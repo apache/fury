@@ -33,6 +33,7 @@
     <arrow.version>5.0.0</arrow.version>
     <jackson-bom.version>2.13.2.20220328</jackson-bom.version>
     <commons_codec.version>1.13</commons_codec.version>
+    <license.maven.plugin>3.0</license.maven.plugin>
   </properties>
 
   <dependencyManagement>
@@ -215,6 +216,33 @@
               <style>GOOGLE</style>
             </googleJavaFormat>
           </java>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>${license.maven.plugin}</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>remove</goal>
+              <goal>format</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <quiet>true</quiet>
+          <header>HEADER</header>
+          <includes>
+            <include>**/src/main/java/**</include>
+            <include>**/src/test/java/**</include>
+          </includes>
+          <strictCheck>true</strictCheck>
+          <mapping>
+            <java>SLASHSTAR_STYLE</java>
+          </mapping>
         </configuration>
       </plugin>
     </plugins>
