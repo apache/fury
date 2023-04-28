@@ -33,3 +33,8 @@ In addition to cross-language capabilities, Fury also has the following abilitie
 
 
 ## Getting involved
+| Platform                                                                                         | Purpose                                         | Estimated Response Time |
+|--------------------------------------------------------------------------------------------------|-------------------------------------------------|-------------------------|
+| [GitHub Issues](https://github.com/alipay/fury/issues)                                           | For reporting bugs and filing feature requests. | < 2 days                |
+| [Slack](https://join.slack.com/t/fury-tgp8961/shared_invite/zt-1ugf4xy5s-kNVExDvb5dLaa_5y9Qpzqw) | For collaborating with other Fury users.        | < 2 days                |
+| [StackOverflow](https://stackoverflow.com/questions/tagged/fury)                                 | For asking questions about how to use Fury.     | < 2 days                |
