@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.fury.format.row;
 
-public class Row {
-}
+public class Row {}
