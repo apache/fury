@@ -20,7 +20,9 @@ package io.fury.util;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
+import io.fury.test.bean.BeanA;
 import java.util.List;
 import org.testng.annotations.Test;
 
@@ -42,5 +44,12 @@ public class ReflectionUtilsTest {
     assertEquals(
         ReflectionUtils.getClassNameWithoutPackage(A.class),
         ReflectionUtilsTest.class.getSimpleName() + "$" + A.class.getSimpleName());
+  }
+
+  @Test
+  public void testObjectEqual() {
+    BeanA beanA = BeanA.createBeanA(1);
+    assertTrue(ReflectionUtils.objectFieldsEquals(beanA, beanA));
+    assertTrue(ReflectionUtils.objectCommonFieldsEquals(beanA, beanA));
   }
 }
