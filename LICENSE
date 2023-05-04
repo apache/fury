@@ -204,3 +204,4 @@
 Apache Software Foundation License 2.0
 --------------------------------------
 java/fury-core/src/main/java/io/fury/util/Platform.java is modified from https://github.com/apache/spark/blob/master/common/unsafe/src/main/java/org/apache/spark/unsafe/Platform.java
+capitalize/uncapitalize/isBlank methods in java/fury-core/src/main/java/io/fury/util/StringUtils.java is copied from https://github.com/apache/commons-lang/blob/master/src/main/java/org/apache/commons/lang3/StringUtils.java

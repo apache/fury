@@ -244,6 +244,7 @@
           </includes>
           <excludes>
             <exclude>**/util/Platform.java</exclude>
+            <exclude>**/util/StringUtils.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>
