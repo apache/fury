@@ -11,7 +11,7 @@ Please review https://github.com/alipay/fury/blob/main/CONTRIBUTING.rst before o
 ## Related issue number
 
 <!-- Are there any issues opened that will be resolved by merging this change? -->
-Fixes #xxxx
+Closes #xxxx
 
 ## Check code requirements
 

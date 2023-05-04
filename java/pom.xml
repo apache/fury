@@ -245,6 +245,7 @@
           <excludes>
             <exclude>**/util/Platform.java</exclude>
             <exclude>**/util/StringUtils.java</exclude>
+            <exclude>**/memory/MemoryBuffer.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>
