@@ -285,21 +285,6 @@ public class LongMap<V> {
   }
 
   /**
-   * Reduces the size of the backing arrays to be the specified capacity / loadFactor, or less. If
-   * the capacity is already less, nothing is done. If the map contains more items than the
-   * specified capacity, the next highest power of two capacity is used instead.
-   */
-  public void shrink(int maximumCapacity) {
-    if (maximumCapacity < 0) {
-      throw new IllegalArgumentException("maximumCapacity must be >= 0: " + maximumCapacity);
-    }
-    int tableSize = FuryObjectMap.tableSize(maximumCapacity, loadFactor);
-    if (keyTable.length > tableSize) {
-      resize(tableSize);
-    }
-  }
-
-  /**
    * Clears the map and reduces the size of the backing arrays to be the specified capacity /
    * loadFactor, if they are larger.
    */
