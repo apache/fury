@@ -18,11 +18,10 @@
 
 package io.fury.collection;
 
-import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 import java.util.stream.IntStream;
-
-import static org.testng.Assert.*;
+import org.testng.annotations.Test;
 
 public class IntArrayTest {
 
