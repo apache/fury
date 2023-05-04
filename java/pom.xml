@@ -250,6 +250,7 @@
             <exclude>**/collection/ObjectIntMap.java</exclude>
             <exclude>**/collection/IdentityObjectIntMap.java</exclude>
             <exclude>**/collection/IdentityMap.java</exclude>
+            <exclude>**/collection/LongMap.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>
