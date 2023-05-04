@@ -18,7 +18,7 @@
 
 package io.fury.collection;
 
-/** An unordered map which has better `get` performance than {@link java.util.HashMap} */
+/** An unordered map which has better `get` performance than {@link java.util.HashMap}. */
 public final class ObjectMap<K, V> extends FuryObjectMap<K, V> {
   public ObjectMap(int initialCapacity, float loadFactor) {
     super(initialCapacity, loadFactor);
