@@ -246,6 +246,10 @@
             <exclude>**/util/Platform.java</exclude>
             <exclude>**/util/StringUtils.java</exclude>
             <exclude>**/memory/MemoryBuffer.java</exclude>
+            <exclude>**/collection/FuryObjectMap.java</exclude>
+            <exclude>**/collection/ObjectIntMap.java</exclude>
+            <exclude>**/collection/IdentityObjectIntMap.java</exclude>
+            <exclude>**/collection/IdentityMap.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>
