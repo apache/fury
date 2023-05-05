@@ -65,7 +65,7 @@ public class ClassLoaderUtilsTest {
       Class<?> cls =
           ClassLoaderUtils.tryDefineClassesInClassLoader(
               pkg + "." + classname, null, getClass().getClassLoader(), bytes);
-      Assert.assertNull(cls);
+      Assert.assertNotNull(cls);
     }
   }
 }
