@@ -18,6 +18,7 @@
 
 package io.fury;
 
+import io.fury.type.Type;
 import io.fury.util.LoggerFactory;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.slf4j.Logger;
@@ -45,4 +46,26 @@ public final class Fury {
   public static final byte NOT_NULL_VALUE_FLAG = -1;
   // this flag indicates that the object is a referencable and first read.
   public static final byte REF_VALUE_FLAG = 0;
+  public static final byte NOT_SUPPORT_CROSS_LANGUAGE = 0;
+  public static final short FURY_TYPE_TAG_ID = Type.FURY_TYPE_TAG.getId();
+
+  private final boolean referenceTracking;
+  private final Language language;
+
+  public Fury() {
+    referenceTracking = false;
+    language = null;
+  }
+
+  public Language getLanguage() {
+    return language;
+  }
+
+  public boolean trackingReference() {
+    return referenceTracking;
+  }
+
+  public boolean isBasicTypesReferenceIgnored() {
+    return false;
+  }
 }
