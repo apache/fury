@@ -18,4 +18,31 @@
 
 package io.fury;
 
-public class Fury {}
+import io.fury.util.LoggerFactory;
+import javax.annotation.concurrent.NotThreadSafe;
+import org.slf4j.Logger;
+
+/**
+ * Cross-Lang Data layout: 1byte mask: 1-bit null: 0->null, 1->not null 1-bit endianness: 0->le,
+ * 1->be 1-bit target lang: 0->native, 1->x_lang if x_lang, will write current process language as a
+ * byte into buffer. 1-bit out-of-band serialization enable flag: 0 -> not enabled, 1 -> enabled.
+ * other bits reserved.
+ *
+ * <p>serialize/deserialize is user API for root object serialization, write/read api is for inner
+ * serialization.
+ *
+ * @author chaokunyang
+ */
+@NotThreadSafe
+public final class Fury {
+  private static final Logger LOG = LoggerFactory.getLogger(Fury.class);
+
+  public static final byte NULL_FLAG = -3;
+  // This flag indicates that object is a not-null value.
+  // We don't use another byte to indicate REF, so that we can save one byte.
+  public static final byte REF_FLAG = -2;
+  // this flag indicates that the object is a non-null value.
+  public static final byte NOT_NULL_VALUE_FLAG = -1;
+  // this flag indicates that the object is a referencable and first read.
+  public static final byte REF_VALUE_FLAG = 0;
+}
