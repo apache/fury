@@ -246,6 +246,7 @@
             <exclude>**/util/Platform.java</exclude>
             <exclude>**/util/StringUtils.java</exclude>
             <exclude>**/util/MurmurHash3.java</exclude>
+            <exclude>**/util/ClassLoaderUtils.java</exclude>
             <exclude>**/memory/MemoryBuffer.java</exclude>
             <exclude>**/collection/FuryObjectMap.java</exclude>
             <exclude>**/collection/ObjectIntMap.java</exclude>
