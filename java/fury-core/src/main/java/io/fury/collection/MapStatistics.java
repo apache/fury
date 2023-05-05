@@ -22,6 +22,7 @@ import io.fury.annotation.Internal;
 
 /**
  * Profiling statistics for hash collision.
+ *
  * @author chaokunyang
  */
 @Internal

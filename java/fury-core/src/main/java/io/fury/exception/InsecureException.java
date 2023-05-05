@@ -21,6 +21,7 @@ package io.fury.exception;
 /**
  * If fury secure mode is enabled, and class of object which is being serialized is not
  * registered(i.e. not in white-list), then this exception will be thrown.
+ *
  * @author chaokunyang
  */
 public class InsecureException extends FuryException {

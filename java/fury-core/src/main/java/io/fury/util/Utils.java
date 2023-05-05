@@ -20,6 +20,7 @@ package io.fury.util;
 
 /**
  * Misc common utils.
+ *
  * @author chaokunyang
  */
 public class Utils {

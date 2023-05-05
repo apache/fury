@@ -24,6 +24,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to mark methods/types as an internal developer API.
+ *
  * @author chaokunyang
  */
 @Documented

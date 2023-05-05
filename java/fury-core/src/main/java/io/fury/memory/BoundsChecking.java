@@ -20,6 +20,7 @@ package io.fury.memory;
 
 /**
  * Util for check whether bounds checking should be turned on or off.
+ *
  * @author chaokunyang
  */
 public class BoundsChecking {

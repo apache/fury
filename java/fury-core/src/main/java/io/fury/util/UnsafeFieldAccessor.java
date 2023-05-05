@@ -24,6 +24,7 @@ import sun.misc.Unsafe;
 
 /**
  * An object field accessor based on {@link Unsafe}.
+ *
  * @author chaokunyang
  */
 public class UnsafeFieldAccessor {

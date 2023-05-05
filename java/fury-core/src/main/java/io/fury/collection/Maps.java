@@ -20,6 +20,7 @@ package io.fury.collection;
 
 /**
  * Map factory to create maps.
+ *
  * @author chaokunyang
  */
 public class Maps {

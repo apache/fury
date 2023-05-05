@@ -25,6 +25,7 @@ import java.lang.annotation.Target;
 
 /**
  * Ignore fields just like transient.
+ *
  * @author chaokunyang
  */
 @Retention(RetentionPolicy.RUNTIME)

@@ -22,6 +22,7 @@ import com.google.common.base.Preconditions;
 
 /**
  * Keep in sync with Type::type in arrow/type_fwd.h
+ *
  * @author chaokunyang
  */
 public enum Type {
