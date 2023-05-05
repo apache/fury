@@ -66,7 +66,7 @@ public class CodegenContextTest {
       Assert.assertEquals(ctx.newName("serializer"), "serializer");
       // Assert.assertEquals(
       //     ctx.newNames(Serializer.class, "isNull"), new String[] {"serializer1", "isNull1"});
-      Assert.assertEquals(ctx.newName("serializer"), "serializer2");
+      Assert.assertEquals(ctx.newName("serializer"), "serializer1");
     }
     {
       CodegenContext ctx = new CodegenContext();
