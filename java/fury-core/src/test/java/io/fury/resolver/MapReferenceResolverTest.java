@@ -32,7 +32,7 @@ public class MapReferenceResolverTest {
   public void testTrackingReference() {
     MapReferenceResolver referenceResolver = new MapReferenceResolver();
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-    assertFalse(referenceResolver.writeReferenceOrNull(buffer, null));
+    assertTrue(referenceResolver.writeReferenceOrNull(buffer, null));
     assertTrue(referenceResolver.writeReferenceOrNull(buffer, new Object()));
     Object o = new Object();
     assertTrue(referenceResolver.writeReferenceOrNull(buffer, o));

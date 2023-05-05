@@ -29,7 +29,7 @@ public class NoReferenceResolverTest {
   public void testWriteReferenceOrNull() {
     ReferenceResolver referenceResolver = new NoReferenceResolver();
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-    assertFalse(referenceResolver.writeReferenceOrNull(buffer, null));
+    assertTrue(referenceResolver.writeReferenceOrNull(buffer, null));
     assertTrue(referenceResolver.writeReferenceOrNull(buffer, new Object()));
     Object o = new Object();
     assertTrue(referenceResolver.writeReferenceOrNull(buffer, o));
