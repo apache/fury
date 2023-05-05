@@ -1532,7 +1532,12 @@ public interface Expression {
       } else {
         cond = StringUtils.format("${condEvalValue}", "condEvalValue", condEval.value());
       }
-
+      TypeToken<?> type = this.type;
+      if (!PRIMITIVE_VOID_TYPE.equals(type.unwrap())) {
+        if (trueExpr instanceof Return && falseExpr instanceof Return) {
+          type = PRIMITIVE_VOID_TYPE;
+        }
+      }
       if (!PRIMITIVE_VOID_TYPE.equals(type.unwrap())) {
         ExprCode falseEval = falseExpr.doGenCode(ctx);
         Preconditions.checkArgument(trueEval.isNull() != null || falseEval.isNull() != null);
