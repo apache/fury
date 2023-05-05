@@ -18,7 +18,11 @@
 
 package io.fury.collection;
 
-/** Map factory to create maps. */
+/**
+ * Map factory to create maps.
+ *
+ * @author chaokunyang
+ */
 public class Maps {
 
   public static <K, V> ObjectMap<K, V> newObjectMap(int initialCapacity, float loadFactor) {

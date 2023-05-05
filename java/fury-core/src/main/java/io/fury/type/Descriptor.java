@@ -53,6 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Build descriptors for a class.
  *
  * @see Ignore
+ * @author chaokunyang
  */
 @SuppressWarnings("UnstableApiUsage")
 public class Descriptor {

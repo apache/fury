@@ -51,7 +51,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** Type utils for common type inference and extraction. */
+/**
+ * Type utils for common type inference and extraction.
+ *
+ * @author chaokunyang
+ */
 @SuppressWarnings("UnstableApiUsage")
 public class TypeUtils {
   public static final String JAVA_BOOLEAN = "boolean";

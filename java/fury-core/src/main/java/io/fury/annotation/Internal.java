@@ -22,7 +22,11 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
-/** Annotation to mark methods/types as an internal developer API. */
+/**
+ * Annotation to mark methods/types as an internal developer API.
+ *
+ * @author chaokunyang
+ */
 @Documented
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
 @Public
