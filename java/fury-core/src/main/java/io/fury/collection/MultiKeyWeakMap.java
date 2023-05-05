@@ -31,6 +31,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * Hash table based implementation with weak keys. An entry in a MultiKeyWeakMap will automatically
+ * be removed when all keys are no longer in ordinary use. More precisely, the presence of a mapping
+ * for the given keys will not prevent the keys from being discarded by the garbage collector.
+ *
+ * @param <T> the type of keys maintained by this map
+ * @see java.util.WeakHashMap
+ * @author chaokunyang
+ */
 public class MultiKeyWeakMap<T> {
   private static final FinalizableReferenceQueue REFERENCE_QUEUE = new FinalizableReferenceQueue();
   private static final Set<Reference<?>> REFERENCES = Sets.newConcurrentHashSet();
