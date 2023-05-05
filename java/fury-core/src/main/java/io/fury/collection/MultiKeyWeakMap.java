@@ -36,7 +36,7 @@ import java.util.stream.IntStream;
  * be removed when all keys are no longer in ordinary use. More precisely, the presence of a mapping
  * for the given keys will not prevent the keys from being discarded by the garbage collector.
  *
- * @param <T> the type of keys maintained by this map
+ * @param <T> the type of values maintained by this map
  * @see java.util.WeakHashMap
  * @author chaokunyang
  */
