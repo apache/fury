@@ -27,13 +27,13 @@ public class NoReferenceResolverTest {
 
   @Test
   public void testWriteReferenceOrNull() {
-    ReferenceResolver referenceResolver = new NoReferenceResolver();
+    NoReferenceResolver referenceResolver = new NoReferenceResolver();
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
     assertTrue(referenceResolver.writeReferenceOrNull(buffer, null));
-    assertTrue(referenceResolver.writeReferenceOrNull(buffer, new Object()));
+    assertFalse(referenceResolver.writeReferenceOrNull(buffer, new Object()));
     Object o = new Object();
-    assertTrue(referenceResolver.writeReferenceOrNull(buffer, o));
-    assertTrue(referenceResolver.writeReferenceOrNull(buffer, o));
+    assertFalse(referenceResolver.writeReferenceOrNull(buffer, o));
+    assertFalse(referenceResolver.writeReferenceOrNull(buffer, o));
     assertFalse(referenceResolver.writeNullFlag(buffer, o));
     assertTrue(referenceResolver.writeNullFlag(buffer, null));
   }
