@@ -20,7 +20,10 @@ package io.fury.collection;
 
 import io.fury.annotation.Internal;
 
-/** Profiling statistics for hash collision. */
+/**
+ * Profiling statistics for hash collision.
+ * @author chaokunyang
+ */
 @Internal
 public class MapStatistics {
   public int maxProbeProfiled;

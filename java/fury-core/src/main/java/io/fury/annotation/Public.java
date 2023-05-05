@@ -22,7 +22,10 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
-/** Annotation for marking classes as public, stable interfaces. */
+/**
+ * Annotation for marking classes as public, stable interfaces.
+ * @author chaokunyang
+ */
 @Documented
 @Target(ElementType.TYPE)
 @Public

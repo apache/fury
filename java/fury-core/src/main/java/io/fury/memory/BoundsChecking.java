@@ -18,7 +18,10 @@
 
 package io.fury.memory;
 
-/** Util for check whether bounds checking should be turned on or off. */
+/**
+ * Util for check whether bounds checking should be turned on or off.
+ * @author chaokunyang
+ */
 public class BoundsChecking {
   public static final boolean BOUNDS_CHECKING_ENABLED;
 

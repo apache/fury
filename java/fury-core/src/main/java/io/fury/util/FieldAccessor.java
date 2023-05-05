@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
  *
  * <p>Note for primitive types, there will be box/unbox overhead. Use {@link UnsafeFieldAccessor} if
  * possible to avoid this overhead.
+ * @author chaokunyang
  */
 public abstract class FieldAccessor {
   protected final Field field;

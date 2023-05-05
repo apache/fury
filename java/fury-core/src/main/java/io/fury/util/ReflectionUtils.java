@@ -39,6 +39,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Reflection util.
+ * @author chaokunyang
+ */
 @SuppressWarnings("UnstableApiUsage")
 public class ReflectionUtils {
   public static boolean isAbstract(Class<?> clazz) {

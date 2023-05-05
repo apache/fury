@@ -18,7 +18,10 @@
 
 package io.fury.exception;
 
-/** Base class of all fury exceptions. */
+/**
+ * Base class of all fury exceptions.
+ * @author chaokunyang
+ */
 public class FuryException extends RuntimeException {
 
   public FuryException(String message) {

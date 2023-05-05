@@ -20,7 +20,10 @@ package io.fury.type;
 
 import com.google.common.base.Preconditions;
 
-/** Keep in sync with Type::type in arrow/type_fwd.h */
+/**
+ * Keep in sync with Type::type in arrow/type_fwd.h
+ * @author chaokunyang
+ */
 public enum Type {
   /// A NULL type having no physical storage
   NA, // NA = 0
