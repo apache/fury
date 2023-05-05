@@ -49,7 +49,7 @@ public class ClassLoaderUtilsTest {
             .values()
             .iterator()
             .next();
-    if (Platform.JAVA_VERSION >= 11) {
+    if (Platform.JAVA_VERSION >= 17) {
       Class<?> cls =
           ClassLoaderUtils.tryDefineClassesInClassLoader(
               pkg + "." + classname, null, getClass().getClassLoader(), bytes);
