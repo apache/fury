@@ -28,6 +28,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -523,5 +524,9 @@ public class ReflectionUtils {
     Set<String> commonFields = fieldMap1.keySet();
     commonFields.retainAll(fieldMap2.keySet());
     return Tuple3.of(commonFields, fieldMap1, fieldMap2);
+  }
+
+  public static boolean isJdkProxy(Class<?> clz) {
+    return Proxy.isProxyClass(clz);
   }
 }
