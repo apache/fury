@@ -18,6 +18,8 @@
 
 package io.fury;
 
+import io.fury.memory.MemoryBuffer;
+import io.fury.resolver.ClassInfo;
 import io.fury.type.Type;
 import io.fury.util.LoggerFactory;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -51,10 +53,15 @@ public final class Fury {
 
   private final boolean referenceTracking;
   private final Language language;
+  private int depth;
 
-  public Fury() {
+  public Fury(FuryBuilder builder) {
     referenceTracking = false;
     language = null;
+  }
+
+  public void writeReferencableToJava(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
+    throw new UnsupportedOperationException();
   }
 
   public Language getLanguage() {
@@ -67,5 +74,27 @@ public final class Fury {
 
   public boolean isBasicTypesReferenceIgnored() {
     return false;
+  }
+
+  public int getDepth() {
+    return depth;
+  }
+
+  public void setDepth(int depth) {
+    this.depth = depth;
+  }
+
+  public static FuryBuilder builder() {
+    return new FuryBuilder();
+  }
+
+  public static final class FuryBuilder {
+    public Fury build() {
+      return new Fury(this);
+    }
+
+    public FuryBuilder withLanguage(Language language) {
+      return this;
+    }
   }
 }
