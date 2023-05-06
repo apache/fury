@@ -18,6 +18,8 @@
 
 package io.fury;
 
+import io.fury.memory.MemoryBuffer;
+import io.fury.resolver.ClassInfo;
 import io.fury.type.Type;
 import io.fury.util.LoggerFactory;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -56,6 +58,10 @@ public final class Fury {
   public Fury(FuryBuilder builder) {
     referenceTracking = false;
     language = null;
+  }
+
+  public void writeReferencableToJava(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
+    throw new UnsupportedOperationException();
   }
 
   public Language getLanguage() {
