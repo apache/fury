@@ -51,8 +51,9 @@ public final class Fury {
 
   private final boolean referenceTracking;
   private final Language language;
+  private int depth;
 
-  public Fury() {
+  public Fury(FuryBuilder builder) {
     referenceTracking = false;
     language = null;
   }
@@ -67,5 +68,27 @@ public final class Fury {
 
   public boolean isBasicTypesReferenceIgnored() {
     return false;
+  }
+
+  public int getDepth() {
+    return depth;
+  }
+
+  public void setDepth(int depth) {
+    this.depth = depth;
+  }
+
+  public static FuryBuilder builder() {
+    return new FuryBuilder();
+  }
+
+  public static final class FuryBuilder {
+    public Fury build() {
+      return new Fury(this);
+    }
+
+    public FuryBuilder withLanguage(Language language) {
+      return this;
+    }
   }
 }

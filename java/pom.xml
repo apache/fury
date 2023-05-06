@@ -253,6 +253,7 @@
             <exclude>**/collection/IdentityObjectIntMap.java</exclude>
             <exclude>**/collection/IdentityMap.java</exclude>
             <exclude>**/collection/LongMap.java</exclude>
+            <exclude>**/type/Generics.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>
