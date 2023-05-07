@@ -38,6 +38,8 @@ import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -225,6 +227,8 @@ public class ClassResolver {
     addDefaultSerializer(Class.class, new Serializers.ClassSerializer(fury));
     addDefaultSerializer(StringBuilder.class, new Serializers.StringBuilderSerializer(fury));
     addDefaultSerializer(StringBuffer.class, new Serializers.StringBufferSerializer(fury));
+    addDefaultSerializer(BigInteger.class, new Serializers.BigIntegerSerializer(fury));
+    addDefaultSerializer(BigDecimal.class, new Serializers.BigDecimalSerializer(fury));
   }
 
   private void addDefaultSerializer(Class<?> type, Class<? extends Serializer> serializerClass) {

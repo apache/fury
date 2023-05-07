@@ -27,6 +27,8 @@ import io.fury.util.Platform;
 import io.fury.util.Utils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.IdentityHashMap;
 
 /**
@@ -436,6 +438,51 @@ public class Serializers {
     @Override
     public Enum read(MemoryBuffer buffer) {
       return enumConstants[buffer.readPositiveVarInt()];
+    }
+  }
+
+  public static final class BigDecimalSerializer extends Serializer<BigDecimal> {
+    public BigDecimalSerializer(Fury fury) {
+      super(fury, BigDecimal.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, BigDecimal value) {
+      final byte[] bytes = value.unscaledValue().toByteArray();
+      Preconditions.checkArgument(bytes.length <= 16);
+      buffer.writeByte((byte) value.scale());
+      buffer.writeByte((byte) bytes.length);
+      buffer.writeBytes(bytes);
+    }
+
+    @Override
+    public BigDecimal read(MemoryBuffer buffer) {
+      int scale = buffer.readByte();
+      int len = buffer.readByte();
+      byte[] bytes = buffer.readBytes(len);
+      final BigInteger bigInteger = new BigInteger(bytes);
+      return new BigDecimal(bigInteger, scale);
+    }
+  }
+
+  public static final class BigIntegerSerializer extends Serializer<BigInteger> {
+    public BigIntegerSerializer(Fury fury) {
+      super(fury, BigInteger.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, BigInteger value) {
+      final byte[] bytes = value.toByteArray();
+      Preconditions.checkArgument(bytes.length <= 16);
+      buffer.writeByte((byte) bytes.length);
+      buffer.writeBytes(bytes);
+    }
+
+    @Override
+    public BigInteger read(MemoryBuffer buffer) {
+      int len = buffer.readByte();
+      byte[] bytes = buffer.readBytes(len);
+      return new BigInteger(bytes);
     }
   }
 
