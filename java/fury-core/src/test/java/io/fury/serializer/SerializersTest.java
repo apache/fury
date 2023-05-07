@@ -52,9 +52,8 @@ public class SerializersTest extends FuryTestBase {
     assertEquals(serializer.crossLanguageRead(buffer), Integer.valueOf(65535));
     assertThrows(IllegalArgumentException.class, () -> serializer.crossLanguageWrite(buffer, -1));
     assertThrows(
-      IllegalArgumentException.class, () -> serializer.crossLanguageWrite(buffer, 65536));
+        IllegalArgumentException.class, () -> serializer.crossLanguageWrite(buffer, 65536));
   }
-
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testStringBuilder(boolean referenceTracking, Language language) {
