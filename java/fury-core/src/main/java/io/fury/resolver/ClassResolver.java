@@ -223,6 +223,8 @@ public class ClassResolver {
     addDefaultSerializer(String.class, new StringSerializer(fury));
     addDefaultSerializer(String[].class, new Serializers.StringArraySerializer(fury));
     addDefaultSerializer(Class.class, new Serializers.ClassSerializer(fury));
+    addDefaultSerializer(StringBuilder.class, new Serializers.StringBuilderSerializer(fury));
+    addDefaultSerializer(StringBuffer.class, new Serializers.StringBufferSerializer(fury));
   }
 
   private void addDefaultSerializer(Class<?> type, Class<? extends Serializer> serializerClass) {

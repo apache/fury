@@ -358,6 +358,59 @@ public class Serializers {
     }
   }
 
+  public static final class StringBuilderSerializer extends Serializer<StringBuilder> {
+    private final StringSerializer stringSerializer;
+
+    public StringBuilderSerializer(Fury fury) {
+      super(fury, StringBuilder.class);
+      stringSerializer = new StringSerializer(fury);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, StringBuilder value) {
+      stringSerializer.writeJavaString(buffer, value.toString());
+    }
+
+    @Override
+    public StringBuilder read(MemoryBuffer buffer) {
+      return new StringBuilder(stringSerializer.readJavaString(buffer));
+    }
+  }
+
+  public static final class StringBufferSerializer extends Serializer<StringBuffer> {
+    private final StringSerializer stringSerializer;
+
+    public StringBufferSerializer(Fury fury) {
+      super(fury, StringBuffer.class);
+      stringSerializer = new StringSerializer(fury);
+    }
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return (short) -Type.STRING.getId();
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, StringBuffer value) {
+      stringSerializer.writeJavaString(buffer, value.toString());
+    }
+
+    @Override
+    public void crossLanguageWrite(MemoryBuffer buffer, StringBuffer value) {
+      stringSerializer.writeUTF8String(buffer, value.toString());
+    }
+
+    @Override
+    public StringBuffer read(MemoryBuffer buffer) {
+      return new StringBuffer(stringSerializer.readJavaString(buffer));
+    }
+
+    @Override
+    public StringBuffer crossLanguageRead(MemoryBuffer buffer) {
+      return new StringBuffer(stringSerializer.readUTF8String(buffer));
+    }
+  }
+
   public static final class StringArraySerializer extends Serializer<String[]> {
     private final StringSerializer stringSerializer;
 
