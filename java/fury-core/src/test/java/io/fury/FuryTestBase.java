@@ -36,6 +36,16 @@ public abstract class FuryTestBase {
     return new Object[][] {{false}, {true}};
   }
 
+  @DataProvider(name = "crossLanguageReferenceTrackingConfig")
+  public static Object[][] crossLanguageReferenceTrackingConfig() {
+    return new Object[][] {
+      {false, Language.JAVA},
+      {true, Language.JAVA},
+      {false, Language.XLANG},
+      {true, Language.XLANG}
+    };
+  }
+
   public static Object serDe(Fury fury1, Fury fury2, Object obj) {
     byte[] bytes = fury1.serialize(obj);
     return fury2.deserialize(bytes);
