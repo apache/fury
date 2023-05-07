@@ -411,6 +411,34 @@ public class Serializers {
     }
   }
 
+  public static final class EnumSerializer extends Serializer<Enum> {
+    private final Enum[] enumConstants;
+
+    public EnumSerializer(Fury fury, Class<Enum> cls) {
+      super(fury, cls, false);
+      if (cls.isEnum()) {
+        enumConstants = cls.getEnumConstants();
+      } else {
+        Preconditions.checkArgument(Enum.class.isAssignableFrom(cls) && cls != Enum.class);
+        @SuppressWarnings("unchecked")
+        Class<Enum> enclosingClass = (Class<Enum>) cls.getEnclosingClass();
+        Preconditions.checkNotNull(enclosingClass);
+        Preconditions.checkArgument(enclosingClass.isEnum());
+        enumConstants = enclosingClass.getEnumConstants();
+      }
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Enum value) {
+      buffer.writePositiveVarInt(value.ordinal());
+    }
+
+    @Override
+    public Enum read(MemoryBuffer buffer) {
+      return enumConstants[buffer.readPositiveVarInt()];
+    }
+  }
+
   public static final class StringArraySerializer extends Serializer<String[]> {
     private final StringSerializer stringSerializer;
 

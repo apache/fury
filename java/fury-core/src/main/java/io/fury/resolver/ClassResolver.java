@@ -493,6 +493,12 @@ public class ClassResolver {
       // serialized, which will create a class info with serializer null, see `#writeClassInternal`
       return classInfo.serializer.getClass();
     } else {
+      if (cls.isEnum()) {
+        return Serializers.EnumSerializer.class;
+      } else if (Enum.class.isAssignableFrom(cls) && cls != Enum.class) {
+        // handles an enum value that is an inner class. Eg: enum A {b{}};
+        return Serializers.EnumSerializer.class;
+      }
       throw new UnsupportedOperationException();
     }
   }
