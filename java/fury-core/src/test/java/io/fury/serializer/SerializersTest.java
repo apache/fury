@@ -24,6 +24,8 @@ import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
 import io.fury.memory.MemoryBuffer;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import org.testng.annotations.Test;
 
 public class SerializersTest extends FuryTestBase {
@@ -57,18 +59,13 @@ public class SerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testStringBuilder(boolean referenceTracking, Language language) {
-    Fury fury1 =
+    Fury.FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
             .withReferenceTracking(referenceTracking)
-            .disableSecureMode()
-            .build();
-    Fury fury2 =
-        Fury.builder()
-            .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode()
-            .build();
+            .disableSecureMode();
+    Fury fury1 = builder.build();
+    Fury fury2 = builder.build();
     assertEquals("str", serDe(fury1, fury2, "str"));
     assertEquals("str", serDe(fury1, fury2, new StringBuilder("str")).toString());
     assertEquals("str", serDe(fury1, fury2, new StringBuffer("str")).toString());
@@ -94,23 +91,31 @@ public class SerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testEnumSerialization(boolean referenceTracking, Language language) {
-    Fury fury1 =
+    Fury.FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
             .withReferenceTracking(referenceTracking)
-            .disableSecureMode()
-            .build();
-    Fury fury2 =
-        Fury.builder()
-            .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode()
-            .build();
+            .disableSecureMode();
+    Fury fury1 = builder.build();
+    Fury fury2 = builder.build();
     assertEquals(SerializersTest.EnumFoo.A, serDe(fury1, fury2, SerializersTest.EnumFoo.A));
     assertEquals(SerializersTest.EnumFoo.B, serDe(fury1, fury2, SerializersTest.EnumFoo.B));
     assertEquals(
         SerializersTest.EnumSubClass.A, serDe(fury1, fury2, SerializersTest.EnumSubClass.A));
     assertEquals(
         SerializersTest.EnumSubClass.B, serDe(fury1, fury2, SerializersTest.EnumSubClass.B));
+  }
+
+  @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
+  public void testBigInt(boolean referenceTracking, Language language) {
+    Fury.FuryBuilder builder =
+        Fury.builder()
+            .withLanguage(language)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode();
+    Fury fury1 = builder.build();
+    Fury fury2 = builder.build();
+    assertEquals(BigInteger.valueOf(100), serDe(fury1, fury2, BigInteger.valueOf(100)));
+    assertEquals(BigDecimal.valueOf(100, 2), serDe(fury1, fury2, BigDecimal.valueOf(100, 2)));
   }
 }
