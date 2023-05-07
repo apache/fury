@@ -23,9 +23,37 @@ import static org.testng.Assert.*;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
+import io.fury.memory.MemoryBuffer;
 import org.testng.annotations.Test;
 
 public class SerializersTest extends FuryTestBase {
+
+  @Test
+  public void testUint8Serializer() {
+    Fury fury = Fury.builder().withLanguage(Language.XLANG).disableSecureMode().build();
+    Serializers.Uint8Serializer serializer = new Serializers.Uint8Serializer(fury);
+    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(8);
+    serializer.crossLanguageWrite(buffer, 0);
+    assertEquals(serializer.crossLanguageRead(buffer), Integer.valueOf(0));
+    serializer.crossLanguageWrite(buffer, 255);
+    assertEquals(serializer.crossLanguageRead(buffer), Integer.valueOf(255));
+    assertThrows(IllegalArgumentException.class, () -> serializer.crossLanguageWrite(buffer, -1));
+    assertThrows(IllegalArgumentException.class, () -> serializer.crossLanguageWrite(buffer, 256));
+  }
+
+  @Test
+  public void testUint16Serializer() {
+    Fury fury = Fury.builder().withLanguage(Language.XLANG).disableSecureMode().build();
+    Serializers.Uint16Serializer serializer = new Serializers.Uint16Serializer(fury);
+    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(16);
+    serializer.crossLanguageWrite(buffer, 0);
+    assertEquals(serializer.crossLanguageRead(buffer), Integer.valueOf(0));
+    serializer.crossLanguageWrite(buffer, 65535);
+    assertEquals(serializer.crossLanguageRead(buffer), Integer.valueOf(65535));
+    assertThrows(IllegalArgumentException.class, () -> serializer.crossLanguageWrite(buffer, -1));
+    assertThrows(
+        IllegalArgumentException.class, () -> serializer.crossLanguageWrite(buffer, 65536));
+  }
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testStringBuilder(boolean referenceTracking, Language language) {
