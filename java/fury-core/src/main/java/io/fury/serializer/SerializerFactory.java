@@ -18,15 +18,14 @@
 
 package io.fury.serializer;
 
+import io.fury.Fury;
+
 /**
- * If the callback returns false, the given buffer is out-of-band; otherwise the buffer is
- * serialized in-band, i.e. inside the serialized stream.
+ * Serializer factory for customizing serializer creation.
  *
  * @author chaokunyang
  */
-@FunctionalInterface
-public interface BufferCallback {
+public interface SerializerFactory {
 
-  /** Returns false if serialized out-of-band, otherwise true for in-band serialization. */
-  boolean apply(BufferObject object);
+  Serializer createSerializer(Fury fury, Class<?> cls);
 }

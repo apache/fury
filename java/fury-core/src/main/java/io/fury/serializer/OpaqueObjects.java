@@ -18,15 +18,40 @@
 
 package io.fury.serializer;
 
+import io.fury.Language;
+
 /**
- * If the callback returns false, the given buffer is out-of-band; otherwise the buffer is
- * serialized in-band, i.e. inside the serialized stream.
+ * Stub objects for unsupported cross-language serializing type.
  *
  * @author chaokunyang
  */
-@FunctionalInterface
-public interface BufferCallback {
+public class OpaqueObjects {
 
-  /** Returns false if serialized out-of-band, otherwise true for in-band serialization. */
-  boolean apply(BufferObject object);
+  public static OpaqueObject of(Language language, String className, int ordinal) {
+    return new OpaqueObject(language, className, ordinal);
+  }
+
+  public static class OpaqueObject {
+    private final Language language;
+    private final String className;
+    private final int ordinal;
+
+    public OpaqueObject(Language language, String className, int ordinal) {
+      this.language = language;
+      this.className = className;
+      this.ordinal = ordinal;
+    }
+
+    public Language language() {
+      return language;
+    }
+
+    public String className() {
+      return className;
+    }
+
+    public int ordinal() {
+      return ordinal;
+    }
+  }
 }

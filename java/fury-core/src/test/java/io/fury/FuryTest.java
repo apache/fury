@@ -18,4 +18,47 @@
 
 package io.fury;
 
-public class FuryTest {}
+import static org.testng.Assert.assertEquals;
+
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+public class FuryTest extends FuryTestBase {
+  @DataProvider(name = "languageConfig")
+  public static Object[] languageConfig() {
+    return new Object[] {Language.JAVA, Language.PYTHON};
+  }
+
+  @DataProvider(name = "crossLanguageReferenceTrackingConfig")
+  public static Object[][] crossLanguageReferenceTrackingConfig() {
+    return new Object[][] {
+      {false, Language.JAVA},
+      {true, Language.JAVA},
+      {false, Language.XLANG},
+      {true, Language.XLANG}
+    };
+  }
+
+  @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
+  public void primitivesTest(boolean referenceTracking, Language language) {
+    Fury fury1 =
+        Fury.builder()
+            .withLanguage(language)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode()
+            .build();
+    Fury fury2 =
+        Fury.builder()
+            .withLanguage(language)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode()
+            .build();
+    assertEquals(true, serDe(fury1, fury2, true));
+    assertEquals(Byte.MAX_VALUE, serDe(fury1, fury2, Byte.MAX_VALUE));
+    assertEquals(Short.MAX_VALUE, serDe(fury1, fury2, Short.MAX_VALUE));
+    assertEquals(Integer.MAX_VALUE, serDe(fury1, fury2, Integer.MAX_VALUE));
+    assertEquals(Long.MAX_VALUE, serDe(fury1, fury2, Long.MAX_VALUE));
+    assertEquals(Float.MAX_VALUE, serDe(fury1, fury2, Float.MAX_VALUE));
+    assertEquals(Double.MAX_VALUE, serDe(fury1, fury2, Double.MAX_VALUE));
+  }
+}

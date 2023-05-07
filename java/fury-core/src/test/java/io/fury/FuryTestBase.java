@@ -20,6 +20,7 @@ package io.fury;
 
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
+import org.testng.Assert;
 
 /**
  * Fury unit test base class.
@@ -28,6 +29,22 @@ import io.fury.util.ReflectionUtils;
  */
 @SuppressWarnings("unchecked")
 public abstract class FuryTestBase {
+
+  public static Object serDe(Fury fury1, Fury fury2, Object obj) {
+    byte[] bytes = fury1.serialize(obj);
+    return fury2.deserialize(bytes);
+  }
+
+  public static Object serDeCheck(Fury fury, Object obj) {
+    Object o = serDe(fury, obj);
+    Assert.assertEquals(o, obj);
+    return o;
+  }
+
+  public static <T> T serDe(Fury fury, T obj) {
+    byte[] bytes = fury.serialize(obj);
+    return (T) (fury.deserialize(bytes));
+  }
 
   /** Update serialization depth by <code>diff</code>. */
   protected void increaseFuryDepth(Fury fury, int diff) {
