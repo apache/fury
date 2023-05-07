@@ -19,6 +19,7 @@
 package io.fury.serializer;
 
 import com.google.common.base.Preconditions;
+import com.google.common.primitives.Primitives;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.type.Type;
@@ -26,6 +27,7 @@ import io.fury.util.Platform;
 import io.fury.util.Utils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.IdentityHashMap;
 
 /**
  * Serialization utils and common serializers.
@@ -353,6 +355,34 @@ public class Serializers {
     @Override
     public Double read(MemoryBuffer buffer) {
       return buffer.readDouble();
+    }
+  }
+
+  public static final class ClassSerializer extends Serializer<Class> {
+    private static final byte USE_CLASS_ID = 0;
+    private static final byte USE_CLASSNAME = 1;
+    private static final byte PRIMITIVE_FLAG = 2;
+    private final IdentityHashMap<Class<?>, Byte> primitivesMap = new IdentityHashMap<>();
+    private final Class<?>[] id2PrimitiveClasses = new Class[Primitives.allPrimitiveTypes().size()];
+
+    public ClassSerializer(Fury fury) {
+      super(fury, Class.class);
+      byte count = 0;
+      for (Class<?> primitiveType : Primitives.allPrimitiveTypes()) {
+        primitivesMap.put(primitiveType, count);
+        id2PrimitiveClasses[count] = primitiveType;
+        count++;
+      }
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Class value) {
+      fury.getClassResolver().writeClassInternal(buffer, value);
+    }
+
+    @Override
+    public Class read(MemoryBuffer buffer) {
+      return fury.getClassResolver().readClassInternal(buffer);
     }
   }
 }

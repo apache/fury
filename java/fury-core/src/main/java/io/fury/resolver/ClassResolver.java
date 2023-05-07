@@ -219,6 +219,7 @@ public class ClassResolver {
     addDefaultSerializer(Long.class, new Serializers.LongSerializer(fury, Long.class));
     addDefaultSerializer(Float.class, new Serializers.FloatSerializer(fury, Float.class));
     addDefaultSerializer(Double.class, new Serializers.DoubleSerializer(fury, Double.class));
+    addDefaultSerializer(Class.class, new Serializers.ClassSerializer(fury));
   }
 
   private void addDefaultSerializer(Class<?> type, Class<? extends Serializer> serializerClass) {
@@ -700,6 +701,55 @@ public class ClassResolver {
       buffer.increaseWriterIndex(3);
       buffer.unsafePut(writerIndex, USE_STRING_ID);
       buffer.unsafePutShort(writerIndex + 1, classInfo.classId);
+    }
+  }
+
+  /**
+   * Write classname for java serialization. Note that the object of provided class can be
+   * non-serializable, and class with writeReplace/readResolve defined won't be skipped. For
+   * serializable object, {@link #writeClass(MemoryBuffer, ClassInfo)} should be invoked.
+   */
+  public void writeClassInternal(MemoryBuffer buffer, Class<?> cls) {
+    ClassInfo classInfo = classInfoMap.get(cls);
+    if (classInfo == null) {
+      Short classId = extRegistry.registeredClassIdMap.get(cls);
+      // Don't create serializer in case the object for class is non-serializable,
+      // Or class is abstract or interface.
+      classInfo = new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
+      classInfoMap.put(cls, classInfo);
+    }
+    short classId = classInfo.classId;
+    if (classId == REPLACE_STUB_ID) {
+      // clear class id to avoid replaced class written as
+      // ReplaceResolveSerializer.ReplaceStub
+      classInfo.classId = NO_CLASS_ID;
+    }
+    writeClass(buffer, classInfo);
+    classInfo.classId = classId;
+  }
+
+  /**
+   * Read serialized java classname. Note that the object of the class can be non-serializable. For
+   * serializable object, {@link #readClassAndUpdateCache(MemoryBuffer)} or {@link
+   * #readClassInfo(MemoryBuffer, ClassInfoCache)} should be invoked.
+   */
+  public Class<?> readClassInternal(MemoryBuffer buffer) {
+    if (buffer.readByte() == USE_CLASS_VALUE) {
+      if (metaContextShareEnabled) {
+        throw new UnsupportedOperationException();
+      }
+      EnumStringBytes packageBytes = enumStringResolver.readEnumStringBytes(buffer);
+      EnumStringBytes simpleClassNameBytes = enumStringResolver.readEnumStringBytes(buffer);
+      final Class<?> cls = loadBytesToClass(packageBytes, simpleClassNameBytes);
+      currentReadClass = cls;
+      return cls;
+    } else {
+      // use classId
+      short classId = buffer.readShort();
+      ClassInfo classInfo = registeredId2ClassInfo[classId];
+      final Class<?> cls = classInfo.cls;
+      currentReadClass = cls;
+      return cls;
     }
   }
 
