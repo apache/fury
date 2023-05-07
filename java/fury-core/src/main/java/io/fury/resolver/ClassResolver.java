@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 
 /**
- * Class registry for types of serializing objects, responsible for read/writing types,
+ * Class registry for types of serializing objects, responsible for reading/writing types,
  * setting up relations between serializer and types.
  *
  * @author chaokunyang
