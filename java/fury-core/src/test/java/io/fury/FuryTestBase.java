@@ -21,6 +21,7 @@ package io.fury;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 
 /**
  * Fury unit test base class.
@@ -29,6 +30,11 @@ import org.testng.Assert;
  */
 @SuppressWarnings("unchecked")
 public abstract class FuryTestBase {
+
+  @DataProvider(name = "endian")
+  public static Object[][] endian() {
+    return new Object[][] {{false}, {true}};
+  }
 
   public static Object serDe(Fury fury1, Fury fury2, Object obj) {
     byte[] bytes = fury1.serialize(obj);
