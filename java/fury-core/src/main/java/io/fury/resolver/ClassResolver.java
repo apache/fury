@@ -31,6 +31,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.Serializers;
+import io.fury.serializer.StringSerializer;
 import io.fury.type.TypeUtils;
 import io.fury.util.Functions;
 import io.fury.util.LoggerFactory;
@@ -219,6 +220,8 @@ public class ClassResolver {
     addDefaultSerializer(Long.class, new Serializers.LongSerializer(fury, Long.class));
     addDefaultSerializer(Float.class, new Serializers.FloatSerializer(fury, Float.class));
     addDefaultSerializer(Double.class, new Serializers.DoubleSerializer(fury, Double.class));
+    addDefaultSerializer(String.class, new StringSerializer(fury));
+    addDefaultSerializer(String[].class, new Serializers.StringArraySerializer(fury));
     addDefaultSerializer(Class.class, new Serializers.ClassSerializer(fury));
   }
 
