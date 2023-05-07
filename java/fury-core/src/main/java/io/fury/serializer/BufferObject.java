@@ -27,6 +27,8 @@ import java.nio.ByteOrder;
  * serialization and shouldn't be used for any other cases.
  *
  * @see ByteBufferBufferObject // * @see Serializers.PrimitiveArrayBufferObject
+ *
+ * @author chaokunyang
  */
 public interface BufferObject {
 

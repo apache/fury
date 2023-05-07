@@ -16,28 +16,42 @@
  * limitations under the License.
  */
 
-package io.fury;
+package io.fury.serializer;
 
-import io.fury.util.Platform;
-import io.fury.util.ReflectionUtils;
+import io.fury.Language;
 
 /**
- * Fury unit test base class.
+ * Stub objects for unsupported cross-language serializing type.
  *
  * @author chaokunyang
  */
-@SuppressWarnings("unchecked")
-public abstract class FuryTestBase {
+public class OpaqueObjects {
 
-  public static Object serDe(Fury fury1, Fury fury2, Object obj) {
-    byte[] bytes = fury1.serialize(obj);
-    return fury2.deserialize(bytes);
+  public static OpaqueObject of(Language language, String className, int ordinal) {
+    return new OpaqueObject(language, className, ordinal);
   }
 
-  /** Update serialization depth by <code>diff</code>. */
-  protected void increaseFuryDepth(Fury fury, int diff) {
-    long offset = ReflectionUtils.getFieldOffset(Fury.class, "depth");
-    int depth = Platform.getInt(fury, offset);
-    Platform.putInt(fury, offset, depth + diff);
+  public static class OpaqueObject {
+    private final Language language;
+    private final String className;
+    private final int ordinal;
+
+    public OpaqueObject(Language language, String className, int ordinal) {
+      this.language = language;
+      this.className = className;
+      this.ordinal = ordinal;
+    }
+
+    public Language language() {
+      return language;
+    }
+
+    public String className() {
+      return className;
+    }
+
+    public int ordinal() {
+      return ordinal;
+    }
   }
 }

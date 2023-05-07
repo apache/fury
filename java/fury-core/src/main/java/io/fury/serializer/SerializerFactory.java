@@ -16,28 +16,16 @@
  * limitations under the License.
  */
 
-package io.fury;
+package io.fury.serializer;
 
-import io.fury.util.Platform;
-import io.fury.util.ReflectionUtils;
+import io.fury.Fury;
 
 /**
- * Fury unit test base class.
+ * Serializer factory for customizing serializer creation.
  *
  * @author chaokunyang
  */
-@SuppressWarnings("unchecked")
-public abstract class FuryTestBase {
+public interface SerializerFactory {
 
-  public static Object serDe(Fury fury1, Fury fury2, Object obj) {
-    byte[] bytes = fury1.serialize(obj);
-    return fury2.deserialize(bytes);
-  }
-
-  /** Update serialization depth by <code>diff</code>. */
-  protected void increaseFuryDepth(Fury fury, int diff) {
-    long offset = ReflectionUtils.getFieldOffset(Fury.class, "depth");
-    int depth = Platform.getInt(fury, offset);
-    Platform.putInt(fury, offset, depth + diff);
-  }
+  Serializer createSerializer(Fury fury, Class<?> cls);
 }
