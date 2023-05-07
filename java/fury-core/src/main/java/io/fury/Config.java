@@ -51,7 +51,9 @@ public class Config implements Serializable {
   private final Language language;
   private final boolean referenceTracking;
   private final boolean basicTypesReferenceIgnored;
+  private final boolean stringReferenceIgnored;
   private final boolean compressNumber;
+  private final boolean compressString;
   private final boolean secureModeEnabled;
   private final boolean classRegistrationRequired;
   private transient int configHash;
@@ -60,7 +62,9 @@ public class Config implements Serializable {
     language = builder.language;
     referenceTracking = builder.referenceTracking;
     basicTypesReferenceIgnored = !referenceTracking || builder.basicTypesReferenceIgnored;
+    stringReferenceIgnored = !referenceTracking || builder.stringReferenceIgnored;
     compressNumber = builder.compressNumber;
+    compressString = builder.compressString;
     secureModeEnabled = builder.secureModeEnabled;
     classRegistrationRequired = builder.requireClassRegistration;
   }
@@ -77,8 +81,16 @@ public class Config implements Serializable {
     return basicTypesReferenceIgnored;
   }
 
+  public boolean isStringReferenceIgnored() {
+    return stringReferenceIgnored;
+  }
+
   public boolean compressNumber() {
     return compressNumber;
+  }
+
+  public boolean compressString() {
+    return compressString;
   }
 
   public boolean isClassRegistrationRequired() {

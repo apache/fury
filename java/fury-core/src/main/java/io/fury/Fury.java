@@ -34,6 +34,7 @@ import io.fury.serializer.BufferObject;
 import io.fury.serializer.OpaqueObjects;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
+import io.fury.serializer.StringSerializer;
 import io.fury.type.Generics;
 import io.fury.type.Type;
 import io.fury.util.LoggerFactory;
@@ -88,6 +89,7 @@ public final class Fury {
 
   private final MemoryBuffer buffer;
   private final List<Object> nativeObjects;
+  private final StringSerializer stringSerializer;
   private final Language language;
   private final boolean compressNumber;
   private final Generics generics;
@@ -117,6 +119,7 @@ public final class Fury {
     buffer = MemoryUtils.buffer(32);
     nativeObjects = new ArrayList<>();
     generics = new Generics(this);
+    stringSerializer = new StringSerializer(this);
     LOG.info("Created new fury {}", this);
   }
 
@@ -462,7 +465,8 @@ public final class Fury {
         buffer.writeDouble((Double) obj);
         break;
       case ClassResolver.STRING_CLASS_ID:
-        throw new UnsupportedOperationException();
+        stringSerializer.writeJavaString(buffer, (String) obj);
+        break;
         // TODO(add fastpath for other types)
       default:
         depth++;
@@ -683,7 +687,7 @@ public final class Fury {
       case ClassResolver.DOUBLE_CLASS_ID:
         return buffer.readDouble();
       case ClassResolver.STRING_CLASS_ID:
-        throw new UnsupportedOperationException();
+        return stringSerializer.readJavaString(buffer);
         // TODO(add fastpath for other types)
       default:
         depth++;
@@ -855,12 +859,20 @@ public final class Fury {
     return referenceTracking;
   }
 
+  public boolean isStringReferenceIgnored() {
+    return config.isStringReferenceIgnored();
+  }
+
   public boolean isBasicTypesReferenceIgnored() {
     return config.isBasicTypesReferenceIgnored();
   }
 
   public Config getConfig() {
     return config;
+  }
+
+  public boolean compressString() {
+    return config.compressString();
   }
 
   public boolean compressNumber() {
@@ -897,6 +909,7 @@ public final class Fury {
     boolean timeReferenceIgnored = true;
     ClassLoader classLoader;
     boolean compressNumber = false;
+    boolean compressString = true;
     boolean secureModeEnabled = true;
     boolean requireClassRegistration = true;
 
@@ -917,9 +930,19 @@ public final class Fury {
       return this;
     }
 
+    public FuryBuilder ignoreStringReference(boolean ignoreStringReference) {
+      this.stringReferenceIgnored = ignoreStringReference;
+      return this;
+    }
+
     /** Use variable length encoding for int/long. */
     public FuryBuilder withNumberCompressed(boolean compressNumber) {
       this.compressNumber = compressNumber;
+      return this;
+    }
+
+    public FuryBuilder withStringCompressed(boolean compressString) {
+      this.compressString = compressString;
       return this;
     }
 
