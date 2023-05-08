@@ -30,6 +30,7 @@ import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
+import io.fury.serializer.LocaleSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.Serializers;
@@ -50,6 +51,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -210,6 +212,7 @@ public class ClassResolver {
     addDefaultSerializer(String.class, new StringSerializer(fury));
     Serializers.registerDefaultSerializers(fury);
     ArraySerializers.registerDefaultSerializers(fury);
+    addDefaultSerializer(Locale.class, new LocaleSerializer(fury));
   }
 
   private void addDefaultSerializer(Class<?> type, Class<? extends Serializer> serializerClass) {
