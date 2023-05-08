@@ -150,9 +150,8 @@ public class SerializersTest extends FuryTestBase {
 
   @Test
   public void testCurrency() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
     Assert.assertEquals(
-        serDeCheckSerializer(fury, Currency.getInstance("EUR"), "Currency"),
+        serDeCheckSerializer(javaFury, Currency.getInstance("EUR"), "Currency"),
         Currency.getInstance("EUR"));
   }
 
@@ -165,23 +164,27 @@ public class SerializersTest extends FuryTestBase {
 
   @Test
   public void testURI() throws URISyntaxException {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
-    Assert.assertEquals(serDeCheckSerializer(fury, new URI(""), "URI"), new URI(""));
-    Assert.assertEquals(serDeCheckSerializer(fury, new URI("abc"), "URI"), new URI("abc"));
+    Assert.assertEquals(serDeCheckSerializer(javaFury, new URI(""), "URI"), new URI(""));
+    Assert.assertEquals(serDeCheckSerializer(javaFury, new URI("abc"), "URI"), new URI("abc"));
   }
 
   @Test
   public void testRegex() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
     Assert.assertEquals(
-        serDeCheckSerializer(fury, Pattern.compile("abc"), "Regex").toString(),
+        serDeCheckSerializer(javaFury, Pattern.compile("abc"), "Regex").toString(),
         Pattern.compile("abc").toString());
   }
 
   @Test
   public void testUUID() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
     UUID uuid = UUID.randomUUID();
-    Assert.assertEquals(serDeCheckSerializer(fury, uuid, "UUID"), uuid);
+    Assert.assertEquals(serDeCheckSerializer(javaFury, uuid, "UUID"), uuid);
+  }
+
+  private static class TestClassSerialization {}
+
+  @Test
+  public void testClass() {
+    serDeCheckSerializer(javaFury, TestClassSerialization.class, "ClassSerializer");
   }
 }
