@@ -31,6 +31,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
 import io.fury.serializer.LocaleSerializer;
+import io.fury.serializer.OptionalSerializers;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.Serializers;
@@ -212,6 +213,7 @@ public class ClassResolver {
     addDefaultSerializer(String.class, new StringSerializer(fury));
     Serializers.registerDefaultSerializers(fury);
     ArraySerializers.registerDefaultSerializers(fury);
+    OptionalSerializers.registerDefaultSerializers(fury);
     addDefaultSerializer(Locale.class, new LocaleSerializer(fury));
   }
 
