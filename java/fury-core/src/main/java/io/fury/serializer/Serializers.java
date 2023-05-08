@@ -707,5 +707,6 @@ public class Serializers {
     fury.registerSerializer(Currency.class, new CurrencySerializer(fury));
     fury.registerSerializer(URI.class, new URISerializer(fury));
     fury.registerSerializer(Pattern.class, new RegexSerializer(fury));
+    fury.registerSerializer(UUID.class, new UUIDSerializer(fury));
   }
 }
