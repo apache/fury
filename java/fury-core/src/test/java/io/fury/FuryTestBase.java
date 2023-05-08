@@ -18,8 +18,14 @@
 
 package io.fury;
 
+import io.fury.memory.MemoryBuffer;
+import io.fury.serializer.BufferObject;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 
@@ -30,6 +36,11 @@ import org.testng.annotations.DataProvider;
  */
 @SuppressWarnings("unchecked")
 public abstract class FuryTestBase {
+
+  @DataProvider(name = "referenceTrackingConfig")
+  public static Object[][] referenceTrackingConfig() {
+    return new Object[][] {{false}, {true}};
+  }
 
   @DataProvider(name = "endian")
   public static Object[][] endian() {
@@ -51,6 +62,12 @@ public abstract class FuryTestBase {
     return fury2.deserialize(bytes);
   }
 
+  public static Object serDeCheck(Fury fury1, Fury fury2, Object obj) {
+    Object o = serDe(fury1, fury2, obj);
+    Assert.assertEquals(o, obj);
+    return o;
+  }
+
   public static Object serDeCheck(Fury fury, Object obj) {
     Object o = serDe(fury, obj);
     Assert.assertEquals(o, obj);
@@ -60,6 +77,24 @@ public abstract class FuryTestBase {
   public static <T> T serDe(Fury fury, T obj) {
     byte[] bytes = fury.serialize(obj);
     return (T) (fury.deserialize(bytes));
+  }
+
+  public static Object serDeOutOfBand(AtomicInteger counter, Fury fury1, Fury fury2, Object obj) {
+    List<BufferObject> bufferObjects = new ArrayList<>();
+    byte[] bytes =
+        fury1.serialize(
+            obj,
+            o -> {
+              if (counter.incrementAndGet() % 2 == 0) {
+                bufferObjects.add(o);
+                return false;
+              } else {
+                return true;
+              }
+            });
+    List<MemoryBuffer> buffers =
+        bufferObjects.stream().map(BufferObject::toBuffer).collect(Collectors.toList());
+    return fury2.deserialize(bytes, buffers);
   }
 
   /** Update serialization depth by <code>diff</code>. */
