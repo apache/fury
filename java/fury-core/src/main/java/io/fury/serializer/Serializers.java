@@ -29,6 +29,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Currency;
 import java.util.IdentityHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -558,6 +559,23 @@ public class Serializers {
     }
   }
 
+  public static final class CurrencySerializer extends Serializer<Currency> {
+    public CurrencySerializer(Fury fury) {
+      super(fury, Currency.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Currency object) {
+      fury.writeJavaString(buffer, object.getCurrencyCode());
+    }
+
+    @Override
+    public Currency read(MemoryBuffer buffer) {
+      String currencyCode = fury.readJavaString(buffer);
+      return Currency.getInstance(currencyCode);
+    }
+  }
+
   public static final class ClassSerializer extends Serializer<Class> {
     private static final byte USE_CLASS_ID = 0;
     private static final byte USE_CLASSNAME = 1;
@@ -613,5 +631,6 @@ public class Serializers {
     fury.registerSerializer(AtomicInteger.class, new AtomicIntegerSerializer(fury));
     fury.registerSerializer(AtomicLong.class, new AtomicLongSerializer(fury));
     fury.registerSerializer(AtomicReference.class, new AtomicReferenceSerializer(fury));
+    fury.registerSerializer(Currency.class, new CurrencySerializer(fury));
   }
 }

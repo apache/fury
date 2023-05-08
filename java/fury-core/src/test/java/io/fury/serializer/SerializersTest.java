@@ -26,6 +26,7 @@ import io.fury.Language;
 import io.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Currency;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -140,5 +141,13 @@ public class SerializersTest extends FuryTestBase {
                 serDeCheckSerializer(fury, new AtomicReference<>(200), "AtomicReference"))
             .get(),
         200);
+  }
+
+  @Test
+  public void testCurrency() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
+    Assert.assertEquals(
+        serDeCheckSerializer(fury, Currency.getInstance("EUR"), "Currency"),
+        Currency.getInstance("EUR"));
   }
 }
