@@ -538,6 +538,59 @@ public final class Fury {
     }
   }
 
+  public void writeString(MemoryBuffer buffer, String str) {
+    stringSerializer.writeString(buffer, str);
+  }
+
+  public String readString(MemoryBuffer buffer) {
+    return stringSerializer.readString(buffer);
+  }
+
+  public void writeJavaStringRef(MemoryBuffer buffer, String str) {
+    if (stringSerializer.needToWriteReference()) {
+      if (!referenceResolver.writeReferenceOrNull(buffer, str)) {
+        stringSerializer.writeJavaString(buffer, str);
+      }
+    } else {
+      if (str == null) {
+        buffer.writeByte(Fury.NULL_FLAG);
+      } else {
+        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+        stringSerializer.write(buffer, str);
+      }
+    }
+  }
+
+  public String readJavaStringRef(MemoryBuffer buffer) {
+    ReferenceResolver referenceResolver = this.referenceResolver;
+    if (stringSerializer.needToWriteReference()) {
+      String obj;
+      int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+      if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
+        obj = stringSerializer.read(buffer);
+        referenceResolver.setReadObject(nextReadRefId, obj);
+        return obj;
+      } else {
+        return (String) referenceResolver.getReadObject();
+      }
+    } else {
+      byte headFlag = buffer.readByte();
+      if (headFlag == Fury.NULL_FLAG) {
+        return null;
+      } else {
+        return stringSerializer.read(buffer);
+      }
+    }
+  }
+
+  public void writeJavaString(MemoryBuffer buffer, String str) {
+    stringSerializer.writeJavaString(buffer, str);
+  }
+
+  public String readJavaString(MemoryBuffer buffer) {
+    return stringSerializer.readJavaString(buffer);
+  }
+
   /** Deserialize <code>obj</code> from a byte array. */
   public Object deserialize(byte[] bytes) {
     return deserializeInternal(MemoryUtils.wrap(bytes), null);
