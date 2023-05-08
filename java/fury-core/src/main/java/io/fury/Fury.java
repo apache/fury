@@ -29,6 +29,7 @@ import io.fury.resolver.MapReferenceResolver;
 import io.fury.resolver.NoReferenceResolver;
 import io.fury.resolver.ReferenceResolver;
 import io.fury.resolver.SerializationContext;
+import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferCallback;
 import io.fury.serializer.BufferObject;
 import io.fury.serializer.OpaqueObjects;
@@ -472,6 +473,68 @@ public final class Fury {
         depth++;
         classInfo.getSerializer().write(buffer, obj);
         depth--;
+    }
+  }
+
+  public void writeBufferObject(MemoryBuffer buffer, BufferObject bufferObject) {
+    if (bufferCallback == null || bufferCallback.apply(bufferObject)) {
+      buffer.writeBoolean(true);
+      // writer length.
+      int totalBytes = bufferObject.totalBytes();
+      // write aligned length so that later buffer copy happen on aligned offset, which will be more
+      // efficient
+      // TODO(chaokunyang) Remove branch when other languages support aligned varint.
+      if (language == Language.JAVA) {
+        buffer.writePositiveVarIntAligned(totalBytes);
+      } else {
+        buffer.writePositiveVarInt(totalBytes);
+      }
+      int writerIndex = buffer.writerIndex();
+      buffer.ensure(writerIndex + bufferObject.totalBytes());
+      bufferObject.writeTo(buffer);
+      int size = buffer.writerIndex() - writerIndex;
+      Preconditions.checkArgument(size == totalBytes);
+    } else {
+      buffer.writeBoolean(false);
+    }
+  }
+
+  // duplicate for speed.
+  public void writeBufferObject(
+      MemoryBuffer buffer, ArraySerializers.PrimitiveArrayBufferObject bufferObject) {
+    if (bufferCallback == null || bufferCallback.apply(bufferObject)) {
+      buffer.writeBoolean(true);
+      int totalBytes = bufferObject.totalBytes();
+      // write aligned length so that later buffer copy happen on aligned offset, which will be very
+      // efficient
+      // TODO(chaokunyang) Remove branch when other languages support aligned varint.
+      if (language == Language.JAVA) {
+        buffer.writePositiveVarIntAligned(totalBytes);
+      } else {
+        buffer.writePositiveVarInt(totalBytes);
+      }
+      bufferObject.writeTo(buffer);
+    } else {
+      buffer.writeBoolean(false);
+    }
+  }
+
+  public MemoryBuffer readBufferObject(MemoryBuffer buffer) {
+    boolean inBand = buffer.readBoolean();
+    if (inBand) {
+      int size;
+      // TODO(chaokunyang) Remove branch when other languages support aligned varint.
+      if (language == Language.JAVA) {
+        size = buffer.readPositiveAlignedVarInt();
+      } else {
+        size = buffer.readPositiveVarInt();
+      }
+      MemoryBuffer slice = buffer.slice(buffer.readerIndex(), size);
+      buffer.readerIndex(buffer.readerIndex() + size);
+      return slice;
+    } else {
+      Preconditions.checkArgument(outOfBandBuffers.hasNext());
+      return outOfBandBuffers.next();
     }
   }
 
