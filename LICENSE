@@ -205,6 +205,7 @@ Apache Software Foundation License 2.0
 --------------------------------------
 java/fury-core/src/main/java/io/fury/util/Platform.java is modified from https://github.com/apache/spark/blob/master/common/unsafe/src/main/java/org/apache/spark/unsafe/Platform.java
 capitalize/uncapitalize/isBlank methods in java/fury-core/src/main/java/io/fury/util/StringUtils.java is copied from https://github.com/apache/commons-lang/blob/master/src/main/java/org/apache/commons/lang3/StringUtils.java
+java/fury-core/src/main/java/io/fury/util/DateTimeUtils.java is modified from https://github.com/apache/spark/blob/master/sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/util/DateTimeUtils.scala
 compare/swap/copy and absolute read/write methods in java/fury-core/src/main/java/io/fury/memory/MemoryBuffer.java is modified from https://github.com/apache/flink/blob/master/flink-core/src/main/java/org/apache/flink/core/memory/MemorySegment.java
 writeVarInt/writeVarLong in java/fury-core/src/main/java/io/fury/memory/MemoryBuffer.java is modified from https://github.com/EsotericSoftware/kryo/blob/master/src/com/esotericsoftware/kryo/unsafe/UnsafeOutput.java
 java/fury-core/src/main/java/io/fury/util/{FuryObjectMap/ObjectIntMap/IdentityMap/IdentityObjectIntMap/LongMap}.java are adapted from  https://github.com/EsotericSoftware/kryo/blob/master/src/com/esotericsoftware/kryo/util/{ObjectMap/ObjectIntMap/IdentityMap/IdentityObjectIntMap/IntMap}.java
