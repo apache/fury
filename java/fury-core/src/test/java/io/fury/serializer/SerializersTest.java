@@ -26,6 +26,8 @@ import io.fury.Language;
 import io.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.Currency;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -157,5 +159,12 @@ public class SerializersTest extends FuryTestBase {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     Assert.assertEquals(
         serDeCheckSerializer(fury, Charset.defaultCharset(), "Charset"), Charset.defaultCharset());
+  }
+
+  @Test
+  public void testURI() throws URISyntaxException {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
+    Assert.assertEquals(serDeCheckSerializer(fury, new URI(""), "URI"), new URI(""));
+    Assert.assertEquals(serDeCheckSerializer(fury, new URI("abc"), "URI"), new URI("abc"));
   }
 }
