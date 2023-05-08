@@ -40,8 +40,6 @@ import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -208,29 +206,9 @@ public class ClassResolver {
 
   private void addDefaultSerializers() {
     // primitive types will be boxed.
-    addDefaultSerializer(boolean.class, new Serializers.BooleanSerializer(fury, boolean.class));
-    addDefaultSerializer(byte.class, new Serializers.ByteSerializer(fury, byte.class));
-    addDefaultSerializer(short.class, new Serializers.ShortSerializer(fury, short.class));
-    addDefaultSerializer(char.class, new Serializers.CharSerializer(fury, char.class));
-    addDefaultSerializer(int.class, new Serializers.IntSerializer(fury, int.class));
-    addDefaultSerializer(long.class, new Serializers.LongSerializer(fury, long.class));
-    addDefaultSerializer(float.class, new Serializers.FloatSerializer(fury, float.class));
-    addDefaultSerializer(double.class, new Serializers.DoubleSerializer(fury, double.class));
-    addDefaultSerializer(Boolean.class, new Serializers.BooleanSerializer(fury, Boolean.class));
-    addDefaultSerializer(Byte.class, new Serializers.ByteSerializer(fury, Byte.class));
-    addDefaultSerializer(Short.class, new Serializers.ShortSerializer(fury, Short.class));
-    addDefaultSerializer(Character.class, new Serializers.CharSerializer(fury, Character.class));
-    addDefaultSerializer(Integer.class, new Serializers.IntSerializer(fury, Integer.class));
-    addDefaultSerializer(Long.class, new Serializers.LongSerializer(fury, Long.class));
-    addDefaultSerializer(Float.class, new Serializers.FloatSerializer(fury, Float.class));
-    addDefaultSerializer(Double.class, new Serializers.DoubleSerializer(fury, Double.class));
     addDefaultSerializer(String.class, new StringSerializer(fury));
     addDefaultSerializer(String[].class, new Serializers.StringArraySerializer(fury));
-    addDefaultSerializer(Class.class, new Serializers.ClassSerializer(fury));
-    addDefaultSerializer(StringBuilder.class, new Serializers.StringBuilderSerializer(fury));
-    addDefaultSerializer(StringBuffer.class, new Serializers.StringBufferSerializer(fury));
-    addDefaultSerializer(BigInteger.class, new Serializers.BigIntegerSerializer(fury));
-    addDefaultSerializer(BigDecimal.class, new Serializers.BigDecimalSerializer(fury));
+    Serializers.registerDefaultSerializers(fury);
     ArraySerializers.registerDefaultSerializers(fury);
   }
 

@@ -30,6 +30,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.IdentityHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Serialization utils and common serializers.
@@ -486,6 +490,74 @@ public class Serializers {
     }
   }
 
+  public static final class AtomicBooleanSerializer extends Serializer<AtomicBoolean> {
+
+    public AtomicBooleanSerializer(Fury fury) {
+      super(fury, AtomicBoolean.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, AtomicBoolean value) {
+      buffer.writeBoolean(value.get());
+    }
+
+    @Override
+    public AtomicBoolean read(MemoryBuffer buffer) {
+      return new AtomicBoolean(buffer.readBoolean());
+    }
+  }
+
+  public static final class AtomicIntegerSerializer extends Serializer<AtomicInteger> {
+
+    public AtomicIntegerSerializer(Fury fury) {
+      super(fury, AtomicInteger.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, AtomicInteger value) {
+      buffer.writeInt(value.get());
+    }
+
+    @Override
+    public AtomicInteger read(MemoryBuffer buffer) {
+      return new AtomicInteger(buffer.readInt());
+    }
+  }
+
+  public static final class AtomicLongSerializer extends Serializer<AtomicLong> {
+
+    public AtomicLongSerializer(Fury fury) {
+      super(fury, AtomicLong.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, AtomicLong value) {
+      buffer.writeLong(value.get());
+    }
+
+    @Override
+    public AtomicLong read(MemoryBuffer buffer) {
+      return new AtomicLong(buffer.readLong());
+    }
+  }
+
+  public static final class AtomicReferenceSerializer extends Serializer<AtomicReference> {
+
+    public AtomicReferenceSerializer(Fury fury) {
+      super(fury, AtomicReference.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, AtomicReference value) {
+      fury.writeReferencableToJava(buffer, value.get());
+    }
+
+    @Override
+    public AtomicReference read(MemoryBuffer buffer) {
+      return new AtomicReference(fury.readReferencableFromJava(buffer));
+    }
+  }
+
   public static final class StringArraySerializer extends Serializer<String[]> {
     private final StringSerializer stringSerializer;
 
@@ -584,5 +656,34 @@ public class Serializers {
     public Class read(MemoryBuffer buffer) {
       return fury.getClassResolver().readClassInternal(buffer);
     }
+  }
+
+  public static void registerDefaultSerializers(Fury fury) {
+    // primitive types will be boxed.
+    fury.registerSerializer(boolean.class, new BooleanSerializer(fury, boolean.class));
+    fury.registerSerializer(byte.class, new ByteSerializer(fury, byte.class));
+    fury.registerSerializer(short.class, new ShortSerializer(fury, short.class));
+    fury.registerSerializer(char.class, new CharSerializer(fury, char.class));
+    fury.registerSerializer(int.class, new IntSerializer(fury, int.class));
+    fury.registerSerializer(long.class, new LongSerializer(fury, long.class));
+    fury.registerSerializer(float.class, new FloatSerializer(fury, float.class));
+    fury.registerSerializer(double.class, new DoubleSerializer(fury, double.class));
+    fury.registerSerializer(Boolean.class, new BooleanSerializer(fury, Boolean.class));
+    fury.registerSerializer(Byte.class, new ByteSerializer(fury, Byte.class));
+    fury.registerSerializer(Short.class, new ShortSerializer(fury, Short.class));
+    fury.registerSerializer(Character.class, new CharSerializer(fury, Character.class));
+    fury.registerSerializer(Integer.class, new IntSerializer(fury, Integer.class));
+    fury.registerSerializer(Long.class, new LongSerializer(fury, Long.class));
+    fury.registerSerializer(Float.class, new FloatSerializer(fury, Float.class));
+    fury.registerSerializer(Double.class, new DoubleSerializer(fury, Double.class));
+    fury.registerSerializer(Class.class, new ClassSerializer(fury));
+    fury.registerSerializer(StringBuilder.class, new StringBuilderSerializer(fury));
+    fury.registerSerializer(StringBuffer.class, new StringBufferSerializer(fury));
+    fury.registerSerializer(BigInteger.class, new BigIntegerSerializer(fury));
+    fury.registerSerializer(BigDecimal.class, new BigDecimalSerializer(fury));
+    fury.registerSerializer(AtomicBoolean.class, new AtomicBooleanSerializer(fury));
+    fury.registerSerializer(AtomicInteger.class, new AtomicIntegerSerializer(fury));
+    fury.registerSerializer(AtomicLong.class, new AtomicLongSerializer(fury));
+    fury.registerSerializer(AtomicReference.class, new AtomicReferenceSerializer(fury));
   }
 }
