@@ -31,38 +31,41 @@ import java.util.Map;
  * @author chaokunyang
  */
 public final class LocaleSerializer extends Serializer<Locale> {
-  private static final Map<Tuple3<String, String, String>, Object> LOCALE_CACHE = new HashMap<>();
+  // Using `new HashMap<>` to ensure thread safety by java constructor semantics.
+  private static final Map<Tuple3<String, String, String>, Locale> LOCALE_CACHE =
+      new HashMap<>(createCacheMap());
 
-  static {
-    putLocalCache(Locale.US);
-    putLocalCache(Locale.SIMPLIFIED_CHINESE);
-    putLocalCache(Locale.CHINESE);
-    putLocalCache(Locale.TRADITIONAL_CHINESE);
-    putLocalCache(Locale.ENGLISH);
-    putLocalCache(Locale.GERMAN);
-    putLocalCache(Locale.FRENCH);
-    putLocalCache(Locale.ITALIAN);
-    putLocalCache(Locale.JAPANESE);
-    putLocalCache(Locale.KOREAN);
-    putLocalCache(Locale.CHINA);
-    putLocalCache(Locale.TAIWAN);
-    putLocalCache(Locale.UK);
-    putLocalCache(Locale.GERMANY);
-    putLocalCache(Locale.FRANCE);
-    putLocalCache(Locale.ITALY);
-    putLocalCache(Locale.JAPAN);
-    putLocalCache(Locale.KOREA);
-    putLocalCache(Locale.PRC);
-    putLocalCache(Locale.CANADA);
-    putLocalCache(Locale.CANADA_FRENCH);
-    putLocalCache(Locale.ROOT);
-    putLocalCache(new Locale("es", "", ""));
-    putLocalCache(new Locale("es", "ES", ""));
+  static Map<Tuple3<String, String, String>, Locale> createCacheMap() {
+    Map<Tuple3<String, String, String>, Locale> map = new HashMap<>();
+    populateMap(map, Locale.US);
+    populateMap(map, Locale.SIMPLIFIED_CHINESE);
+    populateMap(map, Locale.CHINESE);
+    populateMap(map, Locale.TRADITIONAL_CHINESE);
+    populateMap(map, Locale.ENGLISH);
+    populateMap(map, Locale.GERMAN);
+    populateMap(map, Locale.FRENCH);
+    populateMap(map, Locale.ITALIAN);
+    populateMap(map, Locale.JAPANESE);
+    populateMap(map, Locale.KOREAN);
+    populateMap(map, Locale.CHINA);
+    populateMap(map, Locale.TAIWAN);
+    populateMap(map, Locale.UK);
+    populateMap(map, Locale.GERMANY);
+    populateMap(map, Locale.FRANCE);
+    populateMap(map, Locale.ITALY);
+    populateMap(map, Locale.JAPAN);
+    populateMap(map, Locale.KOREA);
+    populateMap(map, Locale.PRC);
+    populateMap(map, Locale.CANADA);
+    populateMap(map, Locale.CANADA_FRENCH);
+    populateMap(map, Locale.ROOT);
+    populateMap(map, new Locale("es", "", ""));
+    populateMap(map, new Locale("es", "ES", ""));
+    return map;
   }
 
-  private static void putLocalCache(Locale locale) {
-    LOCALE_CACHE.put(
-        Tuple3.of(locale.getCountry(), locale.getLanguage(), locale.getVariant()), locale);
+  private static void populateMap(Map<Tuple3<String, String, String>, Locale> map, Locale locale) {
+    map.put(Tuple3.of(locale.getCountry(), locale.getLanguage(), locale.getVariant()), locale);
   }
 
   public LocaleSerializer(Fury fury) {
