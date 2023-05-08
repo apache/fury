@@ -29,6 +29,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.Currency;
 import java.util.IdentityHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -573,6 +574,21 @@ public class Serializers {
     public Currency read(MemoryBuffer buffer) {
       String currencyCode = fury.readJavaString(buffer);
       return Currency.getInstance(currencyCode);
+    }
+  }
+
+  /** Serializer for {@link Charset}. */
+  public static final class CharsetSerializer<T extends Charset> extends Serializer<T> {
+    public CharsetSerializer(Fury fury, Class<T> type) {
+      super(fury, type);
+    }
+
+    public void write(MemoryBuffer buffer, T object) {
+      fury.writeJavaString(buffer, object.name());
+    }
+
+    public T read(MemoryBuffer buffer) {
+      return (T) Charset.forName(fury.readJavaString(buffer));
     }
   }
 

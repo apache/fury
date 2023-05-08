@@ -41,6 +41,7 @@ import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -487,6 +488,8 @@ public class ClassResolver {
         return ArraySerializers.ObjectArraySerializer.class;
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {
         return BufferSerializers.ByteBufferSerializer.class;
+      } else if (Charset.class.isAssignableFrom(cls)) {
+        return Serializers.CharsetSerializer.class;
       }
       throw new UnsupportedOperationException();
     }
