@@ -46,8 +46,10 @@ import io.fury.util.StringUtils;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -57,6 +59,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -497,6 +500,12 @@ public class ClassResolver {
         return BufferSerializers.ByteBufferSerializer.class;
       } else if (Charset.class.isAssignableFrom(cls)) {
         return Serializers.CharsetSerializer.class;
+      } else if (Calendar.class.isAssignableFrom(cls)) {
+        return TimeSerializers.CalendarSerializer.class;
+      } else if (ZoneId.class.isAssignableFrom(cls)) {
+        return TimeSerializers.ZoneIdSerializer.class;
+      } else if (TimeZone.class.isAssignableFrom(cls)) {
+        return TimeSerializers.TimeZoneSerializer.class;
       }
       throw new UnsupportedOperationException();
     }
