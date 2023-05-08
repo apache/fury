@@ -26,6 +26,11 @@ import io.fury.Language;
 import io.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class SerializersTest extends FuryTestBase {
@@ -117,5 +122,23 @@ public class SerializersTest extends FuryTestBase {
     Fury fury2 = builder.build();
     assertEquals(BigInteger.valueOf(100), serDe(fury1, fury2, BigInteger.valueOf(100)));
     assertEquals(BigDecimal.valueOf(100, 2), serDe(fury1, fury2, BigDecimal.valueOf(100, 2)));
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testAtomic(Fury fury) {
+    assertTrue(
+        ((AtomicBoolean) serDeCheckSerializer(fury, new AtomicBoolean(true), "AtomicBoolean"))
+            .get());
+
+    Assert.assertEquals(
+        ((AtomicInteger) serDeCheckSerializer(fury, new AtomicInteger(100), "AtomicInteger")).get(),
+        100);
+    Assert.assertEquals(
+        ((AtomicLong) serDeCheckSerializer(fury, new AtomicLong(200), "AtomicLong")).get(), 200);
+    Assert.assertEquals(
+        ((AtomicReference)
+                serDeCheckSerializer(fury, new AtomicReference<>(200), "AtomicReference"))
+            .get(),
+        200);
   }
 }

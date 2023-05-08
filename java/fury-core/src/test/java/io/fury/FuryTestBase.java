@@ -25,6 +25,8 @@ import io.fury.util.ReflectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -55,6 +57,54 @@ public abstract class FuryTestBase {
       {false, Language.XLANG},
       {true, Language.XLANG}
     };
+  }
+
+  @DataProvider(name = "javaFury")
+  public static Object[][] javaFuryConfig() {
+    return new Object[][] {
+      {
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(true)
+            .disableSecureMode()
+            .build()
+      },
+      {
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(false)
+            .disableSecureMode()
+            .build()
+      },
+      {
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(true)
+            // .withCodegen(true)
+            .disableSecureMode()
+            .build()
+      },
+      {
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(false)
+            // .withCodegen(true)
+            .disableSecureMode()
+            .build()
+      },
+    };
+  }
+
+  public static void serDeCheckSerializerAndEqual(Fury fury, Object obj, String classRegex) {
+    Assert.assertEquals(serDeCheckSerializer(fury, obj, classRegex), obj);
+  }
+
+  public static Object serDeCheckSerializer(Fury fury, Object obj, String classRegex) {
+    byte[] bytes = fury.serialize(obj);
+    String serializerName = fury.getClassResolver().getSerializerClass(obj.getClass()).getName();
+    Matcher matcher = Pattern.compile(classRegex).matcher(serializerName);
+    Assert.assertTrue(matcher.find());
+    return fury.deserialize(bytes);
   }
 
   public static Object serDe(Fury fury1, Fury fury2, Object obj) {
