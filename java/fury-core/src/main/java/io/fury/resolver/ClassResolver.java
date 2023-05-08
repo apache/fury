@@ -28,6 +28,7 @@ import io.fury.collection.LongMap;
 import io.fury.collection.ObjectMap;
 import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
+import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.Serializers;
@@ -229,6 +230,7 @@ public class ClassResolver {
     addDefaultSerializer(StringBuffer.class, new Serializers.StringBufferSerializer(fury));
     addDefaultSerializer(BigInteger.class, new Serializers.BigIntegerSerializer(fury));
     addDefaultSerializer(BigDecimal.class, new Serializers.BigDecimalSerializer(fury));
+    ArraySerializers.registerDefaultSerializers(fury);
   }
 
   private void addDefaultSerializer(Class<?> type, Class<? extends Serializer> serializerClass) {
@@ -502,6 +504,9 @@ public class ClassResolver {
       } else if (Enum.class.isAssignableFrom(cls) && cls != Enum.class) {
         // handles an enum value that is an inner class. Eg: enum A {b{}};
         return Serializers.EnumSerializer.class;
+      } else if (cls.isArray()) {
+        Preconditions.checkArgument(!cls.getComponentType().isPrimitive());
+        return ArraySerializers.ObjectArraySerializer.class;
       }
       throw new UnsupportedOperationException();
     }
