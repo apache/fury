@@ -29,6 +29,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Currency;
 import java.util.IdentityHashMap;
@@ -592,6 +593,23 @@ public class Serializers {
     }
   }
 
+  public static final class URISerializer extends Serializer<java.net.URI> {
+
+    public URISerializer(Fury fury) {
+      super(fury, URI.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, final URI uri) {
+      fury.writeString(buffer, uri.toString());
+    }
+
+    @Override
+    public URI read(MemoryBuffer buffer) {
+      return URI.create(fury.readString(buffer));
+    }
+  }
+
   public static final class ClassSerializer extends Serializer<Class> {
     private static final byte USE_CLASS_ID = 0;
     private static final byte USE_CLASSNAME = 1;
@@ -648,5 +666,6 @@ public class Serializers {
     fury.registerSerializer(AtomicLong.class, new AtomicLongSerializer(fury));
     fury.registerSerializer(AtomicReference.class, new AtomicReferenceSerializer(fury));
     fury.registerSerializer(Currency.class, new CurrencySerializer(fury));
+    fury.registerSerializer(URI.class, new URISerializer(fury));
   }
 }
