@@ -397,6 +397,78 @@ public class ArraySerializers {
     }
   }
 
+  public static final class StringArraySerializer extends Serializer<String[]> {
+    private final StringSerializer stringSerializer;
+
+    public StringArraySerializer(Fury fury) {
+      super(fury, String[].class);
+      stringSerializer = new StringSerializer(fury);
+    }
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return (short) -Type.FURY_STRING_ARRAY.getId();
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, String[] value) {
+      int len = value.length;
+      buffer.writeInt(len);
+      for (String elem : value) {
+        // TODO reference support
+        if (elem != null) {
+          buffer.writeByte(Fury.REF_VALUE_FLAG);
+          stringSerializer.writeJavaString(buffer, elem);
+        } else {
+          buffer.writeByte(Fury.NULL_FLAG);
+        }
+      }
+    }
+
+    @Override
+    public String[] read(MemoryBuffer buffer) {
+      int numElements = buffer.readInt();
+      String[] value = new String[numElements];
+      fury.getReferenceResolver().reference(value);
+      for (int i = 0; i < numElements; i++) {
+        if (buffer.readByte() == Fury.REF_VALUE_FLAG) {
+          value[i] = stringSerializer.readJavaString(buffer);
+        } else {
+          value[i] = null;
+        }
+      }
+      return value;
+    }
+
+    @Override
+    public void crossLanguageWrite(MemoryBuffer buffer, String[] value) {
+      int len = value.length;
+      buffer.writeInt(len);
+      for (String elem : value) {
+        if (elem != null) {
+          buffer.writeByte(Fury.REF_VALUE_FLAG);
+          stringSerializer.writeUTF8String(buffer, elem);
+        } else {
+          buffer.writeByte(Fury.NULL_FLAG);
+        }
+      }
+    }
+
+    @Override
+    public String[] crossLanguageRead(MemoryBuffer buffer) {
+      int numElements = buffer.readInt();
+      String[] value = new String[numElements];
+      for (int i = 0; i < numElements; i++) {
+        if (buffer.readByte() == Fury.REF_VALUE_FLAG) {
+          value[i] = stringSerializer.readUTF8String(buffer);
+        } else {
+          value[i] = null;
+        }
+      }
+      return value;
+    }
+  }
+
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(Object[].class, new ObjectArraySerializer<>(fury, Object[].class));
     fury.registerSerializer(byte[].class, new ByteArraySerializer(fury));
@@ -407,6 +479,7 @@ public class ArraySerializers {
     fury.registerSerializer(float[].class, new FloatArraySerializer(fury));
     fury.registerSerializer(double[].class, new DoubleArraySerializer(fury));
     fury.registerSerializer(boolean[].class, new BooleanArraySerializer(fury));
+    fury.registerSerializer(String[].class, new StringArraySerializer(fury));
   }
 
   // ########################## utils ##########################

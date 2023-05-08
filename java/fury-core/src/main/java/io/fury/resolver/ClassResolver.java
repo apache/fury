@@ -207,7 +207,6 @@ public class ClassResolver {
   private void addDefaultSerializers() {
     // primitive types will be boxed.
     addDefaultSerializer(String.class, new StringSerializer(fury));
-    addDefaultSerializer(String[].class, new Serializers.StringArraySerializer(fury));
     Serializers.registerDefaultSerializers(fury);
     ArraySerializers.registerDefaultSerializers(fury);
   }
