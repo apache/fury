@@ -154,7 +154,7 @@ public class SerializersTest extends FuryTestBase {
 
   @Test
   public void testCharset() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     Assert.assertEquals(
         serDeCheckSerializer(fury, Charset.defaultCharset(), "Charset"), Charset.defaultCharset());
   }
