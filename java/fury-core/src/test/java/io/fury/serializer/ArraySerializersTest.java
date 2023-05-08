@@ -60,6 +60,25 @@ public class ArraySerializersTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
+  public void testMultiArraySerialization(boolean referenceTracking, Language language) {
+    Fury.FuryBuilder builder =
+        Fury.builder()
+            .withLanguage(language)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode();
+    Fury fury1 = builder.build();
+    Fury fury2 = builder.build();
+    serDeCheck(fury1, fury2, new Object[][] {{false, true}, {false, true}});
+    serDeCheck(
+        fury1,
+        fury2,
+        new Object[][] {
+          {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1},
+          {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1}
+        });
+  }
+
+  @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testArraySerialization(boolean referenceTracking, Language language) {
     Fury.FuryBuilder builder =
         Fury.builder()
