@@ -36,6 +36,8 @@
 
 package io.fury;
 
+import io.fury.serializer.Serializer;
+import io.fury.serializer.TimeSerializers;
 import io.fury.util.MurmurHash3;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -52,6 +54,7 @@ public class Config implements Serializable {
   private final boolean referenceTracking;
   private final boolean basicTypesReferenceIgnored;
   private final boolean stringReferenceIgnored;
+  private final boolean timeReferenceIgnored;
   private final boolean compressNumber;
   private final boolean compressString;
   private final boolean secureModeEnabled;
@@ -63,6 +66,7 @@ public class Config implements Serializable {
     referenceTracking = builder.referenceTracking;
     basicTypesReferenceIgnored = !referenceTracking || builder.basicTypesReferenceIgnored;
     stringReferenceIgnored = !referenceTracking || builder.stringReferenceIgnored;
+    timeReferenceIgnored = !referenceTracking || builder.timeReferenceIgnored;
     compressNumber = builder.compressNumber;
     compressString = builder.compressString;
     secureModeEnabled = builder.secureModeEnabled;
@@ -83,6 +87,24 @@ public class Config implements Serializable {
 
   public boolean isStringReferenceIgnored() {
     return stringReferenceIgnored;
+  }
+
+  /**
+   * Whether ignore reference tracking of all time types registered in {@link TimeSerializers} and
+   * subclasses of those types when ref tracking is enabled.
+   *
+   * <p>If ignored, ref tracking of every time type can be enabled by invoke {@link
+   * Fury#registerSerializer(Class, Serializer)}, ex:
+   *
+   * <pre>
+   *   fury.registerSerializer(Date.class, new DateSerializer(fury, true));
+   * </pre>
+   *
+   * <p>Note that enabling ref tracking should happen before serializer codegen of any types which
+   * contains time fields. Otherwise, those fields will still skip ref tracking.
+   */
+  public boolean isTimeReferenceIgnored() {
+    return timeReferenceIgnored;
   }
 
   public boolean compressNumber() {
