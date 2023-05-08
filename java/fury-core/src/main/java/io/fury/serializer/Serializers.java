@@ -33,6 +33,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Currency;
 import java.util.IdentityHashMap;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -627,6 +628,24 @@ public class Serializers {
       String regex = fury.readJavaString(buffer);
       int flags = buffer.readInt();
       return Pattern.compile(regex, flags);
+    }
+  }
+
+  public static final class UUIDSerializer extends Serializer<UUID> {
+
+    public UUIDSerializer(Fury fury) {
+      super(fury, UUID.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, final UUID uuid) {
+      buffer.writeLong(uuid.getMostSignificantBits());
+      buffer.writeLong(uuid.getLeastSignificantBits());
+    }
+
+    @Override
+    public UUID read(MemoryBuffer buffer) {
+      return new UUID(buffer.readLong(), buffer.readLong());
     }
   }
 

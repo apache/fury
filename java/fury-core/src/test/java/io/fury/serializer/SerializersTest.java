@@ -30,6 +30,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.Currency;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -175,5 +176,12 @@ public class SerializersTest extends FuryTestBase {
     Assert.assertEquals(
         serDeCheckSerializer(fury, Pattern.compile("abc"), "Regex").toString(),
         Pattern.compile("abc").toString());
+  }
+
+  @Test
+  public void testUUID() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
+    UUID uuid = UUID.randomUUID();
+    Assert.assertEquals(serDeCheckSerializer(fury, uuid, "UUID"), uuid);
   }
 }
