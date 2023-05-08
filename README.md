@@ -33,9 +33,9 @@ In addition to cross-language capabilities, Fury also has the following abilitie
 
 
 ## Getting involved
-| Platform                                                                                         | Purpose                                         | Estimated Response Time |
-|--------------------------------------------------------------------------------------------------|-------------------------------------------------|-------------------------|
-| [GitHub Issues](https://github.com/alipay/fury/issues)                                           | For reporting bugs and filing feature requests. | < 2 days                |
-| [Slack](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A) | For collaborating with other Fury users.        | < 2 days                |
-| [StackOverflow](https://stackoverflow.com/questions/tagged/fury)                                 | For asking questions about how to use Fury.     | < 2 days                |
-| [Zhihu](https://www.zhihu.com/column/c_1638859452651765760)                                      | For latest updates about Fury.                  | < 2 days                |
+| Platform                                                                                         | Purpose                                                                      | Estimated Response Time |
+|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------|-------------------------|
+| [GitHub Issues](https://github.com/alipay/fury/issues)                                           | For reporting bugs and filing feature requests.                              | < 2 days                |
+| [Slack](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A) | For collaborating with other Fury users and latest announcements about Fury. | < 2 days                |
+| [StackOverflow](https://stackoverflow.com/questions/tagged/fury)                                 | For asking questions about how to use Fury.                                  | < 2 days                |
+| [Zhihu](https://www.zhihu.com/column/c_1638859452651765760)                                      | For latest announcements about Fury.                                         | < 2 days                |
