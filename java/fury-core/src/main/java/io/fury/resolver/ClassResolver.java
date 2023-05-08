@@ -29,6 +29,7 @@ import io.fury.collection.ObjectMap;
 import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
+import io.fury.serializer.BufferSerializers;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.Serializers;
@@ -507,6 +508,8 @@ public class ClassResolver {
       } else if (cls.isArray()) {
         Preconditions.checkArgument(!cls.getComponentType().isPrimitive());
         return ArraySerializers.ObjectArraySerializer.class;
+      } else if (ByteBuffer.class.isAssignableFrom(cls)) {
+        return BufferSerializers.ByteBufferSerializer.class;
       }
       throw new UnsupportedOperationException();
     }
