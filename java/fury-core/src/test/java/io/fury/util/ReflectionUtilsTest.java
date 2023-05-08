@@ -22,7 +22,9 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
+import com.google.common.collect.ImmutableList;
 import io.fury.test.bean.BeanA;
+import io.fury.type.Descriptor;
 import java.util.List;
 import org.testng.annotations.Test;
 
@@ -51,5 +53,20 @@ public class ReflectionUtilsTest {
     BeanA beanA = BeanA.createBeanA(1);
     assertTrue(ReflectionUtils.objectFieldsEquals(beanA, beanA));
     assertTrue(ReflectionUtils.objectCommonFieldsEquals(beanA, beanA));
+  }
+
+  static class GetFieldValuesTestClass {
+    Object f1;
+    int f2; // test primitive field
+  }
+
+  @Test
+  public void testGetFieldValues() {
+    GetFieldValuesTestClass o = new GetFieldValuesTestClass();
+    o.f1 = "str";
+    o.f2 = 10;
+    List<Object> fieldValues =
+        ReflectionUtils.getFieldValues(Descriptor.getFields(GetFieldValuesTestClass.class), o);
+    assertEquals(fieldValues, ImmutableList.of("str", 10));
   }
 }

@@ -31,6 +31,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -278,6 +279,17 @@ public class ReflectionUtils {
       Collections.addAll(fields, cls.getDeclaredFields());
     }
     return fields;
+  }
+
+  /** Get fields values from provided object. */
+  public static List<Object> getFieldValues(Collection<Field> fields, Object o) {
+    List<Object> results = new ArrayList<>(fields.size());
+    for (Field field : fields) {
+      // Platform.objectFieldOffset(field) can't handle primitive field.
+      Object fieldValue = FieldAccessor.createAccessor(field).get(o);
+      results.add(fieldValue);
+    }
+    return results;
   }
 
   public static long getFieldOffset(Field field) {
