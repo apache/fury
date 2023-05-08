@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 /**
  * Serialization utils and common serializers.
@@ -610,6 +611,25 @@ public class Serializers {
     }
   }
 
+  public static final class RegexSerializer extends Serializer<Pattern> {
+    public RegexSerializer(Fury fury) {
+      super(fury, Pattern.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Pattern pattern) {
+      fury.writeJavaString(buffer, pattern.pattern());
+      buffer.writeInt(pattern.flags());
+    }
+
+    @Override
+    public Pattern read(MemoryBuffer buffer) {
+      String regex = fury.readJavaString(buffer);
+      int flags = buffer.readInt();
+      return Pattern.compile(regex, flags);
+    }
+  }
+
   public static final class ClassSerializer extends Serializer<Class> {
     private static final byte USE_CLASS_ID = 0;
     private static final byte USE_CLASSNAME = 1;
@@ -667,5 +687,6 @@ public class Serializers {
     fury.registerSerializer(AtomicReference.class, new AtomicReferenceSerializer(fury));
     fury.registerSerializer(Currency.class, new CurrencySerializer(fury));
     fury.registerSerializer(URI.class, new URISerializer(fury));
+    fury.registerSerializer(Pattern.class, new RegexSerializer(fury));
   }
 }

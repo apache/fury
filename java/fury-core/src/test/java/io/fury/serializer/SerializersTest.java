@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -166,5 +167,13 @@ public class SerializersTest extends FuryTestBase {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
     Assert.assertEquals(serDeCheckSerializer(fury, new URI(""), "URI"), new URI(""));
     Assert.assertEquals(serDeCheckSerializer(fury, new URI("abc"), "URI"), new URI("abc"));
+  }
+
+  @Test
+  public void testRegex() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
+    Assert.assertEquals(
+        serDeCheckSerializer(fury, Pattern.compile("abc"), "Regex").toString(),
+        Pattern.compile("abc").toString());
   }
 }
