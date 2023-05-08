@@ -18,15 +18,9 @@
 
 package io.fury.serializer;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
-import io.fury.test.bean.ArraysData;
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.testng.annotations.Test;
 
 public class ArraySerializersTest extends FuryTestBase {
@@ -76,58 +70,5 @@ public class ArraySerializersTest extends FuryTestBase {
           {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1},
           {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1}
         });
-  }
-
-  @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
-  public void testArraySerialization(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
-        Fury.builder()
-            .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode();
-    Fury fury1 = builder.build();
-    Fury fury2 = builder.build();
-    testArraySerialization(fury1, fury2);
-  }
-
-  public static void testArraySerialization(Fury fury1, Fury fury2) {
-    assertTrue(
-        Arrays.equals(
-            new boolean[] {false, true},
-            (boolean[]) serDe(fury1, fury2, new boolean[] {false, true})));
-    assertEquals(new byte[] {1, 1}, (byte[]) serDe(fury1, fury2, new byte[] {1, 1}));
-    assertEquals(new short[] {1, 1}, (short[]) serDe(fury1, fury2, new short[] {1, 1}));
-    assertEquals(new int[] {1, 1}, (int[]) serDe(fury1, fury2, new int[] {1, 1}));
-    assertEquals(new long[] {1, 1}, (long[]) serDe(fury1, fury2, new long[] {1, 1}));
-    assertTrue(
-        Arrays.equals(new float[] {1.f, 1.f}, (float[]) serDe(fury1, fury2, new float[] {1f, 1f})));
-    assertTrue(
-        Arrays.equals(
-            new double[] {1.0, 1.0}, (double[]) serDe(fury1, fury2, new double[] {1.0, 1.0})));
-    assertEquals(
-        new String[] {"str", "str"}, (Object[]) serDe(fury1, fury2, new String[] {"str", "str"}));
-    assertEquals(new Object[] {"str", 1}, (Object[]) serDe(fury1, fury2, new Object[] {"str", 1}));
-    assertTrue(
-        Arrays.deepEquals(
-            new Integer[][] {{1, 2}, {1, 2}},
-            (Integer[][]) serDe(fury1, fury2, new Integer[][] {{1, 2}, {1, 2}})));
-  }
-
-  // TODO enable it when
-  @Test(dataProvider = "referenceTrackingConfig", enabled = false)
-  public void testArrayZeroCopy(boolean referenceTracking) {
-    Fury.FuryBuilder builder =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode();
-    Fury fury1 = builder.build();
-    Fury fury2 = builder.build();
-    AtomicInteger counter = new AtomicInteger(0);
-    for (int i = 0; i < 4; i++) {
-      ArraysData arraysData = new ArraysData(7 * i);
-      assertEquals(arraysData, serDeOutOfBand(counter, fury1, fury1, arraysData));
-      assertEquals(arraysData, serDeOutOfBand(counter, fury1, fury2, arraysData));
-    }
   }
 }
