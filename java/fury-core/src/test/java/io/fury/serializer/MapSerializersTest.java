@@ -24,6 +24,7 @@ import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
 import io.fury.type.GenericType;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -80,5 +81,11 @@ public class MapSerializersTest extends FuryTestBase {
     Assert.assertTrue(bytes1.length > bytes2.length);
     fury.getGenerics().popGenericType();
     Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(bytes2));
+  }
+
+  @Test
+  public void testEmptyMap() {
+    serDeCheckSerializer(javaFury, Collections.EMPTY_MAP, "EmptyMapSerializer");
+    serDeCheckSerializer(javaFury, Collections.emptySortedMap(), "EmptySortedMap");
   }
 }

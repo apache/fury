@@ -36,6 +36,7 @@ import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -862,11 +863,64 @@ public class MapSerializers {
     }
   }
 
+  public static final class EmptyMapSerializer extends MapSerializer<Map<?, ?>> {
+
+    public EmptyMapSerializer(Fury fury, Class<Map<?, ?>> cls) {
+      super(fury, cls, false, false);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Map<?, ?> value) {}
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return (short) -Type.MAP.getId();
+    }
+
+    @Override
+    public void crossLanguageWrite(MemoryBuffer buffer, Map<?, ?> value) {
+      // write length
+      buffer.writePositiveVarInt(0);
+    }
+
+    @Override
+    public Map<?, ?> read(MemoryBuffer buffer) {
+      return Collections.EMPTY_MAP;
+    }
+
+    @Override
+    public Map<?, ?> crossLanguageRead(MemoryBuffer buffer) {
+      buffer.readPositiveVarInt();
+      return Collections.EMPTY_MAP;
+    }
+  }
+
+  public static final class EmptySortedMapSerializer extends MapSerializer<SortedMap<?, ?>> {
+    public EmptySortedMapSerializer(Fury fury, Class<SortedMap<?, ?>> cls) {
+      super(fury, cls, false, false);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, SortedMap<?, ?> value) {}
+
+    @Override
+    public SortedMap<?, ?> read(MemoryBuffer buffer) {
+      return Collections.emptySortedMap();
+    }
+  }
+
   // TODO(chaokunyang) support ConcurrentSkipListMap.SubMap more efficiently.
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(HashMap.class, new HashMapSerializer(fury));
     fury.getClassResolver()
         .registerSerializer(LinkedHashMap.class, new LinkedHashMapSerializer(fury));
     fury.registerSerializer(TreeMap.class, new SortedMapSerializer<>(fury, TreeMap.class));
+    fury.registerSerializer(
+        Collections.EMPTY_MAP.getClass(),
+        new EmptyMapSerializer(fury, (Class<Map<?, ?>>) Collections.EMPTY_MAP.getClass()));
+    fury.registerSerializer(
+        Collections.emptySortedMap().getClass(),
+        new EmptySortedMapSerializer(
+            fury, (Class<SortedMap<?, ?>>) Collections.emptySortedMap().getClass()));
   }
 }
