@@ -38,11 +38,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -539,6 +541,90 @@ public class CollectionSerializers {
     }
   }
 
+  // ------------------------------ collections serializers ------------------------------ //
+  // For cross-language serialization, if the data is passed from python, the data will be
+  // deserialized by `MapSerializers` and `CollectionSerializers`.
+  // But if the data is serialized by following collections serializers, we need to ensure the real
+  // type of `crossLanguageRead` is the same as the type when serializing.
+  public static final class EmptyListSerializer extends CollectionSerializer<List<?>> {
+
+    public EmptyListSerializer(Fury fury, Class<List<?>> cls) {
+      super(fury, cls, false, false);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, List<?> value) {}
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return (short) -Type.LIST.getId();
+    }
+
+    @Override
+    public void crossLanguageWrite(MemoryBuffer buffer, List<?> value) {
+      // write length
+      buffer.writePositiveVarInt(0);
+    }
+
+    @Override
+    public List<?> read(MemoryBuffer buffer) {
+      return Collections.EMPTY_LIST;
+    }
+
+    @Override
+    public List<?> crossLanguageRead(MemoryBuffer buffer) {
+      buffer.readPositiveVarInt();
+      return Collections.EMPTY_LIST;
+    }
+  }
+
+  public static final class EmptySetSerializer extends CollectionSerializer<Set<?>> {
+
+    public EmptySetSerializer(Fury fury, Class<Set<?>> cls) {
+      super(fury, cls, false, false);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Set<?> value) {}
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return (short) -Type.FURY_SET.getId();
+    }
+
+    @Override
+    public void crossLanguageWrite(MemoryBuffer buffer, Set<?> value) {
+      // write length
+      buffer.writePositiveVarInt(0);
+    }
+
+    @Override
+    public Set<?> read(MemoryBuffer buffer) {
+      return Collections.EMPTY_SET;
+    }
+
+    @Override
+    public Set<?> crossLanguageRead(MemoryBuffer buffer) {
+      buffer.readPositiveVarInt();
+      return Collections.EMPTY_SET;
+    }
+  }
+
+  public static final class EmptySortedSetSerializer extends CollectionSerializer<SortedSet<?>> {
+
+    public EmptySortedSetSerializer(Fury fury, Class<SortedSet<?>> cls) {
+      super(fury, cls, false, false);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, SortedSet<?> value) {}
+
+    @Override
+    public SortedSet<?> read(MemoryBuffer buffer) {
+      return Collections.emptySortedSet();
+    }
+  }
+
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(ArrayList.class, new ArrayListSerializer(fury));
     Class arrayAsListClass = Arrays.asList(1, 2).getClass();
@@ -548,5 +634,15 @@ public class CollectionSerializers {
     fury.registerSerializer(HashSet.class, new HashSetSerializer(fury));
     fury.registerSerializer(LinkedHashSet.class, new LinkedHashSetSerializer(fury));
     fury.registerSerializer(TreeSet.class, new SortedSetSerializer<>(fury, TreeSet.class));
+    fury.registerSerializer(
+      Collections.EMPTY_LIST.getClass(),
+      new EmptyListSerializer(fury, (Class<List<?>>) Collections.EMPTY_LIST.getClass()));
+    fury.registerSerializer(
+      Collections.emptySortedSet().getClass(),
+      new EmptySortedSetSerializer(
+        fury, (Class<SortedSet<?>>) Collections.emptySortedSet().getClass()));
+    fury.registerSerializer(
+      Collections.EMPTY_SET.getClass(),
+      new EmptySetSerializer(fury, (Class<Set<?>>) Collections.EMPTY_SET.getClass()));
   }
 }
