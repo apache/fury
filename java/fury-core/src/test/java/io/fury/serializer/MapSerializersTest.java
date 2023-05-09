@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -92,5 +94,12 @@ public class MapSerializersTest extends FuryTestBase {
   @Test
   public void testSingleMap() {
     serDeCheckSerializer(javaFury, Collections.singletonMap("k", 1), "SingletonMap");
+  }
+
+  @Test
+  public void testConcurrentMap() {
+    Map<String, Integer> data = new TreeMap<>(ImmutableMap.of("a", 1, "b", 2));
+    serDeCheckSerializer(javaFury, new ConcurrentHashMap<>(data), "ConcurrentHashMap");
+    serDeCheckSerializer(javaFury, new ConcurrentSkipListMap<>(data), "ConcurrentSkipListMap");
   }
 }

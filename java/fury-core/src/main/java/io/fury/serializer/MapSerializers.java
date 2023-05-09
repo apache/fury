@@ -43,6 +43,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Serializers for classes implements {@link Collection}. All map serializers must extends {@link
@@ -951,6 +953,46 @@ public class MapSerializers {
     }
   }
 
+  public static final class ConcurrentHashMapSerializer extends MapSerializer<ConcurrentHashMap> {
+
+    public ConcurrentHashMapSerializer(Fury fury, Class<ConcurrentHashMap> type) {
+      super(fury, type, true, false);
+    }
+
+    @Override
+    public ConcurrentHashMap newMap(MemoryBuffer buffer, int size) {
+      ConcurrentHashMap map = new ConcurrentHashMap(size);
+      fury.getReferenceResolver().reference(map);
+      return map;
+    }
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
+    }
+  }
+
+  public static final class ConcurrentSkipListMapSerializer
+      extends SortedMapSerializer<ConcurrentSkipListMap> {
+
+    public ConcurrentSkipListMapSerializer(Fury fury, Class<ConcurrentSkipListMap> cls) {
+      super(fury, cls);
+    }
+
+    @Override
+    public ConcurrentSkipListMap newMap(MemoryBuffer buffer, int numElements) {
+      Comparator comparator = (Comparator) fury.readReferencableFromJava(buffer);
+      ConcurrentSkipListMap map = new ConcurrentSkipListMap(comparator);
+      fury.getReferenceResolver().reference(map);
+      return map;
+    }
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
+    }
+  }
+
   // TODO(chaokunyang) support ConcurrentSkipListMap.SubMap more efficiently.
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(HashMap.class, new HashMapSerializer(fury));
@@ -968,5 +1010,10 @@ public class MapSerializers {
         Collections.singletonMap(null, null).getClass(),
         new SingletonMapSerializer(
             fury, (Class<Map<?, ?>>) Collections.singletonMap(null, null).getClass()));
+    fury.registerSerializer(
+        ConcurrentHashMap.class, new ConcurrentHashMapSerializer(fury, ConcurrentHashMap.class));
+    fury.registerSerializer(
+        ConcurrentSkipListMap.class,
+        new ConcurrentSkipListMapSerializer(fury, ConcurrentSkipListMap.class));
   }
 }
