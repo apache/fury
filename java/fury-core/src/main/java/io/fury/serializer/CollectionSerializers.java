@@ -48,6 +48,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -803,6 +804,24 @@ public class CollectionSerializers {
     }
   }
 
+  public static class PriorityQueueSerializer extends CollectionSerializer<PriorityQueue> {
+    public PriorityQueueSerializer(Fury fury, Class<PriorityQueue> cls) {
+      super(fury, cls, true, false);
+    }
+
+    public void writeHeader(MemoryBuffer buffer, PriorityQueue value) {
+      fury.writeReferencableToJava(buffer, value.comparator());
+    }
+
+    @Override
+    public PriorityQueue newCollection(MemoryBuffer buffer, int numElements) {
+      Comparator comparator = (Comparator) fury.readReferencableFromJava(buffer);
+      PriorityQueue queue = new PriorityQueue(comparator);
+      fury.getReferenceResolver().reference(queue);
+      return queue;
+    }
+  }
+
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(ArrayList.class, new ArrayListSerializer(fury));
     Class arrayAsListClass = Arrays.asList(1, 2).getClass();
@@ -836,5 +855,7 @@ public class CollectionSerializers {
     fury.registerSerializer(Vector.class, new VectorSerializer(fury, Vector.class));
     fury.registerSerializer(ArrayDeque.class, new ArrayDequeSerializer(fury, ArrayDeque.class));
     fury.registerSerializer(BitSet.class, new BitSetSerializer(fury, BitSet.class));
+    fury.registerSerializer(
+        PriorityQueue.class, new PriorityQueueSerializer(fury, PriorityQueue.class));
   }
 }
