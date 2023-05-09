@@ -255,6 +255,7 @@
             <exclude>**/collection/IdentityMap.java</exclude>
             <exclude>**/collection/LongMap.java</exclude>
             <exclude>**/type/Generics.java</exclude>
+            <exclude>**/io/ClassLoaderObjectInputStream.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>

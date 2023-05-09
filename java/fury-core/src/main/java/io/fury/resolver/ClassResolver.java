@@ -30,6 +30,7 @@ import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
+import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.LocaleSerializer;
 import io.fury.serializer.OptionalSerializers;
 import io.fury.serializer.Serializer;
@@ -43,6 +44,8 @@ import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
+import java.io.Externalizable;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -349,6 +352,49 @@ public class ClassResolver {
   }
 
   /**
+   * Return true if the class has jdk `writeReplace`/`readResolve` method defined, which we need to
+   * use ReplaceResolveSerializer.
+   */
+  public static boolean useReplaceResolveSerializer(Class<?> clz) {
+    // FIXME class with `writeReplace` method defined should be Serializable,
+    //  but hessian ignores this check and many existing system are using hessian.
+    return (JavaSerializer.getWriteReplaceMethod(clz) != null)
+        || JavaSerializer.getReadResolveMethod(clz) != null;
+  }
+
+  /**
+   * Return true if a class satisfy following requirements.
+   * <li>implements {@link Serializable}
+   * <li>is not an {@link Enum}
+   * <li>is not an array
+   * <li>Doesn't have {@code readResolve}/{@code writePlace} method
+   * <li>has {@code readObject}/{@code writeObject} method, but doesn't implements {@link
+   *     Externalizable}
+   * <li/>
+   */
+  public static boolean requireJavaSerialization(Class<?> clz) {
+    if (clz.isEnum() || clz.isArray()) {
+      return false;
+    }
+    if (ReflectionUtils.isDynamicGeneratedCLass(clz)) {
+      // use corresponding serializer.
+      return false;
+    }
+    if (!Serializable.class.isAssignableFrom(clz)) {
+      return false;
+    }
+    if (useReplaceResolveSerializer(clz)) {
+      return false;
+    }
+    if (Externalizable.class.isAssignableFrom(clz)) {
+      return false;
+    } else {
+      return JavaSerializer.getReadObjectMethod(clz) != null
+          || JavaSerializer.getWriteObjectMethod(clz) != null;
+    }
+  }
+
+  /**
    * Register a Serializer.
    *
    * @param type class needed to be serialized/deserialized
@@ -507,8 +553,17 @@ public class ClassResolver {
       } else if (TimeZone.class.isAssignableFrom(cls)) {
         return TimeSerializers.TimeZoneSerializer.class;
       }
-      throw new UnsupportedOperationException();
+      if (requireJavaSerialization(cls)) {
+        return getJavaSerializer(cls);
+      }
+      // TODO(chaokunyang) Switch to other serializers when supported.
+      return getJavaSerializer(cls);
     }
+  }
+
+  public Class<? extends Serializer> getJavaSerializer(Class<?> clz) {
+    // TODO(chaokunyang) add Fury ObjectStreamSerializer
+    return JavaSerializer.class;
   }
 
   /**

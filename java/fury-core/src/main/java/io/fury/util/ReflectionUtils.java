@@ -541,4 +541,9 @@ public class ReflectionUtils {
   public static boolean isJdkProxy(Class<?> clz) {
     return Proxy.isProxyClass(clz);
   }
+
+  public static boolean isDynamicGeneratedCLass(Class<?> cls) {
+    // TODO(chaokunyang) add cglib check
+    return Functions.isLambda(cls) || isJdkProxy(cls);
+  }
 }
