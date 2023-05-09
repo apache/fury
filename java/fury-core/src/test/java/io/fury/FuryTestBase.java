@@ -39,7 +39,8 @@ import org.testng.annotations.DataProvider;
 @SuppressWarnings("unchecked")
 public abstract class FuryTestBase {
 
-  public static Fury javaFury = Fury.builder().withLanguage(Language.JAVA).build();
+  public static Fury javaFury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
 
   @DataProvider(name = "referenceTrackingConfig")
   public static Object[][] referenceTrackingConfig() {

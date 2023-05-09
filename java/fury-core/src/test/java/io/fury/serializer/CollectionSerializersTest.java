@@ -29,6 +29,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -120,5 +121,31 @@ public class CollectionSerializersTest extends FuryTestBase {
   @Test
   public void tesArrayDequeSerializer() {
     serDeCheckSerializer(javaFury, new ArrayDeque<>(Arrays.asList("a", "b", "c")), "ArrayDeque");
+  }
+
+  enum TestEnum {
+    A,
+    B,
+    C,
+    D
+  }
+
+  @Test
+  public void tesEnumSetSerializer() {
+    serDe(javaFury, EnumSet.allOf(TestEnum.class));
+    Assert.assertEquals(
+        javaFury.getClassResolver().getSerializerClass(EnumSet.allOf(TestEnum.class).getClass()),
+        CollectionSerializers.EnumSetSerializer.class);
+    serDe(javaFury, EnumSet.of(TestEnum.A));
+    Assert.assertEquals(
+        javaFury.getClassResolver().getSerializerClass(EnumSet.of(TestEnum.A).getClass()),
+        CollectionSerializers.EnumSetSerializer.class);
+    serDe(javaFury, EnumSet.of(TestEnum.A, TestEnum.B));
+    Assert.assertEquals(
+        javaFury
+            .getClassResolver()
+            .getSerializerClass(EnumSet.of(TestEnum.A, TestEnum.B).getClass()),
+        CollectionSerializers.EnumSetSerializer.class);
+    // TODO test enum which has enums exceed 128.
   }
 }

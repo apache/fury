@@ -577,6 +577,8 @@ public class ClassResolver {
       } else if (Enum.class.isAssignableFrom(cls) && cls != Enum.class) {
         // handles an enum value that is an inner class. Eg: enum A {b{}};
         return Serializers.EnumSerializer.class;
+      } else if (EnumSet.class.isAssignableFrom(cls)) {
+        return CollectionSerializers.EnumSetSerializer.class;
       } else if (cls.isArray()) {
         Preconditions.checkArgument(!cls.getComponentType().isPrimitive());
         return ArraySerializers.ObjectArraySerializer.class;
