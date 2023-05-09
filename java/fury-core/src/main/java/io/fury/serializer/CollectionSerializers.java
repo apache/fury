@@ -23,6 +23,7 @@ import static io.fury.type.TypeUtils.getRawType;
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
+import io.fury.exception.FuryException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfoCache;
 import io.fury.resolver.ClassResolver;
@@ -41,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -738,6 +740,46 @@ public class CollectionSerializers {
       Vector<Object> vector = new Vector<>(numElements);
       fury.getReferenceResolver().reference(vector);
       return vector;
+    }
+  }
+
+  public static class EnumSetSerializer extends CollectionSerializer<EnumSet> {
+    public EnumSetSerializer(Fury fury, Class<EnumSet> type) {
+      // getElementType(EnumSet.class) will be `E` without Enum as bound.
+      // so no need to infer generics in init.
+      super(fury, type, false, false);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, EnumSet object) {
+      Class<?> elemClass;
+      if (object.isEmpty()) {
+        EnumSet tmp = EnumSet.complementOf(object);
+        if (tmp.isEmpty()) {
+          throw new FuryException("An EnumSet must have a defined Enum to be serialized.");
+        }
+        elemClass = tmp.iterator().next().getClass();
+      } else {
+        elemClass = object.iterator().next().getClass();
+      }
+      fury.getClassResolver().writeClassAndUpdateCache(buffer, elemClass);
+      Serializer serializer = fury.getClassResolver().getSerializer(elemClass);
+      buffer.writePositiveVarIntAligned(object.size());
+      for (Object element : object) {
+        serializer.write(buffer, element);
+      }
+    }
+
+    @Override
+    public EnumSet read(MemoryBuffer buffer) {
+      Class elemClass = fury.getClassResolver().readClassAndUpdateCache(buffer);
+      EnumSet object = EnumSet.noneOf(elemClass);
+      Serializer elemSerializer = fury.getClassResolver().getSerializer(elemClass);
+      int length = buffer.readPositiveAlignedVarInt();
+      for (int i = 0; i < length; i++) {
+        object.add(elemSerializer.read(buffer));
+      }
+      return object;
     }
   }
 
