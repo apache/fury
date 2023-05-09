@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -90,16 +91,22 @@ public class CollectionSerializersTest extends FuryTestBase {
 
   @Test
   public void testEmptyCollection() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
-    serDeCheckSerializer(fury, Collections.EMPTY_LIST, "EmptyListSerializer");
-    serDeCheckSerializer(fury, Collections.emptySortedSet(), "EmptySortedSetSerializer");
-    serDeCheckSerializer(fury, Collections.EMPTY_SET, "EmptySetSerializer");
+    serDeCheckSerializer(javaFury, Collections.EMPTY_LIST, "EmptyListSerializer");
+    serDeCheckSerializer(javaFury, Collections.emptySortedSet(), "EmptySortedSetSerializer");
+    serDeCheckSerializer(javaFury, Collections.EMPTY_SET, "EmptySetSerializer");
   }
 
   @Test
   public void testSingleCollection() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
-    serDeCheckSerializer(fury, Collections.singletonList(1), "SingletonList");
-    serDeCheckSerializer(fury, Collections.singleton(1), "SingletonSet");
+    serDeCheckSerializer(javaFury, Collections.singletonList(1), "SingletonList");
+    serDeCheckSerializer(javaFury, Collections.singleton(1), "SingletonSet");
+  }
+
+  @Test
+  public void tesSkipList() {
+    serDeCheckSerializer(
+        javaFury,
+        new ConcurrentSkipListSet<>(Arrays.asList("a", "b", "c")),
+        "ConcurrentSkipListSet");
   }
 }

@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * Serializers for classes implements {@link Collection}. All collection serializers should extend
@@ -694,6 +695,22 @@ public class CollectionSerializers {
     }
   }
 
+  public static final class ConcurrentSkipListSetSerializer
+      extends SortedSetSerializer<ConcurrentSkipListSet> {
+
+    public ConcurrentSkipListSetSerializer(Fury fury, Class<ConcurrentSkipListSet> cls) {
+      super(fury, cls);
+    }
+
+    @Override
+    public ConcurrentSkipListSet newCollection(MemoryBuffer buffer, int numElements) {
+      Comparator comparator = (Comparator) fury.readReferencableFromJava(buffer);
+      ConcurrentSkipListSet skipListSet = new ConcurrentSkipListSet(comparator);
+      fury.getReferenceResolver().reference(skipListSet);
+      return skipListSet;
+    }
+  }
+
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(ArrayList.class, new ArrayListSerializer(fury));
     Class arrayAsListClass = Arrays.asList(1, 2).getClass();
@@ -721,5 +738,8 @@ public class CollectionSerializers {
         Collections.singleton(null).getClass(),
         new CollectionsSingletonSetSerializer(
             fury, (Class<Set<?>>) Collections.singleton(null).getClass()));
+    fury.registerSerializer(
+        ConcurrentSkipListSet.class,
+        new ConcurrentSkipListSetSerializer(fury, ConcurrentSkipListSet.class));
   }
 }
