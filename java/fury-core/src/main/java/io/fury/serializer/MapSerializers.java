@@ -36,9 +36,12 @@ import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * Serializers for classes implements {@link Collection}. All map serializers must extends {@link
@@ -818,10 +821,52 @@ public class MapSerializers {
     }
   }
 
+  public static class SortedMapSerializer<T extends SortedMap> extends MapSerializer<T> {
+    private Constructor<?> constructor;
+
+    public SortedMapSerializer(Fury fury, Class<T> cls) {
+      super(fury, cls, true, false);
+      if (cls != TreeMap.class) {
+        try {
+          this.constructor = cls.getConstructor(Comparator.class);
+          if (!constructor.isAccessible()) {
+            constructor.setAccessible(true);
+          }
+        } catch (Exception e) {
+          throw new UnsupportedOperationException(e);
+        }
+      }
+    }
+
+    @Override
+    public void writeHeader(MemoryBuffer buffer, T value) {
+      fury.writeReferencableToJava(buffer, value.comparator());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public T newMap(MemoryBuffer buffer, int numElements) {
+      T map;
+      Comparator comparator = (Comparator) fury.readReferencableFromJava(buffer);
+      if (type == TreeMap.class) {
+        map = (T) new TreeMap(comparator);
+      } else {
+        try {
+          map = (T) constructor.newInstance(comparator);
+        } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      fury.getReferenceResolver().reference(map);
+      return map;
+    }
+  }
+
   // TODO(chaokunyang) support ConcurrentSkipListMap.SubMap more efficiently.
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(HashMap.class, new HashMapSerializer(fury));
     fury.getClassResolver()
         .registerSerializer(LinkedHashMap.class, new LinkedHashMapSerializer(fury));
+    fury.registerSerializer(TreeMap.class, new SortedMapSerializer<>(fury, TreeMap.class));
   }
 }
