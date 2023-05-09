@@ -38,10 +38,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Serializers for classes implements {@link Collection}. All collection serializers should extend
@@ -495,6 +498,47 @@ public class CollectionSerializers {
     }
   }
 
+  public static class SortedSetSerializer<T extends SortedSet> extends CollectionSerializer<T> {
+    private Constructor<?> constructor;
+
+    public SortedSetSerializer(Fury fury, Class<T> cls) {
+      super(fury, cls, true, false);
+      if (cls != TreeSet.class) {
+        try {
+          this.constructor = cls.getConstructor(Comparator.class);
+          if (!constructor.isAccessible()) {
+            constructor.setAccessible(true);
+          }
+        } catch (Exception e) {
+          throw new UnsupportedOperationException(e);
+        }
+      }
+    }
+
+    @Override
+    public void writeHeader(MemoryBuffer buffer, T value) {
+      fury.writeReferencableToJava(buffer, value.comparator());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public T newCollection(MemoryBuffer buffer, int numElements) {
+      T collection;
+      Comparator comparator = (Comparator) fury.readReferencableFromJava(buffer);
+      if (type == TreeSet.class) {
+        collection = (T) new TreeSet(comparator);
+      } else {
+        try {
+          collection = (T) constructor.newInstance(comparator);
+        } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      fury.getReferenceResolver().reference(collection);
+      return collection;
+    }
+  }
+
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(ArrayList.class, new ArrayListSerializer(fury));
     Class arrayAsListClass = Arrays.asList(1, 2).getClass();
@@ -503,5 +547,6 @@ public class CollectionSerializers {
         LinkedList.class, new CollectionSerializer(fury, LinkedList.class, true, false));
     fury.registerSerializer(HashSet.class, new HashSetSerializer(fury));
     fury.registerSerializer(LinkedHashSet.class, new LinkedHashSetSerializer(fury));
+    fury.registerSerializer(TreeSet.class, new SortedSetSerializer<>(fury, TreeSet.class));
   }
 }

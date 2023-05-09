@@ -19,6 +19,7 @@
 package io.fury.serializer;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.TreeSet;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -57,6 +59,25 @@ public class CollectionSerializersTest extends FuryTestBase {
             .disableSecureMode()
             .build();
     List<String> data = new ArrayList<>(ImmutableList.of("a", "b", "c"));
+    byte[] bytes1 = fury.serialize(data);
+    fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<List<String>>() {}));
+    byte[] bytes2 = fury.serialize(data);
+    Assert.assertTrue(bytes1.length > bytes2.length);
+    System.out.println(fury.deserialize(bytes2));
+    fury.getGenerics().popGenericType();
+    Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(bytes2));
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testSortedSet(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(referenceTrackingConfig)
+            .disableSecureMode()
+            .build();
+    TreeSet<String> data = new TreeSet<>(ImmutableSet.of("a", "b", "c"));
+    serDeCheckSerializer(fury, data, "SortedSet");
     byte[] bytes1 = fury.serialize(data);
     fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<List<String>>() {}));
     byte[] bytes2 = fury.serialize(data);
