@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentSkipListSet;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -108,5 +109,10 @@ public class CollectionSerializersTest extends FuryTestBase {
         javaFury,
         new ConcurrentSkipListSet<>(Arrays.asList("a", "b", "c")),
         "ConcurrentSkipListSet");
+  }
+
+  @Test
+  public void tesVectorSerializer() {
+    serDeCheckSerializer(javaFury, new Vector<>(Arrays.asList("a", "b", "c")), "VectorSerializer");
   }
 }

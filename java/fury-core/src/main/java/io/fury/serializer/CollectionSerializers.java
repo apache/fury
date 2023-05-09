@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
@@ -711,6 +712,20 @@ public class CollectionSerializers {
     }
   }
 
+  public static final class VectorSerializer extends CollectionSerializer<Vector> {
+
+    public VectorSerializer(Fury fury, Class<Vector> cls) {
+      super(fury, cls, true, false);
+    }
+
+    @Override
+    public Vector newCollection(MemoryBuffer buffer, int numElements) {
+      Vector<Object> vector = new Vector<>(numElements);
+      fury.getReferenceResolver().reference(vector);
+      return vector;
+    }
+  }
+
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(ArrayList.class, new ArrayListSerializer(fury));
     Class arrayAsListClass = Arrays.asList(1, 2).getClass();
@@ -741,5 +756,6 @@ public class CollectionSerializers {
     fury.registerSerializer(
         ConcurrentSkipListSet.class,
         new ConcurrentSkipListSetSerializer(fury, ConcurrentSkipListSet.class));
+    fury.registerSerializer(Vector.class, new VectorSerializer(fury, Vector.class));
   }
 }
