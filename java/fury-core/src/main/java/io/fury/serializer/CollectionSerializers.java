@@ -39,6 +39,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -783,6 +784,25 @@ public class CollectionSerializers {
     }
   }
 
+  public static class BitSetSerializer extends Serializer<BitSet> {
+    public BitSetSerializer(Fury fury, Class<BitSet> type) {
+      super(fury, type);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, BitSet set) {
+      long[] values = set.toLongArray();
+      buffer.writePrimitiveArrayWithSizeEmbedded(
+          values, Platform.LONG_ARRAY_OFFSET, Math.multiplyExact(values.length, 8));
+    }
+
+    @Override
+    public BitSet read(MemoryBuffer buffer) {
+      long[] values = buffer.readLongsWithSizeEmbedded();
+      return BitSet.valueOf(values);
+    }
+  }
+
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(ArrayList.class, new ArrayListSerializer(fury));
     Class arrayAsListClass = Arrays.asList(1, 2).getClass();
@@ -815,5 +835,6 @@ public class CollectionSerializers {
         new ConcurrentSkipListSetSerializer(fury, ConcurrentSkipListSet.class));
     fury.registerSerializer(Vector.class, new VectorSerializer(fury, Vector.class));
     fury.registerSerializer(ArrayDeque.class, new ArrayDequeSerializer(fury, ArrayDeque.class));
+    fury.registerSerializer(BitSet.class, new BitSetSerializer(fury, BitSet.class));
   }
 }

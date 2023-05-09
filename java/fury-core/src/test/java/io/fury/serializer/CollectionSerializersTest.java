@@ -28,6 +28,7 @@ import io.fury.type.GenericType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.stream.LongStream;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -147,5 +149,21 @@ public class CollectionSerializersTest extends FuryTestBase {
             .getSerializerClass(EnumSet.of(TestEnum.A, TestEnum.B).getClass()),
         CollectionSerializers.EnumSetSerializer.class);
     // TODO test enum which has enums exceed 128.
+  }
+
+  @Test
+  public void tesBitSetSerializer() {
+    serDe(javaFury, BitSet.valueOf(LongStream.range(0, 2).toArray()));
+    Assert.assertEquals(
+        javaFury
+            .getClassResolver()
+            .getSerializerClass(BitSet.valueOf(LongStream.range(0, 2).toArray()).getClass()),
+        CollectionSerializers.BitSetSerializer.class);
+    serDe(javaFury, BitSet.valueOf(LongStream.range(0, 128).toArray()));
+    Assert.assertEquals(
+        javaFury
+            .getClassResolver()
+            .getSerializerClass(BitSet.valueOf(LongStream.range(0, 128).toArray()).getClass()),
+        CollectionSerializers.BitSetSerializer.class);
   }
 }
