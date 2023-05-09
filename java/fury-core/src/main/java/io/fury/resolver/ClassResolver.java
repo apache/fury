@@ -31,6 +31,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
 import io.fury.serializer.JavaSerializer;
+import io.fury.serializer.JdkProxySerializer;
 import io.fury.serializer.LocaleSerializer;
 import io.fury.serializer.OptionalSerializers;
 import io.fury.serializer.Serializer;
@@ -177,6 +178,7 @@ public class ClassResolver {
   }
 
   public void initialize() {
+    register(JdkProxySerializer.ReplaceStub.class, JDK_PROXY_STUB_ID);
     registerWithCheck(void.class, PRIMITIVE_VOID_CLASS_ID);
     registerWithCheck(boolean.class, PRIMITIVE_BOOLEAN_CLASS_ID);
     registerWithCheck(byte.class, PRIMITIVE_BYTE_CLASS_ID);
@@ -223,6 +225,9 @@ public class ClassResolver {
     TimeSerializers.registerDefaultSerializers(fury);
     OptionalSerializers.registerDefaultSerializers(fury);
     addDefaultSerializer(Locale.class, new LocaleSerializer(fury));
+    addDefaultSerializer(
+        JdkProxySerializer.ReplaceStub.class,
+        new JdkProxySerializer(fury, JdkProxySerializer.ReplaceStub.class));
   }
 
   private void addDefaultSerializer(Class<?> type, Class<? extends Serializer> serializerClass) {
@@ -542,6 +547,8 @@ public class ClassResolver {
       } else if (cls.isArray()) {
         Preconditions.checkArgument(!cls.getComponentType().isPrimitive());
         return ArraySerializers.ObjectArraySerializer.class;
+      } else if (ReflectionUtils.isJdkProxy(cls)) {
+        return JdkProxySerializer.class;
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {
         return BufferSerializers.ByteBufferSerializer.class;
       } else if (Charset.class.isAssignableFrom(cls)) {

@@ -18,7 +18,6 @@
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.io.ClassLoaderObjectInputStream;
 import io.fury.io.FuryObjectInput;
@@ -54,7 +53,8 @@ public class JavaSerializer extends Serializer {
 
   public JavaSerializer(Fury fury, Class<?> cls) {
     super(fury, cls);
-    Preconditions.checkArgument(ClassResolver.requireJavaSerialization(cls));
+    // TODO(chgaokunyang) enable this check when ObjectSerializer is implemented.
+    // Preconditions.checkArgument(ClassResolver.requireJavaSerialization(cls));
     if (cls != SerializedLambda.class) {
       LOG.warn(
           "{} use java built-in serialization, which is inefficient. "
