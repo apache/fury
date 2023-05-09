@@ -625,6 +625,75 @@ public class CollectionSerializers {
     }
   }
 
+  public static final class CollectionsSingletonListSerializer
+      extends CollectionSerializer<List<?>> {
+
+    public CollectionsSingletonListSerializer(Fury fury, Class<List<?>> cls) {
+      super(fury, cls, false, false);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, List<?> value) {
+      fury.writeReferencableToJava(buffer, value.get(0));
+    }
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return (short) -Type.LIST.getId();
+    }
+
+    @Override
+    public void crossLanguageWrite(MemoryBuffer buffer, List<?> value) {
+      buffer.writePositiveVarInt(1);
+      fury.crossLanguageWriteReferencable(buffer, value.get(0));
+    }
+
+    @Override
+    public List<?> read(MemoryBuffer buffer) {
+      return Collections.singletonList(fury.readReferencableFromJava(buffer));
+    }
+
+    @Override
+    public List<?> crossLanguageRead(MemoryBuffer buffer) {
+      buffer.readPositiveVarInt();
+      return Collections.singletonList(fury.crossLanguageReadReferencable(buffer));
+    }
+  }
+
+  public static final class CollectionsSingletonSetSerializer extends CollectionSerializer<Set<?>> {
+
+    public CollectionsSingletonSetSerializer(Fury fury, Class<Set<?>> cls) {
+      super(fury, cls, false, false);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Set<?> value) {
+      fury.writeReferencableToJava(buffer, value.iterator().next());
+    }
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return (short) -Type.FURY_SET.getId();
+    }
+
+    @Override
+    public void crossLanguageWrite(MemoryBuffer buffer, Set<?> value) {
+      buffer.writePositiveVarInt(1);
+      fury.crossLanguageWriteReferencable(buffer, value.iterator().next());
+    }
+
+    @Override
+    public Set<?> read(MemoryBuffer buffer) {
+      return Collections.singleton(fury.readReferencableFromJava(buffer));
+    }
+
+    @Override
+    public Set<?> crossLanguageRead(MemoryBuffer buffer) {
+      buffer.readPositiveVarInt();
+      return Collections.singleton(fury.crossLanguageReadReferencable(buffer));
+    }
+  }
+
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(ArrayList.class, new ArrayListSerializer(fury));
     Class arrayAsListClass = Arrays.asList(1, 2).getClass();
@@ -644,5 +713,13 @@ public class CollectionSerializers {
     fury.registerSerializer(
         Collections.EMPTY_SET.getClass(),
         new EmptySetSerializer(fury, (Class<Set<?>>) Collections.EMPTY_SET.getClass()));
+    fury.registerSerializer(
+        Collections.singletonList(null).getClass(),
+        new CollectionsSingletonListSerializer(
+            fury, (Class<List<?>>) Collections.singletonList(null).getClass()));
+    fury.registerSerializer(
+        Collections.singleton(null).getClass(),
+        new CollectionsSingletonSetSerializer(
+            fury, (Class<Set<?>>) Collections.singleton(null).getClass()));
   }
 }
