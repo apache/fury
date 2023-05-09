@@ -18,8 +18,11 @@
 
 package io.fury.resolver;
 
+import static io.fury.type.TypeUtils.getRawType;
+
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Primitives;
+import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.Language;
 import io.fury.annotation.Internal;
@@ -30,6 +33,7 @@ import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
+import io.fury.serializer.CollectionSerializers;
 import io.fury.serializer.ExternalizableSerializer;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.JdkProxySerializer;
@@ -40,6 +44,7 @@ import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
 import io.fury.serializer.TimeSerializers;
+import io.fury.type.GenericType;
 import io.fury.type.TypeUtils;
 import io.fury.util.Functions;
 import io.fury.util.LoggerFactory;
@@ -48,6 +53,8 @@ import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.io.Externalizable;
 import java.io.Serializable;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -55,6 +62,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -225,6 +233,7 @@ public class ClassResolver {
     ArraySerializers.registerDefaultSerializers(fury);
     TimeSerializers.registerDefaultSerializers(fury);
     OptionalSerializers.registerDefaultSerializers(fury);
+    CollectionSerializers.registerDefaultSerializers(fury);
     addDefaultSerializer(Locale.class, new LocaleSerializer(fury));
     addDefaultSerializer(
         JdkProxySerializer.ReplaceStub.class,
@@ -343,6 +352,29 @@ public class ClassResolver {
         .filter(Objects::nonNull)
         .map(info -> info.cls)
         .collect(Collectors.toList());
+  }
+
+  /**
+   * Mark non-inner registered final types as non-final to write class def for those types. Note if
+   * a class is registered but not an inner class with inner serializer, it will still be taken as
+   * non-final to write class def, so that it can be deserialized by the peer still..
+   */
+  public boolean isFinal(Class<?> clz) {
+    if (Modifier.isFinal(clz.getModifiers())) {
+      if (fury.getConfig().isMetaContextShareEnabled()) {
+        boolean isInnerClass = isInnerClass(clz);
+        if (!isInnerClass) {
+          return false;
+        } else {
+          // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
+          // TypeToken<V>)
+          return !Map.class.isAssignableFrom(clz) && !Collection.class.isAssignableFrom(clz);
+        }
+      } else {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Returns true if <code>cls</code> is fury inner registered class. */
@@ -1024,6 +1056,30 @@ public class ClassResolver {
       result = result * 31 + (int) (classNameHash ^ (classNameHash >>> 32));
       return result;
     }
+  }
+
+  public GenericType buildGenericType(TypeToken<?> typeToken) {
+    return GenericType.build(
+        typeToken.getType(),
+        t -> {
+          if (t.getClass() == Class.class) {
+            return isFinal((Class<?>) t);
+          } else {
+            return isFinal(getRawType(t));
+          }
+        });
+  }
+
+  public GenericType buildGenericType(Type type) {
+    return GenericType.build(
+        type,
+        t -> {
+          if (t.getClass() == Class.class) {
+            return isFinal((Class<?>) t);
+          } else {
+            return isFinal(getRawType(t));
+          }
+        });
   }
 
   // Invoked by fury JIT.
