@@ -95,4 +95,11 @@ public class CollectionSerializersTest extends FuryTestBase {
     serDeCheckSerializer(fury, Collections.emptySortedSet(), "EmptySortedSetSerializer");
     serDeCheckSerializer(fury, Collections.EMPTY_SET, "EmptySetSerializer");
   }
+
+  @Test
+  public void testSingleCollection() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
+    serDeCheckSerializer(fury, Collections.singletonList(1), "SingletonList");
+    serDeCheckSerializer(fury, Collections.singleton(1), "SingletonSet");
+  }
 }
