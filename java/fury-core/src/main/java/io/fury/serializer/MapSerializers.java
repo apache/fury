@@ -32,12 +32,15 @@ import io.fury.type.GenericType;
 import io.fury.type.Generics;
 import io.fury.type.Type;
 import io.fury.type.TypeUtils;
+import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -993,6 +996,30 @@ public class MapSerializers {
     }
   }
 
+  public static class EnumMapSerializer extends MapSerializer<EnumMap> {
+    private final long keyTypeFieldOffset;
+
+    public EnumMapSerializer(Fury fury, Class<EnumMap> cls) {
+      // getMapKeyValueType(EnumMap.class) will be `K, V` without Enum as key bound.
+      // so no need to infer key generics in init.
+      super(fury, cls, true, false);
+      Field field = ReflectionUtils.getDeclaredField(EnumMap.class, "keyType");
+      keyTypeFieldOffset = ReflectionUtils.getFieldOffset(field);
+    }
+
+    @Override
+    public void writeHeader(MemoryBuffer buffer, EnumMap value) {
+      Class keyType = (Class) Platform.getObject(value, keyTypeFieldOffset);
+      fury.getClassResolver().writeClassAndUpdateCache(buffer, keyType);
+    }
+
+    @Override
+    public EnumMap newMap(MemoryBuffer buffer, int numElements) {
+      Class<?> keyType = fury.getClassResolver().readClassAndUpdateCache(buffer);
+      return new EnumMap(keyType);
+    }
+  }
+
   // TODO(chaokunyang) support ConcurrentSkipListMap.SubMap more efficiently.
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(HashMap.class, new HashMapSerializer(fury));
@@ -1015,5 +1042,6 @@ public class MapSerializers {
     fury.registerSerializer(
         ConcurrentSkipListMap.class,
         new ConcurrentSkipListMapSerializer(fury, ConcurrentSkipListMap.class));
+    fury.registerSerializer(EnumMap.class, new EnumMapSerializer(fury, EnumMap.class));
   }
 }

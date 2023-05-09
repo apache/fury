@@ -25,6 +25,7 @@ import io.fury.FuryTestBase;
 import io.fury.Language;
 import io.fury.type.GenericType;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -101,5 +102,17 @@ public class MapSerializersTest extends FuryTestBase {
     Map<String, Integer> data = new TreeMap<>(ImmutableMap.of("a", 1, "b", 2));
     serDeCheckSerializer(javaFury, new ConcurrentHashMap<>(data), "ConcurrentHashMap");
     serDeCheckSerializer(javaFury, new ConcurrentSkipListMap<>(data), "ConcurrentSkipListMap");
+  }
+
+  @Test
+  public void testEnumMap() {
+    EnumMap<CollectionSerializersTest.TestEnum, Object> enumMap =
+        new EnumMap<>(CollectionSerializersTest.TestEnum.class);
+    enumMap.put(CollectionSerializersTest.TestEnum.A, 1);
+    enumMap.put(CollectionSerializersTest.TestEnum.B, "str");
+    serDe(javaFury, enumMap);
+    Assert.assertEquals(
+        javaFury.getClassResolver().getSerializerClass(enumMap.getClass()),
+        MapSerializers.EnumMapSerializer.class);
   }
 }
