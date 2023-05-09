@@ -34,6 +34,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -165,5 +166,13 @@ public class CollectionSerializersTest extends FuryTestBase {
             .getClassResolver()
             .getSerializerClass(BitSet.valueOf(LongStream.range(0, 128).toArray()).getClass()),
         CollectionSerializers.BitSetSerializer.class);
+  }
+
+  @Test
+  public void tesPriorityQueueSerializer() {
+    serDe(javaFury, new PriorityQueue<>(Arrays.asList("a", "b", "c")));
+    Assert.assertEquals(
+        javaFury.getClassResolver().getSerializerClass(PriorityQueue.class),
+        CollectionSerializers.PriorityQueueSerializer.class);
   }
 }
