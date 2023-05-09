@@ -27,6 +27,7 @@ import io.fury.Language;
 import io.fury.type.GenericType;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -85,5 +86,13 @@ public class CollectionSerializersTest extends FuryTestBase {
     System.out.println(fury.deserialize(bytes2));
     fury.getGenerics().popGenericType();
     Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(bytes2));
+  }
+
+  @Test
+  public void testEmptyCollection() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
+    serDeCheckSerializer(fury, Collections.EMPTY_LIST, "EmptyListSerializer");
+    serDeCheckSerializer(fury, Collections.emptySortedSet(), "EmptySortedSetSerializer");
+    serDeCheckSerializer(fury, Collections.EMPTY_SET, "EmptySetSerializer");
   }
 }
