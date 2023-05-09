@@ -635,14 +635,14 @@ public class CollectionSerializers {
     fury.registerSerializer(LinkedHashSet.class, new LinkedHashSetSerializer(fury));
     fury.registerSerializer(TreeSet.class, new SortedSetSerializer<>(fury, TreeSet.class));
     fury.registerSerializer(
-      Collections.EMPTY_LIST.getClass(),
-      new EmptyListSerializer(fury, (Class<List<?>>) Collections.EMPTY_LIST.getClass()));
+        Collections.EMPTY_LIST.getClass(),
+        new EmptyListSerializer(fury, (Class<List<?>>) Collections.EMPTY_LIST.getClass()));
     fury.registerSerializer(
-      Collections.emptySortedSet().getClass(),
-      new EmptySortedSetSerializer(
-        fury, (Class<SortedSet<?>>) Collections.emptySortedSet().getClass()));
+        Collections.emptySortedSet().getClass(),
+        new EmptySortedSetSerializer(
+            fury, (Class<SortedSet<?>>) Collections.emptySortedSet().getClass()));
     fury.registerSerializer(
-      Collections.EMPTY_SET.getClass(),
-      new EmptySetSerializer(fury, (Class<Set<?>>) Collections.EMPTY_SET.getClass()));
+        Collections.EMPTY_SET.getClass(),
+        new EmptySetSerializer(fury, (Class<Set<?>>) Collections.EMPTY_SET.getClass()));
   }
 }
