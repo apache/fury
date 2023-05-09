@@ -27,6 +27,7 @@ import io.fury.type.GenericType;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -55,6 +56,24 @@ public class MapSerializersTest extends FuryTestBase {
             .disableSecureMode()
             .build();
     Map<String, Integer> data = new HashMap<>(ImmutableMap.of("a", 1, "b", 2));
+    byte[] bytes1 = fury.serialize(data);
+    fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<Map<String, Integer>>() {}));
+    byte[] bytes2 = fury.serialize(data);
+    Assert.assertTrue(bytes1.length > bytes2.length);
+    fury.getGenerics().popGenericType();
+    Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(bytes2));
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testSortedMap(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(referenceTrackingConfig)
+            .disableSecureMode()
+            .build();
+    Map<String, Integer> data = new TreeMap<>(ImmutableMap.of("a", 1, "b", 2));
+    serDeCheckSerializer(fury, data, "SortedMap");
     byte[] bytes1 = fury.serialize(data);
     fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<Map<String, Integer>>() {}));
     byte[] bytes2 = fury.serialize(data);
