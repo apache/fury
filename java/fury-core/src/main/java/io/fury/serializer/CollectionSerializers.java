@@ -35,6 +35,7 @@ import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -712,6 +713,20 @@ public class CollectionSerializers {
     }
   }
 
+  public static final class ArrayDequeSerializer extends CollectionSerializer<ArrayDeque> {
+
+    public ArrayDequeSerializer(Fury fury, Class<ArrayDeque> cls) {
+      super(fury, cls, true, false);
+    }
+
+    @Override
+    public ArrayDeque newCollection(MemoryBuffer buffer, int numElements) {
+      ArrayDeque deque = new ArrayDeque(numElements);
+      fury.getReferenceResolver().reference(deque);
+      return deque;
+    }
+  }
+
   public static final class VectorSerializer extends CollectionSerializer<Vector> {
 
     public VectorSerializer(Fury fury, Class<Vector> cls) {
@@ -757,5 +772,6 @@ public class CollectionSerializers {
         ConcurrentSkipListSet.class,
         new ConcurrentSkipListSetSerializer(fury, ConcurrentSkipListSet.class));
     fury.registerSerializer(Vector.class, new VectorSerializer(fury, Vector.class));
+    fury.registerSerializer(ArrayDeque.class, new ArrayDequeSerializer(fury, ArrayDeque.class));
   }
 }
