@@ -1028,6 +1028,7 @@ public final class Fury {
     boolean compressString = true;
     boolean secureModeEnabled = true;
     boolean requireClassRegistration = true;
+    boolean metaContextShareEnabled = false;
 
     private FuryBuilder() {}
 

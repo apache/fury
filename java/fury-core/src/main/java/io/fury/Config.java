@@ -59,6 +59,7 @@ public class Config implements Serializable {
   private final boolean compressString;
   private final boolean secureModeEnabled;
   private final boolean classRegistrationRequired;
+  private final boolean metaContextShareEnabled;
   private transient int configHash;
 
   Config(Fury.FuryBuilder builder) {
@@ -71,6 +72,7 @@ public class Config implements Serializable {
     compressString = builder.compressString;
     secureModeEnabled = builder.secureModeEnabled;
     classRegistrationRequired = builder.requireClassRegistration;
+    metaContextShareEnabled = builder.metaContextShareEnabled;
   }
 
   public Language getLanguage() {
@@ -121,6 +123,10 @@ public class Config implements Serializable {
 
   public boolean isSecureModeEnabled() {
     return secureModeEnabled;
+  }
+
+  public boolean isMetaContextShareEnabled() {
+    return metaContextShareEnabled;
   }
 
   public int getConfigHash() {

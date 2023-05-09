@@ -113,6 +113,10 @@ public class GenericType {
     return build(TypeToken.of(context), type, finalPredicate);
   }
 
+  public static GenericType build(TypeToken<?> type) {
+    return build(type.getType());
+  }
+
   public static GenericType build(Type type) {
     return build(type, defaultFinalPredicate);
   }
