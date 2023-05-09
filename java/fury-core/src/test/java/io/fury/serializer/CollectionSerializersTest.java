@@ -25,6 +25,7 @@ import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
 import io.fury.type.GenericType;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -114,5 +115,10 @@ public class CollectionSerializersTest extends FuryTestBase {
   @Test
   public void tesVectorSerializer() {
     serDeCheckSerializer(javaFury, new Vector<>(Arrays.asList("a", "b", "c")), "VectorSerializer");
+  }
+
+  @Test
+  public void tesArrayDequeSerializer() {
+    serDeCheckSerializer(javaFury, new ArrayDeque<>(Arrays.asList("a", "b", "c")), "ArrayDeque");
   }
 }
