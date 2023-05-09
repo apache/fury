@@ -38,6 +38,7 @@ import io.fury.serializer.ExternalizableSerializer;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.JdkProxySerializer;
 import io.fury.serializer.LocaleSerializer;
+import io.fury.serializer.MapSerializers;
 import io.fury.serializer.OptionalSerializers;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
@@ -234,6 +235,7 @@ public class ClassResolver {
     TimeSerializers.registerDefaultSerializers(fury);
     OptionalSerializers.registerDefaultSerializers(fury);
     CollectionSerializers.registerDefaultSerializers(fury);
+    MapSerializers.registerDefaultSerializers(fury);
     addDefaultSerializer(Locale.class, new LocaleSerializer(fury));
     addDefaultSerializer(
         JdkProxySerializer.ReplaceStub.class,
