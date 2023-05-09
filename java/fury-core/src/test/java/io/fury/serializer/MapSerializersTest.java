@@ -88,4 +88,9 @@ public class MapSerializersTest extends FuryTestBase {
     serDeCheckSerializer(javaFury, Collections.EMPTY_MAP, "EmptyMapSerializer");
     serDeCheckSerializer(javaFury, Collections.emptySortedMap(), "EmptySortedMap");
   }
+
+  @Test
+  public void testSingleMap() {
+    serDeCheckSerializer(javaFury, Collections.singletonMap("k", 1), "SingletonMap");
+  }
 }

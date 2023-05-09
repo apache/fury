@@ -909,6 +909,48 @@ public class MapSerializers {
     }
   }
 
+  public static final class SingletonMapSerializer extends MapSerializer<Map<?, ?>> {
+
+    public SingletonMapSerializer(Fury fury, Class<Map<?, ?>> cls) {
+      super(fury, cls, false, false);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Map<?, ?> value) {
+      Map.Entry entry = value.entrySet().iterator().next();
+      fury.writeReferencableToJava(buffer, entry.getKey());
+      fury.writeReferencableToJava(buffer, entry.getValue());
+    }
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return (short) -Type.MAP.getId();
+    }
+
+    @Override
+    public void crossLanguageWrite(MemoryBuffer buffer, Map<?, ?> value) {
+      buffer.writePositiveVarInt(1);
+      Map.Entry entry = value.entrySet().iterator().next();
+      fury.crossLanguageWriteReferencable(buffer, entry.getKey());
+      fury.crossLanguageWriteReferencable(buffer, entry.getValue());
+    }
+
+    @Override
+    public Map<?, ?> read(MemoryBuffer buffer) {
+      Object key = fury.readReferencableFromJava(buffer);
+      Object value = fury.readReferencableFromJava(buffer);
+      return Collections.singletonMap(key, value);
+    }
+
+    @Override
+    public Map<?, ?> crossLanguageRead(MemoryBuffer buffer) {
+      buffer.readPositiveVarInt();
+      Object key = fury.crossLanguageReadReferencable(buffer);
+      Object value = fury.crossLanguageReadReferencable(buffer);
+      return Collections.singletonMap(key, value);
+    }
+  }
+
   // TODO(chaokunyang) support ConcurrentSkipListMap.SubMap more efficiently.
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(HashMap.class, new HashMapSerializer(fury));
@@ -922,5 +964,9 @@ public class MapSerializers {
         Collections.emptySortedMap().getClass(),
         new EmptySortedMapSerializer(
             fury, (Class<SortedMap<?, ?>>) Collections.emptySortedMap().getClass()));
+    fury.registerSerializer(
+        Collections.singletonMap(null, null).getClass(),
+        new SingletonMapSerializer(
+            fury, (Class<Map<?, ?>>) Collections.singletonMap(null, null).getClass()));
   }
 }
