@@ -30,6 +30,7 @@ import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
+import io.fury.serializer.ExternalizableSerializer;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.JdkProxySerializer;
 import io.fury.serializer.LocaleSerializer;
@@ -559,6 +560,8 @@ public class ClassResolver {
         return TimeSerializers.ZoneIdSerializer.class;
       } else if (TimeZone.class.isAssignableFrom(cls)) {
         return TimeSerializers.TimeZoneSerializer.class;
+      } else if (Externalizable.class.isAssignableFrom(cls)) {
+        return ExternalizableSerializer.class;
       }
       if (requireJavaSerialization(cls)) {
         return getJavaSerializer(cls);
