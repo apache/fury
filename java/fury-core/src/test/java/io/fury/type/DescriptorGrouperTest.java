@@ -121,14 +121,14 @@ public class DescriptorGrouperTest {
     List<Class<?>> expected =
         Arrays.asList(
             double.class,
-            long.class,
             float.class,
-            int.class,
             char.class,
             short.class,
             boolean.class,
             byte.class,
-            void.class);
+            void.class,
+            long.class,
+            int.class);
     assertEquals(classes, expected);
   }
 
