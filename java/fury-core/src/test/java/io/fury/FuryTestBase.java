@@ -18,13 +18,20 @@
 
 package io.fury;
 
+import io.fury.io.ClassLoaderObjectInputStream;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.BufferObject;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -130,6 +137,41 @@ public abstract class FuryTestBase {
   public static <T> T serDe(Fury fury, T obj) {
     byte[] bytes = fury.serialize(obj);
     return (T) (fury.deserialize(bytes));
+  }
+
+  public static void roundCheck(Fury fury1, Fury fury2, Object o) {
+    roundCheck(fury1, fury2, o, Function.identity());
+  }
+
+  public static void roundCheck(
+      Fury fury1, Fury fury2, Object o, Function<Object, Object> compareHook) {
+    byte[] bytes1 = fury1.serialize(o);
+    Object o1 = fury2.deserialize(bytes1);
+    Assert.assertEquals(compareHook.apply(o1), compareHook.apply(o));
+    byte[] bytes2 = fury2.serialize(o1);
+    Object o2 = fury1.deserialize(bytes2);
+    Assert.assertEquals(compareHook.apply(o2), compareHook.apply(o));
+  }
+
+  public static byte[] jdkSerialize(Object o) {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
+      objectOutputStream.writeObject(o);
+      objectOutputStream.flush();
+      return bos.toByteArray();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static Object jdkDeserialize(byte[] data) {
+    try (ByteArrayInputStream bis = new ByteArrayInputStream(data);
+        ObjectInputStream objectInputStream =
+            new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), bis)) {
+      return objectInputStream.readObject();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public static Object serDeOutOfBand(AtomicInteger counter, Fury fury1, Fury fury2, Object obj) {
