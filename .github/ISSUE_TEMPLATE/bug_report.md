@@ -1,7 +1,7 @@
 ---
 name: Bug report
+about: Problems and issues with code of Fury
 title: "[<Fury component: Java|Python|C++|JavaScript|etc...>] "
-description: Problems and issues with code of Fury
 labels: [bug]
 assignees: ''
 
