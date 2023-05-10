@@ -49,6 +49,7 @@ import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
 import io.fury.serializer.SynchronizedSerializers;
 import io.fury.serializer.TimeSerializers;
+import io.fury.serializer.UnmodifiableSerializers;
 import io.fury.type.Descriptor;
 import io.fury.type.GenericType;
 import io.fury.type.TypeUtils;
@@ -255,6 +256,7 @@ public class ClassResolver {
         JdkProxySerializer.ReplaceStub.class,
         new JdkProxySerializer(fury, JdkProxySerializer.ReplaceStub.class));
     SynchronizedSerializers.registerSerializers(fury);
+    UnmodifiableSerializers.registerSerializers(fury);
   }
 
   private void addDefaultSerializer(Class<?> type, Class<? extends Serializer> serializerClass) {

@@ -257,6 +257,7 @@
             <exclude>**/type/Generics.java</exclude>
             <exclude>**/io/ClassLoaderObjectInputStream.java</exclude>
             <exclude>**/serializer/SynchronizedSerializers.java</exclude>
+            <exclude>**/serializer/UnmodifiableCollectionSerializer.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>
