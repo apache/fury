@@ -213,4 +213,6 @@ java/fury-core/src/main/java/io/fury/util/{FuryObjectMap/ObjectIntMap/IdentityMa
 java/fury-core/src/main/java/io/fury/type/Generics.java is modified from https://github.com/EsotericSoftware/kryo/blob/master/src/com/esotericsoftware/kryo/util/DefaultGenerics.java
 java/fury-core/src/main/java/io/fury/io/ClassLoaderObjectInputStream.java is copied from https://github.com/apache/commons-io/blob/master/src/main/java/org/apache/commons/io/input/ClassLoaderObjectInputStream.java
 java/fury-core/src/main/java/io/fury/serializer/SynchronizedSerializers.java is modified from https://github.com/magro/kryo-serializers/blob/master/src/main/java/de/javakaffee/kryoserializers/SynchronizedCollectionsSerializer.java
+java/fury-core/src/main/java/io/fury/serializer/UnmodifiableSerializers.java is modified from https://github.com/magro/kryo-serializers/blob/master/src/main/java/de/javakaffee/kryoserializers/UnmodifiableCollectionSerializer.java
+
 
