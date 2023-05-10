@@ -256,6 +256,7 @@
             <exclude>**/collection/LongMap.java</exclude>
             <exclude>**/type/Generics.java</exclude>
             <exclude>**/io/ClassLoaderObjectInputStream.java</exclude>
+            <exclude>**/serializer/SynchronizedSerializers.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>
