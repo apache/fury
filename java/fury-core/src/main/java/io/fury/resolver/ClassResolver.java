@@ -29,6 +29,7 @@ import io.fury.annotation.Internal;
 import io.fury.collection.IdentityMap;
 import io.fury.collection.LongMap;
 import io.fury.collection.ObjectMap;
+import io.fury.collection.Tuple2;
 import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
@@ -39,12 +40,14 @@ import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.JdkProxySerializer;
 import io.fury.serializer.LocaleSerializer;
 import io.fury.serializer.MapSerializers;
+import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.OptionalSerializers;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
 import io.fury.serializer.TimeSerializers;
+import io.fury.type.Descriptor;
 import io.fury.type.GenericType;
 import io.fury.type.TypeUtils;
 import io.fury.util.Functions;
@@ -54,6 +57,7 @@ import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.io.Externalizable;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
@@ -73,6 +77,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -177,6 +182,9 @@ public class ClassResolver {
     // avoid potential recursive call for seq codec generation.
     // ex. A->field1: B, B.field1: A
     private final Set<Class<?>> getClassCtx = new HashSet<>();
+    // TODO(chaokunyang) Better to  use soft reference, see ObjectStreamClass.
+    private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Field, Descriptor>>
+        descriptorsCache = new ConcurrentHashMap<>();
   }
 
   public ClassResolver(Fury fury) {
@@ -602,14 +610,24 @@ public class ClassResolver {
       if (requireJavaSerialization(cls)) {
         return getJavaSerializer(cls);
       }
-      // TODO(chaokunyang) Switch to other serializers when supported.
-      return getJavaSerializer(cls);
+      if (Functions.isLambda(cls)) {
+        // TODO(chaokunyang) switch to lambda serializer
+        return getJavaSerializer(cls);
+      }
+      return ObjectSerializer.class;
     }
   }
 
   public Class<? extends Serializer> getJavaSerializer(Class<?> clz) {
     // TODO(chaokunyang) add Fury ObjectStreamSerializer
     return JavaSerializer.class;
+  }
+
+  // thread safe
+  public SortedMap<Field, Descriptor> getAllDescriptorsMap(Class<?> clz, boolean searchParent) {
+    // when jit thread query this, it is already built by serialization main thread.
+    return extRegistry.descriptorsCache.computeIfAbsent(
+        Tuple2.of(clz, searchParent), t -> Descriptor.getAllDescriptorsMap(clz, searchParent));
   }
 
   /**
@@ -912,6 +930,20 @@ public class ClassResolver {
       final Class<?> cls = classInfo.cls;
       currentReadClass = cls;
       return cls;
+    }
+  }
+
+  // Called by fury Java serialization JIT.
+  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache) {
+    if (buffer.readByte() == USE_CLASS_VALUE) {
+      if (metaContextShareEnabled) {
+        throw new UnsupportedOperationException();
+      }
+      return readClassInfoFromBytes(buffer, classInfoCache);
+    } else {
+      // use classId
+      short classId = buffer.readShort();
+      return getClassInfo(classId);
     }
   }
 
