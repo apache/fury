@@ -38,6 +38,7 @@ import io.fury.serializer.CollectionSerializers;
 import io.fury.serializer.ExternalizableSerializer;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.JdkProxySerializer;
+import io.fury.serializer.LambdaSerializer;
 import io.fury.serializer.LocaleSerializer;
 import io.fury.serializer.MapSerializers;
 import io.fury.serializer.ObjectSerializer;
@@ -196,6 +197,7 @@ public class ClassResolver {
   }
 
   public void initialize() {
+    register(LambdaSerializer.ReplaceStub.class, LAMBDA_STUB_ID);
     register(JdkProxySerializer.ReplaceStub.class, JDK_PROXY_STUB_ID);
     registerWithCheck(void.class, PRIMITIVE_VOID_CLASS_ID);
     registerWithCheck(boolean.class, PRIMITIVE_BOOLEAN_CLASS_ID);
@@ -245,6 +247,9 @@ public class ClassResolver {
     CollectionSerializers.registerDefaultSerializers(fury);
     MapSerializers.registerDefaultSerializers(fury);
     addDefaultSerializer(Locale.class, new LocaleSerializer(fury));
+    addDefaultSerializer(
+        LambdaSerializer.ReplaceStub.class,
+        new LambdaSerializer(fury, LambdaSerializer.ReplaceStub.class));
     addDefaultSerializer(
         JdkProxySerializer.ReplaceStub.class,
         new JdkProxySerializer(fury, JdkProxySerializer.ReplaceStub.class));
@@ -592,6 +597,9 @@ public class ClassResolver {
       } else if (cls.isArray()) {
         Preconditions.checkArgument(!cls.getComponentType().isPrimitive());
         return ArraySerializers.ObjectArraySerializer.class;
+      }
+      if (Functions.isLambda(cls)) {
+        return LambdaSerializer.class;
       } else if (ReflectionUtils.isJdkProxy(cls)) {
         return JdkProxySerializer.class;
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {
@@ -608,10 +616,6 @@ public class ClassResolver {
         return ExternalizableSerializer.class;
       }
       if (requireJavaSerialization(cls)) {
-        return getJavaSerializer(cls);
-      }
-      if (Functions.isLambda(cls)) {
-        // TODO(chaokunyang) switch to lambda serializer
         return getJavaSerializer(cls);
       }
       return ObjectSerializer.class;
