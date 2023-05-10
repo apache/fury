@@ -56,6 +56,9 @@ public class Serializers {
       Fury fury, Class type, Class<? extends Serializer> serializerClass) {
     Serializer serializer = fury.getClassResolver().getSerializer(type, false);
     try {
+      if (serializerClass == ObjectSerializer.class) {
+        return new ObjectSerializer(fury, type);
+      }
       try {
         try {
           Constructor<? extends Serializer> ctr =

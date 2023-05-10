@@ -57,6 +57,7 @@ public class Config implements Serializable {
   private final boolean timeReferenceIgnored;
   private final boolean compressNumber;
   private final boolean compressString;
+  private final boolean checkClassVersion;
   private final boolean secureModeEnabled;
   private final boolean classRegistrationRequired;
   private final boolean metaContextShareEnabled;
@@ -70,6 +71,7 @@ public class Config implements Serializable {
     timeReferenceIgnored = !referenceTracking || builder.timeReferenceIgnored;
     compressNumber = builder.compressNumber;
     compressString = builder.compressString;
+    checkClassVersion = builder.checkClassVersion;
     secureModeEnabled = builder.secureModeEnabled;
     classRegistrationRequired = builder.requireClassRegistration;
     metaContextShareEnabled = builder.metaContextShareEnabled;
@@ -115,6 +117,10 @@ public class Config implements Serializable {
 
   public boolean compressString() {
     return compressString;
+  }
+
+  public boolean checkClassVersion() {
+    return checkClassVersion;
   }
 
   public boolean isClassRegistrationRequired() {

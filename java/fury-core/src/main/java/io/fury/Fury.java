@@ -983,6 +983,10 @@ public final class Fury {
     return config.isBasicTypesReferenceIgnored();
   }
 
+  public boolean checkClassVersion() {
+    return config.checkClassVersion();
+  }
+
   public Config getConfig() {
     return config;
   }
