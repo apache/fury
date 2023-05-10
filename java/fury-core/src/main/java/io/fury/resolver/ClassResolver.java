@@ -43,6 +43,7 @@ import io.fury.serializer.LocaleSerializer;
 import io.fury.serializer.MapSerializers;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.OptionalSerializers;
+import io.fury.serializer.ReplaceResolveSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.Serializers;
@@ -201,6 +202,7 @@ public class ClassResolver {
   public void initialize() {
     register(LambdaSerializer.ReplaceStub.class, LAMBDA_STUB_ID);
     register(JdkProxySerializer.ReplaceStub.class, JDK_PROXY_STUB_ID);
+    register(ReplaceResolveSerializer.ReplaceStub.class, REPLACE_STUB_ID);
     registerWithCheck(void.class, PRIMITIVE_VOID_CLASS_ID);
     registerWithCheck(boolean.class, PRIMITIVE_BOOLEAN_CLASS_ID);
     registerWithCheck(byte.class, PRIMITIVE_BYTE_CLASS_ID);
@@ -255,6 +257,9 @@ public class ClassResolver {
     addDefaultSerializer(
         JdkProxySerializer.ReplaceStub.class,
         new JdkProxySerializer(fury, JdkProxySerializer.ReplaceStub.class));
+    addDefaultSerializer(
+        ReplaceResolveSerializer.ReplaceStub.class,
+        new ReplaceResolveSerializer(fury, ReplaceResolveSerializer.ReplaceStub.class));
     SynchronizedSerializers.registerSerializers(fury);
     UnmodifiableSerializers.registerSerializers(fury);
   }
@@ -410,7 +415,7 @@ public class ClassResolver {
 
   /**
    * Return true if the class has jdk `writeReplace`/`readResolve` method defined, which we need to
-   * use ReplaceResolveSerializer.
+   * use {@link ReplaceResolveSerializer}.
    */
   public static boolean useReplaceResolveSerializer(Class<?> clz) {
     // FIXME class with `writeReplace` method defined should be Serializable,
@@ -552,7 +557,11 @@ public class ClassResolver {
       classInfo = registeredId2ClassInfo[classId];
       classInfo.serializer = serializer;
     } else {
-      classId = NO_CLASS_ID;
+      if (serializer instanceof ReplaceResolveSerializer) {
+        classId = REPLACE_STUB_ID;
+      } else {
+        classId = NO_CLASS_ID;
+      }
       classInfo = classInfoMap.get(type);
     }
     if (classInfo == null || typeTag != null || classId != classInfo.classId) {
@@ -630,7 +639,14 @@ public class ClassResolver {
     }
   }
 
+  public Class<? extends Serializer> getObjectSerializerClass(Class<?> cls) {
+    return ObjectSerializer.class;
+  }
+
   public Class<? extends Serializer> getJavaSerializer(Class<?> clz) {
+    if (useReplaceResolveSerializer(clz)) {
+      return ReplaceResolveSerializer.class;
+    }
     // TODO(chaokunyang) add Fury ObjectStreamSerializer
     return JavaSerializer.class;
   }
@@ -1128,6 +1144,10 @@ public class ClassResolver {
             return isFinal(getRawType(t));
           }
         });
+  }
+
+  public ClassInfo newClassInfo(Class<?> cls, Serializer<?> serializer, short classId) {
+    return new ClassInfo(this, cls, null, serializer, classId);
   }
 
   // Invoked by fury JIT.
