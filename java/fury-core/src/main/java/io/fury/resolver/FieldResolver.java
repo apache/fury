@@ -100,6 +100,7 @@ import java.util.stream.Collectors;
  * info is less than current field, then it will be a field not exists in current class and can be
  * skipped.
  *
+ * @see io.fury.serializer.CompatibleSerializer
  * @author chaokunyang
  */
 @SuppressWarnings({"rawtypes", "UnstableApiUsage"})
