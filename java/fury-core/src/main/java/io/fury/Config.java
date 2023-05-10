@@ -58,6 +58,7 @@ public class Config implements Serializable {
   private final boolean compressNumber;
   private final boolean compressString;
   private final boolean checkClassVersion;
+  private final Class<? extends Serializer> defaultJDKStreamSerializerType;
   private final boolean secureModeEnabled;
   private final boolean classRegistrationRequired;
   private final boolean metaContextShareEnabled;
@@ -72,6 +73,7 @@ public class Config implements Serializable {
     compressNumber = builder.compressNumber;
     compressString = builder.compressString;
     checkClassVersion = builder.checkClassVersion;
+    defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
     secureModeEnabled = builder.secureModeEnabled;
     classRegistrationRequired = builder.requireClassRegistration;
     metaContextShareEnabled = builder.metaContextShareEnabled;
@@ -121,6 +123,14 @@ public class Config implements Serializable {
 
   public boolean checkClassVersion() {
     return checkClassVersion;
+  }
+
+  /**
+   * Returns default serializer type for class which implements jdk serialization method such as
+   * `writeObject/readObject`.
+   */
+  public Class<? extends Serializer> getDefaultJDKStreamSerializerType() {
+    return defaultJDKStreamSerializerType;
   }
 
   public boolean isClassRegistrationRequired() {
