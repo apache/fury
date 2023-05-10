@@ -186,6 +186,7 @@ public class ClassResolver {
     // avoid potential recursive call for seq codec generation.
     // ex. A->field1: B, B.field1: A
     private final Set<Class<?>> getClassCtx = new HashSet<>();
+    private final Map<Class<?>, FieldResolver> fieldResolverMap = new HashMap<>();
     // TODO(chaokunyang) Better to  use soft reference, see ObjectStreamClass.
     private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Field, Descriptor>>
         descriptorsCache = new ConcurrentHashMap<>();
@@ -649,6 +650,18 @@ public class ClassResolver {
     }
     // TODO(chaokunyang) add Fury ObjectStreamSerializer
     return JavaSerializer.class;
+  }
+
+  public FieldResolver getFieldResolver(Class<?> cls) {
+    // can't use computeIfAbsent, since there may be recursive muiltple
+    // `getFieldResolver` thus multiple updates, which cause concurrent
+    // modification exeption.
+    FieldResolver fieldResolver = extRegistry.fieldResolverMap.get(cls);
+    if (fieldResolver == null) {
+      fieldResolver = FieldResolver.of(fury, cls);
+      extRegistry.fieldResolverMap.put(cls, fieldResolver);
+    }
+    return fieldResolver;
   }
 
   // thread safe
