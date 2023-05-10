@@ -46,7 +46,7 @@ import org.slf4j.Logger;
 /** Serializer for synchronized Collections and Maps created via Collections. */
 // modified from
 // https://github.com/magro/kryo-serializers/blob/master/src/main/java/de/javakaffee/kryoserializers/SynchronizedCollectionsSerializer.java
-// but faster because use unsafe instead of reflection.
+// but faster because of using unsafe instead of reflection.
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SynchronizedSerializers {
   private static final Logger LOG = LoggerFactory.getLogger(SynchronizedSerializers.class);
