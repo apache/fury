@@ -33,7 +33,6 @@ import io.fury.collection.Tuple2;
 import io.fury.exception.ClassNotCompatibleException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.CollectionSerializers;
-import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.MapSerializers;
 import io.fury.serializer.Serializers;
 import io.fury.type.Descriptor;
@@ -101,7 +100,6 @@ import java.util.stream.Collectors;
  * info is less than current field, then it will be a field not exists in current class and can be
  * skipped.
  *
- * @see CompatibleSerializer
  * @author chaokunyang
  */
 @SuppressWarnings({"rawtypes", "UnstableApiUsage"})
