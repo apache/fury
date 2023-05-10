@@ -81,7 +81,6 @@ public class DescriptorGrouper {
         return -1;
       };
 
-  // TODO(chaokunyang) add comparator tests.
   /** Comparator based on field type, name and declaring class. */
   public static final Comparator<Descriptor> COMPARATOR_BY_TYPE_AND_NAME =
       (d1, d2) -> {
