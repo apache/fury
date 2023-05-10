@@ -1,8 +1,8 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
+title: "[<Fury component: Java|Python|C++|JavaScript|etc...>] "
+description: Problems and issues with code of Fury
+labels: [bug]
 assignees: ''
 
 ---
