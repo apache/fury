@@ -32,6 +32,7 @@ import io.fury.resolver.SerializationContext;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferCallback;
 import io.fury.serializer.BufferObject;
+import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.OpaqueObjects;
 import io.fury.serializer.Serializer;
@@ -1035,6 +1036,7 @@ public final class Fury {
     ClassLoader classLoader;
     boolean compressNumber = false;
     boolean compressString = true;
+    CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
     // TODO(chaokunyang) switch to object stream serializer.
     Class<? extends Serializer> defaultJDKStreamSerializerType = JavaSerializer.class;
     boolean secureModeEnabled = true;
@@ -1076,6 +1078,11 @@ public final class Fury {
 
     public FuryBuilder withClassLoader(ClassLoader classLoader) {
       this.classLoader = classLoader;
+      return this;
+    }
+
+    public FuryBuilder withCompatibleMode(CompatibleMode compatibleMode) {
+      this.compatibleMode = compatibleMode;
       return this;
     }
 

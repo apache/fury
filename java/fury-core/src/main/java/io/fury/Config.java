@@ -36,6 +36,7 @@
 
 package io.fury;
 
+import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.TimeSerializers;
 import io.fury.util.MurmurHash3;
@@ -58,6 +59,7 @@ public class Config implements Serializable {
   private final boolean compressNumber;
   private final boolean compressString;
   private final boolean checkClassVersion;
+  private final CompatibleMode compatibleMode;
   private final Class<? extends Serializer> defaultJDKStreamSerializerType;
   private final boolean secureModeEnabled;
   private final boolean classRegistrationRequired;
@@ -73,6 +75,7 @@ public class Config implements Serializable {
     compressNumber = builder.compressNumber;
     compressString = builder.compressString;
     checkClassVersion = builder.checkClassVersion;
+    compatibleMode = builder.compatibleMode;
     defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
     secureModeEnabled = builder.secureModeEnabled;
     classRegistrationRequired = builder.requireClassRegistration;
@@ -123,6 +126,10 @@ public class Config implements Serializable {
 
   public boolean checkClassVersion() {
     return checkClassVersion;
+  }
+
+  public CompatibleMode getCompatibleMode() {
+    return compatibleMode;
   }
 
   /**
