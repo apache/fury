@@ -80,6 +80,39 @@ public class Foo implements Serializable {
     return loadFooClass(pkg, code);
   }
 
+  public static Class<?> createCompatibleClass2() {
+    String pkg = Foo.class.getPackage().getName();
+    String code =
+        ""
+            + "package "
+            + pkg
+            + ";\n"
+            + "public class Foo {\n"
+            + "  long f13;\n"
+            + "  long f14;\n"
+            + "  long f15;\n"
+            + "}";
+    return loadFooClass(pkg, code);
+  }
+
+  public static Class<?> createCompatibleClass3() {
+    String pkg = Foo.class.getPackage().getName();
+    String code =
+        ""
+            + "package "
+            + pkg
+            + ";\n"
+            + "public class Foo {\n"
+            + "  int f2;\n"
+            + "  long f4;\n"
+            + "  float f5;\n"
+            + "  double f6;\n"
+            + "  long f8;\n"
+            + "  long f14;\n"
+            + "}";
+    return loadFooClass(pkg, code);
+  }
+
   private static Class<?> loadFooClass(String pkg, String code) {
     SimpleCompiler compiler = new SimpleCompiler();
     compiler.setParentClassLoader(Foo.class.getClassLoader().getParent());

@@ -35,6 +35,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
 import io.fury.serializer.CollectionSerializers;
+import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.ExternalizableSerializer;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.JdkProxySerializer;
@@ -636,12 +637,24 @@ public class ClassResolver {
       if (requireJavaSerialization(cls)) {
         return getJavaSerializer(cls);
       }
-      return ObjectSerializer.class;
+      return getObjectSerializerClass(cls);
     }
   }
 
   public Class<? extends Serializer> getObjectSerializerClass(Class<?> cls) {
-    return ObjectSerializer.class;
+    if (fury.getLanguage() != Language.JAVA) {
+      LOG.warn("Class {} isn't supported for cross-language serialization.", cls);
+    }
+    LOG.debug("Object of type {} can't be serialized by jit", cls);
+    switch (fury.getConfig().getCompatibleMode()) {
+      case SCHEMA_CONSISTENT:
+        return ObjectSerializer.class;
+      case COMPATIBLE:
+        return CompatibleSerializer.class;
+      default:
+        throw new UnsupportedOperationException(
+            String.format("Unsupported mode %s", fury.getConfig().getCompatibleMode()));
+    }
   }
 
   public Class<? extends Serializer> getJavaSerializer(Class<?> clz) {
