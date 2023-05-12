@@ -34,6 +34,7 @@ import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
+import io.fury.serializer.ChildContainerSerializers;
 import io.fury.serializer.CollectionSerializers;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.ExternalizableSerializer;
@@ -629,6 +630,38 @@ public class ClassResolver {
         return TimeSerializers.TimeZoneSerializer.class;
       } else if (Externalizable.class.isAssignableFrom(cls)) {
         return ExternalizableSerializer.class;
+      }
+      if (Collection.class.isAssignableFrom(cls)) {
+        // Serializer of common collection such as ArrayList/LinkedList should be registered
+        // already.
+        Class<? extends Serializer> serializerClass =
+            ChildContainerSerializers.getCollectionSerializerClass(cls);
+        if (serializerClass != null) {
+          return serializerClass;
+        }
+        if (requireJavaSerialization(cls) || useReplaceResolveSerializer(cls)) {
+          return getJavaSerializer(cls);
+        }
+        if (fury.getLanguage() == Language.JAVA) {
+          return getJavaSerializer(cls);
+        } else {
+          return CollectionSerializers.CollectionSerializer.class;
+        }
+      } else if (Map.class.isAssignableFrom(cls)) {
+        // Serializer of common map such as HashMap/LinkedHashMap should be registered already.
+        Class<? extends Serializer> serializerClass =
+            ChildContainerSerializers.getMapSerializerClass(cls);
+        if (serializerClass != null) {
+          return serializerClass;
+        }
+        if (requireJavaSerialization(cls) || useReplaceResolveSerializer(cls)) {
+          return getJavaSerializer(cls);
+        }
+        if (fury.getLanguage() == Language.JAVA) {
+          return getJavaSerializer(cls);
+        } else {
+          return MapSerializers.MapSerializer.class;
+        }
       }
       if (useReplaceResolveSerializer(cls)) {
         // TODO(chaokunyang) switch to ReplaceResolveSerializer
