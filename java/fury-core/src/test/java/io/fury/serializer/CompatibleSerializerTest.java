@@ -432,7 +432,7 @@ public class CompatibleSerializerTest extends FuryTestBase {
                   new URL[] {Paths.get(".").toUri().toURL()}, Struct.class.getClassLoader())
               .loadClass(cls.getName());
       Files.deleteIfExists(path);
-      Files.deleteIfExists(Paths.get(pkg.replace(".", "/") + "." + cls.getSimpleName() + ".class"));
+      Files.deleteIfExists(Paths.get(pkg.replace(".", "/") + "/" + cls.getSimpleName() + ".class"));
       Assert.assertNotEquals(clz, cls);
       return clz;
     } catch (Exception e) {
@@ -465,7 +465,7 @@ public class CompatibleSerializerTest extends FuryTestBase {
                   new URL[] {Paths.get(".").toUri().toURL()}, Struct.class.getClassLoader())
               .loadClass(pkg + "." + className);
       Files.deleteIfExists(path);
-      Files.deleteIfExists(Paths.get(pkg.replace(".", "/") + "." + className + ".class"));
+      Files.deleteIfExists(Paths.get(pkg.replace(".", "/") + "/" + className + ".class"));
       return clz;
     } catch (Exception e) {
       throw new RuntimeException(e);
