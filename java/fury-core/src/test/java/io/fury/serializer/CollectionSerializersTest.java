@@ -18,6 +18,7 @@
 
 package io.fury.serializer;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
@@ -25,6 +26,7 @@ import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
 import io.fury.type.GenericType;
+import java.util.AbstractCollection;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +34,7 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -174,5 +177,50 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertEquals(
         javaFury.getClassResolver().getSerializerClass(PriorityQueue.class),
         CollectionSerializers.PriorityQueueSerializer.class);
+  }
+
+  public static class TestClassForDefaultCollectionSerializer extends AbstractCollection<String> {
+    private final List<String> data = new ArrayList<>();
+
+    @Override
+    public Iterator<String> iterator() {
+      return data.iterator();
+    }
+
+    @Override
+    public int size() {
+      return data.size();
+    }
+
+    @Override
+    public boolean add(String s) {
+      return data.add(s);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      TestClassForDefaultCollectionSerializer strings = (TestClassForDefaultCollectionSerializer) o;
+      return Objects.equal(data, strings.data);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(data);
+    }
+  }
+
+  @Test
+  public void testDefaultCollectionSerializer() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    TestClassForDefaultCollectionSerializer collection =
+        new TestClassForDefaultCollectionSerializer();
+    collection.add("a");
+    collection.add("b");
+    serDeCheck(fury, collection);
+    Assert.assertSame(
+        fury.getClassResolver().getSerializerClass(TestClassForDefaultCollectionSerializer.class),
+        CollectionSerializers.DefaultJavaCollectionSerializer.class);
   }
 }

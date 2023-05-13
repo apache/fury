@@ -643,7 +643,7 @@ public class ClassResolver {
           return getJavaSerializer(cls);
         }
         if (fury.getLanguage() == Language.JAVA) {
-          return getJavaSerializer(cls);
+          return CollectionSerializers.DefaultJavaCollectionSerializer.class;
         } else {
           return CollectionSerializers.CollectionSerializer.class;
         }
