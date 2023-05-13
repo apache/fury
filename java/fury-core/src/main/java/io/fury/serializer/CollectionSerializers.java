@@ -23,6 +23,7 @@ import static io.fury.type.TypeUtils.getRawType;
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
+import io.fury.Language;
 import io.fury.exception.FuryException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfoCache;
@@ -819,6 +820,39 @@ public class CollectionSerializers {
       PriorityQueue queue = new PriorityQueue(comparator);
       fury.getReferenceResolver().reference(queue);
       return queue;
+    }
+  }
+
+  /**
+   * Java serializer to serialize all fields of a collection implementation. Note that this
+   * serializer won't use element generics and doesn't support JIT, performance won't be the best,
+   * but the correctness can be ensured.
+   */
+  public static final class DefaultJavaCollectionSerializer<T extends Collection>
+      extends CollectionSerializer<T> {
+    private Serializer<T> dataSerializer;
+
+    public DefaultJavaCollectionSerializer(Fury fury, Class<T> cls) {
+      super(fury, cls, false, false);
+      Preconditions.checkArgument(
+          fury.getLanguage() == Language.JAVA,
+          "Python default collection serializer should use " + CollectionSerializer.class);
+      fury.getClassResolver().setSerializer(cls, this);
+      Class<? extends Serializer> serializerClass =
+          fury.getClassResolver().getObjectSerializerClass(cls);
+      dataSerializer = Serializers.newSerializer(fury, cls, serializerClass);
+      // No need to set object serializer to this, it will be set in class resolver later.
+      // fury.getClassResolver().setSerializer(cls, this);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, T value) {
+      dataSerializer.write(buffer, value);
+    }
+
+    @Override
+    public T read(MemoryBuffer buffer) {
+      return dataSerializer.read(buffer);
     }
   }
 
