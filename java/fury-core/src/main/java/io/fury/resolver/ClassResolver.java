@@ -640,7 +640,7 @@ public class ClassResolver {
           return serializerClass;
         }
         if (requireJavaSerialization(cls) || useReplaceResolveSerializer(cls)) {
-          return getJavaSerializer(cls);
+          return CollectionSerializers.JDKCompatibleCollectionSerializer.class;
         }
         if (fury.getLanguage() == Language.JAVA) {
           return CollectionSerializers.DefaultJavaCollectionSerializer.class;
@@ -691,6 +691,9 @@ public class ClassResolver {
   }
 
   public Class<? extends Serializer> getJavaSerializer(Class<?> clz) {
+    if (Collection.class.isAssignableFrom(clz)) {
+      return CollectionSerializers.JDKCompatibleCollectionSerializer.class;
+    }
     if (useReplaceResolveSerializer(clz)) {
       return ReplaceResolveSerializer.class;
     }

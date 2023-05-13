@@ -856,6 +856,34 @@ public class CollectionSerializers {
     }
   }
 
+  /** Collection serializer for class with JDK custom serialization methods defined. */
+  public static final class JDKCompatibleCollectionSerializer<T extends Collection>
+      extends CollectionSerializer<T> {
+    private final Serializer serializer;
+
+    public JDKCompatibleCollectionSerializer(Fury fury, Class<T> cls) {
+      super(fury, cls, false, false);
+      // Collection which defined `writeReplace` may use this serializer, so check replace/resolve
+      // is necessary.
+      Class<? extends Serializer> serializerType =
+          ClassResolver.useReplaceResolveSerializer(cls)
+              ? ReplaceResolveSerializer.class
+              : fury.getDefaultJDKStreamSerializerType();
+      serializer = Serializers.newSerializer(fury, cls, serializerType);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public T read(MemoryBuffer buffer) {
+      return (T) serializer.read(buffer);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, T value) {
+      serializer.write(buffer, value);
+    }
+  }
+
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(ArrayList.class, new ArrayListSerializer(fury));
     Class arrayAsListClass = Arrays.asList(1, 2).getClass();

@@ -1054,6 +1054,33 @@ public class MapSerializers {
     }
   }
 
+  /** Map serializer for class with JDK custom serialization methods defined. */
+  public static class JDKCompatibleMapSerializer<T extends Map> extends MapSerializer<T> {
+    private final Serializer serializer;
+
+    public JDKCompatibleMapSerializer(Fury fury, Class<T> cls) {
+      super(fury, cls, false, false);
+      // Map which defined `writeReplace` may use this serializer, so check replace/resolve
+      // is necessary.
+      Class<? extends Serializer> serializerType =
+          ClassResolver.useReplaceResolveSerializer(cls)
+              ? ReplaceResolveSerializer.class
+              : fury.getDefaultJDKStreamSerializerType();
+      serializer = Serializers.newSerializer(fury, cls, serializerType);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public T read(MemoryBuffer buffer) {
+      return (T) serializer.read(buffer);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, T value) {
+      serializer.write(buffer, value);
+    }
+  }
+
   // TODO(chaokunyang) support ConcurrentSkipListMap.SubMap more efficiently.
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(HashMap.class, new HashMapSerializer(fury));
