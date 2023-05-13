@@ -18,11 +18,16 @@
 
 package io.fury.serializer;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
+import io.fury.memory.MemoryBuffer;
+import io.fury.memory.MemoryUtils;
 import io.fury.type.GenericType;
 import java.util.AbstractMap;
 import java.util.Collections;
@@ -170,5 +175,30 @@ public class MapSerializersTest extends FuryTestBase {
     Assert.assertSame(
         fury.getClassResolver().getSerializerClass(TestClassForDefaultMapSerializer.class),
         MapSerializers.DefaultJavaMapSerializer.class);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void testJDKCompatibleMapSerialization() {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .disableSecureMode()
+            .withReferenceTracking(false)
+            .build();
+    ImmutableMap<String, Integer> set = ImmutableMap.of("a", 1, "b", 2);
+    Class<? extends ImmutableMap> cls = set.getClass();
+    MemoryBuffer buffer = MemoryUtils.buffer(32);
+    MapSerializers.JDKCompatibleMapSerializer javaSerializer =
+        new MapSerializers.JDKCompatibleMapSerializer(fury, cls);
+    javaSerializer.write(buffer, set);
+    Object read = javaSerializer.read(buffer);
+    assertEquals(set, read);
+
+    assertSame(
+        fury.getClassResolver().getSerializer(cls).getClass(), ReplaceResolveSerializer.class);
+    buffer.writerIndex(0);
+    buffer.readerIndex(0);
+    assertEquals(set, fury.deserialize(fury.serialize(buffer, set)));
   }
 }
