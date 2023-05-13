@@ -20,8 +20,10 @@ package io.fury.serializer;
 
 import static io.fury.type.TypeUtils.getRawType;
 
+import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
+import io.fury.Language;
 import io.fury.collection.IdentityMap;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
@@ -1017,6 +1019,38 @@ public class MapSerializers {
     public EnumMap newMap(MemoryBuffer buffer, int numElements) {
       Class<?> keyType = fury.getClassResolver().readClassAndUpdateCache(buffer);
       return new EnumMap(keyType);
+    }
+  }
+
+  /**
+   * Java serializer to serialize all fields of a map implementation. Note that this serializer
+   * won't use element generics and doesn't support JIT, performance won't be the best, but the
+   * correctness can be ensured.
+   */
+  public static final class DefaultJavaMapSerializer<T extends Map> extends MapSerializer<T> {
+    private Serializer<T> dataSerializer;
+
+    public DefaultJavaMapSerializer(Fury fury, Class<T> cls) {
+      super(fury, cls, false, false);
+      Preconditions.checkArgument(
+          fury.getLanguage() == Language.JAVA,
+          "Python default map serializer should use " + MapSerializer.class);
+      fury.getClassResolver().setSerializer(cls, this);
+      Class<? extends Serializer> serializerClass =
+          fury.getClassResolver().getObjectSerializerClass(cls);
+      dataSerializer = Serializers.newSerializer(fury, cls, serializerClass);
+      // No need to set object serializer to this, it will be set in class resolver later.
+      // fury.getClassResolver().setSerializer(cls, this);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, T value) {
+      dataSerializer.write(buffer, value);
+    }
+
+    @Override
+    public T read(MemoryBuffer buffer) {
+      return dataSerializer.read(buffer);
     }
   }
 

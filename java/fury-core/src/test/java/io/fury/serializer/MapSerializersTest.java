@@ -24,11 +24,14 @@ import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
 import io.fury.type.GenericType;
+import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -114,5 +117,58 @@ public class MapSerializersTest extends FuryTestBase {
     Assert.assertEquals(
         javaFury.getClassResolver().getSerializerClass(enumMap.getClass()),
         MapSerializers.EnumMapSerializer.class);
+  }
+
+  public static class TestClassForDefaultMapSerializer extends AbstractMap<String, Object> {
+    private final Set<Entry<String, Object>> data = new HashSet<>();
+
+    @Override
+    public Set<Entry<String, Object>> entrySet() {
+      return data;
+    }
+
+    public static class MapEntry implements Entry<String, Object> {
+      private final String k;
+      private Object v;
+
+      public MapEntry(String k, Object v) {
+        this.k = k;
+        this.v = v;
+      }
+
+      @Override
+      public String getKey() {
+        return k;
+      }
+
+      @Override
+      public Object getValue() {
+        return v;
+      }
+
+      @Override
+      public Object setValue(Object value) {
+        Object o = v;
+        v = value;
+        return o;
+      }
+    }
+
+    @Override
+    public Object put(String key, Object value) {
+      return data.add(new TestClassForDefaultMapSerializer.MapEntry(key, value));
+    }
+  }
+
+  @Test
+  public void testDefaultMapSerializer() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    TestClassForDefaultMapSerializer map = new TestClassForDefaultMapSerializer();
+    map.put("a", 1);
+    map.put("b", 2);
+    serDeCheck(fury, map);
+    Assert.assertSame(
+        fury.getClassResolver().getSerializerClass(TestClassForDefaultMapSerializer.class),
+        MapSerializers.DefaultJavaMapSerializer.class);
   }
 }

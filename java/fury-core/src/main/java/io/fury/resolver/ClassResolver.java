@@ -658,7 +658,7 @@ public class ClassResolver {
           return getJavaSerializer(cls);
         }
         if (fury.getLanguage() == Language.JAVA) {
-          return getJavaSerializer(cls);
+          return MapSerializers.DefaultJavaMapSerializer.class;
         } else {
           return MapSerializers.MapSerializer.class;
         }
