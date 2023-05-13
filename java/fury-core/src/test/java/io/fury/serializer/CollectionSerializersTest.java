@@ -18,6 +18,9 @@
 
 package io.fury.serializer;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
+
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -25,6 +28,8 @@ import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
+import io.fury.memory.MemoryBuffer;
+import io.fury.memory.MemoryUtils;
 import io.fury.type.GenericType;
 import java.util.AbstractCollection;
 import java.util.ArrayDeque;
@@ -222,5 +227,30 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertSame(
         fury.getClassResolver().getSerializerClass(TestClassForDefaultCollectionSerializer.class),
         CollectionSerializers.DefaultJavaCollectionSerializer.class);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void testJavaSerialization() {
+    ImmutableSet<Integer> set = ImmutableSet.of(1, 2, 3);
+    Class<? extends ImmutableSet> setClass = set.getClass();
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(false)
+            .disableSecureMode()
+            .build();
+    MemoryBuffer buffer = MemoryUtils.buffer(32);
+    CollectionSerializers.JDKCompatibleCollectionSerializer javaSerializer =
+        new CollectionSerializers.JDKCompatibleCollectionSerializer(fury, setClass);
+    javaSerializer.write(buffer, set);
+    Object read = javaSerializer.read(buffer);
+    assertEquals(set, read);
+
+    assertSame(
+        fury.getClassResolver().getSerializer(setClass).getClass(), ReplaceResolveSerializer.class);
+    buffer.writerIndex(0);
+    buffer.readerIndex(0);
+    assertEquals(set, fury.deserialize(fury.serialize(buffer, set)));
   }
 }

@@ -98,10 +98,10 @@ public class ChildContainerSerializersTest extends FuryTestBase {
             }
           };
       // innerList captures outer this.
-      // serDeCheck(fury, innerList);
-      // Assert.assertEquals(
-      //     fury.getClassResolver().getSerializer(innerList.getClass()).getClass(),
-      //     CollectionSerializers.CollectionJavaSerializer.class);
+      // serDeCheck(fury, innerList); // needs ObjectStreamSerializer
+      Assert.assertEquals(
+          fury.getClassResolver().getSerializer(innerList.getClass()).getClass(),
+          CollectionSerializers.JDKCompatibleCollectionSerializer.class);
     }
     {
       ChildLinkedList<Integer> list = new ChildLinkedList<>();
