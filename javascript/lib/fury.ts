@@ -1,5 +1,5 @@
 import ClassResolver from './classResolver';
-import { BinaryView, BinaryWriter } from './dataView';
+import { BinaryReader, BinaryWriter } from './io';
 import { ReferenceResolver } from './referenceResolver';
 import { ConfigFlags, InternalSerializerType, Serializer, RefFlags, GenericReader, SerializerRead } from './type';
 
@@ -7,7 +7,7 @@ import { ConfigFlags, InternalSerializerType, Serializer, RefFlags, GenericReade
 export default () => {
     const classResolver = new ClassResolver();
     const referenceResolver = ReferenceResolver();
-    const binaryView = BinaryView();
+    const binaryView = BinaryReader();
     const binaryWriter = BinaryWriter();
 
     const fury = {
@@ -101,7 +101,7 @@ export default () => {
         }
     }
 
-    function unmarshal<T = any>(bytes: Buffer): T | null {
+    function unmarshal<T = any>(bytes: Uint8Array): T | null {
         referenceResolver.reset();
         classResolver.reset();
         binaryView.reset(bytes);

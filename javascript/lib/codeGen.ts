@@ -1,4 +1,5 @@
 import { InternalSerializerType, MaxInt32, RefFlags, Serializer, SerializerRead, Fury } from './type';
+import { utf8Encoder } from './util';
 
 
 export interface TypeDefinition {
@@ -14,7 +15,7 @@ export interface TypeDefinition {
 }
 
 export const computeStringHash = (str: string) => {
-    const bytes = Buffer.from(str, 'utf-8');
+    const bytes = utf8Encoder.encode(str);
     let hash = 17
     bytes.forEach(b => {
         hash = hash * 31 + b

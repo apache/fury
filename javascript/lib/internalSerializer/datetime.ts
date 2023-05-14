@@ -14,7 +14,7 @@ export const timestampSerializer = (fury: Fury) => {
         write: (v: Date) => {
             writeInt8(RefFlags.NotNullValueFlag);
             writeInt16(InternalSerializerType.TIMESTAMP);
-            writeInt64(v.getTime());
+            writeInt64(BigInt(v.getTime()));
         }
     }
 }

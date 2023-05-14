@@ -1,12 +1,17 @@
 import { LATIN1, UTF8 } from "./type";
+import { latin1Decoder, utf8Decoder, utf8Encoder } from "./util";
 
 
 export const BinaryWriter = () => {
     let cursor = 0;
-    let dataView = Buffer.allocUnsafe(Buffer.poolSize / 2); // Buffer.poolSize is 8k, it'll fit it in to a pre-allocated 8KB chunk of memory.
+    let arrayBuffer = new Uint8Array(1024);
+    let dataView = new DataView(new Uint8Array(1024));
     function reserves(len: number) {
         if (dataView.byteLength - (cursor + 1) <= len) {
-            dataView = Buffer.concat([dataView, Buffer.allocUnsafe(dataView.byteLength)]);
+            // resize the arrayBuffer
+            let newArrayBuffer = new Uint8Array(dataView.byteLength * 2);
+            newArrayBuffer.set(arrayBuffer);
+            dataView = new DataView(arrayBuffer);
         }
     }
     function reset() {
@@ -22,118 +27,118 @@ export const BinaryWriter = () => {
 
     function writeUInt8(v: number) {
         reserves(1);
-        return dataView.writeUint8(v, move(1));
+        return dataView.setUint8(move(1), v);
     }
 
     function writeInt8(v: number) {
         reserves(1);
-        return dataView.writeInt8(v, move(1));
+        return dataView.setInt8(move(1), v);
     }
 
     function writeUInt16(v: number) {
         reserves(2);
-        return dataView.writeUInt16LE(v, move(2));
+        return dataView.setUint16(move(2), v, true);
     }
 
     function writeInt16(v: number) {
         reserves(2);
-        return dataView.writeInt16LE(v, move(2));
+        return dataView.setInt16(move(2), v, true);
     }
 
     function skip(len: number) {
         reserves(len);
-        dataView.fill(0, move(len), cursor);
+        move(len);
     }
 
     function writeInt32(v: number) {
         reserves(4);
-        return dataView.writeInt32LE(v, move(4));
+        return dataView.setInt32(move(4), v, true);
     }
 
     function writeUInt32(v: number) {
         reserves(4);
-        return dataView.writeUInt32LE(v, move(4));
+        return dataView.setUint32(move(4), v, true);
     }
 
-    function writeInt64(v: bigint | number) {
+    function writeInt64(v: bigint) {
         reserves(8);
-        return dataView.writeBigInt64LE(BigInt(v), move(8));
+        return dataView.setBigInt64(move(8), v, true);
     }
 
     function writeFloat(v: number) {
         reserves(4);
-        return dataView.writeFloatLE(v, move(4));
+        return dataView.setFloat32(move(4), v, true);
     }
 
     function writeDouble(v: number) {
         reserves(8);
-        return dataView.writeDoubleLE(v, move(8));
+        return dataView.setFloat64(move(8), v, true);
     }
 
-    function writeBuffer(v: Buffer) {
+    function writeBuffer(v: Uint8Array) {
         const len = v.byteLength;
         reserves(len);
-        v.copy(dataView, move(len));
+        arrayBuffer.set(v, move(len));
     }
 
-    function writeUInt64(v: bigint | number) {
+    function writeUInt64(v: bigint) {
         reserves(8);
-        return dataView.writeBigUInt64LE(BigInt(v), move(8));
+        return dataView.setBigUint64(move(8), v, true);
     }
 
-    function writeStringOfInt16(v: string) {
-        const len = Buffer.byteLength(v, 'utf8');
+    function writeUtf8StringOfInt16(v: string) {
+        const ab = utf8Encoder.encode(v);
+        const len = ab.byteLength;
         writeInt16(len);
         reserves(len);
-        return dataView.write(v, move(len), 'utf8');
+        arrayBuffer.set(ab, move(len));
     }
 
     function writeStringOfVarInt32(v: string) {
-        const len = Buffer.byteLength(v, 'utf8');
+        const ab = utf8Encoder.encode(v);
+        const len = ab.byteLength;
         // type and len
         reserves(len + 6);
         const isLatin1 = v.length === len;
-        dataView.writeUint8(isLatin1 ? LATIN1 : UTF8, move(1));
+        // write type
+        dataView.setUint8(move(1), isLatin1 ? LATIN1 : UTF8);
         writeVarInt32(len);
-        if (isLatin1) {
-            return dataView.write(v, move(len), 'latin1');
-        }
-        return dataView.write(v, move(len), 'utf8');
+        arrayBuffer.set(ab, move(len));
     }
 
     function writeVarInt32(value: number) {
         reserves(5);
         if (value >> 7 == 0) {
-            dataView[cursor] = value
+            arrayBuffer[cursor] = value
             move(1)
             return 1
         }
         if (value >> 14 == 0) {
-            dataView[cursor] = (value & 0x7F) | 0x80
-            dataView[cursor + 1] = value >> 7
+            arrayBuffer[cursor] = (value & 0x7F) | 0x80
+            arrayBuffer[cursor + 1] = value >> 7
             move(2)
             return 2
         }
         if (value >> 21 == 0) {
-            dataView[cursor] = (value & 0x7F) | 0x80
-            dataView[cursor + 1] = value >> 7 | 0x80
-            dataView[cursor + 2] = value >> 14
+            arrayBuffer[cursor] = (value & 0x7F) | 0x80
+            arrayBuffer[cursor + 1] = value >> 7 | 0x80
+            arrayBuffer[cursor + 2] = value >> 14
             move(3)
             return 3
         }
         if (value >> 28 == 0) {
-            dataView[cursor] = (value & 0x7F) | 0x80
-            dataView[cursor + 1] = value >> 7 | 0x80
-            dataView[cursor + 2] = value >> 14 | 0x80
-            dataView[cursor + 3] = value >> 21
+            arrayBuffer[cursor] = (value & 0x7F) | 0x80
+            arrayBuffer[cursor + 1] = value >> 7 | 0x80
+            arrayBuffer[cursor + 2] = value >> 14 | 0x80
+            arrayBuffer[cursor + 3] = value >> 21
             move(4)
             return 4
         }
-        dataView[cursor] = (value & 0x7F) | 0x80
-        dataView[cursor + 1] = value >> 7 | 0x80
-        dataView[cursor + 2] = value >> 14 | 0x80
-        dataView[cursor + 3] = value >> 21 | 0x80
-        dataView[cursor + 4] = value >> 28
+        arrayBuffer[cursor] = (value & 0x7F) | 0x80
+        arrayBuffer[cursor + 1] = value >> 7 | 0x80
+        arrayBuffer[cursor + 2] = value >> 14 | 0x80
+        arrayBuffer[cursor + 3] = value >> 21 | 0x80
+        arrayBuffer[cursor + 4] = value >> 28
         move(5)
         return 5
     }
@@ -142,35 +147,37 @@ export const BinaryWriter = () => {
         return ArrayBuffer.prototype.slice.apply(dataView.buffer, [0, cursor]);
     }
 
-    return { skip, reset, writeUInt16, writeInt8, dump, writeUInt8, writeInt16, writeVarInt32, writeStringOfVarInt32, writeStringOfInt16, writeUInt64, writeBuffer, writeDouble, writeFloat, writeInt64, writeUInt32, writeInt32 }
+    return { skip, reset, writeUInt16, writeInt8, dump, writeUInt8, writeInt16, writeVarInt32, writeStringOfVarInt32, writeUtf8StringOfInt16, writeUInt64, writeBuffer, writeDouble, writeFloat, writeInt64, writeUInt32, writeInt32 }
 }
 
-export const BinaryView = () => {
+export const BinaryReader = () => {
     let cursor = 0;
-    let dataView!: Buffer;
+    let dataView!: DataView;
+    let arrayBuffer!: Uint8Array;
 
 
-    function reset(buffer: Buffer) {
-        dataView = buffer;
+    function reset(buffer: Uint8Array) {
+        dataView = new DataView(buffer);
+        arrayBuffer = buffer;
         cursor = 0;
     }
 
     function readUInt8() {
-        return dataView.readUint8(cursor++);
+        return dataView.getUint8(cursor++);
     }
 
     function readInt8() {
-        return dataView.readInt8(cursor++);
+        return dataView.getInt8(cursor++);
     }
 
     function readUInt16() {
-        const result = dataView.readUInt16LE(cursor);
+        const result = dataView.getUint16(cursor, true);
         cursor += 2;
         return result;
     }
 
     function readInt16() {
-        const result = dataView.readInt16LE(cursor);
+        const result = dataView.getInt16(cursor, true);
         cursor += 2;
         return result;
     }
@@ -182,57 +189,57 @@ export const BinaryView = () => {
 
 
     function readInt32() {
-        const result = dataView.readInt32LE(cursor);
+        const result = dataView.getInt32(cursor, true);
         cursor += 4;
         return result;
     }
 
     function readUInt32() {
-        const result = dataView.readUInt32LE(cursor);
+        const result = dataView.getUint32(cursor, true);
         cursor += 4;
         return result;
     }
 
     function readInt64() {
-        const result = dataView.readBigInt64LE(cursor);
+        const result = dataView.getBigInt64(cursor, true);
         cursor += 8;
         return Number(result);
     }
 
     function readUInt64() {
-        const result = dataView.readBigUInt64LE(cursor);
+        const result = dataView.getBigUint64(cursor, true);
         cursor += 8;
         return Number(result);
     }
 
 
     function readFloat() {
-        const result = dataView.readFloatLE(cursor);
+        const result = dataView.getFloat32(cursor, true);
         cursor += 4;
         return result;
     }
 
     function readDouble() {
-        const result = dataView.readDoubleLE(cursor);
+        const result = dataView.getFloat64(cursor, true);
         cursor += 8;
         return result;
     }
 
     function readStringUtf8(len: number) {
-        const result = (dataView as any).utf8Slice(cursor, cursor + len);
+        const result = utf8Decoder.decode(arrayBuffer.subarray(cursor, cursor + len));
         cursor += len;
         return result;
     }
 
 
     function readStringLatin1(len: number) {
-        const result = (dataView as any).latin1Slice(cursor, cursor + len);
+        const result = latin1Decoder.decode(arrayBuffer.subarray(cursor, cursor + len));
         cursor += len;
         return result;
     }
 
     function readBuffer(len: number) {
-        return Buffer.from(ArrayBuffer.prototype.slice.apply(dataView.buffer, [cursor, cursor + len]));
+        return arrayBuffer.slice(cursor, cursor + len);
     }
 
 

@@ -18,7 +18,7 @@ export default (fury: Fury) => {
             }
             return result
         },
-        write: (v: Buffer) => {
+        write: (v: Uint8Array) => {
             if (writeNullOrRef(v)) {
                 return;
             }

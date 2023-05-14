@@ -145,7 +145,7 @@ export const uInt64Serializer = (fury: Fury) => {
         read: () => {
             return readUInt64();
         },
-        write: (v: bigint | number) => {
+        write: (v: bigint) => {
             writeInt8(RefFlags.NotNullValueFlag);
             writeInt16(InternalSerializerType.UINT64);
             writeUInt64(v);
@@ -162,7 +162,7 @@ export const int64Serializer = (fury: Fury) => {
         read: () => {
             return readInt64();
         },
-        write: (v: bigint | number) => {
+        write: (v: bigint) => {
             writeInt8(RefFlags.NotNullValueFlag);
             writeInt16(InternalSerializerType.INT64);
             writeInt64(v);
