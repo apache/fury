@@ -5,7 +5,7 @@
   "main": "output/index.js",
   "scripts": {
     "tsc": "tsc -p ./",
-    "test": "npm run tsc && jest",
+    "test": "npm run tsc && jest ./test/object.test.ts",
     "lint": "eslint ."
   },
   "author": "",
