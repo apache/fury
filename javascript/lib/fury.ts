@@ -160,7 +160,7 @@ export default () => {
 
         // NotNullValueFlag
         if (typeof v === "number") {
-            writeInt64(v);
+            writeInt64(BigInt(v));
             return;
         }
         if (typeof v === "bigint") {
