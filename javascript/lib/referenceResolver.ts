@@ -1,4 +1,4 @@
-import { RefFlags, BinaryView } from "./type";
+import { RefFlags, BinaryReader } from "./type";
 
 
 export const ReferenceResolver = () => {
@@ -14,7 +14,7 @@ export const ReferenceResolver = () => {
         return readObjects[refId];
     }
 
-    function readRefFlag(binaryView: BinaryView) {
+    function readRefFlag(binaryView: BinaryReader) {
         return binaryView.readInt8() as RefFlags;
     }
 

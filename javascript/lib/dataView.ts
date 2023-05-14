@@ -145,7 +145,7 @@ export const BinaryWriter = () => {
     return { skip, reset, writeUInt16, writeInt8, dump, writeUInt8, writeInt16, writeVarInt32, writeStringOfVarInt32, writeStringOfInt16, writeUInt64, writeBuffer, writeDouble, writeFloat, writeInt64, writeUInt32, writeInt32 }
 }
 
-export const BinaryView = () => {
+export const BinaryReader = () => {
     let cursor = 0;
     let dataView!: Buffer;
 

@@ -1,9 +1,9 @@
-import { BinaryView, BinaryWriter } from "./dataView";
+import { BinaryReader, BinaryWriter } from "./dataView";
 import type FuryFunc from "./fury";
 
 export type Fury = ReturnType<typeof FuryFunc>;
 export type BinaryWriter = ReturnType<typeof BinaryWriter>
-export type BinaryView = ReturnType<typeof BinaryView>
+export type BinaryReader = ReturnType<typeof BinaryReader>
 
 export enum InternalSerializerType{
     STRING = 13,

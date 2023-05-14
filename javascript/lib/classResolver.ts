@@ -6,7 +6,7 @@ import mapSerializer from "./internalSerializer/map";
 import setSerializer from "./internalSerializer/set";
 import boolSerializer from "./internalSerializer/bool";
 import { uInt16Serializer, int16Serializer, int32Serializer, uInt32Serializer, uInt64Serializer, floatSerializer, doubleSerializer, uInt8Serializer, int64Serializer, int8Serializer } from "./internalSerializer/number";
-import { InternalSerializerType, Serializer, SerializerRead, SerializerWrite, Fury, BinaryView, BinaryWriter } from "./type";
+import { InternalSerializerType, Serializer, SerializerRead, SerializerWrite, Fury, BinaryReader, BinaryWriter } from "./type";
 
 
 const USESTRINGVALUE = 0;
@@ -130,7 +130,7 @@ export default class SerializerResolver {
     }
 
 
-    readTag(binaryView: BinaryView) {
+    readTag(binaryView: BinaryReader) {
         const flag = binaryView.readUInt8();
         if (flag === USESTRINGVALUE) {
             // todo: support tag hash. skip
