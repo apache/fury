@@ -126,7 +126,7 @@ export default class SerializerResolver {
         this.writeStringIndex.set(tag, this.writeStringIndex.size);
         binaryWriter.writeUInt8(USESTRINGVALUE);
         binaryWriter.skip(8); // todo: support tag hash. skip
-        binaryWriter.writeStringOfInt16(tag);
+        binaryWriter.writeUtf8StringOfInt16(tag);
     }
 
 

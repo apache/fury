@@ -1,4 +1,4 @@
-import { BinaryReader, BinaryWriter } from "./dataView";
+import { BinaryReader, BinaryWriter } from "./io";
 import type FuryFunc from "./fury";
 
 export type Fury = ReturnType<typeof FuryFunc>;

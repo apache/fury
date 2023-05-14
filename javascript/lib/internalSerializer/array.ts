@@ -50,9 +50,7 @@ export const shortArraySerializer = (fury: Fury) => {
     return buildTypedArray<number>(
         fury,
         read,
-        (v: number) => {
-            writeInt8(v)
-        },
+        writeInt8,
     )
 };
 
@@ -64,9 +62,7 @@ export const intArraySerializer = (fury: Fury) => {
     return buildTypedArray<number>(
         fury,
         read,
-        (v: number) => {
-            writeInt32(v)
-        },
+        writeInt32,
     )
 };
 export const longArraySerializer = (fury: Fury) => {
@@ -77,9 +73,7 @@ export const longArraySerializer = (fury: Fury) => {
     return buildTypedArray<number>(
         fury,
         read,
-        (v: number) => {
-            writeInt64(v)
-        },
+        writeInt64,
     )
 };
 export const floatArraySerializer = (fury: Fury) => {
@@ -90,9 +84,7 @@ export const floatArraySerializer = (fury: Fury) => {
     return buildTypedArray<number>(
         fury,
         read,
-        (v: number) => {
-            writeFloat(v)
-        },
+        writeFloat,
     )
 };
 export const doubleArraySerializer = (fury: Fury) => {
@@ -104,9 +96,7 @@ export const doubleArraySerializer = (fury: Fury) => {
     return buildTypedArray<number>(
         fury,
         read,
-        (v: number) => {
-            writeDouble(v)
-        },
+        writeDouble,
     )
 };
 
