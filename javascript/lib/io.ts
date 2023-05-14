@@ -61,8 +61,11 @@ export const BinaryWriter = () => {
         return dataView.setUint32(move(4), v, true);
     }
 
-    function writeInt64(v: bigint) {
+    function writeInt64(v: bigint | number) {
         reserves(8);
+        if (typeof v === 'number') {
+            return dataView.setBigInt64(move(8), BigInt(v), true);
+        }
         return dataView.setBigInt64(move(8), v, true);
     }
 

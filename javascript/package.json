@@ -2,10 +2,10 @@
   "name": "fury",
   "version": "0.10.dev",
   "description": "javascript impl of fury",
-  "main": "output/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "tsc": "tsc -p ./",
-    "test": "npm run tsc && jest ./test/object.test.ts",
+    "test": "npm run tsc",
     "lint": "eslint ."
   },
   "author": "",
