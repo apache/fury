@@ -1,0 +1,26 @@
+{
+  "name": "fury",
+  "version": "0.10.dev",
+  "description": "javascript impl of fury",
+  "main": "output/index.js",
+  "scripts": {
+    "tsc": "tsc -p ./",
+    "test": "npm run tsc && jest",
+    "lint": "eslint ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^18.7.21",
+    "@typescript-eslint/eslint-plugin": "^5.40.0",
+    "@typescript-eslint/parser": "^5.40.0",
+    "benchmark": "^2.1.4",
+    "eslint": "^8.25.0",
+    "hessian.js-1": "^1.9.3",
+    "ts-jest": "^29.0.2",
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "tslib": "^2.4.0"
+  }
+}
