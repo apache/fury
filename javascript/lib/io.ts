@@ -4,14 +4,15 @@ import { latin1Decoder, utf8Decoder, utf8Encoder } from "./util";
 
 export const BinaryWriter = () => {
     let cursor = 0;
-    let arrayBuffer = new Uint8Array(1024);
-    let dataView = new DataView(new Uint8Array(1024));
+    let arrayBuffer = new Uint8Array(1024 * 100);
+    let dataView = new DataView(arrayBuffer.buffer);
     function reserves(len: number) {
         if (dataView.byteLength - (cursor + 1) <= len) {
             // resize the arrayBuffer
             let newArrayBuffer = new Uint8Array(dataView.byteLength * 2);
             newArrayBuffer.set(arrayBuffer);
-            dataView = new DataView(arrayBuffer);
+            arrayBuffer = newArrayBuffer;
+            dataView = new DataView(arrayBuffer.buffer);
         }
     }
     function reset() {
@@ -144,7 +145,7 @@ export const BinaryWriter = () => {
     }
 
     function dump() {
-        return ArrayBuffer.prototype.slice.apply(dataView.buffer, [0, cursor]);
+        return arrayBuffer.slice(0, cursor);
     }
 
     return { skip, reset, writeUInt16, writeInt8, dump, writeUInt8, writeInt16, writeVarInt32, writeStringOfVarInt32, writeUtf8StringOfInt16, writeUInt64, writeBuffer, writeDouble, writeFloat, writeInt64, writeUInt32, writeInt32 }
@@ -157,7 +158,7 @@ export const BinaryReader = () => {
 
 
     function reset(buffer: Uint8Array) {
-        dataView = new DataView(buffer);
+        dataView = new DataView(buffer.buffer);
         arrayBuffer = buffer;
         cursor = 0;
     }
