@@ -134,7 +134,7 @@ export const arraySerializer = (fury: Fury) => {
                 return;
             }
             writeInt8(RefFlags.RefValueFlag);
-            writeInt16(InternalSerializerType.FURY_STRING_ARRAY);
+            writeInt16(InternalSerializerType.ARRAY);
             pushWriteObject(v);
             writeInt32(v.length);
             // if the array hash concrete type, we can use the genericWriter, otherwise use the normal writer
