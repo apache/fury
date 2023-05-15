@@ -3,12 +3,18 @@ name: Fury CI
 on:
   push:
     branches:
-      - '*'
+      - main
+      - 'releases/**'
+      - 'deploy/**'
+      - 'test*'
+    tags:
+      - v*
   pull_request:
     types: ['opened', 'reopened', 'synchronize']
 
 jobs:
   java:
+    name: Java CI
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -20,9 +26,10 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'temurin'
-      - name: Build with Maven
+      - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
   javascript:
+    name: Javascript CI
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -33,4 +40,5 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
+      - name: Run CI with NodeJS
         run: ./ci/run_ci.sh javascript
