@@ -34,6 +34,7 @@ import io.fury.serializer.BufferCallback;
 import io.fury.serializer.BufferObject;
 import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.JavaSerializer;
+import io.fury.serializer.ObjectStreamSerializer;
 import io.fury.serializer.OpaqueObjects;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
@@ -1037,8 +1038,7 @@ public final class Fury {
     boolean compressNumber = false;
     boolean compressString = true;
     CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
-    // TODO(chaokunyang) switch to object stream serializer.
-    Class<? extends Serializer> defaultJDKStreamSerializerType = JavaSerializer.class;
+    Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
     boolean secureModeEnabled = true;
     boolean requireClassRegistration = true;
     boolean metaContextShareEnabled = false;
@@ -1086,6 +1086,18 @@ public final class Fury {
       return this;
     }
 
+    /**
+     * Set default serializer type for class which implements jdk serialization method such as
+     * `writeObject/readObject`.
+     *
+     * @param serializerClass Default serializer type for class which implement jdk serialization.
+     */
+    public FuryBuilder withDefaultJDKCompatibleSerializerType(
+        Class<? extends Serializer> serializerClass) {
+      this.defaultJDKStreamSerializerType = serializerClass;
+      return this;
+    }
+
     public FuryBuilder requireClassRegistration(boolean requireClassRegistration) {
       this.requireClassRegistration = requireClassRegistration;
       return this;
@@ -1118,6 +1130,21 @@ public final class Fury {
           LOG.warn("Security mode is enabled forcibly, ignore security mode disable config.");
           secureModeEnabled = true;
           requireClassRegistration = true;
+        }
+      }
+      if (defaultJDKStreamSerializerType == JavaSerializer.class) {
+        if (secureModeEnabled) {
+          LOG.warn(
+              "Security mode is enabled, disable jdk serialization for types "
+                  + "which customized java serialization by methods such as writeObject/readObject.");
+          defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
+        } else {
+          LOG.warn(
+              "JDK serialization is used for types which customized java serialization by "
+                  + "implementing methods such as writeObject/readObject. This is not secure, try to "
+                  + "use {} instead, or implement a custom {}.",
+              ObjectStreamSerializer.class,
+              Serializer.class);
         }
       }
     }

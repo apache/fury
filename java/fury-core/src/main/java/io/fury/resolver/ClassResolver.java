@@ -664,8 +664,7 @@ public class ClassResolver {
         }
       }
       if (useReplaceResolveSerializer(cls)) {
-        // TODO(chaokunyang) switch to ReplaceResolveSerializer
-        return getJavaSerializer(cls);
+        return ReplaceResolveSerializer.class;
       }
       if (requireJavaSerialization(cls)) {
         return getJavaSerializer(cls);
@@ -693,12 +692,14 @@ public class ClassResolver {
   public Class<? extends Serializer> getJavaSerializer(Class<?> clz) {
     if (Collection.class.isAssignableFrom(clz)) {
       return CollectionSerializers.JDKCompatibleCollectionSerializer.class;
+    } else if (Map.class.isAssignableFrom(clz)) {
+      return MapSerializers.JDKCompatibleMapSerializer.class;
+    } else {
+      if (useReplaceResolveSerializer(clz)) {
+        return ReplaceResolveSerializer.class;
+      }
+      return fury.getDefaultJDKStreamSerializerType();
     }
-    if (useReplaceResolveSerializer(clz)) {
-      return ReplaceResolveSerializer.class;
-    }
-    // TODO(chaokunyang) add Fury ObjectStreamSerializer
-    return JavaSerializer.class;
   }
 
   public FieldResolver getFieldResolver(Class<?> cls) {
