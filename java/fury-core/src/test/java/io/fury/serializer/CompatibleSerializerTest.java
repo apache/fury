@@ -30,7 +30,6 @@ import io.fury.test.bean.Foo;
 import io.fury.test.bean.MapFields;
 import io.fury.test.bean.Struct;
 import io.fury.util.ReflectionUtils;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,7 +37,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import lombok.Data;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -399,5 +397,4 @@ public class CompatibleSerializerTest extends FuryTestBase {
     Class<?> structClass = Struct.createNumberStructClass("CompatibleCompressIntStruct", 50);
     serDeCheck(fury, Struct.createPOJO(structClass));
   }
-
 }

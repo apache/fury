@@ -26,15 +26,14 @@ import io.fury.test.bean.MapFields;
 import io.fury.test.bean.Struct;
 import io.fury.util.ClassLoaderUtils;
 import io.fury.util.ReflectionUtils;
-import org.testng.Assert;
-
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
 import java.io.ByteArrayOutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
+import org.testng.Assert;
 
 public class ClassUtils {
   public static Class<?> createCompatibleClass1() {
