@@ -241,33 +241,33 @@ public class ClassDef implements Serializable {
 
   public static ClassDef buildClassDef(Class<?> cls, Fury fury) {
     Comparator<Descriptor> comparator =
-      fury.compressNumber()
-        ? DescriptorGrouper.PRIMITIVE_COMPRESSED_COMPARATOR
-        : DescriptorGrouper.PRIMITIVE_COMPARATOR;
+        fury.compressNumber()
+            ? DescriptorGrouper.PRIMITIVE_COMPRESSED_COMPARATOR
+            : DescriptorGrouper.PRIMITIVE_COMPARATOR;
     DescriptorGrouper descriptorGrouper =
-      new DescriptorGrouper(
-        fury.getClassResolver().getAllDescriptorsMap(cls, true).values(),
-        false,
-        Function.identity(),
-        comparator,
-        DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
+        new DescriptorGrouper(
+            fury.getClassResolver().getAllDescriptorsMap(cls, true).values(),
+            false,
+            Function.identity(),
+            comparator,
+            DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
     ClassResolver classResolver = fury.getClassResolver();
     List<Field> fields = new ArrayList<>();
     descriptorGrouper
-      .getPrimitiveDescriptors()
-      .forEach(descriptor -> fields.add(descriptor.getField()));
+        .getPrimitiveDescriptors()
+        .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-      .getBoxedDescriptors()
-      .forEach(descriptor -> fields.add(descriptor.getField()));
+        .getBoxedDescriptors()
+        .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-      .getFinalDescriptors()
-      .forEach(descriptor -> fields.add(descriptor.getField()));
+        .getFinalDescriptors()
+        .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-      .getOtherDescriptors()
-      .forEach(descriptor -> fields.add(descriptor.getField()));
+        .getOtherDescriptors()
+        .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-      .getCollectionDescriptors()
-      .forEach(descriptor -> fields.add(descriptor.getField()));
+        .getCollectionDescriptors()
+        .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper.getMapDescriptors().forEach(descriptor -> fields.add(descriptor.getField()));
     return buildClassDef(classResolver, cls, fields);
   }
