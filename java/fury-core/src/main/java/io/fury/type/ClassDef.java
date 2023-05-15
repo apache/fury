@@ -26,6 +26,7 @@ import static io.fury.type.TypeUtils.mapOf;
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
+import io.fury.builder.MetaSharedCodecBuilder;
 import io.fury.collection.IdentityObjectIntMap;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
@@ -61,8 +62,10 @@ import org.slf4j.Logger;
  * <li>{@link ObjectStreamClass} doesn't contain any non-primitive field type info, which is not
  *     enough to create serializer in receiver.
  *
+ * @see MetaSharedCodecBuilder
  * @see CompatibleMode#COMPATIBLE
  * @see CompatibleSerializer
+ * @see Fury.FuryBuilder#withMetaContextShareEnabled
  * @see Platform#objectFieldOffset
  * @author chaokunyang
  */
