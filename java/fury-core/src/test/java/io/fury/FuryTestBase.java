@@ -20,6 +20,7 @@ package io.fury;
 
 import io.fury.io.ClassLoaderObjectInputStream;
 import io.fury.memory.MemoryBuffer;
+import io.fury.resolver.MetaContext;
 import io.fury.serializer.BufferObject;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
@@ -161,6 +162,14 @@ public abstract class FuryTestBase {
     byte[] bytes2 = fury2.serialize(o1);
     Object o2 = fury1.deserialize(bytes2);
     Assert.assertEquals(compareHook.apply(o2), compareHook.apply(o));
+  }
+
+  public static Object serDeMetaShared(Fury fury, Object obj) {
+    MetaContext context = new MetaContext();
+    fury.getSerializationContext().setMetaContext(context);
+    byte[] bytes = fury.serialize(obj);
+    fury.getSerializationContext().setMetaContext(context);
+    return fury.deserialize(bytes);
   }
 
   public static byte[] jdkSerialize(Object o) {

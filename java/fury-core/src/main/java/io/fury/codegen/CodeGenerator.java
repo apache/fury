@@ -23,10 +23,13 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.fury.builder.AccessorHelper;
+import io.fury.builder.Generated;
 import io.fury.collection.MultiKeyWeakMap;
 import io.fury.util.ClassLoaderUtils;
 import io.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
 import io.fury.util.LoggerFactory;
+import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -70,8 +73,24 @@ public class CodeGenerator {
       new WeakHashMap<>();
   private static final MultiKeyWeakMap<WeakReference<CodeGenerator>> sharedCodeGenerator2 =
       new MultiKeyWeakMap<>();
+
+  // use this package when bean class name starts with java.
+  private static final String FALLBACK_PACKAGE = Generated.class.getPackage().getName();
+  public static final boolean ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID;
   private static int maxPoolSize = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
   private static ListeningExecutorService compilationExecutorService;
+
+  static {
+    boolean useUniqueId = StringUtils.isBlank(CodeGenerator.getCodeDir());
+    String flagValue =
+        System.getProperty(
+            "fury.enable_fury_generated_class_unique_id",
+            System.getenv("ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID"));
+    if (flagValue != null) {
+      useUniqueId = "true".equals(flagValue);
+    }
+    ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID = useUniqueId;
+  }
 
   private ClassLoader classLoader;
   private final Object classLoaderLock;
@@ -294,6 +313,34 @@ public class CodeGenerator {
       sharedCodeGenerator.put(classLoader, new WeakReference<>(codeGenerator));
     }
     return codeGenerator;
+  }
+
+  /**
+   * Can't create a codec class that has package starts with java, which throws
+   * java.lang.SecurityException: Prohibited package name.<br>
+   * Caution: The runtime package is defined by package name and classloader. see {@link
+   * AccessorHelper}.
+   */
+  public static String getPackage(Class<?> cls) {
+    String pkg = ReflectionUtils.getPackage(cls);
+    if (pkg.startsWith("java")) {
+      return FALLBACK_PACKAGE;
+    } else {
+      return pkg;
+    }
+  }
+
+  public static String getClassUniqueId(Class<?> cls) {
+    if (!ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID) {
+      return "";
+    }
+    // classLoader will be null for jdk classes.
+    ClassLoader classLoader = cls.getClassLoader();
+    if (classLoader == null) {
+      return String.valueOf(cls.hashCode());
+    } else {
+      return String.format("%s_%s", classLoader.hashCode(), cls.hashCode());
+    }
   }
 
   public static String getCodeDir() {

@@ -18,17 +18,17 @@
 
 package io.fury.resolver;
 
+import io.fury.Fury;
 import java.util.IdentityHashMap;
 
 /**
  * A context is used to add some context-related information, so that the serializers can set up
  * relation between serializing different objects. The context will be reset after finished
  * serializing/deserializing the object tree.
- *
- * @author chaokunyang
  */
 public final class SerializationContext {
   private final IdentityHashMap<Object, Object> objects = new IdentityHashMap<>();
+  private MetaContext metaContext;
 
   /** Return the previous value associated with <tt>key</tt>, or <tt>null</tt>. */
   public Object add(Object key, Object value) {
@@ -43,9 +43,24 @@ public final class SerializationContext {
     return objects.get(key);
   }
 
+  public MetaContext getMetaContext() {
+    return metaContext;
+  }
+
+  /**
+   * Set meta context, which can be used to share data across multiple serialization call. Note that
+   * {@code metaContext} will be cleared after the serialization is finished. Please set the context
+   * before every serialization if metaShare is enabled by {@link
+   * Fury.FuryBuilder#withMetaContextShareEnabled(boolean)}
+   */
+  public void setMetaContext(MetaContext metaContext) {
+    this.metaContext = metaContext;
+  }
+
   public void reset() {
     if (objects.size() > 0) {
       objects.clear();
     }
+    metaContext = null;
   }
 }
