@@ -110,39 +110,6 @@ public class ClassDef implements Serializable {
     this.extMeta = extMeta;
   }
 
-  public static ClassDef buildClassDef(Class<?> cls, Fury fury) {
-    Comparator<Descriptor> comparator =
-        fury.compressNumber()
-            ? DescriptorGrouper.PRIMITIVE_COMPRESSED_COMPARATOR
-            : DescriptorGrouper.PRIMITIVE_COMPARATOR;
-    DescriptorGrouper descriptorGrouper =
-        new DescriptorGrouper(
-            fury.getClassResolver().getAllDescriptorsMap(cls, true).values(),
-            false,
-            Function.identity(),
-            comparator,
-            DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
-    ClassResolver classResolver = fury.getClassResolver();
-    List<Field> fields = new ArrayList<>();
-    descriptorGrouper
-        .getPrimitiveDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
-    descriptorGrouper
-        .getBoxedDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
-    descriptorGrouper
-        .getFinalDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
-    descriptorGrouper
-        .getOtherDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
-    descriptorGrouper
-        .getCollectionDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
-    descriptorGrouper.getMapDescriptors().forEach(descriptor -> fields.add(descriptor.getField()));
-    return buildClassDef(classResolver, cls, fields);
-  }
-
   /**
    * Returns class name.
    *
@@ -270,6 +237,39 @@ public class ClassDef implements Serializable {
       strings.add(str);
       return str;
     }
+  }
+
+  public static ClassDef buildClassDef(Class<?> cls, Fury fury) {
+    Comparator<Descriptor> comparator =
+      fury.compressNumber()
+        ? DescriptorGrouper.PRIMITIVE_COMPRESSED_COMPARATOR
+        : DescriptorGrouper.PRIMITIVE_COMPARATOR;
+    DescriptorGrouper descriptorGrouper =
+      new DescriptorGrouper(
+        fury.getClassResolver().getAllDescriptorsMap(cls, true).values(),
+        false,
+        Function.identity(),
+        comparator,
+        DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
+    ClassResolver classResolver = fury.getClassResolver();
+    List<Field> fields = new ArrayList<>();
+    descriptorGrouper
+      .getPrimitiveDescriptors()
+      .forEach(descriptor -> fields.add(descriptor.getField()));
+    descriptorGrouper
+      .getBoxedDescriptors()
+      .forEach(descriptor -> fields.add(descriptor.getField()));
+    descriptorGrouper
+      .getFinalDescriptors()
+      .forEach(descriptor -> fields.add(descriptor.getField()));
+    descriptorGrouper
+      .getOtherDescriptors()
+      .forEach(descriptor -> fields.add(descriptor.getField()));
+    descriptorGrouper
+      .getCollectionDescriptors()
+      .forEach(descriptor -> fields.add(descriptor.getField()));
+    descriptorGrouper.getMapDescriptors().forEach(descriptor -> fields.add(descriptor.getField()));
+    return buildClassDef(classResolver, cls, fields);
   }
 
   /** Build class definition from fields of class. */
