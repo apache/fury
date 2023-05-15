@@ -21,7 +21,7 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'temurin'
-      - name: Build with Maven
+      - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
   javascript:
     name: Javascript CI
@@ -35,4 +35,5 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
+      - name: Run CI with NodeJS
         run: ./ci/run_ci.sh javascript
