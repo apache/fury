@@ -850,8 +850,10 @@ public class ClassResolver {
                   + "registering class by `Fury#register` will have better performance, "
                   + "otherwise class name will be serialized too.",
               cls);
-      if ((fury.isClassRegistrationRequired()
-          && !isSecure(extRegistry.registeredClassIdMap, cls))) {
+      boolean forbidden = BlackList.getDefaultBlackList().contains(cls.getName());
+      if (forbidden
+          || (fury.isClassRegistrationRequired()
+              && !isSecure(extRegistry.registeredClassIdMap, cls))) {
         throw new InsecureException(msg);
       } else {
         if (!Functions.isLambda(cls) && !ReflectionUtils.isJdkProxy(cls)) {
@@ -870,9 +872,9 @@ public class ClassResolver {
   }
 
   private static boolean isSecure(IdentityMap<Class<?>, Short> registeredClasses, Class<?> cls) {
-    // if (BlackList.getDefaultBlackList().contains(cls.getName())) {
-    //   return false;
-    // }
+    if (BlackList.getDefaultBlackList().contains(cls.getName())) {
+      return false;
+    }
     if (registeredClasses.containsKey(cls)) {
       return true;
     }
