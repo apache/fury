@@ -47,7 +47,7 @@ import org.slf4j.Logger;
  *       fallback jdk custom serialization to {@link JavaSerializer}.
  * </ul>
  *
- * `ObjectInputStream#setObjectInputFilter` will be ignored by this serializer.
+ * <p>`ObjectInputStream#setObjectInputFilter` will be ignored by this serializer.
  *
  * @author chaokunyang
  */
