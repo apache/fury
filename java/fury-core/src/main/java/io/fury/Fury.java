@@ -242,7 +242,15 @@ public final class Fury {
     }
     buffer.put(maskIndex, bitmap);
     if (language == Language.JAVA) {
-      writeReferencableToJava(buffer, obj);
+      if (config.isMetaContextShareEnabled()) {
+        int startOffset = buffer.writerIndex();
+        buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
+        writeReferencableToJava(buffer, obj);
+        buffer.putInt(startOffset, buffer.writerIndex());
+        classResolver.writeClassDefs(buffer);
+      } else {
+        writeReferencableToJava(buffer, obj);
+      }
     } else {
       crossLanguageSerializeInternal(buffer, obj);
     }
@@ -682,6 +690,9 @@ public final class Fury {
       if (isTargetXLang) {
         obj = crossLanguageDeserializeInternal(buffer);
       } else {
+        if (config.isMetaContextShareEnabled()) {
+          classResolver.readClassDefs(buffer);
+        }
         obj = readReferencableFromJava(buffer);
       }
       return obj;
@@ -1081,6 +1092,11 @@ public final class Fury {
       return this;
     }
 
+    public FuryBuilder withCodegen(boolean codeGenEnabled) {
+      // TODO(chaokunyang) add jit support
+      return this;
+    }
+
     public FuryBuilder withCompatibleMode(CompatibleMode compatibleMode) {
       this.compatibleMode = compatibleMode;
       return this;
@@ -1118,6 +1134,12 @@ public final class Fury {
       return this;
     }
 
+    /** Whether to enable meta share mode. */
+    public FuryBuilder withMetaContextShareEnabled(boolean shareMetaContext) {
+      this.metaContextShareEnabled = shareMetaContext;
+      return this;
+    }
+
     private void finish() {
       if (classLoader == null) {
         classLoader = Thread.currentThread().getContextClassLoader();
@@ -1146,6 +1168,9 @@ public final class Fury {
               ObjectStreamSerializer.class,
               Serializer.class);
         }
+      }
+      if (compatibleMode == CompatibleMode.COMPATIBLE) {
+        checkClassVersion = false;
       }
     }
 
