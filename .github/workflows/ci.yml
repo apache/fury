@@ -1,4 +1,4 @@
-name: Java CI
+name: Fury CI
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
     types: ['opened', 'reopened', 'synchronize']
 
 jobs:
-  build:
+  java:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,3 +22,15 @@ jobs:
           distribution: 'temurin'
       - name: Build with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
+  javascript:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x, 20.x]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+        run: ./ci/run_ci.sh javascript
