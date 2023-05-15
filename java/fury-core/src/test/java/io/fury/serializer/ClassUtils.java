@@ -18,11 +18,23 @@
 
 package io.fury.serializer;
 
-import static io.fury.serializer.CompatibleSerializerTest.loadClass;
+import static io.fury.serializer.ClassUtils.loadClass;
 
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.CollectionFields;
 import io.fury.test.bean.MapFields;
+import io.fury.test.bean.Struct;
+import io.fury.util.ClassLoaderUtils;
+import io.fury.util.ReflectionUtils;
+import org.testng.Assert;
+
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
+import java.io.ByteArrayOutputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class ClassUtils {
   public static Class<?> createCompatibleClass1() {
@@ -114,5 +126,71 @@ public class ClassUtils {
             + "  public Map<String, Integer> singletonMap2;\n"
             + "}";
     return loadClass(MapFields.class, code);
+  }
+
+  static Class<?> loadClass(Class<?> cls, String code) {
+    String pkg = ReflectionUtils.getPackage(cls);
+    Path path = Paths.get(pkg.replace(".", "/") + "/" + cls.getSimpleName() + ".java");
+    try {
+      Files.deleteIfExists(path);
+      System.out.println(path.toAbsolutePath());
+      path.getParent().toFile().mkdirs();
+      Files.write(path, code.getBytes());
+      // Use JavaCompiler because janino doesn't support generics.
+      JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+      int result =
+          compiler.run(
+              null,
+              new ByteArrayOutputStream(), // ignore output
+              System.err,
+              "-classpath",
+              System.getProperty("java.class.path"),
+              path.toString());
+      if (result != 0) {
+        throw new RuntimeException(String.format("Couldn't compile code:\n %s.", code));
+      }
+      Class<?> clz =
+          new ClassLoaderUtils.ChildFirstURLClassLoader(
+                  new URL[] {Paths.get(".").toUri().toURL()}, Struct.class.getClassLoader())
+              .loadClass(cls.getName());
+      Files.deleteIfExists(path);
+      Files.deleteIfExists(Paths.get(pkg.replace(".", "/") + "/" + cls.getSimpleName() + ".class"));
+      Assert.assertNotEquals(clz, cls);
+      return clz;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  static Class<?> loadClass(String pkg, String className, String code) {
+    Path path = Paths.get(pkg.replace(".", "/") + "/" + className + ".java");
+    try {
+      Files.deleteIfExists(path);
+      System.out.println(path.toAbsolutePath());
+      path.getParent().toFile().mkdirs();
+      Files.write(path, code.getBytes());
+      // Use JavaCompiler because janino doesn't support generics.
+      JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+      int result =
+          compiler.run(
+              null,
+              new ByteArrayOutputStream(), // ignore output
+              System.err,
+              "-classpath",
+              System.getProperty("java.class.path"),
+              path.toString());
+      if (result != 0) {
+        throw new RuntimeException(String.format("Couldn't compile code:\n %s.", code));
+      }
+      Class<?> clz =
+          new ClassLoaderUtils.ChildFirstURLClassLoader(
+                  new URL[] {Paths.get(".").toUri().toURL()}, Struct.class.getClassLoader())
+              .loadClass(pkg + "." + className);
+      Files.deleteIfExists(path);
+      Files.deleteIfExists(Paths.get(pkg.replace(".", "/") + "/" + className + ".class"));
+      return clz;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }

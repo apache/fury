@@ -18,7 +18,7 @@
 
 package io.fury.serializer;
 
-import static io.fury.serializer.CompatibleSerializerTest.loadClass;
+import static io.fury.serializer.ClassUtils.loadClass;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
