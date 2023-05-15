@@ -85,8 +85,11 @@ export const BinaryWriter = () => {
         arrayBuffer.set(v, move(len));
     }
 
-    function writeUInt64(v: bigint) {
+    function writeUInt64(v: bigint | number) {
         reserves(8);
+        if (typeof v === 'number') {
+            return dataView.setBigUint64(move(8), BigInt(v), true);
+        }
         return dataView.setBigUint64(move(8), v, true);
     }
 
