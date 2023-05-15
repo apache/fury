@@ -21,5 +21,7 @@ package io.fury.builder;
 /**
  * Since janino doesn't support generics, we use {@link Object} to represent object type rather
  * generic type.
+ *
+ * @author chaokunyang
  */
 public interface Generated {}
