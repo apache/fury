@@ -9,6 +9,7 @@ on:
 
 jobs:
   java:
+    name: Java CI
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -23,6 +24,7 @@ jobs:
       - name: Build with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
   javascript:
+    name: Javascript CI
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -64,7 +64,7 @@ case $1 in
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
       fi
-      echo "Executing fury javascript tests succeeds!"
+      echo "Executing fury javascript tests succeeds"
     ;;
     format)
       echo "Executing format check"
