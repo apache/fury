@@ -3,7 +3,12 @@ name: Fury CI
 on:
   push:
     branches:
-      - '*'
+      - main
+      - 'releases/**'
+      - 'deploy/**'
+      - 'test*'
+    tags:
+      - v*
   pull_request:
     types: ['opened', 'reopened', 'synchronize']
 
