@@ -67,7 +67,6 @@ import org.slf4j.Logger;
  * @see CompatibleSerializer
  * @see Fury.FuryBuilder#withMetaContextShareEnabled
  * @see Platform#objectFieldOffset
- *
  * @author chaokunyang
  */
 @SuppressWarnings("UnstableApiUsage")

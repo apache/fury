@@ -57,7 +57,6 @@ import java.util.SortedMap;
  * @see Fury.FuryBuilder#withMetaContextShareEnabled
  * @see MetaSharedCodecBuilder
  * @see ObjectSerializer
- *
  * @author chaokunyang
  */
 public class MetaSharedSerializer<T> extends Serializer<T> {
