@@ -34,4 +34,11 @@ public interface Generated {
       super(fury, cls);
     }
   }
+
+  /** Base class for all type consist serializers. */
+  abstract class GeneratedObjectSerializer extends GeneratedSerializer implements Generated {
+    public GeneratedObjectSerializer(Fury fury, Class<?> cls) {
+      super(fury, cls);
+    }
+  }
 }
