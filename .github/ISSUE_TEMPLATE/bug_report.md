@@ -7,30 +7,19 @@ assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+Thank you for reporting the problem!
+Please make sure what you are reporting is a bug with reproducible steps. 
+
+**Describe the bug + Expected behavior**
+- A clear and concise description of what the bug is.
+- A clear and concise description of what you expected to happen.
 
 **To Reproduce**
-Steps to reproduce the behavior:
-1. Step1
-2. Step2
-3. Step3
-4. See error
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+Steps to reproduce the behavior.
+Please try to provide a reproducible script.
 
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
 **Environment (please complete the following information):**
- - OS: [e.g. Linux/Ubuntu]
- - JDK [e.g. jdk8]
- - Python
- - Gcc/Clang
- - Go
- - NodeJS
- - Fury Version [e.g. 22]
-
-**Additional context**
-Add any other context about the problem here.
+Please specify the versions of Fury, OS, and others such as JDK/Python/Gcc/Clang/Go/NodeJS if they are used.
