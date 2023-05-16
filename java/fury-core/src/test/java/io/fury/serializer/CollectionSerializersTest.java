@@ -105,33 +105,35 @@ public class CollectionSerializersTest extends FuryTestBase {
 
   @Test
   public void testEmptyCollection() {
-    serDeCheckSerializer(javaFury, Collections.EMPTY_LIST, "EmptyListSerializer");
-    serDeCheckSerializer(javaFury, Collections.emptySortedSet(), "EmptySortedSetSerializer");
-    serDeCheckSerializer(javaFury, Collections.EMPTY_SET, "EmptySetSerializer");
+    serDeCheckSerializer(getJavaFury(), Collections.EMPTY_LIST, "EmptyListSerializer");
+    serDeCheckSerializer(getJavaFury(), Collections.emptySortedSet(), "EmptySortedSetSerializer");
+    serDeCheckSerializer(getJavaFury(), Collections.EMPTY_SET, "EmptySetSerializer");
   }
 
   @Test
   public void testSingleCollection() {
-    serDeCheckSerializer(javaFury, Collections.singletonList(1), "SingletonList");
-    serDeCheckSerializer(javaFury, Collections.singleton(1), "SingletonSet");
+    serDeCheckSerializer(getJavaFury(), Collections.singletonList(1), "SingletonList");
+    serDeCheckSerializer(getJavaFury(), Collections.singleton(1), "SingletonSet");
   }
 
   @Test
   public void tesSkipList() {
     serDeCheckSerializer(
-        javaFury,
+        getJavaFury(),
         new ConcurrentSkipListSet<>(Arrays.asList("a", "b", "c")),
         "ConcurrentSkipListSet");
   }
 
   @Test
   public void tesVectorSerializer() {
-    serDeCheckSerializer(javaFury, new Vector<>(Arrays.asList("a", "b", "c")), "VectorSerializer");
+    serDeCheckSerializer(
+        getJavaFury(), new Vector<>(Arrays.asList("a", "b", "c")), "VectorSerializer");
   }
 
   @Test
   public void tesArrayDequeSerializer() {
-    serDeCheckSerializer(javaFury, new ArrayDeque<>(Arrays.asList("a", "b", "c")), "ArrayDeque");
+    serDeCheckSerializer(
+        getJavaFury(), new ArrayDeque<>(Arrays.asList("a", "b", "c")), "ArrayDeque");
   }
 
   enum TestEnum {
@@ -143,17 +145,19 @@ public class CollectionSerializersTest extends FuryTestBase {
 
   @Test
   public void tesEnumSetSerializer() {
-    serDe(javaFury, EnumSet.allOf(TestEnum.class));
+    serDe(getJavaFury(), EnumSet.allOf(TestEnum.class));
     Assert.assertEquals(
-        javaFury.getClassResolver().getSerializerClass(EnumSet.allOf(TestEnum.class).getClass()),
+        getJavaFury()
+            .getClassResolver()
+            .getSerializerClass(EnumSet.allOf(TestEnum.class).getClass()),
         CollectionSerializers.EnumSetSerializer.class);
-    serDe(javaFury, EnumSet.of(TestEnum.A));
+    serDe(getJavaFury(), EnumSet.of(TestEnum.A));
     Assert.assertEquals(
-        javaFury.getClassResolver().getSerializerClass(EnumSet.of(TestEnum.A).getClass()),
+        getJavaFury().getClassResolver().getSerializerClass(EnumSet.of(TestEnum.A).getClass()),
         CollectionSerializers.EnumSetSerializer.class);
-    serDe(javaFury, EnumSet.of(TestEnum.A, TestEnum.B));
+    serDe(getJavaFury(), EnumSet.of(TestEnum.A, TestEnum.B));
     Assert.assertEquals(
-        javaFury
+        getJavaFury()
             .getClassResolver()
             .getSerializerClass(EnumSet.of(TestEnum.A, TestEnum.B).getClass()),
         CollectionSerializers.EnumSetSerializer.class);
@@ -162,15 +166,15 @@ public class CollectionSerializersTest extends FuryTestBase {
 
   @Test
   public void tesBitSetSerializer() {
-    serDe(javaFury, BitSet.valueOf(LongStream.range(0, 2).toArray()));
+    serDe(getJavaFury(), BitSet.valueOf(LongStream.range(0, 2).toArray()));
     Assert.assertEquals(
-        javaFury
+        getJavaFury()
             .getClassResolver()
             .getSerializerClass(BitSet.valueOf(LongStream.range(0, 2).toArray()).getClass()),
         CollectionSerializers.BitSetSerializer.class);
-    serDe(javaFury, BitSet.valueOf(LongStream.range(0, 128).toArray()));
+    serDe(getJavaFury(), BitSet.valueOf(LongStream.range(0, 128).toArray()));
     Assert.assertEquals(
-        javaFury
+        getJavaFury()
             .getClassResolver()
             .getSerializerClass(BitSet.valueOf(LongStream.range(0, 128).toArray()).getClass()),
         CollectionSerializers.BitSetSerializer.class);
@@ -178,9 +182,9 @@ public class CollectionSerializersTest extends FuryTestBase {
 
   @Test
   public void tesPriorityQueueSerializer() {
-    serDe(javaFury, new PriorityQueue<>(Arrays.asList("a", "b", "c")));
+    serDe(getJavaFury(), new PriorityQueue<>(Arrays.asList("a", "b", "c")));
     Assert.assertEquals(
-        javaFury.getClassResolver().getSerializerClass(PriorityQueue.class),
+        getJavaFury().getClassResolver().getSerializerClass(PriorityQueue.class),
         CollectionSerializers.PriorityQueueSerializer.class);
   }
 

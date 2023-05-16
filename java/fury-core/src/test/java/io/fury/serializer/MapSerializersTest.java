@@ -96,20 +96,20 @@ public class MapSerializersTest extends FuryTestBase {
 
   @Test
   public void testEmptyMap() {
-    serDeCheckSerializer(javaFury, Collections.EMPTY_MAP, "EmptyMapSerializer");
-    serDeCheckSerializer(javaFury, Collections.emptySortedMap(), "EmptySortedMap");
+    serDeCheckSerializer(getJavaFury(), Collections.EMPTY_MAP, "EmptyMapSerializer");
+    serDeCheckSerializer(getJavaFury(), Collections.emptySortedMap(), "EmptySortedMap");
   }
 
   @Test
   public void testSingleMap() {
-    serDeCheckSerializer(javaFury, Collections.singletonMap("k", 1), "SingletonMap");
+    serDeCheckSerializer(getJavaFury(), Collections.singletonMap("k", 1), "SingletonMap");
   }
 
   @Test
   public void testConcurrentMap() {
     Map<String, Integer> data = new TreeMap<>(ImmutableMap.of("a", 1, "b", 2));
-    serDeCheckSerializer(javaFury, new ConcurrentHashMap<>(data), "ConcurrentHashMap");
-    serDeCheckSerializer(javaFury, new ConcurrentSkipListMap<>(data), "ConcurrentSkipListMap");
+    serDeCheckSerializer(getJavaFury(), new ConcurrentHashMap<>(data), "ConcurrentHashMap");
+    serDeCheckSerializer(getJavaFury(), new ConcurrentSkipListMap<>(data), "ConcurrentSkipListMap");
   }
 
   @Test
@@ -118,9 +118,9 @@ public class MapSerializersTest extends FuryTestBase {
         new EnumMap<>(CollectionSerializersTest.TestEnum.class);
     enumMap.put(CollectionSerializersTest.TestEnum.A, 1);
     enumMap.put(CollectionSerializersTest.TestEnum.B, "str");
-    serDe(javaFury, enumMap);
+    serDe(getJavaFury(), enumMap);
     Assert.assertEquals(
-        javaFury.getClassResolver().getSerializerClass(enumMap.getClass()),
+        getJavaFury().getClassResolver().getSerializerClass(enumMap.getClass()),
         MapSerializers.EnumMapSerializer.class);
   }
 
