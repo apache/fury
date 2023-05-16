@@ -16,29 +16,20 @@
  * limitations under the License.
  */
 
-package io.fury.builder;
+package io.fury.collection;
 
-import io.fury.Fury;
-import io.fury.serializer.Serializer;
+import java.util.Collection;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-/**
- * Since janino doesn't support generics, we use {@link Object} to represent object type rather
- * generic type.
- *
- * @author chaokunyang
- */
-public interface Generated {
-  /** Base class for all generated serializers. */
-  abstract class GeneratedSerializer extends Serializer implements Generated {
-    public GeneratedSerializer(Fury fury, Class<?> cls) {
-      super(fury, cls);
-    }
-  }
-
-  /** Base class for all type consist serializers. */
-  abstract class GeneratedObjectSerializer extends GeneratedSerializer implements Generated {
-    public GeneratedObjectSerializer(Fury fury, Class<?> cls) {
-      super(fury, cls);
-    }
+public class Collections {
+  /**
+   * Returns a sequential {@link Stream} of the contents of {@code iterable}, delegating to {@link
+   * Collection#stream} if possible.
+   */
+  public static <T> Stream<T> stream(Iterable<T> iterable) {
+    return (iterable instanceof Collection)
+        ? ((Collection<T>) iterable).stream()
+        : StreamSupport.stream(iterable.spliterator(), false);
   }
 }

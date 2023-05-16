@@ -977,6 +977,11 @@ public final class Fury {
     this.depth = depth;
   }
 
+  // Invoked by jit
+  public StringSerializer getStringSerializer() {
+    return stringSerializer;
+  }
+
   public ClassLoader getClassLoader() {
     return classLoader;
   }
@@ -1054,6 +1059,7 @@ public final class Fury {
     boolean secureModeEnabled = true;
     boolean requireClassRegistration = true;
     boolean metaContextShareEnabled = false;
+    boolean codeGenEnabled = true;
 
     private FuryBuilder() {}
 
@@ -1090,11 +1096,6 @@ public final class Fury {
 
     public FuryBuilder withClassLoader(ClassLoader classLoader) {
       this.classLoader = classLoader;
-      return this;
-    }
-
-    public FuryBuilder withCodegen(boolean codeGenEnabled) {
-      // TODO(chaokunyang) add jit support
       return this;
     }
 
@@ -1143,6 +1144,11 @@ public final class Fury {
     /** Whether to enable meta share mode. */
     public FuryBuilder withMetaContextShareEnabled(boolean shareMetaContext) {
       this.metaContextShareEnabled = shareMetaContext;
+      return this;
+    }
+
+    public FuryBuilder withCodegen(boolean codeGenEnabled) {
+      this.codeGenEnabled = codeGenEnabled;
       return this;
     }
 

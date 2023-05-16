@@ -23,6 +23,7 @@ import static io.fury.util.Utils.checkArgument;
 
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
+import io.fury.builder.CodecUtils;
 import io.fury.builder.Generated;
 import io.fury.memory.MemoryBuffer;
 import java.lang.reflect.Modifier;
@@ -48,6 +49,16 @@ public final class CodegenSerializer {
       return rawType.getEnclosingClass() == null || Modifier.isStatic(rawType.getModifiers());
     } else {
       return false;
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> Class<Serializer<T>> loadCodegenSerializer(Fury fury, Class<T> cls) {
+    try {
+      return (Class<Serializer<T>>) CodecUtils.loadOrGenObjectCodecClass(cls, fury);
+    } catch (Exception e) {
+      String msg = String.format("Create sequential serializer failed, \nclass: %s", cls);
+      throw new RuntimeException(msg, e);
     }
   }
 
