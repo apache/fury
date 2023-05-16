@@ -18,8 +18,54 @@
 
 package io.fury.builder;
 
+import io.fury.Fury;
+import io.fury.memory.MemoryBuffer;
+import io.fury.serializer.CompatibleSerializerBase;
+import io.fury.serializer.Serializer;
+
 /**
  * Since janino doesn't support generics, we use {@link Object} to represent object type rather
  * generic type.
+ *
+ * @author chaokunyang
  */
-public interface Generated {}
+public interface Generated {
+  /** Base class for all generated serializers. */
+  abstract class GeneratedSerializer extends Serializer implements Generated {
+    public GeneratedSerializer(Fury fury, Class<?> cls) {
+      super(fury, cls);
+    }
+  }
+
+  /** Base class for all type consist serializers. */
+  abstract class GeneratedObjectSerializer extends GeneratedSerializer implements Generated {
+    public GeneratedObjectSerializer(Fury fury, Class<?> cls) {
+      super(fury, cls);
+    }
+  }
+
+  /** Base class for all serializers with meta shared by {@link io.fury.type.ClassDef}. */
+  abstract class GeneratedMetaSharedSerializer extends GeneratedSerializer implements Generated {
+    public static final String SERIALIZER_FIELD_NAME = "serializer";
+    /** Will be set in generated constructor by {@link MetaSharedCodecBuilder}. */
+    public Serializer serializer;
+
+    public GeneratedMetaSharedSerializer(Fury fury, Class<?> cls) {
+      super(fury, cls);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Object value) {
+      serializer.write(buffer, value);
+    }
+  }
+
+  /** Base class for all compatible serializers. */
+  abstract class GeneratedCompatibleSerializer extends CompatibleSerializerBase
+      implements Generated {
+
+    public GeneratedCompatibleSerializer(Fury fury, Class<?> type) {
+      super(fury, type);
+    }
+  }
+}

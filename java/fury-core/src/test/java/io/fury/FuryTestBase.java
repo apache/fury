@@ -60,6 +60,11 @@ public abstract class FuryTestBase {
     return new Object[][] {{false}, {true}};
   }
 
+  @DataProvider(name = "enableCodegen")
+  public static Object[][] enableCodegen() {
+    return new Object[][] {{false}, {true}};
+  }
+
   @DataProvider(name = "compressNumber")
   public static Object[][] compressNumber() {
     return new Object[][] {{false}, {true}};

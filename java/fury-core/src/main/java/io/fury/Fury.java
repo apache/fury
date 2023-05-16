@@ -977,6 +977,11 @@ public final class Fury {
     this.depth = depth;
   }
 
+  // Invoked by jit
+  public StringSerializer getStringSerializer() {
+    return stringSerializer;
+  }
+
   public ClassLoader getClassLoader() {
     return classLoader;
   }
@@ -1049,10 +1054,12 @@ public final class Fury {
     boolean compressNumber = false;
     boolean compressString = true;
     CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
+    boolean jdkClassSerializableCheck = true;
     Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
     boolean secureModeEnabled = true;
     boolean requireClassRegistration = true;
     boolean metaContextShareEnabled = false;
+    boolean codeGenEnabled = true;
 
     private FuryBuilder() {}
 
@@ -1092,13 +1099,13 @@ public final class Fury {
       return this;
     }
 
-    public FuryBuilder withCodegen(boolean codeGenEnabled) {
-      // TODO(chaokunyang) add jit support
+    public FuryBuilder withCompatibleMode(CompatibleMode compatibleMode) {
+      this.compatibleMode = compatibleMode;
       return this;
     }
 
-    public FuryBuilder withCompatibleMode(CompatibleMode compatibleMode) {
-      this.compatibleMode = compatibleMode;
+    public FuryBuilder withJdkClassSerializableCheck(boolean jdkClassSerializableCheck) {
+      this.jdkClassSerializableCheck = jdkClassSerializableCheck;
       return this;
     }
 
@@ -1137,6 +1144,11 @@ public final class Fury {
     /** Whether to enable meta share mode. */
     public FuryBuilder withMetaContextShareEnabled(boolean shareMetaContext) {
       this.metaContextShareEnabled = shareMetaContext;
+      return this;
+    }
+
+    public FuryBuilder withCodegen(boolean codeGenEnabled) {
+      this.codeGenEnabled = codeGenEnabled;
       return this;
     }
 

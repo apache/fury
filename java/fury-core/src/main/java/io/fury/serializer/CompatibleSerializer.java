@@ -40,6 +40,7 @@ import java.util.Map;
  * @author chaokunyang
  */
 // TODO(chaokunyang) support generics optimization for {@code SomeClass<T>}
+// TODO(chaokunyang) support generics optimization for nested collection/map fields.
 @SuppressWarnings({"unchecked", "rawtypes"})
 public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private static final int INDEX_FOR_SKIP_FILL_VALUES = -1;

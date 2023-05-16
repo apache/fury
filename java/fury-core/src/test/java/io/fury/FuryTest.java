@@ -20,6 +20,7 @@ package io.fury;
 
 import static org.testng.Assert.assertEquals;
 
+import java.util.StringTokenizer;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -50,5 +51,18 @@ public class FuryTest extends FuryTestBase {
     assertEquals(Long.MAX_VALUE, serDe(fury1, fury2, Long.MAX_VALUE));
     assertEquals(Float.MAX_VALUE, serDe(fury1, fury2, Float.MAX_VALUE));
     assertEquals(Double.MAX_VALUE, serDe(fury1, fury2, Double.MAX_VALUE));
+  }
+
+  @Test(dataProvider = "enableCodegen")
+  public void testSerializeJDKObject(boolean enableCodegen) {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withJdkClassSerializableCheck(false)
+            .disableSecureMode()
+            .withCodegen(enableCodegen)
+            .build();
+    StringTokenizer tokenizer = new StringTokenizer("abc,1,23", ",");
+    assertEquals(serDe(fury, tokenizer).countTokens(), tokenizer.countTokens());
   }
 }

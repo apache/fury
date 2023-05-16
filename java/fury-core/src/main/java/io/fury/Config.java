@@ -60,11 +60,13 @@ public class Config implements Serializable {
   private final boolean compressString;
   private final boolean checkClassVersion;
   private final CompatibleMode compatibleMode;
+  private final boolean checkJdkClassSerializable;
   private final Class<? extends Serializer> defaultJDKStreamSerializerType;
   private final boolean secureModeEnabled;
   private final boolean classRegistrationRequired;
   private final boolean metaContextShareEnabled;
   private transient int configHash;
+  private final boolean codeGenEnabled;
 
   Config(Fury.FuryBuilder builder) {
     language = builder.language;
@@ -76,10 +78,12 @@ public class Config implements Serializable {
     compressString = builder.compressString;
     checkClassVersion = builder.checkClassVersion;
     compatibleMode = builder.compatibleMode;
+    checkJdkClassSerializable = builder.jdkClassSerializableCheck;
     defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
     secureModeEnabled = builder.secureModeEnabled;
     classRegistrationRequired = builder.requireClassRegistration;
     metaContextShareEnabled = builder.metaContextShareEnabled;
+    codeGenEnabled = builder.codeGenEnabled;
   }
 
   public Language getLanguage() {
@@ -133,6 +137,13 @@ public class Config implements Serializable {
   }
 
   /**
+   * Returns true if fury need to check whether the class needs to implement {@link Serializable}.
+   */
+  public boolean checkJdkClassSerializable() {
+    return checkJdkClassSerializable;
+  }
+
+  /**
    * Returns default serializer type for class which implements jdk serialization method such as
    * `writeObject/readObject`.
    */
@@ -150,6 +161,11 @@ public class Config implements Serializable {
 
   public boolean isMetaContextShareEnabled() {
     return metaContextShareEnabled;
+  }
+
+  /** Whether JIT is enabled. */
+  public boolean isCodeGenEnabled() {
+    return codeGenEnabled;
   }
 
   public int getConfigHash() {

@@ -18,6 +18,13 @@
 
 package io.fury.resolver;
 
+import static io.fury.codegen.Expression.Invoke.inlineInvoke;
+import static io.fury.codegen.ExpressionUtils.eq;
+import static io.fury.serializer.CodegenSerializer.loadCodegenSerializer;
+import static io.fury.serializer.CodegenSerializer.loadCompatibleCodegenSerializer;
+import static io.fury.serializer.CodegenSerializer.supportCodegenForJavaSerialization;
+import static io.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
@@ -27,6 +34,10 @@ import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.Language;
 import io.fury.annotation.Internal;
+import io.fury.builder.CodecUtils;
+import io.fury.builder.Generated;
+import io.fury.codegen.Expression;
+import io.fury.codegen.ExpressionUtils;
 import io.fury.collection.IdentityMap;
 import io.fury.collection.IdentityObjectIntMap;
 import io.fury.collection.LongMap;
@@ -37,6 +48,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
 import io.fury.serializer.ChildContainerSerializers;
+import io.fury.serializer.CodegenSerializer;
 import io.fury.serializer.CollectionSerializers;
 import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.CompatibleSerializer;
@@ -601,6 +613,12 @@ public class ClassResolver {
   }
 
   public Class<? extends Serializer> getSerializerClass(Class<?> cls) {
+    boolean codegen =
+        supportCodegenForJavaSerialization(cls) && fury.getConfig().isCodeGenEnabled();
+    return getSerializerClass(cls, codegen);
+  }
+
+  public Class<? extends Serializer> getSerializerClass(Class<?> cls, boolean codegen) {
     if (cls.isPrimitive()) {
       cls = Primitives.wrap(cls);
     }
@@ -617,18 +635,15 @@ public class ClassResolver {
         return Serializers.EnumSerializer.class;
       } else if (EnumSet.class.isAssignableFrom(cls)) {
         return CollectionSerializers.EnumSetSerializer.class;
+      } else if (Charset.class.isAssignableFrom(cls)) {
+        return Serializers.CharsetSerializer.class;
       } else if (cls.isArray()) {
         Preconditions.checkArgument(!cls.getComponentType().isPrimitive());
         return ArraySerializers.ObjectArraySerializer.class;
-      }
-      if (Functions.isLambda(cls)) {
+      } else if (Functions.isLambda(cls)) {
         return LambdaSerializer.class;
       } else if (ReflectionUtils.isJdkProxy(cls)) {
         return JdkProxySerializer.class;
-      } else if (ByteBuffer.class.isAssignableFrom(cls)) {
-        return BufferSerializers.ByteBufferSerializer.class;
-      } else if (Charset.class.isAssignableFrom(cls)) {
-        return Serializers.CharsetSerializer.class;
       } else if (Calendar.class.isAssignableFrom(cls)) {
         return TimeSerializers.CalendarSerializer.class;
       } else if (ZoneId.class.isAssignableFrom(cls)) {
@@ -637,6 +652,14 @@ public class ClassResolver {
         return TimeSerializers.TimeZoneSerializer.class;
       } else if (Externalizable.class.isAssignableFrom(cls)) {
         return ExternalizableSerializer.class;
+      } else if (ByteBuffer.class.isAssignableFrom(cls)) {
+        return BufferSerializers.ByteBufferSerializer.class;
+      }
+      if (fury.getConfig().checkJdkClassSerializable()) {
+        if (cls.getName().startsWith("java") && !(Serializable.class.isAssignableFrom(cls))) {
+          throw new UnsupportedOperationException(
+              String.format("Class %s doesn't support serialization.", cls));
+        }
       }
       if (Collection.class.isAssignableFrom(cls)) {
         // Serializer of common collection such as ArrayList/LinkedList should be registered
@@ -676,27 +699,59 @@ public class ClassResolver {
       if (requireJavaSerialization(cls)) {
         return getJavaSerializer(cls);
       }
-      return getObjectSerializerClass(cls, metaContextShareEnabled);
+      Class<?> clz = cls;
+      return getObjectSerializerClass(cls, metaContextShareEnabled, codegen);
     }
   }
 
   public Class<? extends Serializer> getObjectSerializerClass(Class<?> cls) {
-    return getObjectSerializerClass(cls, false);
+    boolean codegen =
+        supportCodegenForJavaSerialization(cls) && fury.getConfig().isCodeGenEnabled();
+    return getObjectSerializerClass(cls, false, codegen);
   }
 
-  private Class<? extends Serializer> getObjectSerializerClass(Class<?> cls, boolean shareMeta) {
+  private Class<? extends Serializer> getObjectSerializerClass(
+      Class<?> cls, boolean shareMeta, boolean codegen) {
     if (fury.getLanguage() != Language.JAVA) {
       LOG.warn("Class {} isn't supported for cross-language serialization.", cls);
     }
-    LOG.debug("Object of type {} can't be serialized by jit", cls);
-    switch (fury.getConfig().getCompatibleMode()) {
-      case SCHEMA_CONSISTENT:
-        return ObjectSerializer.class;
-      case COMPATIBLE:
-        return shareMeta ? ObjectSerializer.class : CompatibleSerializer.class;
-      default:
-        throw new UnsupportedOperationException(
-            String.format("Unsupported mode %s", fury.getConfig().getCompatibleMode()));
+    if (codegen) {
+      if (extRegistry.getClassCtx.contains(cls)) {
+        // avoid potential recursive call for seq codec generation.
+        return CodegenSerializer.LazyInitBeanSerializer.class;
+      } else {
+        extRegistry.getClassCtx.add(cls);
+        Class<? extends Serializer> sc;
+        switch (fury.getConfig().getCompatibleMode()) {
+          case SCHEMA_CONSISTENT:
+            sc = loadCodegenSerializer(fury, cls);
+            extRegistry.getClassCtx.remove(cls);
+            return sc;
+          case COMPATIBLE:
+            // If share class meta, compatible serializer won't be necessary, class
+            // definition will be sent to peer to create serializer for deserialization.
+            sc =
+                shareMeta
+                    ? loadCodegenSerializer(fury, cls)
+                    : loadCompatibleCodegenSerializer(fury, cls);
+            extRegistry.getClassCtx.remove(cls);
+            return sc;
+          default:
+            throw new UnsupportedOperationException(
+                String.format("Unsupported mode %s", fury.getConfig().getCompatibleMode()));
+        }
+      }
+    } else {
+      LOG.debug("Object of type {} can't be serialized by jit", cls);
+      switch (fury.getConfig().getCompatibleMode()) {
+        case SCHEMA_CONSISTENT:
+          return ObjectSerializer.class;
+        case COMPATIBLE:
+          return shareMeta ? ObjectSerializer.class : CompatibleSerializer.class;
+        default:
+          throw new UnsupportedOperationException(
+              String.format("Unsupported mode %s", fury.getConfig().getCompatibleMode()));
+      }
     }
   }
 
@@ -962,7 +1017,11 @@ public class ClassResolver {
       ClassDef classDef;
       Serializer<?> serializer = classInfo.serializer;
       if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE
-          && (serializer instanceof ObjectSerializer
+          && (serializer instanceof Generated.GeneratedObjectSerializer
+              // May already switched to MetaSharedSerializer when update class info cache.
+              || serializer instanceof Generated.GeneratedMetaSharedSerializer
+              || serializer instanceof CodegenSerializer.LazyInitBeanSerializer
+              || serializer instanceof ObjectSerializer
               || serializer instanceof MetaSharedSerializer)) {
         classDef =
             classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(cls, fury));
@@ -1046,8 +1105,15 @@ public class ClassResolver {
     Short classId = extRegistry.registeredClassIdMap.get(cls);
     ClassInfo classInfo =
         new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
-    Class<? extends Serializer> sc = MetaSharedSerializer.class;
-    classInfo.serializer = new MetaSharedSerializer(fury, cls, classDef);
+    Class<? extends Serializer> sc =
+        fury.getConfig().isCodeGenEnabled()
+            ? CodecUtils.loadOrGenMetaSharedCodecClass(fury, cls, classDef)
+            : MetaSharedSerializer.class;
+    if (sc == MetaSharedSerializer.class) {
+      classInfo.serializer = new MetaSharedSerializer(fury, cls, classDef);
+    } else {
+      classInfo.serializer = Serializers.newSerializer(fury, cls, sc);
+    }
     return classInfo;
   }
 
@@ -1089,6 +1155,72 @@ public class ClassResolver {
       metaContext.readClassInfos.add(null);
     }
     buffer.readerIndex(readerIndex);
+  }
+
+  /**
+   * Native code for ClassResolver.writeClass is too big to inline, so inline it manually.
+   *
+   * <p>See `already compiled into a big method` in <a
+   * href="https://wiki.openjdk.org/display/HotSpot/Server+Compiler+Inlining+Messages">Server+Compiler+Inlining+Messages</a>
+   */
+  // Note: Thread safe fot jit thread to call.
+  public Expression writeClassExpr(
+      Expression classResolverRef, Expression buffer, Expression classInfo) {
+    Expression classId = new Expression.Invoke(classInfo, "getClassId", PRIMITIVE_SHORT_TYPE);
+    Expression.ListExpression writeUnregistered =
+        new Expression.ListExpression(
+            new Expression.Invoke(buffer, "writeByte", Expression.Literal.ofByte(USE_CLASS_VALUE)));
+    if (metaContextShareEnabled) {
+      writeUnregistered.add(
+          new Expression.Invoke(classResolverRef, "writeClassWithMetaShare", buffer, classInfo));
+    } else {
+      writeUnregistered.add(
+          new Expression.Invoke(
+              classResolverRef,
+              "writeEnumStringBytes",
+              buffer,
+              inlineInvoke(classInfo, "getPackageNameBytes", TypeToken.of(EnumStringBytes.class))),
+          new Expression.Invoke(
+              classResolverRef,
+              "writeEnumStringBytes",
+              buffer,
+              inlineInvoke(classInfo, "getClassNameBytes", TypeToken.of(EnumStringBytes.class))));
+    }
+    return new Expression.If(
+        eq(classId, Expression.Literal.ofShort(NO_CLASS_ID)),
+        writeUnregistered,
+        writeClassExpr(buffer, classId));
+  }
+
+  // Note: Thread safe fot jit thread to call.
+  public Expression writeClassExpr(Expression buffer, short classId) {
+    Preconditions.checkArgument(classId != NO_CLASS_ID);
+    return writeClassExpr(buffer, Expression.Literal.ofShort(classId));
+  }
+
+  // Note: Thread safe fot jit thread to call.
+  public Expression writeClassExpr(Expression buffer, Expression classId) {
+    Expression writerIndex = new Expression.Invoke(buffer, "writerIndex", PRIMITIVE_INT_TYPE);
+    return new Expression.ListExpression(
+        writerIndex,
+        new Expression.Invoke(buffer, "increaseWriterIndex", Expression.Literal.ofInt(3)),
+        new Expression.Invoke(
+            buffer, "unsafePut", writerIndex, Expression.Literal.ofByte(USE_STRING_ID)),
+        new Expression.Invoke(
+            buffer,
+            "unsafePutShort",
+            ExpressionUtils.add(writerIndex, Expression.Literal.ofInt(1)),
+            classId));
+  }
+
+  // Invoked by Fury JIT.
+  public void writeEnumStringBytes(MemoryBuffer buffer, EnumStringBytes byteString) {
+    enumStringResolver.writeEnumStringBytes(buffer, byteString);
+  }
+
+  // Note: Thread safe fot jit thread to call.
+  public Expression skipRegisteredClassExpr(Expression buffer) {
+    return new Expression.Invoke(buffer, "increaseReaderIndex", Expression.Literal.ofInt(3));
   }
 
   /**
