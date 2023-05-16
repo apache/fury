@@ -33,6 +33,7 @@ import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.Language;
 import io.fury.annotation.Internal;
+import io.fury.builder.Generated;
 import io.fury.codegen.Expression;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.collection.IdentityMap;
@@ -1011,7 +1012,10 @@ public class ClassResolver {
       ClassDef classDef;
       Serializer<?> serializer = classInfo.serializer;
       if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE
-          && (serializer instanceof ObjectSerializer
+          && (serializer instanceof Generated.GeneratedObjectSerializer
+              // May already switched to MetaSharedSerializer when update class info cache.
+              || serializer instanceof CodegenSerializer.LazyInitBeanSerializer
+              || serializer instanceof ObjectSerializer
               || serializer instanceof MetaSharedSerializer)) {
         classDef =
             classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(cls, fury));
