@@ -62,6 +62,16 @@ public final class CodegenSerializer {
     }
   }
 
+  @SuppressWarnings("unchecked")
+  public static <T> Class<Serializer<T>> loadCompatibleCodegenSerializer(Fury fury, Class<T> cls) {
+    try {
+      return (Class<Serializer<T>>) CodecUtils.loadOrGenCompatibleCodecClass(cls, fury);
+    } catch (Exception e) {
+      String msg = String.format("Create compatible serializer failed, \nclass: %s", cls);
+      throw new RuntimeException(msg, e);
+    }
+  }
+
   /**
    * A bean serializer which initializes lazily on first call read/write method.
    *

@@ -21,6 +21,7 @@ package io.fury.resolver;
 import static io.fury.codegen.Expression.Invoke.inlineInvoke;
 import static io.fury.codegen.ExpressionUtils.eq;
 import static io.fury.serializer.CodegenSerializer.loadCodegenSerializer;
+import static io.fury.serializer.CodegenSerializer.loadCompatibleCodegenSerializer;
 import static io.fury.serializer.CodegenSerializer.supportCodegenForJavaSerialization;
 import static io.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
@@ -722,13 +723,16 @@ public class ClassResolver {
         Class<? extends Serializer> sc;
         switch (fury.getConfig().getCompatibleMode()) {
           case SCHEMA_CONSISTENT:
-            sc = ObjectSerializer.class;
+            sc = loadCodegenSerializer(fury, cls);
             extRegistry.getClassCtx.remove(cls);
             return sc;
           case COMPATIBLE:
             // If share class meta, compatible serializer won't be necessary, class
             // definition will be sent to peer to create serializer for deserialization.
-            sc = shareMeta ? loadCodegenSerializer(fury, cls) : CompatibleSerializer.class;
+            sc =
+                shareMeta
+                    ? loadCodegenSerializer(fury, cls)
+                    : loadCompatibleCodegenSerializer(fury, cls);
             extRegistry.getClassCtx.remove(cls);
             return sc;
           default:
@@ -1203,6 +1207,11 @@ public class ClassResolver {
   // Invoked by Fury JIT.
   public void writeEnumStringBytes(MemoryBuffer buffer, EnumStringBytes byteString) {
     enumStringResolver.writeEnumStringBytes(buffer, byteString);
+  }
+
+  // Note: Thread safe fot jit thread to call.
+  public Expression skipRegisteredClassExpr(Expression buffer) {
+    return new Expression.Invoke(buffer, "increaseReaderIndex", Expression.Literal.ofInt(3));
   }
 
   /**
