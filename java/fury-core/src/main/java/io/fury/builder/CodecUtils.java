@@ -25,6 +25,7 @@ import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CompileUnit;
 import io.fury.resolver.FieldResolver;
 import io.fury.serializer.Serializer;
+import io.fury.type.ClassDef;
 import java.util.Collections;
 
 /**
@@ -38,6 +39,14 @@ public class CodecUtils {
       Class<T> cls, Fury fury) {
     Preconditions.checkNotNull(fury);
     BaseObjectCodecBuilder codecBuilder = new ObjectCodecBuilder(cls, fury);
+    return loadOrGenCodecClass(cls, fury, codecBuilder);
+  }
+
+  public static <T> Class<? extends Serializer<T>> loadOrGenMetaSharedCodecClass(
+      Fury fury, Class<T> cls, ClassDef classDef) {
+    Preconditions.checkNotNull(fury);
+    MetaSharedCodecBuilder codecBuilder =
+        new MetaSharedCodecBuilder(TypeToken.of(cls), fury, classDef);
     return loadOrGenCodecClass(cls, fury, codecBuilder);
   }
 
