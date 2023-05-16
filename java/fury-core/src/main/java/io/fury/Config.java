@@ -163,9 +163,7 @@ public class Config implements Serializable {
     return metaContextShareEnabled;
   }
 
-  /**
-   * Whether JIT is enabled.
-   */
+  /** Whether JIT is enabled. */
   public boolean isCodeGenEnabled() {
     return codeGenEnabled;
   }

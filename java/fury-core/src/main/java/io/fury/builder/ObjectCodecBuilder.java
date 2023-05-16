@@ -1,4 +1,37 @@
+/*
+ * Copyright 2023 The Fury authors
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.fury.builder;
+
+import static io.fury.type.TypeUtils.OBJECT_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_ARRAY_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_CHAR_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_DOUBLE_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_FLOAT_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
+import static io.fury.type.TypeUtils.getRawType;
+import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
+import static io.fury.type.TypeUtils.isPrimitive;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -19,27 +52,11 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static io.fury.type.TypeUtils.OBJECT_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_ARRAY_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_CHAR_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_DOUBLE_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_FLOAT_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
-import static io.fury.type.TypeUtils.getRawType;
-import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
-import static io.fury.type.TypeUtils.isPrimitive;
 
 /**
  * Generate sequential read/write code for java serialization to speed up performance. It also
