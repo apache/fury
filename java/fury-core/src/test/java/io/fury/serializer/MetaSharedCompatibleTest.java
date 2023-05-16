@@ -535,10 +535,10 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
         field.setInt(o1, 100);
       }
     }
-    // {
-    //   Object o = serDeMetaShared(fury, o1);
-    //   Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o, o1));
-    // }
+    {
+      Object o = serDeMetaShared(fury, o1);
+      Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o, o1));
+    }
 
     Class<?> cls2 =
         loadClass(
@@ -575,10 +575,10 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
         field.setInt(o2, 100);
       }
     }
-    // {
-    //   Object o = serDeMetaShared(fury2, o2);
-    //   Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o, o2));
-    // }
+    {
+      Object o = serDeMetaShared(fury2, o2);
+      Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o, o2));
+    }
     {
       fury2.getSerializationContext().setMetaContext(context2);
       fury.getSerializationContext().setMetaContext(context);
