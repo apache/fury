@@ -1049,6 +1049,7 @@ public final class Fury {
     boolean compressNumber = false;
     boolean compressString = true;
     CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
+    boolean jdkClassSerializableCheck = true;
     Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
     boolean secureModeEnabled = true;
     boolean requireClassRegistration = true;
@@ -1099,6 +1100,11 @@ public final class Fury {
 
     public FuryBuilder withCompatibleMode(CompatibleMode compatibleMode) {
       this.compatibleMode = compatibleMode;
+      return this;
+    }
+
+    public FuryBuilder withJdkClassSerializableCheck(boolean jdkClassSerializableCheck) {
+      this.jdkClassSerializableCheck = jdkClassSerializableCheck;
       return this;
     }
 

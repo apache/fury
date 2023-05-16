@@ -60,6 +60,7 @@ public class Config implements Serializable {
   private final boolean compressString;
   private final boolean checkClassVersion;
   private final CompatibleMode compatibleMode;
+  private final boolean checkJdkClassSerializable;
   private final Class<? extends Serializer> defaultJDKStreamSerializerType;
   private final boolean secureModeEnabled;
   private final boolean classRegistrationRequired;
@@ -76,6 +77,7 @@ public class Config implements Serializable {
     compressString = builder.compressString;
     checkClassVersion = builder.checkClassVersion;
     compatibleMode = builder.compatibleMode;
+    checkJdkClassSerializable = builder.jdkClassSerializableCheck;
     defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
     secureModeEnabled = builder.secureModeEnabled;
     classRegistrationRequired = builder.requireClassRegistration;
@@ -130,6 +132,13 @@ public class Config implements Serializable {
 
   public CompatibleMode getCompatibleMode() {
     return compatibleMode;
+  }
+
+  /**
+   * Returns true if fury need to check whether the class needs to implement {@link Serializable}.
+   */
+  public boolean checkJdkClassSerializable() {
+    return checkJdkClassSerializable;
   }
 
   /**
