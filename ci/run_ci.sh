@@ -58,7 +58,6 @@ case $1 in
       echo "Executing fury javascript tests"
       cd "$ROOT/javascript"
       npm install
-      npm install jest-junit
       node ./node_modules/.bin/jest --ci --reporters=default --reporters=jest-junit
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
