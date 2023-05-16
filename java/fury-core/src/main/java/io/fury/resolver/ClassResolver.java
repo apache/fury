@@ -18,6 +18,10 @@
 
 package io.fury.resolver;
 
+import static io.fury.codegen.Expression.Invoke.inlineInvoke;
+import static io.fury.codegen.ExpressionUtils.eq;
+import static io.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
@@ -27,6 +31,8 @@ import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.Language;
 import io.fury.annotation.Internal;
+import io.fury.codegen.Expression;
+import io.fury.codegen.ExpressionUtils;
 import io.fury.collection.IdentityMap;
 import io.fury.collection.IdentityObjectIntMap;
 import io.fury.collection.LongMap;
@@ -1095,6 +1101,62 @@ public class ClassResolver {
       metaContext.readClassInfos.add(null);
     }
     buffer.readerIndex(readerIndex);
+  }
+
+  /**
+   * Native code for ClassResolver.writeClass is too big to inline, so inline it manually.
+   *
+   * <p>See `already compiled into a big method` in <a
+   * href="https://wiki.openjdk.org/display/HotSpot/Server+Compiler+Inlining+Messages">Server+Compiler+Inlining+Messages</a>
+   */
+  // Note: Thread safe fot jit thread to call.
+  public Expression writeClassExpr(
+      Expression classResolverRef, Expression buffer, Expression classInfo) {
+    Expression classId = new Expression.Invoke(classInfo, "getClassId", PRIMITIVE_SHORT_TYPE);
+    Expression.ListExpression writeUnregistered =
+        new Expression.ListExpression(
+            new Expression.Invoke(buffer, "writeByte", Expression.Literal.ofByte(USE_CLASS_VALUE)));
+    if (metaContextShareEnabled) {
+      writeUnregistered.add(
+          new Expression.Invoke(classResolverRef, "writeClassWithMetaShare", buffer, classInfo));
+    } else {
+      writeUnregistered.add(
+          new Expression.Invoke(
+              classResolverRef,
+              "writeEnumStringBytes",
+              buffer,
+              inlineInvoke(classInfo, "getPackageNameBytes", TypeToken.of(EnumStringBytes.class))),
+          new Expression.Invoke(
+              classResolverRef,
+              "writeEnumStringBytes",
+              buffer,
+              inlineInvoke(classInfo, "getClassNameBytes", TypeToken.of(EnumStringBytes.class))));
+    }
+    return new Expression.If(
+        eq(classId, Expression.Literal.ofShort(NO_CLASS_ID)),
+        writeUnregistered,
+        writeClassExpr(buffer, classId));
+  }
+
+  // Note: Thread safe fot jit thread to call.
+  public Expression writeClassExpr(Expression buffer, short classId) {
+    Preconditions.checkArgument(classId != NO_CLASS_ID);
+    return writeClassExpr(buffer, Expression.Literal.ofShort(classId));
+  }
+
+  // Note: Thread safe fot jit thread to call.
+  public Expression writeClassExpr(Expression buffer, Expression classId) {
+    Expression writerIndex = new Expression.Invoke(buffer, "writerIndex", PRIMITIVE_INT_TYPE);
+    return new Expression.ListExpression(
+        writerIndex,
+        new Expression.Invoke(buffer, "increaseWriterIndex", Expression.Literal.ofInt(3)),
+        new Expression.Invoke(
+            buffer, "unsafePut", writerIndex, Expression.Literal.ofByte(USE_STRING_ID)),
+        new Expression.Invoke(
+            buffer,
+            "unsafePutShort",
+            ExpressionUtils.add(writerIndex, Expression.Literal.ofInt(1)),
+            classId));
   }
 
   /**

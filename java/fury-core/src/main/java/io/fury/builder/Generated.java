@@ -18,10 +18,20 @@
 
 package io.fury.builder;
 
+import io.fury.Fury;
+import io.fury.serializer.Serializer;
+
 /**
  * Since janino doesn't support generics, we use {@link Object} to represent object type rather
  * generic type.
  *
  * @author chaokunyang
  */
-public interface Generated {}
+public interface Generated {
+  /** Base class for all generated serializers. */
+  abstract class GeneratedSerializer extends Serializer implements Generated {
+    public GeneratedSerializer(Fury fury, Class<?> cls) {
+      super(fury, cls);
+    }
+  }
+}
