@@ -638,6 +638,12 @@ public class ClassResolver {
       } else if (Externalizable.class.isAssignableFrom(cls)) {
         return ExternalizableSerializer.class;
       }
+      if (fury.getConfig().checkJdkClassSerializable()) {
+        if (cls.getName().startsWith("java") && !(Serializable.class.isAssignableFrom(cls))) {
+          throw new UnsupportedOperationException(
+              String.format("Class %s doesn't support serialization.", cls));
+        }
+      }
       if (Collection.class.isAssignableFrom(cls)) {
         // Serializer of common collection such as ArrayList/LinkedList should be registered
         // already.
