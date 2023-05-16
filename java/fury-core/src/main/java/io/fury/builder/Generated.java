@@ -19,6 +19,7 @@
 package io.fury.builder;
 
 import io.fury.Fury;
+import io.fury.serializer.CompatibleSerializerBase;
 import io.fury.serializer.Serializer;
 
 /**
@@ -39,6 +40,15 @@ public interface Generated {
   abstract class GeneratedObjectSerializer extends GeneratedSerializer implements Generated {
     public GeneratedObjectSerializer(Fury fury, Class<?> cls) {
       super(fury, cls);
+    }
+  }
+
+  /** Base class for all compatible serializers. */
+  abstract class GeneratedCompatibleSerializer extends CompatibleSerializerBase
+      implements Generated {
+
+    public GeneratedCompatibleSerializer(Fury fury, Class<?> type) {
+      super(fury, type);
     }
   }
 }

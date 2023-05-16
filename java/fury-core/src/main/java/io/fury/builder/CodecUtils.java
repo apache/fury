@@ -19,9 +19,11 @@
 package io.fury.builder;
 
 import com.google.common.base.Preconditions;
+import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CompileUnit;
+import io.fury.resolver.FieldResolver;
 import io.fury.serializer.Serializer;
 import java.util.Collections;
 
@@ -36,6 +38,20 @@ public class CodecUtils {
       Class<T> cls, Fury fury) {
     Preconditions.checkNotNull(fury);
     BaseObjectCodecBuilder codecBuilder = new ObjectCodecBuilder(cls, fury);
+    return loadOrGenCodecClass(cls, fury, codecBuilder);
+  }
+
+  public static <T> Class<? extends Serializer<T>> loadOrGenCompatibleCodecClass(
+      Class<T> cls, Fury fury) {
+    FieldResolver resolver = FieldResolver.of(fury, cls, true, false);
+    return loadOrGenCompatibleCodecClass(cls, fury, resolver, Generated.GeneratedSerializer.class);
+  }
+
+  public static <T> Class<? extends Serializer<T>> loadOrGenCompatibleCodecClass(
+      Class<T> cls, Fury fury, FieldResolver fieldResolver, Class<?> parentSerializerClass) {
+    Preconditions.checkNotNull(fury);
+    BaseObjectCodecBuilder codecBuilder =
+        new CompatibleCodecBuilder(TypeToken.of(cls), fury, fieldResolver, parentSerializerClass);
     return loadOrGenCodecClass(cls, fury, codecBuilder);
   }
 
