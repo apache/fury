@@ -65,8 +65,9 @@ public class Config implements Serializable {
   private final boolean secureModeEnabled;
   private final boolean classRegistrationRequired;
   private final boolean metaContextShareEnabled;
-  private transient int configHash;
   private final boolean codeGenEnabled;
+  private final boolean asyncCompilationEnabled;
+  private transient int configHash;
 
   Config(Fury.FuryBuilder builder) {
     language = builder.language;
@@ -84,6 +85,7 @@ public class Config implements Serializable {
     classRegistrationRequired = builder.requireClassRegistration;
     metaContextShareEnabled = builder.metaContextShareEnabled;
     codeGenEnabled = builder.codeGenEnabled;
+    asyncCompilationEnabled = builder.asyncCompilationEnabled;
   }
 
   public Language getLanguage() {
@@ -166,6 +168,15 @@ public class Config implements Serializable {
   /** Whether JIT is enabled. */
   public boolean isCodeGenEnabled() {
     return codeGenEnabled;
+  }
+
+  /**
+   * Whether enable async compilation. If enabled, serialization will use interpreter mode
+   * serialization first and switch to jit serialization after async serializer jit for a class \ is
+   * finished.
+   */
+  public boolean isAsyncCompilationEnabled() {
+    return asyncCompilationEnabled;
   }
 
   public int getConfigHash() {
