@@ -977,6 +977,11 @@ public final class Fury {
     this.depth = depth;
   }
 
+  // Invoked by jit
+  public StringSerializer getStringSerializer() {
+    return stringSerializer;
+  }
+
   public ClassLoader getClassLoader() {
     return classLoader;
   }
