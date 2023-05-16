@@ -34,6 +34,7 @@ import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.Language;
 import io.fury.annotation.Internal;
+import io.fury.builder.CodecUtils;
 import io.fury.builder.Generated;
 import io.fury.codegen.Expression;
 import io.fury.codegen.ExpressionUtils;
@@ -1018,6 +1019,7 @@ public class ClassResolver {
       if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE
           && (serializer instanceof Generated.GeneratedObjectSerializer
               // May already switched to MetaSharedSerializer when update class info cache.
+              || serializer instanceof Generated.GeneratedMetaSharedSerializer
               || serializer instanceof CodegenSerializer.LazyInitBeanSerializer
               || serializer instanceof ObjectSerializer
               || serializer instanceof MetaSharedSerializer)) {
@@ -1103,8 +1105,15 @@ public class ClassResolver {
     Short classId = extRegistry.registeredClassIdMap.get(cls);
     ClassInfo classInfo =
         new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
-    Class<? extends Serializer> sc = MetaSharedSerializer.class;
-    classInfo.serializer = new MetaSharedSerializer(fury, cls, classDef);
+    Class<? extends Serializer> sc =
+        fury.getConfig().isCodeGenEnabled()
+            ? CodecUtils.loadOrGenMetaSharedCodecClass(fury, cls, classDef)
+            : MetaSharedSerializer.class;
+    if (sc == MetaSharedSerializer.class) {
+      classInfo.serializer = new MetaSharedSerializer(fury, cls, classDef);
+    } else {
+      classInfo.serializer = Serializers.newSerializer(fury, cls, sc);
+    }
     return classInfo;
   }
 

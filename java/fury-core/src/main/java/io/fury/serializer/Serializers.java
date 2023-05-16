@@ -59,6 +59,9 @@ public class Serializers {
       if (serializerClass == ObjectSerializer.class) {
         return new ObjectSerializer(fury, type);
       }
+      if (serializerClass == CompatibleSerializer.class) {
+        return new CompatibleSerializer(fury, type);
+      }
       try {
         try {
           Constructor<? extends Serializer> ctr =
