@@ -1060,6 +1060,7 @@ public final class Fury {
     boolean requireClassRegistration = true;
     boolean metaContextShareEnabled = false;
     boolean codeGenEnabled = true;
+    public boolean asyncCompilationEnabled = false;
 
     private FuryBuilder() {}
 
@@ -1149,6 +1150,18 @@ public final class Fury {
 
     public FuryBuilder withCodegen(boolean codeGenEnabled) {
       this.codeGenEnabled = codeGenEnabled;
+      return this;
+    }
+
+    /**
+     * Whether enable async compilation. If enabled, serialization will use interpreter mode
+     * serialization first and switch to jit serialization after async serializer jit for a class \
+     * is finished.
+     *
+     * @see Config#isAsyncCompilationEnabled()
+     */
+    public FuryBuilder withAsyncCompilationEnabled(boolean asyncCompilationEnabled) {
+      this.asyncCompilationEnabled = asyncCompilationEnabled;
       return this;
     }
 
