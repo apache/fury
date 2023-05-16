@@ -46,9 +46,13 @@ import org.testng.annotations.DataProvider;
  */
 @SuppressWarnings("unchecked")
 public abstract class FuryTestBase {
+  private static final ThreadLocal<Fury> javaFuryLocal =
+      ThreadLocal.withInitial(
+          () -> Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build());
 
-  public static Fury javaFury =
-      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+  public static Fury getJavaFury() {
+    return javaFuryLocal.get();
+  }
 
   @DataProvider(name = "referenceTrackingConfig")
   public static Object[][] referenceTrackingConfig() {

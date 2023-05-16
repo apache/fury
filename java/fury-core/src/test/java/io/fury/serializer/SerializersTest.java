@@ -151,7 +151,7 @@ public class SerializersTest extends FuryTestBase {
   @Test
   public void testCurrency() {
     Assert.assertEquals(
-        serDeCheckSerializer(javaFury, Currency.getInstance("EUR"), "Currency"),
+        serDeCheckSerializer(getJavaFury(), Currency.getInstance("EUR"), "Currency"),
         Currency.getInstance("EUR"));
   }
 
@@ -164,27 +164,27 @@ public class SerializersTest extends FuryTestBase {
 
   @Test
   public void testURI() throws URISyntaxException {
-    Assert.assertEquals(serDeCheckSerializer(javaFury, new URI(""), "URI"), new URI(""));
-    Assert.assertEquals(serDeCheckSerializer(javaFury, new URI("abc"), "URI"), new URI("abc"));
+    Assert.assertEquals(serDeCheckSerializer(getJavaFury(), new URI(""), "URI"), new URI(""));
+    Assert.assertEquals(serDeCheckSerializer(getJavaFury(), new URI("abc"), "URI"), new URI("abc"));
   }
 
   @Test
   public void testRegex() {
     Assert.assertEquals(
-        serDeCheckSerializer(javaFury, Pattern.compile("abc"), "Regex").toString(),
+        serDeCheckSerializer(getJavaFury(), Pattern.compile("abc"), "Regex").toString(),
         Pattern.compile("abc").toString());
   }
 
   @Test
   public void testUUID() {
     UUID uuid = UUID.randomUUID();
-    Assert.assertEquals(serDeCheckSerializer(javaFury, uuid, "UUID"), uuid);
+    Assert.assertEquals(serDeCheckSerializer(getJavaFury(), uuid, "UUID"), uuid);
   }
 
   private static class TestClassSerialization {}
 
   @Test
   public void testClass() {
-    serDeCheckSerializer(javaFury, TestClassSerialization.class, "ClassSerializer");
+    serDeCheckSerializer(getJavaFury(), TestClassSerialization.class, "ClassSerializer");
   }
 }
