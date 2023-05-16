@@ -63,7 +63,7 @@ export default class SerializerResolver {
 
     reset() {
         this.readStringPool = [];
-        this.writeStringIndex.clear();
+        this.writeStringIndex = new Map();
     }
 
     getSerializerById(id: InternalSerializerType) {
