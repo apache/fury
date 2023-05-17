@@ -21,6 +21,7 @@ package io.fury.serializer;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.Language;
@@ -955,6 +956,43 @@ public class MapSerializers {
       Object key = fury.crossLanguageReadReferencable(buffer);
       Object value = fury.crossLanguageReadReferencable(buffer);
       return Collections.singletonMap(key, value);
+    }
+  }
+
+  public static final class ImmutableMapSerializer<T extends ImmutableMap>
+      extends MapSerializer<T> {
+    private final ReplaceResolveSerializer serializer;
+
+    public ImmutableMapSerializer(Fury fury, Class<T> cls) {
+      super(fury, cls, false, false);
+      fury.getClassResolver().setSerializer(cls, this);
+      serializer = new ReplaceResolveSerializer(fury, cls);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public T read(MemoryBuffer buffer) {
+      return (T) serializer.read(buffer);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, T value) {
+      serializer.write(buffer, value);
+    }
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return (short) -Type.MAP.getId();
+    }
+
+    @Override
+    public T crossLanguageRead(MemoryBuffer buffer) {
+      int size = buffer.readPositiveVarInt();
+      Map map = new HashMap();
+      crossLanguageReadElements(fury, buffer, map, size);
+      T immutableMap = (T) ImmutableMap.copyOf(map);
+      fury.getReferenceResolver().reference(immutableMap);
+      return immutableMap;
     }
   }
 

@@ -188,17 +188,11 @@ public class CollectionSerializersTest extends FuryTestBase {
         CollectionSerializers.PriorityQueueSerializer.class);
   }
 
-  @Test(dataProvider = "referenceTrackingConfig")
-  public void testCollectionSerializers(boolean referenceTrackingConfig) {
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
-            .disableSecureMode()
-            .build();
+  @Test
+  public void testImmutableListSerializer() {
     serDe(getJavaFury(), ImmutableList.of(1, 2));
     Assert.assertEquals(
-        fury.getClassResolver().getSerializerClass(ImmutableList.of(1, 2).getClass()),
+        getJavaFury().getClassResolver().getSerializerClass(ImmutableList.of(1, 2).getClass()),
         CollectionSerializers.ImmutableListSerializer.class);
   }
 
