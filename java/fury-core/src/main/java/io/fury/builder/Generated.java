@@ -18,10 +18,17 @@
 
 package io.fury.builder;
 
+import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.CompatibleSerializerBase;
 import io.fury.serializer.Serializer;
+import io.fury.util.Platform;
+import io.fury.util.ReflectionUtils;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Since janino doesn't support generics, we use {@link Object} to represent object type rather
@@ -29,11 +36,65 @@ import io.fury.serializer.Serializer;
  *
  * @author chaokunyang
  */
+@SuppressWarnings({"rawtypes", "unchecked"})
 public interface Generated {
+
   /** Base class for all generated serializers. */
   abstract class GeneratedSerializer extends Serializer implements Generated {
     public GeneratedSerializer(Fury fury, Class<?> cls) {
       super(fury, cls);
+    }
+
+    /**
+     * Register notify callback to update final field type serializers if it's jit-able.
+     *
+     * @param serializerFieldInfos fields name and types whose field value will be updated when jit
+     *     succeed fot these field types.
+     * @see BaseObjectCodecBuilder#getOrCreateSerializer(Class)
+     * @see BaseObjectCodecBuilder#genCode
+     */
+    // Invoked in jit constructor.
+    public void registerJITNotifyCallback(
+        Serializer subclassSerializer, Object... serializerFieldInfos) {
+      if (serializerFieldInfos.length > 0) {
+        Map<String, Field> fieldsMap = new HashMap<>(serializerFieldInfos.length / 2);
+        for (Field field : getClass().getDeclaredFields()) {
+          if (field.getType() == Serializer.class) {
+            fieldsMap.put(field.getName(), field);
+          }
+        }
+        for (int i = 0; i < serializerFieldInfos.length; i += 2) {
+          String serializerFieldName = (String) serializerFieldInfos[i];
+          Class<?> beanFieldType = (Class<?>) serializerFieldInfos[i + 1];
+          Field field = Objects.requireNonNull(fieldsMap.get(serializerFieldName));
+          fury.getJITContext()
+              .registerJITNotifyCallback(
+                  beanFieldType,
+                  new JITContext.NotifyCallback() {
+                    @Override
+                    public void onNotifyResult(Object result) {
+                      Serializer<?> fieldSerializer =
+                          fury.getClassResolver().getSerializer(beanFieldType);
+                      Preconditions.checkState(beanFieldType == fieldSerializer.getType());
+                      Preconditions.checkState(result == fieldSerializer.getClass());
+                      Platform.putObject(
+                          subclassSerializer,
+                          ReflectionUtils.getFieldOffset(field),
+                          fieldSerializer);
+                    }
+
+                    @Override
+                    public void onNotifyMissed() {
+                      Serializer<?> fieldSerializer =
+                          fury.getClassResolver().getSerializer(beanFieldType);
+                      Platform.putObject(
+                          subclassSerializer,
+                          ReflectionUtils.getFieldOffset(field),
+                          fieldSerializer);
+                    }
+                  });
+        }
+      }
     }
   }
 
