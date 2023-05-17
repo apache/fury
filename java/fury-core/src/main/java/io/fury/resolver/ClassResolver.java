@@ -655,6 +655,8 @@ public class ClassResolver {
         return ExternalizableSerializer.class;
       } else if (ImmutableList.class.isAssignableFrom(cls)) {
         return CollectionSerializers.ImmutableListSerializer.class;
+      } else if (ImmutableMap.class.isAssignableFrom(cls)) {
+        return MapSerializers.ImmutableMapSerializer.class;
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {
         return BufferSerializers.ByteBufferSerializer.class;
       }

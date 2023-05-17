@@ -124,6 +124,16 @@ public class MapSerializersTest extends FuryTestBase {
         MapSerializers.EnumMapSerializer.class);
   }
 
+  @Test
+  public void testImmutableMapSerializer() {
+    serDe(getJavaFury(), ImmutableMap.of("k1", 1, "k2", 2));
+    Assert.assertEquals(
+        getJavaFury()
+            .getClassResolver()
+            .getSerializerClass(ImmutableMap.of("k1", 1, "k2", 2).getClass()),
+        MapSerializers.ImmutableMapSerializer.class);
+  }
+
   public static class TestClassForDefaultMapSerializer extends AbstractMap<String, Object> {
     private final Set<Entry<String, Object>> data = new HashSet<>();
 
