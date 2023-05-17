@@ -74,8 +74,6 @@ import java.util.Map;
  *
  * @author chaokunyang
  */
-// TODO(chaokunyang) support generics optimization for {@code SomeClass<T>}
-// TODO(chaokunyang) support generics optimization for nested collection/map fields.
 @SuppressWarnings("UnstableApiUsage")
 public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   public static final String FIELD_RESOLVER_NAME = "fieldResolver";
@@ -114,7 +112,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   @Override
   protected void addCommonImports() {
     super.addCommonImports();
-    ctx.addImport(Generated.GeneratedCompatibleSerializer.class);
+    ctx.addImport(GeneratedCompatibleSerializer.class);
   }
 
   @Override

@@ -97,8 +97,15 @@ public class LambdaSerializer extends Serializer {
       if (SERIALIZED_LAMBDA_HAS_JDK_WRITE || SERIALIZED_LAMBDA_HAS_JDK_READ) {
         sc = fury.getDefaultJDKStreamSerializerType();
       } else {
-        // TODO(chaokunyang) add jit serialization support
-        sc = ObjectSerializer.class;
+        sc =
+            fury.getJITContext()
+                .registerSerializerJITCallback(
+                    () -> ObjectSerializer.class,
+                    () -> CodegenSerializer.loadCodegenSerializer(fury, SERIALIZED_LAMBDA),
+                    c -> {
+                      this.dataSerializer = Serializers.newSerializer(fury, SERIALIZED_LAMBDA, c);
+                      fury.getClassResolver().clearSerializer(SERIALIZED_LAMBDA);
+                    });
       }
       this.dataSerializer = dataSerializer = Serializers.newSerializer(fury, SERIALIZED_LAMBDA, sc);
       fury.getClassResolver().clearSerializer(SERIALIZED_LAMBDA);

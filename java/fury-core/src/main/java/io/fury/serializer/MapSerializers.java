@@ -1075,7 +1075,9 @@ public class MapSerializers {
           "Python default map serializer should use " + MapSerializer.class);
       fury.getClassResolver().setSerializer(cls, this);
       Class<? extends Serializer> serializerClass =
-          fury.getClassResolver().getObjectSerializerClass(cls);
+          fury.getClassResolver()
+              .getObjectSerializerClass(
+                  cls, sc -> dataSerializer = Serializers.newSerializer(fury, cls, sc));
       dataSerializer = Serializers.newSerializer(fury, cls, serializerClass);
       // No need to set object serializer to this, it will be set in class resolver later.
       // fury.getClassResolver().setSerializer(cls, this);
@@ -1119,7 +1121,7 @@ public class MapSerializers {
     }
   }
 
-  // TODO(chaokunyang) support ConcurrentSkipListMap.SubMap more efficiently.
+  // TODO(chaokunyang) support ConcurrentSkipListMap.SubMap mo efficiently.
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(HashMap.class, new HashMapSerializer(fury));
     fury.getClassResolver()

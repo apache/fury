@@ -756,20 +756,6 @@ public class CollectionSerializers {
     }
   }
 
-  public static final class ArrayDequeSerializer extends CollectionSerializer<ArrayDeque> {
-
-    public ArrayDequeSerializer(Fury fury, Class<ArrayDeque> cls) {
-      super(fury, cls, true, false);
-    }
-
-    @Override
-    public ArrayDeque newCollection(MemoryBuffer buffer, int numElements) {
-      ArrayDeque deque = new ArrayDeque(numElements);
-      fury.getReferenceResolver().reference(deque);
-      return deque;
-    }
-  }
-
   public static final class VectorSerializer extends CollectionSerializer<Vector> {
 
     public VectorSerializer(Fury fury, Class<Vector> cls) {
@@ -781,6 +767,20 @@ public class CollectionSerializers {
       Vector<Object> vector = new Vector<>(numElements);
       fury.getReferenceResolver().reference(vector);
       return vector;
+    }
+  }
+
+  public static final class ArrayDequeSerializer extends CollectionSerializer<ArrayDeque> {
+
+    public ArrayDequeSerializer(Fury fury, Class<ArrayDeque> cls) {
+      super(fury, cls, true, false);
+    }
+
+    @Override
+    public ArrayDeque newCollection(MemoryBuffer buffer, int numElements) {
+      ArrayDeque deque = new ArrayDeque(numElements);
+      fury.getReferenceResolver().reference(deque);
+      return deque;
     }
   }
 
@@ -877,7 +877,9 @@ public class CollectionSerializers {
           "Python default collection serializer should use " + CollectionSerializer.class);
       fury.getClassResolver().setSerializer(cls, this);
       Class<? extends Serializer> serializerClass =
-          fury.getClassResolver().getObjectSerializerClass(cls);
+          fury.getClassResolver()
+              .getObjectSerializerClass(
+                  cls, sc -> dataSerializer = Serializers.newSerializer(fury, cls, sc));
       dataSerializer = Serializers.newSerializer(fury, cls, serializerClass);
       // No need to set object serializer to this, it will be set in class resolver later.
       // fury.getClassResolver().setSerializer(cls, this);
@@ -921,6 +923,10 @@ public class CollectionSerializers {
       serializer.write(buffer, value);
     }
   }
+
+  // TODO add JDK11:JdkImmutableListSerializer,JdkImmutableMapSerializer,JdkImmutableSetSerializer
+  //  by jit codegen those constructor for compiling in jdk8.
+  // TODO Support ArraySubListSerializer, SubListSerializer
 
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(ArrayList.class, new ArrayListSerializer(fury));
