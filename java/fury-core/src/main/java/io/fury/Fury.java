@@ -19,6 +19,7 @@
 package io.fury;
 
 import com.google.common.base.Preconditions;
+import io.fury.builder.JITContext;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.resolver.ClassInfo;
@@ -90,7 +91,7 @@ public final class Fury {
   private final EnumStringResolver enumStringResolver;
   private final SerializationContext serializationContext;
   private final ClassLoader classLoader;
-
+  private final JITContext jitContext;
   private final MemoryBuffer buffer;
   private final List<Object> nativeObjects;
   private final StringSerializer stringSerializer;
@@ -124,6 +125,7 @@ public final class Fury {
     nativeObjects = new ArrayList<>();
     generics = new Generics(this);
     stringSerializer = new StringSerializer(this);
+    jitContext = new JITContext(this);
     LOG.info("Created new fury {}", this);
   }
 
@@ -189,9 +191,49 @@ public final class Fury {
   /** Serialize <code>obj</code> to a <code>buffer</code>. */
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj, BufferCallback callback) {
     try {
-      return serializeInternal(buffer, obj, callback);
+      jitContext.lock();
+      this.bufferCallback = callback;
+      int maskIndex = buffer.writerIndex();
+      // 1byte used for bit mask
+      buffer.ensure(maskIndex + 1);
+      buffer.writerIndex(maskIndex + 1);
+      byte bitmap = 0;
+      if (obj == null) {
+        bitmap |= isNilFlag;
+        buffer.put(maskIndex, bitmap);
+        return buffer;
+      }
+      // set endian.
+      if (isLittleEndian) {
+        bitmap |= isLittleEndianFlag;
+      }
+      if (language != Language.JAVA) {
+        // set reader as x_lang.
+        bitmap |= isCrossLanguageFlag;
+        // set writer language.
+        buffer.writeByte((byte) Language.JAVA.ordinal());
+      }
+      if (bufferCallback != null) {
+        bitmap |= isOutOfBandFlag;
+      }
+      buffer.put(maskIndex, bitmap);
+      if (language == Language.JAVA) {
+        if (config.isMetaContextShareEnabled()) {
+          int startOffset = buffer.writerIndex();
+          buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
+          writeReferencableToJava(buffer, obj);
+          buffer.putInt(startOffset, buffer.writerIndex());
+          classResolver.writeClassDefs(buffer);
+        } else {
+          writeReferencableToJava(buffer, obj);
+        }
+      } else {
+        crossLanguageSerializeInternal(buffer, obj);
+      }
+      return buffer;
     } finally {
       resetWrite();
+      jitContext.unlock();
     }
   }
 
@@ -202,59 +244,14 @@ public final class Fury {
   public void serialize(OutputStream outputStream, Object obj, BufferCallback callback) {
     buffer.writerIndex(0);
     buffer.writeInt(-1);
-    try {
-      serializeInternal(buffer, obj, callback);
-    } finally {
-      resetWrite();
-    }
+    serialize(buffer, obj, callback);
+
     buffer.putInt(0, buffer.writerIndex() - 4);
     try {
       outputStream.write(buffer.getBytes(0, buffer.writerIndex()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  private MemoryBuffer serializeInternal(MemoryBuffer buffer, Object obj, BufferCallback callback) {
-    this.bufferCallback = callback;
-    int maskIndex = buffer.writerIndex();
-    // 1byte used for bit mask
-    buffer.ensure(maskIndex + 1);
-    buffer.writerIndex(maskIndex + 1);
-    byte bitmap = 0;
-    if (obj == null) {
-      bitmap |= isNilFlag;
-      buffer.put(maskIndex, bitmap);
-      return buffer;
-    }
-    // set endian.
-    if (isLittleEndian) {
-      bitmap |= isLittleEndianFlag;
-    }
-    if (language != Language.JAVA) {
-      // set reader as x_lang.
-      bitmap |= isCrossLanguageFlag;
-      // set writer language.
-      buffer.writeByte((byte) Language.JAVA.ordinal());
-    }
-    if (bufferCallback != null) {
-      bitmap |= isOutOfBandFlag;
-    }
-    buffer.put(maskIndex, bitmap);
-    if (language == Language.JAVA) {
-      if (config.isMetaContextShareEnabled()) {
-        int startOffset = buffer.writerIndex();
-        buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
-        writeReferencableToJava(buffer, obj);
-        buffer.putInt(startOffset, buffer.writerIndex());
-        classResolver.writeClassDefs(buffer);
-      } else {
-        writeReferencableToJava(buffer, obj);
-      }
-    } else {
-      crossLanguageSerializeInternal(buffer, obj);
-    }
-    return buffer;
   }
 
   private void crossLanguageSerializeInternal(MemoryBuffer buffer, Object obj) {
@@ -604,11 +601,11 @@ public final class Fury {
 
   /** Deserialize <code>obj</code> from a byte array. */
   public Object deserialize(byte[] bytes) {
-    return deserializeInternal(MemoryUtils.wrap(bytes), null);
+    return deserialize(MemoryUtils.wrap(bytes), null);
   }
 
   public Object deserialize(byte[] bytes, Iterable<MemoryBuffer> outOfBandBuffers) {
-    return deserializeInternal(MemoryUtils.wrap(bytes), outOfBandBuffers);
+    return deserialize(MemoryUtils.wrap(bytes), outOfBandBuffers);
   }
 
   /**
@@ -616,34 +613,12 @@ public final class Fury {
    * <code>size</code>.
    */
   public Object deserialize(long address, int size) {
-    return deserializeInternal(MemoryUtils.buffer(address, size), null);
+    return deserialize(MemoryUtils.buffer(address, size), null);
   }
 
   /** Deserialize <code>obj</code> from a <code>buffer</code>. */
   public Object deserialize(MemoryBuffer buffer) {
-    return deserializeInternal(buffer, null);
-  }
-
-  public Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
-    return deserializeInternal(buffer, outOfBandBuffers);
-  }
-
-  public Object deserialize(InputStream inputStream) {
-    return deserialize(inputStream, null);
-  }
-
-  public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
-    buffer.readerIndex(0);
-    try {
-      int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
-      Preconditions.checkArgument(read == 4);
-      int size = buffer.readInt();
-      read = inputStream.read(buffer.getHeapMemory(), 4, size);
-      Preconditions.checkArgument(read == size);
-      return deserializeInternal(buffer, outOfBandBuffers);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return deserialize(buffer, null);
   }
 
   /**
@@ -659,8 +634,9 @@ public final class Fury {
    *     It is an error for <code>outOfBandBuffers</code> to be null if the serialized stream was
    *     produced with a non-null `bufferCallback`.
    */
-  private Object deserializeInternal(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
+  private Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
+      jitContext.lock();
       byte bitmap = buffer.readByte();
       if ((bitmap & isNilFlag) == isNilFlag) {
         return null;
@@ -698,6 +674,25 @@ public final class Fury {
       return obj;
     } finally {
       resetRead();
+      jitContext.unlock();
+    }
+  }
+
+  public Object deserialize(InputStream inputStream) {
+    return deserialize(inputStream, null);
+  }
+
+  public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
+    buffer.readerIndex(0);
+    try {
+      int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
+      Preconditions.checkArgument(read == 4);
+      int size = buffer.readInt();
+      read = inputStream.read(buffer.getHeapMemory(), 4, size);
+      Preconditions.checkArgument(read == size);
+      return deserialize(buffer, outOfBandBuffers);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -941,6 +936,10 @@ public final class Fury {
     depth = 0;
   }
 
+  public JITContext getJITContext() {
+    return jitContext;
+  }
+
   public BufferCallback getBufferCallback() {
     return bufferCallback;
   }
@@ -1004,6 +1003,10 @@ public final class Fury {
 
   public boolean checkClassVersion() {
     return config.checkClassVersion();
+  }
+
+  public CompatibleMode getCompatibleMode() {
+    return config.getCompatibleMode();
   }
 
   public Config getConfig() {
