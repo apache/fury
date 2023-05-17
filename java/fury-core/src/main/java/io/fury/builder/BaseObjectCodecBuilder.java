@@ -83,6 +83,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.function.Function;
 import org.slf4j.Logger;
 
@@ -112,6 +113,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   private final Map<Class<?>, Reference> serializerMap = new HashMap<>();
   private final Map<Class<?>, Reference> classInfoMap = new HashMap<>();
   protected final Class<?> parentSerializerClass;
+  private final Map<String, String> jitCallbackUpdateFields;
 
   public BaseObjectCodecBuilder(TypeToken<?> beanType, Fury fury, Class<?> parentSerializerClass) {
     super(new CodegenContext(), beanType);
@@ -136,6 +138,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         ctx.type(TypeToken.of(StringSerializer.class)),
         STRING_SERIALIZER_NAME,
         inlineInvoke(furyRef, "getStringSerializer", CLASS_RESOLVER_TYPE_TOKEN));
+    jitCallbackUpdateFields = new HashMap<>();
   }
 
   public String codecClassName(Class<?> beanClass) {
@@ -169,9 +172,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   protected abstract String codecSuffix();
 
   <T> T visitFury(Function<Fury, T> function) {
-    return function.apply(fury);
-    // TODO(chaokunyang) support asyncVisitFury for async compilation.
-    // return fury.getJITContext().asyncVisitFury(function);
+    return fury.getJITContext().asyncVisitFury(function);
   }
 
   @Override
@@ -207,8 +208,23 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         Object.class,
         ROOT_OBJECT_NAME);
     ctx.overrideMethod("read", decodeCode, Object.class, MemoryBuffer.class, BUFFER_NAME);
+    registerJITNotifyCallback();
     ctx.addConstructor(constructorCode, Fury.class, "fury", Class.class, POJO_CLASS_TYPE_NAME);
     return ctx.genCode();
+  }
+
+  protected void registerJITNotifyCallback() {
+    // build encode/decode expr before add constructor to fill up jitCallbackUpdateFields.
+    if (!jitCallbackUpdateFields.isEmpty()) {
+      StringJoiner stringJoiner = new StringJoiner(", ", "registerJITNotifyCallback(this,", ");\n");
+      for (Map.Entry<String, String> entry : jitCallbackUpdateFields.entrySet()) {
+        stringJoiner.add("\"" + entry.getKey() + "\"");
+        stringJoiner.add(entry.getValue());
+      }
+      // add this code after field serialization initialization to avoid
+      // it overrides field updates by this callback.
+      ctx.addInitCode(stringJoiner.toString());
+    }
   }
 
   /**
@@ -427,9 +443,22 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression newSerializerExpr =
           inlineInvoke(classResolverRef, "getSerializer", SERIALIZER_TYPE, clzLiteral);
       String name = ctx.newName(StringUtils.uncapitalize(serializerClass.getSimpleName()));
-      ctx.addField(
-          ctx.type(serializerClass), name, new Cast(newSerializerExpr, serializerTypeToken), true);
-      serializerRef = new Reference(name, serializerTypeToken, false);
+      // It's ok it jit already finished and this method return false, in such cases
+      // `serializerClass` is already jit generated class.
+      boolean hasJITResult = fury.getJITContext().hasJITResult(cls);
+      if (hasJITResult) {
+        jitCallbackUpdateFields.put(name, ctx.type(cls) + ".class");
+        ctx.addField(
+            ctx.type(Serializer.class), name, new Cast(newSerializerExpr, SERIALIZER_TYPE), false);
+        serializerRef = new Reference(name, SERIALIZER_TYPE, false);
+      } else {
+        ctx.addField(
+            ctx.type(serializerClass),
+            name,
+            new Cast(newSerializerExpr, serializerTypeToken),
+            true);
+        serializerRef = new Reference(name, serializerTypeToken, false);
+      }
       serializerMap.put(cls, serializerRef);
     }
     return serializerRef;

@@ -1910,6 +1910,17 @@ public interface Expression {
     }
   }
 
+  /**
+   * While expression for java while. TODO(chaokunyang) refactor to:
+   *
+   * <pre>
+   *   def while_loop(cond_fun, body_fun, init_val):
+   *     val = init_val
+   *     while cond_fun(val):
+   *       val = body_fun(val)
+   *     return val
+   * </pre>
+   */
   class While implements Expression {
     private final BinaryOperator predicate;
     private Expression action;
