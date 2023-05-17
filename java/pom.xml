@@ -34,6 +34,7 @@
     <jackson-bom.version>2.13.2.20220328</jackson-bom.version>
     <commons_codec.version>1.13</commons_codec.version>
     <license.maven.plugin>4.2</license.maven.plugin>
+    <fury.java.rootdir>${basedir}</fury.java.rootdir>
   </properties>
 
   <dependencyManagement>
@@ -194,8 +195,8 @@
           </execution>
         </executions>
         <configuration>
-          <configLocation>checkstyle.xml</configLocation>
-          <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
+          <configLocation>${fury.java.rootdir}/checkstyle.xml</configLocation>
+          <suppressionsLocation>${fury.java.rootdir}/checkstyle-suppressions.xml</suppressionsLocation>
           <encoding>UTF-8</encoding>
           <consoleOutput>true</consoleOutput>
           <failsOnError>true</failsOnError>
@@ -237,7 +238,7 @@
             <project.inceptionYear>2023</project.inceptionYear>
           </properties>
           <quiet>true</quiet>
-          <header>HEADER</header>
+          <header>${fury.java.rootdir}/HEADER</header>
           <includes>
             <include>**/src/main/java/**</include>
             <include>**/src/test/java/**</include>
@@ -261,7 +262,7 @@
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>
-            <headerDefinition>license-format.xml</headerDefinition>
+            <headerDefinition>${fury.java.rootdir}/license-format.xml</headerDefinition>
           </headerDefinitions>
           <mapping>
             <java>SLASHSTART_WITH_BLANKLINE_STYLE</java>
