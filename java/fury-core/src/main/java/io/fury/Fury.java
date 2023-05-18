@@ -43,6 +43,8 @@ import io.fury.serializer.StringSerializer;
 import io.fury.type.Generics;
 import io.fury.type.Type;
 import io.fury.util.LoggerFactory;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -50,6 +52,8 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.slf4j.Logger;
 
@@ -902,6 +906,222 @@ public final class Fury {
       } else {
         return nativeObjects.get(ordinal);
       }
+    }
+  }
+
+  /**
+   * Serialize java object without class info, deserialization should use {@link
+   * #deserializeJavaObject}.
+   */
+  public byte[] serializeJavaObject(Object obj) {
+    buffer.writerIndex(0);
+    serializeJavaObject(buffer, obj);
+    return buffer.getBytes(0, buffer.writerIndex());
+  }
+
+  /**
+   * Serialize java object without class info, deserialization should use {@link
+   * #deserializeJavaObject}.
+   */
+  public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
+    try {
+      jitContext.lock();
+      if (config.isMetaContextShareEnabled()) {
+        int startOffset = buffer.writerIndex();
+        buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
+        if (!referenceResolver.writeReferenceOrNull(buffer, obj)) {
+          ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
+          writeData(buffer, classInfo, obj);
+        }
+        buffer.putInt(startOffset, buffer.writerIndex());
+        classResolver.writeClassDefs(buffer);
+      } else {
+        if (!referenceResolver.writeReferenceOrNull(buffer, obj)) {
+          ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
+          writeData(buffer, classInfo, obj);
+        }
+      }
+    } finally {
+      resetWrite();
+      jitContext.unlock();
+    }
+  }
+
+  /**
+   * Serialize java object without class info, deserialization should use {@link
+   * #deserializeJavaObject}.
+   */
+  public void serializeJavaObject(OutputStream outputStream, Object obj) {
+    serializeToStream(outputStream, buf -> serializeJavaObject(buf, obj));
+  }
+
+  /**
+   * Deserialize java object from binary without class info, serialization should use {@link
+   * #serializeJavaObject}.
+   */
+  public <T> T deserializeJavaObject(byte[] data, Class<T> cls) {
+    return deserializeJavaObject(MemoryBuffer.fromByteArray(data), cls);
+  }
+
+  /**
+   * Deserialize java object from binary by passing class info, serialization should use {@link
+   * #serializeJavaObject}.
+   */
+  @SuppressWarnings("unchecked")
+  public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
+    try {
+      if (config.isMetaContextShareEnabled()) {
+        classResolver.readClassDefs(buffer);
+      }
+      T obj;
+      int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+      if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
+        obj = (T) readData(buffer, classResolver.getClassInfo(cls));
+        return obj;
+      } else {
+        return null;
+      }
+    } finally {
+      resetRead();
+    }
+  }
+
+  /**
+   * Deserialize java object from binary by passing class info, serialization should use {@link
+   * #serializeJavaObject}.
+   */
+  @SuppressWarnings("unchecked")
+  public <T> T deserializeJavaObject(InputStream inputStream, Class<T> cls) {
+    return (T) deserializeFromStream(inputStream, buf -> this.deserializeJavaObject(buf, cls));
+  }
+
+  /**
+   * Deserialize java object from binary by passing class info, serialization should use {@link
+   * #deserializeJavaObjectAndClass}.
+   */
+  public byte[] serializeJavaObjectAndClass(Object obj) {
+    buffer.writerIndex(0);
+    serializeJavaObjectAndClass(buffer, obj);
+    return buffer.getBytes(0, buffer.writerIndex());
+  }
+
+  /**
+   * Serialize java object with class info, deserialization should use {@link
+   * #deserializeJavaObjectAndClass}.
+   */
+  public void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj) {
+    try {
+      jitContext.lock();
+      if (config.isMetaContextShareEnabled()) {
+        int startOffset = buffer.writerIndex();
+        buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
+        writeReferencableToJava(buffer, obj);
+        buffer.putInt(startOffset, buffer.writerIndex());
+        classResolver.writeClassDefs(buffer);
+      } else {
+        writeReferencableToJava(buffer, obj);
+      }
+    } finally {
+      resetWrite();
+      jitContext.unlock();
+    }
+  }
+
+  /**
+   * Serialize java object with class info, deserialization should use {@link
+   * #deserializeJavaObjectAndClass}.
+   */
+  public void serializeJavaObjectAndClass(OutputStream outputStream, Object obj) {
+    serializeToStream(outputStream, buf -> serializeJavaObjectAndClass(buf, obj));
+  }
+
+  /**
+   * Deserialize class info and java object from binary, serialization should use {@link
+   * #serializeJavaObjectAndClass}.
+   */
+  public Object deserializeJavaObjectAndClass(byte[] data) {
+    return deserializeJavaObjectAndClass(MemoryBuffer.fromByteArray(data));
+  }
+
+  /**
+   * Deserialize class info and java object from binary, serialization should use {@link
+   * #serializeJavaObjectAndClass}.
+   */
+  public Object deserializeJavaObjectAndClass(MemoryBuffer buffer) {
+    try {
+      jitContext.lock();
+      if (config.isMetaContextShareEnabled()) {
+        classResolver.readClassDefs(buffer);
+      }
+      return readReferencableFromJava(buffer);
+    } finally {
+      resetRead();
+      jitContext.unlock();
+    }
+  }
+
+  /**
+   * Deserialize class info and java object from binary, serialization should use {@link
+   * #serializeJavaObjectAndClass}.
+   */
+  public Object deserializeJavaObjectAndClass(InputStream inputStream) {
+    return deserializeFromStream(inputStream, this::deserializeJavaObjectAndClass);
+  }
+
+  private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {
+    if (outputStream.getClass() == ByteArrayOutputStream.class) {
+      byte[] oldBytes = buffer.getHeapMemory(); // Note: This should not be null.
+      MemoryUtils.wrap((ByteArrayOutputStream) outputStream, buffer);
+      int writerIndex = buffer.writerIndex();
+      buffer.writeInt(-1);
+      function.accept(buffer);
+      buffer.putInt(writerIndex, buffer.writerIndex() - writerIndex);
+      MemoryUtils.wrap(buffer, (ByteArrayOutputStream) outputStream);
+      buffer.pointTo(oldBytes, 0, oldBytes.length);
+    } else {
+      buffer.writerIndex(0);
+      buffer.writeInt(-1);
+      function.accept(buffer);
+      buffer.putInt(0, buffer.writerIndex() - 4);
+      try {
+        byte[] bytes = buffer.getHeapMemory();
+        if (bytes != null) {
+          outputStream.write(bytes, 0, buffer.writerIndex());
+        } else {
+          outputStream.write(buffer.getBytes(0, buffer.writerIndex()));
+        }
+        outputStream.flush();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private Object deserializeFromStream(
+      InputStream inputStream, Function<MemoryBuffer, Object> function) {
+    buffer.readerIndex(0);
+    try {
+      boolean isBis = inputStream.getClass() == ByteArrayInputStream.class;
+      byte[] oldBytes = null;
+      if (isBis) {
+        oldBytes = buffer.getHeapMemory(); // Note: This should not be null.
+        MemoryUtils.wrap((ByteArrayInputStream) inputStream, buffer);
+        buffer.increaseReaderIndex(4); // skip size.
+      } else {
+        int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
+        Preconditions.checkArgument(read == 4);
+        int size = buffer.readInt();
+        read = inputStream.read(buffer.getHeapMemory(), 4, size);
+        Preconditions.checkArgument(read == size);
+      }
+      Object o = function.apply(buffer);
+      if (isBis) {
+        inputStream.skip(buffer.readerIndex());
+        buffer.pointTo(oldBytes, 0, oldBytes.length);
+      }
+      return o;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 

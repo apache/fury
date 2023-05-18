@@ -18,13 +18,13 @@
 
 package io.fury.memory;
 
+import com.google.common.base.Preconditions;
+import io.fury.util.Platform;
+import io.fury.util.ReflectionUtils;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
-/**
- * Factory class for create {@link MemoryBuffer}.
- *
- * @author chaokunyang
- */
 public class MemoryUtils {
 
   public static MemoryBuffer buffer(int size) {
@@ -64,5 +64,54 @@ public class MemoryUtils {
       int offset = buffer.arrayOffset() + buffer.position();
       return MemoryBuffer.fromByteArray(buffer.array(), offset, buffer.remaining());
     }
+  }
+
+  private static final long BAS_BUF_BUF =
+      ReflectionUtils.getFieldOffsetChecked(ByteArrayOutputStream.class, "buf");
+  private static final long BAS_BUF_COUNT =
+      ReflectionUtils.getFieldOffsetChecked(ByteArrayOutputStream.class, "count");
+
+  private static final long BIS_BUF_BUF =
+      ReflectionUtils.getFieldOffsetChecked(ByteArrayInputStream.class, "buf");
+  private static final long BIS_BUF_POS =
+      ReflectionUtils.getFieldOffsetChecked(ByteArrayInputStream.class, "pos");
+  private static final long BIS_BUF_COUNT =
+      ReflectionUtils.getFieldOffsetChecked(ByteArrayInputStream.class, "count");
+
+  /**
+   * Wrap a {@link ByteArrayOutputStream} into a {@link MemoryBuffer}. The writerIndex of buffer
+   * will be the count of stream.
+   */
+  public static void wrap(ByteArrayOutputStream stream, MemoryBuffer buffer) {
+    Preconditions.checkNotNull(stream);
+    byte[] buf = (byte[]) Platform.getObject(stream, BAS_BUF_BUF);
+    int count = Platform.getInt(stream, BAS_BUF_COUNT);
+    buffer.pointTo(buf, 0, buf.length);
+    buffer.writerIndex(count);
+  }
+
+  /**
+   * Wrap a @link MemoryBuffer} into a {@link ByteArrayOutputStream}. The count of stream will be
+   * the writerIndex of buffer.
+   */
+  public static void wrap(MemoryBuffer buffer, ByteArrayOutputStream stream) {
+    Preconditions.checkNotNull(stream);
+    byte[] bytes = buffer.getHeapMemory();
+    Preconditions.checkNotNull(bytes);
+    Platform.putObject(stream, BAS_BUF_BUF, bytes);
+    Platform.putInt(stream, BAS_BUF_COUNT, buffer.writerIndex());
+  }
+
+  /**
+   * Wrap a {@link ByteArrayInputStream} into a {@link MemoryBuffer}. The readerIndex of buffer will
+   * be the pos of stream.
+   */
+  public static void wrap(ByteArrayInputStream stream, MemoryBuffer buffer) {
+    Preconditions.checkNotNull(stream);
+    byte[] buf = (byte[]) Platform.getObject(stream, BIS_BUF_BUF);
+    int count = Platform.getInt(stream, BIS_BUF_COUNT);
+    int pos = Platform.getInt(stream, BIS_BUF_POS);
+    buffer.pointTo(buf, 0, count);
+    buffer.readerIndex(pos);
   }
 }
