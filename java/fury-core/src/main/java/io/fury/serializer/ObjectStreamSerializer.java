@@ -20,6 +20,8 @@ package io.fury.serializer;
 
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
+import io.fury.builder.CodecUtils;
+import io.fury.builder.Generated;
 import io.fury.collection.ObjectArray;
 import io.fury.collection.ObjectIntMap;
 import io.fury.memory.MemoryBuffer;
@@ -277,7 +279,27 @@ public class ObjectStreamSerializer extends Serializer {
       // using field generic types.
       Class<? extends Serializer> sc = CompatibleSerializer.class;
       FieldResolver fieldResolver = FieldResolver.of(fury, type, false, true);
-      this.slotsSerializer = new CompatibleSerializer(fury, type, fieldResolver);
+      if (fury.getConfig().isCodeGenEnabled()
+          && CodegenSerializer.supportCodegenForJavaSerialization(cls)) {
+        sc =
+            fury.getJITContext()
+                .registerSerializerJITCallback(
+                    () -> CompatibleSerializer.class,
+                    () ->
+                        CodecUtils.loadOrGenCompatibleCodecClass(
+                            cls,
+                            fury,
+                            fieldResolver,
+                            Generated.GeneratedCompatibleSerializer.class),
+                    c ->
+                        this.slotsSerializer =
+                            (CompatibleSerializerBase) Serializers.newSerializer(fury, type, c));
+      }
+      if (sc == CompatibleSerializer.class) {
+        this.slotsSerializer = new CompatibleSerializer(fury, type, fieldResolver);
+      } else {
+        this.slotsSerializer = (CompatibleSerializerBase) Serializers.newSerializer(fury, type, sc);
+      }
       fieldIndexMap = new ObjectIntMap<>(4, 0.4f);
       List<ClassField> allFields = new ArrayList<>();
       for (ObjectStreamField serialField : objectStreamClass.getFields()) {

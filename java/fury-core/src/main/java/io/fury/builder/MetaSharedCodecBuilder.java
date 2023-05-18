@@ -30,6 +30,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.CodegenSerializer;
 import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.MetaSharedSerializer;
+import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.Serializers;
 import io.fury.type.ClassDef;
@@ -108,6 +109,7 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
     Expression decodeExpr = buildDecodeExpression();
     String decodeCode = decodeExpr.genCode(ctx).code();
     ctx.overrideMethod("read", decodeCode, Object.class, MemoryBuffer.class, BUFFER_NAME);
+    registerJITNotifyCallback();
     ctx.addConstructor(constructorCode, Fury.class, "fury", Class.class, POJO_CLASS_TYPE_NAME);
     return ctx.genCode();
   }
@@ -123,7 +125,12 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
   public static Serializer setCodegenSerializer(
       Fury fury, Class<?> cls, GeneratedMetaSharedSerializer s) {
     // This method hold jit lock, so create jit serializer async to avoid block serialization.
-    Class serializerClass = CodegenSerializer.loadCodegenSerializer(fury, s.getType());
+    Class serializerClass =
+        fury.getJITContext()
+            .registerSerializerJITCallback(
+                () -> ObjectSerializer.class,
+                () -> CodegenSerializer.loadCodegenSerializer(fury, s.getType()),
+                c -> s.serializer = Serializers.newSerializer(fury, s.getType(), c));
     return Serializers.newSerializer(fury, cls, serializerClass);
   }
 

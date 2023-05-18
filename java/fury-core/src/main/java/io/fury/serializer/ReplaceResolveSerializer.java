@@ -120,7 +120,10 @@ public class ReplaceResolveSerializer extends Serializer {
     boolean hasJDKReadObjectMethod = readObjectMethod != null;
     Class<? extends Serializer> serializerClass;
     if (!hasJDKWriteObjectMethod && !hasJDKReadObjectMethod) {
-      serializerClass = fury.getClassResolver().getObjectSerializerClass(cls);
+      serializerClass =
+          fury.getClassResolver()
+              .getObjectSerializerClass(
+                  cls, sc -> methodInfoCache.setObjectSerializer(createDataSerializer(cls, sc)));
     } else {
       serializerClass = fury.getDefaultJDKStreamSerializerType();
     }

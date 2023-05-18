@@ -37,6 +37,7 @@ import io.fury.Language;
 import io.fury.annotation.Internal;
 import io.fury.builder.CodecUtils;
 import io.fury.builder.Generated;
+import io.fury.builder.JITContext;
 import io.fury.codegen.Expression;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.collection.IdentityMap;
@@ -705,18 +706,40 @@ public class ClassResolver {
         return getJavaSerializer(cls);
       }
       Class<?> clz = cls;
-      return getObjectSerializerClass(cls, metaContextShareEnabled, codegen);
+      return getObjectSerializerClass(
+          cls,
+          metaContextShareEnabled,
+          codegen,
+          new JITContext.SerializerJITCallback<Class<? extends Serializer>>() {
+            @Override
+            public void onSuccess(Class<? extends Serializer> result) {
+              setSerializer(clz, Serializers.newSerializer(fury, clz, result));
+              if (classInfoCache.cls == clz) {
+                classInfoCache = NIL_CLASS_INFO; // clear class info cache
+              }
+              Preconditions.checkState(getSerializer(clz).getClass() == result);
+            }
+
+            @Override
+            public Object id() {
+              return clz;
+            }
+          });
     }
   }
 
-  public Class<? extends Serializer> getObjectSerializerClass(Class<?> cls) {
+  public Class<? extends Serializer> getObjectSerializerClass(
+      Class<?> cls, JITContext.SerializerJITCallback<Class<? extends Serializer>> callback) {
     boolean codegen =
         supportCodegenForJavaSerialization(cls) && fury.getConfig().isCodeGenEnabled();
-    return getObjectSerializerClass(cls, false, codegen);
+    return getObjectSerializerClass(cls, false, codegen, callback);
   }
 
   private Class<? extends Serializer> getObjectSerializerClass(
-      Class<?> cls, boolean shareMeta, boolean codegen) {
+      Class<?> cls,
+      boolean shareMeta,
+      boolean codegen,
+      JITContext.SerializerJITCallback<Class<? extends Serializer>> callback) {
     if (fury.getLanguage() != Language.JAVA) {
       LOG.warn("Class {} isn't supported for cross-language serialization.", cls);
     }
@@ -727,35 +750,45 @@ public class ClassResolver {
       } else {
         extRegistry.getClassCtx.add(cls);
         Class<? extends Serializer> sc;
-        switch (fury.getConfig().getCompatibleMode()) {
+        switch (fury.getCompatibleMode()) {
           case SCHEMA_CONSISTENT:
-            sc = loadCodegenSerializer(fury, cls);
+            sc =
+                fury.getJITContext()
+                    .registerSerializerJITCallback(
+                        () -> ObjectSerializer.class,
+                        () -> loadCodegenSerializer(fury, cls),
+                        callback);
             extRegistry.getClassCtx.remove(cls);
             return sc;
           case COMPATIBLE:
             // If share class meta, compatible serializer won't be necessary, class
             // definition will be sent to peer to create serializer for deserialization.
             sc =
-                shareMeta
-                    ? loadCodegenSerializer(fury, cls)
-                    : loadCompatibleCodegenSerializer(fury, cls);
+                fury.getJITContext()
+                    .registerSerializerJITCallback(
+                        () -> shareMeta ? ObjectSerializer.class : CompatibleSerializer.class,
+                        () ->
+                            shareMeta
+                                ? loadCodegenSerializer(fury, cls)
+                                : loadCompatibleCodegenSerializer(fury, cls),
+                        callback);
             extRegistry.getClassCtx.remove(cls);
             return sc;
           default:
             throw new UnsupportedOperationException(
-                String.format("Unsupported mode %s", fury.getConfig().getCompatibleMode()));
+                String.format("Unsupported mode %s", fury.getCompatibleMode()));
         }
       }
     } else {
       LOG.debug("Object of type {} can't be serialized by jit", cls);
-      switch (fury.getConfig().getCompatibleMode()) {
+      switch (fury.getCompatibleMode()) {
         case SCHEMA_CONSISTENT:
           return ObjectSerializer.class;
         case COMPATIBLE:
           return shareMeta ? ObjectSerializer.class : CompatibleSerializer.class;
         default:
           throw new UnsupportedOperationException(
-              String.format("Unsupported mode %s", fury.getConfig().getCompatibleMode()));
+              String.format("Unsupported mode %s", fury.getCompatibleMode()));
       }
     }
   }
@@ -1111,9 +1144,11 @@ public class ClassResolver {
     ClassInfo classInfo =
         new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
     Class<? extends Serializer> sc =
-        fury.getConfig().isCodeGenEnabled()
-            ? CodecUtils.loadOrGenMetaSharedCodecClass(fury, cls, classDef)
-            : MetaSharedSerializer.class;
+        fury.getJITContext()
+            .registerSerializerJITCallback(
+                () -> MetaSharedSerializer.class,
+                () -> CodecUtils.loadOrGenMetaSharedCodecClass(fury, cls, classDef),
+                c -> classInfo.serializer = Serializers.newSerializer(fury, cls, c));
     if (sc == MetaSharedSerializer.class) {
       classInfo.serializer = new MetaSharedSerializer(fury, cls, classDef);
     } else {
