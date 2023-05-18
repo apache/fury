@@ -19,7 +19,13 @@
 package io.fury;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 
+import io.fury.memory.MemoryBuffer;
+import io.fury.test.bean.BeanA;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.StringTokenizer;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -64,5 +70,65 @@ public class FuryTest extends FuryTestBase {
             .build();
     StringTokenizer tokenizer = new StringTokenizer("abc,1,23", ",");
     assertEquals(serDe(fury, tokenizer).countTokens(), tokenizer.countTokens());
+  }
+
+  @Test
+  public void testSerializeJavaObject() {
+    Fury fury =
+        Fury.builder().withClassRegistrationRequired(false).withLanguage(Language.JAVA).build();
+    BeanA beanA = BeanA.createBeanA(2);
+    assertEquals(fury.deserializeJavaObject(fury.serializeJavaObject(beanA), BeanA.class), beanA);
+    assertThrows(
+        Exception.class,
+        () -> fury.deserializeJavaObject(fury.serializeJavaObjectAndClass(beanA), BeanA.class));
+    assertEquals(
+        fury.deserializeJavaObjectAndClass(fury.serializeJavaObjectAndClass(beanA)), beanA);
+    assertEquals(
+        fury.deserializeJavaObjectAndClass(
+            MemoryBuffer.fromByteArray(fury.serializeJavaObjectAndClass(beanA))),
+        beanA);
+  }
+
+  @Test
+  public void testOutputStream() throws IOException {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    ByteArrayOutputStream bas = new ByteArrayOutputStream();
+    BeanA beanA = BeanA.createBeanA(2);
+    fury.serialize(bas, beanA);
+    fury.serialize(bas, beanA);
+    bas.flush();
+    ByteArrayInputStream bis = new ByteArrayInputStream(bas.toByteArray());
+    Object newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+    newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+  }
+
+  @Test
+  public void testJavaOutputStream() throws IOException {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    BeanA beanA = BeanA.createBeanA(2);
+    {
+      ByteArrayOutputStream bas = new ByteArrayOutputStream();
+      fury.serializeJavaObject(bas, beanA);
+      fury.serializeJavaObject(bas, beanA);
+      bas.flush();
+      ByteArrayInputStream bis = new ByteArrayInputStream(bas.toByteArray());
+      Object newObj = fury.deserializeJavaObject(bis, BeanA.class);
+      assertEquals(newObj, beanA);
+      newObj = fury.deserializeJavaObject(bis, BeanA.class);
+      assertEquals(newObj, beanA);
+    }
+    {
+      ByteArrayOutputStream bas = new ByteArrayOutputStream();
+      fury.serializeJavaObjectAndClass(bas, beanA);
+      fury.serializeJavaObjectAndClass(bas, beanA);
+      bas.flush();
+      ByteArrayInputStream bis = new ByteArrayInputStream(bas.toByteArray());
+      Object newObj = fury.deserializeJavaObjectAndClass(bis);
+      assertEquals(newObj, beanA);
+      newObj = fury.deserializeJavaObjectAndClass(bis);
+      assertEquals(newObj, beanA);
+    }
   }
 }
