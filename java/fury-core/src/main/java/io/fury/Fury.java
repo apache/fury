@@ -40,6 +40,7 @@ import io.fury.serializer.OpaqueObjects;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.StringSerializer;
+import io.fury.serializer.TimeSerializers;
 import io.fury.type.Generics;
 import io.fury.type.Type;
 import io.fury.util.LoggerFactory;
@@ -1306,6 +1307,18 @@ public final class Fury {
       this.stringReferenceIgnored = ignoreStringReference;
       return this;
     }
+
+    /**
+     * Whether ignore reference tracking of all time types registered in {@link TimeSerializers}
+     * when ref tracking is enabled.
+     *
+     * @see Config#isTimeReferenceIgnored
+     */
+    public FuryBuilder ignoreTimeReference(boolean ignoreTimeReference) {
+      this.timeReferenceIgnored = ignoreTimeReference;
+      return this;
+    }
+
 
     /** Use variable length encoding for int/long. */
     public FuryBuilder withNumberCompressed(boolean compressNumber) {
