@@ -20,7 +20,6 @@ package io.fury.util;
 
 import static org.testng.Assert.assertEquals;
 
-import io.fury.util.UnsafeFieldAccessor;
 import org.testng.annotations.Test;
 
 public class UnsafeFieldAccessorTest {

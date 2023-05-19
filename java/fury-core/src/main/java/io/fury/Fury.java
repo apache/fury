@@ -1319,7 +1319,6 @@ public final class Fury {
       return this;
     }
 
-
     /** Use variable length encoding for int/long. */
     public FuryBuilder withNumberCompressed(boolean compressNumber) {
       this.compressNumber = compressNumber;
