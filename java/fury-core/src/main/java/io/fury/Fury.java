@@ -1430,5 +1430,23 @@ public final class Fury {
       this.classLoader = null;
       return new Fury(this, loader);
     }
+
+    /** Build thread safe fury. */
+    public ThreadSafeFury buildThreadSafeFury() {
+      return buildThreadLocalFury();
+    }
+
+    /** Build thread safe fury backed by {@link ThreadLocalFury}. */
+    public ThreadLocalFury buildThreadLocalFury() {
+      finish();
+      ClassLoader loader = this.classLoader;
+      // clear classLoader to avoid `LoaderBinding#furyFactory` lambda capture classLoader by
+      // capturing `FuryBuilder`,  which make `classLoader` not able to be gc.
+      this.classLoader = null;
+      ThreadLocalFury threadSafeFury =
+          new ThreadLocalFury(classLoader -> new Fury(FuryBuilder.this, classLoader));
+      threadSafeFury.setClassLoader(loader);
+      return threadSafeFury;
+    }
   }
 }
