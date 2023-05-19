@@ -31,26 +31,34 @@ import io.fury.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.type.GenericType;
+import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.LongStream;
+import lombok.Data;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class CollectionSerializersTest extends FuryTestBase {
+
   @Test(dataProvider = "referenceTrackingConfig")
   public void testBasicList(boolean referenceTrackingConfig) {
     Fury fury =
@@ -79,7 +87,6 @@ public class CollectionSerializersTest extends FuryTestBase {
     fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<List<String>>() {}));
     byte[] bytes2 = fury.serialize(data);
     Assert.assertTrue(bytes1.length > bytes2.length);
-    System.out.println(fury.deserialize(bytes2));
     fury.getGenerics().popGenericType();
     Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(bytes2));
   }
@@ -92,13 +99,27 @@ public class CollectionSerializersTest extends FuryTestBase {
             .withReferenceTracking(referenceTrackingConfig)
             .disableSecureMode()
             .build();
+    // Test serialize Comparator
+    TreeSet<String> set =
+      new TreeSet<>(
+        (Comparator<? super String> & Serializable)
+          (s1, s2) -> {
+            int delta = s1.length() - s2.length();
+            if (delta == 0) {
+              return s1.compareTo(s2);
+            } else {
+              return delta;
+            }
+          });
+    set.add("str11");
+    set.add("str2");
+    assertEquals(set, serDe(fury, set));
     TreeSet<String> data = new TreeSet<>(ImmutableSet.of("a", "b", "c"));
     serDeCheckSerializer(fury, data, "SortedSet");
     byte[] bytes1 = fury.serialize(data);
     fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<List<String>>() {}));
     byte[] bytes2 = fury.serialize(data);
     Assert.assertTrue(bytes1.length > bytes2.length);
-    System.out.println(fury.deserialize(bytes2));
     fury.getGenerics().popGenericType();
     Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(bytes2));
   }
@@ -196,6 +217,107 @@ public class CollectionSerializersTest extends FuryTestBase {
         CollectionSerializers.ImmutableListSerializer.class);
   }
 
+  @Test
+  public void testCollectionNoJIT() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(false).build();
+    serDeCheck(fury, new ArrayList<>(ImmutableList.of("a", "b", "c")));
+    serDeCheck(fury, new ArrayList<>(ImmutableList.of(1, 2, 3)));
+    serDeCheck(fury, new ArrayList<>(ImmutableList.of("a", 1, "b", 2)));
+  }
+
+  @Data
+  public static class CollectionFieldsClass {
+    public ArrayList<String> arrayList;
+    public List<String> arrayList2;
+    public Collection<String> arrayList3;
+    public List<String> arrayAsList;
+    public Collection<String> arrayAsList2;
+    public LinkedList<String> linkedList;
+    public List<String> linkedList2;
+    public Collection<String> linkedList3;
+    public HashSet<String> hashSet;
+    public Set<String> hashSet2;
+    public LinkedHashSet<String> linkedHashSet;
+    public Set<String> linkedHashSet2;
+    public TreeSet<String> treeSet;
+    public SortedSet<String> treeSet2;
+    public ConcurrentSkipListSet<String> skipListSet;
+    public Set<String> skipListSet2;
+    public Vector<String> vector;
+    public List<String> vector2;
+    public ArrayDeque<Integer> arrayDeque;
+    public Collection<Integer> arrayDeque2;
+    public BitSet bitSet1;
+    public BitSet bitSet2;
+    public PriorityQueue<String> priorityQueue;
+    public Collection<String> priorityQueue2;
+    public EnumSet<TestEnum> enumSet1;
+    public EnumSet<TestEnum> enumSet2;
+    public List<String> emptyList1;
+    public Set<String> emptySet1;
+    // TODO add support for common emtpy
+    public Set<String> emptySortedSet;
+    public List<String> singleList1;
+    public Set<String> singleSet1;
+  }
+
+  public static CollectionFieldsClass createCollectionFieldsObject() {
+    CollectionFieldsClass obj = new CollectionFieldsClass();
+    ArrayList<String> arrayList = new ArrayList<>(ImmutableList.of("a", "b"));
+    obj.arrayList = arrayList;
+    obj.arrayList2 = arrayList;
+    obj.arrayList3 = arrayList;
+    obj.arrayAsList = Arrays.asList("a", "b");
+    obj.arrayAsList2 = Arrays.asList("a", "b");
+    LinkedList<String> linkedList = new LinkedList<>(Arrays.asList("a", "b"));
+    obj.linkedList = linkedList;
+    obj.linkedList2 = linkedList;
+    obj.linkedList3 = linkedList;
+    HashSet<String> hashSet = new HashSet<>(ImmutableSet.of("a", "b"));
+    obj.hashSet = hashSet;
+    obj.hashSet2 = hashSet;
+    obj.linkedHashSet = new LinkedHashSet<>(hashSet);
+    obj.linkedHashSet2 = new LinkedHashSet<>(hashSet);
+    obj.treeSet = new TreeSet<>(hashSet);
+    obj.treeSet2 = new TreeSet<>(hashSet);
+    ConcurrentSkipListSet<String> skipListSet =
+        new ConcurrentSkipListSet<>(Arrays.asList("a", "b", "c"));
+    obj.skipListSet = skipListSet;
+    obj.skipListSet2 = skipListSet;
+    Vector<String> vector = new Vector<>(Arrays.asList("a", "b", "c"));
+    obj.vector = vector;
+    obj.vector2 = vector;
+    ArrayDeque<Integer> arrayDeque = new ArrayDeque<>(Arrays.asList(1, 2));
+    obj.arrayDeque = arrayDeque;
+    obj.arrayDeque2 = arrayDeque;
+    obj.bitSet1 = BitSet.valueOf(LongStream.range(0, 2).toArray());
+    obj.bitSet2 = BitSet.valueOf(LongStream.range(0, 128).toArray());
+    PriorityQueue<String> priorityQueue = new PriorityQueue<>(Arrays.asList("a", "b", "c"));
+    obj.priorityQueue = priorityQueue;
+    obj.priorityQueue2 = priorityQueue;
+    obj.enumSet1 = EnumSet.allOf(TestEnum.class);
+    obj.enumSet2 = EnumSet.of(TestEnum.A);
+    obj.emptyList1 = Collections.emptyList();
+    obj.emptySet1 = Collections.emptySet();
+    obj.emptySortedSet = Collections.emptySortedSet();
+    obj.singleList1 = Collections.singletonList("");
+    obj.singleSet1 = Collections.singleton("");
+    return obj;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testCollectionFieldSerializers(Fury fury) {
+    CollectionFieldsClass obj = createCollectionFieldsObject();
+    Assert.assertEquals(serDe(fury, obj).toString(), obj.toString());
+    if (fury.getConfig().isCodeGenEnabled()) {
+      Assert.assertTrue(
+          fury.getClassResolver()
+              .getSerializerClass(CollectionFieldsClass.class)
+              .getName()
+              .contains("Codec"));
+    }
+  }
+
   public static class TestClassForDefaultCollectionSerializer extends AbstractCollection<String> {
     private final List<String> data = new ArrayList<>();
 
@@ -264,5 +386,38 @@ public class CollectionSerializersTest extends FuryTestBase {
     buffer.writerIndex(0);
     buffer.readerIndex(0);
     assertEquals(set, fury.deserialize(fury.serialize(buffer, set)));
+  }
+
+  public static class SubListSerializer extends CollectionSerializers.CollectionSerializer {
+
+    public SubListSerializer(Fury fury, Class cls) {
+      super(fury, cls, true, false);
+    }
+
+    @Override
+    public Collection newCollection(MemoryBuffer buffer, int numElements) {
+      return new ArrayList(numElements);
+    }
+  }
+
+  @Test
+  public void testSubList() {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .disableSecureMode()
+            .withJdkClassSerializableCheck(false)
+            .build();
+    ArrayList<Integer> list = new ArrayList<>(ImmutableList.of(1, 2, 3, 4));
+    fury.registerSerializer(
+        list.subList(0, 2).getClass(), new SubListSerializer(fury, list.subList(0, 2).getClass()));
+    serDeCheck(fury, list.subList(0, 2));
+
+    //     ArrayList<Integer> list = new ArrayList<>(ImmutableList.of(1, 2, 3, 4));
+    //     ByteArrayOutputStream bas = new ByteArrayOutputStream();
+    //     Hessian2Output hessian2Output = new Hessian2Output(bas);
+    //     serialize(hessian2Output, list.subList(0 ,2));
+    //     Object o = deserialize(new Hessian2Input(new ByteArrayInputStream(bas.toByteArray())));
+    //     System.out.println(o.getClass());
   }
 }
