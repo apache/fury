@@ -70,6 +70,9 @@ import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
 import io.fury.serializer.SynchronizedSerializers;
 import io.fury.serializer.TimeSerializers;
+import io.fury.serializer.UnexistedClassSerializers.UnExistedClassSerializer;
+import io.fury.serializer.UnexistedClassSerializers.UnexistedMetaSharedClass;
+import io.fury.serializer.UnexistedClassSerializers.UnexistedSkipClass;
 import io.fury.serializer.UnmodifiableSerializers;
 import io.fury.type.ClassDef;
 import io.fury.type.Descriptor;
@@ -286,6 +289,10 @@ public class ClassResolver {
         new ReplaceResolveSerializer(fury, ReplaceResolveSerializer.ReplaceStub.class));
     SynchronizedSerializers.registerSerializers(fury);
     UnmodifiableSerializers.registerSerializers(fury);
+    if (metaContextShareEnabled) {
+      addDefaultSerializer(
+          UnexistedMetaSharedClass.class, new UnExistedClassSerializer(fury, null));
+    }
   }
 
   private void addDefaultSerializer(Class<?> type, Class<? extends Serializer> serializerClass) {
@@ -314,6 +321,7 @@ public class ClassResolver {
     register(AtomicReference.class);
     register(EnumSet.allOf(Language.class).getClass());
     register(EnumSet.of(Language.JAVA).getClass());
+    register(UnexistedMetaSharedClass.class, UnexistedSkipClass.class);
   }
 
   /** register class. */
@@ -1139,10 +1147,20 @@ public class ClassResolver {
   // TODO(chaokunyang) if ClassDef is consistent with class in this process,
   //  use existing serializer instead.
   private ClassInfo getMetaSharedClassInfo(ClassDef classDef, Class<?> clz) {
+    if (clz == UnexistedSkipClass.class) {
+      clz = UnexistedMetaSharedClass.class;
+    }
     Class<?> cls = clz;
     Short classId = extRegistry.registeredClassIdMap.get(cls);
     ClassInfo classInfo =
         new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
+    if (cls == UnexistedMetaSharedClass.class) {
+      classInfo.serializer = new UnExistedClassSerializer(fury, classDef);
+      // ensure `UnExistedMetaSharedClass` registered to write fixed-length class def,
+      // so we can rewrite it in `UnExistedClassSerializer`.
+      Preconditions.checkNotNull(classId);
+      return classInfo;
+    }
     Class<? extends Serializer> sc =
         fury.getJITContext()
             .registerSerializerJITCallback(
@@ -1474,6 +1492,12 @@ public class ClassResolver {
             String.format(
                 "Class %s not found from classloaders [%s, %s]",
                 className, fury.getClassLoader(), Thread.currentThread().getContextClassLoader());
+        if (fury.getConfig().isDeserializeUnExistClassEnabled()) {
+          // ex.printStackTrace();
+          LOG.error(msg, e);
+          // FIXME create a subclass dynamically may be better?
+          return UnexistedSkipClass.class;
+        }
         throw new IllegalStateException(msg, ex);
       }
     }
