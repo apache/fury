@@ -83,12 +83,12 @@ public final class UnexistedClassSerializers {
     }
   }
 
-  public static final class UnExistedClassSerializer extends Serializer {
-    private ClassDef classDef;
-    private ClassInfoCache classInfoCache;
+  public static final class UnexistedClassSerializer extends Serializer {
+    private final ClassDef classDef;
+    private final ClassInfoCache classInfoCache;
     private final LongMap<ClassFieldsInfo> fieldsInfoMap;
 
-    public UnExistedClassSerializer(Fury fury, ClassDef classDef) {
+    public UnexistedClassSerializer(Fury fury, ClassDef classDef) {
       super(fury, UnexistedMetaSharedClass.class);
       this.classDef = classDef;
       classInfoCache = fury.getClassResolver().nilClassInfoCache();

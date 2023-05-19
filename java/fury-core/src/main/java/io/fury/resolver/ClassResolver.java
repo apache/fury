@@ -70,7 +70,7 @@ import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
 import io.fury.serializer.SynchronizedSerializers;
 import io.fury.serializer.TimeSerializers;
-import io.fury.serializer.UnexistedClassSerializers.UnExistedClassSerializer;
+import io.fury.serializer.UnexistedClassSerializers.UnexistedClassSerializer;
 import io.fury.serializer.UnexistedClassSerializers.UnexistedMetaSharedClass;
 import io.fury.serializer.UnexistedClassSerializers.UnexistedSkipClass;
 import io.fury.serializer.UnmodifiableSerializers;
@@ -291,7 +291,7 @@ public class ClassResolver {
     UnmodifiableSerializers.registerSerializers(fury);
     if (metaContextShareEnabled) {
       addDefaultSerializer(
-          UnexistedMetaSharedClass.class, new UnExistedClassSerializer(fury, null));
+          UnexistedMetaSharedClass.class, new UnexistedClassSerializer(fury, null));
     }
   }
 
@@ -1155,7 +1155,7 @@ public class ClassResolver {
     ClassInfo classInfo =
         new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
     if (cls == UnexistedMetaSharedClass.class) {
-      classInfo.serializer = new UnExistedClassSerializer(fury, classDef);
+      classInfo.serializer = new UnexistedClassSerializer(fury, classDef);
       // ensure `UnExistedMetaSharedClass` registered to write fixed-length class def,
       // so we can rewrite it in `UnExistedClassSerializer`.
       Preconditions.checkNotNull(classId);
