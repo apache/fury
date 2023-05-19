@@ -1284,6 +1284,7 @@ public final class Fury {
     boolean requireClassRegistration = true;
     boolean metaContextShareEnabled = false;
     boolean codeGenEnabled = true;
+    public boolean deserializeUnExistClassEnabled = false;
     public boolean asyncCompilationEnabled = false;
 
     private FuryBuilder() {}
@@ -1380,6 +1381,16 @@ public final class Fury {
     /** Whether to enable meta share mode. */
     public FuryBuilder withMetaContextShareEnabled(boolean shareMetaContext) {
       this.metaContextShareEnabled = shareMetaContext;
+      return this;
+    }
+
+    /**
+     * Whether deserialize/skip data of un-existed class.
+     *
+     * @see Config#isDeserializeUnExistClassEnabled()
+     */
+    public FuryBuilder withDeserializeUnExistClassEnabled(boolean deserializeUnExistClassEnabled) {
+      this.deserializeUnExistClassEnabled = deserializeUnExistClassEnabled;
       return this;
     }
 
