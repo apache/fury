@@ -18,18 +18,20 @@
 
 package io.fury.serializer;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
+import static com.google.common.collect.ImmutableList.of;
+import static io.fury.TestUtils.mapOf;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
+import io.fury.serializer.CollectionSerializersTest.TestEnum;
+import io.fury.test.bean.MapFields;
 import io.fury.type.GenericType;
 import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -40,10 +42,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-@SuppressWarnings("UnstableApiUsage")
 public class MapSerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -114,10 +117,9 @@ public class MapSerializersTest extends FuryTestBase {
 
   @Test
   public void testEnumMap() {
-    EnumMap<CollectionSerializersTest.TestEnum, Object> enumMap =
-        new EnumMap<>(CollectionSerializersTest.TestEnum.class);
-    enumMap.put(CollectionSerializersTest.TestEnum.A, 1);
-    enumMap.put(CollectionSerializersTest.TestEnum.B, "str");
+    EnumMap<TestEnum, Object> enumMap = new EnumMap<>(TestEnum.class);
+    enumMap.put(TestEnum.A, 1);
+    enumMap.put(TestEnum.B, "str");
     serDe(getJavaFury(), enumMap);
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(enumMap.getClass()),
@@ -132,6 +134,66 @@ public class MapSerializersTest extends FuryTestBase {
             .getClassResolver()
             .getSerializerClass(ImmutableMap.of("k1", 1, "k2", 2).getClass()),
         MapSerializers.ImmutableMapSerializer.class);
+  }
+
+  private static Map<String, Integer> newInnerMap() {
+    return new HashMap<String, Integer>() {
+      {
+        put("k1", 1);
+        put("k2", 2);
+      }
+    };
+  }
+
+  @Test
+  public void testNoArgConstructor() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+    Map<String, Integer> map = newInnerMap();
+    Assert.assertEquals(jdkDeserialize(jdkSerialize(map)), map);
+    serDeCheck(fury, map);
+  }
+
+  @Test
+  public void testMapNoJIT() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(false).build();
+    serDeCheck(fury, new HashMap<>(ImmutableMap.of("a", 1, "b", 2)));
+    serDeCheck(fury, new HashMap<>(ImmutableMap.of("a", "v1", "b", "v2")));
+    serDeCheck(fury, new HashMap<>(ImmutableMap.of(1, 2, 3, 4)));
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testMapFieldSerializers(Fury fury) {
+    MapFields obj = createMapFieldsObject();
+    Assert.assertEquals(serDe(fury, obj), obj);
+  }
+
+  public static MapFields createMapFieldsObject() {
+    MapFields obj = new MapFields();
+    Map<String, Integer> map = ImmutableMap.of("k1", 1, "k2", 2);
+    obj.map = map;
+    obj.map2 = new HashMap<>(map);
+    obj.map3 = new HashMap<>(map);
+    obj.linkedHashMap = new LinkedHashMap<>(map);
+    obj.linkedHashMap2 = new LinkedHashMap<>(map);
+    obj.linkedHashMap3 = new LinkedHashMap<>(map);
+    obj.sortedMap = new TreeMap<>(map);
+    obj.sortedMap2 = new TreeMap<>(map);
+    obj.sortedMap3 = new TreeMap<>(map);
+    obj.concurrentHashMap = new ConcurrentHashMap<>(map);
+    obj.concurrentHashMap2 = new ConcurrentHashMap<>(map);
+    obj.concurrentHashMap3 = new ConcurrentHashMap<>(map);
+    obj.skipListMap = new ConcurrentSkipListMap<>(map);
+    obj.skipListMap2 = new ConcurrentSkipListMap<>(map);
+    obj.skipListMap3 = new ConcurrentSkipListMap<>(map);
+    EnumMap<TestEnum, Object> enumMap = new EnumMap<>(TestEnum.class);
+    enumMap.put(TestEnum.A, 1);
+    enumMap.put(TestEnum.B, "str");
+    obj.enumMap = enumMap;
+    obj.enumMap2 = enumMap;
+    obj.emptyMap = Collections.emptyMap();
+    obj.sortedEmptyMap = Collections.emptySortedMap();
+    obj.singletonMap = Collections.singletonMap("k", "v");
+    return obj;
   }
 
   public static class TestClassForDefaultMapSerializer extends AbstractMap<String, Object> {
@@ -171,13 +233,18 @@ public class MapSerializersTest extends FuryTestBase {
 
     @Override
     public Object put(String key, Object value) {
-      return data.add(new TestClassForDefaultMapSerializer.MapEntry(key, value));
+      return data.add(new MapEntry(key, value));
     }
   }
 
-  @Test
-  public void testDefaultMapSerializer() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+  @Test(dataProvider = "enableCodegen")
+  public void testDefaultMapSerializer(boolean enableCodegen) {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCodegen(enableCodegen)
+            .disableSecureMode()
+            .build();
     TestClassForDefaultMapSerializer map = new TestClassForDefaultMapSerializer();
     map.put("a", 1);
     map.put("b", 2);
@@ -187,28 +254,28 @@ public class MapSerializersTest extends FuryTestBase {
         MapSerializers.DefaultJavaMapSerializer.class);
   }
 
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testJDKCompatibleMapSerialization() {
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .disableSecureMode()
-            .withReferenceTracking(false)
-            .build();
-    ImmutableMap<String, Integer> set = ImmutableMap.of("a", 1, "b", 2);
-    Class<? extends ImmutableMap> cls = set.getClass();
-    MemoryBuffer buffer = MemoryUtils.buffer(32);
-    MapSerializers.JDKCompatibleMapSerializer javaSerializer =
-        new MapSerializers.JDKCompatibleMapSerializer(fury, cls);
-    javaSerializer.write(buffer, set);
-    Object read = javaSerializer.read(buffer);
-    assertEquals(set, read);
+  @Data
+  @AllArgsConstructor
+  public static class GenericMapBoundTest {
+    // test k/v generics
+    public Map<Map<Integer, Collection<Integer>>, ? extends Collection<Integer>> map1;
+    // test k/v generics bounds
+    public Map<? extends Map<Integer, ? extends Collection<Integer>>, ? extends Collection<Integer>>
+        map2;
+  }
 
-    assertSame(
-        fury.getClassResolver().getSerializer(cls).getClass(), ReplaceResolveSerializer.class);
-    buffer.writerIndex(0);
-    buffer.readerIndex(0);
-    assertEquals(set, fury.deserialize(fury.serialize(buffer, set)));
+  @Test
+  public void testGenericMapBound() {
+    Fury fury1 =
+        Fury.builder().withLanguage(Language.JAVA).disableSecureMode().withCodegen(false).build();
+    Fury fury2 =
+        Fury.builder().withLanguage(Language.JAVA).disableSecureMode().withCodegen(false).build();
+    ArrayList<Integer> list = new ArrayList<>(of(1, 2));
+    roundCheck(
+        fury1,
+        fury2,
+        new GenericMapBoundTest(
+            new HashMap<>(mapOf(new HashMap<>(mapOf(1, list)), list)),
+            new HashMap<>(mapOf(new HashMap<>(mapOf(1, list)), list))));
   }
 }
