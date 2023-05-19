@@ -18,6 +18,7 @@
 
 package io.fury;
 
+import com.google.common.base.Preconditions;
 import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.TimeSerializers;
@@ -27,28 +28,25 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-/**
- * Fury config.
- *
- * @author chaokunyang
- */
+@SuppressWarnings({"rawtypes"})
 public class Config implements Serializable {
   private final Language language;
   private final boolean referenceTracking;
   private final boolean basicTypesReferenceIgnored;
   private final boolean stringReferenceIgnored;
   private final boolean timeReferenceIgnored;
-  private final boolean compressNumber;
-  private final boolean compressString;
+  private final boolean codeGenEnabled;
   private final boolean checkClassVersion;
   private final CompatibleMode compatibleMode;
   private final boolean checkJdkClassSerializable;
   private final Class<? extends Serializer> defaultJDKStreamSerializerType;
+  private final boolean compressString;
+  private final boolean compressNumber;
   private final boolean secureModeEnabled;
   private final boolean classRegistrationRequired;
   private final boolean metaContextShareEnabled;
-  private final boolean codeGenEnabled;
   private final boolean asyncCompilationEnabled;
+  private final boolean deserializeUnExistClassEnabled;
   private transient int configHash;
 
   Config(Fury.FuryBuilder builder) {
@@ -57,16 +55,23 @@ public class Config implements Serializable {
     basicTypesReferenceIgnored = !referenceTracking || builder.basicTypesReferenceIgnored;
     stringReferenceIgnored = !referenceTracking || builder.stringReferenceIgnored;
     timeReferenceIgnored = !referenceTracking || builder.timeReferenceIgnored;
-    compressNumber = builder.compressNumber;
     compressString = builder.compressString;
+    compressNumber = builder.compressNumber;
+    secureModeEnabled = builder.secureModeEnabled;
+    classRegistrationRequired = builder.requireClassRegistration;
+    codeGenEnabled = builder.codeGenEnabled;
     checkClassVersion = builder.checkClassVersion;
     compatibleMode = builder.compatibleMode;
     checkJdkClassSerializable = builder.jdkClassSerializableCheck;
     defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
-    secureModeEnabled = builder.secureModeEnabled;
-    classRegistrationRequired = builder.requireClassRegistration;
     metaContextShareEnabled = builder.metaContextShareEnabled;
-    codeGenEnabled = builder.codeGenEnabled;
+    deserializeUnExistClassEnabled = builder.deserializeUnExistClassEnabled;
+    if (deserializeUnExistClassEnabled) {
+      // Only in meta share mode or compatibleMode, fury knows how to deserialize
+      // exist class by type info in data.
+      Preconditions.checkArgument(
+          metaContextShareEnabled || compatibleMode == CompatibleMode.COMPATIBLE);
+    }
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
   }
 
@@ -104,14 +109,6 @@ public class Config implements Serializable {
     return timeReferenceIgnored;
   }
 
-  public boolean compressNumber() {
-    return compressNumber;
-  }
-
-  public boolean compressString() {
-    return compressString;
-  }
-
   public boolean checkClassVersion() {
     return checkClassVersion;
   }
@@ -120,11 +117,20 @@ public class Config implements Serializable {
     return compatibleMode;
   }
 
-  /**
-   * Returns true if fury need to check whether the class needs to implement {@link Serializable}.
-   */
   public boolean checkJdkClassSerializable() {
     return checkJdkClassSerializable;
+  }
+
+  public boolean compressString() {
+    return compressString;
+  }
+
+  public boolean compressNumber() {
+    return compressNumber;
+  }
+
+  public boolean isClassRegistrationRequired() {
+    return classRegistrationRequired;
   }
 
   /**
@@ -135,10 +141,6 @@ public class Config implements Serializable {
     return defaultJDKStreamSerializerType;
   }
 
-  public boolean isClassRegistrationRequired() {
-    return classRegistrationRequired;
-  }
-
   public boolean isSecureModeEnabled() {
     return secureModeEnabled;
   }
@@ -147,7 +149,19 @@ public class Config implements Serializable {
     return metaContextShareEnabled;
   }
 
-  /** Whether JIT is enabled. */
+  /**
+   * Whether deserialize/skip data of un-existed class. If not enabled, an exception will be thrown
+   * if class not exist.
+   */
+  public boolean isDeserializeUnExistClassEnabled() {
+    return deserializeUnExistClassEnabled;
+  }
+
+  /**
+   * Whether JIT is enabled.
+   *
+   * @see #isAsyncCompilationEnabled
+   */
   public boolean isCodeGenEnabled() {
     return codeGenEnabled;
   }
