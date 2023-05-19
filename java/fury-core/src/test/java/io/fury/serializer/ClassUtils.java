@@ -18,8 +18,6 @@
 
 package io.fury.serializer;
 
-import static io.fury.serializer.ClassUtils.loadClass;
-
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.CollectionFields;
 import io.fury.test.bean.MapFields;

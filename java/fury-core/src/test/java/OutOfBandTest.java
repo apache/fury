@@ -16,17 +16,16 @@
  * limitations under the License.
  */
 
+import static org.testng.Assert.assertEquals;
+
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.testng.Assert.assertEquals;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 public class OutOfBandTest extends FuryTestBase {
 

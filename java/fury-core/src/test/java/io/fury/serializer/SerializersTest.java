@@ -18,7 +18,9 @@
 
 package io.fury.serializer;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
 
 import io.fury.Fury;
 import io.fury.FuryTestBase;
@@ -109,12 +111,10 @@ public class SerializersTest extends FuryTestBase {
             .disableSecureMode();
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
-    assertEquals(SerializersTest.EnumFoo.A, serDe(fury1, fury2, SerializersTest.EnumFoo.A));
-    assertEquals(SerializersTest.EnumFoo.B, serDe(fury1, fury2, SerializersTest.EnumFoo.B));
-    assertEquals(
-        SerializersTest.EnumSubClass.A, serDe(fury1, fury2, SerializersTest.EnumSubClass.A));
-    assertEquals(
-        SerializersTest.EnumSubClass.B, serDe(fury1, fury2, SerializersTest.EnumSubClass.B));
+    assertEquals(EnumFoo.A, serDe(fury1, fury2, EnumFoo.A));
+    assertEquals(EnumFoo.B, serDe(fury1, fury2, EnumFoo.B));
+    assertEquals(EnumSubClass.A, serDe(fury1, fury2, EnumSubClass.A));
+    assertEquals(EnumSubClass.B, serDe(fury1, fury2, EnumSubClass.B));
   }
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
