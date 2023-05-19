@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.testng.annotations.Test;
 
 public class ArraySerializersTest extends FuryTestBase {
+
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testObjectArraySerialization(boolean referenceTracking, Language language) {
     Fury.FuryBuilder builder =
@@ -134,8 +135,7 @@ public class ArraySerializersTest extends FuryTestBase {
     }
   }
 
-  // TODO(chaokunyang) enable it when object serialization is supported.
-  @Test(dataProvider = "referenceTrackingConfig", enabled = false)
+  @Test(dataProvider = "referenceTrackingConfig")
   public void testArrayStructZeroCopy(boolean referenceTracking) {
     Fury.FuryBuilder builder =
         Fury.builder()
