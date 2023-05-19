@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+package io.fury;
+
 import static org.testng.Assert.assertEquals;
 
 import io.fury.Fury;
