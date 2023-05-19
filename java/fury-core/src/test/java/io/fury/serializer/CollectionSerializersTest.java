@@ -101,16 +101,16 @@ public class CollectionSerializersTest extends FuryTestBase {
             .build();
     // Test serialize Comparator
     TreeSet<String> set =
-      new TreeSet<>(
-        (Comparator<? super String> & Serializable)
-          (s1, s2) -> {
-            int delta = s1.length() - s2.length();
-            if (delta == 0) {
-              return s1.compareTo(s2);
-            } else {
-              return delta;
-            }
-          });
+        new TreeSet<>(
+            (Comparator<? super String> & Serializable)
+                (s1, s2) -> {
+                  int delta = s1.length() - s2.length();
+                  if (delta == 0) {
+                    return s1.compareTo(s2);
+                  } else {
+                    return delta;
+                  }
+                });
     set.add("str11");
     set.add("str2");
     assertEquals(set, serDe(fury, set));

@@ -26,12 +26,11 @@ import io.fury.test.bean.BeanB;
 import io.fury.test.bean.Foo;
 import io.fury.type.TypeUtils;
 import io.fury.util.LoggerFactory;
-import org.slf4j.Logger;
-import org.testng.annotations.Test;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import org.slf4j.Logger;
+import org.testng.annotations.Test;
 
 @Test(enabled = false)
 public class FuryInitPerf {

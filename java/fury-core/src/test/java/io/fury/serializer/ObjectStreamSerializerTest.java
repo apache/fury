@@ -217,13 +217,14 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
     serDeCheck(fury, new Vector<>(list));
   }
 
-  @Test
-  public void testJDKCompatibleCircularReference() {
+  @Test(dataProvider = "enableCodegen")
+  public void testJDKCompatibleCircularReference(boolean enableCodegen) {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
             .withReferenceTracking(true)
+            .withCodegen(enableCodegen)
             .build();
     {
       ObjectStreamSerializer serializer = new ObjectStreamSerializer(fury, ConcurrentHashMap.class);

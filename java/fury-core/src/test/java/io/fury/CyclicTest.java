@@ -23,12 +23,11 @@ import com.google.common.collect.Sets;
 import io.fury.serializer.CompatibleMode;
 import io.fury.test.bean.Cyclic;
 import io.fury.test.bean.FinalCyclic;
+import java.util.ArrayList;
+import java.util.List;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class CyclicTest extends FuryTestBase {
 

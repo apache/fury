@@ -98,7 +98,7 @@ public class ChildContainerSerializersTest extends FuryTestBase {
             }
           };
       // innerList captures outer this.
-      // serDeCheck(fury, innerList); // needs ObjectStreamSerializer
+      serDeCheck(fury, innerList);
       Assert.assertEquals(
           fury.getClassResolver().getSerializer(innerList.getClass()).getClass(),
           CollectionSerializers.JDKCompatibleCollectionSerializer.class);
