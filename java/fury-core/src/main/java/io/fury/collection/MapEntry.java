@@ -16,28 +16,38 @@
  * limitations under the License.
  */
 
-package io.fury.util;
+package io.fury.collection;
 
-import static org.testng.Assert.assertEquals;
+import java.util.Map;
 
-import org.testng.annotations.Test;
+/**
+ * Map Entry implementation of {@link Map.Entry}.
+ *
+ * @author chaokunyang
+ */
+public class MapEntry<K, V> implements Map.Entry<K, V> {
+  private final K key;
+  private V value;
 
-public class UnsafeFieldAccessorTest {
-
-  class A {
-    int f1 = 1;
-    int f2 = 2;
+  public MapEntry(K key, V value) {
+    this.key = key;
+    this.value = value;
   }
 
-  class B extends A {
-    int f1 = 2;
+  @Override
+  public K getKey() {
+    return key;
   }
 
-  @Test
-  public void testRepeatedFields() {
-    assertEquals(new UnsafeFieldAccessor(A.class, "f1").getInt(new A()), 1);
-    assertEquals(new UnsafeFieldAccessor(A.class, "f2").getInt(new A()), 2);
-    assertEquals(new UnsafeFieldAccessor(B.class, "f1").getInt(new B()), 2);
-    assertEquals(new UnsafeFieldAccessor(B.class, "f2").getInt(new B()), 2);
+  @Override
+  public V getValue() {
+    return value;
+  }
+
+  @Override
+  public V setValue(V value) {
+    V o = this.value;
+    this.value = value;
+    return o;
   }
 }

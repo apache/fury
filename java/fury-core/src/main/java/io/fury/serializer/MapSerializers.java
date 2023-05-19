@@ -26,6 +26,7 @@ import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.Language;
 import io.fury.collection.IdentityMap;
+import io.fury.collection.LazyMap;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfoCache;
@@ -830,6 +831,24 @@ public class MapSerializers {
     }
   }
 
+  public static final class LazyMapSerializer extends MapSerializer<LazyMap> {
+    public LazyMapSerializer(Fury fury) {
+      super(fury, LazyMap.class, true, false);
+    }
+
+    @Override
+    public short getCrossLanguageTypeId() {
+      return Type.MAP.getId();
+    }
+
+    @Override
+    public LazyMap newMap(MemoryBuffer buffer, int size) {
+      LazyMap map = new LazyMap(size);
+      fury.getReferenceResolver().reference(map);
+      return map;
+    }
+  }
+
   public static class SortedMapSerializer<T extends SortedMap> extends MapSerializer<T> {
     private Constructor<?> constructor;
 
@@ -1144,5 +1163,6 @@ public class MapSerializers {
         ConcurrentSkipListMap.class,
         new ConcurrentSkipListMapSerializer(fury, ConcurrentSkipListMap.class));
     fury.registerSerializer(EnumMap.class, new EnumMapSerializer(fury, EnumMap.class));
+    fury.registerSerializer(LazyMap.class, new LazyMapSerializer(fury));
   }
 }
