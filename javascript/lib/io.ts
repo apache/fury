@@ -161,13 +161,13 @@ export const BinaryReader = () => {
     let cursor = 0;
     let dataView!: DataView;
     let buffer!: Buffer;
-    
+    let bufferAsLatin1String: string;
 
 
     function reset(u8Array: Uint8Array) {
         dataView = new DataView(u8Array.buffer);
         buffer = Buffer.from(u8Array);
-
+        bufferAsLatin1String = (buffer as any).latin1Slice(0, buffer.byteLength);
         cursor = 0;
     }
 
@@ -242,7 +242,7 @@ export const BinaryReader = () => {
 
 
     function readStringLatin1(len: number) {
-        const result = (buffer as any).latin1Slice(cursor, cursor + len);
+        const result = bufferAsLatin1String.substring(cursor, cursor + len);
         cursor += len;
         return result;
     }
