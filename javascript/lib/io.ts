@@ -160,12 +160,14 @@ export const BinaryWriter = () => {
 export const BinaryReader = () => {
     let cursor = 0;
     let dataView!: DataView;
-    let arrayBuffer!: Uint8Array;
+    let buffer!: Buffer;
+    let bufferAsLatin1String: string;
 
 
-    function reset(buffer: Uint8Array) {
-        dataView = new DataView(buffer.buffer);
-        arrayBuffer = buffer;
+    function reset(u8Array: Uint8Array) {
+        dataView = new DataView(u8Array.buffer);
+        buffer = Buffer.from(u8Array);
+        bufferAsLatin1String = (buffer as any).latin1Slice(0, buffer.byteLength);
         cursor = 0;
     }
 
@@ -233,20 +235,20 @@ export const BinaryReader = () => {
     }
 
     function readStringUtf8(len: number) {
-        const result = utf8Decoder.decode(arrayBuffer.subarray(cursor, cursor + len));
+        const result = (buffer as any).utf8Slice(cursor, cursor + len);
         cursor += len;
         return result;
     }
 
 
     function readStringLatin1(len: number) {
-        const result = latin1Decoder.decode(arrayBuffer.subarray(cursor, cursor + len));
+        const result = bufferAsLatin1String.substring(cursor, cursor + len);
         cursor += len;
         return result;
     }
 
     function readBuffer(len: number) {
-        return arrayBuffer.slice(cursor, cursor + len);
+        return new Uint8Array(dataView.buffer.slice(cursor, cursor + len))
     }
 
 

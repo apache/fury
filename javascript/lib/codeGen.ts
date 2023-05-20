@@ -54,39 +54,84 @@ export const computeTagHash = (definition: TypeDefinition) => {
 export const genReadSerializer = (fury: Fury, definition: TypeDefinition, regTag: (tag: string, reader: SerializerRead) => void, exists: (tag: string) => boolean, stack: string[] = []) => {
     const readerSerializerStmt: string[] = [];
     let count = 0;
+    let existsStmt = new Map();
+    let existsBuiltinStmt = new Map();
+
+    const genBuiltinReaderSerializerStmt = (type: number) => {
+        if(existsBuiltinStmt.has(type)) {
+            return existsBuiltinStmt.get(type);
+        }
+        readerSerializerStmt.push(`const type_${type}_serializer = classResolver.getSerializerById(${type}).read;`)
+        existsBuiltinStmt.set(type, `type_${type}_serializer`);
+        return `type_${type}_serializer`;
+    }
     const genTagReaderSerializerStmt = (tag: string) => {
+        if(existsStmt.has(tag)) {
+            return existsStmt.get(tag);
+        }
         const result = `tag_reader_${count++}`;
         readerSerializerStmt.push(`
             // ${tag}
             let ${result} = null;
-            const ${result}_get = () => {
+            const ${result}_get = (a, b) => {
                 if (${result}) {
-                    return ${result};
+                    return ${result}(a, b);
                 }
                 ${result} = classResolver.getSerializerByTag("${tag}").read;
-                return ${result};
+                return ${result}(a, b);
             }`
         )
+        existsStmt.set(tag, `${result}_get`);
         return `${result}_get`;
     }
-    const definitionReadExpression = (definition: TypeDefinition): string => {
+    const definitionReadExpression = (key: string, definition: TypeDefinition): string => {
+        const template = key ? (readFunctionName: string, genericReaders?: string) => `
+        switch (readRefFlag(binaryView)) {
+            case ${RefFlags.RefValueFlag}:
+                skipType();
+                result.${key} = ${readFunctionName}(true, ${genericReaders});
+                break;
+            case ${RefFlags.RefFlag}:
+                result.${key} =  getReadObjectByRefId(binaryView.readVarInt32());
+                break;
+            case ${RefFlags.NullFlag}:
+                result.${key} = null;
+                break;
+            case ${RefFlags.NotNullValueFlag}:
+                skipType();
+                result.${key} = ${readFunctionName}(false, ${genericReaders})
+                break;
+        }
+        ` : (readFunctionName: string, genericReaders?: string) => `
+        () => {
+            switch (readRefFlag(binaryView)) {
+                case ${RefFlags.RefValueFlag}:
+                    skipType();
+                    return ${readFunctionName}(true, ${genericReaders});
+                case ${RefFlags.RefFlag}:
+                    return getReadObjectByRefId(binaryView.readVarInt32());
+                case ${RefFlags.NullFlag}:
+                    return null;
+                case ${RefFlags.NotNullValueFlag}:
+                    skipType();
+                    return ${readFunctionName}(false, ${genericReaders})
+            }
+        }
+        `
         if (definition.type === InternalSerializerType.ARRAY) {
-            return `
-            readBySerializer(type_${definition.type}_serializer, [
-                () => ${definitionReadExpression(definition.asArray!.item)}
-            ])`
+            return template(genBuiltinReaderSerializerStmt(definition.type), `[
+                ${definitionReadExpression('', definition.asArray!.item)}
+            ]`);
         }
         if (definition.type === InternalSerializerType.FURY_TYPE_TAG) {
             genReadSerializer(fury, definition, regTag, exists, stack);
-            return `
-            readBySerializer(${genTagReaderSerializerStmt(definition.asObject!.tag!)}())`
+            return template(genTagReaderSerializerStmt(definition.asObject!.tag!));
         }
-        return `
-            readBySerializer(type_${definition.type}_serializer)`
+        return template(genBuiltinReaderSerializerStmt(definition.type));
     }
     const genEntry = (definition: TypeDefinition) => {
         return `
-            const entry = () => {
+            {
                 // relation tag: ${definition.asObject?.tag}
                 const result = {
                     ${Object.entries(definition.asObject!.props!).map(([key]) => {
@@ -98,14 +143,11 @@ export const genReadSerializer = (fury: Fury, definition: TypeDefinition, regTag
                     pushReadObject(result);
                 }
                 ${Object.entries(definition.asObject!.props!).map(([key, value]) => {
-                return `
-                            result.${key} = ${definitionReadExpression(value)};
-                        `
+                return definitionReadExpression(key, value);
             }).join('\n')
             }
                 return result;
             }
-            return entry();
         `;
     }
     if (definition.type !== InternalSerializerType.FURY_TYPE_TAG || !definition.asObject?.tag) {
@@ -120,12 +162,8 @@ export const genReadSerializer = (fury: Fury, definition: TypeDefinition, regTag
     regTag(definition.asObject!.tag, new Function(
         `
     return function(fury) {
-        const { readBySerializer, referenceResolver, binaryView, classResolver } = fury; 
-        const { pushReadObject } = referenceResolver;
-        ${Object.values(InternalSerializerType).filter(x => typeof x === 'number').map(y => {
-            return `const type_${y}_serializer = classResolver.getSerializerById(${y}).read;`
-        }).join('\n')
-        }
+        const { referenceResolver, binaryView, classResolver, skipType } = fury; 
+        const { pushReadObject, readRefFlag, getReadObjectByRefId } = referenceResolver;
 
         ${readerSerializerStmt.join('\n')}
         return function(shouldSetRef) {
@@ -204,7 +242,7 @@ export const genWriteSerializer = (fury: Fury, definition: TypeDefinition, regTa
     regTag(definition.asObject!.tag, new Function(
         `
     return function(fury, enums) {
-        const { readBySerializer, referenceResolver, binaryWriter, classResolver, writeNullOrRef } = fury; 
+        const { referenceResolver, binaryWriter, classResolver, writeNullOrRef } = fury; 
         const { pushWriteObject } = referenceResolver;
         ${Object.values(InternalSerializerType).filter(x => typeof x === 'number').map(y => {
             return `const type_${y}_serializer = classResolver.getSerializerById(${y}).write;`

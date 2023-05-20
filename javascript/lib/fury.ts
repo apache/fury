@@ -11,10 +11,8 @@ export default () => {
     const binaryWriter = BinaryWriter();
 
     const fury = {
-        readSerializer,
         skipType,
         readBySerializerWithOutTypeId,
-        readBySerializer,
         read,
         unmarshal,
         writeNull,
@@ -68,22 +66,6 @@ export default () => {
                 return null;
             case RefFlags.NotNullValueFlag:
                 return read(false)
-        }
-    }
-
-    function readBySerializer(read: SerializerRead, genericReaders?: GenericReader[]) {
-        const flag = referenceResolver.readRefFlag(binaryView);
-        switch (flag) {
-            case RefFlags.RefValueFlag:
-                skipType();
-                return read(true, genericReaders)
-            case RefFlags.RefFlag:
-                return referenceResolver.getReadObjectByRefId(binaryView.readVarInt32());
-            case RefFlags.NullFlag:
-                return null;
-            case RefFlags.NotNullValueFlag:
-                skipType();
-                return read(false, genericReaders)
         }
     }
 
