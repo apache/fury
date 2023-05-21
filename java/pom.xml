@@ -259,6 +259,7 @@
             <exclude>**/io/ClassLoaderObjectInputStream.java</exclude>
             <exclude>**/serializer/SynchronizedSerializers.java</exclude>
             <exclude>**/serializer/UnmodifiableCollectionSerializer.java</exclude>
+            <exclude>**/fury/format/row/**</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>

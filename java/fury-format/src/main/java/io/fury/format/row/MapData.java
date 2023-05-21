@@ -17,32 +17,13 @@
 
 package io.fury.format.row;
 
-import org.apache.arrow.vector.types.pojo.Schema;
+/** Interface for map in row format. */
+public interface MapData {
+  int numElements();
 
-/**
- * Interface for row in row format. Row is inspired by Apache Spark tungsten, the differences are
- * <li>Use arrow schema to describe meta.
- * <li>String support ascii/utf16/utf8 encoding.
- * <li>Decimal use arrow decimal format.
- * <li>Variable-size field can be inline in fixed-size region if small enough.
- * <li>Allow skip 8byte padding in the future.
- * <li>The implementation support java/C++/python/golang/javascript/rust/etc..
- * <li>Support adding fields without breaking compatibility in the future.
- */
-public interface Row extends Getters, Setters {
+  ArrayData keyArray();
 
-  Schema getSchema();
+  ArrayData valueArray();
 
-  int numFields();
-
-  Row copy();
-
-  default boolean anyNull() {
-    for (int i = 0; i < numFields(); i++) {
-      if (isNullAt(i)) {
-        return true;
-      }
-    }
-    return false;
-  }
+  MapData copy();
 }
