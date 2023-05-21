@@ -62,6 +62,6 @@ public interface Getters {
   MapData getMap(int ordinal);
 
   default Object get(int ordinal, Field field) {
-    throw new UnsupportedOperationException();
+    return field.getType().accept(new ValueVisitor(this)).apply(ordinal);
   }
 }
