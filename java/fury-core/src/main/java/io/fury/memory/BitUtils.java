@@ -18,8 +18,8 @@
 package io.fury.memory;
 
 /**
- * Util class for bits related operations.
- * We assume that the bitmap data is word-aligned (that is, a multiple of 8 bytes in length).
+ * Util class for bits related operations. We assume that the bitmap data is word-aligned (that is,
+ * a multiple of 8 bytes in length).
  */
 // Modified from org.apache.spark.unsafe.bitset.BitSetMethods and
 // org.apache.arrow.vector.BitVectorHelper
@@ -69,8 +69,7 @@ public class BitUtils {
   }
 
   /** Set the bit at a given index to provided value (1 or 0). */
-  public static void setBit(
-      MemoryBuffer bitmapBuffer, int baseOffset, int index, int value) {
+  public static void setBit(MemoryBuffer bitmapBuffer, int baseOffset, int index, int value) {
     final int byteIndex = baseOffset + (index >> 3);
     final int bitIndex = index & 7;
     byte current = bitmapBuffer.get(byteIndex);
@@ -98,8 +97,7 @@ public class BitUtils {
   }
 
   /** Returns {@code true} if any bit is set. */
-  public static boolean anySet(
-      MemoryBuffer bitmapBuffer, int baseOffset, int bitmapWidthInBytes) {
+  public static boolean anySet(MemoryBuffer bitmapBuffer, int baseOffset, int bitmapWidthInBytes) {
     int addr = baseOffset;
     int bitmapWidthInWords = bitmapWidthInBytes / WORD_SIZE;
     for (int i = 0; i < bitmapWidthInWords; i++, addr += WORD_SIZE) {
@@ -146,8 +144,7 @@ public class BitUtils {
    *
    * @return number of bits not set.
    */
-  public static int getNullCount(
-      final MemoryBuffer bitmapBuffer, int baseOffset, int valueCount) {
+  public static int getNullCount(final MemoryBuffer bitmapBuffer, int baseOffset, int valueCount) {
     // not null count + remainder
     int count = 0;
     final int sizeInBytes = (valueCount + 7) / 8;

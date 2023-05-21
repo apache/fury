@@ -18,11 +18,11 @@
 
 package io.fury.memory;
 
-import io.fury.util.StringUtils;
-import org.testng.annotations.Test;
-
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+
+import io.fury.util.StringUtils;
+import org.testng.annotations.Test;
 
 public class BitUtilsTest {
 
