@@ -16,11 +16,24 @@
  * limitations under the License.
  */
 
-package io.fury.type;
+package io.fury.format.type;
+
+import static io.fury.util.Utils.checkArgument;
 
 import com.google.common.base.Preconditions;
 import io.fury.exception.FuryException;
+import io.fury.io.FuryOutputStream;
+import io.fury.memory.MemoryBuffer;
+import io.fury.type.Type;
 import io.fury.util.DecimalUtils;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.channels.Channels;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.ipc.ReadChannel;
 import org.apache.arrow.vector.ipc.WriteChannel;
@@ -32,17 +45,6 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.channels.Channels;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static io.fury.util.Utils.checkArgument;
 
 /**
  * Arrow data type utils.
@@ -432,6 +434,15 @@ public class DataTypes {
 
   public static Field fieldOfSchema(Schema schema, int index) {
     return schema.getFields().get(index);
+  }
+
+  public static void serializeSchema(Schema schema, MemoryBuffer buffer) {
+    try (FuryOutputStream outputStream = new FuryOutputStream(buffer);
+        WriteChannel writeChannel = new WriteChannel(Channels.newChannel(outputStream))) {
+      MessageSerializer.serialize(writeChannel, schema);
+    } catch (IOException e) {
+      throw new FuryException(String.format("Write schema %s failed", schema), e);
+    }
   }
 
   public static byte[] serializeSchema(Schema schema) {

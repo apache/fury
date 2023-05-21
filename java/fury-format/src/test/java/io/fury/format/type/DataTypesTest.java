@@ -16,14 +16,25 @@
  * limitations under the License.
  */
 
-package io.fury.type;
-
-import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.testng.annotations.Test;
+package io.fury.format.type;
 
 import static org.testng.Assert.assertEquals;
 
+import io.fury.test.bean.BeanA;
+import java.nio.ByteBuffer;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.Schema;
+import org.testng.annotations.Test;
+
 public class DataTypesTest {
+
+  @Test
+  public void parseSchema() {
+    Schema schema = TypeInference.inferSchema(BeanA.class);
+    byte[] bytes = schema.toByteArray();
+    Schema parsedSchema = Schema.deserialize(ByteBuffer.wrap(bytes));
+    assertEquals(schema, parsedSchema);
+  }
 
   @Test
   public void testDataTypes() {
@@ -31,6 +42,6 @@ public class DataTypesTest {
     assertEquals(DataTypes.intType(16), DataTypes.int16());
     assertEquals(DataTypes.intType(32), DataTypes.int32());
     assertEquals(DataTypes.intType(64), DataTypes.int64());
-    assertEquals(DataTypes.utf8(),  ArrowType.Utf8.INSTANCE);
+    assertEquals(DataTypes.utf8(), ArrowType.Utf8.INSTANCE);
   }
 }

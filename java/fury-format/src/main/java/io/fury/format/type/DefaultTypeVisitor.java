@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
-package io.fury.type;
+package io.fury.format.type;
 
 import org.apache.arrow.vector.types.pojo.ArrowType;
-
 
 /**
  * A default arrow type visitor to make overriding easier.
