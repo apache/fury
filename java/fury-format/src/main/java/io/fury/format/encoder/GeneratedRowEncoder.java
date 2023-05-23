@@ -18,17 +18,17 @@
 
 package io.fury.format.encoder;
 
+import io.fury.builder.Generated;
+import io.fury.format.row.binary.BinaryRow;
+
 /**
- * The encoding interface for encode/decode object to/from binary. The implementation class must
- * have a constructor with signature {@code Object[] references}, so we can pass any params to
- * codec.
+ * A row format codec for java bean.
  *
- * @param <T> type of value
  * @author chaokunyang
  */
-public interface Encoder<T> {
+public interface GeneratedRowEncoder extends Generated {
 
-  T decode(byte[] bytes);
+  BinaryRow toRow(Object obj);
 
-  byte[] encode(T obj);
+  Object fromRow(BinaryRow row);
 }

@@ -18,17 +18,20 @@
 
 package io.fury.format.encoder;
 
+import io.fury.exception.FuryException;
+
 /**
- * The encoding interface for encode/decode object to/from binary. The implementation class must
- * have a constructor with signature {@code Object[] references}, so we can pass any params to
- * codec.
+ * This class represents encoder-related exception.
  *
- * @param <T> type of value
  * @author chaokunyang
  */
-public interface Encoder<T> {
+public class EncoderException extends FuryException {
 
-  T decode(byte[] bytes);
+  public EncoderException(String message) {
+    super(message);
+  }
 
-  byte[] encode(T obj);
+  public EncoderException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

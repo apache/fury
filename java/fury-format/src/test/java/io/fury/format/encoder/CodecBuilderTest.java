@@ -18,17 +18,28 @@
 
 package io.fury.format.encoder;
 
-/**
- * The encoding interface for encode/decode object to/from binary. The implementation class must
- * have a constructor with signature {@code Object[] references}, so we can pass any params to
- * codec.
- *
- * @param <T> type of value
- * @author chaokunyang
- */
-public interface Encoder<T> {
+import io.fury.test.bean.BeanA;
+import io.fury.test.bean.BeanB;
+import io.fury.test.bean.Foo;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
-  T decode(byte[] bytes);
+import java.util.concurrent.atomic.AtomicLong;
 
-  byte[] encode(T obj);
+import static org.testng.Assert.assertTrue;
+
+public class CodecBuilderTest {
+  @Test
+  public void genCode() {
+    new RowEncoderBuilder(Foo.class).genCode();
+    new RowEncoderBuilder(BeanA.class).genCode();
+    new RowEncoderBuilder(BeanB.class).genCode();
+  }
+
+  @Test
+  public void loadOrGenRowCodecClass() {
+    assertTrue(RowEncoder.class.isAssignableFrom(Encoders.loadOrGenRowCodecClass(BeanA.class)));
+    assertTrue(RowEncoder.class.isAssignableFrom(Encoders.loadOrGenRowCodecClass(BeanB.class)));
+    assertTrue(RowEncoder.class.isAssignableFrom(Encoders.loadOrGenRowCodecClass(AtomicLong.class)));
+  }
 }
