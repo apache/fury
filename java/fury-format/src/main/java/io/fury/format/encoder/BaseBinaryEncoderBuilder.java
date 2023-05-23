@@ -674,9 +674,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
             newIndexes[indexes.length] = i;
             Expression elemArr =
                 deserializeForArray(value, Objects.requireNonNull(typeToken.getComponentType()));
-            Expression.AssignArrayElem assign =
-                new Expression.AssignArrayElem(rootJavaArray, elemArr, newIndexes);
-            return assign;
+            return new Expression.AssignArrayElem(rootJavaArray, elemArr, newIndexes);
           });
     } else {
       return new ArrayDataForEach(
