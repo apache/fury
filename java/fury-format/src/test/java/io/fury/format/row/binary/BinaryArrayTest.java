@@ -21,11 +21,10 @@ package io.fury.format.row.binary;
 import io.fury.format.row.binary.writer.BinaryArrayWriter;
 import io.fury.format.type.DataTypes;
 import io.fury.util.LoggerFactory;
+import java.util.Random;
 import org.slf4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import java.util.Random;
 
 public class BinaryArrayTest {
   private static final Logger LOG = LoggerFactory.getLogger(BinaryArrayTest.class);

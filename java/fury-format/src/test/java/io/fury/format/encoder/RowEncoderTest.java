@@ -24,15 +24,14 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
-import lombok.Data;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.Data;
+import org.testng.Assert;
+import org.testng.annotations.Test;
 
 public class RowEncoderTest {
 

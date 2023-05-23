@@ -18,15 +18,13 @@
 
 package io.fury.format.encoder;
 
+import static org.testng.Assert.assertTrue;
+
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
 import io.fury.test.bean.Foo;
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import java.util.concurrent.atomic.AtomicLong;
-
-import static org.testng.Assert.assertTrue;
+import org.testng.annotations.Test;
 
 public class CodecBuilderTest {
   @Test
@@ -40,6 +38,7 @@ public class CodecBuilderTest {
   public void loadOrGenRowCodecClass() {
     assertTrue(RowEncoder.class.isAssignableFrom(Encoders.loadOrGenRowCodecClass(BeanA.class)));
     assertTrue(RowEncoder.class.isAssignableFrom(Encoders.loadOrGenRowCodecClass(BeanB.class)));
-    assertTrue(RowEncoder.class.isAssignableFrom(Encoders.loadOrGenRowCodecClass(AtomicLong.class)));
+    assertTrue(
+        RowEncoder.class.isAssignableFrom(Encoders.loadOrGenRowCodecClass(AtomicLong.class)));
   }
 }
