@@ -26,8 +26,21 @@ import io.fury.builder.CodecBuilder;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Arithmetic;
+import io.fury.codegen.Expression.AssignArrayElem;
+import io.fury.codegen.Expression.Cast;
+import io.fury.codegen.Expression.FieldValue;
+import io.fury.codegen.Expression.ForEach;
+import io.fury.codegen.Expression.If;
+import io.fury.codegen.Expression.Invoke;
+import io.fury.codegen.Expression.ListExpression;
+import io.fury.codegen.Expression.ListFromIterable;
+import io.fury.codegen.Expression.Literal;
+import io.fury.codegen.Expression.NewArray;
 import io.fury.codegen.Expression.NewInstance;
 import io.fury.codegen.Expression.Reference;
+import io.fury.codegen.Expression.StaticInvoke;
+import io.fury.codegen.Expression.ZipForEach;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.format.row.ArrayData;
 import io.fury.format.row.Getters;
@@ -134,21 +147,20 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
       Expression arrowField) {
     Class<?> rawType = getRawType(typeToken);
     if (TypeUtils.isPrimitive(rawType)) {
-      return new Expression.ListExpression(
+      return new ListExpression(
           // notNull is by default, no need to call setNotNullAt
-          new Expression.Invoke(writer, "write", ordinal, inputObject));
+          new Invoke(writer, "write", ordinal, inputObject));
     } else if (TypeUtils.isBoxed(rawType)) {
       // janino support autoboxing and unboxing, so we don't need to call intValue/longValue....
       return setValueOrNull(writer, ordinal, inputObject, inputObject);
     } else if (rawType == BigDecimal.class) {
       return setValueOrNull(writer, ordinal, inputObject, inputObject);
     } else if (rawType == java.math.BigInteger.class) {
-      Expression.Invoke value =
-          new Expression.Invoke(inputObject, "toByteArray", TypeToken.of(byte[].class));
+      Invoke value = new Invoke(inputObject, "toByteArray", TypeToken.of(byte[].class));
       return setValueOrNull(writer, ordinal, inputObject, value);
     } else if (rawType == java.time.LocalDate.class) {
-      Expression.StaticInvoke value =
-          new Expression.StaticInvoke(
+      StaticInvoke value =
+          new StaticInvoke(
               DateTimeUtils.class,
               "localDateToDays",
               TypeUtils.PRIMITIVE_INT_TYPE,
@@ -156,8 +168,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
               inputObject);
       return setValueOrNull(writer, ordinal, inputObject, value);
     } else if (rawType == java.sql.Date.class) {
-      Expression.StaticInvoke value =
-          new Expression.StaticInvoke(
+      StaticInvoke value =
+          new StaticInvoke(
               DateTimeUtils.class,
               "fromJavaDate",
               TypeUtils.PRIMITIVE_INT_TYPE,
@@ -165,8 +177,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
               inputObject);
       return setValueOrNull(writer, ordinal, inputObject, value);
     } else if (rawType == java.sql.Timestamp.class) {
-      Expression.StaticInvoke value =
-          new Expression.StaticInvoke(
+      StaticInvoke value =
+          new StaticInvoke(
               DateTimeUtils.class,
               "fromJavaTimestamp",
               TypeUtils.PRIMITIVE_LONG_TYPE,
@@ -174,8 +186,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
               inputObject);
       return setValueOrNull(writer, ordinal, inputObject, value);
     } else if (rawType == java.time.Instant.class) {
-      Expression.StaticInvoke value =
-          new Expression.StaticInvoke(
+      StaticInvoke value =
+          new StaticInvoke(
               DateTimeUtils.class,
               "instantToMicros",
               TypeUtils.PRIMITIVE_LONG_TYPE,
@@ -185,27 +197,25 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     } else if (rawType == String.class) {
       return setValueOrNull(writer, ordinal, inputObject, inputObject);
     } else if (rawType.isEnum()) {
-      Expression.Invoke value = new Expression.Invoke(inputObject, "name", TypeUtils.STRING_TYPE);
+      Invoke value = new Invoke(inputObject, "name", TypeUtils.STRING_TYPE);
       return setValueOrNull(writer, ordinal, inputObject, value);
     } else if (rawType.isArray() || TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeToken)) {
       // place outer writer operations here, because map key/value arrays need to call
       // serializeForArray,
       // but don't setOffsetAndSize for array.
-      Expression.Invoke offset =
-          new Expression.Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
+      Invoke offset =
+          new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
       Expression serializeArray = serializeForArray(inputObject, writer, typeToken, arrowField);
-      Expression.Arithmetic size =
+      Arithmetic size =
           ExpressionUtils.subtract(
-              new Expression.Invoke(
-                  writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE),
+              new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE),
               offset);
-      Expression.Invoke setOffsetAndSize =
-          new Expression.Invoke(writer, "setOffsetAndSize", ordinal, offset, size);
-      Expression.ListExpression expression =
-          new Expression.ListExpression(offset, serializeArray, size, setOffsetAndSize);
-      return new Expression.If(
+      Invoke setOffsetAndSize = new Invoke(writer, "setOffsetAndSize", ordinal, offset, size);
+      ListExpression expression =
+          new ListExpression(offset, serializeArray, size, setOffsetAndSize);
+      return new If(
           ExpressionUtils.eqNull(inputObject),
-          new Expression.Invoke(writer, "setNullAt", ordinal),
+          new Invoke(writer, "setNullAt", ordinal),
           expression);
     } else if (TypeUtils.MAP_TYPE.isSupertypeOf(typeToken)) {
       return serializeForMap(ordinal, writer, inputObject, typeToken, arrowField);
@@ -232,22 +242,19 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
       Expression arrowField,
       boolean reuse) {
     Reference arrayWriter = getOrCreateArrayWriter(typeToken, arrowField, writer, reuse);
-    Expression.StaticInvoke arrayElementField =
-        new Expression.StaticInvoke(
+    StaticInvoke arrayElementField =
+        new StaticInvoke(
             DataTypes.class, "arrayElementField", "elemField", ARROW_FIELD_TYPE, false, arrowField);
     Class<?> rawType = getRawType(typeToken);
     if (rawType.isArray()) {
-      Expression.FieldValue length =
-          new Expression.FieldValue(inputObject, "length", TypeUtils.PRIMITIVE_INT_TYPE);
-      Expression.Invoke reset = new Expression.Invoke(arrayWriter, "reset", length);
+      FieldValue length = new FieldValue(inputObject, "length", TypeUtils.PRIMITIVE_INT_TYPE);
+      Invoke reset = new Invoke(arrayWriter, "reset", length);
       if (rawType.getComponentType().isPrimitive()) {
-        return new Expression.ListExpression(
-            reset,
-            new Expression.Invoke(arrayWriter, "fromPrimitiveArray", inputObject),
-            arrayWriter);
+        return new ListExpression(
+            reset, new Invoke(arrayWriter, "fromPrimitiveArray", inputObject), arrayWriter);
       } else {
-        Expression.ForEach forEach =
-            new Expression.ForEach(
+        ForEach forEach =
+            new ForEach(
                 inputObject,
                 (i, value) ->
                     serializeFor(
@@ -256,15 +263,14 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
                         arrayWriter,
                         Objects.requireNonNull(typeToken.getComponentType()),
                         arrayElementField));
-        return new Expression.ListExpression(reset, forEach, arrayWriter);
+        return new ListExpression(reset, forEach, arrayWriter);
       }
     } else if (getRawType(typeToken) == Iterable.class) {
-      Expression.ListFromIterable listFromIterable = new Expression.ListFromIterable(inputObject);
-      Expression.Invoke size =
-          new Expression.Invoke(listFromIterable, "size", TypeUtils.PRIMITIVE_INT_TYPE);
-      Expression.Invoke reset = new Expression.Invoke(arrayWriter, "reset", size);
-      Expression.ForEach forEach =
-          new Expression.ForEach(
+      ListFromIterable listFromIterable = new ListFromIterable(inputObject);
+      Invoke size = new Invoke(listFromIterable, "size", TypeUtils.PRIMITIVE_INT_TYPE);
+      Invoke reset = new Invoke(arrayWriter, "reset", size);
+      ForEach forEach =
+          new ForEach(
               listFromIterable,
               (i, value) ->
                   serializeFor(
@@ -273,13 +279,12 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
                       arrayWriter,
                       TypeUtils.getElementType(typeToken),
                       arrayElementField));
-      return new Expression.ListExpression(reset, forEach, arrayWriter);
+      return new ListExpression(reset, forEach, arrayWriter);
     } else { // collection
-      Expression.Invoke size =
-          new Expression.Invoke(inputObject, "size", TypeUtils.PRIMITIVE_INT_TYPE);
-      Expression.Invoke reset = new Expression.Invoke(arrayWriter, "reset", size);
-      Expression.ForEach forEach =
-          new Expression.ForEach(
+      Invoke size = new Invoke(inputObject, "size", TypeUtils.PRIMITIVE_INT_TYPE);
+      Invoke reset = new Invoke(arrayWriter, "reset", size);
+      ForEach forEach =
+          new ForEach(
               inputObject,
               (i, value) ->
                   serializeFor(
@@ -288,7 +293,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
                       arrayWriter,
                       TypeUtils.getElementType(typeToken),
                       arrayElementField));
-      return new Expression.ListExpression(reset, forEach, arrayWriter);
+      return new ListExpression(reset, forEach, arrayWriter);
     }
   }
 
@@ -329,16 +334,16 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
       Expression inputObject,
       TypeToken<?> typeToken,
       Expression arrowField) {
-    Expression.StaticInvoke keyArrayField =
-        new Expression.StaticInvoke(
+    StaticInvoke keyArrayField =
+        new StaticInvoke(
             DataTypes.class,
             "keyArrayFieldForMap",
             "keyArrayField",
             ARROW_FIELD_TYPE,
             false,
             arrowField);
-    Expression.StaticInvoke valueArrayField =
-        new Expression.StaticInvoke(
+    StaticInvoke valueArrayField =
+        new StaticInvoke(
             DataTypes.class,
             "itemArrayFieldForMap",
             "valueArrayField",
@@ -351,35 +356,30 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     TypeToken<?> keySetType = supertype.resolveType(TypeUtils.KEY_SET_RETURN_TYPE);
     TypeToken<?> valuesType = supertype.resolveType(TypeUtils.VALUES_RETURN_TYPE);
 
-    Expression.Invoke keySet = new Expression.Invoke(inputObject, "keySet", keySetType);
+    Invoke keySet = new Invoke(inputObject, "keySet", keySetType);
     Expression keySerializationExpr = serializeForArray(keySet, writer, keySetType, keyArrayField);
 
-    Expression.Invoke values = new Expression.Invoke(inputObject, "values", valuesType);
+    Invoke values = new Invoke(inputObject, "values", valuesType);
     Expression valueSerializationExpr =
         serializeForArray(values, writer, valuesType, valueArrayField);
 
-    Expression.Invoke offset =
-        new Expression.Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
+    Invoke offset = new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
     // preserve 8 bytes to write the key array numBytes later
-    Expression.Invoke preserve =
-        new Expression.Invoke(
-            writer, "writeDirectly", new Expression.Literal(-1, TypeUtils.PRIMITIVE_INT_TYPE));
-    Expression.Invoke writeKeyArrayNumBytes =
-        new Expression.Invoke(
+    Invoke preserve =
+        new Invoke(writer, "writeDirectly", new Literal(-1, TypeUtils.PRIMITIVE_INT_TYPE));
+    Invoke writeKeyArrayNumBytes =
+        new Invoke(
             writer,
             "writeDirectly",
             offset,
-            new Expression.Invoke(keySerializationExpr, "size", TypeUtils.PRIMITIVE_INT_TYPE));
-    Expression.Arithmetic size =
+            new Invoke(keySerializationExpr, "size", TypeUtils.PRIMITIVE_INT_TYPE));
+    Arithmetic size =
         ExpressionUtils.subtract(
-            new Expression.Invoke(
-                writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE),
-            offset);
-    Expression.Invoke setOffsetAndSize =
-        new Expression.Invoke(writer, "setOffsetAndSize", ordinal, offset, size);
+            new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE), offset);
+    Invoke setOffsetAndSize = new Invoke(writer, "setOffsetAndSize", ordinal, offset, size);
 
-    Expression.ListExpression expression =
-        new Expression.ListExpression(
+    ListExpression expression =
+        new ListExpression(
             offset,
             preserve,
             keySerializationExpr,
@@ -387,10 +387,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
             valueSerializationExpr,
             setOffsetAndSize);
 
-    return new Expression.If(
-        ExpressionUtils.eqNull(inputObject),
-        new Expression.Invoke(writer, "setNullAt", ordinal),
-        expression);
+    return new If(
+        ExpressionUtils.eqNull(inputObject), new Invoke(writer, "setNullAt", ordinal), expression);
   }
 
   /**
@@ -408,8 +406,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     Reference beanEncoder = beanEncoderMap.get(typeToken);
     if (beanEncoder == null) {
       // janino generics don't add cast, so this `<${type}>` is only for generated code readability
-      Expression.StaticInvoke schema =
-          new Expression.StaticInvoke(
+      StaticInvoke schema =
+          new StaticInvoke(
               DataTypes.class, "schemaFromStructField", "schema", SCHEMA_TYPE, false, structField);
       String rowWriterName =
           ctx.newName(StringUtils.uncapitalize(rawType.getSimpleName() + "RowWriter"));
@@ -434,29 +432,23 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     }
     rowWriter = rowWriterMap.get(typeToken);
 
-    Expression.Invoke reset = new Expression.Invoke(rowWriter, "reset");
-    Expression.Invoke offset =
-        new Expression.Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
-    Expression.Invoke toRow = new Expression.Invoke(beanEncoder, "toRow", inputObject);
-    Expression.Arithmetic size =
+    Invoke reset = new Invoke(rowWriter, "reset");
+    Invoke offset = new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
+    Invoke toRow = new Invoke(beanEncoder, "toRow", inputObject);
+    Arithmetic size =
         ExpressionUtils.subtract(
-            new Expression.Invoke(
-                writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE),
-            offset);
-    Expression.Invoke setOffsetAndSize =
-        new Expression.Invoke(writer, "setOffsetAndSize", ordinal, offset, size);
-    Expression.ListExpression expression =
-        new Expression.ListExpression(
+            new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE), offset);
+    Invoke setOffsetAndSize = new Invoke(writer, "setOffsetAndSize", ordinal, offset, size);
+    ListExpression expression =
+        new ListExpression(
             offset,
             reset,
             toRow, // reset will change writerIndex. must call reset and toRow in pair.
             size,
             setOffsetAndSize);
 
-    return new Expression.If(
-        ExpressionUtils.eqNull(inputObject),
-        new Expression.Invoke(writer, "setNullAt", ordinal),
-        expression);
+    return new If(
+        ExpressionUtils.eqNull(inputObject), new Invoke(writer, "setNullAt", ordinal), expression);
   }
 
   /**
@@ -466,40 +458,33 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
    */
   protected Expression serializeForObject(
       Expression ordinal, Expression writer, Expression inputObject) {
-    Expression.Invoke offset =
-        new Expression.Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
-    Expression.Invoke buffer =
-        new Expression.Invoke(writer, "getBuffer", "buffer", TypeToken.of(MemoryBuffer.class));
-    Expression setWriterIndex = new Expression.Invoke(buffer, "writerIndex", offset);
-    Expression.Invoke serialize = new Expression.Invoke(furyRef, "serialize", buffer, inputObject);
-    Expression.Invoke newWriterIndex =
-        new Expression.Invoke(buffer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
-    Expression.Arithmetic size = ExpressionUtils.subtract(newWriterIndex, offset, "size");
+    Invoke offset = new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
+    Invoke buffer = new Invoke(writer, "getBuffer", "buffer", TypeToken.of(MemoryBuffer.class));
+    Expression setWriterIndex = new Invoke(buffer, "writerIndex", offset);
+    Invoke serialize = new Invoke(furyRef, "serialize", buffer, inputObject);
+    Invoke newWriterIndex =
+        new Invoke(buffer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
+    Arithmetic size = ExpressionUtils.subtract(newWriterIndex, offset, "size");
     Expression increaseWriterIndexToAligned =
-        new Expression.Invoke(writer, "increaseWriterIndexToAligned", size);
-    Expression.Invoke setOffsetAndSize =
-        new Expression.Invoke(writer, "setOffsetAndSize", ordinal, offset, size);
-    Expression.ListExpression expression =
-        new Expression.ListExpression(
+        new Invoke(writer, "increaseWriterIndexToAligned", size);
+    Invoke setOffsetAndSize = new Invoke(writer, "setOffsetAndSize", ordinal, offset, size);
+    ListExpression expression =
+        new ListExpression(
             offset,
             buffer,
             setWriterIndex,
             serialize,
             increaseWriterIndexToAligned,
             setOffsetAndSize);
-    return new Expression.If(
-        ExpressionUtils.eqNull(inputObject),
-        new Expression.Invoke(writer, "setNullAt", ordinal),
-        expression);
+    return new If(
+        ExpressionUtils.eqNull(inputObject), new Invoke(writer, "setNullAt", ordinal), expression);
   }
 
   protected Expression setValueOrNull(
       Expression writer, Expression ordinal, Expression inputObject, Expression value) {
-    Expression action = new Expression.Invoke(writer, "write", ordinal, value);
-    return new Expression.If(
-        ExpressionUtils.eqNull(inputObject),
-        new Expression.Invoke(writer, "setNullAt", ordinal),
-        action);
+    Expression action = new Invoke(writer, "write", ordinal, value);
+    return new If(
+        ExpressionUtils.eqNull(inputObject), new Invoke(writer, "setNullAt", ordinal), action);
   }
 
   /**
@@ -515,16 +500,15 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     } else if (rawType == java.math.BigInteger.class) {
       return new NewInstance(TypeUtils.BIG_INTEGER_TYPE, value);
     } else if (rawType == java.time.LocalDate.class) {
-      return new Expression.StaticInvoke(
+      return new StaticInvoke(
           DateTimeUtils.class, "daysToLocalDate", TypeUtils.LOCAL_DATE_TYPE, false, value);
     } else if (rawType == java.sql.Date.class) {
-      return new Expression.StaticInvoke(
-          DateTimeUtils.class, "toJavaDate", TypeUtils.DATE_TYPE, false, value);
+      return new StaticInvoke(DateTimeUtils.class, "toJavaDate", TypeUtils.DATE_TYPE, false, value);
     } else if (rawType == java.sql.Timestamp.class) {
-      return new Expression.StaticInvoke(
+      return new StaticInvoke(
           DateTimeUtils.class, "toJavaTimestamp", TypeUtils.TIMESTAMP_TYPE, false, value);
     } else if (rawType == java.time.Instant.class) {
-      return new Expression.StaticInvoke(
+      return new StaticInvoke(
           DateTimeUtils.class, "microsToInstant", TypeUtils.INSTANT_TYPE, false, value);
     } else if (rawType == String.class) {
       return value;
@@ -552,9 +536,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     if (beanEncoder == null) {
       throw new IllegalStateException("beanEncoder should have be added in serializeForBean()");
     }
-    Expression.Invoke beanObj =
-        new Expression.Invoke(beanEncoder, "fromRow", TypeUtils.OBJECT_TYPE, false, row);
-    return new Expression.Cast(beanObj, typeToken, "bean");
+    Invoke beanObj = new Invoke(beanEncoder, "fromRow", TypeUtils.OBJECT_TYPE, false, row);
+    return new Cast(beanObj, typeToken, "bean");
   }
 
   /** Returns an expression that deserialize <code>mapData</code> as a java map. */
@@ -565,9 +548,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     TypeToken<?> keySetType = supertype.resolveType(TypeUtils.KEY_SET_RETURN_TYPE);
     TypeToken<?> keysType = TypeUtils.getCollectionType(keySetType);
     TypeToken<?> valuesType = supertype.resolveType(TypeUtils.VALUES_RETURN_TYPE);
-    Expression keyArray = new Expression.Invoke(mapData, "keyArray", binaryArrayTypeToken, false);
-    Expression valueArray =
-        new Expression.Invoke(mapData, "valueArray", binaryArrayTypeToken, false);
+    Expression keyArray = new Invoke(mapData, "keyArray", binaryArrayTypeToken, false);
+    Expression valueArray = new Invoke(mapData, "valueArray", binaryArrayTypeToken, false);
     Expression keyJavaArray;
     Expression valueJavaArray;
     if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(keysType)) {
@@ -581,15 +563,13 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
       valueJavaArray = deserializeForArray(valueArray, valuesType);
     }
 
-    Expression.ZipForEach put =
-        new Expression.ZipForEach(
+    ZipForEach put =
+        new ZipForEach(
             keyJavaArray,
             valueJavaArray,
             (i, key, value) ->
-                new Expression.If(
-                    ExpressionUtils.notNull(key),
-                    new Expression.Invoke(javaMap, "put", key, value)));
-    return new Expression.ListExpression(javaMap, put, javaMap);
+                new If(ExpressionUtils.notNull(key), new Invoke(javaMap, "put", key, value)));
+    return new ListExpression(javaMap, put, javaMap);
   }
 
   /** Returns an expression that deserialize <code>arrayData</code> as a java collection. */
@@ -601,10 +581,9 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
           new ArrayDataForEach(
               arrayData,
               elemType,
-              (i, value) ->
-                  new Expression.Invoke(collection, "add", deserializeFor(value, elemType)),
-              i -> new Expression.Invoke(collection, "add", ExpressionUtils.nullValue(elemType)));
-      return new Expression.ListExpression(collection, addElemsOp, collection);
+              (i, value) -> new Invoke(collection, "add", deserializeFor(value, elemType)),
+              i -> new Invoke(collection, "add", ExpressionUtils.nullValue(elemType)));
+      return new ListExpression(collection, addElemsOp, collection);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -674,7 +653,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
             newIndexes[indexes.length] = i;
             Expression elemArr =
                 deserializeForArray(value, Objects.requireNonNull(typeToken.getComponentType()));
-            return new Expression.AssignArrayElem(rootJavaArray, elemArr, newIndexes);
+            return new AssignArrayElem(rootJavaArray, elemArr, newIndexes);
           });
     } else {
       return new ArrayDataForEach(
@@ -698,63 +677,57 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     if (numDimensions > 1) {
       // If some dimension's elements is all null, we take outer-most array as null,
       // and don't create multi-array. return an no-ops expression or return null.
-      Expression.StaticInvoke dimensions =
-          new Expression.StaticInvoke(
+      StaticInvoke dimensions =
+          new StaticInvoke(
               BinaryArray.class,
               "getDimensions",
               "dims",
               TypeToken.of(int[].class),
               true,
               arrayData,
-              new Expression.Literal(numDimensions, TypeUtils.INT_TYPE));
+              new Literal(numDimensions, TypeUtils.INT_TYPE));
       TypeToken<?> innerElemType = TypeUtils.getMultiDimensionArrayElementType(typeToken);
       Class<?> innerElemClass = getRawType(innerElemType);
-      Expression rootJavaMultiDimArray =
-          new Expression.NewArray(innerElemClass, numDimensions, dimensions);
+      Expression rootJavaMultiDimArray = new NewArray(innerElemClass, numDimensions, dimensions);
       Expression op =
           deserializeForMultiDimensionArray(
               arrayData, rootJavaMultiDimArray, numDimensions, typeToken, new Expression[0]);
       // although the value maybe null, we don't use this info, so we set nullability to false.
-      return new Expression.If(
+      return new If(
           ExpressionUtils.notNull(dimensions),
-          new Expression.ListExpression(rootJavaMultiDimArray, op, rootJavaMultiDimArray),
+          new ListExpression(rootJavaMultiDimArray, op, rootJavaMultiDimArray),
           ExpressionUtils.nullValue(rootJavaMultiDimArray.type()),
           false);
     } else {
       TypeToken<?> elemType = typeToken.getComponentType();
       Class<?> innerElemClass = getRawType(Objects.requireNonNull(elemType));
       if (byte.class == innerElemClass) {
-        return new Expression.Invoke(arrayData, "toByteArray", TypeUtils.PRIMITIVE_BYTE_ARRAY_TYPE);
+        return new Invoke(arrayData, "toByteArray", TypeUtils.PRIMITIVE_BYTE_ARRAY_TYPE);
       } else if (boolean.class == innerElemClass) {
-        return new Expression.Invoke(
-            arrayData, "toBooleanArray", TypeUtils.PRIMITIVE_BOOLEAN_ARRAY_TYPE);
+        return new Invoke(arrayData, "toBooleanArray", TypeUtils.PRIMITIVE_BOOLEAN_ARRAY_TYPE);
       } else if (short.class == innerElemClass) {
-        return new Expression.Invoke(
-            arrayData, "toShortArray", TypeUtils.PRIMITIVE_SHORT_ARRAY_TYPE);
+        return new Invoke(arrayData, "toShortArray", TypeUtils.PRIMITIVE_SHORT_ARRAY_TYPE);
       } else if (int.class == innerElemClass) {
-        return new Expression.Invoke(arrayData, "toIntArray", TypeUtils.PRIMITIVE_INT_ARRAY_TYPE);
+        return new Invoke(arrayData, "toIntArray", TypeUtils.PRIMITIVE_INT_ARRAY_TYPE);
       } else if (long.class == innerElemClass) {
-        return new Expression.Invoke(arrayData, "toLongArray", TypeUtils.PRIMITIVE_LONG_ARRAY_TYPE);
+        return new Invoke(arrayData, "toLongArray", TypeUtils.PRIMITIVE_LONG_ARRAY_TYPE);
       } else if (float.class == innerElemClass) {
-        return new Expression.Invoke(
-            arrayData, "toFloatArray", TypeUtils.PRIMITIVE_FLOAT_ARRAY_TYPE);
+        return new Invoke(arrayData, "toFloatArray", TypeUtils.PRIMITIVE_FLOAT_ARRAY_TYPE);
       } else if (double.class == innerElemClass) {
-        return new Expression.Invoke(
-            arrayData, "toDoubleArray", TypeUtils.PRIMITIVE_DOUBLE_ARRAY_TYPE);
+        return new Invoke(arrayData, "toDoubleArray", TypeUtils.PRIMITIVE_DOUBLE_ARRAY_TYPE);
       } else {
-        Expression.Invoke dim =
-            new Expression.Invoke(arrayData, "numElements", TypeUtils.PRIMITIVE_INT_TYPE);
-        Expression.NewArray javaArray = new Expression.NewArray(innerElemClass, dim);
+        Invoke dim = new Invoke(arrayData, "numElements", TypeUtils.PRIMITIVE_INT_TYPE);
+        NewArray javaArray = new NewArray(innerElemClass, dim);
         ArrayDataForEach op =
             new ArrayDataForEach(
                 arrayData,
                 elemType,
                 (i, value) -> {
                   Expression elemValue = deserializeFor(value, elemType);
-                  return new Expression.AssignArrayElem(javaArray, elemValue, i);
+                  return new AssignArrayElem(javaArray, elemValue, i);
                 });
         // add javaArray at last as expression value
-        return new Expression.ListExpression(javaArray, op, javaArray);
+        return new ListExpression(javaArray, op, javaArray);
       }
     }
   }
@@ -764,6 +737,6 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
    * BinaryUtils#getElemAccessMethodName(TypeToken)}, {@link Getters#getBuffer(int)}
    */
   protected Expression deserializeForObject(Expression value, TypeToken<?> typeToken) {
-    return new Expression.Invoke(furyRef, "deserialize", typeToken, value);
+    return new Invoke(furyRef, "deserialize", typeToken, value);
   }
 }

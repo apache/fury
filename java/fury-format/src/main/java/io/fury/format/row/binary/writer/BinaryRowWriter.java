@@ -17,15 +17,14 @@
 
 package io.fury.format.row.binary.writer;
 
+import static io.fury.memory.BitUtils.calculateBitmapWidthInBytes;
+
 import io.fury.format.row.binary.BinaryRow;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import java.math.BigDecimal;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Schema;
-
-import java.math.BigDecimal;
-
-import static io.fury.memory.BitUtils.calculateBitmapWidthInBytes;
 
 /**
  * Writer to write data into buffer using row format, see {@link BinaryRow}.
@@ -67,10 +66,10 @@ public class BinaryRowWriter extends BinaryWriter {
   /**
    * Call {@code reset()} before write nested row to buffer
    *
-   * <p>reset BinaryRowWriter(schema, writer) increase writerIndex, which increase writer's writerIndex, so we
-   * need to record writer's writerIndex before call reset, so we can call writer's {@code
-   * setOffsetAndSize(int ordinal, int absoluteOffset, int size)}. <em>Reset will change writerIndex,
-   * please use it very carefully</em>
+   * <p>reset BinaryRowWriter(schema, writer) increase writerIndex, which increase writer's
+   * writerIndex, so we need to record writer's writerIndex before call reset, so we can call
+   * writer's {@code setOffsetAndSize(int ordinal, int absoluteOffset, int size)}. <em>Reset will
+   * change writerIndex, please use it very carefully</em>
    */
   public void reset() {
     super.startIndex = buffer.writerIndex();

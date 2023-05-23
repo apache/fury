@@ -24,14 +24,13 @@ import io.fury.format.vectorized.ArrowUtils;
 import io.fury.memory.BitUtils;
 import io.fury.memory.MemoryBuffer;
 import io.fury.util.DecimalUtils;
-import org.apache.arrow.memory.ArrowBuf;
-import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.arrow.vector.util.DecimalUtility;
-
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.arrow.memory.ArrowBuf;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.util.DecimalUtility;
 
 /** Base class for writing row-format structures. */
 public abstract class BinaryWriter {
@@ -217,9 +216,8 @@ public abstract class BinaryWriter {
       ArrowBuf arrowBuf = ArrowUtils.buffer(DecimalUtils.DECIMAL_BYTE_LENGTH);
       DecimalUtility.writeBigDecimalToArrowBuf(
           value, arrowBuf, 0, DecimalUtils.DECIMAL_BYTE_LENGTH);
-      buffer
-          .copyFromUnsafe(
-              writerIndex(), null, arrowBuf.memoryAddress(), DecimalUtils.DECIMAL_BYTE_LENGTH);
+      buffer.copyFromUnsafe(
+          writerIndex(), null, arrowBuf.memoryAddress(), DecimalUtils.DECIMAL_BYTE_LENGTH);
       arrowBuf.getReferenceManager().release();
       setOffsetAndSize(ordinal, writerIndex(), DecimalUtils.DECIMAL_BYTE_LENGTH);
       increaseWriterIndex(DecimalUtils.DECIMAL_BYTE_LENGTH);

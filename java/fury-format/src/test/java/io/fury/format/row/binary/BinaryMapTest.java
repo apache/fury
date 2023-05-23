@@ -23,12 +23,11 @@ import io.fury.format.row.binary.writer.BinaryRowWriter;
 import io.fury.format.type.DataTypes;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import java.util.Collections;
+import java.util.List;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.testng.annotations.Test;
-
-import java.util.Collections;
-import java.util.List;
 
 public class BinaryMapTest {
 

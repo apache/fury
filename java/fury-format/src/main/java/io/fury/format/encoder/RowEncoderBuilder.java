@@ -18,6 +18,8 @@
 
 package io.fury.format.encoder;
 
+import static io.fury.type.TypeUtils.getRawType;
+
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
@@ -41,13 +43,10 @@ import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
 import io.fury.util.LoggerFactory;
 import io.fury.util.StringUtils;
+import java.util.SortedMap;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.slf4j.Logger;
-
-import java.util.SortedMap;
-
-import static io.fury.type.TypeUtils.getRawType;
 
 /**
  * Expression builder for building jit row encoder class.

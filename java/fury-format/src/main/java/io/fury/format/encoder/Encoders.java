@@ -30,10 +30,9 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.type.TypeUtils;
 import io.fury.util.LoggerFactory;
+import java.util.Set;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.slf4j.Logger;
-
-import java.util.Set;
 
 /**
  * Factory to create {@link Encoder}.

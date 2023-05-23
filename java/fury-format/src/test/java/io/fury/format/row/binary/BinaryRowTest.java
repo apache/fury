@@ -25,14 +25,13 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.slf4j.Logger;
 import org.testng.annotations.Test;
-
-import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
 
 public class BinaryRowTest {
   private static final Logger LOG = LoggerFactory.getLogger(BinaryRowTest.class);
@@ -163,7 +162,8 @@ public class BinaryRowTest {
     intArrayWriter.reset(2);
     intArrayWriter.fromPrimitiveArray(arr);
     writer.setNotNullAt(i);
-    // reset BinaryArrayWriter(ArrayType type, BinaryWriter writer) increase writerIndex, which increase
+    // reset BinaryArrayWriter(ArrayType type, BinaryWriter writer) increase writerIndex, which
+    // increase
     // writer's writerIndex,
     // so we need to record writerIndex before call BinaryArrayWriter(ArrayType type, BinaryWriter
     // writer) to setOffsetAndSize.

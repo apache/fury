@@ -17,16 +17,6 @@
 
 package io.fury.format.row.binary.writer;
 
-import io.fury.format.row.binary.BinaryArray;
-import io.fury.format.type.DataTypes;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.util.Platform;
-import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.arrow.vector.types.pojo.Field;
-
-import java.math.BigDecimal;
-
 import static io.fury.format.type.DataTypes.PRIMITIVE_BOOLEAN_ARRAY_FIELD;
 import static io.fury.format.type.DataTypes.PRIMITIVE_BYTE_ARRAY_FIELD;
 import static io.fury.format.type.DataTypes.PRIMITIVE_DOUBLE_ARRAY_FIELD;
@@ -34,6 +24,15 @@ import static io.fury.format.type.DataTypes.PRIMITIVE_FLOAT_ARRAY_FIELD;
 import static io.fury.format.type.DataTypes.PRIMITIVE_INT_ARRAY_FIELD;
 import static io.fury.format.type.DataTypes.PRIMITIVE_LONG_ARRAY_FIELD;
 import static io.fury.format.type.DataTypes.PRIMITIVE_SHORT_ARRAY_FIELD;
+
+import io.fury.format.row.binary.BinaryArray;
+import io.fury.format.type.DataTypes;
+import io.fury.memory.MemoryBuffer;
+import io.fury.memory.MemoryUtils;
+import io.fury.util.Platform;
+import java.math.BigDecimal;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.Field;
 
 /**
  * Writer for binary array. See {@link BinaryArray}
@@ -84,10 +83,10 @@ public class BinaryArrayWriter extends BinaryWriter {
   }
 
   /**
-   * reset BinaryArrayWriter(ArrayType type, BinaryWriter writer) increase writerIndex, which increase
-   * writer's writerIndex, we need to record writer's writerIndex before call reset, so we can call
-   * writer's {@code setOffsetAndSize(int ordinal, int absoluteOffset, int size)} <em>Reset will
-   * change writerIndex, please use it very carefully</em>.
+   * reset BinaryArrayWriter(ArrayType type, BinaryWriter writer) increase writerIndex, which
+   * increase writer's writerIndex, we need to record writer's writerIndex before call reset, so we
+   * can call writer's {@code setOffsetAndSize(int ordinal, int absoluteOffset, int size)} <em>Reset
+   * will change writerIndex, please use it very carefully</em>.
    */
   public void reset(int numElements) {
     super.startIndex = writerIndex();
@@ -170,8 +169,8 @@ public class BinaryArrayWriter extends BinaryWriter {
               type.getChildren().get(0).getType(), this.field.getChildren().get(0).getType());
       throw new IllegalArgumentException(msg);
     }
-    buffer
-        .copyFromUnsafe(startIndex + headerInBytes, arr, offset, numElements * (long)elementSize);
+    buffer.copyFromUnsafe(
+        startIndex + headerInBytes, arr, offset, numElements * (long) elementSize);
     // no need to increasewriterIndex, because reset has already increased writerIndex
   }
 
