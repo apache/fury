@@ -24,15 +24,14 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.Serializers;
 import io.fury.type.Type;
 import io.fury.util.Platform;
+import java.nio.channels.ReadableByteChannel;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
-
-import java.nio.channels.ReadableByteChannel;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Serializers for {@link ArrowTable}.

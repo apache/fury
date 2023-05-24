@@ -28,6 +28,9 @@ import io.fury.serializer.BufferObject;
 import io.fury.serializer.Serializers.CrossLanguageCompatibleSerializer;
 import io.fury.type.Type;
 import io.fury.util.Platform;
+import java.io.IOException;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
@@ -36,10 +39,6 @@ import org.apache.arrow.vector.ipc.WriteChannel;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.ipc.message.IpcOption;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
-
-import java.io.IOException;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
 
 /**
  * Serializers for apache arrow.
@@ -60,8 +59,7 @@ public class ArrowSerializers {
       this(fury, defaultAllocator);
     }
 
-    public VectorSchemaRootSerializer(
-        Fury fury, BufferAllocator allocator) {
+    public VectorSchemaRootSerializer(Fury fury, BufferAllocator allocator) {
       super(fury, VectorSchemaRoot.class, Type.FURY_ARROW_RECORD_BATCH.getId());
       this.allocator = allocator;
     }

@@ -19,13 +19,12 @@
 package io.fury.format.vectorized;
 
 import com.google.common.base.Preconditions;
+import java.util.Iterator;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorLoader;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.types.pojo.Schema;
-
-import java.util.Iterator;
 
 /**
  * A custom pyarrow-style arrow table by attach {@link Schema} to {@link ArrowRecordBatch}.
