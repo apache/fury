@@ -140,6 +140,7 @@ public class ClassResolver {
     try {
       cls =
           (Class<Serializer>) Class.forName(className, true, ClassResolver.class.getClassLoader());
+      LOG.debug("Loaded arrow serializer classes.");
     } catch (ClassNotFoundException e) {
       LOG.debug(
           "`fury-format` dependency not included, skip adding serializer for class {}. "

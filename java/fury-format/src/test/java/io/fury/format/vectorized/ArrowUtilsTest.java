@@ -1,7 +1,12 @@
 package io.fury.format.vectorized;
 
+import static org.testng.Assert.*;
+
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VarCharVector;
@@ -10,12 +15,6 @@ import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.testng.annotations.Test;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.testng.Assert.*;
 
 public class ArrowUtilsTest {
   public static VectorSchemaRoot createVectorSchemaRoot(int size) {
@@ -39,12 +38,11 @@ public class ArrowUtilsTest {
     ArrowRecordBatch recordBatch = unloader.getRecordBatch();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     ArrowUtils.serializeRecordBatch(recordBatch, buffer);
-    try(ArrowRecordBatch batch = ArrowUtils.deserializeRecordBatch(buffer)) {
+    try (ArrowRecordBatch batch = ArrowUtils.deserializeRecordBatch(buffer)) {
       System.out.println("newRecordBatch " + batch);
       assertEquals(batch.getLength(), recordBatch.getLength());
       assertEquals(batch.computeBodyLength(), recordBatch.computeBodyLength());
       assertEquals(batch.getMessageType(), recordBatch.getMessageType());
     }
   }
-
 }
