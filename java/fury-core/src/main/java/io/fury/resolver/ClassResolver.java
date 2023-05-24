@@ -86,6 +86,8 @@ import io.fury.util.StringUtils;
 import java.io.Externalizable;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
@@ -127,6 +129,31 @@ import org.slf4j.Logger;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class ClassResolver {
   private static final Logger LOG = LoggerFactory.getLogger(ClassResolver.class);
+  private static final Class<Serializer> ArrowSerializersClass;
+
+  static {
+    List<String> splits = Arrays.asList(ClassResolver.class.getName().split("\\."));
+    String furyPackage = String.join(".", splits.subList(0, splits.size() - 2));
+    // compatible with maven shade.
+    String className = furyPackage + ".format.vectorized.ArrowSerializers";
+    Class<Serializer> cls = null;
+    try {
+      cls =
+          (Class<Serializer>) Class.forName(className, true, ClassResolver.class.getClassLoader());
+      LOG.debug("Loaded arrow serializer classes.");
+    } catch (ClassNotFoundException e) {
+      LOG.debug(
+          "`fury-format` dependency not included, skip adding serializer for class {}. "
+              + "If you want to use fury-format, please include fury-format dependency.",
+          className);
+    } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
+      LOG.info(
+          "Add serializer for class {} failed. Apache arrow relies on the internals of `java.nio`. "
+              + "If you are using jdk17+, please open module `java.base` to unnamed module",
+          className);
+    }
+    ArrowSerializersClass = cls;
+  }
 
   public static final byte USE_CLASS_VALUE = 0;
   public static final byte USE_STRING_ID = 1;
@@ -292,6 +319,17 @@ public class ClassResolver {
     if (metaContextShareEnabled) {
       addDefaultSerializer(
           UnexistedMetaSharedClass.class, new UnexistedClassSerializer(fury, null));
+    }
+    if (ArrowSerializersClass != null) {
+      try {
+        Method method = ArrowSerializersClass.getDeclaredMethod("registerSerializers", Fury.class);
+        method.setAccessible(true);
+        method.invoke(null, fury);
+      } catch (NoSuchMethodException e) {
+        throw new IllegalStateException("unreachable", e);
+      } catch (InvocationTargetException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 

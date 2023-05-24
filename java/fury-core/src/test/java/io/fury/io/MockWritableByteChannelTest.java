@@ -1,10 +1,9 @@
 package io.fury.io;
 
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
 
 import java.nio.ByteBuffer;
-
-import static org.testng.Assert.assertEquals;
+import org.testng.annotations.Test;
 
 public class MockWritableByteChannelTest {
 

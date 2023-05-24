@@ -23,6 +23,11 @@ import io.fury.memory.MemoryBuffer;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * InputStream based on {@link MemoryBuffer}.
+ *
+ * @author chaokunyang
+ */
 public class FuryInputStream extends InputStream {
   private final MemoryBuffer buffer;
 
