@@ -58,6 +58,11 @@ public class ArrowUtils {
     return VectorSchemaRoot.create(schema, allocator);
   }
 
+  public static ArrowWriter createArrowWriter(Schema schema) {
+    VectorSchemaRoot root = VectorSchemaRoot.create(schema, allocator);
+    return new ArrowWriter(root);
+  }
+
   public static void serializeRecordBatch(ArrowRecordBatch recordBatch, MemoryBuffer buffer) {
     // TODO(chaokunyang) add custom WritableByteChannel to avoid copy in `WritableByteChannelImpl`
     try (WriteChannel channel =
