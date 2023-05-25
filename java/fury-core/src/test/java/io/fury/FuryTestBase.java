@@ -159,6 +159,18 @@ public abstract class FuryTestBase {
     return (T) (fury.deserialize(bytes));
   }
 
+  public static Object serDe(Fury fury1, Fury fury2, MemoryBuffer buffer, Object obj) {
+    fury1.serialize(buffer, obj);
+    return fury2.deserialize(buffer);
+  }
+
+  public static Object serDeCheckIndex(Fury fury1, Fury fury2, MemoryBuffer buffer, Object obj) {
+    fury1.serialize(buffer, obj);
+    Object newObj = fury2.deserialize(buffer);
+    Assert.assertEquals(buffer.writerIndex(), buffer.readerIndex());
+    return newObj;
+  }
+
   public static void roundCheck(Fury fury1, Fury fury2, Object o) {
     roundCheck(fury1, fury2, o, Function.identity());
   }
