@@ -262,6 +262,7 @@
             <exclude>**/serializer/SynchronizedSerializers.java</exclude>
             <exclude>**/serializer/UnmodifiableCollectionSerializer.java</exclude>
             <exclude>**/fury/format/row/**</exclude>
+            <exclude>**/fury/format/vectorized/ArrowWriter.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>
