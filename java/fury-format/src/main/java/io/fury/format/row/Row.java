@@ -25,7 +25,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
  * <li>String support ascii/utf16/utf8 encoding.
  * <li>Decimal use arrow decimal format.
  * <li>Variable-size field can be inline in fixed-size region if small enough.
- * <li>Allow skip 8byte padding in the future.
+ * <li>Allow skip padding bye generate Row using aot to put offsets in generated code.
  * <li>The implementation support java/C++/python/golang/javascript/rust/etc..
  * <li>Support adding fields without breaking compatibility in the future.
  */
