@@ -24,13 +24,31 @@ import static org.testng.Assert.assertTrue;
 
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.serializer.ArraySerializersTest;
 import io.fury.serializer.SerializersTest;
 import io.fury.test.bean.BeanA;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+import io.fury.util.DateTimeUtils;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -61,6 +79,67 @@ public class FuryTest extends FuryTestBase {
     assertEquals(Long.MAX_VALUE, serDe(fury1, fury2, Long.MAX_VALUE));
     assertEquals(Float.MAX_VALUE, serDe(fury1, fury2, Float.MAX_VALUE));
     assertEquals(Double.MAX_VALUE, serDe(fury1, fury2, Double.MAX_VALUE));
+  }
+
+  @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
+  public void basicTest(boolean referenceTracking, Language language) {
+    Fury.FuryBuilder builder =
+      Fury.builder()
+        .withLanguage(language)
+        .withReferenceTracking(referenceTracking)
+        .disableSecureMode();
+    Fury fury1 = builder.build();
+    Fury fury2 = builder.build();
+    assertEquals("str", serDe(fury1, fury2, "str"));
+    assertEquals("str", serDe(fury1, fury2, new StringBuilder("str")).toString());
+    assertEquals("str", serDe(fury1, fury2, new StringBuffer("str")).toString());
+    assertEquals(SerializersTest.EnumFoo.A, serDe(fury1, fury2, SerializersTest.EnumFoo.A));
+    assertEquals(SerializersTest.EnumFoo.B, serDe(fury1, fury2, SerializersTest.EnumFoo.B));
+    assertEquals(
+      SerializersTest.EnumSubClass.A, serDe(fury1, fury2, SerializersTest.EnumSubClass.A));
+    assertEquals(
+      SerializersTest.EnumSubClass.B, serDe(fury1, fury2, SerializersTest.EnumSubClass.B));
+    assertEquals(BigInteger.valueOf(100), serDe(fury1, fury2, BigInteger.valueOf(100)));
+    assertEquals(BigDecimal.valueOf(100, 2), serDe(fury1, fury2, BigDecimal.valueOf(100, 2)));
+    java.sql.Date sqlDate = new java.sql.Date(System.currentTimeMillis());
+    assertEquals(sqlDate, serDe(fury1, fury2, sqlDate));
+    LocalDate localDate = LocalDate.now();
+    assertEquals(localDate, serDe(fury1, fury2, localDate));
+    Date utilDate = new Date();
+    assertEquals(utilDate, serDe(fury1, fury2, utilDate));
+    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+    assertEquals(timestamp, serDe(fury1, fury2, timestamp));
+    Instant instant = DateTimeUtils.truncateInstantToMicros(Instant.now());
+    assertEquals(instant, serDe(fury1, fury2, instant));
+
+    ArraySerializersTest.testPrimitiveArray(fury1, fury2);
+
+    assertEquals(Arrays.asList(1, 2), serDe(fury1, fury2, Arrays.asList(1, 2)));
+    List<String> arrayList = Arrays.asList("str", "str");
+    assertEquals(arrayList, serDe(fury1, fury2, arrayList));
+    assertEquals(new LinkedList<>(arrayList), serDe(fury1, fury2, new LinkedList<>(arrayList)));
+    assertEquals(new HashSet<>(arrayList), serDe(fury1, fury2, new HashSet<>(arrayList)));
+    TreeSet<String> treeSet = new TreeSet<>(Comparator.naturalOrder());
+    treeSet.add("str1");
+    treeSet.add("str2");
+    assertEquals(treeSet, serDe(fury1, fury2, treeSet));
+
+    HashMap<String, Integer> hashMap = new HashMap<>();
+    hashMap.put("k1", 1);
+    hashMap.put("k2", 2);
+    assertEquals(hashMap, serDe(fury1, fury2, hashMap));
+    assertEquals(new LinkedHashMap<>(hashMap), serDe(fury1, fury2, new LinkedHashMap<>(hashMap)));
+    TreeMap<String, Integer> treeMap = new TreeMap<>(Comparator.naturalOrder());
+    treeMap.putAll(hashMap);
+    assertEquals(treeMap, serDe(fury1, fury2, treeMap));
+    assertEquals(Collections.EMPTY_LIST, serDe(fury1, fury2, Collections.EMPTY_LIST));
+    assertEquals(Collections.EMPTY_SET, serDe(fury1, fury2, Collections.EMPTY_SET));
+    assertEquals(Collections.EMPTY_MAP, serDe(fury1, fury2, Collections.EMPTY_MAP));
+    assertEquals(
+      Collections.singletonList("str"), serDe(fury1, fury2, Collections.singletonList("str")));
+    assertEquals(Collections.singleton("str"), serDe(fury1, fury2, Collections.singleton("str")));
+    assertEquals(
+      Collections.singletonMap("k", 1), serDe(fury1, fury2, Collections.singletonMap("k", 1)));
   }
 
   @Test(dataProvider = "languageConfig")
