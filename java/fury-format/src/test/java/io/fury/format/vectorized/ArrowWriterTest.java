@@ -16,14 +16,12 @@
  * limitations under the License.
  */
 
-package io.fury.vectorized;
+package io.fury.format.vectorized;
 
 import io.fury.format.encoder.Encoders;
 import io.fury.format.encoder.RowEncoder;
 import io.fury.format.row.binary.BinaryRow;
 import io.fury.format.type.TypeInference;
-import io.fury.format.vectorized.ArrowUtils;
-import io.fury.format.vectorized.ArrowWriter;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.test.bean.BeanA;
