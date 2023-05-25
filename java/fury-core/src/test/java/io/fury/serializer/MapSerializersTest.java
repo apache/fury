@@ -20,6 +20,7 @@ package io.fury.serializer;
 
 import static com.google.common.collect.ImmutableList.of;
 import static io.fury.TestUtils.mapOf;
+import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
@@ -29,10 +30,13 @@ import io.fury.Language;
 import io.fury.serializer.CollectionSerializersTest.TestEnum;
 import io.fury.test.bean.MapFields;
 import io.fury.type.GenericType;
+
+import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -95,6 +99,43 @@ public class MapSerializersTest extends FuryTestBase {
     Assert.assertTrue(bytes1.length > bytes2.length);
     fury.getGenerics().popGenericType();
     Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(bytes2));
+  }
+
+  @Data
+  public static class BeanForMap {
+    public Map<String, String> map = new TreeMap<>();
+
+    {
+      map.put("k1", "v1");
+      map.put("k2", "v2");
+    }
+  }
+
+  @Test
+  public void testTreeMap() {
+    boolean referenceTracking = true;
+    Fury fury =
+      Fury.builder()
+        .withLanguage(Language.JAVA)
+        .withReferenceTracking(referenceTracking)
+        .disableSecureMode()
+        .build();
+    TreeMap<String, String> map =
+      new TreeMap<>(
+        (Comparator<? super String> & Serializable)
+          (s1, s2) -> {
+            int delta = s1.length() - s2.length();
+            if (delta == 0) {
+              return s1.compareTo(s2);
+            } else {
+              return delta;
+            }
+          });
+    map.put("str1", "1");
+    map.put("str2", "1");
+    assertEquals(map, serDe(fury, map));
+    BeanForMap beanForMap = new BeanForMap();
+    assertEquals(beanForMap, serDe(fury, beanForMap));
   }
 
   @Test
