@@ -1,6 +1,6 @@
 package io.fury.format.vectorized;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
@@ -17,6 +17,7 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.testng.annotations.Test;
 
 public class ArrowUtilsTest {
+
   public static VectorSchemaRoot createVectorSchemaRoot(int size) {
     BitVector bitVector = new BitVector("boolean", ArrowUtils.allocator);
     VarCharVector varCharVector = new VarCharVector("varchar", ArrowUtils.allocator);
