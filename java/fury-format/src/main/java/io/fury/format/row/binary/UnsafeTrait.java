@@ -133,12 +133,11 @@ abstract class UnsafeTrait implements Getters, Setters {
       return null;
     }
     MemoryBuffer buffer = getBuffer(ordinal);
-    ArrowBuf arrowBuf = ArrowUtils.buffer(DECIMAL_BYTE_LENGTH);
+    ArrowBuf arrowBuf = ArrowUtils.decimalArrowBuf();
     buffer.copyToUnsafe(0, null, arrowBuf.memoryAddress(), DECIMAL_BYTE_LENGTH);
     BigDecimal decimal =
         DecimalUtility.getBigDecimalFromArrowBuf(
             arrowBuf, 0, decimalType.getScale(), DECIMAL_BYTE_LENGTH);
-    arrowBuf.getReferenceManager().release();
     return decimal;
   }
 
