@@ -20,12 +20,16 @@ package io.fury;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
 
 import io.fury.memory.MemoryBuffer;
+import io.fury.memory.MemoryUtils;
+import io.fury.serializer.SerializersTest;
 import io.fury.test.bean.BeanA;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -57,6 +61,48 @@ public class FuryTest extends FuryTestBase {
     assertEquals(Long.MAX_VALUE, serDe(fury1, fury2, Long.MAX_VALUE));
     assertEquals(Float.MAX_VALUE, serDe(fury1, fury2, Float.MAX_VALUE));
     assertEquals(Double.MAX_VALUE, serDe(fury1, fury2, Double.MAX_VALUE));
+  }
+
+  @Test(dataProvider = "languageConfig")
+  public void testSerializationToBuffer(Language language) {
+    Fury fury1 = Fury.builder().withLanguage(language).disableSecureMode().build();
+    Fury fury2 = Fury.builder().withLanguage(language).disableSecureMode().build();
+    MemoryBuffer buffer = MemoryUtils.buffer(64);
+    assertSerializationToBuffer(fury1, fury2, buffer);
+  }
+
+  @Test(dataProvider = "languageConfig")
+  public void testSerializationSlicedBuffer(Language language) {
+    Fury fury1 = Fury.builder().withLanguage(language).disableSecureMode().build();
+    Fury fury2 = Fury.builder().withLanguage(language).disableSecureMode().build();
+    MemoryBuffer buffer0 = MemoryUtils.buffer(64);
+    buffer0.writeLong(-1);
+    buffer0.writeLong(-1);
+    buffer0.readLong();
+    buffer0.readLong();
+    MemoryBuffer buffer = buffer0.slice(8);
+    assertSerializationToBuffer(fury1, fury2, buffer);
+  }
+
+  public void assertSerializationToBuffer(Fury fury1, Fury fury2, MemoryBuffer buffer) {
+    assertEquals(true, serDeCheckIndex(fury1, fury2, buffer, true));
+    assertEquals(Byte.MAX_VALUE, serDeCheckIndex(fury1, fury2, buffer, Byte.MAX_VALUE));
+    assertEquals(Short.MAX_VALUE, serDeCheckIndex(fury1, fury2, buffer, Short.MAX_VALUE));
+    assertEquals("str", serDeCheckIndex(fury1, fury2, buffer, "str"));
+    assertEquals("str", serDeCheckIndex(fury1, fury2, buffer, new StringBuilder("str")).toString());
+    assertEquals(
+        SerializersTest.EnumFoo.A,
+        serDeCheckIndex(fury1, fury2, buffer, SerializersTest.EnumFoo.A));
+    assertEquals(
+        SerializersTest.EnumSubClass.A,
+        serDeCheckIndex(fury1, fury2, buffer, SerializersTest.EnumSubClass.A));
+    assertTrue(
+        Arrays.equals(
+            new boolean[] {false, true},
+            (boolean[]) serDeCheckIndex(fury1, fury2, buffer, new boolean[] {false, true})));
+    assertEquals(
+        new byte[] {1, 1}, (byte[]) serDeCheckIndex(fury1, fury2, buffer, new byte[] {1, 1}));
+    assertEquals(Arrays.asList(1, 2), serDe(fury1, fury2, buffer, Arrays.asList(1, 2)));
   }
 
   @Test(dataProvider = "enableCodegen")
