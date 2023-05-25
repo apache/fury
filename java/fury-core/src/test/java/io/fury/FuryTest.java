@@ -19,6 +19,7 @@
 package io.fury;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
@@ -30,6 +31,7 @@ import io.fury.test.bean.BeanA;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
@@ -49,6 +51,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import io.fury.util.DateTimeUtils;
+import io.fury.util.Platform;
+import lombok.EqualsAndHashCode;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -209,6 +213,43 @@ public class FuryTest extends FuryTestBase {
     fury.register(BeanA.class);
     BeanA beanA = BeanA.createBeanA(2);
     assertEquals(beanA, serDe(fury, beanA));
+  }
+
+  @EqualsAndHashCode
+  static class A implements Serializable {
+    public Object f1 = 1;
+    public Object f2 = 1;
+    private Object f3 = "str";
+
+    Object getF3() {
+      return f3;
+    }
+
+    void setF3(Object f3) {
+      this.f3 = f3;
+    }
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testOffHeap(boolean referenceTracking) {
+    Fury fury =
+      Fury.builder()
+        .withLanguage(Language.JAVA)
+        .withReferenceTracking(referenceTracking)
+        .disableSecureMode()
+        .build();
+    long ptr = 0;
+    try {
+      int size = 1024;
+      ptr = Platform.allocateMemory(size);
+      MemoryBuffer buffer = fury.serialize(new A(), ptr, size);
+      assertNull(buffer.getHeapMemory());
+
+      Object obj = fury.deserialize(ptr, size);
+      assertEquals(new A(), obj);
+    } finally {
+      Platform.freeMemory(ptr);
+    }
   }
 
   @Test(dataProvider = "enableCodegen")
