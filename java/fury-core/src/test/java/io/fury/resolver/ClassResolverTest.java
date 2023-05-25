@@ -105,6 +105,20 @@ public class ClassResolverTest extends FuryTestBase {
 
   @Test
   public void testGetSerializerClass() {
+    {
+      Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      // serialize class first will create a class info with serializer null.
+      serDeCheck(fury, BeanB.class);
+      Assert.assertTrue(
+        Generated.GeneratedSerializer.class.isAssignableFrom(
+          fury.getClassResolver().getSerializerClass(BeanB.class)));
+      // ensure serialize class first won't make object fail to serialize.
+      serDeCheck(fury, BeanB.createBeanB(2));
+    }
+    {
+      Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      serDeCheck(fury, new Object[] {BeanB.class, BeanB.createBeanB(2)});
+    }
     Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
     ClassResolver classResolver = fury.getClassResolver();
     assertEquals(
@@ -248,24 +262,6 @@ public class ClassResolverTest extends FuryTestBase {
   public void testSecureModeInit() {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(false).build();
     serDeCheck(fury, new HashMap<>(ImmutableMap.of("a", 1, "b", 2)));
-  }
-
-  @Test
-  public void testGetSerializeClass() {
-    {
-      Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
-      // serialize class first will create a class info with serializer null.
-      serDeCheck(fury, BeanB.class);
-      Assert.assertTrue(
-          Generated.GeneratedSerializer.class.isAssignableFrom(
-              fury.getClassResolver().getSerializerClass(BeanB.class)));
-      // ensure serialize class first won't make object fail to serialize.
-      serDeCheck(fury, BeanB.createBeanB(2));
-    }
-    {
-      Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
-      serDeCheck(fury, new Object[] {BeanB.class, BeanB.createBeanB(2)});
-    }
   }
 
   private enum TestNeedToWriteReferenceClass {
