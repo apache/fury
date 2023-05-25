@@ -21,6 +21,7 @@ import static io.fury.util.DecimalUtils.DECIMAL_BYTE_LENGTH;
 
 import io.fury.format.row.Getters;
 import io.fury.format.row.Setters;
+import io.fury.format.type.DataTypes;
 import io.fury.format.vectorized.ArrowUtils;
 import io.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
@@ -28,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
-import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.DecimalUtility;
 
 /** Internal to binary row format to reuse code, don't use it in anywhere else. */
@@ -148,7 +148,7 @@ abstract class UnsafeTrait implements Getters, Setters {
     final long offsetAndSize = getLong(ordinal);
     final int relativeOffset = (int) (offsetAndSize >> 32);
     final int size = (int) offsetAndSize;
-    BinaryRow row = new BinaryRow(new Schema(field.getChildren(), field.getMetadata()));
+    BinaryRow row = new BinaryRow(DataTypes.createSchema(field));
     row.pointTo(getBuffer(), getBaseOffset() + relativeOffset, size);
     return row;
   }

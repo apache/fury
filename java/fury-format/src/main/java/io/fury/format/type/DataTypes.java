@@ -235,7 +235,7 @@ public class DataTypes {
     return ArrowType.Bool.INSTANCE;
   }
 
-  static ArrowType.Int intType(int bitWidth) {
+  private static ArrowType.Int intType(int bitWidth) {
     return new ArrowType.Int(bitWidth, true);
   }
 
@@ -297,27 +297,27 @@ public class DataTypes {
 
   /* ========================= field utils ========================= */
   public static Field field(String name, FieldType fieldType) {
-    return new Field(name, fieldType, null);
-  }
-
-  public static Field field(String name, FieldType fieldType, Field... children) {
-    return new Field(name, fieldType, Arrays.asList(children));
-  }
-
-  public static Field field(String name, FieldType fieldType, List<Field> children) {
-    return new Field(name, fieldType, children);
+    return field(name, fieldType, Collections.emptyList());
   }
 
   public static Field field(String name, boolean nullable, ArrowType type, Field... children) {
-    return new Field(name, new FieldType(nullable, type, null), Arrays.asList(children));
+    return field(name, new FieldType(nullable, type, null), children);
+  }
+
+  public static Field field(String name, FieldType fieldType, Field... children) {
+    return field(name, fieldType, Arrays.asList(children));
   }
 
   public static Field field(String name, boolean nullable, ArrowType type, List<Field> children) {
-    return new Field(name, new FieldType(nullable, type, null), children);
+    return field(name, new FieldType(nullable, type, null), children);
   }
 
   public static Field field(String name, ArrowType type, Field... children) {
     return field(name, true, type, children);
+  }
+
+  public static Field field(String name, FieldType fieldType, List<Field> children) {
+    return new ExtField(name, fieldType, children);
   }
 
   public static Field notNullField(String name, ArrowType type, Field... children) {
@@ -334,7 +334,7 @@ public class DataTypes {
   }
 
   public static Field primitiveArrayField(String name, ArrowType type) {
-    return new Field(
+    return field(
         name,
         FieldType.nullable(ArrowType.List.INSTANCE),
         Collections.singletonList(field(ARRAY_ITEM_NAME, false, type)));
@@ -345,7 +345,7 @@ public class DataTypes {
   }
 
   public static Field arrayField(String name, ArrowType type) {
-    return new Field(
+    return field(
         name,
         FieldType.nullable(ArrowType.List.INSTANCE),
         Collections.singletonList(field(ARRAY_ITEM_NAME, true, type)));
@@ -356,7 +356,7 @@ public class DataTypes {
   }
 
   public static Field arrayField(String name, FieldType valueType) {
-    return new Field(
+    return field(
         name,
         FieldType.nullable(ArrowType.List.INSTANCE),
         Collections.singletonList(field(ARRAY_ITEM_NAME, valueType)));
@@ -367,7 +367,7 @@ public class DataTypes {
   }
 
   public static Field arrayField(String name, Field valueField) {
-    return new Field(
+    return field(
         name, FieldType.nullable(ArrowType.List.INSTANCE), Collections.singletonList(valueField));
   }
 
@@ -417,6 +417,27 @@ public class DataTypes {
   /* ========================= struct field utils start ========================= */
   public static Schema schemaFromStructField(Field structField) {
     return new Schema(structField.getChildren(), structField.getMetadata());
+  }
+
+  public static Schema createSchema(Field field) {
+    if (field.getClass() != ExtField.class) {
+      throw new IllegalArgumentException(
+          String.format("Field %s got wrong type %s", field, field.getClass()));
+    }
+    ExtField extField = (ExtField) field;
+    Object extData = extField.extData;
+    if (extData == null) {
+      extField.extData = extData = new Schema(field.getChildren(), field.getMetadata());
+    }
+    return (Schema) extData;
+  }
+
+  static class ExtField extends Field {
+    Object extData;
+
+    public ExtField(String name, FieldType fieldType, List<Field> children) {
+      super(name, fieldType, children);
+    }
   }
 
   public static Field structField(boolean nullable, Field... fields) {
