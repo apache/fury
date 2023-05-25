@@ -23,11 +23,15 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
+import io.fury.builder.Generated;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.serializer.ArraySerializersTest;
+import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.SerializersTest;
 import io.fury.test.bean.BeanA;
+import io.fury.util.DateTimeUtils;
+import io.fury.util.Platform;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -49,9 +53,6 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-import io.fury.util.DateTimeUtils;
-import io.fury.util.Platform;
 import lombok.EqualsAndHashCode;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -88,10 +89,10 @@ public class FuryTest extends FuryTestBase {
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void basicTest(boolean referenceTracking, Language language) {
     Fury.FuryBuilder builder =
-      Fury.builder()
-        .withLanguage(language)
-        .withReferenceTracking(referenceTracking)
-        .disableSecureMode();
+        Fury.builder()
+            .withLanguage(language)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode();
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals("str", serDe(fury1, fury2, "str"));
@@ -100,9 +101,9 @@ public class FuryTest extends FuryTestBase {
     assertEquals(SerializersTest.EnumFoo.A, serDe(fury1, fury2, SerializersTest.EnumFoo.A));
     assertEquals(SerializersTest.EnumFoo.B, serDe(fury1, fury2, SerializersTest.EnumFoo.B));
     assertEquals(
-      SerializersTest.EnumSubClass.A, serDe(fury1, fury2, SerializersTest.EnumSubClass.A));
+        SerializersTest.EnumSubClass.A, serDe(fury1, fury2, SerializersTest.EnumSubClass.A));
     assertEquals(
-      SerializersTest.EnumSubClass.B, serDe(fury1, fury2, SerializersTest.EnumSubClass.B));
+        SerializersTest.EnumSubClass.B, serDe(fury1, fury2, SerializersTest.EnumSubClass.B));
     assertEquals(BigInteger.valueOf(100), serDe(fury1, fury2, BigInteger.valueOf(100)));
     assertEquals(BigDecimal.valueOf(100, 2), serDe(fury1, fury2, BigDecimal.valueOf(100, 2)));
     java.sql.Date sqlDate = new java.sql.Date(System.currentTimeMillis());
@@ -140,10 +141,10 @@ public class FuryTest extends FuryTestBase {
     assertEquals(Collections.EMPTY_SET, serDe(fury1, fury2, Collections.EMPTY_SET));
     assertEquals(Collections.EMPTY_MAP, serDe(fury1, fury2, Collections.EMPTY_MAP));
     assertEquals(
-      Collections.singletonList("str"), serDe(fury1, fury2, Collections.singletonList("str")));
+        Collections.singletonList("str"), serDe(fury1, fury2, Collections.singletonList("str")));
     assertEquals(Collections.singleton("str"), serDe(fury1, fury2, Collections.singleton("str")));
     assertEquals(
-      Collections.singletonMap("k", 1), serDe(fury1, fury2, Collections.singletonMap("k", 1)));
+        Collections.singletonMap("k", 1), serDe(fury1, fury2, Collections.singletonMap("k", 1)));
   }
 
   @Test(dataProvider = "languageConfig")
@@ -191,11 +192,11 @@ public class FuryTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void serializeBeanTest(boolean referenceTracking) {
     Fury fury =
-      Fury.builder()
-        .withLanguage(Language.JAVA)
-        .withReferenceTracking(referenceTracking)
-        .disableSecureMode()
-        .build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode()
+            .build();
     BeanA beanA = BeanA.createBeanA(2);
     byte[] bytes = fury.serialize(beanA);
     Object o = fury.deserialize(bytes);
@@ -205,11 +206,11 @@ public class FuryTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void registerTest(boolean referenceTracking) {
     Fury fury =
-      Fury.builder()
-        .withLanguage(Language.JAVA)
-        .withReferenceTracking(referenceTracking)
-        .disableSecureMode()
-        .build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode()
+            .build();
     fury.register(BeanA.class);
     BeanA beanA = BeanA.createBeanA(2);
     assertEquals(beanA, serDe(fury, beanA));
@@ -233,11 +234,11 @@ public class FuryTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testOffHeap(boolean referenceTracking) {
     Fury fury =
-      Fury.builder()
-        .withLanguage(Language.JAVA)
-        .withReferenceTracking(referenceTracking)
-        .disableSecureMode()
-        .build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode()
+            .build();
     long ptr = 0;
     try {
       int size = 1024;
@@ -250,6 +251,31 @@ public class FuryTest extends FuryTestBase {
     } finally {
       Platform.freeMemory(ptr);
     }
+  }
+
+  public static class Outer {
+    private long x;
+    private Inner inner;
+
+    private static class Inner {
+      int y;
+    }
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testSerializePrivateBean(boolean referenceTracking) {
+    Fury fury =
+      Fury.builder()
+        .withLanguage(Language.JAVA)
+        .withReferenceTracking(referenceTracking)
+        .disableSecureMode()
+        .build();
+    Outer outer = new Outer();
+    outer.inner = new Outer.Inner();
+    fury.deserialize(fury.serialize(outer));
+    assertTrue(fury.getClassResolver().getSerializer(Outer.class) instanceof Generated);
+    assertTrue(
+      fury.getClassResolver().getSerializer(Outer.Inner.class) instanceof ObjectSerializer);
   }
 
   @Test(dataProvider = "enableCodegen")

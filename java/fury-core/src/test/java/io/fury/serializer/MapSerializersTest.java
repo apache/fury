@@ -30,7 +30,6 @@ import io.fury.Language;
 import io.fury.serializer.CollectionSerializersTest.TestEnum;
 import io.fury.test.bean.MapFields;
 import io.fury.type.GenericType;
-
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -115,22 +114,22 @@ public class MapSerializersTest extends FuryTestBase {
   public void testTreeMap() {
     boolean referenceTracking = true;
     Fury fury =
-      Fury.builder()
-        .withLanguage(Language.JAVA)
-        .withReferenceTracking(referenceTracking)
-        .disableSecureMode()
-        .build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode()
+            .build();
     TreeMap<String, String> map =
-      new TreeMap<>(
-        (Comparator<? super String> & Serializable)
-          (s1, s2) -> {
-            int delta = s1.length() - s2.length();
-            if (delta == 0) {
-              return s1.compareTo(s2);
-            } else {
-              return delta;
-            }
-          });
+        new TreeMap<>(
+            (Comparator<? super String> & Serializable)
+                (s1, s2) -> {
+                  int delta = s1.length() - s2.length();
+                  if (delta == 0) {
+                    return s1.compareTo(s2);
+                  } else {
+                    return delta;
+                  }
+                });
     map.put("str1", "1");
     map.put("str2", "1");
     assertEquals(map, serDe(fury, map));
