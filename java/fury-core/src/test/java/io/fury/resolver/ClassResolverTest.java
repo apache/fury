@@ -20,24 +20,45 @@ package io.fury.resolver;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.Primitives;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
+import io.fury.builder.Generated;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.resolver.longlongpkg.C1;
 import io.fury.resolver.longlongpkg.C2;
 import io.fury.resolver.longlongpkg.C3;
+import io.fury.serializer.CollectionSerializers;
+import io.fury.serializer.CompatibleSerializer;
+import io.fury.serializer.MapSerializers;
+import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.Serializers;
+import io.fury.test.bean.BeanB;
 import io.fury.type.TypeUtils;
 import io.fury.util.LoggerFactory;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -83,6 +104,83 @@ public class ClassResolverTest extends FuryTestBase {
   }
 
   @Test
+  public void testGetSerializerClass() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    ClassResolver classResolver = fury.getClassResolver();
+    assertEquals(
+        classResolver.getSerializerClass(ArrayList.class),
+        CollectionSerializers.ArrayListSerializer.class);
+    assertEquals(
+        classResolver.getSerializerClass(Arrays.asList(1, 2).getClass()),
+        CollectionSerializers.ArraysAsListSerializer.class);
+    assertEquals(
+        classResolver.getSerializerClass(LinkedList.class),
+        CollectionSerializers.CollectionSerializer.class);
+
+    assertEquals(
+        classResolver.getSerializerClass(HashSet.class),
+        CollectionSerializers.HashSetSerializer.class);
+    assertEquals(
+        classResolver.getSerializerClass(LinkedHashSet.class),
+        CollectionSerializers.LinkedHashSetSerializer.class);
+    assertEquals(
+        classResolver.getSerializerClass(TreeSet.class),
+        CollectionSerializers.SortedSetSerializer.class);
+
+    assertEquals(
+        classResolver.getSerializerClass(HashMap.class), MapSerializers.HashMapSerializer.class);
+    assertEquals(
+        classResolver.getSerializerClass(LinkedHashMap.class),
+        MapSerializers.LinkedHashMapSerializer.class);
+    assertEquals(
+        classResolver.getSerializerClass(TreeMap.class), MapSerializers.SortedMapSerializer.class);
+
+    if (ClassResolver.requireJavaSerialization(ArrayBlockingQueue.class)) {
+      assertEquals(
+          classResolver.getSerializerClass(ArrayBlockingQueue.class),
+          CollectionSerializers.JDKCompatibleCollectionSerializer.class);
+    } else {
+      assertEquals(
+          classResolver.getSerializerClass(ArrayBlockingQueue.class),
+          CollectionSerializers.DefaultJavaCollectionSerializer.class);
+    }
+    assertEquals(
+        classResolver.getSerializerClass(ConcurrentHashMap.class),
+        MapSerializers.ConcurrentHashMapSerializer.class);
+    assertEquals(
+        classResolver.getSerializerClass(A.class),
+        CollectionSerializers.DefaultJavaCollectionSerializer.class);
+    assertEquals(
+        classResolver.getSerializerClass(B.class), MapSerializers.DefaultJavaMapSerializer.class);
+  }
+
+  interface Interface1 {}
+
+  interface Interface2 {}
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testSerializeClasses(boolean referenceTracking) {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode()
+            .build();
+    Primitives.allPrimitiveTypes()
+        .forEach(cls -> assertSame(cls, fury.deserialize(fury.serialize(cls))));
+    Primitives.allWrapperTypes()
+        .forEach(cls -> assertSame(cls, fury.deserialize(fury.serialize(cls))));
+    assertSame(Class.class, fury.deserialize(fury.serialize(Class.class)));
+    assertSame(Fury.class, fury.deserialize(fury.serialize(Fury.class)));
+    List<Class<?>> classes =
+        Arrays.asList(getClass(), getClass(), Foo.class, Foo.class, Bar.class, Bar.class);
+    serDeCheck(fury, classes);
+    serDeCheck(
+        fury,
+        Arrays.asList(Interface1.class, Interface1.class, Interface2.class, Interface2.class));
+  }
+
+  @Test
   public void testWriteClassName() {
     {
       Fury fury =
@@ -98,6 +196,27 @@ public class ClassResolverTest extends FuryTestBase {
       classResolver.writeClassInternal(buffer, getClass());
       Assert.assertEquals(buffer.writerIndex(), writerIndex + 7);
       buffer.writerIndex(0);
+    }
+    {
+      Fury fury =
+          Fury.builder()
+              .withLanguage(Language.JAVA)
+              .withReferenceTracking(true)
+              .disableSecureMode()
+              .build();
+      ClassResolver classResolver = fury.getClassResolver();
+      MemoryBuffer buffer = MemoryUtils.buffer(32);
+      classResolver.writeClassAndUpdateCache(buffer, getClass());
+      classResolver.writeClassAndUpdateCache(buffer, getClass());
+      Assert.assertSame(classResolver.readClassAndUpdateCache(buffer), getClass());
+      Assert.assertSame(classResolver.readClassAndUpdateCache(buffer), getClass());
+      classResolver.reset();
+      buffer.writerIndex(0);
+      buffer.readerIndex(0);
+      List<io.fury.test.bean.Foo> fooList =
+          Arrays.asList(io.fury.test.bean.Foo.create(), io.fury.test.bean.Foo.create());
+      Assert.assertEquals(fury.deserialize(fury.serialize(fooList)), fooList);
+      Assert.assertEquals(fury.deserialize(fury.serialize(fooList)), fooList);
     }
   }
 
@@ -125,6 +244,30 @@ public class ClassResolverTest extends FuryTestBase {
     long f2;
   }
 
+  @Test
+  public void testSecureModeInit() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(false).build();
+    serDeCheck(fury, new HashMap<>(ImmutableMap.of("a", 1, "b", 2)));
+  }
+
+  @Test
+  public void testGetSerializeClass() {
+    {
+      Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      // serialize class first will create a class info with serializer null.
+      serDeCheck(fury, BeanB.class);
+      Assert.assertTrue(
+          Generated.GeneratedSerializer.class.isAssignableFrom(
+              fury.getClassResolver().getSerializerClass(BeanB.class)));
+      // ensure serialize class first won't make object fail to serialize.
+      serDeCheck(fury, BeanB.createBeanB(2));
+    }
+    {
+      Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      serDeCheck(fury, new Object[] {BeanB.class, BeanB.createBeanB(2)});
+    }
+  }
+
   private enum TestNeedToWriteReferenceClass {
     A,
     B
@@ -141,6 +284,35 @@ public class ClassResolverTest extends FuryTestBase {
     ClassResolver classResolver = fury.getClassResolver();
     Assert.assertFalse(classResolver.needToWriteReference(TestNeedToWriteReferenceClass.class));
     assertNull(classResolver.getClassInfo(TestNeedToWriteReferenceClass.class, false));
+  }
+
+  @Test
+  public void testSetSerializer() {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(true)
+            .disableSecureMode()
+            .build();
+    ClassResolver classResolver = fury.getClassResolver();
+    {
+      classResolver.setSerializer(Foo.class, new ObjectSerializer<>(fury, Foo.class));
+      ClassInfo classInfo = classResolver.getClassInfo(Foo.class);
+      assertSame(classInfo.getSerializer().getClass(), ObjectSerializer.class);
+      classResolver.setSerializer(Foo.class, new CompatibleSerializer<>(fury, Foo.class));
+      Assert.assertSame(classResolver.getClassInfo(Foo.class), classInfo);
+      assertSame(classInfo.getSerializer().getClass(), CompatibleSerializer.class);
+    }
+    {
+      classResolver.register(Bar.class);
+      ClassInfo classInfo = classResolver.getClassInfo(Bar.class);
+      classResolver.setSerializer(Bar.class, new ObjectSerializer<>(fury, Bar.class));
+      Assert.assertSame(classResolver.getClassInfo(Bar.class), classInfo);
+      assertSame(classInfo.getSerializer().getClass(), ObjectSerializer.class);
+      classResolver.setSerializer(Bar.class, new CompatibleSerializer<>(fury, Bar.class));
+      Assert.assertSame(classResolver.getClassInfo(Bar.class), classInfo);
+      assertSame(classInfo.getSerializer().getClass(), CompatibleSerializer.class);
+    }
   }
 
   private static class ErrorSerializer extends Serializer<Foo> {
@@ -181,6 +353,6 @@ public class ClassResolverTest extends FuryTestBase {
     Assert.assertTrue(classResolver.isPrimitive(classResolver.getRegisteredClassId(float.class)));
     Assert.assertTrue(classResolver.isPrimitive(classResolver.getRegisteredClassId(double.class)));
     Assert.assertFalse(classResolver.isPrimitive(classResolver.getRegisteredClassId(String.class)));
-    // Assert.assertFalse(classResolver.isPrimitive(classResolver.getRegisteredClassId(Date.class)));
+    Assert.assertFalse(classResolver.isPrimitive(classResolver.getRegisteredClassId(Date.class)));
   }
 }
