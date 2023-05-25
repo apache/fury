@@ -198,6 +198,19 @@ public class FuryTest extends FuryTestBase {
     assertEquals(beanA, o);
   }
 
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void registerTest(boolean referenceTracking) {
+    Fury fury =
+      Fury.builder()
+        .withLanguage(Language.JAVA)
+        .withReferenceTracking(referenceTracking)
+        .disableSecureMode()
+        .build();
+    fury.register(BeanA.class);
+    BeanA beanA = BeanA.createBeanA(2);
+    assertEquals(beanA, serDe(fury, beanA));
+  }
+
   @Test(dataProvider = "enableCodegen")
   public void testSerializeJDKObject(boolean enableCodegen) {
     Fury fury =
