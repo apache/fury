@@ -21,6 +21,7 @@ package io.fury.format.vectorized;
 import io.fury.io.FuryInputStream;
 import io.fury.io.FuryOutputStream;
 import io.fury.memory.MemoryBuffer;
+import io.fury.util.DecimalUtils;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import org.apache.arrow.memory.ArrowBuf;
@@ -42,9 +43,15 @@ public class ArrowUtils {
   // FIXME JDK17: Unable to make field long java.nio.Buffer.address
   //   accessible: module java.base does not "opens java.nio" to unnamed module @405e4200
   public static RootAllocator allocator = new RootAllocator();
+  private static final ThreadLocal<ArrowBuf> decimalArrowBuf =
+      ThreadLocal.withInitial(() -> buffer(DecimalUtils.DECIMAL_BYTE_LENGTH));
 
   public static ArrowBuf buffer(final long initialRequestSize) {
     return allocator.buffer(initialRequestSize);
+  }
+
+  public static ArrowBuf decimalArrowBuf() {
+    return decimalArrowBuf.get();
   }
 
   public static VectorSchemaRoot createVectorSchemaRoot(Schema schema) {
