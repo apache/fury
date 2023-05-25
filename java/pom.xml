@@ -251,6 +251,7 @@
             <exclude>**/util/DateTimeUtils.java</exclude>
             <exclude>**/memory/MemoryBuffer.java</exclude>
             <exclude>**/memory/BitUtils.java</exclude>
+            <exclude>**/codegen/Code.java</exclude>
             <exclude>**/collection/FuryObjectMap.java</exclude>
             <exclude>**/collection/ObjectIntMap.java</exclude>
             <exclude>**/collection/IdentityObjectIntMap.java</exclude>
