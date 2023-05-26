@@ -44,7 +44,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
  *   <li>Variable-Length Data Section
  * </ul>
  *
- * Equality comparison and hashing of rows can be performed on raw bytes since if two rows are
+ * <p>Equality comparison and hashing of rows can be performed on raw bytes since if two rows are
  * identical so should be their bit-wise representation.
  *
  * <ul>

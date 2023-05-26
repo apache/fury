@@ -23,6 +23,7 @@
     <module>fury-core</module>
     <module>fury-test-core</module>
     <module>fury-testsuite</module>
+    <module>fury-benchmark</module>
   </modules>
 
   <properties>
@@ -228,7 +229,7 @@
           <execution>
             <phase>generate-sources</phase>
             <goals>
-              <goal>remove</goal>
+              <!-- <goal>remove</goal> -->
               <goal>format</goal>
             </goals>
           </execution>
@@ -263,6 +264,15 @@
             <exclude>**/serializer/UnmodifiableCollectionSerializer.java</exclude>
             <exclude>**/fury/format/row/**</exclude>
             <exclude>**/fury/format/vectorized/ArrowWriter.java</exclude>
+            <exclude>**/fury/benchmark/data/Data.java</exclude>
+            <exclude>**/fury/benchmark/data/Image.java</exclude>
+            <exclude>**/fury/benchmark/data/Media.java</exclude>
+            <exclude>**/fury/benchmark/data/MediaContent.java</exclude>
+            <exclude>**/fury/benchmark/data/Sample.java</exclude>
+            <exclude>**/fury/benchmark/state/KryoState.java</exclude>
+            <exclude>**/fury/benchmark/state/BufferType.java</exclude>
+            <exclude>**/fury/benchmark/state/ObjectType.java</exclude>
+            <exclude>**/fury/benchmark/Identity2IdMap.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>
