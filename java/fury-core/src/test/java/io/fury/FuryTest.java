@@ -278,6 +278,26 @@ public class FuryTest extends FuryTestBase {
         fury.getClassResolver().getSerializer(Outer.Inner.class) instanceof ObjectSerializer);
   }
 
+  static class B {
+    int f1;
+  }
+
+  static class C extends B {
+    int f1;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testDuplicateFields(Fury fury) {
+    C c = new C();
+    ((B) c).f1 = 100;
+    c.f1 = -100;
+    assertEquals(((B) c).f1, 100);
+    assertEquals(c.f1, -100);
+    C newC = (C) serDe(fury, c);
+    assertEquals(newC.f1, c.f1);
+    assertEquals(((B) newC).f1, ((B) c).f1);
+  }
+
   @Test(dataProvider = "enableCodegen")
   public void testSerializeJDKObject(boolean enableCodegen) {
     Fury fury =
