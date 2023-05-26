@@ -23,6 +23,8 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.fury.builder.Generated;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
@@ -54,6 +56,7 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import lombok.EqualsAndHashCode;
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -296,6 +299,21 @@ public class FuryTest extends FuryTestBase {
     C newC = (C) serDe(fury, c);
     assertEquals(newC.f1, c.f1);
     assertEquals(((B) newC).f1, ((B) c).f1);
+  }
+
+  @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
+  public void testGuava(boolean referenceTracking, Language language) {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(language)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode()
+            .build();
+    Assert.assertEquals(serDe(fury, ImmutableList.of(1)), ImmutableList.of(1));
+    Assert.assertEquals(serDe(fury, ImmutableList.of(1, 2)), ImmutableList.of(1, 2));
+    Assert.assertEquals(serDe(fury, ImmutableList.of(1, 2, "str")), ImmutableList.of(1, 2, "str"));
+    Assert.assertEquals(
+        serDe(fury, ImmutableMap.of(1, 2, "k", "v")), ImmutableMap.of(1, 2, "k", "v"));
   }
 
   @Test(dataProvider = "enableCodegen")
