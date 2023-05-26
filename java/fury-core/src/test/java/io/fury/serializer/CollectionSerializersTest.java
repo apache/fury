@@ -51,7 +51,9 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.LongStream;
 import lombok.Data;
 import org.testng.Assert;
@@ -215,6 +217,34 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(ImmutableList.of(1, 2).getClass()),
         CollectionSerializers.ImmutableListSerializer.class);
+  }
+
+  @Test
+  public void testSerializeJavaBlockingQueue() {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(true)
+            .disableSecureMode()
+            .build();
+    // TODO(chaokunyang) add optimized serializers for blocking queue.
+    {
+      ArrayBlockingQueue<Integer> queue = new ArrayBlockingQueue<>(10);
+      queue.add(1);
+      queue.add(2);
+      queue.add(3);
+      assertEquals(new ArrayList<>(serDe(fury, queue)), new ArrayList<>(queue));
+    }
+    {
+      // If reference tracking is off, deserialization will throw
+      // `java.lang.IllegalMonitorStateException`
+      // when using fury `ObjectStreamSerializer`, maybe some internal state are shared.
+      LinkedBlockingQueue<Integer> queue = new LinkedBlockingQueue<>(10);
+      queue.add(1);
+      queue.add(2);
+      queue.add(3);
+      assertEquals(new ArrayList<>(serDe(fury, queue)), new ArrayList<>(queue));
+    }
   }
 
   @Test

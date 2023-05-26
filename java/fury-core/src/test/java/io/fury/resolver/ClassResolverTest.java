@@ -110,8 +110,8 @@ public class ClassResolverTest extends FuryTestBase {
       // serialize class first will create a class info with serializer null.
       serDeCheck(fury, BeanB.class);
       Assert.assertTrue(
-        Generated.GeneratedSerializer.class.isAssignableFrom(
-          fury.getClassResolver().getSerializerClass(BeanB.class)));
+          Generated.GeneratedSerializer.class.isAssignableFrom(
+              fury.getClassResolver().getSerializerClass(BeanB.class)));
       // ensure serialize class first won't make object fail to serialize.
       serDeCheck(fury, BeanB.createBeanB(2));
     }
