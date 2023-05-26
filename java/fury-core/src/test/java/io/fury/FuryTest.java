@@ -265,17 +265,17 @@ public class FuryTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testSerializePrivateBean(boolean referenceTracking) {
     Fury fury =
-      Fury.builder()
-        .withLanguage(Language.JAVA)
-        .withReferenceTracking(referenceTracking)
-        .disableSecureMode()
-        .build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(referenceTracking)
+            .disableSecureMode()
+            .build();
     Outer outer = new Outer();
     outer.inner = new Outer.Inner();
     fury.deserialize(fury.serialize(outer));
     assertTrue(fury.getClassResolver().getSerializer(Outer.class) instanceof Generated);
     assertTrue(
-      fury.getClassResolver().getSerializer(Outer.Inner.class) instanceof ObjectSerializer);
+        fury.getClassResolver().getSerializer(Outer.Inner.class) instanceof ObjectSerializer);
   }
 
   @Test(dataProvider = "enableCodegen")
