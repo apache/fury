@@ -46,6 +46,13 @@ See org.openjdk.jmh.runner.options.CommandLineOptions for more information about
 
 Save benchmark data to specified dir, then run `tool.py` to plot graphs.
 
+# Plotting
+Fury uses pandas to process the jmh data, and uses matplotlib for plotting.
+```bash
+pip install pandas matplotlib
+python analyze.py
+```
+
 # Debug
 
 Using `async-profiler` to generate flame graph.
@@ -56,7 +63,7 @@ nohup java -jar target/benchmarks.jar 'io.*Fury.*deserialize*' -f 1 -wi 1 -i 1 -
 profiler.sh  -d 30 -f $pic `jps | grep ForkedMain | awk '{print $1}'`
 ```
 
-# JIP optimization
+# JIT optimization
 
 1. Use `-XX:+PrintCompilation -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining` to inspect jit:
    java -XX:+PrintCompilation -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining -jar target/benchmarks.jar io.*Fury.*
