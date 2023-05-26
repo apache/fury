@@ -25,6 +25,7 @@ import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.fury.annotation.Ignore;
 import io.fury.builder.Generated;
 import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
@@ -63,6 +64,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -362,6 +365,24 @@ public class FuryTest extends FuryTestBase {
     assertThrows(InsecureException.class, () -> fury.serialize(new A()));
     Fury fury1 = Fury.builder().withSecureMode(false).build();
     serDe(fury1, new A());
+  }
+
+  @Data
+  @AllArgsConstructor
+  private static class IgnoreFields {
+    @Ignore
+    int f1;
+    @Ignore long f2;
+    long f3;
+  }
+
+  @Test
+  public void testIgnoreFields() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    IgnoreFields o = serDe(fury, new IgnoreFields(1, 2, 3));
+    assertEquals(0, o.f1);
+    assertEquals(0, o.f2);
+    assertEquals(3, o.f3);
   }
 
   @Test(timeOut = 60_000)
