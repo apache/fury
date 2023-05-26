@@ -235,7 +235,7 @@ public class DataTypes {
     return ArrowType.Bool.INSTANCE;
   }
 
-  private static ArrowType.Int intType(int bitWidth) {
+  public static ArrowType.Int intType(int bitWidth) {
     return new ArrowType.Int(bitWidth, true);
   }
 
