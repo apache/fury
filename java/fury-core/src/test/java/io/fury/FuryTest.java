@@ -31,8 +31,11 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.serializer.ArraySerializersTest;
 import io.fury.serializer.ObjectSerializer;
+import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializersTest;
 import io.fury.test.bean.BeanA;
+import io.fury.test.bean.Struct;
+import io.fury.type.Descriptor;
 import io.fury.util.DateTimeUtils;
 import io.fury.util.Platform;
 import java.io.ByteArrayInputStream;
@@ -58,6 +61,8 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.WeakHashMap;
+
 import lombok.EqualsAndHashCode;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -357,6 +362,36 @@ public class FuryTest extends FuryTestBase {
     assertThrows(InsecureException.class, () -> fury.serialize(new A()));
     Fury fury1 = Fury.builder().withSecureMode(false).build();
     serDe(fury1, new A());
+  }
+
+  @Test(timeOut = 60_000)
+  public void testClassGC() {
+    WeakHashMap<Object, Boolean> map = new WeakHashMap<>();
+    furyGC(map);
+    Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+    Descriptor.clearDescriptorCache();
+    TestUtils.triggerOOMForSoftGC(
+      () -> {
+        System.out.printf("Wait map keys %s gc.\n", map.keySet());
+        return map.size() > 0;
+      });
+    Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+  }
+
+  private void furyGC(WeakHashMap<Object, Boolean> map) {
+    Fury fury = Fury.builder().withClassRegistrationRequired(false).build();
+    Class<?> structClass1 = Struct.createStructClass("TestClassGC", 1);
+    System.out.println(structClass1.hashCode());
+    Object struct1 = Struct.createPOJO(structClass1);
+    serDe(fury, struct1);
+    Class<? extends Serializer> serializerClass =
+      fury.getClassResolver().getSerializerClass(structClass1);
+    assertTrue(serializerClass.getName().contains("Codec"));
+    map.put(fury, true);
+    System.out.println(fury.hashCode());
+    map.put(struct1, true);
+    map.put(structClass1, true);
+    System.out.println(structClass1.hashCode());
   }
 
   @Test
