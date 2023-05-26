@@ -136,6 +136,7 @@ org.codehaus.groovy.runtime.GStringImpl
 bsh.Interpreter
 bsh.XThis
 java.lang.Runtime
+java.lang.Thread
 javax.xml.transform.Templates
 org.apache.commons.fileupload.disk.DiskFileItem
 org.apache.myfaces.view.facelets.el.ValueExpressionMethodExpression
