@@ -26,6 +26,7 @@ import static org.testng.Assert.assertTrue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.fury.builder.Generated;
+import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.serializer.ArraySerializersTest;
@@ -38,8 +39,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -327,6 +330,24 @@ public class FuryTest extends FuryTestBase {
             .build();
     StringTokenizer tokenizer = new StringTokenizer("abc,1,23", ",");
     assertEquals(serDe(fury, tokenizer).countTokens(), tokenizer.countTokens());
+  }
+
+  @Test
+  public void testJDKSerializableCheck() {
+    Fury fury =
+      Fury.builder()
+        .withLanguage(Language.JAVA)
+        .withReferenceTracking(true)
+        .disableSecureMode()
+        .build();
+    serDe(fury, ByteBuffer.allocate(32));
+    serDe(fury, ByteBuffer.allocateDirect(32));
+    assertThrows(
+      InsecureException.class,
+      () -> fury.serialize(new Thread()));
+    assertThrows(
+      UnsupportedOperationException.class,
+      () -> fury.serialize(MethodHandles.lookup()));
   }
 
   @Test
