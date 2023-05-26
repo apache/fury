@@ -351,6 +351,15 @@ public class FuryTest extends FuryTestBase {
   }
 
   @Test
+  public void testSecureMode() {
+    Fury fury = Fury.builder().withSecureMode(true).build();
+    class A {}
+    assertThrows(InsecureException.class, () -> fury.serialize(new A()));
+    Fury fury1 = Fury.builder().withSecureMode(false).build();
+    serDe(fury1, new A());
+  }
+
+  @Test
   public void testSerializeJavaObject() {
     Fury fury =
         Fury.builder().withClassRegistrationRequired(false).withLanguage(Language.JAVA).build();
