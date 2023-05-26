@@ -639,7 +639,7 @@ public final class Fury {
    *     It is an error for <code>outOfBandBuffers</code> to be null if the serialized stream was
    *     produced with a non-null `bufferCallback`.
    */
-  private Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
+  public Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
       jitContext.lock();
       byte bitmap = buffer.readByte();
@@ -1338,6 +1338,11 @@ public final class Fury {
 
     public FuryBuilder withCompatibleMode(CompatibleMode compatibleMode) {
       this.compatibleMode = compatibleMode;
+      return this;
+    }
+
+    public FuryBuilder withClassVersionCheck(boolean checkClassVersion) {
+      this.checkClassVersion = checkClassVersion;
       return this;
     }
 
