@@ -170,4 +170,39 @@ public class FstState {
     }
   }
 
+  public static class DataState extends FstBenchmarkState {
+    public Data data = new Data();
+  }
+
+  public static class ReadIntsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      buffer = new IntsSerializationSuite().fst_serializeInts(this, null);
+    }
+  }
+
+  public static class ReadLongsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      buffer = new LongsSerializationSuite().fst_serializeLongs(this, null);
+    }
+  }
+
+  public static class ReadStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      buffer = new StringSerializationSuite().fst_serializeStr(this, null);
+    }
+  }
+
+  public static class ReadLongStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      buffer = new LongStringSerializationSuite().fst_serializeLongStr(this, null);
+    }
+  }
 }

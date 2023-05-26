@@ -201,4 +201,40 @@ public class FuryState {
       return true;
     }
   }
+
+  public static class DataState extends FuryBenchmarkState {
+    public Data data = new Data();
+  }
+
+  public static class ReadIntsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      new IntsSerializationSuite().fury_serializeInts(this);
+    }
+  }
+
+  public static class ReadLongsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      new LongsSerializationSuite().fury_serializeLongs(this);
+    }
+  }
+
+  public static class ReadStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      new StringSerializationSuite().fury_serializeStr(this);
+    }
+  }
+
+  public static class ReadLongStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      new LongStringSerializationSuite().fury_serializeLongStr(this);
+    }
+  }
 }

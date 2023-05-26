@@ -63,6 +63,15 @@ public class ProtostuffState {
     ProtostuffUserTypeState userTypeState = new ProtostuffUserTypeState();
     userTypeState.objectType = ObjectType.STRUCT;
     userTypeState.setup();
+
+    ReadStrState readStrState = new ReadStrState();
+    readStrState.setup();
+    ReadLongStrState readLongStrState = new ReadLongStrState();
+    readLongStrState.setup();
+    // ReadIntsState readIntsState = new ReadIntsState();
+    // readIntsState.setup();
+    // ReadLongsState readLongsState = new ReadLongsState();
+    // readLongsState.setup();
   }
 
   @State(Scope.Thread)
@@ -106,4 +115,50 @@ public class ProtostuffState {
     }
   }
 
+  public static class DataState extends ProtostuffBenchmarkState {
+    public Data data = new Data();
+  }
+
+  public static class ReadIntsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      schema = RuntimeSchema.getSchema(data.ints.getClass());
+      protoStuff = new IntsSerializationSuite().protostuff_serializeInts(this);
+      Preconditions.checkArgument(
+          ProtostuffState.deserialize(schema, protoStuff).equals(data.ints));
+    }
+  }
+
+  public static class ReadLongsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      schema = RuntimeSchema.getSchema(data.longs.getClass());
+      protoStuff = new LongsSerializationSuite().protostuff_serializeLongs(this);
+      Preconditions.checkArgument(
+          ProtostuffState.deserialize(schema, protoStuff).equals(data.longs));
+    }
+  }
+
+  public static class ReadStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      schema = RuntimeSchema.getSchema(data.str.getClass());
+      protoStuff = new StringSerializationSuite().protostuff_serializeStr(this);
+      Preconditions.checkArgument(ProtostuffState.deserialize(schema, protoStuff).equals(data.str));
+    }
+  }
+
+  public static class ReadLongStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      schema = RuntimeSchema.getSchema(data.longStr.getClass());
+      protoStuff = new LongStringSerializationSuite().protostuff_serializeLongStr(this);
+      Preconditions.checkArgument(
+          ProtostuffState.deserialize(schema, protoStuff).equals(data.longStr));
+    }
+  }
 }

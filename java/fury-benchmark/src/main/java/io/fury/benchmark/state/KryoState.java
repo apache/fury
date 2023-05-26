@@ -180,4 +180,39 @@ public class KryoState {
     }
   }
 
+  public static class DataState extends KryoBenchmarkState {
+    public Data data = new Data();
+  }
+
+  public static class ReadIntsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      new IntsSerializationSuite().kryo_serializeInts(this);
+    }
+  }
+
+  public static class ReadLongsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      new LongsSerializationSuite().kryo_serializeLongs(this);
+    }
+  }
+
+  public static class ReadStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      new StringSerializationSuite().kryo_serializeStr(this);
+    }
+  }
+
+  public static class ReadLongStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      new LongStringSerializationSuite().kryo_serializeLongStr(this);
+    }
+  }
 }

@@ -84,6 +84,50 @@ public class JDKState {
     }
   }
 
+  public static class DataState extends JDKBenchmarkState {
+    public Data data = new Data();
+  }
+
+  public static class ReadIntsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      bis =
+          new ByteArrayInputStream(
+              new IntsSerializationSuite().jdk_serializeInts(this).toByteArray());
+    }
+  }
+
+  public static class ReadLongsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      bis =
+          new ByteArrayInputStream(
+              new LongsSerializationSuite().jdk_serializeLongs(this).toByteArray());
+    }
+  }
+
+  public static class ReadStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      bis =
+          new ByteArrayInputStream(
+              new StringSerializationSuite().jdk_serializeStr(this).toByteArray());
+    }
+  }
+
+  public static class ReadLongStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      bis =
+          new ByteArrayInputStream(
+              new LongStringSerializationSuite().jdk_serializeLongStr(this).toByteArray());
+    }
+  }
+
   public static void serialize(ByteArrayOutputStream bas, Object data) {
     bas.reset();
     try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bas)) {

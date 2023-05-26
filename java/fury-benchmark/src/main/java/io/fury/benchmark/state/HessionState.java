@@ -149,4 +149,51 @@ public class HessionState {
     }
   }
 
+  public static class DataState extends HessionBenchmarkState {
+    public Data data = new Data();
+  }
+
+  public static class ReadIntsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      bis =
+          new ByteArrayInputStream(
+              new IntsSerializationSuite().hession_serializeInts(this).toByteArray());
+      input = new Hessian2Input(bis);
+    }
+  }
+
+  public static class ReadLongsState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      bis =
+          new ByteArrayInputStream(
+              new LongsSerializationSuite().hession_serializeLongs(this).toByteArray());
+      input = new Hessian2Input(bis);
+    }
+  }
+
+  public static class ReadStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      bis =
+          new ByteArrayInputStream(
+              new StringSerializationSuite().hession_serializeStr(this).toByteArray());
+      input = new Hessian2Input(bis);
+    }
+  }
+
+  public static class ReadLongStrState extends DataState {
+    @Override
+    public void setup() {
+      super.setup();
+      bis =
+          new ByteArrayInputStream(
+              new LongStringSerializationSuite().hession_serializeLongStr(this).toByteArray());
+      input = new Hessian2Input(bis);
+    }
+  }
 }
