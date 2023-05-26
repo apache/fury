@@ -12,6 +12,8 @@ Flatbuffers generated is short, just add generated files to repo directly.
 # Run tests
 TODO following command doesn't work
 ```bash
+cd java && mvn -T10 install -DskipTests -Dcheckstyle.skip -Dlicense.skip -Dmaven.javadoc.skip && cd ../integration_tests
+mvn -T10 compile
 #mvn exec:java -Dexec.mainClass="io.fury.integration_tests.UserTypeSerializeSuite" -Dexec.args="-f 1 -wi 0 -i 1 -t 1 -w 1s -r 1s -rf csv"
 mvn exec:java -Dexec.mainClass="io.fury.integration_tests.UserTypeSerializeSuite"
 ```
