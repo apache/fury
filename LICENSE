@@ -218,3 +218,4 @@ java/fury-core/src/main/java/io/fury/memory/BitUtils.java is modified from https
 src/main/java/io/fury/format/row/Getters.java is modified from https://github.com/apache/spark/blob/master/sql/catalyst/src/main/java/org/apache/spark/sql/catalyst/expressions/SpecializedGetters.java
 java/fury-core/src/main/java/io/fury/codegen/Code.java is modified from https://github.com/apache/spark/blob/master/sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/expressions/codegen/javaCode.scala
 src/main/java/io/fury/format/vectorized/ArrowWriter.java is modified from https://github.com/apache/spark/blob/master/sql/catalyst/src/main/scala/org/apache/spark/sql/execution/arrow/ArrowWriter.scala
+bazel/arrow/pyarrow_configure.bzl is modified from  https://github.com/tensorflow/tensorflow/blob/5a244072f2b33d2347e803146c244c179c1ddb75/third_party/py/python_configure.bzl
