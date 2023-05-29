@@ -1,0 +1,98 @@
+#include "fury/util/logging.h"
+#include "absl/debugging/failure_signal_handler.h"
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
+#include "fury/util/util.h"
+#include <unordered_map>
+#include <vector>
+
+namespace std {
+template <> struct hash<fury::FuryLogLevel> {
+  size_t operator()(const fury::FuryLogLevel &t) const {
+    return size_t(t);
+  }
+};
+} // namespace std
+
+namespace fury {
+
+std::string GetCallTrace() {
+  std::vector<void *> local_stack;
+  local_stack.resize(50);
+  absl::GetStackTrace(local_stack.data(), 50, 0);
+  static constexpr size_t buf_size = 16 * 1024;
+  char buf[buf_size];
+  std::string output;
+  for (auto &stack : local_stack) {
+    if (absl::Symbolize(stack, buf, buf_size)) {
+      output.append("    ").append(buf).append("\n");
+    }
+  }
+  return output;
+}
+
+std::string LogLevelAsString(FuryLogLevel level) {
+  static std::unordered_map<FuryLogLevel, std::string> level_to_str = {
+      {FuryLogLevel::DEBUG, "DEBUG"},     {FuryLogLevel::INFO, "INFO"},
+      {FuryLogLevel::WARNING, "WARNING"}, {FuryLogLevel::ERROR, "ERROR"},
+      {FuryLogLevel::FATAL, "FATAL"},
+  };
+
+  auto it = level_to_str.find(level);
+  if (it == level_to_str.end()) {
+    return "UNKNOWN";
+  }
+  return it->second;
+}
+
+FuryLogLevel FuryLog::GetLogLevel() {
+  FuryLogLevel severity_threshold = FuryLogLevel::INFO;
+  const char *var_value = std::getenv("FURY_LOG_LEVEL");
+  if (var_value != nullptr) {
+    std::string data = var_value;
+    std::transform(data.begin(), data.end(), data.begin(), ::tolower);
+    if (data == "debug") {
+      severity_threshold = FuryLogLevel::DEBUG;
+    } else if (data == "info") {
+      severity_threshold = FuryLogLevel::INFO;
+    } else if (data == "warning") {
+      severity_threshold = FuryLogLevel::WARNING;
+    } else if (data == "error") {
+      severity_threshold = FuryLogLevel::ERROR;
+    } else if (data == "fatal") {
+      severity_threshold = FuryLogLevel::FATAL;
+    } else {
+      FURY_LOG(WARNING) << "Unrecognized setting of FuryLogLevel=" << var_value;
+    }
+    FURY_LOG(INFO)
+        << "Set ray log level from environment variable RAY_BACKEND_LOG_LEVEL"
+        << " to " << static_cast<int>(severity_threshold);
+  }
+  return severity_threshold;
+}
+
+FuryLog::FuryLog(const char *file_name, int line_number, FuryLogLevel severity)
+    : is_enabled_(severity >= __fury_severity_threshold__),
+      severity_(severity) {
+  Stream() << "[" << FormatTimePoint(std::chrono::system_clock::now()) << "] "
+           << LogLevelAsString(severity) << " " << file_name << ":"
+           << line_number << ": ";
+}
+
+FuryLog::~FuryLog() {
+  if (severity_ == FuryLogLevel::FATAL) {
+    Stream() << "\n*** StackTrace Information ***\n"
+             << ::fury::GetCallTrace();
+    Stream() << std::endl;
+    std::_Exit(EXIT_FAILURE);
+  }
+  Stream() << "\n" << std::endl;
+}
+
+bool FuryLog::IsEnabled() const { return is_enabled_; }
+
+bool FuryLog::IsLevelEnabled(FuryLogLevel log_level) {
+  return log_level >= __fury_severity_threshold__;
+}
+
+} // namespace fury
