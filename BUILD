@@ -17,3 +17,15 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
 )
+
+cc_test(
+    name = "fury_util_test",
+    srcs = [
+        "src/fury/util/util_test.cc",
+    ],
+    copts = COPTS,
+    deps = [
+        ":fury_util",
+        "@com_google_googletest//:gtest",
+    ],
+)
