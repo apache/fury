@@ -212,7 +212,7 @@ public class TypeInference {
       FieldType keyFieldType =
           new FieldType(
               false, keyField.getType(), keyField.getDictionary(), keyField.getMetadata());
-      keyField = new Field(keyField.getName(), keyFieldType, keyField.getChildren());
+      keyField = new DataTypes.ExtField(keyField.getName(), keyFieldType, keyField.getChildren());
       Field valueField = inferField(MapVector.VALUE_NAME, kvType.f1, seenTypeSet);
       return DataTypes.mapField(name, keyField, valueField);
     } else if (TypeUtils.isBean(rawType)) { // bean field
@@ -242,5 +242,29 @@ public class TypeInference {
               "Unsupported type %s for field %s, seen type set is %s",
               typeToken, name, seenTypeSet));
     }
+  }
+
+  public static String inferTypeName(TypeToken<?> token) {
+    StringBuilder sb = new StringBuilder();
+    TypeToken<?> arrayToken = token;
+    while (TypeUtils.ITERABLE_TYPE.isSupertypeOf(arrayToken)
+        || TypeUtils.MAP_TYPE.isSupertypeOf(arrayToken)) {
+      if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(arrayToken)) {
+        sb.append(getRawType(arrayToken).getSimpleName());
+        arrayToken = TypeUtils.getElementType(arrayToken);
+      } else {
+        Tuple2<TypeToken<?>, TypeToken<?>> tuple2 = TypeUtils.getMapKeyValueType(arrayToken);
+        sb.append("Map");
+
+        if (!TypeUtils.isBean(tuple2.f0)) {
+          arrayToken = tuple2.f0;
+        }
+
+        if (!TypeUtils.isBean(tuple2.f1)) {
+          arrayToken = tuple2.f1;
+        }
+      }
+    }
+    return sb.toString();
   }
 }

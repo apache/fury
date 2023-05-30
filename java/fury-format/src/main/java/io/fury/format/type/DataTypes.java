@@ -399,11 +399,19 @@ public class DataTypes {
   }
 
   public static Field keyFieldForMap(Field mapField) {
-    return mapField.getChildren().get(0).getChildren().get(0);
+    Field field = mapField.getChildren().get(0).getChildren().get(0);
+    if (field.getClass() != ExtField.class) {
+      return new ExtField(field.getName(), field.getFieldType(), field.getChildren());
+    }
+    return field;
   }
 
   public static Field itemFieldForMap(Field mapField) {
-    return mapField.getChildren().get(0).getChildren().get(1);
+    Field field = mapField.getChildren().get(0).getChildren().get(1);
+    if (field.getClass() != ExtField.class) {
+      return new ExtField(field.getName(), field.getFieldType(), field.getChildren());
+    }
+    return field;
   }
 
   public static Field keyArrayFieldForMap(Field mapField) {
