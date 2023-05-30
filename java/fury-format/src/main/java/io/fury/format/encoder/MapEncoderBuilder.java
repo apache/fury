@@ -20,6 +20,11 @@ import java.util.Map;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.slf4j.Logger;
 
+/**
+ * Expression builder for building jit map encoder class.
+ *
+ * @author ganrunsheng
+ */
 @SuppressWarnings("UnstableApiUsage")
 public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
   private static final Logger LOG = LoggerFactory.getLogger(MapEncoderBuilder.class);

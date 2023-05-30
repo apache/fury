@@ -49,7 +49,7 @@ import org.slf4j.Logger;
 /**
  * Factory to create {@link Encoder}.
  *
- * @author chaokunyang
+ * @author chaokunyang, ganrunsheng
  */
 public class Encoders {
   private static final Logger LOG = LoggerFactory.getLogger(Encoders.class);

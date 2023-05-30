@@ -18,12 +18,17 @@ import io.fury.util.StringUtils;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.slf4j.Logger;
 
+/**
+ * Expression builder for building jit array encoder class.
+ *
+ * @author ganrunsheng
+ */
 @SuppressWarnings("UnstableApiUsage")
 public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
   private static final Logger LOG = LoggerFactory.getLogger(ArrayEncoderBuilder.class);
   private static final String FIELD_NAME = "field";
-  static final String ROOT_ARRAY_NAME = "array";
-  static final String ROOT_ARRAY_WRITER_NAME = "arrayWriter";
+  private static final String ROOT_ARRAY_NAME = "array";
+  private static final String ROOT_ARRAY_WRITER_NAME = "arrayWriter";
 
   private static final TypeToken<Field> ARROW_FIELD_TYPE = TypeToken.of(Field.class);
   private final TypeToken<?> arrayToken;

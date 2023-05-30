@@ -4,7 +4,11 @@ import io.fury.builder.Generated;
 import io.fury.format.row.binary.BinaryArray;
 import io.fury.format.row.binary.BinaryMap;
 
-/** A map row format codec for java bean. */
+/**
+ * A map container row format codec for java bean.
+ *
+ * @author ganrunsheng
+ */
 public interface GeneratedMapEncoder extends Generated {
 
   BinaryMap toMap(Object obj);
