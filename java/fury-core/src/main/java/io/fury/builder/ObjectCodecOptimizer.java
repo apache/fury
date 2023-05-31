@@ -21,6 +21,7 @@ package io.fury.builder;
 import io.fury.annotation.Internal;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
+import io.fury.codegen.ExpressionOptimizer;
 import io.fury.collection.Tuple3;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;

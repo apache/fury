@@ -16,16 +16,11 @@
  * limitations under the License.
  */
 
-package io.fury.builder;
+package io.fury.codegen;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-import io.fury.codegen.Code;
-import io.fury.codegen.CodeGenerator;
-import io.fury.codegen.CodegenContext;
-import io.fury.codegen.CompileUnit;
-import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Add;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Return;

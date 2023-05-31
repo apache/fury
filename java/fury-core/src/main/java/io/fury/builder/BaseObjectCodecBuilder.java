@@ -57,6 +57,7 @@ import io.fury.codegen.Expression.Invoke;
 import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.Return;
+import io.fury.codegen.ExpressionOptimizer;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.codegen.ExpressionVisitor;
 import io.fury.collection.Tuple2;

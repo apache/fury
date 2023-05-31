@@ -16,16 +16,12 @@
  * limitations under the License.
  */
 
-package io.fury.builder;
+package io.fury.codegen;
 
 import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
-import io.fury.codegen.CodegenContext;
-import io.fury.codegen.Expression;
-import io.fury.codegen.ExpressionUtils;
-import io.fury.codegen.ExpressionVisitor;
 import io.fury.util.Functions;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -36,8 +32,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Optimizer to generate expression logic in a new method and return an {@link Expression} to invoke
- * the new generated method.
+ * Optimizer to generate expression logic in a new method and return an {@link
+ * io.fury.codegen.Expression} to invoke the new generated method.
  *
  * @author chaokunyang
  */
