@@ -384,14 +384,22 @@ public class ClassResolver {
     throw new UnsupportedOperationException();
   }
 
-  public void register(Class<?> cls, short id) {
-    Preconditions.checkArgument(id >= 0);
+  public void register(Class<?> cls, int classId) {
+    Preconditions.checkArgument(classId >= 0 && classId < Short.MAX_VALUE);
+    short id = (short) classId;
     if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
       if (extRegistry.registeredClasses.containsKey(cls.getName())) {
         throw new IllegalArgumentException(
             String.format(
-                "Class %s with name %s has been registered, registering classes with same name are not allowed.",
+                "Class %s with name %s has been registered, registering class with same name are not allowed.",
                 extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
+      }
+      Class<?> idToClass = extRegistry.registeredId2Classes.get(id);
+      if (idToClass != null) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Class %s with id %s has been registered, registering class %s with same id are not allowed.",
+                idToClass, id, cls.getName()));
       }
       extRegistry.registeredClassIdMap.put(cls, id);
       if (registeredId2ClassInfo.length <= id) {

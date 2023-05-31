@@ -63,7 +63,6 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -343,19 +342,15 @@ public class FuryTest extends FuryTestBase {
   @Test
   public void testJDKSerializableCheck() {
     Fury fury =
-      Fury.builder()
-        .withLanguage(Language.JAVA)
-        .withReferenceTracking(true)
-        .disableSecureMode()
-        .build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(true)
+            .disableSecureMode()
+            .build();
     serDe(fury, ByteBuffer.allocate(32));
     serDe(fury, ByteBuffer.allocateDirect(32));
-    assertThrows(
-      InsecureException.class,
-      () -> fury.serialize(new Thread()));
-    assertThrows(
-      UnsupportedOperationException.class,
-      () -> fury.serialize(MethodHandles.lookup()));
+    assertThrows(InsecureException.class, () -> fury.serialize(new Thread()));
+    assertThrows(UnsupportedOperationException.class, () -> fury.serialize(MethodHandles.lookup()));
   }
 
   @Test
@@ -370,8 +365,7 @@ public class FuryTest extends FuryTestBase {
   @Data
   @AllArgsConstructor
   private static class IgnoreFields {
-    @Ignore
-    int f1;
+    @Ignore int f1;
     @Ignore long f2;
     long f3;
   }
@@ -392,10 +386,10 @@ public class FuryTest extends FuryTestBase {
     Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
     Descriptor.clearDescriptorCache();
     TestUtils.triggerOOMForSoftGC(
-      () -> {
-        System.out.printf("Wait map keys %s gc.\n", map.keySet());
-        return map.size() > 0;
-      });
+        () -> {
+          System.out.printf("Wait map keys %s gc.\n", map.keySet());
+          return map.size() > 0;
+        });
     Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
   }
 
@@ -406,7 +400,7 @@ public class FuryTest extends FuryTestBase {
     Object struct1 = Struct.createPOJO(structClass1);
     serDe(fury, struct1);
     Class<? extends Serializer> serializerClass =
-      fury.getClassResolver().getSerializerClass(structClass1);
+        fury.getClassResolver().getSerializerClass(structClass1);
     assertTrue(serializerClass.getName().contains("Codec"));
     map.put(fury, true);
     System.out.println(fury.hashCode());
