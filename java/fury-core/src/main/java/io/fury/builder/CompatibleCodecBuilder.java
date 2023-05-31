@@ -48,6 +48,7 @@ import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Return;
 import io.fury.codegen.Expression.While;
+import io.fury.codegen.ExpressionOptimizer;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.collection.Tuple2;
 import io.fury.resolver.ClassInfo;
