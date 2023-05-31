@@ -212,7 +212,7 @@ public class TypeInference {
       FieldType keyFieldType =
           new FieldType(
               false, keyField.getType(), keyField.getDictionary(), keyField.getMetadata());
-      keyField = new DataTypes.ExtField(keyField.getName(), keyFieldType, keyField.getChildren());
+      keyField = DataTypes.field(keyField.getName(), keyFieldType, keyField.getChildren());
       Field valueField = inferField(MapVector.VALUE_NAME, kvType.f1, seenTypeSet);
       return DataTypes.mapField(name, keyField, valueField);
     } else if (TypeUtils.isBean(rawType)) { // bean field
