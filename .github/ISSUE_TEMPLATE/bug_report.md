@@ -10,9 +10,11 @@ assignees: ''
 Thank you for reporting the problem!
 Please make sure what you are reporting is a bug with reproducible steps. 
 
-**Describe the bug + Expected behavior**
-- A clear and concise description of what the bug is.
-- A clear and concise description of what you expected to happen.
+**Describe the bug**
+A clear and concise description of what the bug is.
+
+**Expected behavior**
+A clear and concise description of what you expected to happen.
 
 **To Reproduce**
 Steps to reproduce the behavior.
