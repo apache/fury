@@ -37,9 +37,9 @@ public class BeanMock {
   private static final int MAX_MOCK_INSTANCE = 100;
 
   /**
-   * Generate a mock object with randomly assigned values based on the object property types.
-   * To avoid circular nested references, the number of object constructions is limited.
-   * Note that arrays and enumerated properties are not supported for mocking.
+   * Generate a mock object with randomly assigned values based on the object property types. To
+   * avoid circular nested references, the number of object constructions is limited. Note that
+   * arrays and enumerated properties are not supported for mocking.
    */
   public static <T> T mockBean(Class<T> bean) {
     mockDepth = 1;
