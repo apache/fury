@@ -22,6 +22,7 @@ import com.google.common.base.Preconditions;
 import io.fury.builder.JITContext;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.pool.ThreadPoolFury;
 import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassInfoCache;
 import io.fury.resolver.ClassResolver;
@@ -53,6 +54,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -1473,6 +1475,48 @@ public final class Fury {
       this.classLoader = null;
       ThreadLocalFury threadSafeFury =
           new ThreadLocalFury(classLoader -> new Fury(FuryBuilder.this, classLoader));
+      threadSafeFury.setClassLoader(loader);
+      return threadSafeFury;
+    }
+
+    /**
+     * Build pooled ThreadSafeFury.
+     *
+     * @param minPoolSize min pool size
+     * @param maxPoolSize max pool size
+     * @return ThreadSafeFuryPool
+     */
+    public ThreadSafeFury buildThreadSafeFuryPool(int minPoolSize, int maxPoolSize) {
+      return buildThreadSafeFuryPool(minPoolSize, maxPoolSize, 30L, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Build pooled ThreadSafeFury.
+     *
+     * @param minPoolSize min pool size
+     * @param maxPoolSize max pool size
+     * @param expireTime cache expire time, default 5's
+     * @param timeUnit TimeUnit, default SECONDS
+     * @return ThreadSafeFuryPool
+     */
+    public ThreadSafeFury buildThreadSafeFuryPool(
+            int minPoolSize, int maxPoolSize, long expireTime, TimeUnit timeUnit) {
+      if (minPoolSize < 0 || maxPoolSize < 0 || minPoolSize > maxPoolSize) {
+        throw new IllegalArgumentException(
+                String.format(
+                        "thread safe fury pool's init pool size error, please check it, min:[%s], max:[%s]",
+                        minPoolSize, maxPoolSize));
+      }
+      finish();
+      ClassLoader loader = this.classLoader;
+      this.classLoader = null;
+      ThreadSafeFury threadSafeFury =
+              new ThreadPoolFury(
+                      classLoader -> new Fury(FuryBuilder.this, classLoader),
+                      minPoolSize,
+                      maxPoolSize,
+                      expireTime,
+                      timeUnit);
       threadSafeFury.setClassLoader(loader);
       return threadSafeFury;
     }

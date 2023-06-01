@@ -43,6 +43,34 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   private volatile boolean hasException;
 
   @Test
+  public void testPoolSerialize() {
+    BeanA beanA = BeanA.createBeanA(2);
+    ThreadSafeFury fury =
+            Fury.builder()
+                    .withLanguage(Language.JAVA)
+                    .withReferenceTracking(true)
+                    .disableSecureMode()
+                    .withAsyncCompilationEnabled(true)
+                    .buildThreadSafeFuryPool(5, 10);
+    for (int i = 0; i < 2000; i++) {
+      new Thread(
+              () -> {
+                for (int j = 0; j < 10; j++) {
+                  try {
+                    fury.setClassLoader(beanA.getClass().getClassLoader());
+                    assertEquals(fury.deserialize(fury.serialize(beanA)), beanA);
+                  } catch (Exception e) {
+                    hasException = true;
+                    e.printStackTrace();
+                  }
+                }
+              })
+              .start();
+    }
+    assertFalse(hasException);
+  }
+
+  @Test
   public void testSerialize() throws Exception {
     BeanA beanA = BeanA.createBeanA(2);
     ThreadSafeFury fury =
