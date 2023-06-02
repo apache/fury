@@ -18,7 +18,7 @@ import java.util.function.Function;
  */
 public class FuryPooledObjectFactory {
 
-    private static final Logger logger = LoggerFactory.getLogger(FuryPooledObjectFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FuryPooledObjectFactory.class);
 
     private final Function<ClassLoader, Fury> furyFactory;
 
@@ -75,7 +75,7 @@ public class FuryPooledObjectFactory {
             }
             return classLoaderFuryPooled.getFury();
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -91,7 +91,7 @@ public class FuryPooledObjectFactory {
             }
             classLoaderFuryPooled.returnFury(fury);
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }

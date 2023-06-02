@@ -12,10 +12,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
-/** for every classloader, have a pool whit fury instance. */
+/** A thread-safe object pool of {@link Fury}. */
 public class ClassLoaderFuryPooled {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClassLoaderFuryPooled.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ClassLoaderFuryPooled.class);
 
     private final Function<ClassLoader, Fury> furyFactory;
 
@@ -72,7 +72,7 @@ public class ClassLoaderFuryPooled {
             activeCacheNumber.incrementAndGet();
             return fury;
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            LOG.error(e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             lock.unlock();
@@ -86,7 +86,7 @@ public class ClassLoaderFuryPooled {
             activeCacheNumber.decrementAndGet();
             furyCondition.signalAll();
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            LOG.error(e.getMessage(), e);
         } finally {
             lock.unlock();
         }
