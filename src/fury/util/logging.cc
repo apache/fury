@@ -16,8 +16,8 @@ namespace fury {
 
 std::string GetCallTrace() {
   std::vector<void *> local_stack;
-  local_stack.resize(50);
-  absl::GetStackTrace(local_stack.data(), 50, 0);
+  local_stack.resize(100);
+  absl::GetStackTrace(local_stack.data(), 100, 0);
   static constexpr size_t buf_size = 16 * 1024;
   char buf[buf_size];
   std::string output;
