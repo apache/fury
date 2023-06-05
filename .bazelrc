@@ -1,0 +1,26 @@
+# Must be first. Enables build:windows, build:linux, build:macos, build:freebsd, build:openbsd
+build --enable_platform_specific_config
+###############################################################################
+# On       Windows, provide: BAZEL_SH, and BAZEL_LLVM (if using clang-cl)
+# On all platforms, provide: PYTHON3_BIN_PATH=python
+###############################################################################
+build --action_env=PATH
+# For --compilation_mode=dbg, consider enabling checks in the standard library as well (below).
+build --compilation_mode=opt
+# This workaround is needed to prevent Bazel from compiling the same file twice (once PIC and once not).
+build:linux --force_pic
+build:macos --force_pic
+build:clang-cl --compiler=clang-cl
+build:msvc --compiler=msvc-cl
+
+# for abi issue
+build --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=0"
+
+# test config
+test --build_tests_only
+test --cache_test_results=no
+test --test_output=all
+
+build:linux --cxxopt="-std=c++11"
+build:macos --cxxopt="-std=c++11"
+build:clang-cl --cxxopt="-std=c++11"
