@@ -51,8 +51,13 @@ std::string TestFunctionLevel2() { return TestFunctionLevel1(); }
 #ifndef _WIN32
 TEST(PrintLogTest, CallstackTraceTest) {
   auto ret = TestFunctionLevel2();
+  FURY_LOG(INFO) << "stack trace:\n" << ret;
+  // work for linux
   // EXPECT_TRUE(ret.find("TestFunctionLevel0") != std::string::npos);
-  EXPECT_TRUE(ret.find("GetCallTrace") != std::string::npos);
+  // work for mac
+  // EXPECT_TRUE(ret.find("GetCallTrace") != std::string::npos);
+  EXPECT_TRUE(ret.find("fury") != std::string::npos);
+  EXPECT_TRUE(ret.find("PrintLogTest") != std::string::npos);
 }
 #endif
 

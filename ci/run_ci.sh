@@ -3,7 +3,31 @@ set -e
 set -x
 
 ROOT="$(git rev-parse --show-toplevel)"
+echo "Root path: $ROOT, home path: $HOME"
 cd "$ROOT"
+
+install_bazel() {
+  if command -v java >/dev/null; then
+    echo "existing bazel location $(which bazel)"
+    echo "existing bazel version $(bazel version)"
+  fi
+  URL="https://github.com/bazelbuild/bazel/releases/download/3.4.0/bazel-3.4.0-installer-linux-x86_64.sh"
+  wget -q -O install.sh $URL
+  chmod +x install.sh
+  set +x
+  ./install.sh --user
+  source ~/.bazel/bin/bazel-complete.bash
+  set -x
+  export PATH=~/bin:$PATH
+  echo "$HOME/bin/bazel version: $(~/bin/bazel version)"
+  rm -f install.sh
+  VERSION=`bazel version`
+  echo "bazel version: $VERSION"
+  MEM=`cat /proc/meminfo | grep MemTotal | awk '{print $2}'`
+  JOBS=`expr $MEM / 1024 / 1024 / 3`
+  echo "build --jobs="$JOBS >> ~/.bazelrc
+  grep "jobs" ~/.bazelrc
+}
 
 case $1 in
     java8)
@@ -67,6 +91,21 @@ case $1 in
       fi
       echo "Executing fury javascript tests succeeds"
     ;;
+    cpp)
+      echo "Install pyarrow"
+      pip install pyarrow==4.0.0
+      export PATH=~/bin:$PATH
+      echo "bazel version: $(bazel version)"
+      set +e
+      echo "Executing fury c++ tests"
+      bazel test $(bazel query //...)
+      testcode=$?
+      if [[ $testcode -ne 0 ]]; then
+        echo "Executing fury c++ tests failed"
+        exit $testcode
+      fi
+      echo "Executing fury c++ tests succeeds"
+    ;;
     format)
       echo "Executing format check"
       cd "$ROOT/java"
@@ -74,4 +113,8 @@ case $1 in
       mvn -T10 spotless:apply
       mvn -T10 checkstyle:check
     ;;
+    *)
+      echo "Execute command $*"
+      "$@"
+      ;;
 esac

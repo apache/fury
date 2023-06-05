@@ -8,6 +8,9 @@ namespace fury {
 Buffer::Buffer() {
   data_ = nullptr;
   size_ = -1;
+  own_data_ = false;
+  writer_index_ = 0;
+  reader_index_ = 0;
 }
 
 Buffer::Buffer(Buffer &&buffer) noexcept {
@@ -18,6 +21,8 @@ Buffer::Buffer(Buffer &&buffer) noexcept {
   data_ = buffer.data_;
   size_ = buffer.size_;
   own_data_ = buffer.own_data_;
+  writer_index_ = buffer.writer_index_;
+  reader_index_ = buffer.reader_index_;
   buffer.data_ = nullptr;
   buffer.size_ = -1;
   buffer.own_data_ = false;
@@ -31,6 +36,8 @@ Buffer &Buffer::operator=(Buffer &&buffer) noexcept {
   data_ = buffer.data_;
   size_ = buffer.size_;
   own_data_ = buffer.own_data_;
+  writer_index_ = buffer.writer_index_;
+  reader_index_ = buffer.reader_index_;
   buffer.data_ = nullptr;
   buffer.size_ = -1;
   buffer.own_data_ = false;

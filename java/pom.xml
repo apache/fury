@@ -230,7 +230,7 @@
             <phase>generate-sources</phase>
             <goals>
               <!-- <goal>remove</goal> -->
-              <goal>format</goal>
+              <!-- <goal>format</goal> -->
             </goals>
           </execution>
         </executions>

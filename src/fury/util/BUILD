@@ -20,7 +20,7 @@ cc_library(
 
 
 cc_test(
-    name = "fury_util_test",
+    name = "util_test",
     srcs = ["util_test.cc"],
     copts = COPTS,
     deps = [
@@ -30,7 +30,7 @@ cc_test(
 )
 
 cc_test(
-    name = "fury_logging_test",
+    name = "logging_test",
     srcs = ["logging_test.cc"],
     copts = COPTS,
     deps = [
@@ -40,7 +40,7 @@ cc_test(
 )
 
 cc_test(
-    name = "fury_status_test",
+    name = "status_test",
     srcs = ["status_test.cc"],
     copts = COPTS,
     deps = [
@@ -50,7 +50,7 @@ cc_test(
 )
 
 cc_test(
-    name = "fury_buffer_test",
+    name = "buffer_test",
     srcs = ["buffer_test.cc"],
     copts = COPTS,
     deps = [
