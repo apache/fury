@@ -46,12 +46,12 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   public void testPoolSerialize() {
     BeanA beanA = BeanA.createBeanA(2);
     ThreadSafeFury fury =
-            Fury.builder()
-                    .withLanguage(Language.JAVA)
-                    .withReferenceTracking(true)
-                    .disableSecureMode()
-                    .withAsyncCompilationEnabled(true)
-                    .buildThreadSafeFuryPool(5, 10);
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(true)
+            .disableSecureMode()
+            .withAsyncCompilationEnabled(true)
+            .buildThreadSafeFuryPool(5, 10);
     for (int i = 0; i < 2000; i++) {
       new Thread(
               () -> {
@@ -65,7 +65,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
                   }
                 }
               })
-              .start();
+          .start();
     }
     assertFalse(hasException);
   }

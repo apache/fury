@@ -1500,23 +1500,23 @@ public final class Fury {
      * @return ThreadSafeFuryPool
      */
     public ThreadSafeFury buildThreadSafeFuryPool(
-            int minPoolSize, int maxPoolSize, long expireTime, TimeUnit timeUnit) {
+        int minPoolSize, int maxPoolSize, long expireTime, TimeUnit timeUnit) {
       if (minPoolSize < 0 || maxPoolSize < 0 || minPoolSize > maxPoolSize) {
         throw new IllegalArgumentException(
-                String.format(
-                        "thread safe fury pool's init pool size error, please check it, min:[%s], max:[%s]",
-                        minPoolSize, maxPoolSize));
+            String.format(
+                "thread safe fury pool's init pool size error, please check it, min:[%s], max:[%s]",
+                minPoolSize, maxPoolSize));
       }
       finish();
       ClassLoader loader = this.classLoader;
       this.classLoader = null;
       ThreadSafeFury threadSafeFury =
-              new ThreadPoolFury(
-                      classLoader -> new Fury(FuryBuilder.this, classLoader),
-                      minPoolSize,
-                      maxPoolSize,
-                      expireTime,
-                      timeUnit);
+          new ThreadPoolFury(
+              classLoader -> new Fury(FuryBuilder.this, classLoader),
+              minPoolSize,
+              maxPoolSize,
+              expireTime,
+              timeUnit);
       threadSafeFury.setClassLoader(loader);
       return threadSafeFury;
     }
