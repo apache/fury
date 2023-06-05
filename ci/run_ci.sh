@@ -3,13 +3,26 @@ set -e
 set -x
 
 ROOT="$(git rev-parse --show-toplevel)"
+echo "Root path: $ROOT, home path: $HOME"
 cd "$ROOT"
 
 install_bazel() {
-  URL="https://github.com/bazelbuild/bazel/releases/download/4.2.3/bazel-4.2.3-installer-linux-x86_64.sh"
+  if command -v java >/dev/null; then
+    echo "existing bazel location $(which bazel)"
+    echo "existing bazel version $(bazel version)"
+  fi
+  URL="https://github.com/bazelbuild/bazel/releases/download/3.4.0/bazel-3.4.0-installer-linux-x86_64.sh"
   wget -q -O install.sh $URL
   chmod +x install.sh
+  set +x
   ./install.sh --user
+  source ~/.bazel/bin/bazel-complete.bash
+  set -x
+  echo "PATH=~/bin:$PATH" >> ~/.bash_profile
+  source ~/.bash_profile
+  echo $PATH
+  ls ~/
+  echo "$HOME/bin/bazel version: $(~/bin/bazel version)"
   rm -f install.sh
   VERSION=`bazel version`
   echo "bazel version: $VERSION"
@@ -84,6 +97,8 @@ case $1 in
     cpp)
       echo "Install pyarrow"
       pip install pyarrow==4.0.0
+      source ~/.bash_profile
+      echo "bazel version: $(bazel version)"
       set +e
       echo "Executing fury c++ tests"
       bazel test $(bazel query //...)
