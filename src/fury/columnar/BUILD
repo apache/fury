@@ -2,7 +2,7 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load("//bazel:fury.bzl", "COPTS")
 
 cc_library(
-    name = "fury_columar_format",
+    name = "fury_columnar_format",
     srcs = ["arrow_writer.cc"],
     hdrs = ["arrow_writer.h"],
     strip_include_prefix = "/src",
@@ -20,7 +20,7 @@ cc_test(
     ],
     copts = COPTS,
     deps = [
-        ":fury_columar_format",
+        ":fury_columnar_format",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -32,7 +32,7 @@ cc_test(
     ],
     copts = COPTS,
     deps = [
-        ":fury_columar_format",
+        ":fury_columnar_format",
         "@com_google_googletest//:gtest",
     ],
 )

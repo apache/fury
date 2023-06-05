@@ -6,7 +6,7 @@
 #include <utility>
 
 namespace fury {
-namespace vectorized {
+namespace columnar {
 
 class ArrowArrayWriter;
 
@@ -287,5 +287,5 @@ private:
   std::unique_ptr<ArrowArrayWriter> item_writer_;
 };
 
-} // namespace vectorized
+} // namespace columnar
 } // namespace fury

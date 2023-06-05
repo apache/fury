@@ -1,13 +1,13 @@
 #include "gtest/gtest.h"
 
 #include "fury/row/writer.h"
-#include "fury/vectorized/arrow_writer.h"
+#include "fury/columnar/arrow_writer.h"
 #include <limits>
 #include <memory>
 #include <vector>
 
 namespace fury {
-namespace vectorized {
+namespace columnar {
 
 TEST(ARROW_WRITER, BASE_TYPE_TO_RECORD_BATCH) {
   auto f1 = arrow::field("f0", arrow::int32());
@@ -167,7 +167,7 @@ TEST(ARROW_WRITER, SPARSE_TENSOR_TO_RECORD_BATCH) {
   // std::cout << record_batch->column(0)->ToString() << std::endl;
 }
 
-} // namespace vectorized
+} // namespace columnar
 } // namespace fury
 
 int main(int argc, char **argv) {

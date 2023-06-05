@@ -1,7 +1,7 @@
-#include "fury/vectorized/arrow_writer.h"
+#include "fury/columnar/arrow_writer.h"
 
 namespace fury {
-namespace vectorized {
+namespace columnar {
 
 ::arrow::Status
 ArrowWriter::Make(const std::shared_ptr<::arrow::Schema> &arrow_schema,
@@ -212,5 +212,5 @@ MapWriter::MapWriter(const std::shared_ptr<::arrow::DataType> &type,
   return ::arrow::Status::OK();
 }
 
-} // namespace vectorized
+} // namespace columnar
 } // namespace fury
