@@ -8,9 +8,7 @@
 
 namespace std {
 template <> struct hash<fury::FuryLogLevel> {
-  size_t operator()(const fury::FuryLogLevel &t) const {
-    return size_t(t);
-  }
+  size_t operator()(const fury::FuryLogLevel &t) const { return size_t(t); }
 };
 } // namespace std
 
@@ -81,8 +79,7 @@ FuryLog::FuryLog(const char *file_name, int line_number, FuryLogLevel severity)
 
 FuryLog::~FuryLog() {
   if (severity_ == FuryLogLevel::FATAL) {
-    Stream() << "\n*** StackTrace Information ***\n"
-             << ::fury::GetCallTrace();
+    Stream() << "\n*** StackTrace Information ***\n" << ::fury::GetCallTrace();
     Stream() << std::endl;
     std::_Exit(EXIT_FAILURE);
   }
