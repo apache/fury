@@ -18,10 +18,7 @@ install_bazel() {
   ./install.sh --user
   source ~/.bazel/bin/bazel-complete.bash
   set -x
-  echo "PATH=~/bin:$PATH" >> ~/.bash_profile
-  source ~/.bash_profile
-  echo $PATH
-  ls ~/
+  export PATH=~/bin:$PATH
   echo "$HOME/bin/bazel version: $(~/bin/bazel version)"
   rm -f install.sh
   VERSION=`bazel version`
@@ -97,7 +94,7 @@ case $1 in
     cpp)
       echo "Install pyarrow"
       pip install pyarrow==4.0.0
-      source ~/.bash_profile
+      export PATH=~/bin:$PATH
       echo "bazel version: $(bazel version)"
       set +e
       echo "Executing fury c++ tests"
