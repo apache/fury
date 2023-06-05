@@ -44,6 +44,7 @@ jobs:
         run: ./ci/run_ci.sh javascript
   c++:
     name: C++ CI
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.8
