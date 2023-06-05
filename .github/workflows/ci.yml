@@ -51,5 +51,7 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
       - name: Run C++ CI with Bazel
         run: ./ci/run_ci.sh cpp

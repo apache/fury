@@ -5,6 +5,20 @@ set -x
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 
+install_bazel() {
+  URL="https://github.com/bazelbuild/bazel/releases/download/4.2.3/bazel-4.2.3-installer-linux-x86_64.sh"
+  wget -q -O install.sh $URL
+  chmod +x install.sh
+  ./install.sh --user
+  rm -f install.sh
+  VERSION=`bazel version`
+  echo "bazel version: $VERSION"
+  MEM=`cat /proc/meminfo | grep MemTotal | awk '{print $2}'`
+  JOBS=`expr $MEM / 1024 / 1024 / 3`
+  echo "build --jobs="$JOBS >> ~/.bazelrc
+  grep "jobs" ~/.bazelrc
+}
+
 case $1 in
     java8)
       echo "Executing fury java tests"
@@ -86,4 +100,8 @@ case $1 in
       mvn -T10 spotless:apply
       mvn -T10 checkstyle:check
     ;;
+    *)
+      echo "Execute command $*"
+      "$@"
+      ;;
 esac
