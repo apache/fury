@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "fury/row/writer.h"
 #include "fury/columnar/arrow_writer.h"
+#include "fury/row/writer.h"
 #include <limits>
 #include <memory>
 #include <vector>
