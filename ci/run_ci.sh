@@ -46,7 +46,7 @@ case $1 in
       # check naming and others
       mvn -T16 checkstyle:check
       set +e
-      mvn -T16 test -pl '!fury-format,!fury-testsuite'
+      mvn -T16 test -pl '!fury-format,!fury-testsuite,!fury-benchmark'
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
