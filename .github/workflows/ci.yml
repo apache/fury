@@ -42,7 +42,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Run CI with NodeJS
         run: ./ci/run_ci.sh javascript
-  c++:
+  cpp:
     name: C++ CI
     runs-on: ubuntu-latest
     steps:
