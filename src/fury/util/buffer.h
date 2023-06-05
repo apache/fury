@@ -43,7 +43,8 @@ public:
 
   inline void WriterIndex(uint32_t writer_index) {
     FURY_CHECK(writer_index < std::numeric_limits<int>::max())
-        << "Buffer overflow writer_index" << writer_index_ << " diff " << diff;
+        << "Buffer overflow writer_index" << writer_index_
+        << " target writer_index " << writer_index;
     writer_index_ = writer_index;
   }
 
@@ -56,7 +57,8 @@ public:
 
   inline void ReaderIndex(uint32_t reader_index) {
     FURY_CHECK(reader_index < std::numeric_limits<int>::max())
-        << "Buffer overflow reader_index" << reader_index_ << " diff " << diff;
+        << "Buffer overflow reader_index" << reader_index_
+        << " target reader_index " << reader_index;
     reader_index_ = reader_index;
   }
 
