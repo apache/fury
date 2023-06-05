@@ -119,13 +119,6 @@ GIT_LS_EXCLUDES=(
   ':(exclude)src/thirdparty/'
 )
 
-JAVA_EXCLUDES=(
-  '.code'
-  'benchmark/.code'
-  'benchmark/java/.code'
-  'integration_tests/src/main/java/io/fury/integration_tests/state/generated'
-)
-
 # TODO(barakmich): This should be cleaned up. I've at least excised the copies
 # of these arguments to this location, but the long-term answer is to actually
 # make a flake8 config file
