@@ -298,8 +298,9 @@ else
         git remote add 'origin' 'https://github.com/alipay/fury.git'
     fi
 
+    # use unshallow fetch for `git merge-base origin/main HEAD` to work.
     # Only fetch main since that's the branch we're diffing against.
-    git fetch origin main --depth=1 || true
+    git fetch origin main || true
 
     echo "Format only the files that changed in last commit."
     format_changed
