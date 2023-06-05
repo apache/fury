@@ -35,7 +35,7 @@ namespace fury {
 // Return the given status if it is not OK.
 #define FURY_RETURN_NOT_OK(s)                                                  \
   do {                                                                         \
-    ::fury::Status _s = (s);                                              \
+    ::fury::Status _s = (s);                                                   \
     if (FURY_PREDICT_FALSE(!_s.ok())) {                                        \
       return _s;                                                               \
     }                                                                          \
@@ -43,7 +43,7 @@ namespace fury {
 
 #define FURY_RETURN_NOT_OK_ELSE(s, else_)                                      \
   do {                                                                         \
-    ::fury::Status _s = (s);                                              \
+    ::fury::Status _s = (s);                                                   \
     if (!_s.ok()) {                                                            \
       else_;                                                                   \
       return _s;                                                               \
@@ -54,7 +54,7 @@ namespace fury {
 // of 'msg' followed by the status.
 #define FURY_CHECK_OK_PREPEND(to_call, msg)                                    \
   do {                                                                         \
-    ::fury::Status _s = (to_call);                                        \
+    ::fury::Status _s = (to_call);                                             \
     FURY_CHECK(_s.ok()) << (msg) << ": " << _s.ToString();                     \
   } while (0)
 

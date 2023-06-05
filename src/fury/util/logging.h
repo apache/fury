@@ -26,17 +26,17 @@ enum class FuryLogLevel {
   fury::FuryLog::IsLevelEnabled(fury::FuryLogLevel::level)
 
 #define FURY_LOG(level)                                                        \
-  if (fury::FuryLog::IsLevelEnabled(fury::FuryLogLevel::level))      \
+  if (fury::FuryLog::IsLevelEnabled(fury::FuryLogLevel::level))                \
   FURY_LOG_INTERNAL(fury::FuryLogLevel::level)
 
 #define FURY_IGNORE_EXPR(expr) ((void)(expr))
 
 #define FURY_CHECK(condition)                                                  \
-  (condition) ? FURY_IGNORE_EXPR(0)                                            \
-              : ::fury::Voidify() &                                       \
-                    ::fury::FuryLog(__FILE__, __LINE__,                   \
-                                         fury::FuryLogLevel::FATAL)       \
-                        << " Check failed: " #condition " "
+  (condition)                                                                  \
+      ? FURY_IGNORE_EXPR(0)                                                    \
+      : ::fury::Voidify() &                                                    \
+            ::fury::FuryLog(__FILE__, __LINE__, fury::FuryLogLevel::FATAL)     \
+                << " Check failed: " #condition " "
 
 #define FURY_CHECK_OP(left, op, right)                                         \
   do {                                                                         \
@@ -88,8 +88,7 @@ private:
   FuryLogLevel severity_;
 };
 
-const FuryLogLevel __fury_severity_threshold__ =
-    ::fury::FuryLog::GetLogLevel();
+const FuryLogLevel __fury_severity_threshold__ = ::fury::FuryLog::GetLogLevel();
 
 // This class make FURY_CHECK compilation pass to change the << operator to
 // void.
