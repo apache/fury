@@ -62,10 +62,22 @@ case $1 in
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         echo "Executing fury javascript tests failed"
-        # TODO(bigtech) enable js ci
-        # exit $testcode
+         exit $testcode
       fi
       echo "Executing fury javascript tests succeeds"
+    ;;
+    cpp)
+      echo "Install pyarrow"
+      pip install pyarrow==4.0.0
+      set +e
+      echo "Executing fury c++ tests"
+      bazel test $(bazel query //...)
+      testcode=$?
+      if [[ $testcode -ne 0 ]]; then
+        echo "Executing fury c++ tests failed"
+        exit $testcode
+      fi
+      echo "Executing fury c++ tests succeeds"
     ;;
     format)
       echo "Executing format check"

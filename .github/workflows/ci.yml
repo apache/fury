@@ -42,3 +42,13 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Run CI with NodeJS
         run: ./ci/run_ci.sh javascript
+  c++:
+    name: C++ CI
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Run C++ CI with Bazel
+        run: ./ci/run_ci.sh cpp
