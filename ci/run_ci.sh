@@ -107,9 +107,10 @@ case $1 in
       echo "Executing fury c++ tests succeeds"
     ;;
     python)
-      pip install pyarrow==4.0.0 Cython numpy
+      pip install pyarrow==4.0.0 Cython numpy pytest
       cd "$ROOT/python"
       pip list
+      export PATH=~/bin:$PATH
       echo "Install pyfury"
       pip install -v -e .
       echo "Executing fury python tests"
