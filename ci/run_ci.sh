@@ -107,13 +107,13 @@ case $1 in
       echo "Executing fury c++ tests succeeds"
     ;;
     python_without_arrow)
-      echo "Uninstall pyarrow"
-      pip uninstall -y pyarrow
+      pip install pyarrow Cython numpy
       cd "$ROOT/python"
-      pip install Cython
       pip list
       echo "Install pyfury"
       pip install -v -e .
+      echo "Uninstall pyarrow"
+      pip uninstall -y pyarrow
       echo "Executing fury python tests"
       pytest -v -s --durations=60 pyfury/tests
       testcode=$?
