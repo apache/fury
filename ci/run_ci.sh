@@ -110,7 +110,7 @@ case $1 in
       echo "Uninstall pyarrow"
       pip uninstall -y pyarrow
       cd "$ROOT/python"
-      pip install cython
+      pip install Cython
       pip list
       echo "Install pyfury"
       pip install -v -e .
