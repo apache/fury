@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: [3.6.15, 3.9.16]
+        python-version: [3.6, 3.9]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -72,7 +72,7 @@ jobs:
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Run Python CI
-        run: ./ci/run_ci.sh python_without_arrow
+        run: ./ci/run_ci.sh python
   Lint:
     name: Code Style Check
     runs-on: ubuntu-latest
