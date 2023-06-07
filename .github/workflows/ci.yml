@@ -57,7 +57,9 @@ jobs:
         run: ./ci/run_ci.sh cpp
   python:
     name: Python CI
-    runs-on: ubuntu-latest
+    # Fix python 3.6 install issue, see
+    # https://github.com/rwth-i6/returnn/commit/38ecab17d781c4b74db6a174c8097187380b4ddc
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         python-version: [3.6.15, 3.9.16]
