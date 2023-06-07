@@ -27,4 +27,5 @@ except (ImportError, AttributeError) as e:
         f"Fury format initialization failed, please ensure pyarrow is installed "
         f"with version which fury is compiled with: {e}",
         RuntimeWarning,
+        stacklevel=2,
     )
