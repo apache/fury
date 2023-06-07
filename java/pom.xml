@@ -191,7 +191,8 @@
             <id>validate</id>
             <phase>validate</phase>
             <goals>
-              <goal>check</goal>
+              <!-- test in ci only or manually invoke the gaol -->
+              <!-- <goal>check</goal> -->
             </goals>
           </execution>
         </executions>
