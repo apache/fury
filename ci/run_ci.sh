@@ -126,7 +126,8 @@ case $1 in
       pip install black==22.1.0 flake8==3.9.1 flake8-quotes flake8-bugbear click==8.0.2
       echo "Executing format check"
       bash ci/format.sh
-      cd
+      cd "$ROOT/java"
+      mvn -T10 checkstyle:check
       echo "Executing format check succeeds"
     ;;
     *)
