@@ -111,12 +111,12 @@ setup(
     },
     packages=find_packages(),
     description="Fury is a blazing fast multi-language serialization "
-                "framework powered by jit, vectorization and zero-copy",
+    + "framework powered by jit, vectorization and zero-copy",
     long_description=io.open(
         os.path.join(setup_dir, os.path.pardir, "README.md"), "r", encoding="utf-8"
     ).read(),
     keywords="fury serialization multi-language arrow row-format jit "
-             "vectorization zero-copy",
+    + "vectorization zero-copy",
     zip_safe=False,
     install_requires=[
         'dataclasses; python_version<"3.7"',
