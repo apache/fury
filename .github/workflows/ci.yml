@@ -55,6 +55,22 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Run C++ CI with Bazel
         run: ./ci/run_ci.sh cpp
+  python:
+    name: Python CI
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Run Python CI
+        run: ./ci/run_ci.sh python_without_arrow
   Lint:
     name: Code Style Check
     runs-on: ubuntu-latest
