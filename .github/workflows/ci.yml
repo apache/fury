@@ -55,6 +55,24 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Run C++ CI with Bazel
         run: ./ci/run_ci.sh cpp
+  python:
+    name: Python CI
+    # Fix python 3.6 install issue, see
+    # https://github.com/rwth-i6/returnn/commit/38ecab17d781c4b74db6a174c8097187380b4ddc
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: [3.6.15, 3.9.16]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Run Python CI
+        run: ./ci/run_ci.sh python_without_arrow
   Lint:
     name: Code Style Check
     runs-on: ubuntu-latest

@@ -106,6 +106,21 @@ case $1 in
       fi
       echo "Executing fury c++ tests succeeds"
     ;;
+    python_without_arrow)
+      echo "Uninstall pyarrow"
+      pip uninstall -y pyarrow
+      cd "$ROOT/python"
+      pip list
+      echo "Install pyfury"
+      pip install -v -e .
+      echo "Executing fury python tests"
+      pytest -v -s --durations=60 pyfury/tests
+      testcode=$?
+      if [[ $testcode -ne 0 ]]; then
+        exit $testcode
+      fi
+      echo "Executing fury python tests succeeds"
+      ;;
     format)
       echo "Install format tools"
       pip install black==22.1.0 flake8==3.9.1 flake8-quotes flake8-bugbear click==8.0.2
