@@ -8,6 +8,7 @@ from typing import TypeVar
 from abc import ABC, abstractmethod
 
 
+# modified from `fluent python`
 def record_class_factory(cls_name, field_names):
     """
     record_factory: create simple classes just for holding data fields
