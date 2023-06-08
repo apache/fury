@@ -107,7 +107,7 @@ case $1 in
       echo "Executing fury c++ tests succeeds"
     ;;
     python)
-      pip install pyarrow==4.0.0 Cython numpy pytest
+      pip install pyarrow==4.0.0 Cython wheel numpy pytest
       cd "$ROOT/python"
       pip list
       export PATH=~/bin:$PATH
