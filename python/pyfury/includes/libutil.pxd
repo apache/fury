@@ -55,11 +55,6 @@ cdef extern from "fury/util/buffer.h" namespace "fury" nogil:
 
         c_string Hex()
 
-    cdef cppclass CBufferHolder" fury::BufferHolder":
-        shared_ptr[CBuffer]& buffer()
-
-        inline uint32_t cursor()
-
     CBuffer* AllocateBuffer(uint32_t size)
     c_bool AllocateBuffer(uint32_t size, shared_ptr[CBuffer]* out)
 
