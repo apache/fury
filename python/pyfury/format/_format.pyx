@@ -16,3 +16,6 @@ include "row.pxi"
 
 # Python encoder for row format
 include "encoder.pxi"
+
+# Interoperability between row and columnar format
+include "vectorized.pxi"
