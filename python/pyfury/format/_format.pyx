@@ -13,3 +13,6 @@ import_pyarrow()
 # include "buffer.pxi"
 
 include "row.pxi"
+
+# Python encoder for row format
+include "encoder.pxi"
