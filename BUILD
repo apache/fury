@@ -20,10 +20,33 @@ pyx_library(
     ],
 )
 
+pyx_library(
+    name = "_format",
+    srcs = glob([
+        "python/pyfury/__init__.py",
+        "python/pyfury/includes/*.pxd",
+        "python/pyfury/_util.pxd",
+        "python/pyfury/*.pxi",
+        "python/pyfury/format/_format.pyx",
+        "python/pyfury/format/__init__.py",
+        "python/pyfury/format/*.pxi",
+    ]),
+    cc_kwargs = dict(
+        copts = COPTS,
+        linkstatic = 1,
+    ),
+    deps = [
+        "//src/fury:fury",
+        "@local_config_pyarrow//:python_numpy_headers",
+        "@local_config_pyarrow//:arrow_python_shared_library"
+    ],
+)
+
 genrule(
     name = "cp_fury_so",
     srcs = [
         ":python/pyfury/_util.so",
+        ":python/pyfury/format/_format.so",
     ],
     outs = [
         "cp_fury_py_generated.out",
@@ -33,6 +56,7 @@ genrule(
         set -x
         WORK_DIR=$$(pwd)
         cp -f $(location python/pyfury/_util.so) "$$WORK_DIR/python/pyfury"
+        cp -f $(location python/pyfury/format/_format.so) "$$WORK_DIR/python/pyfury/format"
         echo $$(date) > $@
     """,
     local = 1,
