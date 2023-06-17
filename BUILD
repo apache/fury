@@ -21,6 +21,22 @@ pyx_library(
 )
 
 pyx_library(
+    name = "mmh3",
+    srcs = glob([
+        "python/pyfury/lib/mmh3/*.pxd",
+        "python/pyfury/lib/mmh3/*.pyx",
+        "python/pyfury/lib/mmh3/__init__.py",
+    ]),
+    cc_kwargs = dict(
+        copts = COPTS,
+        linkstatic = 1,
+    ),
+    deps = [
+        "//src/fury/thirdparty:libmmh3",
+    ],
+)
+
+pyx_library(
     name = "_format",
     srcs = glob([
         "python/pyfury/__init__.py",
@@ -47,6 +63,7 @@ genrule(
     srcs = [
         ":python/pyfury/_util.so",
         ":python/pyfury/format/_format.so",
+        ":python/pyfury/lib/mmh3/mmh3.so",
     ],
     outs = [
         "cp_fury_py_generated.out",
@@ -57,6 +74,7 @@ genrule(
         WORK_DIR=$$(pwd)
         cp -f $(location python/pyfury/_util.so) "$$WORK_DIR/python/pyfury"
         cp -f $(location python/pyfury/format/_format.so) "$$WORK_DIR/python/pyfury/format"
+        cp -f $(location python/pyfury/lib/mmh3/mmh3.so) "$$WORK_DIR/python/pyfury/lib/mmh3"
         echo $$(date) > $@
     """,
     local = 1,
