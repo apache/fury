@@ -18,6 +18,7 @@
 
 package io.fury.format.encoder;
 
+import static io.fury.type.TypeUtils.CLASS_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.CaseFormat;
@@ -28,6 +29,7 @@ import io.fury.builder.CodecBuilder;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.format.row.ArrayData;
 import io.fury.format.row.MapData;
@@ -43,6 +45,7 @@ import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
 import io.fury.util.LoggerFactory;
 import io.fury.util.StringUtils;
+import java.lang.reflect.Modifier;
 import java.util.SortedMap;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
@@ -62,6 +65,8 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
 
   private final SortedMap<String, Descriptor> descriptorsMap;
   private final Schema schema;
+  protected static final String BEAN_CLASS_NAME = "beanClass";
+  protected Reference beanClassRef = new Reference(BEAN_CLASS_NAME, CLASS_TYPE);
 
   public RowEncoderBuilder(Class<?> beanClass) {
     this(TypeToken.of(beanClass));
@@ -75,6 +80,17 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     ctx.reserveName(ROOT_ROW_WRITER_NAME);
     ctx.reserveName(SCHEMA_NAME);
     ctx.reserveName(ROOT_ROW_NAME);
+    ctx.reserveName(BEAN_CLASS_NAME);
+    Expression clsExpr;
+    if (Modifier.isPublic(beanClass.getModifiers())) {
+      clsExpr = new Expression.Literal(ctx.type(beanClass) + ".class");
+    } else {
+      // non-public class is not accessible in other class.
+      clsExpr =
+          new Expression.StaticInvoke(
+              Class.class, "forName", CLASS_TYPE, false, Expression.Literal.ofClass(beanClass));
+    }
+    ctx.addField(Class.class, "beanClass", clsExpr);
     ctx.addImports(Field.class, Schema.class);
     ctx.addImports(Row.class, ArrayData.class, MapData.class);
     ctx.addImports(BinaryRow.class, BinaryArray.class, BinaryMap.class);
@@ -138,11 +154,9 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
    */
   @Override
   public Expression buildEncodeExpression() {
-    Expression.Reference inputObject =
-        new Expression.Reference(ROOT_OBJECT_NAME, TypeUtils.OBJECT_TYPE, false);
-    Expression.Reference writer =
-        new Expression.Reference(ROOT_ROW_WRITER_NAME, rowWriterTypeToken, false);
-    Expression.Reference schemaExpr = new Expression.Reference(SCHEMA_NAME, schemaTypeToken, false);
+    Reference inputObject = new Reference(ROOT_OBJECT_NAME, TypeUtils.OBJECT_TYPE, false);
+    Reference writer = new Reference(ROOT_ROW_WRITER_NAME, rowWriterTypeToken, false);
+    Reference schemaExpr = new Reference(SCHEMA_NAME, schemaTypeToken, false);
 
     int numFields = schema.getFields().size();
     Expression.ListExpression expressions = new Expression.ListExpression();
@@ -171,7 +185,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
    * CodecBuilder#beanClass}.
    */
   public Expression buildDecodeExpression() {
-    Expression.Reference row = new Expression.Reference(ROOT_ROW_NAME, binaryRowTypeToken, false);
+    Reference row = new Reference(ROOT_ROW_NAME, binaryRowTypeToken, false);
     Expression bean = newBean();
 
     int numFields = schema.getFields().size();
@@ -207,5 +221,10 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
   private Descriptor getDescriptorByFieldName(String fieldName) {
     String name = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, fieldName);
     return descriptorsMap.get(name);
+  }
+
+  @Override
+  protected Expression beanClassExpr() {
+    return beanClassRef;
   }
 }
