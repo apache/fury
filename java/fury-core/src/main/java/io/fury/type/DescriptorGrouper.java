@@ -18,11 +18,12 @@
 
 package io.fury.type;
 
-import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Primitives;
+import com.google.common.reflect.TypeToken;
+import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +43,7 @@ import java.util.function.Function;
  *
  * @author chaokunyang
  */
+@SuppressWarnings("UnstableApiUsage")
 public class DescriptorGrouper {
   // sort primitive descriptors from largest to smallest, if size is the same,
   // sort by field name to fix order.
@@ -185,7 +187,8 @@ public class DescriptorGrouper {
       // (Ignore protected/package level access for simplicity.
       // Since class members whose type are non-public class are rare,
       // it doesn't have much impact on performance.)
-      return d.copy(OBJECT_TYPE, null, null);
+      TypeToken<?> publicSuperType = ReflectionUtils.getPublicSuperType(d.getTypeToken());
+      return d.copy(publicSuperType, null, null);
     } else {
       // getter/setter may lose some inner state of an object, so we set them to null.
       if (d.getReadMethod() == null && d.getWriteMethod() == null) {

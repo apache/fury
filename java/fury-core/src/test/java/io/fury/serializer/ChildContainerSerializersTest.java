@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
+import io.fury.resolver.MetaContext;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.Data;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -157,5 +159,32 @@ public class ChildContainerSerializersTest extends FuryTestBase {
       map.putAll(data);
       serDeCheck(fury, map);
     }
+  }
+
+  private static class CustomMap extends HashMap<String, String> {}
+
+  @Data
+  private static class UserDO {
+    private CustomMap features;
+  }
+
+  @Test(dataProvider = "enableCodegen")
+  public void testSerializeCustomPrivateMap(boolean enableCodegen) {
+    CustomMap features = new CustomMap();
+    features.put("a", "A");
+    UserDO outerDO = new UserDO();
+    outerDO.setFeatures(features);
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withDeserializeUnExistClassEnabled(true)
+            .withMetaContextShareEnabled(true)
+            .disableSecureMode()
+            .withClassRegistrationRequired(false)
+            .withCodegen(enableCodegen)
+            .build();
+    fury.getSerializationContext().setMetaContext(new MetaContext());
+    serDeMetaShared(fury, outerDO);
   }
 }
