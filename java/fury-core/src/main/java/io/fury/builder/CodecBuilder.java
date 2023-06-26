@@ -18,7 +18,6 @@
 
 package io.fury.builder;
 
-import static io.fury.type.TypeUtils.CLASS_TYPE;
 import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
@@ -29,6 +28,7 @@ import io.fury.Fury;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Literal;
+import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.StaticInvoke;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.memory.MemoryBuffer;
@@ -71,10 +71,9 @@ public abstract class CodecBuilder {
   protected final TypeToken<?> beanType;
   protected final Class<?> beanClass;
   private final Set<String> duplicatedFields;
-  protected Expression.Reference furyRef =
-      new Expression.Reference(FURY_NAME, TypeToken.of(Fury.class));
-  private final Map<String, Expression.Reference> fieldMap = new HashMap<>();
-  private final Map<String, Expression.Reference> fieldAccessorMap = new HashMap<>();
+  protected Reference furyRef = new Reference(FURY_NAME, TypeToken.of(Fury.class));
+  private final Map<String, Reference> fieldMap = new HashMap<>();
+  private final Map<String, Reference> fieldAccessorMap = new HashMap<>();
 
   public CodecBuilder(CodegenContext ctx, TypeToken<?> beanType) {
     this.ctx = ctx;
@@ -87,15 +86,6 @@ public abstract class CodecBuilder {
     // Don't import other packages to avoid class conflicts.
     // For example user class named as `Date`/`List`/`MemoryBuffer`
 
-    Expression clsExpr;
-    if (Modifier.isPublic(beanClass.getModifiers())) {
-      clsExpr = new Literal(ctx.type(beanClass) + ".class");
-    } else {
-      // non-public class is not accessible in other class.
-      clsExpr =
-          new StaticInvoke(Class.class, "forName", CLASS_TYPE, false, Literal.ofClass(beanClass));
-    }
-    ctx.addField(Class.class, "beanClass", clsExpr);
   }
 
   /** Generate codec class code. */
@@ -154,7 +144,7 @@ public abstract class CodecBuilder {
   /** Returns an expression that get field value> from <code>bean</code> using reflection. */
   private Expression reflectAccessField(
       Expression inputObject, Class<?> cls, Descriptor descriptor) {
-    Expression.Reference fieldRef = getOrCreateField(cls, descriptor.getName());
+    Reference fieldRef = getOrCreateField(cls, descriptor.getName());
     // boolean fieldNullable = !descriptor.getTypeToken().isPrimitive();
     Expression.Invoke getObj =
         new Expression.Invoke(fieldRef, "get", OBJECT_TYPE, fieldNullable, inputObject);
@@ -231,7 +221,7 @@ public abstract class CodecBuilder {
   private Expression reflectSetField(Expression bean, String fieldName, Expression value) {
     // Class maybe have getter, but don't have setter, so we can't rely on reflectAccessField to
     // populate fieldMap
-    Expression.Reference fieldRef = getOrCreateField(getRawType(bean.type()), fieldName);
+    Reference fieldRef = getOrCreateField(getRawType(bean.type()), fieldName);
     Preconditions.checkNotNull(fieldRef);
     return new Expression.Invoke(fieldRef, "set", bean, value);
   }
@@ -255,8 +245,8 @@ public abstract class CodecBuilder {
     }
   }
 
-  private Expression.Reference getOrCreateField(Class<?> cls, String fieldName) {
-    Expression.Reference fieldRef = fieldMap.get(fieldName);
+  private Reference getOrCreateField(Class<?> cls, String fieldName) {
+    Reference fieldRef = fieldMap.get(fieldName);
     if (fieldRef == null) {
       TypeToken<Field> fieldTypeToken = TypeToken.of(Field.class);
       String fieldRefName = ctx.newName(fieldName + "Field");
@@ -275,7 +265,7 @@ public abstract class CodecBuilder {
       Expression.ListExpression createField =
           new Expression.ListExpression(setAccessible, fieldExpr);
       ctx.addField(ctx.type(Field.class), fieldRefName, createField);
-      fieldRef = new Expression.Reference(fieldRefName, fieldTypeToken);
+      fieldRef = new Reference(fieldRefName, fieldTypeToken);
       fieldMap.put(fieldName, fieldRef);
     }
     return fieldRef;
@@ -284,7 +274,14 @@ public abstract class CodecBuilder {
   /** Returns an Expression that create a new java object of type {@link CodecBuilder#beanClass}. */
   protected Expression newBean() {
     // TODO allow default access-level class.
-    Preconditions.checkArgument(Modifier.isPublic(beanClass.getModifiers()));
-    return new Expression.NewInstance(beanType);
+    if (Modifier.isPublic(beanClass.getModifiers())) {
+      return new Expression.NewInstance(beanType);
+    } else {
+      return new StaticInvoke(Platform.class, "newInstance", OBJECT_TYPE, beanClassExpr());
+    }
+  }
+
+  protected Expression beanClassExpr() {
+    throw new UnsupportedOperationException();
   }
 }

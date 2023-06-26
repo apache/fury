@@ -1005,4 +1005,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     }
     return action;
   }
+
+  @Override
+  protected Expression beanClassExpr() {
+    // Serializer has a `type` field.
+    return new Reference("super.type", CLASS_TYPE);
+  }
 }

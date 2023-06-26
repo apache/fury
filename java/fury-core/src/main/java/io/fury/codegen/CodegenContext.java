@@ -543,6 +543,10 @@ public class CodegenContext {
    * @param type type
    * @param fieldName field name
    */
+  public void addField(Class<?> type, String fieldName) {
+    addField(type(type), fieldName);
+  }
+
   public void addField(String type, String fieldName) {
     fields.add(Tuple3.of(true, type, fieldName));
   }
