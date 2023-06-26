@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableMap;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
-import io.fury.resolver.MetaContext;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -184,7 +183,6 @@ public class ChildContainerSerializersTest extends FuryTestBase {
             .withClassRegistrationRequired(false)
             .withCodegen(enableCodegen)
             .build();
-    fury.getSerializationContext().setMetaContext(new MetaContext());
     serDeMetaShared(fury, outerDO);
   }
 }
