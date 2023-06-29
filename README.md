@@ -1,3 +1,7 @@
+<div align="center">
+  <img width="77%" alt="" src="docs/images/logo/fury-logo.svg"><br>
+</div>
+
 # Fury
 
 Fury is a blazing fast general multi-language native serialization framework powered by jit and zero-copy:

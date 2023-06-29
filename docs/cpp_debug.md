@@ -8,7 +8,7 @@ Just open the fury root directory in vscode, then open a test file such as `src/
 enter `F5`, then you can debug the c++ code line by line, watch variables, add breakpoints in vscode just like 
 java/python debugging.
 
-<img src="img/vscode_debug_fury.jpg" alt="Fury Debugging Example" width="50%" height="50%" />
+<img src="images/vscode_debug_fury.jpg" alt="Fury Debugging Example" width="50%" height="50%" />
 
 ## Notes
 - For Macos: Install `CodeLLDB` vscode plugin
