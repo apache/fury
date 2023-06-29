@@ -476,9 +476,11 @@ public class MapSerializers {
           map.put(key, fury.readReferencableFromJava(buffer, keyClassInfoReadCache));
         }
       } else if (valueSerializer != null) {
-        Object key = fury.readReferencableFromJava(buffer);
-        Object value = fury.readReferencableFromJava(buffer, valueSerializer);
-        map.put(key, value);
+        for (int i = 0; i < size; i++) {
+          Object key = fury.readReferencableFromJava(buffer);
+          Object value = fury.readReferencableFromJava(buffer, valueSerializer);
+          map.put(key, value);
+        }
       } else {
         genericJavaRead(fury, buffer, map, size);
       }

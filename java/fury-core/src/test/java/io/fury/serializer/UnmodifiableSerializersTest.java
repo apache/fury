@@ -155,6 +155,10 @@ public class UnmodifiableSerializersTest extends FuryTestBase {
     obj.map = Collections.unmodifiableMap(map);
     obj.map2 = Collections.unmodifiableMap(map);
     obj.map3 = new HashMap<>(map);
+    obj.mapKeyFinal =
+        Collections.unmodifiableMap(
+            new HashMap<>(ImmutableMap.of("k1", map, "k2", new HashMap<>(map))));
+    obj.mapValueFinal = Collections.unmodifiableMap(new HashMap<>(map));
     obj.linkedHashMap = Collections.unmodifiableMap(new LinkedHashMap<>(map));
     obj.linkedHashMap2 = Collections.unmodifiableMap(new LinkedHashMap<>(map));
     obj.linkedHashMap3 = new LinkedHashMap<>(map);

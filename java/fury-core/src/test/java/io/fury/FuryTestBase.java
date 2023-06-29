@@ -22,6 +22,7 @@ import io.fury.io.ClassLoaderObjectInputStream;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.MetaContext;
 import io.fury.serializer.BufferObject;
+import io.fury.serializer.CompatibleMode;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import java.io.ByteArrayInputStream;
@@ -96,6 +97,7 @@ public abstract class FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withReferenceTracking(true)
+            .withCodegen(false)
             .disableSecureMode()
             .build()
       },
@@ -103,6 +105,7 @@ public abstract class FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withReferenceTracking(false)
+            .withCodegen(false)
             .disableSecureMode()
             .build()
       },
@@ -110,7 +113,7 @@ public abstract class FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withReferenceTracking(true)
-            // .withCodegen(true)
+            .withCodegen(true)
             .disableSecureMode()
             .build()
       },
@@ -118,7 +121,49 @@ public abstract class FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withReferenceTracking(false)
-            // .withCodegen(true)
+            .withCodegen(true)
+            .disableSecureMode()
+            .build()
+      },
+    };
+  }
+
+  @DataProvider
+  public static Object[][] javaFuryKVCompatible() {
+    return new Object[][] {
+      {
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(true)
+            .withCodegen(false)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .disableSecureMode()
+            .build()
+      },
+      {
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(false)
+            .withCodegen(false)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .disableSecureMode()
+            .build()
+      },
+      {
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(true)
+            .withCodegen(true)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .disableSecureMode()
+            .build()
+      },
+      {
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withReferenceTracking(false)
+            .withCodegen(true)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .disableSecureMode()
             .build()
       },
