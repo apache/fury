@@ -207,12 +207,20 @@ public class MapSerializersTest extends FuryTestBase {
     Assert.assertEquals(serDe(fury, obj), obj);
   }
 
+  @Test(dataProvider = "javaFuryKVCompatible")
+  public void testMapFieldsKVCompatible(Fury fury) {
+    MapFields obj = createMapFieldsObject();
+    Assert.assertEquals(serDe(fury, obj), obj);
+  }
+
   public static MapFields createMapFieldsObject() {
     MapFields obj = new MapFields();
     Map<String, Integer> map = ImmutableMap.of("k1", 1, "k2", 2);
     obj.map = map;
     obj.map2 = new HashMap<>(map);
     obj.map3 = new HashMap<>(map);
+    obj.mapKeyFinal = new HashMap<>(ImmutableMap.of("k1", map, "k2", new HashMap<>(map)));
+    obj.mapValueFinal = new HashMap<>(map);
     obj.linkedHashMap = new LinkedHashMap<>(map);
     obj.linkedHashMap2 = new LinkedHashMap<>(map);
     obj.linkedHashMap3 = new LinkedHashMap<>(map);

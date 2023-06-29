@@ -33,6 +33,8 @@ public class MapFields {
   public Map map;
   public Map<String, Integer> map2;
   public HashMap<String, Integer> map3;
+  public Map<String, Object> mapKeyFinal;
+  public Map<Object, Integer> mapValueFinal;
   public Map linkedHashMap;
   public Map<String, Integer> linkedHashMap2;
   public LinkedHashMap<String, Integer> linkedHashMap3;
