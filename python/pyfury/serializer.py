@@ -250,3 +250,136 @@ class PandasRangeIndexSerializer(Serializer):
 
     def cross_language_read(self, buffer):
         raise NotImplementedError
+
+
+_jit_context = locals()
+
+
+_ENABLE_FURY_PYTHON_JIT = os.environ.get("ENABLE_FURY_PYTHON_JIT", "True").lower() in (
+    "true",
+    "1",
+)
+
+
+class DataClassSerializer(Serializer):
+    def __init__(self, fury_, clz: type):
+        super().__init__(fury_, clz)
+        # This will get superclass type hints too.
+        self._type_hints = typing.get_type_hints(clz)
+        self._field_names = sorted(self._type_hints.keys())
+        # TODO compute hash
+        self._hash = len(self._field_names)
+        self._generated_write_method = self._gen_write_method()
+        self._generated_read_method = self._gen_read_method()
+        if _ENABLE_FURY_PYTHON_JIT:
+            # don't use `__slots__`, which will make instance method readonly
+            self.write = self._gen_write_method()
+            self.read = self._gen_read_method()
+
+    def _gen_write_method(self):
+        context = {}
+        counter = itertools.count(0)
+        buffer, fury_, value = "buffer", "fury_", "value"
+        context[fury_] = self.fury_
+        stmts = [
+            f'"""write method for {self.type_}"""',
+            f"{buffer}.write_int32({self._hash})",
+        ]
+        for field_name in self._field_names:
+            field_type = self._type_hints[field_name]
+            field_value = f"field_value{next(counter)}"
+            stmts.append(f"{field_value} = {value}.{field_name}")
+            if field_type is bool:
+                stmts.extend(gen_write_nullable_basic_stmts(buffer, field_value, bool))
+            elif field_type == int:
+                stmts.extend(gen_write_nullable_basic_stmts(buffer, field_value, int))
+            elif field_type == float:
+                stmts.extend(gen_write_nullable_basic_stmts(buffer, field_value, float))
+            elif field_type == str:
+                stmts.extend(gen_write_nullable_basic_stmts(buffer, field_value, str))
+            else:
+                stmts.append(
+                    f"{fury_}.write_referencable_pyobject({buffer}, {field_value})"
+                )
+        self._write_method_code, func = compile_function(
+            f"write_{self.type_.__module__}_{self.type_.__qualname__}".replace(
+                ".", "_"
+            ),
+            [buffer, value],
+            stmts,
+            context,
+        )
+        return func
+
+    def _gen_read_method(self):
+        context = dict(_jit_context)
+        buffer, fury_, obj_class, obj = "buffer", "fury_", "obj_class", "obj"
+        reference_resolver = "reference_resolver"
+        context[fury_] = self.fury_
+        context[obj_class] = self.type_
+        context[reference_resolver] = self.fury_.reference_resolver
+        stmts = [
+            f'"""read method for {self.type_}"""',
+            f"{obj} = {obj_class}.__new__({obj_class})",
+            f"{reference_resolver}.reference({obj})",
+            f"read_hash = {buffer}.read_int32()",
+            f"if read_hash != {self._hash}:",
+            f"""   raise ClassNotCompatibleError(
+            "Hash read_hash is not consistent with {self._hash} for {self.type_}")""",
+        ]
+
+        def set_action(value: str):
+            return f"{obj}.{field_name} = {value}"
+
+        for field_name in self._field_names:
+            field_type = self._type_hints[field_name]
+            if field_type is bool:
+                stmts.extend(gen_read_nullable_basic_stmts(buffer, bool, set_action))
+            elif field_type == int:
+                stmts.extend(gen_read_nullable_basic_stmts(buffer, int, set_action))
+            elif field_type == float:
+                stmts.extend(gen_read_nullable_basic_stmts(buffer, float, set_action))
+            elif field_type == str:
+                stmts.extend(gen_read_nullable_basic_stmts(buffer, str, set_action))
+            else:
+                stmts.append(
+                    f"{obj}.{field_name} = {fury_}.read_referencable_pyobject({buffer})"
+                )
+        stmts.append(f"return {obj}")
+        self._read_method_code, func = compile_function(
+            f"read_{self.type_.__module__}_{self.type_.__qualname__}".replace(".", "_"),
+            [buffer],
+            stmts,
+            context,
+        )
+        return func
+
+    def write(self, buffer, value):
+        buffer.write_int32(self._hash)
+        for field_name in self._field_names:
+            field_value = getattr(value, field_name)
+            self.fury_.serialize_referencable_to_py(buffer, field_value)
+
+    def read(self, buffer):
+        hash_ = buffer.read_int32()
+        if hash_ != self._hash:
+            raise ClassNotCompatibleError(
+                f"Hash {hash_} is not consistent with {self._hash} "
+                f"for class {self.type_}",
+            )
+        obj = self.type_.__new__(self.type_)
+        self.fury_.reference_resolver.reference(obj)
+        for field_name in self._field_names:
+            field_value = self.fury_.deserialize_referencable_from_py(buffer)
+            setattr(
+                obj,
+                field_name,
+                field_value,
+            )
+        return obj
+
+    def cross_language_write(self, buffer: Buffer, value):
+        raise NotImplementedError
+
+    def cross_language_read(self, buffer):
+        raise NotImplementedError
