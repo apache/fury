@@ -1358,3 +1358,177 @@ cdef class CrossLanguageCompatibleSerializer(Serializer):
 
     cpdef cross_language_read(self, Buffer buffer):
         return self.read(buffer)
+
+
+@cython.final
+cdef class BooleanSerializer(CrossLanguageCompatibleSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.BOOL.value
+
+    cpdef inline write(self, Buffer buffer, value):
+        buffer.write_bool(value)
+
+    cpdef inline read(self, Buffer buffer):
+        return buffer.read_bool()
+
+
+@cython.final
+cdef class NoneSerializer(Serializer):
+
+    cpdef inline cross_language_write(self, Buffer buffer, value):
+        raise NotImplementedError
+
+    cpdef inline cross_language_read(self, Buffer buffer):
+        raise NotImplementedError
+
+    cpdef inline write(self, Buffer buffer, value):
+        pass
+
+    cpdef inline read(self, Buffer buffer):
+        return None
+
+
+@cython.final
+cdef class ByteSerializer(CrossLanguageCompatibleSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.INT8.value
+
+    cpdef inline write(self, Buffer buffer, value):
+        buffer.write_int8(value)
+
+    cpdef inline read(self, Buffer buffer):
+        return buffer.read_int8()
+
+
+@cython.final
+cdef class Int16Serializer(CrossLanguageCompatibleSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.INT16.value
+
+    cpdef inline write(self, Buffer buffer, value):
+        buffer.write_int16(value)
+
+    cpdef inline read(self, Buffer buffer):
+        return buffer.read_int16()
+
+
+@cython.final
+cdef class Int32Serializer(CrossLanguageCompatibleSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.INT32.value
+
+    cpdef inline write(self, Buffer buffer, value):
+        buffer.write_int32(value)
+
+    cpdef inline read(self, Buffer buffer):
+        return buffer.read_int32()
+
+
+@cython.final
+cdef class Int64Serializer(CrossLanguageCompatibleSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.INT64.value
+
+    cpdef inline cross_language_write(self, Buffer buffer, value):
+        buffer.write_int64(value)
+
+    cpdef inline cross_language_read(self, Buffer buffer):
+        return buffer.read_int64()
+
+    cpdef inline write(self, Buffer buffer, value):
+        buffer.write_varint64(value)
+
+    cpdef inline read(self, Buffer buffer):
+        return buffer.read_varint64()
+
+
+@cython.final
+cdef class FloatSerializer(CrossLanguageCompatibleSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.FLOAT.value
+
+    cpdef inline write(self, Buffer buffer, value):
+        buffer.write_float(value)
+
+    cpdef inline read(self, Buffer buffer):
+        return buffer.read_float()
+
+
+@cython.final
+cdef class DoubleSerializer(CrossLanguageCompatibleSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.DOUBLE.value
+
+    cpdef inline write(self, Buffer buffer, value):
+        buffer.write_double(value)
+
+    cpdef inline read(self, Buffer buffer):
+        return buffer.read_double()
+
+
+@cython.final
+cdef class StringSerializer(CrossLanguageCompatibleSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.STRING.value
+
+    cpdef inline write(self, Buffer buffer, value):
+        buffer.write_string(value)
+
+    cpdef inline read(self, Buffer buffer):
+        return buffer.read_string()
+
+
+cdef _base_date = datetime.date(1970, 1, 1)
+
+
+@cython.final
+cdef class DateSerializer(CrossLanguageCompatibleSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.DATE32.value
+
+    cpdef inline write(self, Buffer buffer, value):
+        if type(value) is not datetime.date:
+            raise TypeError(
+                "{} should be {} instead of {}".format(
+                    value, datetime.date, type(value)
+                )
+            )
+        days = (value - _base_date).days
+        buffer.write_int32(days)
+
+    cpdef inline read(self, Buffer buffer):
+        days = buffer.read_int32()
+        return _base_date + datetime.timedelta(days=days)
+
+
+@cython.final
+cdef class TimestampSerializer(CrossLanguageCompatibleSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.TIMESTAMP.value
+
+    cpdef inline write(self, Buffer buffer, value):
+        if type(value) is not datetime.datetime:
+            raise TypeError(
+                "{} should be {} instead of {}".format(value, datetime, type(value))
+            )
+        # TimestampType represent micro seconds
+        timestamp = int(value.timestamp() * 1000000)
+        buffer.write_int64(timestamp)
+
+    cpdef inline read(self, Buffer buffer):
+        ts = buffer.read_int64() / 1000000
+        # TODO support timezone
+        return datetime.datetime.fromtimestamp(ts)
+
+
+@cython.final
+cdef class BytesSerializer(CrossLanguageCompatibleSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.BINARY.value
+
+    cpdef inline write(self, Buffer buffer, value):
+        self.fury_.write_buffer_object(buffer, BytesBufferObject(value))
+
+    cpdef inline read(self, Buffer buffer):
+        fury_buf = self.fury_.read_buffer_object(buffer)
+        return fury_buf.to_pybytes()
