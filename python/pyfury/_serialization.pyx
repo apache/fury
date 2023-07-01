@@ -15,8 +15,8 @@ from pyfury._util import get_bit, set_bit, clear_bit
 from pyfury._fury import Language, OpaqueObject
 from pyfury.error import ClassNotCompatibleError
 from pyfury.lib import mmh3
-from pyfury.type import is_primitive_type, FuryType, Int8Type, Int16Type, Int32Type,\
-    Int64Type, Float32Type, Float64Type, Int16ArrayType, Int32ArrayType,\
+from pyfury.type import is_primitive_type, FuryType, Int8Type, Int16Type, Int32Type, \
+    Int64Type, Float32Type, Float64Type, Int16ArrayType, Int32ArrayType, \
     Int64ArrayType, Float32ArrayType, Float64ArrayType, infer_field, load_class
 from pyfury.util import is_little_endian
 
@@ -204,14 +204,67 @@ cdef int8_t PICKLE_CLASS_ID = 5
 cdef int8_t PICKLE_STRONG_CACHE_CLASS_ID = 6
 cdef int8_t PICKLE_CACHE_CLASS_ID = 7
 # `NOT_NULL_VALUE_FLAG` + `CLASS_ID` in little-endian order
-cdef int32_t NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 |\
+cdef int32_t NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
                                    (PYINT_CLASS_ID << 8)
-cdef int32_t NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 |\
+cdef int32_t NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
                                      (PYFLOAT_CLASS_ID << 8)
-cdef int32_t NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 |\
+cdef int32_t NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
                                     (PYBOOL_CLASS_ID << 8)
-cdef int32_t NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 |\
+cdef int32_t NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
                                     (STRING_CLASS_ID << 8)
+
+
+cdef class BufferObject:
+    """
+    Fury binary representation of an object.
+    Note: This class is used for zero-copy out-of-band serialization and shouldn't be
+    used for any other cases.
+    """
+
+    cpdef int32_t total_bytes(self):
+        """total size for serialized bytes of an object"""
+        raise NotImplementedError
+
+    cpdef write_to(self, Buffer buffer):
+        """Write serialized object to a buffer."""
+        raise NotImplementedError
+
+    cpdef Buffer to_buffer(self):
+        """Write serialized data as Buffer."""
+        raise NotImplementedError
+
+
+@cython.final
+cdef class BytesBufferObject(BufferObject):
+    cdef public bytes binary
+
+    def __init__(self, bytes binary):
+        self.binary = binary
+
+    cpdef inline int32_t total_bytes(self):
+        return len(self.binary)
+
+    cpdef inline write_to(self, Buffer buffer):
+        buffer.write_bytes(self.binary)
+
+    cpdef inline Buffer to_buffer(self):
+        return Buffer(self.binary)
+
+
+@cython.final
+cdef class _PickleStub:
+    pass
+
+
+@cython.final
+cdef class PickleStrongCacheStub:
+    pass
+
+
+@cython.final
+cdef class PickleCacheStub:
+    pass
+
 
 @cython.final
 cdef class ClassResolver:
@@ -294,7 +347,7 @@ cdef class ClassResolver:
             if isinstance(cls, TypeVar):
                 class_name_bytes = (cls.__module__ + "#" + cls.__name__).encode("utf-8")
             else:
-                class_name_bytes = (cls.__module__ + "#" + cls.__qualname__)\
+                class_name_bytes = (cls.__module__ + "#" + cls.__qualname__) \
                     .encode("utf-8")
             class_id = class_id if class_id is not None else self._next_class_id()
             assert class_id not in self._used_classes_id, (
@@ -516,9 +569,9 @@ cdef class ClassResolver:
         for clz in mro:
             class_info = self._classes_info.get(clz)
             if (
-                class_info
-                and class_info.serializer
-                and class_info.serializer.support_subclass()
+                    class_info
+                    and class_info.serializer
+                    and class_info.serializer.support_subclass()
             ):
                 if classinfo_ is None or classinfo_.class_id == NO_CLASS_ID:
                     logger.info("Class %s not registered", cls)
@@ -669,7 +722,7 @@ cdef class ClassResolver:
         if self.dynamic_write_string_id != 0:
             self.dynamic_write_string_id = 0
             for ptr in self._c_dynamic_written_enum_string:
-                (<EnumStringBytes>ptr).dynamic_write_string_id =\
+                (<EnumStringBytes>ptr).dynamic_write_string_id = \
                     DEFAULT_DYNAMIC_WRITE_STRING_ID
             self._c_dynamic_written_enum_string.clear()
 
@@ -722,3 +775,586 @@ cdef class ClassInfo:
     def __repr__(self):
         return f"ClassInfo(cls={self.cls}, class_id={self.class_id}, " \
                f"serializer={self.serializer})"
+
+
+@cython.final
+cdef class Fury:
+    cdef readonly object language
+    cdef readonly c_bool reference_tracking
+    cdef readonly MapReferenceResolver reference_resolver
+    cdef readonly ClassResolver class_resolver
+    cdef readonly SerializationContext serialization_context
+    cdef Buffer buffer
+    cdef public object pickler  # pickle.Pickler
+    cdef public object unpickler  # Optional[pickle.Unpickler]
+    cdef object _buffer_callback
+    cdef object _buffers  # iterator
+    cdef object _unsupported_callback
+    cdef object _unsupported_objects  # iterator
+    cdef object _peer_language
+    cdef list _native_objects
+
+    def __init__(self, language=Language.XLANG, reference_tracking: bool = True):
+        self.language = language
+
+        self.reference_tracking = reference_tracking
+        self.reference_resolver = MapReferenceResolver(reference_tracking)
+        self.class_resolver = ClassResolver(self)
+        self.class_resolver.initialize()
+        self.serialization_context = SerializationContext()
+        self.buffer = Buffer.allocate(32)
+        self.pickler = pickle.Pickler(self.buffer)
+        self.unpickler = None
+        self._buffer_callback = None
+        self._buffers = None
+        self._unsupported_callback = None
+        self._unsupported_objects = None
+        self._peer_language = None
+        self._native_objects = []
+
+    def register_serializer(self, cls: Union[type, TypeVar], Serializer serializer):
+        self.class_resolver.register_serializer(cls, serializer)
+
+    def register_class(self, cls: Union[type, TypeVar], class_id: int = None):
+        self.class_resolver.register_class(cls, class_id=class_id)
+
+    def register_class_tag(self, cls: Union[type, TypeVar], type_tag: str = None):
+        self.class_resolver.register_class_tag(cls, type_tag)
+
+    def serialize(
+            self, obj,
+            Buffer buffer=None,
+            buffer_callback=None,
+            unsupported_callback=None
+    ) -> Union[Buffer, bytes]:
+        try:
+            return self._serialize(
+                obj,
+                buffer,
+                buffer_callback=buffer_callback,
+                unsupported_callback=unsupported_callback)
+        finally:
+            self.reset_write()
+
+    cpdef inline _serialize(
+            self, obj, Buffer buffer, buffer_callback=None, unsupported_callback=None):
+        self._buffer_callback = buffer_callback
+        self._unsupported_callback = unsupported_callback
+        if buffer is not None:
+            self.pickler = pickle.Pickler(self.buffer)
+        else:
+            self.buffer.writer_index = 0
+            buffer = self.buffer
+        cdef int32_t mask_index = buffer.writer_index
+        # 1byte used for bit mask
+        buffer.grow(1)
+        buffer.writer_index = mask_index + 1
+        if obj is None:
+            set_bit(buffer, mask_index, 0)
+        else:
+            clear_bit(buffer, mask_index, 0)
+        # set endian
+        if is_little_endian:
+            set_bit(buffer, mask_index, 1)
+        else:
+            clear_bit(buffer, mask_index, 1)
+
+        if self.language == Language.XLANG:
+            # set reader as x_lang.
+            set_bit(buffer, mask_index, 2)
+            # set writer language.
+            buffer.write_int8(Language.PYTHON.value)
+        else:
+            # set reader as native.
+            clear_bit(buffer, mask_index, 2)
+        if self._buffer_callback is not None:
+            set_bit(buffer, mask_index, 3)
+        else:
+            clear_bit(buffer, mask_index, 3)
+        cdef int32_t start_offset
+        if self.language == Language.PYTHON:
+            self.serialize_referencable_to_py(buffer, obj)
+        else:
+            start_offset = buffer.writer_index
+            # preserve 4-byte for nativeObjects start offsets.
+            buffer.write_int32(<int32_t>-1)
+            # preserve 4-byte for nativeObjects size
+            buffer.write_int32(<int32_t>-1)
+            self.cross_language_serialize_referencable(buffer, obj)
+            buffer.put_int32(start_offset, buffer.writer_index)
+            buffer.put_int32(start_offset + 4, len(self._native_objects))
+            self.reference_resolver.reset_write()
+            # fury write opaque object classname which cause later write of classname
+            # only write an id.
+            self.class_resolver.reset_write()
+            for native_object in self._native_objects:
+                self.serialize_referencable_to_py(buffer, native_object)
+        self.reset_write()
+        if buffer is not self.buffer:
+            return buffer
+        else:
+            return buffer.to_bytes(0, buffer.writer_index)
+
+    cpdef inline serialize_referencable_to_py(
+            self, Buffer buffer, obj, ClassInfo classinfo=None):
+        cls = type(obj)
+        if cls is str:
+            buffer.write_int24(NOT_NULL_STRING_FLAG)
+            buffer.write_string(obj)
+            return
+        elif cls is int:
+            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_varint64(obj)
+            return
+        elif cls is bool:
+            buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+            buffer.write_bool(obj)
+            return
+        elif cls is float:
+            buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+            buffer.write_double(obj)
+            return
+        if self.reference_resolver.write_reference_or_null(buffer, obj):
+            return
+        if classinfo is None:
+            classinfo = self.class_resolver.get_or_create_classinfo(cls)
+        self.class_resolver.write_classinfo(buffer, classinfo)
+        classinfo.serializer.write(buffer, obj)
+
+    cpdef inline serialize_non_referencable_to_py(self, Buffer buffer, obj):
+        cls = type(obj)
+        if cls is str:
+            buffer.write_int16(STRING_CLASS_ID)
+            buffer.write_string(obj)
+            return
+        elif cls is int:
+            buffer.write_int16(PYINT_CLASS_ID)
+            buffer.write_varint64(obj)
+            return
+        elif cls is bool:
+            buffer.write_int16(PYBOOL_CLASS_ID)
+            buffer.write_bool(obj)
+            return
+        elif cls is float:
+            buffer.write_int16(PYFLOAT_CLASS_ID)
+            buffer.write_double(obj)
+            return
+        cdef ClassInfo classinfo = self.class_resolver.get_or_create_classinfo(cls)
+        self.class_resolver.write_classinfo(buffer, classinfo)
+        classinfo.serializer.write(buffer, obj)
+
+    cpdef inline cross_language_serialize_referencable(
+            self, Buffer buffer, obj, Serializer serializer=None):
+        if serializer is None or serializer.need_to_write_reference:
+            if not self.reference_resolver.write_reference_or_null(buffer, obj):
+                self.cross_language_serialize_non_referencable(
+                    buffer, obj, serializer=serializer
+                )
+        else:
+            if obj is None:
+                buffer.write_int8(NULL_FLAG)
+            else:
+                buffer.write_int8(NOT_NULL_VALUE_FLAG)
+                self.cross_language_serialize_non_referencable(
+                    buffer, obj, serializer=serializer
+                )
+
+    cpdef inline cross_language_serialize_non_referencable(
+            self, Buffer buffer, obj, Serializer serializer=None):
+        cls = type(obj)
+        serializer = serializer or self.class_resolver.get_serializer(obj=obj)
+        cdef int16_t type_id = serializer.get_cross_language_type_id()
+        buffer.write_int16(type_id)
+        if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
+            if type_id == FuryType.FURY_TYPE_TAG.value:
+                self.class_resolver.cross_language_write_type_tag(buffer, cls)
+            if type_id < NOT_SUPPORT_CROSS_LANGUAGE:
+                self.class_resolver.cross_language_write_class(buffer, cls)
+            serializer.cross_language_write(buffer, obj)
+        else:
+            # Write classname so it can be used for debugging which object doesn't
+            # support cross-language.
+            # TODO add a config to disable this to reduce space cost.
+            self.class_resolver.cross_language_write_class(buffer, cls)
+            # serializer may increase reference id multi times internally, thus peer
+            # cross-language later fields/objects deserialization will use wrong
+            # reference id since we skip opaque objects deserialization.
+            # So we stash native objects and serialize all those object at the last.
+            buffer.write_varint32(len(self._native_objects))
+            self._native_objects.append(obj)
+
+    def deserialize(
+            self,
+            buffer: Union[Buffer, bytes],
+            buffers: Iterable = None,
+            unsupported_objects: Iterable = None,
+    ):
+        try:
+            if type(buffer) == bytes:
+                buffer = Buffer(buffer)
+            return self._deserialize(buffer, buffers, unsupported_objects)
+        finally:
+            self.reset_read()
+
+    cpdef inline _deserialize(
+            self, Buffer buffer, buffers=None, unsupported_objects=None):
+        self.unpickler = pickle.Unpickler(buffer)
+        if unsupported_objects is not None:
+            self._unsupported_objects = iter(unsupported_objects)
+        cdef int32_t reader_index = buffer.reader_index
+        buffer.reader_index = reader_index + 1
+        if get_bit(buffer, reader_index, 0):
+            return None
+        cdef c_bool is_little_endian_ = get_bit(buffer, reader_index, 1)
+        assert is_little_endian_, (
+            "Big endian is not supported for now, "
+            "please ensure peer machine is little endian."
+        )
+        cdef c_bool is_target_x_lang = get_bit(buffer, reader_index, 2)
+        if is_target_x_lang:
+            self._peer_language = Language(buffer.read_int8())
+        else:
+            self._peer_language = Language.PYTHON
+        cdef c_bool is_out_of_band_serialization_enabled = \
+            get_bit(buffer, reader_index, 3)
+        if is_out_of_band_serialization_enabled:
+            assert buffers is not None, (
+                "buffers shouldn't be null when the serialized stream is "
+                "produced with buffer_callback not null."
+            )
+            self._buffers = iter(buffers)
+        else:
+            assert buffers is None, (
+                "buffers should be null when the serialized stream is "
+                "produced with buffer_callback null."
+            )
+        if not is_target_x_lang:
+            return self.deserialize_referencable_from_py(buffer)
+        cdef int32_t native_objects_start_offset = buffer.read_int32()
+        cdef int32_t native_objects_size = buffer.read_int32()
+        if self._peer_language == Language.PYTHON:
+            if native_objects_size > 0:
+                native_objects_buffer = buffer.slice(native_objects_start_offset)
+                for i in range(native_objects_size):
+                    self._native_objects.append(
+                        self.deserialize_referencable_from_py(native_objects_buffer)
+                    )
+                self.reference_resolver.reset_read()
+                self.class_resolver.reset_read()
+        return self.cross_language_deserialize_referencable(buffer)
+
+    cpdef inline deserialize_referencable_from_py(self, Buffer buffer):
+        cdef MapReferenceResolver reference_resolver = self.reference_resolver
+        cdef int32_t ref_id = reference_resolver.try_preserve_reference_id(buffer)
+        if ref_id < NOT_NULL_VALUE_FLAG:
+            return reference_resolver.get_read_object()
+        # indicates that the object is first read.
+        cdef ClassInfo classinfo = self.class_resolver.read_classinfo(buffer)
+        cls = classinfo.cls
+        if cls is str:
+            return buffer.read_string()
+        elif cls is int:
+            return buffer.read_varint64()
+        elif cls is bool:
+            return buffer.read_bool()
+        elif cls is float:
+            return buffer.read_double()
+        o = classinfo.serializer.read(buffer)
+        reference_resolver.set_read_object(ref_id, o)
+        return o
+
+    cpdef inline deserialize_non_reference_from_py(self, Buffer buffer):
+        """Deserialize not-null and non-reference object from buffer."""
+        cdef ClassInfo classinfo = self.class_resolver.read_classinfo(buffer)
+        cls = classinfo.cls
+        if cls is str:
+            return buffer.read_string()
+        elif cls is int:
+            return buffer.read_varint64()
+        elif cls is bool:
+            return buffer.read_bool()
+        elif cls is float:
+            return buffer.read_double()
+        return classinfo.serializer.read(buffer)
+
+    cpdef inline cross_language_deserialize_referencable(
+            self, Buffer buffer, Serializer serializer=None):
+        cdef MapReferenceResolver reference_resolver
+        cdef int32_t red_id
+        if serializer is None or serializer.need_to_write_reference:
+            reference_resolver = self.reference_resolver
+            red_id = reference_resolver.try_preserve_reference_id(buffer)
+
+            # indicates that the object is first read.
+            if red_id >= NOT_NULL_VALUE_FLAG:
+                o = self.cross_language_deserialize_non_referencable(
+                    buffer, serializer=serializer
+                )
+                reference_resolver.set_read_object(red_id, o)
+                return o
+            else:
+                return reference_resolver.get_read_object()
+        cdef int8_t head_flag = buffer.read_int8()
+        if head_flag == NULL_FLAG:
+            return None
+        return self.cross_language_deserialize_non_referencable(
+            buffer, serializer=serializer
+        )
+
+    cpdef inline cross_language_deserialize_non_referencable(
+            self, Buffer buffer, Serializer serializer=None):
+        cdef int16_t type_id = buffer.read_int16()
+        cls = None
+        if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
+            if type_id == FuryType.FURY_TYPE_TAG.value:
+                cls = self.class_resolver.read_class_by_type_tag(buffer)
+            if type_id < NOT_SUPPORT_CROSS_LANGUAGE:
+                if self._peer_language is not Language.PYTHON:
+                    self.class_resolver.cross_language_read_classname(buffer)
+                    cls = self.class_resolver.get_class_by_type_id(-type_id)
+                    serializer = serializer or self.class_resolver.get_serializer(
+                        type_id=-type_id
+                    )
+                else:
+                    cls = self.class_resolver.cross_language_read_class(buffer)
+                    serializer = serializer or self.class_resolver.get_serializer(
+                        cls=cls, type_id=type_id
+                    )
+            else:
+                if type_id != FuryType.FURY_TYPE_TAG.value:
+                    cls = self.class_resolver.get_class_by_type_id(type_id)
+                serializer = serializer or self.class_resolver.get_serializer(
+                    cls=cls, type_id=type_id
+                )
+            assert cls is not None
+            return serializer.cross_language_read(buffer)
+        cdef str class_name = self.class_resolver.cross_language_read_classname(buffer)
+        cdef int32_t ordinal = buffer.read_varint32()
+        if self._peer_language != Language.PYTHON:
+            return OpaqueObject(self._peer_language, class_name, ordinal)
+        else:
+            return self._native_objects[ordinal]
+
+    cpdef inline write_buffer_object(self, Buffer buffer, BufferObject buffer_object):
+        if self._buffer_callback is not None and self._buffer_callback(buffer_object):
+            buffer.write_bool(False)
+            return
+        buffer.write_bool(True)
+        cdef int32_t size = buffer_object.total_bytes()
+        # writer length.
+        buffer.write_varint32(size)
+        cdef int32_t writer_index = buffer.writer_index
+        buffer.ensure(writer_index + size)
+        cdef Buffer buf = buffer.slice(buffer.writer_index, size)
+        buffer_object.write_to(buf)
+        buffer.writer_index += size
+
+    cpdef inline Buffer read_buffer_object(self, Buffer buffer):
+        cdef c_bool in_band = buffer.read_bool()
+        if not in_band:
+            assert self._buffers is not None
+            return next(self._buffers)
+        cdef int32_t size = buffer.read_varint32()
+        cdef Buffer buf = buffer.slice(buffer.reader_index, size)
+        buffer.reader_index += size
+        return buf
+
+    cpdef inline handle_unsupported_write(self, Buffer buffer, obj):
+        if self._unsupported_callback is None or self._unsupported_callback(obj):
+            buffer.write_bool(True)
+            self.pickler.dump(obj)
+        else:
+            buffer.write_bool(False)
+
+    cpdef inline handle_unsupported_read(self, Buffer buffer):
+        cdef c_bool in_band = buffer.read_bool()
+        if in_band:
+            return self.unpickler.load()
+        else:
+            assert self._unsupported_objects is not None
+            return next(self._unsupported_objects)
+
+    cpdef inline write_referencable_pyobject(
+            self, Buffer buffer, value, ClassInfo classinfo=None):
+        if self.reference_resolver.write_reference_or_null(buffer, value):
+            return
+        if classinfo is None:
+            classinfo = self.class_resolver.get_or_create_classinfo(type(value))
+        self.class_resolver.write_classinfo(buffer, classinfo)
+        classinfo.serializer.write(buffer, value)
+
+    cpdef inline read_referencable_pyobject(self, Buffer buffer):
+        cdef MapReferenceResolver reference_resolver = self.reference_resolver
+        cdef int32_t ref_id = reference_resolver.try_preserve_reference_id(buffer)
+        if ref_id < NOT_NULL_VALUE_FLAG:
+            return reference_resolver.get_read_object()
+        # indicates that the object is first read.
+        cdef ClassInfo classinfo = self.class_resolver.read_classinfo(buffer)
+        o = classinfo.serializer.read(buffer)
+        reference_resolver.set_read_object(ref_id, o)
+        return o
+
+    cpdef inline reset_write(self):
+        self.reference_resolver.reset_write()
+        self.class_resolver.reset_write()
+        self.serialization_context.reset()
+        self._native_objects.clear()
+        self.pickler.clear_memo()
+        self._unsupported_callback = None
+
+    cpdef inline reset_read(self):
+        self.reference_resolver.reset_read()
+        self.class_resolver.reset_read()
+        self.serialization_context.reset()
+        self._native_objects.clear()
+        self._buffers = None
+        self.unpickler = None
+        self._unsupported_objects = None
+
+    cpdef inline reset(self):
+        self.reset_write()
+        self.reset_read()
+
+
+cpdef inline write_nullable_pybool(Buffer buffer, value):
+    if value is None:
+        buffer.write_int8(NULL_FLAG)
+    else:
+        buffer.write_int8(NOT_NULL_VALUE_FLAG)
+        buffer.write_bool(value)
+
+cpdef inline write_nullable_pyint64(Buffer buffer, value):
+    if value is None:
+        buffer.write_int8(NULL_FLAG)
+    else:
+        buffer.write_int8(NOT_NULL_VALUE_FLAG)
+        buffer.write_varint64(value)
+
+cpdef inline write_nullable_pyfloat64(Buffer buffer, value):
+    if value is None:
+        buffer.write_int8(NULL_FLAG)
+    else:
+        buffer.write_int8(NOT_NULL_VALUE_FLAG)
+        buffer.write_double(value)
+
+cpdef inline write_nullable_pystr(Buffer buffer, value):
+    if value is None:
+        buffer.write_int8(NULL_FLAG)
+    else:
+        buffer.write_int8(NOT_NULL_VALUE_FLAG)
+        buffer.write_string(value)
+
+
+cpdef inline read_nullable_pybool(Buffer buffer):
+    if buffer.read_int8() == NOT_NULL_VALUE_FLAG:
+        return buffer.read_bool()
+    else:
+        return None
+
+cpdef inline read_nullable_pyint64(Buffer buffer):
+    if buffer.read_int8() == NOT_NULL_VALUE_FLAG:
+        return buffer.read_varint64()
+    else:
+        return None
+
+cpdef inline read_nullable_pyfloat64(Buffer buffer):
+    if buffer.read_int8() == NOT_NULL_VALUE_FLAG:
+        return buffer.read_double()
+    else:
+        return None
+
+cpdef inline read_nullable_pystr(Buffer buffer):
+    if buffer.read_int8() == NOT_NULL_VALUE_FLAG:
+        return buffer.read_string()
+    else:
+        return None
+
+
+@cython.final
+cdef class SerializationContext:
+    cdef dict objects
+
+    def __init__(self):
+        self.objects = dict()
+
+    def add(self, key, obj):
+        self.objects[id(key)] = obj
+
+    def __contains__(self, key):
+        return id(key) in self.objects
+
+    def __getitem__(self, key):
+        return self.objects[id(key)]
+
+    def get(self, key):
+        return self.objects.get(id(key))
+
+    def reset(self):
+        if len(self.objects) > 0:
+            self.objects.clear()
+
+
+cdef class Serializer:
+    cdef readonly Fury fury_
+    cdef readonly object type_
+    cdef public c_bool need_to_write_reference
+
+    def __init__(self, fury_, type_: Union[type, TypeVar]):
+        self.fury_ = fury_
+        self.type_ = type_
+        self.need_to_write_reference = not is_primitive_type(type_)
+
+    cpdef int16_t get_cross_language_type_id(self):
+        """
+        Returns
+        -------
+            Returns NOT_SUPPORT_CROSS_LANGUAGE if the serializer doesn't
+            support cross-language serialization.
+            Return a number in range (0, 32767) if the serializer support
+            cross-language serialization and native serialization data is the
+            same with cross-language serialization.
+            Return a negative short in range [-32768, 0) if the serializer
+            support cross-language serialization and native serialization data
+            is not the same with cross-language serialization.
+        """
+        return NOT_SUPPORT_CROSS_LANGUAGE
+
+    cpdef str get_cross_language_type_tag(self):
+        """
+        Returns
+        -------
+            a type tag used for setup type mapping between languages.
+        """
+
+    cpdef write(self, Buffer buffer, value):
+        raise NotImplementedError
+
+    cpdef read(self, Buffer buffer):
+        raise NotImplementedError
+
+    cpdef cross_language_write(self, Buffer buffer, value):
+        raise NotImplemented
+
+    cpdef cross_language_read(self, Buffer buffer):
+        raise NotImplemented
+
+    @classmethod
+    def support_subclass(cls) -> bool:
+        return False
+
+
+cdef class CrossLanguageCompatibleSerializer(Serializer):
+    cpdef write(self, Buffer buffer, value):
+        raise NotImplementedError
+
+    cpdef read(self, Buffer buffer):
+        raise NotImplementedError
+
+    def __init__(self, fury_, type_):
+        super().__init__(fury_, type_)
+
+    cpdef cross_language_write(self, Buffer buffer, value):
+        self.write(buffer, value)
+
+    cpdef cross_language_read(self, Buffer buffer):
+        return self.read(buffer)
