@@ -250,12 +250,3 @@ class PandasRangeIndexSerializer(Serializer):
 
     def cross_language_read(self, buffer):
         raise NotImplementedError
-
-
-_jit_context = locals()
-
-
-_ENABLE_FURY_PYTHON_JIT = os.environ.get("ENABLE_FURY_PYTHON_JIT", "True").lower() in (
-    "true",
-    "1",
-)
