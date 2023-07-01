@@ -1532,3 +1532,393 @@ cdef class BytesSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline read(self, Buffer buffer):
         fury_buf = self.fury_.read_buffer_object(buffer)
         return fury_buf.to_pybytes()
+
+
+cdef class CollectionSerializer(Serializer):
+    cdef ClassResolver class_resolver
+    cdef MapReferenceResolver reference_resolver
+    cdef Serializer elem_serializer
+
+    def __init__(self, fury, type_, elem_serializer=None):
+        super().__init__(fury, type_)
+        self.class_resolver = fury.class_resolver
+        self.reference_resolver = fury.reference_resolver
+        self.elem_serializer = elem_serializer
+
+    cpdef int16_t get_cross_language_type_id(self):
+        return -FuryType.LIST.value
+
+    cpdef write(self, Buffer buffer, value):
+        buffer.write_varint32(len(value))
+        cdef MapReferenceResolver reference_resolver = self.reference_resolver
+        cdef ClassResolver class_resolver = self.class_resolver
+        for s in value:
+            cls = type(s)
+            if cls is str:
+                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_string(s)
+            elif cls is int:
+                buffer.write_int24(NOT_NULL_PYINT_FLAG)
+                buffer.write_varint64(s)
+            elif cls is bool:
+                buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_bool(s)
+            elif cls is float:
+                buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+                buffer.write_double(s)
+            else:
+                if not reference_resolver.write_reference_or_null(buffer, s):
+                    classinfo = class_resolver.get_or_create_classinfo(cls)
+                    class_resolver.write_classinfo(buffer, classinfo)
+                    classinfo.serializer.write(buffer, s)
+
+    cpdef cross_language_write(self, Buffer buffer, value):
+        cdef int32_t len_ = 0
+        try:
+            len_ = len(value)
+        except AttributeError:
+            value = list(value)
+            len_ = len(value)
+        buffer.write_varint32(len_)
+        for s in value:
+            self.fury_.cross_language_serialize_referencable(
+                buffer, s, serializer=self.elem_serializer
+            )
+            len_ += 1
+
+
+cdef class ListSerializer(CollectionSerializer):
+    cpdef int16_t get_cross_language_type_id(self):
+        return FuryType.LIST.value
+
+    cpdef read(self, Buffer buffer):
+        cdef MapReferenceResolver reference_resolver = self.fury_.reference_resolver
+        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        cdef list list_ = []
+        reference_resolver.reference(list_)
+        populate_list(buffer, list_, reference_resolver, class_resolver)
+        return list_
+
+    cpdef cross_language_read(self, Buffer buffer):
+        cdef int32_t len_ = buffer.read_varint32()
+        cdef list collection_ = []
+        self.fury_.reference_resolver.reference(collection_)
+        for i in range(len_):
+            collection_.append(self.fury_.cross_language_deserialize_referencable(
+                buffer, serializer=self.elem_serializer
+            ))
+        return collection_
+
+
+cdef populate_list(
+        Buffer buffer,
+        list list_,
+        MapReferenceResolver reference_resolver,
+        ClassResolver class_resolver):
+    cdef int32_t ref_id
+    cdef ClassInfo classinfo
+    cdef int32_t len_ = buffer.read_varint32()
+    for i in range(len_):
+        ref_id = reference_resolver.try_preserve_reference_id(buffer)
+        if ref_id < NOT_NULL_VALUE_FLAG:
+            list_.append(reference_resolver.get_read_object())
+            continue
+        # indicates that the object is first read.
+        classinfo = class_resolver.read_classinfo(buffer)
+        cls = classinfo.cls
+        # Note that all read operations in fast paths of list/tuple/set/dict/sub_dict
+        # ust match corresponding writing operations. Otherwise, ref tracking will
+        # error.
+        if cls is str:
+            list_.append(buffer.read_string())
+        elif cls is int:
+            list_.append(buffer.read_varint64())
+        elif cls is bool:
+            list_.append(buffer.read_bool())
+        elif cls is float:
+            list_.append(buffer.read_double())
+        else:
+            o = classinfo.serializer.read(buffer)
+            reference_resolver.set_read_object(ref_id, o)
+            list_.append(o)
+
+
+@cython.final
+cdef class TupleSerializer(CollectionSerializer):
+    cpdef inline read(self, Buffer buffer):
+        cdef MapReferenceResolver reference_resolver = self.fury_.reference_resolver
+        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        cdef list list_ = []
+        populate_list(buffer, list_, reference_resolver, class_resolver)
+        return tuple(list_)
+
+    cpdef inline cross_language_read(self, Buffer buffer):
+        cdef int32_t len_ = buffer.read_varint32()
+        cdef list collection_ = []
+        for i in range(len_):
+            collection_.append(self.fury_.cross_language_deserialize_referencable(
+                buffer, serializer=self.elem_serializer
+            ))
+        return tuple(collection_)
+
+
+@cython.final
+cdef class StringArraySerializer(ListSerializer):
+    def __init__(self, fury, type_):
+        super().__init__(fury, type_, StringSerializer(fury, str))
+
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.FURY_STRING_ARRAY.value
+
+
+@cython.final
+cdef class SetSerializer(CollectionSerializer):
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.FURY_SET.value
+
+    cpdef inline read(self, Buffer buffer):
+        cdef MapReferenceResolver reference_resolver = self.fury_.reference_resolver
+        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        cdef set instance = set()
+        reference_resolver.reference(instance)
+        cdef int32_t len_ = buffer.read_varint32()
+        cdef int32_t ref_id
+        cdef ClassInfo classinfo
+        for i in range(len_):
+            ref_id = reference_resolver.try_preserve_reference_id(buffer)
+            if ref_id < NOT_NULL_VALUE_FLAG:
+                instance.add(reference_resolver.get_read_object())
+                continue
+            # indicates that the object is first read.
+            classinfo = class_resolver.read_classinfo(buffer)
+            cls = classinfo.cls
+            if cls is str:
+                instance.add(buffer.read_string())
+            elif cls is int:
+                instance.add(buffer.read_varint64())
+            elif cls is bool:
+                instance.add(buffer.read_bool())
+            elif cls is float:
+                instance.add(buffer.read_double())
+            else:
+                o = classinfo.serializer.read(buffer)
+                reference_resolver.set_read_object(ref_id, o)
+                instance.add(o)
+        return instance
+
+    cpdef inline cross_language_read(self, Buffer buffer):
+        cdef int32_t len_ = buffer.read_varint32()
+        cdef set instance = set()
+        self.fury_.reference_resolver.reference(instance)
+        for i in range(len_):
+            instance.add(self.fury_.cross_language_deserialize_referencable(
+                buffer, serializer=self.elem_serializer
+            ))
+        return instance
+
+
+@cython.final
+cdef class MapSerializer(Serializer):
+    cdef ClassResolver class_resolver
+    cdef MapReferenceResolver reference_resolver
+    cdef Serializer key_serializer
+    cdef Serializer value_serializer
+
+    def __init__(self, fury, type_, key_serializer=None, value_serializer=None):
+        super().__init__(fury, type_)
+        self.class_resolver = fury.class_resolver
+        self.reference_resolver = fury.reference_resolver
+        self.key_serializer = key_serializer
+        self.value_serializer = value_serializer
+
+    cpdef inline int16_t get_cross_language_type_id(self):
+        return FuryType.MAP.value
+
+    cpdef inline write(self, Buffer buffer, o):
+        cdef dict value = o
+        buffer.write_varint32(len(value))
+        cdef ClassInfo key_classinfo
+        cdef ClassInfo value_classinfo
+        for k, v in value.items():
+            key_cls = type(k)
+            if key_cls is str:
+                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_string(k)
+            else:
+                if not self.reference_resolver.write_reference_or_null(buffer, k):
+                    key_classinfo = self.class_resolver.get_or_create_classinfo(key_cls)
+                    self.class_resolver.write_classinfo(buffer, key_classinfo)
+                    key_classinfo.serializer.write(buffer, k)
+            value_cls = type(v)
+            if value_cls is str:
+                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_string(v)
+            elif value_cls is int:
+                buffer.write_int24(NOT_NULL_PYINT_FLAG)
+                buffer.write_varint64(v)
+            elif value_cls is bool:
+                buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_bool(v)
+            elif value_cls is float:
+                buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+                buffer.write_double(v)
+            else:
+                if not self.reference_resolver.write_reference_or_null(buffer, v):
+                    value_classinfo = self.class_resolver. \
+                        get_or_create_classinfo(value_cls)
+                    self.class_resolver.write_classinfo(buffer, value_classinfo)
+                    value_classinfo.serializer.write(buffer, v)
+
+    cpdef inline read(self, Buffer buffer):
+        cdef MapReferenceResolver reference_resolver = self.reference_resolver
+        cdef ClassResolver class_resolver = self.class_resolver
+        cdef dict map_ = {}
+        reference_resolver.reference(map_)
+        cdef int32_t len_ = buffer.read_varint32()
+        cdef int32_t ref_id
+        cdef ClassInfo key_classinfo
+        cdef ClassInfo value_classinfo
+        for i in range(len_):
+            ref_id = reference_resolver.try_preserve_reference_id(buffer)
+            if ref_id < NOT_NULL_VALUE_FLAG:
+                key = reference_resolver.get_read_object()
+            else:
+                key_classinfo = class_resolver.read_classinfo(buffer)
+                if key_classinfo.cls is str:
+                    key = buffer.read_string()
+                else:
+                    key = key_classinfo.serializer.read(buffer)
+                    reference_resolver.set_read_object(ref_id, key)
+            ref_id = reference_resolver.try_preserve_reference_id(buffer)
+            if ref_id < NOT_NULL_VALUE_FLAG:
+                value = reference_resolver.get_read_object()
+            else:
+                value_classinfo = class_resolver.read_classinfo(buffer)
+                cls = value_classinfo.cls
+                if cls is str:
+                    value = buffer.read_string()
+                elif cls is int:
+                    value = buffer.read_varint64()
+                elif cls is bool:
+                    value = buffer.read_bool()
+                elif cls is float:
+                    value = buffer.read_double()
+                else:
+                    value = value_classinfo.serializer.read(buffer)
+                    reference_resolver.set_read_object(ref_id, value)
+            map_[key] = value
+        return map_
+
+    cpdef inline cross_language_write(self, Buffer buffer, o):
+        cdef dict value = o
+        buffer.write_varint32(len(value))
+        for k, v in value.items():
+            self.fury_.cross_language_serialize_referencable(
+                buffer, k, serializer=self.key_serializer
+            )
+            self.fury_.cross_language_serialize_referencable(
+                buffer, v, serializer=self.value_serializer
+            )
+
+    cpdef inline cross_language_read(self, Buffer buffer):
+        cdef int32_t len_ = buffer.read_varint32()
+        cdef dict map_ = {}
+        self.fury_.reference_resolver.reference(map_)
+        for i in range(len_):
+            k = self.fury_.cross_language_deserialize_referencable(
+                buffer, serializer=self.key_serializer
+            )
+            v = self.fury_.cross_language_deserialize_referencable(
+                buffer, serializer=self.value_serializer
+            )
+            map_[k] = v
+        return map_
+
+
+@cython.final
+cdef class SubMapSerializer(Serializer):
+    cdef ClassResolver class_resolver
+    cdef MapReferenceResolver reference_resolver
+    cdef Serializer key_serializer
+    cdef Serializer value_serializer
+
+    def __init__(self, fury, type_, key_serializer=None, value_serializer=None):
+        super().__init__(fury, type_)
+        self.class_resolver = fury.class_resolver
+        self.reference_resolver = fury.reference_resolver
+        self.key_serializer = key_serializer
+        self.value_serializer = value_serializer
+
+    cpdef inline write(self, Buffer buffer, value):
+        buffer.write_varint32(len(value))
+        cdef ClassInfo key_classinfo
+        cdef ClassInfo value_classinfo
+        for k, v in value.items():
+            key_cls = type(k)
+            if key_cls is str:
+                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_string(k)
+            else:
+                if not self.reference_resolver.write_reference_or_null(buffer, k):
+                    key_classinfo = self.class_resolver.get_or_create_classinfo(key_cls)
+                    self.class_resolver.write_classinfo(buffer, key_classinfo)
+                    key_classinfo.serializer.write(buffer, k)
+            value_cls = type(v)
+            if value_cls is str:
+                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_string(v)
+            elif value_cls is int:
+                buffer.write_int24(NOT_NULL_PYINT_FLAG)
+                buffer.write_varint64(v)
+            elif value_cls is bool:
+                buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_bool(v)
+            elif value_cls is float:
+                buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+                buffer.write_double(v)
+            else:
+                if not self.reference_resolver.write_reference_or_null(buffer, v):
+                    value_classinfo = self.class_resolver. \
+                        get_or_create_classinfo(value_cls)
+                    self.class_resolver.write_classinfo(buffer, value_classinfo)
+                    value_classinfo.serializer.write(buffer, v)
+
+    cpdef inline read(self, Buffer buffer):
+        cdef MapReferenceResolver reference_resolver = self.fury_.reference_resolver
+        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        map_ = self.type_()
+        reference_resolver.reference(map_)
+        cdef int32_t len_ = buffer.read_varint32()
+        cdef int32_t ref_id
+        cdef ClassInfo key_classinfo
+        cdef ClassInfo value_classinfo
+        for i in range(len_):
+            ref_id = reference_resolver.try_preserve_reference_id(buffer)
+            if ref_id < NOT_NULL_VALUE_FLAG:
+                key = reference_resolver.get_read_object()
+            else:
+                key_classinfo = class_resolver.read_classinfo(buffer)
+                if key_classinfo.cls is str:
+                    key = buffer.read_string()
+                else:
+                    key = key_classinfo.serializer.read(buffer)
+                    reference_resolver.set_read_object(ref_id, key)
+            ref_id = reference_resolver.try_preserve_reference_id(buffer)
+            if ref_id < NOT_NULL_VALUE_FLAG:
+                value = reference_resolver.get_read_object()
+            else:
+                value_classinfo = class_resolver.read_classinfo(buffer)
+                cls = value_classinfo.cls
+                if cls is str:
+                    value = buffer.read_string()
+                elif cls is int:
+                    value = buffer.read_varint64()
+                elif cls is bool:
+                    value = buffer.read_bool()
+                elif cls is float:
+                    value = buffer.read_double()
+                else:
+                    value = value_classinfo.serializer.read(buffer)
+                    reference_resolver.set_read_object(ref_id, value)
+            map_[key] = value
+        return map_
