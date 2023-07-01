@@ -80,8 +80,9 @@ genrule(
     name = "cp_fury_so",
     srcs = [
         ":python/pyfury/_util.so",
-        ":python/pyfury/format/_format.so",
         ":python/pyfury/lib/mmh3/mmh3.so",
+        ":python/pyfury/format/_format.so",
+        ":python/pyfury/_serialization.so",
     ],
     outs = [
         "cp_fury_py_generated.out",
@@ -91,8 +92,9 @@ genrule(
         set -x
         WORK_DIR=$$(pwd)
         cp -f $(location python/pyfury/_util.so) "$$WORK_DIR/python/pyfury"
-        cp -f $(location python/pyfury/format/_format.so) "$$WORK_DIR/python/pyfury/format"
         cp -f $(location python/pyfury/lib/mmh3/mmh3.so) "$$WORK_DIR/python/pyfury/lib/mmh3"
+        cp -f $(location python/pyfury/format/_format.so) "$$WORK_DIR/python/pyfury/format"
+        cp -f $(location python/pyfury/_serialization.so) "$$WORK_DIR/python/pyfury"
         echo $$(date) > $@
     """,
     local = 1,
