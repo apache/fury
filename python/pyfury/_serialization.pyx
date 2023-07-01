@@ -1922,3 +1922,126 @@ cdef class SubMapSerializer(Serializer):
                     reference_resolver.set_read_object(ref_id, value)
             map_[key] = value
         return map_
+
+
+# Use numpy array or python array module.
+typecode_dict = {
+    # use bytes serializer for byte array.
+    "h": (2, FuryType.FURY_PRIMITIVE_SHORT_ARRAY.value),
+    "i": (4, FuryType.FURY_PRIMITIVE_INT_ARRAY.value),
+    "l": (8, FuryType.FURY_PRIMITIVE_LONG_ARRAY.value),
+    "f": (4, FuryType.FURY_PRIMITIVE_FLOAT_ARRAY.value),
+    "d": (8, FuryType.FURY_PRIMITIVE_DOUBLE_ARRAY.value),
+}
+if np:
+    typecode_dict = {
+        k: (itemsize, -type_id) for k, (itemsize, type_id) in typecode_dict.items()
+    }
+
+
+@cython.final
+cdef class PyArraySerializer(CrossLanguageCompatibleSerializer):
+    typecode_dict = typecode_dict
+    typecode_to_pyarray_type = {
+        "h": Int16ArrayType,
+        "i": Int32ArrayType,
+        "l": Int64ArrayType,
+        "f": Float32ArrayType,
+        "d": Float64ArrayType,
+    }
+    cdef str typecode
+    cdef int8_t itemsize
+    cdef int16_t type_id
+
+    def __init__(self, fury_, type_, str typecode):
+        super().__init__(fury_, type_)
+        self.typecode = typecode
+        self.itemsize, self.type_id = PyArraySerializer.typecode_dict[self.typecode]
+
+    cpdef int16_t get_cross_language_type_id(self):
+        return self.type_id
+
+    cpdef inline cross_language_write(self, Buffer buffer, value):
+        assert value.itemsize == self.itemsize
+        view = memoryview(value)
+        assert view.format == self.typecode
+        assert view.itemsize == self.itemsize
+        assert view.c_contiguous  # TODO handle contiguous
+        cdef int32_t nbytes = len(value) * self.itemsize
+        buffer.write_varint32(nbytes)
+        buffer.write_buffer(value)
+
+    cpdef inline cross_language_read(self, Buffer buffer):
+        data = buffer.read_bytes_and_size()
+        arr = array.array(self.typecode, [])
+        arr.frombytes(data)
+        return arr
+
+    cpdef inline write(self, Buffer buffer, value: array.array):
+        cdef int32_t nbytes = len(value) * value.itemsize
+        buffer.write_string(value.typecode)
+        buffer.write_varint32(nbytes)
+        buffer.write_buffer(value)
+
+    cpdef inline read(self, Buffer buffer):
+        typecode = buffer.read_string()
+        data = buffer.read_bytes_and_size()
+        arr = array.array(typecode, [])
+        arr.frombytes(data)
+        return arr
+
+
+if np:
+    _np_dtypes_dict = {
+        # use bytes serializer for byte array.
+        np.dtype(np.bool_): (1, "?", FuryType.FURY_PRIMITIVE_BOOL_ARRAY.value),
+        np.dtype(np.int16): (2, "h", FuryType.FURY_PRIMITIVE_SHORT_ARRAY.value),
+        np.dtype(np.int32): (4, "i", FuryType.FURY_PRIMITIVE_INT_ARRAY.value),
+        np.dtype(np.int64): (8, "l", FuryType.FURY_PRIMITIVE_LONG_ARRAY.value),
+        np.dtype(np.float32): (4, "f", FuryType.FURY_PRIMITIVE_FLOAT_ARRAY.value),
+        np.dtype(np.float64): (8, "d", FuryType.FURY_PRIMITIVE_DOUBLE_ARRAY.value),
+    }
+else:
+    _np_dtypes_dict = {}
+
+
+@cython.final
+cdef class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
+    dtypes_dict = _np_dtypes_dict
+    cdef object dtype
+    cdef str typecode
+    cdef int8_t itemsize
+    cdef int16_t type_id
+
+    def __init__(self, fury_, type_, dtype):
+        super().__init__(fury_, type_)
+        self.dtype = dtype
+        self.itemsize, self.typecode, self.type_id = _np_dtypes_dict[self.dtype]
+
+    cpdef int16_t get_cross_language_type_id(self):
+        return self.type_id
+
+    cpdef inline cross_language_write(self, Buffer buffer, value):
+        assert value.itemsize == self.itemsize
+        view = memoryview(value)
+        try:
+            assert view.format == self.typecode
+        except AssertionError as e:
+            raise e
+        assert view.itemsize == self.itemsize
+        cdef int32_t nbytes = len(value) * self.itemsize
+        buffer.write_varint32(nbytes)
+        if self.dtype == np.dtype("bool") or not view.c_contiguous:
+            buffer.write_bytes(value.tobytes())
+        else:
+            buffer.write_buffer(value)
+
+    cpdef inline cross_language_read(self, Buffer buffer):
+        data = buffer.read_bytes_and_size()
+        return np.frombuffer(data, dtype=self.dtype)
+
+    cpdef inline write(self, Buffer buffer, value):
+        self.fury_.handle_unsupported_write(buffer, value)
+
+    cpdef inline read(self, Buffer buffer):
+        return self.fury_.handle_unsupported_read(buffer)
