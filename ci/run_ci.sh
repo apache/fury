@@ -11,7 +11,7 @@ install_bazel() {
     echo "existing bazel location $(which bazel)"
     echo "existing bazel version $(bazel version)"
   fi
-  URL="https://github.com/bazelbuild/bazel/releases/download/3.4.0/bazel-3.4.0-installer-linux-x86_64.sh"
+  URL="https://github.com/bazelbuild/bazel/releases/download/4.2.0/bazel-4.2.0-installer-linux-x86_64.sh"
   wget -q -O install.sh $URL
   chmod +x install.sh
   set +x
