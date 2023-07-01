@@ -37,6 +37,24 @@ pyx_library(
 )
 
 pyx_library(
+    name = "_serialization",
+    srcs = glob([
+        "python/pyfury/includes/*.pxd",
+        "python/pyfury/_util.pxd",
+        "python/pyfury/_serialization.pyx",
+        "python/pyfury/__init__.py",
+    ]),
+    cc_kwargs = dict(
+        copts = COPTS,
+        linkstatic = 1,
+    ),
+    deps = [
+        "//src/fury/util:fury_util",
+        "@com_google_absl//absl/container:flat_hash_map",
+    ],
+)
+
+pyx_library(
     name = "_format",
     srcs = glob([
         "python/pyfury/__init__.py",
