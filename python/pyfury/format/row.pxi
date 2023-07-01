@@ -84,7 +84,6 @@ cdef class Getter:
             return None
         cdef unsigned char* binary_data
         cdef int32_t size = self.getter.GetBinary(i, &binary_data)
-        print(f"i {i} binary_data[:size]: {binary_data[:size]}")
         return binary_data[:size].decode("UTF-8")
 
     cdef RowData get_struct(self, int i):
