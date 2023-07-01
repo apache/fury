@@ -2047,7 +2047,6 @@ cdef class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
         return self.fury_.handle_unsupported_read(buffer)
 
 
-
 cdef _get_hash(Fury fury_, list field_names, dict type_hints):
     from pyfury._struct import StructHashVisitor
 
@@ -2135,3 +2134,97 @@ cdef class ComplexObjectSerializer(Serializer):
                 field_value,
             )
         return obj
+
+
+
+@cython.final
+cdef class EnumSerializer(Serializer):
+    @classmethod
+    def support_subclass(cls) -> bool:
+        return True
+
+    cpdef inline write(self, Buffer buffer, value):
+        buffer.write_string(value.name)
+
+    cpdef inline read(self, Buffer buffer):
+        name = buffer.read_string()
+        return getattr(self.type_, name)
+
+    cpdef inline cross_language_write(self, Buffer buffer, value):
+        raise NotImplementedError
+
+    cpdef inline cross_language_read(self, Buffer buffer):
+        raise NotImplementedError
+
+
+@cython.final
+cdef class SliceSerializer(Serializer):
+    cpdef inline write(self, Buffer buffer, v):
+        cdef slice value = v
+        start, stop, step = value.start, value.stop, value.step
+        if type(start) is int:
+            # TODO support varint128
+            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_varint64(start)
+        else:
+            if start is None:
+                buffer.write_int8(NULL_FLAG)
+            else:
+                buffer.write_int8(NOT_NULL_VALUE_FLAG)
+                self.fury_.serialize_non_referencable_to_py(buffer, start)
+        if type(stop) is int:
+            # TODO support varint128
+            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_varint64(stop)
+        else:
+            if stop is None:
+                buffer.write_int8(NULL_FLAG)
+            else:
+                buffer.write_int8(NOT_NULL_VALUE_FLAG)
+                self.fury_.serialize_non_referencable_to_py(buffer, stop)
+        if type(step) is int:
+            # TODO support varint128
+            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_varint64(step)
+        else:
+            if step is None:
+                buffer.write_int8(NULL_FLAG)
+            else:
+                buffer.write_int8(NOT_NULL_VALUE_FLAG)
+                self.fury_.serialize_non_referencable_to_py(buffer, step)
+
+    cpdef inline read(self, Buffer buffer):
+        if buffer.read_int8() == NULL_FLAG:
+            start = None
+        else:
+            start = self.fury_.deserialize_non_reference_from_py(buffer)
+        if buffer.read_int8() == NULL_FLAG:
+            stop = None
+        else:
+            stop = self.fury_.deserialize_non_reference_from_py(buffer)
+        if buffer.read_int8() == NULL_FLAG:
+            step = None
+        else:
+            step = self.fury_.deserialize_non_reference_from_py(buffer)
+        return slice(start, stop, step)
+
+    cpdef cross_language_write(self, Buffer buffer, value):
+        raise NotImplementedError
+
+    cpdef cross_language_read(self, Buffer buffer):
+        raise NotImplementedError
+
+
+@cython.final
+cdef class PickleSerializer(Serializer):
+    cpdef inline cross_language_write(self, Buffer buffer, value):
+        raise NotImplementedError
+
+    cpdef inline cross_language_read(self, Buffer buffer):
+        raise NotImplementedError
+
+    cpdef inline write(self, Buffer buffer, value):
+        self.fury_.handle_unsupported_write(buffer, value)
+
+    cpdef inline read(self, Buffer buffer):
+        return self.fury_.handle_unsupported_read(buffer)
