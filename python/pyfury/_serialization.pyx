@@ -2045,3 +2045,93 @@ cdef class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
 
     cpdef inline read(self, Buffer buffer):
         return self.fury_.handle_unsupported_read(buffer)
+
+
+
+cdef _get_hash(Fury fury_, list field_names, dict type_hints):
+    from pyfury._struct import StructHashVisitor
+
+    visitor = StructHashVisitor(fury_)
+    for index, key in enumerate(field_names):
+        infer_field(key, type_hints[key], visitor, types_path=[])
+    hash_ = visitor.get_hash()
+    assert hash_ != 0
+    return hash_
+
+
+cdef class ComplexObjectSerializer(Serializer):
+    cdef str _type_tag
+    cdef object _type_hints
+    cdef list _field_names
+    cdef list _serializers
+    cdef int32_t _hash
+
+    def __init__(self, fury_, clz: type, type_tag: str):
+        super().__init__(fury_, clz)
+        self._type_tag = type_tag
+        self._type_hints = get_type_hints(clz)
+        self._field_names = sorted(self._type_hints.keys())
+        self._serializers = [None] * len(self._field_names)
+        from pyfury._struct import ComplexTypeVisitor
+
+        visitor = ComplexTypeVisitor(fury_)
+        for index, key in enumerate(self._field_names):
+            serializer = infer_field(key, self._type_hints[key], visitor, types_path=[])
+            self._serializers[index] = serializer
+        if self.fury_.language == Language.PYTHON:
+            logger.warning(
+                "Type of class %s shouldn't be serialized using cross-language "
+                "serializer",
+                clz,
+            )
+        self._hash = 0
+
+    cpdef int16_t get_cross_language_type_id(self):
+        return FuryType.FURY_TYPE_TAG.value
+
+    cpdef str get_cross_language_type_tag(self):
+        return self._type_tag
+
+    cpdef write(self, Buffer buffer, value):
+        return self.cross_language_write(buffer, value)
+
+    cpdef read(self, Buffer buffer):
+        return self.cross_language_read(buffer)
+
+    cpdef cross_language_write(self, Buffer buffer, value):
+        if self._hash == 0:
+            self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
+        buffer.write_int32(self._hash)
+        cdef Serializer serializer
+        cdef int32_t index
+        for index, field_name in enumerate(self._field_names):
+            field_value = getattr(value, field_name)
+            serializer = self._serializers[index]
+            self.fury_.cross_language_serialize_referencable(
+                buffer, field_value, serializer=serializer
+            )
+
+    cpdef cross_language_read(self, Buffer buffer):
+        cdef int32_t hash_ = buffer.read_int32()
+        if self._hash == 0:
+            self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
+        if hash_ != self._hash:
+            raise ClassNotCompatibleError(
+                f"Hash {hash_} is not consistent with {self._hash} "
+                f"for class {self.type_}",
+            )
+        obj = self.type_.__new__(self.type_)
+        self.fury_.reference_resolver.reference(obj)
+        cdef Serializer serializer
+        cdef int32_t index
+        for index, field_name in enumerate(self._field_names):
+            serializer = self._serializers[index]
+            field_value = self.fury_.cross_language_deserialize_referencable(
+                buffer, serializer=serializer
+            )
+            setattr(
+                obj,
+                field_name,
+                field_value,
+            )
+        return obj
