@@ -1,0 +1,245 @@
+/*
+ * Copyright 2023 The Fury authors
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.fury.serializer;
+
+import com.google.common.base.Preconditions;
+import com.google.common.reflect.TypeToken;
+import io.fury.Fury;
+import io.fury.Language;
+import io.fury.exception.ClassNotCompatibleException;
+import io.fury.memory.MemoryBuffer;
+import io.fury.type.Descriptor;
+import io.fury.type.GenericType;
+import io.fury.type.Generics;
+import io.fury.type.Type;
+import io.fury.type.TypeUtils;
+import io.fury.util.FieldAccessor;
+import io.fury.util.LoggerFactory;
+import io.fury.util.Platform;
+import io.fury.util.Utils;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import org.slf4j.Logger;
+
+/**
+ * A serializer used for cross-language serialization for custom objects.
+ *
+ * <p>TODO(chaokunyang) support generics optimization for {@code SomeClass<T>}.
+ *
+ * @author chaokunyang
+ */
+@SuppressWarnings({"unchecked", "rawtypes", "UnstableApiUsage"})
+public class StructSerializer<T> extends Serializer<T> {
+  private static final Logger LOG = LoggerFactory.getLogger(StructSerializer.class);
+  private final String typeTag;
+  private final Constructor<T> constructor;
+  private final FieldAccessor[] fieldAccessors;
+  private GenericType[] fieldGenerics;
+  private GenericType genericType;
+  private final IdentityHashMap<GenericType, GenericType[]> genericTypesCache;
+  private int typeHash;
+
+  public StructSerializer(Fury fury, Class<T> cls, String typeTag) {
+    super(fury, cls);
+    this.typeTag = typeTag;
+    if (fury.getLanguage() == Language.JAVA) {
+      LOG.warn("Type of class {} shouldn't be serialized using cross-language serializer", cls);
+    }
+    Constructor<T> ctr = null;
+    try {
+      ctr = cls.getConstructor();
+      if (!ctr.isAccessible()) {
+        ctr.setAccessible(true);
+      }
+    } catch (Exception e) {
+      Utils.ignore(e);
+    }
+    this.constructor = ctr;
+    fieldAccessors =
+        Descriptor.getFields(cls).stream()
+            .sorted(Comparator.comparing(Field::getName))
+            .map(FieldAccessor::createAccessor)
+            .toArray(FieldAccessor[]::new);
+    fieldGenerics = buildFieldGenerics(TypeToken.of(cls), fieldAccessors);
+    genericTypesCache = new IdentityHashMap<>();
+    genericTypesCache.put(null, fieldGenerics);
+  }
+
+  private static <T> GenericType[] buildFieldGenerics(
+      TypeToken<T> type, FieldAccessor[] fieldAccessors) {
+    return Arrays.stream(fieldAccessors)
+        .map(fieldAccessor -> GenericType.build(type, fieldAccessor.getField().getGenericType()))
+        .toArray(GenericType[]::new);
+  }
+
+  @Override
+  public void write(MemoryBuffer buffer, T value) {
+    crossLanguageWrite(buffer, value);
+  }
+
+  @Override
+  public T read(MemoryBuffer buffer) {
+    return crossLanguageRead(buffer);
+  }
+
+  @Override
+  public short getCrossLanguageTypeId() {
+    return Fury.FURY_TYPE_TAG_ID;
+  }
+
+  @Override
+  public String getCrossLanguageTypeTag() {
+    return typeTag;
+  }
+
+  @Override
+  public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+    // TODO(chaokunyang) support fields back and forward compatible.
+    //  Maybe need to serialize fields name too.
+    int typeHash = this.typeHash;
+    if (typeHash == 0) {
+      typeHash = computeStructHash();
+      this.typeHash = typeHash;
+    }
+    buffer.writeInt(typeHash);
+    Generics generics = fury.getGenerics();
+    GenericType[] fieldGenerics = getGenericTypes(generics);
+    for (int i = 0; i < fieldAccessors.length; i++) {
+      FieldAccessor fieldAccessor = fieldAccessors[i];
+      GenericType fieldGeneric = fieldGenerics[i];
+      Serializer serializer = fieldGeneric.getSerializerOrNull(fury.getClassResolver());
+      boolean hasGenerics = fieldGeneric.hasGenericParameters();
+      if (hasGenerics) {
+        generics.pushGenericType(fieldGeneric);
+      }
+      if (serializer != null) {
+        fury.crossLanguageWriteReferencable(buffer, fieldAccessor.get(value), serializer);
+      } else {
+        fury.crossLanguageWriteReferencable(buffer, fieldAccessor.get(value));
+      }
+      if (hasGenerics) {
+        generics.popGenericType();
+      }
+    }
+  }
+
+  private GenericType[] getGenericTypes(Generics generics) {
+    GenericType[] fieldGenerics = this.fieldGenerics;
+    // support generics <T> in Pojo<T>
+    GenericType genericType = generics.nextGenericType();
+    if (genericType != this.genericType) {
+      this.genericType = genericType;
+      fieldGenerics = genericTypesCache.get(genericType);
+      if (fieldGenerics == null) {
+        fieldGenerics = buildFieldGenerics(genericType.getTypeToken(), fieldAccessors);
+        genericTypesCache.put(genericType, fieldGenerics);
+      }
+      this.fieldGenerics = fieldGenerics;
+    }
+    return fieldGenerics;
+  }
+
+  @Override
+  public T crossLanguageRead(MemoryBuffer buffer) {
+    int typeHash = this.typeHash;
+    if (typeHash == 0) {
+      typeHash = computeStructHash();
+      this.typeHash = typeHash;
+    }
+    int newHash = buffer.readInt();
+    if (newHash != typeHash) {
+      throw new ClassNotCompatibleException(
+          String.format(
+              "Hash %d is not consistent with %s for class %s",
+              newHash, typeHash, fury.getClassResolver().getCurrentReadClass()));
+    }
+    T obj = newBean();
+    fury.getReferenceResolver().reference(obj);
+    Generics generics = fury.getGenerics();
+    GenericType[] fieldGenerics = getGenericTypes(generics);
+    for (int i = 0; i < fieldAccessors.length; i++) {
+      FieldAccessor fieldAccessor = fieldAccessors[i];
+      GenericType fieldGeneric = fieldGenerics[i];
+      Serializer serializer = fieldGeneric.getSerializerOrNull(fury.getClassResolver());
+      boolean hasGenerics = fieldGeneric.hasGenericParameters();
+      if (hasGenerics) {
+        generics.pushGenericType(fieldGeneric);
+      }
+      Object fieldValue =
+          fury.crossLanguageReadReferencableByNullableSerializer(buffer, serializer);
+      fieldAccessor.set(obj, fieldValue);
+      if (hasGenerics) {
+        generics.pushGenericType(fieldGeneric);
+      }
+    }
+    return obj;
+  }
+
+  private T newBean() {
+    if (constructor != null) {
+      try {
+        return constructor.newInstance();
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        Platform.throwException(e);
+      }
+    }
+    return Platform.newInstance(type);
+  }
+
+  int computeStructHash() {
+    int hash = 17;
+    for (GenericType fieldGeneric : fieldGenerics) {
+      hash = computeFieldHash(hash, fieldGeneric);
+    }
+    Preconditions.checkState(hash != 0);
+    return hash;
+  }
+
+  int computeFieldHash(int hash, GenericType fieldGeneric) {
+    int id;
+    if (fieldGeneric.getTypeToken().isSubtypeOf(List.class)) {
+      // TODO(chaokunyang) add list element type into schema hash
+      id = Type.LIST.getId();
+    } else if (fieldGeneric.getTypeToken().isSubtypeOf(Map.class)) {
+      // TODO(chaokunyang) add map key&value type into schema hash
+      id = Type.MAP.getId();
+    } else {
+      try {
+        Serializer<?> serializer = fury.getClassResolver().getSerializer(fieldGeneric.getCls());
+        id = Math.abs(serializer.getCrossLanguageTypeId());
+        if (id == Type.FURY_TYPE_TAG.getId()) {
+          id = TypeUtils.computeStringHash(serializer.getCrossLanguageTypeTag());
+        }
+      } catch (Exception e) {
+        return hash;
+      }
+    }
+    long newHash = ((long) hash) * 31 + id;
+    while (newHash >= Integer.MAX_VALUE) {
+      newHash /= 7;
+    }
+    return (int) newHash;
+  }
+}

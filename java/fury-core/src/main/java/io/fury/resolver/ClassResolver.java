@@ -68,6 +68,7 @@ import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
+import io.fury.serializer.StructSerializer;
 import io.fury.serializer.SynchronizedSerializers;
 import io.fury.serializer.TimeSerializers;
 import io.fury.serializer.UnexistedClassSerializers.UnexistedClassSerializer;
@@ -381,7 +382,7 @@ public class ClassResolver {
   /** register class with given type tag which will be used for cross-language serialization. */
   public void register(Class<?> cls, String typeTag) {
     Preconditions.checkArgument(!typeTagToClassXLangMap.containsKey(typeTag));
-    throw new UnsupportedOperationException();
+    addSerializer(cls, new StructSerializer<>(fury, cls, typeTag));
   }
 
   public void register(Class<?> cls, int classId) {
