@@ -40,6 +40,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
+
+import io.fury.util.Platform;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
@@ -104,7 +106,7 @@ public class JsonbState {
           "======> Jsonb | {} | {} | {} | {} |", objectType, references, bufferType, buffer.length);
       if (bufferType == BufferType.directBuffer) {
         directBuffer.put(buffer);
-        directBuffer.clear();
+        Platform.clearBuffer(directBuffer);
       }
       Preconditions.checkArgument(object.equals(deserialize(null, this)));
     }
@@ -141,7 +143,7 @@ public class JsonbState {
   public static byte[] serialize(Blackhole blackhole, JsonbBenchmarkState state, Object value) {
     byte[] bytes = JSONB.toBytes(value, state.jsonbWriteFeatures);
     if (state.bufferType == BufferType.directBuffer) {
-      state.directBuffer.clear();
+      Platform.clearBuffer(state.directBuffer);
       state.directBuffer.put(bytes);
     }
     if (blackhole != null) {

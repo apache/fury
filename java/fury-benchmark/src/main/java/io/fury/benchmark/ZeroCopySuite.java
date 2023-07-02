@@ -45,6 +45,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import io.fury.util.Platform;
 import org.nustaq.serialization.FSTConfiguration;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -314,7 +316,7 @@ public class ZeroCopySuite {
   public static Object jsonbSerialize(JsonBState state, Blackhole bh) {
     byte[] bytes = JSONB.toBytes(state.data, state.jsonbWriteFeatures);
     if (state.bufferType == BufferType.directBuffer) {
-      state.directBuffer.clear();
+      Platform.clearBuffer(state.directBuffer);
       state.directBuffer.put(bytes);
     }
     if (bh != null) {

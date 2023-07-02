@@ -31,6 +31,8 @@ import io.fury.benchmark.data.Sample;
 import io.fury.benchmark.data.Struct;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+
+import io.fury.util.Platform;
 import org.nustaq.serialization.FSTConfiguration;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
@@ -51,7 +53,7 @@ public class FstState {
 
   public static void main(String[] args) {
     FstUserTypeState state = new FstUserTypeState();
-    state.objectType = ObjectType.SAMPLE;
+    state.objectType = ObjectType.STRUCT;
     state.bufferType = BufferType.directBuffer;
     state.setup();
     FstBenchmarkState.serialize(null, state, state.object);
@@ -89,7 +91,7 @@ public class FstState {
         Blackhole blackhole) {
       byte[] bytes = fst.asSharedByteArray(value, out);
       if (bufferType == BufferType.directBuffer) {
-        directBuffer.clear();
+        Platform.clearBuffer(directBuffer);
         directBuffer.put(bytes, 0, out[0]);
       }
       if (blackhole != null) {

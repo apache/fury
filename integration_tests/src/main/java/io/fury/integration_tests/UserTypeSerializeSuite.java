@@ -9,6 +9,8 @@ import io.fury.integration_tests.state.FlatBuffersState.FlatBuffersUserTypeState
 import io.fury.integration_tests.state.ProtoBuffersState;
 import io.fury.integration_tests.state.ProtoBuffersState.ProtoBuffersUserTypeState;
 import java.io.IOException;
+
+import io.fury.util.Platform;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -28,7 +30,7 @@ public class UserTypeSerializeSuite extends io.fury.benchmark.UserTypeSerializeS
 
   @Benchmark
   public Object flatbuffers_serialize(FlatBuffersUserTypeState state) {
-    state.directBuffer.clear();
+    Platform.clearBuffer(state.directBuffer);
     if (state.objectType == ObjectType.SAMPLE) {
       return FlatBuffersState.serializeSample((Sample) state.object, state.directBuffer);
     } else {
