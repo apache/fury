@@ -21,7 +21,7 @@
     <jmh.version>1.33</jmh.version>
     <uberjar.name>benchmarks</uberjar.name>
     <protostuff.version>1.7.2</protostuff.version>
-    <fastjson2.version>2.0.31-SNAPSHOT</fastjson2.version>
+    <fastjson2.version>2.0.34</fastjson2.version>
     <janino.version>3.0.11</janino.version>
     <protobuf.version>3.11.0</protobuf.version>
     <checkstyle.skip>true</checkstyle.skip>
