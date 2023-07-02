@@ -137,7 +137,7 @@ public final class StringSerializer extends Serializer<String> {
   public Expression writeStringExpr(Expression strSerializer, Expression buffer, Expression str) {
     if (isJava) {
       if (STRING_VALUE_FIELD_IS_BYTES) {
-        return new Invoke(strSerializer, "writeJDK11String", buffer, str);
+        return new StaticInvoke(StringSerializer.class, "writeJDK11String", buffer, str);
       } else {
         if (!STRING_VALUE_FIELD_IS_CHARS) {
           throw new UnsupportedOperationException();
@@ -188,7 +188,7 @@ public final class StringSerializer extends Serializer<String> {
           Expression coder = inlineInvoke(buffer, "readByte", BYTE_TYPE);
           Expression value = inlineInvoke(buffer, "readBytesWithSizeEmbedded", BINARY_TYPE);
           return new StaticInvoke(
-              StringSerializer.class, "newJava11StringByZeroCopy", STRING_TYPE, value, coder);
+              StringSerializer.class, "newJava11StringByZeroCopy", STRING_TYPE, coder, value);
         }
       } else {
         if (!STRING_VALUE_FIELD_IS_CHARS) {
@@ -298,7 +298,7 @@ public final class StringSerializer extends Serializer<String> {
       } else {
         byte coder = buffer.readByte();
         byte[] value = buffer.readBytesWithSizeEmbedded();
-        return newJava11StringByZeroCopy(value, coder);
+        return newJava11StringByZeroCopy(coder, value);
       }
     } else {
       if (!STRING_VALUE_FIELD_IS_CHARS) {
@@ -317,7 +317,7 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  static void writeJDK11String(MemoryBuffer buffer, String value) {
+  public static void writeJDK11String(MemoryBuffer buffer, String value) {
     byte[] bytes = (byte[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
     byte coder = Platform.getByte(value, STRING_CODER_FIELD_OFFSET);
     buffer.writeByte(coder);
@@ -472,7 +472,9 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  public static String newJava11StringByZeroCopy(byte[] data, byte coder) {
+  // coder param first to make inline call args
+  // `(buffer.readByte(), buffer.readBytesWithSizeEmbedded())` work.
+  public static String newJava11StringByZeroCopy(byte coder, byte[] data) {
     if (Platform.JAVA_VERSION < 9) {
       throw new IllegalStateException(
           String.format("Current java version is %s", Platform.JAVA_VERSION));
