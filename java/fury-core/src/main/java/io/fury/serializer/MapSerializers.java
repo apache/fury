@@ -18,6 +18,7 @@
 
 package io.fury.serializer;
 
+import static io.fury.type.TypeUtils.MAP_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
@@ -82,6 +83,7 @@ public class MapSerializers {
     // by
     // `pushGenerics` instead of set value serializers.
     private final GenericType mapGenericType;
+    private final GenericType objType = fury.getClassResolver().buildGenericType(Object.class);
 
     public MapSerializer(Fury fury, Class<T> cls) {
       this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls), true);
@@ -206,6 +208,10 @@ public class MapSerializers {
         // `SubMap<V> implements Map<String, V>` will be 1;
         if (genericType.getTypeParametersCount() < 2) {
           Tuple2<GenericType, GenericType> kvGenericType = getKVGenericType(genericType);
+          if (keyGenericType == objType && valueGenericType == objType) {
+            generalJavaWrite(fury, buffer, map);
+            return;
+          }
           keyGenericType = kvGenericType.f0;
           valueGenericType = kvGenericType.f1;
         }
@@ -428,8 +434,14 @@ public class MapSerializers {
     private Tuple2<GenericType, GenericType> getKVGenericType(GenericType genericType) {
       Tuple2<GenericType, GenericType> genericTypes = partialGenericKVTypeMap.get(genericType);
       if (genericTypes == null) {
+        TypeToken<?> typeToken = genericType.getTypeToken();
+        if (!MAP_TYPE.isSupertypeOf(typeToken)) {
+          Tuple2<GenericType, GenericType> typeTuple = Tuple2.of(objType, objType);
+          partialGenericKVTypeMap.put(genericType, typeTuple);
+          return typeTuple;
+        }
         Tuple2<TypeToken<?>, TypeToken<?>> mapKeyValueType =
-            TypeUtils.getMapKeyValueType(genericType.getTypeToken());
+            TypeUtils.getMapKeyValueType(typeToken);
         genericTypes =
             Tuple2.of(
                 fury.getClassResolver().buildGenericType(mapKeyValueType.f0.getType()),
@@ -499,6 +511,10 @@ public class MapSerializers {
         GenericType valueGenericType = genericType.getTypeParameter1();
         if (genericType.getTypeParametersCount() < 2) {
           Tuple2<GenericType, GenericType> kvGenericType = getKVGenericType(genericType);
+          if (keyGenericType == objType && valueGenericType == objType) {
+            generalJavaRead(fury, buffer, map, size);
+            return;
+          }
           keyGenericType = kvGenericType.f0;
           valueGenericType = kvGenericType.f1;
         }

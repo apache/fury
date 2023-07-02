@@ -109,6 +109,7 @@ public class TypeUtils {
   public static final TypeToken<?> PRIMITIVE_BYTE_ARRAY_TYPE = TypeToken.of(byte[].class);
   public static final TypeToken<?> PRIMITIVE_BOOLEAN_ARRAY_TYPE = TypeToken.of(boolean[].class);
   public static final TypeToken<?> PRIMITIVE_SHORT_ARRAY_TYPE = TypeToken.of(short[].class);
+  public static final TypeToken<?> PRIMITIVE_CHAR_ARRAY_TYPE = TypeToken.of(char[].class);
   public static final TypeToken<?> PRIMITIVE_INT_ARRAY_TYPE = TypeToken.of(int[].class);
   public static final TypeToken<?> PRIMITIVE_LONG_ARRAY_TYPE = TypeToken.of(long[].class);
   public static final TypeToken<?> PRIMITIVE_FLOAT_ARRAY_TYPE = TypeToken.of(float[].class);
