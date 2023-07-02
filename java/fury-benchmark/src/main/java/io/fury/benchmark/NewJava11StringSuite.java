@@ -70,7 +70,7 @@ public class NewJava11StringSuite {
 
   // @Benchmark
   public Object createJDK8StringByMethodHandle() {
-    return StringSerializer.newJava11StringByZeroCopy(strBytes, coder);
+    return StringSerializer.newJava11StringByZeroCopy(coder, strBytes);
   }
 
   // @Benchmark

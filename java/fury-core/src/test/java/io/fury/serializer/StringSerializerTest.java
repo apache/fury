@@ -92,7 +92,7 @@ public class StringSerializerTest extends FuryTestBase {
   static String readJDK11String(MemoryBuffer buffer) {
     byte coder = buffer.readByte();
     byte[] value = buffer.readBytesWithSizeEmbedded();
-    return newJava11StringByZeroCopy(value, coder);
+    return newJava11StringByZeroCopy(coder, value);
   }
 
   private static boolean writeJavaStringZeroCopy(MemoryBuffer buffer, String value) {
