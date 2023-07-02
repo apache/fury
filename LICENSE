@@ -222,3 +222,4 @@ bazel/arrow/pyarrow_configure.bzl is modified from  https://github.com/tensorflo
 ci/format.sh is modified from https://github.com/ray-project/ray/blob/master/ci/lint/format.sh
 lazy_import method in python/pyfury/util.py is copied from https://github.com/mars-project/mars/blob/master/mars/utils.py
 dataslots in pytho/pyfury/type.py is copied from https://github.com/ericvsmith/dataclasses/blob/master/dataclass_tools.py
+java/fury-benchmark/src/main/java/io/fury/benchmark/Identity2IdMap.java is modified from https://github.com/RuedigerMoeller/fast-serialization/blob/master/src/main/java/org/nustaq/serialization/util/FSTIdentity2IdMap.java to benchmark identity map performance
