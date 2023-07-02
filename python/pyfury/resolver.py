@@ -182,14 +182,6 @@ class MapReferenceResolver(ReferenceResolver):
 
     def set_read_object(self, id_, obj):
         if id_ >= 0:
-            import weakref
-
-            if (
-                type(obj) is list
-                and len(obj) > 0
-                and isinstance(obj[0], weakref.ReferenceType)
-            ):
-                print()
             self.read_objects[id_] = obj
 
     def reset(self):

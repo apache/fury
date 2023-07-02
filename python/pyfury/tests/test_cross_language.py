@@ -14,6 +14,11 @@ from typing import List, Dict, Any
 pa = lazy_import("pyarrow")
 
 
+def debug_print(*params):
+    """print params if debug is needed."""
+    # print(*params)
+
+
 def cross_language_test(test_func):
     env_key = "ENABLE_CROSS_LANGUAGE_TESTS"
     test_func = pytest.mark.skipif(
@@ -100,7 +105,7 @@ def test_map_encoder(data_file_path):
     with open(data_file_path, "rb+") as f:
         data_bytes = f.read()
         obj = encoder.decode(data_bytes)
-        print("deserialized obj", obj)
+        debug_print("deserialized obj", obj)
         assert a == obj
         assert encoder.decode(encoder.encode(a)) == a
         f.seek(0)
@@ -111,12 +116,12 @@ def test_map_encoder(data_file_path):
 @cross_language_test
 def test_encoder_without_schema(data_file_path):
     encoder = pyfury.encoder(FooPOJO)
-    print(encoder)
+    debug_print(encoder)
     foo = create_foo(foo_cls=FooPOJO, bar_cls=BarPOJO)
     with open(data_file_path, "rb+") as f:
         data_bytes = f.read()
         obj = encoder.decode(data_bytes)
-        print("deserialized foo", obj)
+        debug_print("deserialized foo", obj)
         assert foo == obj
         f.seek(0)
         f.truncate()
@@ -132,9 +137,9 @@ def test_serialization_without_schema(data_file_path, schema=None):
         data_bytes = f.read()
         buf = pyfury.Buffer(data_bytes, 0, len(data_bytes))
         row = pyfury.RowData(schema, buf)
-        print("row", row)
+        debug_print("row", row)
         obj = encoder.from_row(row)
-        print("deserialized foo", obj)
+        debug_print("deserialized foo", obj)
         assert str(foo.f5) == str(obj.f5)
         # class of `f5` is generated, which may be different from class
         # of deserialized `f5`
@@ -156,7 +161,7 @@ def test_serialization_with_schema(schema_file_path, data_file_path):
     with open(schema_file_path, "rb") as f:
         schema_bytes = f.read()
         schema = pa.ipc.read_schema(pa.py_buffer(schema_bytes))
-        print("deserialized schema", schema)
+        debug_print("deserialized schema", schema)
         test_serialization_without_schema(data_file_path, schema)
 
 
@@ -169,7 +174,7 @@ def test_record_batch_basic(data_file_path):
         batches = [batch for batch in reader]
         assert len(batches) == 1
         batch = batches[0]
-        print(f"batch {batch}")
+        debug_print(f"batch {batch}")
 
 
 @cross_language_test
@@ -182,11 +187,11 @@ def test_record_batch(data_file_path):
             [pa.field(f.name, f.type, f.nullable) for f in create_foo_schema()]
         )
         assert reader.schema == foo_schema_without_meta
-        # print(f"reader.schema {reader.schema}")
+        # debug_print(f"reader.schema {reader.schema}")
         batches = [batch for batch in reader]
         assert len(batches) == 1
         batch = batches[0]
-        # print(f"batch[0] {batch[0]}")
+        # debug_print(f"batch[0] {batch[0]}")
 
         encoder = pyfury.create_row_encoder(create_foo_schema())
         writer = pyfury.ArrowWriter(create_foo_schema())
@@ -465,12 +470,12 @@ def struct_round_back(data_file_path, fury_, obj1):
     assert fury_.deserialize(new_buf) == obj1
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
-    print(f"len {len(data_bytes)}")
+    debug_print(f"len {len(data_bytes)}")
     new_obj = fury_.deserialize(data_bytes)
-    print(new_obj)
+    debug_print(new_obj)
     assert new_obj == obj1, f"new_obj {new_obj}\n expected {obj1}"
     new_buf = fury_.serialize(new_obj)
-    print(f"new_buf size {len(new_buf)}")
+    debug_print(f"new_buf size {len(new_buf)}")
     assert fury_.deserialize(new_buf) == new_obj
     with open(data_file_path, "wb+") as f:
         f.write(new_buf)
@@ -480,17 +485,17 @@ def struct_round_back(data_file_path, fury_, obj1):
 def test_serialize_opaque_object(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
-    print(f"len {len(data_bytes)}")
+    debug_print(f"len {len(data_bytes)}")
     fury_ = pyfury.Fury(language=pyfury.Language.XLANG, reference_tracking=True)
     fury_.register_class_tag(ComplexObject1, "test.ComplexObject1")
     new_obj = fury_.deserialize(data_bytes)
-    print(new_obj)
+    debug_print(new_obj)
     assert new_obj.f2 == "abc"
     assert isinstance(new_obj.f1, pyfury.OpaqueObject)
     assert isinstance(new_obj.f3[0], pyfury.OpaqueObject)
     assert isinstance(new_obj.f3[1], pyfury.OpaqueObject)
     # new_buf = fury_.serialize(new_obj)
-    # print(f"new_buf size {len(new_buf)}")
+    # debug_print(f"new_buf size {len(new_buf)}")
     # assert fury_.deserialize(new_buf) == new_obj
     # with open(data_file_path, "wb+") as f:
     #     f.write(new_buf)
@@ -537,7 +542,7 @@ def test_register_serializer(data_file_path):
     new_obj = fury_.deserialize(buffer)
     expected = ComplexObject1(*[None] * 12)
     expected.f1, expected.f2, expected.f3 = True, "abc", ["abc", "abc"]
-    print(new_obj)
+    debug_print(new_obj)
     assert new_obj == expected
     new_buf = pyfury.Buffer.allocate(32)
     fury_.serialize(new_obj, buffer=new_buf)
@@ -577,9 +582,9 @@ def test_oob_buffer(in_band_file_path, out_of_band_file_path):
 
     serialized = fury_.serialize(obj, buffer_callback=buffer_callback)
     # in_band_bytes size may be different because it may contain language-specific meta.
-    print(f"{len(serialized), len(in_band_bytes)}")
-    print(f"deserialized from other language {new_obj}")
-    print(
+    debug_print(f"{len(serialized), len(in_band_bytes)}")
+    debug_print(f"deserialized from other language {new_obj}")
+    debug_print(
         f"deserialized from python "
         f"{fury_.deserialize(serialized, [o.to_buffer() for o in buffer_objects])}"
     )
