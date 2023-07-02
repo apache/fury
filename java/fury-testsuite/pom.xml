@@ -14,7 +14,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
     <artifactId>fury-parent</artifactId>
-    <groupId>io.furyx</groupId>
+    <groupId>org.furyio</groupId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -40,19 +40,19 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.furyx</groupId>
+      <groupId>org.furyio</groupId>
       <artifactId>fury-core</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.furyx</groupId>
+      <groupId>org.furyio</groupId>
       <artifactId>fury-format</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.furyx</groupId>
+      <groupId>org.furyio</groupId>
       <artifactId>fury-test-core</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
