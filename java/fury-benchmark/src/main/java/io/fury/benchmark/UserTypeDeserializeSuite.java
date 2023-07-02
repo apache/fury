@@ -68,6 +68,15 @@ public class UserTypeDeserializeSuite {
   }
 
   @Benchmark
+  public Object furymetashared_deserialize_compatible(FuryState.FuryMetaSharedState state) {
+    state.buffer.readerIndex(0);
+    state.fury.getSerializationContext().setMetaContext(state.metaContext);
+    Object o = state.fury.readReferencableFromJava(state.buffer);
+    state.fury.resetRead();
+    return o;
+  }
+
+  @Benchmark
   public Object fst_deserialize(FstState.FstUserTypeState state, Blackhole bh) {
     return FstState.FstBenchmarkState.deserialize(bh, state);
   }

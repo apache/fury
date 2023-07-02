@@ -43,7 +43,7 @@ def process_data(filepath: str):
             benchmark_name = bench_df["Benchmark"].str.rsplit(
                 pat=".", n=1, expand=True
             )[1]
-            bench_df[["Lib", "Benchmark"]] = benchmark_name.str.rsplit(
+            bench_df[["Lib", "Benchmark"]] = benchmark_name.str.split(
                 pat="_", n=1, expand=True
             )
             bench_df["Lib"] = bench_df["Lib"].str.capitalize()
@@ -90,7 +90,7 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
         libs = final_df.columns.to_frame()["Lib"]
         color_map = {
             "Fury": "c",
-            "Fury_deserialize": "c",
+            "Furymetashared": "#7845FD",
             # "Kryo": (1, 0.5, 1),
             # "Kryo": (1, 0.84, 0.25),
             "Kryo": (1, 0.65, 0.55),

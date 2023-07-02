@@ -33,6 +33,7 @@ import io.fury.benchmark.data.Sample;
 import io.fury.benchmark.data.Struct;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.resolver.MetaContext;
 import io.fury.serializer.CompatibleMode;
 import io.fury.util.LoggerFactory;
 import java.nio.ByteBuffer;
@@ -190,6 +191,37 @@ public class FuryState {
                 .disableSecureMode()
                 .withCompatibleMode(CompatibleMode.COMPATIBLE)
                 .build();
+        if (registerClass) {
+          fury.register(object.getClass());
+        }
+      }
+    }
+
+    @Override
+    public boolean compatible() {
+      return true;
+    }
+  }
+
+  public static class FuryMetaSharedState extends FuryUserTypeState {
+    public MetaContext metaContext = new MetaContext();
+
+    @Override
+    public void setup() {
+      super.setup();
+      if (objectType == ObjectType.STRUCT) {
+        Thread.currentThread()
+          .setContextClassLoader(Struct.createStructClass(110, false).getClassLoader());
+        fury =
+          Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withClassVersionCheck(false)
+            .ignoreStringReference(true) // for compare with fastjson
+            .withReferenceTracking(references)
+            .disableSecureMode()
+            .withMetaContextShareEnabled(true)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .build();
         if (registerClass) {
           fury.register(object.getClass());
         }
