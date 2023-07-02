@@ -18,8 +18,17 @@
 
 package io.fury.serializer;
 
+import static io.fury.codegen.Expression.Invoke.inlineInvoke;
+import static io.fury.type.TypeUtils.BINARY_TYPE;
+import static io.fury.type.TypeUtils.BYTE_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_CHAR_ARRAY_TYPE;
+import static io.fury.type.TypeUtils.STRING_TYPE;
+
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
+import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Invoke;
+import io.fury.codegen.Expression.StaticInvoke;
 import io.fury.memory.MemoryBuffer;
 import io.fury.type.Type;
 import io.fury.util.MathUtils;
@@ -125,11 +134,87 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
+  public Expression writeStringExpr(Expression strSerializer, Expression buffer, Expression str) {
+    if (isJava) {
+      if (STRING_VALUE_FIELD_IS_BYTES) {
+        return new Invoke(strSerializer, "writeJDK11String", buffer, str);
+      } else {
+        if (!STRING_VALUE_FIELD_IS_CHARS) {
+          throw new UnsupportedOperationException();
+        }
+        if (compressString) {
+          return new Invoke(strSerializer, "writeJava8StringCompressed", buffer, str);
+        } else {
+          return new Invoke(strSerializer, "writeJava8StringUncompressed", buffer, str);
+        }
+      }
+    } else {
+      return new Invoke(strSerializer, "writeUTF8String", buffer, str);
+    }
+  }
+
+  // Invoked by jit
+  public void writeJava8StringCompressed(MemoryBuffer buffer, String value) {
+    final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
+    if (isAscii(chars)) {
+      writeJDK8Ascii(buffer, chars);
+    } else {
+      writeJDK8UTF16(buffer, chars);
+    }
+  }
+
+  // Invoked by jit
+  public void writeJava8StringUncompressed(MemoryBuffer buffer, String value) {
+    int numBytes = MathUtils.doubleExact(value.length());
+    final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
+    buffer.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+  }
+
   public String readString(MemoryBuffer buffer) {
     if (isJava) {
       return readJavaString(buffer);
     } else {
       return readUTF8String(buffer);
+    }
+  }
+
+  public Expression readStringExpr(Expression strSerializer, Expression buffer) {
+    if (isJava) {
+      if (STRING_VALUE_FIELD_IS_BYTES) {
+        if (Platform.JAVA_VERSION >= 17) {
+          // TODO(chaokunyang) optimize for jdk17 str.
+          return new Invoke(strSerializer, "readJavaString", STRING_TYPE, buffer);
+        } else {
+          Expression coder = inlineInvoke(buffer, "readByte", BYTE_TYPE);
+          Expression value = inlineInvoke(buffer, "readBytesWithSizeEmbedded", BINARY_TYPE);
+          return new StaticInvoke(
+              StringSerializer.class, "newJava11StringByZeroCopy", STRING_TYPE, value, coder);
+        }
+      } else {
+        if (!STRING_VALUE_FIELD_IS_CHARS) {
+          throw new UnsupportedOperationException();
+        }
+        if (compressString) {
+          return new Invoke(strSerializer, "readJava8CompressedString", STRING_TYPE, buffer);
+        } else {
+          Expression chars =
+              new Invoke(buffer, "readCharsWithSizeEmbedded", PRIMITIVE_CHAR_ARRAY_TYPE);
+          return new StaticInvoke(
+              StringSerializer.class, "newJava8StringByZeroCopy", STRING_TYPE, chars);
+        }
+      }
+    } else {
+      return new Invoke(strSerializer, "readUTF8String", STRING_TYPE, buffer);
+    }
+  }
+
+  // Invoked by jit
+  public String readJava8CompressedString(MemoryBuffer buffer) {
+    byte coder = buffer.readByte();
+    if (coder == LATIN1) {
+      return newJava8StringByZeroCopy(readAsciiChars(buffer));
+    } else {
+      return newJava8StringByZeroCopy(readUTF16Chars(buffer, coder));
     }
   }
 
@@ -239,7 +324,7 @@ public final class StringSerializer extends Serializer<String> {
     buffer.writePrimitiveArrayWithSizeEmbedded(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
   }
 
-  private void writeJDK8Ascii(MemoryBuffer buffer, char[] chars) {
+  public void writeJDK8Ascii(MemoryBuffer buffer, char[] chars) {
     buffer.writeByte(LATIN1);
     final int strLen = chars.length;
     int writerIndex = buffer.writerIndex();
@@ -264,7 +349,7 @@ public final class StringSerializer extends Serializer<String> {
     buffer.writerIndex(writerIndex + strLen);
   }
 
-  private void writeJDK8UTF16(MemoryBuffer buffer, char[] chars) {
+  public void writeJDK8UTF16(MemoryBuffer buffer, char[] chars) {
     buffer.writeByte(UTF16);
     int strLen = chars.length;
     int numBytes = MathUtils.doubleExact(strLen);
