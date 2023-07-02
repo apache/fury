@@ -36,7 +36,6 @@ import static io.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static io.fury.type.TypeUtils.SET_TYPE;
-import static io.fury.type.TypeUtils.STRING_TYPE;
 import static io.fury.type.TypeUtils.getElementType;
 import static io.fury.type.TypeUtils.getRawType;
 import static io.fury.type.TypeUtils.isBoxed;
@@ -330,7 +329,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       }
     } else {
       if (clz == String.class) {
-        return new Invoke(stringSerializerRef, "writeJavaString", buffer, inputObject);
+        return fury.getStringSerializer().writeStringExpr(stringSerializerRef, buffer, inputObject);
       }
       Expression action;
       // this is different from ITERABLE_TYPE in RowCodecBuilder. In row-format we don't need to
@@ -858,7 +857,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       }
     } else {
       if (cls == String.class) {
-        return new Invoke(stringSerializerRef, "readJavaString", STRING_TYPE, buffer);
+        return fury.getStringSerializer().readStringExpr(stringSerializerRef, buffer);
       }
       Expression obj;
       if (useCollectionSerialization(typeToken)) {
