@@ -1,6 +1,6 @@
 import Fury from '../index';
 import { describe, expect, test } from '@jest/globals';
-import { TypeDefinition } from '../lib/codeGen';
+import { TypeDescription } from '../lib/codeGen';
 import { InternalSerializerType } from '../lib/type';
 
 describe('array', () => {
@@ -12,7 +12,7 @@ describe('array', () => {
     expect(result).toEqual(["str1", "str1"])
   });
   test('should typedarray work', () => {
-    const definition: TypeDefinition = {
+    const description: TypeDescription = {
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         props: {
@@ -39,7 +39,7 @@ describe('array', () => {
       }
     };
     const fury = new Fury();
-    fury.registerSerializerByDefinition(definition);
+    const serializer = fury.registerSerializerByDescription(description);
     const input = fury.marshal({
       a: [true, false],
       a2: [1, 2, 3],
@@ -47,7 +47,7 @@ describe('array', () => {
       a4: [634, 564, 76],
       a6: [234243.555, 55654.6786],
       a7: ["hello", "world"]
-    }, "example.foo");
+    }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -61,7 +61,7 @@ describe('array', () => {
     })
   });
   test('should floatarray work', () => {
-    const definition: TypeDefinition = {
+    const description: TypeDescription = {
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         props: {
@@ -73,10 +73,10 @@ describe('array', () => {
       }
     };
     const fury = new Fury();
-    fury.registerSerializerByDefinition(definition);
+    const serialize = fury.registerSerializerByDescription(description);
     const input = fury.marshal({
       a5: [2.43, 654.4, 55],
-    }, "example.foo");
+    }, serialize);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );

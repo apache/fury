@@ -5,7 +5,7 @@ import { InternalSerializerType } from '../lib/type';
 describe('number', () => {
   test('should i8 work', () => {
     const fury = new Fury();
-    fury.registerSerializerByDefinition({
+    const serialize = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         tag: "example.foo",
@@ -16,7 +16,7 @@ describe('number', () => {
         }
       }
     });
-    const input = fury.marshal({ a: 1 }, 'example.foo');
+    const input = fury.marshal({ a: 1 }, serialize);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -24,7 +24,7 @@ describe('number', () => {
   });
   test('should i16 work', () => {
     const fury = new Fury();
-    fury.registerSerializerByDefinition({
+    const serialize = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         tag: "example.foo",
@@ -35,7 +35,7 @@ describe('number', () => {
         }
       }
     });
-    const input = fury.marshal({ a: 1 }, 'example.foo');
+    const input = fury.marshal({ a: 1 }, serialize);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -43,7 +43,7 @@ describe('number', () => {
   });
   test('should i32 work', () => {
     const fury = new Fury();
-    fury.registerSerializerByDefinition({
+    const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         tag: "example.foo",
@@ -54,7 +54,7 @@ describe('number', () => {
         }
       }
     });
-    const input = fury.marshal({ a: 1 }, 'example.foo');
+    const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -62,7 +62,7 @@ describe('number', () => {
   });
   test('should i64 work', () => {
     const fury = new Fury();
-    fury.registerSerializerByDefinition({
+    const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         tag: "example.foo",
@@ -73,7 +73,7 @@ describe('number', () => {
         }
       }
     });
-    const input = fury.marshal({ a: 1 }, 'example.foo');
+    const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -81,7 +81,7 @@ describe('number', () => {
   });
   test('should u8 work', () => {
     const fury = new Fury();
-    fury.registerSerializerByDefinition({
+    const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         tag: "example.foo",
@@ -92,7 +92,7 @@ describe('number', () => {
         }
       }
     });
-    const input = fury.marshal({ a: 1 }, 'example.foo');
+    const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -100,7 +100,7 @@ describe('number', () => {
   });
   test('should u16 work', () => {
     const fury = new Fury();
-    fury.registerSerializerByDefinition({
+    const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         tag: "example.foo",
@@ -111,7 +111,7 @@ describe('number', () => {
         }
       }
     });
-    const input = fury.marshal({ a: 1 }, 'example.foo');
+    const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -119,7 +119,7 @@ describe('number', () => {
   });
   test('should u32 work', () => {
     const fury = new Fury();
-    fury.registerSerializerByDefinition({
+    const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         tag: "example.foo",
@@ -130,7 +130,7 @@ describe('number', () => {
         }
       }
     });
-    const input = fury.marshal({ a: 1 }, 'example.foo');
+    const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -138,7 +138,7 @@ describe('number', () => {
   });
   test('should u64 work', () => {
     const fury = new Fury();
-    fury.registerSerializerByDefinition({
+    const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         tag: "example.foo",
@@ -149,7 +149,7 @@ describe('number', () => {
         }
       }
     });
-    const input = fury.marshal({ a: 1 }, 'example.foo');
+    const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -157,7 +157,7 @@ describe('number', () => {
   });
   test('should float work', () => {
     const fury = new Fury();
-    fury.registerSerializerByDefinition({
+    const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         tag: "example.foo",
@@ -168,7 +168,7 @@ describe('number', () => {
         }
       }
     });
-    const input = fury.marshal({ a: 1.2 }, 'example.foo');
+    const input = fury.marshal({ a: 1.2 }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -176,7 +176,7 @@ describe('number', () => {
   });
   test('should double work', () => {
     const fury = new Fury();
-    fury.registerSerializerByDefinition({
+    const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         tag: "example.foo",
@@ -187,7 +187,7 @@ describe('number', () => {
         }
       }
     });
-    const input = fury.marshal({ a: 1.2 }, 'example.foo');
+    const input = fury.marshal({ a: 1.2 }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );

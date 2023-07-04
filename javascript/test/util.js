@@ -1,10 +1,10 @@
 const { InternalSerializerType } = require('../dist/lib/type')
-const mockData2Definition = (data, tag) => {
+const mockData2Description = (data, tag) => {
     if (data === null || data === undefined) {
         return null;
     }
     if (Array.isArray(data)) {
-        const item = mockData2Definition(data[0], tag);
+        const item = mockData2Description(data[0], tag);
         if (!item) {
             throw new Error('empty array can\'t convert')
         }
@@ -36,8 +36,8 @@ const mockData2Definition = (data, tag) => {
     }
     if (typeof data === 'number') {
         return {
-            type: InternalSerializerType.INT64,
-            label: "int64"
+            type: InternalSerializerType.INT32,
+            label: "int32"
         }
     }
     if (typeof data === 'object') {
@@ -46,7 +46,7 @@ const mockData2Definition = (data, tag) => {
             label: "object",
             asObject: {
                 props: Object.fromEntries(Object.entries(data).map(([key, value]) => {
-                    return [key, mockData2Definition(value, `${tag}.${key}`)]
+                    return [key, mockData2Description(value, `${tag}.${key}`)]
                 }).filter(([k, v]) => Boolean(v))),
                 tag
             }
@@ -55,5 +55,5 @@ const mockData2Definition = (data, tag) => {
     }
     throw `unkonw data type ${typeof data}`
 }
-module.exports.mockData2Definition = mockData2Definition;
+module.exports.mockData2Description = mockData2Description;
 
