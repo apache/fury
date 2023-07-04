@@ -24,8 +24,8 @@ for v in {8,11,17} ; do
   done
 done
 
-echo "Oracle JDK8 Serialization: false"
-oracle_jdk 8
+echo "Oracle JDK11 Serialization: ZeroCopySuite"
+oracle_jdk 11
 REGISTER_CLASS=false java -jar target/benchmarks.jar "io.*\.ZeroCopySuite\.*" -f 3 -wi 10 -i 10 -t 1 -w 2s -r 2s -rf csv
 cp jmh-result.csv jmh-result-jdk-8-false-zerocopy-deserialization.csv
 python analyze.py
