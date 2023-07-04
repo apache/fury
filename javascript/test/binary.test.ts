@@ -1,11 +1,11 @@
 import Fury from '../index';
 import { describe, expect, test } from '@jest/globals';
-import { TypeDefinition } from '../lib/codeGen';
+import { TypeDescription } from '../lib/codeGen';
 import { InternalSerializerType } from '../lib/type';
 
 describe('binary', () => {
     test('should binary work', () => {
-        const definition: TypeDefinition = {
+        const description: TypeDescription = {
             type: InternalSerializerType.FURY_TYPE_TAG,
             asObject: {
                 props: {
@@ -17,8 +17,8 @@ describe('binary', () => {
             }
         };
         const fury = new Fury();
-        fury.registerSerializerByDefinition(definition);
-        const input = fury.marshal({ a: new Uint8Array([1, 2, 3]) }, "example.foo");
+        const serializer = fury.registerSerializerByDescription(description);
+        const input = fury.marshal({ a: new Uint8Array([1, 2, 3]) }, serializer);
         const result = fury.unmarshal(
             new Uint8Array(input)
         );

@@ -1,14 +1,17 @@
-import { genReadSerializer, genWriteSerializer, TypeDefinition } from './lib/codeGen';
-import { Serializer, SerializerRead, SerializerWrite, Fury } from './lib/type';
+import { genReadSerializer, genWriteSerializer, TypeDescription } from './lib/codeGen';
+import { Serializer, SerializerRead, SerializerWrite, Fury, InternalSerializerType } from './lib/type';
 import FuryInternal from './lib/fury';
 
 export default class {
     private fury: Fury = FuryInternal();
 
-    registerSerializerByDefinition(definition: TypeDefinition) {
+    registerSerializerByDescription(description: TypeDescription) {
+        if (description.type !== InternalSerializerType.FURY_TYPE_TAG || !description.asObject?.tag) {
+            throw new Error('root type should be object')
+        }
         genReadSerializer(
             this.fury,
-            definition,
+            description,
             (tag: string, reader: SerializerRead) => {
                 this.fury.classResolver.registerReadSerializerByTag(tag, reader);
             },
@@ -18,7 +21,7 @@ export default class {
         );
         genWriteSerializer(
             this.fury,
-            definition,
+            description,
             (tag: string, writer: SerializerWrite) => {
                 this.fury.classResolver.registerWriteSerializerByTag(tag, writer);
             },
@@ -26,14 +29,15 @@ export default class {
                 return this.fury.classResolver.existsTagWriteSerializer(tag);
             }
         );
+        return this.fury.classResolver.getSerializerByTag(description.asObject.tag);
     }
 
     registerSerializer(tag: string, serializer: Serializer) {
         this.fury.classResolver.registerSerializerByTag(tag, serializer);
     }
 
-    marshal(v: any, tag = '') {
-        return this.fury.marshal(v, tag);
+    marshal(v: any, serialize?: Serializer) {
+        return this.fury.marshal(v, serialize);
     }
 
     unmarshal(bytes: Uint8Array) {

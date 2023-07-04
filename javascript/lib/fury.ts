@@ -1,7 +1,7 @@
 import ClassResolver from './classResolver';
 import { BinaryReader, BinaryWriter } from './io';
 import { ReferenceResolver } from './referenceResolver';
-import { ConfigFlags, InternalSerializerType, Serializer, RefFlags, GenericReader, SerializerRead } from './type';
+import { ConfigFlags, InternalSerializerType, Serializer, RefFlags, SerializerRead } from './type';
 
 
 export default () => {
@@ -133,7 +133,7 @@ export default () => {
         }
     }
 
-    function write(v: any, tag = '') {
+    function write(v: any, serializer?: Serializer) {
         // NullFlag
         if (v === null || v === undefined) {
             binaryWriter.writeInt8(RefFlags.NullFlag); // null
@@ -187,17 +187,16 @@ export default () => {
             return;
         }
         if (typeof v === "object") {
-            if (!tag) {
+            if (!serializer) {
                 throw new Error('type of value is object, should provide the tag')
             }
-            const { write } = classResolver.getSerializerByTag(tag);
-            write(v, [], tag);
+            serializer.write(v, []);
             return;
         }
         throw new Error(`serializer not support ${typeof v} yet`);
     }
 
-    function marshal<T = any>(data: T, tag = '') {
+    function marshal<T = any>(data: T, serializer?: Serializer) {
         referenceResolver.reset();
         classResolver.reset();
         binaryWriter.reset();
@@ -211,7 +210,7 @@ export default () => {
         binaryWriter.writeUInt8(4); // todo: replace with javascript
         binaryWriter.skip(4) // preserve 4-byte for nativeObjects start offsets.
         binaryWriter.skip(4) // preserve 4-byte for nativeObjects length.
-        write(data, tag);
+        write(data, serializer);
         return binaryWriter.dump();
     }
     return fury;

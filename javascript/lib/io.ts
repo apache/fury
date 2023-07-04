@@ -1,17 +1,14 @@
 import { LATIN1, UTF8 } from "./type";
-import { latin1Decoder, utf8Decoder, utf8Encoder } from "./util";
 
 
 export const BinaryWriter = () => {
     let cursor = 0;
-    let arrayBuffer = new Uint8Array(1024 * 100);
+    let arrayBuffer = Buffer.alloc(1024 * 100);
     let dataView = new DataView(arrayBuffer.buffer);
     function reserves(len: number) {
         if (dataView.byteLength - (cursor + 1) <= len) {
             // resize the arrayBuffer
-            let newArrayBuffer = new Uint8Array(dataView.byteLength * 2);
-            newArrayBuffer.set(arrayBuffer);
-            arrayBuffer = newArrayBuffer;
+            arrayBuffer = Buffer.concat([arrayBuffer, Buffer.alloc(dataView.byteLength)]);
             dataView = new DataView(arrayBuffer.buffer);
         }
     }
@@ -93,24 +90,71 @@ export const BinaryWriter = () => {
         return dataView.setBigUint64(move(8), v, true);
     }
 
-    function writeUtf8StringOfInt16(v: string) {
-        const ab = utf8Encoder.encode(v);
-        const len = ab.byteLength;
+    function writeUtf8StringOfInt16(bf: Buffer) {
+        const len = bf.byteLength;
         writeInt16(len);
         reserves(len);
-        arrayBuffer.set(ab, move(len));
+        bf.copy(arrayBuffer, move(len));
+    }
+
+    function fastWriteStringLatin1(string: string, buffer: Buffer, offset: number) {
+        const start: number = offset;
+        let c1: number;
+        for (let i = 0; i < string.length; ++i) {
+            c1 = string.charCodeAt(i);
+            buffer[offset++] = c1;
+        }
+        return offset - start;
+    }
+
+    function fastWriteStringUtf8(string: string, buffer: Buffer, offset: number) {
+        const start: number = offset;
+        let c1: number;
+        let c2: number;
+        for (let i = 0; i < string.length; ++i) {
+            c1 = string.charCodeAt(i);
+            if (c1 < 128) {
+                buffer[offset++] = c1;
+            } else if (c1 < 2048) {
+                buffer[offset++] = c1 >> 6 | 192;
+                buffer[offset++] = c1 & 63 | 128;
+            } else if ((c1 & 0xFC00) === 0xD800 && ((c2 = string.charCodeAt(i + 1)) & 0xFC00) === 0xDC00) {
+                c1 = 0x10000 + ((c1 & 0x03FF) << 10) + (c2 & 0x03FF);
+                ++i;
+                buffer[offset++] = c1 >> 18 | 240;
+                buffer[offset++] = c1 >> 12 & 63 | 128;
+                buffer[offset++] = c1 >> 6 & 63 | 128;
+                buffer[offset++] = c1 & 63 | 128;
+            } else {
+                buffer[offset++] = c1 >> 12 | 224;
+                buffer[offset++] = c1 >> 6 & 63 | 128;
+                buffer[offset++] = c1 & 63 | 128;
+            }
+        }
+        return offset - start;
     }
 
     function writeStringOfVarInt32(v: string) {
-        const ab = utf8Encoder.encode(v);
-        const len = ab.byteLength;
+        const len = Buffer.byteLength(v, 'utf8');
         // type and len
         reserves(len + 6);
         const isLatin1 = v.length === len;
         // write type
         dataView.setUint8(move(1), isLatin1 ? LATIN1 : UTF8);
         writeVarInt32(len);
-        arrayBuffer.set(ab, move(len));
+        if (isLatin1) {
+            if (len < 40) {
+                fastWriteStringLatin1(v, arrayBuffer, move(len));
+            } else {
+                arrayBuffer.write(v, move(len), 'latin1');
+            }
+        } else {
+            if (len < 40) {
+                fastWriteStringUtf8(v, arrayBuffer, move(len));
+            } else {
+                (arrayBuffer as any).utf8Write(v, move(len));
+            }
+        }
     }
 
     function writeVarInt32(value: number) {

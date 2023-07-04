@@ -1,7 +1,7 @@
 
 import Fury from '../index';
 import {describe, expect, test} from '@jest/globals';
-import { TypeDefinition } from '../lib/codeGen';
+import { TypeDescription } from '../lib/codeGen';
 import { InternalSerializerType } from '../lib/type';
 
 describe('datetime', () => {
@@ -15,7 +15,7 @@ describe('datetime', () => {
     expect(result).toEqual(now)
   });
   test('should datetime work', () => {
-    const definition: TypeDefinition = {
+    const description: TypeDescription = {
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         props: {
@@ -30,9 +30,9 @@ describe('datetime', () => {
       }
     };
     const fury = new Fury();
-    fury.registerSerializerByDefinition(definition);
+    const serializer = fury.registerSerializerByDescription(description);
     const d = new Date('2021/10/20 09:13');
-    const input = fury.marshal({ a:  d, b: d}, "example.foo");
+    const input = fury.marshal({ a:  d, b: d}, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );

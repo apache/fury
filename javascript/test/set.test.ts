@@ -1,5 +1,5 @@
 import Fury from '../index';
-import { genReadSerializer, TypeDefinition } from '../lib/codeGen';
+import { genReadSerializer, TypeDescription } from '../lib/codeGen';
 import { describe, expect, test } from '@jest/globals';
 import { InternalSerializerType } from '../lib/type';
 
@@ -13,7 +13,7 @@ describe('set', () => {
         expect(result).toEqual(new Set(["foo1", "bar1", "cc2"]))
     });
     test('should set in object work', () => {
-        const definition: TypeDefinition = {
+        const description: TypeDescription = {
             type: InternalSerializerType.FURY_TYPE_TAG,
             asObject: {
                 props: {
@@ -25,8 +25,8 @@ describe('set', () => {
             }
         };
         const fury = new Fury();
-        fury.registerSerializerByDefinition(definition);
-        const input = fury.marshal({ a: new Set(["foo1", "bar2"]) }, "example.foo");
+        const serializer = fury.registerSerializerByDescription(description);
+        const input = fury.marshal({ a: new Set(["foo1", "bar2"]) }, serializer);
         const result = fury.unmarshal(
             new Uint8Array(input)
         );
