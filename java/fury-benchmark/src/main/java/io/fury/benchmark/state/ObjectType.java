@@ -18,9 +18,28 @@
 
 package io.fury.benchmark.state;
 
+import io.fury.benchmark.data.MediaContent;
+import io.fury.benchmark.data.Sample;
+import io.fury.benchmark.data.Struct;
+
 public enum ObjectType {
   SAMPLE,
   MEDIA_CONTENT,
   STRUCT,
-  STRUCT2,
+  STRUCT2;
+
+  public static Object createObject(ObjectType objectType, boolean references) {
+    switch (objectType) {
+      case SAMPLE:
+        return new Sample().populate(references);
+      case MEDIA_CONTENT:
+        return new MediaContent().populate(references);
+      case STRUCT:
+        return Struct.create(false);
+      case STRUCT2:
+        return Struct.create(true);
+      default:
+        throw new UnsupportedOperationException(String.valueOf(objectType));
+    }
+  }
 }

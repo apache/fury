@@ -25,11 +25,12 @@ import io.fury.benchmark.IntsSerializationSuite;
 import io.fury.benchmark.LongStringSerializationSuite;
 import io.fury.benchmark.LongsSerializationSuite;
 import io.fury.benchmark.StringSerializationSuite;
+import io.fury.benchmark.UserTypeDeserializeSuite;
+import io.fury.benchmark.UserTypeSerializeSuite;
 import io.fury.benchmark.data.Data;
 import io.fury.benchmark.data.Image;
 import io.fury.benchmark.data.Media;
 import io.fury.benchmark.data.MediaContent;
-import io.fury.benchmark.data.Sample;
 import io.fury.benchmark.data.Struct;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
@@ -74,6 +75,10 @@ public class FuryState {
               .withReferenceTracking(references)
               .disableSecureMode()
               .build();
+      setupBuffer();
+    }
+
+    public void setupBuffer() {
       switch (bufferType) {
         case array:
           buffer = MemoryUtils.buffer(1024 * 512);
@@ -112,7 +117,9 @@ public class FuryState {
 
     @Override
     public void setup() {
-      super.setup();
+      setupBuffer();
+      object = ObjectType.createObject(objectType, references);
+      Thread.currentThread().setContextClassLoader(object.getClass().getClassLoader());
       Fury.FuryBuilder furyBuilder =
           Fury.builder()
               .withLanguage(Language.JAVA)
@@ -126,13 +133,13 @@ public class FuryState {
       }
       switch (objectType) {
         case SAMPLE:
-          object = new Sample().populate(references);
+        case STRUCT:
+        case STRUCT2:
           if (registerClass) {
             fury.register(object.getClass());
           }
           break;
         case MEDIA_CONTENT:
-          object = new MediaContent().populate(references);
           if (registerClass) {
             fury.register(Image.class);
             fury.register(Image.Size.class);
@@ -141,18 +148,6 @@ public class FuryState {
             fury.register(ArrayList.class);
             fury.register(MediaContent.class);
             fury.register(Struct.class);
-          }
-          break;
-        case STRUCT:
-          object = Struct.create(false);
-          if (registerClass) {
-            fury.register(object.getClass());
-          }
-          break;
-        case STRUCT2:
-          object = Struct.create(true);
-          if (registerClass) {
-            fury.register(object.getClass());
           }
           break;
       }
@@ -177,55 +172,46 @@ public class FuryState {
 
   public static class FuryCompatibleState extends FuryUserTypeState {
     @Override
-    public void setup() {
-      super.setup();
-      if (objectType == ObjectType.STRUCT) {
-        Thread.currentThread()
-            .setContextClassLoader(Struct.createStructClass(110, false).getClassLoader());
-        fury =
-            Fury.builder()
-                .withLanguage(Language.JAVA)
-                .withClassVersionCheck(false)
-                .ignoreStringReference(true) // for compare with fastjson
-                .withReferenceTracking(references)
-                .disableSecureMode()
-                .withCompatibleMode(CompatibleMode.COMPATIBLE)
-                .build();
-        if (registerClass) {
-          fury.register(object.getClass());
-        }
-      }
-    }
-
-    @Override
     public boolean compatible() {
       return true;
     }
   }
 
   public static class FuryMetaSharedState extends FuryUserTypeState {
-    public MetaContext metaContext = new MetaContext();
+    public MetaContext writerMetaContext = new MetaContext();
+    public MetaContext readerMetaContext = new MetaContext();
 
     @Override
     public void setup() {
-      super.setup();
-      if (objectType == ObjectType.STRUCT) {
-        Thread.currentThread()
-          .setContextClassLoader(Struct.createStructClass(110, false).getClassLoader());
-        fury =
+      setupBuffer();
+      object = ObjectType.createObject(objectType, references);
+      Thread.currentThread().setContextClassLoader(object.getClass().getClassLoader());
+      fury =
           Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withClassVersionCheck(false)
-            .ignoreStringReference(true) // for compare with fastjson
-            .withReferenceTracking(references)
-            .disableSecureMode()
-            .withMetaContextShareEnabled(true)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .build();
-        if (registerClass) {
-          fury.register(object.getClass());
-        }
-      }
+              .withLanguage(Language.JAVA)
+              .withClassVersionCheck(false)
+              .ignoreStringReference(true) // for compare with fastjson
+              .withReferenceTracking(references)
+              .disableSecureMode()
+              .withMetaContextShareEnabled(true)
+              .withCompatibleMode(CompatibleMode.COMPATIBLE)
+              .build();
+      // share meta first time.
+      new UserTypeSerializeSuite().furymetashared_serialize_compatible(this);
+      new UserTypeDeserializeSuite().furymetashared_deserialize_compatible(this);
+      // meta shared.
+      new UserTypeSerializeSuite().furymetashared_serialize_compatible(this);
+      serializedLength = buffer.writerIndex();
+      LOG.info(
+          "======> Fury metashared | {} | {} | {} | {} |",
+          objectType,
+          references,
+          bufferType,
+          serializedLength);
+      buffer.writerIndex(0);
+      Object o = new UserTypeDeserializeSuite().furymetashared_deserialize_compatible(this);
+      Preconditions.checkArgument(object.equals(o));
+      buffer.readerIndex(0);
     }
 
     @Override

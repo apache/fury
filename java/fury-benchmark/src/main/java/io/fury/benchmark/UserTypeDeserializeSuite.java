@@ -70,10 +70,8 @@ public class UserTypeDeserializeSuite {
   @Benchmark
   public Object furymetashared_deserialize_compatible(FuryState.FuryMetaSharedState state) {
     state.buffer.readerIndex(0);
-    state.fury.getSerializationContext().setMetaContext(state.metaContext);
-    Object o = state.fury.readReferencableFromJava(state.buffer);
-    state.fury.resetRead();
-    return o;
+    state.fury.getSerializationContext().setMetaContext(state.readerMetaContext);
+    return state.fury.deserialize(state.buffer);
   }
 
   @Benchmark
@@ -114,7 +112,7 @@ public class UserTypeDeserializeSuite {
   public static void main(String[] args) throws IOException {
     if (args.length == 0) {
       String commandLine =
-          "io.*UserTypeDeserializeSuite.* -f 3 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+          "io.*UserTypeDeserializeSuite.furymetashared_deserialize_compatible -f 0 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

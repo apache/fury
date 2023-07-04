@@ -39,6 +39,8 @@ import io.fury.builder.CodecUtils;
 import io.fury.builder.Generated;
 import io.fury.builder.JITContext;
 import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Invoke;
+import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.collection.IdentityMap;
 import io.fury.collection.IdentityObjectIntMap;
@@ -50,7 +52,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
 import io.fury.serializer.ChildContainerSerializers;
-import io.fury.serializer.CodegenSerializer;
+import io.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
 import io.fury.serializer.CollectionSerializers;
 import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.CompatibleSerializer;
@@ -801,7 +803,7 @@ public class ClassResolver {
     if (codegen) {
       if (extRegistry.getClassCtx.contains(cls)) {
         // avoid potential recursive call for seq codec generation.
-        return CodegenSerializer.LazyInitBeanSerializer.class;
+        return LazyInitBeanSerializer.class;
       } else {
         extRegistry.getClassCtx.add(cls);
         Class<? extends Serializer> sc;
@@ -862,9 +864,9 @@ public class ClassResolver {
   }
 
   public FieldResolver getFieldResolver(Class<?> cls) {
-    // can't use computeIfAbsent, since there may be recursive muiltple
+    // can't use computeIfAbsent, since there may be recursive multiple
     // `getFieldResolver` thus multiple updates, which cause concurrent
-    // modification exeption.
+    // modification exception.
     FieldResolver fieldResolver = extRegistry.fieldResolverMap.get(cls);
     if (fieldResolver == null) {
       fieldResolver = FieldResolver.of(fury, cls);
@@ -1109,11 +1111,12 @@ public class ClassResolver {
       buffer.writePositiveVarInt(newId);
       ClassDef classDef;
       Serializer<?> serializer = classInfo.serializer;
+      Preconditions.checkArgument(serializer.getClass() != UnexistedClassSerializer.class);
       if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE
           && (serializer instanceof Generated.GeneratedObjectSerializer
               // May already switched to MetaSharedSerializer when update class info cache.
               || serializer instanceof Generated.GeneratedMetaSharedSerializer
-              || serializer instanceof CodegenSerializer.LazyInitBeanSerializer
+              || serializer instanceof LazyInitBeanSerializer
               || serializer instanceof ObjectSerializer
               || serializer instanceof MetaSharedSerializer)) {
         classDef =
@@ -1271,28 +1274,28 @@ public class ClassResolver {
   // Note: Thread safe fot jit thread to call.
   public Expression writeClassExpr(
       Expression classResolverRef, Expression buffer, Expression classInfo) {
-    Expression classId = new Expression.Invoke(classInfo, "getClassId", PRIMITIVE_SHORT_TYPE);
+    Expression classId = new Invoke(classInfo, "getClassId", PRIMITIVE_SHORT_TYPE);
     Expression.ListExpression writeUnregistered =
         new Expression.ListExpression(
-            new Expression.Invoke(buffer, "writeByte", Expression.Literal.ofByte(USE_CLASS_VALUE)));
+            new Invoke(buffer, "writeByte", Literal.ofByte(USE_CLASS_VALUE)));
     if (metaContextShareEnabled) {
       writeUnregistered.add(
-          new Expression.Invoke(classResolverRef, "writeClassWithMetaShare", buffer, classInfo));
+          new Invoke(classResolverRef, "writeClassWithMetaShare", buffer, classInfo));
     } else {
       writeUnregistered.add(
-          new Expression.Invoke(
+          new Invoke(
               classResolverRef,
               "writeEnumStringBytes",
               buffer,
               inlineInvoke(classInfo, "getPackageNameBytes", TypeToken.of(EnumStringBytes.class))),
-          new Expression.Invoke(
+          new Invoke(
               classResolverRef,
               "writeEnumStringBytes",
               buffer,
               inlineInvoke(classInfo, "getClassNameBytes", TypeToken.of(EnumStringBytes.class))));
     }
     return new Expression.If(
-        eq(classId, Expression.Literal.ofShort(NO_CLASS_ID)),
+        eq(classId, Literal.ofShort(NO_CLASS_ID)),
         writeUnregistered,
         writeClassExpr(buffer, classId));
   }
@@ -1300,22 +1303,18 @@ public class ClassResolver {
   // Note: Thread safe fot jit thread to call.
   public Expression writeClassExpr(Expression buffer, short classId) {
     Preconditions.checkArgument(classId != NO_CLASS_ID);
-    return writeClassExpr(buffer, Expression.Literal.ofShort(classId));
+    return writeClassExpr(buffer, Literal.ofShort(classId));
   }
 
   // Note: Thread safe fot jit thread to call.
   public Expression writeClassExpr(Expression buffer, Expression classId) {
-    Expression writerIndex = new Expression.Invoke(buffer, "writerIndex", PRIMITIVE_INT_TYPE);
+    Expression writerIndex = new Invoke(buffer, "writerIndex", PRIMITIVE_INT_TYPE);
     return new Expression.ListExpression(
         writerIndex,
-        new Expression.Invoke(buffer, "increaseWriterIndex", Expression.Literal.ofInt(3)),
-        new Expression.Invoke(
-            buffer, "unsafePut", writerIndex, Expression.Literal.ofByte(USE_STRING_ID)),
-        new Expression.Invoke(
-            buffer,
-            "unsafePutShort",
-            ExpressionUtils.add(writerIndex, Expression.Literal.ofInt(1)),
-            classId));
+        new Invoke(buffer, "increaseWriterIndex", Literal.ofInt(3)),
+        new Invoke(buffer, "unsafePut", writerIndex, Literal.ofByte(USE_STRING_ID)),
+        new Invoke(
+            buffer, "unsafePutShort", ExpressionUtils.add(writerIndex, Literal.ofInt(1)), classId));
   }
 
   // Invoked by Fury JIT.
@@ -1325,7 +1324,7 @@ public class ClassResolver {
 
   // Note: Thread safe fot jit thread to call.
   public Expression skipRegisteredClassExpr(Expression buffer) {
-    return new Expression.Invoke(buffer, "increaseReaderIndex", Expression.Literal.ofInt(3));
+    return new Invoke(buffer, "increaseReaderIndex", Literal.ofInt(3));
   }
 
   /**

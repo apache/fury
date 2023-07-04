@@ -25,7 +25,6 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.io.UnsafeMemoryInput;
 import com.esotericsoftware.kryo.io.UnsafeMemoryOutput;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
-import com.esotericsoftware.kryo.serializers.FieldSerializer;
 import com.google.common.base.Preconditions;
 import io.fury.benchmark.IntsSerializationSuite;
 import io.fury.benchmark.LongStringSerializationSuite;
@@ -35,8 +34,6 @@ import io.fury.benchmark.data.Data;
 import io.fury.benchmark.data.Image;
 import io.fury.benchmark.data.Media;
 import io.fury.benchmark.data.MediaContent;
-import io.fury.benchmark.data.Sample;
-import io.fury.benchmark.data.Struct;
 import java.util.ArrayList;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
@@ -97,15 +94,15 @@ public class KryoState {
     @Override
     public void setup() {
       super.setup();
+      object = ObjectType.createObject(objectType, references);
+      Thread.currentThread().setContextClassLoader(object.getClass().getClassLoader());
+      kryo = new Kryo();
+      kryo.setReferences(references);
       if (compatible()) {
-        kryo = new Kryo();
-        kryo.setReferences(references);
         kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
       }
-
       switch (objectType) {
         case SAMPLE:
-          object = new Sample().populate(references);
           if (registerClass) {
             kryo.register(double[].class);
             kryo.register(int[].class);
@@ -119,7 +116,6 @@ public class KryoState {
           }
           break;
         case MEDIA_CONTENT:
-          object = new MediaContent().populate(references);
           if (registerClass) {
             kryo.register(Image.class);
             kryo.register(Image.Size.class);
@@ -130,20 +126,12 @@ public class KryoState {
           }
           break;
         case STRUCT:
-          object = Struct.create(false);
-          if (registerClass) {
-            kryo.register(object.getClass());
-          }
-          break;
         case STRUCT2:
-          object = Struct.create(true);
           if (registerClass) {
             kryo.register(object.getClass());
           }
           break;
       }
-      kryo.setDefaultSerializer(FieldSerializer.class);
-
       output.setPosition(0);
       kryo.writeClassAndObject(output, object);
       serializedLength = output.position();
@@ -164,16 +152,6 @@ public class KryoState {
   }
 
   public static class KryoCompatibleState extends KryoUserTypeState {
-
-    @Override
-    public void setup() {
-      if (objectType == ObjectType.STRUCT) {
-        Thread.currentThread()
-          .setContextClassLoader(Struct.createStructClass(110, false).getClassLoader());
-      }
-      super.setup();
-    }
-
     @Override
     public boolean compatible() {
       return true;
