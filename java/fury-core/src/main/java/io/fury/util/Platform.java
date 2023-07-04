@@ -390,4 +390,8 @@ public final class Platform {
   public static void flipBuffer(Buffer buffer) {
     buffer.flip();
   }
+
+  public static void rewind(Buffer buffer) {
+    buffer.rewind();
+  }
 }

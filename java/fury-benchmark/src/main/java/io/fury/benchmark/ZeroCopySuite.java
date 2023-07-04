@@ -333,7 +333,7 @@ public class ZeroCopySuite {
 
   public static Object jsonbDeserialize(JsonBState state, Blackhole bh) {
     if (state.bufferType == BufferType.directBuffer) {
-      state.directBuffer.rewind();
+      Platform.rewind(state.directBuffer);
       byte[] bytes = new byte[state.buffer.length];
       state.directBuffer.get(bytes);
       Object newObj = JSONB.parseObject(bytes, Object.class, state.jsonbReaderFeatures);

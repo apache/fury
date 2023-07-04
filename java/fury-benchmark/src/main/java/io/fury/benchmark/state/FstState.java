@@ -114,7 +114,7 @@ public class FstState {
         ByteBuffer directBuffer,
         Blackhole blackhole) {
       if (bufferType == BufferType.directBuffer) {
-        directBuffer.rewind();
+        Platform.rewind(directBuffer);
         byte[] bytes = new byte[out[0]];
         directBuffer.get(bytes);
         Object newObj = fst.asObject(bytes);
@@ -134,8 +134,11 @@ public class FstState {
 
     @Override
     public void setup() {
+      if (objectType == ObjectType.STRUCT) {
+        Thread.currentThread()
+          .setContextClassLoader(Struct.createStructClass(110, false).getClassLoader());
+      }
       super.setup();
-
       switch (objectType) {
         case SAMPLE:
           object = new Sample().populate(references);

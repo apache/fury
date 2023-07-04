@@ -167,11 +167,11 @@ public class KryoState {
 
     @Override
     public void setup() {
-      super.setup();
       if (objectType == ObjectType.STRUCT) {
         Thread.currentThread()
-            .setContextClassLoader(Struct.createStructClass(110, false).getClassLoader());
+          .setContextClassLoader(Struct.createStructClass(110, false).getClassLoader());
       }
+      super.setup();
     }
 
     @Override
