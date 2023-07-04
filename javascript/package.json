@@ -1,7 +1,7 @@
 {
-  "name": "fury",
-  "version": "0.10.dev",
-  "description": "javascript impl of fury",
+  "name": "furyjs",
+  "version": "0.0.1dev",
+  "description": "A blazing fast multi-language serialization framework powered by jit and zero-copy",
   "main": "dist/index.js",
   "scripts": {
     "tsc": "tsc -p ./",
@@ -9,7 +9,7 @@
     "lint": "eslint ."
   },
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0 license",
   "devDependencies": {
     "@types/node": "^18.7.21",
     "@typescript-eslint/eslint-plugin": "^5.40.0",
