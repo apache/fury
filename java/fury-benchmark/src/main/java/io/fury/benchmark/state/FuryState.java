@@ -129,8 +129,8 @@ public class FuryState {
               .disableSecureMode();
       if (compatible()) {
         furyBuilder.withCompatibleMode(CompatibleMode.COMPATIBLE);
-        fury = furyBuilder.build();
       }
+      fury = furyBuilder.build();
       switch (objectType) {
         case SAMPLE:
         case STRUCT:
