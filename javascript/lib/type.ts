@@ -56,7 +56,6 @@ export type SerializerRead<T = any> = (
 export type SerializerWrite<T = any> = (
 	v: T,
 	genericWriters?: GenericWriter<T>[],
-	tag?: string,
 ) => void
 
 // read, write

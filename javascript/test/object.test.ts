@@ -1,11 +1,11 @@
 import Fury from '../index';
 import { describe, expect, test } from '@jest/globals';
-import { TypeDefinition } from '../lib/codeGen';
+import { TypeDescription } from '../lib/codeGen';
 import { InternalSerializerType } from '../lib/type';
 
 describe('object', () => {
   test('should object work', () => {
-    const definition: TypeDefinition = {
+    const description: TypeDescription = {
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         props: {
@@ -25,8 +25,8 @@ describe('object', () => {
       }
     };
     const fury = new Fury();
-    fury.registerSerializerByDefinition(definition);
-    const input = fury.marshal({ a: { b: "hel" } }, "example.foo");
+    const serializer = fury.registerSerializerByDescription(description);
+    const input = fury.marshal({ a: { b: "hel" } }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -34,7 +34,7 @@ describe('object', () => {
   });
 
   test('should object in array work', () => {
-    const definition: TypeDefinition = {
+    const description: TypeDescription = {
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         props: {
@@ -59,8 +59,8 @@ describe('object', () => {
       }
     };
     const fury = new Fury();
-    fury.registerSerializerByDefinition(definition);
-    const input = fury.marshal({ a: [{ b: "hel" }] }, "example.foo");
+    const serializer = fury.registerSerializerByDescription(description);
+    const input = fury.marshal({ a: [{ b: "hel" }] }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -68,7 +68,7 @@ describe('object', () => {
   });
 
   test('should write tag and read tag work', () => {
-    const definition: TypeDefinition = {
+    const description: TypeDescription = {
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         props: {
@@ -94,8 +94,8 @@ describe('object', () => {
       }
     };
     const fury = new Fury();
-    fury.registerSerializerByDefinition(definition);
-    const input = fury.marshal({ a: { b: "hel" }, a2: { b: "hel2" } }, "example.foo");
+    const serializer = fury.registerSerializerByDescription(description);
+    const input = fury.marshal({ a: { b: "hel" }, a2: { b: "hel2" } }, serializer);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
@@ -103,7 +103,7 @@ describe('object', () => {
   });
 
   test('should ciycle ref work', () => {
-    const definition: TypeDefinition = {
+    const description: TypeDescription = {
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
         props: {
@@ -129,11 +129,11 @@ describe('object', () => {
       }
     };
     const fury = new Fury();
-    fury.registerSerializerByDefinition(definition);
+    const serialize = fury.registerSerializerByDescription(description);
     const param: any = {};
     param.a = {b: "hel"};
     param.a2 = param;
-    const input = fury.marshal(param, "example.foo");
+    const input = fury.marshal(param, serialize);
     const result = fury.unmarshal(
       new Uint8Array(input)
     );
