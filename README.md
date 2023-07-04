@@ -98,7 +98,7 @@ See xxx for more detailed guide.
 
 
 ## RoadMap
-- Meta compression and auto meta sharing.
+- Meta compression, auto meta sharing and cross-language schema compatibility.
 - AOT Framework for c++/golang/rust to generate code statically.
 - C++/Rust object graph serialization support
 - Golang/Rust/NodeJS row format support
