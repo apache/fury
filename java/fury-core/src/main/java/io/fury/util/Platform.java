@@ -382,4 +382,16 @@ public final class Platform {
     UNSAFE.putInt(buffer, BUFFER_CAPACITY_FIELD_OFFSET, size);
     buffer.clear();
   }
+
+  public static void clearBuffer(Buffer buffer) {
+    buffer.clear();
+  }
+
+  public static void flipBuffer(Buffer buffer) {
+    buffer.flip();
+  }
+
+  public static void rewind(Buffer buffer) {
+    buffer.rewind();
+  }
 }

@@ -31,6 +31,7 @@ import io.fury.benchmark.data.MediaContent;
 import io.fury.benchmark.data.Sample;
 import io.fury.benchmark.data.Struct;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Platform;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -104,7 +105,7 @@ public class JsonbState {
           "======> Jsonb | {} | {} | {} | {} |", objectType, references, bufferType, buffer.length);
       if (bufferType == BufferType.directBuffer) {
         directBuffer.put(buffer);
-        directBuffer.clear();
+        Platform.clearBuffer(directBuffer);
       }
       Preconditions.checkArgument(object.equals(deserialize(null, this)));
     }
@@ -141,7 +142,7 @@ public class JsonbState {
   public static byte[] serialize(Blackhole blackhole, JsonbBenchmarkState state, Object value) {
     byte[] bytes = JSONB.toBytes(value, state.jsonbWriteFeatures);
     if (state.bufferType == BufferType.directBuffer) {
-      state.directBuffer.clear();
+      Platform.clearBuffer(state.directBuffer);
       state.directBuffer.put(bytes);
     }
     if (blackhole != null) {
@@ -153,7 +154,7 @@ public class JsonbState {
 
   public static Object deserialize(Blackhole blackhole, JsonbBenchmarkState state) {
     if (state.bufferType == BufferType.directBuffer) {
-      state.directBuffer.rewind();
+      Platform.rewind(state.directBuffer);
       byte[] bytes = new byte[state.buffer.length];
       state.directBuffer.get(bytes);
       Object newObj = JSONB.parseObject(bytes, Object.class, state.jsonbReaderFeatures);

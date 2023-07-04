@@ -39,6 +39,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.serializer.BufferObject;
 import io.fury.test.bean.ArraysData;
+import io.fury.util.Platform;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -192,16 +193,13 @@ public class ZeroCopySuite {
           state.bufferObjects.add(o);
           return false;
         });
-    state.fury.resetWrite();
     return state.buffer;
   }
 
   @Benchmark
   public Object fury_deserialize(FuryState state) {
     state.buffer.readerIndex(0);
-    Object o = state.fury.deserialize(state.buffer, state.buffers);
-    state.fury.resetRead();
-    return o;
+    return state.fury.deserialize(state.buffer, state.buffers);
   }
 
   public static class KryoState extends ZeroCopyBenchmarkState {
@@ -314,7 +312,7 @@ public class ZeroCopySuite {
   public static Object jsonbSerialize(JsonBState state, Blackhole bh) {
     byte[] bytes = JSONB.toBytes(state.data, state.jsonbWriteFeatures);
     if (state.bufferType == BufferType.directBuffer) {
-      state.directBuffer.clear();
+      Platform.clearBuffer(state.directBuffer);
       state.directBuffer.put(bytes);
     }
     if (bh != null) {
@@ -331,7 +329,7 @@ public class ZeroCopySuite {
 
   public static Object jsonbDeserialize(JsonBState state, Blackhole bh) {
     if (state.bufferType == BufferType.directBuffer) {
-      state.directBuffer.rewind();
+      Platform.rewind(state.directBuffer);
       byte[] bytes = new byte[state.buffer.length];
       state.directBuffer.get(bytes);
       Object newObj = JSONB.parseObject(bytes, Object.class, state.jsonbReaderFeatures);

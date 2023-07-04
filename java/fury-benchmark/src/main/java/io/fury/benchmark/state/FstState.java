@@ -29,6 +29,7 @@ import io.fury.benchmark.data.Media;
 import io.fury.benchmark.data.MediaContent;
 import io.fury.benchmark.data.Sample;
 import io.fury.benchmark.data.Struct;
+import io.fury.util.Platform;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import org.nustaq.serialization.FSTConfiguration;
@@ -51,7 +52,7 @@ public class FstState {
 
   public static void main(String[] args) {
     FstUserTypeState state = new FstUserTypeState();
-    state.objectType = ObjectType.SAMPLE;
+    state.objectType = ObjectType.STRUCT;
     state.bufferType = BufferType.directBuffer;
     state.setup();
     FstBenchmarkState.serialize(null, state, state.object);
@@ -89,7 +90,7 @@ public class FstState {
         Blackhole blackhole) {
       byte[] bytes = fst.asSharedByteArray(value, out);
       if (bufferType == BufferType.directBuffer) {
-        directBuffer.clear();
+        Platform.clearBuffer(directBuffer);
         directBuffer.put(bytes, 0, out[0]);
       }
       if (blackhole != null) {
@@ -112,7 +113,7 @@ public class FstState {
         ByteBuffer directBuffer,
         Blackhole blackhole) {
       if (bufferType == BufferType.directBuffer) {
-        directBuffer.rewind();
+        Platform.rewind(directBuffer);
         byte[] bytes = new byte[out[0]];
         directBuffer.get(bytes);
         Object newObj = fst.asObject(bytes);
@@ -132,8 +133,11 @@ public class FstState {
 
     @Override
     public void setup() {
+      if (objectType == ObjectType.STRUCT) {
+        Thread.currentThread()
+            .setContextClassLoader(Struct.createStructClass(110, false).getClassLoader());
+      }
       super.setup();
-
       switch (objectType) {
         case SAMPLE:
           object = new Sample().populate(references);

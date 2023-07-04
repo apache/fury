@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+
+import io.fury.util.Platform;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
@@ -422,7 +424,7 @@ public class FlatBuffersState {
       } else {
         deserializedData = ByteBuffer.wrap(data);
       }
-      deserializedData.clear();
+      Platform.clearBuffer(deserializedData);
       Object newObj = deserializeFunc.apply(deserializedData);
       Preconditions.checkArgument(object.equals(newObj));
     }

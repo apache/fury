@@ -69,6 +69,14 @@ public class UserTypeSerializeSuite {
   }
 
   @Benchmark
+  public Object furymetashared_serialize_compatible(FuryState.FuryMetaSharedState state) {
+    state.buffer.writerIndex(0);
+    state.fury.getSerializationContext().setMetaContext(state.writerMetaContext);
+    state.fury.serialize(state.buffer, state.object);
+    return state.buffer;
+  }
+
+  @Benchmark
   public byte[] fst_serialize(FstState.FstUserTypeState state, Blackhole bh) {
     return FstState.FstBenchmarkState.serialize(bh, state, state.object);
   }
