@@ -39,14 +39,13 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.serializer.BufferObject;
 import io.fury.test.bean.ArraysData;
+import io.fury.util.Platform;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import io.fury.util.Platform;
 import org.nustaq.serialization.FSTConfiguration;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -194,16 +193,13 @@ public class ZeroCopySuite {
           state.bufferObjects.add(o);
           return false;
         });
-    state.fury.resetWrite();
     return state.buffer;
   }
 
   @Benchmark
   public Object fury_deserialize(FuryState state) {
     state.buffer.readerIndex(0);
-    Object o = state.fury.deserialize(state.buffer, state.buffers);
-    state.fury.resetRead();
-    return o;
+    return state.fury.deserialize(state.buffer, state.buffers);
   }
 
   public static class KryoState extends ZeroCopyBenchmarkState {

@@ -29,10 +29,9 @@ import io.fury.benchmark.data.Media;
 import io.fury.benchmark.data.MediaContent;
 import io.fury.benchmark.data.Sample;
 import io.fury.benchmark.data.Struct;
+import io.fury.util.Platform;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-
-import io.fury.util.Platform;
 import org.nustaq.serialization.FSTConfiguration;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
@@ -136,7 +135,7 @@ public class FstState {
     public void setup() {
       if (objectType == ObjectType.STRUCT) {
         Thread.currentThread()
-          .setContextClassLoader(Struct.createStructClass(110, false).getClassLoader());
+            .setContextClassLoader(Struct.createStructClass(110, false).getClassLoader());
       }
       super.setup();
       switch (objectType) {

@@ -31,6 +31,7 @@ import io.fury.benchmark.data.MediaContent;
 import io.fury.benchmark.data.Sample;
 import io.fury.benchmark.data.Struct;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Platform;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -40,8 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
-
-import io.fury.util.Platform;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
