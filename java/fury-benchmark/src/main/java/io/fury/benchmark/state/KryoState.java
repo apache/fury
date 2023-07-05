@@ -97,6 +97,7 @@ public class KryoState {
       object = ObjectType.createObject(objectType, references);
       Thread.currentThread().setContextClassLoader(object.getClass().getClassLoader());
       kryo = new Kryo();
+      kryo.setClassLoader(object.getClass().getClassLoader());
       kryo.setReferences(references);
       if (compatible()) {
         kryo.setDefaultSerializer(CompatibleFieldSerializer.class);

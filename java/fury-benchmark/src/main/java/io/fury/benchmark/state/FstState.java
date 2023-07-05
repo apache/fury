@@ -27,8 +27,6 @@ import io.fury.benchmark.data.Data;
 import io.fury.benchmark.data.Image;
 import io.fury.benchmark.data.Media;
 import io.fury.benchmark.data.MediaContent;
-import io.fury.benchmark.data.Sample;
-import io.fury.benchmark.data.Struct;
 import io.fury.util.Platform;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -68,12 +66,16 @@ public class FstState {
 
     @Setup(Level.Trial)
     public void setup() {
-      fst = FSTConfiguration.createDefaultConfiguration();
-      fst.setPreferSpeed(true);
-      fst.setShareReferences(references);
+      setupFst();
       if (bufferType == BufferType.directBuffer) {
         directBuffer = ByteBuffer.allocateDirect(10 * 1024 * 1024);
       }
+    }
+
+    public void setupFst() {
+      fst = FSTConfiguration.createDefaultConfiguration();
+      fst.setPreferSpeed(true);
+      fst.setShareReferences(references);
     }
 
     public static byte[] serialize(Blackhole blackhole, FstBenchmarkState state, Object value) {
@@ -133,20 +135,20 @@ public class FstState {
 
     @Override
     public void setup() {
-      if (objectType == ObjectType.STRUCT) {
-        Thread.currentThread()
-            .setContextClassLoader(Struct.createStructClass(110, false).getClassLoader());
-      }
+      object = ObjectType.createObject(objectType, references);
+      Thread.currentThread().setContextClassLoader(object.getClass().getClassLoader());
       super.setup();
+      setupFst();
+      fst.setClassLoader(object.getClass().getClassLoader());
       switch (objectType) {
         case SAMPLE:
-          object = new Sample().populate(references);
+        case STRUCT2:
+        case STRUCT:
           if (registerClass) {
             fst.registerClass(object.getClass());
           }
           break;
         case MEDIA_CONTENT:
-          object = new MediaContent().populate(references);
           if (registerClass) {
             fst.registerClass(Image.class);
             fst.registerClass(Image.Size.class);
@@ -156,18 +158,8 @@ public class FstState {
             fst.registerClass(MediaContent.class);
           }
           break;
-        case STRUCT:
-          object = Struct.create(false);
-          if (registerClass) {
-            fst.registerClass(object.getClass());
-          }
-          break;
-        case STRUCT2:
-          object = Struct.create(true);
-          if (registerClass) {
-            fst.registerClass(object.getClass());
-          }
-          break;
+        default:
+          throw new IllegalStateException("Unexpected value: " + objectType);
       }
       buffer = serialize(null, this, object);
       Preconditions.checkArgument(object.equals(deserialize(null, this)));
