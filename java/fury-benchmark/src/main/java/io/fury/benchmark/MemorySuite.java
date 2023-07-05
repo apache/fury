@@ -131,7 +131,7 @@ public class MemorySuite {
     return state.heapBuffer;
   }
 
-  private static byte[] target = new byte[arrLen * 8];
+  private static final byte[] target = new byte[arrLen * 8];
 
   // @org.openjdk.jmh.annotations.Benchmark
   public Object systemArrayCopy(MemoryState state) {
@@ -139,7 +139,7 @@ public class MemorySuite {
     return target;
   }
 
-  // @org.openjdk.jmh.annotations.Benchmark
+  @org.openjdk.jmh.annotations.Benchmark
   public Object unsafeCopy(MemoryState state) {
     Platform.UNSAFE.copyMemory(
         state.bytes,
@@ -147,6 +147,15 @@ public class MemorySuite {
         target,
         Platform.BYTE_ARRAY_OFFSET,
         state.bytes.length);
+    return target;
+  }
+
+  // @org.openjdk.jmh.annotations.Benchmark
+  public Object arrayAssignCopy(MemoryState state) {
+    byte[] bytes = state.bytes;
+    for (int i = 0; i < bytes.length; i++) {
+      target[i] = bytes[i];
+    }
     return target;
   }
 
@@ -162,7 +171,7 @@ public class MemorySuite {
   private static final byte[] array1 = getByteArray(256);
   private static final MemoryBuffer buffer1 = MemoryUtils.wrap(getByteArray(256));
 
-  @org.openjdk.jmh.annotations.Benchmark
+  // @org.openjdk.jmh.annotations.Benchmark
   public Object bufferUnsafeReadByte(MemoryState state) {
     int x = 0;
     MemoryBuffer buffer1 = MemorySuite.buffer1;
@@ -174,7 +183,7 @@ public class MemorySuite {
     return x;
   }
 
-  @org.openjdk.jmh.annotations.Benchmark
+  // @org.openjdk.jmh.annotations.Benchmark
   public Object bufferArrayReadZByte(MemoryState state) {
     int x = 0;
     byte[] array1 = MemorySuite.array1;
@@ -184,7 +193,7 @@ public class MemorySuite {
     return x;
   }
 
-  @org.openjdk.jmh.annotations.Benchmark
+  // @org.openjdk.jmh.annotations.Benchmark
   public Object bufferArrayReadShort(MemoryState state) {
     int x = 0;
     byte[] array1 = MemorySuite.array1;
@@ -194,7 +203,7 @@ public class MemorySuite {
     return x;
   }
 
-  @org.openjdk.jmh.annotations.Benchmark
+  // @org.openjdk.jmh.annotations.Benchmark
   public Object bufferUnsafeReadShort(MemoryState state) {
     int x = 0;
     MemoryBuffer buffer1 = MemorySuite.buffer1;

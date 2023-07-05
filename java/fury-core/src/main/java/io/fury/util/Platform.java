@@ -18,6 +18,7 @@
 package io.fury.util;
 
 import com.google.common.base.Preconditions;
+import io.fury.util.unsafe._JDKAccess;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.Buffer;
@@ -32,18 +33,10 @@ import sun.misc.Unsafe;
 @SuppressWarnings("restriction")
 public final class Platform {
   @SuppressWarnings("restriction")
-  public static final Unsafe UNSAFE;
+  public static final Unsafe UNSAFE = _JDKAccess.UNSAFE;
 
-  public static final int JAVA_VERSION;
+  public static final int JAVA_VERSION = _JDKAccess.JAVA_VERSION;
   public static final boolean IS_LITTLE_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
-
-  static {
-    String property = System.getProperty("java.specification.version");
-    if (property.startsWith("1.")) {
-      property = property.substring(2);
-    }
-    JAVA_VERSION = Integer.parseInt(property);
-  }
 
   public static final int BOOLEAN_ARRAY_OFFSET;
 
@@ -70,15 +63,6 @@ public final class Platform {
   private static final long UNSAFE_COPY_THRESHOLD = 1024L * 1024L;
 
   static {
-    Unsafe unsafe;
-    try {
-      Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-      unsafeField.setAccessible(true);
-      unsafe = (Unsafe) unsafeField.get(null);
-    } catch (Throwable cause) {
-      throw new UnsupportedOperationException("Unsafe is not supported in this platform.");
-    }
-    UNSAFE = unsafe;
     BOOLEAN_ARRAY_OFFSET = UNSAFE.arrayBaseOffset(boolean[].class);
     BYTE_ARRAY_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
     CHAR_ARRAY_OFFSET = UNSAFE.arrayBaseOffset(char[].class);

@@ -504,6 +504,8 @@ public final class StringSerializer extends Serializer<String> {
           // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
           // string length 230.
           // 50% faster than unsafe put field in java11 for string length 10.
+          // `invokeExact` must pass exact params with exact types:
+          // `(Object) data, coder` will throw WrongMethodTypeException
           return (String) JAVA11_STRING_ZERO_COPY_CTR.invokeExact(data, coder);
         }
       }

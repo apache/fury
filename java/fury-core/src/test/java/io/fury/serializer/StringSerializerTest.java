@@ -59,8 +59,11 @@ public class StringSerializerTest extends FuryTestBase {
     // Ensure JavaStringZeroCopy work for CI and most development environments.
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
     for (int i = 0; i < 32; i++) {
-      for (int j = 0; j < 1024; j++) {
+      for (int j = 0; j < 32; j++) {
         String str = StringUtils.random(j);
+        if (j % 2 == 0) {
+          str += "你好"; // utf16
+        }
         Assert.assertTrue(writeJavaStringZeroCopy(buffer, str));
         String newStr = readJavaStringZeroCopy(buffer);
         Assert.assertEquals(str, newStr, String.format("i %s j %s", i, j));
