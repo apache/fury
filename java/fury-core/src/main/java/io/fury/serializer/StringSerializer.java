@@ -30,6 +30,7 @@ import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Invoke;
 import io.fury.codegen.Expression.StaticInvoke;
 import io.fury.memory.MemoryBuffer;
+import io.fury.memory.MemoryUtils;
 import io.fury.type.Type;
 import io.fury.util.MathUtils;
 import io.fury.util.Platform;
@@ -185,10 +186,11 @@ public final class StringSerializer extends Serializer<String> {
           // TODO(chaokunyang) optimize for jdk17 str.
           return new Invoke(strSerializer, "readJavaString", STRING_TYPE, buffer);
         } else {
-          Expression coder = inlineInvoke(buffer, "readByte", BYTE_TYPE);
-          Expression value = inlineInvoke(buffer, "readBytesWithSizeEmbedded", BINARY_TYPE);
-          return new StaticInvoke(
-              StringSerializer.class, "newJava11StringByZeroCopy", STRING_TYPE, coder, value);
+          // Expression coder = inlineInvoke(buffer, "readByte", BYTE_TYPE);
+          // Expression value = inlineInvoke(buffer, "readBytesWithSizeEmbedded", BINARY_TYPE);
+          // return new StaticInvoke(
+          //     StringSerializer.class, "newJava11StringByZeroCopy", STRING_TYPE, coder, value);
+          return new Invoke(strSerializer, "readJava11String", STRING_TYPE, buffer);
         }
       } else {
         if (!STRING_VALUE_FIELD_IS_CHARS) {
@@ -205,6 +207,47 @@ public final class StringSerializer extends Serializer<String> {
       }
     } else {
       return new Invoke(strSerializer, "readUTF8String", STRING_TYPE, buffer);
+    }
+  }
+
+  // Invoked by jit.
+  public String readJava11String(MemoryBuffer buffer) {
+    byte[] heapMemory = buffer.getHeapMemory();
+    if (heapMemory != null) {
+      final int targetIndex = buffer.unsafeHeapWriterIndex();
+      int arrIndex = targetIndex;
+      byte coder = heapMemory[arrIndex++];
+      // The encoding algorithm are based on kryo UnsafeMemoryOutput.writeVarInt
+      // varint are written using little endian byte order.
+      // inline the implementation here since java can't return varIntBytes and varint
+      // at the same time.
+      int b = heapMemory[arrIndex++];
+      int numBytes = b & 0x7F;
+      if ((b & 0x80) != 0) {
+        b = heapMemory[arrIndex++];
+        numBytes |= (b & 0x7F) << 7;
+        if ((b & 0x80) != 0) {
+          b = heapMemory[arrIndex++];
+          numBytes |= (b & 0x7F) << 14;
+          if ((b & 0x80) != 0) {
+            b = heapMemory[arrIndex++];
+            numBytes |= (b & 0x7F) << 21;
+            if ((b & 0x80) != 0) {
+              b = heapMemory[arrIndex];
+              numBytes |= (b & 0x7F) << 28;
+            }
+          }
+        }
+      }
+      final byte[] bytes = new byte[numBytes];
+      System.arraycopy(heapMemory, arrIndex, bytes, 0, numBytes);
+      buffer.increaseReaderIndexUnsafe(arrIndex - targetIndex + numBytes);
+      return newJava11StringByZeroCopy(coder, bytes);
+    } else {
+      byte coder = buffer.readByte();
+      final int numBytes = buffer.readPositiveVarInt();
+      byte[] bytes = buffer.readBytes(numBytes);
+      return newJava11StringByZeroCopy(coder, bytes);
     }
   }
 
@@ -296,9 +339,7 @@ public final class StringSerializer extends Serializer<String> {
           return new String(readUTF16Chars(buffer, coder));
         }
       } else {
-        byte coder = buffer.readByte();
-        byte[] value = buffer.readBytesWithSizeEmbedded();
-        return newJava11StringByZeroCopy(coder, value);
+        return readJava11String(buffer);
       }
     } else {
       if (!STRING_VALUE_FIELD_IS_CHARS) {
@@ -331,7 +372,7 @@ public final class StringSerializer extends Serializer<String> {
       // jvm doesn't eliminate well in some jdk.
       final int targetIndex = buffer.unsafeHeapWriterIndex();
       targetArray[targetIndex] = coder;
-      int varIntBytesLen = MemoryBuffer.writePositiveVarInt(targetArray, targetIndex + 1, bytesLen);
+      int varIntBytesLen = MemoryUtils.writePositiveVarInt(targetArray, targetIndex + 1, bytesLen);
       int diff = varIntBytesLen + 1;
       writerIndex += diff;
       System.arraycopy(bytes, 0, targetArray, targetIndex + diff, bytesLen);
@@ -356,7 +397,7 @@ public final class StringSerializer extends Serializer<String> {
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       final int targetIndex = buffer.unsafeHeapWriterIndex();
-      int varIntBytesLen = MemoryBuffer.writePositiveVarInt(targetArray, targetIndex, strLen);
+      int varIntBytesLen = MemoryUtils.writePositiveVarInt(targetArray, targetIndex, strLen);
       writerIndex += varIntBytesLen + strLen;
       for (int i = 0; i < strLen; i++) {
         targetArray[targetIndex + i] = (byte) chars[i];
@@ -389,7 +430,7 @@ public final class StringSerializer extends Serializer<String> {
       byte[] targetArray = buffer.getHeapMemory();
       if (targetArray != null) {
         final int targetIndex = buffer.unsafeHeapWriterIndex();
-        int varIntBytesLen = MemoryBuffer.writePositiveVarInt(targetArray, targetIndex, strLen);
+        int varIntBytesLen = MemoryUtils.writePositiveVarInt(targetArray, targetIndex, strLen);
         // Write to heap memory then copy is 250% faster than unsafe write to direct memory.
         int charIndex = 0;
         for (int i = targetIndex + varIntBytesLen, end = i + numBytes; i < end; i += 2) {

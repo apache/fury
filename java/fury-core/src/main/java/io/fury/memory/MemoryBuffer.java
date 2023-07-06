@@ -1251,39 +1251,6 @@ public final class MemoryBuffer {
     return 5;
   }
 
-  public static int writePositiveVarInt(byte[] arr, int index, int v) {
-    // The encoding algorithm are based on kryo UnsafeMemoryOutput.writeVarInt
-    // varint are written using little endian byte order.
-    if (v >>> 7 == 0) {
-      arr[index] = (byte)v;
-      return 1;
-    }
-    if (v >>> 14 == 0) {
-      arr[index++] = (byte)((v & 0x7F) | 0x80);
-      arr[index] = (byte)(v >>> 7);
-      return 2;
-    }
-    if (v >>> 21 == 0) {
-      arr[index++] = (byte)((v & 0x7F) | 0x80);
-      arr[index++] = (byte)(v >>> 7 | 0x80);
-      arr[index] = (byte)(v >>> 14);
-      return 3;
-    }
-    if (v >>> 28 == 0) {
-      arr[index++] = (byte)((v & 0x7F) | 0x80);
-      arr[index++] = (byte)(v >>> 7 | 0x80);
-      arr[index++] = (byte)(v >>> 14 | 0x80);
-      arr[index] = (byte)(v >>> 21);
-      return 4;
-    }
-    arr[index++] = (byte)((v & 0x7F) | 0x80);
-    arr[index++] = (byte)(v >>> 7 | 0x80);
-    arr[index++] = (byte)(v >>> 14 | 0x80);
-    arr[index++] = (byte)(v >>> 21 | 0x80);
-    arr[index] = (byte)(v >>> 28);
-    return 5;
-  }
-
   /** Reads the 1-5 byte int part of a non-negative varint. */
   public int readPositiveVarInt() {
     int readIdx = readerIndex;
@@ -1987,7 +1954,9 @@ public final class MemoryBuffer {
           String.format(
               "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, length, size, this));
     }
-    byte[] bytes = getBytes(readerIdx, length);
+    final byte[] bytes = new byte[length];
+    Platform.UNSAFE.copyMemory(
+      this.heapMemory, address + readerIdx, bytes, Platform.BYTE_ARRAY_OFFSET, length);
     readerIndex = readerIdx + length;
     return bytes;
   }
