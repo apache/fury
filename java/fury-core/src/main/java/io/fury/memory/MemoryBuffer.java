@@ -1003,6 +1003,10 @@ public final class MemoryBuffer {
     this.writerIndex = writerIndex;
   }
 
+  public void unsafeWriterIndex(int writerIndex) {
+    this.writerIndex = writerIndex;
+  }
+
   /** Returns heap index for writer index if buffer is a heap buffer. */
   public int unsafeHeapWriterIndex() {
     return writerIndex + heapOffset;
@@ -1244,6 +1248,49 @@ public final class MemoryBuffer {
     varInt &= 0xFFFFFFFFFL;
     unsafePutLong(writerIndex, varInt);
     this.writerIndex = writerIndex + 5;
+    return 5;
+  }
+
+  /**
+   * Caller must ensure there must be at least 8 bytes for writing, otherwise the crash may occur.
+   */
+  public int unsafePutPositiveVarInt(int index, int v) {
+    // The encoding algorithm are based on kryo UnsafeMemoryOutput.writeVarInt
+    // varint are written using little endian byte order.
+    // This version should have better performance since it remove an index update.
+    long value = v;
+    long varInt = (value & 0x7F);
+    value >>>= 7;
+    if (value == 0) {
+      UNSAFE.putByte(heapMemory, address + index, (byte) varInt);
+      return 1;
+    }
+    // bit 8 `set` indicates have next data bytes.
+    varInt |= 0x80;
+    varInt |= ((value & 0x7F) << 8);
+    value >>>= 7;
+    if (value == 0) {
+      unsafePutInt(index, (int) varInt);
+      return 2;
+    }
+    varInt |= (0x80 << 8);
+    varInt |= ((value & 0x7F) << 16);
+    value >>>= 7;
+    if (value == 0) {
+      unsafePutInt(index, (int) varInt);
+      return 3;
+    }
+    varInt |= (0x80 << 16);
+    varInt |= ((value & 0x7F) << 24);
+    value >>>= 7;
+    if (value == 0) {
+      unsafePutInt(index, (int) varInt);
+      return 4;
+    }
+    varInt |= (0x80L << 24);
+    varInt |= ((value & 0x7F) << 32);
+    varInt &= 0xFFFFFFFFFL;
+    unsafePutLong(index, varInt);
     return 5;
   }
 
@@ -1950,7 +1997,9 @@ public final class MemoryBuffer {
           String.format(
               "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, length, size, this));
     }
-    byte[] bytes = getBytes(readerIdx, length);
+    final byte[] bytes = new byte[length];
+    Platform.UNSAFE.copyMemory(
+        this.heapMemory, address + readerIdx, bytes, Platform.BYTE_ARRAY_OFFSET, length);
     readerIndex = readerIdx + length;
     return bytes;
   }
