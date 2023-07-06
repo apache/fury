@@ -18,9 +18,6 @@
 
 package io.fury.serializer;
 
-import static io.fury.codegen.Expression.Invoke.inlineInvoke;
-import static io.fury.type.TypeUtils.BINARY_TYPE;
-import static io.fury.type.TypeUtils.BYTE_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_CHAR_ARRAY_TYPE;
 import static io.fury.type.TypeUtils.STRING_TYPE;
 
@@ -214,7 +211,7 @@ public final class StringSerializer extends Serializer<String> {
   public String readJava11String(MemoryBuffer buffer) {
     byte[] heapMemory = buffer.getHeapMemory();
     if (heapMemory != null) {
-      final int targetIndex = buffer.unsafeHeapWriterIndex();
+      final int targetIndex = buffer.unsafeHeapReaderIndex();
       int arrIndex = targetIndex;
       byte coder = heapMemory[arrIndex++];
       // The encoding algorithm are based on kryo UnsafeMemoryOutput.writeVarInt
@@ -365,45 +362,49 @@ public final class StringSerializer extends Serializer<String> {
     int writerIndex = buffer.writerIndex();
     // The `ensure` ensure next operations are safe without bound checks,
     // and inner heap buffer doesn't change.
-    buffer.ensure(writerIndex + 5 + bytesLen);
+    buffer.ensure(writerIndex + 9 + bytesLen); // 1 byte coder + varint max 8 bytes
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       // Some JDK11 Unsafe.copyMemory will `copyMemoryChecks`, and
       // jvm doesn't eliminate well in some jdk.
       final int targetIndex = buffer.unsafeHeapWriterIndex();
-      targetArray[targetIndex] = coder;
-      int varIntBytesLen = MemoryUtils.writePositiveVarInt(targetArray, targetIndex + 1, bytesLen);
-      int diff = varIntBytesLen + 1;
-      writerIndex += diff;
-      System.arraycopy(bytes, 0, targetArray, targetIndex + diff, bytesLen);
+      int arrIndex = targetIndex;
+      targetArray[arrIndex++] = coder;
+      arrIndex += MemoryUtils.writePositiveVarInt(targetArray, arrIndex, bytesLen);
+      writerIndex += arrIndex - targetIndex;
+      System.arraycopy(bytes, 0, targetArray, arrIndex, bytesLen);
       writerIndex += bytesLen;
     } else {
-      buffer.unsafeWriteByte(coder);
-      writerIndex += buffer.unsafeWritePositiveVarInt(bytesLen);
+      buffer.unsafePut(writerIndex++, coder);
+      writerIndex += buffer.unsafePutPositiveVarInt(writerIndex, bytesLen);
       long offHeapAddress = buffer.getUnsafeAddress();
-      Platform.copyMemory(bytes, Platform.BYTE_ARRAY_OFFSET, null, offHeapAddress + writerIndex, bytesLen);
+      Platform.copyMemory(
+          bytes, Platform.BYTE_ARRAY_OFFSET, null, offHeapAddress + writerIndex, bytesLen);
       writerIndex += bytesLen;
     }
     buffer.unsafeWriterIndex(writerIndex);
   }
 
   public void writeJDK8Ascii(MemoryBuffer buffer, char[] chars) {
-    buffer.writeByte(LATIN1);
     final int strLen = chars.length;
     int writerIndex = buffer.writerIndex();
     // The `ensure` ensure next operations are safe without bound checks,
     // and inner heap buffer doesn't change.
-    buffer.ensure(writerIndex + 5 + strLen);
+    buffer.ensure(writerIndex + 9 + strLen);
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       final int targetIndex = buffer.unsafeHeapWriterIndex();
-      int varIntBytesLen = MemoryUtils.writePositiveVarInt(targetArray, targetIndex, strLen);
-      writerIndex += varIntBytesLen + strLen;
+      int arrIndex = targetIndex;
+      targetArray[arrIndex++] = LATIN1;
+      arrIndex += MemoryUtils.writePositiveVarInt(targetArray, arrIndex, strLen);
+      writerIndex += arrIndex - targetIndex + strLen;
       for (int i = 0; i < strLen; i++) {
-        targetArray[targetIndex + i] = (byte) chars[i];
+        targetArray[arrIndex + i] = (byte) chars[i];
       }
+      buffer.unsafeWriterIndex(writerIndex);
     } else {
-      writerIndex += buffer.unsafeWritePositiveVarInt(strLen);
+      buffer.unsafePut(writerIndex++, LATIN1);
+      writerIndex += buffer.unsafePutPositiveVarInt(writerIndex, strLen);
       final byte[] tmpArray = getByteArray(strLen);
       // Write to heap memory then copy is 60% faster than unsafe write to direct memory.
       for (int i = 0; i < strLen; i++) {
@@ -411,36 +412,39 @@ public final class StringSerializer extends Serializer<String> {
       }
       buffer.put(writerIndex, tmpArray, 0, strLen);
       writerIndex += strLen;
+      buffer.unsafeWriterIndex(writerIndex);
     }
-    buffer.unsafeWriterIndex(writerIndex);
   }
 
   public void writeJDK8UTF16(MemoryBuffer buffer, char[] chars) {
-    buffer.writeByte(UTF16);
     int strLen = chars.length;
     int numBytes = MathUtils.doubleExact(strLen);
     if (Platform.IS_LITTLE_ENDIAN) {
+      buffer.writeByte(UTF16);
       // FIXME JDK11 utf16 string uses little-endian order.
       buffer.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
     } else {
       // The `ensure` ensure next operations are safe without bound checks,
       // and inner heap buffer doesn't change.
       int writerIndex = buffer.writerIndex();
-      buffer.ensure(writerIndex + 5 + numBytes);
+      buffer.ensure(writerIndex + 9 + numBytes);
       byte[] targetArray = buffer.getHeapMemory();
       if (targetArray != null) {
         final int targetIndex = buffer.unsafeHeapWriterIndex();
-        int varIntBytesLen = MemoryUtils.writePositiveVarInt(targetArray, targetIndex, strLen);
+        int arrIndex = targetIndex;
+        targetArray[arrIndex++] = UTF16;
+        arrIndex += MemoryUtils.writePositiveVarInt(targetArray, arrIndex, strLen);
         // Write to heap memory then copy is 250% faster than unsafe write to direct memory.
         int charIndex = 0;
-        for (int i = targetIndex + varIntBytesLen, end = i + numBytes; i < end; i += 2) {
+        for (int i = arrIndex, end = i + numBytes; i < end; i += 2) {
           char c = chars[charIndex++];
           targetArray[i] = (byte) (c >> StringUTF16.HI_BYTE_SHIFT);
           targetArray[i + 1] = (byte) (c >> StringUTF16.LO_BYTE_SHIFT);
         }
-        writerIndex += varIntBytesLen + numBytes;
+        writerIndex += arrIndex - targetIndex + numBytes;
       } else {
-        writerIndex += buffer.unsafeWritePositiveVarInt(numBytes);
+        buffer.unsafePut(writerIndex++, UTF16);
+        writerIndex += buffer.unsafePutPositiveVarInt(writerIndex, numBytes);
         byte[] tmpArray = getByteArray(strLen);
         int charIndex = 0;
         for (int i = 0; i < numBytes; i += 2) {
