@@ -82,6 +82,7 @@ export default class SerializerResolver {
             this.customSerializer[tag] = {
                 read: unreachable,
                 write: unreachable,
+                reserveWhenWrite: unreachable,
             }
         }
         const exists = this.customSerializer[tag];
@@ -96,6 +97,7 @@ export default class SerializerResolver {
             this.customSerializer[tag] = {
                 read: unreachable,
                 write: unreachable,
+                reserveWhenWrite: unreachable,
             }
         }
         const exists = this.customSerializer[tag];

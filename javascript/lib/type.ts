@@ -61,7 +61,8 @@ export type SerializerWrite<T = any> = (
 // read, write
 export type Serializer<T = any, T2 = any> = {
 	read: SerializerRead<T2>, 
-	write: SerializerWrite<T>
+	write: SerializerWrite<T>,
+	reserveWhenWrite: () => number,
 };
 
 

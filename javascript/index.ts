@@ -2,6 +2,13 @@ import { genReadSerializer, genWriteSerializer, TypeDescription } from './lib/co
 import { Serializer, SerializerRead, SerializerWrite, Fury, InternalSerializerType } from './lib/type';
 import FuryInternal from './lib/fury';
 
+
+export {
+    Serializer,
+    InternalSerializerType,
+    TypeDescription,
+}
+
 export default class {
     private fury: Fury = FuryInternal();
 
@@ -12,22 +19,10 @@ export default class {
         genReadSerializer(
             this.fury,
             description,
-            (tag: string, reader: SerializerRead) => {
-                this.fury.classResolver.registerReadSerializerByTag(tag, reader);
-            },
-            (tag: string) => {
-                return this.fury.classResolver.existsTagReadSerializer(tag);
-            }
         );
         genWriteSerializer(
             this.fury,
-            description,
-            (tag: string, writer: SerializerWrite) => {
-                this.fury.classResolver.registerWriteSerializerByTag(tag, writer);
-            },
-            (tag: string) => {
-                return this.fury.classResolver.existsTagWriteSerializer(tag);
-            }
+            description
         );
         return this.fury.classResolver.getSerializerByTag(description.asObject.tag);
     }

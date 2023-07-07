@@ -1,10 +1,11 @@
 import { LATIN1, UTF8 } from "./type";
-
+const { isLatin1: detectIsLatin1 } = require('/Users/quanzheng/nan-example-eol/build/Release/hello.node');
 
 export const BinaryWriter = () => {
     let cursor = 0;
     let arrayBuffer = Buffer.alloc(1024 * 100);
     let dataView = new DataView(arrayBuffer.buffer);
+    
     function reserves(len: number) {
         if (dataView.byteLength - (cursor + 1) <= len) {
             // resize the arrayBuffer
@@ -24,42 +25,34 @@ export const BinaryWriter = () => {
 
 
     function writeUInt8(v: number) {
-        reserves(1);
         return dataView.setUint8(move(1), v);
     }
 
     function writeInt8(v: number) {
-        reserves(1);
         return dataView.setInt8(move(1), v);
     }
 
     function writeUInt16(v: number) {
-        reserves(2);
         return dataView.setUint16(move(2), v, true);
     }
 
     function writeInt16(v: number) {
-        reserves(2);
         return dataView.setInt16(move(2), v, true);
     }
 
     function skip(len: number) {
-        reserves(len);
         move(len);
     }
 
     function writeInt32(v: number) {
-        reserves(4);
         return dataView.setInt32(move(4), v, true);
     }
 
     function writeUInt32(v: number) {
-        reserves(4);
         return dataView.setUint32(move(4), v, true);
     }
 
     function writeInt64(v: bigint | number) {
-        reserves(8);
         if (typeof v === 'number') {
             return dataView.setBigInt64(move(8), BigInt(v), true);
         }
@@ -67,23 +60,19 @@ export const BinaryWriter = () => {
     }
 
     function writeFloat(v: number) {
-        reserves(4);
         return dataView.setFloat32(move(4), v, true);
     }
 
     function writeDouble(v: number) {
-        reserves(8);
         return dataView.setFloat64(move(8), v, true);
     }
 
     function writeBuffer(v: Uint8Array) {
         const len = v.byteLength;
-        reserves(len);
         arrayBuffer.set(v, move(len));
     }
 
     function writeUInt64(v: bigint | number) {
-        reserves(8);
         if (typeof v === 'number') {
             return dataView.setBigUint64(move(8), BigInt(v), true);
         }
@@ -135,10 +124,10 @@ export const BinaryWriter = () => {
     }
 
     function writeStringOfVarInt32(v: string) {
-        const len = Buffer.byteLength(v, 'utf8');
+        const isLatin1 = detectIsLatin1(v);
+        const len = isLatin1 ? v.length : Buffer.byteLength(v);
         // type and len
-        reserves(len + 6);
-        const isLatin1 = v.length === len;
+        reserves(len);
         // write type
         dataView.setUint8(move(1), isLatin1 ? LATIN1 : UTF8);
         writeVarInt32(len);
@@ -158,7 +147,6 @@ export const BinaryWriter = () => {
     }
 
     function writeVarInt32(value: number) {
-        reserves(5);
         if (value >> 7 == 0) {
             arrayBuffer[cursor] = value
             move(1)
@@ -198,7 +186,7 @@ export const BinaryWriter = () => {
         return arrayBuffer.slice(0, cursor);
     }
 
-    return { skip, reset, writeUInt16, writeInt8, dump, writeUInt8, writeInt16, writeVarInt32, writeStringOfVarInt32, writeUtf8StringOfInt16, writeUInt64, writeBuffer, writeDouble, writeFloat, writeInt64, writeUInt32, writeInt32 }
+    return { skip, reset, reserves, writeUInt16, writeInt8, dump, writeUInt8, writeInt16, writeVarInt32, writeStringOfVarInt32, writeUtf8StringOfInt16, writeUInt64, writeBuffer, writeDouble, writeFloat, writeInt64, writeUInt32, writeInt32 }
 }
 
 export const BinaryReader = () => {

@@ -35,6 +35,9 @@ export default (fury: Fury) => {
                 write(key);
                 write(value);
             }
+        },
+        reserveWhenWrite: () => {
+            return 7; 
         }
     }
 }

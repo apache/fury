@@ -29,5 +29,8 @@ export default (fury: Fury) => {
             writeInt32(v.byteLength);
             writeBuffer(v);
         },
+        reserveWhenWrite: () => {
+            return 8; 
+        }
     }
 }
