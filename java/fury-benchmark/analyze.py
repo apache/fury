@@ -5,6 +5,7 @@ import datetime
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
+from pathlib import Path
 import re
 
 # dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -12,7 +13,18 @@ import sys
 
 
 def to_markdown(df: pd.DataFrame, filepath: str):
-    with open(filepath + ".md", "w") as f:
+    columns = df.columns.tolist()
+    for col in list(columns):
+        if len(df[col].value_counts()) == 1:
+            columns.remove(col)
+    if "Lib" in columns:
+        columns.remove("Lib")
+        columns.insert(0, "Lib")
+    if "Tps" in columns:
+        columns.remove("Tps")
+        columns.append("Tps")
+    df = df[columns]
+    with open(filepath, "w") as f:
         f.write(_to_markdown(df))
 
 
@@ -197,14 +209,14 @@ if __name__ == "__main__":
     if args:
         file_name = args[0]
     else:
-        file_name = "jmh-result-jdk-11-true-serialization.csv"
+        file_name = "jmh-jdk-11-zerocopy.csv"
     file_dir = "."
     zero_copy_bench, bench = process_data(os.path.join(file_dir, file_name))
     if zero_copy_bench.shape[0] > 0:
         to_markdown(
-            zero_copy_bench, os.path.join(file_dir, f"{file_name}-zero_copy.md")
+            zero_copy_bench, str(Path(file_name).with_suffix(".zero_copy.md"))
         )
         plot_zero_copy(zero_copy_bench, file_dir, "zero_copy_bench", column="ns")
     if bench.shape[0] > 0:
-        to_markdown(bench, os.path.join(file_dir, f"{file_name}-bench.md"))
+        to_markdown(bench, str(Path(file_name).with_suffix(".bench.md")))
         plot(bench, file_dir, "bench", column="ns")
