@@ -114,7 +114,7 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
 
 
 def plot_zero_copy(df: pd.DataFrame, file_dir, filename, column="Tps"):
-    df["ns"] = 1 / df["Tps"] * 10**9
+    df["ns"] = (1 / df["Tps"] * 10**9).astype(int)
     data = df.fillna("")
     data.to_csv(f"{file_dir}/pd_{filename}")
     if "dataType" in data.columns:
