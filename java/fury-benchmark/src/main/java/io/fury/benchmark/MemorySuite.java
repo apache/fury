@@ -133,7 +133,7 @@ public class MemorySuite {
 
   private static final byte[] target = new byte[arrLen * 8];
 
-  // @org.openjdk.jmh.annotations.Benchmark
+  @org.openjdk.jmh.annotations.Benchmark
   public Object systemArrayCopy(MemoryState state) {
     System.arraycopy(state.bytes, 0, target, 0, state.bytes.length);
     return target;
@@ -239,7 +239,7 @@ public class MemorySuite {
 
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
-      String commandLine = "io.*MemorySuite.* -f 1 -wi 5 -i 5 -t 1 -w 2s -r 2s -rf csv";
+      String commandLine = "io.*MemorySuite.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }
