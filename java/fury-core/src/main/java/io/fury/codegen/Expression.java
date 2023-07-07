@@ -120,6 +120,15 @@ public interface Expression {
   // ####################### Expressions #######################
   // ###########################################################
 
+  abstract class Inlineable implements Expression {
+    protected boolean inlineCall = false;
+
+    public Inlineable inline() {
+      inlineCall = true;
+      return this;
+    }
+  }
+
   /** An expression that have a value as the result of the evaluation. */
   abstract class ValueExpression implements Expression {
     // set to others to get a more context-dependent variable name.
@@ -489,12 +498,11 @@ public interface Expression {
     }
   }
 
-  class FieldValue implements Expression {
+  class FieldValue extends Inlineable {
     private Expression targetObject;
-    private String fieldName;
-    private TypeToken<?> type;
-    private boolean fieldNullable;
-    private final boolean inline;
+    private final String fieldName;
+    private final TypeToken<?> type;
+    private final boolean fieldNullable;
 
     public FieldValue(Expression targetObject, String fieldName, TypeToken<?> type) {
       this(targetObject, fieldName, type, !type.isPrimitive(), false);
@@ -511,7 +519,7 @@ public interface Expression {
       this.fieldName = fieldName;
       this.type = type;
       this.fieldNullable = fieldNullable;
-      this.inline = inline;
+      this.inlineCall = inline;
       if (inline) {
         Preconditions.checkArgument(!fieldNullable);
       }
@@ -537,7 +545,7 @@ public interface Expression {
           ctx.newNames(fieldName, "is" + StringUtils.capitalize(fieldName) + "Null");
       String value = freshNames[0];
       String isNull = freshNames[1];
-      if (inline) {
+      if (inlineCall) {
         String inlinedValue =
             StringUtils.format(
                 "${target}.${fieldName}", "target", targetExprCode.value(), "fieldName", fieldName);
@@ -679,11 +687,10 @@ public interface Expression {
     }
   }
 
-  class Cast implements Expression {
+  class Cast extends Inlineable {
     private Expression targetObject;
     private final String castedValueNamePrefix;
     private final TypeToken<?> type;
-    private final boolean inline;
     private final boolean ignoreUpcast;
 
     public Cast(Expression targetObject, TypeToken<?> type) {
@@ -703,7 +710,7 @@ public interface Expression {
       this.targetObject = targetObject;
       this.type = type;
       this.castedValueNamePrefix = castedValueNamePrefix;
-      this.inline = inline;
+      inlineCall = inline;
       this.ignoreUpcast = ignoreUpcast;
       checkArgument(ReflectionUtils.isPublic(type), "Type %s is not public", type);
     }
@@ -731,7 +738,7 @@ public interface Expression {
       if (type.isPrimitive() && !targetObject.type().isPrimitive()) {
         withCast = ctx.type(boxedType(getRawType(type)));
       }
-      if (inline) {
+      if (inlineCall) {
         String value =
             StringUtils.format(
                 "((${withCast})${target})", "withCast", withCast, "target", targetExprCode.value());
@@ -769,15 +776,14 @@ public interface Expression {
     }
   }
 
-  class Invoke implements Expression {
+  class Invoke extends Inlineable {
     public Expression targetObject;
     public final String functionName;
     public final TypeToken<?> type;
     public Expression[] arguments;
     private String returnNamePrefix;
     private final boolean returnNullable;
-    private boolean needTryCatch;
-    private boolean inlineCall;
+    private final boolean needTryCatch;
 
     /** Invoke don't return value, this is a procedure call for side effect. */
     public Invoke(Expression targetObject, String functionName, Expression... arguments) {
@@ -962,13 +968,14 @@ public interface Expression {
     }
   }
 
-  class StaticInvoke implements Expression {
-    private Class<?> staticObject;
-    private String functionName;
+  class StaticInvoke extends Inlineable {
+    private final boolean needTryCatch;
+    private final Class<?> staticObject;
+    private final String functionName;
     private String returnNamePrefix;
-    private TypeToken<?> type;
+    private final TypeToken<?> type;
     private Expression[] arguments;
-    private boolean returnNullable;
+    private final boolean returnNullable;
 
     public StaticInvoke(Class<?> staticObject, String functionName, TypeToken<?> type) {
       this(staticObject, functionName, type, false);
@@ -992,6 +999,16 @@ public interface Expression {
       this(staticObject, functionName, "", type, returnNullable, arguments);
     }
 
+    public StaticInvoke(
+        Class<?> staticObject,
+        String functionName,
+        String returnNamePrefix,
+        TypeToken<?> type,
+        boolean returnNullable,
+        Expression... arguments) {
+      this(staticObject, functionName, returnNamePrefix, type, returnNullable, false, arguments);
+    }
+
     /**
      * static invoke method.
      *
@@ -1009,6 +1026,7 @@ public interface Expression {
         String returnNamePrefix,
         TypeToken<?> type,
         boolean returnNullable,
+        boolean inline,
         Expression... arguments) {
       this.staticObject = staticObject;
       this.functionName = functionName;
@@ -1016,6 +1034,14 @@ public interface Expression {
       this.arguments = arguments;
       this.returnNullable = returnNullable;
       this.returnNamePrefix = returnNamePrefix;
+      this.inlineCall = inline;
+      this.needTryCatch = ReflectionUtils.hasException(staticObject, functionName);
+      if (inline && needTryCatch) {
+        throw new UnsupportedOperationException(
+            String.format(
+                "Method %s in %s has exception signature and can't be inlined",
+                functionName, staticObject));
+      }
     }
 
     @Override
@@ -1042,11 +1068,10 @@ public interface Expression {
         }
       }
 
-      if (StringUtils.isBlank(returnNamePrefix)) {
+      if (!inlineCall && StringUtils.isBlank(returnNamePrefix)) {
         returnNamePrefix = ctx.newName(getRawType(type));
       }
-      boolean needTryCatch = ReflectionUtils.hasException(staticObject, functionName);
-      if (type != null && !PRIMITIVE_VOID_TYPE.equals(type)) {
+      if (!inlineCall && type != null && !PRIMITIVE_VOID_TYPE.equals(type)) {
         Class<?> rawType = getRawType(type);
         String[] freshNames = ctx.newNames(returnNamePrefix, "isNull");
         String value = freshNames[0];
@@ -1088,6 +1113,13 @@ public interface Expression {
         } else {
           return new ExprCode(codeBuilder.toString(), FalseLiteral, Code.variable(rawType, value));
         }
+      } else if (inlineCall) {
+        CodeGenerator.stripIfHasLastNewline(codeBuilder);
+        String call =
+            ExpressionUtils.callFunc(
+                ctx.type(staticObject), functionName, argsBuilder.toString(), needTryCatch);
+        call = call.substring(0, call.length() - 1);
+        return new ExprCode(codeBuilder.toString(), null, Code.variable(getRawType(type), call));
       } else {
         String call =
             ExpressionUtils.callFunc(

@@ -133,6 +133,11 @@ public class ExpressionUtils {
     return new Cast(value, typeToken);
   }
 
+  public static StaticInvoke invokeStaticInline(
+      Class<?> staticObject, String functionName, TypeToken<?> type, Expression... arguments) {
+    return new StaticInvoke(staticObject, functionName, "", type, false, true, arguments);
+  }
+
   static String callFunc(
       String type,
       String resultVal,
