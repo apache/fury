@@ -7,7 +7,7 @@ describe('array', () => {
   test('should array work', () => {
     const fury = new Fury();
     const result = fury.unmarshal(
-      new Uint8Array([6, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 1, 2, 0, 0, 0, 0, 0, 4, 115, 116, 114, 49, 254, 1])
+      Buffer.from([6, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 1, 2, 0, 0, 0, 0, 0, 4, 115, 116, 114, 49, 254, 1])
     );
     expect(result).toEqual(["str1", "str1"])
   });
@@ -49,7 +49,7 @@ describe('array', () => {
       a7: ["hello", "world"]
     }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({
       a: [true, false],
@@ -78,7 +78,7 @@ describe('array', () => {
       a5: [2.43, 654.4, 55],
     }, serialize);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result.a5[0]).toBeCloseTo(2.43)
     expect(result.a5[1]).toBeCloseTo(654.4)

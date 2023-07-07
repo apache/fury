@@ -28,7 +28,7 @@ describe('object', () => {
     const serializer = fury.registerSerializerByDescription(description);
     const input = fury.marshal({ a: { b: "hel" } }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: { b: "hel" } })
   });
@@ -62,7 +62,7 @@ describe('object', () => {
     const serializer = fury.registerSerializerByDescription(description);
     const input = fury.marshal({ a: [{ b: "hel" }] }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: [{ b: "hel" }] })
   });
@@ -97,7 +97,7 @@ describe('object', () => {
     const serializer = fury.registerSerializerByDescription(description);
     const input = fury.marshal({ a: { b: "hel" }, a2: { b: "hel2" } }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: { b: "hel" }, a2: { b: "hel2" } })
   });
@@ -135,7 +135,7 @@ describe('object', () => {
     param.a2 = param;
     const input = fury.marshal(param, serialize);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result.a).toEqual({ b: "hel" })
     expect(result.a2).toEqual(result)

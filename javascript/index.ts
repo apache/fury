@@ -35,7 +35,7 @@ export default class {
         return this.fury.marshal(v, serialize);
     }
 
-    unmarshal(bytes: Uint8Array) {
+    unmarshal(bytes: Buffer) {
         return this.fury.unmarshal(bytes);
     }
 }

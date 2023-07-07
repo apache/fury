@@ -7,7 +7,7 @@ describe('bool', () => {
     const fury = new Fury();
     const input = fury.marshal(false);
     const result = fury.unmarshal(
-        new Uint8Array(input)
+        input
     );
     expect(result).toEqual(false)
   });
@@ -15,7 +15,7 @@ describe('bool', () => {
     const fury = new Fury();
     const input = fury.marshal(true);
     const result = fury.unmarshal(
-        new Uint8Array(input)
+        input
     );
     expect(result).toEqual(true)
   });

@@ -7,7 +7,7 @@ describe('map', () => {
     const fury = new Fury();
     const input = fury.marshal(new Map([["foo", "bar"], ["foo2", "bar2"]]));
     const result = fury.unmarshal(
-        new Uint8Array(input)
+        input
     );
     expect(result).toEqual(new Map([["foo", "bar"],["foo2", "bar2"]]))
   });

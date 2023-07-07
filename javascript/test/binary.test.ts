@@ -20,7 +20,7 @@ describe('binary', () => {
         const serializer = fury.registerSerializerByDescription(description);
         const input = fury.marshal({ a: new Uint8Array([1, 2, 3]) }, serializer);
         const result = fury.unmarshal(
-            new Uint8Array(input)
+            input
         );
         expect(result).toEqual({ a: new Uint8Array([1, 2, 3]) })
     });

@@ -6,7 +6,7 @@ describe('string', () => {
     const fury = new Fury();
     const input = fury.marshal("123")
     const result = fury.unmarshal(
-        new Uint8Array(input)
+        input
     );
     expect(result).toEqual("123")
   });

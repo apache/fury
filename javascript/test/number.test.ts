@@ -18,7 +18,7 @@ describe('number', () => {
     });
     const input = fury.marshal({ a: 1 }, serialize);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: 1 })
   });
@@ -37,7 +37,7 @@ describe('number', () => {
     });
     const input = fury.marshal({ a: 1 }, serialize);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: 1 })
   });
@@ -56,7 +56,7 @@ describe('number', () => {
     });
     const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: 1 })
   });
@@ -75,7 +75,7 @@ describe('number', () => {
     });
     const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: 1 })
   });
@@ -94,7 +94,7 @@ describe('number', () => {
     });
     const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: 1 })
   });
@@ -113,7 +113,7 @@ describe('number', () => {
     });
     const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: 1 })
   });
@@ -132,7 +132,7 @@ describe('number', () => {
     });
     const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: 1 })
   });
@@ -151,7 +151,7 @@ describe('number', () => {
     });
     const input = fury.marshal({ a: 1 }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: 1 })
   });
@@ -170,7 +170,7 @@ describe('number', () => {
     });
     const input = fury.marshal({ a: 1.2 }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result.a).toBeCloseTo(1.2)
   });
@@ -189,7 +189,7 @@ describe('number', () => {
     });
     const input = fury.marshal({ a: 1.2 }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result.a).toBeCloseTo(1.2)
   });

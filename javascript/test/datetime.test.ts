@@ -10,7 +10,7 @@ describe('datetime', () => {
     const now = new Date();
     const input = fury.marshal(now);
     const result = fury.unmarshal(
-        new Uint8Array(input)
+        input
     );
     expect(result).toEqual(now)
   });
@@ -34,7 +34,7 @@ describe('datetime', () => {
     const d = new Date('2021/10/20 09:13');
     const input = fury.marshal({ a:  d, b: d}, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({ a: d, b: new Date('2021/10/20 00:00') })
   });

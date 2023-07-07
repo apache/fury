@@ -1,15 +1,17 @@
 import { LATIN1, UTF8 } from "./type";
-const { isLatin1: detectIsLatin1 } = require('/Users/quanzheng/nan-example-eol/build/Release/hello.node');
+const { isLatin1: detectIsLatin1 } = require('/Users/quanzheng/nan-example-eol/build/Release/util.node');
 
 export const BinaryWriter = () => {
     let cursor = 0;
-    let arrayBuffer = Buffer.alloc(1024 * 100);
+    let byteLength = 1024 * 100;
+    let arrayBuffer = Buffer.alloc(byteLength);
     let dataView = new DataView(arrayBuffer.buffer);
     
     function reserves(len: number) {
-        if (dataView.byteLength - (cursor + 1) <= len) {
+        if (byteLength - (cursor + 1) <= len) {
             // resize the arrayBuffer
-            arrayBuffer = Buffer.concat([arrayBuffer, Buffer.alloc(dataView.byteLength)]);
+            arrayBuffer = Buffer.concat([arrayBuffer, Buffer.alloc(byteLength)]);
+            byteLength *= 2;
             dataView = new DataView(arrayBuffer.buffer);
         }
     }
@@ -88,9 +90,17 @@ export const BinaryWriter = () => {
 
     function fastWriteStringLatin1(string: string, buffer: Buffer, offset: number) {
         const start: number = offset;
-        let c1: number;
-        for (let i = 0; i < string.length; ++i) {
-            c1 = string.charCodeAt(i);
+        let i = 0;
+        for (i = 0; i < string.length; i=i+4) {
+            const c1 = string.charCodeAt(i);
+            const c2 = string.charCodeAt(i);
+            const c3 = string.charCodeAt(i);
+            const c4 = string.charCodeAt(i);
+            dataView.setUint32(offset, (c1 << 24) | (c2 << 16) | (c3 << 8) | c4);
+            offset += 4;
+        }
+        for (; i < string.length; i++) {
+            const c1 = string.charCodeAt(i);
             buffer[offset++] = c1;
         }
         return offset - start;
@@ -105,18 +115,24 @@ export const BinaryWriter = () => {
             if (c1 < 128) {
                 buffer[offset++] = c1;
             } else if (c1 < 2048) {
-                buffer[offset++] = c1 >> 6 | 192;
-                buffer[offset++] = c1 & 63 | 128;
+                const u1 = c1 >> 6 | 192;
+                const u2 = c1 & 63 | 128;
+                dataView.setUint16(offset, (u1 >> 8) | u2);
+                offset += 2;
             } else if ((c1 & 0xFC00) === 0xD800 && ((c2 = string.charCodeAt(i + 1)) & 0xFC00) === 0xDC00) {
                 c1 = 0x10000 + ((c1 & 0x03FF) << 10) + (c2 & 0x03FF);
                 ++i;
-                buffer[offset++] = c1 >> 18 | 240;
-                buffer[offset++] = c1 >> 12 & 63 | 128;
-                buffer[offset++] = c1 >> 6 & 63 | 128;
-                buffer[offset++] = c1 & 63 | 128;
+                const u1 = c1 >> 18 | 240;
+                const u2 = c1 >> 12 & 63 | 128;
+                const u3 = c1 >> 6 & 63 | 128;
+                const u4 = c1 & 63 | 128;
+                dataView.setUint32(offset, (u1 >> 24) | (u2 >> 16) | (u3 >> 8) | u4);
+                offset += 4;
             } else {
-                buffer[offset++] = c1 >> 12 | 224;
-                buffer[offset++] = c1 >> 6 & 63 | 128;
+                const u1 = c1 >> 12 | 224;
+                const u2 = c1 >> 6 & 63 | 128;
+                dataView.setUint16(offset, (u1 >> 8) | u2);
+                offset += 2;
                 buffer[offset++] = c1 & 63 | 128;
             }
         }
@@ -153,37 +169,41 @@ export const BinaryWriter = () => {
             return 1
         }
         if (value >> 14 == 0) {
-            arrayBuffer[cursor] = (value & 0x7F) | 0x80
-            arrayBuffer[cursor + 1] = value >> 7
+            const u1 = (value & 0x7F) | 0x80
+            const u2 = value >> 7
+            dataView.setUint16(cursor, (u1 >> 8) | u2);
             move(2)
             return 2
         }
         if (value >> 21 == 0) {
-            arrayBuffer[cursor] = (value & 0x7F) | 0x80
-            arrayBuffer[cursor + 1] = value >> 7 | 0x80
+            const u1 = (value & 0x7F) | 0x80
+            const u2 = value >> 7 | 0x80
+            dataView.setUint16(cursor, (u1 >> 8) | u2);
             arrayBuffer[cursor + 2] = value >> 14
             move(3)
             return 3
         }
         if (value >> 28 == 0) {
-            arrayBuffer[cursor] = (value & 0x7F) | 0x80
-            arrayBuffer[cursor + 1] = value >> 7 | 0x80
-            arrayBuffer[cursor + 2] = value >> 14 | 0x80
-            arrayBuffer[cursor + 3] = value >> 21
+            const u1 = (value & 0x7F) | 0x80
+            const u2  = value >> 7 | 0x80
+            const u3 = value >> 14 | 0x80
+            const u4  = value >> 21 | 0x80
+            dataView.setUint32(cursor, (u1 >> 24) | (u2 >> 16) | (u3 >> 8) | u4);
             move(4)
             return 4
         }
-        arrayBuffer[cursor] = (value & 0x7F) | 0x80
-        arrayBuffer[cursor + 1] = value >> 7 | 0x80
-        arrayBuffer[cursor + 2] = value >> 14 | 0x80
-        arrayBuffer[cursor + 3] = value >> 21 | 0x80
+        const u1 = (value & 0x7F) | 0x80
+        const u2  = value >> 7 | 0x80
+        const u3 = value >> 14 | 0x80
+        const u4  = value >> 21 | 0x80
+        dataView.setUint32(cursor, (u1 >> 24) | (u2 >> 16) | (u3 >> 8) | u4);
         arrayBuffer[cursor + 4] = value >> 28
         move(5)
         return 5
     }
 
     function dump() {
-        return arrayBuffer.slice(0, cursor);
+        return arrayBuffer.subarray(0, cursor);
     }
 
     return { skip, reset, reserves, writeUInt16, writeInt8, dump, writeUInt8, writeInt16, writeVarInt32, writeStringOfVarInt32, writeUtf8StringOfInt16, writeUInt64, writeBuffer, writeDouble, writeFloat, writeInt64, writeUInt32, writeInt32 }
@@ -196,9 +216,9 @@ export const BinaryReader = () => {
     let bufferAsLatin1String: string;
 
 
-    function reset(u8Array: Uint8Array) {
-        dataView = new DataView(u8Array.buffer);
-        buffer = Buffer.from(u8Array);
+    function reset(bf: Buffer) {
+        buffer = bf;
+        dataView = new DataView(buffer.buffer, buffer.byteOffset);
         bufferAsLatin1String = (buffer as any).latin1Slice(0, buffer.byteLength);
         cursor = 0;
     }

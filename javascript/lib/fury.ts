@@ -83,7 +83,7 @@ export default () => {
         }
     }
 
-    function unmarshal<T = any>(bytes: Uint8Array): T | null {
+    function unmarshal<T = any>(bytes: Buffer): T | null {
         referenceResolver.reset();
         classResolver.reset();
         binaryView.reset(bytes);
