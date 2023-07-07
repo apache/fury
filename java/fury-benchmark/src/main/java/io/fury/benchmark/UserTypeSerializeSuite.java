@@ -110,7 +110,7 @@ public class UserTypeSerializeSuite {
     return state.bos;
   }
 
-  @Benchmark
+  // @Benchmark
   public byte[] jsonb_serialize(JsonbState.JsonbUserTypeState state, Blackhole bh) {
     return JsonbState.serialize(bh, state, state.object);
   }

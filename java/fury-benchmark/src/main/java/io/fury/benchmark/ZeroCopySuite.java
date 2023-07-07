@@ -304,7 +304,7 @@ public class ZeroCopySuite {
     }
   }
 
-  @Benchmark
+  // @Benchmark
   public Object jsonb_serialize(JsonBState state, Blackhole bh) {
     return jsonbSerialize(state, bh);
   }
@@ -322,7 +322,7 @@ public class ZeroCopySuite {
     return bytes;
   }
 
-  @Benchmark
+  // @Benchmark
   public Object jsonb_deserialize(JsonBState state, Blackhole bh) {
     return jsonbDeserialize(state, bh);
   }

@@ -108,7 +108,7 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
             ax.bar_label(container)
         ax.set_xlabel("enable_references")
         ax.set_ylabel(column)
-        ax.legend(libs)
+        ax.legend(libs, loc="upper center")
         save_dir = get_plot_dir(file_dir)
         sub_plot.get_figure().savefig(save_dir + "/" + save_filename)
 
@@ -197,8 +197,8 @@ if __name__ == "__main__":
     if args:
         file_name = args[0]
     else:
-        file_name = "jmh-result.csv"
-    file_dir = "../.."
+        file_name = "jmh-result-jdk-11-true-serialization.csv"
+    file_dir = "."
     zero_copy_bench, bench = process_data(os.path.join(file_dir, file_name))
     if zero_copy_bench.shape[0] > 0:
         to_markdown(

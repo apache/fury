@@ -104,7 +104,7 @@ public class UserTypeDeserializeSuite {
     return JDKState.deserialize(state.bis);
   }
 
-  @Benchmark
+  // @Benchmark
   public Object jsonb_deserialize(JsonbState.JsonbUserTypeState state, Blackhole bh) {
     return JsonbState.deserialize(bh, state);
   }
