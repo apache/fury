@@ -93,12 +93,13 @@ public interface Expression {
   default ExprCode genCode(CodegenContext ctx) {
     // Ctx already contains expression code, which means that the code to evaluate it has already
     // been added before. In that case, we just reuse it.
-    ExprCode reuseExprCode = ctx.exprState.get(this);
-    if (reuseExprCode != null) {
-      return reuseExprCode;
+    ExprState exprState = ctx.exprState.get(this);
+    if (exprState != null) {
+      exprState.incAccessCount();
+      return exprState.getExprCode();
     } else {
       ExprCode genCode = doGenCode(ctx);
-      ctx.exprState.put(this, new ExprCode(genCode.isNull(), genCode.value()));
+      ctx.exprState.put(this, new ExprState(new ExprCode(genCode.isNull(), genCode.value())));
       return genCode;
     }
   }

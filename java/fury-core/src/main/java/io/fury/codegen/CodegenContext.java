@@ -115,8 +115,6 @@ public class CodegenContext {
     JAVA_RESERVED_WORDS = ImmutableSet.copyOf(JAVA_RESERVED_WORDS);
   }
 
-  private static final String INITIALIZE_METHOD_NAME = "initialize";
-
   Map<String, Long> newValNameIds = new HashMap<>();
   Set<String> valNames = new HashSet<>();
 
@@ -129,7 +127,7 @@ public class CodegenContext {
    * <p>The exprCode's code of subsequent same expression will be null, because the code is already
    * added to current context
    */
-  Map<Expression, ExprCode> exprState = new HashMap<>();
+  Map<Expression, ExprState> exprState = new HashMap<>();
 
   String pkg;
   LinkedHashSet<String> imports = new LinkedHashSet<>();
@@ -609,10 +607,14 @@ public class CodegenContext {
   /** Optimize method code based current compiled expressions. */
   public String optimizeMethodCode(String code) {
     StringBuilder builder = new StringBuilder();
-    for (Expression expression : exprState.keySet()) {
+    for (Map.Entry<Expression, ExprState> entry : exprState.entrySet()) {
+      Expression expression = entry.getKey();
+      ExprState value = entry.getValue();
       if (expression instanceof Reference) {
         Reference reference = (Reference) expression;
-        if (reference.isFieldRef()) {
+        if (reference.isFieldRef() && value.getAccessCount() > 1) {
+          // access only once are not necessary to load into local variable table,
+          // which bloat local variable table.
           String type = type(reference.type());
           String cacheVariable =
               StringUtils.format(
