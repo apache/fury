@@ -96,7 +96,7 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
     List<Descriptor> primitiveDescriptorsList =
         new ArrayList<>(descriptorGrouper.getPrimitiveDescriptors());
     while (primitiveDescriptorsList.size() > 0) {
-      int endIndex = Math.min(14, primitiveDescriptorsList.size());
+      int endIndex = Math.min(24, primitiveDescriptorsList.size());
       primitiveGroups.add(primitiveDescriptorsList.subList(0, endIndex));
       primitiveDescriptorsList =
           primitiveDescriptorsList.subList(endIndex, primitiveDescriptorsList.size());

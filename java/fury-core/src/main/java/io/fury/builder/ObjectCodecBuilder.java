@@ -19,16 +19,11 @@
 package io.fury.builder;
 
 import static io.fury.codegen.Expression.Invoke.inlineInvoke;
+import static io.fury.codegen.ExpressionUtils.add;
 import static io.fury.type.TypeUtils.OBJECT_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_ARRAY_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_CHAR_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_DOUBLE_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_FLOAT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
@@ -40,15 +35,14 @@ import com.google.common.collect.Iterables;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Inlineable;
 import io.fury.codegen.Expression.Invoke;
 import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.ReplaceStub;
 import io.fury.codegen.Expression.StaticInvoke;
-import io.fury.codegen.ExpressionUtils;
 import io.fury.codegen.ExpressionVisitor;
-import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
@@ -207,11 +201,10 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     // After this grow, following writes can be unsafe without checks.
     expressions.add(new Invoke(buffer, "grow", totalSizeLiteral));
     // Must grow first, otherwise may get invalid address.
-    Expression heapBuffer =
-        new Invoke(buffer, "getHeapMemory", "heapBuffer", PRIMITIVE_BYTE_ARRAY_TYPE);
+    Expression base = new Invoke(buffer, "getHeapMemory", "base", PRIMITIVE_BYTE_ARRAY_TYPE);
     Expression writerAddr =
         new Invoke(buffer, "getUnsafeWriterAddress", "writerAddr", PRIMITIVE_LONG_TYPE);
-    expressions.add(heapBuffer);
+    expressions.add(base);
     expressions.add(writerAddr);
     int acc = 0;
     for (List<Descriptor> group : primitiveGroups) {
@@ -222,77 +215,32 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         Preconditions.checkArgument(isPrimitive(clz));
         // `bean` will be replaced by `Reference` to cut-off expr dependency.
         Expression fieldValue = getFieldValue(bean, descriptor);
+        if (fieldValue instanceof Inlineable) {
+          ((Inlineable) fieldValue).inline();
+        }
         if (clz == byte.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePut",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePut(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 1;
         } else if (clz == boolean.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutBoolean",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutBoolean(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 1;
         } else if (clz == char.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutChar",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutChar(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 2;
         } else if (clz == short.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutShort",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutShort(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 2;
         } else if (clz == int.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutInt",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutInt(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 4;
         } else if (clz == long.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutLong",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutLong(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 8;
         } else if (clz == float.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutFloat",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutFloat(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 4;
         } else if (clz == double.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutDouble",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutDouble(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 8;
         } else {
           throw new IllegalStateException("impossible");
@@ -303,7 +251,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       } else {
         expressions.add(
             objectCodecOptimizer.invokeGenerated(
-                ImmutableSet.of(bean, heapBuffer, writerAddr), groupExpressions, "writeFields"));
+                ImmutableSet.of(bean, base, writerAddr), groupExpressions, "writeFields"));
       }
     }
     Expression increaseWriterIndex =
@@ -321,9 +269,8 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     // After this grow, following writes can be unsafe without checks.
     expressions.add(new Invoke(buffer, "grow", Literal.ofInt(growSize)));
     // Must grow first, otherwise may get invalid address.
-    Expression heapBuffer =
-        new Invoke(buffer, "getHeapMemory", "heapBuffer", PRIMITIVE_BYTE_ARRAY_TYPE);
-    expressions.add(heapBuffer);
+    Expression base = new Invoke(buffer, "getHeapMemory", "base", PRIMITIVE_BYTE_ARRAY_TYPE);
+    expressions.add(base);
     for (List<Descriptor> group : primitiveGroups) {
       ListExpression groupExpressions = new ListExpression();
       Expression writerAddr =
@@ -336,59 +283,26 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         Preconditions.checkArgument(isPrimitive(clz));
         // `bean` will be replaced by `Reference` to cut-off expr dependency.
         Expression fieldValue = getFieldValue(bean, descriptor);
+        if (fieldValue instanceof Inlineable) {
+          ((Inlineable) fieldValue).inline();
+        }
         if (clz == byte.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePut",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePut(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 1;
         } else if (clz == boolean.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutBoolean",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutBoolean(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 1;
         } else if (clz == char.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutChar",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutChar(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 2;
         } else if (clz == short.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutShort",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutShort(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 2;
         } else if (clz == float.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutFloat",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutFloat(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 4;
         } else if (clz == double.class) {
-          groupExpressions.add(
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafePutDouble",
-                  heapBuffer,
-                  getWriterAddress(writerAddr, acc),
-                  fieldValue));
+          groupExpressions.add(unsafePutDouble(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 8;
         } else if (clz == int.class) {
           if (!compressStarted) {
@@ -418,7 +332,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       } else {
         expressions.add(
             objectCodecOptimizer.invokeGenerated(
-                ImmutableSet.of(bean, buffer, heapBuffer), groupExpressions, "writeFields"));
+                ImmutableSet.of(bean, buffer, base), groupExpressions, "writeFields"));
       }
     }
     return expressions;
@@ -437,11 +351,11 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         .sum();
   }
 
-  private Expression getWriterAddress(Expression writerPos, long acc) {
+  private Expression getWriterPos(Expression writerPos, long acc) {
     if (acc == 0) {
       return writerPos;
     }
-    return ExpressionUtils.add(writerPos, new Literal(acc, PRIMITIVE_LONG_TYPE));
+    return add(writerPos, Literal.ofLong(acc));
   }
 
   public Expression buildDecodeExpression() {
@@ -555,76 +469,28 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         Preconditions.checkArgument(isPrimitive(clz));
         Expression fieldValue;
         if (clz == byte.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGet",
-                  PRIMITIVE_BYTE_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGet(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 1;
         } else if (clz == boolean.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetBoolean",
-                  PRIMITIVE_BOOLEAN_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetBoolean(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 1;
         } else if (clz == char.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetChar",
-                  PRIMITIVE_CHAR_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetChar(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 2;
         } else if (clz == short.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetShort",
-                  PRIMITIVE_SHORT_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetShort(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 2;
         } else if (clz == int.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetInt",
-                  PRIMITIVE_INT_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetInt(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 4;
         } else if (clz == long.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetLong",
-                  PRIMITIVE_LONG_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetLong(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 8;
         } else if (clz == float.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetFloat",
-                  PRIMITIVE_FLOAT_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetFloat(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 4;
         } else if (clz == double.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetDouble",
-                  PRIMITIVE_DOUBLE_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetDouble(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 8;
         } else {
           throw new IllegalStateException("impossible");
@@ -669,58 +535,22 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         Preconditions.checkArgument(isPrimitive(clz));
         Expression fieldValue;
         if (clz == byte.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGet",
-                  PRIMITIVE_BYTE_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGet(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 1;
         } else if (clz == boolean.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetBoolean",
-                  PRIMITIVE_BOOLEAN_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetBoolean(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 1;
         } else if (clz == char.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetChar",
-                  PRIMITIVE_CHAR_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetChar(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 2;
         } else if (clz == short.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetShort",
-                  PRIMITIVE_SHORT_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetShort(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 2;
         } else if (clz == float.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetFloat",
-                  PRIMITIVE_FLOAT_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetFloat(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 4;
         } else if (clz == double.class) {
-          fieldValue =
-              new StaticInvoke(
-                  MemoryBuffer.class,
-                  "unsafeGetDouble",
-                  PRIMITIVE_DOUBLE_TYPE,
-                  heapBuffer,
-                  getReaderAddress(readerAddr, acc));
+          fieldValue = unsafeGetDouble(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 8;
         } else if (clz == int.class) {
           if (!compressStarted) {
@@ -768,6 +598,6 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     if (acc == 0) {
       return readerPos;
     }
-    return ExpressionUtils.add(readerPos, new Literal(acc, PRIMITIVE_LONG_TYPE));
+    return add(readerPos, new Literal(acc, PRIMITIVE_LONG_TYPE));
   }
 }

@@ -19,6 +19,14 @@
 package io.fury.builder;
 
 import static io.fury.type.TypeUtils.OBJECT_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_CHAR_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_DOUBLE_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_FLOAT_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
+import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
@@ -27,6 +35,7 @@ import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Inlineable;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.StaticInvoke;
@@ -189,6 +198,9 @@ public abstract class CodecBuilder {
   /** Returns an expression that set field <code>value</code> to <code>bean</code>. */
   protected Expression setFieldValue(Expression bean, Descriptor d, Expression value) {
     String fieldName = d.getName();
+    if (value instanceof Inlineable) {
+      ((Inlineable) value).inline();
+    }
     if (duplicatedFields.contains(fieldName)) {
       return unsafeSetField(bean, d, value);
     }
@@ -283,5 +295,86 @@ public abstract class CodecBuilder {
 
   protected Expression beanClassExpr() {
     throw new UnsupportedOperationException();
+  }
+
+  /**
+   * Build unsafePut operation.
+   *
+   * @see MemoryBuffer#unsafePut(Object, long, byte)
+   */
+  protected Expression unsafePut(Expression base, Expression pos, Expression value) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafePut", base, pos, value);
+  }
+
+  protected Expression unsafePutBoolean(Expression base, Expression pos, Expression value) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafePutBoolean", base, pos, value);
+  }
+
+  protected Expression unsafePutChar(Expression base, Expression pos, Expression value) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafePutChar", base, pos, value);
+  }
+
+  protected Expression unsafePutShort(Expression base, Expression pos, Expression value) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafePutShort", base, pos, value);
+  }
+
+  protected Expression unsafePutInt(Expression base, Expression pos, Expression value) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafePutInt", base, pos, value);
+  }
+
+  protected Expression unsafePutLong(Expression base, Expression pos, Expression value) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafePutLong", base, pos, value);
+  }
+
+  protected Expression unsafePutFloat(Expression base, Expression pos, Expression value) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafePutFloat", base, pos, value);
+  }
+
+  /**
+   * Build unsafePutDouble operation.
+   *
+   * @see MemoryBuffer#unsafePutDouble(Object, long, double)
+   */
+  protected Expression unsafePutDouble(Expression base, Expression pos, Expression value) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafePutDouble", base, pos, value);
+  }
+
+  /**
+   * Build unsafeGet operation.
+   *
+   * @see MemoryBuffer#unsafeGet(Object, long)
+   */
+  protected Expression unsafeGet(Expression base, Expression pos) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafeGet", PRIMITIVE_BYTE_TYPE, base, pos);
+  }
+
+  protected Expression unsafeGetBoolean(Expression base, Expression pos) {
+    return new StaticInvoke(
+        MemoryBuffer.class, "unsafeGetBoolean", PRIMITIVE_BOOLEAN_TYPE, base, pos);
+  }
+
+  protected Expression unsafeGetChar(Expression base, Expression pos) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafeGetChar", PRIMITIVE_CHAR_TYPE, base, pos);
+  }
+
+  protected Expression unsafeGetShort(Expression base, Expression pos) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafeGetShort", PRIMITIVE_SHORT_TYPE, base, pos);
+  }
+
+  protected Expression unsafeGetInt(Expression base, Expression pos) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafeGetInt", PRIMITIVE_INT_TYPE, base, pos);
+  }
+
+  protected Expression unsafeGetLong(Expression base, Expression pos) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafeGetLong", PRIMITIVE_LONG_TYPE, base, pos);
+  }
+
+  protected Expression unsafeGetFloat(Expression base, Expression pos) {
+    return new StaticInvoke(MemoryBuffer.class, "unsafeGetFloat", PRIMITIVE_FLOAT_TYPE, base, pos);
+  }
+
+  protected Expression unsafeGetDouble(Expression base, Expression pos) {
+    return new StaticInvoke(
+        MemoryBuffer.class, "unsafeGetDouble", PRIMITIVE_DOUBLE_TYPE, base, pos);
   }
 }
