@@ -106,8 +106,10 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
             MetaSharedCodecBuilder.class.getName(),
             "serializer",
             SERIALIZER_FIELD_NAME);
+    ctx.clearExprState();
     Expression decodeExpr = buildDecodeExpression();
     String decodeCode = decodeExpr.genCode(ctx).code();
+    decodeCode = ctx.optimizeMethodCode(decodeCode);
     ctx.overrideMethod("read", decodeCode, Object.class, MemoryBuffer.class, BUFFER_NAME);
     registerJITNotifyCallback();
     ctx.addConstructor(constructorCode, Fury.class, "fury", Class.class, POJO_CLASS_TYPE_NAME);

@@ -20,6 +20,7 @@ package io.fury.builder;
 
 import static io.fury.codegen.CodeGenerator.getPackage;
 import static io.fury.codegen.Expression.Invoke.inlineInvoke;
+import static io.fury.codegen.Expression.Reference.fieldRef;
 import static io.fury.codegen.ExpressionUtils.eq;
 import static io.fury.codegen.ExpressionUtils.neq;
 import static io.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
@@ -45,7 +46,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
-import io.fury.codegen.Code;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
@@ -107,7 +107,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
 
   protected final Reference refResolverRef;
   protected final Reference classResolverRef =
-      new Reference(CLASS_RESOLVER_NAME, CLASS_RESOLVER_TYPE_TOKEN);
+      fieldRef(CLASS_RESOLVER_NAME, CLASS_RESOLVER_TYPE_TOKEN);
   protected final Fury fury;
   protected final Reference stringSerializerRef;
   private final Map<Class<?>, Reference> serializerMap = new HashMap<>();
@@ -121,7 +121,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     this.parentSerializerClass = parentSerializerClass;
     addCommonImports();
     TypeToken<?> refResolverTypeToken = TypeToken.of(fury.getReferenceResolver().getClass());
-    refResolverRef = new Reference(REF_RESOLVER_NAME, refResolverTypeToken, false);
+    refResolverRef = fieldRef(REF_RESOLVER_NAME, refResolverTypeToken);
     Expression refResolverExpr =
         new Invoke(furyRef, "getReferenceResolver", TypeToken.of(ReferenceResolver.class));
     ctx.addField(
@@ -132,8 +132,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         inlineInvoke(furyRef, "getClassResolver", CLASS_RESOLVER_TYPE_TOKEN);
     ctx.addField(ctx.type(CLASS_RESOLVER_TYPE_TOKEN), CLASS_RESOLVER_NAME, classResolverExpr);
     ctx.reserveName(STRING_SERIALIZER_NAME);
-    stringSerializerRef =
-        new Reference(STRING_SERIALIZER_NAME, STRING_SERIALIZER_TYPE_TOKEN, false);
+    stringSerializerRef = fieldRef(STRING_SERIALIZER_NAME, STRING_SERIALIZER_TYPE_TOKEN);
     ctx.addField(
         ctx.type(TypeToken.of(StringSerializer.class)),
         STRING_SERIALIZER_NAME,
@@ -197,8 +196,12 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             "cls",
             POJO_CLASS_TYPE_NAME);
 
+    ctx.clearExprState();
     String encodeCode = encodeExpr.genCode(ctx).code();
+    encodeCode = ctx.optimizeMethodCode(encodeCode);
+    ctx.clearExprState();
     String decodeCode = decodeExpr.genCode(ctx).code();
+    decodeCode = ctx.optimizeMethodCode(decodeCode);
     ctx.overrideMethod(
         "write",
         encodeCode,
@@ -457,7 +460,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             name,
             new Cast(newSerializerExpr, serializerTypeToken),
             true);
-        serializerRef = new Reference(name, serializerTypeToken, false);
+        serializerRef = fieldRef(name, serializerTypeToken);
       }
       serializerMap.put(cls, serializerRef);
     }
@@ -482,14 +485,15 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       // Use `ctx.freshName(cls)` to avoid wrong name for arr type.
       String name = ctx.newName(ctx.newName(cls) + "ClassInfo");
       ctx.addField(ctx.type(ClassInfo.class), name, classInfoExpr, true);
-      classInfoRef = new Reference(name, classInfoTypeToken, false);
+      classInfoRef = fieldRef(name, classInfoTypeToken);
       classInfoMap.put(cls, classInfoRef);
       return Tuple2.of(classInfoRef, false);
     } else {
       classInfoExpr = inlineInvoke(classResolverRef, "nilClassInfo", classInfoTypeToken);
       String name = ctx.newName(StringUtils.uncapitalize(cls.getSimpleName()) + "ClassInfo");
       ctx.addField(ctx.type(ClassInfo.class), name, classInfoExpr, false);
-      return Tuple2.of(new Reference(name, classInfoTypeToken, false), true);
+      // Can't use fieldRef, since the field is not final.
+      return Tuple2.of(new Reference(name, classInfoTypeToken), true);
     }
   }
 
@@ -499,37 +503,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         inlineInvoke(classResolverRef, "nilClassInfoCache", classInfoCacheTypeToken);
     String name = ctx.newName(cls, "ClassInfoCache");
     ctx.addField(ctx.type(ClassInfoCache.class), name, classInfoCacheExpr, true);
-    return new Reference(name, classInfoCacheTypeToken, false);
-  }
-
-  protected Expression getOrUpdateClassInfo(Class<?> cls, Expression clsExpr) {
-    Tuple2<Reference, Boolean> classInfoRef = addClassInfoField(cls);
-    if (!classInfoRef.f1) {
-      return classInfoRef.f0;
-    }
-    String clsRefName = ctx.newName(cls);
-    Reference clsRef = new Reference(clsRefName); // method parameter for `getClassInfo`
-    Expression updatedClassInfo =
-        new If(
-            neq(new Invoke(classInfoRef.f0, "getCls", CLASS_TYPE), clsRef),
-            new Assign(
-                classInfoRef.f0,
-                inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeToken, clsRef)));
-    Code.ExprCode exprCode =
-        new ListExpression(updatedClassInfo, new Return(classInfoRef.f0))
-            .genCode(new CodegenContext());
-    String classInfoMethodName = ctx.newName("getClassInfo");
-    ctx.addMethod(classInfoMethodName, exprCode.code(), ClassInfo.class, Class.class, clsRefName);
-    Invoke classInfoExpr =
-        new Invoke(
-            new Reference("this"),
-            classInfoMethodName,
-            "classInfo",
-            classInfoTypeToken,
-            false,
-            false,
-            clsExpr);
-    return new ListExpression(clsExpr, classInfoExpr);
+    // The class info field read only once, no need to shallow.
+    return new Reference(name, classInfoCacheTypeToken);
   }
 
   protected Expression readClassInfo(Class<?> cls, Expression buffer) {
@@ -672,10 +647,27 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     return new ListExpression(list, writeSize, writeHeader, writeElements);
   }
 
+  protected Expression tryInlineCast(Expression expression, TypeToken targetType) {
+    return tryCastIfPublic(expression, targetType, true);
+  }
+
   protected Expression tryCastIfPublic(Expression expression, TypeToken targetType) {
+    return tryCastIfPublic(expression, targetType, false);
+  }
+
+  protected Expression tryCastIfPublic(
+      Expression expression, TypeToken targetType, boolean inline) {
     if (getRawType(targetType) == FinalObjectTypeStub.class) {
       // final field doesn't exist in this class, skip cast.
       return expression;
+    }
+    if (inline) {
+      if (ReflectionUtils.isPublic(targetType)
+          && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
+        return new Cast(expression, targetType);
+      } else {
+        return expression;
+      }
     }
     return tryCastIfPublic(expression, targetType, "castedValue");
   }
@@ -812,9 +804,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         // Should put value expr ahead to avoid generated code in wrong scope.
         return new ListExpression(value, callback.apply(value));
       }
-      Invoke nullTag = new Invoke(buffer, "readByte", "nullTag", PRIMITIVE_BYTE_TYPE);
       Expression notNull =
-          neq(nullTag, new Expression.Literal(Fury.NULL_FLAG, PRIMITIVE_BYTE_TYPE));
+          neq(
+              inlineInvoke(buffer, "readByte", PRIMITIVE_BYTE_TYPE),
+              new Expression.Literal(Fury.NULL_FLAG, PRIMITIVE_BYTE_TYPE));
       Expression value = deserializeForNotNull(buffer, typeToken, generateNewMethod);
       // use false to ignore null.
       return new If(
