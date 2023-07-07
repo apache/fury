@@ -117,11 +117,11 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
                 boxedReadWeight,
                 boxedReadGroups),
             Tuple3.of(
-                new ArrayList<>(descriptorGrouper.getFinalDescriptors()), 7, finalWriteGroups),
-            Tuple3.of(new ArrayList<>(descriptorGrouper.getFinalDescriptors()), 4, finalReadGroups),
-            Tuple3.of(new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 3, otherReadGroups),
+                new ArrayList<>(descriptorGrouper.getFinalDescriptors()), 9, finalWriteGroups),
+            Tuple3.of(new ArrayList<>(descriptorGrouper.getFinalDescriptors()), 5, finalReadGroups),
+            Tuple3.of(new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 5, otherReadGroups),
             Tuple3.of(
-                new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 5, otherWriteGroups));
+                new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 9, otherWriteGroups));
     for (Tuple3<List<Descriptor>, Integer, List<List<Descriptor>>> decs : groups) {
       while (decs.f0.size() > 0) {
         int endIndex = Math.min(decs.f1, decs.f0.size());
