@@ -18,6 +18,7 @@
 
 package io.fury.builder;
 
+import static io.fury.codegen.Expression.Invoke.inlineInvoke;
 import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_ARRAY_TYPE;
@@ -47,16 +48,16 @@ import io.fury.codegen.Expression.ReplaceStub;
 import io.fury.codegen.Expression.StaticInvoke;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.codegen.ExpressionVisitor;
-import io.fury.collection.Collections;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
+import io.fury.util.Functions;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Generate sequential read/write code for java serialization to speed up performance. It also
@@ -128,36 +129,53 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       expressions.add(new Invoke(buffer, "writeInt", classVersionHash));
     }
     expressions.addAll(serializePrimitives(bean, buffer, objectCodecOptimizer.primitiveGroups));
-    Collections.stream(
-            Iterables.concat(
-                objectCodecOptimizer.boxedWriteGroups,
-                objectCodecOptimizer.finalWriteGroups,
-                objectCodecOptimizer.otherWriteGroups,
-                objectCodecOptimizer.descriptorGrouper.getCollectionDescriptors().stream()
-                    .map(java.util.Collections::singletonList)
-                    .collect(Collectors.toList()),
-                objectCodecOptimizer.descriptorGrouper.getMapDescriptors().stream()
-                    .map(java.util.Collections::singletonList)
-                    .collect(Collectors.toList())))
-        .filter(group -> group.size() > 0)
-        .forEach(
-            group -> {
-              Expression invokeGeneratedWrite =
-                  objectCodecOptimizer.invokeGenerated(
-                      () -> {
-                        ListExpression groupExpressions = new ListExpression();
-                        for (Descriptor d : group) {
-                          // `bean` will be replaced by `Reference` to cut-off expr dependency.
-                          Expression fieldValue = getFieldValue(bean, d);
-                          Expression fieldExpr = serializeFor(fieldValue, buffer, d.getTypeToken());
-                          groupExpressions.add(fieldExpr);
-                        }
-                        return groupExpressions;
-                      },
-                      "writeFields");
-              expressions.add(invokeGeneratedWrite);
-            });
+    int numGroups = getNumGroups(objectCodecOptimizer);
+    for (List<Descriptor> group :
+        Iterables.concat(
+            objectCodecOptimizer.boxedWriteGroups,
+            objectCodecOptimizer.finalWriteGroups,
+            objectCodecOptimizer.otherWriteGroups)) {
+      if (group.isEmpty()) {
+        continue;
+      }
+      boolean inline = group.size() == 1 && numGroups < 10;
+      expressions.add(serializeGroup(group, bean, buffer, inline));
+    }
+    for (Descriptor descriptor :
+        objectCodecOptimizer.descriptorGrouper.getCollectionDescriptors()) {
+      expressions.add(serializeGroup(Collections.singletonList(descriptor), bean, buffer, false));
+    }
+    for (Descriptor d : objectCodecOptimizer.descriptorGrouper.getMapDescriptors()) {
+      expressions.add(serializeGroup(Collections.singletonList(d), bean, buffer, false));
+    }
     return expressions;
+  }
+
+  private int getNumGroups(ObjectCodecOptimizer objectCodecOptimizer) {
+    return objectCodecOptimizer.boxedWriteGroups.size()
+        + objectCodecOptimizer.finalWriteGroups.size()
+        + objectCodecOptimizer.otherWriteGroups.size()
+        + objectCodecOptimizer.descriptorGrouper.getCollectionDescriptors().size()
+        + objectCodecOptimizer.descriptorGrouper.getMapDescriptors().size();
+  }
+
+  private Expression serializeGroup(
+      List<Descriptor> group, Expression bean, Expression buffer, boolean inline) {
+    Functions.SerializableSupplier<Expression> expressionSupplier =
+        () -> {
+          ListExpression groupExpressions = new ListExpression();
+          for (Descriptor d : group) {
+            // `bean` will be replaced by `Reference` to cut-off expr dependency.
+            Expression fieldValue = getFieldValue(bean, d);
+            Expression fieldExpr = serializeFor(fieldValue, buffer, d.getTypeToken());
+            groupExpressions.add(fieldExpr);
+          }
+          return groupExpressions;
+        };
+    if (inline) {
+      return expressionSupplier.get();
+    }
+    return objectCodecOptimizer.invokeGenerated(expressionSupplier, "writeFields");
   }
 
   /**
@@ -177,9 +195,14 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     }
   }
 
+  protected int getNumPrimitiveFields(List<List<Descriptor>> primitiveGroups) {
+    return primitiveGroups.stream().mapToInt(List::size).sum();
+  }
+
   private List<Expression> serializePrimitivesUnCompressed(
       Expression bean, Expression buffer, List<List<Descriptor>> primitiveGroups, int totalSize) {
     List<Expression> expressions = new ArrayList<>();
+    int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
     Literal totalSizeLiteral = new Literal(totalSize, PRIMITIVE_INT_TYPE);
     // After this grow, following writes can be unsafe without checks.
     expressions.add(new Invoke(buffer, "grow", totalSizeLiteral));
@@ -275,9 +298,13 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
           throw new IllegalStateException("impossible");
         }
       }
-      expressions.add(
-          objectCodecOptimizer.invokeGenerated(
-              ImmutableSet.of(bean, heapBuffer, writerAddr), groupExpressions, "writeFields"));
+      if (numPrimitiveFields < 4) {
+        expressions.add(groupExpressions);
+      } else {
+        expressions.add(
+            objectCodecOptimizer.invokeGenerated(
+                ImmutableSet.of(bean, heapBuffer, writerAddr), groupExpressions, "writeFields"));
+      }
     }
     Expression increaseWriterIndex =
         new Invoke(
@@ -289,6 +316,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   private List<Expression> serializePrimitivesCompressed(
       Expression bean, Expression buffer, List<List<Descriptor>> primitiveGroups, int totalSize) {
     List<Expression> expressions = new ArrayList<>();
+    int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
     int growSize = (int) (totalSize + primitiveGroups.stream().mapToLong(Collection::size).sum());
     // After this grow, following writes can be unsafe without checks.
     expressions.add(new Invoke(buffer, "grow", Literal.ofInt(growSize)));
@@ -385,9 +413,13 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         // int/long are sorted in the last.
         addIncWriterIndexExpr(groupExpressions, buffer, acc);
       }
-      expressions.add(
-          objectCodecOptimizer.invokeGenerated(
-              ImmutableSet.of(bean, buffer, heapBuffer), groupExpressions, "writeFields"));
+      if (numPrimitiveFields < 4) {
+        expressions.add(groupExpressions);
+      } else {
+        expressions.add(
+            objectCodecOptimizer.invokeGenerated(
+                ImmutableSet.of(bean, buffer, heapBuffer), groupExpressions, "writeFields"));
+      }
     }
     return expressions;
   }
@@ -422,61 +454,65 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     Expression referenceObject = new Invoke(refResolverRef, "reference", PRIMITIVE_VOID_TYPE, bean);
     expressions.add(bean);
     expressions.add(referenceObject);
-
     expressions.addAll(deserializePrimitives(bean, buffer, objectCodecOptimizer.primitiveGroups));
-    Collections.stream(
-            Iterables.concat(
-                objectCodecOptimizer.boxedReadGroups,
-                objectCodecOptimizer.finalReadGroups,
-                objectCodecOptimizer.otherReadGroups,
-                objectCodecOptimizer.descriptorGrouper.getCollectionDescriptors().stream()
-                    .map(java.util.Collections::singletonList)
-                    .collect(Collectors.toList()),
-                objectCodecOptimizer.descriptorGrouper.getMapDescriptors().stream()
-                    .map(java.util.Collections::singletonList)
-                    .collect(Collectors.toList())))
-        .filter(group -> group.size() > 0)
-        .forEach(
-            group -> {
-              Expression invokeGeneratedRead =
-                  objectCodecOptimizer.invokeGenerated(
-                      () -> {
-                        ListExpression groupExpressions = new ListExpression();
-                        // use Reference to cut-off expr dependency.
-                        for (Descriptor d : group) {
-                          ExpressionVisitor.ExprHolder exprHolder =
-                              ExpressionVisitor.ExprHolder.of("bean", bean);
-                          Expression action =
-                              deserializeFor(
-                                  buffer,
-                                  d.getTypeToken(),
-                                  // `bean` will be replaced by `Reference` to cut-off expr
-                                  // dependency.
-                                  expr ->
-                                      setFieldValue(
-                                          exprHolder.get("bean"),
-                                          d,
-                                          tryCastIfPublic(expr, d.getTypeToken())));
-                          groupExpressions.add(action);
-                        }
-                        return groupExpressions;
-                      },
-                      "readFields");
-              expressions.add(invokeGeneratedRead);
-            });
+    int numGroups = getNumGroups(objectCodecOptimizer);
+    for (List<Descriptor> group :
+        Iterables.concat(
+            objectCodecOptimizer.boxedReadGroups,
+            objectCodecOptimizer.finalReadGroups,
+            objectCodecOptimizer.otherReadGroups)) {
+      if (group.isEmpty()) {
+        continue;
+      }
+      boolean inline = group.size() == 1 && numGroups < 10;
+      expressions.add(deserializeGroup(group, bean, buffer, inline));
+    }
+    for (Descriptor d : objectCodecOptimizer.descriptorGrouper.getCollectionDescriptors()) {
+      expressions.add(deserializeGroup(Collections.singletonList(d), bean, buffer, false));
+    }
+    for (Descriptor d : objectCodecOptimizer.descriptorGrouper.getMapDescriptors()) {
+      expressions.add(deserializeGroup(Collections.singletonList(d), bean, buffer, false));
+    }
     expressions.add(new Expression.Return(bean));
     return expressions;
   }
 
+  protected Expression deserializeGroup(
+      List<Descriptor> group, Expression bean, Expression buffer, boolean inline) {
+    Functions.SerializableSupplier<Expression> exprSupplier =
+        () -> {
+          ListExpression groupExpressions = new ListExpression();
+          // use Reference to cut-off expr dependency.
+          for (Descriptor d : group) {
+            ExpressionVisitor.ExprHolder exprHolder = ExpressionVisitor.ExprHolder.of("bean", bean);
+            Expression action =
+                deserializeFor(
+                    buffer,
+                    d.getTypeToken(),
+                    // `bean` will be replaced by `Reference` to cut-off expr
+                    // dependency.
+                    expr ->
+                        setFieldValue(
+                            exprHolder.get("bean"), d, tryInlineCast(expr, d.getTypeToken())));
+            groupExpressions.add(action);
+          }
+          return groupExpressions;
+        };
+    if (inline) {
+      return exprSupplier.get();
+    } else {
+      return objectCodecOptimizer.invokeGenerated(exprSupplier, "readFields");
+    }
+  }
+
   private Expression checkClassVersion(Expression buffer) {
-    Expression hash = new Invoke(buffer, "readInt", PRIMITIVE_INT_TYPE);
     return new StaticInvoke(
         ObjectSerializer.class,
         "checkClassVersion",
         PRIMITIVE_VOID_TYPE,
         false,
         furyRef,
-        hash,
+        inlineInvoke(buffer, "readInt", PRIMITIVE_INT_TYPE),
         Objects.requireNonNull(classVersionHash));
   }
 
@@ -500,6 +536,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   private List<Expression> deserializeUnCompressedPrimitives(
       Expression bean, Expression buffer, List<List<Descriptor>> primitiveGroups, int totalSize) {
     List<Expression> expressions = new ArrayList<>();
+    int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
     Literal totalSizeLiteral = Literal.ofInt(totalSize);
     Expression heapBuffer =
         new Invoke(buffer, "getHeapMemory", "heapBuffer", PRIMITIVE_BYTE_ARRAY_TYPE);
@@ -595,9 +632,13 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         // `bean` will be replaced by `Reference` to cut-off expr dependency.
         groupExpressions.add(setFieldValue(bean, descriptor, fieldValue));
       }
-      expressions.add(
-          objectCodecOptimizer.invokeGenerated(
-              ImmutableSet.of(bean, heapBuffer, readerAddr), groupExpressions, "readFields"));
+      if (numPrimitiveFields < 4) {
+        expressions.add(groupExpressions);
+      } else {
+        expressions.add(
+            objectCodecOptimizer.invokeGenerated(
+                ImmutableSet.of(bean, heapBuffer, readerAddr), groupExpressions, "readFields"));
+      }
     }
     Expression increaseReaderIndex =
         new Invoke(
@@ -609,6 +650,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   private List<Expression> deserializeCompressedPrimitives(
       Expression bean, Expression buffer, List<List<Descriptor>> primitiveGroups) {
     List<Expression> expressions = new ArrayList<>();
+    int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
     Expression heapBuffer =
         new Invoke(buffer, "getHeapMemory", "heapBuffer", PRIMITIVE_BYTE_ARRAY_TYPE);
     expressions.add(heapBuffer);
@@ -705,9 +747,13 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       if (!compressStarted) {
         addIncReaderIndexExpr(groupExpressions, buffer, acc);
       }
-      expressions.add(
-          objectCodecOptimizer.invokeGenerated(
-              ImmutableSet.of(bean, buffer, heapBuffer), groupExpressions, "readFields"));
+      if (numPrimitiveFields < 4) {
+        expressions.add(groupExpressions);
+      } else {
+        expressions.add(
+            objectCodecOptimizer.invokeGenerated(
+                ImmutableSet.of(bean, buffer, heapBuffer), groupExpressions, "readFields"));
+      }
     }
     return expressions;
   }

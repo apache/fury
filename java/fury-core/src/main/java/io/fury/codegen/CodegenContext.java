@@ -28,6 +28,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.reflect.TypeToken;
+import io.fury.codegen.Expression.Reference;
 import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
 import io.fury.util.StringUtils;
@@ -114,8 +115,6 @@ public class CodegenContext {
     JAVA_RESERVED_WORDS = ImmutableSet.copyOf(JAVA_RESERVED_WORDS);
   }
 
-  private static final String INITIALIZE_METHOD_NAME = "initialize";
-
   Map<String, Long> newValNameIds = new HashMap<>();
   Set<String> valNames = new HashSet<>();
 
@@ -128,7 +127,7 @@ public class CodegenContext {
    * <p>The exprCode's code of subsequent same expression will be null, because the code is already
    * added to current context
    */
-  Map<Expression, ExprCode> exprState = new HashMap<>();
+  Map<Expression, ExprState> exprState = new HashMap<>();
 
   String pkg;
   LinkedHashSet<String> imports = new LinkedHashSet<>();
@@ -599,5 +598,35 @@ public class CodegenContext {
 
     codeBuilder.append('}');
     return codeBuilder.toString();
+  }
+
+  public void clearExprState() {
+    exprState.clear();
+  }
+
+  /** Optimize method code based current compiled expressions. */
+  public String optimizeMethodCode(String code) {
+    StringBuilder builder = new StringBuilder();
+    for (Map.Entry<Expression, ExprState> entry : exprState.entrySet()) {
+      Expression expression = entry.getKey();
+      ExprState value = entry.getValue();
+      if (expression instanceof Reference) {
+        Reference reference = (Reference) expression;
+        if (reference.isFieldRef() && value.getAccessCount() > 1) {
+          // access only once are not necessary to load into local variable table,
+          // which bloat local variable table.
+          String type = type(reference.type());
+          String cacheVariable =
+              StringUtils.format(
+                  "${type} ${name} = this.${name};", "type", type, "name", reference.name());
+          builder.append(cacheVariable).append('\n');
+        }
+      }
+    }
+    if (builder.length() > 0) {
+      return builder.append(code).toString();
+    } else {
+      return code;
+    }
   }
 }

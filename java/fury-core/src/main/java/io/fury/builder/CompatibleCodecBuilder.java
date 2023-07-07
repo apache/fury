@@ -19,6 +19,7 @@
 package io.fury.builder;
 
 import static io.fury.codegen.Expression.Invoke.inlineInvoke;
+import static io.fury.codegen.Expression.Reference.fieldRef;
 import static io.fury.codegen.ExpressionUtils.cast;
 import static io.fury.codegen.ExpressionUtils.eq;
 import static io.fury.codegen.ExpressionUtils.lessThan;
@@ -46,6 +47,7 @@ import io.fury.codegen.Expression.If;
 import io.fury.codegen.Expression.Invoke;
 import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Literal;
+import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.Return;
 import io.fury.codegen.Expression.While;
 import io.fury.codegen.ExpressionOptimizer;
@@ -79,7 +81,7 @@ import java.util.Map;
 public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   public static final String FIELD_RESOLVER_NAME = "fieldResolver";
   private final FieldResolver fieldResolver;
-  private final Expression.Reference fieldResolverRef;
+  private final Reference fieldResolverRef;
   private final Literal endTagLiteral;
   private final Map<String, Expression> methodCache;
 
@@ -94,7 +96,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
     this.fieldResolver = fieldResolver;
     endTagLiteral = new Literal(fieldResolver.getEndTag(), PRIMITIVE_LONG_TYPE);
     TypeToken<FieldResolver> fieldResolverTypeToken = TypeToken.of(FieldResolver.class);
-    fieldResolverRef = new Expression.Reference(FIELD_RESOLVER_NAME, fieldResolverTypeToken, false);
+    fieldResolverRef = fieldRef(FIELD_RESOLVER_NAME, fieldResolverTypeToken);
     Expression fieldResolverExpr =
         inlineInvoke(
             classResolverRef,
@@ -150,9 +152,8 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   @Override
   public Expression buildEncodeExpression() {
-    Expression.Reference inputObject =
-        new Expression.Reference(ROOT_OBJECT_NAME, OBJECT_TYPE, false);
-    Expression.Reference buffer = new Expression.Reference(BUFFER_NAME, bufferTypeToken, false);
+    Reference inputObject = new Reference(ROOT_OBJECT_NAME, OBJECT_TYPE, false);
+    Reference buffer = new Reference(BUFFER_NAME, bufferTypeToken, false);
 
     ListExpression expressions = new ListExpression();
     Expression bean = tryCastIfPublic(inputObject, beanType, ctx.newName(beanClass));
@@ -325,7 +326,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   @Override
   public Expression buildDecodeExpression() {
-    Expression.Reference buffer = new Expression.Reference(BUFFER_NAME, bufferTypeToken, false);
+    Reference buffer = new Reference(BUFFER_NAME, bufferTypeToken, false);
     ListExpression expressionBuilder = new ListExpression();
     Expression bean = newBean();
     Expression referenceObject = new Invoke(refResolverRef, "reference", PRIMITIVE_VOID_TYPE, bean);
@@ -354,7 +355,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
     return expressionBuilder;
   }
 
-  private ListExpression readAndSetFields(Expression.Reference buffer, Expression bean) {
+  private ListExpression readAndSetFields(Reference buffer, Expression bean) {
     ListExpression readAndSetFieldsExpr = new ListExpression();
     Expression partFieldInfo = new Invoke(buffer, "readInt", "partFieldInfo", PRIMITIVE_LONG_TYPE);
     readAndSetFieldsExpr.add(partFieldInfo);
@@ -371,7 +372,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   }
 
   private void readEmbedTypes4Fields(
-      Expression.Reference buffer,
+      Reference buffer,
       ListExpression expressionBuilder,
       Expression bean,
       Expression partFieldInfo) {
@@ -431,7 +432,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             buffer,
             descriptor.getTypeToken(),
             expr ->
-                setFieldValue(bean, descriptor, tryCastIfPublic(expr, descriptor.getTypeToken())));
+                setFieldValue(bean, descriptor, tryInlineCast(expr, descriptor.getTypeToken())));
     return new ListExpression(
         deserializeAction,
         new Assign(partFieldInfo, inlineInvoke(buffer, "readInt", PRIMITIVE_LONG_TYPE)));
@@ -633,7 +634,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             buffer,
             descriptor.getTypeToken(),
             expr ->
-                setFieldValue(bean, descriptor, tryCastIfPublic(expr, descriptor.getTypeToken())));
+                setFieldValue(bean, descriptor, tryInlineCast(expr, descriptor.getTypeToken())));
     return new ListExpression(
         deserializeAction,
         new Assign(partFieldInfo, inlineInvoke(buffer, "readLong", PRIMITIVE_LONG_TYPE)));
@@ -768,12 +769,11 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                       refId,
                       deserializedValue,
                       setReadObject,
-                      setFieldValue(
-                          bean, descriptor, tryCastIfPublic(deserializedValue, typeToken))),
+                      setFieldValue(bean, descriptor, tryInlineCast(deserializedValue, typeToken))),
                   setFieldValue(
                       bean,
                       descriptor,
-                      tryCastIfPublic(
+                      tryInlineCast(
                           new Invoke(refResolverRef, "getReadObject", OBJECT_TYPE, false),
                           typeToken)),
                   false,
@@ -788,7 +788,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   protected Expression getFinalClassInfo(Class<?> cls) {
     Preconditions.checkArgument(Modifier.isFinal(cls.getModifiers()));
-    Tuple2<Expression.Reference, Boolean> classInfoRef = addClassInfoField(cls);
+    Tuple2<Reference, Boolean> classInfoRef = addClassInfoField(cls);
     Preconditions.checkArgument(!classInfoRef.f1);
     return classInfoRef.f0;
   }

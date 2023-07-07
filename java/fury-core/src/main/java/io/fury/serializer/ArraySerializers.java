@@ -188,51 +188,18 @@ public class ArraySerializers {
     }
   }
 
+  // Implement all read/write methods in subclasses to avoid
+  // virtual method call cost.
   public abstract static class PrimitiveArraySerializer<T>
       extends Serializers.CrossLanguageCompatibleSerializer<T> {
-    private final int offset;
-    private final int elemSize;
+    protected final int offset;
+    protected final int elemSize;
 
     public PrimitiveArraySerializer(Fury fury, Class<T> cls) {
       super(fury, cls, (short) primitiveInfo.get(TypeUtils.getArrayComponentInfo(cls).f0)[2]);
       Class<?> innerType = TypeUtils.getArrayComponentInfo(cls).f0;
       this.offset = primitiveInfo.get(innerType)[0];
       this.elemSize = primitiveInfo.get(innerType)[1];
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, T value) {
-      if (fury.getBufferCallback() == null) {
-        int size = Math.multiplyExact(length(value), elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
-      } else {
-        fury.writeBufferObject(
-            buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, length(value)));
-      }
-    }
-
-    protected abstract int length(T value);
-
-    protected abstract T newInstance(int numElements);
-
-    @Override
-    public T read(MemoryBuffer buffer) {
-      if (fury.isPeerOutOfBandEnabled()) {
-        MemoryBuffer buf = fury.readBufferObject(buffer);
-        int size = buf.remaining();
-        int numElements = size / elemSize;
-        T values = newInstance(numElements);
-        buf.copyToUnsafe(0, values, offset, size);
-        return values;
-      } else {
-        int size = buffer.readPositiveVarInt();
-        int numElements = size / elemSize;
-        T values = newInstance(numElements);
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
-        return values;
-      }
     }
 
     @Override
@@ -253,13 +220,34 @@ public class ArraySerializers {
     }
 
     @Override
-    protected int length(boolean[] value) {
-      return value.length;
+    public void write(MemoryBuffer buffer, boolean[] value) {
+      if (fury.getBufferCallback() == null) {
+        int size = Math.multiplyExact(value.length, elemSize);
+        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+      } else {
+        fury.writeBufferObject(
+            buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
+      }
     }
 
     @Override
-    protected boolean[] newInstance(int numElements) {
-      return new boolean[numElements];
+    public boolean[] read(MemoryBuffer buffer) {
+      if (fury.isPeerOutOfBandEnabled()) {
+        MemoryBuffer buf = fury.readBufferObject(buffer);
+        int size = buf.remaining();
+        int numElements = size / elemSize;
+        boolean[] values = new boolean[numElements];
+        buf.copyToUnsafe(0, values, offset, size);
+        return values;
+      } else {
+        int size = buffer.readPositiveVarInt();
+        int numElements = size / elemSize;
+        boolean[] values = new boolean[numElements];
+        int readerIndex = buffer.readerIndex();
+        buffer.copyToUnsafe(readerIndex, values, offset, size);
+        buffer.readerIndex(readerIndex + size);
+        return values;
+      }
     }
   }
 
@@ -270,13 +258,34 @@ public class ArraySerializers {
     }
 
     @Override
-    protected int length(byte[] value) {
-      return value.length;
+    public void write(MemoryBuffer buffer, byte[] value) {
+      if (fury.getBufferCallback() == null) {
+        int size = Math.multiplyExact(value.length, elemSize);
+        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+      } else {
+        fury.writeBufferObject(
+            buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
+      }
     }
 
     @Override
-    protected byte[] newInstance(int numElements) {
-      return new byte[numElements];
+    public byte[] read(MemoryBuffer buffer) {
+      if (fury.isPeerOutOfBandEnabled()) {
+        MemoryBuffer buf = fury.readBufferObject(buffer);
+        int size = buf.remaining();
+        int numElements = size / elemSize;
+        byte[] values = new byte[numElements];
+        buf.copyToUnsafe(0, values, offset, size);
+        return values;
+      } else {
+        int size = buffer.readPositiveVarInt();
+        int numElements = size / elemSize;
+        byte[] values = new byte[numElements];
+        int readerIndex = buffer.readerIndex();
+        buffer.copyToUnsafe(readerIndex, values, offset, size);
+        buffer.readerIndex(readerIndex + size);
+        return values;
+      }
     }
   }
 
@@ -287,13 +296,34 @@ public class ArraySerializers {
     }
 
     @Override
-    protected int length(char[] value) {
-      return value.length;
+    public void write(MemoryBuffer buffer, char[] value) {
+      if (fury.getBufferCallback() == null) {
+        int size = Math.multiplyExact(value.length, elemSize);
+        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+      } else {
+        fury.writeBufferObject(
+            buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
+      }
     }
 
     @Override
-    protected char[] newInstance(int numElements) {
-      return new char[numElements];
+    public char[] read(MemoryBuffer buffer) {
+      if (fury.isPeerOutOfBandEnabled()) {
+        MemoryBuffer buf = fury.readBufferObject(buffer);
+        int size = buf.remaining();
+        int numElements = size / elemSize;
+        char[] values = new char[numElements];
+        buf.copyToUnsafe(0, values, offset, size);
+        return values;
+      } else {
+        int size = buffer.readPositiveVarInt();
+        int numElements = size / elemSize;
+        char[] values = new char[numElements];
+        int readerIndex = buffer.readerIndex();
+        buffer.copyToUnsafe(readerIndex, values, offset, size);
+        buffer.readerIndex(readerIndex + size);
+        return values;
+      }
     }
 
     @Override
@@ -319,13 +349,34 @@ public class ArraySerializers {
     }
 
     @Override
-    protected int length(short[] value) {
-      return value.length;
+    public void write(MemoryBuffer buffer, short[] value) {
+      if (fury.getBufferCallback() == null) {
+        int size = Math.multiplyExact(value.length, elemSize);
+        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+      } else {
+        fury.writeBufferObject(
+            buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
+      }
     }
 
     @Override
-    protected short[] newInstance(int numElements) {
-      return new short[numElements];
+    public short[] read(MemoryBuffer buffer) {
+      if (fury.isPeerOutOfBandEnabled()) {
+        MemoryBuffer buf = fury.readBufferObject(buffer);
+        int size = buf.remaining();
+        int numElements = size / elemSize;
+        short[] values = new short[numElements];
+        buf.copyToUnsafe(0, values, offset, size);
+        return values;
+      } else {
+        int size = buffer.readPositiveVarInt();
+        int numElements = size / elemSize;
+        short[] values = new short[numElements];
+        int readerIndex = buffer.readerIndex();
+        buffer.copyToUnsafe(readerIndex, values, offset, size);
+        buffer.readerIndex(readerIndex + size);
+        return values;
+      }
     }
   }
 
@@ -336,13 +387,34 @@ public class ArraySerializers {
     }
 
     @Override
-    protected int length(int[] value) {
-      return value.length;
+    public void write(MemoryBuffer buffer, int[] value) {
+      if (fury.getBufferCallback() == null) {
+        int size = Math.multiplyExact(value.length, elemSize);
+        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+      } else {
+        fury.writeBufferObject(
+            buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
+      }
     }
 
     @Override
-    protected int[] newInstance(int numElements) {
-      return new int[numElements];
+    public int[] read(MemoryBuffer buffer) {
+      if (fury.isPeerOutOfBandEnabled()) {
+        MemoryBuffer buf = fury.readBufferObject(buffer);
+        int size = buf.remaining();
+        int numElements = size / elemSize;
+        int[] values = new int[numElements];
+        buf.copyToUnsafe(0, values, offset, size);
+        return values;
+      } else {
+        int size = buffer.readPositiveVarInt();
+        int numElements = size / elemSize;
+        int[] values = new int[numElements];
+        int readerIndex = buffer.readerIndex();
+        buffer.copyToUnsafe(readerIndex, values, offset, size);
+        buffer.readerIndex(readerIndex + size);
+        return values;
+      }
     }
   }
 
@@ -353,13 +425,34 @@ public class ArraySerializers {
     }
 
     @Override
-    protected int length(long[] value) {
-      return value.length;
+    public void write(MemoryBuffer buffer, long[] value) {
+      if (fury.getBufferCallback() == null) {
+        int size = Math.multiplyExact(value.length, elemSize);
+        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+      } else {
+        fury.writeBufferObject(
+            buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
+      }
     }
 
     @Override
-    protected long[] newInstance(int numElements) {
-      return new long[numElements];
+    public long[] read(MemoryBuffer buffer) {
+      if (fury.isPeerOutOfBandEnabled()) {
+        MemoryBuffer buf = fury.readBufferObject(buffer);
+        int size = buf.remaining();
+        int numElements = size / elemSize;
+        long[] values = new long[numElements];
+        buf.copyToUnsafe(0, values, offset, size);
+        return values;
+      } else {
+        int size = buffer.readPositiveVarInt();
+        int numElements = size / elemSize;
+        long[] values = new long[numElements];
+        int readerIndex = buffer.readerIndex();
+        buffer.copyToUnsafe(readerIndex, values, offset, size);
+        buffer.readerIndex(readerIndex + size);
+        return values;
+      }
     }
   }
 
@@ -370,13 +463,34 @@ public class ArraySerializers {
     }
 
     @Override
-    protected int length(float[] value) {
-      return value.length;
+    public void write(MemoryBuffer buffer, float[] value) {
+      if (fury.getBufferCallback() == null) {
+        int size = Math.multiplyExact(value.length, elemSize);
+        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+      } else {
+        fury.writeBufferObject(
+            buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
+      }
     }
 
     @Override
-    protected float[] newInstance(int numElements) {
-      return new float[numElements];
+    public float[] read(MemoryBuffer buffer) {
+      if (fury.isPeerOutOfBandEnabled()) {
+        MemoryBuffer buf = fury.readBufferObject(buffer);
+        int size = buf.remaining();
+        int numElements = size / elemSize;
+        float[] values = new float[numElements];
+        buf.copyToUnsafe(0, values, offset, size);
+        return values;
+      } else {
+        int size = buffer.readPositiveVarInt();
+        int numElements = size / elemSize;
+        float[] values = new float[numElements];
+        int readerIndex = buffer.readerIndex();
+        buffer.copyToUnsafe(readerIndex, values, offset, size);
+        buffer.readerIndex(readerIndex + size);
+        return values;
+      }
     }
   }
 
@@ -387,13 +501,34 @@ public class ArraySerializers {
     }
 
     @Override
-    protected int length(double[] value) {
-      return value.length;
+    public void write(MemoryBuffer buffer, double[] value) {
+      if (fury.getBufferCallback() == null) {
+        int size = Math.multiplyExact(value.length, elemSize);
+        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+      } else {
+        fury.writeBufferObject(
+            buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
+      }
     }
 
     @Override
-    protected double[] newInstance(int numElements) {
-      return new double[numElements];
+    public double[] read(MemoryBuffer buffer) {
+      if (fury.isPeerOutOfBandEnabled()) {
+        MemoryBuffer buf = fury.readBufferObject(buffer);
+        int size = buf.remaining();
+        int numElements = size / elemSize;
+        double[] values = new double[numElements];
+        buf.copyToUnsafe(0, values, offset, size);
+        return values;
+      } else {
+        int size = buffer.readPositiveVarInt();
+        int numElements = size / elemSize;
+        double[] values = new double[numElements];
+        int readerIndex = buffer.readerIndex();
+        buffer.copyToUnsafe(readerIndex, values, offset, size);
+        buffer.readerIndex(readerIndex + size);
+        return values;
+      }
     }
   }
 

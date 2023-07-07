@@ -136,7 +136,9 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
             e ->
                 Assert.assertTrue(
                     e.getValue() < 325,
-                    String.format("Method %s has size %d > 325", e.getKey(), e.getValue())));
+                    String.format(
+                        "Method %s for class %s has size %d > 325",
+                        e.getKey(), compileUnit.getQualifiedClassName(), e.getValue())));
   }
 
   @Data
