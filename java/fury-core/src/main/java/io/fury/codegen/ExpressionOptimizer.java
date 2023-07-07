@@ -114,8 +114,9 @@ public class ExpressionOptimizer {
     for (Expression.Reference reference : cutExprMap.values()) {
       Preconditions.checkArgument(codegenContext.containName(reference.name()));
     }
-    String code = groupExpressions.genCode(codegenContext).code();
     String methodName = ctx.newName(methodPrefix);
+    String code = groupExpressions.genCode(codegenContext).code();
+    code = codegenContext.optimizeMethodCode(code);
     ArrayList<Object> formalParams = new ArrayList<>();
     ArrayList<Expression> actualParams = new ArrayList<>();
     for (Map.Entry<Expression, Expression.Reference> entry : cutExprMap.entrySet()) {

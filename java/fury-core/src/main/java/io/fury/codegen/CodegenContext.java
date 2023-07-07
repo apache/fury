@@ -28,6 +28,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.reflect.TypeToken;
+import io.fury.codegen.Expression.Reference;
 import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
 import io.fury.util.StringUtils;
@@ -599,5 +600,31 @@ public class CodegenContext {
 
     codeBuilder.append('}');
     return codeBuilder.toString();
+  }
+
+  public void clearExprState() {
+    exprState.clear();
+  }
+
+  /** Optimize method code based current compiled expressions. */
+  public String optimizeMethodCode(String code) {
+    StringBuilder builder = new StringBuilder();
+    for (Expression expression : exprState.keySet()) {
+      if (expression instanceof Reference) {
+        Reference reference = (Reference) expression;
+        if (reference.isFieldRef()) {
+          String type = type(reference.type());
+          String cacheVariable =
+              StringUtils.format(
+                  "${type} ${name} = this.${name};", "type", type, "name", reference.name());
+          builder.append(cacheVariable).append('\n');
+        }
+      }
+    }
+    if (builder.length() > 0) {
+      return builder.append(code).toString();
+    } else {
+      return code;
+    }
   }
 }

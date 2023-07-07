@@ -366,21 +366,29 @@ public interface Expression {
     private final String name;
     private final TypeToken<?> type;
     private final boolean nullable;
+    private final boolean fieldRef;
 
     public Reference(String name) {
       this(name, OBJECT_TYPE);
     }
 
     public Reference(String name, TypeToken<?> type) {
-      this.name = name;
-      this.type = type;
-      this.nullable = false;
+      this(name, type, false);
     }
 
     public Reference(String name, TypeToken<?> type, boolean nullable) {
+      this(name, type, nullable, false);
+    }
+
+    public Reference(String name, TypeToken<?> type, boolean nullable, boolean fieldRef) {
       this.name = name;
       this.type = type;
       this.nullable = nullable;
+      this.fieldRef = fieldRef;
+    }
+
+    public static Reference fieldRef(String name, TypeToken<?> type) {
+      return new Reference(name, type, false, true);
     }
 
     @Override
@@ -409,6 +417,10 @@ public interface Expression {
 
     public String name() {
       return name;
+    }
+
+    public boolean isFieldRef() {
+      return fieldRef;
     }
 
     @Override
