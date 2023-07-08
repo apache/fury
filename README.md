@@ -2,34 +2,52 @@
   <img width="77%" alt="" src="docs/images/logo/fury-logo.svg"><br>
 </div>
 
-# Fury: blazing fast
+# Fury: Blazing Fast Binary Serialization
 
 Fury is a blazing fast multi-language serialization framework powered by jit(just-in-time compilation) and zero-copy:
 
 - Support Java/Python/C++/Golang/Javascript.
-- Cross-language serialize any object automatically, no need for IDL definition, schema compilation and object protocol
-  conversion.
-- Support shared reference and circular reference, no duplicate data or recursion error.
+- Design and implement multiple binary protocols:
+  - Cross-language object graph protocol:
+    - Cross-language serialize any object automatically, no need for IDL definition, schema compilation and object protocol
+      conversion.
+    - Support shared reference and circular reference, no duplicate data or recursion error.
+  - Native-language object graph protocol
+  - Row format protocol: a cache-friendly binary random access row format, supports skipping serialization and partial serialization,
+    and can convert to column-format automatically
 - Zero-copy support: cross-language out-of-band serialization protocol inspired
   by [pickle5](https://peps.python.org/pep-0574/) and off-heap read/write.
-- A highly-extensible JIT framework to generate serializer code at runtime in an async multi-thread way to speed
-  serialization, providing 20-200x performance speed up compared to other serialization frameworks:
+- High performance: A highly-extensible JIT framework to generate serializer code at runtime in an async multi-thread way to speed serialization, providing 20-200x performance speed up:
     - reduce memory access by inline variable in generated code.
-    - reduce virtual method invocation.
+    - reduce virtual method invocation by inline call in generated code.
     - reduce conditional branching.
     - reduce hash lookup.
-- a cache-friendly binary random access row format, supports skipping serialization and partial serialization,
-  and can convert to column-format automatically.
 
 In addition to cross-language serialization, Fury also features at:
 
 - Drop-in replaces Java serialization frameworks such as JDK/Kryo/Hessian without modifying any code, but 100x faster. 
   It can greatly improve the efficiency of high-performance RPC calls, data transfer and object persistence.
+- JDK serialization 100% compatible, support java custom serialization 
+  `writeObject/readObject/writeReplace/readResolve/readObjectNoData` natively in fury.
 - Supports shared and circular reference object serialization for golang.
 - Supports automatic object serialization for golang.
 
 
 https://furyio.org
+
+## Benchmarks
+### Java Serialization
+<img width="24%" alt="" src="docs/benchmarks/serialization/bench_serialize_compatible_STRUCT_to_directBuffer_time.png">
+<img width="24%" alt="" src="docs/benchmarks/serialization/bench_serialize_compatible_MEDIA_CONTENT_to_array_time.png">
+<img width="24%" alt="" src="docs/benchmarks/serialization/bench_serialize_MEDIA_CONTENT_to_array_time.png">
+<img width="24%" alt="" src="docs/benchmarks/serialization/bench_serialize_SAMPLE_to_array_time.png">
+
+<img width="24%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_compatible_STRUCT_from_directBuffer_time.png">
+<img width="24%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_compatible_MEDIA_CONTENT_from_array_time.png">
+<img width="24%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_MEDIA_CONTENT_from_array_time.png">
+<img width="24%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_SAMPLE_from_array_time.png">
+
+See [benchmarks](https://github.com/alipay/fury/tree/main/docs/benchmarks) for more benchmarks about type forward/backward compatibility, off-heap support, zero-copy serialization.
 
 ## Installation
 ### Java
@@ -71,19 +89,22 @@ pip install -v -e .
 ```
 ### JavaScript
 ```bash
-# Will be uploaded to npm soon. 
-# Currently you need to install from the source.
-git clone https://github.com/alipay/fury.git
-cd fury/javascript
-npm install
+npm install @furyjs/fury
 ```
 ### Golang
 Coming soon.
 
 ## Quickstart
 
+Fury supports multiple serialization protocols, the usage may have minor difference:
+- Java serialization protocol
+- Cross-language object graph protocol
+- Row format protocol
 
-See xxx for more detailed guide.
+If you don't have cross-language requirements, using `Java serialization protocol` will 
+have better performance.
+
+Here we give a quict start about how to use fury API, for detailed guide, see xxx for more detailed guide.
 
 ## Compatibility
 ### Schema Compatibility
@@ -93,8 +114,6 @@ See xxx for more detailed guide.
 ### API Compatibility
 
 ## Security
-
-## Benchmarks
 
 
 ## RoadMap

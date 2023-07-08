@@ -80,6 +80,7 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
     else:
         group_cols = ["Benchmark", "bufferType"]
     grouped = data.groupby(group_cols)
+    files_dict = {}
     count = 0
     for keys, sub_df in grouped:
         count = count + 1
@@ -88,10 +89,13 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
             title = " ".join(keys[:-1]) + " to " + keys[-1]
         else:
             title = " ".join(keys[:-1]) + " from " + keys[-1]
-        title = "{} ({})".format(title, "Time" if column == "ns" else "Tps")
-        save_filename = "{}_{:02d}_{}".format(
-            filename, count, title.replace(" ", "_").replace("/", "")
-        )
+        kind = "Time" if column == "ns" else "Tps"
+        save_filename = f"""{filename}_{title.replace(" ", "_")}_{kind.lower()}"""
+        cnt = files_dict.get(save_filename, 0)
+        if cnt > 0:
+            files_dict[save_filename] = cnt = cnt + 1
+            save_filename += "_" + cnt
+        title = f"{title} ({kind})"
         fig, ax = plt.subplots()
         final_df = (
             sub_df.reset_index(drop=True)
@@ -134,6 +138,7 @@ def plot_zero_copy(df: pd.DataFrame, file_dir, filename, column="Tps"):
     else:
         group_cols = ["Benchmark", "bufferType"]
     grouped = data.groupby(group_cols)
+    files_dict = {}
     count = 0
     for keys, sub_df in grouped:
         count = count + 1
@@ -142,10 +147,13 @@ def plot_zero_copy(df: pd.DataFrame, file_dir, filename, column="Tps"):
             title = " ".join(keys[:-1]) + " to " + keys[-1]
         else:
             title = " ".join(keys[:-1]) + " from " + keys[-1]
-        title = "{} ({})".format(title, "Time" if column == "ns" else "Tps")
-        save_filename = "{}_{:02d}_{}".format(
-            filename, count, title.replace(" ", "_").replace("/", "")
-        )
+        kind = "Time" if column == "ns" else "Tps"
+        save_filename = f"""{filename}_{title.replace(" ", "_")}_{kind.lower()}"""
+        cnt = files_dict.get(save_filename, 0)
+        if cnt > 0:
+            files_dict[save_filename] = cnt = cnt + 1
+            save_filename += "_" + cnt
+        title = f"{title} ({kind})"
         fig, ax = plt.subplots()
         final_df = (
             sub_df.reset_index(drop=True)
