@@ -18,7 +18,7 @@
 Serialize data java byte array.
 
 #### Java schema consistent serialization
-The deserialization peer must have same class definition as the serialization peer.
+The deserialization peer must have same class definition with the serialization peer.
 No class forward/backward compatibility are supported in this mode.
 
 <img width="22%" alt="" src="serialization/bench_serialize_STRUCT_to_array_time.png">
@@ -27,7 +27,7 @@ No class forward/backward compatibility are supported in this mode.
 <img width="22%" alt="" src="serialization/bench_serialize_SAMPLE_to_array_time.png">
 
 #### Java schema compatible serialization
-The deserialization peer can have different class definition as the serialization peer.
+The deserialization peer can have different class definition with the serialization peer.
 Class forward/backward compatibility are supported in this mode.
 
 <img width="22%" alt="" src="serialization/bench_serialize_compatible_STRUCT_to_array_time.png">
@@ -36,7 +36,7 @@ Class forward/backward compatibility are supported in this mode.
 <img width="22%" alt="" src="serialization/bench_serialize_compatible_SAMPLE_to_array_time.png">
 
 #### Java schema consistent deserialization
-The deserialization peer must have same class definition as the serialization peer.
+The deserialization peer must have same class definition with the serialization peer.
 No class forward/backward compatibility are supported in this mode.
 
 <img width="22%" alt="" src="deserialization/bench_deserialize_STRUCT_from_array_time.png">
@@ -45,7 +45,7 @@ No class forward/backward compatibility are supported in this mode.
 <img width="22%" alt="" src="deserialization/bench_deserialize_SAMPLE_from_array_time.png">
 
 #### Java schema compatible deserialization
-The deserialization peer can have different class definition as the serialization peer.
+The deserialization peer can have different class definition with the serialization peer.
 Class forward/backward compatibility are supported in this mode.
 <img width="22%" alt="" src="deserialization/bench_deserialize_compatible_STRUCT_from_array_time.png">
 <img width="22%" alt="" src="deserialization/bench_deserialize_compatible_STRUCT2_from_array_time.png">
@@ -56,7 +56,7 @@ Class forward/backward compatibility are supported in this mode.
 Serialize data off-heap memory.
 
 #### Java schema consistent serialization
-The deserialization peer must have same class definition as the serialization peer.
+The deserialization peer must have same class definition with the serialization peer.
 No class forward/backward compatibility are supported in this mode.
 <img width="22%" alt="" src="serialization/bench_serialize_STRUCT_to_directBuffer_time.png">
 <img width="22%" alt="" src="serialization/bench_serialize_STRUCT2_to_directBuffer_time.png">
@@ -64,7 +64,7 @@ No class forward/backward compatibility are supported in this mode.
 <img width="22%" alt="" src="serialization/bench_serialize_compatible_SAMPLE_to_directBuffer_time.png">
 
 #### Java schema compatible serialization
-The deserialization peer can have different class definition as the serialization peer.
+The deserialization peer can have different class definition with the serialization peer.
 Class forward/backward compatibility are supported in this mode.
 <img width="22%" alt="" src="serialization/bench_serialize_compatible_STRUCT_to_directBuffer_time.png">
 <img width="22%" alt="" src="serialization/bench_serialize_compatible_STRUCT2_to_directBuffer_time.png">
@@ -72,7 +72,7 @@ Class forward/backward compatibility are supported in this mode.
 <img width="22%" alt="" src="serialization/bench_serialize_SAMPLE_to_directBuffer_time.png">
 
 #### Java schema consistent deserialization
-The deserialization peer must have same class definition as the serialization peer.
+The deserialization peer must have same class definition with the serialization peer.
 No class forward/backward compatibility are supported in this mode.
 <img width="22%" alt="" src="deserialization/bench_deserialize_STRUCT_from_directBuffer_time.png">
 <img width="22%" alt="" src="deserialization/bench_deserialize_STRUCT2_from_directBuffer_time.png">
@@ -80,7 +80,7 @@ No class forward/backward compatibility are supported in this mode.
 <img width="22%" alt="" src="deserialization/bench_deserialize_SAMPLE_from_directBuffer_time.png">
 
 #### Java schema compatible deserialization
-The deserialization peer can have different class definition as the serialization peer.
+The deserialization peer can have different class definition with the serialization peer.
 Class forward/backward compatibility are supported in this mode.
 <img width="22%" alt="" src="deserialization/bench_deserialize_compatible_STRUCT_from_directBuffer_time.png">
 <img width="22%" alt="" src="deserialization/bench_deserialize_compatible_STRUCT2_from_directBuffer_time.png">
