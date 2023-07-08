@@ -333,10 +333,10 @@ We are still improving our protocols, binary compatibility are not ensured betwe
 Binary compatibility will be ensured before fury 1.0.
 
 ## Security
-Static serialization such as row format are secure in nature.
-But dynamic object graph serialization supports  deserialize unregistered types, which can introduce security issues. Fury provides a secure mode option for it, and enabled by default, which can only deserialize registered types or built-in types, thus secure, by sacrificing some dynamics.
+Static serialization such as row format are secure by nature.
+But dynamic object graph serialization supports  deserialize unregistered types, which can introduce security issues. Fury provides a secure mode option  and enabled by default for this protocol, which can only deserialize registered types or built-in types, thus secure, by sacrificing some dynamics.
 
-If you can ensure all environment are secure, you can disable the secure mode, thus the user types are not needed be registered ahead, and can be serialized automatically.
+If you can ensure your environment is secure, you can disable the secure mode, then the user types are not needed be registered ahead, and can be serialized automatically.
 
 ## RoadMap
 - Meta compression, auto meta sharing and cross-language schema compatibility.
