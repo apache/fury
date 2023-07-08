@@ -36,6 +36,13 @@ In addition to cross-language serialization, Fury also features at:
 https://furyio.org
 
 ## Benchmarks
+Different serialization frameworks has different purposes, the benchmark results here are just for reference.
+
+If you benchmark it for your case manually, please ensure all serialization framework are configured for same purpose. Dynamic serialization frameworks need to support polymorphism and reference, 
+which has more cost compared to static serialization, unless it uses the jit techniques as fury did.
+
+Since fury will generate code in runtime, please warm up it before collecting benchmark statistics.
+
 ### Java Serialization
 <img width="24%" alt="" src="docs/benchmarks/serialization/bench_serialize_compatible_STRUCT_to_directBuffer_time.png">
 <img width="24%" alt="" src="docs/benchmarks/serialization/bench_serialize_compatible_MEDIA_CONTENT_to_array_time.png">
