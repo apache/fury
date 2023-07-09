@@ -72,7 +72,7 @@ function typeHandlerDeclaration(readOrWrite: 'read' | 'write') {
     const genTagDeclaration = (tag: string) => {
         const name = `tag_${count++}_${readOrWrite}`;
         return addDeclar(name, `
-        const ${name} = classResolver.getSerializerByTag("${tag}").${readOrWrite};`
+        const ${name} = classResolver.getSerializerByTag("${tag}");`
         )
     }
     return {
@@ -130,7 +130,7 @@ export const genReadSerializer = (fury: Fury, description: TypeDescription, stac
         }
         if (description.type === InternalSerializerType.FURY_TYPE_TAG) {
             genReadSerializer(fury, description, stack);
-            return template(genTagDeclaration(description.asObject!.tag!));
+            return template(`${genTagDeclaration(description.asObject!.tag!)}.read`);
         }
         return template(genBuiltinDeclaration(description.type));
     }
@@ -199,7 +199,7 @@ export const genWriteSerializer = (fury: Fury, description: TypeDescription, sta
             const tag = description.asObject?.tag;
             genWriteSerializer(fury, description, stack);
             return `
-                ${genTagDeclaration(tag!)}(${v}, []);`
+                ${genTagDeclaration(tag!)}.write(${v}, []);`
 
         }
         return `

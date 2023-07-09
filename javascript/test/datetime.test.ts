@@ -1,12 +1,11 @@
 
-import Fury from '../index';
+import Fury, { TypeDescription, InternalSerializerType } from '@furyjs/fury';
 import {describe, expect, test} from '@jest/globals';
-import { TypeDescription } from '../lib/codeGen';
-import { InternalSerializerType } from '../lib/type';
 
 describe('datetime', () => {
   test('should date work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const now = new Date();
     const input = fury.marshal(now);
     const result = fury.unmarshal(
@@ -29,7 +28,8 @@ describe('datetime', () => {
         tag: "example.foo"
       }
     };
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const serializer = fury.registerSerializerByDescription(description);
     const d = new Date('2021/10/20 09:13');
     const input = fury.marshal({ a:  d, b: d}, serializer);

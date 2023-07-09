@@ -30,5 +30,6 @@ bazel-*/
 bazel-fury/
 bazel-fury/**
 java/**/generated
-javascript/dist/
-javascript/node_modules/
+javascript/**/dist/
+javascript/**/node_modules/
+javascript/**/build

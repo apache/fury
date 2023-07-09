@@ -1,10 +1,10 @@
-import Fury from '../index';
+import Fury, { TypeDescription, InternalSerializerType } from '@furyjs/fury';
 import { describe, expect, test } from '@jest/globals';
-import { InternalSerializerType } from '../lib/type';
 
 describe('number', () => {
   test('should i8 work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const serialize = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
@@ -23,7 +23,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should i16 work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const serialize = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
@@ -42,7 +43,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should i32 work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
@@ -61,7 +63,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should i64 work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
@@ -80,7 +83,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should u8 work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
@@ -99,7 +103,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should u16 work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
@@ -118,7 +123,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should u32 work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
@@ -137,7 +143,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should u64 work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
@@ -156,7 +163,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should float work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {
@@ -175,7 +183,8 @@ describe('number', () => {
     expect(result.a).toBeCloseTo(1.2)
   });
   test('should double work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const serializer = fury.registerSerializerByDescription({
       type: InternalSerializerType.FURY_TYPE_TAG,
       asObject: {

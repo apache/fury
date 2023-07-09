@@ -1,4 +1,5 @@
-const { InternalSerializerType } = require('../dist/lib/type')
+const { InternalSerializerType } = require('@furyjs/fury')
+
 const mockData2Description = (data, tag) => {
     if (data === null || data === undefined) {
         return null;

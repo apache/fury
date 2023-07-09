@@ -1,7 +1,6 @@
 import { genReadSerializer, genWriteSerializer, TypeDescription } from './lib/codeGen';
-import { Serializer, SerializerRead, SerializerWrite, Fury, InternalSerializerType } from './lib/type';
+import { Serializer, Fury, InternalSerializerType, Hps } from './lib/type';
 import FuryInternal from './lib/fury';
-
 
 export {
     Serializer,
@@ -10,7 +9,12 @@ export {
 }
 
 export default class {
-    private fury: Fury = FuryInternal();
+    constructor(private config?: {
+        hps: Hps | null;
+    }) {
+
+    }
+    private fury: Fury = FuryInternal(this.config);
 
     registerSerializerByDescription(description: TypeDescription) {
         if (description.type !== InternalSerializerType.FURY_TYPE_TAG || !description.asObject?.tag) {

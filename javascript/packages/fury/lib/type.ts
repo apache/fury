@@ -4,6 +4,10 @@ import type FuryFunc from "./fury";
 export type Fury = ReturnType<typeof FuryFunc>;
 export type BinaryWriter = ReturnType<typeof BinaryWriter>
 export type BinaryReader = ReturnType<typeof BinaryReader>
+export interface Hps {
+    isLatin1: (str: string) => boolean
+    stringCopy: (str: string, dist: Uint8Array, offset: number) => void
+}
 
 export enum InternalSerializerType{
     STRING = 13,
