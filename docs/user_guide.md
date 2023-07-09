@@ -588,6 +588,17 @@ print(f"pickle end: {datetime.datetime.now()}")
 ### Apache Arrow Support
 Fury Format also supports automatic conversion from/to Arrow Table/RecordBatch.
 
+Java:
+```java
+Schema schema = TypeInference.inferSchema(BeanA.class);
+ArrowWriter arrowWriter = ArrowUtils.createArrowWriter(schema);
+Encoder<BeanA> encoder = Encoders.rowEncoder(BeanA.class);
+for (int i = 0; i < 10; i++) {
+  BeanA beanA = BeanA.createBeanA(2);
+  arrowWriter.write(encoder.toRow(beanA));
+}
+return arrowWriter.finishAsRecordBatch();
+```
 Python:
 ```python
 import pyfury
