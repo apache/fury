@@ -177,11 +177,13 @@ class SomeClass2:
     f5: pyfury.Int8Type = None
     f6: pyfury.Int16Type = None
     f7: pyfury.Int32Type = None
-    # int类型默认会按照long类型进行序列化，如果对端是更加narrow的类型，
-    # 需要使用pyfury.Int32Type等进行标注
-    f8: int = None  # 也可以使用pyfury.Int64Type进行标注
+    # int type will be taken as `pyfury.Int64Type`.
+    # use `pyfury.Int32Type` for type hint if peer
+    # are more narrow type.
+    f8: int = None
     f9: pyfury.Float32Type = None
-    f10: float = None  # 也可以使用pyfury.Float64Type进行标注
+    # float type will be taken as `pyfury.Float64Type`
+    f10: float = None
     f11: pyfury.Int16ArrayType = None
     f12: List[pyfury.Int16Type] = None
 
