@@ -6,6 +6,8 @@
 
 Fury is a blazing fast multi-language serialization framework powered by jit(just-in-time compilation) and zero-copy.
 
+https://furyio.org
+
 ## Features
 - Multiple languages: Java/Python/C++/Golang/Javascript.
 - Zero-copy: cross-language out-of-band serialization inspired
@@ -26,21 +28,19 @@ In addition to cross-language serialization, Fury also features at:
 - Supports shared and circular reference object serialization for golang.
 - Supports automatic object serialization for golang.
 
-https://furyio.org
-
 ## Protocols
 Different scenarios have different serialization requirements. Fury designed and implemented 
 multiple binary protocols for those requirements:
 - Cross-language object graph protocol:
-  - Cross-language serialize any object automatically, no need for IDL definition, schema compilation and object protocol
+  - Cross-language serialize any object automatically, no need for IDL definition, schema compilation and object to/from protocol
     conversion.
   - Support shared reference and circular reference, no duplicate data or recursion error.
-  - Support polymorphism.
+  - Support object polymorphism.
 - Native java/python object graph protocol: highly-optimized based on type system of the language.
 - Row format protocol: a cache-friendly binary random access format, supports skipping serialization and partial serialization,
   and can convert to column-format automatically.
 
-New protocols can be added easily based on fury existing buffer, encoding, codegen and other capabilities. All of those share same codebase, and the optimization for one protocol
+New protocols can be added easily based on fury existing buffer, encoding, meta, codegen and other capabilities. All of those share same codebase, and the optimization for one protocol
 can be reused by another protocol.
 
 ## Benchmarks
@@ -48,7 +48,7 @@ Different serialization frameworks are suitable for different scenarios, and ben
 
 If you need to benchmark for your specific scenario, make sure all serialization frameworks are appropriately configured for that scenario.
 
-Dynamic serialization frameworks need to support polymorphism and reference, which has more cost compared 
+Dynamic serialization frameworks supports polymorphism and reference, which has more cost compared 
 to static serialization frameworks, unless it uses the jit techniques as fury did.
 Since fury will generate code at runtime, please warm up before collecting benchmark statistics.
 
@@ -114,7 +114,7 @@ Coming soon.
 Here we give a quick start about how to use fury, see [User Guide](https://github.com/alipay/fury/blob/main/docs/user_guide.md) for more details about java serialization, zero-copy and row format.
 
 ### Fury java object graph serialization
-If you don't have cross-language requirements, using `Fury java object graph serialization` will 
+If you don't have cross-language requirements, using this mode will 
 have better performance.
 ```java
 import io.fury.Fury;
@@ -324,19 +324,22 @@ print(foo_row.f2[100000], foo_row.f4[100000].f1, foo_row.f4[200000].f2[5])
 
 ## Compatibility
 ### Schema Compatibility
-Fury java object graph serialization support class schema forward/backward compatibility. The serialization peer adn deserialization peer can have different add/delete fields independently.
+Fury java object graph serialization support class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
 
 We plan to add support cross-language serialization after [meta compression](https://github.com/alipay/fury/issues/203) are finished.
 ### Binary Compatibility
-We are still improving our protocols, binary compatibility are not ensured between fury releases for now. Please shade fury if you use it for now.
+We are still improving our protocols, binary compatibility are not ensured between fury releases for now. Please `shade` fury if you will upgrade fury in the future.
 
 Binary compatibility will be ensured before fury 1.0.
 
 ## Security
-Static serialization such as row format are secure by nature.
-But dynamic object graph serialization supports  deserialize unregistered types, which can introduce security issues. Fury provides a secure mode option  and enabled by default for this protocol, which can only deserialize registered types or built-in types, thus secure, by sacrificing some dynamics.
+Static serialization such as row format are secure by nature. But dynamic object graph serialization supports  deserialize unregistered types, which can introduce security risks.
 
-If you can ensure your environment is secure, you can disable the secure mode, then the user types are not needed be registered ahead, and can be serialized automatically.
+For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risks.
+
+Fury provides a secure mode option and enabled by default for this protocol, which allows deserializing trusted registered types or built-in types only for security.
+
+If your environment is **secure**, you can disable the secure mode for more dynamics, then the user types are not needed be registered ahead, and can be serialized automatically.
 
 ## RoadMap
 - Meta compression, auto meta sharing and cross-language schema compatibility.
