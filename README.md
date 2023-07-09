@@ -53,15 +53,19 @@ to static serialization frameworks, unless it uses the jit techniques as fury di
 Since fury will generate code at runtime, please warm up before collecting benchmark statistics.
 
 ### Java Serialization
+<p align="center">
 <img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_compatible_STRUCT_to_directBuffer_time.png">
 <img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_compatible_MEDIA_CONTENT_to_array_time.png">
 <img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_MEDIA_CONTENT_to_array_time.png">
 <img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_SAMPLE_to_array_time.png">
+</p>
 
+<p align="center">
 <img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_compatible_STRUCT_from_directBuffer_time.png">
 <img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_compatible_MEDIA_CONTENT_from_array_time.png">
 <img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_MEDIA_CONTENT_from_array_time.png">
 <img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_SAMPLE_from_array_time.png">
+</p>
 
 See [benchmarks](https://github.com/alipay/fury/tree/main/docs/benchmarks) for more benchmarks about type forward/backward compatibility, off-heap support, zero-copy serialization.
 
@@ -339,7 +343,7 @@ For example, the deserialization may invoke `init` constructor or `equals`/`hash
 
 Fury provides a secure mode option and enabled by default for this protocol, which allows deserializing trusted registered types or built-in types only for security.
 
-If your environment is **secure**, you can disable the secure mode for more dynamics, then the user types are not needed be registered ahead, and can be serialized automatically.
+If your environment is **indeed secure**, you can disable the secure mode, then the user types are not needed be registered ahead, and can be serialized automatically.
 
 ## RoadMap
 - Meta compression, auto meta sharing and cross-language schema compatibility.
