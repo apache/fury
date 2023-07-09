@@ -3,11 +3,11 @@ import { RefFlags, BinaryReader } from "./type";
 
 export const ReferenceResolver = () => {
     let readObjects: any[] = [];
-    let writeObjects: Map<any, number> = new Map<any, number>();
+    let writeObjects: any[] = [];
 
     function reset() {
         readObjects = [];
-        writeObjects = new Map();
+        writeObjects =[];
     }
 
     function getReadObjectByRefId(refId: number) {
@@ -23,11 +23,15 @@ export const ReferenceResolver = () => {
     }
 
     function pushWriteObject(object: any) {
-        writeObjects.set(object, writeObjects.size);
+        writeObjects.push(object);
     }
 
     function existsWriteObject(obj: any) {
-        return writeObjects.get(obj);
+        for (let index = 0; index < writeObjects.length; index++) {
+            if (writeObjects[index] === obj) {
+                return index;
+            }
+        }
     }
     return {
         existsWriteObject, pushWriteObject, pushReadObject, readRefFlag, getReadObjectByRefId, reset

@@ -13,7 +13,8 @@ const buildTypedArray = <T>(fury: Fury, reader: GenericReader, writer: GenericWr
         },
         write: (v: T[]) => {
             return serializer.write(v, [writer])
-        }
+        },
+        reserveWhenWrite: serializer.reserveWhenWrite,
     } as Serializer<T[]>
 }
 
@@ -151,6 +152,9 @@ export const arraySerializer = (fury: Fury) => {
                     write(x);
                 })
             }
+        },
+        reserveWhenWrite: () => {
+            return 7; 
         }
     }
 }

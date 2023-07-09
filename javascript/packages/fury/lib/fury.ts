@@ -1,19 +1,22 @@
 import ClassResolver from './classResolver';
 import { BinaryReader, BinaryWriter } from './io';
 import { ReferenceResolver } from './referenceResolver';
-import { ConfigFlags, InternalSerializerType, Serializer, RefFlags, SerializerRead } from './type';
+import { ConfigFlags, InternalSerializerType, Serializer, RefFlags, SerializerRead, Hps } from './type';
 
 
-export default () => {
+export default (config?: {
+    hps: Hps | null;
+}) => {
     const classResolver = new ClassResolver();
     const referenceResolver = ReferenceResolver();
     const binaryView = BinaryReader();
-    const binaryWriter = BinaryWriter();
+    const binaryWriter = BinaryWriter(config);
 
     const fury = {
         skipType,
         readBySerializerWithOutTypeId,
         read,
+        config,
         unmarshal,
         writeNull,
         writeNullOrRef,
@@ -83,7 +86,7 @@ export default () => {
         }
     }
 
-    function unmarshal<T = any>(bytes: Uint8Array): T | null {
+    function unmarshal<T = any>(bytes: Buffer): T | null {
         referenceResolver.reset();
         classResolver.reset();
         binaryView.reset(bytes);

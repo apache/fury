@@ -1,6 +1,6 @@
-const Fury = require("../dist");
+const Fury = require("@furyjs/fury");
 const utils = require("../test/util");
-const fury = new Fury.default();
+const fury = new Fury.default({ enableHps: true });
 const Benchmark = require("benchmark");
 const protobuf = require("protobufjs");
 const path = require('path');

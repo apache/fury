@@ -1,21 +1,23 @@
 
-import Fury from '../index';
+import Fury, { TypeDescription, InternalSerializerType } from '@furyjs/fury';
 import {describe, expect, test} from '@jest/globals';
 
 describe('bool', () => {
   test('should false work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const input = fury.marshal(false);
     const result = fury.unmarshal(
-        new Uint8Array(input)
+        input
     );
     expect(result).toEqual(false)
   });
   test('should true work', () => {
-    const fury = new Fury();
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });    
     const input = fury.marshal(true);
     const result = fury.unmarshal(
-        new Uint8Array(input)
+        input
     );
     expect(result).toEqual(true)
   });

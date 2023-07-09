@@ -33,6 +33,9 @@ export default (fury: Fury) => {
             }
             writeInt8(RefFlags.RefValueFlag);
             writeStringOfVarInt32(v);
+        },
+        reserveWhenWrite: () => {
+            return 7; 
         }
     }
 }

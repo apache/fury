@@ -14,6 +14,9 @@ export const uInt8Serializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.UINT8);
             writeUInt8(v);
         },
+        reserveWhenWrite: () => {
+            return 4; 
+        }
     };
 };
 
@@ -31,6 +34,9 @@ export const floatSerializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.FLOAT);
             writeFloat(v);
         },
+        reserveWhenWrite: () => {
+            return 7; 
+        }
     };
 };
 
@@ -48,6 +54,9 @@ export const doubleSerializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.DOUBLE);
             writeDouble(v);
         },
+        reserveWhenWrite: () => {
+            return 11; 
+        }
     };
 };
 
@@ -65,6 +74,9 @@ export const int8Serializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.INT8);
             writeInt8(v);
         },
+        reserveWhenWrite: () => {
+            return 4; 
+        }
     };
 };
 
@@ -82,6 +94,9 @@ export const uInt16Serializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.UINT16);
             writeUInt16(v);
         },
+        reserveWhenWrite: () => {
+            return 5; 
+        }
     };
 };
 
@@ -99,6 +114,9 @@ export const int16Serializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.INT16);
             writeInt16(v);
         },
+        reserveWhenWrite: () => {
+            return 5; 
+        }
     };
 };
 
@@ -116,6 +134,9 @@ export const uInt32Serializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.UINT32);
             writeUInt32(v);
         },
+        reserveWhenWrite: () => {
+            return 7; 
+        }
     };
 };
 
@@ -133,6 +154,9 @@ export const int32Serializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.INT32);
             writeInt32(v);
         },
+        reserveWhenWrite: () => {
+            return 7; 
+        }
     };
 };
 
@@ -150,6 +174,9 @@ export const uInt64Serializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.UINT64);
             writeUInt64(v);
         },
+        reserveWhenWrite: () => {
+            return 11; 
+        }
     };
 };
 
@@ -167,5 +194,8 @@ export const int64Serializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.INT64);
             writeInt64(v);
         },
+        reserveWhenWrite: () => {
+            return 11; 
+        }
     };
 };

@@ -51,39 +51,44 @@ export const computeTagHash = (description: TypeDescription) => {
     return hash;
 }
 
-export const genReadSerializer = (fury: Fury, description: TypeDescription, regTag: (tag: string, reader: SerializerRead) => void, exists: (tag: string) => boolean, stack: string[] = []) => {
-    const readerSerializerStmt: string[] = [];
+function typeHandlerDeclaration(readOrWrite: 'read' | 'write') {
+    let declarations: string[] = [];
     let count = 0;
-    const existsStmt = new Map();
-    const existsBuiltinStmt = new Map();
+    const exists = new Set();
+    function addDeclar(name: string, declar: string) {
+        if (exists.has(name)) {
+            return name;
+        }
+        declarations.push(declar);
+        exists.add(name);
+        return name;
+    }
 
-    const genBuiltinReaderSerializerStmt = (type: number) => {
-        if (existsBuiltinStmt.has(type)) {
-            return existsBuiltinStmt.get(type);
-        }
-        readerSerializerStmt.push(`const type_${type}_serializer = classResolver.getSerializerById(${type}).read;`)
-        existsBuiltinStmt.set(type, `type_${type}_serializer`);
-        return `type_${type}_serializer`;
+    const genBuiltinDeclaration = (type: number) => {
+        const name = `type_${type}_${readOrWrite}`;
+        return addDeclar(name, `
+        const ${name} = classResolver.getSerializerById(${type}).${readOrWrite};`)
     }
-    const genTagReaderSerializerStmt = (tag: string) => {
-        if (existsStmt.has(tag)) {
-            return existsStmt.get(tag);
-        }
-        const result = `tag_reader_${count++}`;
-        readerSerializerStmt.push(`
-            // ${tag}
-            let ${result} = null;
-            const ${result}_get = (a, b) => {
-                if (${result}) {
-                    return ${result}(a, b);
-                }
-                ${result} = classResolver.getSerializerByTag("${tag}").read;
-                return ${result}(a, b);
-            }`
+    const genTagDeclaration = (tag: string) => {
+        const name = `tag_${count++}_${readOrWrite}`;
+        return addDeclar(name, `
+        const ${name} = classResolver.getSerializerByTag("${tag}");`
         )
-        existsStmt.set(tag, `${result}_get`);
-        return `${result}_get`;
     }
+    return {
+        genBuiltinDeclaration,
+        genTagDeclaration,
+        finish() {
+            const result = declarations;
+            declarations = [];
+            exists.clear();
+            return result;
+        }
+    }
+}
+
+export const genReadSerializer = (fury: Fury, description: TypeDescription, stack: string[] = []) => {
+    const { genBuiltinDeclaration, genTagDeclaration, finish } = typeHandlerDeclaration('read');
     const descriptionReadExpression = (key: string, description: TypeDescription): string => {
         const template = key ? (readFunctionName: string, genericReaders?: string) => `
         switch (readRefFlag(binaryView)) {
@@ -119,15 +124,15 @@ export const genReadSerializer = (fury: Fury, description: TypeDescription, regT
         }
         `
         if (description.type === InternalSerializerType.ARRAY) {
-            return template(genBuiltinReaderSerializerStmt(description.type), `[
+            return template(genBuiltinDeclaration(description.type), `[
                 ${descriptionReadExpression('', description.asArray!.item)}
             ]`);
         }
         if (description.type === InternalSerializerType.FURY_TYPE_TAG) {
-            genReadSerializer(fury, description, regTag, exists, stack);
-            return template(genTagReaderSerializerStmt(description.asObject!.tag!));
+            genReadSerializer(fury, description, stack);
+            return template(`${genTagDeclaration(description.asObject!.tag!)}.read`);
         }
-        return template(genBuiltinReaderSerializerStmt(description.type));
+        return template(genBuiltinDeclaration(description.type));
     }
     const genEntry = (description: TypeDescription) => {
         return `
@@ -136,16 +141,14 @@ export const genReadSerializer = (fury: Fury, description: TypeDescription, regT
                 const result = {
                     ${Object.entries(description.asObject!.props!).map(([key]) => {
             return `${key}: null,`
-        }).join('\n')
-            }
+        }).join('\n')}
                 };
                 if (shouldSetRef) {
                     pushReadObject(result);
                 }
                 ${Object.entries(description.asObject!.props!).map(([key, value]) => {
-                return descriptionReadExpression(key, value);
-            }).join('\n')
-            }
+            return descriptionReadExpression(key, value);
+        }).join('\n')}
                 return result;
             }
         `;
@@ -153,23 +156,24 @@ export const genReadSerializer = (fury: Fury, description: TypeDescription, regT
     if (description.type !== InternalSerializerType.FURY_TYPE_TAG || !description.asObject?.tag) {
         throw new Error('root type should be object')
     }
-    if (exists(description.asObject.tag) || stack.includes(description.asObject.tag)) {
+    const tag = description.asObject.tag;
+    if (fury.classResolver.existsTagReadSerializer(tag) || stack.includes(tag)) {
         return;
     }
-    stack.push(description.asObject.tag);
+    stack.push(tag);
     const entry = genEntry(description);
     const expectHash = computeTagHash(description);
-    regTag(description.asObject!.tag, new Function(
+    fury.classResolver.registerReadSerializerByTag(tag, new Function(
         `
     return function(fury) {
         const { referenceResolver, binaryView, classResolver, skipType } = fury; 
         const { pushReadObject, readRefFlag, getReadObjectByRefId } = referenceResolver;
 
-        ${readerSerializerStmt.join('\n')}
+        ${finish().join('\n')}
         return function(shouldSetRef) {
             const hash = binaryView.readInt32();
             if (hash !== ${expectHash}) {
-                throw new Error("validate hash failed: ${description.asObject.tag}. expect ${expectHash}, but got" + hash);
+                throw new Error("validate hash failed: ${tag}. expect ${expectHash}, but got" + hash);
             }
             ${entry};
         }
@@ -180,50 +184,34 @@ export const genReadSerializer = (fury: Fury, description: TypeDescription, regT
 
 
 
-export const genWriteSerializer = (fury: Fury, description: TypeDescription, regTag: (tag: string, reader: Serializer["write"]) => void, exists: (tag: string) => boolean, stack: string[] = []) => {
-    const writerSerializerStmt: string[] = [];
-    let count = 0;
-    const genTagWriterSerializerStmt = (tag: string) => {
-        const result = `tag_reader_${count++}`;
-        writerSerializerStmt.push(`
-            // ${tag}
-            let ${result} = null;
-            const ${result}_get = () => {
-                if (${result}) {
-                    return ${result};
-                }
-                ${result} = classResolver.getSerializerByTag("${tag}").write;
-                return ${result};
-            }`
-        )
-        return `${result}_get`;
-    }
-    const descriptionWriteExpression = (v: string, description: TypeDescription): string => {
+export const genWriteSerializer = (fury: Fury, description: TypeDescription, stack: string[] = []) => {
+    const { genBuiltinDeclaration, genTagDeclaration, finish } = typeHandlerDeclaration('write');
+    const genTagWriterStmt = (v: string, description: TypeDescription): string => {
         if (description.type === InternalSerializerType.ARRAY) {
             return `
-                type_${description.type}_serializer(${v}, [
-                    (v) => ${descriptionWriteExpression("v", description.asArray!.item)}
-                ])
-            `
+                ${genBuiltinDeclaration(description.type)}(${v}, [
+                    (v) => {
+                        ${genTagWriterStmt("v", description.asArray!.item)} 
+                    }
+                ]);`
         }
         if (description.type === InternalSerializerType.FURY_TYPE_TAG) {
-            genWriteSerializer(fury, description, regTag, exists, stack);
+            const tag = description.asObject?.tag;
+            genWriteSerializer(fury, description, stack);
             return `
-                ${genTagWriterSerializerStmt(description.asObject!.tag!)}()(${v}, [],"${description.asObject!.tag!}")`
+                ${genTagDeclaration(tag!)}.write(${v}, []);`
+
         }
-        return `type_${description.type}_serializer(${v})`
+        return `
+                ${genBuiltinDeclaration(description.type)}(${v}, []);`
     }
     const genEntry = (description: TypeDescription) => {
         return `
             {
                 const { ${Object.keys(description.asObject!.props!).join(',')}} = v;
-                // relation tag: ${description.asObject?.tag}
                 ${Object.entries(description.asObject!.props!).map(([key, value]) => {
-            return `
-                            ${descriptionWriteExpression(key, value)};
-                        `
-        }).join('\n')
-            }
+            return `${genTagWriterStmt(key, value)}`
+        }).join('')}
             }
         `;
     }
@@ -231,36 +219,40 @@ export const genWriteSerializer = (fury: Fury, description: TypeDescription, reg
         throw new Error('root type should be object')
     }
     const tag = description.asObject.tag;
-    if (exists(tag) || stack.includes(tag)) {
+    if (fury.classResolver.existsTagWriteSerializer(tag) || stack.includes(tag)) {
         return;
     }
     stack.push(tag);
     const entry = genEntry(description);
-    regTag(tag, new Function(
+    fury.classResolver.registerWriteSerializerByTag(tag, new Function(
         `
     return function(fury, enums) {
         const { referenceResolver, binaryWriter, classResolver, writeNullOrRef } = fury; 
         const { pushWriteObject } = referenceResolver;
-        ${Object.values(InternalSerializerType).filter(x => typeof x === 'number').map(y => {
-            return `const type_${y}_serializer = classResolver.getSerializerById(${y}).write;`
-        }).join('\n')
-        }
-
-        ${writerSerializerStmt.join('\n')}
+        ${finish().join('')}
         const tagBuffer = Buffer.from("${tag}");
         return function(v, genericWriters) {
+            // relation tag: ${tag}
             const { RefFlags, InternalSerializerType } = enums;
             // is ref
             if (writeNullOrRef(v)) {
                 return;
             }
+            binaryWriter.reserves(${
+                Object.values(description.asObject.props!).map(x => {
+                const serializer = fury.classResolver.getSerializerById(x.type);
+                if (serializer && serializer.reserveWhenWrite) {
+                    return serializer.reserveWhenWrite();
+                }
+                return 0;
+            }).reduce((accumulator, currentValue) => accumulator + currentValue, 0)});
             // write ref ant typeId
             binaryWriter.writeInt8(RefFlags.RefValueFlag);
             pushWriteObject(v);
             binaryWriter.writeInt16(InternalSerializerType.FURY_TYPE_TAG);
             classResolver.writeTag(binaryWriter, "${tag}", tagBuffer);
             binaryWriter.writeInt32(${computeTagHash(description)});
-            ${entry};
+            ${entry}
         }
     }
 `

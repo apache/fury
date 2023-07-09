@@ -1,13 +1,11 @@
-import Fury from '../index';
+import Fury, { TypeDescription, InternalSerializerType } from '@furyjs/fury';
 import { describe, expect, test } from '@jest/globals';
-import { TypeDescription } from '../lib/codeGen';
-import { InternalSerializerType } from '../lib/type';
 
 describe('array', () => {
   test('should array work', () => {
-    const fury = new Fury();
-    const result = fury.unmarshal(
-      new Uint8Array([6, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 1, 2, 0, 0, 0, 0, 0, 4, 115, 116, 114, 49, 254, 1])
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps }); const result = fury.unmarshal(
+      Buffer.from([6, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 1, 2, 0, 0, 0, 0, 0, 4, 115, 116, 114, 49, 254, 1])
     );
     expect(result).toEqual(["str1", "str1"])
   });
@@ -38,8 +36,8 @@ describe('array', () => {
         tag: "example.foo"
       }
     };
-    const fury = new Fury();
-    const serializer = fury.registerSerializerByDescription(description);
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps }); const serializer = fury.registerSerializerByDescription(description);
     const input = fury.marshal({
       a: [true, false],
       a2: [1, 2, 3],
@@ -49,7 +47,7 @@ describe('array', () => {
       a7: ["hello", "world"]
     }, serializer);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result).toEqual({
       a: [true, false],
@@ -72,13 +70,13 @@ describe('array', () => {
         tag: "example.foo"
       }
     };
-    const fury = new Fury();
-    const serialize = fury.registerSerializerByDescription(description);
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps }); const serialize = fury.registerSerializerByDescription(description);
     const input = fury.marshal({
       a5: [2.43, 654.4, 55],
     }, serialize);
     const result = fury.unmarshal(
-      new Uint8Array(input)
+      input
     );
     expect(result.a5[0]).toBeCloseTo(2.43)
     expect(result.a5[1]).toBeCloseTo(654.4)

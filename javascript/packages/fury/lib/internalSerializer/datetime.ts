@@ -15,6 +15,9 @@ export const timestampSerializer = (fury: Fury) => {
             writeInt8(RefFlags.NotNullValueFlag);
             writeInt16(InternalSerializerType.TIMESTAMP);
             writeInt64(BigInt(v.getTime()));
+        },
+        reserveWhenWrite: () => {
+            return 11; 
         }
     }
 }
@@ -34,6 +37,9 @@ export const dateSerializer = (fury: Fury) => {
             writeInt8(RefFlags.NotNullValueFlag);
             writeInt16(InternalSerializerType.DATE);
             writeInt32(day);
+        },
+        reserveWhenWrite: () => {
+            return 7; 
         }
     }
 }

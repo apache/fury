@@ -1,9 +1,20 @@
 import { genReadSerializer, genWriteSerializer, TypeDescription } from './lib/codeGen';
-import { Serializer, SerializerRead, SerializerWrite, Fury, InternalSerializerType } from './lib/type';
+import { Serializer, Fury, InternalSerializerType, Hps } from './lib/type';
 import FuryInternal from './lib/fury';
 
+export {
+    Serializer,
+    InternalSerializerType,
+    TypeDescription,
+}
+
 export default class {
-    private fury: Fury = FuryInternal();
+    constructor(private config?: {
+        hps: Hps | null;
+    }) {
+
+    }
+    private fury: Fury = FuryInternal(this.config);
 
     registerSerializerByDescription(description: TypeDescription) {
         if (description.type !== InternalSerializerType.FURY_TYPE_TAG || !description.asObject?.tag) {
@@ -12,22 +23,10 @@ export default class {
         genReadSerializer(
             this.fury,
             description,
-            (tag: string, reader: SerializerRead) => {
-                this.fury.classResolver.registerReadSerializerByTag(tag, reader);
-            },
-            (tag: string) => {
-                return this.fury.classResolver.existsTagReadSerializer(tag);
-            }
         );
         genWriteSerializer(
             this.fury,
-            description,
-            (tag: string, writer: SerializerWrite) => {
-                this.fury.classResolver.registerWriteSerializerByTag(tag, writer);
-            },
-            (tag: string) => {
-                return this.fury.classResolver.existsTagWriteSerializer(tag);
-            }
+            description
         );
         return this.fury.classResolver.getSerializerByTag(description.asObject.tag);
     }
@@ -40,7 +39,7 @@ export default class {
         return this.fury.marshal(v, serialize);
     }
 
-    unmarshal(bytes: Uint8Array) {
+    unmarshal(bytes: Buffer) {
         return this.fury.unmarshal(bytes);
     }
 }

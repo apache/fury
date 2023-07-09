@@ -27,7 +27,7 @@ export default class SerializerResolver {
     private customSerializer: { [key: string]: Serializer } = {
     };
     private readStringPool: string[] = [];
-    private writeStringIndex: Map<string, number> = new Map();
+    private writeStringIndex: string[] = [];
 
     private initInternalSerializer(fury: Fury) {
         this.internalSerializer[InternalSerializerType.STRING] = stringSerializer(fury);
@@ -63,7 +63,7 @@ export default class SerializerResolver {
 
     reset() {
         this.readStringPool = [];
-        this.writeStringIndex = new Map();
+        this.writeStringIndex = [];
     }
 
     getSerializerById(id: InternalSerializerType) {
@@ -82,6 +82,7 @@ export default class SerializerResolver {
             this.customSerializer[tag] = {
                 read: unreachable,
                 write: unreachable,
+                reserveWhenWrite: unreachable,
             }
         }
         const exists = this.customSerializer[tag];
@@ -96,6 +97,7 @@ export default class SerializerResolver {
             this.customSerializer[tag] = {
                 read: unreachable,
                 write: unreachable,
+                reserveWhenWrite: unreachable,
             }
         }
         const exists = this.customSerializer[tag];
@@ -118,12 +120,13 @@ export default class SerializerResolver {
     }
 
     writeTag(binaryWriter: BinaryWriter, tag: string, tagBuffer: Buffer) {
-        if (this.writeStringIndex.has(tag)) {
+        const index = this.writeStringIndex.indexOf(tag);
+        if (index > -1) {
             binaryWriter.writeUInt8(USESTRINGID)
-            binaryWriter.writeInt16(this.writeStringIndex.get(tag)!);
+            binaryWriter.writeInt16(index);
             return;
         }
-        this.writeStringIndex.set(tag, this.writeStringIndex.size);
+        this.writeStringIndex.push(tag);
         binaryWriter.writeUInt8(USESTRINGVALUE);
         binaryWriter.skip(8); // todo: support tag hash. skip
         binaryWriter.writeUtf8StringOfInt16(tagBuffer);
