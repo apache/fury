@@ -29,7 +29,7 @@
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <guava.version>30.0-jre</guava.version>
+    <guava.version>32.0.0-jre</guava.version>
     <janino.version>3.0.11</janino.version>
     <arrow.version>5.0.0</arrow.version>
     <jackson-bom.version>2.13.2.20220328</jackson-bom.version>
