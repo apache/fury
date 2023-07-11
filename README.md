@@ -2,7 +2,7 @@
   <img width="77%" alt="" src="docs/images/logo/fury-logo.svg"><br>
 </div>
 
-# Fury: Blazing Fast
+# Fury: Blazing Fast Serialization
 
 Fury is a blazing fast multi-language serialization framework powered by jit(just-in-time compilation) and zero-copy.
 
