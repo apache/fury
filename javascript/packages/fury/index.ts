@@ -199,7 +199,7 @@ export default class {
     }
     private fury: Fury = FuryInternal(this.config);
 
-    registerSerializer(description: TypeDescription) {
+    registerSerializer<T extends TypeDescription>(description: T) {
         if (description.type !== InternalSerializerType.FURY_TYPE_TAG || !description.asObject?.tag) {
             throw new Error('root type should be object')
         }
@@ -214,11 +214,11 @@ export default class {
         const serializer = this.fury.classResolver.getSerializerByTag(description.asObject.tag);
         return {
             serializer,
-            serialize: (data: any) => {
+            serialize: (data: ToRecordType<T>) => {
                 return this.fury.serialize(data, serializer);
             },
             deserialize: (bytes: Buffer) => {
-                return this.fury.deserialize(bytes);
+                return this.fury.deserialize(bytes) as ToRecordType<T>;
             }
         }
     }
