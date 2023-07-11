@@ -88,9 +88,9 @@ const sample = {
 };
 
 const description = utils.mockData2Description(sample, "fury.test.foo");
-const serializer = fury.registerSerializerByDescription(description);
+const serializer = fury.registerSerializer(description).serializer;
 
-const furyAb = fury.marshal(sample, serializer);
+const furyAb = fury.serialize(sample, serializer);
 const sampleJson = JSON.stringify(sample);
 
 function loadProto() {
@@ -125,13 +125,13 @@ async function start() {
   {
     console.log('sample json size: ', `${(sampleJson.length / 1000).toFixed()}k`);
     assert(JSON.stringify(protobufDecode(protobufBf)) === sampleJson);
-    assert(JSON.stringify(fury.unmarshal(furyAb)) === sampleJson);
+    assert(JSON.stringify(fury.deserialize(furyAb)) === sampleJson);
   }
   {
     let result;;
     suite
       .add("fury", function () {
-        fury.marshal(sample, serializer);
+        fury.serialize(sample, serializer);
       })
       .add("JSON.stringify", function () {
         JSON.stringify(sample);
@@ -153,7 +153,7 @@ async function start() {
     let result;
     suite
       .add("fury", function () {
-        fury.unmarshal(furyAb);
+        fury.deserialize(furyAb);
       })
       .add("JSON.parse", function () {
         JSON.parse(sampleJson);

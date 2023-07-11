@@ -23,10 +23,10 @@ describe('object', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
-    const serializer = fury.registerSerializerByDescription(description);
-    const input = fury.marshal({ a: { b: "hel" } }, serializer);
-    const result = fury.unmarshal(
+    const fury = new Fury({ hps });
+    const { serialize, deserialize } = fury.registerSerializer(description);
+    const input = serialize({ a: { b: "hel" } });
+    const result = deserialize(
       input
     );
     expect(result).toEqual({ a: { b: "hel" } })
@@ -58,10 +58,10 @@ describe('object', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
-    const serializer = fury.registerSerializerByDescription(description);
-    const input = fury.marshal({ a: [{ b: "hel" }] }, serializer);
-    const result = fury.unmarshal(
+    const fury = new Fury({ hps });
+    const serializer = fury.registerSerializer(description).serializer;
+    const input = fury.serialize({ a: [{ b: "hel" }] }, serializer);
+    const result = fury.deserialize(
       input
     );
     expect(result).toEqual({ a: [{ b: "hel" }] })
@@ -94,10 +94,10 @@ describe('object', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
-    const serializer = fury.registerSerializerByDescription(description);
-    const input = fury.marshal({ a: { b: "hel" }, a2: { b: "hel2" } }, serializer);
-    const result = fury.unmarshal(
+    const fury = new Fury({ hps });
+    const serializer = fury.registerSerializer(description).serializer;
+    const input = fury.serialize({ a: { b: "hel" }, a2: { b: "hel2" } }, serializer);
+    const result = fury.deserialize(
       input
     );
     expect(result).toEqual({ a: { b: "hel" }, a2: { b: "hel2" } })
@@ -130,13 +130,13 @@ describe('object', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
-    const serialize = fury.registerSerializerByDescription(description);
+    const fury = new Fury({ hps });
+    const serialize = fury.registerSerializer(description).serializer;
     const param: any = {};
-    param.a = {b: "hel"};
+    param.a = { b: "hel" };
     param.a2 = param;
-    const input = fury.marshal(param, serialize);
-    const result = fury.unmarshal(
+    const input = fury.serialize(param, serialize);
+    const result = fury.deserialize(
       input
     );
     expect(result.a).toEqual({ b: "hel" })

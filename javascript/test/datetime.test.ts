@@ -7,8 +7,8 @@ describe('datetime', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
     const fury = new Fury({ hps });    
     const now = new Date();
-    const input = fury.marshal(now);
-    const result = fury.unmarshal(
+    const input = fury.serialize(now);
+    const result = fury.deserialize(
         input
     );
     expect(result).toEqual(now)
@@ -30,10 +30,10 @@ describe('datetime', () => {
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
     const fury = new Fury({ hps });    
-    const serializer = fury.registerSerializerByDescription(description);
+    const serializer = fury.registerSerializer(description).serializer;
     const d = new Date('2021/10/20 09:13');
-    const input = fury.marshal({ a:  d, b: d}, serializer);
-    const result = fury.unmarshal(
+    const input = fury.serialize({ a:  d, b: d}, serializer);
+    const result = fury.deserialize(
       input
     );
     expect(result).toEqual({ a: d, b: new Date('2021/10/20 00:00') })

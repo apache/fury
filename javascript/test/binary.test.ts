@@ -17,9 +17,9 @@ describe('binary', () => {
         };
         const hps = process.env.enableHps ? require('@furyjs/hps') : null;
         const fury = new Fury({ hps });    
-        const serializer = fury.registerSerializerByDescription(description);
-        const input = fury.marshal({ a: new Uint8Array([1, 2, 3]) }, serializer);
-        const result = fury.unmarshal(
+        const serializer = fury.registerSerializer(description).serializer;
+        const input = fury.serialize({ a: new Uint8Array([1, 2, 3]) }, serializer);
+        const result = fury.deserialize(
             input
         );
         expect(result).toEqual({ a: new Uint8Array([1, 2, 3]) })
