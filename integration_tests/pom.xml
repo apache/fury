@@ -12,7 +12,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jmh.version>1.33</jmh.version>
     <uberjar.name>benchmarks</uberjar.name>
-    <protobuf.version>3.15.0</protobuf.version>
+    <protobuf.version>3.16.3</protobuf.version>
     <checkstyle.skip>true</checkstyle.skip>
     <maven.deploy.skip>true</maven.deploy.skip>
     <maven.javadoc.skip>true</maven.javadoc.skip>
