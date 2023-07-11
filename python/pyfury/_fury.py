@@ -996,7 +996,10 @@ class Fury:
         self.reset_read()
 
 
-_ENABLE_SECURITY_MODE_FORCIBLY = os.getenv("ENABLE_SECURITY_MODE_FORCIBLY", "0") in {"1", "true"}
+_ENABLE_SECURITY_MODE_FORCIBLY = os.getenv("ENABLE_SECURITY_MODE_FORCIBLY", "0") in {
+    "1",
+    "true",
+}
 
 
 class _PicklerStub:
