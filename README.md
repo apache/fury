@@ -12,7 +12,7 @@ https://furyio.org
 - Multiple languages: Java/Python/C++/Golang/Javascript.
 - Zero-copy: cross-language out-of-band serialization inspired
   by [pickle5](https://peps.python.org/pep-0574/) and off-heap read/write.
-- High performance: A highly-extensible JIT framework to generate serializer code at runtime in an async multi-thread way to speed serialization, providing 20-200x speed up by:
+- High performance: A highly-extensible JIT framework to generate serializer code at runtime in an async multi-thread way to speed serialization, providing 20-170x speed up by:
     - reduce memory access by inline variable in generated code.
     - reduce virtual method invocation by inline call in generated code.
     - reduce conditional branching.
