@@ -5,8 +5,8 @@ describe('string', () => {
   test('should string work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
     const fury = new Fury({ hps });    
-    const input = fury.marshal("123")
-    const result = fury.unmarshal(
+    const input = fury.serialize("123")
+    const result = fury.deserialize(
         input
     );
     expect(result).toEqual("123")

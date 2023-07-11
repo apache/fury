@@ -17,11 +17,11 @@ export default (config?: {
         readBySerializerWithOutTypeId,
         read,
         config,
-        unmarshal,
+        deserialize,
         writeNull,
         writeNullOrRef,
         write,
-        marshal,
+        serialize,
         referenceResolver,
         classResolver,
         binaryView,
@@ -86,7 +86,7 @@ export default (config?: {
         }
     }
 
-    function unmarshal<T = any>(bytes: Buffer): T | null {
+    function deserialize<T = any>(bytes: Buffer): T | null {
         referenceResolver.reset();
         classResolver.reset();
         binaryView.reset(bytes);
@@ -199,7 +199,7 @@ export default (config?: {
         throw new Error(`serializer not support ${typeof v} yet`);
     }
 
-    function marshal<T = any>(data: T, serializer?: Serializer) {
+    function serialize<T = any>(data: T, serializer?: Serializer) {
         referenceResolver.reset();
         classResolver.reset();
         binaryWriter.reset();

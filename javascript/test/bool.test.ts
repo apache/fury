@@ -6,8 +6,8 @@ describe('bool', () => {
   test('should false work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
     const fury = new Fury({ hps });    
-    const input = fury.marshal(false);
-    const result = fury.unmarshal(
+    const input = fury.serialize(false);
+    const result = fury.deserialize(
         input
     );
     expect(result).toEqual(false)
@@ -15,8 +15,8 @@ describe('bool', () => {
   test('should true work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
     const fury = new Fury({ hps });    
-    const input = fury.marshal(true);
-    const result = fury.unmarshal(
+    const input = fury.serialize(true);
+    const result = fury.deserialize(
         input
     );
     expect(result).toEqual(true)

@@ -5,8 +5,8 @@ describe('set', () => {
     test('should set work', () => {
         const hps = process.env.enableHps ? require('@furyjs/hps') : null;
         const fury = new Fury({ hps });    
-        const input = fury.marshal(new Set(["foo1", "bar1", "cc2"]));
-        const result = fury.unmarshal(
+        const input = fury.serialize(new Set(["foo1", "bar1", "cc2"]));
+        const result = fury.deserialize(
             input
         );
         expect(result).toEqual(new Set(["foo1", "bar1", "cc2"]))
@@ -25,9 +25,9 @@ describe('set', () => {
         };
         const hps = process.env.enableHps ? require('@furyjs/hps') : null;
         const fury = new Fury({ hps });    
-        const serializer = fury.registerSerializerByDescription(description);
-        const input = fury.marshal({ a: new Set(["foo1", "bar2"]) }, serializer);
-        const result = fury.unmarshal(
+        const serializer = fury.registerSerializer(description).serializer;
+        const input = fury.serialize({ a: new Set(["foo1", "bar2"]) }, serializer);
+        const result = fury.deserialize(
             input
         );
         expect(result).toEqual({ a: new Set(["foo1", "bar2"]) })
