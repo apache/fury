@@ -18,7 +18,6 @@
 
 package io.fury.test.bean;
 
-import com.google.common.base.Preconditions;
 import java.io.Serializable;
 import java.util.Random;
 import lombok.Data;
@@ -124,7 +123,9 @@ public class Foo implements Serializable {
     try {
       compiler.cook(code);
       Class<?> cls = compiler.getClassLoader().loadClass(pkg + ".Foo");
-      Preconditions.checkArgument(cls != Foo.class);
+      if (cls == Foo.class) {
+        throw new RuntimeException();
+      }
       return cls;
     } catch (Exception e) {
       throw new RuntimeException(e);
