@@ -1,10 +1,10 @@
-import Fury, { TypeDescription, InternalSerializerType } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType, Type } from '@furyjs/fury';
 import { describe, expect, test } from '@jest/globals';
 
 describe('object', () => {
   test('should object work', () => {
-    const description: TypeDescription = {
-      type: InternalSerializerType.FURY_TYPE_TAG,
+    const description = {
+      type: InternalSerializerType.FURY_TYPE_TAG as const,
       asObject: {
         props: {
           a: {
@@ -13,7 +13,7 @@ describe('object', () => {
               tag: "example.bar",
               props: {
                 b: {
-                  type: InternalSerializerType.STRING
+                  type: InternalSerializerType.STRING as const,
                 },
               }
             }
@@ -141,6 +141,22 @@ describe('object', () => {
     );
     expect(result.a).toEqual({ b: "hel" })
     expect(result.a2).toEqual(result)
+  });
+
+  test('should type function tools work', () => {
+    const description = Type.object("example.foo", {
+      a: Type.object("example.bar", {
+        b: Type.string(),
+      }),
+    })
+    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    const fury = new Fury({ hps });
+    const { serialize, deserialize } = fury.registerSerializer(description);
+    const input = serialize({ a: { b: "hel" } });
+    const result = deserialize(
+      input
+    );
+    expect(result).toEqual({ a: { b: "hel" } })
   });
 });
 
