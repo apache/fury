@@ -54,17 +54,17 @@ Since fury will generate code at runtime, please warm up before collecting bench
 
 ### Java Serialization
 <p align="center">
-<img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_compatible_STRUCT_to_directBuffer_time.png">
-<img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_compatible_MEDIA_CONTENT_to_array_time.png">
-<img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_MEDIA_CONTENT_to_array_time.png">
-<img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_SAMPLE_to_array_time.png">
+<img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_compatible_STRUCT_to_directBuffer_tps.png">
+<img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_compatible_MEDIA_CONTENT_to_array_tps.png">
+<img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_MEDIA_CONTENT_to_array_tps.png">
+<img width="22%" alt="" src="docs/benchmarks/serialization/bench_serialize_SAMPLE_to_array_tps.png">
 </p>
 
 <p align="center">
-<img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_compatible_STRUCT_from_directBuffer_time.png">
-<img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_compatible_MEDIA_CONTENT_from_array_time.png">
-<img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_MEDIA_CONTENT_from_array_time.png">
-<img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_SAMPLE_from_array_time.png">
+<img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_compatible_STRUCT_from_directBuffer_tps.png">
+<img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_compatible_MEDIA_CONTENT_from_array_tps.png">
+<img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_MEDIA_CONTENT_from_array_tps.png">
+<img width="22%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_SAMPLE_from_array_tps.png">
 </p>
 
 See [benchmarks](https://github.com/alipay/fury/tree/main/docs/benchmarks) for more benchmarks about type forward/backward compatibility, off-heap support, zero-copy serialization.

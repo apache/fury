@@ -71,6 +71,32 @@ def process_data(filepath: str):
     return zero_copy_bench, bench
 
 
+color_map = {
+    "Fury": "#7845FD",
+    "Furymetashared": "#B237ED",  # (1, 0.65, 0.55)
+    # "Kryo": (1, 0.5, 1),
+    # "Kryo": (1, 0.84, 0.25),
+    "Kryo": "#55BCC2",
+    "Kryo_deserialize": "#55BCC2",
+    "Fst": (0.90, 0.43, 0.5),
+    "Hession": (0.80, 0.5, 0.6),
+    "Hession_deserialize": (0.80, 0.5, 0.6),
+    "Protostuff": (1, 0.84, 0.66),
+    "Jdk": (0.55, 0.40, 0.45),
+    "Jsonb": (0.45, 0.40, 0.55),
+}
+
+
+scaler = 10000
+
+
+def format_scaler(x):
+    if x > 100:
+        return round(x)
+    else:
+        return round(x, 1)
+
+
 def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
     df["ns"] = (1 / df["Tps"] * 10**9).astype(int)
     data = df.fillna("")
@@ -79,6 +105,15 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
         group_cols = ["Benchmark", "objectType", "bufferType"]
     else:
         group_cols = ["Benchmark", "bufferType"]
+    compatible = data[data["Benchmark"].str.contains("compatible")]
+    if len(compatible) > 0:
+        jdk = data[data["Lib"].str.contains("Jdk")].copy()
+        jdk["Benchmark"] = jdk["Benchmark"] + "_compatible"
+        data = data.append(jdk)
+    ylable = column
+    if column == "Tps":
+        ylable = f"Tps/{scaler}"
+        data[column] = (data[column] / scaler).apply(format_scaler)
     grouped = data.groupby(group_cols)
     files_dict = {}
     count = 0
@@ -104,27 +139,14 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
         )
         print(final_df)
         libs = final_df.columns.to_frame()["Lib"]
-        color_map = {
-            "Fury": "c",
-            "Furymetashared": "#7845FD",
-            # "Kryo": (1, 0.5, 1),
-            # "Kryo": (1, 0.84, 0.25),
-            "Kryo": (1, 0.65, 0.55),
-            "Kryo_deserialize": (1, 0.65, 0.55),
-            "Fst": (0.90, 0.43, 0.5),
-            "Hession": (0.80, 0.5, 0.6),
-            "Hession_deserialize": (0.80, 0.5, 0.6),
-            "Protostuff": (1, 0.84, 0.66),
-            "Jdk": (0.55, 0.40, 0.45),
-            "Jsonb": (0.45, 0.40, 0.55),
-        }
         color = [color_map[lib] for lib in libs]
-        sub_plot = final_df.plot.bar(title=title, color=color, ax=ax, figsize=(7, 7))
+        sub_plot = final_df.plot.bar(title=title, color=color, ax=ax, figsize=(7, 7), width=0.7)
         for container in ax.containers:
             ax.bar_label(container)
         ax.set_xlabel("enable_references")
-        ax.set_ylabel(column)
-        ax.legend(libs, loc="upper center")
+        ax.set_ylabel(ylable)
+        libs = libs.str.replace("metashared", "meta\nshared")
+        ax.legend(libs, loc="upper right", prop={'size': 13})
         save_dir = get_plot_dir(file_dir)
         sub_plot.get_figure().savefig(save_dir + "/" + save_filename)
 
@@ -137,6 +159,10 @@ def plot_zero_copy(df: pd.DataFrame, file_dir, filename, column="Tps"):
         group_cols = ["Benchmark", "dataType", "bufferType"]
     else:
         group_cols = ["Benchmark", "bufferType"]
+    ylable = column
+    if column == "Tps":
+        ylable = f"Tps/{scaler}"
+        data[column] = (data[column] / scaler).apply(format_scaler)
     grouped = data.groupby(group_cols)
     files_dict = {}
     count = 0
@@ -162,19 +188,13 @@ def plot_zero_copy(df: pd.DataFrame, file_dir, filename, column="Tps"):
         )
         print(final_df)
         libs = final_df.columns.to_frame()["Lib"]
-        color_map = {
-            "Fury": "c",
-            "Kryo": (1, 0.65, 0.55),
-            "Fst": (0.90, 0.43, 0.5),
-            "Jsonb": (0.45, 0.40, 0.55),
-        }
         color = [color_map[lib] for lib in libs]
         sub_plot = final_df.plot.bar(title=title, color=color, ax=ax, figsize=(7, 7))
         for container in ax.containers:
             ax.bar_label(container)
         ax.set_xlabel("array_size")
-        ax.set_ylabel(column)
-        ax.legend(libs)
+        ax.set_ylabel(ylable)
+        ax.legend(libs, bbox_to_anchor=(0.23, 0.99), prop={'size': 13})
         save_dir = get_plot_dir(file_dir)
         sub_plot.get_figure().savefig(save_dir + "/" + save_filename)
 
@@ -218,13 +238,13 @@ if __name__ == "__main__":
         file_name = args[0]
     else:
         file_name = "jmh-jdk-11-zerocopy.csv"
-    file_dir = "."
+    file_dir = "/Users/chaokunyang/Desktop/chaokun/fury_open_source/docs/benchmarks/data"
     zero_copy_bench, bench = process_data(os.path.join(file_dir, file_name))
     if zero_copy_bench.shape[0] > 0:
         to_markdown(
             zero_copy_bench, str(Path(file_name).with_suffix(".zero_copy.md"))
         )
-        plot_zero_copy(zero_copy_bench, file_dir, "zero_copy_bench", column="ns")
+        plot_zero_copy(zero_copy_bench, file_dir, "zero_copy_bench", column="Tps")
     if bench.shape[0] > 0:
         to_markdown(bench, str(Path(file_name).with_suffix(".bench.md")))
-        plot(bench, file_dir, "bench", column="ns")
+        plot(bench, file_dir, "bench", column="Tps")
