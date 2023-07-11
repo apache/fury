@@ -12,7 +12,7 @@ import sys
 from typing import TypeVar, Union, Iterable, get_type_hints
 
 from pyfury._util import get_bit, set_bit, clear_bit
-from pyfury._fury import Language, OpaqueObject
+from pyfury._fury import Language, OpaqueObject, _PicklerStub, _UnpicklerStub
 from pyfury.error import ClassNotCompatibleError
 from pyfury.lib import mmh3
 from pyfury.type import is_primitive_type, FuryType, Int8Type, Int16Type, Int32Type, \
@@ -781,6 +781,7 @@ cdef class ClassInfo:
 cdef class Fury:
     cdef readonly object language
     cdef readonly c_bool reference_tracking
+    cdef readonly c_bool secure_mode
     cdef readonly MapReferenceResolver reference_resolver
     cdef readonly ClassResolver class_resolver
     cdef readonly SerializationContext serialization_context
@@ -794,16 +795,24 @@ cdef class Fury:
     cdef object _peer_language
     cdef list _native_objects
 
-    def __init__(self, language=Language.XLANG, reference_tracking: bool = True):
+    def __init__(
+        self,
+        language=Language.XLANG,
+        reference_tracking: bool = True,
+        secure_mode: bool = True,
+     ):
         self.language = language
-
+        self.secure_mode = secure_mode
         self.reference_tracking = reference_tracking
         self.reference_resolver = MapReferenceResolver(reference_tracking)
         self.class_resolver = ClassResolver(self)
         self.class_resolver.initialize()
         self.serialization_context = SerializationContext()
         self.buffer = Buffer.allocate(32)
-        self.pickler = pickle.Pickler(self.buffer)
+        if not secure_mode:
+            self.pickler = pickle.Pickler(self.buffer)
+        else:
+            self.pickler = _PicklerStub(self.buffer)
         self.unpickler = None
         self._buffer_callback = None
         self._buffers = None
@@ -998,7 +1007,10 @@ cdef class Fury:
 
     cpdef inline _deserialize(
             self, Buffer buffer, buffers=None, unsupported_objects=None):
-        self.unpickler = pickle.Unpickler(buffer)
+        if self.secure_mode:
+            self.unpickler = _PicklerStub(buffer)
+        else:
+            self.unpickler = pickle.Unpickler(buffer)
         if unsupported_objects is not None:
             self._unsupported_objects = iter(unsupported_objects)
         cdef int32_t reader_index = buffer.reader_index
