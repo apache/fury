@@ -3,6 +3,7 @@ import dataclasses
 import datetime
 import enum
 import logging
+import os
 import sys
 from dataclasses import dataclass
 from typing import Dict, Tuple, TypeVar, Optional, Union, Iterable
@@ -594,7 +595,7 @@ class Fury:
         secure_mode: bool = True,
     ):
         self.language = language
-        self.secure_mode = secure_mode
+        self.secure_mode = _ENABLE_SECURITY_MODE_FORCIBLY or secure_mode
         self.reference_tracking = reference_tracking
         if self.reference_tracking:
             self.reference_resolver = MapReferenceResolver()
@@ -993,6 +994,9 @@ class Fury:
     def reset(self):
         self.reset_write()
         self.reset_read()
+
+
+_ENABLE_SECURITY_MODE_FORCIBLY = os.getenv("ENABLE_SECURITY_MODE_FORCIBLY", "0") in {"1", "true"}
 
 
 class _PicklerStub:

@@ -12,7 +12,7 @@ import sys
 from typing import TypeVar, Union, Iterable, get_type_hints
 
 from pyfury._util import get_bit, set_bit, clear_bit
-from pyfury._fury import Language, OpaqueObject, _PicklerStub, _UnpicklerStub
+from pyfury._fury import Language, OpaqueObject, _PicklerStub, _UnpicklerStub, _ENABLE_SECURITY_MODE_FORCIBLY
 from pyfury.error import ClassNotCompatibleError
 from pyfury.lib import mmh3
 from pyfury.type import is_primitive_type, FuryType, Int8Type, Int16Type, Int32Type, \
@@ -802,7 +802,7 @@ cdef class Fury:
         secure_mode: bool = True,
      ):
         self.language = language
-        self.secure_mode = secure_mode
+        self.secure_mode = _ENABLE_SECURITY_MODE_FORCIBLY or secure_mode
         self.reference_tracking = reference_tracking
         self.reference_resolver = MapReferenceResolver(reference_tracking)
         self.class_resolver = ClassResolver(self)
@@ -1008,7 +1008,7 @@ cdef class Fury:
     cpdef inline _deserialize(
             self, Buffer buffer, buffers=None, unsupported_objects=None):
         if self.secure_mode:
-            self.unpickler = _PicklerStub(buffer)
+            self.unpickler = _UnpicklerStub(buffer)
         else:
             self.unpickler = pickle.Unpickler(buffer)
         if unsupported_objects is not None:
