@@ -3,6 +3,7 @@ import dataclasses
 import datetime
 import enum
 import logging
+import os
 import sys
 from dataclasses import dataclass
 from typing import Dict, Tuple, TypeVar, Optional, Union, Iterable
@@ -573,6 +574,7 @@ class Fury:
         "reference_resolver",
         "class_resolver",
         "serialization_context",
+        "secure_mode",
         "buffer",
         "pickler",
         "unpickler",
@@ -586,8 +588,14 @@ class Fury:
     serialization_context: "SerializationContext"
     unpickler: Optional[pickle.Unpickler]
 
-    def __init__(self, language=Language.XLANG, reference_tracking: bool = True):
+    def __init__(
+        self,
+        language=Language.XLANG,
+        reference_tracking: bool = True,
+        secure_mode: bool = True,
+    ):
         self.language = language
+        self.secure_mode = _ENABLE_SECURITY_MODE_FORCIBLY or secure_mode
         self.reference_tracking = reference_tracking
         if self.reference_tracking:
             self.reference_resolver = MapReferenceResolver()
@@ -597,7 +605,10 @@ class Fury:
         self.class_resolver.initialize()
         self.serialization_context = SerializationContext()
         self.buffer = Buffer.allocate(32)
-        self.pickler = pickle.Pickler(self.buffer)
+        if not secure_mode:
+            self.pickler = pickle.Pickler(self.buffer)
+        else:
+            self.pickler = _PicklerStub(self.buffer)
         self.unpickler = None
         self._buffer_callback = None
         self._buffers = None
@@ -791,7 +802,10 @@ class Fury:
     ):
         if type(buffer) == bytes:
             buffer = Buffer(buffer)
-        self.unpickler = pickle.Unpickler(buffer)
+        if self.secure_mode:
+            self.unpickler = _UnpicklerStub(buffer)
+        else:
+            self.unpickler = pickle.Unpickler(buffer)
         if unsupported_objects is not None:
             self._unsupported_objects = iter(unsupported_objects)
         reader_index = buffer.reader_index
@@ -980,3 +994,35 @@ class Fury:
     def reset(self):
         self.reset_write()
         self.reset_read()
+
+
+_ENABLE_SECURITY_MODE_FORCIBLY = os.getenv("ENABLE_SECURITY_MODE_FORCIBLY", "0") in {
+    "1",
+    "true",
+}
+
+
+class _PicklerStub:
+    def __init__(self, buf):
+        self.buf = buf
+
+    def dump(self, o):
+        raise ValueError(
+            f"Class {type(o)} is not registered, "
+            f"pickle is not allowed when secure mode enabled, Please register"
+            f"the class or pass unsupported_callback"
+        )
+
+    def clear_memo(self):
+        pass
+
+
+class _UnpicklerStub:
+    def __init__(self, buf):
+        self.buf = buf
+
+    def load(self):
+        raise ValueError(
+            f"pickle is not allowed when secure mode enabled, Please register"
+            f"the class or pass unsupported_callback"
+        )
