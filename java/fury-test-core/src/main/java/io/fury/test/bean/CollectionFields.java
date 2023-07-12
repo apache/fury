@@ -67,6 +67,7 @@ public class CollectionFields {
     return (CollectionFields) copyToCanEqual(this, new CollectionFields());
   }
 
+  /** Copy the object, so that inner fields are equal able. */
   public static Object copyToCanEqual(Object raw, Object newObj) {
     for (Field field : raw.getClass().getDeclaredFields()) {
       field.setAccessible(true);
