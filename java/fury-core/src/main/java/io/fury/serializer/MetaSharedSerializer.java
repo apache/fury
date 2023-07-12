@@ -26,7 +26,7 @@ import io.fury.collection.Tuple3;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfoCache;
 import io.fury.resolver.ClassResolver;
-import io.fury.resolver.ReferenceResolver;
+import io.fury.resolver.RefResolver;
 import io.fury.type.ClassDef;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
@@ -112,9 +112,9 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
   public T read(MemoryBuffer buffer) {
     T obj = ObjectSerializer.newBean(constructor, type);
     Fury fury = this.fury;
-    ReferenceResolver referenceResolver = fury.getReferenceResolver();
+    RefResolver refResolver = fury.getRefResolver();
     ClassResolver classResolver = fury.getClassResolver();
-    referenceResolver.reference(obj);
+    refResolver.reference(obj);
     // read order: primitive,boxed,final,other,collection,map
     ObjectSerializer.FinalTypeField[] finalFields = this.finalFields;
     for (int i = 0; i < finalFields.length; i++) {
@@ -130,17 +130,17 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
           assert fieldInfo.classInfo != null;
           Object fieldValue =
               ObjectSerializer.readFinalObjectFieldValue(
-                  fury, referenceResolver, classResolver, fieldInfo, isFinal, buffer);
+                  fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
           fieldAccessor.putObject(obj, fieldValue);
         }
       } else {
         if (skipPrimitiveFieldValueFailed(fury, fieldInfo.classId, buffer)) {
           if (fieldInfo.classInfo == null) {
             // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
-            fury.readReferencableFromJava(buffer, classInfoCache);
+            fury.readRefFromJava(buffer, classInfoCache);
           } else {
             ObjectSerializer.readFinalObjectFieldValue(
-                fury, referenceResolver, classResolver, fieldInfo, isFinal, buffer);
+                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
           }
         }
       }

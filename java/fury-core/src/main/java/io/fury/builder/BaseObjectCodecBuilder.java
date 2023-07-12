@@ -64,7 +64,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassInfoCache;
 import io.fury.resolver.ClassResolver;
-import io.fury.resolver.ReferenceResolver;
+import io.fury.resolver.RefResolver;
 import io.fury.serializer.CollectionSerializers.CollectionSerializer;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.MapSerializers.MapSerializer;
@@ -92,9 +92,7 @@ import org.slf4j.Logger;
  * reduces space overhead introduced by aligning. Codegen only for time-consuming field, others
  * delegate to fury.
  */
-@SuppressWarnings("UnstableApiUsage")
 public abstract class BaseObjectCodecBuilder extends CodecBuilder {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseObjectCodecBuilder.class);
   public static final String BUFFER_NAME = "buffer";
   public static final String REF_RESOLVER_NAME = "refResolver";
   public static final String CLASS_RESOLVER_NAME = "classResolver";
@@ -120,10 +118,11 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     this.fury = fury;
     this.parentSerializerClass = parentSerializerClass;
     addCommonImports();
-    TypeToken<?> refResolverTypeToken = TypeToken.of(fury.getReferenceResolver().getClass());
+    TypeToken<?> refResolverTypeToken = TypeToken.of(fury.getRefResolver().getClass());
+    ctx.reserveName(REF_RESOLVER_NAME);
     refResolverRef = fieldRef(REF_RESOLVER_NAME, refResolverTypeToken);
     Expression refResolverExpr =
-        new Invoke(furyRef, "getReferenceResolver", TypeToken.of(ReferenceResolver.class));
+        new Invoke(furyRef, "getRefResolver", TypeToken.of(RefResolver.class));
     ctx.addField(
         ctx.type(refResolverTypeToken),
         REF_RESOLVER_NAME,
@@ -143,7 +142,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   public String codecClassName(Class<?> beanClass) {
     String name = ReflectionUtils.getClassNameWithoutPackage(beanClass).replace("$", "_");
     StringBuilder nameBuilder = new StringBuilder(name);
-    if (fury.trackingReference()) {
+    if (fury.trackingRef()) {
       // Generated classes are different when referenceTracking is switched.
       // So we need to use a different name.
       nameBuilder.append("FuryRef");
@@ -238,7 +237,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    */
   protected void addCommonImports() {
     ctx.addImports(List.class, Map.class, Set.class);
-    ctx.addImports(Fury.class, MemoryBuffer.class, fury.getReferenceResolver().getClass());
+    ctx.addImports(Fury.class, MemoryBuffer.class, fury.getRefResolver().getClass());
     ctx.addImports(ClassInfo.class, ClassInfoCache.class, ClassResolver.class);
     ctx.addImport(Generated.class);
     ctx.addImports(LazyInitBeanSerializer.class, Serializers.EnumSerializer.class);
@@ -263,9 +262,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       boolean generateNewMethod) {
     // access rawType without jit lock to reduce lock competition.
     Class<?> rawType = getRawType(typeToken);
-    if (visitFury(fury -> fury.getClassResolver().needToWriteReference(rawType))) {
+    if (visitFury(fury -> fury.getClassResolver().needToWriteRef(rawType))) {
       return new If(
-          ExpressionUtils.not(writeReferenceOrNull(buffer, inputObject)),
+          ExpressionUtils.not(writeRefOrNull(buffer, inputObject)),
           serializeForNotNull(inputObject, buffer, typeToken, generateNewMethod));
     } else {
       // if typeToken is not final, ref tracking of subclass will be ignored too.
@@ -287,9 +286,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     }
   }
 
-  protected Expression writeReferenceOrNull(Expression buffer, Expression object) {
+  protected Expression writeRefOrNull(Expression buffer, Expression object) {
     return inlineInvoke(
-        refResolverRef, "writeReferenceOrNull", PRIMITIVE_BOOLEAN_TYPE, buffer, object);
+        refResolverRef, "writeRefOrNull", PRIMITIVE_BOOLEAN_TYPE, buffer, object);
   }
 
   protected Expression serializeForNotNull(
@@ -754,14 +753,14 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     return actions;
   }
 
-  protected Expression readReferenceOrNull(Expression buffer) {
+  protected Expression readRefOrNull(Expression buffer) {
     return new Invoke(
-        refResolverRef, "readReferenceOrNull", "tag", PRIMITIVE_BYTE_TYPE, false, buffer);
+        refResolverRef, "readRefOrNull", "tag", PRIMITIVE_BYTE_TYPE, false, buffer);
   }
 
-  protected Expression tryPreserveReferenceId(Expression buffer) {
+  protected Expression tryPreserveRefId(Expression buffer) {
     return new Invoke(
-        refResolverRef, "tryPreserveReferenceId", "refId", PRIMITIVE_INT_TYPE, false, buffer);
+        refResolverRef, "tryPreserveRefId", "refId", PRIMITIVE_INT_TYPE, false, buffer);
   }
 
   protected Expression deserializeFor(
@@ -781,8 +780,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Function<Expression, Expression> callback,
       boolean generateNewMethod) {
     Class<?> rawType = getRawType(typeToken);
-    if (visitFury(f -> f.getClassResolver().needToWriteReference(rawType))) {
-      Expression refId = tryPreserveReferenceId(buffer);
+    if (visitFury(f -> f.getClassResolver().needToWriteRef(rawType))) {
+      Expression refId = tryPreserveRefId(buffer);
       // indicates that the object is first read.
       Expression needDeserialize =
           ExpressionUtils.egt(

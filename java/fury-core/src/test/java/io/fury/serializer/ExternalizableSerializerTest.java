@@ -67,7 +67,7 @@ public class ExternalizableSerializerTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .disableSecureMode()
             .build();
     assertEquals(a, fury.deserialize(fury.serialize(a)));

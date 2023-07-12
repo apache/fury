@@ -56,7 +56,7 @@ public class JITContextTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
             .disableSecureMode()
             .withAsyncCompilationEnabled(true)
@@ -96,7 +96,7 @@ public class JITContextTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
             .disableSecureMode()
             .withAsyncCompilationEnabled(true)

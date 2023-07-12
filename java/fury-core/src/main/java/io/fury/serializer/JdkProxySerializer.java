@@ -42,15 +42,15 @@ public class JdkProxySerializer extends Serializer {
 
   @Override
   public void write(MemoryBuffer buffer, Object value) {
-    fury.writeReferencableToJava(buffer, Proxy.getInvocationHandler(value));
-    fury.writeReferencableToJava(buffer, value.getClass().getInterfaces());
+    fury.writeRefoJava(buffer, Proxy.getInvocationHandler(value));
+    fury.writeRefoJava(buffer, value.getClass().getInterfaces());
   }
 
   @Override
   public Object read(MemoryBuffer buffer) {
-    InvocationHandler invocationHandler = (InvocationHandler) fury.readReferencableFromJava(buffer);
+    InvocationHandler invocationHandler = (InvocationHandler) fury.readRefFromJava(buffer);
     Preconditions.checkNotNull(invocationHandler);
-    final Class<?>[] interfaces = (Class<?>[]) fury.readReferencableFromJava(buffer);
+    final Class<?>[] interfaces = (Class<?>[]) fury.readRefFromJava(buffer);
     Preconditions.checkNotNull(interfaces);
     return Proxy.newProxyInstance(fury.getClassLoader(), interfaces, invocationHandler);
   }

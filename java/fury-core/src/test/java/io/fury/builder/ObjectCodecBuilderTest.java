@@ -51,7 +51,7 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withNumberCompressed(compressNumber)
             .disableSecureMode()
             .build();
@@ -75,7 +75,7 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withClassLoader(clz.getClassLoader())
             .disableSecureMode()
             .build();
@@ -110,9 +110,9 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withClassLoader(structClass.getClassLoader())
-            .ignoreBasicTypesReference(basicTypesRefIgnored)
+            .ignoreBasicTypesRef(basicTypesRefIgnored)
             .withNumberCompressed(compressNumber)
             .disableSecureMode()
             .build();

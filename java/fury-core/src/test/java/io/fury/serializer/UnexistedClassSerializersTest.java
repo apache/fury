@@ -63,7 +63,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     return Fury.builder()
         .withLanguage(Language.JAVA)
         .withCompatibleMode(CompatibleMode.COMPATIBLE)
-        .withClassRegistrationRequired(false)
+        .requireClassRegistration(false)
         .withDeserializeUnExistClassEnabled(true);
   }
 
@@ -75,7 +75,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       boolean enableCodegen2) {
     Fury fury =
         builder()
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
@@ -90,7 +90,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       byte[] bytes = fury.serialize(pojo);
       Fury fury2 =
           builder()
-              .withReferenceTracking(referenceTracking)
+              .withRefTracking(referenceTracking)
               .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen2)
               .withClassLoader(classLoader)
@@ -109,7 +109,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       boolean enableCodegen3) {
     Fury fury =
         builder()
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
             .withMetaContextShareEnabled(true)
@@ -126,7 +126,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       byte[] bytes = fury.serialize(pojo);
       Fury fury2 =
           builder()
-              .withReferenceTracking(referenceTracking)
+              .withRefTracking(referenceTracking)
               .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen2)
               .withMetaContextShareEnabled(true)
@@ -140,7 +140,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       byte[] bytes2 = fury2.serialize(o2);
       Fury fury3 =
           builder()
-              .withReferenceTracking(referenceTracking)
+              .withRefTracking(referenceTracking)
               .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen3)
               .withMetaContextShareEnabled(true)
@@ -163,7 +163,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       boolean enableCodegen3) {
     Fury fury =
         builder()
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
             .withMetaContextShareEnabled(true)
@@ -179,7 +179,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
         }) {
       Fury fury2 =
           builder()
-              .withReferenceTracking(referenceTracking)
+              .withRefTracking(referenceTracking)
               .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen2)
               .withMetaContextShareEnabled(true)
@@ -187,7 +187,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
               .build();
       Fury fury3 =
           builder()
-              .withReferenceTracking(referenceTracking)
+              .withRefTracking(referenceTracking)
               .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen3)
               .withMetaContextShareEnabled(true)

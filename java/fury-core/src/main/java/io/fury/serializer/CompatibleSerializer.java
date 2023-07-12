@@ -24,7 +24,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.FieldResolver;
-import io.fury.resolver.ReferenceResolver;
+import io.fury.resolver.RefResolver;
 import io.fury.util.Platform;
 import io.fury.util.UnsafeFieldAccessor;
 import java.lang.reflect.Constructor;
@@ -44,7 +44,7 @@ import java.util.Map;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private static final int INDEX_FOR_SKIP_FILL_VALUES = -1;
-  private final ReferenceResolver referenceResolver;
+  private final RefResolver refResolver;
   private final ClassResolver classResolver;
   private final FieldResolver fieldResolver;
   private final Constructor<T> constructor;
@@ -52,7 +52,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
 
   public CompatibleSerializer(Fury fury, Class<T> cls) {
     super(fury, cls);
-    this.referenceResolver = fury.getReferenceResolver();
+    this.refResolver = fury.getRefResolver();
     this.classResolver = fury.getClassResolver();
     // Use `setSerializerIfAbsent` to avoid overwriting existing serializer for class when used
     // as data serializer.
@@ -73,7 +73,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
 
   public CompatibleSerializer(Fury fury, Class<T> cls, FieldResolver fieldResolver) {
     super(fury, cls);
-    this.referenceResolver = fury.getReferenceResolver();
+    this.refResolver = fury.getRefResolver();
     this.classResolver = fury.getClassResolver();
     this.constructor = null;
     this.fieldResolver = fieldResolver;
@@ -120,12 +120,12 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getSeparateTypesHashFields()) {
       buffer.writeLong(fieldInfo.getEncodedFieldInfo());
       Object value = vals[index++];
-      if (!fury.getReferenceResolver().writeReferenceOrNull(buffer, value)) {
+      if (!fury.getRefResolver().writeRefOrNull(buffer, value)) {
         byte fieldType = fieldInfo.getFieldType();
         buffer.writeByte(fieldType);
         Preconditions.checkArgument(fieldType == FieldResolver.FieldTypes.OBJECT);
         ClassInfo classInfo = fieldInfo.getClassInfo(value.getClass());
-        fury.writeNonReferenceToJava(buffer, value, classInfo);
+        fury.writeNonRefToJava(buffer, value, classInfo);
       }
     }
     buffer.writeLong(fieldResolver.getEndTag());
@@ -144,7 +144,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         } else {
           ClassInfo classInfo = fieldInfo.getClassInfo(classId);
           Serializer<Object> serializer = classInfo.getSerializer();
-          fury.writeReferencableToJava(buffer, fieldValue, serializer);
+          fury.writeRefoJava(buffer, fieldValue, serializer);
         }
       }
     }
@@ -197,19 +197,19 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         {
           ClassInfo classInfo = fieldInfo.getClassInfo(classId);
           Serializer<Object> serializer = classInfo.getSerializer();
-          fury.writeReferencableToJava(buffer, fieldValue, serializer);
+          fury.writeRefoJava(buffer, fieldValue, serializer);
         }
     }
   }
 
   private void writeSeparateFieldValue(
       FieldResolver.FieldInfo fieldInfo, MemoryBuffer buffer, Object fieldValue) {
-    if (!referenceResolver.writeReferenceOrNull(buffer, fieldValue)) {
+    if (!refResolver.writeRefOrNull(buffer, fieldValue)) {
       byte fieldType = fieldInfo.getFieldType();
       buffer.writeByte(fieldType);
       if (fieldType == FieldResolver.FieldTypes.OBJECT) {
         ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
-        fury.writeNonReferenceToJava(buffer, fieldValue, classInfo);
+        fury.writeNonRefToJava(buffer, fieldValue, classInfo);
       } else {
         if (fieldType == FieldResolver.FieldTypes.COLLECTION_ELEMENT_FINAL) {
           writeCollectionField(
@@ -285,7 +285,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   @Override
   public T read(MemoryBuffer buffer) {
     T obj = (T) newBean();
-    referenceResolver.reference(obj);
+    refResolver.reference(obj);
     return readAndSetFields(buffer, obj);
   }
 
@@ -542,7 +542,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       } else {
         ClassInfo classInfo = fieldInfo.getClassInfo(classId);
         Serializer<Object> serializer = classInfo.getSerializer();
-        fieldAccessor.putObject(targetObject, fury.readReferencableFromJava(buffer, serializer));
+        fieldAccessor.putObject(targetObject, fury.readRefFromJava(buffer, serializer));
       }
     }
   }
@@ -583,7 +583,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         {
           ClassInfo classInfo = fieldInfo.getClassInfo(classId);
           Serializer<Object> serializer = classInfo.getSerializer();
-          return fury.readReferencableFromJava(buffer, serializer);
+          return fury.readRefFromJava(buffer, serializer);
         }
     }
   }

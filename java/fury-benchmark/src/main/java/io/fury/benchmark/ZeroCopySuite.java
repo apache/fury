@@ -68,7 +68,7 @@ public class ZeroCopySuite {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .disableSecureMode()
             .build();
     Object o1 = fury.deserialize(fury.serialize(o));
@@ -156,7 +156,7 @@ public class ZeroCopySuite {
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)
-              .withReferenceTracking(references)
+              .withRefTracking(references)
               .disableSecureMode()
               .build();
       switch (bufferType) {

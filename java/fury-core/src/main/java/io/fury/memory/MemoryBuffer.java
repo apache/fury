@@ -1187,7 +1187,7 @@ public final class MemoryBuffer {
    */
   public int writePositiveVarInt(int v) {
     // ensure at least 9 bytes are writable at once, so jvm-jit
-    // generated code is smaller. Otherwise, `MapReferenceResolver.writeReferenceOrNull`
+    // generated code is smaller. Otherwise, `MapRefResolver.writeRefOrNull`
     // may be `callee is too large`/`already compiled into a big method`
     ensure(writerIndex + 5);
     return unsafeWritePositiveVarInt(v);

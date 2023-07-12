@@ -80,7 +80,7 @@ public class SerializerFactoryTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .disableSecureMode()
             .build();
     fury.setSerializerFactory(

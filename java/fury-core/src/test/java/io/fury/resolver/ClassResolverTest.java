@@ -180,7 +180,7 @@ public class ClassResolverTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode()
             .build();
     Primitives.allPrimitiveTypes()
@@ -203,7 +203,7 @@ public class ClassResolverTest extends FuryTestBase {
       Fury fury =
           Fury.builder()
               .withLanguage(Language.JAVA)
-              .withReferenceTracking(true)
+              .withRefTracking(true)
               .disableSecureMode()
               .build();
       ClassResolver classResolver = fury.getClassResolver();
@@ -218,7 +218,7 @@ public class ClassResolverTest extends FuryTestBase {
       Fury fury =
           Fury.builder()
               .withLanguage(Language.JAVA)
-              .withReferenceTracking(true)
+              .withRefTracking(true)
               .disableSecureMode()
               .build();
       ClassResolver classResolver = fury.getClassResolver();
@@ -239,11 +239,11 @@ public class ClassResolverTest extends FuryTestBase {
 
   @Test
   public void testWriteClassNamesInSamePackage() {
-    Fury fury = Fury.builder().withClassRegistrationRequired(false).build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-    fury.writeReferencableToJava(buffer, C1.class);
-    fury.writeReferencableToJava(buffer, C2.class);
-    fury.writeReferencableToJava(buffer, C3.class);
+    fury.writeRefoJava(buffer, C1.class);
+    fury.writeRefoJava(buffer, C2.class);
+    fury.writeRefoJava(buffer, C3.class);
     int len1 = C1.class.getName().getBytes(StandardCharsets.UTF_8).length;
     LOG.info("SomeClass1 {}", len1);
     LOG.info("buffer.writerIndex {}", buffer.writerIndex());
@@ -277,11 +277,11 @@ public class ClassResolverTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     ClassResolver classResolver = fury.getClassResolver();
-    Assert.assertFalse(classResolver.needToWriteReference(TestNeedToWriteReferenceClass.class));
+    Assert.assertFalse(classResolver.needToWriteRef(TestNeedToWriteReferenceClass.class));
     assertNull(classResolver.getClassInfo(TestNeedToWriteReferenceClass.class, false));
   }
 
@@ -290,7 +290,7 @@ public class ClassResolverTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     ClassResolver classResolver = fury.getClassResolver();
@@ -327,7 +327,7 @@ public class ClassResolverTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     ClassResolver classResolver = fury.getClassResolver();

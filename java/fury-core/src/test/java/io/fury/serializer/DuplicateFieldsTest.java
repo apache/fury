@@ -55,7 +55,7 @@ public class DuplicateFieldsTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCodegen(true)
             .disableSecureMode()
             .build();
@@ -84,7 +84,7 @@ public class DuplicateFieldsTest extends FuryTestBase {
       Fury fury1 =
           Fury.builder()
               .withLanguage(Language.JAVA)
-              .withReferenceTracking(false)
+              .withRefTracking(false)
               .withCodegen(true)
               .disableSecureMode()
               .build();
@@ -105,7 +105,7 @@ public class DuplicateFieldsTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .disableSecureMode()
@@ -135,7 +135,7 @@ public class DuplicateFieldsTest extends FuryTestBase {
       Fury fury1 =
           Fury.builder()
               .withLanguage(Language.JAVA)
-              .withReferenceTracking(false)
+              .withRefTracking(false)
               .withCodegen(true)
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
               .disableSecureMode()

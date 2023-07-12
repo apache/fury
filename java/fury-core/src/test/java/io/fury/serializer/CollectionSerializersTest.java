@@ -66,7 +66,7 @@ public class CollectionSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
+            .withRefTracking(referenceTrackingConfig)
             .disableSecureMode()
             .build();
     List<String> data = new ArrayList<>(ImmutableList.of("a", "b", "c"));
@@ -81,7 +81,7 @@ public class CollectionSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
+            .withRefTracking(referenceTrackingConfig)
             .disableSecureMode()
             .build();
     List<String> data = new ArrayList<>(ImmutableList.of("a", "b", "c"));
@@ -98,7 +98,7 @@ public class CollectionSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
+            .withRefTracking(referenceTrackingConfig)
             .disableSecureMode()
             .build();
     // Test serialize Comparator
@@ -224,7 +224,7 @@ public class CollectionSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     // TODO(chaokunyang) add optimized serializers for blocking queue.
@@ -401,7 +401,7 @@ public class CollectionSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .disableSecureMode()
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);

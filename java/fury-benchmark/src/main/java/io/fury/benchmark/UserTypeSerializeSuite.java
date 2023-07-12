@@ -27,6 +27,7 @@ import io.fury.benchmark.state.KryoState;
 import io.fury.benchmark.state.ProtostuffState;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -52,18 +53,25 @@ public class UserTypeSerializeSuite {
     return state.output;
   }
 
-  @Benchmark
+  // @Benchmark
   public Object fury_serialize(FuryState.FuryUserTypeState state) {
     state.buffer.writerIndex(0);
-    state.fury.writeReferencableToJava(state.buffer, state.object);
+    state.fury.writeRefoJava(state.buffer, state.object);
     state.fury.resetWrite();
     return state.buffer;
   }
 
   @Benchmark
+  public Object fury_serialize_zero_copy(FuryState.FuryUserTypeState state) {
+    state.buffer.writerIndex(0);
+    state.bufferObjects.clear();
+    return state.fury.serialize(state.buffer, state.object, state.callback);
+  }
+
+  @Benchmark
   public Object fury_serialize_compatible(FuryState.FuryCompatibleState state) {
     state.buffer.writerIndex(0);
-    state.fury.writeReferencableToJava(state.buffer, state.object);
+    state.fury.writeRefoJava(state.buffer, state.object);
     state.fury.resetWrite();
     return state.buffer;
   }
@@ -117,7 +125,7 @@ public class UserTypeSerializeSuite {
 
   public static void main(String[] args) throws IOException {
     if (args.length == 0) {
-      String commandLine = "io.*UserTypeSerializeSuite.* -f 3 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+      String commandLine = "io.*UserTypeSerializeSuite.fury_serialize -f 3 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

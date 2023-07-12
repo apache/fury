@@ -20,6 +20,9 @@ package io.fury.codegen;
 
 import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 
+import io.fury.codegen.Expression.Literal;
+import io.fury.codegen.Expression.Reference;
+import io.fury.codegen.Expression.Return;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -31,10 +34,10 @@ public class ExpressionTest {
       String code =
           new Expression.If(
                   ExpressionUtils.eq(
-                      Expression.Literal.ofInt(1),
-                      new Expression.Reference("classId", PRIMITIVE_SHORT_TYPE, false)),
-                  new Expression.Return(Expression.Literal.True),
-                  new Expression.Return(Expression.Literal.False))
+                      Literal.ofInt(1),
+                      new Reference("classId", PRIMITIVE_SHORT_TYPE, false)),
+                  new Return(Literal.True),
+                  new Return(Literal.False))
               .genCode(new CodegenContext())
               .code();
       String expected =
@@ -49,10 +52,10 @@ public class ExpressionTest {
       String code =
           new Expression.If(
                   ExpressionUtils.eq(
-                      Expression.Literal.ofInt(1),
-                      new Expression.Reference("classId", PRIMITIVE_SHORT_TYPE, false)),
-                  Expression.Literal.True,
-                  Expression.Literal.False)
+                      Literal.ofInt(1),
+                      new Reference("classId", PRIMITIVE_SHORT_TYPE, false)),
+                  Literal.True,
+                  Literal.False)
               .genCode(new CodegenContext())
               .code();
       String expected =

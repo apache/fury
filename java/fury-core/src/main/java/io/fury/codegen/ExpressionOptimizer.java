@@ -22,6 +22,7 @@ import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
+import io.fury.codegen.Expression.Reference;
 import io.fury.util.Functions;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -86,12 +87,12 @@ public class ExpressionOptimizer {
       String modifier,
       String methodPrefix,
       boolean inlineInvoke) {
-    LinkedHashMap<Expression, Expression.Reference> cutExprMap = new LinkedHashMap<>();
+    LinkedHashMap<Expression, Reference> cutExprMap = new LinkedHashMap<>();
     for (Expression expression : cutPoint) {
       Preconditions.checkArgument(
           expression.type() != PRIMITIVE_VOID_TYPE, "Cut on block is not supported currently.");
       String param = ctx.newName(getRawType(expression.type()));
-      cutExprMap.put(expression, new Expression.Reference(param, expression.type()));
+      cutExprMap.put(expression, new Reference(param, expression.type()));
     }
     // iterate groupExpressions dag to update cutoff point to `Reference`.
     new ExpressionVisitor()
@@ -99,7 +100,7 @@ public class ExpressionOptimizer {
             groupExpressions,
             exprSite -> {
               if (cutPoint.contains((exprSite.current))) {
-                Expression.Reference newExpr = cutExprMap.get(exprSite.current);
+                Reference newExpr = cutExprMap.get(exprSite.current);
                 if (exprSite.current != newExpr) {
                   exprSite.update(newExpr);
                 }
@@ -111,7 +112,7 @@ public class ExpressionOptimizer {
     // copy variable names so that to avoid new variable name conflict with generated class
     // instance field name.
     CodegenContext codegenContext = new CodegenContext(ctx.getValNames(), ctx.getImports());
-    for (Expression.Reference reference : cutExprMap.values()) {
+    for (Reference reference : cutExprMap.values()) {
       Preconditions.checkArgument(codegenContext.containName(reference.name()));
     }
     String methodName = ctx.newName(methodPrefix);
@@ -119,9 +120,9 @@ public class ExpressionOptimizer {
     code = codegenContext.optimizeMethodCode(code);
     ArrayList<Object> formalParams = new ArrayList<>();
     ArrayList<Expression> actualParams = new ArrayList<>();
-    for (Map.Entry<Expression, Expression.Reference> entry : cutExprMap.entrySet()) {
+    for (Map.Entry<Expression, Reference> entry : cutExprMap.entrySet()) {
       Expression expr = entry.getKey();
-      Expression.Reference ref = entry.getValue();
+      Reference ref = entry.getValue();
       formalParams.add(getRawType(ref.type()));
       formalParams.add(ref.name());
       actualParams.add(expr);
@@ -130,14 +131,14 @@ public class ExpressionOptimizer {
         modifier, methodName, code, getRawType(groupExpressions.type()), formalParams.toArray());
     if (inlineInvoke) {
       return Expression.Invoke.inlineInvoke(
-          new Expression.Reference("this"),
+          new Reference("this"),
           methodName,
           groupExpressions.type(),
           false,
           actualParams.toArray(new Expression[0]));
     } else {
       return new Expression.Invoke(
-          new Expression.Reference("this"),
+          new Reference("this"),
           methodName,
           "",
           groupExpressions.type(),

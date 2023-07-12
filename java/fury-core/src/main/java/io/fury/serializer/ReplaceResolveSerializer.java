@@ -23,7 +23,7 @@ import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassResolver;
-import io.fury.resolver.ReferenceResolver;
+import io.fury.resolver.RefResolver;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
@@ -144,7 +144,7 @@ public class ReplaceResolveSerializer extends Serializer {
     return serializer;
   }
 
-  private final ReferenceResolver referenceResolver;
+  private final RefResolver refResolver;
   private final ClassResolver classResolver;
   private final JDKReplaceResolveMethodInfoCache jdkMethodInfoWriteCache;
   private final ClassInfo writeClassInfo;
@@ -153,7 +153,7 @@ public class ReplaceResolveSerializer extends Serializer {
 
   public ReplaceResolveSerializer(Fury fury, Class type) {
     super(fury, type);
-    referenceResolver = fury.getReferenceResolver();
+    refResolver = fury.getRefResolver();
     classResolver = fury.getClassResolver();
     // `setSerializer` before `newJDKMethodInfoCache` since it query classinfo from `classResolver`,
     // which create serializer in turn.
@@ -188,23 +188,23 @@ public class ReplaceResolveSerializer extends Serializer {
       //  which is not a problem in almost every case but inconsistent with JDK serialization.
       if (value == null || value.getClass() != type) {
         buffer.writeByte(REPLACED_NEW_TYPE);
-        if (!referenceResolver.writeReferenceOrNull(buffer, value)) {
+        if (!refResolver.writeRefOrNull(buffer, value)) {
           // replace original object reference id with new object reference id
           // for later object graph serialization.
           // written `REF_VALUE_FLAG`/`NOT_NULL_VALUE_FLAG` id outside this method call will be
           // ignored.
-          referenceResolver.replaceReference(original, value);
-          fury.writeNonReferenceToJava(buffer, value);
+          refResolver.replaceRef(original, value);
+          fury.writeNonRefToJava(buffer, value);
         }
       } else {
         if (value != original) {
           buffer.writeByte(REPLACED_SAME_TYPE);
-          if (!referenceResolver.writeReferenceOrNull(buffer, value)) {
+          if (!refResolver.writeRefOrNull(buffer, value)) {
             // replace original object reference id with new object reference id
             // for later object graph serialization,
             // written `REF_VALUE_FLAG`/`NOT_NULL_VALUE_FLAG` id outside this method call will be
             // ignored.
-            referenceResolver.replaceReference(original, value);
+            refResolver.replaceRef(original, value);
             writeObject(buffer, value, jdkMethodInfoCache);
           }
         } else {
@@ -227,30 +227,30 @@ public class ReplaceResolveSerializer extends Serializer {
   @Override
   public Object read(MemoryBuffer buffer) {
     byte flag = buffer.readByte();
-    ReferenceResolver referenceResolver = this.referenceResolver;
+    RefResolver refResolver = this.refResolver;
     if (flag == REPLACED_NEW_TYPE) {
-      int outerRefId = referenceResolver.lastPreservedReferenceId();
-      int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+      int outerRefId = refResolver.lastPreservedRefId();
+      int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
         // ref value or not-null value
         Object o = fury.readDataFromJava(buffer, classResolver.readAndUpdateClassInfoCache(buffer));
-        referenceResolver.setReadObject(nextReadRefId, o);
-        referenceResolver.setReadObject(outerRefId, o);
+        refResolver.setReadObject(nextReadRefId, o);
+        refResolver.setReadObject(outerRefId, o);
         return o;
       } else {
-        return referenceResolver.getReadObject();
+        return refResolver.getReadObject();
       }
     } else if (flag == REPLACED_SAME_TYPE) {
-      int outerRefId = referenceResolver.lastPreservedReferenceId();
-      int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+      int outerRefId = refResolver.lastPreservedRefId();
+      int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
         // ref value or not-null value
         Object o = readObject(buffer);
-        referenceResolver.setReadObject(nextReadRefId, o);
-        referenceResolver.setReadObject(outerRefId, o);
+        refResolver.setReadObject(nextReadRefId, o);
+        refResolver.setReadObject(outerRefId, o);
         return o;
       } else {
-        return referenceResolver.getReadObject();
+        return refResolver.getReadObject();
       }
     } else {
       Preconditions.checkArgument(flag == ORIGINAL);

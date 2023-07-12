@@ -886,14 +886,14 @@ public class ClassResolver {
    * Whether to track reference for this type. If false, reference tracing of subclasses may be
    * ignored too.
    */
-  public boolean needToWriteReference(Class<?> cls) {
-    if (fury.trackingReference()) {
+  public boolean needToWriteRef(Class<?> cls) {
+    if (fury.trackingRef()) {
       ClassInfo classInfo = getClassInfo(cls, false);
       if (classInfo == null || classInfo.serializer == null) {
         // TODO group related logic together for extendability and consistency.
         return !cls.isEnum();
       } else {
-        return classInfo.serializer.needToWriteReference();
+        return classInfo.serializer.needToWriteRef();
       }
     }
     return false;

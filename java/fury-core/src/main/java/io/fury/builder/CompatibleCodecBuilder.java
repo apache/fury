@@ -299,7 +299,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                     }
                                     return new If(
                                         ExpressionUtils.not(
-                                            writeReferenceOrNull(buffer, fieldValue)),
+                                            writeRefOrNull(buffer, fieldValue)),
                                         writeFieldValue);
                                   },
                                   "writeField",
@@ -718,7 +718,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             ctx,
             () -> {
               TypeToken<?> typeToken = descriptor.getTypeToken();
-              Expression refId = tryPreserveReferenceId(buffer);
+              Expression refId = tryPreserveRefId(buffer);
               // indicates that the object is first read.
               Expression needDeserialize =
                   ExpressionUtils.egt(

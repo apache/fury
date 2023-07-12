@@ -135,9 +135,9 @@ public class StructSerializer<T> extends Serializer<T> {
         generics.pushGenericType(fieldGeneric);
       }
       if (serializer != null) {
-        fury.crossLanguageWriteReferencable(buffer, fieldAccessor.get(value), serializer);
+        fury.crossLanguageWriteRef(buffer, fieldAccessor.get(value), serializer);
       } else {
-        fury.crossLanguageWriteReferencable(buffer, fieldAccessor.get(value));
+        fury.crossLanguageWriteRef(buffer, fieldAccessor.get(value));
       }
       if (hasGenerics) {
         generics.popGenericType();
@@ -176,7 +176,7 @@ public class StructSerializer<T> extends Serializer<T> {
               newHash, typeHash, fury.getClassResolver().getCurrentReadClass()));
     }
     T obj = newBean();
-    fury.getReferenceResolver().reference(obj);
+    fury.getRefResolver().reference(obj);
     Generics generics = fury.getGenerics();
     GenericType[] fieldGenerics = getGenericTypes(generics);
     for (int i = 0; i < fieldAccessors.length; i++) {
@@ -188,7 +188,7 @@ public class StructSerializer<T> extends Serializer<T> {
         generics.pushGenericType(fieldGeneric);
       }
       Object fieldValue =
-          fury.crossLanguageReadReferencableByNullableSerializer(buffer, serializer);
+          fury.crossLanguageReadRefByNullableSerializer(buffer, serializer);
       fieldAccessor.set(obj, fieldValue);
       if (hasGenerics) {
         generics.pushGenericType(fieldGeneric);

@@ -71,7 +71,7 @@ public class CodegenSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
@@ -80,10 +80,10 @@ public class CodegenSerializerTest extends FuryTestBase {
     fury.deserialize(buffer);
 
     Serializer<Cyclic> beanSerializer = fury.getClassResolver().getSerializer(Cyclic.class);
-    fury.getReferenceResolver().writeReferenceOrNull(buffer, cyclic);
+    fury.getRefResolver().writeRefOrNull(buffer, cyclic);
     beanSerializer.write(buffer, cyclic);
-    fury.getReferenceResolver().readReferenceOrNull(buffer);
-    fury.getReferenceResolver().preserveReferenceId();
+    fury.getRefResolver().readRefOrNull(buffer);
+    fury.getRefResolver().preserveRefId();
     Cyclic cyclic1 = beanSerializer.read(buffer);
     fury.reset();
     assertEquals(cyclic1, cyclic);
@@ -129,7 +129,7 @@ public class CodegenSerializerTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withNumberCompressed(compressNumber)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     Class<?> structClass = Struct.createNumberStructClass("CompressInt", 50);
     serDeCheck(fury, Struct.createPOJO(structClass));
@@ -162,8 +162,8 @@ public class CodegenSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
-            .withClassRegistrationRequired(true)
+            .withRefTracking(false)
+            .requireClassRegistration(true)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
             .build();
     fury.register(Column.class);

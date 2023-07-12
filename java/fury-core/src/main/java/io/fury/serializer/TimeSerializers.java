@@ -52,11 +52,11 @@ public class TimeSerializers {
   public abstract static class TimeSerializer<T> extends Serializer<T> {
 
     public TimeSerializer(Fury fury, Class<T> type) {
-      super(fury, type, !fury.getConfig().isTimeReferenceIgnored());
+      super(fury, type, !fury.getConfig().isTimeRefIgnored());
     }
 
-    public TimeSerializer(Fury fury, Class<T> type, boolean needToWriteReference) {
-      super(fury, type, needToWriteReference);
+    public TimeSerializer(Fury fury, Class<T> type, boolean needToWriteRef) {
+      super(fury, type, needToWriteRef);
     }
   }
 
@@ -65,8 +65,8 @@ public class TimeSerializers {
       super(fury, type);
     }
 
-    public BaseDateSerializer(Fury fury, Class<T> type, boolean needToWriteReference) {
-      super(fury, type, needToWriteReference);
+    public BaseDateSerializer(Fury fury, Class<T> type, boolean needToWriteRef) {
+      super(fury, type, needToWriteRef);
     }
 
     @Override
@@ -87,8 +87,8 @@ public class TimeSerializers {
       super(fury, Date.class);
     }
 
-    public DateSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, Date.class, needToWriteReference);
+    public DateSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, Date.class, needToWriteRef);
     }
 
     @Override
@@ -102,8 +102,8 @@ public class TimeSerializers {
       super(fury, java.sql.Date.class);
     }
 
-    public SqlDateSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, java.sql.Date.class, needToWriteReference);
+    public SqlDateSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, java.sql.Date.class, needToWriteRef);
     }
 
     @Override
@@ -118,8 +118,8 @@ public class TimeSerializers {
       super(fury, Time.class);
     }
 
-    public SqlTimeSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, Time.class, needToWriteReference);
+    public SqlTimeSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, Time.class, needToWriteRef);
     }
 
     @Override
@@ -137,8 +137,8 @@ public class TimeSerializers {
       typeId = (short) -Type.TIMESTAMP.getId();
     }
 
-    public TimestampSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, Timestamp.class, needToWriteReference);
+    public TimestampSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, Timestamp.class, needToWriteRef);
       typeId = (short) -Type.TIMESTAMP.getId();
     }
 
@@ -177,8 +177,8 @@ public class TimeSerializers {
       super(fury, LocalDate.class);
     }
 
-    public LocalDateSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, LocalDate.class, needToWriteReference);
+    public LocalDateSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, LocalDate.class, needToWriteRef);
     }
 
     @Override
@@ -226,8 +226,8 @@ public class TimeSerializers {
       super(fury, Instant.class);
     }
 
-    public InstantSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, Instant.class, needToWriteReference);
+    public InstantSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, Instant.class, needToWriteRef);
     }
 
     @Override
@@ -265,8 +265,8 @@ public class TimeSerializers {
       super(fury, Duration.class);
     }
 
-    public DurationSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, Duration.class, needToWriteReference);
+    public DurationSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, Duration.class, needToWriteRef);
     }
 
     @Override
@@ -288,8 +288,8 @@ public class TimeSerializers {
       super(fury, LocalDateTime.class);
     }
 
-    public LocalDateTimeSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, LocalDateTime.class, needToWriteReference);
+    public LocalDateTimeSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, LocalDateTime.class, needToWriteRef);
     }
 
     @Override
@@ -311,8 +311,8 @@ public class TimeSerializers {
       super(fury, LocalTime.class);
     }
 
-    public LocalTimeSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, LocalTime.class, needToWriteReference);
+    public LocalTimeSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, LocalTime.class, needToWriteRef);
     }
 
     @Override
@@ -376,8 +376,8 @@ public class TimeSerializers {
       super(fury, type);
     }
 
-    public TimeZoneSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, TimeZone.class, needToWriteReference);
+    public TimeZoneSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, TimeZone.class, needToWriteRef);
     }
 
     public void write(MemoryBuffer buffer, TimeZone object) {
@@ -398,8 +398,8 @@ public class TimeSerializers {
       timeZoneSerializer = new TimeZoneSerializer(fury, TimeZone.class);
     }
 
-    public CalendarSerializer(Fury fury, Class<Calendar> type, boolean needToWriteReference) {
-      super(fury, type, needToWriteReference);
+    public CalendarSerializer(Fury fury, Class<Calendar> type, boolean needToWriteRef) {
+      super(fury, type, needToWriteRef);
       timeZoneSerializer = new TimeZoneSerializer(fury, TimeZone.class);
     }
 
@@ -437,8 +437,8 @@ public class TimeSerializers {
       super(fury, type);
     }
 
-    public ZoneIdSerializer(Fury fury, Class<ZoneId> type, boolean needToWriteReference) {
-      super(fury, type, needToWriteReference);
+    public ZoneIdSerializer(Fury fury, Class<ZoneId> type, boolean needToWriteRef) {
+      super(fury, type, needToWriteRef);
     }
 
     @Override
@@ -457,8 +457,8 @@ public class TimeSerializers {
       super(fury, ZoneOffset.class);
     }
 
-    public ZoneOffsetSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, ZoneOffset.class, needToWriteReference);
+    public ZoneOffsetSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, ZoneOffset.class, needToWriteRef);
     }
 
     public void write(MemoryBuffer buffer, ZoneOffset obj) {
@@ -492,8 +492,8 @@ public class TimeSerializers {
       super(fury, ZonedDateTime.class);
     }
 
-    public ZonedDateTimeSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, ZonedDateTime.class, needToWriteReference);
+    public ZonedDateTimeSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, ZonedDateTime.class, needToWriteRef);
     }
 
     public void write(MemoryBuffer buffer, ZonedDateTime obj) {
@@ -515,8 +515,8 @@ public class TimeSerializers {
       super(fury, Year.class);
     }
 
-    public YearSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, Year.class, needToWriteReference);
+    public YearSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, Year.class, needToWriteRef);
     }
 
     @Override
@@ -535,8 +535,8 @@ public class TimeSerializers {
       super(fury, YearMonth.class);
     }
 
-    public YearMonthSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, YearMonth.class, needToWriteReference);
+    public YearMonthSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, YearMonth.class, needToWriteRef);
     }
 
     @Override
@@ -558,8 +558,8 @@ public class TimeSerializers {
       super(fury, MonthDay.class);
     }
 
-    public MonthDaySerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, MonthDay.class, needToWriteReference);
+    public MonthDaySerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, MonthDay.class, needToWriteRef);
     }
 
     public void write(MemoryBuffer buffer, MonthDay obj) {
@@ -579,8 +579,8 @@ public class TimeSerializers {
       super(fury, Period.class);
     }
 
-    public PeriodSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, Period.class, needToWriteReference);
+    public PeriodSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, Period.class, needToWriteRef);
     }
 
     public void write(MemoryBuffer buffer, Period obj) {
@@ -602,8 +602,8 @@ public class TimeSerializers {
       super(fury, OffsetTime.class);
     }
 
-    public OffsetTimeSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, OffsetTime.class, needToWriteReference);
+    public OffsetTimeSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, OffsetTime.class, needToWriteRef);
     }
 
     public void write(MemoryBuffer buffer, OffsetTime obj) {
@@ -623,8 +623,8 @@ public class TimeSerializers {
       super(fury, OffsetDateTime.class);
     }
 
-    public OffsetDateTimeSerializer(Fury fury, boolean needToWriteReference) {
-      super(fury, OffsetDateTime.class, needToWriteReference);
+    public OffsetDateTimeSerializer(Fury fury, boolean needToWriteRef) {
+      super(fury, OffsetDateTime.class, needToWriteRef);
     }
 
     public void write(MemoryBuffer buffer, OffsetDateTime obj) {

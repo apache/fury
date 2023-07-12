@@ -69,7 +69,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .build();
     CustomReplaceClass1 o1 = new CustomReplaceClass1("abc");
     fury.registerSerializer(CustomReplaceClass1.class, ReplaceResolveSerializer.class);
@@ -130,7 +130,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .build();
     fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
     for (Object o :
@@ -169,7 +169,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass3.class, ReplaceResolveSerializer.class);
     {
@@ -220,7 +220,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass3.class, ReplaceResolveSerializer.class);
     fury.registerSerializer(CustomReplaceClass4.class, ReplaceResolveSerializer.class);
@@ -274,7 +274,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .build();
     fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
     fury.registerSerializer(Subclass1.class, ReplaceResolveSerializer.class);
@@ -318,7 +318,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .build();
     fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
     fury.registerSerializer(Subclass2.class, ReplaceResolveSerializer.class);
@@ -356,7 +356,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass5.class, ReplaceResolveSerializer.class);
     fury.registerSerializer(Subclass3.class, ReplaceResolveSerializer.class);
@@ -376,7 +376,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass6.class, ReplaceResolveSerializer.class);
     assertThrows(Exception.class, () -> jdkSerialize(new CustomReplaceClass6()));
@@ -396,13 +396,13 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     roundCheck(fury1, fury2, ImmutableList.of(1, 2));
     roundCheck(fury1, fury2, ImmutableList.of("a", "b"));
@@ -423,13 +423,13 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     roundCheck(fury1, fury2, ImmutableMap.of("k", 2));
     roundCheck(fury1, fury2, ImmutableMap.of(1, 2));

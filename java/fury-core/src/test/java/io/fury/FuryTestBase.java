@@ -55,32 +55,32 @@ public abstract class FuryTestBase {
     return javaFuryLocal.get();
   }
 
-  @DataProvider(name = "referenceTrackingConfig")
+  @DataProvider
   public static Object[][] referenceTrackingConfig() {
     return new Object[][] {{false}, {true}};
   }
 
-  @DataProvider(name = "endian")
+  @DataProvider
   public static Object[][] endian() {
     return new Object[][] {{false}, {true}};
   }
 
-  @DataProvider(name = "enableCodegen")
+  @DataProvider
   public static Object[][] enableCodegen() {
     return new Object[][] {{false}, {true}};
   }
 
-  @DataProvider(name = "compressNumber")
+  @DataProvider
   public static Object[][] compressNumber() {
     return new Object[][] {{false}, {true}};
   }
 
-  @DataProvider(name = "refTrackingAndCompressNumber")
+  @DataProvider
   public static Object[][] refTrackingAndCompressNumber() {
     return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
   }
 
-  @DataProvider(name = "crossLanguageReferenceTrackingConfig")
+  @DataProvider
   public static Object[][] crossLanguageReferenceTrackingConfig() {
     return new Object[][] {
       {false, Language.JAVA},
@@ -96,7 +96,7 @@ public abstract class FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withCodegen(false)
             .disableSecureMode()
             .build()
@@ -104,7 +104,7 @@ public abstract class FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCodegen(false)
             .disableSecureMode()
             .build()
@@ -112,7 +112,7 @@ public abstract class FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withCodegen(true)
             .disableSecureMode()
             .build()
@@ -120,7 +120,7 @@ public abstract class FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCodegen(true)
             .disableSecureMode()
             .build()
@@ -134,7 +134,7 @@ public abstract class FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .disableSecureMode()
@@ -143,7 +143,7 @@ public abstract class FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .disableSecureMode()
@@ -152,7 +152,7 @@ public abstract class FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .disableSecureMode()
@@ -161,7 +161,7 @@ public abstract class FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .disableSecureMode()

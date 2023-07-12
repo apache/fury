@@ -75,7 +75,7 @@ public class SerializersTest extends FuryTestBase {
     Fury.FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode();
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
@@ -107,7 +107,7 @@ public class SerializersTest extends FuryTestBase {
     Fury.FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode();
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
@@ -122,7 +122,7 @@ public class SerializersTest extends FuryTestBase {
     Fury.FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode();
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
