@@ -116,8 +116,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     this.fury = fury;
     this.parentSerializerClass = parentSerializerClass;
     addCommonImports();
-    TypeToken<?> refResolverTypeToken = TypeToken.of(fury.getRefResolver().getClass());
     ctx.reserveName(REF_RESOLVER_NAME);
+    ctx.reserveName(CLASS_RESOLVER_NAME);
+    TypeToken<?> refResolverTypeToken = TypeToken.of(fury.getRefResolver().getClass());
     refResolverRef = fieldRef(REF_RESOLVER_NAME, refResolverTypeToken);
     Expression refResolverExpr =
         new Invoke(furyRef, "getRefResolver", TypeToken.of(RefResolver.class));
