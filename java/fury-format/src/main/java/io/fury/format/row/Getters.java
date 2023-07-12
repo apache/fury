@@ -21,7 +21,6 @@ import io.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
 import org.apache.arrow.vector.types.pojo.Field;
 
 /**
