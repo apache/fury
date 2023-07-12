@@ -47,6 +47,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public final class Struct implements Serializable {
 
+  /** Return object string repr. */
   public static String toString(Object o) {
     StringBuilder builder = new StringBuilder(o.getClass().getSimpleName() + "(");
     try {
@@ -71,6 +72,7 @@ public final class Struct implements Serializable {
     return builder.toString();
   }
 
+  /** Return whether tow objects equals. */
   public static boolean equalsWith(Object o1, Object o2) {
     if (o1 == o2) {
       return true;
@@ -119,6 +121,7 @@ public final class Struct implements Serializable {
     return true;
   }
 
+  /** Create Object. */
   public static Object create(String classname, int repeat) {
     try {
       return createPOJO(Struct.createStructClass(classname, repeat));
@@ -127,6 +130,7 @@ public final class Struct implements Serializable {
     }
   }
 
+  /** Create Object. */
   public static Object createPOJO(Class<?> clz) {
     Random random = new Random(17);
     try {
@@ -181,6 +185,7 @@ public final class Struct implements Serializable {
     }
   }
 
+  /** Create class. */
   public static Class<?> createNumberStructClass(String classname, int repeat) {
     if (StringUtils.isBlank(classname)) {
       classname = String.format("Struct%d", System.currentTimeMillis());
@@ -221,6 +226,7 @@ public final class Struct implements Serializable {
     return createStructClass(classname, classCode.toString());
   }
 
+  /** Create Class. */
   public static Class<?> createStructClass(String classname, int repeat) {
     if (StringUtils.isBlank(classname)) {
       classname = String.format("Struct%d", System.currentTimeMillis());
@@ -263,6 +269,7 @@ public final class Struct implements Serializable {
     return createStructClass(classname, classCode.toString());
   }
 
+  /** Create class. */
   public static Class<?> createStructClass(String classname, String classCode) {
 
     Path path = Paths.get(classname + ".java");

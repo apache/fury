@@ -11,7 +11,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import sun.misc.Unsafe;
 
+// CHECKSTYLE.OFF:TypeName
 public class _JDKAccess {
+  // CHECKSTYLE.OFF:TypeName
   public static final int JAVA_VERSION;
   public static final boolean OPEN_J9;
   public static final Unsafe UNSAFE;
@@ -51,7 +53,10 @@ public class _JDKAccess {
     }
   }
 
+  // CHECKSTYLE.OFF:MethodName
+
   public static Lookup _trustedLookup(Class<?> objectClass) {
+    // CHECKSTYLE.ON:MethodName
     return _Lookup._trustedLookup(objectClass);
   }
 

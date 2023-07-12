@@ -50,6 +50,7 @@ public class Cyclic {
     }
   }
 
+  /** Create Object. */
   public static Cyclic create(boolean circular) {
     Cyclic cyclic = new Cyclic();
     cyclic.f1 = "str";

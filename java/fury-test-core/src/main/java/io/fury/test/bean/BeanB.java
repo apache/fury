@@ -34,6 +34,7 @@ public final class BeanB implements Serializable {
   private int[] intArr;
   private List<Integer> intList;
 
+  /** Create Object. */
   public static BeanB createBeanB(int arrSize) {
     Random rnd = new Random(37);
     BeanB beanB = new BeanB();

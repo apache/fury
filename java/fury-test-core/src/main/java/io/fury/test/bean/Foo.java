@@ -46,6 +46,7 @@ public class Foo implements Serializable {
   long f14;
   long f15;
 
+  /** Create Object. */
   public static Foo create() {
     Random random = new Random(31);
     Foo foo = new Foo();
@@ -67,6 +68,7 @@ public class Foo implements Serializable {
     return foo;
   }
 
+  /** Create Class. */
   public static Class<?> createCompatibleClass1() {
     String pkg = Foo.class.getPackage().getName();
     String code =
@@ -84,6 +86,7 @@ public class Foo implements Serializable {
     return loadFooClass(pkg, code);
   }
 
+  /** Create class. */
   public static Class<?> createCompatibleClass2() {
     String pkg = Foo.class.getPackage().getName();
     String code =
@@ -99,6 +102,7 @@ public class Foo implements Serializable {
     return loadFooClass(pkg, code);
   }
 
+  /** Create class. */
   public static Class<?> createCompatibleClass3() {
     String pkg = Foo.class.getPackage().getName();
     String code =

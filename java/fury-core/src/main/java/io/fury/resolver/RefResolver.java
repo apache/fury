@@ -27,7 +27,6 @@ import io.fury.memory.MemoryBuffer;
  * @author chaokunyang
  */
 public interface RefResolver {
-  // TODO(mubai) add putIfAbsent for cuckoo hash.
   /**
    * Write reference and tag for the obj if the obj has been written previously, write null/not-null
    * tag otherwise.
