@@ -1244,8 +1244,8 @@ public final class Fury {
     return compressNumber;
   }
 
-  public boolean isClassRegistrationRequired() {
-    return config.isClassRegistrationRequired();
+  public boolean requireClassRegistration() {
+    return config.requireClassRegistration();
   }
 
   public static FuryBuilder builder() {
