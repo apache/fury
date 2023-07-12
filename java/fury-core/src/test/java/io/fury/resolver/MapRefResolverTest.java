@@ -26,38 +26,37 @@ import io.fury.memory.MemoryBuffer;
 import java.util.Map;
 import org.testng.annotations.Test;
 
-public class MapReferenceResolverTest {
+public class MapRefResolverTest {
 
   @Test
   public void testTrackingReference() {
-    MapReferenceResolver referenceResolver = new MapReferenceResolver();
+    MapRefResolver referenceResolver = new MapRefResolver();
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-    assertTrue(referenceResolver.writeReferenceOrNull(buffer, null));
-    assertFalse(referenceResolver.writeReferenceOrNull(buffer, new Object()));
+    assertTrue(referenceResolver.writeRefOrNull(buffer, null));
+    assertFalse(referenceResolver.writeRefOrNull(buffer, new Object()));
     Object o = new Object();
-    assertFalse(referenceResolver.writeReferenceOrNull(buffer, o));
-    assertTrue(referenceResolver.writeReferenceOrNull(buffer, o));
+    assertFalse(referenceResolver.writeRefOrNull(buffer, o));
+    assertTrue(referenceResolver.writeRefOrNull(buffer, o));
     assertFalse(referenceResolver.writeNullFlag(buffer, o));
     assertTrue(referenceResolver.writeNullFlag(buffer, null));
   }
 
   @Test
-  public void testReferenceStatistics() {
-    // MapReferenceResolver may be loaded and run already, set flag won't take effect.
-    // If java jit run and optimized `writeReferenceOrNull`, set `ENABLE_FURY_REF_PROFILING`
+  public void testRefStatistics() {
+    // MapRefResolver may be loaded and run already, set flag won't take effect.
+    // If java jit run and optimized `writeRefOrNull`, set `ENABLE_FURY_REF_PROFILING`
     // by reflection may not take effect too.
     // System.setProperty("fury.enable_ref_profiling", "true");
-    MapReferenceResolver referenceResolver = new MapReferenceResolver();
+    MapRefResolver referenceResolver = new MapRefResolver();
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
     Object obj1 = new Object();
-    referenceResolver.writeReferenceOrNull(buffer, obj1);
-    referenceResolver.writeReferenceOrNull(buffer, obj1);
-    referenceResolver.writeReferenceOrNull(buffer, "abc");
-    referenceResolver.writeReferenceOrNull(buffer, "abcd");
-    referenceResolver.writeReferenceOrNull(buffer, String.class);
-    MapReferenceResolver.ReferenceStatistics referenceStatistics =
-        referenceResolver.referenceStatistics();
-    Map<Class<?>, Integer> summary = referenceStatistics.referenceTypeSummary;
+    referenceResolver.writeRefOrNull(buffer, obj1);
+    referenceResolver.writeRefOrNull(buffer, obj1);
+    referenceResolver.writeRefOrNull(buffer, "abc");
+    referenceResolver.writeRefOrNull(buffer, "abcd");
+    referenceResolver.writeRefOrNull(buffer, String.class);
+    MapRefResolver.RefStatistics refStatistics = referenceResolver.referenceStatistics();
+    Map<Class<?>, Integer> summary = refStatistics.refTypeSummary;
     // check order, type most frequent occurs first.
     assertEquals(summary.entrySet().stream().iterator().next().getKey(), String.class);
     assertEquals(summary.get(Object.class).intValue(), 1);

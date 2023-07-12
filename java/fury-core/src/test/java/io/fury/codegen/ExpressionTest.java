@@ -34,8 +34,7 @@ public class ExpressionTest {
       String code =
           new Expression.If(
                   ExpressionUtils.eq(
-                      Literal.ofInt(1),
-                      new Reference("classId", PRIMITIVE_SHORT_TYPE, false)),
+                      Literal.ofInt(1), new Reference("classId", PRIMITIVE_SHORT_TYPE, false)),
                   new Return(Literal.True),
                   new Return(Literal.False))
               .genCode(new CodegenContext())
@@ -52,8 +51,7 @@ public class ExpressionTest {
       String code =
           new Expression.If(
                   ExpressionUtils.eq(
-                      Literal.ofInt(1),
-                      new Reference("classId", PRIMITIVE_SHORT_TYPE, false)),
+                      Literal.ofInt(1), new Reference("classId", PRIMITIVE_SHORT_TYPE, false)),
                   Literal.True,
                   Literal.False)
               .genCode(new CodegenContext())

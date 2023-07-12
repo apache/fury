@@ -330,8 +330,7 @@ public class CollectionSerializers {
         if (elemGenericType.isFinal()) {
           Serializer elemSerializer = elemGenericType.getSerializer(fury.getClassResolver());
           for (int i = 0; i < numElements; i++) {
-            Object elem =
-                fury.crossLanguageReadRefByNullableSerializer(buffer, elemSerializer);
+            Object elem = fury.crossLanguageReadRefByNullableSerializer(buffer, elemSerializer);
             collection.add(elem);
           }
         } else {

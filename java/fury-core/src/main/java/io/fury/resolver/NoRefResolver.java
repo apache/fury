@@ -26,10 +26,10 @@ import io.fury.memory.MemoryBuffer;
  *
  * @author chaokunyang
  */
-public final class NoReferenceResolver implements ReferenceResolver {
+public final class NoRefResolver implements RefResolver {
 
   @Override
-  public boolean writeReferenceOrNull(MemoryBuffer buffer, Object obj) {
+  public boolean writeRefOrNull(MemoryBuffer buffer, Object obj) {
     if (obj == null) {
       buffer.writeByte(Fury.NULL_FLAG);
       return true;
@@ -40,7 +40,7 @@ public final class NoReferenceResolver implements ReferenceResolver {
   }
 
   @Override
-  public boolean writeReferenceValueFlag(MemoryBuffer buffer, Object obj) {
+  public boolean writeRefValueFlag(MemoryBuffer buffer, Object obj) {
     assert obj != null;
     buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
     return true;
@@ -56,27 +56,27 @@ public final class NoReferenceResolver implements ReferenceResolver {
   }
 
   @Override
-  public void replaceReference(Object original, Object newObject) {}
+  public void replaceRef(Object original, Object newObject) {}
 
   @Override
-  public byte readReferenceOrNull(MemoryBuffer buffer) {
+  public byte readRefOrNull(MemoryBuffer buffer) {
     return buffer.readByte();
   }
 
   @Override
-  public int preserveReferenceId() {
+  public int preserveRefId() {
     return -1;
   }
 
   @Override
-  public int tryPreserveReferenceId(MemoryBuffer buffer) {
+  public int tryPreserveRefId(MemoryBuffer buffer) {
     // `NOT_NULL_VALUE_FLAG` can be used as stub reference id because we use
     // `refId >= NOT_NULL_VALUE_FLAG` to read data.
     return buffer.readByte();
   }
 
   @Override
-  public int lastPreservedReferenceId() {
+  public int lastPreservedRefId() {
     return -1;
   }
 

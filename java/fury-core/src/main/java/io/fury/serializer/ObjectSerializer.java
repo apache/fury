@@ -305,8 +305,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       if (readPrimitiveFieldValueFailed(fury, buffer, obj, fieldAccessor, classId)
           && readBasicObjectFieldValueFailed(fury, buffer, obj, fieldAccessor, classId)) {
         Object fieldValue =
-            readFinalObjectFieldValue(
-                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+            readFinalObjectFieldValue(fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
         fieldAccessor.putObject(obj, fieldValue);
       }
     }

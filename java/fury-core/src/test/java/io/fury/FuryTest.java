@@ -411,8 +411,7 @@ public class FuryTest extends FuryTestBase {
 
   @Test
   public void testSerializeJavaObject() {
-    Fury fury =
-        Fury.builder().requireClassRegistration(false).withLanguage(Language.JAVA).build();
+    Fury fury = Fury.builder().requireClassRegistration(false).withLanguage(Language.JAVA).build();
     BeanA beanA = BeanA.createBeanA(2);
     assertEquals(fury.deserializeJavaObject(fury.serializeJavaObject(beanA), BeanA.class), beanA);
     assertThrows(

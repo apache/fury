@@ -74,7 +74,6 @@ import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
 import io.fury.type.FinalObjectTypeStub;
 import io.fury.type.TypeUtils;
-import io.fury.util.LoggerFactory;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.lang.reflect.Modifier;
@@ -85,7 +84,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Function;
-import org.slf4j.Logger;
 
 /**
  * Generate sequential read/write code for java serialization to speed up performance. It also
@@ -287,8 +285,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected Expression writeRefOrNull(Expression buffer, Expression object) {
-    return inlineInvoke(
-        refResolverRef, "writeRefOrNull", PRIMITIVE_BOOLEAN_TYPE, buffer, object);
+    return inlineInvoke(refResolverRef, "writeRefOrNull", PRIMITIVE_BOOLEAN_TYPE, buffer, object);
   }
 
   protected Expression serializeForNotNull(
@@ -754,8 +751,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected Expression readRefOrNull(Expression buffer) {
-    return new Invoke(
-        refResolverRef, "readRefOrNull", "tag", PRIMITIVE_BYTE_TYPE, false, buffer);
+    return new Invoke(refResolverRef, "readRefOrNull", "tag", PRIMITIVE_BYTE_TYPE, false, buffer);
   }
 
   protected Expression tryPreserveRefId(Expression buffer) {

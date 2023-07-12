@@ -298,8 +298,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                               fieldValue, buffer, descriptor.getTypeToken()));
                                     }
                                     return new If(
-                                        ExpressionUtils.not(
-                                            writeRefOrNull(buffer, fieldValue)),
+                                        ExpressionUtils.not(writeRefOrNull(buffer, fieldValue)),
                                         writeFieldValue);
                                   },
                                   "writeField",

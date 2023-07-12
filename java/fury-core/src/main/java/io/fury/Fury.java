@@ -286,8 +286,7 @@ public final class Fury {
     }
   }
 
-  public void writeRefoJava(
-      MemoryBuffer buffer, Object obj, ClassInfoCache classInfoCache) {
+  public void writeRefoJava(MemoryBuffer buffer, Object obj, ClassInfoCache classInfoCache) {
     if (!refResolver.writeRefOrNull(buffer, obj)) {
       ClassInfo classInfo = classResolver.getClassInfo(obj.getClass(), classInfoCache);
       classResolver.writeClass(buffer, classInfo);
@@ -341,8 +340,7 @@ public final class Fury {
       buffer.writeByte(Fury.NULL_FLAG);
     } else {
       buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-      writeNonRefToJava(
-          buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
+      writeNonRefToJava(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
     }
   }
 
@@ -387,8 +385,7 @@ public final class Fury {
     }
   }
 
-  public <T> void crossLanguageWriteRef(
-      MemoryBuffer buffer, T obj, Serializer<T> serializer) {
+  public <T> void crossLanguageWriteRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
     if (serializer.needToWriteRef()) {
       if (!refResolver.writeRefOrNull(buffer, obj)) {
         crossLanguageWriteNonRef(buffer, obj, serializer);
@@ -412,8 +409,7 @@ public final class Fury {
     }
   }
 
-  public <T> void crossLanguageWriteNonRef(
-      MemoryBuffer buffer, T obj, Serializer<T> serializer) {
+  public <T> void crossLanguageWriteNonRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
     depth++;
     @SuppressWarnings("unchecked")
     Class<T> cls = (Class<T>) obj.getClass();

@@ -187,8 +187,7 @@ public class StructSerializer<T> extends Serializer<T> {
       if (hasGenerics) {
         generics.pushGenericType(fieldGeneric);
       }
-      Object fieldValue =
-          fury.crossLanguageReadRefByNullableSerializer(buffer, serializer);
+      Object fieldValue = fury.crossLanguageReadRefByNullableSerializer(buffer, serializer);
       fieldAccessor.set(obj, fieldValue);
       if (hasGenerics) {
         generics.pushGenericType(fieldGeneric);

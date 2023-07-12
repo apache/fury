@@ -23,17 +23,17 @@ import static org.testng.Assert.*;
 import io.fury.memory.MemoryBuffer;
 import org.testng.annotations.Test;
 
-public class NoReferenceResolverTest {
+public class NoRefResolverTest {
 
   @Test
-  public void testWriteReferenceOrNull() {
-    NoReferenceResolver referenceResolver = new NoReferenceResolver();
+  public void testWriteRefOrNull() {
+    NoRefResolver referenceResolver = new NoRefResolver();
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-    assertTrue(referenceResolver.writeReferenceOrNull(buffer, null));
-    assertFalse(referenceResolver.writeReferenceOrNull(buffer, new Object()));
+    assertTrue(referenceResolver.writeRefOrNull(buffer, null));
+    assertFalse(referenceResolver.writeRefOrNull(buffer, new Object()));
     Object o = new Object();
-    assertFalse(referenceResolver.writeReferenceOrNull(buffer, o));
-    assertFalse(referenceResolver.writeReferenceOrNull(buffer, o));
+    assertFalse(referenceResolver.writeRefOrNull(buffer, o));
+    assertFalse(referenceResolver.writeRefOrNull(buffer, o));
     assertFalse(referenceResolver.writeNullFlag(buffer, o));
     assertTrue(referenceResolver.writeNullFlag(buffer, null));
   }
