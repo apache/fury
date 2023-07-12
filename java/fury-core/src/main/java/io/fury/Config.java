@@ -43,7 +43,7 @@ public class Config implements Serializable {
   private final boolean compressString;
   private final boolean compressNumber;
   private final boolean secureModeEnabled;
-  private final boolean classRegistrationRequired;
+  private final boolean requireClassRegistration;
   private final boolean metaContextShareEnabled;
   private final boolean asyncCompilationEnabled;
   private final boolean deserializeUnExistClassEnabled;
@@ -58,7 +58,7 @@ public class Config implements Serializable {
     compressString = builder.compressString;
     compressNumber = builder.compressNumber;
     secureModeEnabled = builder.secureModeEnabled;
-    classRegistrationRequired = builder.requireClassRegistration;
+    requireClassRegistration = builder.requireClassRegistration;
     codeGenEnabled = builder.codeGenEnabled;
     checkClassVersion = builder.checkClassVersion;
     compatibleMode = builder.compatibleMode;
@@ -129,8 +129,8 @@ public class Config implements Serializable {
     return compressNumber;
   }
 
-  public boolean isClassRegistrationRequired() {
-    return classRegistrationRequired;
+  public boolean requireClassRegistration() {
+    return requireClassRegistration;
   }
 
   /**
