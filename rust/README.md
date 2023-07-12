@@ -2,7 +2,7 @@
 Fury is a blazing fast multi-language serialization framework powered by jit(just-in-time compilation) and zero-copy.
 
 Fury Rust can be implemented by steps:
-- [ ] Static codegen based fury code generator
-- [ ] Static codegen based rust macro
+- [ ] Static codegen based on fury code generator
+- [ ] Static codegen based on rust macro
 - [ ] Cross-langauge object graph serialization
 - [ ] Row format
