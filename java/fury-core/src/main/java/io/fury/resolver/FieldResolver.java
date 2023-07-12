@@ -203,7 +203,7 @@ public class FieldResolver {
 
   private final Class<?> cls;
   private final Fury fury;
-  private final ReferenceResolver referenceResolver;
+  private final RefResolver refResolver;
   private final ClassResolver classResolver;
   private final ClassInfoCache classInfoCache;
   private final int numFields;
@@ -225,7 +225,7 @@ public class FieldResolver {
       Set<String> duplicatedFields) {
     this.cls = type;
     this.fury = fury;
-    this.referenceResolver = fury.getReferenceResolver();
+    this.refResolver = fury.getRefResolver();
     this.classResolver = fury.getClassResolver();
     this.duplicatedFields = duplicatedFields;
     this.numFields = allFields.size();
@@ -426,7 +426,7 @@ public class FieldResolver {
       if (classId >= minPrimitiveClassId && classId <= maxPrimitiveClassId) {
         fury.readDataFromJava(buffer, classInfo);
       } else {
-        fury.readReferencableFromJava(buffer, classInfo.getSerializer());
+        fury.readRefFromJava(buffer, classInfo.getSerializer());
       }
     } else {
       long encodedFieldInfo = buffer.readInt();
@@ -479,7 +479,7 @@ public class FieldResolver {
           fury.readDataFromJava(buffer, classInfo);
         }
       } else {
-        fury.readReferencableFromJava(buffer, classInfo.getSerializer());
+        fury.readRefFromJava(buffer, classInfo.getSerializer());
       }
     } else {
       if ((partFieldInfo & 0b11) == SEPARATE_TYPES_HASH_FLAG) {
@@ -500,7 +500,7 @@ public class FieldResolver {
   }
 
   public void skipObjectField(MemoryBuffer buffer) {
-    int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+    int nextReadRefId = refResolver.tryPreserveRefId(buffer);
     if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
       byte fieldType = buffer.readByte();
       Object o;
@@ -510,7 +510,7 @@ public class FieldResolver {
       } else {
         o = readObjectWithFinal(buffer, fieldType);
       }
-      referenceResolver.setReadObject(nextReadRefId, o);
+      refResolver.setReadObject(nextReadRefId, o);
     }
   }
 
@@ -536,7 +536,7 @@ public class FieldResolver {
   }
 
   public Object readObjectField(MemoryBuffer buffer, FieldInfo fieldInfo) {
-    int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+    int nextReadRefId = refResolver.tryPreserveRefId(buffer);
     if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
       byte fieldType = buffer.readByte();
       checkFieldType(fieldType, fieldInfo.fieldType);
@@ -548,10 +548,10 @@ public class FieldResolver {
       } else {
         o = readObjectWithFinal(buffer, fieldType, fieldInfo);
       }
-      referenceResolver.setReadObject(nextReadRefId, o);
+      refResolver.setReadObject(nextReadRefId, o);
       return o;
     } else {
-      return referenceResolver.getReadObject();
+      return refResolver.getReadObject();
     }
   }
 

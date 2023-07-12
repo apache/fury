@@ -224,7 +224,7 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
@@ -316,7 +316,7 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     Assert.assertEquals(
@@ -398,7 +398,7 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     List<Object> list = new ArrayList<>();
@@ -463,7 +463,7 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     fury.register(ComplexObject2.class, "test.ComplexObject2");
@@ -477,7 +477,7 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     fury.register(ComplexObject1.class, "test.ComplexObject1");
@@ -522,7 +522,7 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     fury.register(ComplexObject2.class, "test.ComplexObject2");
@@ -537,7 +537,7 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     fury.register(ComplexObject1.class, "test.ComplexObject1");
@@ -598,19 +598,19 @@ public class CrossLanguageTest {
 
     @Override
     public void crossLanguageWrite(MemoryBuffer buffer, ComplexObject1 value) {
-      fury.crossLanguageWriteReferencable(buffer, value.f1);
-      fury.crossLanguageWriteReferencable(buffer, value.f2);
-      fury.crossLanguageWriteReferencable(buffer, value.f3);
+      fury.crossLanguageWriteRef(buffer, value.f1);
+      fury.crossLanguageWriteRef(buffer, value.f2);
+      fury.crossLanguageWriteRef(buffer, value.f3);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public ComplexObject1 crossLanguageRead(MemoryBuffer buffer) {
       ComplexObject1 obj = new ComplexObject1();
-      fury.getReferenceResolver().reference(obj);
-      obj.f1 = fury.crossLanguageReadReferencable(buffer);
-      obj.f2 = (String) fury.crossLanguageReadReferencable(buffer);
-      obj.f3 = (List<Object>) fury.crossLanguageReadReferencable(buffer);
+      fury.getRefResolver().reference(obj);
+      obj.f1 = fury.crossLanguageReadRef(buffer);
+      obj.f2 = (String) fury.crossLanguageReadRef(buffer);
+      obj.f3 = (List<Object>) fury.crossLanguageReadRef(buffer);
       return obj;
     }
   }
@@ -620,7 +620,7 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     fury.registerSerializer(ComplexObject1.class, ComplexObject1Serializer.class);
@@ -648,7 +648,7 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     AtomicInteger counter = new AtomicInteger(0);

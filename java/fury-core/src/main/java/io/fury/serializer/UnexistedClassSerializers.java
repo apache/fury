@@ -32,7 +32,7 @@ import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassInfoCache;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.MetaContext;
-import io.fury.resolver.ReferenceResolver;
+import io.fury.resolver.RefResolver;
 import io.fury.type.ClassDef;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
@@ -127,7 +127,7 @@ public final class UnexistedClassSerializers {
       ClassDef classDef = value.classDef;
       ClassFieldsInfo fieldsInfo = getClassFieldsInfo(classDef);
       Fury fury = this.fury;
-      ReferenceResolver referenceResolver = fury.getReferenceResolver();
+      RefResolver refResolver = fury.getRefResolver();
       ClassResolver classResolver = fury.getClassResolver();
       if (fury.checkClassVersion()) {
         buffer.writeInt(fieldsInfo.classVersionHash);
@@ -146,16 +146,16 @@ public final class UnexistedClassSerializers {
             // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
             // consistent with jit serializer.
             Serializer<Object> serializer = classInfo.getSerializer();
-            fury.writeReferencableToJava(buffer, fieldValue, serializer);
+            fury.writeRefoJava(buffer, fieldValue, serializer);
           } else {
-            fury.writeReferencableToJava(buffer, fieldValue, classInfo);
+            fury.writeRefoJava(buffer, fieldValue, classInfo);
           }
         }
       }
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.otherFields) {
         Object fieldValue = value.get(fieldInfo.qualifiedFieldName);
         if (fieldInfo.trackingRef) {
-          fury.writeReferencableToJava(buffer, fieldValue, fieldInfo.classInfoCache);
+          fury.writeRefoJava(buffer, fieldValue, fieldInfo.classInfoCache);
         } else {
           fury.writeNullableToJava(buffer, fieldValue, fieldInfo.classInfoCache);
         }
@@ -164,7 +164,7 @@ public final class UnexistedClassSerializers {
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.containerFields) {
         Object fieldValue = value.get(fieldInfo.qualifiedFieldName);
         ObjectSerializer.writeContainerFieldValue(
-            fury, referenceResolver, classResolver, generics, fieldInfo, buffer, fieldValue);
+            fury, refResolver, classResolver, generics, fieldInfo, buffer, fieldValue);
       }
     }
 
@@ -197,9 +197,9 @@ public final class UnexistedClassSerializers {
     public Object read(MemoryBuffer buffer) {
       UnexistedMetaSharedClass obj = new UnexistedMetaSharedClass(classDef);
       Fury fury = this.fury;
-      ReferenceResolver referenceResolver = fury.getReferenceResolver();
+      RefResolver refResolver = fury.getRefResolver();
       ClassResolver classResolver = fury.getClassResolver();
-      referenceResolver.reference(obj);
+      refResolver.reference(obj);
       List<MapEntry> entries = new ArrayList<>();
       // read order: primitive,boxed,final,other,collection,map
       ClassFieldsInfo fieldsInfo = getClassFieldsInfo(classDef);
@@ -210,14 +210,14 @@ public final class UnexistedClassSerializers {
         Object fieldValue;
         if (fieldInfo.classInfo == null) {
           // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
-          fieldValue = fury.readReferencableFromJava(buffer, classInfoCache);
+          fieldValue = fury.readRefFromJava(buffer, classInfoCache);
         } else {
           if (classResolver.isPrimitive(fieldInfo.classId)) {
             fieldValue = fieldInfo.classInfo.getSerializer().read(buffer);
           } else {
             fieldValue =
                 ObjectSerializer.readFinalObjectFieldValue(
-                    fury, referenceResolver, classResolver, fieldInfo, isFinal[i], buffer);
+                    fury, refResolver, classResolver, fieldInfo, isFinal[i], buffer);
           }
         }
         entries.add(new MapEntry(fieldInfo.qualifiedFieldName, fieldValue));

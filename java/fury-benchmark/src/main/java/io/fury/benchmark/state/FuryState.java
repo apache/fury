@@ -71,8 +71,7 @@ public class FuryState {
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)
-              .ignoreStringReference(true) // for compare with fastjson
-              .withReferenceTracking(references)
+              .withRefTracking(references)
               .disableSecureMode()
               .build();
       setupBuffer();
@@ -95,7 +94,7 @@ public class FuryState {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     Object o1 = fury.deserialize(fury.serialize(o));
@@ -124,8 +123,7 @@ public class FuryState {
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)
-              .ignoreStringReference(true) // for compare with fastjson
-              .withReferenceTracking(references)
+              .withRefTracking(references)
               .disableSecureMode();
       if (compatible()) {
         furyBuilder.withCompatibleMode(CompatibleMode.COMPATIBLE);
@@ -152,7 +150,7 @@ public class FuryState {
           break;
       }
 
-      fury.writeReferencableToJava(buffer, object);
+      fury.writeRefoJava(buffer, object);
       serializedLength = buffer.writerIndex();
       LOG.info(
           "======> Fury | {} | {} | {} | {} |",
@@ -161,7 +159,7 @@ public class FuryState {
           bufferType,
           serializedLength);
       buffer.writerIndex(0);
-      Preconditions.checkArgument(object.equals(fury.readReferencableFromJava(buffer)));
+      Preconditions.checkArgument(object.equals(fury.readRefFromJava(buffer)));
       buffer.readerIndex(0);
     }
 
@@ -190,8 +188,7 @@ public class FuryState {
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)
-              .ignoreStringReference(true) // for compare with fastjson
-              .withReferenceTracking(references)
+              .withRefTracking(references)
               .disableSecureMode()
               .withMetaContextShareEnabled(true)
               .withCompatibleMode(CompatibleMode.COMPATIBLE)

@@ -38,7 +38,7 @@ import java.util.Map;
  */
 // FIXME Will binding a separate reference resolver to every type have better performance?
 //  If so, we can have sophisticated reference control for every type.
-public final class MapReferenceResolver implements ReferenceResolver {
+public final class MapRefResolver implements RefResolver {
   private static final boolean ENABLE_FURY_REF_PROFILING =
       "true".equalsIgnoreCase(System.getProperty("fury.enable_ref_profiling"));
 
@@ -63,10 +63,10 @@ public final class MapReferenceResolver implements ReferenceResolver {
   // last read object which is not a reference
   private Object readObject;
 
-  public MapReferenceResolver() {}
+  public MapRefResolver() {}
 
   @Override
-  public boolean writeReferenceOrNull(MemoryBuffer buffer, Object obj) {
+  public boolean writeRefOrNull(MemoryBuffer buffer, Object obj) {
     buffer.grow(10);
     if (obj == null) {
       buffer.unsafeWriteByte(Fury.NULL_FLAG);
@@ -76,7 +76,7 @@ public final class MapReferenceResolver implements ReferenceResolver {
       int newWriteRefId = writtenObjects.size;
       int writtenRefId;
       if (ENABLE_FURY_REF_PROFILING) {
-        // replaceReference is rare, just ignore it for profiling.
+        // replaceRef is rare, just ignore it for profiling.
         writtenRefId = writtenObjects.profilingPutOrGet(obj, newWriteRefId);
       } else {
         writtenRefId = writtenObjects.putOrGet(obj, newWriteRefId);
@@ -95,14 +95,14 @@ public final class MapReferenceResolver implements ReferenceResolver {
   }
 
   @Override
-  public boolean writeReferenceValueFlag(MemoryBuffer buffer, Object obj) {
+  public boolean writeRefValueFlag(MemoryBuffer buffer, Object obj) {
     assert obj != null;
     buffer.grow(10);
     // The id should be consistent with `#nextReadRefId`
     int newWriteRefId = writtenObjects.size;
     int writtenRefId;
     if (ENABLE_FURY_REF_PROFILING) {
-      // replaceReference is rare, just ignore it for profiling.
+      // replaceRef is rare, just ignore it for profiling.
       writtenRefId = writtenObjects.profilingPutOrGet(obj, newWriteRefId);
     } else {
       writtenRefId = writtenObjects.putOrGet(obj, newWriteRefId);
@@ -129,7 +129,7 @@ public final class MapReferenceResolver implements ReferenceResolver {
   }
 
   @Override
-  public void replaceReference(Object original, Object newObject) {
+  public void replaceRef(Object original, Object newObject) {
     int newObjectId = writtenObjects.get(newObject, -1);
     Preconditions.checkArgument(newObjectId != -1);
     writtenObjects.put(original, newObjectId);
@@ -148,7 +148,7 @@ public final class MapReferenceResolver implements ReferenceResolver {
    * the object is first read.
    */
   @Override
-  public byte readReferenceOrNull(MemoryBuffer buffer) {
+  public byte readRefOrNull(MemoryBuffer buffer) {
     byte headFlag = buffer.readByte();
     if (headFlag == Fury.REF_FLAG) {
       // read reference id and get object from reference resolver
@@ -161,7 +161,7 @@ public final class MapReferenceResolver implements ReferenceResolver {
   }
 
   @Override
-  public int preserveReferenceId() {
+  public int preserveRefId() {
     int nextReadRefId = readObjects.size();
     readObjects.add(null);
     readReferenceIds.add(nextReadRefId);
@@ -169,7 +169,7 @@ public final class MapReferenceResolver implements ReferenceResolver {
   }
 
   @Override
-  public int tryPreserveReferenceId(MemoryBuffer buffer) {
+  public int tryPreserveRefId(MemoryBuffer buffer) {
     byte headFlag = buffer.readByte();
     if (headFlag == Fury.REF_FLAG) {
       // read reference id and get object from reference resolver
@@ -178,7 +178,7 @@ public final class MapReferenceResolver implements ReferenceResolver {
     } else {
       readObject = null;
       if (headFlag == Fury.REF_VALUE_FLAG) {
-        return preserveReferenceId();
+        return preserveRefId();
       }
     }
     // `headFlag` except `REF_FLAG` can be used as stub reference id because we use
@@ -187,7 +187,7 @@ public final class MapReferenceResolver implements ReferenceResolver {
   }
 
   @Override
-  public int lastPreservedReferenceId() {
+  public int lastPreservedRefId() {
     return readReferenceIds.get(readReferenceIds.size - 1);
   }
 
@@ -260,33 +260,33 @@ public final class MapReferenceResolver implements ReferenceResolver {
     readObject = null;
   }
 
-  public static class ReferenceStatistics {
-    LinkedHashMap<Class<?>, Integer> referenceTypeSummary;
-    int referenceCount;
+  public static class RefStatistics {
+    LinkedHashMap<Class<?>, Integer> refTypeSummary;
+    int refCount;
     MapStatistics mapStatistics;
 
-    public ReferenceStatistics(
-        LinkedHashMap<Class<?>, Integer> referenceTypeSummary, MapStatistics mapStatistics) {
-      this.referenceTypeSummary = referenceTypeSummary;
+    public RefStatistics(
+        LinkedHashMap<Class<?>, Integer> refTypeSummary, MapStatistics mapStatistics) {
+      this.refTypeSummary = refTypeSummary;
       this.mapStatistics = mapStatistics;
-      referenceCount = referenceTypeSummary.values().stream().reduce(0, Integer::sum, Integer::sum);
+      refCount = refTypeSummary.values().stream().reduce(0, Integer::sum, Integer::sum);
     }
 
     @Override
     public String toString() {
       return "ReferenceStatistics{"
           + "referenceTypeSummary="
-          + referenceTypeSummary
+          + refTypeSummary
           + ", referenceCount="
-          + referenceCount
+          + refCount
           + ", mapProbeStatistics="
           + mapStatistics
           + '}';
     }
   }
 
-  public ReferenceStatistics referenceStatistics() {
-    return new ReferenceStatistics(referenceTypeSummary(), writtenObjects.getAndResetStatistics());
+  public RefStatistics referenceStatistics() {
+    return new RefStatistics(referenceTypeSummary(), writtenObjects.getAndResetStatistics());
   }
 
   /** Returns a map which indicates counter for reference object type. */

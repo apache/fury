@@ -41,12 +41,12 @@ public final class OptionalSerializers {
     @Override
     public void write(MemoryBuffer buffer, Optional value) {
       Object nullable = value.isPresent() ? value.get() : null;
-      fury.writeReferencableToJava(buffer, nullable);
+      fury.writeRefoJava(buffer, nullable);
     }
 
     @Override
     public Optional read(MemoryBuffer buffer) {
-      return Optional.ofNullable(fury.readReferencableFromJava(buffer));
+      return Optional.ofNullable(fury.readRefFromJava(buffer));
     }
   }
 

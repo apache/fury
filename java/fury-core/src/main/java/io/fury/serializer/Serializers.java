@@ -108,8 +108,8 @@ public class Serializers {
     }
 
     public CrossLanguageCompatibleSerializer(
-        Fury fury, Class<T> cls, short typeId, boolean needToWriteReference) {
-      super(fury, cls, needToWriteReference);
+        Fury fury, Class<T> cls, short typeId, boolean needToWriteRef) {
+      super(fury, cls, needToWriteRef);
       this.typeId = typeId;
     }
 
@@ -135,7 +135,7 @@ public class Serializers {
           fury,
           (Class) cls,
           Type.BOOL.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
 
     @Override
@@ -155,7 +155,7 @@ public class Serializers {
           fury,
           (Class) cls,
           Type.INT8.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
 
     @Override
@@ -217,7 +217,7 @@ public class Serializers {
 
   public static final class CharSerializer extends Serializer<Character> {
     public CharSerializer(Fury fury, Class<?> cls) {
-      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
 
     @Override
@@ -237,7 +237,7 @@ public class Serializers {
           fury,
           (Class) cls,
           Type.INT16.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
 
     @Override
@@ -259,7 +259,7 @@ public class Serializers {
           fury,
           (Class) cls,
           Type.INT32.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
       compressNumber = fury.compressNumber();
     }
 
@@ -301,7 +301,7 @@ public class Serializers {
           fury,
           (Class) cls,
           Type.INT64.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
       compressNumber = fury.compressNumber();
     }
 
@@ -341,7 +341,7 @@ public class Serializers {
           fury,
           (Class) cls,
           Type.FLOAT.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
 
     @Override
@@ -361,7 +361,7 @@ public class Serializers {
           fury,
           (Class) cls,
           Type.DOUBLE.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
 
     @Override
@@ -560,12 +560,12 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, AtomicReference value) {
-      fury.writeReferencableToJava(buffer, value.get());
+      fury.writeRefoJava(buffer, value.get());
     }
 
     @Override
     public AtomicReference read(MemoryBuffer buffer) {
-      return new AtomicReference(fury.readReferencableFromJava(buffer));
+      return new AtomicReference(fury.readRefFromJava(buffer));
     }
   }
 

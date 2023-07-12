@@ -32,7 +32,7 @@ import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfoCache;
 import io.fury.resolver.ClassResolver;
-import io.fury.resolver.ReferenceResolver;
+import io.fury.resolver.RefResolver;
 import io.fury.type.GenericType;
 import io.fury.type.Generics;
 import io.fury.type.Type;
@@ -154,23 +154,23 @@ public class MapSerializers {
         javaWriteWithKVSerializers(fury, buffer, map, keySerializer, valueSerializer);
       } else if (keySerializer != null) {
         ClassResolver classResolver = fury.getClassResolver();
-        ReferenceResolver refResolver = fury.getReferenceResolver();
+        RefResolver refResolver = fury.getRefResolver();
         for (Object object : map.entrySet()) {
           Map.Entry entry = (Map.Entry) object;
-          fury.writeReferencableToJava(buffer, entry.getKey(), keySerializer);
+          fury.writeRefoJava(buffer, entry.getKey(), keySerializer);
           Object value = entry.getValue();
           writeJavaRefOptimized(
               fury, classResolver, refResolver, buffer, value, valueClassInfoWriteCache);
         }
       } else if (valueSerializer != null) {
         ClassResolver classResolver = fury.getClassResolver();
-        ReferenceResolver refResolver = fury.getReferenceResolver();
+        RefResolver refResolver = fury.getRefResolver();
         for (Object object : map.entrySet()) {
           Map.Entry entry = (Map.Entry) object;
           Object key = entry.getKey();
           writeJavaRefOptimized(
               fury, classResolver, refResolver, buffer, key, keyClassInfoWriteCache);
-          fury.writeReferencableToJava(buffer, entry.getValue(), valueSerializer);
+          fury.writeRefoJava(buffer, entry.getValue(), valueSerializer);
         }
       } else {
         genericJavaWrite(fury, buffer, map);
@@ -187,8 +187,8 @@ public class MapSerializers {
         Map.Entry entry = (Map.Entry) object;
         Object key = entry.getKey();
         Object value = entry.getValue();
-        fury.writeReferencableToJava(buffer, key, keySerializer);
-        fury.writeReferencableToJava(buffer, value, valueSerializer);
+        fury.writeRefoJava(buffer, key, keySerializer);
+        fury.writeRefoJava(buffer, value, valueSerializer);
       }
     }
 
@@ -254,10 +254,10 @@ public class MapSerializers {
       for (Object object : map.entrySet()) {
         Map.Entry entry = (Map.Entry) object;
         generics.pushGenericType(keyGenericType);
-        fury.writeReferencableToJava(buffer, entry.getKey(), keySerializer);
+        fury.writeRefoJava(buffer, entry.getKey(), keySerializer);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
-        fury.writeReferencableToJava(buffer, entry.getValue(), valueSerializer);
+        fury.writeRefoJava(buffer, entry.getValue(), valueSerializer);
         generics.popGenericType();
       }
     }
@@ -270,14 +270,13 @@ public class MapSerializers {
         GenericType valueGenericType,
         Generics generics) {
       ClassResolver classResolver = fury.getClassResolver();
-      ReferenceResolver refResolver = fury.getReferenceResolver();
-      boolean trackingValueRef =
-          fury.getClassResolver().needToWriteReference(valueGenericType.getCls());
+      RefResolver refResolver = fury.getRefResolver();
+      boolean trackingValueRef = fury.getClassResolver().needToWriteRef(valueGenericType.getCls());
       Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
       for (Object object : map.entrySet()) {
         Map.Entry entry = (Map.Entry) object;
         generics.pushGenericType(keyGenericType);
-        fury.writeReferencableToJava(buffer, entry.getKey(), keySerializer);
+        fury.writeRefoJava(buffer, entry.getKey(), keySerializer);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
         writeJavaRefOptimized(
@@ -300,9 +299,8 @@ public class MapSerializers {
         GenericType valueGenericType,
         Generics generics) {
       ClassResolver classResolver = fury.getClassResolver();
-      ReferenceResolver refResolver = fury.getReferenceResolver();
-      boolean trackingKeyRef =
-          fury.getClassResolver().needToWriteReference(keyGenericType.getCls());
+      RefResolver refResolver = fury.getRefResolver();
+      boolean trackingKeyRef = fury.getClassResolver().needToWriteRef(keyGenericType.getCls());
       Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
       for (Object object : map.entrySet()) {
         Map.Entry entry = (Map.Entry) object;
@@ -317,7 +315,7 @@ public class MapSerializers {
             keyClassInfoWriteCache);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
-        fury.writeReferencableToJava(buffer, entry.getValue(), valueSerializer);
+        fury.writeRefoJava(buffer, entry.getValue(), valueSerializer);
         generics.popGenericType();
       }
     }
@@ -330,11 +328,9 @@ public class MapSerializers {
         GenericType valueGenericType,
         Generics generics) {
       ClassResolver classResolver = fury.getClassResolver();
-      ReferenceResolver refResolver = fury.getReferenceResolver();
-      boolean trackingKeyRef =
-          fury.getClassResolver().needToWriteReference(keyGenericType.getCls());
-      boolean trackingValueRef =
-          fury.getClassResolver().needToWriteReference(valueGenericType.getCls());
+      RefResolver refResolver = fury.getRefResolver();
+      boolean trackingKeyRef = fury.getClassResolver().needToWriteRef(keyGenericType.getCls());
+      boolean trackingValueRef = fury.getClassResolver().needToWriteRef(valueGenericType.getCls());
       for (Object object : map.entrySet()) {
         Map.Entry entry = (Map.Entry) object;
         generics.pushGenericType(keyGenericType);
@@ -362,7 +358,7 @@ public class MapSerializers {
 
     private void generalJavaWrite(Fury fury, MemoryBuffer buffer, T map) {
       ClassResolver classResolver = fury.getClassResolver();
-      ReferenceResolver refResolver = fury.getReferenceResolver();
+      RefResolver refResolver = fury.getRefResolver();
       for (Object object : map.entrySet()) {
         Map.Entry entry = (Map.Entry) object;
         writeJavaRefOptimized(
@@ -379,8 +375,8 @@ public class MapSerializers {
       if (genericType == null || genericType.getTypeParametersCount() != 2) {
         for (Object object : value.entrySet()) {
           Map.Entry entry = (Map.Entry) object;
-          fury.crossLanguageWriteReferencable(buffer, entry.getKey());
-          fury.crossLanguageWriteReferencable(buffer, entry.getValue());
+          fury.crossLanguageWriteRef(buffer, entry.getKey());
+          fury.crossLanguageWriteRef(buffer, entry.getValue());
         }
       } else {
         // TODO(chaokunyang) use codegen to remove all branches.
@@ -391,18 +387,16 @@ public class MapSerializers {
         if (!keyGenericType.hasGenericParameters() && !valueGenericType.hasGenericParameters()) {
           for (Object object : value.entrySet()) {
             Map.Entry entry = (Map.Entry) object;
-            fury.crossLanguageWriteReferencableByNullableSerializer(
-                buffer, entry.getKey(), keySerializer);
-            fury.crossLanguageWriteReferencableByNullableSerializer(
+            fury.crossLanguageWriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
+            fury.crossLanguageWriteRefByNullableSerializer(
                 buffer, entry.getValue(), valueSerializer);
           }
         } else if (valueGenericType.hasGenericParameters()) {
           for (Object object : value.entrySet()) {
             Map.Entry entry = (Map.Entry) object;
-            fury.crossLanguageWriteReferencableByNullableSerializer(
-                buffer, entry.getKey(), keySerializer);
+            fury.crossLanguageWriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
             generics.pushGenericType(valueGenericType);
-            fury.crossLanguageWriteReferencableByNullableSerializer(
+            fury.crossLanguageWriteRefByNullableSerializer(
                 buffer, entry.getValue(), valueSerializer);
             generics.popGenericType();
           }
@@ -410,20 +404,18 @@ public class MapSerializers {
           for (Object object : value.entrySet()) {
             Map.Entry entry = (Map.Entry) object;
             generics.pushGenericType(keyGenericType);
-            fury.crossLanguageWriteReferencableByNullableSerializer(
-                buffer, entry.getKey(), keySerializer);
+            fury.crossLanguageWriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
             generics.popGenericType();
-            fury.crossLanguageWriteReferencableByNullableSerializer(
+            fury.crossLanguageWriteRefByNullableSerializer(
                 buffer, entry.getValue(), valueSerializer);
           }
         } else {
           for (Object object : value.entrySet()) {
             Map.Entry entry = (Map.Entry) object;
             generics.pushGenericType(keyGenericType);
-            fury.crossLanguageWriteReferencableByNullableSerializer(
-                buffer, entry.getKey(), keySerializer);
+            fury.crossLanguageWriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
             generics.pushGenericType(valueGenericType);
-            fury.crossLanguageWriteReferencableByNullableSerializer(
+            fury.crossLanguageWriteRefByNullableSerializer(
                 buffer, entry.getValue(), valueSerializer);
           }
         }
@@ -478,19 +470,19 @@ public class MapSerializers {
       this.valueSerializer = null;
       if (keySerializer != null && valueSerializer != null) {
         for (int i = 0; i < size; i++) {
-          Object key = fury.readReferencableFromJava(buffer, keySerializer);
-          Object value = fury.readReferencableFromJava(buffer, valueSerializer);
+          Object key = fury.readRefFromJava(buffer, keySerializer);
+          Object value = fury.readRefFromJava(buffer, valueSerializer);
           map.put(key, value);
         }
       } else if (keySerializer != null) {
         for (int i = 0; i < size; i++) {
-          Object key = fury.readReferencableFromJava(buffer, keySerializer);
-          map.put(key, fury.readReferencableFromJava(buffer, keyClassInfoReadCache));
+          Object key = fury.readRefFromJava(buffer, keySerializer);
+          map.put(key, fury.readRefFromJava(buffer, keyClassInfoReadCache));
         }
       } else if (valueSerializer != null) {
         for (int i = 0; i < size; i++) {
-          Object key = fury.readReferencableFromJava(buffer);
-          Object value = fury.readReferencableFromJava(buffer, valueSerializer);
+          Object key = fury.readRefFromJava(buffer);
+          Object value = fury.readRefFromJava(buffer, valueSerializer);
           map.put(key, value);
         }
       } else {
@@ -547,10 +539,10 @@ public class MapSerializers {
       Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
       for (int i = 0; i < size; i++) {
         generics.pushGenericType(keyGenericType);
-        Object key = fury.readReferencableFromJava(buffer, keySerializer);
+        Object key = fury.readRefFromJava(buffer, keySerializer);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
-        Object value = fury.readReferencableFromJava(buffer, valueSerializer);
+        Object value = fury.readRefFromJava(buffer, valueSerializer);
         generics.popGenericType();
         map.put(key, value);
       }
@@ -564,13 +556,12 @@ public class MapSerializers {
         GenericType valueGenericType,
         Generics generics,
         int size) {
-      ReferenceResolver refResolver = fury.getReferenceResolver();
-      boolean trackingValueRef =
-          fury.getClassResolver().needToWriteReference(valueGenericType.getCls());
+      RefResolver refResolver = fury.getRefResolver();
+      boolean trackingValueRef = fury.getClassResolver().needToWriteRef(valueGenericType.getCls());
       Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
       for (int i = 0; i < size; i++) {
         generics.pushGenericType(keyGenericType);
-        Object key = fury.readReferencableFromJava(buffer, keySerializer);
+        Object key = fury.readRefFromJava(buffer, keySerializer);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
         Object value =
@@ -589,17 +580,16 @@ public class MapSerializers {
         GenericType valueGenericType,
         Generics generics,
         int size) {
-      boolean trackingKeyRef =
-          fury.getClassResolver().needToWriteReference(keyGenericType.getCls());
+      boolean trackingKeyRef = fury.getClassResolver().needToWriteRef(keyGenericType.getCls());
       Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
-      ReferenceResolver refResolver = fury.getReferenceResolver();
+      RefResolver refResolver = fury.getRefResolver();
       for (int i = 0; i < size; i++) {
         generics.pushGenericType(keyGenericType);
         Object key =
             readJavaRefOptimized(fury, refResolver, trackingKeyRef, buffer, keyClassInfoWriteCache);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
-        Object value = fury.readReferencableFromJava(buffer, valueSerializer);
+        Object value = fury.readRefFromJava(buffer, valueSerializer);
         generics.popGenericType();
         map.put(key, value);
       }
@@ -614,9 +604,9 @@ public class MapSerializers {
         Generics generics,
         int size) {
       ClassResolver classResolver = fury.getClassResolver();
-      ReferenceResolver refResolver = fury.getReferenceResolver();
-      boolean trackingKeyRef = classResolver.needToWriteReference(keyGenericType.getCls());
-      boolean trackingValueRef = classResolver.needToWriteReference(valueGenericType.getCls());
+      RefResolver refResolver = fury.getRefResolver();
+      boolean trackingKeyRef = classResolver.needToWriteRef(keyGenericType.getCls());
+      boolean trackingValueRef = classResolver.needToWriteRef(valueGenericType.getCls());
       for (int i = 0; i < size; i++) {
         generics.pushGenericType(keyGenericType);
         Object key =
@@ -633,8 +623,8 @@ public class MapSerializers {
 
     private void generalJavaRead(Fury fury, MemoryBuffer buffer, T map, int size) {
       for (int i = 0; i < size; i++) {
-        Object key = fury.readReferencableFromJava(buffer, keyClassInfoReadCache);
-        Object value = fury.readReferencableFromJava(buffer, valueClassInfoReadCache);
+        Object key = fury.readRefFromJava(buffer, keyClassInfoReadCache);
+        Object value = fury.readRefFromJava(buffer, valueClassInfoReadCache);
         map.put(key, value);
       }
     }
@@ -646,8 +636,8 @@ public class MapSerializers {
       GenericType genericType = generics.nextGenericType();
       if (genericType == null || genericType.getTypeParametersCount() != 2) {
         for (int i = 0; i < size; i++) {
-          Object key = fury.crossLanguageReadReferencable(buffer);
-          Object value = fury.crossLanguageReadReferencable(buffer);
+          Object key = fury.crossLanguageReadRef(buffer);
+          Object value = fury.crossLanguageReadRef(buffer);
           map.put(key, value);
         }
       } else {
@@ -658,41 +648,33 @@ public class MapSerializers {
         Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
         if (!keyGenericType.hasGenericParameters() && !valueGenericType.hasGenericParameters()) {
           for (int i = 0; i < size; i++) {
-            Object key =
-                fury.crossLanguageReadReferencableByNullableSerializer(buffer, keySerializer);
-            Object value =
-                fury.crossLanguageReadReferencableByNullableSerializer(buffer, valueSerializer);
+            Object key = fury.crossLanguageReadRefByNullableSerializer(buffer, keySerializer);
+            Object value = fury.crossLanguageReadRefByNullableSerializer(buffer, valueSerializer);
             map.put(key, value);
           }
         } else if (valueGenericType.hasGenericParameters()) {
           for (int i = 0; i < size; i++) {
-            Object key =
-                fury.crossLanguageReadReferencableByNullableSerializer(buffer, keySerializer);
+            Object key = fury.crossLanguageReadRefByNullableSerializer(buffer, keySerializer);
             generics.pushGenericType(valueGenericType);
-            Object value =
-                fury.crossLanguageReadReferencableByNullableSerializer(buffer, valueSerializer);
+            Object value = fury.crossLanguageReadRefByNullableSerializer(buffer, valueSerializer);
             generics.popGenericType();
             map.put(key, value);
           }
         } else if (keyGenericType.hasGenericParameters()) {
           for (int i = 0; i < size; i++) {
             generics.pushGenericType(keyGenericType);
-            Object key =
-                fury.crossLanguageReadReferencableByNullableSerializer(buffer, keySerializer);
+            Object key = fury.crossLanguageReadRefByNullableSerializer(buffer, keySerializer);
             generics.popGenericType();
-            Object value =
-                fury.crossLanguageReadReferencableByNullableSerializer(buffer, valueSerializer);
+            Object value = fury.crossLanguageReadRefByNullableSerializer(buffer, valueSerializer);
             map.put(key, value);
           }
         } else {
           for (int i = 0; i < size; i++) {
             // FIXME(chaokunyang) nested generics may be get by mistake.
             generics.pushGenericType(keyGenericType);
-            Object key =
-                fury.crossLanguageReadReferencableByNullableSerializer(buffer, keySerializer);
+            Object key = fury.crossLanguageReadRefByNullableSerializer(buffer, keySerializer);
             generics.pushGenericType(valueGenericType);
-            Object value =
-                fury.crossLanguageReadReferencableByNullableSerializer(buffer, valueSerializer);
+            Object value = fury.crossLanguageReadRefByNullableSerializer(buffer, valueSerializer);
             map.put(key, value);
           }
         }
@@ -741,7 +723,7 @@ public class MapSerializers {
       }
       try {
         T instance = (T) constructor.newInstance();
-        fury.getReferenceResolver().reference(instance);
+        fury.getRefResolver().reference(instance);
         return instance;
       } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new IllegalArgumentException(
@@ -753,27 +735,26 @@ public class MapSerializers {
     private void writeJavaRefOptimized(
         Fury fury,
         ClassResolver classResolver,
-        ReferenceResolver refResolver,
+        RefResolver refResolver,
         MemoryBuffer buffer,
         Object obj,
         ClassInfoCache classInfoCache) {
       if (!refResolver.writeNullFlag(buffer, obj)) {
-        fury.writeReferencableToJava(
-            buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
+        fury.writeRefoJava(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
       }
     }
 
     private void writeJavaRefOptimized(
         Fury fury,
         ClassResolver classResolver,
-        ReferenceResolver refResolver,
+        RefResolver refResolver,
         boolean trackingRef,
         MemoryBuffer buffer,
         Object obj,
         ClassInfoCache classInfoCache) {
       if (trackingRef) {
         if (!refResolver.writeNullFlag(buffer, obj)) {
-          fury.writeReferencableToJava(
+          fury.writeRefoJava(
               buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
         }
       } else {
@@ -781,7 +762,7 @@ public class MapSerializers {
           buffer.writeByte(Fury.NULL_FLAG);
         } else {
           buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-          fury.writeNonReferenceToJava(
+          fury.writeNonRefToJava(
               buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
         }
       }
@@ -789,14 +770,14 @@ public class MapSerializers {
 
     private Object readJavaRefOptimized(
         Fury fury,
-        ReferenceResolver refResolver,
+        RefResolver refResolver,
         boolean trackingRef,
         MemoryBuffer buffer,
         ClassInfoCache classInfoCache) {
       if (trackingRef) {
-        int nextReadRefId = refResolver.tryPreserveReferenceId(buffer);
+        int nextReadRefId = refResolver.tryPreserveRefId(buffer);
         if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
-          Object obj = fury.readNonReferenceFromJava(buffer, classInfoCache);
+          Object obj = fury.readNonRefFromJava(buffer, classInfoCache);
           refResolver.setReadObject(nextReadRefId, obj);
           return obj;
         } else {
@@ -807,7 +788,7 @@ public class MapSerializers {
         if (headFlag == Fury.NULL_FLAG) {
           return null;
         } else {
-          return fury.readNonReferenceFromJava(buffer, classInfoCache);
+          return fury.readNonRefFromJava(buffer, classInfoCache);
         }
       }
     }
@@ -826,7 +807,7 @@ public class MapSerializers {
     @Override
     public HashMap newMap(MemoryBuffer buffer, int size) {
       HashMap hashMap = new HashMap(size);
-      fury.getReferenceResolver().reference(hashMap);
+      fury.getRefResolver().reference(hashMap);
       return hashMap;
     }
   }
@@ -844,7 +825,7 @@ public class MapSerializers {
     @Override
     public LinkedHashMap newMap(MemoryBuffer buffer, int size) {
       LinkedHashMap hashMap = new LinkedHashMap(size);
-      fury.getReferenceResolver().reference(hashMap);
+      fury.getRefResolver().reference(hashMap);
       return hashMap;
     }
   }
@@ -862,7 +843,7 @@ public class MapSerializers {
     @Override
     public LazyMap newMap(MemoryBuffer buffer, int size) {
       LazyMap map = new LazyMap(size);
-      fury.getReferenceResolver().reference(map);
+      fury.getRefResolver().reference(map);
       return map;
     }
   }
@@ -886,14 +867,14 @@ public class MapSerializers {
 
     @Override
     public void writeHeader(MemoryBuffer buffer, T value) {
-      fury.writeReferencableToJava(buffer, value.comparator());
+      fury.writeRefoJava(buffer, value.comparator());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T newMap(MemoryBuffer buffer, int numElements) {
       T map;
-      Comparator comparator = (Comparator) fury.readReferencableFromJava(buffer);
+      Comparator comparator = (Comparator) fury.readRefFromJava(buffer);
       if (type == TreeMap.class) {
         map = (T) new TreeMap(comparator);
       } else {
@@ -903,7 +884,7 @@ public class MapSerializers {
           throw new RuntimeException(e);
         }
       }
-      fury.getReferenceResolver().reference(map);
+      fury.getRefResolver().reference(map);
       return map;
     }
   }
@@ -963,8 +944,8 @@ public class MapSerializers {
     @Override
     public void write(MemoryBuffer buffer, Map<?, ?> value) {
       Map.Entry entry = value.entrySet().iterator().next();
-      fury.writeReferencableToJava(buffer, entry.getKey());
-      fury.writeReferencableToJava(buffer, entry.getValue());
+      fury.writeRefoJava(buffer, entry.getKey());
+      fury.writeRefoJava(buffer, entry.getValue());
     }
 
     @Override
@@ -976,22 +957,22 @@ public class MapSerializers {
     public void crossLanguageWrite(MemoryBuffer buffer, Map<?, ?> value) {
       buffer.writePositiveVarInt(1);
       Map.Entry entry = value.entrySet().iterator().next();
-      fury.crossLanguageWriteReferencable(buffer, entry.getKey());
-      fury.crossLanguageWriteReferencable(buffer, entry.getValue());
+      fury.crossLanguageWriteRef(buffer, entry.getKey());
+      fury.crossLanguageWriteRef(buffer, entry.getValue());
     }
 
     @Override
     public Map<?, ?> read(MemoryBuffer buffer) {
-      Object key = fury.readReferencableFromJava(buffer);
-      Object value = fury.readReferencableFromJava(buffer);
+      Object key = fury.readRefFromJava(buffer);
+      Object value = fury.readRefFromJava(buffer);
       return Collections.singletonMap(key, value);
     }
 
     @Override
     public Map<?, ?> crossLanguageRead(MemoryBuffer buffer) {
       buffer.readPositiveVarInt();
-      Object key = fury.crossLanguageReadReferencable(buffer);
-      Object value = fury.crossLanguageReadReferencable(buffer);
+      Object key = fury.crossLanguageReadRef(buffer);
+      Object value = fury.crossLanguageReadRef(buffer);
       return Collections.singletonMap(key, value);
     }
   }
@@ -1028,7 +1009,7 @@ public class MapSerializers {
       Map map = new HashMap();
       crossLanguageReadElements(fury, buffer, map, size);
       T immutableMap = (T) ImmutableMap.copyOf(map);
-      fury.getReferenceResolver().reference(immutableMap);
+      fury.getRefResolver().reference(immutableMap);
       return immutableMap;
     }
   }
@@ -1042,7 +1023,7 @@ public class MapSerializers {
     @Override
     public ConcurrentHashMap newMap(MemoryBuffer buffer, int size) {
       ConcurrentHashMap map = new ConcurrentHashMap(size);
-      fury.getReferenceResolver().reference(map);
+      fury.getRefResolver().reference(map);
       return map;
     }
 
@@ -1061,9 +1042,9 @@ public class MapSerializers {
 
     @Override
     public ConcurrentSkipListMap newMap(MemoryBuffer buffer, int numElements) {
-      Comparator comparator = (Comparator) fury.readReferencableFromJava(buffer);
+      Comparator comparator = (Comparator) fury.readRefFromJava(buffer);
       ConcurrentSkipListMap map = new ConcurrentSkipListMap(comparator);
-      fury.getReferenceResolver().reference(map);
+      fury.getRefResolver().reference(map);
       return map;
     }
 

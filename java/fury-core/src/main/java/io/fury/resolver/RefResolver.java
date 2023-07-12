@@ -26,7 +26,7 @@ import io.fury.memory.MemoryBuffer;
  *
  * @author chaokunyang
  */
-public interface ReferenceResolver {
+public interface RefResolver {
   // TODO(mubai) add putIfAbsent for cuckoo hash.
   /**
    * Write reference and tag for the obj if the obj has been written previously, write null/not-null
@@ -34,7 +34,7 @@ public interface ReferenceResolver {
    *
    * @return true if no bytes need to be written for the object.
    */
-  boolean writeReferenceOrNull(MemoryBuffer buffer, Object obj);
+  boolean writeRefOrNull(MemoryBuffer buffer, Object obj);
 
   /**
    * Write reference and tag for the obj if the obj has been written previously, otherwise do
@@ -44,7 +44,7 @@ public interface ReferenceResolver {
    * @param obj object.
    * @return true if bytes need to be written for the object.
    */
-  boolean writeReferenceValueFlag(MemoryBuffer buffer, Object obj);
+  boolean writeRefValueFlag(MemoryBuffer buffer, Object obj);
 
   /**
    * Write null tag for the obj if the obj is null, otherwise do nothing.
@@ -61,7 +61,7 @@ public interface ReferenceResolver {
    * @param original original object
    * @param newObject new object
    */
-  void replaceReference(Object original, Object newObject);
+  void replaceRef(Object original, Object newObject);
 
   /**
    * Returns {@link Fury#REF_FLAG} if a reference to a previously read object was read
@@ -71,7 +71,7 @@ public interface ReferenceResolver {
    * <p>Returns {@link Fury#REF_VALUE_FLAG} if the object is not null and reference tracking is not
    * enabled or the object is first read.
    */
-  byte readReferenceOrNull(MemoryBuffer buffer);
+  byte readRefOrNull(MemoryBuffer buffer);
 
   /**
    * Preserve a reference id, which is used by {@link #reference}/{@link #setReadObject} to set up
@@ -79,16 +79,16 @@ public interface ReferenceResolver {
    *
    * @return a reference id or -1 if reference is not enabled.
    */
-  int preserveReferenceId();
+  int preserveRefId();
 
   /**
    * Preserve and return a `refId` which is `>=` {@link Fury#NOT_NULL_VALUE_FLAG} if the value is
-   * not null. If the value is referencable value, the `refId` will be {@link #preserveReferenceId}.
+   * not null. If the value is referencable value, the `refId` will be {@link #preserveRefId}.
    */
-  int tryPreserveReferenceId(MemoryBuffer buffer);
+  int tryPreserveRefId(MemoryBuffer buffer);
 
   /** Returns last preserved reference id. */
-  int lastPreservedReferenceId();
+  int lastPreservedRefId();
 
   /**
    * Call this method immediately after composited object such as object array/map/collection/bean
@@ -104,7 +104,7 @@ public interface ReferenceResolver {
   /**
    * Sets the id for an object that has been read.
    *
-   * @param id The id from {@link #preserveReferenceId}.
+   * @param id The id from {@link #preserveRefId}.
    * @param object the object that has been read
    */
   void setReadObject(int id, Object object);

@@ -199,7 +199,7 @@ public class TimeSerializersTest extends FuryTestBase {
               .withLanguage(Language.JAVA)
               .disableSecureMode()
               .withCodegen(true)
-              .ignoreTimeReference(true)
+              .ignoreTimeRef(true)
               .build();
       fury.registerSerializer(
           TimeStructRef.class, CodegenSerializer.loadCodegenSerializer(fury, TimeStructRef.class));
@@ -216,7 +216,7 @@ public class TimeSerializersTest extends FuryTestBase {
           Fury.builder()
               .withLanguage(Language.JAVA)
               .disableSecureMode()
-              .ignoreTimeReference(false)
+              .ignoreTimeRef(false)
               .build();
       fury.registerSerializer(
           TimeStruct.class, CodegenSerializer.loadCodegenSerializer(fury, TimeStruct.class));
@@ -237,7 +237,7 @@ public class TimeSerializersTest extends FuryTestBase {
               .withLanguage(Language.JAVA)
               .disableSecureMode()
               .withCodegen(true)
-              .ignoreTimeReference(true)
+              .ignoreTimeRef(true)
               .build();
       fury.registerSerializer(Date.class, new TimeSerializers.DateSerializer(fury, true));
       fury.registerSerializer(

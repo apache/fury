@@ -83,7 +83,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     DescriptorGrouper grouper =
         DescriptorGrouper.createDescriptorGrouper(descriptors, false, fury.compressNumber());
     objectCodecOptimizer =
-        new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesReferenceIgnored(), ctx);
+        new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
   }
 
   protected ObjectCodecBuilder(TypeToken<?> beanType, Fury fury, Class<?> superSerializerClass) {

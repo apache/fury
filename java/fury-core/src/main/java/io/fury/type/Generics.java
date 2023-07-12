@@ -47,7 +47,7 @@ public class Generics {
    * {@link #nextGenericType}. Fury serialization depth should be increased after this call and
    * before {@link #nextGenericType}.
    *
-   * @see Fury#writeReferencableToJava(MemoryBuffer, Object, ClassInfo)
+   * @see Fury#writeRefoJava(MemoryBuffer, Object, ClassInfo)
    */
   public void pushGenericType(GenericType fieldType) {
     int size = genericTypesSize++;
@@ -70,7 +70,7 @@ public class Generics {
    * #pushGenericType(GenericType)} was not called. Fury serialization depth should be decreased
    * before this call and after {@link #nextGenericType}.
    *
-   * @see Fury#writeReferencableToJava(MemoryBuffer, Object, ClassInfo)
+   * @see Fury#writeRefoJava(MemoryBuffer, Object, ClassInfo)
    */
   public void popGenericType() {
     int size = genericTypesSize;

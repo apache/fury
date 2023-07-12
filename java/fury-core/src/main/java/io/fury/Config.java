@@ -31,10 +31,10 @@ import java.io.Serializable;
 @SuppressWarnings({"rawtypes"})
 public class Config implements Serializable {
   private final Language language;
-  private final boolean referenceTracking;
-  private final boolean basicTypesReferenceIgnored;
-  private final boolean stringReferenceIgnored;
-  private final boolean timeReferenceIgnored;
+  private final boolean refTracking;
+  private final boolean basicTypesRefIgnored;
+  private final boolean stringRefIgnored;
+  private final boolean timeRefIgnored;
   private final boolean codeGenEnabled;
   private final boolean checkClassVersion;
   private final CompatibleMode compatibleMode;
@@ -51,10 +51,10 @@ public class Config implements Serializable {
 
   Config(Fury.FuryBuilder builder) {
     language = builder.language;
-    referenceTracking = builder.referenceTracking;
-    basicTypesReferenceIgnored = !referenceTracking || builder.basicTypesReferenceIgnored;
-    stringReferenceIgnored = !referenceTracking || builder.stringReferenceIgnored;
-    timeReferenceIgnored = !referenceTracking || builder.timeReferenceIgnored;
+    refTracking = builder.refTracking;
+    basicTypesRefIgnored = !refTracking || builder.basicTypesRefIgnored;
+    stringRefIgnored = !refTracking || builder.stringRefIgnored;
+    timeRefIgnored = !refTracking || builder.timeRefIgnored;
     compressString = builder.compressString;
     compressNumber = builder.compressNumber;
     secureModeEnabled = builder.secureModeEnabled;
@@ -79,16 +79,16 @@ public class Config implements Serializable {
     return language;
   }
 
-  public boolean trackingReference() {
-    return referenceTracking;
+  public boolean trackingRef() {
+    return refTracking;
   }
 
-  public boolean isBasicTypesReferenceIgnored() {
-    return basicTypesReferenceIgnored;
+  public boolean isBasicTypesRefIgnored() {
+    return basicTypesRefIgnored;
   }
 
-  public boolean isStringReferenceIgnored() {
-    return stringReferenceIgnored;
+  public boolean isStringRefIgnored() {
+    return stringRefIgnored;
   }
 
   /**
@@ -105,8 +105,8 @@ public class Config implements Serializable {
    * <p>Note that enabling ref tracking should happen before serializer codegen of any types which
    * contains time fields. Otherwise, those fields will still skip ref tracking.
    */
-  public boolean isTimeReferenceIgnored() {
-    return timeReferenceIgnored;
+  public boolean isTimeRefIgnored() {
+    return timeRefIgnored;
   }
 
   public boolean checkClassVersion() {

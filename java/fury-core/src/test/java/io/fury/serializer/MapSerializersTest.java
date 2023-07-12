@@ -57,7 +57,7 @@ public class MapSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
+            .withRefTracking(referenceTrackingConfig)
             .disableSecureMode()
             .build();
     Map<String, Integer> data = new HashMap<>(ImmutableMap.of("a", 1, "b", 2));
@@ -70,7 +70,7 @@ public class MapSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
+            .withRefTracking(referenceTrackingConfig)
             .disableSecureMode()
             .build();
     Map<String, Integer> data = new HashMap<>(ImmutableMap.of("a", 1, "b", 2));
@@ -87,7 +87,7 @@ public class MapSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
+            .withRefTracking(referenceTrackingConfig)
             .disableSecureMode()
             .build();
     Map<String, Integer> data = new TreeMap<>(ImmutableMap.of("a", 1, "b", 2));
@@ -116,7 +116,7 @@ public class MapSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode()
             .build();
     TreeMap<String, String> map =

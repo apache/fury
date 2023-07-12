@@ -115,7 +115,7 @@ public class ForwardSerializer {
     protected Fury newFurySerializer(ClassLoader loader) {
       return Fury.builder()
           .withLanguage(Language.JAVA)
-          .withReferenceTracking(true)
+          .withRefTracking(true)
           .withClassLoader(loader)
           .disableSecureMode()
           .build();

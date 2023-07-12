@@ -26,7 +26,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 /**
  * Serialize/deserializer objects into binary. Note that this class is designed as an abstract class
- * instead of interface to reduce virtual method call cost of {@link #needToWriteReference}/{@link
+ * instead of interface to reduce virtual method call cost of {@link #needToWriteRef}/{@link
  * #getCrossLanguageTypeId}.
  *
  * @param <T> type of objects being serializing/deserializing
@@ -37,7 +37,7 @@ public abstract class Serializer<T> {
   protected final Fury fury;
   protected final Class<T> type;
   protected final boolean isJava;
-  protected final boolean needToWriteReference;
+  protected final boolean needToWriteRef;
 
   public void write(MemoryBuffer buffer, T value) {
     throw new UnsupportedOperationException();
@@ -76,23 +76,23 @@ public abstract class Serializer<T> {
     this.fury = fury;
     this.type = type;
     this.isJava = fury.getLanguage() == Language.JAVA;
-    if (fury.trackingReference()) {
-      needToWriteReference =
-          !Primitives.isWrapperType(Primitives.wrap(type)) || !fury.isBasicTypesReferenceIgnored();
+    if (fury.trackingRef()) {
+      needToWriteRef =
+          !Primitives.isWrapperType(Primitives.wrap(type)) || !fury.isBasicTypesRefIgnored();
     } else {
-      needToWriteReference = false;
+      needToWriteRef = false;
     }
   }
 
-  public Serializer(Fury fury, Class<T> type, boolean needToWriteReference) {
+  public Serializer(Fury fury, Class<T> type, boolean needToWriteRef) {
     this.fury = fury;
     this.type = type;
     this.isJava = fury.getLanguage() == Language.JAVA;
-    this.needToWriteReference = needToWriteReference;
+    this.needToWriteRef = needToWriteRef;
   }
 
-  public final boolean needToWriteReference() {
-    return needToWriteReference;
+  public final boolean needToWriteRef() {
+    return needToWriteRef;
   }
 
   public Class<T> getType() {

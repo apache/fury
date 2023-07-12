@@ -54,7 +54,7 @@ public class UserTypeDeserializeSuite {
   @Benchmark
   public Object fury_deserialize(FuryState.FuryUserTypeState state) {
     state.buffer.readerIndex(0);
-    Object o = state.fury.readReferencableFromJava(state.buffer);
+    Object o = state.fury.readRefFromJava(state.buffer);
     state.fury.resetRead();
     return o;
   }
@@ -62,7 +62,7 @@ public class UserTypeDeserializeSuite {
   @Benchmark
   public Object fury_deserialize_compatible(FuryState.FuryCompatibleState state) {
     state.buffer.readerIndex(0);
-    Object o = state.fury.readReferencableFromJava(state.buffer);
+    Object o = state.fury.readRefFromJava(state.buffer);
     state.fury.resetRead();
     return o;
   }

@@ -40,7 +40,7 @@ public class IdentityObjectIntMapTest {
                   .map(
                       n -> {
                         IdentityObjectIntMap<Object> map = new IdentityObjectIntMap<>(8, loadActor);
-                        // resize map to target size to simulate MapReferenceResolver
+                        // resize map to target size to simulate MapRefResolver
                         for (int i = 0; i < n; i++) {
                           map.profilingPutOrGet(new Object(), -1);
                         }
@@ -98,7 +98,7 @@ public class IdentityObjectIntMapTest {
           objs.add(new Object());
         }
         IdentityObjectIntMap<Object> map = new IdentityObjectIntMap<>(8, loadActor);
-        // resize map to target size to simulate MapReferenceResolver
+        // resize map to target size to simulate MapRefResolver
         for (Object obj : objs) {
           map.profilingPutOrGet(obj, -1);
         }

@@ -180,9 +180,9 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
       ObjectStreamSerializer serializer = new ObjectStreamSerializer(fury, ConcurrentHashMap.class);
       MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
       ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>(mapData);
-      fury.getReferenceResolver().writeReferenceOrNull(buffer, map);
+      fury.getRefResolver().writeRefOrNull(buffer, map);
       serializer.write(buffer, map);
-      fury.getReferenceResolver().tryPreserveReferenceId(buffer);
+      fury.getRefResolver().tryPreserveRefId(buffer);
       Object newMap = serializer.read(buffer);
       assertEquals(buffer.writerIndex(), buffer.readerIndex());
       assertEquals(newMap, map);
@@ -223,7 +223,7 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withCodegen(enableCodegen)
             .build();
     {
@@ -235,9 +235,9 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
                   "k1", 1,
                   "k2", 2));
       map.put("k3", map);
-      fury.getReferenceResolver().writeReferenceOrNull(buffer, map);
+      fury.getRefResolver().writeRefOrNull(buffer, map);
       serializer.write(buffer, map);
-      fury.getReferenceResolver().tryPreserveReferenceId(buffer);
+      fury.getRefResolver().tryPreserveRefId(buffer);
       @SuppressWarnings("unchecked")
       ConcurrentHashMap<String, Object> newMap =
           (ConcurrentHashMap<String, Object>) serializer.read(buffer);
@@ -286,9 +286,9 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
     // ObjectStreamSerializer serializer = new ObjectStreamSerializer(fury, HTMLDocument.class);
     // MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
     // HTMLDocument document = new HTMLDocument();
-    // fury.getReferenceResolver().writeReferenceOrNull(buffer, document);
+    // fury.getRefResolver().writeRefOrNull(buffer, document);
     // serializer.write(buffer, document);
-    // fury.getReferenceResolver().tryPreserveReferenceId(buffer);
+    // fury.getRefResolver().tryPreserveRefId(buffer);
     // HTMLDocument newDocument = (HTMLDocument) serializer.read(buffer);
     fury.registerSerializer(
         ValidationTestClass2.class, new ObjectStreamSerializer(fury, ValidationTestClass2.class));

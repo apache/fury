@@ -43,7 +43,7 @@ public class ObjectSerializerTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .disableSecureMode()
             .build();
     ObjectSerializer serializer = new ObjectSerializer(fury, Foo.class);
@@ -72,7 +72,7 @@ public class ObjectSerializerTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .disableSecureMode()
             .build();
     ObjectSerializer serializer = new ObjectSerializer(fury, foo.getClass());
@@ -88,17 +88,17 @@ public class ObjectSerializerTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
 
     ObjectSerializer<Cyclic> serializer = new ObjectSerializer<>(fury, Cyclic.class);
-    fury.getReferenceResolver().writeReferenceOrNull(buffer, cyclic);
+    fury.getRefResolver().writeRefOrNull(buffer, cyclic);
     serializer.write(buffer, cyclic);
-    byte tag = fury.getReferenceResolver().readReferenceOrNull(buffer);
+    byte tag = fury.getRefResolver().readRefOrNull(buffer);
     Preconditions.checkArgument(tag == Fury.REF_VALUE_FLAG);
-    fury.getReferenceResolver().preserveReferenceId();
+    fury.getRefResolver().preserveRefId();
     Cyclic cyclic1 = serializer.read(buffer);
     fury.reset();
     assertEquals(cyclic1, cyclic);
@@ -120,7 +120,7 @@ public class ObjectSerializerTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .disableSecureMode()
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);

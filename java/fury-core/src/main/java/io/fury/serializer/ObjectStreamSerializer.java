@@ -167,7 +167,7 @@ public class ObjectStreamSerializer extends Serializer {
     } else {
       obj = Platform.newInstance(type);
     }
-    fury.getReferenceResolver().reference(obj);
+    fury.getRefResolver().reference(obj);
     int numClasses = buffer.readShort();
     int slotIndex = 0;
     try {
@@ -366,11 +366,11 @@ public class ObjectStreamSerializer extends Serializer {
     }
 
     protected final void writeObjectOverride(Object obj) throws IOException {
-      fury.writeReferencableToJava(buffer, obj);
+      fury.writeRefoJava(buffer, obj);
     }
 
     public void writeUnshared(Object obj) throws IOException {
-      fury.writeNonReferenceToJava(buffer, obj);
+      fury.writeNonRefToJava(buffer, obj);
     }
 
     /**
@@ -630,11 +630,11 @@ public class ObjectStreamSerializer extends Serializer {
     }
 
     protected Object readObjectOverride() {
-      return fury.readReferencableFromJava(buffer);
+      return fury.readRefFromJava(buffer);
     }
 
     public Object readUnshared() {
-      return fury.readNonReferenceFromJava(buffer);
+      return fury.readNonRefFromJava(buffer);
     }
 
     private static final Object NO_VALUE_STUB = new Object();

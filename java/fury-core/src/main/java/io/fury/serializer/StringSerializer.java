@@ -95,7 +95,7 @@ public final class StringSerializer extends Serializer<String> {
   private int smoothByteArrayLength = DEFAULT_BUFFER_SIZE;
 
   public StringSerializer(Fury fury) {
-    super(fury, String.class, fury.trackingReference() && !fury.isStringReferenceIgnored());
+    super(fury, String.class, fury.trackingRef() && !fury.isStringRefIgnored());
     compressString = fury.compressString();
   }
 

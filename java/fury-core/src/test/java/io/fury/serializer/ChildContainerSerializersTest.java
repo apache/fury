@@ -63,7 +63,7 @@ public class ChildContainerSerializersTest extends FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .disableSecureMode()
             .build()
@@ -71,7 +71,7 @@ public class ChildContainerSerializersTest extends FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
             .disableSecureMode()
             .build()
@@ -180,7 +180,7 @@ public class ChildContainerSerializersTest extends FuryTestBase {
             .withDeserializeUnExistClassEnabled(true)
             .withMetaContextShareEnabled(true)
             .disableSecureMode()
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .withCodegen(enableCodegen)
             .build();
     serDeMetaShared(fury, outerDO);

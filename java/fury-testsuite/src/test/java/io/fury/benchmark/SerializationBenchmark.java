@@ -68,7 +68,7 @@ public class SerializationBenchmark {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .disableSecureMode()
             .build();
     RowEncoder<Foo> encoder = Encoders.bean(Foo.class, fury, 64);
@@ -103,7 +103,7 @@ public class SerializationBenchmark {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .disableSecureMode()
             .build();
     fury.register(obj.getClass());
@@ -111,13 +111,13 @@ public class SerializationBenchmark {
     // warm
     for (int i = 0; i < iterNums; i++) {
       buffer.writerIndex(0);
-      fury.writeReferencableToJava(buffer, obj);
+      fury.writeRefoJava(buffer, obj);
     }
     // test
     long startTime = System.nanoTime();
     for (int i = 0; i < iterNums; i++) {
       buffer.writerIndex(0);
-      fury.writeReferencableToJava(buffer, obj);
+      fury.writeRefoJava(buffer, obj);
     }
     long duration = System.nanoTime() - startTime;
     if (LOG.isInfoEnabled()) {

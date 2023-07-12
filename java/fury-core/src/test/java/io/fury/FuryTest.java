@@ -81,13 +81,13 @@ public class FuryTest extends FuryTestBase {
     Fury fury1 =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode()
             .build();
     Fury fury2 =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode()
             .build();
     assertEquals(true, serDe(fury1, fury2, true));
@@ -104,7 +104,7 @@ public class FuryTest extends FuryTestBase {
     Fury.FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode();
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
@@ -207,7 +207,7 @@ public class FuryTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode()
             .build();
     BeanA beanA = BeanA.createBeanA(2);
@@ -221,7 +221,7 @@ public class FuryTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode()
             .build();
     fury.register(BeanA.class);
@@ -249,7 +249,7 @@ public class FuryTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode()
             .build();
     long ptr = 0;
@@ -280,7 +280,7 @@ public class FuryTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode()
             .build();
     Outer outer = new Outer();
@@ -316,7 +316,7 @@ public class FuryTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .disableSecureMode()
             .build();
     Assert.assertEquals(serDe(fury, ImmutableList.of(1)), ImmutableList.of(1));
@@ -344,7 +344,7 @@ public class FuryTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .disableSecureMode()
             .build();
     serDe(fury, ByteBuffer.allocate(32));
@@ -394,7 +394,7 @@ public class FuryTest extends FuryTestBase {
   }
 
   private void furyGC(WeakHashMap<Object, Boolean> map) {
-    Fury fury = Fury.builder().withClassRegistrationRequired(false).build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     Class<?> structClass1 = Struct.createStructClass("TestClassGC", 1);
     System.out.println(structClass1.hashCode());
     Object struct1 = Struct.createPOJO(structClass1);
@@ -411,8 +411,7 @@ public class FuryTest extends FuryTestBase {
 
   @Test
   public void testSerializeJavaObject() {
-    Fury fury =
-        Fury.builder().withClassRegistrationRequired(false).withLanguage(Language.JAVA).build();
+    Fury fury = Fury.builder().requireClassRegistration(false).withLanguage(Language.JAVA).build();
     BeanA beanA = BeanA.createBeanA(2);
     assertEquals(fury.deserializeJavaObject(fury.serializeJavaObject(beanA), BeanA.class), beanA);
     assertThrows(

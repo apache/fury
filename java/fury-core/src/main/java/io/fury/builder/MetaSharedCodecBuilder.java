@@ -72,7 +72,7 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
     DescriptorGrouper grouper =
         DescriptorGrouper.createDescriptorGrouper(descriptors, true, fury.compressNumber());
     objectCodecOptimizer =
-        new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesReferenceIgnored(), ctx);
+        new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
   }
 
   @Override
