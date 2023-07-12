@@ -82,7 +82,6 @@ public abstract class CodecBuilder {
   private final Set<String> duplicatedFields;
   protected Reference furyRef = new Reference(FURY_NAME, TypeToken.of(Fury.class));
   private final Map<String, Reference> fieldMap = new HashMap<>();
-  private final Map<String, Reference> fieldAccessorMap = new HashMap<>();
 
   public CodecBuilder(CodegenContext ctx, TypeToken<?> beanType) {
     this.ctx = ctx;
@@ -91,10 +90,10 @@ public abstract class CodecBuilder {
     duplicatedFields =
         Descriptor.getSortedDuplicatedFields(Descriptor.getAllDescriptorsMap(beanClass)).keySet();
     // don't ctx.addImport beanClass, because it maybe causes name collide.
+    ctx.reserveName(FURY_NAME);
     ctx.reserveName(ROOT_OBJECT_NAME);
     // Don't import other packages to avoid class conflicts.
     // For example user class named as `Date`/`List`/`MemoryBuffer`
-
   }
 
   /** Generate codec class code. */

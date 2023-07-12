@@ -58,7 +58,7 @@ public final class MapRefResolver implements RefResolver {
   private final IdentityObjectIntMap<Object> writtenObjects =
       new IdentityObjectIntMap<>(DEFAULT_MAP_CAPACITY, 0.51f);
   private final ObjectArray readObjects = new ObjectArray(DEFAULT_ARRAY_CAPACITY);
-  private final IntArray readReferenceIds = new IntArray(DEFAULT_ARRAY_CAPACITY);
+  private final IntArray readRefIds = new IntArray(DEFAULT_ARRAY_CAPACITY);
 
   // last read object which is not a reference
   private Object readObject;
@@ -164,7 +164,7 @@ public final class MapRefResolver implements RefResolver {
   public int preserveRefId() {
     int nextReadRefId = readObjects.size();
     readObjects.add(null);
-    readReferenceIds.add(nextReadRefId);
+    readRefIds.add(nextReadRefId);
     return nextReadRefId;
   }
 
@@ -188,12 +188,12 @@ public final class MapRefResolver implements RefResolver {
 
   @Override
   public int lastPreservedRefId() {
-    return readReferenceIds.get(readReferenceIds.size - 1);
+    return readRefIds.get(readRefIds.size - 1);
   }
 
   @Override
   public void reference(Object object) {
-    int refId = readReferenceIds.pop();
+    int refId = readRefIds.pop();
     setReadObject(refId, object);
   }
 
@@ -256,7 +256,7 @@ public final class MapRefResolver implements RefResolver {
       avg = DEFAULT_ARRAY_CAPACITY;
     }
     readObjects.clearApproximate(avg);
-    readReferenceIds.clear();
+    readRefIds.clear();
     readObject = null;
   }
 
@@ -274,7 +274,7 @@ public final class MapRefResolver implements RefResolver {
 
     @Override
     public String toString() {
-      return "ReferenceStatistics{"
+      return "RefStatistics{"
           + "referenceTypeSummary="
           + refTypeSummary
           + ", referenceCount="
