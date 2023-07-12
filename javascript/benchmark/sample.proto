@@ -28,20 +28,16 @@ message SomeMessage {
         string endDate = 4;
     }
 
-    message Employee {
-        uint32 id = 1;
-        string name = 2;
-        string email = 3;
-        uint32 age = 4;
-        Address address = 5;
-        repeated Phonenumbers phoneNumbers = 6;
-        bool isMarried = 7;
-        bool hasChildren = 8;
-        repeated string interests = 9;
-        repeated Education education = 10;
-        repeated Workexperience workExperience = 11;
-        string selfIntroduction = 12;
-    }
-
-    repeated Employee employee = 1;
+    uint32 id = 1;
+    string name = 2;
+    string email = 3;
+    uint32 age = 4;
+    Address address = 5;
+    repeated Phonenumbers phoneNumbers = 6;
+    bool isMarried = 7;
+    bool hasChildren = 8;
+    repeated string interests = 9;
+    repeated Education education = 10;
+    repeated Workexperience workExperience = 11;
+    string selfIntroduction = 12;
 }
