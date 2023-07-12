@@ -19,6 +19,9 @@ package io.fury.format.row;
 
 import io.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 import org.apache.arrow.vector.types.pojo.Field;
 
 /**
@@ -51,7 +54,11 @@ public interface Getters {
 
   long getTimestamp(int ordinal);
 
-  String getString(int ordinal);
+  String getString(int ordinal, Charset charset);
+
+  default String getString(int ordinal) {
+    return getString(ordinal, StandardCharsets.UTF_8);
+  }
 
   byte[] getBinary(int ordinal);
 

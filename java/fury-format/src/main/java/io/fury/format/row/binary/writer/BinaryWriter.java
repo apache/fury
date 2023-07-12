@@ -25,6 +25,7 @@ import io.fury.memory.BitUtils;
 import io.fury.memory.MemoryBuffer;
 import io.fury.util.DecimalUtils;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,7 @@ import org.apache.arrow.vector.util.DecimalUtility;
 
 /** Base class for writing row-format structures. */
 public abstract class BinaryWriter {
+  public static int THRESHOLD_LEN = 8;
 
   public static int roundNumberOfBytesToNearestWord(int numBytes) {
     int remainder = numBytes & 0x07;
@@ -158,7 +160,17 @@ public abstract class BinaryWriter {
 
   // String is not 8-byte aligned
   public final void write(int ordinal, String input) {
-    write(ordinal, input.getBytes(StandardCharsets.UTF_8));
+    write(ordinal, input, StandardCharsets.UTF_8);
+  }
+
+  public final void write(int ordinal, String input, Charset charset) {
+    byte[] bytes = input.getBytes(charset);
+    int numBytes = bytes.length;
+    if (numBytes < THRESHOLD_LEN) {
+      writeDirectly(ordinal, bytes);
+    } else {
+      write(ordinal, bytes);
+    }
   }
 
   // byte[] is not 8-byte aligned
@@ -226,6 +238,13 @@ public abstract class BinaryWriter {
     }
   }
 
+  final void writeDirectly(int ordinal, byte[] bytes) {
+    buffer.grow(8);
+    long value = bytesToLong(bytes);
+    buffer.putLong(getOffset(ordinal), value);
+    buffer.increaseWriterIndexUnsafe(8);
+  }
+
   /** write long value to position pointed by current writerIndex. */
   public final void writeDirectly(long value) {
     buffer.grow(8);
@@ -247,5 +266,18 @@ public abstract class BinaryWriter {
     for (BinaryWriter child : children) {
       child.setBuffer(buffer);
     }
+  }
+
+  final long bytesToLong(byte[] bytes) {
+    long value = 0;
+    // Encode byte array to long type value.
+    for (byte b : bytes) {
+      value <<= 8;
+      long byteValue = b & 0xFF;
+      value ^= byteValue;
+    }
+    // Record flag and array length in one byte.
+    value = ((128L + bytes.length) << 56) | value;
+    return value;
   }
 }

@@ -25,7 +25,7 @@ import io.fury.format.type.DataTypes;
 import io.fury.format.vectorized.ArrowUtils;
 import io.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
@@ -102,13 +102,11 @@ abstract class UnsafeTrait implements Getters, Setters {
     return getBuffer().getLong(getOffset(ordinal));
   }
 
-  // TODO when length of string utf-8 bytes is less than 8, store it in fixed-width region. Use one
-  // bit as mark
   @Override
-  public String getString(int ordinal) {
+  public String getString(int ordinal, Charset charset) {
     byte[] bytes = getBinary(ordinal);
     if (bytes != null) {
-      return new String(bytes, StandardCharsets.UTF_8);
+      return new String(bytes, charset);
     } else {
       return null;
     }
@@ -120,6 +118,20 @@ abstract class UnsafeTrait implements Getters, Setters {
       return null;
     } else {
       final long offsetAndSize = getLong(ordinal);
+      int flag = (int) (offsetAndSize >> 56);
+      flag &= 0x00FF;
+      if (flag > 128) {
+        // Directly decode long type value to byte array in small size.
+        int size = flag - 128;
+        final byte[] bytes = new byte[size];
+        long value = offsetAndSize;
+        for (int i = (size - 1); i > 0; i--) {
+          bytes[i] = (byte) value;
+          value >>>= 8;
+        }
+        bytes[0] = (byte) value;
+        return bytes;
+      }
       final int relativeOffset = (int) (offsetAndSize >> 32);
       final int size = (int) offsetAndSize;
       final byte[] bytes = new byte[size];
