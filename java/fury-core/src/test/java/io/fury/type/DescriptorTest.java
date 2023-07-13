@@ -19,6 +19,7 @@
 package io.fury.type;
 
 import com.google.common.reflect.TypeToken;
+import io.fury.codegen.CodeGenerator;
 import io.fury.test.bean.BeanA;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -26,7 +27,6 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.SortedMap;
-import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -88,7 +88,7 @@ public class DescriptorTest {
     Assert.assertEquals(int.class.getName(), "int");
     Assert.assertEquals(Integer.class.getName(), "java.lang.Integer");
     Descriptor.warmField(
-        BeanA.class, BeanA.class.getDeclaredField("beanB"), ForkJoinPool.commonPool());
+        BeanA.class, BeanA.class.getDeclaredField("beanB"), CodeGenerator.getCompilationService());
     Descriptor.getAllDescriptorsMap(BeanA.class);
     Descriptor.clearDescriptorCache();
     Descriptor.getAllDescriptorsMap(BeanA.class);
