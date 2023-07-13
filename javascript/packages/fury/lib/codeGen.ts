@@ -1,5 +1,5 @@
 import { InternalSerializerType, MaxInt32, RefFlags, Fury } from './type';
-import { safePropAccessor, safePropName, utf8Encoder } from './util';
+import { replaceBackslashAndQuote, safePropAccessor, safePropName, utf8Encoder } from './util';
 
 
 export interface TypeDescription {
@@ -124,11 +124,11 @@ function typeHandlerDeclaration(readOrWrite: 'read' | 'write') {
                         return serializer.read(false)
                         break;
                 }
-            })(classResolver.getSerializerByTag("${tag}"))
+            })(classResolver.getSerializerByTag("${replaceBackslashAndQuote(tag)}"))
             `)
         } else {
             return addDeclar(name, `
-            const ${name} = classResolver.getSerializerByTag("${tag}");`
+            const ${name} = classResolver.getSerializerByTag("${replaceBackslashAndQuote(tag)}");`
             )
         }
 
@@ -207,7 +207,7 @@ export const genReadSerializer = (fury: Fury, description: TypeDescription, stac
         return function(shouldSetRef) {
             const hash = binaryView.readInt32();
             if (hash !== ${expectHash}) {
-                throw new Error("validate hash failed: ${tag}. expect ${expectHash}, but got" + hash);
+                throw new Error("validate hash failed: ${replaceBackslashAndQuote(tag)}. expect ${expectHash}, but got" + hash);
             }
             ${entry};
         }
@@ -260,7 +260,7 @@ export const genWriteSerializer = (fury: Fury, description: TypeDescription, sta
         const { referenceResolver, binaryWriter, classResolver, writeNullOrRef } = fury; 
         const { pushWriteObject } = referenceResolver;
         ${finish().join('')}
-        const tagBuffer = Buffer.from("${tag}");
+        const tagBuffer = Buffer.from("${replaceBackslashAndQuote(tag)}");
         const bufferLen = ${Buffer.from(tag).byteLength};
         return function(v) {
             // relation tag: ${tag}
@@ -281,7 +281,7 @@ export const genWriteSerializer = (fury: Fury, description: TypeDescription, sta
             binaryWriter.writeInt8(RefFlags.RefValueFlag);
             pushWriteObject(v);
             binaryWriter.writeInt16(InternalSerializerType.FURY_TYPE_TAG);
-            classResolver.writeTag(binaryWriter, "${tag}", tagBuffer, bufferLen);
+            classResolver.writeTag(binaryWriter, "${replaceBackslashAndQuote(tag)}", tagBuffer, bufferLen);
             binaryWriter.writeInt32(${computeTagHash(description)});
             ${entry}
         }

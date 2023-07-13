@@ -145,9 +145,9 @@ describe('object', () => {
 
   test('should type function tools work', () => {
     const description = Type.object("example.foo", {
-      a: Type.object("example.bar", {
+      a: Type.object("example\".bar", {
         b: Type.string(),
-        c: Type.array(Type.object("example.foo2", {
+        c: Type.array(Type.object("example\\\".foo2", {
           d: Type.string(),
         }))
       }),
