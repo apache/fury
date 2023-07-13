@@ -498,7 +498,7 @@ public class Example {
     {
       ThreadSafeFury fury = new ThreadSafeFury(() -> {
         Fury fury = Fury.builder().withLanguage(Fury.Language.JAVA)
-          .withClassRegistrationRequired(false)
+          .requireClassRegistration(false)
           .withRefTracking(true).build();
         fury.register(SomeClass.class);
         return fury;
