@@ -7,9 +7,9 @@ import os
 import pandas as pd
 from pathlib import Path
 import re
-
-# dir_path = os.path.dirname(os.path.realpath(__file__))
 import sys
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
 def to_markdown(df: pd.DataFrame, filepath: str):
@@ -106,10 +106,15 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
     else:
         group_cols = ["Benchmark", "bufferType"]
     compatible = data[data["Benchmark"].str.contains("compatible")]
+    plot_color_map = dict(color_map)
     if len(compatible) > 0:
         jdk = data[data["Lib"].str.contains("Jdk")].copy()
         jdk["Benchmark"] = jdk["Benchmark"] + "_compatible"
         data = data.append(jdk)
+        fury_metashared_color = plot_color_map["Furymetashared"]
+        fury_color = plot_color_map["Fury"]
+        plot_color_map["Fury"] = fury_metashared_color
+        plot_color_map["Furymetashared"] = fury_color
     ylable = column
     if column == "Tps":
         ylable = f"Tps/{scaler}"
@@ -139,7 +144,7 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
         )
         print(final_df)
         libs = final_df.columns.to_frame()["Lib"]
-        color = [color_map[lib] for lib in libs]
+        color = [plot_color_map[lib] for lib in libs]
         sub_plot = final_df.plot.bar(title=title, color=color, ax=ax, figsize=(7, 7), width=0.7)
         for container in ax.containers:
             ax.bar_label(container)
@@ -237,8 +242,8 @@ if __name__ == "__main__":
     if args:
         file_name = args[0]
     else:
-        file_name = "jmh-jdk-11-zerocopy.csv"
-    file_dir = "/Users/chaokunyang/Desktop/chaokun/fury_open_source/docs/benchmarks/data"
+        file_name = "jmh-jdk-11-deserialization.csv"
+    file_dir = f"{dir_path}/../../docs/benchmarks/data"
     zero_copy_bench, bench = process_data(os.path.join(file_dir, file_name))
     if zero_copy_bench.shape[0] > 0:
         to_markdown(
