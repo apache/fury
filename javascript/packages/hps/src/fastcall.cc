@@ -1,5 +1,5 @@
 #include <nan.h>
-#include <v8-fast-api-calls.h>
+#include "v8-fast-api-calls.h"
 
 void IsLatin1Slow(const v8::FunctionCallbackInfo<v8::Value> &info)
 {
