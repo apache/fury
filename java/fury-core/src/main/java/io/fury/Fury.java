@@ -1368,7 +1368,7 @@ public final class Fury {
 
     public FuryBuilder withSecureMode(boolean enableSecureMode) {
       this.secureModeEnabled = enableSecureMode;
-      requireClassRegistration(enableSecureMode);
+      this.requireClassRegistration = enableSecureMode;
       return this;
     }
 
@@ -1436,6 +1436,12 @@ public final class Fury {
       }
       if (compatibleMode == CompatibleMode.COMPATIBLE) {
         checkClassVersion = false;
+      }
+      if (!requireClassRegistration) {
+        LOG.warn(
+            "Class registration isn't forced, unknown class can be deserialized, which isn't secure. "
+                + "If the environment isn't 100% secure, please enable class registration by "
+                + "`FuryBuilder#withSecureMode(true)`.");
       }
     }
 
