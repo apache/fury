@@ -7,7 +7,7 @@ describe('number', () => {
     const fury = new Fury({ hps });    
     const serialize = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         tag: "example.foo",
         props: {
           a: {
@@ -27,7 +27,7 @@ describe('number', () => {
     const fury = new Fury({ hps });    
     const serialize = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         tag: "example.foo",
         props: {
           a: {
@@ -47,7 +47,7 @@ describe('number', () => {
     const fury = new Fury({ hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         tag: "example.foo",
         props: {
           a: {
@@ -67,7 +67,7 @@ describe('number', () => {
     const fury = new Fury({ hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         tag: "example.foo",
         props: {
           a: {
@@ -87,7 +87,7 @@ describe('number', () => {
     const fury = new Fury({ hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         tag: "example.foo",
         props: {
           a: {
@@ -107,7 +107,7 @@ describe('number', () => {
     const fury = new Fury({ hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         tag: "example.foo",
         props: {
           a: {
@@ -127,7 +127,7 @@ describe('number', () => {
     const fury = new Fury({ hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         tag: "example.foo",
         props: {
           a: {
@@ -147,7 +147,7 @@ describe('number', () => {
     const fury = new Fury({ hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         tag: "example.foo",
         props: {
           a: {
@@ -167,7 +167,7 @@ describe('number', () => {
     const fury = new Fury({ hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         tag: "example.foo",
         props: {
           a: {
@@ -187,7 +187,7 @@ describe('number', () => {
     const fury = new Fury({ hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         tag: "example.foo",
         props: {
           a: {

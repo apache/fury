@@ -1,4 +1,4 @@
-import { genReadSerializer, genWriteSerializer, TypeDescription } from './lib/codeGen';
+import { Cast, genReadSerializer, genWriteSerializer, ObjectTypeDescription, TypeDescription, ArrayTypeDescription } from './lib/codeGen';
 import { Serializer, Fury, InternalSerializerType, Hps } from './lib/type';
 import FuryInternal from './lib/fury';
 
@@ -6,6 +6,8 @@ export {
     Serializer,
     InternalSerializerType,
     TypeDescription,
+    ArrayTypeDescription,
+    ObjectTypeDescription,
 }
 
 
@@ -18,8 +20,8 @@ export const Type = {
     array<T extends TypeDescription>(def: T) {
         return {
             type: InternalSerializerType.ARRAY as const,
-            asArray: {
-                item: def
+            options: {
+                inner: def
             }
         }
     },
@@ -36,7 +38,7 @@ export const Type = {
     object<T extends { [key: string]: TypeDescription }>(tag: string, props?: T) {
         return {
             type: InternalSerializerType.FURY_TYPE_TAG as const,
-            asObject: {
+            options: {
                 tag,
                 props
             }
@@ -111,16 +113,17 @@ export const Type = {
 
 //#region template function
 type Props<T> = T extends {
-    asObject: {
-        props?: infer T2 extends { [key: string]: any }
+    options: {
+        props?: infer T2 extends { [key: string]: any },
+        tag: string
     }
 } ? {
         [P in keyof T2]: ToRecordType<T2[P]>
     } : unknown
 
-type ItemProps<T> = T extends {
-    asArray: {
-        item: infer T2 extends TypeDescription
+type InnerProps<T> = T extends {
+    options: {
+        inner: infer T2 extends TypeDescription
     }
 } ? ToRecordType<T2>[] : unknown
 
@@ -157,7 +160,7 @@ export type ToRecordType<T> = T extends {
                     T extends {
                         type: InternalSerializerType.ARRAY
                     } ? (
-                        ItemProps<T>
+                        InnerProps<T>
                     ) : (
                         T extends {
                             type: InternalSerializerType.BOOL
@@ -200,7 +203,7 @@ export default class {
     private fury: Fury = FuryInternal(this.config);
 
     registerSerializer<T extends TypeDescription>(description: T) {
-        if (description.type !== InternalSerializerType.FURY_TYPE_TAG || !description.asObject?.tag) {
+        if (description.type !== InternalSerializerType.FURY_TYPE_TAG || !Cast<ObjectTypeDescription>(description)?.options.tag) {
             throw new Error('root type should be object')
         }
         genReadSerializer(
@@ -211,7 +214,7 @@ export default class {
             this.fury,
             description
         );
-        const serializer = this.fury.classResolver.getSerializerByTag(description.asObject.tag);
+        const serializer = this.fury.classResolver.getSerializerByTag(Cast<ObjectTypeDescription>(description)?.options.tag);
         return {
             serializer,
             serialize: (data: ToRecordType<T>) => {

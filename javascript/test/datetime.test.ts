@@ -14,9 +14,9 @@ describe('datetime', () => {
     expect(result).toEqual(now)
   });
   test('should datetime work', () => {
-    const description: TypeDescription = {
+    const description = {
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         props: {
           a: {
             type: InternalSerializerType.TIMESTAMP,

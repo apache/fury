@@ -1,18 +1,25 @@
-import { GenericReader, GenericWriter, InternalSerializerType, RefFlags, Serializer } from "../type";
+import { InternalSerializerType, RefFlags, Serializer } from "../type";
 import { Fury } from "../type";
 import stringSerializer from "../internalSerializer/string";
 import boolSerializer from "../internalSerializer/bool";
 import { int8Serializer, int32Serializer, int64Serializer, floatSerializer, doubleSerializer } from "../internalSerializer/number";
 
 
-const buildTypedArray = <T>(fury: Fury, reader: GenericReader, writer: GenericWriter) => {
+const buildTypedArray = <T>(fury: Fury, read: () => void,  write: (p: T) => void) => {
     const serializer = arraySerializer(fury);
     return {
         read: (shouldSetRef: boolean) => {
-            return serializer.read(shouldSetRef, [reader])
+            const result =  serializer.read(shouldSetRef)
+            for (let i = 0 ;i < result.length; i++) {
+                result[i] = read();
+            }
+            return result;
         },
         write: (v: T[]) => {
-            return serializer.write(v, [writer])
+            serializer.write(v);
+            for (let item of v) {
+                write(item);
+            }
         },
         reserveWhenWrite: serializer.reserveWhenWrite,
     } as Serializer<T[]>
@@ -34,12 +41,10 @@ export const boolArraySerializer = (fury: Fury) => {
     const { binaryWriter } = fury;
     const { writeUInt8 } = binaryWriter;
 
-    return buildTypedArray<boolean>(
+    return buildTypedArray<number>(
         fury,
         read,
-        (v: boolean) => {
-            writeUInt8(v ? 1 : 0)
-        },
+        writeUInt8,
     )
 };
 
@@ -63,7 +68,7 @@ export const intArraySerializer = (fury: Fury) => {
     return buildTypedArray<number>(
         fury,
         read,
-        writeInt32,
+        writeInt32
     )
 };
 export const longArraySerializer = (fury: Fury) => {
@@ -74,7 +79,7 @@ export const longArraySerializer = (fury: Fury) => {
     return buildTypedArray<number>(
         fury,
         read,
-        writeInt64,
+        writeInt64
     )
 };
 export const floatArraySerializer = (fury: Fury) => {
@@ -85,7 +90,7 @@ export const floatArraySerializer = (fury: Fury) => {
     return buildTypedArray<number>(
         fury,
         read,
-        writeFloat,
+        writeFloat
     )
 };
 export const doubleArraySerializer = (fury: Fury) => {
@@ -97,7 +102,7 @@ export const doubleArraySerializer = (fury: Fury) => {
     return buildTypedArray<number>(
         fury,
         read,
-        writeDouble,
+        writeDouble
     )
 };
 
@@ -108,29 +113,15 @@ export const arraySerializer = (fury: Fury) => {
     const { writeInt8, writeInt16, writeInt32 } = binaryWriter;
     const { readInt32 } = binaryView;
     return {
-        read: (shouldSetRef: boolean, genericReaders?: GenericReader[]) => {
+        read: (shouldSetRef: boolean) => {
             const len = readInt32();
             const result = new Array(len);
             if (shouldSetRef) {
                 pushReadObject(result);
             }
-            // if the array hash concrete type, we can use the genericReader, otherwise use the normal read
-            let itemReader: GenericReader | null = null;
-            if (genericReaders) {
-                itemReader = genericReaders[0];
-            }
-            if (itemReader) {
-                for (let index = 0; index < len; index++) {
-                    result[index] = itemReader();
-                }
-            } else {
-                for (let index = 0; index < len; index++) {
-                    result[index] = read();
-                }
-            }
             return result;
         },
-        write: (v: any[], genericWriters?: GenericWriter[]) => {
+        write: (v: any[]) => {
             if (writeNullOrRef(v)) {
                 return;
             }
@@ -138,20 +129,6 @@ export const arraySerializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.ARRAY);
             pushWriteObject(v);
             writeInt32(v.length);
-            // if the array hash concrete type, we can use the genericWriter, otherwise use the normal writer
-            let itemWriter: Serializer['write'] | null = null;
-            if (genericWriters) {
-                itemWriter = genericWriters[0];
-            }
-            if (itemWriter) {
-                v.forEach(x => {
-                    itemWriter!(x);
-                })
-            } else {
-                v.forEach(x => {
-                    write(x);
-                })
-            }
         },
         reserveWhenWrite: () => {
             return 7; 

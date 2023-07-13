@@ -1,4 +1,4 @@
-import Fury, { TypeDescription, InternalSerializerType } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType, ObjectTypeDescription } from '@furyjs/fury';
 import { describe, expect, test } from '@jest/globals';
 
 describe('array', () => {
@@ -10,9 +10,9 @@ describe('array', () => {
     expect(result).toEqual(["str1", "str1"])
   });
   test('should typedarray work', () => {
-    const description: TypeDescription = {
+    const description = {
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         props: {
           a: {
             type: InternalSerializerType.FURY_PRIMITIVE_BOOL_ARRAY,
@@ -59,9 +59,9 @@ describe('array', () => {
     })
   });
   test('should floatarray work', () => {
-    const description: TypeDescription = {
+    const description: ObjectTypeDescription = {
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         props: {
           a5: {
             type: InternalSerializerType.FURY_PRIMITIVE_FLOAT_ARRAY,

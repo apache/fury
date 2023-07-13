@@ -12,8 +12,8 @@ const mockData2Description = (data, tag) => {
         return {
             type: InternalSerializerType.ARRAY,
             label: 'array',
-            asArray: {
-                item,
+            options: {
+                inner: item,
             }
         }
     }
@@ -45,7 +45,7 @@ const mockData2Description = (data, tag) => {
         return {
             type: InternalSerializerType.FURY_TYPE_TAG,
             label: "object",
-            asObject: {
+            options: {
                 props: Object.fromEntries(Object.entries(data).map(([key, value]) => {
                     return [key, mockData2Description(value, `${tag}.${key}`)]
                 }).filter(([k, v]) => Boolean(v))),

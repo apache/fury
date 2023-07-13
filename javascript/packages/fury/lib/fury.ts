@@ -136,7 +136,7 @@ export default (config?: {
         }
     }
 
-    function write(v: any, serializer?: Serializer) {
+    function write(v: any) {
         // NullFlag
         if (v === null || v === undefined) {
             binaryWriter.writeInt8(RefFlags.NullFlag); // null
@@ -189,13 +189,6 @@ export default (config?: {
             stringWrite(v);
             return;
         }
-        if (typeof v === "object") {
-            if (!serializer) {
-                throw new Error('type of value is object, should provide the tag')
-            }
-            serializer.write(v, []);
-            return;
-        }
         throw new Error(`serializer not support ${typeof v} yet`);
     }
 
@@ -213,7 +206,11 @@ export default (config?: {
         binaryWriter.writeUInt8(4); // todo: replace with javascript
         binaryWriter.skip(4) // preserve 4-byte for nativeObjects start offsets.
         binaryWriter.skip(4) // preserve 4-byte for nativeObjects length.
-        write(data, serializer);
+        if (serializer) {
+            serializer.write(data);
+        } else {
+            write(data);
+        }
         return binaryWriter.dump();
     }
     return fury;

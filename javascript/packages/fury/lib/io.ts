@@ -81,11 +81,10 @@ export const BinaryWriter = (config?: { hps: Hps | null }) => {
         return dataView.setBigUint64(move(8), v, true);
     }
 
-    function writeUtf8StringOfInt16(bf: Buffer) {
-        const len = bf.byteLength;
-        writeInt16(len);
-        reserves(len);
-        bf.copy(arrayBuffer, move(len));
+    function writeUtf8StringOfInt16(bf: Buffer, bufferLen: number) {
+        writeInt16(bufferLen);
+        reserves(bufferLen);
+        bf.copy(arrayBuffer, move(bufferLen));
     }
 
     function fastWriteStringUtf8(string: string, buffer: Buffer, offset: number) {
