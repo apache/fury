@@ -5,7 +5,9 @@ const fury = new Fury.default({ hps });
 const Benchmark = require("benchmark");
 const protobuf = require("protobufjs");
 const path = require('path');
+const Type = Fury.Type;
 const assert = require('assert');
+const { spawn } = require("child_process");
 
 const sample = {
   id: 123456,
@@ -117,7 +119,6 @@ function loadProto() {
 
 async function start() {
   const { encode: protobufEncode, decode: protobufDecode } = await loadProto();
-  var suite = new Benchmark.Suite();
   const protobufBf = protobufEncode(sample);
 
   {
@@ -125,46 +126,69 @@ async function start() {
     assert(JSON.stringify(protobufDecode(protobufBf)) === sampleJson);
     assert(JSON.stringify(deserialize(furyAb)) === sampleJson);
   }
+  let result = {
+    fury: {
+      serialize: 0,
+      deserialize: 0,
+    },
+    protobuf: {
+      serialize: 0,
+      deserialize: 0,
+    },
+    json: {
+      serialize: 0,
+      deserialize: 0,
+    }
+  }
+
   {
-    let result;;
+    var suite = new Benchmark.Suite();
     suite
       .add("fury", function () {
         serialize(sample);
       })
-      .add("JSON.stringify", function () {
+      .add("json", function () {
         JSON.stringify(sample);
       })
       .add("protobuf", function () {
         protobufEncode(sample);
       })
       .on("complete", function (e) {
-        result = e.currentTarget.map(({ name, hz }) => [name, Math.ceil(hz)]);
+        e.currentTarget.forEach(({ name, hz }) => {
+          result[name].serialize = Math.ceil(hz / 10000);
+        });
       })
       .run({ async: false });
-    console.log('serialize');
-    console.table(result);
   }
 
-  var suite = new Benchmark.Suite();
 
   {
-    let result;
+    var suite = new Benchmark.Suite();
     suite
       .add("fury", function () {
         deserialize(furyAb);
       })
-      .add("JSON.parse", function () {
+      .add("json", function () {
         JSON.parse(sampleJson);
       })
       .add("protobuf", function () {
         protobufDecode(protobufBf);
       })
       .on("complete", function (e) {
-        result = e.currentTarget.map(({ name, hz }) => [name, Math.ceil(hz)]);
+        e.currentTarget.forEach(({ name, hz }) => {
+          result[name].deserialize = Math.ceil(hz / 10000);
+        });
       })
       .run({ async: false });
-    console.log('deserialize');
-    console.table(result);
   }
+  console.table(result);
+
+  spawn(
+    `python3`,
+    ['draw.py', result.json.serialize, result.json.deserialize, result.protobuf.serialize, result.protobuf.deserialize, result.fury.serialize, result.fury.deserialize],
+    {
+      cwd: __dirname,
+    }
+  )
 }
 start();
