@@ -6,7 +6,7 @@
 Common types can be serialized automatically: primitive numeric types, string, binary, array, list, map and so on.
 
 
-#### Java
+**Java**
 
 ```java
 import io.fury.*;
@@ -32,7 +32,7 @@ public class Example1 {
 }
 ```
 
-#### Python
+**Python**
 
 ```python
 import pyfury
@@ -51,7 +51,7 @@ new_map = fury.deserialize(data)
 print(new_map)
 ```
 
-#### GoLang
+**Golang**
 
 ```go
 package main
@@ -89,7 +89,7 @@ func main() {
 }
 ```
 
-#### Javascript
+**JavaScript**
 
 ```javascript
 // Coming soon
@@ -97,7 +97,8 @@ func main() {
 
 ### Serialize custom types
 Serializing user-defined types needs registering the custom type using the register API to establish the mapping relationship between the type in different languages.
-#### Java
+
+**Java**
 
 ```java
 public class Example2 {
@@ -154,7 +155,7 @@ public class Example2 {
 }
 ```
 
-#### Python
+**Python**
 
 ```python
 from dataclasses import dataclass
@@ -212,7 +213,7 @@ if __name__ == "__main__":
     print(f.deserialize(data))
 ```
 
-#### Golang
+**Golang**
 
 ```go
 package main
@@ -277,7 +278,7 @@ func main() {
 }
 ```
 
-#### Javascript
+**JavaScript**
 
 ```javascript
 // Coming soon
@@ -285,7 +286,8 @@ func main() {
 
 ### Serialize Shared Reference and Circular Reference
 Shared reference and circular reference can be serialized automatically, no duplicate data or recursion error.
-#### Java
+
+**Java**
 
 ```java
 import com.google.common.collect.ImmutableMap;
@@ -321,7 +323,7 @@ public class ReferenceExample {
 }
 ```
 
-#### Python
+**Python**
 
 ```python
 from typing import Dict
@@ -342,7 +344,7 @@ data = fury.serialize(obj)
 print(fury.deserialize(data))
 ```
 
-#### Golang
+**Golang**
 
 ```go
 package main
@@ -375,7 +377,7 @@ func main() {
 }
 ```
 
-#### Javascript
+**JavaScript**
 
 ```javascript
 // Coming soon
@@ -383,7 +385,7 @@ func main() {
 
 ### Zero-Copy Serialization
 
-#### Java
+**Java**
 
 ```java
 import io.fury.*;
@@ -408,7 +410,7 @@ public class ZeroCopyExample {
 }
 ```
 
-#### Python
+**Python**
 
 ```python
 import array
@@ -425,7 +427,7 @@ buffers = [o.to_buffer() for o in serialized_objects]
 print(fury.deserialize(data, buffers=buffers))
 ```
 
-#### Golang
+**Golang**
 
 ```go
 package main
@@ -454,7 +456,7 @@ func main() {
 }
 ```
 
-#### Javascript
+**JavaScript**
 
 ```javascript
 // Coming soon
@@ -511,11 +513,6 @@ public class Example {
 }
 ```
 
-### Class Registration
-`FuryBuilder#requireClassRegistration`/`FuryBuilder#withSecureMode` can be used to disable class registration, this will allow to deserialize objects unknown types, more flexible but less secure. Do not disable class registration until you know what you are doing.
-
-Class registration can not only reduce security risks, but also avoid classname serialization cost.
-
 ### Advanced Fury Creation
 Single thread fury:
 ```java
@@ -555,6 +552,20 @@ ThreadSafeFury fury = Fury.builder()
 byte[] bytes = fury.serialize(object);
 System.out.println(fury.deserialize(bytes));
 ```
+
+### Class Registration
+`FuryBuilder#requireClassRegistration`/`FuryBuilder#withSecureMode` can be used to disable class registration, this will allow to deserialize objects unknown types, more flexible but less secure. Do not disable class registration until you know what you are doing.
+
+Class registration can not only reduce security risks, but also avoid classname serialization cost.
+
+You can register class with API `Fury#register`.
+
+Note that class registration order is important, serialization and deserialization peer should have same registration order.
+
+### Serializer Registration
+You can also register a custom serializer for a class by `Fury#registerSerializer` API.
+
+Or implement `java.io.Externalizable` for a class.
 
 ### Zero-Copy Serialization
 ```java
@@ -614,6 +625,11 @@ Object newObj = fury.execute(
     return f.deserialize(serialized);
   });
 ```
+
+### Deserialize un-exited classes.
+Fury support deserializing unexisted classes, this feature can be enabled by `FuryBuilder#withDeserializeUnExistClassEnabled(true)`. When enabled, and metadata sharing enabled, Fury will store the deserialized data of this type in a lazy subclass of Map. By using the lazy map implemented by Fury, the rebalance cost of filling map during deserialization can be avoided, which further improves performance. If this data is sent to another process and the class exists in this process, the data will be deserialized into the object of this type without losing any information. 
+
+If metadata sharing is not enabled, the new class data will be skipped and a UnExistedSkipClass stub object will be returned.
 
 ## Row format protocol
 ### Java
