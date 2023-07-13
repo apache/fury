@@ -42,9 +42,7 @@ public class ExprState {
     accessCount++;
   }
 
-  /**
-   * Returns access count when compiling this expression.
-   */
+  /** Returns access count when compiling this expression. */
   public int getAccessCount() {
     return accessCount;
   }
