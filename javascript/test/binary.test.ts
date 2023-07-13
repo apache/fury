@@ -1,12 +1,12 @@
-import Fury, { TypeDescription, InternalSerializerType } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType, ObjectTypeDescription } from '@furyjs/fury';
 import { describe, expect, test } from '@jest/globals';
 
 
 describe('binary', () => {
     test('should binary work', () => {
-        const description: TypeDescription = {
+        const description = {
             type: InternalSerializerType.FURY_TYPE_TAG,
-            asObject: {
+            options: {
                 props: {
                     a: {
                         type: InternalSerializerType.BINARY

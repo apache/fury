@@ -12,9 +12,9 @@ describe('set', () => {
         expect(result).toEqual(new Set(["foo1", "bar1", "cc2"]))
     });
     test('should set in object work', () => {
-        const description: TypeDescription = {
+        const description = {
             type: InternalSerializerType.FURY_TYPE_TAG,
-            asObject: {
+            options: {
                 props: {
                     a: {
                         type: InternalSerializerType.FURY_SET

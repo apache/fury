@@ -46,20 +46,12 @@ export enum ConfigFlags {
 	isOutOfBandFlag = 8,
 }
 
-export type GenericReader<T = any> = (
-) => T
-export type GenericWriter<T = any> = (
-	v: T,
-) => void
-
 export type SerializerRead<T = any> = (
 	shouldSetRef: boolean,
-	genericReaders?: GenericReader<T>[],
 ) => T
 
 export type SerializerWrite<T = any> = (
 	v: T,
-	genericWriters?: GenericWriter<T>[],
 ) => void
 
 // read, write

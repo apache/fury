@@ -5,11 +5,11 @@ describe('object', () => {
   test('should object work', () => {
     const description = {
       type: InternalSerializerType.FURY_TYPE_TAG as const,
-      asObject: {
+      options: {
         props: {
           a: {
             type: InternalSerializerType.FURY_TYPE_TAG as const,
-            asObject: {
+            options: {
               tag: "example.bar",
               props: {
                 b: {
@@ -33,16 +33,16 @@ describe('object', () => {
   });
 
   test('should object in array work', () => {
-    const description: TypeDescription = {
+    const description = {
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         props: {
           a: {
             type: InternalSerializerType.ARRAY,
-            asArray: {
-              item: {
+            options: {
+              inner: {
                 type: InternalSerializerType.FURY_TYPE_TAG,
-                asObject: {
+                options: {
                   tag: "example.bar",
                   props: {
                     b: {
@@ -68,13 +68,13 @@ describe('object', () => {
   });
 
   test('should write tag and read tag work', () => {
-    const description: TypeDescription = {
+    const description = {
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         props: {
           a: {
             type: InternalSerializerType.FURY_TYPE_TAG as const,
-            asObject: {
+            options: {
               tag: "example.bar",
               props: {
                 b: {
@@ -85,7 +85,7 @@ describe('object', () => {
           },
           a2: {
             type: InternalSerializerType.FURY_TYPE_TAG as const,
-            asObject: {
+            options: {
               tag: "example.bar",
             }
           }
@@ -104,13 +104,13 @@ describe('object', () => {
   });
 
   test('should ciycle ref work', () => {
-    const description: TypeDescription = {
+    const description = {
       type: InternalSerializerType.FURY_TYPE_TAG,
-      asObject: {
+      options: {
         props: {
           a: {
             type: InternalSerializerType.FURY_TYPE_TAG as const,
-            asObject: {
+            options: {
               tag: "example.bar",
               props: {
                 b: {
@@ -121,7 +121,7 @@ describe('object', () => {
           },
           a2: {
             type: InternalSerializerType.FURY_TYPE_TAG as const,
-            asObject: {
+            options: {
               tag: "example.foo",
             }
           }
@@ -147,16 +147,19 @@ describe('object', () => {
     const description = Type.object("example.foo", {
       a: Type.object("example.bar", {
         b: Type.string(),
+        c: Type.array(Type.object("example.foo2", {
+          d: Type.string(),
+        }))
       }),
     })
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
     const fury = new Fury({ hps });
     const { serialize, deserialize } = fury.registerSerializer(description);
-    const input = serialize({ a: { b: "hel" } });
+    const input = serialize({ a: { b: "hel", c: [{ d: "hello" }] } });
     const result = deserialize(
       input
     );
-    expect(result).toEqual({ a: { b: "hel" } })
+    expect(result).toEqual({ a: { b: "hel", c: [{ d: "hello" }] } })
   });
 });
 
