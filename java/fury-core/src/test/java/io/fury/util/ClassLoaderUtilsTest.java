@@ -18,13 +18,41 @@
 
 package io.fury.util;
 
+import io.fury.Fury;
+import io.fury.Language;
 import io.fury.codegen.CompileUnit;
 import io.fury.codegen.JaninoUtils;
+import java.io.StringReader;
+import org.codehaus.janino.SimpleCompiler;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class ClassLoaderUtilsTest {
+
+  @Test
+  public void testClassloader() throws Exception {
+    String classname = String.format("A%d", System.currentTimeMillis());
+    String classCode =
+        String.format(
+            ""
+                + "package demo.pkg1;\n"
+                + "public final class %s implements java.io.Serializable {\n"
+                + "  public int f1;\n"
+                + "  public long f2;\n"
+                + "}",
+            classname);
+    SimpleCompiler compiler = new SimpleCompiler();
+    compiler.setParentClassLoader(Fury.class.getClassLoader().getParent());
+    compiler.cook(new StringReader(classCode));
+    ClassLoader classLoader = compiler.getClassLoader();
+    Class<?> clz = classLoader.loadClass("demo.pkg1." + classname);
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Thread.currentThread().setContextClassLoader(classLoader);
+    byte[] bytes = fury.serialize(clz.newInstance());
+    fury.deserialize(bytes);
+    Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+  }
 
   @DataProvider(name = "packages")
   public static Object[][] packages() {
