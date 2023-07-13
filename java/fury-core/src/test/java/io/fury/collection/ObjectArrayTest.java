@@ -18,7 +18,8 @@
 
 package io.fury.collection;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
 
 import java.util.stream.IntStream;
 import org.testng.annotations.Test;
@@ -35,5 +36,24 @@ public class ObjectArrayTest {
     Object[] elementData = array.objects;
     array.add(1);
     assertNotSame(elementData, array.objects);
+  }
+
+  @Test
+  public void testClearObjectArray() {
+    int[] numObjs = new int[] {100, 500, 1000, 5000, 10000, 100000, 1000000};
+    for (int numObj : numObjs) {
+      Object[] array = new Object[numObj];
+      Object o = new Object();
+      for (int i = 0; i < numObj; i++) {
+        array[i] = o;
+      }
+      ObjectArray.clearObjectArray(array, 0, array.length);
+      for (int i = 0; i < array.length; i++) {
+        Object value = array[i];
+        if (value != null) {
+          throw new IllegalStateException(String.format("numObj: %d, index: %d", numObj, i));
+        }
+      }
+    }
   }
 }
