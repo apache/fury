@@ -251,6 +251,7 @@
             <exclude>**/util/MurmurHash3.java</exclude>
             <exclude>**/util/ClassLoaderUtils.java</exclude>
             <exclude>**/util/DateTimeUtils.java</exclude>
+            <exclude>**/util/unsafe/_Lookup.java</exclude>
             <exclude>**/memory/MemoryBuffer.java</exclude>
             <exclude>**/memory/BitUtils.java</exclude>
             <exclude>**/codegen/Code.java</exclude>
