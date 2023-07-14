@@ -20,9 +20,9 @@ NOT_NULL_VALUE_FLAG = -1
 REF_VALUE_FLAG = 0
 
 
-class ReferenceResolver(ABC):
+class RefResolver(ABC):
     @abstractmethod
-    def write_reference_or_null(self, buffer, obj):
+    def write_ref_or_null(self, buffer, obj):
         """
         Write reference and tag for the obj if the obj has been written
         previously, write null/not-null tag otherwise.
@@ -33,7 +33,7 @@ class ReferenceResolver(ABC):
         """
 
     @abstractmethod
-    def read_reference_or_null(self, buffer):
+    def read_ref_or_null(self, buffer):
         """
         Returns
         -------
@@ -45,7 +45,7 @@ class ReferenceResolver(ABC):
         """
 
     @abstractmethod
-    def preserve_reference_id(self) -> int:
+    def preserve_ref_id(self) -> int:
         """
         Preserve a reference id, which is used by `setReadObject` to set up
         reference for object that is first deserialized.
@@ -56,7 +56,7 @@ class ReferenceResolver(ABC):
         """
 
     @abstractmethod
-    def try_preserve_reference_id(self, buffer) -> int:
+    def try_preserve_ref_id(self, buffer) -> int:
         """
         Preserve and return a `refId` which is `>=` {@link NOT_NULL_VALUE_FLAG}
         if the value is not null. If the value is referencable value, the `refId`
@@ -109,18 +109,18 @@ class ReferenceResolver(ABC):
         pass
 
 
-class MapReferenceResolver(ReferenceResolver):
+class MapRefResolver(RefResolver):
     written_objects: Dict[int, Tuple[int, Any]]  # id(obj) -> (ref_id, obj)
     read_objects: List[Any]
-    read_reference_ids: List[int]
+    read_ref_ids: List[int]
 
     def __init__(self):
         self.written_objects = dict()
         self.read_objects = list()
-        self.read_reference_ids = list()
+        self.read_ref_ids = list()
         self.read_object = None
 
-    def write_reference_or_null(self, buffer, obj):
+    def write_ref_or_null(self, buffer, obj):
         if obj is None:
             buffer.write_int8(NULL_FLAG)
             return True
@@ -140,24 +140,24 @@ class MapReferenceResolver(ReferenceResolver):
             buffer.write_int8(REF_VALUE_FLAG)
             return False
 
-    def read_reference_or_null(self, buffer):
+    def read_ref_or_null(self, buffer):
         head_flag = buffer.read_int8()
         if head_flag == REF_FLAG:
             # read reference id and get object from reference resolver
-            reference_id = buffer.read_varint32()
-            self.read_object = self.get_read_object(reference_id)
+            ref_id = buffer.read_varint32()
+            self.read_object = self.get_read_object(ref_id)
             return REF_FLAG
         else:
             self.read_object = None
             return head_flag
 
-    def preserve_reference_id(self) -> int:
+    def preserve_ref_id(self) -> int:
         next_read_ref_id = len(self.read_objects)
         self.read_objects.append(None)
-        self.read_reference_ids.append(next_read_ref_id)
+        self.read_ref_ids.append(next_read_ref_id)
         return next_read_ref_id
 
-    def try_preserve_reference_id(self, buffer) -> int:
+    def try_preserve_ref_id(self, buffer) -> int:
         head_flag = buffer.read_int8()
         if head_flag == REF_FLAG:
             # read reference id and get object from reference resolver
@@ -166,13 +166,13 @@ class MapReferenceResolver(ReferenceResolver):
         else:
             self.read_object = None
             if head_flag == REF_VALUE_FLAG:
-                return self.preserve_reference_id()
+                return self.preserve_ref_id()
         # `head_flag` except `REF_FLAG` can be used as stub reference id because we use
         # `refId >= NOT_NULL_VALUE_FLAG` to read data.
         return head_flag
 
     def reference(self, obj):
-        ref_id = self.read_reference_ids.pop()
+        ref_id = self.read_ref_ids.pop()
         self.set_read_object(ref_id, obj)
 
     def get_read_object(self, id_=None):
@@ -193,12 +193,12 @@ class MapReferenceResolver(ReferenceResolver):
 
     def reset_read(self):
         self.read_objects.clear()
-        self.read_reference_ids.clear()
+        self.read_ref_ids.clear()
         self.read_object = None
 
 
-class NoReferenceResolver(ReferenceResolver):
-    def write_reference_or_null(self, buffer, obj):
+class NoRefResolver(RefResolver):
+    def write_ref_or_null(self, buffer, obj):
         if obj is None:
             buffer.write_int8(NULL_FLAG)
             return True
@@ -206,13 +206,13 @@ class NoReferenceResolver(ReferenceResolver):
             buffer.write_int8(NOT_NULL_VALUE_FLAG)
             return False
 
-    def read_reference_or_null(self, buffer):
+    def read_ref_or_null(self, buffer):
         return buffer.read_int8()
 
-    def preserve_reference_id(self) -> int:
+    def preserve_ref_id(self) -> int:
         return -1
 
-    def try_preserve_reference_id(self, buffer) -> int:
+    def try_preserve_ref_id(self, buffer) -> int:
         # `NOT_NULL_VALUE_FLAG` can be used as stub reference id because we use
         # `refId >= NOT_NULL_VALUE_FLAG` to read data.
         return buffer.read_int8()

@@ -206,7 +206,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_referencable_to_py(buffer, start)
+                fury.serialize_non_ref_to_py(buffer, start)
         if type(stop) is int:
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(stop)
@@ -215,7 +215,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_referencable_to_py(buffer, stop)
+                fury.serialize_non_ref_to_py(buffer, stop)
         if type(step) is int:
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(step)
@@ -224,25 +224,25 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_referencable_to_py(buffer, step)
-        fury.serialize_referencable_to_py(buffer, value.dtype)
-        fury.serialize_referencable_to_py(buffer, value.name)
+                fury.serialize_non_ref_to_py(buffer, step)
+        fury.serialize_ref_to_py(buffer, value.dtype)
+        fury.serialize_ref_to_py(buffer, value.name)
 
     def read(self, buffer):
         if buffer.read_int8() == NULL_FLAG:
             start = None
         else:
-            start = self.fury_.deserialize_non_reference_from_py(buffer)
+            start = self.fury_.deserialize_non_ref_from_py(buffer)
         if buffer.read_int8() == NULL_FLAG:
             stop = None
         else:
-            stop = self.fury_.deserialize_non_reference_from_py(buffer)
+            stop = self.fury_.deserialize_non_ref_from_py(buffer)
         if buffer.read_int8() == NULL_FLAG:
             step = None
         else:
-            step = self.fury_.deserialize_non_reference_from_py(buffer)
-        dtype = self.fury_.deserialize_referencable_from_py(buffer)
-        name = self.fury_.deserialize_referencable_from_py(buffer)
+            step = self.fury_.deserialize_non_ref_from_py(buffer)
+        dtype = self.fury_.deserialize_ref_from_py(buffer)
+        name = self.fury_.deserialize_ref_from_py(buffer)
         return self.type_(start, stop, step, dtype=dtype, name=name)
 
     def cross_language_write(self, buffer, value):
@@ -298,9 +298,7 @@ class DataClassSerializer(Serializer):
             elif field_type == str:
                 stmts.extend(gen_write_nullable_basic_stmts(buffer, field_value, str))
             else:
-                stmts.append(
-                    f"{fury_}.write_referencable_pyobject({buffer}, {field_value})"
-                )
+                stmts.append(f"{fury_}.write_ref_pyobject({buffer}, {field_value})")
         self._write_method_code, func = compile_function(
             f"write_{self.type_.__module__}_{self.type_.__qualname__}".replace(
                 ".", "_"
@@ -314,14 +312,14 @@ class DataClassSerializer(Serializer):
     def _gen_read_method(self):
         context = dict(_jit_context)
         buffer, fury_, obj_class, obj = "buffer", "fury_", "obj_class", "obj"
-        reference_resolver = "reference_resolver"
+        ref_resolver = "ref_resolver"
         context[fury_] = self.fury_
         context[obj_class] = self.type_
-        context[reference_resolver] = self.fury_.reference_resolver
+        context[ref_resolver] = self.fury_.ref_resolver
         stmts = [
             f'"""read method for {self.type_}"""',
             f"{obj} = {obj_class}.__new__({obj_class})",
-            f"{reference_resolver}.reference({obj})",
+            f"{ref_resolver}.reference({obj})",
             f"read_hash = {buffer}.read_int32()",
             f"if read_hash != {self._hash}:",
             f"""   raise ClassNotCompatibleError(
@@ -343,7 +341,7 @@ class DataClassSerializer(Serializer):
                 stmts.extend(gen_read_nullable_basic_stmts(buffer, str, set_action))
             else:
                 stmts.append(
-                    f"{obj}.{field_name} = {fury_}.read_referencable_pyobject({buffer})"
+                    f"{obj}.{field_name} = {fury_}.read_ref_pyobject({buffer})"
                 )
         stmts.append(f"return {obj}")
         self._read_method_code, func = compile_function(
@@ -358,7 +356,7 @@ class DataClassSerializer(Serializer):
         buffer.write_int32(self._hash)
         for field_name in self._field_names:
             field_value = getattr(value, field_name)
-            self.fury_.serialize_referencable_to_py(buffer, field_value)
+            self.fury_.serialize_ref_to_py(buffer, field_value)
 
     def read(self, buffer):
         hash_ = buffer.read_int32()
@@ -368,9 +366,9 @@ class DataClassSerializer(Serializer):
                 f"for class {self.type_}",
             )
         obj = self.type_.__new__(self.type_)
-        self.fury_.reference_resolver.reference(obj)
+        self.fury_.ref_resolver.reference(obj)
         for field_name in self._field_names:
-            field_value = self.fury_.deserialize_referencable_from_py(buffer)
+            field_value = self.fury_.deserialize_ref_from_py(buffer)
             setattr(
                 obj,
                 field_name,

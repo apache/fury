@@ -33,7 +33,7 @@ class ComplexObject:
 
 
 def test_struct():
-    fury_ = Fury(language=Language.XLANG, reference_tracking=True)
+    fury_ = Fury(language=Language.XLANG, ref_tracking=True)
     fury_.register_class_tag(SimpleObject, "example.SimpleObject")
     fury_.register_class_tag(ComplexObject, "example.ComplexObject")
     o = SimpleObject(f1={1: 1.0 / 3})
@@ -79,7 +79,7 @@ def test_inheritance():
     type_hints = typing.get_type_hints(ChildClass1)
     print(type_hints)
     assert type_hints.keys() == {"f1", "f2", "f3"}
-    fury_ = Fury(language=Language.PYTHON, reference_tracking=True)
+    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
     obj = ChildClass1(f1="a", f2=-10, f3={"a": -10.0, "b": 1 / 3})
     assert ser_de(fury_, obj) == obj
     assert (
