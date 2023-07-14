@@ -1,13 +1,19 @@
-import Fury, { TypeDescription, InternalSerializerType, ObjectTypeDescription } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType, ObjectTypeDescription, Type } from '@furyjs/fury';
 import { describe, expect, test } from '@jest/globals';
 
 describe('array', () => {
   test('should array work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps }); const result = fury.deserialize(
-      Buffer.from([6, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 1, 2, 0, 0, 0, 0, 0, 4, 115, 116, 114, 49, 254, 1])
-    );
-    expect(result).toEqual(["str1", "str1"])
+
+    const description = Type.object("example.bar", {
+      c: Type.array(Type.object("example.foo", {
+        a: Type.string()
+      }))
+    });
+    const fury = new Fury({ hps });
+    const { serialize, deserialize } = fury.registerSerializer(description);
+    const o = { a: "123" };
+    expect(deserialize(serialize({ c: [o, o] }))).toEqual({ c: [o, o] })
   });
   test('should typedarray work', () => {
     const description = {
@@ -37,7 +43,7 @@ describe('array', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-  const fury = new Fury({ hps }); const serializer = fury.registerSerializer(description).serializer;
+    const fury = new Fury({ hps }); const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({
       a: [true, false],
       a2: [1, 2, 3],

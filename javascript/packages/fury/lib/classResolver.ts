@@ -6,7 +6,7 @@ import mapSerializer from "./internalSerializer/map";
 import setSerializer from "./internalSerializer/set";
 import boolSerializer from "./internalSerializer/bool";
 import { uInt16Serializer, int16Serializer, int32Serializer, uInt32Serializer, uInt64Serializer, floatSerializer, doubleSerializer, uInt8Serializer, int64Serializer, int8Serializer } from "./internalSerializer/number";
-import { InternalSerializerType, Serializer, SerializerRead, SerializerWrite, Fury, BinaryReader, BinaryWriter } from "./type";
+import { InternalSerializerType, Serializer, SerializerRead, SerializerWrite, Fury, BinaryReader, BinaryWriter, SerializerConfig } from "./type";
 
 
 const USESTRINGVALUE = 0;
@@ -82,7 +82,7 @@ export default class SerializerResolver {
             this.customSerializer[tag] = {
                 read: unreachable,
                 write: unreachable,
-                reserveWhenWrite: unreachable,
+                config: unreachable,
             }
         }
         const exists = this.customSerializer[tag];
@@ -92,12 +92,12 @@ export default class SerializerResolver {
         exists.read = serializer;
     }
 
-    registerWriteSerializerByTag(tag: string, serializer: SerializerWrite) {
+    registerWriteSerializerByTag(tag: string, serializer: SerializerWrite, config: ReturnType<SerializerConfig>) {
         if (!this.customSerializer[tag]) {
             this.customSerializer[tag] = {
                 read: unreachable,
                 write: unreachable,
-                reserveWhenWrite: unreachable,
+                config: unreachable,
             }
         }
         const exists = this.customSerializer[tag];
@@ -105,6 +105,9 @@ export default class SerializerResolver {
             throw new Error(`${tag} write has been registered`);
         }
         exists.write = serializer;
+        exists.config = () => {
+            return config;
+        }
     }
 
     existsTagReadSerializer(tag: string) {

@@ -8,8 +8,8 @@ import { int8Serializer, int32Serializer, int64Serializer, floatSerializer, doub
 const buildTypedArray = <T>(fury: Fury, read: () => void,  write: (p: T) => void) => {
     const serializer = arraySerializer(fury);
     return {
-        read: (shouldSetRef: boolean) => {
-            const result =  serializer.read(shouldSetRef)
+        read: () => {
+            const result =  serializer.read()
             for (let i = 0 ;i < result.length; i++) {
                 result[i] = read();
             }
@@ -21,7 +21,7 @@ const buildTypedArray = <T>(fury: Fury, read: () => void,  write: (p: T) => void
                 write(item);
             }
         },
-        reserveWhenWrite: serializer.reserveWhenWrite,
+        config: serializer.config,
     } as Serializer<T[]>
 }
 
@@ -113,12 +113,10 @@ export const arraySerializer = (fury: Fury) => {
     const { writeInt8, writeInt16, writeInt32 } = binaryWriter;
     const { readInt32 } = binaryView;
     return {
-        read: (shouldSetRef: boolean) => {
+        read: () => {
             const len = readInt32();
             const result = new Array(len);
-            if (shouldSetRef) {
-                pushReadObject(result);
-            }
+            pushReadObject(result);
             return result;
         },
         write: (v: any[]) => {
@@ -130,8 +128,11 @@ export const arraySerializer = (fury: Fury) => {
             pushWriteObject(v);
             writeInt32(v.length);
         },
-        reserveWhenWrite: () => {
-            return 7; 
+        config: () => {
+            return {
+                reserve: 7,
+                refType: true,
+            }
         }
     }
 }

@@ -9,13 +9,11 @@ export default (fury: Fury) => {
     const { pushReadObject, pushWriteObject } = referenceResolver;
     
     return {
-        read: (shouldSetRef: boolean) => {
+        read: () => {
             readUInt8(); // isInBand
             const len = readInt32();
             const result = readBuffer(len);
-            if (shouldSetRef) {
-                pushReadObject(result);
-            }
+            pushReadObject(result);
             return result
         },
         write: (v: Uint8Array) => {
@@ -29,8 +27,11 @@ export default (fury: Fury) => {
             writeInt32(v.byteLength);
             writeBuffer(v);
         },
-        reserveWhenWrite: () => {
-            return 8; 
+        config: () => {
+            return {
+                reserve: 8,
+                refType: true,
+            }
         }
     }
 }

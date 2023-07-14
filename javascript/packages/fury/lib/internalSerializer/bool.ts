@@ -15,8 +15,10 @@ export default (fury: Fury) => {
             writeInt16(InternalSerializerType.BOOL);
             writeUInt8(v ? 1 : 0)
         },
-        reserveWhenWrite: () => {
-            return 4; 
+        config: () => {
+            return {
+                reserve: 4,
+            }
         }
     }
 }
