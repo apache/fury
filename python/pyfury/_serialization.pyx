@@ -1312,7 +1312,7 @@ cdef class Serializer:
     cdef public c_bool need_to_write_ref
 
     def __init__(self, fury_, type_: Union[type, TypeVar]):
-        self.fury_ = fury_
+        self.fury = fury_
         self.type_ = type_
         self.need_to_write_ref = not is_primitive_type(type_)
 
@@ -1539,10 +1539,10 @@ cdef class BytesSerializer(CrossLanguageCompatibleSerializer):
         return FuryType.BINARY.value
 
     cpdef inline write(self, Buffer buffer, value):
-        self.fury_.write_buffer_object(buffer, BytesBufferObject(value))
+        self.fury.write_buffer_object(buffer, BytesBufferObject(value))
 
     cpdef inline read(self, Buffer buffer):
-        fury_buf = self.fury_.read_buffer_object(buffer)
+        fury_buf = self.fury.read_buffer_object(buffer)
         return fury_buf.to_pybytes()
 
 
@@ -1593,7 +1593,7 @@ cdef class CollectionSerializer(Serializer):
             len_ = len(value)
         buffer.write_varint32(len_)
         for s in value:
-            self.fury_.xserialize_ref(
+            self.fury.xserialize_ref(
                 buffer, s, serializer=self.elem_serializer
             )
             len_ += 1
@@ -1604,8 +1604,8 @@ cdef class ListSerializer(CollectionSerializer):
         return FuryType.LIST.value
 
     cpdef read(self, Buffer buffer):
-        cdef MapRefResolver ref_resolver = self.fury_.ref_resolver
-        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        cdef MapRefResolver ref_resolver = self.fury.ref_resolver
+        cdef ClassResolver class_resolver = self.fury.class_resolver
         cdef list list_ = []
         ref_resolver.reference(list_)
         populate_list(buffer, list_, ref_resolver, class_resolver)
@@ -1614,9 +1614,9 @@ cdef class ListSerializer(CollectionSerializer):
     cpdef xread(self, Buffer buffer):
         cdef int32_t len_ = buffer.read_varint32()
         cdef list collection_ = []
-        self.fury_.ref_resolver.reference(collection_)
+        self.fury.ref_resolver.reference(collection_)
         for i in range(len_):
-            collection_.append(self.fury_.xdeserialize_ref(
+            collection_.append(self.fury.xdeserialize_ref(
                 buffer, serializer=self.elem_serializer
             ))
         return collection_
@@ -1658,8 +1658,8 @@ cdef populate_list(
 @cython.final
 cdef class TupleSerializer(CollectionSerializer):
     cpdef inline read(self, Buffer buffer):
-        cdef MapRefResolver ref_resolver = self.fury_.ref_resolver
-        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        cdef MapRefResolver ref_resolver = self.fury.ref_resolver
+        cdef ClassResolver class_resolver = self.fury.class_resolver
         cdef list list_ = []
         populate_list(buffer, list_, ref_resolver, class_resolver)
         return tuple(list_)
@@ -1668,7 +1668,7 @@ cdef class TupleSerializer(CollectionSerializer):
         cdef int32_t len_ = buffer.read_varint32()
         cdef list collection_ = []
         for i in range(len_):
-            collection_.append(self.fury_.xdeserialize_ref(
+            collection_.append(self.fury.xdeserialize_ref(
                 buffer, serializer=self.elem_serializer
             ))
         return tuple(collection_)
@@ -1689,8 +1689,8 @@ cdef class SetSerializer(CollectionSerializer):
         return FuryType.FURY_SET.value
 
     cpdef inline read(self, Buffer buffer):
-        cdef MapRefResolver ref_resolver = self.fury_.ref_resolver
-        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        cdef MapRefResolver ref_resolver = self.fury.ref_resolver
+        cdef ClassResolver class_resolver = self.fury.class_resolver
         cdef set instance = set()
         ref_resolver.reference(instance)
         cdef int32_t len_ = buffer.read_varint32()
@@ -1721,9 +1721,9 @@ cdef class SetSerializer(CollectionSerializer):
     cpdef inline xread(self, Buffer buffer):
         cdef int32_t len_ = buffer.read_varint32()
         cdef set instance = set()
-        self.fury_.ref_resolver.reference(instance)
+        self.fury.ref_resolver.reference(instance)
         for i in range(len_):
-            instance.add(self.fury_.xdeserialize_ref(
+            instance.add(self.fury.xdeserialize_ref(
                 buffer, serializer=self.elem_serializer
             ))
         return instance
@@ -1825,22 +1825,22 @@ cdef class MapSerializer(Serializer):
         cdef dict value = o
         buffer.write_varint32(len(value))
         for k, v in value.items():
-            self.fury_.xserialize_ref(
+            self.fury.xserialize_ref(
                 buffer, k, serializer=self.key_serializer
             )
-            self.fury_.xserialize_ref(
+            self.fury.xserialize_ref(
                 buffer, v, serializer=self.value_serializer
             )
 
     cpdef inline xread(self, Buffer buffer):
         cdef int32_t len_ = buffer.read_varint32()
         cdef dict map_ = {}
-        self.fury_.ref_resolver.reference(map_)
+        self.fury.ref_resolver.reference(map_)
         for i in range(len_):
-            k = self.fury_.xdeserialize_ref(
+            k = self.fury.xdeserialize_ref(
                 buffer, serializer=self.key_serializer
             )
-            v = self.fury_.xdeserialize_ref(
+            v = self.fury.xdeserialize_ref(
                 buffer, serializer=self.value_serializer
             )
             map_[k] = v
@@ -1896,8 +1896,8 @@ cdef class SubMapSerializer(Serializer):
                     value_classinfo.serializer.write(buffer, v)
 
     cpdef inline read(self, Buffer buffer):
-        cdef MapRefResolver ref_resolver = self.fury_.ref_resolver
-        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        cdef MapRefResolver ref_resolver = self.fury.ref_resolver
+        cdef ClassResolver class_resolver = self.fury.class_resolver
         map_ = self.type_()
         ref_resolver.reference(map_)
         cdef int32_t len_ = buffer.read_varint32()
@@ -2053,10 +2053,10 @@ cdef class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
         return np.frombuffer(data, dtype=self.dtype)
 
     cpdef inline write(self, Buffer buffer, value):
-        self.fury_.handle_unsupported_write(buffer, value)
+        self.fury.handle_unsupported_write(buffer, value)
 
     cpdef inline read(self, Buffer buffer):
-        return self.fury_.handle_unsupported_read(buffer)
+        return self.fury.handle_unsupported_read(buffer)
 
 
 cdef _get_hash(Fury fury_, list field_names, dict type_hints):
@@ -2089,7 +2089,7 @@ cdef class ComplexObjectSerializer(Serializer):
         for index, key in enumerate(self._field_names):
             serializer = infer_field(key, self._type_hints[key], visitor, types_path=[])
             self._serializers[index] = serializer
-        if self.fury_.language == Language.PYTHON:
+        if self.fury.language == Language.PYTHON:
             logger.warning(
                 "Type of class %s shouldn't be serialized using cross-language "
                 "serializer",
@@ -2111,33 +2111,33 @@ cdef class ComplexObjectSerializer(Serializer):
 
     cpdef xwrite(self, Buffer buffer, value):
         if self._hash == 0:
-            self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
+            self._hash = _get_hash(self.fury, self._field_names, self._type_hints)
         buffer.write_int32(self._hash)
         cdef Serializer serializer
         cdef int32_t index
         for index, field_name in enumerate(self._field_names):
             field_value = getattr(value, field_name)
             serializer = self._serializers[index]
-            self.fury_.xserialize_ref(
+            self.fury.xserialize_ref(
                 buffer, field_value, serializer=serializer
             )
 
     cpdef xread(self, Buffer buffer):
         cdef int32_t hash_ = buffer.read_int32()
         if self._hash == 0:
-            self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
+            self._hash = _get_hash(self.fury, self._field_names, self._type_hints)
         if hash_ != self._hash:
             raise ClassNotCompatibleError(
                 f"Hash {hash_} is not consistent with {self._hash} "
                 f"for class {self.type_}",
             )
         obj = self.type_.__new__(self.type_)
-        self.fury_.ref_resolver.reference(obj)
+        self.fury.ref_resolver.reference(obj)
         cdef Serializer serializer
         cdef int32_t index
         for index, field_name in enumerate(self._field_names):
             serializer = self._serializers[index]
-            field_value = self.fury_.xdeserialize_ref(
+            field_value = self.fury.xdeserialize_ref(
                 buffer, serializer=serializer
             )
             setattr(
@@ -2183,7 +2183,7 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_nonref(buffer, start)
+                self.fury.serialize_nonref(buffer, start)
         if type(stop) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -2193,7 +2193,7 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_nonref(buffer, stop)
+                self.fury.serialize_nonref(buffer, stop)
         if type(step) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -2203,21 +2203,21 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_nonref(buffer, step)
+                self.fury.serialize_nonref(buffer, step)
 
     cpdef inline read(self, Buffer buffer):
         if buffer.read_int8() == NULL_FLAG:
             start = None
         else:
-            start = self.fury_.deserialize_nonref(buffer)
+            start = self.fury.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             stop = None
         else:
-            stop = self.fury_.deserialize_nonref(buffer)
+            stop = self.fury.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             step = None
         else:
-            step = self.fury_.deserialize_nonref(buffer)
+            step = self.fury.deserialize_nonref(buffer)
         return slice(start, stop, step)
 
     cpdef xwrite(self, Buffer buffer, value):
@@ -2236,7 +2236,7 @@ cdef class PickleSerializer(Serializer):
         raise NotImplementedError
 
     cpdef inline write(self, Buffer buffer, value):
-        self.fury_.handle_unsupported_write(buffer, value)
+        self.fury.handle_unsupported_write(buffer, value)
 
     cpdef inline read(self, Buffer buffer):
-        return self.fury_.handle_unsupported_read(buffer)
+        return self.fury.handle_unsupported_read(buffer)

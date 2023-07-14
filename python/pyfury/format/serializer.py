@@ -6,10 +6,10 @@ from pyfury.type import FuryType
 
 class ArrowRecordBatchSerializer(CrossLanguageCompatibleSerializer):
     def write(self, buffer, value: pa.RecordBatch):
-        self.fury_.write_buffer_object(buffer, ArrowRecordBatchBufferObject(value))
+        self.fury.write_buffer_object(buffer, ArrowRecordBatchBufferObject(value))
 
     def read(self, buffer: Buffer) -> pa.Table:
-        fury_buf = self.fury_.read_buffer_object(buffer)
+        fury_buf = self.fury.read_buffer_object(buffer)
         # If the input source supports zero-copy reads (e.g. like a memory
         # map, or pa.BufferReader), then the returned batches are also
         # zero-copy and do not allocate any new memory on read.
@@ -52,10 +52,10 @@ class ArrowRecordBatchBufferObject(BufferObject):
 
 class ArrowTableSerializer(CrossLanguageCompatibleSerializer):
     def write(self, buffer, value: pa.Table):
-        self.fury_.write_buffer_object(buffer, ArrowTableBufferObject(value))
+        self.fury.write_buffer_object(buffer, ArrowTableBufferObject(value))
 
     def read(self, buffer: Buffer) -> pa.Table:
-        fury_buf = self.fury_.read_buffer_object(buffer)
+        fury_buf = self.fury.read_buffer_object(buffer)
         # If the input source supports zero-copy reads (e.g. like a memory
         # map, or pa.BufferReader), then the returned batches are also
         # zero-copy and do not allocate any new memory on read.

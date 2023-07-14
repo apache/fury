@@ -98,7 +98,7 @@ class ComplexObjectSerializer(Serializer):
             self._serializers[index] = serializer
         from pyfury._fury import Language
 
-        if self.fury_.language == Language.PYTHON:
+        if self.fury.language == Language.PYTHON:
             logger.warning(
                 "Type of class %s shouldn't be serialized using cross-language "
                 "serializer",
@@ -120,16 +120,16 @@ class ComplexObjectSerializer(Serializer):
 
     def xwrite(self, buffer: Buffer, value):
         if self._hash == 0:
-            self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
+            self._hash = _get_hash(self.fury, self._field_names, self._type_hints)
         buffer.write_int32(self._hash)
         for index, field_name in enumerate(self._field_names):
             field_value = getattr(value, field_name)
             serializer = self._serializers[index]
-            self.fury_.xserialize_ref(buffer, field_value, serializer=serializer)
+            self.fury.xserialize_ref(buffer, field_value, serializer=serializer)
 
     def xread(self, buffer):
         if self._hash == 0:
-            self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
+            self._hash = _get_hash(self.fury, self._field_names, self._type_hints)
         hash_ = buffer.read_int32()
         if hash_ != self._hash:
             raise ClassNotCompatibleError(
@@ -137,10 +137,10 @@ class ComplexObjectSerializer(Serializer):
                 f"for class {self.type_}",
             )
         obj = self.type_.__new__(self.type_)
-        self.fury_.ref_resolver.reference(obj)
+        self.fury.ref_resolver.reference(obj)
         for index, field_name in enumerate(self._field_names):
             serializer = self._serializers[index]
-            field_value = self.fury_.xdeserialize_ref(buffer, serializer=serializer)
+            field_value = self.fury.xdeserialize_ref(buffer, serializer=serializer)
             setattr(
                 obj,
                 field_name,

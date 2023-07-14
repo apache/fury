@@ -194,7 +194,7 @@ class PandasRangeIndexSerializer(Serializer):
         super().__init__(fury_, pd.RangeIndex)
 
     def write(self, buffer, value):
-        fury = self.fury_
+        fury = self.fury
         start = value.start
         stop = value.stop
         step = value.step
@@ -232,17 +232,17 @@ class PandasRangeIndexSerializer(Serializer):
         if buffer.read_int8() == NULL_FLAG:
             start = None
         else:
-            start = self.fury_.deserialize_nonref(buffer)
+            start = self.fury.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             stop = None
         else:
-            stop = self.fury_.deserialize_nonref(buffer)
+            stop = self.fury.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             step = None
         else:
-            step = self.fury_.deserialize_nonref(buffer)
-        dtype = self.fury_.deserialize_ref(buffer)
-        name = self.fury_.deserialize_ref(buffer)
+            step = self.fury.deserialize_nonref(buffer)
+        dtype = self.fury.deserialize_ref(buffer)
+        name = self.fury.deserialize_ref(buffer)
         return self.type_(start, stop, step, dtype=dtype, name=name)
 
     def xwrite(self, buffer, value):
@@ -280,7 +280,7 @@ class DataClassSerializer(Serializer):
         context = {}
         counter = itertools.count(0)
         buffer, fury_, value = "buffer", "fury_", "value"
-        context[fury_] = self.fury_
+        context[fury_] = self.fury
         stmts = [
             f'"""write method for {self.type_}"""',
             f"{buffer}.write_int32({self._hash})",
@@ -313,9 +313,9 @@ class DataClassSerializer(Serializer):
         context = dict(_jit_context)
         buffer, fury_, obj_class, obj = "buffer", "fury_", "obj_class", "obj"
         ref_resolver = "ref_resolver"
-        context[fury_] = self.fury_
+        context[fury_] = self.fury
         context[obj_class] = self.type_
-        context[ref_resolver] = self.fury_.ref_resolver
+        context[ref_resolver] = self.fury.ref_resolver
         stmts = [
             f'"""read method for {self.type_}"""',
             f"{obj} = {obj_class}.__new__({obj_class})",
@@ -356,7 +356,7 @@ class DataClassSerializer(Serializer):
         buffer.write_int32(self._hash)
         for field_name in self._field_names:
             field_value = getattr(value, field_name)
-            self.fury_.serialize_ref(buffer, field_value)
+            self.fury.serialize_ref(buffer, field_value)
 
     def read(self, buffer):
         hash_ = buffer.read_int32()
@@ -366,9 +366,9 @@ class DataClassSerializer(Serializer):
                 f"for class {self.type_}",
             )
         obj = self.type_.__new__(self.type_)
-        self.fury_.ref_resolver.reference(obj)
+        self.fury.ref_resolver.reference(obj)
         for field_name in self._field_names:
-            field_value = self.fury_.deserialize_ref(buffer)
+            field_value = self.fury.deserialize_ref(buffer)
             setattr(
                 obj,
                 field_name,
