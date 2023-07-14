@@ -621,7 +621,7 @@ public class ClassResolver {
   private void addSerializer(Class<?> type, Serializer<?> serializer) {
     Preconditions.checkNotNull(serializer);
     String typeTag = null;
-    short typeId = serializer.getCrossLanguageTypeId();
+    short typeId = serializer.getXtypeId();
     if (typeId != Fury.NOT_SUPPORT_CROSS_LANGUAGE) {
       if (typeId > Fury.NOT_SUPPORT_CROSS_LANGUAGE) {
         typeIdToClassXLangMap.put(typeId, type);
@@ -1498,15 +1498,15 @@ public class ClassResolver {
     return cls;
   }
 
-  public void crossLanguageWriteClass(MemoryBuffer buffer, Class<?> cls) {
+  public void xwriteClass(MemoryBuffer buffer, Class<?> cls) {
     enumStringResolver.writeEnumStringBytes(buffer, getOrUpdateClassInfo(cls).fullClassNameBytes);
   }
 
-  public void crossLanguageWriteTypeTag(MemoryBuffer buffer, Class<?> cls) {
+  public void xwriteTypeTag(MemoryBuffer buffer, Class<?> cls) {
     enumStringResolver.writeEnumStringBytes(buffer, getOrUpdateClassInfo(cls).typeTagBytes);
   }
 
-  public Class<?> crossLanguageReadClass(MemoryBuffer buffer) {
+  public Class<?> xreadClass(MemoryBuffer buffer) {
     EnumStringBytes byteString = enumStringResolver.readEnumStringBytes(buffer);
     Class<?> cls = classNameBytes2Class.get(byteString);
     if (cls == null) {
@@ -1519,7 +1519,7 @@ public class ClassResolver {
     return cls;
   }
 
-  public String crossLanguageReadClassName(MemoryBuffer buffer) {
+  public String xreadClassName(MemoryBuffer buffer) {
     return enumStringResolver.readEnumString(buffer);
   }
 

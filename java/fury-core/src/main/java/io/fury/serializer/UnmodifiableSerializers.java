@@ -98,12 +98,12 @@ public class UnmodifiableSerializers {
     public void write(MemoryBuffer buffer, Collection value) {
       Preconditions.checkArgument(value.getClass() == type);
       Object fieldValue = Platform.getObject(value, unmodifiableFactory.sourceFieldOffset);
-      fury.writeRefoJava(buffer, fieldValue);
+      fury.writeRef(buffer, fieldValue);
     }
 
     @Override
     public Collection read(MemoryBuffer buffer) {
-      final Object sourceCollection = fury.readRefFromJava(buffer);
+      final Object sourceCollection = fury.readRef(buffer);
       return (Collection) unmodifiableFactory.create(sourceCollection);
     }
   }
@@ -121,12 +121,12 @@ public class UnmodifiableSerializers {
     public void write(MemoryBuffer buffer, Map value) {
       Preconditions.checkArgument(value.getClass() == type);
       Object fieldValue = Platform.getObject(value, unmodifiableFactory.sourceFieldOffset);
-      fury.writeRefoJava(buffer, fieldValue);
+      fury.writeRef(buffer, fieldValue);
     }
 
     @Override
     public Map read(MemoryBuffer buffer) {
-      final Object sourceCollection = fury.readRefFromJava(buffer);
+      final Object sourceCollection = fury.readRef(buffer);
       return (Map) unmodifiableFactory.create(sourceCollection);
     }
   }

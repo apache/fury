@@ -114,17 +114,17 @@ public class Serializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return typeId;
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+    public void xwrite(MemoryBuffer buffer, T value) {
       write(buffer, value);
     }
 
     @Override
-    public T crossLanguageRead(MemoryBuffer buffer) {
+    public T xread(MemoryBuffer buffer) {
       return read(buffer);
     }
   }
@@ -175,18 +175,18 @@ public class Serializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Type.UINT8.getId();
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Integer value) {
+    public void xwrite(MemoryBuffer buffer, Integer value) {
       Preconditions.checkArgument(value >= 0 && value <= 255);
       buffer.writeByte(value.byteValue());
     }
 
     @Override
-    public Integer crossLanguageRead(MemoryBuffer buffer) {
+    public Integer xread(MemoryBuffer buffer) {
       int b = buffer.readByte();
       return b >>> 24;
     }
@@ -198,18 +198,18 @@ public class Serializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Type.UINT16.getId();
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Integer value) {
+    public void xwrite(MemoryBuffer buffer, Integer value) {
       Preconditions.checkArgument(value >= 0 && value <= 65535);
       buffer.writeByte(value.byteValue());
     }
 
     @Override
-    public Integer crossLanguageRead(MemoryBuffer buffer) {
+    public Integer xread(MemoryBuffer buffer) {
       int b = buffer.readByte();
       return b >>> 16;
     }
@@ -282,13 +282,13 @@ public class Serializers {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Integer value) {
+    public void xwrite(MemoryBuffer buffer, Integer value) {
       // TODO support varint in cross-language serialization
       buffer.writeInt(value);
     }
 
     @Override
-    public Integer crossLanguageRead(MemoryBuffer buffer) {
+    public Integer xread(MemoryBuffer buffer) {
       return buffer.readInt();
     }
   }
@@ -324,13 +324,13 @@ public class Serializers {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Long value) {
+    public void xwrite(MemoryBuffer buffer, Long value) {
       // TODO support var long in cross-language serialization
       buffer.writeLong(value);
     }
 
     @Override
-    public Long crossLanguageRead(MemoryBuffer buffer) {
+    public Long xread(MemoryBuffer buffer) {
       return buffer.readLong();
     }
   }
@@ -403,7 +403,7 @@ public class Serializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.STRING.getId();
     }
 
@@ -413,7 +413,7 @@ public class Serializers {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, StringBuffer value) {
+    public void xwrite(MemoryBuffer buffer, StringBuffer value) {
       stringSerializer.writeUTF8String(buffer, value.toString());
     }
 
@@ -423,7 +423,7 @@ public class Serializers {
     }
 
     @Override
-    public StringBuffer crossLanguageRead(MemoryBuffer buffer) {
+    public StringBuffer xread(MemoryBuffer buffer) {
       return new StringBuffer(stringSerializer.readUTF8String(buffer));
     }
   }
@@ -560,12 +560,12 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, AtomicReference value) {
-      fury.writeRefoJava(buffer, value.get());
+      fury.writeRef(buffer, value.get());
     }
 
     @Override
     public AtomicReference read(MemoryBuffer buffer) {
-      return new AtomicReference(fury.readRefFromJava(buffer));
+      return new AtomicReference(fury.readRef(buffer));
     }
   }
 

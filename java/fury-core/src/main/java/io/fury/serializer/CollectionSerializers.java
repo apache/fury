@@ -138,12 +138,12 @@ public class CollectionSerializers {
           javaWriteWithGenerics(fury, buffer, value, refResolver, elemGenericType);
         } else {
           for (Object elem : value) {
-            fury.writeRefoJava(buffer, elem);
+            fury.writeRef(buffer, elem);
           }
         }
       } else {
         for (Object elem : value) {
-          fury.writeRefoJava(buffer, elem, elemSerializer);
+          fury.writeRef(buffer, elem, elemSerializer);
         }
       }
     }
@@ -166,18 +166,18 @@ public class CollectionSerializers {
       if (elemGenericType.isFinal()) {
         elemSerializer = elemGenericType.getSerializer(classResolver);
         for (Object elem : value) {
-          fury.writeRefoJava(buffer, elem, elemSerializer);
+          fury.writeRef(buffer, elem, elemSerializer);
         }
       } else {
         // whether ignore all subclass ref tracking.
         if (fury.getClassResolver().needToWriteRef(elemGenericType.getCls())) {
           for (Object elem : value) {
-            fury.writeRefoJava(buffer, elem);
+            fury.writeRef(buffer, elem);
           }
         } else {
           for (Object elem : value) {
             if (!refResolver.writeNullFlag(buffer, elem)) {
-              fury.writeRefoJava(
+              fury.writeRef(
                   buffer,
                   elem,
                   classResolver.getClassInfo(elem.getClass(), elementClassInfoWriteCache));
@@ -191,14 +191,13 @@ public class CollectionSerializers {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+    public void xwrite(MemoryBuffer buffer, T value) {
       int len = value.size();
       buffer.writePositiveVarInt(len);
-      crossLanguageWriteElements(fury, buffer, value);
+      xwriteElements(fury, buffer, value);
     }
 
-    public static void crossLanguageWriteElements(
-        Fury fury, MemoryBuffer buffer, Collection value) {
+    public static void xwriteElements(Fury fury, MemoryBuffer buffer, Collection value) {
       GenericType genericType = fury.getGenerics().nextGenericType();
       GenericType elemGenericType = null;
       if (genericType != null) {
@@ -212,11 +211,11 @@ public class CollectionSerializers {
         if (elemGenericType.isFinal()) {
           Serializer elemSerializer = elemGenericType.getSerializer(fury.getClassResolver());
           for (Object elem : value) {
-            fury.crossLanguageWriteRef(buffer, elem, elemSerializer);
+            fury.xwriteRef(buffer, elem, elemSerializer);
           }
         } else {
           for (Object elem : value) {
-            fury.crossLanguageWriteRef(buffer, elem);
+            fury.xwriteRef(buffer, elem);
           }
         }
         if (hasGenericParameters) {
@@ -224,7 +223,7 @@ public class CollectionSerializers {
         }
       } else {
         for (Object elem : value) {
-          fury.crossLanguageWriteRef(buffer, elem);
+          fury.xwriteRef(buffer, elem);
         }
       }
     }
@@ -257,13 +256,13 @@ public class CollectionSerializers {
           javaReadWithGenerics(fury, buffer, collection, numElements, elemGenericType);
         } else {
           for (int i = 0; i < numElements; i++) {
-            Object elem = fury.readRefFromJava(buffer, elementClassInfoReadCache);
+            Object elem = fury.readRef(buffer, elementClassInfoReadCache);
             collection.add(elem);
           }
         }
       } else {
         for (int i = 0; i < numElements; i++) {
-          collection.add(fury.readRefFromJava(buffer, elemSerializer));
+          collection.add(fury.readRef(buffer, elemSerializer));
         }
       }
     }
@@ -282,13 +281,13 @@ public class CollectionSerializers {
       if (elemGenericType.isFinal()) {
         elemSerializer = elemGenericType.getSerializer(fury.getClassResolver());
         for (int i = 0; i < numElements; i++) {
-          Object elem = fury.readRefFromJava(buffer, elemSerializer);
+          Object elem = fury.readRef(buffer, elemSerializer);
           collection.add(elem);
         }
       } else {
         if (fury.getClassResolver().needToWriteRef(elemGenericType.getCls())) {
           for (int i = 0; i < numElements; i++) {
-            Object elem = fury.readRefFromJava(buffer);
+            Object elem = fury.readRef(buffer);
             collection.add(elem);
           }
         } else {
@@ -296,7 +295,7 @@ public class CollectionSerializers {
             if (buffer.readByte() == Fury.NULL_FLAG) {
               collection.add(null);
             } else {
-              Object elem = fury.readNonRefFromJava(buffer, elementClassInfoReadCache);
+              Object elem = fury.readNonRef(buffer, elementClassInfoReadCache);
               collection.add(elem);
             }
           }
@@ -308,14 +307,14 @@ public class CollectionSerializers {
     }
 
     @Override
-    public T crossLanguageRead(MemoryBuffer buffer) {
+    public T xread(MemoryBuffer buffer) {
       int numElements = buffer.readPositiveVarInt();
       T collection = newCollection(buffer, numElements);
-      crossLanguageReadElements(fury, buffer, collection, numElements);
+      xreadElements(fury, buffer, collection, numElements);
       return collection;
     }
 
-    public static void crossLanguageReadElements(
+    public static void xreadElements(
         Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
       GenericType genericType = fury.getGenerics().nextGenericType();
       GenericType elemGenericType = null;
@@ -330,12 +329,12 @@ public class CollectionSerializers {
         if (elemGenericType.isFinal()) {
           Serializer elemSerializer = elemGenericType.getSerializer(fury.getClassResolver());
           for (int i = 0; i < numElements; i++) {
-            Object elem = fury.crossLanguageReadRefByNullableSerializer(buffer, elemSerializer);
+            Object elem = fury.xreadRefByNullableSerializer(buffer, elemSerializer);
             collection.add(elem);
           }
         } else {
           for (int i = 0; i < numElements; i++) {
-            Object elem = fury.crossLanguageReadRef(buffer);
+            Object elem = fury.xreadRef(buffer);
             collection.add(elem);
           }
         }
@@ -344,7 +343,7 @@ public class CollectionSerializers {
         }
       } else {
         for (int i = 0; i < numElements; i++) {
-          Object elem = fury.crossLanguageReadRef(buffer);
+          Object elem = fury.xreadRef(buffer);
           collection.add(elem);
         }
       }
@@ -407,7 +406,7 @@ public class CollectionSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Type.LIST.getId();
     }
 
@@ -433,7 +432,7 @@ public class CollectionSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.LIST.getId();
     }
 
@@ -441,31 +440,31 @@ public class CollectionSerializers {
     public void write(MemoryBuffer buffer, List<?> value) {
       try {
         final Object[] array = (Object[]) Platform.getObject(value, arrayFieldOffset);
-        fury.writeRefoJava(buffer, array);
+        fury.writeRef(buffer, array);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, List<?> value) {
+    public void xwrite(MemoryBuffer buffer, List<?> value) {
       // FIXME this may cause array data got duplicated when reference tracking enabled.
-      super.crossLanguageWrite(buffer, value);
+      super.xwrite(buffer, value);
     }
 
     @Override
     public List<?> read(MemoryBuffer buffer) {
-      final Object[] array = (Object[]) fury.readRefFromJava(buffer);
+      final Object[] array = (Object[]) fury.readRef(buffer);
       Preconditions.checkNotNull(array);
       return Arrays.asList(array);
     }
 
     @Override
-    public List<?> crossLanguageRead(MemoryBuffer buffer) {
+    public List<?> xread(MemoryBuffer buffer) {
       int numElements = buffer.readPositiveVarInt();
       Object[] arr = new Object[numElements];
       for (int i = 0; i < numElements; i++) {
-        Object elem = fury.crossLanguageReadRef(buffer);
+        Object elem = fury.xreadRef(buffer);
         arr[i] = elem;
       }
       return Arrays.asList(arr);
@@ -478,7 +477,7 @@ public class CollectionSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Type.FURY_SET.getId();
     }
 
@@ -496,7 +495,7 @@ public class CollectionSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Type.FURY_SET.getId();
     }
 
@@ -527,14 +526,14 @@ public class CollectionSerializers {
 
     @Override
     public void writeHeader(MemoryBuffer buffer, T value) {
-      fury.writeRefoJava(buffer, value.comparator());
+      fury.writeRef(buffer, value.comparator());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T newCollection(MemoryBuffer buffer, int numElements) {
       T collection;
-      Comparator comparator = (Comparator) fury.readRefFromJava(buffer);
+      Comparator comparator = (Comparator) fury.readRef(buffer);
       if (type == TreeSet.class) {
         collection = (T) new TreeSet(comparator);
       } else {
@@ -553,7 +552,7 @@ public class CollectionSerializers {
   // For cross-language serialization, if the data is passed from python, the data will be
   // deserialized by `MapSerializers` and `CollectionSerializers`.
   // But if the data is serialized by following collections serializers, we need to ensure the real
-  // type of `crossLanguageRead` is the same as the type when serializing.
+  // type of `xread` is the same as the type when serializing.
   public static final class EmptyListSerializer extends CollectionSerializer<List<?>> {
 
     public EmptyListSerializer(Fury fury, Class<List<?>> cls) {
@@ -564,12 +563,12 @@ public class CollectionSerializers {
     public void write(MemoryBuffer buffer, List<?> value) {}
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.LIST.getId();
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, List<?> value) {
+    public void xwrite(MemoryBuffer buffer, List<?> value) {
       // write length
       buffer.writePositiveVarInt(0);
     }
@@ -580,7 +579,7 @@ public class CollectionSerializers {
     }
 
     @Override
-    public List<?> crossLanguageRead(MemoryBuffer buffer) {
+    public List<?> xread(MemoryBuffer buffer) {
       buffer.readPositiveVarInt();
       return Collections.EMPTY_LIST;
     }
@@ -596,12 +595,12 @@ public class CollectionSerializers {
     public void write(MemoryBuffer buffer, Set<?> value) {}
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.FURY_SET.getId();
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Set<?> value) {
+    public void xwrite(MemoryBuffer buffer, Set<?> value) {
       // write length
       buffer.writePositiveVarInt(0);
     }
@@ -612,7 +611,7 @@ public class CollectionSerializers {
     }
 
     @Override
-    public Set<?> crossLanguageRead(MemoryBuffer buffer) {
+    public Set<?> xread(MemoryBuffer buffer) {
       buffer.readPositiveVarInt();
       return Collections.EMPTY_SET;
     }
@@ -642,29 +641,29 @@ public class CollectionSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, List<?> value) {
-      fury.writeRefoJava(buffer, value.get(0));
+      fury.writeRef(buffer, value.get(0));
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.LIST.getId();
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, List<?> value) {
+    public void xwrite(MemoryBuffer buffer, List<?> value) {
       buffer.writePositiveVarInt(1);
-      fury.crossLanguageWriteRef(buffer, value.get(0));
+      fury.xwriteRef(buffer, value.get(0));
     }
 
     @Override
     public List<?> read(MemoryBuffer buffer) {
-      return Collections.singletonList(fury.readRefFromJava(buffer));
+      return Collections.singletonList(fury.readRef(buffer));
     }
 
     @Override
-    public List<?> crossLanguageRead(MemoryBuffer buffer) {
+    public List<?> xread(MemoryBuffer buffer) {
       buffer.readPositiveVarInt();
-      return Collections.singletonList(fury.crossLanguageReadRef(buffer));
+      return Collections.singletonList(fury.xreadRef(buffer));
     }
   }
 
@@ -676,29 +675,29 @@ public class CollectionSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Set<?> value) {
-      fury.writeRefoJava(buffer, value.iterator().next());
+      fury.writeRef(buffer, value.iterator().next());
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.FURY_SET.getId();
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Set<?> value) {
+    public void xwrite(MemoryBuffer buffer, Set<?> value) {
       buffer.writePositiveVarInt(1);
-      fury.crossLanguageWriteRef(buffer, value.iterator().next());
+      fury.xwriteRef(buffer, value.iterator().next());
     }
 
     @Override
     public Set<?> read(MemoryBuffer buffer) {
-      return Collections.singleton(fury.readRefFromJava(buffer));
+      return Collections.singleton(fury.readRef(buffer));
     }
 
     @Override
-    public Set<?> crossLanguageRead(MemoryBuffer buffer) {
+    public Set<?> xread(MemoryBuffer buffer) {
       buffer.readPositiveVarInt();
-      return Collections.singleton(fury.crossLanguageReadRef(buffer));
+      return Collections.singleton(fury.xreadRef(buffer));
     }
   }
 
@@ -724,15 +723,15 @@ public class CollectionSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.LIST.getId();
     }
 
     @Override
-    public T crossLanguageRead(MemoryBuffer buffer) {
+    public T xread(MemoryBuffer buffer) {
       int size = buffer.readPositiveVarInt();
       List list = new ArrayList<>();
-      crossLanguageReadElements(fury, buffer, list, size);
+      xreadElements(fury, buffer, list, size);
       T immutableList = (T) ImmutableList.copyOf(list);
       fury.getRefResolver().reference(immutableList);
       return immutableList;
@@ -748,7 +747,7 @@ public class CollectionSerializers {
 
     @Override
     public ConcurrentSkipListSet newCollection(MemoryBuffer buffer, int numElements) {
-      Comparator comparator = (Comparator) fury.readRefFromJava(buffer);
+      Comparator comparator = (Comparator) fury.readRef(buffer);
       ConcurrentSkipListSet skipListSet = new ConcurrentSkipListSet(comparator);
       fury.getRefResolver().reference(skipListSet);
       return skipListSet;
@@ -848,12 +847,12 @@ public class CollectionSerializers {
     }
 
     public void writeHeader(MemoryBuffer buffer, PriorityQueue value) {
-      fury.writeRefoJava(buffer, value.comparator());
+      fury.writeRef(buffer, value.comparator());
     }
 
     @Override
     public PriorityQueue newCollection(MemoryBuffer buffer, int numElements) {
-      Comparator comparator = (Comparator) fury.readRefFromJava(buffer);
+      Comparator comparator = (Comparator) fury.readRef(buffer);
       PriorityQueue queue = new PriorityQueue(comparator);
       fury.getRefResolver().reference(queue);
       return queue;

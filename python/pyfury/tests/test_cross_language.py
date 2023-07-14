@@ -328,7 +328,7 @@ def _deserialize_and_append(fury_, buffer, objects: list):
 
 
 @cross_language_test
-def test_cross_language_ref(data_file_path):
+def test_cross_language_reference(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
         buffer = pyfury.Buffer(data_bytes)
@@ -502,31 +502,31 @@ def test_serialize_opaque_object(data_file_path):
 
 
 class ComplexObject1Serializer(pyfury.serializer.Serializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return pyfury.type.FuryType.FURY_TYPE_TAG.value
 
-    def get_cross_language_type_tag(self):
+    def get_xtype_tag(self):
         return "test.ComplexObject1"
 
     def write(self, buffer, value):
-        self.cross_language_write(buffer, value)
+        self.xwrite(buffer, value)
 
     def read(self, buffer):
-        return self.cross_language_read(buffer)
+        return self.xread(buffer)
 
-    def cross_language_write(self, buffer, value):
-        self.fury_.cross_language_serialize_ref(buffer, value.f1)
-        self.fury_.cross_language_serialize_ref(buffer, value.f2)
-        self.fury_.cross_language_serialize_ref(buffer, value.f3)
+    def xwrite(self, buffer, value):
+        self.fury.xserialize_ref(buffer, value.f1)
+        self.fury.xserialize_ref(buffer, value.f2)
+        self.fury.xserialize_ref(buffer, value.f3)
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         obj = ComplexObject1(
             *([None] * len(typing.get_type_hints(ComplexObject1).keys()))
         )
-        self.fury_.ref_resolver.reference(obj)
-        obj.f1 = self.fury_.cross_language_deserialize_ref(buffer)
-        obj.f2 = self.fury_.cross_language_deserialize_ref(buffer)
-        obj.f3 = self.fury_.cross_language_deserialize_ref(buffer)
+        self.fury.ref_resolver.reference(obj)
+        obj.f1 = self.fury.xdeserialize_ref(buffer)
+        obj.f2 = self.fury.xdeserialize_ref(buffer)
+        obj.f3 = self.fury.xdeserialize_ref(buffer)
         return obj
 
 
@@ -535,17 +535,17 @@ def test_register_serializer(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
     buffer = pyfury.Buffer(data_bytes)
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury_.register_serializer(
-        ComplexObject1, ComplexObject1Serializer(fury_, ComplexObject1)
+    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+    fury.register_serializer(
+        ComplexObject1, ComplexObject1Serializer(fury, ComplexObject1)
     )
-    new_obj = fury_.deserialize(buffer)
+    new_obj = fury.deserialize(buffer)
     expected = ComplexObject1(*[None] * 12)
     expected.f1, expected.f2, expected.f3 = True, "abc", ["abc", "abc"]
     debug_print(new_obj)
     assert new_obj == expected
     new_buf = pyfury.Buffer.allocate(32)
-    fury_.serialize(new_obj, buffer=new_buf)
+    fury.serialize(new_obj, buffer=new_buf)
     with open(data_file_path, "wb+") as f:
         f.write(new_buf.get_bytes(0, new_buf.writer_index))
 

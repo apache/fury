@@ -194,7 +194,7 @@ public class ReplaceResolveSerializer extends Serializer {
           // written `REF_VALUE_FLAG`/`NOT_NULL_VALUE_FLAG` id outside this method call will be
           // ignored.
           refResolver.replaceRef(original, value);
-          fury.writeNonRefToJava(buffer, value);
+          fury.writeNonRefT(buffer, value);
         }
       } else {
         if (value != original) {
@@ -233,7 +233,7 @@ public class ReplaceResolveSerializer extends Serializer {
       int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
         // ref value or not-null value
-        Object o = fury.readDataFromJava(buffer, classResolver.readAndUpdateClassInfoCache(buffer));
+        Object o = fury.readData(buffer, classResolver.readAndUpdateClassInfoCache(buffer));
         refResolver.setReadObject(nextReadRefId, o);
         refResolver.setReadObject(outerRefId, o);
         return o;

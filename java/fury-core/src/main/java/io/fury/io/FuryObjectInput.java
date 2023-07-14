@@ -52,7 +52,7 @@ public class FuryObjectInput extends InputStream implements ObjectInput {
 
   @Override
   public Object readObject() throws ClassNotFoundException, IOException {
-    return fury.readRefFromJava(buffer);
+    return fury.readRef(buffer);
   }
 
   @Override

@@ -334,7 +334,7 @@ cdef class ClassResolver:
 
     def register_serializer(self, cls: Union[type, TypeVar], serializer):
         assert isinstance(cls, (type, TypeVar)), cls
-        type_id = serializer.get_cross_language_type_id()
+        type_id = serializer.get_xtype_id()
         if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
             self._add_x_lang_serializer(cls, serializer=serializer)
         else:
@@ -416,7 +416,7 @@ cdef class ClassResolver:
                                serializer_cls=None):
         if serializer_cls:
             serializer = serializer_cls(self.fury_, cls)
-        type_id = serializer.get_cross_language_type_id()
+        type_id = serializer.get_xtype_id()
 
         assert type_id != NOT_SUPPORT_CROSS_LANGUAGE
         self._type_id_and_cls_to_serializer[(type_id, cls)] = serializer
@@ -424,7 +424,7 @@ cdef class ClassResolver:
         classinfo = self._classes_info[cls]
         classinfo.serializer = serializer
         if type_id == FuryType.FURY_TYPE_TAG.value:
-            type_tag = serializer.get_cross_language_type_tag()
+            type_tag = serializer.get_xtype_tag()
             assert type(type_tag) is str
             assert type_tag not in self._type_tag_to_class_x_lang_map
             classinfo.type_tag_bytes = EnumStringBytes(type_tag.encode("utf-8"))
@@ -487,7 +487,7 @@ cdef class ClassResolver:
                 serializer=PyArraySerializer(self.fury_, array.array, typecode),
             )
             self._add_serializer(
-                PyArraySerializer.typecode_to_pyarray_type[typecode],
+                PyArraySerializer.typecodearray_type[typecode],
                 serializer=PyArraySerializer(self.fury_, array.array, typecode),
             )
         if np:
@@ -668,23 +668,23 @@ cdef class ClassResolver:
         self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
         return enum_str
 
-    cpdef inline cross_language_write_class(self, Buffer buffer, cls):
+    cpdef inline xwrite_class(self, Buffer buffer, cls):
         cdef PyObject* classinfo_ptr = self._c_classes_info[<uintptr_t><PyObject*>cls]
         assert classinfo_ptr != NULL
         cdef EnumStringBytes class_name_bytes = (<object>classinfo_ptr).class_name_bytes
         self._write_enum_string_bytes(buffer, class_name_bytes)
 
-    cpdef inline cross_language_write_type_tag(self, Buffer buffer, cls):
+    cpdef inline xwrite_type_tag(self, Buffer buffer, cls):
         cdef PyObject* classinfo_ptr = self._c_classes_info[<uintptr_t><PyObject*>cls]
         assert classinfo_ptr != NULL
         cdef EnumStringBytes type_tag_bytes = (<object>classinfo_ptr).type_tag_bytes
         self._write_enum_string_bytes(buffer, type_tag_bytes)
 
     cpdef inline read_class_by_type_tag(self, Buffer buffer):
-        tag = self.cross_language_read_classname(buffer)
+        tag = self.xread_classname(buffer)
         return self._type_tag_to_class_x_lang_map[tag]
 
-    cpdef inline cross_language_read_class(self, Buffer buffer):
+    cpdef inline xread_class(self, Buffer buffer):
         cdef EnumStringBytes str_bytes = self._read_enum_string_bytes(buffer)
         cdef uint64_t object_id = <uintptr_t><PyObject*>str_bytes
         cdef PyObject* cls_ptr = self._c_str_bytes_to_class[object_id]
@@ -696,7 +696,7 @@ cdef class ClassResolver:
         self._class_set.add(cls)
         return cls
 
-    cpdef inline str cross_language_read_classname(self, Buffer buffer):
+    cpdef inline str xread_classname(self, Buffer buffer):
         cdef EnumStringBytes str_bytes = self._read_enum_string_bytes(buffer)
         cdef uint64_t object_id = <uintptr_t><PyObject*>str_bytes
         cdef PyObject* classname_ptr = self._c_enum_str_to_str[object_id]
@@ -882,14 +882,14 @@ cdef class Fury:
             clear_bit(buffer, mask_index, 3)
         cdef int32_t start_offset
         if self.language == Language.PYTHON:
-            self.serialize_ref_to_py(buffer, obj)
+            self.serialize_ref(buffer, obj)
         else:
             start_offset = buffer.writer_index
             # preserve 4-byte for nativeObjects start offsets.
             buffer.write_int32(<int32_t>-1)
             # preserve 4-byte for nativeObjects size
             buffer.write_int32(<int32_t>-1)
-            self.cross_language_serialize_ref(buffer, obj)
+            self.xserialize_ref(buffer, obj)
             buffer.put_int32(start_offset, buffer.writer_index)
             buffer.put_int32(start_offset + 4, len(self._native_objects))
             self.ref_resolver.reset_write()
@@ -897,14 +897,14 @@ cdef class Fury:
             # only write an id.
             self.class_resolver.reset_write()
             for native_object in self._native_objects:
-                self.serialize_ref_to_py(buffer, native_object)
+                self.serialize_ref(buffer, native_object)
         self.reset_write()
         if buffer is not self.buffer:
             return buffer
         else:
             return buffer.to_bytes(0, buffer.writer_index)
 
-    cpdef inline serialize_ref_to_py(
+    cpdef inline serialize_ref(
             self, Buffer buffer, obj, ClassInfo classinfo=None):
         cls = type(obj)
         if cls is str:
@@ -930,7 +930,7 @@ cdef class Fury:
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
-    cpdef inline serialize_non_ref_to_py(self, Buffer buffer, obj):
+    cpdef inline serialize_nonref(self, Buffer buffer, obj):
         cls = type(obj)
         if cls is str:
             buffer.write_int16(STRING_CLASS_ID)
@@ -952,11 +952,11 @@ cdef class Fury:
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
-    cpdef inline cross_language_serialize_ref(
+    cpdef inline xserialize_ref(
             self, Buffer buffer, obj, Serializer serializer=None):
         if serializer is None or serializer.need_to_write_ref:
             if not self.ref_resolver.write_ref_or_null(buffer, obj):
-                self.cross_language_serialize_non_ref(
+                self.xserialize_nonref(
                     buffer, obj, serializer=serializer
                 )
         else:
@@ -964,27 +964,27 @@ cdef class Fury:
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.cross_language_serialize_non_ref(
+                self.xserialize_nonref(
                     buffer, obj, serializer=serializer
                 )
 
-    cpdef inline cross_language_serialize_non_ref(
+    cpdef inline xserialize_nonref(
             self, Buffer buffer, obj, Serializer serializer=None):
         cls = type(obj)
         serializer = serializer or self.class_resolver.get_serializer(obj=obj)
-        cdef int16_t type_id = serializer.get_cross_language_type_id()
+        cdef int16_t type_id = serializer.get_xtype_id()
         buffer.write_int16(type_id)
         if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
             if type_id == FuryType.FURY_TYPE_TAG.value:
-                self.class_resolver.cross_language_write_type_tag(buffer, cls)
+                self.class_resolver.xwrite_type_tag(buffer, cls)
             if type_id < NOT_SUPPORT_CROSS_LANGUAGE:
-                self.class_resolver.cross_language_write_class(buffer, cls)
-            serializer.cross_language_write(buffer, obj)
+                self.class_resolver.xwrite_class(buffer, cls)
+            serializer.xwrite(buffer, obj)
         else:
             # Write classname so it can be used for debugging which object doesn't
             # support cross-language.
             # TODO add a config to disable this to reduce space cost.
-            self.class_resolver.cross_language_write_class(buffer, cls)
+            self.class_resolver.xwrite_class(buffer, cls)
             # serializer may increase reference id multi times internally, thus peer
             # cross-language later fields/objects deserialization will use wrong
             # reference id since we skip opaque objects deserialization.
@@ -1041,7 +1041,7 @@ cdef class Fury:
                 "produced with buffer_callback null."
             )
         if not is_target_x_lang:
-            return self.deserialize_ref_from_py(buffer)
+            return self.deserialize_ref(buffer)
         cdef int32_t native_objects_start_offset = buffer.read_int32()
         cdef int32_t native_objects_size = buffer.read_int32()
         if self._peer_language == Language.PYTHON:
@@ -1049,13 +1049,13 @@ cdef class Fury:
                 native_objects_buffer = buffer.slice(native_objects_start_offset)
                 for i in range(native_objects_size):
                     self._native_objects.append(
-                        self.deserialize_ref_from_py(native_objects_buffer)
+                        self.deserialize_ref(native_objects_buffer)
                     )
                 self.ref_resolver.reset_read()
                 self.class_resolver.reset_read()
-        return self.cross_language_deserialize_ref(buffer)
+        return self.xdeserialize_ref(buffer)
 
-    cpdef inline deserialize_ref_from_py(self, Buffer buffer):
+    cpdef inline deserialize_ref(self, Buffer buffer):
         cdef MapRefResolver ref_resolver = self.ref_resolver
         cdef int32_t ref_id = ref_resolver.try_preserve_ref_id(buffer)
         if ref_id < NOT_NULL_VALUE_FLAG:
@@ -1075,7 +1075,7 @@ cdef class Fury:
         ref_resolver.set_read_object(ref_id, o)
         return o
 
-    cpdef inline deserialize_non_ref_from_py(self, Buffer buffer):
+    cpdef inline deserialize_nonref(self, Buffer buffer):
         """Deserialize not-null and non-reference object from buffer."""
         cdef ClassInfo classinfo = self.class_resolver.read_classinfo(buffer)
         cls = classinfo.cls
@@ -1089,7 +1089,7 @@ cdef class Fury:
             return buffer.read_double()
         return classinfo.serializer.read(buffer)
 
-    cpdef inline cross_language_deserialize_ref(
+    cpdef inline xdeserialize_ref(
             self, Buffer buffer, Serializer serializer=None):
         cdef MapRefResolver ref_resolver
         cdef int32_t red_id
@@ -1099,7 +1099,7 @@ cdef class Fury:
 
             # indicates that the object is first read.
             if red_id >= NOT_NULL_VALUE_FLAG:
-                o = self.cross_language_deserialize_non_ref(
+                o = self.xdeserialize_nonref(
                     buffer, serializer=serializer
                 )
                 ref_resolver.set_read_object(red_id, o)
@@ -1109,11 +1109,11 @@ cdef class Fury:
         cdef int8_t head_flag = buffer.read_int8()
         if head_flag == NULL_FLAG:
             return None
-        return self.cross_language_deserialize_non_ref(
+        return self.xdeserialize_nonref(
             buffer, serializer=serializer
         )
 
-    cpdef inline cross_language_deserialize_non_ref(
+    cpdef inline xdeserialize_nonref(
             self, Buffer buffer, Serializer serializer=None):
         cdef int16_t type_id = buffer.read_int16()
         cls = None
@@ -1122,13 +1122,13 @@ cdef class Fury:
                 cls = self.class_resolver.read_class_by_type_tag(buffer)
             if type_id < NOT_SUPPORT_CROSS_LANGUAGE:
                 if self._peer_language is not Language.PYTHON:
-                    self.class_resolver.cross_language_read_classname(buffer)
+                    self.class_resolver.xread_classname(buffer)
                     cls = self.class_resolver.get_class_by_type_id(-type_id)
                     serializer = serializer or self.class_resolver.get_serializer(
                         type_id=-type_id
                     )
                 else:
-                    cls = self.class_resolver.cross_language_read_class(buffer)
+                    cls = self.class_resolver.xread_class(buffer)
                     serializer = serializer or self.class_resolver.get_serializer(
                         cls=cls, type_id=type_id
                     )
@@ -1139,8 +1139,8 @@ cdef class Fury:
                     cls=cls, type_id=type_id
                 )
             assert cls is not None
-            return serializer.cross_language_read(buffer)
-        cdef str class_name = self.class_resolver.cross_language_read_classname(buffer)
+            return serializer.xread(buffer)
+        cdef str class_name = self.class_resolver.xread_classname(buffer)
         cdef int32_t ordinal = buffer.read_varint32()
         if self._peer_language != Language.PYTHON:
             return OpaqueObject(self._peer_language, class_name, ordinal)
@@ -1312,11 +1312,11 @@ cdef class Serializer:
     cdef public c_bool need_to_write_ref
 
     def __init__(self, fury_, type_: Union[type, TypeVar]):
-        self.fury_ = fury_
+        self.fury = fury_
         self.type_ = type_
         self.need_to_write_ref = not is_primitive_type(type_)
 
-    cpdef int16_t get_cross_language_type_id(self):
+    cpdef int16_t get_xtype_id(self):
         """
         Returns
         -------
@@ -1331,7 +1331,7 @@ cdef class Serializer:
         """
         return NOT_SUPPORT_CROSS_LANGUAGE
 
-    cpdef str get_cross_language_type_tag(self):
+    cpdef str get_xtype_tag(self):
         """
         Returns
         -------
@@ -1344,10 +1344,10 @@ cdef class Serializer:
     cpdef read(self, Buffer buffer):
         raise NotImplementedError
 
-    cpdef cross_language_write(self, Buffer buffer, value):
+    cpdef xwrite(self, Buffer buffer, value):
         raise NotImplemented
 
-    cpdef cross_language_read(self, Buffer buffer):
+    cpdef xread(self, Buffer buffer):
         raise NotImplemented
 
     @classmethod
@@ -1365,16 +1365,16 @@ cdef class CrossLanguageCompatibleSerializer(Serializer):
     def __init__(self, fury_, type_):
         super().__init__(fury_, type_)
 
-    cpdef cross_language_write(self, Buffer buffer, value):
+    cpdef xwrite(self, Buffer buffer, value):
         self.write(buffer, value)
 
-    cpdef cross_language_read(self, Buffer buffer):
+    cpdef xread(self, Buffer buffer):
         return self.read(buffer)
 
 
 @cython.final
 cdef class BooleanSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.BOOL.value
 
     cpdef inline write(self, Buffer buffer, value):
@@ -1387,10 +1387,10 @@ cdef class BooleanSerializer(CrossLanguageCompatibleSerializer):
 @cython.final
 cdef class NoneSerializer(Serializer):
 
-    cpdef inline cross_language_write(self, Buffer buffer, value):
+    cpdef inline xwrite(self, Buffer buffer, value):
         raise NotImplementedError
 
-    cpdef inline cross_language_read(self, Buffer buffer):
+    cpdef inline xread(self, Buffer buffer):
         raise NotImplementedError
 
     cpdef inline write(self, Buffer buffer, value):
@@ -1402,7 +1402,7 @@ cdef class NoneSerializer(Serializer):
 
 @cython.final
 cdef class ByteSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.INT8.value
 
     cpdef inline write(self, Buffer buffer, value):
@@ -1414,7 +1414,7 @@ cdef class ByteSerializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class Int16Serializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.INT16.value
 
     cpdef inline write(self, Buffer buffer, value):
@@ -1426,7 +1426,7 @@ cdef class Int16Serializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class Int32Serializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.INT32.value
 
     cpdef inline write(self, Buffer buffer, value):
@@ -1438,13 +1438,13 @@ cdef class Int32Serializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class Int64Serializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.INT64.value
 
-    cpdef inline cross_language_write(self, Buffer buffer, value):
+    cpdef inline xwrite(self, Buffer buffer, value):
         buffer.write_int64(value)
 
-    cpdef inline cross_language_read(self, Buffer buffer):
+    cpdef inline xread(self, Buffer buffer):
         return buffer.read_int64()
 
     cpdef inline write(self, Buffer buffer, value):
@@ -1456,7 +1456,7 @@ cdef class Int64Serializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class FloatSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.FLOAT.value
 
     cpdef inline write(self, Buffer buffer, value):
@@ -1468,7 +1468,7 @@ cdef class FloatSerializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class DoubleSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.DOUBLE.value
 
     cpdef inline write(self, Buffer buffer, value):
@@ -1480,7 +1480,7 @@ cdef class DoubleSerializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class StringSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.STRING.value
 
     cpdef inline write(self, Buffer buffer, value):
@@ -1495,7 +1495,7 @@ cdef _base_date = datetime.date(1970, 1, 1)
 
 @cython.final
 cdef class DateSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.DATE32.value
 
     cpdef inline write(self, Buffer buffer, value):
@@ -1515,7 +1515,7 @@ cdef class DateSerializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class TimestampSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.TIMESTAMP.value
 
     cpdef inline write(self, Buffer buffer, value):
@@ -1535,14 +1535,14 @@ cdef class TimestampSerializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class BytesSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.BINARY.value
 
     cpdef inline write(self, Buffer buffer, value):
-        self.fury_.write_buffer_object(buffer, BytesBufferObject(value))
+        self.fury.write_buffer_object(buffer, BytesBufferObject(value))
 
     cpdef inline read(self, Buffer buffer):
-        fury_buf = self.fury_.read_buffer_object(buffer)
+        fury_buf = self.fury.read_buffer_object(buffer)
         return fury_buf.to_pybytes()
 
 
@@ -1557,7 +1557,7 @@ cdef class CollectionSerializer(Serializer):
         self.ref_resolver = fury.ref_resolver
         self.elem_serializer = elem_serializer
 
-    cpdef int16_t get_cross_language_type_id(self):
+    cpdef int16_t get_xtype_id(self):
         return -FuryType.LIST.value
 
     cpdef write(self, Buffer buffer, value):
@@ -1584,7 +1584,7 @@ cdef class CollectionSerializer(Serializer):
                     class_resolver.write_classinfo(buffer, classinfo)
                     classinfo.serializer.write(buffer, s)
 
-    cpdef cross_language_write(self, Buffer buffer, value):
+    cpdef xwrite(self, Buffer buffer, value):
         cdef int32_t len_ = 0
         try:
             len_ = len(value)
@@ -1593,30 +1593,30 @@ cdef class CollectionSerializer(Serializer):
             len_ = len(value)
         buffer.write_varint32(len_)
         for s in value:
-            self.fury_.cross_language_serialize_ref(
+            self.fury.xserialize_ref(
                 buffer, s, serializer=self.elem_serializer
             )
             len_ += 1
 
 
 cdef class ListSerializer(CollectionSerializer):
-    cpdef int16_t get_cross_language_type_id(self):
+    cpdef int16_t get_xtype_id(self):
         return FuryType.LIST.value
 
     cpdef read(self, Buffer buffer):
-        cdef MapRefResolver ref_resolver = self.fury_.ref_resolver
-        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        cdef MapRefResolver ref_resolver = self.fury.ref_resolver
+        cdef ClassResolver class_resolver = self.fury.class_resolver
         cdef list list_ = []
         ref_resolver.reference(list_)
         populate_list(buffer, list_, ref_resolver, class_resolver)
         return list_
 
-    cpdef cross_language_read(self, Buffer buffer):
+    cpdef xread(self, Buffer buffer):
         cdef int32_t len_ = buffer.read_varint32()
         cdef list collection_ = []
-        self.fury_.ref_resolver.reference(collection_)
+        self.fury.ref_resolver.reference(collection_)
         for i in range(len_):
-            collection_.append(self.fury_.cross_language_deserialize_ref(
+            collection_.append(self.fury.xdeserialize_ref(
                 buffer, serializer=self.elem_serializer
             ))
         return collection_
@@ -1658,17 +1658,17 @@ cdef populate_list(
 @cython.final
 cdef class TupleSerializer(CollectionSerializer):
     cpdef inline read(self, Buffer buffer):
-        cdef MapRefResolver ref_resolver = self.fury_.ref_resolver
-        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        cdef MapRefResolver ref_resolver = self.fury.ref_resolver
+        cdef ClassResolver class_resolver = self.fury.class_resolver
         cdef list list_ = []
         populate_list(buffer, list_, ref_resolver, class_resolver)
         return tuple(list_)
 
-    cpdef inline cross_language_read(self, Buffer buffer):
+    cpdef inline xread(self, Buffer buffer):
         cdef int32_t len_ = buffer.read_varint32()
         cdef list collection_ = []
         for i in range(len_):
-            collection_.append(self.fury_.cross_language_deserialize_ref(
+            collection_.append(self.fury.xdeserialize_ref(
                 buffer, serializer=self.elem_serializer
             ))
         return tuple(collection_)
@@ -1679,18 +1679,18 @@ cdef class StringArraySerializer(ListSerializer):
     def __init__(self, fury, type_):
         super().__init__(fury, type_, StringSerializer(fury, str))
 
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.FURY_STRING_ARRAY.value
 
 
 @cython.final
 cdef class SetSerializer(CollectionSerializer):
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.FURY_SET.value
 
     cpdef inline read(self, Buffer buffer):
-        cdef MapRefResolver ref_resolver = self.fury_.ref_resolver
-        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        cdef MapRefResolver ref_resolver = self.fury.ref_resolver
+        cdef ClassResolver class_resolver = self.fury.class_resolver
         cdef set instance = set()
         ref_resolver.reference(instance)
         cdef int32_t len_ = buffer.read_varint32()
@@ -1718,12 +1718,12 @@ cdef class SetSerializer(CollectionSerializer):
                 instance.add(o)
         return instance
 
-    cpdef inline cross_language_read(self, Buffer buffer):
+    cpdef inline xread(self, Buffer buffer):
         cdef int32_t len_ = buffer.read_varint32()
         cdef set instance = set()
-        self.fury_.ref_resolver.reference(instance)
+        self.fury.ref_resolver.reference(instance)
         for i in range(len_):
-            instance.add(self.fury_.cross_language_deserialize_ref(
+            instance.add(self.fury.xdeserialize_ref(
                 buffer, serializer=self.elem_serializer
             ))
         return instance
@@ -1743,7 +1743,7 @@ cdef class MapSerializer(Serializer):
         self.key_serializer = key_serializer
         self.value_serializer = value_serializer
 
-    cpdef inline int16_t get_cross_language_type_id(self):
+    cpdef inline int16_t get_xtype_id(self):
         return FuryType.MAP.value
 
     cpdef inline write(self, Buffer buffer, o):
@@ -1821,26 +1821,26 @@ cdef class MapSerializer(Serializer):
             map_[key] = value
         return map_
 
-    cpdef inline cross_language_write(self, Buffer buffer, o):
+    cpdef inline xwrite(self, Buffer buffer, o):
         cdef dict value = o
         buffer.write_varint32(len(value))
         for k, v in value.items():
-            self.fury_.cross_language_serialize_ref(
+            self.fury.xserialize_ref(
                 buffer, k, serializer=self.key_serializer
             )
-            self.fury_.cross_language_serialize_ref(
+            self.fury.xserialize_ref(
                 buffer, v, serializer=self.value_serializer
             )
 
-    cpdef inline cross_language_read(self, Buffer buffer):
+    cpdef inline xread(self, Buffer buffer):
         cdef int32_t len_ = buffer.read_varint32()
         cdef dict map_ = {}
-        self.fury_.ref_resolver.reference(map_)
+        self.fury.ref_resolver.reference(map_)
         for i in range(len_):
-            k = self.fury_.cross_language_deserialize_ref(
+            k = self.fury.xdeserialize_ref(
                 buffer, serializer=self.key_serializer
             )
-            v = self.fury_.cross_language_deserialize_ref(
+            v = self.fury.xdeserialize_ref(
                 buffer, serializer=self.value_serializer
             )
             map_[k] = v
@@ -1896,8 +1896,8 @@ cdef class SubMapSerializer(Serializer):
                     value_classinfo.serializer.write(buffer, v)
 
     cpdef inline read(self, Buffer buffer):
-        cdef MapRefResolver ref_resolver = self.fury_.ref_resolver
-        cdef ClassResolver class_resolver = self.fury_.class_resolver
+        cdef MapRefResolver ref_resolver = self.fury.ref_resolver
+        cdef ClassResolver class_resolver = self.fury.class_resolver
         map_ = self.type_()
         ref_resolver.reference(map_)
         cdef int32_t len_ = buffer.read_varint32()
@@ -1954,7 +1954,7 @@ if np:
 @cython.final
 cdef class PyArraySerializer(CrossLanguageCompatibleSerializer):
     typecode_dict = typecode_dict
-    typecode_to_pyarray_type = {
+    typecodearray_type = {
         "h": Int16ArrayType,
         "i": Int32ArrayType,
         "l": Int64ArrayType,
@@ -1970,10 +1970,10 @@ cdef class PyArraySerializer(CrossLanguageCompatibleSerializer):
         self.typecode = typecode
         self.itemsize, self.type_id = PyArraySerializer.typecode_dict[self.typecode]
 
-    cpdef int16_t get_cross_language_type_id(self):
+    cpdef int16_t get_xtype_id(self):
         return self.type_id
 
-    cpdef inline cross_language_write(self, Buffer buffer, value):
+    cpdef inline xwrite(self, Buffer buffer, value):
         assert value.itemsize == self.itemsize
         view = memoryview(value)
         assert view.format == self.typecode
@@ -1983,7 +1983,7 @@ cdef class PyArraySerializer(CrossLanguageCompatibleSerializer):
         buffer.write_varint32(nbytes)
         buffer.write_buffer(value)
 
-    cpdef inline cross_language_read(self, Buffer buffer):
+    cpdef inline xread(self, Buffer buffer):
         data = buffer.read_bytes_and_size()
         arr = array.array(self.typecode, [])
         arr.frombytes(data)
@@ -2030,10 +2030,10 @@ cdef class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
         self.dtype = dtype
         self.itemsize, self.typecode, self.type_id = _np_dtypes_dict[self.dtype]
 
-    cpdef int16_t get_cross_language_type_id(self):
+    cpdef int16_t get_xtype_id(self):
         return self.type_id
 
-    cpdef inline cross_language_write(self, Buffer buffer, value):
+    cpdef inline xwrite(self, Buffer buffer, value):
         assert value.itemsize == self.itemsize
         view = memoryview(value)
         try:
@@ -2048,15 +2048,15 @@ cdef class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
         else:
             buffer.write_buffer(value)
 
-    cpdef inline cross_language_read(self, Buffer buffer):
+    cpdef inline xread(self, Buffer buffer):
         data = buffer.read_bytes_and_size()
         return np.frombuffer(data, dtype=self.dtype)
 
     cpdef inline write(self, Buffer buffer, value):
-        self.fury_.handle_unsupported_write(buffer, value)
+        self.fury.handle_unsupported_write(buffer, value)
 
     cpdef inline read(self, Buffer buffer):
-        return self.fury_.handle_unsupported_read(buffer)
+        return self.fury.handle_unsupported_read(buffer)
 
 
 cdef _get_hash(Fury fury_, list field_names, dict type_hints):
@@ -2089,7 +2089,7 @@ cdef class ComplexObjectSerializer(Serializer):
         for index, key in enumerate(self._field_names):
             serializer = infer_field(key, self._type_hints[key], visitor, types_path=[])
             self._serializers[index] = serializer
-        if self.fury_.language == Language.PYTHON:
+        if self.fury.language == Language.PYTHON:
             logger.warning(
                 "Type of class %s shouldn't be serialized using cross-language "
                 "serializer",
@@ -2097,47 +2097,47 @@ cdef class ComplexObjectSerializer(Serializer):
             )
         self._hash = 0
 
-    cpdef int16_t get_cross_language_type_id(self):
+    cpdef int16_t get_xtype_id(self):
         return FuryType.FURY_TYPE_TAG.value
 
-    cpdef str get_cross_language_type_tag(self):
+    cpdef str get_xtype_tag(self):
         return self._type_tag
 
     cpdef write(self, Buffer buffer, value):
-        return self.cross_language_write(buffer, value)
+        return self.xwrite(buffer, value)
 
     cpdef read(self, Buffer buffer):
-        return self.cross_language_read(buffer)
+        return self.xread(buffer)
 
-    cpdef cross_language_write(self, Buffer buffer, value):
+    cpdef xwrite(self, Buffer buffer, value):
         if self._hash == 0:
-            self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
+            self._hash = _get_hash(self.fury, self._field_names, self._type_hints)
         buffer.write_int32(self._hash)
         cdef Serializer serializer
         cdef int32_t index
         for index, field_name in enumerate(self._field_names):
             field_value = getattr(value, field_name)
             serializer = self._serializers[index]
-            self.fury_.cross_language_serialize_ref(
+            self.fury.xserialize_ref(
                 buffer, field_value, serializer=serializer
             )
 
-    cpdef cross_language_read(self, Buffer buffer):
+    cpdef xread(self, Buffer buffer):
         cdef int32_t hash_ = buffer.read_int32()
         if self._hash == 0:
-            self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
+            self._hash = _get_hash(self.fury, self._field_names, self._type_hints)
         if hash_ != self._hash:
             raise ClassNotCompatibleError(
                 f"Hash {hash_} is not consistent with {self._hash} "
                 f"for class {self.type_}",
             )
         obj = self.type_.__new__(self.type_)
-        self.fury_.ref_resolver.reference(obj)
+        self.fury.ref_resolver.reference(obj)
         cdef Serializer serializer
         cdef int32_t index
         for index, field_name in enumerate(self._field_names):
             serializer = self._serializers[index]
-            field_value = self.fury_.cross_language_deserialize_ref(
+            field_value = self.fury.xdeserialize_ref(
                 buffer, serializer=serializer
             )
             setattr(
@@ -2162,10 +2162,10 @@ cdef class EnumSerializer(Serializer):
         name = buffer.read_string()
         return getattr(self.type_, name)
 
-    cpdef inline cross_language_write(self, Buffer buffer, value):
+    cpdef inline xwrite(self, Buffer buffer, value):
         raise NotImplementedError
 
-    cpdef inline cross_language_read(self, Buffer buffer):
+    cpdef inline xread(self, Buffer buffer):
         raise NotImplementedError
 
 
@@ -2183,7 +2183,7 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref_to_py(buffer, start)
+                self.fury.serialize_nonref(buffer, start)
         if type(stop) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -2193,7 +2193,7 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref_to_py(buffer, stop)
+                self.fury.serialize_nonref(buffer, stop)
         if type(step) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -2203,40 +2203,40 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref_to_py(buffer, step)
+                self.fury.serialize_nonref(buffer, step)
 
     cpdef inline read(self, Buffer buffer):
         if buffer.read_int8() == NULL_FLAG:
             start = None
         else:
-            start = self.fury_.deserialize_non_ref_from_py(buffer)
+            start = self.fury.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             stop = None
         else:
-            stop = self.fury_.deserialize_non_ref_from_py(buffer)
+            stop = self.fury.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             step = None
         else:
-            step = self.fury_.deserialize_non_ref_from_py(buffer)
+            step = self.fury.deserialize_nonref(buffer)
         return slice(start, stop, step)
 
-    cpdef cross_language_write(self, Buffer buffer, value):
+    cpdef xwrite(self, Buffer buffer, value):
         raise NotImplementedError
 
-    cpdef cross_language_read(self, Buffer buffer):
+    cpdef xread(self, Buffer buffer):
         raise NotImplementedError
 
 
 @cython.final
 cdef class PickleSerializer(Serializer):
-    cpdef inline cross_language_write(self, Buffer buffer, value):
+    cpdef inline xwrite(self, Buffer buffer, value):
         raise NotImplementedError
 
-    cpdef inline cross_language_read(self, Buffer buffer):
+    cpdef inline xread(self, Buffer buffer):
         raise NotImplementedError
 
     cpdef inline write(self, Buffer buffer, value):
-        self.fury_.handle_unsupported_write(buffer, value)
+        self.fury.handle_unsupported_write(buffer, value)
 
     cpdef inline read(self, Buffer buffer):
-        return self.fury_.handle_unsupported_read(buffer)
+        return self.fury.handle_unsupported_read(buffer)

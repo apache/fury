@@ -54,7 +54,7 @@ public class FuryObjectOutput extends OutputStream implements ObjectOutput {
 
   @Override
   public void writeObject(Object obj) throws IOException {
-    fury.writeRefoJava(buffer, obj);
+    fury.writeRef(buffer, obj);
   }
 
   @Override

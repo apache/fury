@@ -150,7 +150,7 @@ public class FuryState {
           break;
       }
 
-      fury.writeRefoJava(buffer, object);
+      fury.writeRef(buffer, object);
       serializedLength = buffer.writerIndex();
       LOG.info(
           "======> Fury | {} | {} | {} | {} |",
@@ -159,7 +159,7 @@ public class FuryState {
           bufferType,
           serializedLength);
       buffer.writerIndex(0);
-      Preconditions.checkArgument(object.equals(fury.readRefFromJava(buffer)));
+      Preconditions.checkArgument(object.equals(fury.readRef(buffer)));
       buffer.readerIndex(0);
     }
 

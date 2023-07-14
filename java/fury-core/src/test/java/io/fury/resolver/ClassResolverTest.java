@@ -241,9 +241,9 @@ public class ClassResolverTest extends FuryTestBase {
   public void testWriteClassNamesInSamePackage() {
     Fury fury = Fury.builder().requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-    fury.writeRefoJava(buffer, C1.class);
-    fury.writeRefoJava(buffer, C2.class);
-    fury.writeRefoJava(buffer, C3.class);
+    fury.writeRef(buffer, C1.class);
+    fury.writeRef(buffer, C2.class);
+    fury.writeRef(buffer, C3.class);
     int len1 = C1.class.getName().getBytes(StandardCharsets.UTF_8).length;
     LOG.info("SomeClass1 {}", len1);
     LOG.info("buffer.writerIndex {}", buffer.writerIndex());

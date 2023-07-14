@@ -146,18 +146,18 @@ public final class UnexistedClassSerializers {
             // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
             // consistent with jit serializer.
             Serializer<Object> serializer = classInfo.getSerializer();
-            fury.writeRefoJava(buffer, fieldValue, serializer);
+            fury.writeRef(buffer, fieldValue, serializer);
           } else {
-            fury.writeRefoJava(buffer, fieldValue, classInfo);
+            fury.writeRef(buffer, fieldValue, classInfo);
           }
         }
       }
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.otherFields) {
         Object fieldValue = value.get(fieldInfo.qualifiedFieldName);
         if (fieldInfo.trackingRef) {
-          fury.writeRefoJava(buffer, fieldValue, fieldInfo.classInfoCache);
+          fury.writeRef(buffer, fieldValue, fieldInfo.classInfoCache);
         } else {
-          fury.writeNullableToJava(buffer, fieldValue, fieldInfo.classInfoCache);
+          fury.writeNullable(buffer, fieldValue, fieldInfo.classInfoCache);
         }
       }
       Generics generics = fury.getGenerics();
@@ -210,7 +210,7 @@ public final class UnexistedClassSerializers {
         Object fieldValue;
         if (fieldInfo.classInfo == null) {
           // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
-          fieldValue = fury.readRefFromJava(buffer, classInfoCache);
+          fieldValue = fury.readRef(buffer, classInfoCache);
         } else {
           if (classResolver.isPrimitive(fieldInfo.classId)) {
             fieldValue = fieldInfo.classInfo.getSerializer().read(buffer);

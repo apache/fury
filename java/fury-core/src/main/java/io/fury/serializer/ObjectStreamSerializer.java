@@ -366,11 +366,11 @@ public class ObjectStreamSerializer extends Serializer {
     }
 
     protected final void writeObjectOverride(Object obj) throws IOException {
-      fury.writeRefoJava(buffer, obj);
+      fury.writeRef(buffer, obj);
     }
 
     public void writeUnshared(Object obj) throws IOException {
-      fury.writeNonRefToJava(buffer, obj);
+      fury.writeNonRefT(buffer, obj);
     }
 
     /**
@@ -630,11 +630,11 @@ public class ObjectStreamSerializer extends Serializer {
     }
 
     protected Object readObjectOverride() {
-      return fury.readRefFromJava(buffer);
+      return fury.readRef(buffer);
     }
 
     public Object readUnshared() {
-      return fury.readNonRefFromJava(buffer);
+      return fury.readNonRef(buffer);
     }
 
     private static final Object NO_VALUE_STUB = new Object();

@@ -72,10 +72,10 @@ def test_basic_serializer(language):
     assert isinstance(
         datetime_serializer, (TimestampSerializer, _serialization.TimestampSerializer)
     )
-    assert datetime_serializer.get_cross_language_type_id() == FuryType.TIMESTAMP.value
+    assert datetime_serializer.get_xtype_id() == FuryType.TIMESTAMP.value
     date_serializer = fury_.class_resolver.get_serializer(datetime.date)
     assert isinstance(date_serializer, (DateSerializer, _serialization.DateSerializer))
-    assert date_serializer.get_cross_language_type_id() == FuryType.DATE32.value
+    assert date_serializer.get_xtype_id() == FuryType.DATE32.value
     assert ser_de(fury_, True) is True
     assert ser_de(fury_, False) is False
     assert ser_de(fury_, -1) == -1
@@ -308,17 +308,17 @@ class Bar(Foo):
 
 
 class BarSerializer(pyfury.Serializer):
-    def cross_language_write(self, buffer, value: Bar):
+    def xwrite(self, buffer, value: Bar):
         buffer.write_int32(value.f1)
         buffer.write_int32(value.f2)
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         return Bar(buffer.read_int32(), buffer.read_int32())
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return pyfury.FuryType.FURY_TYPE_TAG.value
 
-    def get_cross_language_type_tag(self):
+    def get_xtype_tag(self):
         return "test.Bar"
 
 
@@ -339,10 +339,10 @@ def test_register_py_serializer():
             a.f1 = buffer.read_int32()
             return a
 
-        def cross_language_write(self, buffer, value):
+        def xwrite(self, buffer, value):
             raise NotImplementedError
 
-        def cross_language_read(self, buffer):
+        def xread(self, buffer):
             raise NotImplementedError
 
     fury_.register_serializer(A, Serializer(fury_, RegisterClass))
@@ -365,10 +365,10 @@ def test_register_class():
         def read(self, buffer):
             return self.type_()
 
-        def cross_language_write(self, buffer, value):
+        def xwrite(self, buffer, value):
             raise NotImplementedError
 
-        def cross_language_read(self, buffer):
+        def xread(self, buffer):
             raise NotImplementedError
 
     fury_.register_serializer(A, Serializer(fury_, A))
@@ -477,11 +477,11 @@ def test_cache_serializer():
 
     classinfo = pyfury.PickleStrongCacheSerializer.new_classinfo(fury)
     buffer = Buffer.allocate(32)
-    fury.serialize_ref_to_py(buffer, TestCacheClass1(1), classinfo)
-    assert fury.deserialize_ref_from_py(buffer) == TestCacheClass1(1)
+    fury.serialize_ref(buffer, TestCacheClass1(1), classinfo)
+    assert fury.deserialize_ref(buffer) == TestCacheClass1(1)
     classinfo = pyfury.PickleCacheSerializer.new_classinfo(fury)
-    fury.serialize_ref_to_py(buffer, TestCacheClass1(1), classinfo)
-    assert fury.deserialize_ref_from_py(buffer) == TestCacheClass1(1)
+    fury.serialize_ref(buffer, TestCacheClass1(1), classinfo)
+    assert fury.deserialize_ref(buffer) == TestCacheClass1(1)
 
 
 def test_pandas_range_index():
