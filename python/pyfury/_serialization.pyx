@@ -12,7 +12,8 @@ import sys
 from typing import TypeVar, Union, Iterable, get_type_hints
 
 from pyfury._util import get_bit, set_bit, clear_bit
-from pyfury._fury import Language, OpaqueObject, _PicklerStub, _UnpicklerStub, _ENABLE_SECURITY_MODE_FORCIBLY
+from pyfury._fury import Language, OpaqueObject
+from pyfury._fury import _PicklerStub, _UnpicklerStub, _ENABLE_SECURITY_MODE_FORCIBLY
 from pyfury.error import ClassNotCompatibleError
 from pyfury.lib import mmh3
 from pyfury.type import is_primitive_type, FuryType, Int8Type, Int16Type, Int32Type, \
@@ -2146,7 +2147,6 @@ cdef class ComplexObjectSerializer(Serializer):
                 field_value,
             )
         return obj
-
 
 
 @cython.final

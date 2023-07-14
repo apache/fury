@@ -9,13 +9,12 @@ cd "$ROOT"
 install_python() {
   wget -q https://repo.anaconda.com/miniconda/Miniconda3-py38_23.5.2-0-Linux-x86_64.sh -O Miniconda3.sh
   bash Miniconda3.sh -b -p $HOME/miniconda && rm -f miniconda.*
-  echo 'export PATH="$HOME/miniconda/bin:$PATH"' >> ~/.bashrc
   which python
   echo "Python version $(python -V)"
 }
 
 install_pyfury() {
-  source ~/.bashrc
+  export PATH="$HOME/miniconda/bin:$PATH"
   echo "Python version $(python -V)"
   pip install pyarrow==4.0.0 Cython wheel numpy pytest
   pushd "$ROOT/python"
