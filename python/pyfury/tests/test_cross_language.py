@@ -258,71 +258,71 @@ def test_cross_language_serializer(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
         buffer = pyfury.Buffer(data_bytes)
-        fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+        fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
         objects = []
-        assert _deserialize_and_append(fury_, buffer, objects) is True
-        assert _deserialize_and_append(fury_, buffer, objects) is False
-        assert _deserialize_and_append(fury_, buffer, objects) == -1
-        assert _deserialize_and_append(fury_, buffer, objects) == 2**7 - 1
-        assert _deserialize_and_append(fury_, buffer, objects) == -(2**7)
-        assert _deserialize_and_append(fury_, buffer, objects) == 2**15 - 1
-        assert _deserialize_and_append(fury_, buffer, objects) == -(2**15)
-        assert _deserialize_and_append(fury_, buffer, objects) == 2**31 - 1
-        assert _deserialize_and_append(fury_, buffer, objects) == -(2**31)
-        assert _deserialize_and_append(fury_, buffer, objects) == 2**63 - 1
-        assert _deserialize_and_append(fury_, buffer, objects) == -(2**63)
-        assert _deserialize_and_append(fury_, buffer, objects) == -1.0
-        assert _deserialize_and_append(fury_, buffer, objects) == -1.0
-        assert _deserialize_and_append(fury_, buffer, objects) == "str"
+        assert _deserialize_and_append(fury, buffer, objects) is True
+        assert _deserialize_and_append(fury, buffer, objects) is False
+        assert _deserialize_and_append(fury, buffer, objects) == -1
+        assert _deserialize_and_append(fury, buffer, objects) == 2**7 - 1
+        assert _deserialize_and_append(fury, buffer, objects) == -(2**7)
+        assert _deserialize_and_append(fury, buffer, objects) == 2**15 - 1
+        assert _deserialize_and_append(fury, buffer, objects) == -(2**15)
+        assert _deserialize_and_append(fury, buffer, objects) == 2**31 - 1
+        assert _deserialize_and_append(fury, buffer, objects) == -(2**31)
+        assert _deserialize_and_append(fury, buffer, objects) == 2**63 - 1
+        assert _deserialize_and_append(fury, buffer, objects) == -(2**63)
+        assert _deserialize_and_append(fury, buffer, objects) == -1.0
+        assert _deserialize_and_append(fury, buffer, objects) == -1.0
+        assert _deserialize_and_append(fury, buffer, objects) == "str"
         day = datetime.date(2021, 11, 23)
-        assert _deserialize_and_append(fury_, buffer, objects) == day
+        assert _deserialize_and_append(fury, buffer, objects) == day
         instant = datetime.datetime.fromtimestamp(100)
-        assert _deserialize_and_append(fury_, buffer, objects) == instant
+        assert _deserialize_and_append(fury, buffer, objects) == instant
         list_ = ["a", 1, -1.0, instant, day]
-        assert _deserialize_and_append(fury_, buffer, objects) == list_
+        assert _deserialize_and_append(fury, buffer, objects) == list_
         dict_ = {f"k{i}": v for i, v in enumerate(list_)}
         dict_.update({v: v for v in list_})
-        assert _deserialize_and_append(fury_, buffer, objects) == dict_
+        assert _deserialize_and_append(fury, buffer, objects) == dict_
         set_ = set(list_)
-        assert _deserialize_and_append(fury_, buffer, objects) == set_
+        assert _deserialize_and_append(fury, buffer, objects) == set_
 
         # test primitive arrays
         import numpy as np
 
         np.testing.assert_array_equal(
-            _deserialize_and_append(fury_, buffer, objects),
+            _deserialize_and_append(fury, buffer, objects),
             np.array([True, False], dtype=np.bool_),
         )
         np.testing.assert_array_equal(
-            _deserialize_and_append(fury_, buffer, objects),
+            _deserialize_and_append(fury, buffer, objects),
             np.array([1, 2**15 - 1], dtype=np.int16),
         )
         np.testing.assert_array_equal(
-            _deserialize_and_append(fury_, buffer, objects),
+            _deserialize_and_append(fury, buffer, objects),
             np.array([1, 2**31 - 1], dtype=np.int32),
         )
         np.testing.assert_array_equal(
-            _deserialize_and_append(fury_, buffer, objects),
+            _deserialize_and_append(fury, buffer, objects),
             np.array([1, 2**63 - 1], dtype=np.int64),
         )
         np.testing.assert_array_equal(
-            _deserialize_and_append(fury_, buffer, objects),
+            _deserialize_and_append(fury, buffer, objects),
             np.array([1, 2], dtype=np.float32),
         )
         np.testing.assert_array_equal(
-            _deserialize_and_append(fury_, buffer, objects),
+            _deserialize_and_append(fury, buffer, objects),
             np.array([1, 2], dtype=np.float64),
         )
         new_buf = pyfury.Buffer.allocate(32)
         for obj in objects:
-            fury_.serialize(obj, buffer=new_buf)
+            fury.serialize(obj, buffer=new_buf)
     with open(data_file_path, "wb+") as f:
         f.write(new_buf.get_bytes(0, new_buf.writer_index))
 
 
 @cross_language_test
-def _deserialize_and_append(fury_, buffer, objects: list):
-    obj = fury_.deserialize(buffer)
+def _deserialize_and_append(fury, buffer, objects: list):
+    obj = fury.deserialize(buffer)
     objects.append(obj)
     return obj
 
@@ -332,16 +332,16 @@ def test_cross_language_reference(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
         buffer = pyfury.Buffer(data_bytes)
-        fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+        fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
         objects = []
-        new_list = _deserialize_and_append(fury_, buffer, objects)
+        new_list = _deserialize_and_append(fury, buffer, objects)
         assert new_list[0] is new_list
         new_map = new_list[1]
         assert new_map["k1"] is new_map
         assert new_map["k2"] is new_list
         new_buf = pyfury.Buffer.allocate(32)
         for obj in objects:
-            fury_.serialize(obj, buffer=new_buf)
+            fury.serialize(obj, buffer=new_buf)
     with open(data_file_path, "wb+") as f:
         f.write(new_buf.get_bytes(0, new_buf.writer_index))
 
@@ -353,10 +353,10 @@ def test_serialize_arrow_in_band(data_file_path):
         table = pa.Table.from_batches([batch] * 2)
         data_bytes = f.read()
         buffer = pyfury.Buffer(data_bytes)
-        fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-        new_batch = fury_.deserialize(buffer)
+        fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+        new_batch = fury.deserialize(buffer)
         assert new_batch == batch
-        new_table = fury_.deserialize(buffer)
+        new_table = fury.deserialize(buffer)
         assert table == new_table
 
 
@@ -375,11 +375,11 @@ def test_serialize_arrow_out_of_band(int_band_file, out_of_band_file):
         out_of_band_buffer.slice(8, len1),
         out_of_band_buffer.slice(8 + len1, len2),
     ]
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    objects = fury_.deserialize(in_band_buffer, buffers=buffers)
+    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+    objects = fury.deserialize(in_band_buffer, buffers=buffers)
     assert objects == [batch, table]
     buffer_objects = []
-    in_band_buffer = fury_.serialize(
+    in_band_buffer = fury.serialize(
         [batch, table], buffer_callback=buffer_objects.append
     )
     buffers = [o.to_buffer() for o in buffer_objects]
@@ -426,26 +426,26 @@ class ComplexObject2:
 
 
 def test_serialize_simple_struct_local():
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury_.register_class_tag(ComplexObject2, "test.ComplexObject2")
+    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+    fury.register_class_tag(ComplexObject2, "test.ComplexObject2")
     obj = ComplexObject2(f1=True, f2={-1: 2})
-    new_buf = fury_.serialize(obj)
-    assert fury_.deserialize(new_buf) == obj
+    new_buf = fury.serialize(obj)
+    assert fury.deserialize(new_buf) == obj
 
 
 @cross_language_test
 def test_serialize_simple_struct(data_file_path):
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury_.register_class_tag(ComplexObject2, "test.ComplexObject2")
+    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+    fury.register_class_tag(ComplexObject2, "test.ComplexObject2")
     obj = ComplexObject2(f1=True, f2={-1: 2})
-    struct_round_back(data_file_path, fury_, obj)
+    struct_round_back(data_file_path, fury, obj)
 
 
 @cross_language_test
 def test_serialize_complex_struct(data_file_path):
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury_.register_class_tag(ComplexObject1, "test.ComplexObject1")
-    fury_.register_class_tag(ComplexObject2, "test.ComplexObject2")
+    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+    fury.register_class_tag(ComplexObject1, "test.ComplexObject1")
+    fury.register_class_tag(ComplexObject2, "test.ComplexObject2")
 
     obj2 = ComplexObject2(f1=True, f2={-1: 2})
     obj1 = ComplexObject1(
@@ -462,21 +462,21 @@ def test_serialize_complex_struct(data_file_path):
         f11=array.array("h", [1, 2]),
         f12=[-1, 4],
     )
-    struct_round_back(data_file_path, fury_, obj1)
+    struct_round_back(data_file_path, fury, obj1)
 
 
-def struct_round_back(data_file_path, fury_, obj1):
-    new_buf = fury_.serialize(obj1)
-    assert fury_.deserialize(new_buf) == obj1
+def struct_round_back(data_file_path, fury, obj1):
+    new_buf = fury.serialize(obj1)
+    assert fury.deserialize(new_buf) == obj1
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
     debug_print(f"len {len(data_bytes)}")
-    new_obj = fury_.deserialize(data_bytes)
+    new_obj = fury.deserialize(data_bytes)
     debug_print(new_obj)
     assert new_obj == obj1, f"new_obj {new_obj}\n expected {obj1}"
-    new_buf = fury_.serialize(new_obj)
+    new_buf = fury.serialize(new_obj)
     debug_print(f"new_buf size {len(new_buf)}")
-    assert fury_.deserialize(new_buf) == new_obj
+    assert fury.deserialize(new_buf) == new_obj
     with open(data_file_path, "wb+") as f:
         f.write(new_buf)
 
@@ -486,17 +486,17 @@ def test_serialize_opaque_object(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
     debug_print(f"len {len(data_bytes)}")
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury_.register_class_tag(ComplexObject1, "test.ComplexObject1")
-    new_obj = fury_.deserialize(data_bytes)
+    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+    fury.register_class_tag(ComplexObject1, "test.ComplexObject1")
+    new_obj = fury.deserialize(data_bytes)
     debug_print(new_obj)
     assert new_obj.f2 == "abc"
     assert isinstance(new_obj.f1, pyfury.OpaqueObject)
     assert isinstance(new_obj.f3[0], pyfury.OpaqueObject)
     assert isinstance(new_obj.f3[1], pyfury.OpaqueObject)
-    # new_buf = fury_.serialize(new_obj)
+    # new_buf = fury.serialize(new_obj)
     # debug_print(f"new_buf size {len(new_buf)}")
-    # assert fury_.deserialize(new_buf) == new_obj
+    # assert fury.deserialize(new_buf) == new_obj
     # with open(data_file_path, "wb+") as f:
     #     f.write(new_buf)
 
@@ -556,7 +556,7 @@ def test_oob_buffer(in_band_file_path, out_of_band_file_path):
         in_band_bytes = f.read()
     with open(out_of_band_file_path, "rb") as f:
         out_of_band_buffer = pyfury.Buffer(f.read())
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
     n_buffers = out_of_band_buffer.read_int32()
     buffers = []
     for i in range(n_buffers):
@@ -564,7 +564,7 @@ def test_oob_buffer(in_band_file_path, out_of_band_file_path):
         reader_index = out_of_band_buffer.reader_index
         buffers.append(out_of_band_buffer.slice(reader_index, length))
         out_of_band_buffer.reader_index += length
-    new_obj = fury_.deserialize(in_band_bytes, buffers)
+    new_obj = fury.deserialize(in_band_bytes, buffers)
     obj = [bytes(bytearray([0, 1])) for _ in range(10)]
     assert new_obj == obj, (obj, new_obj)
 
@@ -580,15 +580,15 @@ def test_oob_buffer(in_band_file_path, out_of_band_file_path):
         else:
             return True
 
-    serialized = fury_.serialize(obj, buffer_callback=buffer_callback)
+    serialized = fury.serialize(obj, buffer_callback=buffer_callback)
     # in_band_bytes size may be different because it may contain language-specific meta.
     debug_print(f"{len(serialized), len(in_band_bytes)}")
     debug_print(f"deserialized from other language {new_obj}")
     debug_print(
         f"deserialized from python "
-        f"{fury_.deserialize(serialized, [o.to_buffer() for o in buffer_objects])}"
+        f"{fury.deserialize(serialized, [o.to_buffer() for o in buffer_objects])}"
     )
-    fury_.deserialize(serialized, [o.to_buffer() for o in buffer_objects])
+    fury.deserialize(serialized, [o.to_buffer() for o in buffer_objects])
     with open(in_band_file_path, "wb+") as f:
         f.write(serialized)
     out_of_band_buffer.write_int32(len(buffer_objects))

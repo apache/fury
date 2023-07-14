@@ -93,10 +93,10 @@ class BytesBufferObject(BufferObject):
 
 
 class Serializer(ABC):
-    __slots__ = "fury_", "type_", "need_to_write_ref"
+    __slots__ = "fury", "type_", "need_to_write_ref"
 
-    def __init__(self, fury_, type_: type):
-        self.fury_ = fury_
+    def __init__(self, fury, type_: type):
+        self.fury = fury
         self.type_: type = type_
         self.need_to_write_ref = not is_primitive_type(type_)
 
@@ -115,6 +115,7 @@ class Serializer(ABC):
         """
         return NOT_SUPPORT_CROSS_LANGUAGE
 
+    @abstractmethod
     def get_xtype_tag(self):
         """
         Returns
@@ -142,8 +143,8 @@ class Serializer(ABC):
 
 
 class CrossLanguageCompatibleSerializer(Serializer):
-    def __init__(self, fury_, type_):
-        super().__init__(fury_, type_)
+    def __init__(self, fury, type_):
+        super().__init__(fury, type_)
 
     def xwrite(self, buffer, value):
         self.write(buffer, value)
@@ -307,10 +308,10 @@ class BytesSerializer(CrossLanguageCompatibleSerializer):
 
     def write(self, buffer, value: bytes):
         assert isinstance(value, bytes)
-        self.fury_.write_buffer_object(buffer, BytesBufferObject(value))
+        self.fury.write_buffer_object(buffer, BytesBufferObject(value))
 
     def read(self, buffer):
-        fury_buf = self.fury_.read_buffer_object(buffer)
+        fury_buf = self.fury.read_buffer_object(buffer)
         return fury_buf.to_pybytes()
 
 
@@ -339,8 +340,8 @@ class PyArraySerializer(CrossLanguageCompatibleSerializer):
         "d": Float64ArrayType,
     }
 
-    def __init__(self, fury_, type_, typecode):
-        super().__init__(fury_, type_)
+    def __init__(self, fury, type_, typecode):
+        super().__init__(fury, type_)
         self.typecode = typecode
         self.itemsize, self.type_id = PyArraySerializer.typecode_dict[self.typecode]
 
@@ -394,8 +395,8 @@ else:
 class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
     dtypes_dict = _np_dtypes_dict
 
-    def __init__(self, fury_, type_, dtype):
-        super().__init__(fury_, type_)
+    def __init__(self, fury, type_, dtype):
+        super().__init__(fury, type_)
         self.dtype = dtype
         self.itemsize, self.typecode, self.type_id = _np_dtypes_dict[self.dtype]
 
@@ -419,10 +420,10 @@ class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
         return np.frombuffer(data, dtype=self.dtype)
 
     def write(self, buffer, value):
-        self.fury_.handle_unsupported_write(buffer, value)
+        self.fury.handle_unsupported_write(buffer, value)
 
     def read(self, buffer):
-        return self.fury_.handle_unsupported_read(buffer)
+        return self.fury.handle_unsupported_read(buffer)
 
 
 class CollectionSerializer(Serializer):
@@ -460,15 +461,13 @@ class CollectionSerializer(Serializer):
         len_ = buffer.read_varint32()
         collection_ = self.new_instance(self.type_)
         for i in range(len_):
-            self.handle_read_elem(
-                self.fury_.deserialize_ref(buffer), collection_
-            )
+            self.handle_read_elem(self.fury.deserialize_ref(buffer), collection_)
         return collection_
 
     def new_instance(self, type_):
         # TODO support iterable subclass
         instance = []
-        self.fury_.ref_resolver.reference(instance)
+        self.fury.ref_resolver.reference(instance)
         return instance
 
     def handle_read_elem(self, elem, collection_):
@@ -482,7 +481,7 @@ class CollectionSerializer(Serializer):
             len_ = len(value)
         buffer.write_varint32(len_)
         for s in value:
-            self.fury_.xserialize_ref(buffer, s, serializer=self.elem_serializer)
+            self.fury.xserialize_ref(buffer, s, serializer=self.elem_serializer)
             len_ += 1
 
     def xread(self, buffer):
@@ -490,7 +489,7 @@ class CollectionSerializer(Serializer):
         collection_ = self.new_instance(self.type_)
         for i in range(len_):
             self.handle_read_elem(
-                self.fury_.xdeserialize_ref(buffer, serializer=self.elem_serializer),
+                self.fury.xdeserialize_ref(buffer, serializer=self.elem_serializer),
                 collection_,
             )
         return collection_
@@ -503,9 +502,9 @@ class ListSerializer(CollectionSerializer):
     def read(self, buffer):
         len_ = buffer.read_varint32()
         instance = []
-        self.fury_.ref_resolver.reference(instance)
+        self.fury.ref_resolver.reference(instance)
         for i in range(len_):
-            instance.append(self.fury_.deserialize_ref(buffer))
+            instance.append(self.fury.deserialize_ref(buffer))
         return instance
 
 
@@ -514,7 +513,7 @@ class TupleSerializer(CollectionSerializer):
         len_ = buffer.read_varint32()
         collection_ = []
         for i in range(len_):
-            collection_.append(self.fury_.deserialize_ref(buffer))
+            collection_.append(self.fury.deserialize_ref(buffer))
         return tuple(collection_)
 
 
@@ -532,7 +531,7 @@ class SetSerializer(CollectionSerializer):
 
     def new_instance(self, type_):
         instance = set()
-        self.fury_.ref_resolver.reference(instance)
+        self.fury.ref_resolver.reference(instance)
         return instance
 
     def handle_read_elem(self, elem, set_: set):
@@ -585,26 +584,26 @@ class MapSerializer(Serializer):
     def read(self, buffer):
         len_ = buffer.read_varint32()
         map_ = self.type_()
-        self.fury_.ref_resolver.reference(map_)
+        self.fury.ref_resolver.reference(map_)
         for i in range(len_):
-            k = self.fury_.deserialize_ref(buffer)
-            v = self.fury_.deserialize_ref(buffer)
+            k = self.fury.deserialize_ref(buffer)
+            v = self.fury.deserialize_ref(buffer)
             map_[k] = v
         return map_
 
     def xwrite(self, buffer, value: Dict):
         buffer.write_varint32(len(value))
         for k, v in value.items():
-            self.fury_.xserialize_ref(buffer, k, serializer=self.key_serializer)
-            self.fury_.xserialize_ref(buffer, v, serializer=self.value_serializer)
+            self.fury.xserialize_ref(buffer, k, serializer=self.key_serializer)
+            self.fury.xserialize_ref(buffer, v, serializer=self.value_serializer)
 
     def xread(self, buffer):
         len_ = buffer.read_varint32()
         map_ = {}
-        self.fury_.ref_resolver.reference(map_)
+        self.fury.ref_resolver.reference(map_)
         for i in range(len_):
-            k = self.fury_.xdeserialize_ref(buffer, serializer=self.key_serializer)
-            v = self.fury_.xdeserialize_ref(buffer, serializer=self.value_serializer)
+            k = self.fury.xdeserialize_ref(buffer, serializer=self.key_serializer)
+            v = self.fury.xdeserialize_ref(buffer, serializer=self.value_serializer)
             map_[k] = v
         return map_
 
@@ -643,7 +642,7 @@ class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_nonref(buffer, start)
+                self.fury.serialize_nonref(buffer, start)
         if type(stop) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -653,7 +652,7 @@ class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_nonref(buffer, stop)
+                self.fury.serialize_nonref(buffer, stop)
         if type(step) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -663,21 +662,21 @@ class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_nonref(buffer, step)
+                self.fury.serialize_nonref(buffer, step)
 
     def read(self, buffer):
         if buffer.read_int8() == NULL_FLAG:
             start = None
         else:
-            start = self.fury_.deserialize_nonref(buffer)
+            start = self.fury.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             stop = None
         else:
-            stop = self.fury_.deserialize_nonref(buffer)
+            stop = self.fury.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             step = None
         else:
-            step = self.fury_.deserialize_nonref(buffer)
+            step = self.fury.deserialize_nonref(buffer)
         return slice(start, stop, step)
 
     def xwrite(self, buffer, value):
@@ -695,10 +694,10 @@ class PickleSerializer(Serializer):
         raise NotImplementedError
 
     def write(self, buffer, value):
-        self.fury_.handle_unsupported_write(buffer, value)
+        self.fury.handle_unsupported_write(buffer, value)
 
     def read(self, buffer):
-        return self.fury_.handle_unsupported_read(buffer)
+        return self.fury.handle_unsupported_read(buffer)
 
 
 class SerializationContext:

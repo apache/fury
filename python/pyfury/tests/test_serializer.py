@@ -31,29 +31,29 @@ pa = lazy_import("pyarrow")
 
 
 def test_float():
-    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
-    assert ser_de(fury_, -1.0) == -1.0
-    assert ser_de(fury_, 1 / 3) == 1 / 3
-    serializer = fury_.class_resolver.get_serializer(float)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    assert ser_de(fury, -1.0) == -1.0
+    assert ser_de(fury, 1 / 3) == 1 / 3
+    serializer = fury.class_resolver.get_serializer(float)
     assert type(serializer) is pyfury.DoubleSerializer
 
 
 def test_tuple():
-    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
-    print(len(fury_.serialize((-1.0, 2))))
-    assert ser_de(fury_, (-1.0, 2)) == (-1.0, 2)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    print(len(fury.serialize((-1.0, 2))))
+    assert ser_de(fury, (-1.0, 2)) == (-1.0, 2)
 
 
 def test_dict():
-    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
-    assert ser_de(fury_, {1: 2}) == {1: 2}
-    assert ser_de(fury_, {1 / 3: 2.0}) == {1 / 3: 2.0}
-    assert ser_de(fury_, {1 / 3: 2}) == {1 / 3: 2}
-    assert ser_de(fury_, {"1": 2}) == {"1": 2}
-    assert ser_de(fury_, {"1": 1 / 3}) == {"1": 1 / 3}
-    assert ser_de(fury_, {"1": {}}) == {"1": {}}
-    assert ser_de(fury_, {"1": {1: 2}}) == {"1": {1: 2}}
-    assert ser_de(fury_, {"k1": {"a": 2.0}, "k2": {-1.0: -1.0}}) == {
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    assert ser_de(fury, {1: 2}) == {1: 2}
+    assert ser_de(fury, {1 / 3: 2.0}) == {1 / 3: 2.0}
+    assert ser_de(fury, {1 / 3: 2}) == {1 / 3: 2}
+    assert ser_de(fury, {"1": 2}) == {"1": 2}
+    assert ser_de(fury, {"1": 1 / 3}) == {"1": 1 / 3}
+    assert ser_de(fury, {"1": {}}) == {"1": {}}
+    assert ser_de(fury, {"1": {1: 2}}) == {"1": {1: 2}}
+    assert ser_de(fury, {"k1": {"a": 2.0}, "k2": {-1.0: -1.0}}) == {
         "k1": {"a": 2.0},
         "k2": {-1.0: -1.0},
     }
@@ -62,54 +62,54 @@ def test_dict():
         1: {5: -1.0},
         2: {-1.0: -1.0, 10: -1.0},
     }
-    assert ser_de(fury_, dict3) == dict3
+    assert ser_de(fury, dict3) == dict3
 
 
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
 def test_basic_serializer(language):
-    fury_ = Fury(language=language, ref_tracking=True)
-    datetime_serializer = fury_.class_resolver.get_serializer(datetime.datetime)
+    fury = Fury(language=language, ref_tracking=True)
+    datetime_serializer = fury.class_resolver.get_serializer(datetime.datetime)
     assert isinstance(
         datetime_serializer, (TimestampSerializer, _serialization.TimestampSerializer)
     )
     assert datetime_serializer.get_xtype_id() == FuryType.TIMESTAMP.value
-    date_serializer = fury_.class_resolver.get_serializer(datetime.date)
+    date_serializer = fury.class_resolver.get_serializer(datetime.date)
     assert isinstance(date_serializer, (DateSerializer, _serialization.DateSerializer))
     assert date_serializer.get_xtype_id() == FuryType.DATE32.value
-    assert ser_de(fury_, True) is True
-    assert ser_de(fury_, False) is False
-    assert ser_de(fury_, -1) == -1
-    assert ser_de(fury_, 2**7 - 1) == 2**7 - 1
-    assert ser_de(fury_, 2**15 - 1) == 2**15 - 1
-    assert ser_de(fury_, -(2**15)) == -(2**15)
-    assert ser_de(fury_, 2**31 - 1) == 2**31 - 1
-    assert ser_de(fury_, 2**63 - 1) == 2**63 - 1
-    assert ser_de(fury_, -(2**63)) == -(2**63)
-    assert ser_de(fury_, 1.0) == 1.0
-    assert ser_de(fury_, -1.0) == -1.0
-    assert ser_de(fury_, "str") == "str"
-    assert ser_de(fury_, b"") == b""
+    assert ser_de(fury, True) is True
+    assert ser_de(fury, False) is False
+    assert ser_de(fury, -1) == -1
+    assert ser_de(fury, 2**7 - 1) == 2**7 - 1
+    assert ser_de(fury, 2**15 - 1) == 2**15 - 1
+    assert ser_de(fury, -(2**15)) == -(2**15)
+    assert ser_de(fury, 2**31 - 1) == 2**31 - 1
+    assert ser_de(fury, 2**63 - 1) == 2**63 - 1
+    assert ser_de(fury, -(2**63)) == -(2**63)
+    assert ser_de(fury, 1.0) == 1.0
+    assert ser_de(fury, -1.0) == -1.0
+    assert ser_de(fury, "str") == "str"
+    assert ser_de(fury, b"") == b""
     now = datetime.datetime.now()
-    assert ser_de(fury_, now) == now
+    assert ser_de(fury, now) == now
     day = datetime.date(2021, 11, 23)
-    assert ser_de(fury_, day) == day
+    assert ser_de(fury, day) == day
     list_ = ["a", 1, -1.0, True, now, day]
-    assert ser_de(fury_, list_) == list_
+    assert ser_de(fury, list_) == list_
     dict1_ = {"k1": "a", "k2": 1, "k3": -1.0, "k4": True, "k5": now, "k6": day}
-    assert ser_de(fury_, dict1_) == dict1_
+    assert ser_de(fury, dict1_) == dict1_
     dict2_ = {"a": "a", 1: 1, -1.0: -1.0, True: True, now: now, day: day}
-    assert ser_de(fury_, dict2_) == dict2_
+    assert ser_de(fury, dict2_) == dict2_
     set_ = {"a", 1, -1.0, True, now, day}
-    assert ser_de(fury_, set_) == set_
+    assert ser_de(fury, set_) == set_
 
 
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
 def test_ref_tracking(language):
-    fury_ = Fury(language=language, ref_tracking=True)
+    fury = Fury(language=language, ref_tracking=True)
 
     simple_list = []
     simple_list.append(simple_list)
-    new_simple_list = ser_de(fury_, simple_list)
+    new_simple_list = ser_de(fury, simple_list)
     assert new_simple_list[0] is new_simple_list
 
     now = datetime.datetime.now()
@@ -127,7 +127,7 @@ def test_ref_tracking(language):
     }
     dict3["dict3_0"] = dict3
     dict3["dict3_1"] = dict3
-    new_dict3 = ser_de(fury_, dict3)
+    new_dict3 = ser_de(fury, dict3)
     assert new_dict3["list1_0"] == list_
     assert new_dict3["list1_0"] is new_dict3["list1_1"]
     assert new_dict3["dict1_0"] == dict1
@@ -142,18 +142,18 @@ def test_ref_tracking(language):
 def test_tmp_ref(language):
     # FIXME this can't simulate the case where new objects are allocated on memory
     #  address of released tmp object.
-    fury_ = Fury(language=language, ref_tracking=True)
+    fury = Fury(language=language, ref_tracking=True)
     buffer = Buffer.allocate(128)
     writer_index = buffer.writer_index
     x = 1
-    fury_.serialize([x], buffer)
-    fury_.serialize([x], buffer)
-    fury_.serialize([x], buffer)
+    fury.serialize([x], buffer)
+    fury.serialize([x], buffer)
+    fury.serialize([x], buffer)
     assert buffer.writer_index > writer_index + 15
 
-    l1 = fury_.deserialize(buffer)
-    l2 = fury_.deserialize(buffer)
-    l3 = fury_.deserialize(buffer)
+    l1 = fury.deserialize(buffer)
+    l2 = fury.deserialize(buffer)
+    l3 = fury.deserialize(buffer)
     assert l1 == [x]
     assert l2 == [x]
     assert l3 == [x]
@@ -166,13 +166,13 @@ def test_tmp_ref(language):
 def test_multiple_ref(language):
     # FIXME this can't simulate the case where new objects are allocated on memory
     #  address of released tmp object.
-    fury_ = Fury(language=language, ref_tracking=True)
+    fury = Fury(language=language, ref_tracking=True)
     buffer = Buffer.allocate(128)
     for i in range(1000):
-        fury_.serialize([], buffer)
+        fury.serialize([], buffer)
     objs = []
     for i in range(1000):
-        objs.append(fury_.deserialize(buffer))
+        objs.append(fury.deserialize(buffer))
     assert len(set(id(o) for o in objs)) == 1000
 
 
@@ -190,37 +190,37 @@ class RefTestClass2:
 def test_ref_cleanup(language):
     # FIXME this can't simulate the case where new objects are allocated on memory
     #  address of released tmp object.
-    fury_ = Fury(language=language, ref_tracking=True, secure_mode=False)
+    fury = Fury(language=language, ref_tracking=True, secure_mode=False)
     # TODO support Language.XLANG, current unpickler will error for xlang,
     o1 = RefTestClass1()
     o2 = RefTestClass2(f1=o1)
     pickle.loads(pickle.dumps(o2))
     ref1 = weakref.ref(o1)
     ref2 = weakref.ref(o2)
-    data = fury_.serialize(o2)
+    data = fury.serialize(o2)
     del o1, o2
     gc.collect()
     assert ref1() is None
     assert ref2() is None
-    fury_.deserialize(data)
+    fury.deserialize(data)
 
 
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
 def test_array_serializer(language):
-    fury_ = Fury(language=language, ref_tracking=True, secure_mode=False)
+    fury = Fury(language=language, ref_tracking=True, secure_mode=False)
     for typecode in PyArraySerializer.typecode_dict.keys():
         arr = array.array(typecode, list(range(10)))
-        assert ser_de(fury_, arr) == arr
+        assert ser_de(fury, arr) == arr
     for dtype in Numpy1DArraySerializer.dtypes_dict.keys():
         arr = np.array(list(range(10)), dtype=dtype)
-        new_arr = ser_de(fury_, arr)
+        new_arr = ser_de(fury, arr)
         assert np.array_equal(new_arr, arr)
         np.testing.assert_array_equal(new_arr, arr)
 
 
-def ser_de(fury_, obj):
-    binary = fury_.serialize(obj)
-    return fury_.deserialize(binary)
+def ser_de(fury, obj):
+    binary = fury.serialize(obj)
+    return fury.deserialize(binary)
 
 
 def test_pickle():
@@ -258,12 +258,12 @@ def test_pickle():
 def test_serialize_arrow():
     record_batch = create_record_batch(10000)
     table = pa.Table.from_batches([record_batch, record_batch])
-    fury_ = Fury(language=Language.XLANG, ref_tracking=True)
+    fury = Fury(language=Language.XLANG, ref_tracking=True)
     serialized_data = Buffer.allocate(32)
-    fury_.serialize(record_batch, buffer=serialized_data)
-    fury_.serialize(table, buffer=serialized_data)
-    new_batch = fury_.deserialize(serialized_data)
-    new_table = fury_.deserialize(serialized_data)
+    fury.serialize(record_batch, buffer=serialized_data)
+    fury.serialize(table, buffer=serialized_data)
+    new_batch = fury.deserialize(serialized_data)
+    new_table = fury.deserialize(serialized_data)
     assert new_batch == record_batch
     assert new_table == table
 
@@ -273,17 +273,15 @@ def test_serialize_arrow_zero_copy():
     record_batch = create_record_batch(10000)
     table = pa.Table.from_batches([record_batch, record_batch])
     buffer_objects = []
-    fury_ = Fury(language=Language.XLANG, ref_tracking=True)
+    fury = Fury(language=Language.XLANG, ref_tracking=True)
     serialized_data = Buffer.allocate(32)
-    fury_.serialize(
+    fury.serialize(
         record_batch, buffer=serialized_data, buffer_callback=buffer_objects.append
     )
-    fury_.serialize(
-        table, buffer=serialized_data, buffer_callback=buffer_objects.append
-    )
+    fury.serialize(table, buffer=serialized_data, buffer_callback=buffer_objects.append)
     buffers = [o.to_buffer() for o in buffer_objects]
-    new_batch = fury_.deserialize(serialized_data, buffers=buffers[:1])
-    new_table = fury_.deserialize(serialized_data, buffers=buffers[1:])
+    new_batch = fury.deserialize(serialized_data, buffers=buffers[:1])
+    new_table = fury.deserialize(serialized_data, buffers=buffers[1:])
     buffer_objects.clear()
     assert new_batch == record_batch
     assert new_table == table
@@ -328,7 +326,7 @@ class RegisterClass:
 
 
 def test_register_py_serializer():
-    fury_ = Fury(language=Language.PYTHON, ref_tracking=True, secure_mode=False)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True, secure_mode=False)
 
     class Serializer(pyfury.Serializer):
         def write(self, buffer, value):
@@ -345,8 +343,8 @@ def test_register_py_serializer():
         def xread(self, buffer):
             raise NotImplementedError
 
-    fury_.register_serializer(A, Serializer(fury_, RegisterClass))
-    assert fury_.deserialize(fury_.serialize(RegisterClass(100))).f1 == 100
+    fury.register_serializer(A, Serializer(fury, RegisterClass))
+    assert fury.deserialize(fury.serialize(RegisterClass(100))).f1 == 100
 
 
 class A:
@@ -356,7 +354,7 @@ class A:
 
 
 def test_register_class():
-    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
 
     class Serializer(pyfury.Serializer):
         def write(self, buffer, value):
@@ -371,24 +369,24 @@ def test_register_class():
         def xread(self, buffer):
             raise NotImplementedError
 
-    fury_.register_serializer(A, Serializer(fury_, A))
-    fury_.register_serializer(A.B, Serializer(fury_, A.B))
-    fury_.register_serializer(A.B.C, Serializer(fury_, A.B.C))
-    assert isinstance(fury_.deserialize(fury_.serialize(A())), A)
-    assert isinstance(fury_.deserialize(fury_.serialize(A.B())), A.B)
-    assert isinstance(fury_.deserialize(fury_.serialize(A.B.C())), A.B.C)
+    fury.register_serializer(A, Serializer(fury, A))
+    fury.register_serializer(A.B, Serializer(fury, A.B))
+    fury.register_serializer(A.B.C, Serializer(fury, A.B.C))
+    assert isinstance(fury.deserialize(fury.serialize(A())), A)
+    assert isinstance(fury.deserialize(fury.serialize(A.B())), A.B)
+    assert isinstance(fury.deserialize(fury.serialize(A.B.C())), A.B.C)
 
 
 def test_pickle_fallback():
-    fury_ = Fury(language=Language.PYTHON, ref_tracking=True, secure_mode=False)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True, secure_mode=False)
     o1 = [1, True, np.dtype(np.int32)]
-    data1 = fury_.serialize(o1)
-    new_o1 = fury_.deserialize(data1)
+    data1 = fury.serialize(o1)
+    new_o1 = fury.deserialize(data1)
     assert o1 == new_o1
 
 
 def test_unsupported_callback():
-    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
 
     def f1(x):
         return x
@@ -398,36 +396,34 @@ def test_unsupported_callback():
 
     obj1 = [1, True, f1, f2, {1: 2}]
     with pytest.raises(Exception):
-        fury_.serialize(obj1)
+        fury.serialize(obj1)
     unsupported_objects = []
-    binary1 = fury_.serialize(obj1, unsupported_callback=unsupported_objects.append)
+    binary1 = fury.serialize(obj1, unsupported_callback=unsupported_objects.append)
     assert len(unsupported_objects) == 2
     assert unsupported_objects == [f1, f2]
-    new_obj1 = fury_.deserialize(binary1, unsupported_objects=unsupported_objects)
+    new_obj1 = fury.deserialize(binary1, unsupported_objects=unsupported_objects)
     assert new_obj1 == obj1
 
 
 def test_slice():
-    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
-    assert fury_.deserialize(fury_.serialize(slice(1, 100, 10))) == slice(1, 100, 10)
-    assert fury_.deserialize(fury_.serialize(slice(1, None, 10))) == slice(1, None, 10)
-    assert fury_.deserialize(fury_.serialize(slice(10, 10, None))) == slice(
-        10, 10, None
-    )
-    assert fury_.deserialize(fury_.serialize(slice(None, None, 10))) == slice(
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    assert fury.deserialize(fury.serialize(slice(1, 100, 10))) == slice(1, 100, 10)
+    assert fury.deserialize(fury.serialize(slice(1, None, 10))) == slice(1, None, 10)
+    assert fury.deserialize(fury.serialize(slice(10, 10, None))) == slice(10, 10, None)
+    assert fury.deserialize(fury.serialize(slice(None, None, 10))) == slice(
         None, None, 10
     )
-    assert fury_.deserialize(fury_.serialize(slice(None, None, None))) == slice(
+    assert fury.deserialize(fury.serialize(slice(None, None, None))) == slice(
         None, None, None
     )
-    assert fury_.deserialize(
-        fury_.serialize([1, 2, slice(1, 100, 10), slice(1, 100, 10)])
+    assert fury.deserialize(
+        fury.serialize([1, 2, slice(1, 100, 10), slice(1, 100, 10)])
     ) == [1, 2, slice(1, 100, 10), slice(1, 100, 10)]
-    assert fury_.deserialize(
-        fury_.serialize([1, slice(1, None, 10), False, [], slice(1, 100, 10)])
+    assert fury.deserialize(
+        fury.serialize([1, slice(1, None, 10), False, [], slice(1, 100, 10)])
     ) == [1, slice(1, None, 10), False, [], slice(1, 100, 10)]
-    assert fury_.deserialize(
-        fury_.serialize([1, slice(1, None, "10"), False, [], slice(1, 100, "10")])
+    assert fury.deserialize(
+        fury.serialize([1, slice(1, None, "10"), False, [], slice(1, 100, "10")])
     ) == [1, slice(1, None, "10"), False, [], slice(1, 100, "10")]
 
 
@@ -439,28 +435,28 @@ class TestEnum(Enum):
 
 
 def test_enum():
-    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
-    assert ser_de(fury_, TestEnum.E1) == TestEnum.E1
-    assert ser_de(fury_, TestEnum.E2) == TestEnum.E2
-    assert ser_de(fury_, TestEnum.E3) == TestEnum.E3
-    assert ser_de(fury_, TestEnum.E4) == TestEnum.E4
-    assert isinstance(fury_.class_resolver.get_serializer(TestEnum), EnumSerializer)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    assert ser_de(fury, TestEnum.E1) == TestEnum.E1
+    assert ser_de(fury, TestEnum.E2) == TestEnum.E2
+    assert ser_de(fury, TestEnum.E3) == TestEnum.E3
+    assert ser_de(fury, TestEnum.E4) == TestEnum.E4
+    assert isinstance(fury.class_resolver.get_serializer(TestEnum), EnumSerializer)
     assert isinstance(
-        fury_.class_resolver.get_serializer(obj=TestEnum.E1), EnumSerializer
+        fury.class_resolver.get_serializer(obj=TestEnum.E1), EnumSerializer
     )
     assert isinstance(
-        fury_.class_resolver.get_serializer(obj=TestEnum.E4), EnumSerializer
+        fury.class_resolver.get_serializer(obj=TestEnum.E4), EnumSerializer
     )
 
 
 def test_duplicate_serialize():
-    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
-    assert ser_de(fury_, TestEnum.E1) == TestEnum.E1
-    assert ser_de(fury_, TestEnum.E2) == TestEnum.E2
-    assert ser_de(fury_, TestEnum.E4) == TestEnum.E4
-    assert ser_de(fury_, TestEnum.E2) == TestEnum.E2
-    assert ser_de(fury_, TestEnum.E1) == TestEnum.E1
-    assert ser_de(fury_, TestEnum.E4) == TestEnum.E4
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    assert ser_de(fury, TestEnum.E1) == TestEnum.E1
+    assert ser_de(fury, TestEnum.E2) == TestEnum.E2
+    assert ser_de(fury, TestEnum.E4) == TestEnum.E4
+    assert ser_de(fury, TestEnum.E2) == TestEnum.E2
+    assert ser_de(fury, TestEnum.E1) == TestEnum.E1
+    assert ser_de(fury, TestEnum.E4) == TestEnum.E4
 
 
 @dataclass(unsafe_hash=True)

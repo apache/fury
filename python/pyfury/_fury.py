@@ -126,7 +126,7 @@ class ClassInfo:
 
 class ClassResolver:
     __slots__ = (
-        "fury_",
+        "fury",
         "_type_id_to_class",
         "_type_id_to_serializer",
         "_type_id_and_cls_to_serializer",
@@ -151,8 +151,8 @@ class ClassResolver:
     _type_id_and_cls_to_serializer: Dict[Tuple[int, type], Serializer]
     _classes_info: Dict[type, "ClassInfo"]
 
-    def __init__(self, fury_):
-        self.fury_ = fury_
+    def __init__(self, fury):
+        self.fury = fury
         self._type_id_to_class = dict()
         self._type_id_to_serializer = dict()
         self._type_id_and_cls_to_serializer = dict()
@@ -249,18 +249,16 @@ class ClassResolver:
         serialization."""
         from pyfury._struct import ComplexObjectSerializer
 
-        self.register_serializer(
-            cls, ComplexObjectSerializer(self.fury_, cls, type_tag)
-        )
+        self.register_serializer(cls, ComplexObjectSerializer(self.fury, cls, type_tag))
 
     def _add_serializer(self, cls: type, serializer=None, serializer_cls=None):
         if serializer_cls:
-            serializer = serializer_cls(self.fury_, cls)
+            serializer = serializer_cls(self.fury, cls)
         self.register_serializer(cls, serializer)
 
     def _add_x_lang_serializer(self, cls: type, serializer=None, serializer_cls=None):
         if serializer_cls:
-            serializer = serializer_cls(self.fury_, cls)
+            serializer = serializer_cls(self.fury, cls)
         type_id = serializer.get_xtype_id()
         from pyfury._serializer import NOT_SUPPORT_CROSS_LANGUAGE
 
@@ -313,10 +311,10 @@ class ClassResolver:
         from pyfury import PickleCacheSerializer, PickleStrongCacheSerializer
 
         self._add_serializer(
-            PickleStrongCacheStub, serializer=PickleStrongCacheSerializer(self.fury_)
+            PickleStrongCacheStub, serializer=PickleStrongCacheSerializer(self.fury)
         )
         self._add_serializer(
-            PickleCacheStub, serializer=PickleCacheSerializer(self.fury_)
+            PickleCacheStub, serializer=PickleCacheSerializer(self.fury)
         )
         try:
             import pyarrow as pa
@@ -334,17 +332,17 @@ class ClassResolver:
         for typecode in PyArraySerializer.typecode_dict.keys():
             self._add_serializer(
                 array.array,
-                serializer=PyArraySerializer(self.fury_, array.array, typecode),
+                serializer=PyArraySerializer(self.fury, array.array, typecode),
             )
             self._add_serializer(
                 PyArraySerializer.typecodearray_type[typecode],
-                serializer=PyArraySerializer(self.fury_, array.array, typecode),
+                serializer=PyArraySerializer(self.fury, array.array, typecode),
             )
         if np:
             for dtype in Numpy1DArraySerializer.dtypes_dict.keys():
                 self._add_serializer(
                     np.ndarray,
-                    serializer=Numpy1DArraySerializer(self.fury_, array.array, dtype),
+                    serializer=Numpy1DArraySerializer(self.fury, array.array, dtype),
                 )
 
     def get_serializer(self, cls: type = None, type_id: int = None, obj=None):
@@ -423,7 +421,7 @@ class ClassResolver:
             ):
                 if classinfo_ is None or classinfo_.class_id == NO_CLASS_ID:
                     logger.info("Class %s not registered", cls)
-                serializer = type(class_info.serializer)(self.fury_, cls)
+                serializer = type(class_info.serializer)(self.fury, cls)
                 break
         else:
             if dataclasses.is_dataclass(cls):
@@ -432,9 +430,9 @@ class ClassResolver:
                 logger.info("Class %s not registered", cls)
                 from pyfury import DataClassSerializer
 
-                serializer = DataClassSerializer(self.fury_, cls)
+                serializer = DataClassSerializer(self.fury, cls)
             else:
-                serializer = PickleSerializer(self.fury_, cls)
+                serializer = PickleSerializer(self.fury, cls)
         return serializer
 
     def write_classinfo(self, buffer: Buffer, classinfo: ClassInfo):
@@ -1015,6 +1013,6 @@ class _UnpicklerStub:
 
     def load(self):
         raise ValueError(
-            f"pickle is not allowed when secure mode enabled, Please register"
-            f"the class or pass unsupported_callback"
+            "pickle is not allowed when secure mode enabled, Please register"
+            "the class or pass unsupported_callback"
         )

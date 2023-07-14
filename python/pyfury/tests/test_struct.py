@@ -8,9 +8,9 @@ import pyfury
 from pyfury import Fury, Language
 
 
-def ser_de(fury_, obj):
-    binary = fury_.serialize(obj)
-    return fury_.deserialize(binary)
+def ser_de(fury, obj):
+    binary = fury.serialize(obj)
+    return fury.deserialize(binary)
 
 
 @dataclass
@@ -33,11 +33,11 @@ class ComplexObject:
 
 
 def test_struct():
-    fury_ = Fury(language=Language.XLANG, ref_tracking=True)
-    fury_.register_class_tag(SimpleObject, "example.SimpleObject")
-    fury_.register_class_tag(ComplexObject, "example.ComplexObject")
+    fury = Fury(language=Language.XLANG, ref_tracking=True)
+    fury.register_class_tag(SimpleObject, "example.SimpleObject")
+    fury.register_class_tag(ComplexObject, "example.ComplexObject")
     o = SimpleObject(f1={1: 1.0 / 3})
-    # assert ser_de(fury_, o) == o
+    # assert ser_de(fury, o) == o
 
     o = ComplexObject(
         f1="str",
@@ -51,17 +51,17 @@ def test_struct():
         f9=[1, 2],
         f10={1: 1.0 / 3, 100: 2 / 7.0},
     )
-    assert ser_de(fury_, o) == o
+    assert ser_de(fury, o) == o
     with pytest.raises(AssertionError):
-        assert ser_de(fury_, ComplexObject(f7=1.0 / 3)) == ComplexObject(f7=1.0 / 3)
+        assert ser_de(fury, ComplexObject(f7=1.0 / 3)) == ComplexObject(f7=1.0 / 3)
     with pytest.raises(OverflowError):
-        assert ser_de(fury_, ComplexObject(f3=2**8)) == ComplexObject(f3=2**8)
+        assert ser_de(fury, ComplexObject(f3=2**8)) == ComplexObject(f3=2**8)
     with pytest.raises(OverflowError):
-        assert ser_de(fury_, ComplexObject(f4=2**16)) == ComplexObject(f4=2**16)
+        assert ser_de(fury, ComplexObject(f4=2**16)) == ComplexObject(f4=2**16)
     with pytest.raises(OverflowError):
-        assert ser_de(fury_, ComplexObject(f5=2**32)) == ComplexObject(f5=2**32)
+        assert ser_de(fury, ComplexObject(f5=2**32)) == ComplexObject(f5=2**32)
     with pytest.raises(OverflowError):
-        assert ser_de(fury_, ComplexObject(f6=2**64)) == ComplexObject(f6=2**64)
+        assert ser_de(fury, ComplexObject(f6=2**64)) == ComplexObject(f6=2**64)
 
 
 @dataclass
@@ -79,10 +79,10 @@ def test_inheritance():
     type_hints = typing.get_type_hints(ChildClass1)
     print(type_hints)
     assert type_hints.keys() == {"f1", "f2", "f3"}
-    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
     obj = ChildClass1(f1="a", f2=-10, f3={"a": -10.0, "b": 1 / 3})
-    assert ser_de(fury_, obj) == obj
+    assert ser_de(fury, obj) == obj
     assert (
-        type(fury_.class_resolver.get_serializer(ChildClass1))
+        type(fury.class_resolver.get_serializer(ChildClass1))
         == pyfury.DataClassSerializer
     )
