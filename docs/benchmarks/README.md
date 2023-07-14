@@ -38,9 +38,9 @@ public class Struct {
   public Double f99;
 }
 ```
-### MEDIA_CONTENT
+### MediaContent
 MEDIA_CONTENT is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java).
-### SAMPLE
+### Sample
 SAMPLE is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java)
 
 ## Benchmark Plots
