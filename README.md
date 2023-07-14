@@ -57,6 +57,8 @@ Title containing "compatible" represent schema compatible mode: support type for
 
 Title without "compatible" represent schema consistent mode: class schema must be same between serialization and deserialization.
 
+`Struct` is a class with [100 primitive fields](https://github.com/alipay/fury/tree/main/docs/benchmarks#Struct), `MEDIA_CONTENT` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), `SAMPLE` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
+
 <p align="center">
 <img width="24%" alt="" src="docs/benchmarks/compatible/bench_serialize_compatible_STRUCT_to_directBuffer_tps.png">
 <img width="24%" alt="" src="docs/benchmarks/compatible/bench_serialize_compatible_MEDIA_CONTENT_to_array_tps.png">
