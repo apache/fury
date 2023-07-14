@@ -328,7 +328,7 @@ def _deserialize_and_append(fury_, buffer, objects: list):
 
 
 @cross_language_test
-def test_cross_language_ref(data_file_path):
+def test_xref(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
         buffer = pyfury.Buffer(data_bytes)

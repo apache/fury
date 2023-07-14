@@ -118,10 +118,10 @@ class PickleStrongCacheSerializer(Serializer):
     def read(self, buffer):
         return pickle.loads(buffer.read_bytes_and_size())
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError
 
     @staticmethod
@@ -167,10 +167,10 @@ class PickleCacheSerializer(Serializer):
             buffer.skip(size)
         return value
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError
 
     @staticmethod
@@ -245,10 +245,10 @@ class PandasRangeIndexSerializer(Serializer):
         name = self.fury_.deserialize_ref_from_py(buffer)
         return self.type_(start, stop, step, dtype=dtype, name=name)
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError
 
 
@@ -376,8 +376,8 @@ class DataClassSerializer(Serializer):
             )
         return obj
 
-    def cross_language_write(self, buffer: Buffer, value):
+    def xwrite(self, buffer: Buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError

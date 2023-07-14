@@ -106,30 +106,28 @@ class ComplexObjectSerializer(Serializer):
             )
         self._hash = 0
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.FURY_TYPE_TAG.value
 
-    def get_cross_language_type_tag(self):
+    def get_xtype_tag(self):
         return self._type_tag
 
     def write(self, buffer, value):
-        return self.cross_language_write(buffer, value)
+        return self.xwrite(buffer, value)
 
     def read(self, buffer):
-        return self.cross_language_read(buffer)
+        return self.xread(buffer)
 
-    def cross_language_write(self, buffer: Buffer, value):
+    def xwrite(self, buffer: Buffer, value):
         if self._hash == 0:
             self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
         buffer.write_int32(self._hash)
         for index, field_name in enumerate(self._field_names):
             field_value = getattr(value, field_name)
             serializer = self._serializers[index]
-            self.fury_.cross_language_serialize_ref(
-                buffer, field_value, serializer=serializer
-            )
+            self.fury_.xserialize_ref(buffer, field_value, serializer=serializer)
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         if self._hash == 0:
             self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
         hash_ = buffer.read_int32()
@@ -142,9 +140,7 @@ class ComplexObjectSerializer(Serializer):
         self.fury_.ref_resolver.reference(obj)
         for index, field_name in enumerate(self._field_names):
             serializer = self._serializers[index]
-            field_value = self.fury_.cross_language_deserialize_ref(
-                buffer, serializer=serializer
-            )
+            field_value = self.fury_.xdeserialize_ref(buffer, serializer=serializer)
             setattr(
                 obj,
                 field_name,
@@ -163,18 +159,18 @@ class StructHashVisitor(TypeVisitor):
 
     def visit_list(self, field_name, elem_type, types_path=None):
         # TODO add list element type to hash.
-        id_ = abs(ListSerializer(self.fury, list).get_cross_language_type_id())
+        id_ = abs(ListSerializer(self.fury, list).get_xtype_id())
         self._hash = self._compute_field_hash(self._hash, id_)
 
     def visit_dict(self, field_name, key_type, value_type, types_path=None):
         # TODO add map key/value type to hash.
-        id_ = abs(MapSerializer(self.fury, dict).get_cross_language_type_id())
+        id_ = abs(MapSerializer(self.fury, dict).get_xtype_id())
         self._hash = self._compute_field_hash(self._hash, id_)
 
     def visit_customized(self, field_name, type_, types_path=None):
         serializer = self.fury.class_resolver.get_serializer(type_)
-        if serializer.get_cross_language_type_id() != NOT_SUPPORT_CROSS_LANGUAGE:
-            tag = serializer.get_cross_language_type_tag()
+        if serializer.get_xtype_id() != NOT_SUPPORT_CROSS_LANGUAGE:
+            tag = serializer.get_xtype_tag()
         else:
             tag = qualified_class_name(type_)
         tag_hash = compute_string_hash(tag)
@@ -186,7 +182,7 @@ class StructHashVisitor(TypeVisitor):
             return None
         serializer = self.fury.class_resolver.get_serializer(type_)
         assert not isinstance(serializer, (PickleSerializer,))
-        id_ = serializer.get_cross_language_type_id()
+        id_ = serializer.get_xtype_id()
         assert id_ is not None, serializer
         id_ = abs(id_)
         self._hash = self._compute_field_hash(self._hash, id_)

@@ -100,7 +100,7 @@ class Serializer(ABC):
         self.type_: type = type_
         self.need_to_write_ref = not is_primitive_type(type_)
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         """
         Returns
         -------
@@ -115,7 +115,7 @@ class Serializer(ABC):
         """
         return NOT_SUPPORT_CROSS_LANGUAGE
 
-    def get_cross_language_type_tag(self):
+    def get_xtype_tag(self):
         """
         Returns
         -------
@@ -129,11 +129,11 @@ class Serializer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         pass
 
     @abstractmethod
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         pass
 
     @classmethod
@@ -145,18 +145,18 @@ class CrossLanguageCompatibleSerializer(Serializer):
     def __init__(self, fury_, type_):
         super().__init__(fury_, type_)
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         self.write(buffer, value)
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         return self.read(buffer)
 
 
 class NoneSerializer(Serializer):
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError
 
     def write(self, buffer, value):
@@ -167,7 +167,7 @@ class NoneSerializer(Serializer):
 
 
 class BooleanSerializer(CrossLanguageCompatibleSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.BOOL.value
 
     def write(self, buffer, value):
@@ -178,7 +178,7 @@ class BooleanSerializer(CrossLanguageCompatibleSerializer):
 
 
 class ByteSerializer(CrossLanguageCompatibleSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.INT8.value
 
     def write(self, buffer, value):
@@ -189,7 +189,7 @@ class ByteSerializer(CrossLanguageCompatibleSerializer):
 
 
 class Int16Serializer(CrossLanguageCompatibleSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.INT16.value
 
     def write(self, buffer, value):
@@ -200,7 +200,7 @@ class Int16Serializer(CrossLanguageCompatibleSerializer):
 
 
 class Int32Serializer(CrossLanguageCompatibleSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.INT32.value
 
     def write(self, buffer, value):
@@ -211,13 +211,13 @@ class Int32Serializer(CrossLanguageCompatibleSerializer):
 
 
 class Int64Serializer(Serializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.INT64.value
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         buffer.write_int64(value)
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         return buffer.read_int64()
 
     def write(self, buffer, value):
@@ -228,7 +228,7 @@ class Int64Serializer(Serializer):
 
 
 class FloatSerializer(CrossLanguageCompatibleSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.FLOAT.value
 
     def write(self, buffer, value):
@@ -239,7 +239,7 @@ class FloatSerializer(CrossLanguageCompatibleSerializer):
 
 
 class DoubleSerializer(CrossLanguageCompatibleSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.DOUBLE.value
 
     def write(self, buffer, value):
@@ -250,7 +250,7 @@ class DoubleSerializer(CrossLanguageCompatibleSerializer):
 
 
 class StringSerializer(CrossLanguageCompatibleSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.STRING.value
 
     def write(self, buffer, value: str):
@@ -264,7 +264,7 @@ _base_date = datetime.date(1970, 1, 1)
 
 
 class DateSerializer(CrossLanguageCompatibleSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.DATE32.value
 
     def write(self, buffer, value: datetime.date):
@@ -283,7 +283,7 @@ class DateSerializer(CrossLanguageCompatibleSerializer):
 
 
 class TimestampSerializer(CrossLanguageCompatibleSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.TIMESTAMP.value
 
     def write(self, buffer, value: datetime.datetime):
@@ -302,7 +302,7 @@ class TimestampSerializer(CrossLanguageCompatibleSerializer):
 
 
 class BytesSerializer(CrossLanguageCompatibleSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.BINARY.value
 
     def write(self, buffer, value: bytes):
@@ -344,10 +344,10 @@ class PyArraySerializer(CrossLanguageCompatibleSerializer):
         self.typecode = typecode
         self.itemsize, self.type_id = PyArraySerializer.typecode_dict[self.typecode]
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return self.type_id
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         assert value.itemsize == self.itemsize
         view = memoryview(value)
         assert view.format == self.typecode
@@ -357,7 +357,7 @@ class PyArraySerializer(CrossLanguageCompatibleSerializer):
         buffer.write_varint32(nbytes)
         buffer.write_buffer(value)
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         data = buffer.read_bytes_and_size()
         arr = array.array(self.typecode, [])
         arr.frombytes(data)
@@ -399,10 +399,10 @@ class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
         self.dtype = dtype
         self.itemsize, self.typecode, self.type_id = _np_dtypes_dict[self.dtype]
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return self.type_id
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         assert value.itemsize == self.itemsize
         view = memoryview(value)
         assert view.format == self.typecode
@@ -414,7 +414,7 @@ class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
         else:
             buffer.write_buffer(value)
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         data = buffer.read_bytes_and_size()
         return np.frombuffer(data, dtype=self.dtype)
 
@@ -434,7 +434,7 @@ class CollectionSerializer(Serializer):
         self.ref_resolver = fury.ref_resolver
         self.elem_serializer = elem_serializer
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return -FuryType.LIST.value
 
     def write(self, buffer, value: Iterable[Any]):
@@ -474,7 +474,7 @@ class CollectionSerializer(Serializer):
     def handle_read_elem(self, elem, collection_):
         collection_.append(elem)
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         try:
             len_ = len(value)
         except AttributeError:
@@ -482,26 +482,22 @@ class CollectionSerializer(Serializer):
             len_ = len(value)
         buffer.write_varint32(len_)
         for s in value:
-            self.fury_.cross_language_serialize_ref(
-                buffer, s, serializer=self.elem_serializer
-            )
+            self.fury_.xserialize_ref(buffer, s, serializer=self.elem_serializer)
             len_ += 1
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         len_ = buffer.read_varint32()
         collection_ = self.new_instance(self.type_)
         for i in range(len_):
             self.handle_read_elem(
-                self.fury_.cross_language_deserialize_ref(
-                    buffer, serializer=self.elem_serializer
-                ),
+                self.fury_.xdeserialize_ref(buffer, serializer=self.elem_serializer),
                 collection_,
             )
         return collection_
 
 
 class ListSerializer(CollectionSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.LIST.value
 
     def read(self, buffer):
@@ -526,12 +522,12 @@ class StringArraySerializer(ListSerializer):
     def __init__(self, fury, type_):
         super().__init__(fury, type_, StringSerializer(fury, str))
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.FURY_STRING_ARRAY.value
 
 
 class SetSerializer(CollectionSerializer):
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.FURY_SET.value
 
     def new_instance(self, type_):
@@ -558,7 +554,7 @@ class MapSerializer(Serializer):
         self.key_serializer = key_serializer
         self.value_serializer = value_serializer
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.MAP.value
 
     def write(self, buffer, value: Dict):
@@ -596,27 +592,19 @@ class MapSerializer(Serializer):
             map_[k] = v
         return map_
 
-    def cross_language_write(self, buffer, value: Dict):
+    def xwrite(self, buffer, value: Dict):
         buffer.write_varint32(len(value))
         for k, v in value.items():
-            self.fury_.cross_language_serialize_ref(
-                buffer, k, serializer=self.key_serializer
-            )
-            self.fury_.cross_language_serialize_ref(
-                buffer, v, serializer=self.value_serializer
-            )
+            self.fury_.xserialize_ref(buffer, k, serializer=self.key_serializer)
+            self.fury_.xserialize_ref(buffer, v, serializer=self.value_serializer)
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         len_ = buffer.read_varint32()
         map_ = {}
         self.fury_.ref_resolver.reference(map_)
         for i in range(len_):
-            k = self.fury_.cross_language_deserialize_ref(
-                buffer, serializer=self.key_serializer
-            )
-            v = self.fury_.cross_language_deserialize_ref(
-                buffer, serializer=self.value_serializer
-            )
+            k = self.fury_.xdeserialize_ref(buffer, serializer=self.key_serializer)
+            v = self.fury_.xdeserialize_ref(buffer, serializer=self.value_serializer)
             map_[k] = v
         return map_
 
@@ -636,10 +624,10 @@ class EnumSerializer(Serializer):
         name = buffer.read_string()
         return getattr(self.type_, name)
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError
 
 
@@ -692,18 +680,18 @@ class SliceSerializer(Serializer):
             step = self.fury_.deserialize_non_ref_from_py(buffer)
         return slice(start, stop, step)
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError
 
 
 class PickleSerializer(Serializer):
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError
 
     def write(self, buffer, value):

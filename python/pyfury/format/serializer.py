@@ -18,7 +18,7 @@ class ArrowRecordBatchSerializer(CrossLanguageCompatibleSerializer):
         [batch] = [batch for batch in reader]
         return batch
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.FURY_ARROW_RECORD_BATCH.value
 
 
@@ -64,7 +64,7 @@ class ArrowTableSerializer(CrossLanguageCompatibleSerializer):
         batches = [batch for batch in reader]
         return pa.Table.from_batches(batches)
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.FURY_ARROW_TABLE.value
 
 

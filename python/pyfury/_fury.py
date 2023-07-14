@@ -187,7 +187,7 @@ class ClassResolver:
     # `Union[type, TypeVar]` is not supported in py3.6
     def register_serializer(self, cls, serializer):
         assert isinstance(cls, (type, TypeVar)), cls
-        type_id = serializer.get_cross_language_type_id()
+        type_id = serializer.get_xtype_id()
         if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
             self._add_x_lang_serializer(cls, serializer=serializer)
         else:
@@ -261,7 +261,7 @@ class ClassResolver:
     def _add_x_lang_serializer(self, cls: type, serializer=None, serializer_cls=None):
         if serializer_cls:
             serializer = serializer_cls(self.fury_, cls)
-        type_id = serializer.get_cross_language_type_id()
+        type_id = serializer.get_xtype_id()
         from pyfury._serializer import NOT_SUPPORT_CROSS_LANGUAGE
 
         assert type_id != NOT_SUPPORT_CROSS_LANGUAGE
@@ -270,7 +270,7 @@ class ClassResolver:
         classinfo = self._classes_info[cls]
         classinfo.serializer = serializer
         if type_id == FuryType.FURY_TYPE_TAG.value:
-            type_tag = serializer.get_cross_language_type_tag()
+            type_tag = serializer.get_xtype_tag()
             assert type(type_tag) is str
             assert type_tag not in self._type_tag_to_class_x_lang_map
             classinfo.type_tag_bytes = EnumStringBytes(type_tag.encode("utf-8"))
@@ -504,19 +504,19 @@ class ClassResolver:
         self._dynamic_id_to_enum_str_list.append(enum_str)
         return enum_str
 
-    def cross_language_write_class(self, buffer, cls):
+    def xwrite_class(self, buffer, cls):
         class_name_bytes = self._classes_info[cls].class_name_bytes
         self.write_enum_string_bytes(buffer, class_name_bytes)
 
-    def cross_language_write_type_tag(self, buffer, cls):
+    def xwrite_type_tag(self, buffer, cls):
         type_tag_bytes = self._classes_info[cls].type_tag_bytes
         self.write_enum_string_bytes(buffer, type_tag_bytes)
 
     def read_class_by_type_tag(self, buffer):
-        tag = self.cross_language_read_classname(buffer)
+        tag = self.xread_classname(buffer)
         return self._type_tag_to_class_x_lang_map[tag]
 
-    def cross_language_read_class(self, buffer):
+    def xread_class(self, buffer):
         class_name_bytes = self.read_enum_string_bytes(buffer)
         cls = self._enum_str_to_class.get(class_name_bytes)
         if cls is None:
@@ -525,7 +525,7 @@ class ClassResolver:
             self._enum_str_to_class[class_name_bytes] = cls
         return cls
 
-    def cross_language_read_classname(self, buffer) -> str:
+    def xread_classname(self, buffer) -> str:
         str_bytes = self.read_enum_string_bytes(buffer)
         str_ = self._enum_str_to_str.get(str_bytes)
         if str_ is None:
@@ -690,7 +690,7 @@ class Fury:
             start_offset = buffer.writer_index
             buffer.write_int32(-1)  # preserve 4-byte for nativeObjects start offsets.
             buffer.write_int32(-1)  # preserve 4-byte for nativeObjects size
-            self.cross_language_serialize_ref(buffer, obj)
+            self.xserialize_ref(buffer, obj)
             buffer.put_int32(start_offset, buffer.writer_index)
             buffer.put_int32(start_offset + 4, len(self._native_objects))
             self.ref_resolver.reset_write()
@@ -745,37 +745,36 @@ class Fury:
             self.class_resolver.write_classinfo(buffer, classinfo)
             classinfo.serializer.write(buffer, obj)
 
-    def cross_language_serialize_ref(self, buffer, obj, serializer=None):
+    def xserialize_ref(self, buffer, obj, serializer=None):
+        pass
+
+    def xserialize_ref(self, buffer, obj, serializer=None):
         if serializer is None or serializer.need_to_write_ref:
             if not self.ref_resolver.write_ref_or_null(buffer, obj):
-                self.cross_language_serialize_non_ref(
-                    buffer, obj, serializer=serializer
-                )
+                self.xserialize_non_ref(buffer, obj, serializer=serializer)
         else:
             if obj is None:
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.cross_language_serialize_non_ref(
-                    buffer, obj, serializer=serializer
-                )
+                self.xserialize_non_ref(buffer, obj, serializer=serializer)
 
-    def cross_language_serialize_non_ref(self, buffer, obj, serializer=None):
+    def xserialize_non_ref(self, buffer, obj, serializer=None):
         cls = type(obj)
         serializer = serializer or self.class_resolver.get_serializer(obj=obj)
-        type_id = serializer.get_cross_language_type_id()
+        type_id = serializer.get_xtype_id()
         buffer.write_int16(type_id)
         if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
             if type_id == FuryType.FURY_TYPE_TAG.value:
-                self.class_resolver.cross_language_write_type_tag(buffer, cls)
+                self.class_resolver.xwrite_type_tag(buffer, cls)
             if type_id < NOT_SUPPORT_CROSS_LANGUAGE:
-                self.class_resolver.cross_language_write_class(buffer, cls)
-            serializer.cross_language_write(buffer, obj)
+                self.class_resolver.xwrite_class(buffer, cls)
+            serializer.xwrite(buffer, obj)
         else:
             # Write classname so it can be used for debugging which object doesn't
             # support cross-language.
             # TODO add a config to disable this to reduce space cost.
-            self.class_resolver.cross_language_write_class(buffer, cls)
+            self.class_resolver.xwrite_class(buffer, cls)
             # serializer may increase reference id multi times internally, thus peer
             # cross-language later fields/objects deserialization will use wrong
             # reference id since we skip opaque objects deserialization.
@@ -845,7 +844,7 @@ class Fury:
                     )
                 self.ref_resolver.reset_read()
                 self.class_resolver.reset_read()
-            obj = self.cross_language_deserialize_ref(buffer)
+            obj = self.xdeserialize_ref(buffer)
         else:
             obj = self.deserialize_ref_from_py(buffer)
         return obj
@@ -867,16 +866,14 @@ class Fury:
         classinfo = self.class_resolver.read_classinfo(buffer)
         return classinfo.serializer.read(buffer)
 
-    def cross_language_deserialize_ref(self, buffer, serializer=None):
+    def xdeserialize_ref(self, buffer, serializer=None):
         if serializer is None or serializer.need_to_write_ref:
             ref_resolver = self.ref_resolver
             red_id = ref_resolver.try_preserve_ref_id(buffer)
 
             # indicates that the object is first read.
             if red_id >= NOT_NULL_VALUE_FLAG:
-                o = self.cross_language_deserialize_non_ref(
-                    buffer, serializer=serializer
-                )
+                o = self.xdeserialize_non_ref(buffer, serializer=serializer)
                 ref_resolver.set_read_object(red_id, o)
                 return o
             else:
@@ -884,9 +881,9 @@ class Fury:
         head_flag = buffer.read_int8()
         if head_flag == NULL_FLAG:
             return None
-        return self.cross_language_deserialize_non_ref(buffer, serializer=serializer)
+        return self.xdeserialize_non_ref(buffer, serializer=serializer)
 
-    def cross_language_deserialize_non_ref(self, buffer, serializer=None):
+    def xdeserialize_non_ref(self, buffer, serializer=None):
         type_id = buffer.read_int16()
         cls = None
         if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
@@ -900,7 +897,7 @@ class Fury:
                         type_id=-type_id
                     )
                 else:
-                    cls = self.class_resolver.cross_language_read_class(buffer)
+                    cls = self.class_resolver.xread_class(buffer)
                     serializer = serializer or self.class_resolver.get_serializer(
                         cls=cls, type_id=type_id
                     )
@@ -911,9 +908,9 @@ class Fury:
                     cls=cls, type_id=type_id
                 )
             assert cls is not None
-            return serializer.cross_language_read(buffer)
+            return serializer.xread(buffer)
         else:
-            class_name = self.class_resolver.cross_language_read_classname(buffer)
+            class_name = self.class_resolver.xread_classname(buffer)
             ordinal = buffer.read_varint32()
             if self._peer_language != Language.PYTHON:
                 return OpaqueObject(self._peer_language, class_name, ordinal)
