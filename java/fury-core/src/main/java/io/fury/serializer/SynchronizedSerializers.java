@@ -89,12 +89,12 @@ public class SynchronizedSerializers {
     public void write(MemoryBuffer buffer, Collection object) {
       // the ordinal could be replaced by s.th. else (e.g. a explicitly managed "id")
       Object unwrapped = Platform.getObject(object, synchronizedFactory.sourceFieldOffset);
-      fury.writeRefoJava(buffer, unwrapped);
+      fury.writeRef(buffer, unwrapped);
     }
 
     @Override
     public Collection read(MemoryBuffer buffer) {
-      final Object sourceCollection = fury.readRefFromJava(buffer);
+      final Object sourceCollection = fury.readRef(buffer);
       return (Collection) synchronizedFactory.create(sourceCollection);
     }
   }
@@ -112,12 +112,12 @@ public class SynchronizedSerializers {
     public void write(MemoryBuffer buffer, Map object) {
       // the ordinal could be replaced by s.th. else (e.g. a explicitly managed "id")
       Object unwrapped = Platform.getObject(object, synchronizedFactory.sourceFieldOffset);
-      fury.writeRefoJava(buffer, unwrapped);
+      fury.writeRef(buffer, unwrapped);
     }
 
     @Override
     public Map read(MemoryBuffer buffer) {
-      final Object sourceCollection = fury.readRefFromJava(buffer);
+      final Object sourceCollection = fury.readRef(buffer);
       return (Map) synchronizedFactory.create(sourceCollection);
     }
   }

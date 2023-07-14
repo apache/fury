@@ -88,7 +88,7 @@ public class ArraySerializers {
         }
       } else {
         for (T t : arr) {
-          fury.writeRefoJava(buffer, t);
+          fury.writeRef(buffer, t);
         }
       }
     }
@@ -124,7 +124,7 @@ public class ArraySerializers {
         }
       } else {
         for (int i = 0; i < numElements; i++) {
-          value[i] = fury.readRefFromJava(buffer);
+          value[i] = fury.readRef(buffer);
         }
       }
       return (T[]) value;

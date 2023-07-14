@@ -111,13 +111,13 @@ public class SerializationBenchmark {
     // warm
     for (int i = 0; i < iterNums; i++) {
       buffer.writerIndex(0);
-      fury.writeRefoJava(buffer, obj);
+      fury.writeRef(buffer, obj);
     }
     // test
     long startTime = System.nanoTime();
     for (int i = 0; i < iterNums; i++) {
       buffer.writerIndex(0);
-      fury.writeRefoJava(buffer, obj);
+      fury.writeRef(buffer, obj);
     }
     long duration = System.nanoTime() - startTime;
     if (LOG.isInfoEnabled()) {

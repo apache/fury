@@ -560,12 +560,12 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, AtomicReference value) {
-      fury.writeRefoJava(buffer, value.get());
+      fury.writeRef(buffer, value.get());
     }
 
     @Override
     public AtomicReference read(MemoryBuffer buffer) {
-      return new AtomicReference(fury.readRefFromJava(buffer));
+      return new AtomicReference(fury.readRef(buffer));
     }
   }
 

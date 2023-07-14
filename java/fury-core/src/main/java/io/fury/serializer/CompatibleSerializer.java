@@ -125,7 +125,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         buffer.writeByte(fieldType);
         Preconditions.checkArgument(fieldType == FieldResolver.FieldTypes.OBJECT);
         ClassInfo classInfo = fieldInfo.getClassInfo(value.getClass());
-        fury.writeNonRefToJava(buffer, value, classInfo);
+        fury.writeNonRefT(buffer, value, classInfo);
       }
     }
     buffer.writeLong(fieldResolver.getEndTag());
@@ -144,7 +144,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         } else {
           ClassInfo classInfo = fieldInfo.getClassInfo(classId);
           Serializer<Object> serializer = classInfo.getSerializer();
-          fury.writeRefoJava(buffer, fieldValue, serializer);
+          fury.writeRef(buffer, fieldValue, serializer);
         }
       }
     }
@@ -197,7 +197,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         {
           ClassInfo classInfo = fieldInfo.getClassInfo(classId);
           Serializer<Object> serializer = classInfo.getSerializer();
-          fury.writeRefoJava(buffer, fieldValue, serializer);
+          fury.writeRef(buffer, fieldValue, serializer);
         }
     }
   }
@@ -209,7 +209,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       buffer.writeByte(fieldType);
       if (fieldType == FieldResolver.FieldTypes.OBJECT) {
         ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
-        fury.writeNonRefToJava(buffer, fieldValue, classInfo);
+        fury.writeNonRefT(buffer, fieldValue, classInfo);
       } else {
         if (fieldType == FieldResolver.FieldTypes.COLLECTION_ELEMENT_FINAL) {
           writeCollectionField(
@@ -542,7 +542,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       } else {
         ClassInfo classInfo = fieldInfo.getClassInfo(classId);
         Serializer<Object> serializer = classInfo.getSerializer();
-        fieldAccessor.putObject(targetObject, fury.readRefFromJava(buffer, serializer));
+        fieldAccessor.putObject(targetObject, fury.readRef(buffer, serializer));
       }
     }
   }
@@ -583,7 +583,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         {
           ClassInfo classInfo = fieldInfo.getClassInfo(classId);
           Serializer<Object> serializer = classInfo.getSerializer();
-          return fury.readRefFromJava(buffer, serializer);
+          return fury.readRef(buffer, serializer);
         }
     }
   }

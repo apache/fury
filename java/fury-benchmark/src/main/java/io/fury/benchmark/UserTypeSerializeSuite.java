@@ -55,7 +55,7 @@ public class UserTypeSerializeSuite {
   // @Benchmark
   public Object fury_serialize(FuryState.FuryUserTypeState state) {
     state.buffer.writerIndex(0);
-    state.fury.writeRefoJava(state.buffer, state.object);
+    state.fury.writeRef(state.buffer, state.object);
     state.fury.resetWrite();
     return state.buffer;
   }
@@ -63,7 +63,7 @@ public class UserTypeSerializeSuite {
   @Benchmark
   public Object fury_serialize_compatible(FuryState.FuryCompatibleState state) {
     state.buffer.writerIndex(0);
-    state.fury.writeRefoJava(state.buffer, state.object);
+    state.fury.writeRef(state.buffer, state.object);
     state.fury.resetWrite();
     return state.buffer;
   }

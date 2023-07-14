@@ -157,7 +157,7 @@ public class MapSerializers {
         RefResolver refResolver = fury.getRefResolver();
         for (Object object : map.entrySet()) {
           Map.Entry entry = (Map.Entry) object;
-          fury.writeRefoJava(buffer, entry.getKey(), keySerializer);
+          fury.writeRef(buffer, entry.getKey(), keySerializer);
           Object value = entry.getValue();
           writeJavaRefOptimized(
               fury, classResolver, refResolver, buffer, value, valueClassInfoWriteCache);
@@ -170,7 +170,7 @@ public class MapSerializers {
           Object key = entry.getKey();
           writeJavaRefOptimized(
               fury, classResolver, refResolver, buffer, key, keyClassInfoWriteCache);
-          fury.writeRefoJava(buffer, entry.getValue(), valueSerializer);
+          fury.writeRef(buffer, entry.getValue(), valueSerializer);
         }
       } else {
         genericJavaWrite(fury, buffer, map);
@@ -187,8 +187,8 @@ public class MapSerializers {
         Map.Entry entry = (Map.Entry) object;
         Object key = entry.getKey();
         Object value = entry.getValue();
-        fury.writeRefoJava(buffer, key, keySerializer);
-        fury.writeRefoJava(buffer, value, valueSerializer);
+        fury.writeRef(buffer, key, keySerializer);
+        fury.writeRef(buffer, value, valueSerializer);
       }
     }
 
@@ -254,10 +254,10 @@ public class MapSerializers {
       for (Object object : map.entrySet()) {
         Map.Entry entry = (Map.Entry) object;
         generics.pushGenericType(keyGenericType);
-        fury.writeRefoJava(buffer, entry.getKey(), keySerializer);
+        fury.writeRef(buffer, entry.getKey(), keySerializer);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
-        fury.writeRefoJava(buffer, entry.getValue(), valueSerializer);
+        fury.writeRef(buffer, entry.getValue(), valueSerializer);
         generics.popGenericType();
       }
     }
@@ -276,7 +276,7 @@ public class MapSerializers {
       for (Object object : map.entrySet()) {
         Map.Entry entry = (Map.Entry) object;
         generics.pushGenericType(keyGenericType);
-        fury.writeRefoJava(buffer, entry.getKey(), keySerializer);
+        fury.writeRef(buffer, entry.getKey(), keySerializer);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
         writeJavaRefOptimized(
@@ -315,7 +315,7 @@ public class MapSerializers {
             keyClassInfoWriteCache);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
-        fury.writeRefoJava(buffer, entry.getValue(), valueSerializer);
+        fury.writeRef(buffer, entry.getValue(), valueSerializer);
         generics.popGenericType();
       }
     }
@@ -466,19 +466,19 @@ public class MapSerializers {
       this.valueSerializer = null;
       if (keySerializer != null && valueSerializer != null) {
         for (int i = 0; i < size; i++) {
-          Object key = fury.readRefFromJava(buffer, keySerializer);
-          Object value = fury.readRefFromJava(buffer, valueSerializer);
+          Object key = fury.readRef(buffer, keySerializer);
+          Object value = fury.readRef(buffer, valueSerializer);
           map.put(key, value);
         }
       } else if (keySerializer != null) {
         for (int i = 0; i < size; i++) {
-          Object key = fury.readRefFromJava(buffer, keySerializer);
-          map.put(key, fury.readRefFromJava(buffer, keyClassInfoReadCache));
+          Object key = fury.readRef(buffer, keySerializer);
+          map.put(key, fury.readRef(buffer, keyClassInfoReadCache));
         }
       } else if (valueSerializer != null) {
         for (int i = 0; i < size; i++) {
-          Object key = fury.readRefFromJava(buffer);
-          Object value = fury.readRefFromJava(buffer, valueSerializer);
+          Object key = fury.readRef(buffer);
+          Object value = fury.readRef(buffer, valueSerializer);
           map.put(key, value);
         }
       } else {
@@ -535,10 +535,10 @@ public class MapSerializers {
       Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
       for (int i = 0; i < size; i++) {
         generics.pushGenericType(keyGenericType);
-        Object key = fury.readRefFromJava(buffer, keySerializer);
+        Object key = fury.readRef(buffer, keySerializer);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
-        Object value = fury.readRefFromJava(buffer, valueSerializer);
+        Object value = fury.readRef(buffer, valueSerializer);
         generics.popGenericType();
         map.put(key, value);
       }
@@ -557,7 +557,7 @@ public class MapSerializers {
       Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
       for (int i = 0; i < size; i++) {
         generics.pushGenericType(keyGenericType);
-        Object key = fury.readRefFromJava(buffer, keySerializer);
+        Object key = fury.readRef(buffer, keySerializer);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
         Object value =
@@ -585,7 +585,7 @@ public class MapSerializers {
             readJavaRefOptimized(fury, refResolver, trackingKeyRef, buffer, keyClassInfoWriteCache);
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
-        Object value = fury.readRefFromJava(buffer, valueSerializer);
+        Object value = fury.readRef(buffer, valueSerializer);
         generics.popGenericType();
         map.put(key, value);
       }
@@ -619,8 +619,8 @@ public class MapSerializers {
 
     private void generalJavaRead(Fury fury, MemoryBuffer buffer, T map, int size) {
       for (int i = 0; i < size; i++) {
-        Object key = fury.readRefFromJava(buffer, keyClassInfoReadCache);
-        Object value = fury.readRefFromJava(buffer, valueClassInfoReadCache);
+        Object key = fury.readRef(buffer, keyClassInfoReadCache);
+        Object value = fury.readRef(buffer, valueClassInfoReadCache);
         map.put(key, value);
       }
     }
@@ -735,7 +735,7 @@ public class MapSerializers {
         Object obj,
         ClassInfoCache classInfoCache) {
       if (!refResolver.writeNullFlag(buffer, obj)) {
-        fury.writeRefoJava(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
+        fury.writeRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
       }
     }
 
@@ -749,15 +749,14 @@ public class MapSerializers {
         ClassInfoCache classInfoCache) {
       if (trackingRef) {
         if (!refResolver.writeNullFlag(buffer, obj)) {
-          fury.writeRefoJava(
-              buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
+          fury.writeRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
         }
       } else {
         if (obj == null) {
           buffer.writeByte(Fury.NULL_FLAG);
         } else {
           buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-          fury.writeNonRefToJava(
+          fury.writeNonRefT(
               buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
         }
       }
@@ -772,7 +771,7 @@ public class MapSerializers {
       if (trackingRef) {
         int nextReadRefId = refResolver.tryPreserveRefId(buffer);
         if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
-          Object obj = fury.readNonRefFromJava(buffer, classInfoCache);
+          Object obj = fury.readNonRef(buffer, classInfoCache);
           refResolver.setReadObject(nextReadRefId, obj);
           return obj;
         } else {
@@ -783,7 +782,7 @@ public class MapSerializers {
         if (headFlag == Fury.NULL_FLAG) {
           return null;
         } else {
-          return fury.readNonRefFromJava(buffer, classInfoCache);
+          return fury.readNonRef(buffer, classInfoCache);
         }
       }
     }
@@ -862,14 +861,14 @@ public class MapSerializers {
 
     @Override
     public void writeHeader(MemoryBuffer buffer, T value) {
-      fury.writeRefoJava(buffer, value.comparator());
+      fury.writeRef(buffer, value.comparator());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T newMap(MemoryBuffer buffer, int numElements) {
       T map;
-      Comparator comparator = (Comparator) fury.readRefFromJava(buffer);
+      Comparator comparator = (Comparator) fury.readRef(buffer);
       if (type == TreeMap.class) {
         map = (T) new TreeMap(comparator);
       } else {
@@ -939,8 +938,8 @@ public class MapSerializers {
     @Override
     public void write(MemoryBuffer buffer, Map<?, ?> value) {
       Map.Entry entry = value.entrySet().iterator().next();
-      fury.writeRefoJava(buffer, entry.getKey());
-      fury.writeRefoJava(buffer, entry.getValue());
+      fury.writeRef(buffer, entry.getKey());
+      fury.writeRef(buffer, entry.getValue());
     }
 
     @Override
@@ -958,8 +957,8 @@ public class MapSerializers {
 
     @Override
     public Map<?, ?> read(MemoryBuffer buffer) {
-      Object key = fury.readRefFromJava(buffer);
-      Object value = fury.readRefFromJava(buffer);
+      Object key = fury.readRef(buffer);
+      Object value = fury.readRef(buffer);
       return Collections.singletonMap(key, value);
     }
 
@@ -1037,7 +1036,7 @@ public class MapSerializers {
 
     @Override
     public ConcurrentSkipListMap newMap(MemoryBuffer buffer, int numElements) {
-      Comparator comparator = (Comparator) fury.readRefFromJava(buffer);
+      Comparator comparator = (Comparator) fury.readRef(buffer);
       ConcurrentSkipListMap map = new ConcurrentSkipListMap(comparator);
       fury.getRefResolver().reference(map);
       return map;

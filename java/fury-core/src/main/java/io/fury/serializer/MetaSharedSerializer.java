@@ -137,7 +137,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         if (skipPrimitiveFieldValueFailed(fury, fieldInfo.classId, buffer)) {
           if (fieldInfo.classInfo == null) {
             // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
-            fury.readRefFromJava(buffer, classInfoCache);
+            fury.readRef(buffer, classInfoCache);
           } else {
             ObjectSerializer.readFinalObjectFieldValue(
                 fury, refResolver, classResolver, fieldInfo, isFinal, buffer);

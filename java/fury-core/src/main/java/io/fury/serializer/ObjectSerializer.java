@@ -189,9 +189,9 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       UnsafeFieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       Object fieldValue = fieldAccessor.getObject(value);
       if (fieldInfo.trackingRef) {
-        fury.writeRefoJava(buffer, fieldValue, fieldInfo.classInfoCache);
+        fury.writeRef(buffer, fieldValue, fieldInfo.classInfoCache);
       } else {
-        fury.writeNullableToJava(buffer, fieldValue, fieldInfo.classInfoCache);
+        fury.writeNullable(buffer, fieldValue, fieldInfo.classInfoCache);
       }
     }
     writeContainerFields(buffer, value, fury, refResolver, classResolver);
@@ -216,7 +216,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
           if (!metaContextShareEnabled || isFinal[i]) {
             // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
             // consistent with jit serializer.
-            fury.writeRefoJava(buffer, fieldValue, serializer);
+            fury.writeRef(buffer, fieldValue, serializer);
           } else {
             if (serializer.needToWriteRef()) {
               if (!refResolver.writeRefOrNull(buffer, fieldValue)) {
@@ -225,7 +225,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
                 serializer.write(buffer, fieldValue);
               }
             } else {
-              fury.writeNullableToJava(buffer, fieldValue, fieldInfo.classInfo);
+              fury.writeNullable(buffer, fieldValue, fieldInfo.classInfo);
             }
           }
         }
@@ -261,7 +261,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         ClassInfo classInfo =
             classResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoCache);
         generics.pushGenericType(fieldInfo.genericType);
-        fury.writeNonRefToJava(buffer, fieldValue, classInfo);
+        fury.writeNonRefT(buffer, fieldValue, classInfo);
         generics.popGenericType();
       }
     } else {
@@ -270,7 +270,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       } else {
         buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
         generics.pushGenericType(fieldInfo.genericType);
-        fury.writeNonRefToJava(
+        fury.writeNonRefT(
             buffer,
             fieldValue,
             classResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoCache));
@@ -339,7 +339,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     if (isFinal) {
       // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
       // consistent with jit serializer.
-      fieldValue = fury.readRefFromJava(buffer, serializer);
+      fieldValue = fury.readRef(buffer, serializer);
     } else {
       if (serializer.needToWriteRef()) {
         int nextReadRefId = refResolver.tryPreserveRefId(buffer);
@@ -366,13 +366,13 @@ public final class ObjectSerializer<T> extends Serializer<T> {
   static Object readOtherFieldValue(Fury fury, GenericTypeField fieldInfo, MemoryBuffer buffer) {
     Object fieldValue;
     if (fieldInfo.trackingRef) {
-      fieldValue = fury.readRefFromJava(buffer, fieldInfo.classInfoCache);
+      fieldValue = fury.readRef(buffer, fieldInfo.classInfoCache);
     } else {
       byte headFlag = buffer.readByte();
       if (headFlag == Fury.NULL_FLAG) {
         fieldValue = null;
       } else {
-        fieldValue = fury.readNonRefFromJava(buffer, fieldInfo.classInfoCache);
+        fieldValue = fury.readNonRef(buffer, fieldInfo.classInfoCache);
       }
     }
     return fieldValue;
@@ -383,7 +383,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     Object fieldValue;
     if (fieldInfo.trackingRef) {
       generics.pushGenericType(fieldInfo.genericType);
-      fieldValue = fury.readRefFromJava(buffer, fieldInfo.classInfoCache);
+      fieldValue = fury.readRef(buffer, fieldInfo.classInfoCache);
       generics.popGenericType();
     } else {
       byte headFlag = buffer.readByte();
@@ -391,7 +391,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         fieldValue = null;
       } else {
         generics.pushGenericType(fieldInfo.genericType);
-        fieldValue = fury.readNonRefFromJava(buffer, fieldInfo.classInfoCache);
+        fieldValue = fury.readNonRef(buffer, fieldInfo.classInfoCache);
         generics.popGenericType();
       }
     }

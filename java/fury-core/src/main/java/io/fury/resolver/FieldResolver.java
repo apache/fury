@@ -424,9 +424,9 @@ public class FieldResolver {
       }
       ClassInfo classInfo = classResolver.getClassInfo(classId);
       if (classId >= minPrimitiveClassId && classId <= maxPrimitiveClassId) {
-        fury.readDataFromJava(buffer, classInfo);
+        fury.readData(buffer, classInfo);
       } else {
-        fury.readRefFromJava(buffer, classInfo.getSerializer());
+        fury.readRef(buffer, classInfo.getSerializer());
       }
     } else {
       long encodedFieldInfo = buffer.readInt();
@@ -476,10 +476,10 @@ public class FieldResolver {
         } else if (classId == PRIMITIVE_LONG_CLASS_ID) {
           longSerializer.read(buffer);
         } else {
-          fury.readDataFromJava(buffer, classInfo);
+          fury.readData(buffer, classInfo);
         }
       } else {
-        fury.readRefFromJava(buffer, classInfo.getSerializer());
+        fury.readRef(buffer, classInfo.getSerializer());
       }
     } else {
       if ((partFieldInfo & 0b11) == SEPARATE_TYPES_HASH_FLAG) {
@@ -506,7 +506,7 @@ public class FieldResolver {
       Object o;
       if (fieldType == FieldTypes.OBJECT) {
         ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoCache);
-        o = fury.readDataFromJava(buffer, classInfo);
+        o = fury.readData(buffer, classInfo);
       } else {
         o = readObjectWithFinal(buffer, fieldType);
       }
@@ -543,7 +543,7 @@ public class FieldResolver {
       Object o;
       if (fieldType == FieldTypes.OBJECT) {
         o =
-            fury.readDataFromJava(
+            fury.readData(
                 buffer, classResolver.readClassInfo(buffer, fieldInfo.getClassInfoCache()));
       } else {
         o = readObjectWithFinal(buffer, fieldType, fieldInfo);

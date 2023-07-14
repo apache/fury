@@ -138,12 +138,12 @@ public class CollectionSerializers {
           javaWriteWithGenerics(fury, buffer, value, refResolver, elemGenericType);
         } else {
           for (Object elem : value) {
-            fury.writeRefoJava(buffer, elem);
+            fury.writeRef(buffer, elem);
           }
         }
       } else {
         for (Object elem : value) {
-          fury.writeRefoJava(buffer, elem, elemSerializer);
+          fury.writeRef(buffer, elem, elemSerializer);
         }
       }
     }
@@ -166,18 +166,18 @@ public class CollectionSerializers {
       if (elemGenericType.isFinal()) {
         elemSerializer = elemGenericType.getSerializer(classResolver);
         for (Object elem : value) {
-          fury.writeRefoJava(buffer, elem, elemSerializer);
+          fury.writeRef(buffer, elem, elemSerializer);
         }
       } else {
         // whether ignore all subclass ref tracking.
         if (fury.getClassResolver().needToWriteRef(elemGenericType.getCls())) {
           for (Object elem : value) {
-            fury.writeRefoJava(buffer, elem);
+            fury.writeRef(buffer, elem);
           }
         } else {
           for (Object elem : value) {
             if (!refResolver.writeNullFlag(buffer, elem)) {
-              fury.writeRefoJava(
+              fury.writeRef(
                   buffer,
                   elem,
                   classResolver.getClassInfo(elem.getClass(), elementClassInfoWriteCache));
@@ -256,13 +256,13 @@ public class CollectionSerializers {
           javaReadWithGenerics(fury, buffer, collection, numElements, elemGenericType);
         } else {
           for (int i = 0; i < numElements; i++) {
-            Object elem = fury.readRefFromJava(buffer, elementClassInfoReadCache);
+            Object elem = fury.readRef(buffer, elementClassInfoReadCache);
             collection.add(elem);
           }
         }
       } else {
         for (int i = 0; i < numElements; i++) {
-          collection.add(fury.readRefFromJava(buffer, elemSerializer));
+          collection.add(fury.readRef(buffer, elemSerializer));
         }
       }
     }
@@ -281,13 +281,13 @@ public class CollectionSerializers {
       if (elemGenericType.isFinal()) {
         elemSerializer = elemGenericType.getSerializer(fury.getClassResolver());
         for (int i = 0; i < numElements; i++) {
-          Object elem = fury.readRefFromJava(buffer, elemSerializer);
+          Object elem = fury.readRef(buffer, elemSerializer);
           collection.add(elem);
         }
       } else {
         if (fury.getClassResolver().needToWriteRef(elemGenericType.getCls())) {
           for (int i = 0; i < numElements; i++) {
-            Object elem = fury.readRefFromJava(buffer);
+            Object elem = fury.readRef(buffer);
             collection.add(elem);
           }
         } else {
@@ -295,7 +295,7 @@ public class CollectionSerializers {
             if (buffer.readByte() == Fury.NULL_FLAG) {
               collection.add(null);
             } else {
-              Object elem = fury.readNonRefFromJava(buffer, elementClassInfoReadCache);
+              Object elem = fury.readNonRef(buffer, elementClassInfoReadCache);
               collection.add(elem);
             }
           }
@@ -440,7 +440,7 @@ public class CollectionSerializers {
     public void write(MemoryBuffer buffer, List<?> value) {
       try {
         final Object[] array = (Object[]) Platform.getObject(value, arrayFieldOffset);
-        fury.writeRefoJava(buffer, array);
+        fury.writeRef(buffer, array);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
@@ -454,7 +454,7 @@ public class CollectionSerializers {
 
     @Override
     public List<?> read(MemoryBuffer buffer) {
-      final Object[] array = (Object[]) fury.readRefFromJava(buffer);
+      final Object[] array = (Object[]) fury.readRef(buffer);
       Preconditions.checkNotNull(array);
       return Arrays.asList(array);
     }
@@ -526,14 +526,14 @@ public class CollectionSerializers {
 
     @Override
     public void writeHeader(MemoryBuffer buffer, T value) {
-      fury.writeRefoJava(buffer, value.comparator());
+      fury.writeRef(buffer, value.comparator());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T newCollection(MemoryBuffer buffer, int numElements) {
       T collection;
-      Comparator comparator = (Comparator) fury.readRefFromJava(buffer);
+      Comparator comparator = (Comparator) fury.readRef(buffer);
       if (type == TreeSet.class) {
         collection = (T) new TreeSet(comparator);
       } else {
@@ -641,7 +641,7 @@ public class CollectionSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, List<?> value) {
-      fury.writeRefoJava(buffer, value.get(0));
+      fury.writeRef(buffer, value.get(0));
     }
 
     @Override
@@ -657,7 +657,7 @@ public class CollectionSerializers {
 
     @Override
     public List<?> read(MemoryBuffer buffer) {
-      return Collections.singletonList(fury.readRefFromJava(buffer));
+      return Collections.singletonList(fury.readRef(buffer));
     }
 
     @Override
@@ -675,7 +675,7 @@ public class CollectionSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Set<?> value) {
-      fury.writeRefoJava(buffer, value.iterator().next());
+      fury.writeRef(buffer, value.iterator().next());
     }
 
     @Override
@@ -691,7 +691,7 @@ public class CollectionSerializers {
 
     @Override
     public Set<?> read(MemoryBuffer buffer) {
-      return Collections.singleton(fury.readRefFromJava(buffer));
+      return Collections.singleton(fury.readRef(buffer));
     }
 
     @Override
@@ -747,7 +747,7 @@ public class CollectionSerializers {
 
     @Override
     public ConcurrentSkipListSet newCollection(MemoryBuffer buffer, int numElements) {
-      Comparator comparator = (Comparator) fury.readRefFromJava(buffer);
+      Comparator comparator = (Comparator) fury.readRef(buffer);
       ConcurrentSkipListSet skipListSet = new ConcurrentSkipListSet(comparator);
       fury.getRefResolver().reference(skipListSet);
       return skipListSet;
@@ -847,12 +847,12 @@ public class CollectionSerializers {
     }
 
     public void writeHeader(MemoryBuffer buffer, PriorityQueue value) {
-      fury.writeRefoJava(buffer, value.comparator());
+      fury.writeRef(buffer, value.comparator());
     }
 
     @Override
     public PriorityQueue newCollection(MemoryBuffer buffer, int numElements) {
-      Comparator comparator = (Comparator) fury.readRefFromJava(buffer);
+      Comparator comparator = (Comparator) fury.readRef(buffer);
       PriorityQueue queue = new PriorityQueue(comparator);
       fury.getRefResolver().reference(queue);
       return queue;
