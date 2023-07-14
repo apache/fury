@@ -143,17 +143,17 @@ public class TimeSerializers {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Timestamp value) {
+    public void xwrite(MemoryBuffer buffer, Timestamp value) {
       buffer.writeLong(DateTimeUtils.fromJavaTimestamp(value));
     }
 
     @Override
-    public Timestamp crossLanguageRead(MemoryBuffer buffer) {
+    public Timestamp xread(MemoryBuffer buffer) {
       return DateTimeUtils.toJavaTimestamp(buffer.readLong());
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return typeId;
     }
 
@@ -182,18 +182,18 @@ public class TimeSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Type.DATE32.getId();
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, LocalDate value) {
+    public void xwrite(MemoryBuffer buffer, LocalDate value) {
       // TODO use java encoding to support larger range.
       buffer.writeInt(DateTimeUtils.localDateToDays(value));
     }
 
     @Override
-    public LocalDate crossLanguageRead(MemoryBuffer buffer) {
+    public LocalDate xread(MemoryBuffer buffer) {
       return DateTimeUtils.daysToLocalDate(buffer.readInt());
     }
 
@@ -231,18 +231,18 @@ public class TimeSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Type.TIMESTAMP.getId();
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Instant value) {
+    public void xwrite(MemoryBuffer buffer, Instant value) {
       // FIXME JDK17 may have higher precision than millisecond
       buffer.writeLong(DateTimeUtils.instantToMicros(value));
     }
 
     @Override
-    public Instant crossLanguageRead(MemoryBuffer buffer) {
+    public Instant xread(MemoryBuffer buffer) {
       return DateTimeUtils.microsToInstant(buffer.readLong());
     }
 

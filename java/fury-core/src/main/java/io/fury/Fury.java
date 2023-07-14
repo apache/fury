@@ -235,7 +235,7 @@ public final class Fury {
           writeRefoJava(buffer, obj);
         }
       } else {
-        crossLanguageSerializeInternal(buffer, obj);
+        xserializeInternal(buffer, obj);
       }
       return buffer;
     } finally {
@@ -261,11 +261,11 @@ public final class Fury {
     }
   }
 
-  private void crossLanguageSerializeInternal(MemoryBuffer buffer, Object obj) {
+  private void xserializeInternal(MemoryBuffer buffer, Object obj) {
     int startOffset = buffer.writerIndex();
     buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
     buffer.writeInt(-1); // preserve 4-byte for nativeObjects size
-    crossLanguageWriteRef(buffer, obj);
+    xwriteRef(buffer, obj);
     buffer.putInt(startOffset, buffer.writerIndex());
     buffer.putInt(startOffset + 4, nativeObjects.size());
     refResolver.resetWrite();
@@ -379,58 +379,58 @@ public final class Fury {
     depth--;
   }
 
-  public void crossLanguageWriteRef(MemoryBuffer buffer, Object obj) {
+  public void xwriteRef(MemoryBuffer buffer, Object obj) {
     if (!refResolver.writeRefOrNull(buffer, obj)) {
-      crossLanguageWriteNonRef(buffer, obj, null);
+      xwriteNonRef(buffer, obj, null);
     }
   }
 
-  public <T> void crossLanguageWriteRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
+  public <T> void xwriteRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
     if (serializer.needToWriteRef()) {
       if (!refResolver.writeRefOrNull(buffer, obj)) {
-        crossLanguageWriteNonRef(buffer, obj, serializer);
+        xwriteNonRef(buffer, obj, serializer);
       }
     } else {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
         buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-        crossLanguageWriteNonRef(buffer, obj, serializer);
+        xwriteNonRef(buffer, obj, serializer);
       }
     }
   }
 
-  public <T> void crossLanguageWriteRefByNullableSerializer(
+  public <T> void xwriteRefByNullableSerializer(
       MemoryBuffer buffer, T obj, Serializer<T> serializer) {
     if (serializer == null) {
-      crossLanguageWriteRef(buffer, obj);
+      xwriteRef(buffer, obj);
     } else {
-      crossLanguageWriteRef(buffer, obj, serializer);
+      xwriteRef(buffer, obj, serializer);
     }
   }
 
-  public <T> void crossLanguageWriteNonRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
+  public <T> void xwriteNonRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
     depth++;
     @SuppressWarnings("unchecked")
     Class<T> cls = (Class<T>) obj.getClass();
     if (serializer == null) {
       serializer = classResolver.getSerializer(cls);
     }
-    short typeId = serializer.getCrossLanguageTypeId();
+    short typeId = serializer.getXtypeId();
     buffer.writeShort(typeId);
     if (typeId != NOT_SUPPORT_CROSS_LANGUAGE) {
       if (typeId == FURY_TYPE_TAG_ID) {
-        classResolver.crossLanguageWriteTypeTag(buffer, cls);
+        classResolver.xwriteTypeTag(buffer, cls);
       }
       if (typeId < NOT_SUPPORT_CROSS_LANGUAGE) {
-        classResolver.crossLanguageWriteClass(buffer, cls);
+        classResolver.xwriteClass(buffer, cls);
       }
-      serializer.crossLanguageWrite(buffer, obj);
+      serializer.xwrite(buffer, obj);
     } else {
       // Write classname so it can be used for debugging which object doesn't support
       // cross-language.
       // TODO add a config to disable this to reduce space cost.
-      classResolver.crossLanguageWriteClass(buffer, cls);
+      classResolver.xwriteClass(buffer, cls);
       // serializer may increase reference id multi times internally, thus peer cross-language later
       // fields/objects deserialization will use wrong reference id since we skip opaque objects
       // deserialization.
@@ -667,7 +667,7 @@ public final class Fury {
       }
       Object obj;
       if (isTargetXLang) {
-        obj = crossLanguageDeserializeInternal(buffer);
+        obj = xdeserializeInternal(buffer);
       } else {
         if (config.isMetaContextShareEnabled()) {
           classResolver.readClassDefs(buffer);
@@ -699,7 +699,7 @@ public final class Fury {
     }
   }
 
-  private Object crossLanguageDeserializeInternal(MemoryBuffer buffer) {
+  private Object xdeserializeInternal(MemoryBuffer buffer) {
     Object obj;
     int nativeObjectsStartOffset = buffer.readInt();
     int nativeObjectsSize = buffer.readInt();
@@ -716,7 +716,7 @@ public final class Fury {
       classResolver.resetRead();
       enumStringResolver.resetRead();
     }
-    obj = crossLanguageReadRef(buffer);
+    obj = xreadRef(buffer);
     buffer.readerIndex(endReaderIndex);
     return obj;
   }
@@ -825,11 +825,11 @@ public final class Fury {
     }
   }
 
-  public Object crossLanguageReadRef(MemoryBuffer buffer) {
+  public Object xreadRef(MemoryBuffer buffer) {
     RefResolver refResolver = this.refResolver;
     int nextReadRefId = refResolver.tryPreserveRefId(buffer);
     if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
-      Object o = crossLanguageReadNonRef(buffer, null);
+      Object o = xreadNonRef(buffer, null);
       refResolver.setReadObject(nextReadRefId, o);
       return o;
     } else {
@@ -837,12 +837,12 @@ public final class Fury {
     }
   }
 
-  public Object crossLanguageReadRef(MemoryBuffer buffer, Serializer<?> serializer) {
+  public Object xreadRef(MemoryBuffer buffer, Serializer<?> serializer) {
     if (serializer.needToWriteRef()) {
       RefResolver refResolver = this.refResolver;
       int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
-        Object o = crossLanguageReadNonRef(buffer, serializer);
+        Object o = xreadNonRef(buffer, serializer);
         refResolver.setReadObject(nextReadRefId, o);
         return o;
       } else {
@@ -853,21 +853,20 @@ public final class Fury {
       if (headFlag == Fury.NULL_FLAG) {
         return null;
       } else {
-        return crossLanguageReadNonRef(buffer, serializer);
+        return xreadNonRef(buffer, serializer);
       }
     }
   }
 
-  public Object crossLanguageReadRefByNullableSerializer(
-      MemoryBuffer buffer, Serializer<?> serializer) {
+  public Object xreadRefByNullableSerializer(MemoryBuffer buffer, Serializer<?> serializer) {
     if (serializer == null) {
-      return crossLanguageReadRef(buffer);
+      return xreadRef(buffer);
     } else {
-      return crossLanguageReadRef(buffer, serializer);
+      return xreadRef(buffer, serializer);
     }
   }
 
-  public Object crossLanguageReadNonRef(MemoryBuffer buffer, Serializer<?> serializer) {
+  public Object xreadNonRef(MemoryBuffer buffer, Serializer<?> serializer) {
     depth++;
     short typeId = buffer.readShort();
     ClassResolver classResolver = this.classResolver;
@@ -878,10 +877,10 @@ public final class Fury {
       }
       if (typeId < NOT_SUPPORT_CROSS_LANGUAGE) {
         if (peerLanguage != Language.JAVA) {
-          classResolver.crossLanguageReadClassName(buffer);
+          classResolver.xreadClassName(buffer);
           cls = classResolver.getClassByTypeId((short) -typeId);
         } else {
-          cls = classResolver.crossLanguageReadClass(buffer);
+          cls = classResolver.xreadClass(buffer);
         }
       } else {
         if (typeId != FURY_TYPE_TAG_ID) {
@@ -894,11 +893,11 @@ public final class Fury {
       }
       // TODO check serializer consistent with `classResolver.getSerializer(cls)` when serializer
       // not null;
-      Object o = serializer.crossLanguageRead(buffer);
+      Object o = serializer.xread(buffer);
       depth--;
       return o;
     } else {
-      String className = classResolver.crossLanguageReadClassName(buffer);
+      String className = classResolver.xreadClassName(buffer);
       int ordinal = buffer.readPositiveVarInt();
       if (peerLanguage != Language.JAVA) {
         return OpaqueObjects.of(peerLanguage, className, ordinal);

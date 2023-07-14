@@ -578,16 +578,16 @@ public class CrossLanguageTest {
 
     @Override
     public void write(MemoryBuffer buffer, ComplexObject1 value) {
-      crossLanguageWrite(buffer, value);
+      xwrite(buffer, value);
     }
 
     @Override
     public ComplexObject1 read(MemoryBuffer buffer) {
-      return crossLanguageRead(buffer);
+      return xread(buffer);
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Fury.FURY_TYPE_TAG_ID;
     }
 
@@ -597,20 +597,20 @@ public class CrossLanguageTest {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, ComplexObject1 value) {
-      fury.crossLanguageWriteRef(buffer, value.f1);
-      fury.crossLanguageWriteRef(buffer, value.f2);
-      fury.crossLanguageWriteRef(buffer, value.f3);
+    public void xwrite(MemoryBuffer buffer, ComplexObject1 value) {
+      fury.xwriteRef(buffer, value.f1);
+      fury.xwriteRef(buffer, value.f2);
+      fury.xwriteRef(buffer, value.f3);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public ComplexObject1 crossLanguageRead(MemoryBuffer buffer) {
+    public ComplexObject1 xread(MemoryBuffer buffer) {
       ComplexObject1 obj = new ComplexObject1();
       fury.getRefResolver().reference(obj);
-      obj.f1 = fury.crossLanguageReadRef(buffer);
-      obj.f2 = (String) fury.crossLanguageReadRef(buffer);
-      obj.f3 = (List<Object>) fury.crossLanguageReadRef(buffer);
+      obj.f1 = fury.xreadRef(buffer);
+      obj.f2 = (String) fury.xreadRef(buffer);
+      obj.f3 = (List<Object>) fury.xreadRef(buffer);
       return obj;
     }
   }

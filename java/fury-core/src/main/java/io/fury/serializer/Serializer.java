@@ -27,7 +27,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 /**
  * Serialize/deserializer objects into binary. Note that this class is designed as an abstract class
  * instead of interface to reduce virtual method call cost of {@link #needToWriteRef}/{@link
- * #getCrossLanguageTypeId}.
+ * #getXtypeId}.
  *
  * @param <T> type of objects being serializing/deserializing
  * @author chaokunyang
@@ -55,7 +55,7 @@ public abstract class Serializer<T> {
    * cross-language serialization and native serialization data is not the same with cross-language
    * serialization.
    */
-  public short getCrossLanguageTypeId() {
+  public short getXtypeId() {
     return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
   }
 
@@ -64,11 +64,11 @@ public abstract class Serializer<T> {
     throw new UnsupportedOperationException();
   }
 
-  public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+  public void xwrite(MemoryBuffer buffer, T value) {
     throw new UnsupportedOperationException();
   }
 
-  public T crossLanguageRead(MemoryBuffer buffer) {
+  public T xread(MemoryBuffer buffer) {
     throw new UnsupportedOperationException();
   }
 

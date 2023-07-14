@@ -70,7 +70,7 @@ public class ArraySerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.LIST.getId();
     }
 
@@ -94,12 +94,12 @@ public class ArraySerializers {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, T[] arr) {
+    public void xwrite(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
       buffer.writeInt(len);
       // TODO(chaokunyang) use generics by creating component serializers to multi-dimension array.
       for (T t : arr) {
-        fury.crossLanguageWriteRef(buffer, t);
+        fury.xwriteRef(buffer, t);
       }
     }
 
@@ -131,11 +131,11 @@ public class ArraySerializers {
     }
 
     @Override
-    public T[] crossLanguageRead(MemoryBuffer buffer) {
+    public T[] xread(MemoryBuffer buffer) {
       int numElements = buffer.readInt();
       Object[] value = newArray(numElements);
       for (int i = 0; i < numElements; i++) {
-        value[i] = fury.crossLanguageReadRef(buffer);
+        value[i] = fury.xreadRef(buffer);
       }
       return (T[]) value;
     }
@@ -203,12 +203,12 @@ public class ArraySerializers {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+    public void xwrite(MemoryBuffer buffer, T value) {
       write(buffer, value);
     }
 
     @Override
-    public T crossLanguageRead(MemoryBuffer buffer) {
+    public T xread(MemoryBuffer buffer) {
       return read(buffer);
     }
   }
@@ -327,17 +327,17 @@ public class ArraySerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, char[] value) {
+    public void xwrite(MemoryBuffer buffer, char[] value) {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public char[] crossLanguageRead(MemoryBuffer buffer) {
+    public char[] xread(MemoryBuffer buffer) {
       throw new UnsupportedOperationException();
     }
   }
@@ -541,7 +541,7 @@ public class ArraySerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.FURY_STRING_ARRAY.getId();
     }
 
@@ -576,7 +576,7 @@ public class ArraySerializers {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, String[] value) {
+    public void xwrite(MemoryBuffer buffer, String[] value) {
       int len = value.length;
       buffer.writeInt(len);
       for (String elem : value) {
@@ -590,7 +590,7 @@ public class ArraySerializers {
     }
 
     @Override
-    public String[] crossLanguageRead(MemoryBuffer buffer) {
+    public String[] xread(MemoryBuffer buffer) {
       int numElements = buffer.readInt();
       String[] value = new String[numElements];
       for (int i = 0; i < numElements; i++) {

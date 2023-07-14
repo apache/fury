@@ -62,7 +62,7 @@ public class ExternalizableSerializer<T extends Externalizable> extends Serializ
   }
 
   @Override
-  public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+  public void xwrite(MemoryBuffer buffer, T value) {
     throw new UnsupportedOperationException("Externalizable can only be used in java");
   }
 

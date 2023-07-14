@@ -137,9 +137,9 @@ public class MapSerializers {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+    public void xwrite(MemoryBuffer buffer, T value) {
       buffer.writePositiveVarInt(value.size());
-      crossLanguageWriteElements(fury, buffer, value);
+      xwriteElements(fury, buffer, value);
     }
 
     protected final void writeElements(Fury fury, MemoryBuffer buffer, T map) {
@@ -368,15 +368,15 @@ public class MapSerializers {
       }
     }
 
-    public static void crossLanguageWriteElements(Fury fury, MemoryBuffer buffer, Map value) {
+    public static void xwriteElements(Fury fury, MemoryBuffer buffer, Map value) {
       Generics generics = fury.getGenerics();
       GenericType genericType = generics.nextGenericType();
       // TODO(chaokunyang) support map subclass whose key or value generics only are available.
       if (genericType == null || genericType.getTypeParametersCount() != 2) {
         for (Object object : value.entrySet()) {
           Map.Entry entry = (Map.Entry) object;
-          fury.crossLanguageWriteRef(buffer, entry.getKey());
-          fury.crossLanguageWriteRef(buffer, entry.getValue());
+          fury.xwriteRef(buffer, entry.getKey());
+          fury.xwriteRef(buffer, entry.getValue());
         }
       } else {
         // TODO(chaokunyang) use codegen to remove all branches.
@@ -387,36 +387,32 @@ public class MapSerializers {
         if (!keyGenericType.hasGenericParameters() && !valueGenericType.hasGenericParameters()) {
           for (Object object : value.entrySet()) {
             Map.Entry entry = (Map.Entry) object;
-            fury.crossLanguageWriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
-            fury.crossLanguageWriteRefByNullableSerializer(
-                buffer, entry.getValue(), valueSerializer);
+            fury.xwriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
+            fury.xwriteRefByNullableSerializer(buffer, entry.getValue(), valueSerializer);
           }
         } else if (valueGenericType.hasGenericParameters()) {
           for (Object object : value.entrySet()) {
             Map.Entry entry = (Map.Entry) object;
-            fury.crossLanguageWriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
+            fury.xwriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
             generics.pushGenericType(valueGenericType);
-            fury.crossLanguageWriteRefByNullableSerializer(
-                buffer, entry.getValue(), valueSerializer);
+            fury.xwriteRefByNullableSerializer(buffer, entry.getValue(), valueSerializer);
             generics.popGenericType();
           }
         } else if (keyGenericType.hasGenericParameters()) {
           for (Object object : value.entrySet()) {
             Map.Entry entry = (Map.Entry) object;
             generics.pushGenericType(keyGenericType);
-            fury.crossLanguageWriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
+            fury.xwriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
             generics.popGenericType();
-            fury.crossLanguageWriteRefByNullableSerializer(
-                buffer, entry.getValue(), valueSerializer);
+            fury.xwriteRefByNullableSerializer(buffer, entry.getValue(), valueSerializer);
           }
         } else {
           for (Object object : value.entrySet()) {
             Map.Entry entry = (Map.Entry) object;
             generics.pushGenericType(keyGenericType);
-            fury.crossLanguageWriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
+            fury.xwriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
             generics.pushGenericType(valueGenericType);
-            fury.crossLanguageWriteRefByNullableSerializer(
-                buffer, entry.getValue(), valueSerializer);
+            fury.xwriteRefByNullableSerializer(buffer, entry.getValue(), valueSerializer);
           }
         }
         generics.popGenericType();
@@ -452,10 +448,10 @@ public class MapSerializers {
     }
 
     @Override
-    public T crossLanguageRead(MemoryBuffer buffer) {
+    public T xread(MemoryBuffer buffer) {
       int size = buffer.readPositiveVarInt();
       T map = newMap(buffer, size);
-      crossLanguageReadElements(fury, buffer, map, size);
+      xreadElements(fury, buffer, map, size);
       return map;
     }
 
@@ -630,14 +626,13 @@ public class MapSerializers {
     }
 
     @SuppressWarnings("unchecked")
-    public static void crossLanguageReadElements(
-        Fury fury, MemoryBuffer buffer, Map map, int size) {
+    public static void xreadElements(Fury fury, MemoryBuffer buffer, Map map, int size) {
       Generics generics = fury.getGenerics();
       GenericType genericType = generics.nextGenericType();
       if (genericType == null || genericType.getTypeParametersCount() != 2) {
         for (int i = 0; i < size; i++) {
-          Object key = fury.crossLanguageReadRef(buffer);
-          Object value = fury.crossLanguageReadRef(buffer);
+          Object key = fury.xreadRef(buffer);
+          Object value = fury.xreadRef(buffer);
           map.put(key, value);
         }
       } else {
@@ -648,33 +643,33 @@ public class MapSerializers {
         Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
         if (!keyGenericType.hasGenericParameters() && !valueGenericType.hasGenericParameters()) {
           for (int i = 0; i < size; i++) {
-            Object key = fury.crossLanguageReadRefByNullableSerializer(buffer, keySerializer);
-            Object value = fury.crossLanguageReadRefByNullableSerializer(buffer, valueSerializer);
+            Object key = fury.xreadRefByNullableSerializer(buffer, keySerializer);
+            Object value = fury.xreadRefByNullableSerializer(buffer, valueSerializer);
             map.put(key, value);
           }
         } else if (valueGenericType.hasGenericParameters()) {
           for (int i = 0; i < size; i++) {
-            Object key = fury.crossLanguageReadRefByNullableSerializer(buffer, keySerializer);
+            Object key = fury.xreadRefByNullableSerializer(buffer, keySerializer);
             generics.pushGenericType(valueGenericType);
-            Object value = fury.crossLanguageReadRefByNullableSerializer(buffer, valueSerializer);
+            Object value = fury.xreadRefByNullableSerializer(buffer, valueSerializer);
             generics.popGenericType();
             map.put(key, value);
           }
         } else if (keyGenericType.hasGenericParameters()) {
           for (int i = 0; i < size; i++) {
             generics.pushGenericType(keyGenericType);
-            Object key = fury.crossLanguageReadRefByNullableSerializer(buffer, keySerializer);
+            Object key = fury.xreadRefByNullableSerializer(buffer, keySerializer);
             generics.popGenericType();
-            Object value = fury.crossLanguageReadRefByNullableSerializer(buffer, valueSerializer);
+            Object value = fury.xreadRefByNullableSerializer(buffer, valueSerializer);
             map.put(key, value);
           }
         } else {
           for (int i = 0; i < size; i++) {
             // FIXME(chaokunyang) nested generics may be get by mistake.
             generics.pushGenericType(keyGenericType);
-            Object key = fury.crossLanguageReadRefByNullableSerializer(buffer, keySerializer);
+            Object key = fury.xreadRefByNullableSerializer(buffer, keySerializer);
             generics.pushGenericType(valueGenericType);
-            Object value = fury.crossLanguageReadRefByNullableSerializer(buffer, valueSerializer);
+            Object value = fury.xreadRefByNullableSerializer(buffer, valueSerializer);
             map.put(key, value);
           }
         }
@@ -800,7 +795,7 @@ public class MapSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Type.MAP.getId();
     }
 
@@ -818,7 +813,7 @@ public class MapSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Type.MAP.getId();
     }
 
@@ -836,7 +831,7 @@ public class MapSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Type.MAP.getId();
     }
 
@@ -899,12 +894,12 @@ public class MapSerializers {
     public void write(MemoryBuffer buffer, Map<?, ?> value) {}
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.MAP.getId();
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Map<?, ?> value) {
+    public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
       // write length
       buffer.writePositiveVarInt(0);
     }
@@ -915,7 +910,7 @@ public class MapSerializers {
     }
 
     @Override
-    public Map<?, ?> crossLanguageRead(MemoryBuffer buffer) {
+    public Map<?, ?> xread(MemoryBuffer buffer) {
       buffer.readPositiveVarInt();
       return Collections.EMPTY_MAP;
     }
@@ -949,16 +944,16 @@ public class MapSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.MAP.getId();
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Map<?, ?> value) {
+    public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
       buffer.writePositiveVarInt(1);
       Map.Entry entry = value.entrySet().iterator().next();
-      fury.crossLanguageWriteRef(buffer, entry.getKey());
-      fury.crossLanguageWriteRef(buffer, entry.getValue());
+      fury.xwriteRef(buffer, entry.getKey());
+      fury.xwriteRef(buffer, entry.getValue());
     }
 
     @Override
@@ -969,10 +964,10 @@ public class MapSerializers {
     }
 
     @Override
-    public Map<?, ?> crossLanguageRead(MemoryBuffer buffer) {
+    public Map<?, ?> xread(MemoryBuffer buffer) {
       buffer.readPositiveVarInt();
-      Object key = fury.crossLanguageReadRef(buffer);
-      Object value = fury.crossLanguageReadRef(buffer);
+      Object key = fury.xreadRef(buffer);
+      Object value = fury.xreadRef(buffer);
       return Collections.singletonMap(key, value);
     }
   }
@@ -999,15 +994,15 @@ public class MapSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.MAP.getId();
     }
 
     @Override
-    public T crossLanguageRead(MemoryBuffer buffer) {
+    public T xread(MemoryBuffer buffer) {
       int size = buffer.readPositiveVarInt();
       Map map = new HashMap();
-      crossLanguageReadElements(fury, buffer, map, size);
+      xreadElements(fury, buffer, map, size);
       T immutableMap = (T) ImmutableMap.copyOf(map);
       fury.getRefResolver().reference(immutableMap);
       return immutableMap;
@@ -1028,7 +1023,7 @@ public class MapSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
     }
   }
@@ -1049,7 +1044,7 @@ public class MapSerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
     }
   }

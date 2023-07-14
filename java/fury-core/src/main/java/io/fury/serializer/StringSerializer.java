@@ -100,7 +100,7 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   @Override
-  public short getCrossLanguageTypeId() {
+  public short getXtypeId() {
     return Type.STRING.getId();
   }
 
@@ -110,7 +110,7 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   @Override
-  public void crossLanguageWrite(MemoryBuffer buffer, String value) {
+  public void xwrite(MemoryBuffer buffer, String value) {
     writeUTF8String(buffer, value);
   }
 
@@ -120,7 +120,7 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   @Override
-  public String crossLanguageRead(MemoryBuffer buffer) {
+  public String xread(MemoryBuffer buffer) {
     return readUTF8String(buffer);
   }
 
