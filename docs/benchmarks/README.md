@@ -13,6 +13,36 @@
  -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf cs
 ```
 
+## Benchmark Data:
+### Struct
+Struct is a class with 100 primitive fields:
+```java
+public class Struct {
+  public int f1;
+  public long f2;
+  public float f3;
+  public double f4;
+  // ...
+  public double f99;
+}
+```
+### Struct2
+Struct2 is a class with 100 boxed fields:
+```java
+public class Struct {
+  public Integer f1;
+  public Long f2;
+  public Float f3;
+  public Double f4;
+  // ...
+  public Double f99;
+}
+```
+### MEDIA_CONTENT
+MEDIA_CONTENT is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java).
+### SAMPLE
+SAMPLE is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java)
+
 ## Benchmark Plots
 ### Serialize to heap buffer
 Serialize data java byte array.
