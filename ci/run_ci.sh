@@ -113,6 +113,7 @@ case $1 in
       export PATH=~/bin:$PATH
       echo "Install pyfury"
       pip install -v -e .
+      pip install pandas
       echo "Executing fury python tests"
       pytest -v -s --durations=60 pyfury/tests
       testcode=$?
