@@ -26,6 +26,12 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'temurin'
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Install python
+        run: ./ci/run_ci.sh install_python
+      - name: Install pyfury
+        run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
   javascript:

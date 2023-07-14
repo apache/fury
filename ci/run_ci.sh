@@ -6,6 +6,21 @@ ROOT="$(git rev-parse --show-toplevel)"
 echo "Root path: $ROOT, home path: $HOME"
 cd "$ROOT"
 
+install_python() {
+  wget -q https://repo.anaconda.com/miniconda/Miniconda3-py38_23.5.2-0-Linux-x86_64.sh -O Miniconda3.sh
+  bash Miniconda3.sh -b -p .
+}
+
+install_pyfury() {
+  pip install pyarrow==4.0.0 Cython wheel numpy pytest
+  pushd "$ROOT/python"
+  pip list
+  export PATH=~/bin:$PATH
+  echo "Install pyfury"
+  pip install -v -e .
+  popd
+}
+
 install_bazel() {
   if command -v java >/dev/null; then
     echo "existing bazel location $(which bazel)"
@@ -107,12 +122,7 @@ case $1 in
       echo "Executing fury c++ tests succeeds"
     ;;
     python)
-      pip install pyarrow==4.0.0 Cython wheel numpy pytest
-      cd "$ROOT/python"
-      pip list
-      export PATH=~/bin:$PATH
-      echo "Install pyfury"
-      pip install -v -e .
+      install_pyfury
       pip install pandas
       echo "Executing fury python tests"
       pytest -v -s --durations=60 pyfury/tests
