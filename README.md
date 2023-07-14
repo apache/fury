@@ -80,7 +80,7 @@ Nightly snapshot:
 <repositories>
   <repository>
     <id>sonatype</id>
-    <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+    <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
     <releases>
       <enabled>false</enabled>
     </releases>
