@@ -337,7 +337,7 @@ class ClassResolver:
                 serializer=PyArraySerializer(self.fury_, array.array, typecode),
             )
             self._add_serializer(
-                PyArraySerializer.typecode_to_pyarray_type[typecode],
+                PyArraySerializer.typecodearray_type[typecode],
                 serializer=PyArraySerializer(self.fury_, array.array, typecode),
             )
         if np:
@@ -685,7 +685,7 @@ class Fury:
         else:
             clear_bit(buffer, mask_index, 3)
         if self.language == Language.PYTHON:
-            self.serialize_ref_to_py(buffer, obj)
+            self.serialize_ref(buffer, obj)
         else:
             start_offset = buffer.writer_index
             buffer.write_int32(-1)  # preserve 4-byte for nativeObjects start offsets.
@@ -698,14 +698,14 @@ class Fury:
             # only write an id.
             self.class_resolver.reset_write()
             for native_object in self._native_objects:
-                self.serialize_ref_to_py(buffer, native_object)
+                self.serialize_ref(buffer, native_object)
         self.reset_write()
         if buffer is not self.buffer:
             return buffer
         else:
             return buffer.to_bytes(0, buffer.writer_index)
 
-    def serialize_ref_to_py(self, buffer, obj, classinfo=None):
+    def serialize_ref(self, buffer, obj, classinfo=None):
         cls = type(obj)
         if cls is str:
             buffer.write_int24(NOT_NULL_STRING_FLAG)
@@ -726,7 +726,7 @@ class Fury:
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
-    def serialize_non_ref_to_py(self, buffer, obj):
+    def serialize_non_ref(self, buffer, obj):
         cls = type(obj)
         if cls is str:
             buffer.write_int16(STRING_CLASS_ID)
@@ -744,9 +744,6 @@ class Fury:
             classinfo = self.class_resolver.get_or_create_classinfo(cls)
             self.class_resolver.write_classinfo(buffer, classinfo)
             classinfo.serializer.write(buffer, obj)
-
-    def xserialize_ref(self, buffer, obj, serializer=None):
-        pass
 
     def xserialize_ref(self, buffer, obj, serializer=None):
         if serializer is None or serializer.need_to_write_ref:
@@ -840,16 +837,16 @@ class Fury:
                 native_objects_buffer = buffer.slice(native_objects_start_offset)
                 for i in range(native_objects_size):
                     self._native_objects.append(
-                        self.deserialize_ref_from_py(native_objects_buffer)
+                        self.deserialize_ref(native_objects_buffer)
                     )
                 self.ref_resolver.reset_read()
                 self.class_resolver.reset_read()
             obj = self.xdeserialize_ref(buffer)
         else:
-            obj = self.deserialize_ref_from_py(buffer)
+            obj = self.deserialize_ref(buffer)
         return obj
 
-    def deserialize_ref_from_py(self, buffer):
+    def deserialize_ref(self, buffer):
         ref_resolver = self.ref_resolver
         ref_id = ref_resolver.try_preserve_ref_id(buffer)
         # indicates that the object is first read.
@@ -861,7 +858,7 @@ class Fury:
         else:
             return ref_resolver.get_read_object()
 
-    def deserialize_non_ref_from_py(self, buffer):
+    def deserialize_non_ref(self, buffer):
         """Deserialize not-null and non-reference object from buffer."""
         classinfo = self.class_resolver.read_classinfo(buffer)
         return classinfo.serializer.read(buffer)
@@ -966,7 +963,7 @@ class Fury:
         classinfo.serializer.write(buffer, value)
 
     def read_ref_pyobject(self, buffer):
-        return self.deserialize_ref_from_py(buffer)
+        return self.deserialize_ref(buffer)
 
     def reset_write(self):
         self.ref_resolver.reset_write()

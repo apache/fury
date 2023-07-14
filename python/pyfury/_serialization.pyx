@@ -487,7 +487,7 @@ cdef class ClassResolver:
                 serializer=PyArraySerializer(self.fury_, array.array, typecode),
             )
             self._add_serializer(
-                PyArraySerializer.typecode_to_pyarray_type[typecode],
+                PyArraySerializer.typecodearray_type[typecode],
                 serializer=PyArraySerializer(self.fury_, array.array, typecode),
             )
         if np:
@@ -882,7 +882,7 @@ cdef class Fury:
             clear_bit(buffer, mask_index, 3)
         cdef int32_t start_offset
         if self.language == Language.PYTHON:
-            self.serialize_ref_to_py(buffer, obj)
+            self.serialize_ref(buffer, obj)
         else:
             start_offset = buffer.writer_index
             # preserve 4-byte for nativeObjects start offsets.
@@ -897,14 +897,14 @@ cdef class Fury:
             # only write an id.
             self.class_resolver.reset_write()
             for native_object in self._native_objects:
-                self.serialize_ref_to_py(buffer, native_object)
+                self.serialize_ref(buffer, native_object)
         self.reset_write()
         if buffer is not self.buffer:
             return buffer
         else:
             return buffer.to_bytes(0, buffer.writer_index)
 
-    cpdef inline serialize_ref_to_py(
+    cpdef inline serialize_ref(
             self, Buffer buffer, obj, ClassInfo classinfo=None):
         cls = type(obj)
         if cls is str:
@@ -930,7 +930,7 @@ cdef class Fury:
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
-    cpdef inline serialize_non_ref_to_py(self, Buffer buffer, obj):
+    cpdef inline serialize_non_ref(self, Buffer buffer, obj):
         cls = type(obj)
         if cls is str:
             buffer.write_int16(STRING_CLASS_ID)
@@ -1041,7 +1041,7 @@ cdef class Fury:
                 "produced with buffer_callback null."
             )
         if not is_target_x_lang:
-            return self.deserialize_ref_from_py(buffer)
+            return self.deserialize_ref(buffer)
         cdef int32_t native_objects_start_offset = buffer.read_int32()
         cdef int32_t native_objects_size = buffer.read_int32()
         if self._peer_language == Language.PYTHON:
@@ -1049,13 +1049,13 @@ cdef class Fury:
                 native_objects_buffer = buffer.slice(native_objects_start_offset)
                 for i in range(native_objects_size):
                     self._native_objects.append(
-                        self.deserialize_ref_from_py(native_objects_buffer)
+                        self.deserialize_ref(native_objects_buffer)
                     )
                 self.ref_resolver.reset_read()
                 self.class_resolver.reset_read()
         return self.xdeserialize_ref(buffer)
 
-    cpdef inline deserialize_ref_from_py(self, Buffer buffer):
+    cpdef inline deserialize_ref(self, Buffer buffer):
         cdef MapRefResolver ref_resolver = self.ref_resolver
         cdef int32_t ref_id = ref_resolver.try_preserve_ref_id(buffer)
         if ref_id < NOT_NULL_VALUE_FLAG:
@@ -1075,7 +1075,7 @@ cdef class Fury:
         ref_resolver.set_read_object(ref_id, o)
         return o
 
-    cpdef inline deserialize_non_ref_from_py(self, Buffer buffer):
+    cpdef inline deserialize_non_ref(self, Buffer buffer):
         """Deserialize not-null and non-reference object from buffer."""
         cdef ClassInfo classinfo = self.class_resolver.read_classinfo(buffer)
         cls = classinfo.cls
@@ -1954,7 +1954,7 @@ if np:
 @cython.final
 cdef class PyArraySerializer(CrossLanguageCompatibleSerializer):
     typecode_dict = typecode_dict
-    typecode_to_pyarray_type = {
+    typecodearray_type = {
         "h": Int16ArrayType,
         "i": Int32ArrayType,
         "l": Int64ArrayType,
@@ -2183,7 +2183,7 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref_to_py(buffer, start)
+                self.fury_.serialize_non_ref(buffer, start)
         if type(stop) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -2193,7 +2193,7 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref_to_py(buffer, stop)
+                self.fury_.serialize_non_ref(buffer, stop)
         if type(step) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -2203,21 +2203,21 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref_to_py(buffer, step)
+                self.fury_.serialize_non_ref(buffer, step)
 
     cpdef inline read(self, Buffer buffer):
         if buffer.read_int8() == NULL_FLAG:
             start = None
         else:
-            start = self.fury_.deserialize_non_ref_from_py(buffer)
+            start = self.fury_.deserialize_non_ref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             stop = None
         else:
-            stop = self.fury_.deserialize_non_ref_from_py(buffer)
+            stop = self.fury_.deserialize_non_ref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             step = None
         else:
-            step = self.fury_.deserialize_non_ref_from_py(buffer)
+            step = self.fury_.deserialize_non_ref(buffer)
         return slice(start, stop, step)
 
     cpdef xwrite(self, Buffer buffer, value):

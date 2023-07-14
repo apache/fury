@@ -206,7 +206,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_ref_to_py(buffer, start)
+                fury.serialize_non_ref(buffer, start)
         if type(stop) is int:
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(stop)
@@ -215,7 +215,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_ref_to_py(buffer, stop)
+                fury.serialize_non_ref(buffer, stop)
         if type(step) is int:
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(step)
@@ -224,25 +224,25 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_ref_to_py(buffer, step)
-        fury.serialize_ref_to_py(buffer, value.dtype)
-        fury.serialize_ref_to_py(buffer, value.name)
+                fury.serialize_non_ref(buffer, step)
+        fury.serialize_ref(buffer, value.dtype)
+        fury.serialize_ref(buffer, value.name)
 
     def read(self, buffer):
         if buffer.read_int8() == NULL_FLAG:
             start = None
         else:
-            start = self.fury_.deserialize_non_ref_from_py(buffer)
+            start = self.fury_.deserialize_non_ref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             stop = None
         else:
-            stop = self.fury_.deserialize_non_ref_from_py(buffer)
+            stop = self.fury_.deserialize_non_ref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             step = None
         else:
-            step = self.fury_.deserialize_non_ref_from_py(buffer)
-        dtype = self.fury_.deserialize_ref_from_py(buffer)
-        name = self.fury_.deserialize_ref_from_py(buffer)
+            step = self.fury_.deserialize_non_ref(buffer)
+        dtype = self.fury_.deserialize_ref(buffer)
+        name = self.fury_.deserialize_ref(buffer)
         return self.type_(start, stop, step, dtype=dtype, name=name)
 
     def xwrite(self, buffer, value):
@@ -356,7 +356,7 @@ class DataClassSerializer(Serializer):
         buffer.write_int32(self._hash)
         for field_name in self._field_names:
             field_value = getattr(value, field_name)
-            self.fury_.serialize_ref_to_py(buffer, field_value)
+            self.fury_.serialize_ref(buffer, field_value)
 
     def read(self, buffer):
         hash_ = buffer.read_int32()
@@ -368,7 +368,7 @@ class DataClassSerializer(Serializer):
         obj = self.type_.__new__(self.type_)
         self.fury_.ref_resolver.reference(obj)
         for field_name in self._field_names:
-            field_value = self.fury_.deserialize_ref_from_py(buffer)
+            field_value = self.fury_.deserialize_ref(buffer)
             setattr(
                 obj,
                 field_name,
