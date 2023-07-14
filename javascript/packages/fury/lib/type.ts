@@ -47,18 +47,24 @@ export enum ConfigFlags {
 }
 
 export type SerializerRead<T = any> = (
-	shouldSetRef: boolean,
 ) => T
 
 export type SerializerWrite<T = any> = (
 	v: T,
 ) => void
 
+export type SerializerConfig = (
+) => {
+	reserve: number,
+	refType?: boolean,
+}
+
+
 // read, write
 export type Serializer<T = any, T2 = any> = {
 	read: SerializerRead<T2>, 
 	write: SerializerWrite<T>,
-	reserveWhenWrite: () => number,
+	config: SerializerConfig,
 };
 
 

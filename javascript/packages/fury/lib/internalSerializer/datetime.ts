@@ -16,8 +16,10 @@ export const timestampSerializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.TIMESTAMP);
             writeInt64(BigInt(v.getTime()));
         },
-        reserveWhenWrite: () => {
-            return 11; 
+        config: () => {
+            return {
+                reserve: 11
+            }
         }
     }
 }
@@ -38,8 +40,10 @@ export const dateSerializer = (fury: Fury) => {
             writeInt16(InternalSerializerType.DATE);
             writeInt32(day);
         },
-        reserveWhenWrite: () => {
-            return 7; 
+        config: () => {
+            return {
+                reserve: 7,
+            }
         }
     }
 }

@@ -9,12 +9,10 @@ export default (fury: Fury) => {
 
     const { pushReadObject, pushWriteObject } = referenceResolver;
     return {
-        read: (shouldSetRef: boolean) => {
+        read: () => {
             const len = readUInt32();
             const result = new Set();
-            if (shouldSetRef) {
-                pushReadObject(result);
-            }
+            pushReadObject(result);
             for (let index = 0; index < len; index++) {
                 result.add(read());
             }
@@ -33,8 +31,11 @@ export default (fury: Fury) => {
                 write(value);
             }
         },
-        reserveWhenWrite: () => {
-            return 7; 
+        config: () => {
+            return {
+                reserve: 7,
+                refType: true,
+            }
         }
     }
 }

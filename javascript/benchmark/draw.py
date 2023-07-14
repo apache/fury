@@ -19,7 +19,7 @@ rects2 = ax.bar(x, protobuf, width, label='protobuf')
 rects3 = ax.bar(x + width, fury, width, label='fury', color="#7845FD")
 
 # Add some text for labels, title and custom x-axis tick labels, etc.
-ax.set_ylabel('Tps')
+ax.set_ylabel('Tps/10000')
 ax.set_title('javascript complex object', loc="center")
 ax.set_xticks(x)
 ax.set_xticklabels(labels)

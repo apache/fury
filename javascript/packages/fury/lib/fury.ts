@@ -26,6 +26,7 @@ export default (config?: {
         classResolver,
         binaryView,
         binaryWriter,
+        buildRefTypeReader,
     }
     classResolver.init(fury);
 
@@ -58,17 +59,35 @@ export default (config?: {
         }
     }
 
+    function buildRefTypeReader<T>(fn: SerializerRead<T>) {
+        return () => {
+            switch (referenceResolver.readRefFlag(binaryView)) {
+                case RefFlags.RefValueFlag:
+                    skipType();
+                    return fn();
+                case RefFlags.RefFlag:
+                    return referenceResolver.getReadObjectByRefId(binaryView.readVarInt32());
+                case RefFlags.NullFlag:
+                    return null;
+                case RefFlags.NotNullValueFlag:
+                    skipType();
+                    return fn()
+            }
+        }
+    }
+    
+
     function readBySerializerWithOutTypeId(read: SerializerRead) {
         const flag = referenceResolver.readRefFlag(binaryView);
         switch (flag) {
             case RefFlags.RefValueFlag:
-                return read(true)
+                return read()
             case RefFlags.RefFlag:
                 return referenceResolver.getReadObjectByRefId(binaryView.readVarInt32());
             case RefFlags.NullFlag:
                 return null;
             case RefFlags.NotNullValueFlag:
-                return read(false)
+                return read()
         }
     }
 
@@ -76,13 +95,13 @@ export default (config?: {
         const flag = referenceResolver.readRefFlag(binaryView);
         switch (flag) {
             case RefFlags.RefValueFlag:
-                return readSerializer().read(true);
+                return readSerializer().read();
             case RefFlags.RefFlag:
                 return referenceResolver.getReadObjectByRefId(binaryView.readVarInt32());
             case RefFlags.NullFlag:
                 return null;
             case RefFlags.NotNullValueFlag:
-                return readSerializer().read(false);
+                return readSerializer().read();
         }
     }
 
