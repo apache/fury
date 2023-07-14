@@ -15,6 +15,7 @@ install_python() {
 }
 
 install_pyfury() {
+  echo "Python version $(python -V)"
   pip install pyarrow==4.0.0 Cython wheel numpy pytest
   pushd "$ROOT/python"
   pip list
