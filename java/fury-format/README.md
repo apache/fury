@@ -7,3 +7,5 @@ Fury row format is heavily inspired by spark tungsten row format, but with chang
 - Variable-size field can be inline in fixed-size region if small enough.
 - Allow skip padding by generate Row using aot to put offsets in generated code.
 - Support adding fields without breaking compatibility.
+
+The initial fury java row data structure implementation is modified from spark unsafe row/writer.
