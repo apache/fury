@@ -477,7 +477,7 @@ public class Example {
     // Note that Fury instances should be reused between 
     // multiple serializations of different objects.
     {
-      Fury fury = Fury.builder().withLanguage(Fury.Language.JAVA)
+      Fury fury = Fury.builder().withLanguage(Language.JAVA)
         .withRefTracking(true)
         // Allow to deserialize objects unknown types,
         // more flexible but less secure.
@@ -490,7 +490,7 @@ public class Example {
       System.out.println(fury.deserialize(bytes));
     }
     {
-      ThreadSafeFury fury = Fury.builder().withLanguage(Fury.Language.JAVA)
+      ThreadSafeFury fury = Fury.builder().withLanguage(Language.JAVA)
         // Allow to deserialize objects unknown types,
         // more flexible but less secure.
         // .withSecureMode(false)
@@ -501,7 +501,7 @@ public class Example {
     }
     {
       ThreadSafeFury fury = new ThreadSafeFury(() -> {
-        Fury fury = Fury.builder().withLanguage(Fury.Language.JAVA)
+        Fury fury = Fury.builder().withLanguage(Language.JAVA)
           .withRefTracking(true).build();
         fury.register(SomeClass.class);
         return fury;
