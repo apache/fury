@@ -129,6 +129,7 @@ case $1 in
     python)
       install_pyfury
       pip install pandas
+      cd "$ROOT/python"
       echo "Executing fury python tests"
       pytest -v -s --durations=60 pyfury/tests
       testcode=$?
