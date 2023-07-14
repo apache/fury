@@ -12,8 +12,8 @@ from pyfury.lib import mmh3
 
 from pyfury.buffer import Buffer
 from pyfury.resolver import (
-    MapReferenceResolver,
-    NoReferenceResolver,
+    MapRefResolver,
+    NoRefResolver,
     NULL_FLAG,
     NOT_NULL_VALUE_FLAG,
 )
@@ -570,8 +570,8 @@ class OpaqueObject:
 class Fury:
     __slots__ = (
         "language",
-        "reference_tracking",
-        "reference_resolver",
+        "ref_tracking",
+        "ref_resolver",
         "class_resolver",
         "serialization_context",
         "secure_mode",
@@ -591,16 +591,16 @@ class Fury:
     def __init__(
         self,
         language=Language.XLANG,
-        reference_tracking: bool = True,
+        ref_tracking: bool = True,
         secure_mode: bool = True,
     ):
         self.language = language
         self.secure_mode = _ENABLE_SECURITY_MODE_FORCIBLY or secure_mode
-        self.reference_tracking = reference_tracking
-        if self.reference_tracking:
-            self.reference_resolver = MapReferenceResolver()
+        self.ref_tracking = ref_tracking
+        if self.ref_tracking:
+            self.ref_resolver = MapRefResolver()
         else:
-            self.reference_resolver = NoReferenceResolver()
+            self.ref_resolver = NoRefResolver()
         self.class_resolver = ClassResolver(self)
         self.class_resolver.initialize()
         self.serialization_context = SerializationContext()
@@ -685,27 +685,27 @@ class Fury:
         else:
             clear_bit(buffer, mask_index, 3)
         if self.language == Language.PYTHON:
-            self.serialize_referencable_to_py(buffer, obj)
+            self.serialize_ref_to_py(buffer, obj)
         else:
             start_offset = buffer.writer_index
             buffer.write_int32(-1)  # preserve 4-byte for nativeObjects start offsets.
             buffer.write_int32(-1)  # preserve 4-byte for nativeObjects size
-            self.cross_language_serialize_referencable(buffer, obj)
+            self.cross_language_serialize_ref(buffer, obj)
             buffer.put_int32(start_offset, buffer.writer_index)
             buffer.put_int32(start_offset + 4, len(self._native_objects))
-            self.reference_resolver.reset_write()
+            self.ref_resolver.reset_write()
             # fury write opaque object classname which cause later write of classname
             # only write an id.
             self.class_resolver.reset_write()
             for native_object in self._native_objects:
-                self.serialize_referencable_to_py(buffer, native_object)
+                self.serialize_ref_to_py(buffer, native_object)
         self.reset_write()
         if buffer is not self.buffer:
             return buffer
         else:
             return buffer.to_bytes(0, buffer.writer_index)
 
-    def serialize_referencable_to_py(self, buffer, obj, classinfo=None):
+    def serialize_ref_to_py(self, buffer, obj, classinfo=None):
         cls = type(obj)
         if cls is str:
             buffer.write_int24(NOT_NULL_STRING_FLAG)
@@ -719,14 +719,14 @@ class Fury:
             buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
             buffer.write_bool(obj)
             return
-        if self.reference_resolver.write_reference_or_null(buffer, obj):
+        if self.ref_resolver.write_ref_or_null(buffer, obj):
             return
         if classinfo is None:
             classinfo = self.class_resolver.get_or_create_classinfo(cls)
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
-    def serialize_non_referencable_to_py(self, buffer, obj):
+    def serialize_non_ref_to_py(self, buffer, obj):
         cls = type(obj)
         if cls is str:
             buffer.write_int16(STRING_CLASS_ID)
@@ -745,10 +745,10 @@ class Fury:
             self.class_resolver.write_classinfo(buffer, classinfo)
             classinfo.serializer.write(buffer, obj)
 
-    def cross_language_serialize_referencable(self, buffer, obj, serializer=None):
-        if serializer is None or serializer.need_to_write_reference:
-            if not self.reference_resolver.write_reference_or_null(buffer, obj):
-                self.cross_language_serialize_non_referencable(
+    def cross_language_serialize_ref(self, buffer, obj, serializer=None):
+        if serializer is None or serializer.need_to_write_ref:
+            if not self.ref_resolver.write_ref_or_null(buffer, obj):
+                self.cross_language_serialize_non_ref(
                     buffer, obj, serializer=serializer
                 )
         else:
@@ -756,11 +756,11 @@ class Fury:
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.cross_language_serialize_non_referencable(
+                self.cross_language_serialize_non_ref(
                     buffer, obj, serializer=serializer
                 )
 
-    def cross_language_serialize_non_referencable(self, buffer, obj, serializer=None):
+    def cross_language_serialize_non_ref(self, buffer, obj, serializer=None):
         cls = type(obj)
         serializer = serializer or self.class_resolver.get_serializer(obj=obj)
         type_id = serializer.get_cross_language_type_id()
@@ -841,54 +841,52 @@ class Fury:
                 native_objects_buffer = buffer.slice(native_objects_start_offset)
                 for i in range(native_objects_size):
                     self._native_objects.append(
-                        self.deserialize_referencable_from_py(native_objects_buffer)
+                        self.deserialize_ref_from_py(native_objects_buffer)
                     )
-                self.reference_resolver.reset_read()
+                self.ref_resolver.reset_read()
                 self.class_resolver.reset_read()
-            obj = self.cross_language_deserialize_referencable(buffer)
+            obj = self.cross_language_deserialize_ref(buffer)
         else:
-            obj = self.deserialize_referencable_from_py(buffer)
+            obj = self.deserialize_ref_from_py(buffer)
         return obj
 
-    def deserialize_referencable_from_py(self, buffer):
-        reference_resolver = self.reference_resolver
-        ref_id = reference_resolver.try_preserve_reference_id(buffer)
+    def deserialize_ref_from_py(self, buffer):
+        ref_resolver = self.ref_resolver
+        ref_id = ref_resolver.try_preserve_ref_id(buffer)
         # indicates that the object is first read.
         if ref_id >= NOT_NULL_VALUE_FLAG:
             classinfo = self.class_resolver.read_classinfo(buffer)
             o = classinfo.serializer.read(buffer)
-            reference_resolver.set_read_object(ref_id, o)
+            ref_resolver.set_read_object(ref_id, o)
             return o
         else:
-            return reference_resolver.get_read_object()
+            return ref_resolver.get_read_object()
 
-    def deserialize_non_reference_from_py(self, buffer):
+    def deserialize_non_ref_from_py(self, buffer):
         """Deserialize not-null and non-reference object from buffer."""
         classinfo = self.class_resolver.read_classinfo(buffer)
         return classinfo.serializer.read(buffer)
 
-    def cross_language_deserialize_referencable(self, buffer, serializer=None):
-        if serializer is None or serializer.need_to_write_reference:
-            reference_resolver = self.reference_resolver
-            red_id = reference_resolver.try_preserve_reference_id(buffer)
+    def cross_language_deserialize_ref(self, buffer, serializer=None):
+        if serializer is None or serializer.need_to_write_ref:
+            ref_resolver = self.ref_resolver
+            red_id = ref_resolver.try_preserve_ref_id(buffer)
 
             # indicates that the object is first read.
             if red_id >= NOT_NULL_VALUE_FLAG:
-                o = self.cross_language_deserialize_non_referencable(
+                o = self.cross_language_deserialize_non_ref(
                     buffer, serializer=serializer
                 )
-                reference_resolver.set_read_object(red_id, o)
+                ref_resolver.set_read_object(red_id, o)
                 return o
             else:
-                return reference_resolver.get_read_object()
+                return ref_resolver.get_read_object()
         head_flag = buffer.read_int8()
         if head_flag == NULL_FLAG:
             return None
-        return self.cross_language_deserialize_non_referencable(
-            buffer, serializer=serializer
-        )
+        return self.cross_language_deserialize_non_ref(buffer, serializer=serializer)
 
-    def cross_language_deserialize_non_referencable(self, buffer, serializer=None):
+    def cross_language_deserialize_non_ref(self, buffer, serializer=None):
         type_id = buffer.read_int16()
         cls = None
         if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
@@ -962,19 +960,19 @@ class Fury:
             assert self._unsupported_objects is not None
             return next(self._unsupported_objects)
 
-    def write_referencable_pyobject(self, buffer, value, classinfo=None):
-        if self.reference_resolver.write_reference_or_null(buffer, value):
+    def write_ref_pyobject(self, buffer, value, classinfo=None):
+        if self.ref_resolver.write_ref_or_null(buffer, value):
             return
         if classinfo is None:
             classinfo = self.class_resolver.get_or_create_classinfo(type(value))
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, value)
 
-    def read_referencable_pyobject(self, buffer):
-        return self.deserialize_referencable_from_py(buffer)
+    def read_ref_pyobject(self, buffer):
+        return self.deserialize_ref_from_py(buffer)
 
     def reset_write(self):
-        self.reference_resolver.reset_write()
+        self.ref_resolver.reset_write()
         self.class_resolver.reset_write()
         self.serialization_context.reset()
         self._native_objects.clear()
@@ -983,7 +981,7 @@ class Fury:
         self._unsupported_callback = None
 
     def reset_read(self):
-        self.reference_resolver.reset_read()
+        self.ref_resolver.reset_read()
         self.class_resolver.reset_read()
         self.serialization_context.reset()
         self._native_objects.clear()

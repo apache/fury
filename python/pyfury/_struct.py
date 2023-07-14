@@ -125,7 +125,7 @@ class ComplexObjectSerializer(Serializer):
         for index, field_name in enumerate(self._field_names):
             field_value = getattr(value, field_name)
             serializer = self._serializers[index]
-            self.fury_.cross_language_serialize_referencable(
+            self.fury_.cross_language_serialize_ref(
                 buffer, field_value, serializer=serializer
             )
 
@@ -139,10 +139,10 @@ class ComplexObjectSerializer(Serializer):
                 f"for class {self.type_}",
             )
         obj = self.type_.__new__(self.type_)
-        self.fury_.reference_resolver.reference(obj)
+        self.fury_.ref_resolver.reference(obj)
         for index, field_name in enumerate(self._field_names):
             serializer = self._serializers[index]
-            field_value = self.fury_.cross_language_deserialize_referencable(
+            field_value = self.fury_.cross_language_deserialize_ref(
                 buffer, serializer=serializer
             )
             setattr(

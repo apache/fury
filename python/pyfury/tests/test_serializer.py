@@ -31,7 +31,7 @@ pa = lazy_import("pyarrow")
 
 
 def test_float():
-    fury_ = Fury(language=Language.PYTHON, reference_tracking=True)
+    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
     assert ser_de(fury_, -1.0) == -1.0
     assert ser_de(fury_, 1 / 3) == 1 / 3
     serializer = fury_.class_resolver.get_serializer(float)
@@ -39,13 +39,13 @@ def test_float():
 
 
 def test_tuple():
-    fury_ = Fury(language=Language.PYTHON, reference_tracking=True)
+    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
     print(len(fury_.serialize((-1.0, 2))))
     assert ser_de(fury_, (-1.0, 2)) == (-1.0, 2)
 
 
 def test_dict():
-    fury_ = Fury(language=Language.PYTHON, reference_tracking=True)
+    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
     assert ser_de(fury_, {1: 2}) == {1: 2}
     assert ser_de(fury_, {1 / 3: 2.0}) == {1 / 3: 2.0}
     assert ser_de(fury_, {1 / 3: 2}) == {1 / 3: 2}
@@ -67,7 +67,7 @@ def test_dict():
 
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
 def test_basic_serializer(language):
-    fury_ = Fury(language=language, reference_tracking=True)
+    fury_ = Fury(language=language, ref_tracking=True)
     datetime_serializer = fury_.class_resolver.get_serializer(datetime.datetime)
     assert isinstance(
         datetime_serializer, (TimestampSerializer, _serialization.TimestampSerializer)
@@ -104,8 +104,8 @@ def test_basic_serializer(language):
 
 
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
-def test_reference_tracking(language):
-    fury_ = Fury(language=language, reference_tracking=True)
+def test_ref_tracking(language):
+    fury_ = Fury(language=language, ref_tracking=True)
 
     simple_list = []
     simple_list.append(simple_list)
@@ -139,10 +139,10 @@ def test_reference_tracking(language):
 
 
 @pytest.mark.parametrize("language", [Language.PYTHON, Language.XLANG])
-def test_tmp_reference(language):
+def test_tmp_ref(language):
     # FIXME this can't simulate the case where new objects are allocated on memory
     #  address of released tmp object.
-    fury_ = Fury(language=language, reference_tracking=True)
+    fury_ = Fury(language=language, ref_tracking=True)
     buffer = Buffer.allocate(128)
     writer_index = buffer.writer_index
     x = 1
@@ -163,10 +163,10 @@ def test_tmp_reference(language):
 
 
 @pytest.mark.parametrize("language", [Language.PYTHON, Language.XLANG])
-def test_multiple_reference(language):
+def test_multiple_ref(language):
     # FIXME this can't simulate the case where new objects are allocated on memory
     #  address of released tmp object.
-    fury_ = Fury(language=language, reference_tracking=True)
+    fury_ = Fury(language=language, ref_tracking=True)
     buffer = Buffer.allocate(128)
     for i in range(1000):
         fury_.serialize([], buffer)
@@ -187,10 +187,10 @@ class RefTestClass2:
 
 
 @pytest.mark.parametrize("language", [Language.PYTHON])
-def test_reference_cleanup(language):
+def test_ref_cleanup(language):
     # FIXME this can't simulate the case where new objects are allocated on memory
     #  address of released tmp object.
-    fury_ = Fury(language=language, reference_tracking=True, secure_mode=False)
+    fury_ = Fury(language=language, ref_tracking=True, secure_mode=False)
     # TODO support Language.XLANG, current unpickler will error for xlang,
     o1 = RefTestClass1()
     o2 = RefTestClass2(f1=o1)
@@ -207,7 +207,7 @@ def test_reference_cleanup(language):
 
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
 def test_array_serializer(language):
-    fury_ = Fury(language=language, reference_tracking=True, secure_mode=False)
+    fury_ = Fury(language=language, ref_tracking=True, secure_mode=False)
     for typecode in PyArraySerializer.typecode_dict.keys():
         arr = array.array(typecode, list(range(10)))
         assert ser_de(fury_, arr) == arr
@@ -258,7 +258,7 @@ def test_pickle():
 def test_serialize_arrow():
     record_batch = create_record_batch(10000)
     table = pa.Table.from_batches([record_batch, record_batch])
-    fury_ = Fury(language=Language.XLANG, reference_tracking=True)
+    fury_ = Fury(language=Language.XLANG, ref_tracking=True)
     serialized_data = Buffer.allocate(32)
     fury_.serialize(record_batch, buffer=serialized_data)
     fury_.serialize(table, buffer=serialized_data)
@@ -273,7 +273,7 @@ def test_serialize_arrow_zero_copy():
     record_batch = create_record_batch(10000)
     table = pa.Table.from_batches([record_batch, record_batch])
     buffer_objects = []
-    fury_ = Fury(language=Language.XLANG, reference_tracking=True)
+    fury_ = Fury(language=Language.XLANG, ref_tracking=True)
     serialized_data = Buffer.allocate(32)
     fury_.serialize(
         record_batch, buffer=serialized_data, buffer_callback=buffer_objects.append
@@ -328,7 +328,7 @@ class RegisterClass:
 
 
 def test_register_py_serializer():
-    fury_ = Fury(language=Language.PYTHON, reference_tracking=True, secure_mode=False)
+    fury_ = Fury(language=Language.PYTHON, ref_tracking=True, secure_mode=False)
 
     class Serializer(pyfury.Serializer):
         def write(self, buffer, value):
@@ -356,7 +356,7 @@ class A:
 
 
 def test_register_class():
-    fury_ = Fury(language=Language.PYTHON, reference_tracking=True)
+    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
 
     class Serializer(pyfury.Serializer):
         def write(self, buffer, value):
@@ -380,7 +380,7 @@ def test_register_class():
 
 
 def test_pickle_fallback():
-    fury_ = Fury(language=Language.PYTHON, reference_tracking=True, secure_mode=False)
+    fury_ = Fury(language=Language.PYTHON, ref_tracking=True, secure_mode=False)
     o1 = [1, True, np.dtype(np.int32)]
     data1 = fury_.serialize(o1)
     new_o1 = fury_.deserialize(data1)
@@ -388,7 +388,7 @@ def test_pickle_fallback():
 
 
 def test_unsupported_callback():
-    fury_ = Fury(language=Language.PYTHON, reference_tracking=True)
+    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
 
     def f1(x):
         return x
@@ -408,7 +408,7 @@ def test_unsupported_callback():
 
 
 def test_slice():
-    fury_ = Fury(language=Language.PYTHON, reference_tracking=True)
+    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
     assert fury_.deserialize(fury_.serialize(slice(1, 100, 10))) == slice(1, 100, 10)
     assert fury_.deserialize(fury_.serialize(slice(1, None, 10))) == slice(1, None, 10)
     assert fury_.deserialize(fury_.serialize(slice(10, 10, None))) == slice(
@@ -439,7 +439,7 @@ class TestEnum(Enum):
 
 
 def test_enum():
-    fury_ = Fury(language=Language.PYTHON, reference_tracking=True)
+    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
     assert ser_de(fury_, TestEnum.E1) == TestEnum.E1
     assert ser_de(fury_, TestEnum.E2) == TestEnum.E2
     assert ser_de(fury_, TestEnum.E3) == TestEnum.E3
@@ -454,7 +454,7 @@ def test_enum():
 
 
 def test_duplicate_serialize():
-    fury_ = Fury(language=Language.PYTHON, reference_tracking=True)
+    fury_ = Fury(language=Language.PYTHON, ref_tracking=True)
     assert ser_de(fury_, TestEnum.E1) == TestEnum.E1
     assert ser_de(fury_, TestEnum.E2) == TestEnum.E2
     assert ser_de(fury_, TestEnum.E4) == TestEnum.E4
@@ -469,7 +469,7 @@ class TestCacheClass1:
 
 
 def test_cache_serializer():
-    fury = Fury(language=Language.PYTHON, reference_tracking=True)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
     fury.register_serializer(TestCacheClass1, pyfury.PickleStrongCacheSerializer(fury))
     assert ser_de(fury, TestCacheClass1(1)) == TestCacheClass1(1)
     fury.register_serializer(TestCacheClass1, pyfury.PickleCacheSerializer(fury))
@@ -477,15 +477,15 @@ def test_cache_serializer():
 
     classinfo = pyfury.PickleStrongCacheSerializer.new_classinfo(fury)
     buffer = Buffer.allocate(32)
-    fury.serialize_referencable_to_py(buffer, TestCacheClass1(1), classinfo)
-    assert fury.deserialize_referencable_from_py(buffer) == TestCacheClass1(1)
+    fury.serialize_ref_to_py(buffer, TestCacheClass1(1), classinfo)
+    assert fury.deserialize_ref_from_py(buffer) == TestCacheClass1(1)
     classinfo = pyfury.PickleCacheSerializer.new_classinfo(fury)
-    fury.serialize_referencable_to_py(buffer, TestCacheClass1(1), classinfo)
-    assert fury.deserialize_referencable_from_py(buffer) == TestCacheClass1(1)
+    fury.serialize_ref_to_py(buffer, TestCacheClass1(1), classinfo)
+    assert fury.deserialize_ref_from_py(buffer) == TestCacheClass1(1)
 
 
 def test_pandas_range_index():
-    fury = Fury(language=Language.PYTHON, reference_tracking=True, secure_mode=False)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True, secure_mode=False)
     fury.register_serializer(pd.RangeIndex, pyfury.PandasRangeIndexSerializer(fury))
     index = pd.RangeIndex(1, 100, 2, name="a")
     new_index = ser_de(fury, index)
@@ -504,7 +504,7 @@ class TestPyDataClass1:
 
 
 def test_py_serialize_dataclass():
-    fury = Fury(language=Language.PYTHON, reference_tracking=True)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
     obj1 = TestPyDataClass1(
         f1=1, f2=-2.0, f3="abc", f4=True, f5="xyz", f6=[1, 2], f7={"k1": "v1"}
     )

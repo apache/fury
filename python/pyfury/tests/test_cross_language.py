@@ -258,7 +258,7 @@ def test_cross_language_serializer(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
         buffer = pyfury.Buffer(data_bytes)
-        fury_ = pyfury.Fury(language=pyfury.Language.XLANG, reference_tracking=True)
+        fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
         objects = []
         assert _deserialize_and_append(fury_, buffer, objects) is True
         assert _deserialize_and_append(fury_, buffer, objects) is False
@@ -328,11 +328,11 @@ def _deserialize_and_append(fury_, buffer, objects: list):
 
 
 @cross_language_test
-def test_cross_language_reference(data_file_path):
+def test_cross_language_ref(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
         buffer = pyfury.Buffer(data_bytes)
-        fury_ = pyfury.Fury(language=pyfury.Language.XLANG, reference_tracking=True)
+        fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
         objects = []
         new_list = _deserialize_and_append(fury_, buffer, objects)
         assert new_list[0] is new_list
@@ -353,7 +353,7 @@ def test_serialize_arrow_in_band(data_file_path):
         table = pa.Table.from_batches([batch] * 2)
         data_bytes = f.read()
         buffer = pyfury.Buffer(data_bytes)
-        fury_ = pyfury.Fury(language=pyfury.Language.XLANG, reference_tracking=True)
+        fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
         new_batch = fury_.deserialize(buffer)
         assert new_batch == batch
         new_table = fury_.deserialize(buffer)
@@ -375,7 +375,7 @@ def test_serialize_arrow_out_of_band(int_band_file, out_of_band_file):
         out_of_band_buffer.slice(8, len1),
         out_of_band_buffer.slice(8 + len1, len2),
     ]
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, reference_tracking=True)
+    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
     objects = fury_.deserialize(in_band_buffer, buffers=buffers)
     assert objects == [batch, table]
     buffer_objects = []
@@ -426,7 +426,7 @@ class ComplexObject2:
 
 
 def test_serialize_simple_struct_local():
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, reference_tracking=True)
+    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
     fury_.register_class_tag(ComplexObject2, "test.ComplexObject2")
     obj = ComplexObject2(f1=True, f2={-1: 2})
     new_buf = fury_.serialize(obj)
@@ -435,7 +435,7 @@ def test_serialize_simple_struct_local():
 
 @cross_language_test
 def test_serialize_simple_struct(data_file_path):
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, reference_tracking=True)
+    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
     fury_.register_class_tag(ComplexObject2, "test.ComplexObject2")
     obj = ComplexObject2(f1=True, f2={-1: 2})
     struct_round_back(data_file_path, fury_, obj)
@@ -443,7 +443,7 @@ def test_serialize_simple_struct(data_file_path):
 
 @cross_language_test
 def test_serialize_complex_struct(data_file_path):
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, reference_tracking=True)
+    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
     fury_.register_class_tag(ComplexObject1, "test.ComplexObject1")
     fury_.register_class_tag(ComplexObject2, "test.ComplexObject2")
 
@@ -486,7 +486,7 @@ def test_serialize_opaque_object(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
     debug_print(f"len {len(data_bytes)}")
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, reference_tracking=True)
+    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
     fury_.register_class_tag(ComplexObject1, "test.ComplexObject1")
     new_obj = fury_.deserialize(data_bytes)
     debug_print(new_obj)
@@ -515,18 +515,18 @@ class ComplexObject1Serializer(pyfury.serializer.Serializer):
         return self.cross_language_read(buffer)
 
     def cross_language_write(self, buffer, value):
-        self.fury_.cross_language_serialize_referencable(buffer, value.f1)
-        self.fury_.cross_language_serialize_referencable(buffer, value.f2)
-        self.fury_.cross_language_serialize_referencable(buffer, value.f3)
+        self.fury_.cross_language_serialize_ref(buffer, value.f1)
+        self.fury_.cross_language_serialize_ref(buffer, value.f2)
+        self.fury_.cross_language_serialize_ref(buffer, value.f3)
 
     def cross_language_read(self, buffer):
         obj = ComplexObject1(
             *([None] * len(typing.get_type_hints(ComplexObject1).keys()))
         )
-        self.fury_.reference_resolver.reference(obj)
-        obj.f1 = self.fury_.cross_language_deserialize_referencable(buffer)
-        obj.f2 = self.fury_.cross_language_deserialize_referencable(buffer)
-        obj.f3 = self.fury_.cross_language_deserialize_referencable(buffer)
+        self.fury_.ref_resolver.reference(obj)
+        obj.f1 = self.fury_.cross_language_deserialize_ref(buffer)
+        obj.f2 = self.fury_.cross_language_deserialize_ref(buffer)
+        obj.f3 = self.fury_.cross_language_deserialize_ref(buffer)
         return obj
 
 
@@ -535,7 +535,7 @@ def test_register_serializer(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
     buffer = pyfury.Buffer(data_bytes)
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, reference_tracking=True)
+    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
     fury_.register_serializer(
         ComplexObject1, ComplexObject1Serializer(fury_, ComplexObject1)
     )
@@ -556,7 +556,7 @@ def test_oob_buffer(in_band_file_path, out_of_band_file_path):
         in_band_bytes = f.read()
     with open(out_of_band_file_path, "rb") as f:
         out_of_band_buffer = pyfury.Buffer(f.read())
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, reference_tracking=True)
+    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
     n_buffers = out_of_band_buffer.read_int32()
     buffers = []
     for i in range(n_buffers):
