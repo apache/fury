@@ -305,6 +305,7 @@
             <exclude>**/fury/benchmark/state/BufferType.java</exclude>
             <exclude>**/fury/benchmark/state/ObjectType.java</exclude>
             <exclude>**/fury/benchmark/Identity2IdMap.java</exclude>
+            <exclude>**/GenericsTest.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
           <headerDefinitions>
