@@ -269,7 +269,7 @@ cdef class PickleCacheStub:
 @cython.final
 cdef class ClassResolver:
     cdef:
-        readonly Fury fury_
+        readonly Fury fury
         dict _type_id_to_class  # Dict[int, type]
         dict _type_id_to_serializer  # Dict[int, Serializer]
         dict _type_id_and_cls_to_serializer  # Dict[Tuple[int, type], Serializer]
@@ -304,8 +304,8 @@ cdef class ClassResolver:
         set _classname_set
         set _enum_str_set
 
-    def __init__(self, fury_):
-        self.fury_ = fury_
+    def __init__(self, fury):
+        self.fury = fury
         self._type_id_to_class = dict()
         self._type_id_to_serializer = dict()
         self._type_id_and_cls_to_serializer = dict()
@@ -398,7 +398,7 @@ cdef class ClassResolver:
         """Register class with given type tag which will be used for cross-language
         serialization."""
         self.register_serializer(
-            cls, ComplexObjectSerializer(self.fury_, cls, type_tag)
+            cls, ComplexObjectSerializer(self.fury, cls, type_tag)
         )
 
     def _add_serializer(
@@ -407,7 +407,7 @@ cdef class ClassResolver:
             serializer=None,
             serializer_cls=None):
         if serializer_cls:
-            serializer = serializer_cls(self.fury_, cls)
+            serializer = serializer_cls(self.fury, cls)
         self.register_serializer(cls, serializer)
 
     def _add_x_lang_serializer(self,
@@ -415,7 +415,7 @@ cdef class ClassResolver:
                                serializer=None,
                                serializer_cls=None):
         if serializer_cls:
-            serializer = serializer_cls(self.fury_, cls)
+            serializer = serializer_cls(self.fury, cls)
         type_id = serializer.get_xtype_id()
 
         assert type_id != NOT_SUPPORT_CROSS_LANGUAGE
@@ -464,9 +464,9 @@ cdef class ClassResolver:
         from pyfury import PickleCacheSerializer, PickleStrongCacheSerializer
 
         self._add_serializer(PickleStrongCacheStub,
-                             serializer=PickleStrongCacheSerializer(self.fury_))
+                             serializer=PickleStrongCacheSerializer(self.fury))
         self._add_serializer(PickleCacheStub,
-                             serializer=PickleCacheSerializer(self.fury_))
+                             serializer=PickleCacheSerializer(self.fury))
 
         try:
             import pyarrow as pa
@@ -484,17 +484,17 @@ cdef class ClassResolver:
         for typecode in PyArraySerializer.typecode_dict.keys():
             self._add_serializer(
                 array.array,
-                serializer=PyArraySerializer(self.fury_, array.array, typecode),
+                serializer=PyArraySerializer(self.fury, array.array, typecode),
             )
             self._add_serializer(
                 PyArraySerializer.typecodearray_type[typecode],
-                serializer=PyArraySerializer(self.fury_, array.array, typecode),
+                serializer=PyArraySerializer(self.fury, array.array, typecode),
             )
         if np:
             for dtype in Numpy1DArraySerializer.dtypes_dict.keys():
                 self._add_serializer(
                     np.ndarray,
-                    serializer=Numpy1DArraySerializer(self.fury_, array.array, dtype),
+                    serializer=Numpy1DArraySerializer(self.fury, array.array, dtype),
                 )
 
     cpdef inline Serializer get_serializer(self, cls=None, type_id=None, obj=None):
@@ -575,7 +575,7 @@ cdef class ClassResolver:
             ):
                 if classinfo_ is None or classinfo_.class_id == NO_CLASS_ID:
                     logger.info("Class %s not registered", cls)
-                serializer = type(class_info.serializer)(self.fury_, cls)
+                serializer = type(class_info.serializer)(self.fury, cls)
                 break
         else:
             if dataclasses.is_dataclass(cls):
@@ -583,9 +583,9 @@ cdef class ClassResolver:
                     logger.info("Class %s not registered", cls)
                 from pyfury import DataClassSerializer
 
-                serializer = DataClassSerializer(self.fury_, cls)
+                serializer = DataClassSerializer(self.fury, cls)
             else:
-                serializer = PickleSerializer(self.fury_, cls)
+                serializer = PickleSerializer(self.fury, cls)
         return serializer
 
     cpdef inline write_classinfo(self, Buffer buffer, ClassInfo classinfo):
@@ -1307,12 +1307,12 @@ cdef class SerializationContext:
 
 
 cdef class Serializer:
-    cdef readonly Fury fury_
+    cdef readonly Fury fury
     cdef readonly object type_
     cdef public c_bool need_to_write_ref
 
-    def __init__(self, fury_, type_: Union[type, TypeVar]):
-        self.fury = fury_
+    def __init__(self, fury, type_: Union[type, TypeVar]):
+        self.fury = fury
         self.type_ = type_
         self.need_to_write_ref = not is_primitive_type(type_)
 
@@ -1362,8 +1362,8 @@ cdef class CrossLanguageCompatibleSerializer(Serializer):
     cpdef read(self, Buffer buffer):
         raise NotImplementedError
 
-    def __init__(self, fury_, type_):
-        super().__init__(fury_, type_)
+    def __init__(self, fury, type_):
+        super().__init__(fury, type_)
 
     cpdef xwrite(self, Buffer buffer, value):
         self.write(buffer, value)
@@ -1965,8 +1965,8 @@ cdef class PyArraySerializer(CrossLanguageCompatibleSerializer):
     cdef int8_t itemsize
     cdef int16_t type_id
 
-    def __init__(self, fury_, type_, str typecode):
-        super().__init__(fury_, type_)
+    def __init__(self, fury, type_, str typecode):
+        super().__init__(fury, type_)
         self.typecode = typecode
         self.itemsize, self.type_id = PyArraySerializer.typecode_dict[self.typecode]
 
@@ -2025,8 +2025,8 @@ cdef class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
     cdef int8_t itemsize
     cdef int16_t type_id
 
-    def __init__(self, fury_, type_, dtype):
-        super().__init__(fury_, type_)
+    def __init__(self, fury, type_, dtype):
+        super().__init__(fury, type_)
         self.dtype = dtype
         self.itemsize, self.typecode, self.type_id = _np_dtypes_dict[self.dtype]
 
@@ -2059,10 +2059,10 @@ cdef class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
         return self.fury.handle_unsupported_read(buffer)
 
 
-cdef _get_hash(Fury fury_, list field_names, dict type_hints):
+cdef _get_hash(Fury fury, list field_names, dict type_hints):
     from pyfury._struct import StructHashVisitor
 
-    visitor = StructHashVisitor(fury_)
+    visitor = StructHashVisitor(fury)
     for index, key in enumerate(field_names):
         infer_field(key, type_hints[key], visitor, types_path=[])
     hash_ = visitor.get_hash()
@@ -2077,15 +2077,15 @@ cdef class ComplexObjectSerializer(Serializer):
     cdef list _serializers
     cdef int32_t _hash
 
-    def __init__(self, fury_, clz: type, type_tag: str):
-        super().__init__(fury_, clz)
+    def __init__(self, fury, clz: type, type_tag: str):
+        super().__init__(fury, clz)
         self._type_tag = type_tag
         self._type_hints = get_type_hints(clz)
         self._field_names = sorted(self._type_hints.keys())
         self._serializers = [None] * len(self._field_names)
         from pyfury._struct import ComplexTypeVisitor
 
-        visitor = ComplexTypeVisitor(fury_)
+        visitor = ComplexTypeVisitor(fury)
         for index, key in enumerate(self._field_names):
             serializer = infer_field(key, self._type_hints[key], visitor, types_path=[])
             self._serializers[index] = serializer

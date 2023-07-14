@@ -76,8 +76,8 @@ class ComplexTypeVisitor(TypeVisitor):
         return serializer
 
 
-def _get_hash(fury_, field_names: list, type_hints: dict):
-    visitor = StructHashVisitor(fury_)
+def _get_hash(fury, field_names: list, type_hints: dict):
+    visitor = StructHashVisitor(fury)
     for index, key in enumerate(field_names):
         infer_field(key, type_hints[key], visitor, types_path=[])
     hash_ = visitor.get_hash()
@@ -86,13 +86,13 @@ def _get_hash(fury_, field_names: list, type_hints: dict):
 
 
 class ComplexObjectSerializer(Serializer):
-    def __init__(self, fury_, clz: type, type_tag: str):
-        super().__init__(fury_, clz)
+    def __init__(self, fury, clz: type, type_tag: str):
+        super().__init__(fury, clz)
         self._type_tag = type_tag
         self._type_hints = typing.get_type_hints(clz)
         self._field_names = sorted(self._type_hints.keys())
         self._serializers = [None] * len(self._field_names)
-        visitor = ComplexTypeVisitor(fury_)
+        visitor = ComplexTypeVisitor(fury)
         for index, key in enumerate(self._field_names):
             serializer = infer_field(key, self._type_hints[key], visitor, types_path=[])
             self._serializers[index] = serializer

@@ -101,8 +101,8 @@ class PickleStrongCacheSerializer(Serializer):
 
     __slots__ = "_cached", "_clear_threshold", "_counter"
 
-    def __init__(self, fury_, clear_threshold: int = 1000):
-        super().__init__(fury_, PickleStrongCacheStub)
+    def __init__(self, fury, clear_threshold: int = 1000):
+        super().__init__(fury, PickleStrongCacheStub)
         self._cached = {}
         self._clear_threshold = clear_threshold
 
@@ -141,8 +141,8 @@ class PickleStrongCacheSerializer(Serializer):
 class PickleCacheSerializer(Serializer):
     __slots__ = "_cached", "_reverse_cached"
 
-    def __init__(self, fury_):
-        super().__init__(fury_, PickleCacheStub)
+    def __init__(self, fury):
+        super().__init__(fury, PickleCacheStub)
         self._cached = WeakIdentityKeyDictionary()
         self._reverse_cached = WeakValueDictionary()
 
@@ -188,10 +188,10 @@ class PickleCacheSerializer(Serializer):
 class PandasRangeIndexSerializer(Serializer):
     __slots__ = "_cached"
 
-    def __init__(self, fury_):
+    def __init__(self, fury):
         import pandas as pd
 
-        super().__init__(fury_, pd.RangeIndex)
+        super().__init__(fury, pd.RangeIndex)
 
     def write(self, buffer, value):
         fury = self.fury
@@ -262,8 +262,8 @@ _ENABLE_FURY_PYTHON_JIT = os.environ.get("ENABLE_FURY_PYTHON_JIT", "True").lower
 
 
 class DataClassSerializer(Serializer):
-    def __init__(self, fury_, clz: type):
-        super().__init__(fury_, clz)
+    def __init__(self, fury, clz: type):
+        super().__init__(fury, clz)
         # This will get superclass type hints too.
         self._type_hints = typing.get_type_hints(clz)
         self._field_names = sorted(self._type_hints.keys())
@@ -279,8 +279,8 @@ class DataClassSerializer(Serializer):
     def _gen_write_method(self):
         context = {}
         counter = itertools.count(0)
-        buffer, fury_, value = "buffer", "fury_", "value"
-        context[fury_] = self.fury
+        buffer, fury, value = "buffer", "fury", "value"
+        context[fury] = self.fury
         stmts = [
             f'"""write method for {self.type_}"""',
             f"{buffer}.write_int32({self._hash})",
@@ -298,7 +298,7 @@ class DataClassSerializer(Serializer):
             elif field_type == str:
                 stmts.extend(gen_write_nullable_basic_stmts(buffer, field_value, str))
             else:
-                stmts.append(f"{fury_}.write_ref_pyobject({buffer}, {field_value})")
+                stmts.append(f"{fury}.write_ref_pyobject({buffer}, {field_value})")
         self._write_method_code, func = compile_function(
             f"write_{self.type_.__module__}_{self.type_.__qualname__}".replace(
                 ".", "_"
@@ -311,9 +311,9 @@ class DataClassSerializer(Serializer):
 
     def _gen_read_method(self):
         context = dict(_jit_context)
-        buffer, fury_, obj_class, obj = "buffer", "fury_", "obj_class", "obj"
+        buffer, fury, obj_class, obj = "buffer", "fury", "obj_class", "obj"
         ref_resolver = "ref_resolver"
-        context[fury_] = self.fury
+        context[fury] = self.fury
         context[obj_class] = self.type_
         context[ref_resolver] = self.fury.ref_resolver
         stmts = [
@@ -340,9 +340,7 @@ class DataClassSerializer(Serializer):
             elif field_type == str:
                 stmts.extend(gen_read_nullable_basic_stmts(buffer, str, set_action))
             else:
-                stmts.append(
-                    f"{obj}.{field_name} = {fury_}.read_ref_pyobject({buffer})"
-                )
+                stmts.append(f"{obj}.{field_name} = {fury}.read_ref_pyobject({buffer})")
         stmts.append(f"return {obj}")
         self._read_method_code, func = compile_function(
             f"read_{self.type_.__module__}_{self.type_.__qualname__}".replace(".", "_"),
