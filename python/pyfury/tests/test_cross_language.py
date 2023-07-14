@@ -535,17 +535,17 @@ def test_register_serializer(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
     buffer = pyfury.Buffer(data_bytes)
-    fury_ = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury_.register_serializer(
-        ComplexObject1, ComplexObject1Serializer(fury_, ComplexObject1)
+    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+    fury.register_serializer(
+        ComplexObject1, ComplexObject1Serializer(fury, ComplexObject1)
     )
-    new_obj = fury_.deserialize(buffer)
+    new_obj = fury.deserialize(buffer)
     expected = ComplexObject1(*[None] * 12)
     expected.f1, expected.f2, expected.f3 = True, "abc", ["abc", "abc"]
     debug_print(new_obj)
     assert new_obj == expected
     new_buf = pyfury.Buffer.allocate(32)
-    fury_.serialize(new_obj, buffer=new_buf)
+    fury.serialize(new_obj, buffer=new_buf)
     with open(data_file_path, "wb+") as f:
         f.write(new_buf.get_bytes(0, new_buf.writer_index))
 

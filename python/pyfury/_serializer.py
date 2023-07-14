@@ -643,7 +643,7 @@ class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref(buffer, start)
+                self.fury_.serialize_nonref(buffer, start)
         if type(stop) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -653,7 +653,7 @@ class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref(buffer, stop)
+                self.fury_.serialize_nonref(buffer, stop)
         if type(step) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -663,21 +663,21 @@ class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref(buffer, step)
+                self.fury_.serialize_nonref(buffer, step)
 
     def read(self, buffer):
         if buffer.read_int8() == NULL_FLAG:
             start = None
         else:
-            start = self.fury_.deserialize_non_ref(buffer)
+            start = self.fury_.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             stop = None
         else:
-            stop = self.fury_.deserialize_non_ref(buffer)
+            stop = self.fury_.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             step = None
         else:
-            step = self.fury_.deserialize_non_ref(buffer)
+            step = self.fury_.deserialize_nonref(buffer)
         return slice(start, stop, step)
 
     def xwrite(self, buffer, value):

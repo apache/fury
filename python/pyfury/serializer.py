@@ -206,7 +206,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_ref(buffer, start)
+                fury.serialize_nonref(buffer, start)
         if type(stop) is int:
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(stop)
@@ -215,7 +215,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_ref(buffer, stop)
+                fury.serialize_nonref(buffer, stop)
         if type(step) is int:
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(step)
@@ -224,7 +224,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_ref(buffer, step)
+                fury.serialize_nonref(buffer, step)
         fury.serialize_ref(buffer, value.dtype)
         fury.serialize_ref(buffer, value.name)
 
@@ -232,15 +232,15 @@ class PandasRangeIndexSerializer(Serializer):
         if buffer.read_int8() == NULL_FLAG:
             start = None
         else:
-            start = self.fury_.deserialize_non_ref(buffer)
+            start = self.fury_.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             stop = None
         else:
-            stop = self.fury_.deserialize_non_ref(buffer)
+            stop = self.fury_.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             step = None
         else:
-            step = self.fury_.deserialize_non_ref(buffer)
+            step = self.fury_.deserialize_nonref(buffer)
         dtype = self.fury_.deserialize_ref(buffer)
         name = self.fury_.deserialize_ref(buffer)
         return self.type_(start, stop, step, dtype=dtype, name=name)

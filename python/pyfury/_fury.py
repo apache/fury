@@ -726,7 +726,7 @@ class Fury:
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
-    def serialize_non_ref(self, buffer, obj):
+    def serialize_nonref(self, buffer, obj):
         cls = type(obj)
         if cls is str:
             buffer.write_int16(STRING_CLASS_ID)
@@ -748,15 +748,15 @@ class Fury:
     def xserialize_ref(self, buffer, obj, serializer=None):
         if serializer is None or serializer.need_to_write_ref:
             if not self.ref_resolver.write_ref_or_null(buffer, obj):
-                self.xserialize_non_ref(buffer, obj, serializer=serializer)
+                self.xserialize_nonref(buffer, obj, serializer=serializer)
         else:
             if obj is None:
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.xserialize_non_ref(buffer, obj, serializer=serializer)
+                self.xserialize_nonref(buffer, obj, serializer=serializer)
 
-    def xserialize_non_ref(self, buffer, obj, serializer=None):
+    def xserialize_nonref(self, buffer, obj, serializer=None):
         cls = type(obj)
         serializer = serializer or self.class_resolver.get_serializer(obj=obj)
         type_id = serializer.get_xtype_id()
@@ -858,7 +858,7 @@ class Fury:
         else:
             return ref_resolver.get_read_object()
 
-    def deserialize_non_ref(self, buffer):
+    def deserialize_nonref(self, buffer):
         """Deserialize not-null and non-reference object from buffer."""
         classinfo = self.class_resolver.read_classinfo(buffer)
         return classinfo.serializer.read(buffer)
@@ -870,7 +870,7 @@ class Fury:
 
             # indicates that the object is first read.
             if red_id >= NOT_NULL_VALUE_FLAG:
-                o = self.xdeserialize_non_ref(buffer, serializer=serializer)
+                o = self.xdeserialize_nonref(buffer, serializer=serializer)
                 ref_resolver.set_read_object(red_id, o)
                 return o
             else:
@@ -878,9 +878,9 @@ class Fury:
         head_flag = buffer.read_int8()
         if head_flag == NULL_FLAG:
             return None
-        return self.xdeserialize_non_ref(buffer, serializer=serializer)
+        return self.xdeserialize_nonref(buffer, serializer=serializer)
 
-    def xdeserialize_non_ref(self, buffer, serializer=None):
+    def xdeserialize_nonref(self, buffer, serializer=None):
         type_id = buffer.read_int16()
         cls = None
         if type_id != NOT_SUPPORT_CROSS_LANGUAGE:

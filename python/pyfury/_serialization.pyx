@@ -930,7 +930,7 @@ cdef class Fury:
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
-    cpdef inline serialize_non_ref(self, Buffer buffer, obj):
+    cpdef inline serialize_nonref(self, Buffer buffer, obj):
         cls = type(obj)
         if cls is str:
             buffer.write_int16(STRING_CLASS_ID)
@@ -956,7 +956,7 @@ cdef class Fury:
             self, Buffer buffer, obj, Serializer serializer=None):
         if serializer is None or serializer.need_to_write_ref:
             if not self.ref_resolver.write_ref_or_null(buffer, obj):
-                self.xserialize_non_ref(
+                self.xserialize_nonref(
                     buffer, obj, serializer=serializer
                 )
         else:
@@ -964,11 +964,11 @@ cdef class Fury:
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.xserialize_non_ref(
+                self.xserialize_nonref(
                     buffer, obj, serializer=serializer
                 )
 
-    cpdef inline xserialize_non_ref(
+    cpdef inline xserialize_nonref(
             self, Buffer buffer, obj, Serializer serializer=None):
         cls = type(obj)
         serializer = serializer or self.class_resolver.get_serializer(obj=obj)
@@ -1075,7 +1075,7 @@ cdef class Fury:
         ref_resolver.set_read_object(ref_id, o)
         return o
 
-    cpdef inline deserialize_non_ref(self, Buffer buffer):
+    cpdef inline deserialize_nonref(self, Buffer buffer):
         """Deserialize not-null and non-reference object from buffer."""
         cdef ClassInfo classinfo = self.class_resolver.read_classinfo(buffer)
         cls = classinfo.cls
@@ -1099,7 +1099,7 @@ cdef class Fury:
 
             # indicates that the object is first read.
             if red_id >= NOT_NULL_VALUE_FLAG:
-                o = self.xdeserialize_non_ref(
+                o = self.xdeserialize_nonref(
                     buffer, serializer=serializer
                 )
                 ref_resolver.set_read_object(red_id, o)
@@ -1109,11 +1109,11 @@ cdef class Fury:
         cdef int8_t head_flag = buffer.read_int8()
         if head_flag == NULL_FLAG:
             return None
-        return self.xdeserialize_non_ref(
+        return self.xdeserialize_nonref(
             buffer, serializer=serializer
         )
 
-    cpdef inline xdeserialize_non_ref(
+    cpdef inline xdeserialize_nonref(
             self, Buffer buffer, Serializer serializer=None):
         cdef int16_t type_id = buffer.read_int16()
         cls = None
@@ -2183,7 +2183,7 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref(buffer, start)
+                self.fury_.serialize_nonref(buffer, start)
         if type(stop) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -2193,7 +2193,7 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref(buffer, stop)
+                self.fury_.serialize_nonref(buffer, stop)
         if type(step) is int:
             # TODO support varint128
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
@@ -2203,21 +2203,21 @@ cdef class SliceSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.fury_.serialize_non_ref(buffer, step)
+                self.fury_.serialize_nonref(buffer, step)
 
     cpdef inline read(self, Buffer buffer):
         if buffer.read_int8() == NULL_FLAG:
             start = None
         else:
-            start = self.fury_.deserialize_non_ref(buffer)
+            start = self.fury_.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             stop = None
         else:
-            stop = self.fury_.deserialize_non_ref(buffer)
+            stop = self.fury_.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             step = None
         else:
-            step = self.fury_.deserialize_non_ref(buffer)
+            step = self.fury_.deserialize_nonref(buffer)
         return slice(start, stop, step)
 
     cpdef xwrite(self, Buffer buffer, value):
