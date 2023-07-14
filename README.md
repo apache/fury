@@ -342,13 +342,14 @@ We are still improving our protocols, binary compatibility are not ensured betwe
 Binary compatibility will be ensured before fury 1.0.
 
 ## Security
-Static serialization such as row format are secure by nature. But dynamic object graph serialization supports  deserialize unregistered types, which can introduce security risks.
+Static serialization such as row format are secure by nature. But native java/python dynamic object graph serialization 
+supports deserialize unregistered types, which can introduce security risks.
 
 For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risks.
 
-Fury provides a secure mode option and enabled by default for this protocol, which allows deserializing trusted registered types or built-in types only for security.
+Fury provides a secure mode option and enabled by default for this protocol, which allows deserializing trusted registered types or built-in types only.
 
-If your environment is **indeed secure**, you can disable the secure mode, then the user types are not needed be registered ahead, and can be serialized automatically.
+You can take this option as a whitelist mechanism. **Do not disable it unless you can ensure your environment is indeed secure**.
 
 ## RoadMap
 - Meta compression, auto meta sharing and cross-language schema compatibility.

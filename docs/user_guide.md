@@ -554,7 +554,9 @@ System.out.println(fury.deserialize(bytes));
 ```
 
 ### Class Registration
-`FuryBuilder#requireClassRegistration`/`FuryBuilder#withSecureMode` can be used to disable class registration, this will allow to deserialize objects unknown types, more flexible but less secure. Do not disable class registration until you know what you are doing.
+`FuryBuilder#requireClassRegistration`/`FuryBuilder#withSecureMode` can be used to disable class registration, this will allow to deserialize objects unknown types, more flexible but **less secure**.
+
+**Do not disable class registration  unless you can ensure your environment is indeed secure**.
 
 Class registration can not only reduce security risks, but also avoid classname serialization cost.
 
