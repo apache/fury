@@ -1013,6 +1013,6 @@ class _UnpicklerStub:
 
     def load(self):
         raise ValueError(
-            f"pickle is not allowed when secure mode enabled, Please register"
-            f"the class or pass unsupported_callback"
+            "pickle is not allowed when secure mode enabled, Please register"
+            "the class or pass unsupported_callback"
         )

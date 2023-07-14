@@ -115,6 +115,7 @@ class Serializer(ABC):
         """
         return NOT_SUPPORT_CROSS_LANGUAGE
 
+    @abstractmethod
     def get_xtype_tag(self):
         """
         Returns
