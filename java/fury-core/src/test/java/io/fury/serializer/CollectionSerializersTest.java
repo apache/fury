@@ -212,14 +212,6 @@ public class CollectionSerializersTest extends FuryTestBase {
   }
 
   @Test
-  public void testImmutableListSerializer() {
-    serDe(getJavaFury(), ImmutableList.of(1, 2));
-    Assert.assertEquals(
-        getJavaFury().getClassResolver().getSerializerClass(ImmutableList.of(1, 2).getClass()),
-        CollectionSerializers.ImmutableListSerializer.class);
-  }
-
-  @Test
   public void testSerializeJavaBlockingQueue() {
     Fury fury =
         Fury.builder()

@@ -57,6 +57,7 @@ import io.fury.serializer.CollectionSerializers;
 import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.ExternalizableSerializer;
+import io.fury.serializer.GuavaSerializers;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.JdkProxySerializer;
 import io.fury.serializer.LambdaSerializer;
@@ -322,6 +323,9 @@ public class ClassResolver {
     if (metaContextShareEnabled) {
       addDefaultSerializer(
           UnexistedMetaSharedClass.class, new UnexistedClassSerializer(fury, null));
+    }
+    if (fury.getConfig().registerGuavaTypes()) {
+      GuavaSerializers.registerDefaultSerializers(fury);
     }
     if (ArrowSerializersClass != null) {
       try {
@@ -712,9 +716,9 @@ public class ClassResolver {
       } else if (Externalizable.class.isAssignableFrom(cls)) {
         return ExternalizableSerializer.class;
       } else if (ImmutableList.class.isAssignableFrom(cls)) {
-        return CollectionSerializers.ImmutableListSerializer.class;
+        return GuavaSerializers.ImmutableListSerializer.class;
       } else if (ImmutableMap.class.isAssignableFrom(cls)) {
-        return MapSerializers.ImmutableMapSerializer.class;
+        return GuavaSerializers.ImmutableMapSerializer.class;
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {
         return BufferSerializers.ByteBufferSerializer.class;
       }
@@ -755,6 +759,9 @@ public class ClassResolver {
         } else {
           return MapSerializers.MapSerializer.class;
         }
+      }
+      if (fury.getLanguage() != Language.JAVA) {
+        LOG.warn("Class {} isn't supported for cross-language serialization.", cls);
       }
       if (useReplaceResolveSerializer(cls)) {
         return ReplaceResolveSerializer.class;
@@ -797,9 +804,6 @@ public class ClassResolver {
       boolean shareMeta,
       boolean codegen,
       JITContext.SerializerJITCallback<Class<? extends Serializer>> callback) {
-    if (fury.getLanguage() != Language.JAVA) {
-      LOG.warn("Class {} isn't supported for cross-language serialization.", cls);
-    }
     if (codegen) {
       if (extRegistry.getClassCtx.contains(cls)) {
         // avoid potential recursive call for seq codec generation.
