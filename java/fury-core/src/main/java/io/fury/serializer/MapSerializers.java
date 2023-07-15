@@ -22,7 +22,6 @@ import static io.fury.type.TypeUtils.MAP_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.Language;
@@ -60,7 +59,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  *
  * @author chaokunyang
  */
-@SuppressWarnings({"unchecked", "rawtypes", "UnstableApiUsage"})
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class MapSerializers {
 
   public static class MapSerializer<T extends Map> extends Serializer<T> {
@@ -968,43 +967,6 @@ public class MapSerializers {
       Object key = fury.xreadRef(buffer);
       Object value = fury.xreadRef(buffer);
       return Collections.singletonMap(key, value);
-    }
-  }
-
-  public static final class ImmutableMapSerializer<T extends ImmutableMap>
-      extends MapSerializer<T> {
-    private final ReplaceResolveSerializer serializer;
-
-    public ImmutableMapSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, false, false);
-      fury.getClassResolver().setSerializer(cls, this);
-      serializer = new ReplaceResolveSerializer(fury, cls);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public T read(MemoryBuffer buffer) {
-      return (T) serializer.read(buffer);
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, T value) {
-      serializer.write(buffer, value);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.MAP.getId();
-    }
-
-    @Override
-    public T xread(MemoryBuffer buffer) {
-      int size = buffer.readPositiveVarInt();
-      Map map = new HashMap();
-      xreadElements(fury, buffer, map, size);
-      T immutableMap = (T) ImmutableMap.copyOf(map);
-      fury.getRefResolver().reference(immutableMap);
-      return immutableMap;
     }
   }
 

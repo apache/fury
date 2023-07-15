@@ -1279,6 +1279,7 @@ public final class Fury {
     boolean codeGenEnabled = true;
     public boolean deserializeUnExistClassEnabled = false;
     public boolean asyncCompilationEnabled = false;
+    public boolean registerGuavaTypes = true;
 
     private FuryBuilder() {}
 
@@ -1353,6 +1354,17 @@ public final class Fury {
     public FuryBuilder withDefaultJDKCompatibleSerializerType(
         Class<? extends Serializer> serializerClass) {
       this.defaultJDKStreamSerializerType = serializerClass;
+      return this;
+    }
+
+    /**
+     * Whether pre-register guava types such as `RegularImmutableMap`/`RegularImmutableList`. Those
+     * types are not public API, but seems pretty stable.
+     *
+     * @see io.fury.serializer.GuavaSerializers
+     */
+    public FuryBuilder registerGuavaTypes(boolean register) {
+      this.registerGuavaTypes = register;
       return this;
     }
 

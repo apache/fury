@@ -21,7 +21,6 @@ package io.fury.serializer;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.Language;
@@ -698,43 +697,6 @@ public class CollectionSerializers {
     public Set<?> xread(MemoryBuffer buffer) {
       buffer.readPositiveVarInt();
       return Collections.singleton(fury.xreadRef(buffer));
-    }
-  }
-
-  public static final class ImmutableListSerializer<T extends ImmutableList>
-      extends CollectionSerializer<T> {
-    private final ReplaceResolveSerializer serializer;
-
-    public ImmutableListSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, false, false);
-      fury.getClassResolver().setSerializer(cls, this);
-      serializer = new ReplaceResolveSerializer(fury, cls);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public T read(MemoryBuffer buffer) {
-      return (T) serializer.read(buffer);
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, T value) {
-      serializer.write(buffer, value);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
-    }
-
-    @Override
-    public T xread(MemoryBuffer buffer) {
-      int size = buffer.readPositiveVarInt();
-      List list = new ArrayList<>();
-      xreadElements(fury, buffer, list, size);
-      T immutableList = (T) ImmutableList.copyOf(list);
-      fury.getRefResolver().reference(immutableList);
-      return immutableList;
     }
   }
 

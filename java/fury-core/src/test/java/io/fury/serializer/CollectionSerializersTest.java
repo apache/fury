@@ -24,12 +24,14 @@ import static org.testng.Assert.assertSame;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.serializer.CollectionSerializers.JDKCompatibleCollectionSerializer;
 import io.fury.type.GenericType;
 import java.io.Serializable;
 import java.util.AbstractCollection;
@@ -212,14 +214,6 @@ public class CollectionSerializersTest extends FuryTestBase {
   }
 
   @Test
-  public void testImmutableListSerializer() {
-    serDe(getJavaFury(), ImmutableList.of(1, 2));
-    Assert.assertEquals(
-        getJavaFury().getClassResolver().getSerializerClass(ImmutableList.of(1, 2).getClass()),
-        CollectionSerializers.ImmutableListSerializer.class);
-  }
-
-  @Test
   public void testSerializeJavaBlockingQueue() {
     Fury fury =
         Fury.builder()
@@ -396,8 +390,8 @@ public class CollectionSerializersTest extends FuryTestBase {
   @SuppressWarnings("unchecked")
   @Test
   public void testJavaSerialization() {
-    ImmutableSet<Integer> set = ImmutableSet.of(1, 2, 3);
-    Class<? extends ImmutableSet> setClass = set.getClass();
+    ImmutableSortedSet<Integer> set = ImmutableSortedSet.of(1, 2, 3);
+    Class<? extends ImmutableSortedSet> setClass = set.getClass();
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
@@ -405,8 +399,8 @@ public class CollectionSerializersTest extends FuryTestBase {
             .disableSecureMode()
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
-    CollectionSerializers.JDKCompatibleCollectionSerializer javaSerializer =
-        new CollectionSerializers.JDKCompatibleCollectionSerializer(fury, setClass);
+    JDKCompatibleCollectionSerializer javaSerializer =
+        new JDKCompatibleCollectionSerializer(fury, setClass);
     javaSerializer.write(buffer, set);
     Object read = javaSerializer.read(buffer);
     assertEquals(set, read);
