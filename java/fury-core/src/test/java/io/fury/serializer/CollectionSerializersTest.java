@@ -399,7 +399,8 @@ public class CollectionSerializersTest extends FuryTestBase {
             .disableSecureMode()
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
-    JDKCompatibleCollectionSerializer javaSerializer = new JDKCompatibleCollectionSerializer(fury, setClass);
+    JDKCompatibleCollectionSerializer javaSerializer =
+        new JDKCompatibleCollectionSerializer(fury, setClass);
     javaSerializer.write(buffer, set);
     Object read = javaSerializer.read(buffer);
     assertEquals(set, read);
