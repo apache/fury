@@ -121,7 +121,7 @@ npm install @furyjs/fury
 Coming soon.
 
 ## Quickstart
-Here we give a quick start about how to use fury, see [User Guide](https://github.com/alipay/fury/blob/main/docs/user_guide.md) for more details about java serialization, zero-copy and row format.
+Here we give a quick start about how to use fury, see [user guide](https://github.com/alipay/fury/blob/main/docs/README.md) for more details about [java](https://github.com/alipay/fury/blob/main/docs/java_object_graph_guide.md), [cross language](https://github.com/alipay/fury/blob/main/docs/xlang_object_graph_guide.md), and [row format](https://github.com/alipay/fury/blob/main/docs/row_format_guide.md).
 
 ### Fury java object graph serialization
 If you don't have cross-language requirements, using this mode will 
