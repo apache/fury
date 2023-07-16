@@ -1,0 +1,6 @@
+fury-project/fury-sites@main:
+  - source: docs/guide/
+    dest: docs/guide/
+
+  - source: docs/benchmarks/
+    dest: public/benchmarks/
