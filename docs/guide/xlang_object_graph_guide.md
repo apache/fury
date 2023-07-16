@@ -1,3 +1,8 @@
+<!-- fury_frontmatter --
+title: Xlang Object Graph Guide
+order: 2
+-- fury_frontmatter -->
+
 ## Cross-language object graph serialization
 
 ### Serialize built-in types

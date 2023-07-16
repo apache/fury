@@ -1,3 +1,8 @@
+<!-- fury_frontmatter --
+title: Row Format Guide
+order: 1
+-- fury_frontmatter -->
+
 ## Row format protocol
 ### Java
 ```java
