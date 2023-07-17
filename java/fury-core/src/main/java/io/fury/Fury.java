@@ -691,6 +691,7 @@ public final class Fury {
       int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
       Preconditions.checkArgument(read == 4);
       int size = buffer.readInt();
+      buffer.ensure(size + 4);
       read = inputStream.read(buffer.getHeapMemory(), 4, size);
       Preconditions.checkArgument(read == size);
       return deserialize(buffer, outOfBandBuffers);
@@ -1109,6 +1110,7 @@ public final class Fury {
         int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
         Preconditions.checkArgument(read == 4);
         int size = buffer.readInt();
+        buffer.ensure(4 + size);
         read = inputStream.read(buffer.getHeapMemory(), 4, size);
         Preconditions.checkArgument(read == size);
       }
