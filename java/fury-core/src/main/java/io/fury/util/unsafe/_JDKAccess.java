@@ -101,16 +101,18 @@ public class _JDKAccess {
       paramTypes[i] = t;
     }
     MethodType instantiatedMethodType = MethodType.methodType(methodType.returnType(), paramTypes);
-    MethodType methodToImplType = MethodType.methodType(methodToImpl.getReturnType(), methodToImpl.getParameterTypes());
+    MethodType methodToImplType =
+        MethodType.methodType(methodToImpl.getReturnType(), methodToImpl.getParameterTypes());
     try {
       // Faster than handle.invokeExact.
-      CallSite callSite = LambdaMetafactory.metafactory(
-        lookup,
-        methodToImpl.getName(),
-        MethodType.methodType(methodToImpl.getDeclaringClass()),
-        methodToImplType,
-        handle,
-        instantiatedMethodType);
+      CallSite callSite =
+          LambdaMetafactory.metafactory(
+              lookup,
+              methodToImpl.getName(),
+              MethodType.methodType(methodToImpl.getDeclaringClass()),
+              methodToImplType,
+              handle,
+              instantiatedMethodType);
       return (T) callSite.getTarget().invokeExact();
     } catch (Throwable e) {
       UNSAFE.throwException(e);

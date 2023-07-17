@@ -33,7 +33,6 @@ import io.fury.util.MathUtils;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.unsafe._JDKAccess;
-
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
@@ -504,11 +503,14 @@ public final class StringSerializer extends Serializer<String> {
     return chars;
   }
 
-  private static final MethodHandles.Lookup STRING_LOOK_UP = _JDKAccess._trustedLookup(String.class);
-  private static final BiFunction<char[], Boolean, String> JAVA8_STRING_ZERO_COPY_CTR = getJava8StringZeroCopyCtr();
-  private static final BiFunction<byte[], Byte, String> JAVA11_STRING_ZERO_COPY_CTR = getJava11StringZeroCopyCtr();
+  private static final MethodHandles.Lookup STRING_LOOK_UP =
+      _JDKAccess._trustedLookup(String.class);
+  private static final BiFunction<char[], Boolean, String> JAVA8_STRING_ZERO_COPY_CTR =
+      getJava8StringZeroCopyCtr();
+  private static final BiFunction<byte[], Byte, String> JAVA11_STRING_ZERO_COPY_CTR =
+      getJava11StringZeroCopyCtr();
   private static final Function<byte[], String> JAVA11_ASCII_STRING_ZERO_COPY_CTR =
-    getJava11AsciiStringZeroCopyCtr();
+      getJava11AsciiStringZeroCopyCtr();
 
   public static String newJava8StringByZeroCopy(char[] data) {
     if (Platform.JAVA_VERSION != 8) {
@@ -603,15 +605,15 @@ public final class StringSerializer extends Serializer<String> {
     // Faster than handle.invokeExact(data, byte)
     try {
       MethodType instantiatedMethodType =
-        MethodType.methodType(handle.type().returnType(), new Class[]{byte[].class, Byte.class});
+          MethodType.methodType(handle.type().returnType(), new Class[] {byte[].class, Byte.class});
       CallSite callSite =
-        LambdaMetafactory.metafactory(
-          STRING_LOOK_UP,
-          "apply",
-          MethodType.methodType(BiFunction.class),
-          handle.type().generic(),
-          handle,
-          instantiatedMethodType);
+          LambdaMetafactory.metafactory(
+              STRING_LOOK_UP,
+              "apply",
+              MethodType.methodType(BiFunction.class),
+              handle.type().generic(),
+              handle,
+              instantiatedMethodType);
       return (BiFunction) callSite.getTarget().invokeExact();
     } catch (Throwable e) {
       return null;
