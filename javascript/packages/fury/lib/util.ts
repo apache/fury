@@ -13,7 +13,7 @@ const isDotPropAccessor = (prop: string) => {
 
 
 export const replaceBackslashAndQuote = (v: string) => {
-    return v.replace(/\\/g, '\\\\').replace(/"/g, '\\\"')
+    return v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
 }
 
 export const safePropAccessor = (prop: string) => {

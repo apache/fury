@@ -1,18 +1,19 @@
 import { Fury } from "../type";
-import { InternalSerializerType, RefFlags, LATIN1 } from "../type";
+import { InternalSerializerType, RefFlags } from "../type";
 
 
 
 export default (fury: Fury) => {
-    const { binaryView, binaryWriter, writeNull, referenceResolver } = fury;
+    const { binaryView, binaryWriter, writeNull } = fury;
     const { writeInt8, writeInt16, writeStringOfVarInt32 } = binaryWriter
-    const { readVarInt32, readStringUtf8, readUInt8, readStringLatin1 } = binaryView;
+    const { readVarInt32, readStringUtf8 } = binaryView;
 
     return {
         read: () => {
-            const type = readUInt8();
+            // todo support latin1
+            //const type = readUInt8();
             const len = readVarInt32();
-            const result = type === LATIN1 ? readStringLatin1(len) : readStringUtf8(len);
+            const result = readStringUtf8(len);
             return result;
         },
         write: (v: string) => {
