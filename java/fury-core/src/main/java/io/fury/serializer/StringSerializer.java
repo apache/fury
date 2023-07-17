@@ -32,12 +32,13 @@ import io.fury.type.Type;
 import io.fury.util.MathUtils;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
+import io.fury.util.unsafe._JDKAccess;
+
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.function.BiFunction;
@@ -62,7 +63,9 @@ public final class StringSerializer extends Serializer<String> {
   // String length field for android.
   private static final long STRING_COUNT_FIELD_OFFSET;
   private static final byte LATIN1 = 0;
+  private static final Byte LATIN1_BOXED = LATIN1;
   private static final byte UTF16 = 1;
+  private static final Byte UTF16_BOXED = UTF16;
   private static final int DEFAULT_BUFFER_SIZE = 1024;
   // A long mask used to clear all-higher bits of char in a super-word way.
   private static final long MULTI_CHARS_NON_ASCII_MASK;
@@ -179,16 +182,11 @@ public final class StringSerializer extends Serializer<String> {
   public Expression readStringExpr(Expression strSerializer, Expression buffer) {
     if (isJava) {
       if (STRING_VALUE_FIELD_IS_BYTES) {
-        if (Platform.JAVA_VERSION >= 17) {
-          // TODO(chaokunyang) optimize for jdk17 str.
-          return new Invoke(strSerializer, "readJavaString", STRING_TYPE, buffer);
-        } else {
-          // Expression coder = inlineInvoke(buffer, "readByte", BYTE_TYPE);
-          // Expression value = inlineInvoke(buffer, "readBytesWithSizeEmbedded", BINARY_TYPE);
-          // return new StaticInvoke(
-          //     StringSerializer.class, "newJava11StringByZeroCopy", STRING_TYPE, coder, value);
-          return new Invoke(strSerializer, "readJava11String", STRING_TYPE, buffer);
-        }
+        // Expression coder = inlineInvoke(buffer, "readByte", BYTE_TYPE);
+        // Expression value = inlineInvoke(buffer, "readBytesWithSizeEmbedded", BINARY_TYPE);
+        // return new StaticInvoke(
+        //     StringSerializer.class, "newJava11StringByZeroCopy", STRING_TYPE, coder, value);
+        return new Invoke(strSerializer, "readJava11String", STRING_TYPE, buffer);
       } else {
         if (!STRING_VALUE_FIELD_IS_CHARS) {
           throw new UnsupportedOperationException();
@@ -325,19 +323,7 @@ public final class StringSerializer extends Serializer<String> {
   // Invoked by fury JIT
   public String readJavaString(MemoryBuffer buffer) {
     if (STRING_VALUE_FIELD_IS_BYTES) {
-      if (Platform.JAVA_VERSION >= 17) {
-        // Seems neither Unsafe.put nor MethodHandle are available in JDK17+,
-        // `Unsafe.put` doesn't work on IDE, but works on command.
-        // But `Unsafe.put` is 50% slower than `readStringChars`, so just inflate ant copy here.
-        byte coder = buffer.readByte();
-        if (coder == LATIN1) {
-          return new String(readAsciiChars(buffer));
-        } else {
-          return new String(readUTF16Chars(buffer, coder));
-        }
-      } else {
-        return readJava11String(buffer);
-      }
+      return readJava11String(buffer);
     } else {
       if (!STRING_VALUE_FIELD_IS_CHARS) {
         throw new UnsupportedOperationException();
@@ -518,6 +504,12 @@ public final class StringSerializer extends Serializer<String> {
     return chars;
   }
 
+  private static final MethodHandles.Lookup STRING_LOOK_UP = _JDKAccess._trustedLookup(String.class);
+  private static final BiFunction<char[], Boolean, String> JAVA8_STRING_ZERO_COPY_CTR = getJava8StringZeroCopyCtr();
+  private static final BiFunction<byte[], Byte, String> JAVA11_STRING_ZERO_COPY_CTR = getJava11StringZeroCopyCtr();
+  private static final Function<byte[], String> JAVA11_ASCII_STRING_ZERO_COPY_CTR =
+    getJava11AsciiStringZeroCopyCtr();
+
   public static String newJava8StringByZeroCopy(char[] data) {
     if (Platform.JAVA_VERSION != 8) {
       throw new IllegalStateException(
@@ -553,53 +545,34 @@ public final class StringSerializer extends Serializer<String> {
       throw new IllegalStateException(
           String.format("Current java version is %s", Platform.JAVA_VERSION));
     }
-    try {
-      if (coder == LATIN1) {
-        if (JAVA11_ASCII_STRING_ZERO_COPY_CTR == null) {
-          String str = Platform.newInstance(String.class);
-          // if --illegal-access=deny, this wont' take effect, the reset will be empty.
-          Platform.putObject(str, STRING_VALUE_FIELD_OFFSET, data);
-          Platform.putObject(str, STRING_CODER_FIELD_OFFSET, coder);
-          return str;
-        } else {
-          // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
-          // string length 230.
-          // 50% faster than unsafe put field in java11 for string length 10.
-          return JAVA11_ASCII_STRING_ZERO_COPY_CTR.apply(data);
-        }
+    if (coder == LATIN1) {
+      // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
+      // string length 230.
+      // 50% faster than unsafe put field in java11 for string length 10.
+      if (JAVA11_ASCII_STRING_ZERO_COPY_CTR != null) {
+        return JAVA11_ASCII_STRING_ZERO_COPY_CTR.apply(data);
       } else {
-        if (JAVA11_STRING_ZERO_COPY_CTR == null) {
-          String str = Platform.newInstance(String.class);
-          // if --illegal-access=deny, this won't take effect, the reset will be empty.
-          Platform.putObject(str, STRING_VALUE_FIELD_OFFSET, data);
-          Platform.putObject(str, STRING_CODER_FIELD_OFFSET, coder);
-          return str;
-        } else {
-          // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
-          // string length 230.
-          // 50% faster than unsafe put field in java11 for string length 10.
-          // `invokeExact` must pass exact params with exact types:
-          // `(Object) data, coder` will throw WrongMethodTypeException
-          return (String) JAVA11_STRING_ZERO_COPY_CTR.invokeExact(data, coder);
-        }
+        // JDK17 removed newStringLatin1
+        return JAVA11_STRING_ZERO_COPY_CTR.apply(data, LATIN1_BOXED);
       }
-    } catch (Throwable e) {
-      throw new RuntimeException(e);
+    } else if (coder == UTF16) {
+      // avoid byte box cost.
+      return JAVA11_STRING_ZERO_COPY_CTR.apply(data, UTF16_BOXED);
+    } else {
+      // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
+      // string length 230.
+      // 50% faster than unsafe put field in java11 for string length 10.
+      // `invokeExact` must pass exact params with exact types:
+      // `(Object) data, coder` will throw WrongMethodTypeException
+      return JAVA11_STRING_ZERO_COPY_CTR.apply(data, coder);
     }
   }
 
-  private static final BiFunction<char[], Boolean, String> JAVA8_STRING_ZERO_COPY_CTR =
-      getJava8StringZeroCopyCtr();
-  private static final MethodHandle JAVA11_STRING_ZERO_COPY_CTR = getJava11StringZeroCopyCtr();
-  private static final Function<byte[], String> JAVA11_ASCII_STRING_ZERO_COPY_CTR =
-      getJava11AsciiStringZeroCopyCtr();
-
   private static BiFunction<char[], Boolean, String> getJava8StringZeroCopyCtr() {
-    MethodHandles.Lookup lookup = getLookupByReflection();
-    if (lookup == null) {
+    if (Platform.JAVA_VERSION > 8) {
       return null;
     }
-    MethodHandle handle = getJavaStringZeroCopyCtrHandle(lookup);
+    MethodHandle handle = getJavaStringZeroCopyCtrHandle();
     if (handle == null) {
       return null;
     }
@@ -607,7 +580,7 @@ public final class StringSerializer extends Serializer<String> {
       // Faster than handle.invokeExact(data, boolean)
       CallSite callSite =
           LambdaMetafactory.metafactory(
-              lookup,
+              STRING_LOOK_UP,
               "apply",
               MethodType.methodType(BiFunction.class),
               handle.type().generic(),
@@ -619,54 +592,64 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  private static MethodHandle getJava11StringZeroCopyCtr() {
-    MethodHandles.Lookup lookup = getLookupByReflection();
-    if (lookup == null) {
+  private static BiFunction<byte[], Byte, String> getJava11StringZeroCopyCtr() {
+    if (Platform.JAVA_VERSION < 9) {
       return null;
     }
-    return getJavaStringZeroCopyCtrHandle(lookup);
-  }
-
-  private static Function<byte[], String> getJava11AsciiStringZeroCopyCtr() {
-    MethodHandles.Lookup lookup = getLookupByReflection();
-    if (lookup == null) {
+    MethodHandle handle = getJavaStringZeroCopyCtrHandle();
+    if (handle == null) {
       return null;
     }
-    // Can't create callSite like java8, will get error:
-    //   java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 1:
-    //   byte is not a subtype of class java.lang.Object
+    // Faster than handle.invokeExact(data, byte)
     try {
-      Class clazz = Class.forName("java.lang.StringCoding");
-      MethodHandles.Lookup caller = lookup.in(clazz);
-      MethodHandle handle =
-          caller.findStatic(
-              clazz, "newStringLatin1", MethodType.methodType(String.class, byte[].class));
-      // Faster than handle.invokeExact(data, byte)
+      MethodType instantiatedMethodType =
+        MethodType.methodType(handle.type().returnType(), new Class[]{byte[].class, Byte.class});
       CallSite callSite =
-          LambdaMetafactory.metafactory(
-              caller,
-              "apply",
-              MethodType.methodType(Function.class),
-              handle.type().generic(),
-              handle,
-              handle.type());
-      return (Function<byte[], String>) callSite.getTarget().invokeExact();
+        LambdaMetafactory.metafactory(
+          STRING_LOOK_UP,
+          "apply",
+          MethodType.methodType(BiFunction.class),
+          handle.type().generic(),
+          handle,
+          instantiatedMethodType);
+      return (BiFunction) callSite.getTarget().invokeExact();
     } catch (Throwable e) {
       return null;
     }
   }
 
-  private static MethodHandle getJavaStringZeroCopyCtrHandle(MethodHandles.Lookup lookup) {
+  private static Function<byte[], String> getJava11AsciiStringZeroCopyCtr() {
+    if (Platform.JAVA_VERSION < 9) {
+      return null;
+    }
+    if (STRING_LOOK_UP == null) {
+      return null;
+    }
+    try {
+      Class clazz = Class.forName("java.lang.StringCoding");
+      MethodHandles.Lookup caller = STRING_LOOK_UP.in(clazz);
+      // JDK17 removed this method.
+      MethodHandle handle =
+          caller.findStatic(
+              clazz, "newStringLatin1", MethodType.methodType(String.class, byte[].class));
+      // Faster than handle.invokeExact(data, byte)
+      return _JDKAccess.makeFunction(caller, handle, Function.class);
+    } catch (Throwable e) {
+      return null;
+    }
+  }
+
+  private static MethodHandle getJavaStringZeroCopyCtrHandle() {
     Preconditions.checkArgument(Platform.JAVA_VERSION >= 8);
-    if (Platform.JAVA_VERSION > 16) {
+    if (STRING_LOOK_UP == null) {
       return null;
     }
     try {
       if (Platform.JAVA_VERSION == 8) {
-        return lookup.findConstructor(
+        return STRING_LOOK_UP.findConstructor(
             String.class, MethodType.methodType(void.class, char[].class, boolean.class));
       } else {
-        return lookup.findConstructor(
+        return STRING_LOOK_UP.findConstructor(
             String.class, MethodType.methodType(void.class, byte[].class, byte.class));
       }
     } catch (Exception e) {
@@ -686,19 +669,6 @@ public final class StringSerializer extends Serializer<String> {
     Platform.putObject(lookup, lookupClassOffset, String.class);
     Platform.putObject(lookup, allowedModesOffset, -1);
     return lookup;
-  }
-
-  private static MethodHandles.Lookup getLookupByReflection() {
-    try {
-      Constructor<MethodHandles.Lookup> constructor =
-          MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
-      constructor.setAccessible(true);
-      return constructor.newInstance(
-          String.class, -1 // Lookup.TRUSTED
-          );
-    } catch (Exception e) {
-      return null;
-    }
   }
 
   public void writeUTF8String(MemoryBuffer buffer, String value) {
