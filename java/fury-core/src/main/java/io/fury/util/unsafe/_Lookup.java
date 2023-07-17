@@ -40,7 +40,7 @@ class _Lookup {
       try {
         int trusted = -1;
         MethodHandle constructor = CONSTRUCTOR_LOOKUP;
-        if (_JDKAccess.JAVA_VERSION < 15) {
+        if (_JDKAccess.JAVA_VERSION < 14) {
           if (constructor == null) {
             constructor =
                 IMPL_LOOKUP.findConstructor(

@@ -19,6 +19,7 @@
 package io.fury.util.unsafe;
 
 import com.google.common.base.Preconditions;
+import com.google.common.primitives.Primitives;
 import io.fury.util.Utils;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
@@ -89,6 +90,36 @@ public class _JDKAccess {
   }
 
   @SuppressWarnings("unchecked")
+  public static <T> T makeFunction(Lookup lookup, MethodHandle handle, Method methodToImpl) {
+    MethodType methodType = handle.type();
+    Class<?>[] paramTypes = new Class[methodType.parameterCount()];
+    for (int i = 0; i < paramTypes.length; i++) {
+      Class<?> t = methodType.parameterType(i);
+      if (t.isPrimitive()) {
+        t = Primitives.wrap(t);
+      }
+      paramTypes[i] = t;
+    }
+    MethodType instantiatedMethodType = MethodType.methodType(methodType.returnType(), paramTypes);
+    MethodType methodToImplType =
+        MethodType.methodType(methodToImpl.getReturnType(), methodToImpl.getParameterTypes());
+    try {
+      // Faster than handle.invokeExact.
+      CallSite callSite =
+          LambdaMetafactory.metafactory(
+              lookup,
+              methodToImpl.getName(),
+              MethodType.methodType(methodToImpl.getDeclaringClass()),
+              methodToImplType,
+              handle,
+              instantiatedMethodType);
+      return (T) callSite.getTarget().invokeExact();
+    } catch (Throwable e) {
+      UNSAFE.throwException(e);
+      throw new IllegalStateException(e);
+    }
+  }
+
   public static <T> T makeFunction(Lookup lookup, MethodHandle handle, Class<T> functionInterface) {
     String invokedName = "apply";
     try {
