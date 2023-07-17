@@ -438,6 +438,14 @@ public class FuryTest extends FuryTestBase {
     assertEquals(newObj, beanA);
     newObj = fury.deserialize(bis);
     assertEquals(newObj, beanA);
+
+    fury = Fury.builder().requireClassRegistration(false).build();
+    // test reader buffer grow
+    bis = new ByteArrayInputStream(bas.toByteArray());
+    newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+    newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
   }
 
   @Test
@@ -462,6 +470,14 @@ public class FuryTest extends FuryTestBase {
       bas.flush();
       ByteArrayInputStream bis = new ByteArrayInputStream(bas.toByteArray());
       Object newObj = fury.deserializeJavaObjectAndClass(bis);
+      assertEquals(newObj, beanA);
+      newObj = fury.deserializeJavaObjectAndClass(bis);
+      assertEquals(newObj, beanA);
+
+      fury = Fury.builder().requireClassRegistration(false).build();
+      // test reader buffer grow
+      bis = new ByteArrayInputStream(bas.toByteArray());
+      newObj = fury.deserializeJavaObjectAndClass(bis);
       assertEquals(newObj, beanA);
       newObj = fury.deserializeJavaObjectAndClass(bis);
       assertEquals(newObj, beanA);
