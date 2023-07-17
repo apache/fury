@@ -42,10 +42,10 @@ public class Example {
     }
     {
       ThreadSafeFury fury = new ThreadSafeFury(() -> {
-        Fury fury = Fury.builder().withLanguage(Language.JAVA)
+        Fury f = Fury.builder().withLanguage(Language.JAVA)
           .withRefTracking(true).build();
-        fury.register(SomeClass.class);
-        return fury;
+        f.register(SomeClass.class);
+        return f;
       });
       byte[] bytes = fury.serialize(object);
       System.out.println(fury.deserialize(bytes));
