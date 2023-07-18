@@ -54,4 +54,4 @@ try:
 except (AttributeError, ImportError):
     pass
 
-__version__ = "0.1.0.dev"
+__version__ = "0.1.0-alpha.1"
