@@ -2,8 +2,7 @@
   <img width="77%" alt="" src="docs/images/logo/fury-logo.svg"><br>
 </div>
 
-Fury is a blazing fast multi-language serialization framework powered by **jit(just-in-time compilation)** and **zero-copy**, 
-which can provides up to 170x speed up and ultimate ease of use.
+Fury is a blazing fast multi-language serialization framework powered by **jit(just-in-time compilation)** and **zero-copy**, providing up to 170x speed up and ultimate ease of use.
 
 https://furyio.org
 
@@ -30,13 +29,13 @@ In addition to cross-language serialization, Fury also features at:
 ## Protocols
 Different scenarios have different serialization requirements. Fury designed and implemented 
 multiple binary protocols for those requirements:
-- Cross-language object graph protocol:
+- **Cross-language object graph protocol**:
   - Cross-language serialize any object automatically, no need for IDL definition, schema compilation and object to/from protocol
     conversion.
   - Support shared reference and circular reference, no duplicate data or recursion error.
   - Support object polymorphism.
-- Native java/python object graph protocol: highly-optimized based on type system of the language.
-- Row format protocol: a cache-friendly binary random access format, supports skipping serialization and partial serialization,
+- **Native java/python object graph protocol**: highly-optimized based on type system of the language.
+- **Row format protocol**: a cache-friendly binary random access format, supports skipping serialization and partial serialization,
   and can convert to column-format automatically.
 
 New protocols can be added easily based on fury existing buffer, encoding, meta, codegen and other capabilities. All of those share same codebase, and the optimization for one protocol
