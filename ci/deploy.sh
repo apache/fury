@@ -76,7 +76,17 @@ bump_javascript_version() {
   version=$1
   cd "$ROOT/javascript"
   echo "Set fury javascript version to $version"
+  pushd packages/fury
   sed -i '' -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
+  popd
+  pushd packages/hps
+  sed -i '' -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
+  popd
+}
+
+deploy_jars() {
+  cd "$ROOT/java"
+  mvn -T10 clean deploy -DskipTests -Prelease
 }
 
 deploy_python() {
