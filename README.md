@@ -103,7 +103,21 @@ Nightly snapshot:
   <version>0.1.0-SNAPSHOT</version>
 </dependency> -->
 ```
-Release version: coming soon.
+Release version:
+```xml
+<dependency>
+  <groupId>org.furyio</groupId>
+  <artifactId>fury-core</artifactId>
+  <version>0.1.0-alpha.1</version>
+</dependency>
+<!-- row/arrow format support -->
+<!-- <dependency>
+  <groupId>org.furyio</groupId>
+  <artifactId>fury-format</artifactId>
+  <version>0.1.0-alpha.1</version>
+</dependency> -->
+```
+```
 
 ### Python
 ```bash
