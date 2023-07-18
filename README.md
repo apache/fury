@@ -2,28 +2,26 @@
   <img width="77%" alt="" src="docs/images/logo/fury-logo.svg"><br>
 </div>
 
-# Fury: Blazing Fast Serialization
-
-Fury is a blazing fast multi-language serialization framework powered by jit(just-in-time compilation) and zero-copy.
+Fury is a blazing fast multi-language serialization framework powered by **jit(just-in-time compilation)** and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
 https://furyio.org
 
 ## Features
-- Multiple languages: Java/Python/C++/Golang/Javascript.
-- Zero-copy: cross-language out-of-band serialization inspired
+- **Multiple languages**: Java/Python/C++/Golang/Javascript.
+- **Zero-copy**: cross-language out-of-band serialization inspired
   by [pickle5](https://peps.python.org/pep-0574/) and off-heap read/write.
-- High performance: A highly-extensible JIT framework to generate serializer code at runtime in an async multi-thread way to speed serialization, providing 20-170x speed up by:
+- **High performance**: A highly-extensible JIT framework to generate serializer code at runtime in an async multi-thread way to speed serialization, providing 20-170x speed up by:
     - reduce memory access by inline variable in generated code.
     - reduce virtual method invocation by inline call in generated code.
     - reduce conditional branching.
     - reduce hash lookup.
-- Multiple binary protocols: object graph, row format and so on.
+- **Multiple binary protocols**: object graph, row format and so on.
 
 In addition to cross-language serialization, Fury also features at:
 
 - Drop-in replace Java serialization frameworks such as JDK/Kryo/Hessian without modifying any code, but 100x faster. 
   It can greatly improve the efficiency of high-performance RPC calls, data transfer and object persistence.
-- JDK serialization 100% compatible, support java custom serialization 
+- JDK serialization **100% compatible**, support java custom serialization 
   `writeObject/readObject/writeReplace/readResolve/readObjectNoData` natively.
 - Supports shared and circular reference object serialization for golang.
 - Supports automatic object serialization for golang.
@@ -31,13 +29,13 @@ In addition to cross-language serialization, Fury also features at:
 ## Protocols
 Different scenarios have different serialization requirements. Fury designed and implemented 
 multiple binary protocols for those requirements:
-- Cross-language object graph protocol:
+- **Cross-language object graph protocol**:
   - Cross-language serialize any object automatically, no need for IDL definition, schema compilation and object to/from protocol
     conversion.
   - Support shared reference and circular reference, no duplicate data or recursion error.
   - Support object polymorphism.
-- Native java/python object graph protocol: highly-optimized based on type system of the language.
-- Row format protocol: a cache-friendly binary random access format, supports skipping serialization and partial serialization,
+- **Native java/python object graph protocol**: highly-optimized based on type system of the language.
+- **Row format protocol**: a cache-friendly binary random access format, supports skipping serialization and partial serialization,
   and can convert to column-format automatically.
 
 New protocols can be added easily based on fury existing buffer, encoding, meta, codegen and other capabilities. All of those share same codebase, and the optimization for one protocol
