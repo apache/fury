@@ -173,7 +173,7 @@ public class Example {
     {
       ThreadSafeFury fury = new ThreadLocalFury((classLoader) -> {
         Fury f = Fury.builder().withLanguage(Language.JAVA)
-                .withRefTracking(true).withClassLoader(classLoader).build();
+          .withRefTracking(true).withClassLoader(classLoader).build();
         f.register(SomeClass.class);
         return f;
       });
