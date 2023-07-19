@@ -20,6 +20,8 @@ package io.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
 
 import io.fury.Fury;
 import io.fury.FuryTestBase;
@@ -52,5 +54,17 @@ public class LambdaSerializerTest extends FuryTestBase {
     }
     assertSame(
         fury.getClassResolver().getSerializerClass(Class.class), Serializers.ClassSerializer.class);
+  }
+
+  @Test
+  public void testLambdaUnserializableMsg() {
+    Fury fury = Fury.builder().disableSecureMode().build();
+    Function<Object, String> function = String::valueOf;
+    assertThrows(UnsupportedOperationException.class, () -> fury.serialize(function));
+    try {
+      fury.serialize(function);
+    } catch (Exception e) {
+      assertTrue(e.getMessage().contains("LambdaSerializerTest"));
+    }
   }
 }
