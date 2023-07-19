@@ -55,7 +55,9 @@ public class LambdaSerializer extends Serializer {
     if (cls != ReplaceStub.class) {
       if (!Serializable.class.isAssignableFrom(cls)) {
         String msg =
-            String.format("Lambda needs to implement %s for serialization", Serializable.class);
+            String.format(
+                "Lambda %s needs to implement %s for serialization",
+                cls, Serializable.class.getName());
         throw new UnsupportedOperationException(msg);
       }
       writeReplaceMethod =

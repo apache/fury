@@ -63,30 +63,33 @@ public class Serializers {
         return new CompatibleSerializer(fury, type);
       }
       try {
-        try {
-          Constructor<? extends Serializer> ctr =
-              serializerClass.getConstructor(Fury.class, Class.class);
-          ctr.setAccessible(true);
-          return ctr.newInstance(fury, type);
-        } catch (NoSuchMethodException e) {
-          Utils.ignore(e);
-        }
-        try {
-          Constructor<? extends Serializer> ctr = serializerClass.getConstructor(Fury.class);
-          ctr.setAccessible(true);
-          return ctr.newInstance(fury);
-        } catch (NoSuchMethodException e) {
-          Utils.ignore(e);
-        }
-        try {
-          Constructor<? extends Serializer> ctr = serializerClass.getConstructor(Class.class);
-          ctr.setAccessible(true);
-          return ctr.newInstance(type);
-        } catch (NoSuchMethodException e) {
-          Utils.ignore(e);
-        }
-        return serializerClass.newInstance();
-      } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+        Constructor<? extends Serializer> ctr =
+            serializerClass.getConstructor(Fury.class, Class.class);
+        ctr.setAccessible(true);
+        return ctr.newInstance(fury, type);
+      } catch (NoSuchMethodException e) {
+        Utils.ignore(e);
+      }
+      try {
+        Constructor<? extends Serializer> ctr = serializerClass.getConstructor(Fury.class);
+        ctr.setAccessible(true);
+        return ctr.newInstance(fury);
+      } catch (NoSuchMethodException e) {
+        Utils.ignore(e);
+      }
+      try {
+        Constructor<? extends Serializer> ctr = serializerClass.getConstructor(Class.class);
+        ctr.setAccessible(true);
+        return ctr.newInstance(type);
+      } catch (NoSuchMethodException e) {
+        Utils.ignore(e);
+      }
+      return serializerClass.newInstance();
+    } catch (InvocationTargetException e) {
+      fury.getClassResolver().resetSerializer(type, serializer);
+      if (e.getCause() != null) {
+        Platform.throwException(e.getCause());
+      } else {
         Platform.throwException(e);
       }
     } catch (Throwable t) {
