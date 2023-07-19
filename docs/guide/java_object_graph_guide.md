@@ -8,9 +8,9 @@ When only java object serialization needed, this mode will have better performan
 
 ### Quick Start
 ```java
-import io.fury.Fury;
 import java.util.List;
 import java.util.Arrays;
+import io.fury.*;
 
 public class Example {
   public static void main(String[] args) {
@@ -41,9 +41,9 @@ public class Example {
       System.out.println(fury.deserialize(bytes));
     }
     {
-      ThreadSafeFury fury = new ThreadSafeFury(() -> {
+      ThreadSafeFury fury = new ThreadLocalFury((classLoader) -> {
         Fury f = Fury.builder().withLanguage(Language.JAVA)
-          .withRefTracking(true).build();
+          .withRefTracking(true).withClassLoader(classLoader).build();
         f.register(SomeClass.class);
         return f;
       });
