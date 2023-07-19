@@ -171,9 +171,9 @@ public class Example {
       System.out.println(fury.deserialize(bytes));
     }
     {
-      ThreadSafeFury fury = new ThreadSafeFury(() -> {
+      ThreadSafeFury fury = new ThreadLocalFury((classLoader) -> {
         Fury f = Fury.builder().withLanguage(Language.JAVA)
-          .withRefTracking(true).build();
+                .withRefTracking(true).withClassLoader(classLoader).build();
         f.register(SomeClass.class);
         return f;
       });
