@@ -48,7 +48,7 @@ If you need to benchmark for your specific scenario, make sure all serialization
 
 Dynamic serialization frameworks supports polymorphism and reference, which has more cost compared 
 to static serialization frameworks, unless it uses the jit techniques as fury did.
-Since fury will generate code at runtime, please warm up before collecting benchmark statistics.
+Since fury will generate code at runtime, please **warm up** before collecting benchmark statistics.
 
 ### Java Serialization
 Title containing "compatible" represent schema compatible mode: support type forward/backward compatibility.
