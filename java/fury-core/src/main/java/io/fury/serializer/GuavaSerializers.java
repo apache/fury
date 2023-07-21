@@ -54,7 +54,7 @@ public class GuavaSerializers {
     protected ReplaceResolveSerializer getOrCreateSerializer() {
       // reduce cost of fury creation, ReplaceResolveSerializer will jit-generate serializer.
       ReplaceResolveSerializer serializer = this.serializer;
-      if (serializer == null)  {
+      if (serializer == null) {
         this.serializer = serializer = new ReplaceResolveSerializer(fury, type);
       }
       return serializer;
@@ -140,7 +140,7 @@ public class GuavaSerializers {
     protected ReplaceResolveSerializer getOrCreateSerializer() {
       // reduce cost of fury creation, ReplaceResolveSerializer will jit-generate serializer.
       ReplaceResolveSerializer serializer = this.serializer;
-      if (serializer == null)  {
+      if (serializer == null) {
         this.serializer = serializer = new ReplaceResolveSerializer(fury, type);
       }
       return serializer;
