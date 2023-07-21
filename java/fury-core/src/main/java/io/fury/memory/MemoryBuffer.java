@@ -553,16 +553,12 @@ public final class MemoryBuffer {
     return UNSAFE.getShort(heapMemory, pos);
   }
 
-  /**
-   * Get short in big endian order from provided buffer.
-   */
+  /** Get short in big endian order from provided buffer. */
   public static short getShortB(byte[] b, int off) {
     return (short) ((b[off + 1] & 0xFF) + (b[off] << 8));
   }
 
-  /**
-   * Get short in big endian order from specified offset.
-   */
+  /** Get short in big endian order from specified offset. */
   public short getShortB(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 2);
