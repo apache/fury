@@ -30,9 +30,11 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamConstants;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.ByteBuffer;
 import org.slf4j.Logger;
 
 /**
@@ -185,5 +187,42 @@ public class JavaSerializer extends Serializer {
       cls = cls.getSuperclass();
     } while (cls != null && searchParent);
     return null;
+  }
+
+  /**
+   * Return true if current binary is serialized by JDK {@link ObjectOutputStream}.
+   *
+   * @see #serializedByJDK(byte[], int)
+   */
+  public static boolean serializedByJDK(byte[] data) {
+    return serializedByJDK(data, 0);
+  }
+
+  /**
+   * Return true if current binary is serialized by JDK {@link ObjectOutputStream}.
+   *
+   * <p>Note that one can fake magic number {@link ObjectStreamConstants#STREAM_MAGIC}, please use
+   * this method carefully in a trusted environment. And it's not a strict check, if this method
+   * return true, the data may be not serialized by JDK if other framework generate same magic
+   * number by accident. But if this method return false, the data are definitely not serialized by
+   * JDK.
+   */
+  public static boolean serializedByJDK(byte[] data, int offset) {
+    // JDK serialization use big endian byte order.
+    short magicNumber = MemoryBuffer.getShortB(data, offset);
+    return magicNumber == ObjectStreamConstants.STREAM_MAGIC;
+  }
+
+  /**
+   * Return true if current binary is serialized by JDK {@link ObjectOutputStream}.
+   *
+   * @see #serializedByJDK(byte[], int)
+   */
+  public static boolean serializedByJDK(ByteBuffer buffer, int offset) {
+    // (short) ((b[off + 1] & 0xFF) + (b[off] << 8));
+    byte b1 = buffer.get(offset + 1);
+    byte b0 = buffer.get(offset);
+    short magicNumber = (short) ((b1 & 0xFF) + (b0 << 8));
+    return magicNumber == ObjectStreamConstants.STREAM_MAGIC;
   }
 }

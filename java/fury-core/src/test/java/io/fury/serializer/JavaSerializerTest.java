@@ -21,9 +21,15 @@ package io.fury.serializer;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
+import io.fury.memory.MemoryBuffer;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamConstants;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import lombok.Data;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class JavaSerializerTest extends FuryTestBase {
@@ -53,5 +59,21 @@ public class JavaSerializerTest extends FuryTestBase {
             .disableSecureMode()
             .build();
     serDe(fury, new CustomClass());
+  }
+
+  @Test
+  public void testJdkSerializationMagicNumber() throws Exception {
+    ByteArrayOutputStream bas = new ByteArrayOutputStream();
+    try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bas)) {
+      objectOutputStream.writeObject(1.1);
+      objectOutputStream.flush();
+    }
+    byte[] bytes = bas.toByteArray();
+    Assert.assertEquals(MemoryBuffer.getShortB(bytes, 0), ObjectStreamConstants.STREAM_MAGIC);
+    Assert.assertTrue(JavaSerializer.serializedByJDK(bytes));
+    Assert.assertTrue(JavaSerializer.serializedByJDK(ByteBuffer.wrap(bytes), 0));
+    Fury fury = Fury.builder().build();
+    bytes = fury.serialize(1.1);
+    Assert.assertFalse(JavaSerializer.serializedByJDK(bytes));
   }
 }
