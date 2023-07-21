@@ -32,8 +32,7 @@ import java.nio.ReadOnlyBufferException;
  * array) or by off-heap memory. Note that the buffer can auto grow on write operations and change
  * into a heap buffer when growing.
  *
- * <p>This class is based on org.apache.flink.core.memory.MemorySegment and
- * org.apache.arrow.memory.ArrowBuf, we add this class mainly for:
+ * <p>This is a byte buffer similar class with more features:
  *
  * <ul>
  *   <li>read/write data into a chunk of direct memory.
@@ -55,6 +54,8 @@ import java.nio.ReadOnlyBufferException;
  */
 // FIXME Buffer operations is most common, and jvm inline and branch elimination
 //  is not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually.
+// Note: This class is based on org.apache.flink.core.memory.MemorySegment and
+//  org.apache.arrow.memory.ArrowBuf.
 public final class MemoryBuffer {
   // The unsafe handle for transparent memory copied (heap/off-heap).
   private static final sun.misc.Unsafe UNSAFE = Platform.UNSAFE;
@@ -550,6 +551,22 @@ public final class MemoryBuffer {
     final long pos = address + index;
     checkPosition(index, pos, 2);
     return UNSAFE.getShort(heapMemory, pos);
+  }
+
+  /** Get short in big endian order from provided buffer. */
+  public static short getShortB(byte[] b, int off) {
+    return (short) ((b[off + 1] & 0xFF) + (b[off] << 8));
+  }
+
+  /** Get short in big endian order from specified offset. */
+  public short getShortB(int index) {
+    final long pos = address + index;
+    checkPosition(index, pos, 2);
+    if (LITTLE_ENDIAN) {
+      return Short.reverseBytes(UNSAFE.getShort(heapMemory, pos));
+    } else {
+      return UNSAFE.getShort(heapMemory, pos);
+    }
   }
 
   public short getShort(int index) {

@@ -528,4 +528,13 @@ public class MemoryBufferTest {
     buffer.readByte();
     assertEquals(buffer.readPositiveAlignedVarInt(), Integer.MAX_VALUE);
   }
+
+  @Test
+  public void testGetShortB() {
+    byte[] data = new byte[4];
+    data[0] = (byte) 0xac;
+    data[1] = (byte) 0xed;
+    assertEquals(MemoryBuffer.getShortB(data, 0), (short) 0xaced);
+    assertEquals(MemoryBuffer.fromByteArray(data).getShortB(0), (short) 0xaced);
+  }
 }
