@@ -1,16 +1,16 @@
 mod buffer;
-mod de;
+mod deserializer;
 mod error;
-mod ser;
-mod ty;
+mod serializer;
+mod types;
 
-pub use de::from_buffer;
-pub use de::Deserialize;
-pub use de::DeserializerState;
+pub use deserializer::from_buffer;
+pub use deserializer::Deserialize;
+pub use deserializer::DeserializerState;
 pub use error::Error;
-pub use ser::to_buffer;
-pub use ser::Serialize;
-pub use ser::SerializerState;
-pub use ty::{
+pub use serializer::to_buffer;
+pub use serializer::Serialize;
+pub use serializer::SerializerState;
+pub use types::{
     compute_field_hash, compute_string_hash, compute_tag_hash, FieldType, FuryMeta, RefFlag,
 };

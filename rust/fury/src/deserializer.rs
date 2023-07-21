@@ -1,11 +1,19 @@
 use crate::{
     error::Error,
-    ty::{FuryMeta, RefFlag},
+    types::{FuryMeta, RefFlag},
 };
 use chrono::{DateTime, Days, NaiveDate, NaiveDateTime, TimeZone, Utc};
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    mem,
+};
 
 use super::buffer::Reader;
+
+fn from_u8_slice<T: Clone>(slice: &[u8]) -> Vec<T> {
+    let byte_len = slice.len() / mem::size_of::<T>();
+    unsafe { std::slice::from_raw_parts(slice.as_ptr().cast::<T>(), byte_len) }.to_vec()
+}
 
 pub trait Deserialize
 where
@@ -13,8 +21,15 @@ where
 {
     fn read(deserializer: &mut DeserializerState) -> Result<Self, Error>;
 
-    fn read_as_vec_item(deserializer: &mut DeserializerState) -> Result<Self, Error> {
-        Self::read(deserializer)
+    fn read_vec(deserializer: &mut DeserializerState) -> Result<Vec<Self>, Error> {
+        // length
+        let len = deserializer.reader.i32();
+        // value
+        let mut result = Vec::new();
+        for _ in 0..len {
+            result.push(Self::read(deserializer)?);
+        }
+        Ok(result)
     }
 
     fn deserialize(deserializer: &mut DeserializerState) -> Result<Self, Error> {
@@ -62,8 +77,12 @@ macro_rules! impl_num_deserialize_and_pritimive_vec {
                 Ok(deserializer.reader.$name())
             }
 
-            fn read_as_vec_item(deserializer: &mut DeserializerState) -> Result<Self, Error> {
-                Ok(deserializer.reader.$name())
+            fn read_vec(deserializer: &mut DeserializerState) -> Result<Vec<Self>, Error> {
+                // length
+                let len = deserializer.reader.i32();
+                Ok(from_u8_slice::<$ty>(
+                    deserializer.reader.bytes::<$ty>(len as usize),
+                ))
             }
         }
     };
@@ -82,7 +101,8 @@ impl_num_deserialize_and_pritimive_vec!(f64, f64);
 
 impl Deserialize for String {
     fn read(deserializer: &mut DeserializerState) -> Result<Self, Error> {
-        Ok(deserializer.reader.string_varint32())
+        let len = deserializer.reader.var_int32();
+        Ok(deserializer.reader.string(len as u32))
     }
 }
 
@@ -134,30 +154,7 @@ impl Deserialize for NaiveDateTime {
 
 impl<T: Deserialize> Deserialize for Vec<T> {
     fn read(deserializer: &mut DeserializerState) -> Result<Self, Error> {
-        // length
-        let len = deserializer.reader.i32();
-        // value
-        let mut result = Vec::new();
-        for _ in 0..len {
-            result.push(T::read_as_vec_item(deserializer)?);
-        }
-        Ok(result)
-    }
-
-    fn deserialize(deserializer: &mut DeserializerState) -> Result<Self, Error> {
-        // ref flag
-        deserializer.reader.i8();
-
-        let type_id = deserializer.reader.i16();
-
-        if type_id != <Self as FuryMeta>::ty() as i16 {
-            Err(Error::FieldType {
-                expected: <T as FuryMeta>::vec_ty(),
-                actial: type_id,
-            })
-        } else {
-            Ok(Self::read(deserializer)?)
-        }
+        T::read_vec(deserializer)
     }
 }
 

@@ -40,7 +40,7 @@ impl Writer {
     }
 
     pub fn reserve(&mut self, additional: usize) {
-        self.bf.reserve(additional);
+        self.bf.reserve_exact(additional);
     }
 
     write_num!(u8, u8);
@@ -60,7 +60,7 @@ impl Writer {
         LittleEndian::write_f64(self.cast::<u8>(8), value);
     }
 
-    fn var_int32(&mut self, value: i32) {
+    pub fn var_int32(&mut self, value: i32) {
         if value >> 7 == 0 {
             self.u8(value as u8);
         } else if value >> 14 == 0 {
@@ -88,15 +88,8 @@ impl Writer {
         }
     }
 
-    pub fn string_varint32(&mut self, v: &String) {
-        self.var_int32(v.len() as i32);
-        unsafe {
-            ptr::copy_nonoverlapping(v.as_ptr(), self.ptr(), v.len());
-        }
-        self.move_next(v.len());
-    }
-
-    pub fn str(&mut self, v: &str) {
+    pub fn bytes(&mut self, v: &[u8]) {
+        self.reserve(v.len());
         unsafe {
             ptr::copy_nonoverlapping(v.as_ptr(), self.ptr(), v.len());
         }
@@ -157,7 +150,7 @@ impl<'de> Reader<'de> {
         LittleEndian::read_f64(self.cast::<u8>(4))
     }
 
-    fn var_int32(&mut self) -> i32 {
+    pub fn var_int32(&mut self) -> i32 {
         let mut byte_ = self.i8() as i32;
         let mut result = byte_ & 0x7F;
         if (byte_ & 0x80) != 0 {
@@ -179,10 +172,16 @@ impl<'de> Reader<'de> {
         result
     }
 
-    pub fn string_varint32(&mut self) -> String {
-        let len = self.var_int32();
+    pub fn string(&mut self, len: u32) -> String {
         let result = String::from_utf8_lossy(self.cast::<u8>(len as usize)).to_string();
         self.move_next(len as usize);
+        result
+    }
+
+    pub fn bytes<T>(&mut self, len: usize) -> &[u8] {
+        let byte_len = len * mem::size_of::<T>();
+        let result = &self.bf[self.cursor..self.cursor + byte_len];
+        self.move_next(byte_len);
         result
     }
 }
