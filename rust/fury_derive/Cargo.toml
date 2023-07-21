@@ -1,0 +1,16 @@
+[package]
+name = "fury_derive"
+version = "0.0.1-dev"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = { default-features = false, version = "1.0.66" }
+syn = { default-features = false, version = "2.0.26", features = ["parsing", "proc-macro", "derive", "printing"] }
+quote = { default-features = false, version = "1.0.31" }
+thiserror = { default-features = false, version = "1.0.43" }

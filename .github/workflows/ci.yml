@@ -48,6 +48,14 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Run CI with NodeJS
         run: ./ci/run_ci.sh javascript
+  rust:
+    name: Rust CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: ./ci/run_ci.sh rust
   cpp:
     name: C++ CI
     runs-on: ubuntu-latest
