@@ -18,10 +18,8 @@
 
 package io.fury.serializer;
 
-import static io.fury.type.TypeUtils.getRawType;
 import static io.fury.util.Utils.checkArgument;
 
-import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.builder.CodecUtils;
 import io.fury.builder.Generated;
@@ -37,19 +35,8 @@ import java.lang.reflect.Modifier;
 public final class CodegenSerializer {
 
   public static boolean supportCodegenForJavaSerialization(Class<?> cls) {
-    return isJavaPojo(TypeToken.of(cls));
-  }
-
-  private static boolean isJavaPojo(TypeToken<?> type) {
-    Class<?> rawType = getRawType(type);
-    // since we need to access class in generated code in our package, the class must be public.
-    // TODO support default access-level class jit.
-    if (Modifier.isPublic(rawType.getModifiers())) {
-      // bean class can be static nested class, but can't be a non-static inner class
-      return rawType.getEnclosingClass() == null || Modifier.isStatic(rawType.getModifiers());
-    } else {
-      return false;
-    }
+    // bean class can be static nested class, but can't be a non-static inner class
+    return cls.getEnclosingClass() == null || Modifier.isStatic(cls.getModifiers());
   }
 
   @SuppressWarnings("unchecked")

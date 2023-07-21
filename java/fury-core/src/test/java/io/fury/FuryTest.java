@@ -72,8 +72,8 @@ import org.testng.annotations.Test;
 
 public class FuryTest extends FuryTestBase {
   @DataProvider(name = "languageConfig")
-  public static Object[] languageConfig() {
-    return new Object[] {Language.JAVA, Language.PYTHON};
+  public static Object[][] languageConfig() {
+    return new Object[][] {{Language.JAVA}, {Language.PYTHON}};
   }
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
@@ -275,20 +275,53 @@ public class FuryTest extends FuryTestBase {
     }
   }
 
-  @Test(dataProvider = "referenceTrackingConfig")
-  public void testSerializePrivateBean(boolean referenceTracking) {
+  @Test
+  public void testSerializePrivateBean() {
     Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
-            .disableSecureMode()
-            .build();
+        Fury.builder().withLanguage(Language.JAVA).withCodegen(false).disableSecureMode().build();
+    Outer outer = new Outer();
+    outer.inner = new Outer.Inner();
+    fury.deserialize(fury.serialize(outer));
+    assertTrue(fury.getClassResolver().getSerializer(Outer.class) instanceof ObjectSerializer);
+    assertTrue(
+        fury.getClassResolver().getSerializer(Outer.Inner.class) instanceof ObjectSerializer);
+  }
+
+  @Test
+  public void testSerializePrivateBeanJIT() {
+    Fury fury =
+        Fury.builder().withLanguage(Language.JAVA).withCodegen(true).disableSecureMode().build();
     Outer outer = new Outer();
     outer.inner = new Outer.Inner();
     fury.deserialize(fury.serialize(outer));
     assertTrue(fury.getClassResolver().getSerializer(Outer.class) instanceof Generated);
-    assertTrue(
-        fury.getClassResolver().getSerializer(Outer.Inner.class) instanceof ObjectSerializer);
+    assertTrue(fury.getClassResolver().getSerializer(Outer.Inner.class) instanceof Generated);
+  }
+
+  @Data
+  public static class PackageLevelBean {
+    public long f1;
+    private long f2;
+  }
+
+  @Test
+  public void testSerializePackageLevelBean() {
+    Fury fury =
+        Fury.builder().withLanguage(Language.JAVA).withCodegen(false).disableSecureMode().build();
+    PackageLevelBean o = new PackageLevelBean();
+    o.f1 = 10;
+    o.f2 = 1;
+    serDeCheckSerializer(fury, o, "Object");
+  }
+
+  @Test
+  public void testSerializePackageLevelBeanJIT() {
+    Fury fury =
+        Fury.builder().withLanguage(Language.JAVA).withCodegen(true).disableSecureMode().build();
+    PackageLevelBean o = new PackageLevelBean();
+    o.f1 = 10;
+    o.f2 = 1;
+    serDeCheckSerializer(fury, o, "PackageLevelBean");
   }
 
   static class B {
