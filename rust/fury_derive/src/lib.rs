@@ -76,11 +76,19 @@ fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
         }
     };
 
-    let exprs = fields.iter().map(|field| {
+    let accessor_exprs = fields.iter().map(|field| {
         let ty = &field.ty;
         let ident = &field.ident;
         quote! {
             <#ty as fury::Serialize>::serialize(&self.#ident, serializer);
+        }
+    });
+
+    let reserved_size_exprs = fields.iter().map(|field| {
+        let ty = &field.ty;
+        // each field have one byte ref tag and two byte type id
+        quote! {
+            <#ty as fury::Serialize>::reserved_space() + 3
         }
     });
 
@@ -90,7 +98,16 @@ fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
                 // write tag hash
                 serializer.writer.u32(<#name as fury::FuryMeta>::hash());
                 // write fields
-                #(#exprs)*
+                #(#accessor_exprs)*
+            }
+
+            fn reserve(serializer: &mut fury::SerializerState) {
+                serializer.writer.reserve(Self::reserved_space());
+            }
+
+            fn reserved_space() -> usize {
+                // struct have four byte hash
+                4 + #(#reserved_size_exprs)+*
             }
         }
     };
