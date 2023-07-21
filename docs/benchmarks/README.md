@@ -9,6 +9,7 @@
 - L3 cache： 33792K
 
 ## JMH params
+Don't skip **warm up**, otherwise the results aren't accurate.
 ```bash
  -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf cs
 ```
