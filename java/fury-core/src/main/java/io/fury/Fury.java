@@ -123,6 +123,7 @@ public final class Fury {
     } else {
       this.refResolver = new NoRefResolver();
     }
+    jitContext = new JITContext(this);
     enumStringResolver = new EnumStringResolver();
     classResolver = new ClassResolver(this);
     classResolver.initialize();
@@ -132,7 +133,6 @@ public final class Fury {
     nativeObjects = new ArrayList<>();
     generics = new Generics(this);
     stringSerializer = new StringSerializer(this);
-    jitContext = new JITContext(this);
     LOG.info("Created new fury {}", this);
   }
 

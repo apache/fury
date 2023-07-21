@@ -43,13 +43,8 @@ public final class CodegenSerializer {
   private static boolean isJavaPojo(TypeToken<?> type) {
     Class<?> rawType = getRawType(type);
     // since we need to access class in generated code in our package, the class must be public.
-    // TODO support default access-level class jit.
-    if (Modifier.isPublic(rawType.getModifiers())) {
-      // bean class can be static nested class, but can't be a non-static inner class
-      return rawType.getEnclosingClass() == null || Modifier.isStatic(rawType.getModifiers());
-    } else {
-      return false;
-    }
+    // bean class can be static nested class, but can't be a non-static inner class
+    return rawType.getEnclosingClass() == null || Modifier.isStatic(rawType.getModifiers());
   }
 
   @SuppressWarnings("unchecked")

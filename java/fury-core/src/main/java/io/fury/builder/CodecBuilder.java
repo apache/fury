@@ -113,7 +113,7 @@ public abstract class CodecBuilder {
         Modifier.isPublic(getRawType(fieldType).getModifiers()),
         "Field type should be public for codegen-based access");
     String fieldName = descriptor.getName();
-    if (duplicatedFields.contains(fieldName)) {
+    if (duplicatedFields.contains(fieldName) || !Modifier.isPublic(beanClass.getModifiers())) {
       return unsafeAccessField(inputBeanExpr, beanClass, descriptor);
     }
     // public field or non-private non-java field access field directly.
@@ -200,7 +200,7 @@ public abstract class CodecBuilder {
     if (value instanceof Inlineable) {
       ((Inlineable) value).inline();
     }
-    if (duplicatedFields.contains(fieldName)) {
+    if (duplicatedFields.contains(fieldName) || !Modifier.isPublic(beanClass.getModifiers())) {
       return unsafeSetField(bean, d, value);
     }
     if (!Modifier.isFinal(d.getModifiers()) && Modifier.isPublic(d.getModifiers())) {
