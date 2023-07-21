@@ -44,23 +44,31 @@ public class GuavaSerializers {
 
   abstract static class GuavaCollectionSerializer<T extends Collection>
       extends CollectionSerializer<T> {
-    private final ReplaceResolveSerializer serializer;
+    private ReplaceResolveSerializer serializer;
 
     public GuavaCollectionSerializer(Fury fury, Class<T> cls) {
       super(fury, cls, false, false);
       fury.getClassResolver().setSerializer(cls, this);
-      serializer = new ReplaceResolveSerializer(fury, cls);
+    }
+
+    protected ReplaceResolveSerializer getOrCreateSerializer() {
+      // reduce cost of fury creation, ReplaceResolveSerializer will jit-generate serializer.
+      ReplaceResolveSerializer serializer = this.serializer;
+      if (serializer == null)  {
+        this.serializer = serializer = new ReplaceResolveSerializer(fury, type);
+      }
+      return serializer;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T read(MemoryBuffer buffer) {
-      return (T) serializer.read(buffer);
+      return (T) getOrCreateSerializer().read(buffer);
     }
 
     @Override
     public void write(MemoryBuffer buffer, T value) {
-      serializer.write(buffer, value);
+      getOrCreateSerializer().write(buffer, value);
     }
 
     @Override
@@ -122,23 +130,31 @@ public class GuavaSerializers {
   }
 
   abstract static class GuavaMapSerializer<T extends Map> extends MapSerializer<T> {
-    private final ReplaceResolveSerializer serializer;
+    private ReplaceResolveSerializer serializer;
 
     public GuavaMapSerializer(Fury fury, Class<T> cls) {
       super(fury, cls, false, false);
       fury.getClassResolver().setSerializer(cls, this);
-      serializer = new ReplaceResolveSerializer(fury, cls);
+    }
+
+    protected ReplaceResolveSerializer getOrCreateSerializer() {
+      // reduce cost of fury creation, ReplaceResolveSerializer will jit-generate serializer.
+      ReplaceResolveSerializer serializer = this.serializer;
+      if (serializer == null)  {
+        this.serializer = serializer = new ReplaceResolveSerializer(fury, type);
+      }
+      return serializer;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T read(MemoryBuffer buffer) {
-      return (T) serializer.read(buffer);
+      return (T) getOrCreateSerializer().read(buffer);
     }
 
     @Override
     public void write(MemoryBuffer buffer, T value) {
-      serializer.write(buffer, value);
+      getOrCreateSerializer().write(buffer, value);
     }
 
     @Override
