@@ -387,6 +387,11 @@ public class ClassResolver {
 
   /** register class with given type tag which will be used for cross-language serialization. */
   public void register(Class<?> cls, String typeTag) {
+    if (fury.getLanguage() == Language.JAVA) {
+      throw new IllegalArgumentException(
+          "Java serialization should register class by "
+              + "Fury#register(Class) or Fury.register(Class<?>, Short)");
+    }
     Preconditions.checkArgument(!typeTagToClassXLangMap.containsKey(typeTag));
     addSerializer(cls, new StructSerializer<>(fury, cls, typeTag));
   }
