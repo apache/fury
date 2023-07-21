@@ -110,6 +110,16 @@ case $1 in
       fi
       echo "Executing fury javascript tests succeeds"
     ;;
+    rust)
+      set +e
+      echo "Executing fury rust tests"
+      cd "$ROOT/rust"
+      cargo test
+      rustup component add clippy-preview
+      rustup component add rustfmt
+      cargo clippy -- -Dwarnings
+      cargo fmt --check
+    ;;
     cpp)
       echo "Install pyarrow"
       pip install pyarrow==4.0.0
