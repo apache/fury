@@ -35,7 +35,6 @@ import java.lang.reflect.Modifier;
 public final class CodegenSerializer {
 
   public static boolean supportCodegenForJavaSerialization(Class<?> cls) {
-    // since we need to access class in generated code in our package, the class must be public.
     // bean class can be static nested class, but can't be a non-static inner class
     return cls.getEnclosingClass() == null || Modifier.isStatic(cls.getModifiers());
   }
