@@ -1265,7 +1265,7 @@ public final class Fury {
 
     boolean checkClassVersion = true;
     Language language = Language.JAVA;
-    boolean refTracking = true;
+    boolean refTracking = false;
     boolean basicTypesRefIgnored = true;
     boolean stringRefIgnored = true;
     boolean timeRefIgnored = true;

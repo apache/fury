@@ -799,7 +799,7 @@ cdef class Fury:
     def __init__(
         self,
         language=Language.XLANG,
-        ref_tracking: bool = True,
+        ref_tracking: bool = False,
         secure_mode: bool = True,
      ):
         self.language = language

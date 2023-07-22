@@ -19,7 +19,6 @@ public class Example {
     // multiple serializations of different objects.
     {
       Fury fury = Fury.builder().withLanguage(Language.JAVA)
-        .withRefTracking(true)
         // Allow to deserialize objects unknown types,
         // more flexible but less secure.
         // .withSecureMode(false)
@@ -35,7 +34,6 @@ public class Example {
         // Allow to deserialize objects unknown types,
         // more flexible but less secure.
         // .withSecureMode(false)
-        .withRefTracking(true)
         .buildThreadSafeFury();
       byte[] bytes = fury.serialize(object);
       System.out.println(fury.deserialize(bytes));
@@ -43,7 +41,7 @@ public class Example {
     {
       ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
         Fury f = Fury.builder().withLanguage(Language.JAVA)
-          .withRefTracking(true).withClassLoader(classLoader).build();
+          .withClassLoader(classLoader).build();
         f.register(SomeClass.class);
         return f;
       });
@@ -62,7 +60,7 @@ Fury fury = Fury.builder()
   .withLanguage(Language.JAVA)
   // enable referecne tracking for shared/circular reference.
   // Disable it will have better performance if no duplciate reference.
-  .withRefTracking(true)
+  .withRefTracking(false)
   // compress int/long for smaller size
   // .withNumberCompressed(true)
   .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
@@ -81,7 +79,7 @@ ThreadSafeFury fury = Fury.builder()
   .withLanguage(Language.JAVA)
   // enable referecne tracking for shared/circular reference.
   // Disable it will have better performance if no duplciate reference.
-  .withRefTracking(true)
+  .withRefTracking(false)
   // compress int/long for smaller size
   // .withNumberCompressed(true)
   .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
@@ -142,7 +140,7 @@ Fury supports share type metadata (class name, field name, final field type info
 ```java
 // Fury.builder()
 //   .withLanguage(Language.JAVA)
-//   .withReferenceTracking(true)
+//   .withRefTracking(false)
 //   // share meta across serialization.
 //   .withMetaContextShareEnabled(true)
 // Not thread-safe fury.
