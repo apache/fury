@@ -16,6 +16,10 @@ pub trait FuryMeta {
     fn tag() -> &'static str {
         ""
     }
+
+    fn is_vec() -> bool {
+        false
+    }
 }
 
 macro_rules! impl_number_meta {
@@ -93,6 +97,10 @@ impl<T: FuryMeta> FuryMeta for Vec<T> {
     fn ty() -> FieldType {
         FieldType::ARRAY
     }
+
+    fn is_vec() -> bool {
+        true
+    }
 }
 
 impl<T: FuryMeta> FuryMeta for Option<T> {
@@ -122,11 +130,8 @@ pub enum RefFlag {
     RefValueFlag = 0,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum FieldType {
-    STRING = 13,
-    ARRAY = 25,
-    MAP = 30,
     BOOL = 1,
     UINT8 = 2,
     INT8 = 3,
@@ -138,9 +143,12 @@ pub enum FieldType {
     INT64 = 9,
     FLOAT = 11,
     DOUBLE = 12,
+    STRING = 13,
     BINARY = 14,
     DATE = 16,
     TIMESTAMP = 18,
+    ARRAY = 25,
+    MAP = 30,
     FuryTypeTag = 256,
     FurySet = 257,
     FuryPrimitiveBoolArray = 258,
@@ -156,33 +164,68 @@ const MAX_UNT32: u64 = (1 << 31) - 1;
 
 pub fn compute_string_hash(s: &str) -> u32 {
     let mut hash: u64 = 17;
-    s.as_bytes()
-        .iter()
-        .for_each(|b| hash = (hash * 31) + (*b as u64));
-    hash /= 7;
-    while hash >= MAX_UNT32 {
-        hash /= 7;
-    }
+    s.as_bytes().iter().for_each(|b| {
+        hash = (hash * 31) + (*b as u64);
+        while hash >= MAX_UNT32 {
+            hash /= 7;
+        }
+    });
     hash as u32
 }
 
-pub fn compute_field_hash(hash: u32, prop: &(FieldType, &str)) -> u32 {
-    let id = match prop {
-        (FieldType::FuryTypeTag, tag) => compute_string_hash(tag),
-        (t, _) => *t as u32,
-    };
+const BASIC_TYPES: [FieldType; 11] = [
+    FieldType::BOOL,
+    FieldType::INT8,
+    FieldType::INT16,
+    FieldType::INT32,
+    FieldType::INT64,
+    FieldType::FLOAT,
+    FieldType::DOUBLE,
+    FieldType::STRING,
+    FieldType::BINARY,
+    FieldType::DATE,
+    FieldType::TIMESTAMP,
+];
+
+pub fn compute_field_hash(hash: u32, id: i16) -> u32 {
     let mut new_hash: u64 = (hash as u64) * 31 + (id as u64);
-    new_hash /= 7;
     while new_hash >= MAX_UNT32 {
         new_hash /= 7;
     }
     new_hash as u32
 }
 
-pub fn compute_tag_hash(props: Vec<(FieldType, &str)>) -> u32 {
+pub fn compute_struct_hash(props: Vec<(&str, FieldType, &str)>) -> u32 {
     let mut hash = 17;
-    props
-        .iter()
-        .for_each(|prop| hash = compute_field_hash(hash, prop));
+    props.iter().for_each(|prop| {
+        let (_name, ty, _tag) = prop;
+        hash = match ty {
+            FieldType::ARRAY | FieldType::MAP => {
+                compute_field_hash(hash, *ty as i16)
+            }
+            _ => hash,
+        };
+        let is_basic_type = BASIC_TYPES.iter().find(|x| **x == *ty).is_some();
+        if is_basic_type {
+            hash = compute_field_hash(hash, *ty as i16);
+        }
+    });
     hash
+}
+
+pub mod config_flags {
+    pub const IS_NULL_FLAG: u8 = 1 << 0;
+    pub const IS_LITTLE_ENDIAN_FLAG: u8 = 2;
+    pub const IS_CROSS_LANGUAGE_FLAG: u8 = 4;
+    pub const IS_OUT_OF_BAND_FLAG: u8 = 8;
+}
+
+pub enum Language {
+    XLANG = 0,
+    JAVA = 1,
+    PYTHON = 2,
+    CPP = 3,
+    GO = 4,
+    JAVASCRIPT = 5,
+    RUST = 6,
 }

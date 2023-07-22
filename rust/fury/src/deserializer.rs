@@ -23,11 +23,11 @@ where
 
     fn read_vec(deserializer: &mut DeserializerState) -> Result<Vec<Self>, Error> {
         // length
-        let len = deserializer.reader.i32();
+        let len = deserializer.reader.var_int32();
         // value
         let mut result = Vec::new();
         for _ in 0..len {
-            result.push(Self::read(deserializer)?);
+            result.push(Self::deserialize(deserializer)?);
         }
         Ok(result)
     }
@@ -36,13 +36,17 @@ where
         // ref flag
         let ref_flag = deserializer.reader.i8();
 
-        if ref_flag == (RefFlag::NotNullValueFlag as i8) {
+        if ref_flag == (RefFlag::NotNullValueFlag as i8) || ref_flag == (RefFlag::RefValueFlag as i8){
             // type_id
             let type_id = deserializer.reader.i16();
-
-            if type_id != <Self as FuryMeta>::ty() as i16 {
+            let ty = if Self::is_vec() {
+                Self::vec_ty()
+            } else {
+                Self::ty()
+            };
+            if type_id != ty as i16 {
                 Err(Error::FieldType {
-                    expected: <Self as FuryMeta>::ty(),
+                    expected: ty,
                     actial: type_id,
                 })
             } else {
@@ -52,8 +56,6 @@ where
             Err(Error::Null)
         } else if ref_flag == (RefFlag::RefFlag as i8) {
             Err(Error::Ref)
-        } else if ref_flag == (RefFlag::RefValueFlag as i8) {
-            Err(Error::RefValue)
         } else {
             Err(Error::BadRefFlag)
         }
@@ -79,20 +81,21 @@ macro_rules! impl_num_deserialize_and_pritimive_vec {
 
             fn read_vec(deserializer: &mut DeserializerState) -> Result<Vec<Self>, Error> {
                 // length
-                let len = deserializer.reader.i32();
+                let len = (deserializer.reader.var_int32() as usize) * mem::size_of::<$ty>();
                 Ok(from_u8_slice::<$ty>(
-                    deserializer.reader.bytes::<$ty>(len as usize),
+                    deserializer.reader.bytes(len as usize),
                 ))
             }
         }
     };
 }
 
-impl_num_deserialize!(u8, u8);
 impl_num_deserialize!(u16, u16);
 impl_num_deserialize!(u32, u32);
 impl_num_deserialize!(u64, u64);
 impl_num_deserialize!(i8, i8);
+
+impl_num_deserialize_and_pritimive_vec!(u8, u8);
 impl_num_deserialize_and_pritimive_vec!(i16, i16);
 impl_num_deserialize_and_pritimive_vec!(i32, i32);
 impl_num_deserialize_and_pritimive_vec!(i64, i64);
@@ -115,13 +118,13 @@ impl Deserialize for bool {
 impl<T1: Deserialize + Eq + std::hash::Hash, T2: Deserialize> Deserialize for HashMap<T1, T2> {
     fn read(deserializer: &mut DeserializerState) -> Result<Self, Error> {
         // length
-        let len = deserializer.reader.i32();
+        let len = deserializer.reader.var_int32();
         let mut result = HashMap::new();
         // key-value
         for _ in 0..len {
             result.insert(
-                <T1 as Deserialize>::read(deserializer)?,
-                <T2 as Deserialize>::read(deserializer)?,
+                <T1 as Deserialize>::deserialize(deserializer)?,
+                <T2 as Deserialize>::deserialize(deserializer)?,
             );
         }
         Ok(result)
@@ -131,11 +134,11 @@ impl<T1: Deserialize + Eq + std::hash::Hash, T2: Deserialize> Deserialize for Ha
 impl<T: Deserialize + Eq + std::hash::Hash> Deserialize for HashSet<T> {
     fn read(deserializer: &mut DeserializerState) -> Result<Self, Error> {
         // length
-        let len = deserializer.reader.i32();
+        let len = deserializer.reader.var_int32();
         let mut result = HashSet::new();
         // key-value
         for _ in 0..len {
-            result.insert(<T as Deserialize>::read(deserializer)?);
+            result.insert(<T as Deserialize>::deserialize(deserializer)?);
         }
         Ok(result)
     }
@@ -167,7 +170,7 @@ impl<T: Deserialize> Deserialize for Option<T> {
         // ref flag
         let ref_flag = deserializer.reader.i8();
 
-        if ref_flag == (RefFlag::NotNullValueFlag as i8) {
+        if ref_flag == (RefFlag::NotNullValueFlag as i8) || ref_flag == (RefFlag::RefValueFlag as i8) {
             // type_id
             let type_id = deserializer.reader.i16();
 
@@ -183,8 +186,6 @@ impl<T: Deserialize> Deserialize for Option<T> {
             Ok(None)
         } else if ref_flag == (RefFlag::RefFlag as i8) {
             Err(Error::Ref)
-        } else if ref_flag == (RefFlag::RefValueFlag as i8) {
-            Err(Error::RefValue)
         } else {
             Err(Error::BadRefFlag)
         }
@@ -204,18 +205,47 @@ impl Deserialize for NaiveDate {
         }
     }
 }
-pub struct DeserializerState<'de> {
-    pub reader: Reader<'de>,
+pub struct DeserializerState<'de, 'bf: 'de> {
+    pub reader: Reader<'bf>,
+    pub tags: Vec<&'de str>,
 }
 
-impl<'de> DeserializerState<'de> {
-    fn new(reader: Reader<'de>) -> DeserializerState<'de> {
-        DeserializerState { reader }
+impl<'de, 'bf: 'de> DeserializerState<'de, 'bf> {
+    fn new(reader: Reader<'bf>) -> DeserializerState<'de, 'bf> {
+        DeserializerState {
+            reader,
+            tags: Vec::new(),
+        }
+    }
+
+    fn head(&mut self) {
+        let _bitmap = self.reader.u8();
+        let _language = self.reader.u8();
+        self.reader.skip(8); // native offset and size
+    }
+
+    pub fn read_tag(&mut self) -> Result<&str, Error> {
+        const USESTRINGVALUE: u8 = 0;
+        const USESTRINGID: u8 = 1;
+        let tag_type = self.reader.u8();
+        if tag_type == USESTRINGID {
+            Ok(&self.tags[self.reader.i16() as usize])
+        } else if tag_type == USESTRINGVALUE {
+            self.reader.skip(8); // todo tag hash
+            let len = self.reader.i16();
+            let tag: &str =
+                unsafe { std::str::from_utf8_unchecked(self.reader.bytes(len as usize)) };
+            self.tags.push(tag);
+            Ok(tag)
+        } else {
+            Err(Error::TagType(tag_type))
+        }
     }
 }
 
 pub fn from_buffer<T: Deserialize>(bf: &[u8]) -> Result<T, Error> {
     let reader = Reader::new(bf);
     let mut deserializer = DeserializerState::new(reader);
+    deserializer.head();
     <T as Deserialize>::deserialize(&mut deserializer)
 }

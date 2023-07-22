@@ -8,6 +8,7 @@ use byteorder::{ByteOrder, LittleEndian};
 #[derive(Default)]
 pub struct Writer {
     bf: Vec<u8>,
+    reserved: usize
 }
 
 macro_rules! write_num {
@@ -40,7 +41,10 @@ impl Writer {
     }
 
     pub fn reserve(&mut self, additional: usize) {
-        self.bf.reserve_exact(additional);
+        self.reserved += additional;
+        if self.bf.capacity() < self.reserved  {
+            self.bf.reserve(self.reserved);
+        }
     }
 
     write_num!(u8, u8);
@@ -52,12 +56,18 @@ impl Writer {
     write_num!(i32, i32);
     write_num!(i64, i64);
 
+    pub fn skip(&mut self, len: usize) {
+        self.move_next(len);
+    }
+
     pub fn f32(&mut self, value: f32) {
         LittleEndian::write_f32(self.cast::<u8>(4), value);
+        self.move_next(4);
     }
 
     pub fn f64(&mut self, value: f64) {
         LittleEndian::write_f64(self.cast::<u8>(8), value);
+        self.move_next(8);
     }
 
     pub fn var_int32(&mut self, value: i32) {
@@ -113,7 +123,7 @@ macro_rules! read_num {
     };
 }
 
-impl<'de> Reader<'de> {
+impl<'bf> Reader<'bf> {
     pub fn new(bf: &[u8]) -> Reader {
         Reader { bf, cursor: 0 }
     }
@@ -143,11 +153,15 @@ impl<'de> Reader<'de> {
     read_num!(i64, i64);
 
     pub fn f32(&mut self) -> f32 {
-        LittleEndian::read_f32(self.cast::<u8>(4))
+        let result = LittleEndian::read_f32(self.cast::<u8>(4));
+        self.move_next(4);
+        result
     }
 
     pub fn f64(&mut self) -> f64 {
-        LittleEndian::read_f64(self.cast::<u8>(4))
+        let result = LittleEndian::read_f64(self.cast::<u8>(8));
+        self.move_next(8);
+        result
     }
 
     pub fn var_int32(&mut self) -> i32 {
@@ -178,10 +192,13 @@ impl<'de> Reader<'de> {
         result
     }
 
-    pub fn bytes<T>(&mut self, len: usize) -> &[u8] {
-        let byte_len = len * mem::size_of::<T>();
-        let result = &self.bf[self.cursor..self.cursor + byte_len];
-        self.move_next(byte_len);
+    pub fn skip(&mut self, len: u32) {
+        self.move_next(len as usize);
+    }
+
+    pub fn bytes(&mut self, len: usize) -> &'bf [u8] {
+        let result = &self.bf[self.cursor..self.cursor + len];
+        self.move_next(len);
         result
     }
 }
