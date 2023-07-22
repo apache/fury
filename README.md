@@ -106,13 +106,13 @@ Release version:
 <dependency>
   <groupId>org.furyio</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.1.0-alpha.1</version>
+  <version>0.1.0-alpha.2</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.furyio</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.1.0-alpha.1</version>
+  <version>0.1.0-alpha.2</version>
 </dependency> -->
 ```
 
