@@ -149,7 +149,9 @@ public class CodeGenerator {
       for (Map.Entry<String, byte[]> e : classes.entrySet()) {
         String key = e.getKey();
         byte[] value = e.getValue();
-        LOG.info("Code stats for class {} is {}", key, JaninoUtils.getClassStats(value));
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Code stats for class {} is {}", key, JaninoUtils.getClassStats(value));
+        }
       }
     }
     return defineClasses(classes);
