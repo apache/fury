@@ -18,8 +18,7 @@ import java.util.*;
 
 public class Example1 {
   public static void main(String[] args) {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG)
-      .withRefTracking(false).build();
+    Fury fury = Fury.builder().withLanguage(Language.XLANG).build();
     List<Object> list = Arrays.asList(true, false, "str", -1.1, 1, new int[100], new double[20]);
     byte[] bytes = fury.serialize(list);
     // bytes can be data serialized by other languages.
@@ -41,7 +40,7 @@ public class Example1 {
 import pyfury
 import numpy as np
 
-fury = pyfury.Fury(ref_tracking=False)
+fury = pyfury.Fury()
 object_list = [True, False, "str", -1.1, 1,
                np.full(100, 0, dtype=np.int32), np.full(20, 0.0, dtype=np.double)]
 data = fury.serialize(object_list)
@@ -64,7 +63,7 @@ import "fmt"
 
 func main() {
 	list := []interface{}{true, false, "str", -1.1, 1, make([]int32, 10), make([]float64, 20)}
-	fury := furygo.NewFury(false)
+	fury := furygo.NewFury()
 	bytes, err := fury.Marshal(list)
 	if err != nil {
 		panic(err)
@@ -147,7 +146,7 @@ public class Example2 {
 
   // mvn exec:java -Dexec.mainClass="io.fury.examples.Example2"
   public static void main(String[] args) {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG).withRefTracking(false).build();
+    Fury fury = Fury.builder().withLanguage(Language.XLANG).build();
     fury.register(SomeClass1.class, "example.SomeClass1");
     fury.register(SomeClass2.class, "example.SomeClass2");
     byte[] bytes = fury.serialize(createObject());
@@ -193,7 +192,7 @@ class SomeClass2:
 
 
 if __name__ == "__main__":
-    f = pyfury.Fury(ref_tracking=False)
+    f = pyfury.Fury()
     f.register_class(SomeClass1, "example.SomeClass1")
     f.register_class(SomeClass2, "example.SomeClass2")
     obj1 = SomeClass1(f1=True, f2={-1: 2})
@@ -244,7 +243,7 @@ func main() {
 		F1 interface{}
 		F2 map[int8]int32
 	}
-	fury := furygo.NewFury(false)
+	fury := furygo.NewFury()
 	if err := fury.RegisterTagType("example.SomeClass1", SomeClass1{}); err != nil {
 		panic(err)
 	}
@@ -439,7 +438,7 @@ import furygo "github.com/alipay/fury/fury/go/fury"
 import "fmt"
 
 func main() {
-	fury := furygo.NewFury(true)
+	fury := furygo.NewFury()
 	list := []interface{}{"str", make([]byte, 1000)}
 	buf := fury.NewByteBuffer(nil)
 	var bufferObjects []fury.BufferObject
