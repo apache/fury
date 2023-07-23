@@ -1,5 +1,5 @@
 import { InternalSerializerType, MaxInt32, RefFlags, Fury } from './type';
-import { replaceBackslashAndQuote, safePropAccessor, safePropName, utf8Encoder } from './util';
+import { replaceBackslashAndQuote, safePropAccessor, safePropName } from './util';
 
 
 export interface TypeDescription {
@@ -25,44 +25,46 @@ export function Cast<T1 extends TypeDescription>(p: TypeDescription) {
 }
 
 
-export const computeStringHash = (str: string) => {
-    const bytes = utf8Encoder.encode(str);
-    let hash = 17
-    bytes.forEach(b => {
-        hash = hash * 31 + b
-        do {
-            hash = Math.round(hash / 7)
-        } while (hash >= MaxInt32);
-    });
-    return hash;
-}
 
-export const computeFieldHash = (hash: number, t: TypeDescription) => {
-    let id = 0;
-    if (t.type === InternalSerializerType.FURY_TYPE_TAG) {
-        id = computeStringHash(Cast<ObjectTypeDescription>(t).options!.tag!);
-    } else {
-        id = t.type;
+const BASIC_TYPES  = [
+    InternalSerializerType.BOOL,
+    InternalSerializerType.INT8,
+    InternalSerializerType.INT16,
+    InternalSerializerType.INT32,
+    InternalSerializerType.INT64,
+    InternalSerializerType.FLOAT,
+    InternalSerializerType.DOUBLE,
+    InternalSerializerType.STRING,
+    InternalSerializerType.BINARY,
+    InternalSerializerType.DATE,
+    InternalSerializerType.TIMESTAMP,
+];
+
+function computeFieldHash(hash: number, id: number): number {
+    let newHash = (hash) * 31 + (id);
+    while (newHash >= MaxInt32) {
+        newHash = Math.floor(newHash / 7);
     }
-    let newHash = hash * 31 + id;
-    do {
-        newHash = Math.round(newHash / 7)
-    } while (newHash >= MaxInt32);
-    return newHash;
+    return newHash
 }
 
-export const computeTagHash = (description: TypeDescription) => {
+export const computeStructHash = (description: TypeDescription) => {
     if (description.type !== InternalSerializerType.FURY_TYPE_TAG) {
         throw new Error('only object is hashable');
     }
     let hash = 17;
-    for (const [, value] of Object.entries(Cast<ObjectTypeDescription>(description).options!.props!)) {
-        hash = computeFieldHash(hash, value)
+    for (const [, value] of Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort()) {
+        if (value.type === InternalSerializerType.ARRAY || value.type === InternalSerializerType.MAP) {
+            hash = computeFieldHash(hash, value.type);
+        }
+        if (BASIC_TYPES.includes(value.type)) {
+            hash = computeFieldHash(hash, value.type);
+        }
     }
     return hash;
 }
 
-function typeHandlerDeclaration(readOrWrite: 'read' | 'write', fury: Fury) {
+function typeHandlerDeclaration(readOrWrite: 'read' | 'write') {
     let declarations: string[] = [];
     let count = 0;
     const exists = new Set();
@@ -111,7 +113,7 @@ function typeHandlerDeclaration(readOrWrite: 'read' | 'write', fury: Fury) {
 }
 
 export const genReadSerializer = (fury: Fury, description: TypeDescription, stack: string[] = []) => {
-    const { genBuiltinDeclaration, genTagDeclaration, finish } = typeHandlerDeclaration('read', fury);
+    const { genBuiltinDeclaration, genTagDeclaration, finish } = typeHandlerDeclaration('read');
     const descriptionReadExpression = (key: string, description: TypeDescription): string => {
         if (description.type === InternalSerializerType.ARRAY) {
             const readFunction = genBuiltinDeclaration(description.type);
@@ -138,12 +140,12 @@ export const genReadSerializer = (fury: Fury, description: TypeDescription, stac
             {
                 // relation tag: ${Cast<ObjectTypeDescription>(description).options?.tag}
                 const result = {
-                    ${Object.entries(Cast<ObjectTypeDescription>(description).options?.props!).map(([key]) => {
+                    ${Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key]) => {
             return `${safePropName(key)}: null,`
         }).join('\n')}
                 };
                 pushReadObject(result);
-                ${Object.entries(Cast<ObjectTypeDescription>(description).options?.props!).map(([key, value]) => {
+                ${Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key, value]) => {
             return descriptionReadExpression(`result${safePropAccessor(key)}`, value);
         }).join('\n')}
                 return result;
@@ -159,7 +161,7 @@ export const genReadSerializer = (fury: Fury, description: TypeDescription, stac
     }
     stack.push(tag);
     const entry = genEntry(description);
-    const expectHash = computeTagHash(description);
+    const expectHash = computeStructHash(description);
     fury.classResolver.registerReadSerializerByTag(tag, new Function(
         `
     return function(fury) {
@@ -182,7 +184,7 @@ export const genReadSerializer = (fury: Fury, description: TypeDescription, stac
 
 
 export const genWriteSerializer = (fury: Fury, description: TypeDescription, stack: string[] = []) => {
-    const { genBuiltinDeclaration, genTagDeclaration, finish } = typeHandlerDeclaration('write', fury);
+    const { genBuiltinDeclaration, genTagDeclaration, finish } = typeHandlerDeclaration('write');
     const genTagWriterStmt = (v: string, description: TypeDescription): string => {
         if (description.type === InternalSerializerType.ARRAY) {
             const inner = genTagWriterStmt("item", Cast<ArrayTypeDescription>(description).options?.inner);
@@ -204,7 +206,7 @@ export const genWriteSerializer = (fury: Fury, description: TypeDescription, sta
             ${genBuiltinDeclaration(description.type)}(${v});`
     }
     const genEntry = (description: TypeDescription) => {
-        return Object.entries(Cast<ObjectTypeDescription>(description).options?.props).map(([key, value]) => {
+        return Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key, value]) => {
             return `${genTagWriterStmt(`v${safePropAccessor(key)}`, value)}`
         }).join('');
     }
@@ -233,7 +235,7 @@ export const genWriteSerializer = (fury: Fury, description: TypeDescription, sta
             if (writeNullOrRef(v)) {
                 return;
             }
-            binaryWriter.reserves(${Object.values(Cast<ObjectTypeDescription>(description).options?.props).map(x => {
+            binaryWriter.reserves(${Object.values(Cast<ObjectTypeDescription>(description).options.props).map(x => {
             const serializer = fury.classResolver.getSerializerById(x.type);
             if (serializer && serializer.config) {
                 return serializer.config().reserve;
@@ -245,7 +247,7 @@ export const genWriteSerializer = (fury: Fury, description: TypeDescription, sta
             pushWriteObject(v);
             binaryWriter.writeInt16(InternalSerializerType.FURY_TYPE_TAG);
             classResolver.writeTag(binaryWriter, "${replaceBackslashAndQuote(tag)}", tagBuffer, bufferLen);
-            binaryWriter.writeInt32(${computeTagHash(description)});
+            binaryWriter.writeInt32(${computeStructHash(description)});
             ${entry}
         }
     }

@@ -200,8 +200,8 @@ format_all() {
 
     echo "$(date)" "format javascript...."
     if command -v node >/dev/null; then
-      pushd "$ROOT/javascript"
-      git ls-files -- '*.ts' "${GIT_LS_EXCLUDES[@]}" | xargs -P 5 node ./node_modules/.bin/eslint
+      pushd "$ROOT"
+      git ls-files -- '*.ts' "${GIT_LS_EXCLUDES[@]}" | xargs -P 5 node ./javascript/node_modules/.bin/eslint
       popd
     fi
 
@@ -269,10 +269,10 @@ format_changed() {
     fi
 
     if which node >/dev/null; then
-        pushd "$ROOT/javascript"
+        pushd "$ROOT"
         if ! git diff --diff-filter=ACRM --quiet --exit-code "$MERGEBASE" -- '*.ts' &>/dev/null; then
             git diff --name-only --diff-filter=ACRM "$MERGEBASE" -- '*.ts' | xargs -P 5 \
-                  node ./node_modules/.bin/eslint
+                  node ./javascript/node_modules/.bin/eslint
         fi
         popd
     fi

@@ -80,6 +80,6 @@ export enum RefFlags {
 	RefValueFlag = 0,
 }
 
-export const MaxInt32  = 1<<31 - 1
+export const MaxInt32  = 2147483647;
 export const LATIN1 = 0;
 export const UTF8 = 1;

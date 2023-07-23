@@ -1,4 +1,4 @@
-import { Hps, LATIN1, UTF8 } from "./type";
+import { Hps } from "./type";
 
 export const BinaryWriter = (config?: { hps: Hps | null }) => {
     let cursor = 0;
@@ -126,7 +126,8 @@ export const BinaryWriter = (config?: { hps: Hps | null }) => {
             // type and len
             reserves(len);
             // write type
-            dataView.setUint8(move(1), isLatin1 ? LATIN1 : UTF8);
+            // todo support latin1
+            // dataView.setUint8(move(1), isLatin1 ? LATIN1 : UTF8);
             writeVarInt32(len);
             if (isLatin1) {
                 stringCopy(v, i8array, move(len))
@@ -146,7 +147,8 @@ export const BinaryWriter = (config?: { hps: Hps | null }) => {
         // type and len
         reserves(len);
         // write type
-        dataView.setUint8(move(1), isLatin1 ? LATIN1 : UTF8);
+        // todo support latin1
+        // dataView.setUint8(move(1), isLatin1 ? LATIN1 : UTF8);
         writeVarInt32(len);
         if (isLatin1) {
             if (len < 40) {

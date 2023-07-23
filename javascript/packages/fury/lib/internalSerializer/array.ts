@@ -17,7 +17,7 @@ const buildTypedArray = <T>(fury: Fury, read: () => void,  write: (p: T) => void
         },
         write: (v: T[]) => {
             serializer.write(v);
-            for (let item of v) {
+            for (const item of v) {
                 write(item);
             }
         },
@@ -108,13 +108,13 @@ export const doubleArraySerializer = (fury: Fury) => {
 
 
 export const arraySerializer = (fury: Fury) => {
-    const { binaryView, binaryWriter, read, referenceResolver, writeNullOrRef, write } = fury;
+    const { binaryView, binaryWriter, referenceResolver, writeNullOrRef } = fury;
     const { pushReadObject, pushWriteObject } = referenceResolver;
-    const { writeInt8, writeInt16, writeInt32 } = binaryWriter;
-    const { readInt32 } = binaryView;
+    const { writeInt8, writeInt16, writeVarInt32 } = binaryWriter;
+    const { readVarInt32 } = binaryView;
     return {
         read: () => {
-            const len = readInt32();
+            const len = readVarInt32();
             const result = new Array(len);
             pushReadObject(result);
             return result;
@@ -126,7 +126,7 @@ export const arraySerializer = (fury: Fury) => {
             writeInt8(RefFlags.RefValueFlag);
             writeInt16(InternalSerializerType.ARRAY);
             pushWriteObject(v);
-            writeInt32(v.length);
+            writeVarInt32(v.length);
         },
         config: () => {
             return {

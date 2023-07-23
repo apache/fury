@@ -4,13 +4,13 @@ import { InternalSerializerType, RefFlags, Fury } from "../type";
 
 export default (fury: Fury) => {
     const { binaryView, binaryWriter, writeNullOrRef, read, referenceResolver, write } = fury;
-    const { readUInt32 } = binaryView;
-    const { writeInt8, writeInt16, writeUInt32 } = binaryWriter;
+    const { readVarInt32 } = binaryView;
+    const { writeInt8, writeInt16, writeVarInt32 } = binaryWriter;
     const { pushReadObject, pushWriteObject } = referenceResolver;
 
     return {
         read: () => {
-            const len = readUInt32();
+            const len = readVarInt32();
             const result = new Map();
             pushReadObject(result);
             for (let index = 0; index < len; index++) {
@@ -28,7 +28,7 @@ export default (fury: Fury) => {
             writeInt16(InternalSerializerType.MAP);
             pushWriteObject(v);
             const len = v.size;
-            writeUInt32(len);
+            writeVarInt32(len);
             for (const [key, value] of v.entries()) {
                 write(key);
                 write(value);
