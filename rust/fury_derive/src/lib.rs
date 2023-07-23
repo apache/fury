@@ -1,6 +1,12 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{parse_macro_input, DeriveInput, Field, Fields};
+
+fn sorted_fields(fields: &Fields) -> Vec<&Field> {
+    let mut fields = fields.iter().collect::<Vec<&Field>>();
+    fields.sort_by(|a, b| a.ident.cmp(&b.ident));
+    fields
+}
 
 #[proc_macro_derive(FuryMeta, attributes(tag))]
 pub fn proc_macro_derive_fury_meta(input: proc_macro::TokenStream) -> TokenStream {
@@ -23,16 +29,16 @@ pub fn proc_macro_derive_fury_meta(input: proc_macro::TokenStream) -> TokenStrea
 fn derive_fury_meta(ast: &syn::DeriveInput, tag: String) -> TokenStream {
     let name = &ast.ident;
     let fields = match &ast.data {
-        syn::Data::Struct(s) => &s.fields,
+        syn::Data::Struct(s) => sorted_fields(&s.fields),
         _ => {
             panic!("only struct be supported")
         }
     };
-
     let props = fields.iter().map(|field| {
         let ty = &field.ty;
+        let name = format!("{}", field.ident.as_ref().expect("should be field name"));
         quote! {
-            (<#ty as fury::FuryMeta>::ty(), <#ty as fury::FuryMeta>::tag())
+            (#name, <#ty as fury::FuryMeta>::ty(), <#ty as fury::FuryMeta>::tag())
         }
     });
     let name_hash_static: proc_macro2::Ident =
@@ -41,7 +47,7 @@ fn derive_fury_meta(ast: &syn::DeriveInput, tag: String) -> TokenStream {
     let gen = quote! {
 
         lazy_static::lazy_static! {
-            static ref #name_hash_static: u32 = fury::compute_tag_hash(vec![#(#props),*]);
+            static ref #name_hash_static: u32 = fury::compute_struct_hash(vec![#(#props),*]);
         }
 
         impl fury::FuryMeta for #name {
@@ -70,7 +76,7 @@ pub fn proc_macro_derive_serialize(input: proc_macro::TokenStream) -> TokenStrea
 fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let fields = match &ast.data {
-        syn::Data::Struct(s) => &s.fields,
+        syn::Data::Struct(s) => sorted_fields(&s.fields),
         _ => {
             panic!("only struct be supported")
         }
@@ -92,22 +98,22 @@ fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
         }
     });
 
+    let tag_bytelen = format!("{}", name).len();
+
     let gen = quote! {
         impl fury::Serialize for #name {
             fn write(&self, serializer: &mut fury::SerializerState) {
+                // write tag string
+                serializer.write_tag(<#name as fury::FuryMeta>::tag());
                 // write tag hash
                 serializer.writer.u32(<#name as fury::FuryMeta>::hash());
                 // write fields
                 #(#accessor_exprs)*
             }
 
-            fn reserve(serializer: &mut fury::SerializerState) {
-                serializer.writer.reserve(Self::reserved_space());
-            }
-
             fn reserved_space() -> usize {
                 // struct have four byte hash
-                4 + #(#reserved_size_exprs)+*
+                #tag_bytelen + 4 + #(#reserved_size_exprs)+*
             }
         }
     };
@@ -123,7 +129,7 @@ pub fn proc_macro_derive_deserialize(input: proc_macro::TokenStream) -> TokenStr
 fn derive_deserilize(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let fields = match &ast.data {
-        syn::Data::Struct(s) => &s.fields,
+        syn::Data::Struct(s) => sorted_fields(&s.fields),
         _ => {
             panic!("only struct be supported")
         }
@@ -140,6 +146,9 @@ fn derive_deserilize(ast: &syn::DeriveInput) -> TokenStream {
     let gen = quote! {
         impl<'de> fury::Deserialize for #name {
             fn read(deserializer: &mut fury::DeserializerState) -> Result<Self, fury::Error> {
+                // read tag string
+                deserializer.read_tag()?;
+                // read tag hash
                 let hash = deserializer.reader.u32();
                 let expected = <#name as fury::FuryMeta>::hash();
                 if(hash != expected) {

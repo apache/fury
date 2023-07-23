@@ -25,4 +25,7 @@ pub enum Error {
 
     #[error("Schema is not consistent; expected: {expected:?}, actual: {actial:?}")]
     StructHash { expected: u32, actial: u32 },
+
+    #[error("Bad Tag Type: {0}")]
+    TagType(u8),
 }
