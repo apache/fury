@@ -12,5 +12,6 @@ pub use serializer::to_buffer;
 pub use serializer::Serialize;
 pub use serializer::SerializerState;
 pub use types::{
-    compute_field_hash, compute_string_hash, compute_struct_hash, FieldType, FuryMeta, RefFlag,config_flags, Language
+    compute_field_hash, compute_string_hash, compute_struct_hash, config_flags, FieldType,
+    FuryMeta, Language, RefFlag,
 };

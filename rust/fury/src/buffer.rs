@@ -8,7 +8,7 @@ use byteorder::{ByteOrder, LittleEndian};
 #[derive(Default)]
 pub struct Writer {
     bf: Vec<u8>,
-    reserved: usize
+    reserved: usize,
 }
 
 macro_rules! write_num {
@@ -42,7 +42,7 @@ impl Writer {
 
     pub fn reserve(&mut self, additional: usize) {
         self.reserved += additional;
-        if self.bf.capacity() < self.reserved  {
+        if self.bf.capacity() < self.reserved {
             self.bf.reserve(self.reserved);
         }
     }

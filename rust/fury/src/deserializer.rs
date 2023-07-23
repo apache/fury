@@ -36,7 +36,9 @@ where
         // ref flag
         let ref_flag = deserializer.reader.i8();
 
-        if ref_flag == (RefFlag::NotNullValueFlag as i8) || ref_flag == (RefFlag::RefValueFlag as i8){
+        if ref_flag == (RefFlag::NotNullValueFlag as i8)
+            || ref_flag == (RefFlag::RefValueFlag as i8)
+        {
             // type_id
             let type_id = deserializer.reader.i16();
             let ty = if Self::is_vec() {
@@ -170,7 +172,9 @@ impl<T: Deserialize> Deserialize for Option<T> {
         // ref flag
         let ref_flag = deserializer.reader.i8();
 
-        if ref_flag == (RefFlag::NotNullValueFlag as i8) || ref_flag == (RefFlag::RefValueFlag as i8) {
+        if ref_flag == (RefFlag::NotNullValueFlag as i8)
+            || ref_flag == (RefFlag::RefValueFlag as i8)
+        {
             // type_id
             let type_id = deserializer.reader.i16();
 
@@ -229,7 +233,7 @@ impl<'de, 'bf: 'de> DeserializerState<'de, 'bf> {
         const USESTRINGID: u8 = 1;
         let tag_type = self.reader.u8();
         if tag_type == USESTRINGID {
-            Ok(&self.tags[self.reader.i16() as usize])
+            Ok(self.tags[self.reader.i16() as usize])
         } else if tag_type == USESTRINGVALUE {
             self.reader.skip(8); // todo tag hash
             let len = self.reader.i16();

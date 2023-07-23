@@ -200,12 +200,10 @@ pub fn compute_struct_hash(props: Vec<(&str, FieldType, &str)>) -> u32 {
     props.iter().for_each(|prop| {
         let (_name, ty, _tag) = prop;
         hash = match ty {
-            FieldType::ARRAY | FieldType::MAP => {
-                compute_field_hash(hash, *ty as i16)
-            }
+            FieldType::ARRAY | FieldType::MAP => compute_field_hash(hash, *ty as i16),
             _ => hash,
         };
-        let is_basic_type = BASIC_TYPES.iter().find(|x| **x == *ty).is_some();
+        let is_basic_type = BASIC_TYPES.iter().any(|x| *x == *ty);
         if is_basic_type {
             hash = compute_field_hash(hash, *ty as i16);
         }
