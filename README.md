@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="65%" alt="" src="docs/images/logo/fury_banner.png"><br>
+  <img width="65%" alt="" src="docs/images/logo/fury_github_banner.png"><br>
 </div>
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/alipay/fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/alipay/fury)
