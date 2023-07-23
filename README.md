@@ -1,6 +1,11 @@
 <div align="center">
-  <img width="77%" alt="" src="docs/images/logo/fury_banner.png"><br>
+  <img width="65%" alt="" src="docs/images/logo/fury_github_banner.png"><br>
 </div>
+
+[![Build Status](https://img.shields.io/github/actions/workflow/status/alipay/fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/alipay/fury)
+[![Slack](https://img.shields.io/badge/join_Slack-781FF5.svg?logo=slack&style=for-the-badge)](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
+[![Twitter](https://img.shields.io/twitter/follow/fury_community?logo=twitter&style=for-the-badge)](https://twitter.com/fury_community)
+
 
 Fury is a blazing fast multi-language serialization framework powered by **jit(just-in-time compilation)** and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
