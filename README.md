@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="77%" alt="" src="docs/images/logo/fury-logo.svg"><br>
+  <img width="77%" alt="" src="docs/images/logo/fury-logo.png"><br>
 </div>
 
 Fury is a blazing fast multi-language serialization framework powered by **jit(just-in-time compilation)** and **zero-copy**, providing up to 170x performance and ultimate ease of use.
