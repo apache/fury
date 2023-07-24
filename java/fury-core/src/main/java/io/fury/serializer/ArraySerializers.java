@@ -82,7 +82,7 @@ public class ArraySerializers {
     @Override
     public void write(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
-      buffer.writePositiveVarInt(len);
+      buffer.writeInt(len);
       RefResolver refResolver = fury.getRefResolver();
       Serializer componentSerializer = this.componentTypeSerializer;
       if (componentSerializer != null) {
@@ -122,7 +122,8 @@ public class ArraySerializers {
 
     @Override
     public T[] read(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      // Some jdk8 will crash if use varint, why?
+      int numElements = buffer.readInt();
       Object[] value = newArray(numElements);
       RefResolver refResolver = fury.getRefResolver();
       refResolver.reference(value);
