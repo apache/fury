@@ -71,24 +71,26 @@ public class ReplaceResolveSerializer extends Serializer {
       Class<?> declaringClass =
           writeReplaceMethod != null
               ? writeReplaceMethod.getDeclaringClass()
-              : readResolveMethod.getDeclaringClass();
+              : (readResolveMethod != null ? readResolveMethod.getDeclaringClass() : null);
       Function writeReplaceFunc = null, readResolveFunc = null;
-      MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(declaringClass);
-      try {
-        if (writeReplaceMethod != null) {
-          writeReplaceFunc =
-              _JDKAccess.makeJDKUtilFunction(lookup, lookup.unreflect(writeReplaceMethod));
-        }
-        if (readResolveMethod != null) {
-          readResolveFunc =
-              _JDKAccess.makeJDKUtilFunction(lookup, lookup.unreflect(readResolveMethod));
-        }
-      } catch (Exception e) {
-        if (writeReplaceMethod != null && !writeReplaceMethod.isAccessible()) {
-          writeReplaceMethod.setAccessible(true);
-        }
-        if (readResolveMethod != null && !readResolveMethod.isAccessible()) {
-          readResolveMethod.setAccessible(true);
+      if (declaringClass != null) {
+        MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(declaringClass);
+        try {
+          if (writeReplaceMethod != null) {
+            writeReplaceFunc =
+                _JDKAccess.makeJDKUtilFunction(lookup, lookup.unreflect(writeReplaceMethod));
+          }
+          if (readResolveMethod != null) {
+            readResolveFunc =
+                _JDKAccess.makeJDKUtilFunction(lookup, lookup.unreflect(readResolveMethod));
+          }
+        } catch (Exception e) {
+          if (writeReplaceMethod != null && !writeReplaceMethod.isAccessible()) {
+            writeReplaceMethod.setAccessible(true);
+          }
+          if (readResolveMethod != null && !readResolveMethod.isAccessible()) {
+            readResolveMethod.setAccessible(true);
+          }
         }
       }
       this.writeReplaceFunc = writeReplaceFunc;
