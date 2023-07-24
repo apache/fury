@@ -370,7 +370,7 @@ public class ObjectStreamSerializer extends Serializer {
     }
 
     public void writeUnshared(Object obj) throws IOException {
-      fury.writeNonRefT(buffer, obj);
+      fury.writeNonRef(buffer, obj);
     }
 
     /**

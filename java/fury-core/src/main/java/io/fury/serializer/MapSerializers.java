@@ -755,7 +755,7 @@ public class MapSerializers {
           buffer.writeByte(Fury.NULL_FLAG);
         } else {
           buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-          fury.writeNonRefT(
+          fury.writeNonRef(
               buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
         }
       }
