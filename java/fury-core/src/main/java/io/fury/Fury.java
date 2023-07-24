@@ -340,7 +340,7 @@ public final class Fury {
       buffer.writeByte(Fury.NULL_FLAG);
     } else {
       buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-      writeNonRefT(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
+      writeNonRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
     }
   }
 
@@ -349,7 +349,7 @@ public final class Fury {
       buffer.writeByte(Fury.NULL_FLAG);
     } else {
       buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-      writeNonRefT(buffer, obj, classInfo);
+      writeNonRef(buffer, obj, classInfo);
     }
   }
 
@@ -359,13 +359,13 @@ public final class Fury {
    * <p>If reference is enabled, this method should be called only the object is first seen in the
    * object graph.
    */
-  public void writeNonRefT(MemoryBuffer buffer, Object obj) {
+  public void writeNonRef(MemoryBuffer buffer, Object obj) {
     ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
     classResolver.writeClass(buffer, classInfo);
     writeData(buffer, classInfo, obj);
   }
 
-  public void writeNonRefT(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
+  public void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
     classResolver.writeClass(buffer, classInfo);
     Serializer serializer = classInfo.getSerializer();
     depth++;
@@ -373,7 +373,7 @@ public final class Fury {
     depth--;
   }
 
-  public <T> void writeNonRefT(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
+  public <T> void writeNonRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
     depth++;
     serializer.write(buffer, obj);
     depth--;
