@@ -19,13 +19,11 @@
 package io.fury.serializer;
 
 import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.UnmodifiableIterator;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfoCache;
@@ -274,16 +272,8 @@ public class GuavaSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, T value) {
-      // reuse classInfoCache for key/value
       buffer.writePositiveVarInt(value.size());
-      Fury fury = this.fury;
-      ClassInfoCache keyClassInfoWriteCache = this.keyClassInfoWriteCache;
-      ClassInfoCache valueClassInfoWriteCache = this.valueClassInfoWriteCache;
-      for (Object o : value.entrySet()) {
-        Map.Entry entry = (Map.Entry) o;
-        fury.writeRef(buffer, entry.getKey(), keyClassInfoWriteCache);
-        fury.writeRef(buffer, entry.getValue(), valueClassInfoWriteCache);
-      }
+      simpleWriteElements(fury, buffer, value);
     }
 
     protected abstract ImmutableMap.Builder makeBuilder(int size);
@@ -387,22 +377,21 @@ public class GuavaSerializers {
     @Override
     public void write(MemoryBuffer buffer, T value) {
       fury.writeRef(buffer, value.comparator());
-      fury.writeRef(buffer, value.keySet(), keyClassInfoWriteCache);
-      fury.writeRef(buffer, value.values(), valueClassInfoWriteCache);
+      buffer.writePositiveVarInt(value.size());
+      simpleWriteElements(fury, buffer, value);
     }
 
     @Override
     public T read(MemoryBuffer buffer) {
       Comparator comparator = (Comparator) fury.readRef(buffer);
-      // reuse classInfoCache for key/value
-      ImmutableSet keySet = (ImmutableSet) fury.readRef(buffer, keyClassInfoReadCache);
-      ImmutableCollection values =
-          (ImmutableCollection) fury.readRef(buffer, valueClassInfoReadCache);
       ImmutableMap.Builder builder = new ImmutableSortedMap.Builder(comparator);
-      UnmodifiableIterator keyIter = keySet.iterator();
-      UnmodifiableIterator valueIter = values.iterator();
-      while (keyIter.hasNext()) {
-        builder.put(keyIter.next(), valueIter.next());
+      int size = buffer.readPositiveVarInt();
+      ClassInfoCache keyClassInfoReadCache = this.keyClassInfoReadCache;
+      ClassInfoCache valueClassInfoReadCache = this.valueClassInfoReadCache;
+      for (int i = 0; i < size; i++) {
+        Object key = fury.readRef(buffer, keyClassInfoReadCache);
+        Object value = fury.readRef(buffer, valueClassInfoReadCache);
+        builder.put(key, value);
       }
       return (T) builder.buildOrThrow();
     }

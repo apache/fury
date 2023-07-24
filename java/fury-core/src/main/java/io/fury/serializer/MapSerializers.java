@@ -176,6 +176,16 @@ public class MapSerializers {
       }
     }
 
+    protected final void simpleWriteElements(Fury fury, MemoryBuffer buffer, T map) {
+      ClassInfoCache keyClassInfoWriteCache = this.keyClassInfoWriteCache;
+      ClassInfoCache valueClassInfoWriteCache = this.valueClassInfoWriteCache;
+      for (Object o : map.entrySet()) {
+        Map.Entry entry = (Map.Entry) o;
+        fury.writeRef(buffer, entry.getKey(), keyClassInfoWriteCache);
+        fury.writeRef(buffer, entry.getValue(), valueClassInfoWriteCache);
+      }
+    }
+
     private void javaWriteWithKVSerializers(
         Fury fury,
         MemoryBuffer buffer,
