@@ -125,7 +125,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         buffer.writeByte(fieldType);
         Preconditions.checkArgument(fieldType == FieldResolver.FieldTypes.OBJECT);
         ClassInfo classInfo = fieldInfo.getClassInfo(value.getClass());
-        fury.writeNonRefT(buffer, value, classInfo);
+        fury.writeNonRef(buffer, value, classInfo);
       }
     }
     buffer.writeLong(fieldResolver.getEndTag());
@@ -209,7 +209,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       buffer.writeByte(fieldType);
       if (fieldType == FieldResolver.FieldTypes.OBJECT) {
         ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
-        fury.writeNonRefT(buffer, fieldValue, classInfo);
+        fury.writeNonRef(buffer, fieldValue, classInfo);
       } else {
         if (fieldType == FieldResolver.FieldTypes.COLLECTION_ELEMENT_FINAL) {
           writeCollectionField(

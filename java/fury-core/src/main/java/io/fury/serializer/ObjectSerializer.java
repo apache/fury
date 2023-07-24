@@ -261,7 +261,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         ClassInfo classInfo =
             classResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoCache);
         generics.pushGenericType(fieldInfo.genericType);
-        fury.writeNonRefT(buffer, fieldValue, classInfo);
+        fury.writeNonRef(buffer, fieldValue, classInfo);
         generics.popGenericType();
       }
     } else {
@@ -270,7 +270,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       } else {
         buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
         generics.pushGenericType(fieldInfo.genericType);
-        fury.writeNonRefT(
+        fury.writeNonRef(
             buffer,
             fieldValue,
             classResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoCache));

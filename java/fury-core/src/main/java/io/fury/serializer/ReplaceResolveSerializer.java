@@ -194,7 +194,7 @@ public class ReplaceResolveSerializer extends Serializer {
           // written `REF_VALUE_FLAG`/`NOT_NULL_VALUE_FLAG` id outside this method call will be
           // ignored.
           refResolver.replaceRef(original, value);
-          fury.writeNonRefT(buffer, value);
+          fury.writeNonRef(buffer, value);
         }
       } else {
         if (value != original) {
