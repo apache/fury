@@ -28,6 +28,8 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import sun.misc.Unsafe;
 
@@ -90,21 +92,63 @@ public class _JDKAccess {
     }
   }
 
-  private static final MethodType jdkUtilFunctionMethodType =
+  private static final MethodType jdkFunctionMethodType =
       MethodType.methodType(Object.class, Object.class);
 
   @SuppressWarnings("unchecked")
-  public static <T> T makeJDKUtilFunction(Lookup lookup, MethodHandle handle) {
+  public static <T, R> Function<T, R> makeJDKFunction(Lookup lookup, MethodHandle handle) {
     try {
       CallSite callSite =
           LambdaMetafactory.metafactory(
               lookup,
               "apply",
               MethodType.methodType(Function.class),
-              jdkUtilFunctionMethodType,
+              jdkFunctionMethodType,
               handle,
               handle.type());
-      return (T) callSite.getTarget().invoke();
+      return (Function<T, R>) callSite.getTarget().invoke();
+    } catch (Throwable e) {
+      UNSAFE.throwException(e);
+      throw new IllegalStateException(e);
+    }
+  }
+
+  private static final MethodType jdkConsumerMethodType =
+      MethodType.methodType(void.class, Object.class);
+
+  @SuppressWarnings("unchecked")
+  public static <T> Consumer<T> makeJDKConsumer(Lookup lookup, MethodHandle handle) {
+    try {
+      CallSite callSite =
+          LambdaMetafactory.metafactory(
+              lookup,
+              "accept",
+              MethodType.methodType(Consumer.class),
+              jdkConsumerMethodType,
+              handle,
+              handle.type());
+      return (Consumer<T>) callSite.getTarget().invoke();
+    } catch (Throwable e) {
+      UNSAFE.throwException(e);
+      throw new IllegalStateException(e);
+    }
+  }
+
+  private static final MethodType jdkBiConsumerMethodType =
+      MethodType.methodType(void.class, Object.class, Object.class);
+
+  @SuppressWarnings("unchecked")
+  public static <T, U> BiConsumer<T, U> makeJDKBiConsumer(Lookup lookup, MethodHandle handle) {
+    try {
+      CallSite callSite =
+          LambdaMetafactory.metafactory(
+              lookup,
+              "accept",
+              MethodType.methodType(BiConsumer.class),
+              jdkBiConsumerMethodType,
+              handle,
+              handle.type());
+      return (BiConsumer<T, U>) callSite.getTarget().invoke();
     } catch (Throwable e) {
       UNSAFE.throwException(e);
       throw new IllegalStateException(e);

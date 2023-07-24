@@ -32,6 +32,8 @@ import io.fury.resolver.FieldResolver.ClassField;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
+import io.fury.util.Utils;
+import io.fury.util.unsafe._JDKAccess;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -44,6 +46,7 @@ import java.io.ObjectStreamClass;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -55,6 +58,8 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 
 /**
@@ -141,7 +146,11 @@ public class ObjectStreamSerializer extends Serializer {
             objectOutputStream.buffer = buffer;
             objectOutputStream.curPut = null;
             objectOutputStream.fieldsWritten = false;
-            writeObjectMethod.invoke(value, objectOutputStream);
+            if (slotsInfo.writeObjectFunc != null) {
+              slotsInfo.writeObjectFunc.accept(value, objectOutputStream);
+            } else {
+              writeObjectMethod.invoke(value, objectOutputStream);
+            }
           } finally {
             objectOutputStream.targetObject = oldObject;
             objectOutputStream.buffer = oldBuffer;
@@ -179,7 +188,11 @@ public class ObjectStreamSerializer extends Serializer {
           // the receiver's version extends classes that are not extended by the sender's version.
           Method readObjectNoData = slotsInfo.readObjectNoData;
           if (readObjectNoData != null) {
-            readObjectNoData.invoke(obj);
+            if (slotsInfo.readObjectNoDataFunc != null) {
+              slotsInfo.readObjectNoDataFunc.accept(obj);
+            } else {
+              readObjectNoData.invoke(obj);
+            }
           }
           slotsInfo = slotsInfos[slotIndex++];
         }
@@ -203,7 +216,11 @@ public class ObjectStreamSerializer extends Serializer {
             objectInputStream.targetObject = obj;
             objectInputStream.getField = getField;
             objectInputStream.callbacks = callbacks;
-            readObjectMethod.invoke(obj, objectInputStream);
+            if (slotsInfo.readObjectFunc != null) {
+              slotsInfo.readObjectFunc.accept(obj, objectInputStream);
+            } else {
+              readObjectMethod.invoke(obj, objectInputStream);
+            }
           } finally {
             objectInputStream.fieldsRead = fieldsRead;
             objectInputStream.buffer = oldBuffer;
@@ -249,6 +266,9 @@ public class ObjectStreamSerializer extends Serializer {
     private final Method writeObjectMethod;
     private final Method readObjectMethod;
     private final Method readObjectNoData;
+    private final BiConsumer writeObjectFunc;
+    private final BiConsumer readObjectFunc;
+    private final Consumer readObjectNoDataFunc;
     // mark non-final for async-jit to update it to jit-serializer.
     private CompatibleSerializerBase slotsSerializer;
     private final ObjectIntMap<String> fieldIndexMap;
@@ -270,6 +290,27 @@ public class ObjectStreamSerializer extends Serializer {
           (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "readObjectMethod");
       readObjectNoData =
           (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "readObjectNoData");
+      MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(type);
+      BiConsumer writeObjectFunc = null, readObjectFunc = null;
+      Consumer readObjectNoDataFunc = null;
+      try {
+        if (writeObjectMethod != null) {
+          writeObjectFunc =
+              _JDKAccess.makeJDKBiConsumer(lookup, lookup.unreflect(writeObjectMethod));
+        }
+        if (readObjectMethod != null) {
+          readObjectFunc = _JDKAccess.makeJDKBiConsumer(lookup, lookup.unreflect(readObjectMethod));
+        }
+        if (readObjectNoData != null) {
+          readObjectNoDataFunc =
+              _JDKAccess.makeJDKConsumer(lookup, lookup.unreflect(readObjectNoData));
+        }
+      } catch (Exception e) {
+        Utils.ignore(e);
+      }
+      this.writeObjectFunc = writeObjectFunc;
+      this.readObjectFunc = readObjectFunc;
+      this.readObjectNoDataFunc = readObjectNoDataFunc;
       // `putFields/writeFields` will convert to fields value to be written by
       // `CompatibleSerializer`,
       // since `put` values may not exist in current class, which means container generic type are
