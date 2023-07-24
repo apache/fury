@@ -30,6 +30,7 @@ import static io.fury.type.TypeUtils.getRawType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Primitives;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
@@ -722,6 +723,8 @@ public class ClassResolver {
         return ExternalizableSerializer.class;
       } else if (ImmutableList.class.isAssignableFrom(cls)) {
         return GuavaSerializers.ImmutableListSerializer.class;
+      } else if (ImmutableSet.class.isAssignableFrom(cls)) {
+        return GuavaSerializers.ImmutableSetSerializer.class;
       } else if (ImmutableMap.class.isAssignableFrom(cls)) {
         return GuavaSerializers.ImmutableMapSerializer.class;
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {

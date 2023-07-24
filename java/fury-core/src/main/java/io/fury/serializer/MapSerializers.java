@@ -67,10 +67,10 @@ public class MapSerializers {
     protected final boolean supportCodegenHook;
     private Serializer keySerializer;
     private Serializer valueSerializer;
-    private final ClassInfoCache keyClassInfoWriteCache;
-    private final ClassInfoCache keyClassInfoReadCache;
-    private final ClassInfoCache valueClassInfoWriteCache;
-    private final ClassInfoCache valueClassInfoReadCache;
+    protected final ClassInfoCache keyClassInfoWriteCache;
+    protected final ClassInfoCache keyClassInfoReadCache;
+    protected final ClassInfoCache valueClassInfoWriteCache;
+    protected final ClassInfoCache valueClassInfoReadCache;
     // support map subclass whose key or value generics only are available,
     // or one of types is already instantiated in subclass, ex: `Subclass<T> implements Map<String,
     // T>`
