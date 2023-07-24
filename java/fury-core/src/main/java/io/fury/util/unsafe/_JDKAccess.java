@@ -32,7 +32,7 @@ import sun.misc.Unsafe;
 
 // CHECKSTYLE.OFF:TypeName
 public class _JDKAccess {
-  // CHECKSTYLE.OFF:TypeName
+  // CHECKSTYLE.ON:TypeName
   public static final int JAVA_VERSION;
   public static final boolean OPEN_J9;
   public static final Unsafe UNSAFE;

@@ -18,6 +18,9 @@
 
 package io.fury.collection;
 
+import static io.fury.util.unsafe._Collections.setArrayListElements;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -31,5 +34,13 @@ public class Collections {
     return (iterable instanceof Collection)
         ? ((Collection<T>) iterable).stream()
         : StreamSupport.stream(iterable.spliterator(), false);
+  }
+
+  /** Create an {@link ArrayList} from provided elements. */
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public static <T> ArrayList<T> ofArrayList(T... elements) {
+    ArrayList list = new ArrayList(elements.length);
+    setArrayListElements(list, elements);
+    return list;
   }
 }
