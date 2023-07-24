@@ -124,7 +124,7 @@ public class GuavaSerializers {
       try {
         MethodHandle ctr =
             lookup.findConstructor(cls, MethodType.methodType(void.class, Object[].class));
-        Function func = _JDKAccess.makeJDKUtilFunction(lookup, ctr);
+        Function func = _JDKAccess.makeJDKFunction(lookup, ctr);
         regularImmutableListInvoke[2] = func;
       } catch (NoSuchMethodException | IllegalAccessException e) {
         Utils.ignore(e);
