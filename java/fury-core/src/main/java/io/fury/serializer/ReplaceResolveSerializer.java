@@ -78,11 +78,11 @@ public class ReplaceResolveSerializer extends Serializer {
         try {
           if (writeReplaceMethod != null) {
             writeReplaceFunc =
-                _JDKAccess.makeJDKUtilFunction(lookup, lookup.unreflect(writeReplaceMethod));
+                _JDKAccess.makeJDKFunction(lookup, lookup.unreflect(writeReplaceMethod));
           }
           if (readResolveMethod != null) {
             readResolveFunc =
-                _JDKAccess.makeJDKUtilFunction(lookup, lookup.unreflect(readResolveMethod));
+                _JDKAccess.makeJDKFunction(lookup, lookup.unreflect(readResolveMethod));
           }
         } catch (Exception e) {
           if (writeReplaceMethod != null && !writeReplaceMethod.isAccessible()) {
