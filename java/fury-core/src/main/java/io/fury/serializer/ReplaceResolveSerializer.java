@@ -27,11 +27,14 @@ import io.fury.resolver.RefResolver;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
+import io.fury.util.unsafe._JDKAccess;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 import org.slf4j.Logger;
 
 /**
@@ -57,12 +60,41 @@ public class ReplaceResolveSerializer extends Serializer {
   private static class JDKReplaceResolveMethodInfoCache {
     private final Method writeReplaceMethod;
     private final Method readResolveMethod;
+    private final Function writeReplaceFunc;
+    private final Function readResolveFunc;
     private Serializer objectSerializer;
 
     private JDKReplaceResolveMethodInfoCache(
         Method writeReplaceMethod, Method readResolveMethod, Serializer objectSerializer) {
       this.writeReplaceMethod = writeReplaceMethod;
       this.readResolveMethod = readResolveMethod;
+      Class<?> declaringClass =
+          writeReplaceMethod != null
+              ? writeReplaceMethod.getDeclaringClass()
+              : (readResolveMethod != null ? readResolveMethod.getDeclaringClass() : null);
+      Function writeReplaceFunc = null, readResolveFunc = null;
+      if (declaringClass != null) {
+        MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(declaringClass);
+        try {
+          if (writeReplaceMethod != null) {
+            writeReplaceFunc =
+                _JDKAccess.makeJDKUtilFunction(lookup, lookup.unreflect(writeReplaceMethod));
+          }
+          if (readResolveMethod != null) {
+            readResolveFunc =
+                _JDKAccess.makeJDKUtilFunction(lookup, lookup.unreflect(readResolveMethod));
+          }
+        } catch (Exception e) {
+          if (writeReplaceMethod != null && !writeReplaceMethod.isAccessible()) {
+            writeReplaceMethod.setAccessible(true);
+          }
+          if (readResolveMethod != null && !readResolveMethod.isAccessible()) {
+            readResolveMethod.setAccessible(true);
+          }
+        }
+      }
+      this.writeReplaceFunc = writeReplaceFunc;
+      this.readResolveFunc = readResolveFunc;
       this.objectSerializer = objectSerializer;
     }
 
@@ -71,7 +103,7 @@ public class ReplaceResolveSerializer extends Serializer {
     }
   }
 
-  private JDKReplaceResolveMethodInfoCache newJDKMethodInfoCache(Class<?> cls, Fury fury) {
+  static JDKReplaceResolveMethodInfoCache newJDKMethodInfoCache(Class<?> cls, Fury fury) {
     Method writeReplaceMethod, readResolveMethod, writeObjectMethod, readObjectMethod;
     // In JDK17, set private jdk method accessible will fail by default, use ObjectStreamClass
     // instead, since it set accessible.
@@ -90,13 +122,7 @@ public class ReplaceResolveSerializer extends Serializer {
       //  but hessian ignores this check and many existing system are using hessian,
       //  so we just warn it to keep compatibility with most applications.
       writeReplaceMethod = JavaSerializer.getWriteReplaceMethod(cls);
-      if (writeReplaceMethod != null) {
-        writeReplaceMethod.setAccessible(true);
-      }
       readResolveMethod = JavaSerializer.getReadResolveMethod(cls);
-      if (readResolveMethod != null) {
-        readResolveMethod.setAccessible(true);
-      }
       writeObjectMethod = JavaSerializer.getWriteObjectMethod(cls);
       readObjectMethod = JavaSerializer.getReadObjectMethod(cls);
       if (writeReplaceMethod != null) {
@@ -123,11 +149,12 @@ public class ReplaceResolveSerializer extends Serializer {
       serializerClass =
           fury.getClassResolver()
               .getObjectSerializerClass(
-                  cls, sc -> methodInfoCache.setObjectSerializer(createDataSerializer(cls, sc)));
+                  cls,
+                  sc -> methodInfoCache.setObjectSerializer(createDataSerializer(fury, cls, sc)));
     } else {
       serializerClass = fury.getDefaultJDKStreamSerializerType();
     }
-    methodInfoCache.setObjectSerializer(createDataSerializer(cls, serializerClass));
+    methodInfoCache.setObjectSerializer(createDataSerializer(fury, cls, serializerClass));
     return methodInfoCache;
   }
 
@@ -137,10 +164,11 @@ public class ReplaceResolveSerializer extends Serializer {
    *
    * @see #readObject
    */
-  private Serializer createDataSerializer(Class<?> cls, Class<? extends Serializer> sc) {
-    Serializer prev = classResolver.getSerializer(cls, false);
+  private static Serializer createDataSerializer(
+      Fury fury, Class<?> cls, Class<? extends Serializer> sc) {
+    Serializer prev = fury.getClassResolver().getSerializer(cls, false);
     Serializer serializer = Serializers.newSerializer(fury, cls, sc);
-    classResolver.resetSerializer(cls, prev);
+    fury.getClassResolver().resetSerializer(cls, prev);
     return serializer;
   }
 
@@ -177,10 +205,14 @@ public class ReplaceResolveSerializer extends Serializer {
     Method writeReplaceMethod = jdkMethodInfoCache.writeReplaceMethod;
     if (writeReplaceMethod != null) {
       Object original = value;
-      try {
-        value = writeReplaceMethod.invoke(value);
-      } catch (Exception e) {
-        Platform.throwException(e);
+      if (jdkMethodInfoCache.writeReplaceFunc != null) {
+        value = jdkMethodInfoCache.writeReplaceFunc.apply(value);
+      } else {
+        try {
+          value = writeReplaceMethod.invoke(value);
+        } catch (Exception e) {
+          Platform.throwException(e);
+        }
       }
       // FIXME JDK serialization will update reference table, which will change deserialized object
       // graph.
@@ -268,6 +300,9 @@ public class ReplaceResolveSerializer extends Serializer {
     Object o = jdkMethodInfoCache.objectSerializer.read(buffer);
     Method readResolveMethod = jdkMethodInfoCache.readResolveMethod;
     if (readResolveMethod != null) {
+      if (jdkMethodInfoCache.readResolveFunc != null) {
+        return jdkMethodInfoCache.readResolveFunc.apply(o);
+      }
       try {
         return readResolveMethod.invoke(o);
       } catch (Exception e) {

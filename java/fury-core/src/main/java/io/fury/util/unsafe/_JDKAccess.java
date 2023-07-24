@@ -28,6 +28,7 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.function.Function;
 import sun.misc.Unsafe;
 
 // CHECKSTYLE.OFF:TypeName
@@ -86,6 +87,27 @@ public class _JDKAccess {
     } catch (Throwable e) {
       Utils.ignore(e);
       throw new IllegalStateException();
+    }
+  }
+
+  private static final MethodType jdkUtilFunctionMethodType =
+      MethodType.methodType(Object.class, Object.class);
+
+  @SuppressWarnings("unchecked")
+  public static <T> T makeJDKUtilFunction(Lookup lookup, MethodHandle handle) {
+    try {
+      CallSite callSite =
+          LambdaMetafactory.metafactory(
+              lookup,
+              "apply",
+              MethodType.methodType(Function.class),
+              jdkUtilFunctionMethodType,
+              handle,
+              handle.type());
+      return (T) callSite.getTarget().invoke();
+    } catch (Throwable e) {
+      UNSAFE.throwException(e);
+      throw new IllegalStateException(e);
     }
   }
 
