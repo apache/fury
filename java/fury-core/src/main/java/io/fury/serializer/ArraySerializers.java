@@ -21,6 +21,9 @@ package io.fury.serializer;
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
+import io.fury.resolver.ClassInfo;
+import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.type.Type;
 import io.fury.type.TypeUtils;
@@ -37,10 +40,11 @@ import java.util.IdentityHashMap;
 public class ArraySerializers {
 
   /** May be multi-dimension array, or multi-dimension primitive array. */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public static final class ObjectArraySerializer<T> extends Serializer<T[]> {
     private final Class<T> innerType;
     private final Serializer componentTypeSerializer;
+    private final ClassInfoCache classInfoCache;
     private final int dimension;
     private final int[] stubDims;
 
@@ -67,6 +71,7 @@ public class ArraySerializers {
         this.componentTypeSerializer = null;
       }
       this.stubDims = new int[dimension];
+      classInfoCache = fury.getClassResolver().nilClassInfoCache();
     }
 
     @Override
@@ -77,18 +82,29 @@ public class ArraySerializers {
     @Override
     public void write(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
-      buffer.writeInt(len);
-      final Serializer componentTypeSerializer = this.componentTypeSerializer;
-      if (componentTypeSerializer != null) {
-        RefResolver refResolver = fury.getRefResolver();
+      buffer.writePositiveVarInt(len);
+      RefResolver refResolver = fury.getRefResolver();
+      Serializer componentSerializer = this.componentTypeSerializer;
+      if (componentSerializer != null) {
         for (T t : arr) {
           if (!refResolver.writeRefOrNull(buffer, t)) {
-            componentTypeSerializer.write(buffer, t);
+            componentSerializer.write(buffer, t);
           }
         }
       } else {
+        Fury fury = this.fury;
+        ClassResolver classResolver = fury.getClassResolver();
+        ClassInfo classInfo = null;
+        Class<?> elemClass = null;
         for (T t : arr) {
-          fury.writeRef(buffer, t);
+          if (!refResolver.writeRefOrNull(buffer, t)) {
+            Class<?> clz = t.getClass();
+            if (clz != elemClass) {
+              elemClass = clz;
+              classInfo = classResolver.getClassInfo(clz);
+            }
+            fury.writeNonRef(buffer, t, classInfo);
+          }
         }
       }
     }
@@ -96,7 +112,7 @@ public class ArraySerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
-      buffer.writeInt(len);
+      buffer.writePositiveVarInt(len);
       // TODO(chaokunyang) use generics by creating component serializers to multi-dimension array.
       for (T t : arr) {
         fury.xwriteRef(buffer, t);
@@ -105,7 +121,7 @@ public class ArraySerializers {
 
     @Override
     public T[] read(MemoryBuffer buffer) {
-      int numElements = buffer.readInt();
+      int numElements = buffer.readPositiveVarInt();
       Object[] value = newArray(numElements);
       RefResolver refResolver = fury.getRefResolver();
       refResolver.reference(value);
@@ -123,8 +139,19 @@ public class ArraySerializers {
           value[i] = elem;
         }
       } else {
+        Fury fury = this.fury;
+        ClassInfoCache classInfoCache = this.classInfoCache;
         for (int i = 0; i < numElements; i++) {
-          value[i] = fury.readRef(buffer);
+          int nextReadRefId = refResolver.tryPreserveRefId(buffer);
+          Object o;
+          if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
+            // ref value or not-null value
+            o = fury.readNonRef(buffer, classInfoCache);
+            refResolver.setReadObject(nextReadRefId, o);
+          } else {
+            o = refResolver.getReadObject();
+          }
+          value[i] = o;
         }
       }
       return (T[]) value;
@@ -132,7 +159,7 @@ public class ArraySerializers {
 
     @Override
     public T[] xread(MemoryBuffer buffer) {
-      int numElements = buffer.readInt();
+      int numElements = buffer.readPositiveVarInt();
       Object[] value = newArray(numElements);
       for (int i = 0; i < numElements; i++) {
         value[i] = fury.xreadRef(buffer);
