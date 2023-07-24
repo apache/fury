@@ -57,7 +57,7 @@ public class ReplaceResolveSerializer extends Serializer {
   private static final byte REPLACED_NEW_TYPE = 1;
   private static final byte REPLACED_SAME_TYPE = 2;
 
-  private static class JDKReplaceResolveMethodInfoCache {
+  static class JDKReplaceResolveMethodInfoCache {
     private final Method writeReplaceMethod;
     private final Method readResolveMethod;
     private final Function writeReplaceFunc;
@@ -96,6 +96,19 @@ public class ReplaceResolveSerializer extends Serializer {
       this.writeReplaceFunc = writeReplaceFunc;
       this.readResolveFunc = readResolveFunc;
       this.objectSerializer = objectSerializer;
+    }
+
+    Object writeReplace(Object o) {
+      if (writeReplaceFunc != null) {
+        return writeReplaceFunc.apply(o);
+      } else {
+        try {
+          return writeReplaceMethod.invoke(o);
+        } catch (Exception e) {
+          Platform.throwException(e);
+          throw new IllegalStateException(e);
+        }
+      }
     }
 
     public void setObjectSerializer(Serializer objectSerializer) {
@@ -205,15 +218,7 @@ public class ReplaceResolveSerializer extends Serializer {
     Method writeReplaceMethod = jdkMethodInfoCache.writeReplaceMethod;
     if (writeReplaceMethod != null) {
       Object original = value;
-      if (jdkMethodInfoCache.writeReplaceFunc != null) {
-        value = jdkMethodInfoCache.writeReplaceFunc.apply(value);
-      } else {
-        try {
-          value = writeReplaceMethod.invoke(value);
-        } catch (Exception e) {
-          Platform.throwException(e);
-        }
-      }
+      value = jdkMethodInfoCache.writeReplace(value);
       // FIXME JDK serialization will update reference table, which will change deserialized object
       // graph.
       //  If fury doesn't update reference table, deserialized object graph will be same,

@@ -37,7 +37,7 @@ public class GuavaSerializersTest extends FuryTestBase {
     serDe(getJavaFury(), ImmutableList.of(1, 2));
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(ImmutableList.of(1, 2).getClass()),
-        GuavaSerializers.ImmutableListSerializer.class);
+        GuavaSerializers.RegularImmutableListSerializer.class);
   }
 
   @Test
