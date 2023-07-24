@@ -103,6 +103,7 @@ public class ArraySerializers {
               elemClass = clz;
               classInfo = classResolver.getClassInfo(clz);
             }
+            classResolver.writeClass(buffer, classInfo);
             fury.writeNonRef(buffer, t, classInfo);
           }
         }
