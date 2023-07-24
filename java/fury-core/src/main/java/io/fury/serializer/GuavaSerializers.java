@@ -24,14 +24,23 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
+import io.fury.resolver.ClassInfoCache;
 import io.fury.serializer.CollectionSerializers.CollectionSerializer;
 import io.fury.serializer.MapSerializers.MapSerializer;
 import io.fury.type.Type;
+import io.fury.util.Platform;
+import io.fury.util.ReflectionUtils;
+import io.fury.util.Utils;
+import io.fury.util.unsafe._JDKAccess;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Serializers for common guava types.
@@ -96,17 +105,75 @@ public class GuavaSerializers {
       return (short) -Type.LIST.getId();
     }
 
-    @Override
-    public T xread(MemoryBuffer buffer) {
-      int size = buffer.readPositiveVarInt();
-      List list = new ArrayList<>();
-      xreadElements(fury, buffer, list, size);
-      T immutableList = (T) ImmutableList.copyOf(list);
-      fury.getRefResolver().reference(immutableList);
-      return immutableList;
+    public T xnewInstance(Collection collection) {
+      return (T) ImmutableList.copyOf(collection);
+    }
+  }
+
+  private static final String pkg = "com.google.common.collect";
+  private static volatile Object[] regularImmutableListInvokeCache;
+
+  private static Object[] regularImmutableListInvoke() {
+    Object[] regularImmutableListInvoke = regularImmutableListInvokeCache;
+    if (regularImmutableListInvoke == null) {
+      regularImmutableListInvoke = new Object[3];
+      Class<?> cls = loadClass(pkg + ".RegularImmutableList", ImmutableList.of(1, 2).getClass());
+      regularImmutableListInvoke[0] = cls;
+      regularImmutableListInvoke[1] = ReflectionUtils.getFieldOffset(cls, "array");
+      MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(cls);
+      try {
+        MethodHandle ctr =
+            lookup.findConstructor(cls, MethodType.methodType(void.class, Object[].class));
+        Function func = _JDKAccess.makeJDKUtilFunction(lookup, ctr);
+        regularImmutableListInvoke[2] = func;
+      } catch (NoSuchMethodException | IllegalAccessException e) {
+        Utils.ignore(e);
+      }
+      regularImmutableListInvokeCache = regularImmutableListInvoke;
+    }
+    return regularImmutableListInvoke;
+  }
+
+  public static final class RegularImmutableListSerializer<T extends ImmutableList>
+      extends GuavaCollectionSerializer<T> {
+    private final long offset;
+    private final Function<Object[], ImmutableList> function;
+    private final ClassInfoCache classInfoCache;
+
+    public RegularImmutableListSerializer(Fury fury, Class<T> cls) {
+      super(fury, cls);
+      Object[] cache = regularImmutableListInvoke();
+      offset = (long) cache[1];
+      function = (Function<Object[], ImmutableList>) cache[2];
+      classInfoCache = fury.getClassResolver().nilClassInfoCache();
     }
 
-    public T xnewInstance(Collection collection) {
+    @Override
+    public void write(MemoryBuffer buffer, T value) {
+      Object[] array = (Object[]) Platform.getObject(value, offset);
+      buffer.writePositiveVarInt(array.length);
+      for (Object o : array) {
+        fury.writeRef(buffer, o, classInfoCache);
+      }
+    }
+
+    @Override
+    public T read(MemoryBuffer buffer) {
+      int len = buffer.readPositiveVarInt();
+      Object[] array = new Object[len];
+      for (int i = 0; i < len; i++) {
+        array[i] = fury.readRef(buffer, classInfoCache);
+      }
+      return (T) function.apply(array);
+    }
+
+    @Override
+    public short getXtypeId() {
+      return (short) -Type.LIST.getId();
+    }
+
+    @Override
+    protected T xnewInstance(Collection collection) {
       return (T) ImmutableList.copyOf(collection);
     }
   }
@@ -227,7 +294,6 @@ public class GuavaSerializers {
     // inconsistent if peers load different version of guava.
     // For example: guava 20 return ImmutableBiMap for ImmutableMap.of(), but guava 27 return
     // ImmutableMap.
-    String pkg = "com.google.common.collect";
     Class<?> cls = loadClass(pkg + ".RegularImmutableBiMap", ImmutableBiMap.of().getClass());
     fury.registerSerializer(cls, new ImmutableBiMapSerializer(fury, cls));
     cls = loadClass(pkg + ".SingletonImmutableBiMap", ImmutableBiMap.of(1, 2).getClass());
@@ -235,7 +301,7 @@ public class GuavaSerializers {
     cls = loadClass(pkg + ".RegularImmutableMap", ImmutableMap.of().getClass());
     fury.registerSerializer(cls, new ImmutableMapSerializer(fury, cls));
     cls = loadClass(pkg + ".RegularImmutableList", ImmutableList.of().getClass());
-    fury.registerSerializer(cls, new ImmutableListSerializer(fury, cls));
+    fury.registerSerializer(cls, new RegularImmutableListSerializer(fury, cls));
     cls = loadClass(pkg + ".SingletonImmutableList", ImmutableList.of(1).getClass());
     fury.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
     cls = loadClass(pkg + ".RegularImmutableSet", ImmutableSet.of().getClass());
