@@ -18,27 +18,16 @@
 
 package io.fury.collection;
 
-import java.util.HashMap;
+import static org.testng.Assert.*;
 
-/**
- * Map factory to create maps.
- *
- * @author chaokunyang
- */
-public class Maps {
+import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
+import org.testng.annotations.Test;
 
-  /** Create a {@link HashMap} from provided kv pairs. */
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public static <K, V> HashMap<K, V> ofHashMap(Object... kv) {
-    if (kv.length % 2 != 0) {
-      throw new IllegalArgumentException(
-          String.format("entries got %d objects, which aren't pairs", kv.length));
-    }
-    int size = kv.length / 2;
-    HashMap map = new HashMap<>(size);
-    for (int i = 0; i < size; i += 2) {
-      map.put(kv[i], kv[i + 1]);
-    }
-    return map;
+public class CollectionsTest {
+
+  @Test
+  public void testOfArrayList() {
+    assertEquals(Collections.ofArrayList(1, 2), new ArrayList<>(ImmutableList.of(1, 2)));
   }
 }

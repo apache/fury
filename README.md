@@ -143,9 +143,8 @@ Here we give a quick start about how to use fury, see [user guide](https://githu
 If you don't have cross-language requirements, using this mode will 
 have better performance.
 ```java
-import io.fury.Fury;
-import java.util.List;
-import java.util.Arrays;
+import io.fury.*;
+import java.util.*;
 
 public class Example {
   public static void main(String[] args) {
@@ -190,10 +189,8 @@ public class Example {
 ### Cross-language object graph serialization
 **Java**
 ```java
-import com.google.common.collect.ImmutableMap;
 import io.fury.*;
-
-import java.util.Map;
+import java.util.*;
 
 public class ReferenceExample {
   public static class SomeClass {
@@ -218,7 +215,6 @@ public class ReferenceExample {
     byte[] bytes = fury.serialize(createObject());
     // bytes can be data serialized by other languages.
     System.out.println(fury.deserialize(bytes));
-    ;
   }
 }
 ```
