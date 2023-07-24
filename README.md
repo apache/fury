@@ -202,7 +202,7 @@ public class ReferenceExample {
   public static Object createObject() {
     SomeClass obj = new SomeClass();
     obj.f1 = obj;
-    obj.f2 = ImmutableMap.of("k1", "v1", "k2", "v2");
+    obj.f2 = ofHashMap("k1", "v1", "k2", "v2");
     obj.f3 = obj.f2;
     return obj;
   }
