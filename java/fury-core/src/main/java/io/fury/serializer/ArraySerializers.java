@@ -575,7 +575,7 @@ public class ArraySerializers {
     @Override
     public void write(MemoryBuffer buffer, String[] value) {
       int len = value.length;
-      buffer.writeInt(len);
+      buffer.writePositiveVarInt(len);
       for (String elem : value) {
         // TODO reference support
         if (elem != null) {
@@ -589,7 +589,7 @@ public class ArraySerializers {
 
     @Override
     public String[] read(MemoryBuffer buffer) {
-      int numElements = buffer.readInt();
+      int numElements = buffer.readPositiveVarInt();
       String[] value = new String[numElements];
       fury.getRefResolver().reference(value);
       for (int i = 0; i < numElements; i++) {
@@ -605,7 +605,7 @@ public class ArraySerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, String[] value) {
       int len = value.length;
-      buffer.writeInt(len);
+      buffer.writePositiveVarInt(len);
       for (String elem : value) {
         if (elem != null) {
           buffer.writeByte(Fury.REF_VALUE_FLAG);
@@ -618,7 +618,7 @@ public class ArraySerializers {
 
     @Override
     public String[] xread(MemoryBuffer buffer) {
-      int numElements = buffer.readInt();
+      int numElements = buffer.readPositiveVarInt();
       String[] value = new String[numElements];
       for (int i = 0; i < numElements; i++) {
         if (buffer.readByte() == Fury.REF_VALUE_FLAG) {
@@ -649,7 +649,7 @@ public class ArraySerializers {
   static void writePrimitiveArray(
       MemoryBuffer buffer, Object arr, int offset, int numElements, int elemSize) {
     int size = Math.multiplyExact(numElements, elemSize);
-    buffer.writeInt(size);
+    buffer.writePositiveVarInt(size);
     int writerIndex = buffer.writerIndex();
     int end = writerIndex + size;
     buffer.ensure(end);

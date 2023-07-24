@@ -129,7 +129,7 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     byte[] bytecode =
         JaninoUtils.toBytecode(clz.getClassLoader(), compileUnit).values().iterator().next();
     JaninoUtils.CodeStats classStats = JaninoUtils.getClassStats(bytecode);
-    System.out.println(classStats);
+    // System.out.println(classStats);
     classStats.methodsSize.entrySet().stream()
         .filter(e -> !e.getKey().equals("<init>"))
         .forEach(
