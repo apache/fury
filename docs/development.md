@@ -35,3 +35,10 @@ sudo dtrace -x ustackframes=100 -n 'profile-99 /pid == 73485 && arg1/ { @[ustack
 sudo stackcollapse.pl out.stack > out.folded
 sudo flamegraph.pl out.folded > out.svg
 ```
+
+## CI
+### Login into ci machine
+```yaml
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+```
