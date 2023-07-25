@@ -369,7 +369,8 @@ Fury provides a secure mode option and enabled by default for such protocols, wh
 - Continuously improve our serialization infrastructure for any new protocols
 
 ## How to Contribute
-Please read our [project development guide](https://github.com/alipay/fury/blob/main/docs/development.md).
+
+Please read the [CONTRIBUTING](CONTRIBUTING.md) guide.
 
 ## Getting involved
 
