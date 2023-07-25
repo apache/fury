@@ -348,7 +348,7 @@ Fury java object graph serialization support class schema forward/backward compa
 
 We plan to add support cross-language serialization after [meta compression](https://github.com/alipay/fury/issues/203) are finished.
 ### Binary Compatibility
-We are still improving our protocols, binary compatibility are not ensured between fury releases for now. Please `shade` fury if you will upgrade fury in the future.
+We are still improving our protocols, binary compatibility are not ensured between fury releases for now. Please versioning your data and fury dependency if you will upgrade fury in the future.
 
 Binary compatibility will be ensured before fury 1.0.
 
