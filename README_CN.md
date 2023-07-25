@@ -6,7 +6,7 @@
 [![Slack](https://img.shields.io/badge/join_Slack-781FF5.svg?logo=slack&style=for-the-badge)](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
 [![Twitter](https://img.shields.io/twitter/follow/fury_community?logo=twitter&style=for-the-badge)](https://twitter.com/fury_community)
 
-Fury是一个基于**JIT动态编译**和**零拷贝**的多语言序列化框架，提供最好170x的性能和极致的易用性。
+Fury是一个基于**JIT动态编译**和**零拷贝**的高性能多语言序列化框架，提供最高170x的性能和极致的易用性。
 
 https://furyio.org
 
