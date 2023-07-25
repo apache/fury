@@ -28,7 +28,6 @@ import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Primitives;
 import com.google.common.reflect.TypeToken;
@@ -720,10 +719,6 @@ public class ClassResolver {
         return TimeSerializers.TimeZoneSerializer.class;
       } else if (Externalizable.class.isAssignableFrom(cls)) {
         return ExternalizableSerializer.class;
-      } else if (ImmutableList.class.isAssignableFrom(cls)) {
-        return GuavaSerializers.ImmutableListSerializer.class;
-      } else if (ImmutableMap.class.isAssignableFrom(cls)) {
-        return GuavaSerializers.ImmutableMapSerializer.class;
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {
         return BufferSerializers.ByteBufferSerializer.class;
       }

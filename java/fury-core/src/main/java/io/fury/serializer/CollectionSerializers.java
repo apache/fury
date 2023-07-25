@@ -69,8 +69,8 @@ public class CollectionSerializers {
     private final boolean supportCodegenHook;
     // TODO remove elemSerializer, support generics in CompatibleSerializer.
     private Serializer<?> elemSerializer;
-    private final ClassInfoCache elementClassInfoWriteCache;
-    private final ClassInfoCache elementClassInfoReadCache;
+    protected final ClassInfoCache elementClassInfoWriteCache;
+    protected final ClassInfoCache elementClassInfoReadCache;
     // support subclass whose element type are instantiated already, such as
     // `Subclass extends ArrayList<String>`.
     // nested generics such as `Subclass extends ArrayList<List<Integer>>` can only be passed by

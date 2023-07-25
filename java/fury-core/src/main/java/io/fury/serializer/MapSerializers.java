@@ -67,10 +67,10 @@ public class MapSerializers {
     protected final boolean supportCodegenHook;
     private Serializer keySerializer;
     private Serializer valueSerializer;
-    private final ClassInfoCache keyClassInfoWriteCache;
-    private final ClassInfoCache keyClassInfoReadCache;
-    private final ClassInfoCache valueClassInfoWriteCache;
-    private final ClassInfoCache valueClassInfoReadCache;
+    protected final ClassInfoCache keyClassInfoWriteCache;
+    protected final ClassInfoCache keyClassInfoReadCache;
+    protected final ClassInfoCache valueClassInfoWriteCache;
+    protected final ClassInfoCache valueClassInfoReadCache;
     // support map subclass whose key or value generics only are available,
     // or one of types is already instantiated in subclass, ex: `Subclass<T> implements Map<String,
     // T>`
@@ -173,6 +173,16 @@ public class MapSerializers {
         }
       } else {
         genericJavaWrite(fury, buffer, map);
+      }
+    }
+
+    protected final void simpleWriteElements(Fury fury, MemoryBuffer buffer, T map) {
+      ClassInfoCache keyClassInfoWriteCache = this.keyClassInfoWriteCache;
+      ClassInfoCache valueClassInfoWriteCache = this.valueClassInfoWriteCache;
+      for (Object o : map.entrySet()) {
+        Map.Entry entry = (Map.Entry) o;
+        fury.writeRef(buffer, entry.getKey(), keyClassInfoWriteCache);
+        fury.writeRef(buffer, entry.getValue(), valueClassInfoWriteCache);
       }
     }
 

@@ -406,7 +406,8 @@ public class CollectionSerializersTest extends FuryTestBase {
     assertEquals(set, read);
 
     assertSame(
-        fury.getClassResolver().getSerializer(setClass).getClass(), ReplaceResolveSerializer.class);
+        fury.getClassResolver().getSerializer(setClass).getClass(),
+        GuavaSerializers.ImmutableSortedSetSerializer.class);
     buffer.writerIndex(0);
     buffer.readerIndex(0);
     assertEquals(set, fury.deserialize(fury.serialize(buffer, set)));
