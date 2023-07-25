@@ -22,11 +22,67 @@ import io.fury.util.Platform;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 public class JDKAccessTest {
+
+  private Object func1() {
+    return this;
+  }
+
+  private void func2() {}
+
+  private void func3(int x) {}
+
+  private void func4(Object x) {}
+
+  @Test
+  public void testMakeJDKFunction() throws NoSuchMethodException, IllegalAccessException {
+    JDKAccessTest accessTest = new JDKAccessTest();
+    MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(JDKAccessTest.class);
+    {
+      Function<Object, Object> func1 =
+          _JDKAccess.makeJDKFunction(
+              lookup,
+              lookup.findVirtual(
+                  JDKAccessTest.class, "func1", MethodType.methodType(Object.class)));
+      Assert.assertSame(func1.apply(accessTest), accessTest);
+    }
+    {
+      Consumer<Object> func =
+          _JDKAccess.makeJDKConsumer(
+              lookup,
+              lookup.findVirtual(JDKAccessTest.class, "func2", MethodType.methodType(void.class)));
+      func.accept(accessTest);
+    }
+    {
+      BiConsumer<Object, Object> func =
+          _JDKAccess.makeJDKBiConsumer(
+              lookup,
+              lookup.findVirtual(
+                  JDKAccessTest.class, "func3", MethodType.methodType(void.class, int.class)));
+      func.accept(accessTest, 1);
+    }
+    {
+      BiConsumer<Object, Object> func =
+          _JDKAccess.makeJDKBiConsumer(
+              lookup,
+              lookup.findVirtual(
+                  JDKAccessTest.class, "func4", MethodType.methodType(void.class, Object.class)));
+      func.accept(accessTest, 1);
+    }
+  }
+
+  @Test
+  public void testMakeJDKConsumer() {}
+
+  @Test
+  public void testMakeJDKBiConsumer() {}
 
   public interface JDK11StringCtr {
     String apply(byte[] data, byte coder);
