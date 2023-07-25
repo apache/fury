@@ -5,4 +5,4 @@
 
 # Development
 - For cpp debug, see [cpp_debug](https://github.com/alipay/fury/blob/main/docs/cpp_debug.md) doc.
-- For development, see [development](https://github.com/alipay/fury/blob/main/docs/development.md) doc.
+- For development, see [CONTRIBUTING](https://github.com/alipay/fury/blob/main/CONTRIBUTING.md) doc.
