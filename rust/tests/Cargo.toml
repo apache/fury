@@ -1,0 +1,12 @@
+[package]
+name = "fury-tests"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+fury = { path = "../fury" }
+fury-derive = { path = "../fury-derive" }
+
+chrono = "0.4.26"
+lazy_static = { version = "1.4.0" }
