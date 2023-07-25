@@ -92,9 +92,6 @@ public class _JDKAccess {
     }
   }
 
-  private static final MethodType jdkFunctionMethodType =
-      MethodType.methodType(Object.class, Object.class);
-
   @SuppressWarnings("unchecked")
   public static <T, R> Function<T, R> makeJDKFunction(Lookup lookup, MethodHandle handle) {
     try {
@@ -103,7 +100,7 @@ public class _JDKAccess {
               lookup,
               "apply",
               MethodType.methodType(Function.class),
-              jdkFunctionMethodType,
+              handle.type(),
               handle,
               handle.type());
       return (Function<T, R>) callSite.getTarget().invoke();
@@ -113,9 +110,6 @@ public class _JDKAccess {
     }
   }
 
-  private static final MethodType jdkConsumerMethodType =
-      MethodType.methodType(void.class, Object.class);
-
   @SuppressWarnings("unchecked")
   public static <T> Consumer<T> makeJDKConsumer(Lookup lookup, MethodHandle handle) {
     try {
@@ -124,7 +118,7 @@ public class _JDKAccess {
               lookup,
               "accept",
               MethodType.methodType(Consumer.class),
-              jdkConsumerMethodType,
+              handle.type(),
               handle,
               handle.type());
       return (Consumer<T>) callSite.getTarget().invoke();
@@ -134,9 +128,6 @@ public class _JDKAccess {
     }
   }
 
-  private static final MethodType jdkBiConsumerMethodType =
-      MethodType.methodType(void.class, Object.class, Object.class);
-
   @SuppressWarnings("unchecked")
   public static <T, U> BiConsumer<T, U> makeJDKBiConsumer(Lookup lookup, MethodHandle handle) {
     try {
@@ -145,7 +136,7 @@ public class _JDKAccess {
               lookup,
               "accept",
               MethodType.methodType(BiConsumer.class),
-              jdkBiConsumerMethodType,
+              handle.type(),
               handle,
               handle.type());
       return (BiConsumer<T, U>) callSite.getTarget().invoke();
