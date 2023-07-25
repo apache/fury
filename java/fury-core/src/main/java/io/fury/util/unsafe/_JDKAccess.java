@@ -105,8 +105,8 @@ public class _JDKAccess {
               MethodType.methodType(Function.class),
               jdkFunctionMethodType,
               handle,
-              handle.type());
-      return (Function<T, R>) callSite.getTarget().invoke();
+              boxedMethodType(handle.type()));
+      return (Function<T, R>) callSite.getTarget().invokeExact();
     } catch (Throwable e) {
       UNSAFE.throwException(e);
       throw new IllegalStateException(e);
@@ -126,8 +126,8 @@ public class _JDKAccess {
               MethodType.methodType(Consumer.class),
               jdkConsumerMethodType,
               handle,
-              handle.type());
-      return (Consumer<T>) callSite.getTarget().invoke();
+              boxedMethodType(handle.type()));
+      return (Consumer<T>) callSite.getTarget().invokeExact();
     } catch (Throwable e) {
       UNSAFE.throwException(e);
       throw new IllegalStateException(e);
@@ -147,17 +147,15 @@ public class _JDKAccess {
               MethodType.methodType(BiConsumer.class),
               jdkBiConsumerMethodType,
               handle,
-              handle.type());
-      return (BiConsumer<T, U>) callSite.getTarget().invoke();
+              boxedMethodType(handle.type()));
+      return (BiConsumer<T, U>) callSite.getTarget().invokeExact();
     } catch (Throwable e) {
       UNSAFE.throwException(e);
       throw new IllegalStateException(e);
     }
   }
 
-  @SuppressWarnings("unchecked")
-  public static <T> T makeFunction(Lookup lookup, MethodHandle handle, Method methodToImpl) {
-    MethodType methodType = handle.type();
+  private static MethodType boxedMethodType(MethodType methodType) {
     Class<?>[] paramTypes = new Class[methodType.parameterCount()];
     for (int i = 0; i < paramTypes.length; i++) {
       Class<?> t = methodType.parameterType(i);
@@ -166,7 +164,12 @@ public class _JDKAccess {
       }
       paramTypes[i] = t;
     }
-    MethodType instantiatedMethodType = MethodType.methodType(methodType.returnType(), paramTypes);
+    return MethodType.methodType(methodType.returnType(), paramTypes);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T makeFunction(Lookup lookup, MethodHandle handle, Method methodToImpl) {
+    MethodType instantiatedMethodType = boxedMethodType(handle.type());
     MethodType methodToImplType =
         MethodType.methodType(methodToImpl.getReturnType(), methodToImpl.getParameterTypes());
     try {
