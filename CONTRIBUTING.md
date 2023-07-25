@@ -42,3 +42,10 @@ sudo flamegraph.pl out.folded > out.svg
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
 ```
+
+## Website
+Fury website are static pages hosted by github pages under https://github.com/fury-project/fury-sites.
+
+All updates about docs under [guide](./docs/guide) and [benchmarks](./docs/benchmarks) will be synced to [fury-sites](https://github.com/fury-project/fury-sites) automatically.
+
+If you want write a blog, or update other contents about fury website, please submit PR to [fury-sites](https://github.com/fury-project/fury-sites).
