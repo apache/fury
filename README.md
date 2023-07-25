@@ -9,6 +9,8 @@
 
 Fury is a blazing fast multi-language serialization framework powered by **jit(just-in-time compilation)** and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
+[English](./README.md) | [中文](./README_CN.md)
+
 https://furyio.org
 
 ## Features
@@ -311,7 +313,6 @@ BinaryArray binaryArray2 = binaryRow.getArray(1);
 BinaryArray binaryArray4 = binaryRow.getArray(4);
 // zero-copy read 11th element of `readList<Bar> f4`
 BinaryRow barStruct = binaryArray4.getStruct(10);
-
 // zero-copy read 6th of f2 of 11th element of `readList<Bar> f4`
 barStruct.getArray(1).getLong(5);
 Encoder<Bar> barEncoder = Encoders.bean(Bar.class);
