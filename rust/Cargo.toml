@@ -1,12 +1,15 @@
 [workspace]
 members = [
-    "fury_derive",
     "fury",
-    "test_suite"
+    "fury-derive",
+    "tests"
 ]
+
 exclude = [
     "fuzz"
 ]
+
+resolver = "2"
 
 [workspace.package]
 version = "0.0.1"
