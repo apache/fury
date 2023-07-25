@@ -401,8 +401,8 @@ Fury提供了一个安全模式并默认开启，该模式只允许反序列化�
 - 持续改进序列化基础能力，让所有协议受益。
 
 ## 如何贡献
+请访问 [CONTRIBUTING](https://github.com/alipay/fury/blob/main/docs/development.md) 来了解如何向 Fury 提交更新和贡献代码。
 
-Please read our [project development guide](https://github.com/alipay/fury/blob/main/docs/development.md).
 
 ## 加入Fury
 
