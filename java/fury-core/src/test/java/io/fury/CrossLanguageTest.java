@@ -470,11 +470,7 @@ public class CrossLanguageTest {
     ComplexObject2 obj2 = new ComplexObject2();
     obj2.f1 = true;
     obj2.f2 = new HashMap<>(ImmutableMap.of((byte) -1, 2));
-    Map<Object, Object> map = new HashMap<>();
-    map.put("k1", "v1");
-    map.put("k2", Arrays.asList(true, false, "str", -1.1, 1, new int[100], new double[20]));
-    map.put("k3", -1);
-    structRoundBack(fury, map, "test_serialize_simple_struct");
+    structRoundBack(fury, obj2, "test_serialize_simple_struct");
   }
 
   public void testSerializeComplexStruct() throws Exception {
@@ -508,7 +504,7 @@ public class CrossLanguageTest {
 
   private void structRoundBack(Fury fury, Object obj, String testName) throws IOException {
     byte[] serialized = fury.serialize(obj);
-    // Assert.assertEquals(fury.deserialize(serialized), obj);
+    Assert.assertEquals(fury.deserialize(serialized), obj);
     Path dataFile = Paths.get(testName);
     System.out.println(dataFile.toAbsolutePath());
     Files.deleteIfExists(dataFile);
@@ -518,8 +514,7 @@ public class CrossLanguageTest {
         ImmutableList.of(
             PYTHON_EXECUTABLE, "-m", PYTHON_MODULE, testName, dataFile.toAbsolutePath().toString());
     Assert.assertTrue(executeCommand(command, 30));
-    System.out.println(fury.deserialize(Files.readAllBytes(dataFile)));
-    // Assert.assertEquals(fury.deserialize(Files.readAllBytes(dataFile)), obj);
+    Assert.assertEquals(fury.deserialize(Files.readAllBytes(dataFile)), obj);
   }
 
   @Test
