@@ -56,7 +56,7 @@ public class JavaSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     serDe(fury, new CustomClass());
   }

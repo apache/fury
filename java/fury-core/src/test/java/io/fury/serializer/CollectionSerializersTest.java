@@ -69,7 +69,7 @@ public class CollectionSerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     List<String> data = new ArrayList<>(ImmutableList.of("a", "b", "c"));
     serDeCheckSerializer(fury, data, "ArrayList");
@@ -84,7 +84,7 @@ public class CollectionSerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     List<String> data = new ArrayList<>(ImmutableList.of("a", "b", "c"));
     byte[] bytes1 = fury.serialize(data);
@@ -101,7 +101,7 @@ public class CollectionSerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     // Test serialize Comparator
     TreeSet<String> set =
@@ -219,7 +219,7 @@ public class CollectionSerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     // TODO(chaokunyang) add optimized serializers for blocking queue.
     {
@@ -376,7 +376,7 @@ public class CollectionSerializersTest extends FuryTestBase {
 
   @Test
   public void testDefaultCollectionSerializer() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     TestClassForDefaultCollectionSerializer collection =
         new TestClassForDefaultCollectionSerializer();
     collection.add("a");
@@ -396,7 +396,7 @@ public class CollectionSerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     JDKCompatibleCollectionSerializer javaSerializer =
@@ -430,7 +430,7 @@ public class CollectionSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .withJdkClassSerializableCheck(false)
             .build();
     ArrayList<Integer> list = new ArrayList<>(ImmutableList.of(1, 2, 3, 4));

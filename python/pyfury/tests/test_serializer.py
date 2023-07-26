@@ -190,7 +190,7 @@ class RefTestClass2:
 def test_ref_cleanup(language):
     # FIXME this can't simulate the case where new objects are allocated on memory
     #  address of released tmp object.
-    fury = Fury(language=language, ref_tracking=True, secure_mode=False)
+    fury = Fury(language=language, ref_tracking=True, require_class_registration=False)
     # TODO support Language.XLANG, current unpickler will error for xlang,
     o1 = RefTestClass1()
     o2 = RefTestClass2(f1=o1)
@@ -207,7 +207,7 @@ def test_ref_cleanup(language):
 
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
 def test_array_serializer(language):
-    fury = Fury(language=language, ref_tracking=True, secure_mode=False)
+    fury = Fury(language=language, ref_tracking=True, require_class_registration=False)
     for typecode in PyArraySerializer.typecode_dict.keys():
         arr = array.array(typecode, list(range(10)))
         assert ser_de(fury, arr) == arr
@@ -326,7 +326,7 @@ class RegisterClass:
 
 
 def test_register_py_serializer():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True, secure_mode=False)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True, require_class_registration=False)
 
     class Serializer(pyfury.Serializer):
         def write(self, buffer, value):
@@ -378,7 +378,7 @@ def test_register_class():
 
 
 def test_pickle_fallback():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True, secure_mode=False)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True, require_class_registration=False)
     o1 = [1, True, np.dtype(np.int32)]
     data1 = fury.serialize(o1)
     new_o1 = fury.deserialize(data1)
@@ -481,7 +481,7 @@ def test_cache_serializer():
 
 
 def test_pandas_range_index():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True, secure_mode=False)
+    fury = Fury(language=Language.PYTHON, ref_tracking=True, require_class_registration=False)
     fury.register_serializer(pd.RangeIndex, pyfury.PandasRangeIndexSerializer(fury))
     index = pd.RangeIndex(1, 100, 2, name="a")
     new_index = ser_de(fury, index)

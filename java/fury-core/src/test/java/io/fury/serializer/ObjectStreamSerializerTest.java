@@ -222,7 +222,7 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(true)
             .withCodegen(enableCodegen)
             .build();

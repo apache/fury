@@ -58,7 +58,7 @@ public class LambdaSerializerTest extends FuryTestBase {
 
   @Test
   public void testLambdaUnserializableMsg() {
-    Fury fury = Fury.builder().disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     Function<Object, String> function = String::valueOf;
     assertThrows(UnsupportedOperationException.class, () -> fury.serialize(function));
     try {

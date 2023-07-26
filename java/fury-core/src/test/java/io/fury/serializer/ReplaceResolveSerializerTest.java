@@ -68,7 +68,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(referenceTracking)
             .build();
     CustomReplaceClass1 o1 = new CustomReplaceClass1("abc");
@@ -129,7 +129,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(referenceTracking)
             .build();
     fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
@@ -168,7 +168,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass3.class, ReplaceResolveSerializer.class);
@@ -219,7 +219,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass3.class, ReplaceResolveSerializer.class);
@@ -273,7 +273,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(referenceTracking)
             .build();
     fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
@@ -317,7 +317,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(referenceTracking)
             .build();
     fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
@@ -355,7 +355,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass5.class, ReplaceResolveSerializer.class);
@@ -375,7 +375,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass6.class, ReplaceResolveSerializer.class);
@@ -395,13 +395,13 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     Fury fury1 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
     roundCheck(fury1, fury2, ImmutableList.of(1, 2));
@@ -422,13 +422,13 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     Fury fury1 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
     roundCheck(fury1, fury2, ImmutableMap.of("k", 2));

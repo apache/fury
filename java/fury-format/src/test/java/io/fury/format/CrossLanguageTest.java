@@ -366,7 +366,7 @@ public class CrossLanguageTest {
         Fury.builder()
             .withLanguage(Language.XLANG)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     int size = 2000;
@@ -406,7 +406,7 @@ public class CrossLanguageTest {
         Fury.builder()
             .withLanguage(Language.XLANG)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
 
     MemoryBuffer buffer = MemoryUtils.buffer(32);

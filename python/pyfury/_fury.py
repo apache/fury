@@ -572,7 +572,7 @@ class Fury:
         "ref_resolver",
         "class_resolver",
         "serialization_context",
-        "secure_mode",
+        "require_class_registration",
         "buffer",
         "pickler",
         "unpickler",
@@ -590,10 +590,10 @@ class Fury:
         self,
         language=Language.XLANG,
         ref_tracking: bool = False,
-        secure_mode: bool = True,
+        require_class_registration: bool = True,
     ):
         self.language = language
-        self.secure_mode = _ENABLE_SECURITY_MODE_FORCIBLY or secure_mode
+        self.require_class_registration = _ENABLE_SECURITY_MODE_FORCIBLY or require_class_registration
         self.ref_tracking = ref_tracking
         if self.ref_tracking:
             self.ref_resolver = MapRefResolver()
@@ -603,7 +603,7 @@ class Fury:
         self.class_resolver.initialize()
         self.serialization_context = SerializationContext()
         self.buffer = Buffer.allocate(32)
-        if not secure_mode:
+        if not require_class_registration:
             self.pickler = pickle.Pickler(self.buffer)
         else:
             self.pickler = _PicklerStub(self.buffer)
@@ -796,7 +796,7 @@ class Fury:
     ):
         if type(buffer) == bytes:
             buffer = Buffer(buffer)
-        if self.secure_mode:
+        if self.require_class_registration:
             self.unpickler = _UnpicklerStub(buffer)
         else:
             self.unpickler = pickle.Unpickler(buffer)
@@ -999,7 +999,7 @@ class _PicklerStub:
     def dump(self, o):
         raise ValueError(
             f"Class {type(o)} is not registered, "
-            f"pickle is not allowed when secure mode enabled, Please register"
+            f"pickle is not allowed when class registration enabled, Please register"
             f"the class or pass unsupported_callback"
         )
 
@@ -1013,6 +1013,6 @@ class _UnpicklerStub:
 
     def load(self):
         raise ValueError(
-            "pickle is not allowed when secure mode enabled, Please register"
+            "pickle is not allowed when class registration enabled, Please register"
             "the class or pass unsupported_callback"
         )

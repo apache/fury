@@ -58,7 +58,7 @@ public class MapSerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Map<String, Integer> data = new HashMap<>(ImmutableMap.of("a", 1, "b", 2));
     serDeCheckSerializer(fury, data, "HashMap");
@@ -71,7 +71,7 @@ public class MapSerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Map<String, Integer> data = new HashMap<>(ImmutableMap.of("a", 1, "b", 2));
     byte[] bytes1 = fury.serialize(data);
@@ -88,7 +88,7 @@ public class MapSerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Map<String, Integer> data = new TreeMap<>(ImmutableMap.of("a", 1, "b", 2));
     serDeCheckSerializer(fury, data, "SortedMap");
@@ -117,7 +117,7 @@ public class MapSerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     TreeMap<String, String> map =
         new TreeMap<>(
@@ -177,7 +177,7 @@ public class MapSerializersTest extends FuryTestBase {
 
   @Test
   public void testNoArgConstructor() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).withSecureMode(false).build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     Map<String, Integer> map = newInnerMap();
     Assert.assertEquals(jdkDeserialize(jdkSerialize(map)), map);
     serDeCheck(fury, map);
@@ -281,7 +281,7 @@ public class MapSerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withCodegen(enableCodegen)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     TestClassForDefaultMapSerializer map = new TestClassForDefaultMapSerializer();
     map.put("a", 1);
@@ -305,9 +305,17 @@ public class MapSerializersTest extends FuryTestBase {
   @Test
   public void testGenericMapBound() {
     Fury fury1 =
-        Fury.builder().withLanguage(Language.JAVA).disableSecureMode().withCodegen(false).build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .withCodegen(false)
+            .build();
     Fury fury2 =
-        Fury.builder().withLanguage(Language.JAVA).disableSecureMode().withCodegen(false).build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .withCodegen(false)
+            .build();
     ArrayList<Integer> list = new ArrayList<>(of(1, 2));
     roundCheck(
         fury1,

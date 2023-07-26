@@ -782,7 +782,7 @@ cdef class ClassInfo:
 cdef class Fury:
     cdef readonly object language
     cdef readonly c_bool ref_tracking
-    cdef readonly c_bool secure_mode
+    cdef readonly c_bool require_class_registration
     cdef readonly MapRefResolver ref_resolver
     cdef readonly ClassResolver class_resolver
     cdef readonly SerializationContext serialization_context
@@ -800,17 +800,17 @@ cdef class Fury:
         self,
         language=Language.XLANG,
         ref_tracking: bool = False,
-        secure_mode: bool = True,
+        require_class_registration: bool = True,
      ):
         self.language = language
-        self.secure_mode = _ENABLE_SECURITY_MODE_FORCIBLY or secure_mode
+        self.require_class_registration = _ENABLE_SECURITY_MODE_FORCIBLY or require_class_registration
         self.ref_tracking = ref_tracking
         self.ref_resolver = MapRefResolver(ref_tracking)
         self.class_resolver = ClassResolver(self)
         self.class_resolver.initialize()
         self.serialization_context = SerializationContext()
         self.buffer = Buffer.allocate(32)
-        if not secure_mode:
+        if not require_class_registration:
             self.pickler = pickle.Pickler(self.buffer)
         else:
             self.pickler = _PicklerStub(self.buffer)
@@ -1008,7 +1008,7 @@ cdef class Fury:
 
     cpdef inline _deserialize(
             self, Buffer buffer, buffers=None, unsupported_objects=None):
-        if self.secure_mode:
+        if self.require_class_registration:
             self.unpickler = _UnpicklerStub(buffer)
         else:
             self.unpickler = pickle.Unpickler(buffer)

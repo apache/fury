@@ -49,7 +49,7 @@ public class TimeSerializersTest extends FuryTestBase {
 
   @Test
   public void testBasicTime() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     serDeCheckSerializerAndEqual(fury, new Date(), "Time");
     serDeCheckSerializerAndEqual(fury, new java.sql.Date(100), "Time");
     serDeCheckSerializerAndEqual(fury, new java.sql.Time(200), "Time");
@@ -69,14 +69,14 @@ public class TimeSerializersTest extends FuryTestBase {
 
   @Test
   public void testCalendar() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     serDeCheckSerializerAndEqual(fury, GregorianCalendar.getInstance(), "Calendar");
     serDeCheckSerializerAndEqual(fury, Calendar.getInstance(), "Calendar");
   }
 
   @Test
   public void testZone() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     serDeCheckSerializerAndEqual(
         fury,
         ZonedDateTime.of(Year.MIN_VALUE, Month.JANUARY.getValue(), 1, 0, 0, 0, 0, ZoneOffset.UTC),
@@ -147,13 +147,15 @@ public class TimeSerializersTest extends FuryTestBase {
     struct.instant = DateTimeUtils.truncateInstantToMicros(Instant.now());
     struct.duration = Duration.between(Instant.now(), Instant.ofEpochSecond(-1));
     {
-      Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      Fury fury =
+          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
       fury.registerSerializer(
           TimeStruct.class, CodegenSerializer.loadCodegenSerializer(fury, TimeStruct.class));
       serDe(fury, struct);
     }
     {
-      Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      Fury fury =
+          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
       fury.registerSerializer(TimeStruct.class, new ObjectSerializer(fury, TimeStruct.class));
       serDe(fury, struct);
     }
@@ -197,7 +199,7 @@ public class TimeSerializersTest extends FuryTestBase {
       Fury fury =
           Fury.builder()
               .withLanguage(Language.JAVA)
-              .disableSecureMode()
+              .requireClassRegistration(false)
               .withCodegen(true)
               .withRefTracking(true)
               .ignoreTimeRef(true)
@@ -216,7 +218,7 @@ public class TimeSerializersTest extends FuryTestBase {
       Fury fury =
           Fury.builder()
               .withLanguage(Language.JAVA)
-              .disableSecureMode()
+              .requireClassRegistration(false)
               .withRefTracking(true)
               .ignoreTimeRef(false)
               .build();
@@ -237,7 +239,7 @@ public class TimeSerializersTest extends FuryTestBase {
       Fury fury =
           Fury.builder()
               .withLanguage(Language.JAVA)
-              .disableSecureMode()
+              .requireClassRegistration(false)
               .withCodegen(true)
               .withRefTracking(true)
               .ignoreTimeRef(true)

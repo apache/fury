@@ -69,7 +69,7 @@ public class SerializationBenchmark {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     RowEncoder<Foo> encoder = Encoders.bean(Foo.class, fury, 64);
     Foo data = Foo.create();
@@ -104,7 +104,7 @@ public class SerializationBenchmark {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     fury.register(obj.getClass());
     MemoryBuffer buffer = MemoryUtils.buffer(32);

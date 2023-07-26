@@ -42,7 +42,6 @@ public class Config implements Serializable {
   private final Class<? extends Serializer> defaultJDKStreamSerializerType;
   private final boolean compressString;
   private final boolean compressNumber;
-  private final boolean secureModeEnabled;
   private final boolean requireClassRegistration;
   private final boolean registerGuavaTypes;
   private final boolean metaContextShareEnabled;
@@ -58,7 +57,6 @@ public class Config implements Serializable {
     timeRefIgnored = !refTracking || builder.timeRefIgnored;
     compressString = builder.compressString;
     compressNumber = builder.compressNumber;
-    secureModeEnabled = builder.secureModeEnabled;
     requireClassRegistration = builder.requireClassRegistration;
     registerGuavaTypes = builder.registerGuavaTypes;
     codeGenEnabled = builder.codeGenEnabled;
@@ -145,10 +143,6 @@ public class Config implements Serializable {
    */
   public Class<? extends Serializer> getDefaultJDKStreamSerializerType() {
     return defaultJDKStreamSerializerType;
-  }
-
-  public boolean isSecureModeEnabled() {
-    return secureModeEnabled;
   }
 
   public boolean isMetaContextShareEnabled() {

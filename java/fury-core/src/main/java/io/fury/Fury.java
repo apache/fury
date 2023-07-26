@@ -1250,7 +1250,7 @@ public final class Fury {
   }
 
   public static final class FuryBuilder {
-    private static final boolean ENABLE_SECURITY_MODE_FORCIBLY;
+    private static final boolean ENABLE_CLASS_REGISTRATION_FORCIBLY;
 
     static {
       String flagValue =
@@ -1260,7 +1260,7 @@ public final class Fury {
       if (flagValue == null) {
         flagValue = "false";
       }
-      ENABLE_SECURITY_MODE_FORCIBLY = "true".equals(flagValue) || "1".equals(flagValue);
+      ENABLE_CLASS_REGISTRATION_FORCIBLY = "true".equals(flagValue) || "1".equals(flagValue);
     }
 
     boolean checkClassVersion = true;
@@ -1275,7 +1275,6 @@ public final class Fury {
     CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
     boolean jdkClassSerializableCheck = true;
     Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
-    boolean secureModeEnabled = true;
     boolean requireClassRegistration = true;
     boolean metaContextShareEnabled = false;
     boolean codeGenEnabled = true;
@@ -1348,18 +1347,6 @@ public final class Fury {
     }
 
     /**
-     * Set default serializer type for class which implements jdk serialization method such as
-     * `writeObject/readObject`.
-     *
-     * @param serializerClass Default serializer type for class which implement jdk serialization.
-     */
-    public FuryBuilder withDefaultJDKCompatibleSerializerType(
-        Class<? extends Serializer> serializerClass) {
-      this.defaultJDKStreamSerializerType = serializerClass;
-      return this;
-    }
-
-    /**
      * Whether pre-register guava types such as `RegularImmutableMap`/`RegularImmutableList`. Those
      * types are not public API, but seems pretty stable.
      *
@@ -1370,13 +1357,15 @@ public final class Fury {
       return this;
     }
 
-    public FuryBuilder disableSecureMode() {
-      return withSecureMode(false);
-    }
-
-    public FuryBuilder withSecureMode(boolean enableSecureMode) {
-      this.secureModeEnabled = enableSecureMode;
-      this.requireClassRegistration = enableSecureMode;
+    /**
+     * Whether to require registering classes for serialization, enabled by default. If disabled,
+     * unknown insecure classes can be deserialized, which can be insure and cause remote code
+     * execution attack if the classes `constructor`/`equals`/`hashCode` method contain malicious
+     * code. Do not disable class registration if you can't ensure your environment are *indeed
+     * secure*. We are not responsible for security risks if you disable this option.
+     */
+    public FuryBuilder requireClassRegistration(boolean requireClassRegistration) {
+      this.requireClassRegistration = requireClassRegistration;
       return this;
     }
 
@@ -1420,27 +1409,19 @@ public final class Fury {
       if (language != Language.JAVA) {
         stringRefIgnored = false;
       }
-      if (ENABLE_SECURITY_MODE_FORCIBLY) {
-        if (!secureModeEnabled || !requireClassRegistration) {
-          LOG.warn("Security mode is enabled forcibly, ignore security mode disable config.");
-          secureModeEnabled = true;
+      if (ENABLE_CLASS_REGISTRATION_FORCIBLY) {
+        if (!requireClassRegistration) {
+          LOG.warn("Class registration is enabled forcibly.");
           requireClassRegistration = true;
         }
       }
       if (defaultJDKStreamSerializerType == JavaSerializer.class) {
-        if (secureModeEnabled) {
-          LOG.warn(
-              "Security mode is enabled, disable jdk serialization for types "
-                  + "which customized java serialization by methods such as writeObject/readObject.");
-          defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
-        } else {
-          LOG.warn(
-              "JDK serialization is used for types which customized java serialization by "
-                  + "implementing methods such as writeObject/readObject. This is not secure, try to "
-                  + "use {} instead, or implement a custom {}.",
-              ObjectStreamSerializer.class,
-              Serializer.class);
-        }
+        LOG.warn(
+            "JDK serialization is used for types which customized java serialization by "
+                + "implementing methods such as writeObject/readObject. This is not secure, try to "
+                + "use {} instead, or implement a custom {}.",
+            ObjectStreamSerializer.class,
+            Serializer.class);
       }
       if (compatibleMode == CompatibleMode.COMPATIBLE) {
         checkClassVersion = false;
@@ -1449,7 +1430,7 @@ public final class Fury {
         LOG.warn(
             "Class registration isn't forced, unknown insecure classes can be deserialized. "
                 + "If the environment isn't 100% secure, please enable class registration by "
-                + "`FuryBuilder#withSecureMode(true)`.");
+                + "`FuryBuilder#requireClassRegistration(true)`.");
       }
     }
 

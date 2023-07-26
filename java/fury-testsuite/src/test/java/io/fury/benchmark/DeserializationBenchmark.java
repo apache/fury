@@ -72,7 +72,7 @@ public class DeserializationBenchmark {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     RowEncoder<Foo> encoder = Encoders.bean(Foo.class, fury, 64);
     Foo foo = Foo.create();
@@ -108,7 +108,7 @@ public class DeserializationBenchmark {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     fury.register(obj.getClass());
     // test fury

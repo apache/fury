@@ -53,7 +53,7 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
             .withNumberCompressed(compressNumber)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     new ObjectCodecBuilder(Foo.class, fury).genCode();
     // System.out.println(code);
@@ -77,7 +77,7 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .withClassLoader(clz.getClassLoader())
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Object obj = clz.newInstance();
     Field f1 = clz.getDeclaredField("f1");
@@ -114,7 +114,7 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
             .withClassLoader(structClass.getClassLoader())
             .ignoreBasicTypesRef(basicTypesRefIgnored)
             .withNumberCompressed(compressNumber)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Object struct = Struct.createPOJO(structClass);
     Assert.assertEquals(fury.deserialize(fury.serialize(struct)), struct);
@@ -149,7 +149,7 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
 
   @Test
   public void testNestedContainer() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).withSecureMode(false).build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     NestedContainer nestedContainer = new NestedContainer();
     List<List<String>> list1 = new ArrayList<>();
     list1.add(new ArrayList<>(ImmutableList.of("a", "b")));

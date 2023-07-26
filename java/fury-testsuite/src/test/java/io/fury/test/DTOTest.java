@@ -90,7 +90,7 @@ public class DTOTest {
 
   @Test
   public void testFury() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     UserDTO obj = BeanMock.mockBean(UserDTO.class);
     obj.setColorEnum(ColorEnum.RED);
     Assert.assertEquals(fury.deserialize(fury.serialize(obj)), obj);

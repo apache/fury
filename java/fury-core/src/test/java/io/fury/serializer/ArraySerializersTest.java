@@ -42,7 +42,7 @@ public class ArraySerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
-            .disableSecureMode();
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     serDeCheck(fury1, fury2, new Object[] {false, true});
@@ -73,7 +73,7 @@ public class ArraySerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
-            .disableSecureMode();
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     serDeCheck(fury1, fury2, new Object[][] {{false, true}, {false, true}});
@@ -93,7 +93,7 @@ public class ArraySerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
-            .disableSecureMode();
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     testPrimitiveArray(fury1, fury2);
@@ -121,7 +121,7 @@ public class ArraySerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
-            .disableSecureMode();
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     AtomicInteger counter = new AtomicInteger(0);
@@ -141,7 +141,7 @@ public class ArraySerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
-            .disableSecureMode();
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     AtomicInteger counter = new AtomicInteger(0);

@@ -58,7 +58,7 @@ public class JITContextTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .withAsyncCompilationEnabled(true)
             .build();
     BeanB beanB = BeanB.createBeanB(2);
@@ -98,7 +98,7 @@ public class JITContextTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .withAsyncCompilationEnabled(true)
             .build();
     BeanB beanB = BeanB.createBeanB(2);

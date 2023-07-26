@@ -28,7 +28,7 @@ public class LocaleSerializerTest extends FuryTestBase {
 
   @Test
   public void testWrite() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     serDeCheckSerializerAndEqual(fury, Locale.US, "LocaleSerializer");
     serDeCheckSerializerAndEqual(fury, Locale.CHINESE, "LocaleSerializer");
     serDeCheckSerializerAndEqual(fury, Locale.ENGLISH, "LocaleSerializer");

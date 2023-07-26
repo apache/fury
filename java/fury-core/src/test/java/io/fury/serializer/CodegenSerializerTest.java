@@ -51,7 +51,7 @@ public class CodegenSerializerTest extends FuryTestBase {
 
   @Test
   public void testSimpleBean() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     // serDe(fury, new A());
     B b = new B();
     b.f1 = "str1";
@@ -72,7 +72,7 @@ public class CodegenSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
 
@@ -111,7 +111,7 @@ public class CodegenSerializerTest extends FuryTestBase {
 
   @Test
   public void testCacheNonFinalClassInfo() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     TestCacheNonFinalClassInfo obj = new TestCacheNonFinalClassInfo();
     obj.finalList = new ArrayList<>(ImmutableList.of("a", "b"));
     obj.nonFinalPublicList =
@@ -129,7 +129,7 @@ public class CodegenSerializerTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withNumberCompressed(compressNumber)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
-            .withSecureMode(false)
+            .requireClassRegistration(false)
             .build();
     Class<?> structClass = Struct.createNumberStructClass("CompressInt", 50);
     serDeCheck(fury, Struct.createPOJO(structClass));
@@ -163,7 +163,7 @@ public class CodegenSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .withSecureMode(true)
+            .requireClassRegistration(true)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
             .build();
     fury.register(Column.class);

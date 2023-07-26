@@ -21,10 +21,10 @@ public class Example {
       Fury fury = Fury.builder().withLanguage(Language.JAVA)
         // Allow to deserialize objects unknown types,
         // more flexible but less secure.
-        // .withSecureMode(false)
+        // .requireClassRegistration(false)
         .build();
       // Registering types can reduce class name serialization overhead, but not mandatory.
-      // If secure mode enabled, all custom types must be registered.
+      // If class registration enabled, all custom types must be registered.
       fury.register(SomeClass.class);
       byte[] bytes = fury.serialize(object);
       System.out.println(fury.deserialize(bytes));
@@ -33,7 +33,7 @@ public class Example {
       ThreadSafeFury fury = Fury.builder().withLanguage(Language.JAVA)
         // Allow to deserialize objects unknown types,
         // more flexible but less secure.
-        // .withSecureMode(false)
+        // .requireClassRegistration(false)
         .buildThreadSafeFury();
       byte[] bytes = fury.serialize(object);
       System.out.println(fury.deserialize(bytes));
@@ -94,7 +94,7 @@ System.out.println(fury.deserialize(bytes));
 ```
 
 ### Security & Class Registration
-`FuryBuilder#withSecureMode` can be used to disable class registration, this will allow to deserialize objects unknown types, more flexible but **less secure**.
+`FuryBuilder#requireClassRegistration` can be used to disable class registration, this will allow to deserialize objects unknown types, more flexible but **less secure**.
 
 **Do not disable class registration unless you can ensure your environment is indeed secure**. Malicious code in `init/equals/hashCode` can be executed when deserializing unknown/untrusted types when this option disabled.
 

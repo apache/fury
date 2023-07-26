@@ -47,7 +47,7 @@ import org.testng.annotations.Test;
 public class SynchronizedSerializersTest extends FuryTestBase {
   @Test
   public void testWrite() throws Exception {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     Object[] values =
         new Object[] {
