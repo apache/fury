@@ -815,7 +815,10 @@ cdef class Fury:
          you disable this option.
        """
         self.language = language
-        self.require_class_registration = _ENABLE_CLASS_REGISTRATION_FORCIBLY or require_class_registration
+        if _ENABLE_CLASS_REGISTRATION_FORCIBLY or require_class_registration:
+            self.require_class_registration = True
+        else:
+            self.require_class_registration = False
         self.ref_tracking = ref_tracking
         self.ref_resolver = MapRefResolver(ref_tracking)
         self.class_resolver = ClassResolver(self)
