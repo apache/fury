@@ -239,7 +239,7 @@ public class ClassResolverTest extends FuryTestBase {
 
   @Test
   public void testWriteClassNamesInSamePackage() {
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    Fury fury = Fury.builder().withSecureMode(false).build();
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
     fury.writeRef(buffer, C1.class);
     fury.writeRef(buffer, C2.class);

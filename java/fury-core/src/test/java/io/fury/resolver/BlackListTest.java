@@ -48,7 +48,7 @@ public class BlackListTest extends FuryTestBase {
         new Fury[] {
           Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build(),
           Fury.builder().withLanguage(Language.JAVA).withSecureMode(true).build(),
-          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build()
+          Fury.builder().withLanguage(Language.JAVA).withSecureMode(false).build()
         }) {
       Assert.assertThrows(
           InsecureException.class,

@@ -63,7 +63,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     return Fury.builder()
         .withLanguage(Language.JAVA)
         .withCompatibleMode(CompatibleMode.COMPATIBLE)
-        .requireClassRegistration(false)
+        .withSecureMode(false)
         .withDeserializeUnExistClassEnabled(true);
   }
 

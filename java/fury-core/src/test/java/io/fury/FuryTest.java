@@ -405,7 +405,7 @@ public class FuryTest extends FuryTestBase {
 
   @Test
   public void testIgnoreFields() {
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    Fury fury = Fury.builder().withSecureMode(false).build();
     IgnoreFields o = serDe(fury, new IgnoreFields(1, 2, 3));
     assertEquals(0, o.f1);
     assertEquals(0, o.f2);
@@ -427,7 +427,7 @@ public class FuryTest extends FuryTestBase {
   }
 
   private void furyGC(WeakHashMap<Object, Boolean> map) {
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    Fury fury = Fury.builder().withSecureMode(false).build();
     Class<?> structClass1 = Struct.createStructClass("TestClassGC", 1);
     System.out.println(structClass1.hashCode());
     Object struct1 = Struct.createPOJO(structClass1);
@@ -444,7 +444,7 @@ public class FuryTest extends FuryTestBase {
 
   @Test
   public void testSerializeJavaObject() {
-    Fury fury = Fury.builder().requireClassRegistration(false).withLanguage(Language.JAVA).build();
+    Fury fury = Fury.builder().withSecureMode(false).withLanguage(Language.JAVA).build();
     BeanA beanA = BeanA.createBeanA(2);
     assertEquals(fury.deserializeJavaObject(fury.serializeJavaObject(beanA), BeanA.class), beanA);
     assertThrows(
@@ -460,7 +460,7 @@ public class FuryTest extends FuryTestBase {
 
   @Test
   public void testOutputStream() throws IOException {
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    Fury fury = Fury.builder().withSecureMode(false).build();
     ByteArrayOutputStream bas = new ByteArrayOutputStream();
     BeanA beanA = BeanA.createBeanA(2);
     fury.serialize(bas, beanA);
@@ -472,7 +472,7 @@ public class FuryTest extends FuryTestBase {
     newObj = fury.deserialize(bis);
     assertEquals(newObj, beanA);
 
-    fury = Fury.builder().requireClassRegistration(false).build();
+    fury = Fury.builder().withSecureMode(false).build();
     // test reader buffer grow
     bis = new ByteArrayInputStream(bas.toByteArray());
     newObj = fury.deserialize(bis);
@@ -483,7 +483,7 @@ public class FuryTest extends FuryTestBase {
 
   @Test
   public void testJavaOutputStream() throws IOException {
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    Fury fury = Fury.builder().withSecureMode(false).build();
     BeanA beanA = BeanA.createBeanA(2);
     {
       ByteArrayOutputStream bas = new ByteArrayOutputStream();
@@ -507,7 +507,7 @@ public class FuryTest extends FuryTestBase {
       newObj = fury.deserializeJavaObjectAndClass(bis);
       assertEquals(newObj, beanA);
 
-      fury = Fury.builder().requireClassRegistration(false).build();
+      fury = Fury.builder().withSecureMode(false).build();
       // test reader buffer grow
       bis = new ByteArrayInputStream(bas.toByteArray());
       newObj = fury.deserializeJavaObjectAndClass(bis);

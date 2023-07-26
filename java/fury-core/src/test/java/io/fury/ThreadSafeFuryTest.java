@@ -178,7 +178,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
 
   @Test(dataProvider = "stagingConfig")
   public void testClassDuplicateName(StagingType staging) {
-    ThreadSafeFury fury = Fury.builder().requireClassRegistration(false).buildThreadSafeFury();
+    ThreadSafeFury fury = Fury.builder().withSecureMode(false).buildThreadSafeFury();
     String className = "DuplicateStruct";
 
     Class<?> structClass1 = Struct.createStructClass(className, 1);
@@ -241,7 +241,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   }
 
   private WeakHashMap<Class<?>, Boolean> generateClassForGC() {
-    ThreadSafeFury fury = Fury.builder().requireClassRegistration(false).buildThreadSafeFury();
+    ThreadSafeFury fury = Fury.builder().withSecureMode(false).buildThreadSafeFury();
     String className = "DuplicateStruct";
     WeakHashMap<Class<?>, Boolean> map = new WeakHashMap<>();
     {

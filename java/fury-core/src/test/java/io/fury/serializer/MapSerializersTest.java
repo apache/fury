@@ -177,7 +177,7 @@ public class MapSerializersTest extends FuryTestBase {
 
   @Test
   public void testNoArgConstructor() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).withSecureMode(false).build();
     Map<String, Integer> map = newInnerMap();
     Assert.assertEquals(jdkDeserialize(jdkSerialize(map)), map);
     serDeCheck(fury, map);

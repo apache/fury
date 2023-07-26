@@ -49,7 +49,7 @@ import org.testng.annotations.DataProvider;
 public abstract class FuryTestBase {
   private static final ThreadLocal<Fury> javaFuryLocal =
       ThreadLocal.withInitial(
-          () -> Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build());
+          () -> Fury.builder().withLanguage(Language.JAVA).withSecureMode(false).build());
 
   public static Fury getJavaFury() {
     return javaFuryLocal.get();

@@ -41,7 +41,7 @@ public class MetaContextTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .withMetaContextShareEnabled(true)
-            .requireClassRegistration(false)
+            .withSecureMode(false)
             .build();
     for (Object o : new Object[] {Foo.create(), BeanB.createBeanB(2), BeanA.createBeanA(2)}) {
       checkMetaShared(fury, o);
@@ -57,7 +57,7 @@ public class MetaContextTest extends FuryTestBase {
             .withMetaContextShareEnabled(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withCodegen(enableCodegen)
-            .requireClassRegistration(false)
+            .withSecureMode(false)
             .build();
     for (Object o : new Object[] {Foo.create(), BeanB.createBeanB(2), BeanA.createBeanA(2)}) {
       checkMetaShared(fury, o);
@@ -102,7 +102,7 @@ public class MetaContextTest extends FuryTestBase {
             .withMetaContextShareEnabled(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withCodegen(enableCodegen)
-            .requireClassRegistration(false)
+            .withSecureMode(false)
             .build();
     OuterPojo outerPojo =
         new OuterPojo(new ArrayList<>(ImmutableList.of(new InnerPojo(1), new InnerPojo(2))));

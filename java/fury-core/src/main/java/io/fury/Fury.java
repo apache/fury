@@ -1370,11 +1370,6 @@ public final class Fury {
       return this;
     }
 
-    public FuryBuilder requireClassRegistration(boolean requireClassRegistration) {
-      this.requireClassRegistration = requireClassRegistration;
-      return this;
-    }
-
     public FuryBuilder disableSecureMode() {
       return withSecureMode(false);
     }

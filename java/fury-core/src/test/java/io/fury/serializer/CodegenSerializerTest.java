@@ -129,7 +129,7 @@ public class CodegenSerializerTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withNumberCompressed(compressNumber)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
-            .requireClassRegistration(false)
+            .withSecureMode(false)
             .build();
     Class<?> structClass = Struct.createNumberStructClass("CompressInt", 50);
     serDeCheck(fury, Struct.createPOJO(structClass));
@@ -163,7 +163,7 @@ public class CodegenSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .requireClassRegistration(true)
+            .withSecureMode(true)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
             .build();
     fury.register(Column.class);

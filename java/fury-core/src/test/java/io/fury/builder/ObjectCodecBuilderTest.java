@@ -149,7 +149,7 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
 
   @Test
   public void testNestedContainer() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).withSecureMode(false).build();
     NestedContainer nestedContainer = new NestedContainer();
     List<List<String>> list1 = new ArrayList<>();
     list1.add(new ArrayList<>(ImmutableList.of("a", "b")));

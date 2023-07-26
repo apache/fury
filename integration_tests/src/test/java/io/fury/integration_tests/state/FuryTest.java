@@ -11,7 +11,7 @@ public class FuryTest {
   @Test
   public void testMediaContent() {
     Sample object = new Sample().populate(false);
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    Fury fury = Fury.builder().withSecureMode(false).build();
     byte[] data = fury.serialize(object);
     Sample sample = (Sample) fury.deserialize(data);
     Assert.assertEquals(sample, object);
@@ -20,7 +20,7 @@ public class FuryTest {
   @Test
   public void testSample() {
     MediaContent object = new MediaContent().populate(false);
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    Fury fury = Fury.builder().withSecureMode(false).build();
     byte[] data = fury.serialize(object);
     MediaContent mediaContent = (MediaContent) fury.deserialize(data);
     Assert.assertEquals(mediaContent, object);
