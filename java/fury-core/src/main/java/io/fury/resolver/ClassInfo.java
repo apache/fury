@@ -77,7 +77,9 @@ public class ClassInfo {
     } else {
       this.fullClassNameBytes = null;
     }
-    if (cls != null && classId == ClassResolver.NO_CLASS_ID) {
+    if (cls != null
+        && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
+      // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       String packageName = ReflectionUtils.getPackage(cls);
       this.packageNameBytes = enumStringResolver.getOrCreateEnumStringBytes(packageName);
       this.classNameBytes =
