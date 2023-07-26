@@ -31,7 +31,9 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Currency;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -182,8 +184,26 @@ public class SerializersTest extends FuryTestBase {
 
   private static class TestClassSerialization {}
 
+  private static class TestReplaceClassSerialization {
+    private Object writeReplace() {
+      return 1;
+    }
+  }
+
   @Test
-  public void testClass() {
-    serDeCheckSerializer(getJavaFury(), TestClassSerialization.class, "ClassSerializer");
+  public void testSerializeClass() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    // serialize both TestReplaceClassSerialization object and class.
+    // Scala `object` native serialization will return ModuleSerializationProxy will write original
+    // class.
+    List<Object> list =
+        serDe(
+            fury,
+            Arrays.asList(
+                new TestReplaceClassSerialization(), TestReplaceClassSerialization.class));
+    assertEquals(list.get(1), TestReplaceClassSerialization.class);
+    serDeCheckSerializer(fury, TestClassSerialization.class, "ClassSerializer");
+    serDeCheckSerializer(fury, TestReplaceClassSerialization.class, "ClassSerializer");
+    serDe(fury, new TestReplaceClassSerialization());
   }
 }
