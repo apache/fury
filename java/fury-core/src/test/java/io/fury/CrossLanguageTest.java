@@ -63,8 +63,7 @@ import org.testng.annotations.Test;
 public class CrossLanguageTest {
   private static final Logger LOG = LoggerFactory.getLogger(CrossLanguageTest.class);
   private static final String PYTHON_MODULE = "pyfury.tests.test_cross_language";
-  private static final String PYTHON_EXECUTABLE =
-      "/Users/chaokunyang/anaconda3/envs/py3.7/bin/python";
+  private static final String PYTHON_EXECUTABLE = "python";
 
   /**
    * Execute an external command.
