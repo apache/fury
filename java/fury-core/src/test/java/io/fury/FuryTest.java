@@ -82,13 +82,13 @@ public class FuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Fury fury2 =
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     assertEquals(true, serDe(fury1, fury2, true));
     assertEquals(Byte.MAX_VALUE, serDe(fury1, fury2, Byte.MAX_VALUE));
@@ -105,7 +105,7 @@ public class FuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
-            .disableSecureMode();
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals("str", serDe(fury1, fury2, "str"));
@@ -162,16 +162,16 @@ public class FuryTest extends FuryTestBase {
 
   @Test(dataProvider = "languageConfig")
   public void testSerializationToBuffer(Language language) {
-    Fury fury1 = Fury.builder().withLanguage(language).disableSecureMode().build();
-    Fury fury2 = Fury.builder().withLanguage(language).disableSecureMode().build();
+    Fury fury1 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
+    Fury fury2 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryUtils.buffer(64);
     assertSerializationToBuffer(fury1, fury2, buffer);
   }
 
   @Test(dataProvider = "languageConfig")
   public void testSerializationSlicedBuffer(Language language) {
-    Fury fury1 = Fury.builder().withLanguage(language).disableSecureMode().build();
-    Fury fury2 = Fury.builder().withLanguage(language).disableSecureMode().build();
+    Fury fury1 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
+    Fury fury2 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
     MemoryBuffer buffer0 = MemoryUtils.buffer(64);
     buffer0.writeLong(-1);
     buffer0.writeLong(-1);
@@ -208,7 +208,7 @@ public class FuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     BeanA beanA = BeanA.createBeanA(2);
     byte[] bytes = fury.serialize(beanA);
@@ -222,7 +222,7 @@ public class FuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     fury.register(BeanA.class);
     BeanA beanA = BeanA.createBeanA(2);
@@ -250,7 +250,7 @@ public class FuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     long ptr = 0;
     try {
@@ -278,7 +278,11 @@ public class FuryTest extends FuryTestBase {
   @Test
   public void testSerializePrivateBean() {
     Fury fury =
-        Fury.builder().withLanguage(Language.JAVA).withCodegen(false).disableSecureMode().build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCodegen(false)
+            .requireClassRegistration(false)
+            .build();
     Outer outer = new Outer();
     outer.inner = new Outer.Inner();
     fury.deserialize(fury.serialize(outer));
@@ -290,7 +294,11 @@ public class FuryTest extends FuryTestBase {
   @Test
   public void testSerializePrivateBeanJIT() {
     Fury fury =
-        Fury.builder().withLanguage(Language.JAVA).withCodegen(true).disableSecureMode().build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
     Outer outer = new Outer();
     outer.inner = new Outer.Inner();
     fury.deserialize(fury.serialize(outer));
@@ -307,7 +315,11 @@ public class FuryTest extends FuryTestBase {
   @Test
   public void testSerializePackageLevelBean() {
     Fury fury =
-        Fury.builder().withLanguage(Language.JAVA).withCodegen(false).disableSecureMode().build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCodegen(false)
+            .requireClassRegistration(false)
+            .build();
     PackageLevelBean o = new PackageLevelBean();
     o.f1 = 10;
     o.f2 = 1;
@@ -317,7 +329,11 @@ public class FuryTest extends FuryTestBase {
   @Test
   public void testSerializePackageLevelBeanJIT() {
     Fury fury =
-        Fury.builder().withLanguage(Language.JAVA).withCodegen(true).disableSecureMode().build();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
     PackageLevelBean o = new PackageLevelBean();
     o.f1 = 10;
     o.f2 = 1;
@@ -350,7 +366,7 @@ public class FuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Assert.assertEquals(serDe(fury, ImmutableList.of(1)), ImmutableList.of(1));
     Assert.assertEquals(serDe(fury, ImmutableList.of(1, 2)), ImmutableList.of(1, 2));
@@ -365,7 +381,7 @@ public class FuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withJdkClassSerializableCheck(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .withCodegen(enableCodegen)
             .build();
     StringTokenizer tokenizer = new StringTokenizer("abc,1,23", ",");
@@ -378,7 +394,7 @@ public class FuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     serDe(fury, ByteBuffer.allocate(32));
     serDe(fury, ByteBuffer.allocateDirect(32));
@@ -387,11 +403,11 @@ public class FuryTest extends FuryTestBase {
   }
 
   @Test
-  public void testSecureMode() {
-    Fury fury = Fury.builder().withSecureMode(true).build();
+  public void testClassRegistration() {
+    Fury fury = Fury.builder().requireClassRegistration(true).build();
     class A {}
     assertThrows(InsecureException.class, () -> fury.serialize(new A()));
-    Fury fury1 = Fury.builder().withSecureMode(false).build();
+    Fury fury1 = Fury.builder().requireClassRegistration(false).build();
     serDe(fury1, new A());
   }
 

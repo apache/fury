@@ -46,8 +46,8 @@ public class BlackListTest extends FuryTestBase {
   public void testSerializeBlackListClass() {
     for (Fury fury :
         new Fury[] {
-          Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build(),
-          Fury.builder().withLanguage(Language.JAVA).withSecureMode(true).build(),
+          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build(),
+          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build(),
           Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build()
         }) {
       Assert.assertThrows(

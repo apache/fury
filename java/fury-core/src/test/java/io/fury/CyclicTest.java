@@ -56,7 +56,7 @@ public class CyclicTest extends FuryTestBase {
                       .withCodegen((Boolean) c[0])
                       .withAsyncCompilationEnabled((Boolean) c[1])
                       .withCompatibleMode((CompatibleMode) c[2])
-                      .disableSecureMode()
+                      .requireClassRegistration(false)
                 })
         .toArray(Object[][]::new);
   }

@@ -39,7 +39,7 @@ public class OutOfBandTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
-            .disableSecureMode();
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     ByteBuffer byteBuffer = ByteBuffer.allocate(10);

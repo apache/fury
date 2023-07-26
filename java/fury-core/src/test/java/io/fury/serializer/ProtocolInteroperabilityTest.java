@@ -68,7 +68,7 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                       .withNumberCompressed((Boolean) c[1])
                       .withCodegen(false)
                       .withCompatibleMode((CompatibleMode) c[2])
-                      .disableSecureMode()
+                      .requireClassRegistration(false)
                       .build(),
                   Fury.builder()
                       .withLanguage(Language.JAVA)
@@ -76,7 +76,7 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                       .withNumberCompressed((Boolean) c[1])
                       .withCodegen(true)
                       .withCompatibleMode((CompatibleMode) c[2])
-                      .disableSecureMode()
+                      .requireClassRegistration(false)
                       .build()
                 })
         .toArray(Object[][]::new);
@@ -233,14 +233,14 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                       .withMetaContextShareEnabled(true)
                       .withCompatibleMode((CompatibleMode) c[0])
                       .withCodegen(false)
-                      .disableSecureMode()
+                      .requireClassRegistration(false)
                       .build(),
                   Fury.builder()
                       .withLanguage(Language.JAVA)
                       .withMetaContextShareEnabled(true)
                       .withCompatibleMode((CompatibleMode) c[0])
                       .withCodegen(true)
-                      .disableSecureMode()
+                      .requireClassRegistration(false)
                       .build()
                 })
         .toArray(Object[][]::new);

@@ -57,7 +57,7 @@ public class DuplicateFieldsTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
             .withCodegen(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     {
       ObjectSerializer<C> serializer = new ObjectSerializer<>(fury, C.class);
@@ -86,7 +86,7 @@ public class DuplicateFieldsTest extends FuryTestBase {
               .withLanguage(Language.JAVA)
               .withRefTracking(false)
               .withCodegen(true)
-              .disableSecureMode()
+              .requireClassRegistration(false)
               .build();
       C newC = (C) serDeCheckSerializer(fury1, c, "Codec");
       assertEquals(newC.f1, c.f1);
@@ -108,7 +108,7 @@ public class DuplicateFieldsTest extends FuryTestBase {
             .withRefTracking(false)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     {
       CompatibleSerializer<C> serializer = new CompatibleSerializer<>(fury, C.class);
@@ -138,7 +138,7 @@ public class DuplicateFieldsTest extends FuryTestBase {
               .withRefTracking(false)
               .withCodegen(true)
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
-              .disableSecureMode()
+              .requireClassRegistration(false)
               .build();
       C newC = (C) serDeCheckSerializer(fury1, c, "Compatible.*Codec");
       assertEquals(newC.f1, c.f1);

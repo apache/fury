@@ -36,7 +36,7 @@ public class CodecUtilsTest {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Class<?> seqCodecClass = fury.getClassResolver().getSerializerClass(BeanA.class);
     Generated.GeneratedSerializer serializer =

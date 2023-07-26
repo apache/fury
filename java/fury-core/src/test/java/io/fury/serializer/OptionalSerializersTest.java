@@ -31,7 +31,7 @@ public class OptionalSerializersTest extends FuryTestBase {
 
   @Test
   void testOptionals() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     serDeCheckSerializerAndEqual(fury, Optional.empty(), "Optional");
     serDeCheckSerializerAndEqual(fury, Optional.of("abc"), "Optional");
     serDeCheckSerializerAndEqual(fury, OptionalInt.empty(), "Optional");

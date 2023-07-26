@@ -130,7 +130,7 @@ public class StringSerializerTest extends FuryTestBase {
 
   @Test
   public void testJavaStringSimple() {
-    Fury fury = Fury.builder().withStringCompressed(true).disableSecureMode().build();
+    Fury fury = Fury.builder().withStringCompressed(true).requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     StringSerializer serializer = new StringSerializer(fury);
     {
@@ -149,7 +149,8 @@ public class StringSerializerTest extends FuryTestBase {
 
   @Test(dataProvider = "stringCompress")
   public void testJavaString(boolean stringCompress) {
-    Fury fury = Fury.builder().withStringCompressed(stringCompress).disableSecureMode().build();
+    Fury fury =
+        Fury.builder().withStringCompressed(stringCompress).requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     StringSerializer serializer = new StringSerializer(fury);
 
@@ -169,7 +170,8 @@ public class StringSerializerTest extends FuryTestBase {
 
   @Test(dataProvider = "stringCompress")
   public void testJavaStringOffHeap(boolean stringCompress) {
-    Fury fury = Fury.builder().withStringCompressed(stringCompress).disableSecureMode().build();
+    Fury fury =
+        Fury.builder().withStringCompressed(stringCompress).requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryUtils.wrap(ByteBuffer.allocateDirect(1024));
     Object o1 = "你好, Fury" + StringUtils.random(64);
     Object o2 =
@@ -208,7 +210,8 @@ public class StringSerializerTest extends FuryTestBase {
 
     public DataProducer(BlockingQueue<Tuple2<String, byte[]>> dataQueue) {
       this.dataQueue = dataQueue;
-      this.fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      this.fury =
+          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     }
 
     public void run() {
@@ -239,7 +242,8 @@ public class StringSerializerTest extends FuryTestBase {
     public DataConsumer(
         BlockingQueue<Tuple2<String, byte[]>> dataQueue,
         ConcurrentLinkedQueue<Tuple2<String, String>> results) {
-      this.fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      this.fury =
+          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
       this.dataQueue = dataQueue;
       this.results = results;
     }
@@ -263,7 +267,7 @@ public class StringSerializerTest extends FuryTestBase {
     if (Platform.JAVA_VERSION != 8) {
       throw new SkipException("Java 8 only");
     }
-    Fury fury = Fury.builder().withStringCompressed(true).disableSecureMode().build();
+    Fury fury = Fury.builder().withStringCompressed(true).requireClassRegistration(false).build();
     StringSerializer stringSerializer =
         (StringSerializer) fury.getClassResolver().getSerializer(String.class);
 

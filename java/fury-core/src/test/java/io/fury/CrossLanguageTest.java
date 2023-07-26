@@ -225,7 +225,7 @@ public class CrossLanguageTest {
         Fury.builder()
             .withLanguage(Language.XLANG)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     fury.serialize(buffer, true);
@@ -317,7 +317,7 @@ public class CrossLanguageTest {
         Fury.builder()
             .withLanguage(Language.XLANG)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Assert.assertEquals(
         new String[] {"str", "str"}, (Object[]) serDe(fury, new String[] {"str", "str"}));
@@ -399,7 +399,7 @@ public class CrossLanguageTest {
         Fury.builder()
             .withLanguage(Language.XLANG)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     List<Object> list = new ArrayList<>();
     Map<Object, Object> map = new HashMap<>();
@@ -464,7 +464,7 @@ public class CrossLanguageTest {
         Fury.builder()
             .withLanguage(Language.XLANG)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     fury.register(ComplexObject2.class, "test.ComplexObject2");
     ComplexObject2 obj2 = new ComplexObject2();
@@ -478,7 +478,7 @@ public class CrossLanguageTest {
         Fury.builder()
             .withLanguage(Language.XLANG)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     fury.register(ComplexObject1.class, "test.ComplexObject1");
     fury.register(ComplexObject2.class, "test.ComplexObject2");
@@ -523,7 +523,7 @@ public class CrossLanguageTest {
         Fury.builder()
             .withLanguage(Language.XLANG)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     fury.register(ComplexObject2.class, "test.ComplexObject2");
     ComplexObject2 obj = new ComplexObject2();
@@ -538,7 +538,7 @@ public class CrossLanguageTest {
         Fury.builder()
             .withLanguage(Language.XLANG)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     fury.register(ComplexObject1.class, "test.ComplexObject1");
     // don't register ComplexObject2/Foo to make them serialize as opaque blobs.
@@ -621,7 +621,7 @@ public class CrossLanguageTest {
         Fury.builder()
             .withLanguage(Language.XLANG)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     fury.registerSerializer(ComplexObject1.class, ComplexObject1Serializer.class);
     ComplexObject1 obj = new ComplexObject1();
@@ -649,7 +649,7 @@ public class CrossLanguageTest {
         Fury.builder()
             .withLanguage(Language.XLANG)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     AtomicInteger counter = new AtomicInteger(0);
     List<byte[]> data =

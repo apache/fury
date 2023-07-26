@@ -72,7 +72,7 @@ public class FuryState {
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)
               .withRefTracking(references)
-              .disableSecureMode()
+              .requireClassRegistration(false)
               .build();
       setupBuffer();
     }
@@ -95,7 +95,7 @@ public class FuryState {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Object o1 = fury.deserialize(fury.serialize(o));
     Preconditions.checkArgument(o.equals(o1));
@@ -124,7 +124,7 @@ public class FuryState {
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)
               .withRefTracking(references)
-              .disableSecureMode();
+              .requireClassRegistration(false);
       if (compatible()) {
         furyBuilder.withCompatibleMode(CompatibleMode.COMPATIBLE);
       }
@@ -189,7 +189,7 @@ public class FuryState {
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)
               .withRefTracking(references)
-              .disableSecureMode()
+              .requireClassRegistration(false)
               .withMetaContextShareEnabled(true)
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
               .build();

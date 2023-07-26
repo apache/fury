@@ -60,7 +60,7 @@ public class ArrowSerializersTest {
   @Test
   public void testWriteVectorSchemaRoot() throws IOException {
     Collection<BufferObject> bufferObjects = new ArrayList<>();
-    Fury fury = Fury.builder().disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     int size = 2000;
     VectorSchemaRoot root = ArrowUtilsTest.createVectorSchemaRoot(size);
     Assert.assertEquals(
@@ -85,7 +85,7 @@ public class ArrowSerializersTest {
     assertRecordBatchEqual(newRoot, root);
 
     // test in band serialization.
-    fury = Fury.builder().disableSecureMode().build();
+    fury = Fury.builder().requireClassRegistration(false).build();
     newRoot = (VectorSchemaRoot) fury.deserialize(fury.serialize(root));
     assertRecordBatchEqual(newRoot, root);
   }
@@ -93,7 +93,7 @@ public class ArrowSerializersTest {
   @Test
   public void testWriteArrowTable() throws IOException {
     Collection<BufferObject> bufferObjects = new ArrayList<>();
-    Fury fury = Fury.builder().disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     int size = 2000;
     VectorSchemaRoot root = ArrowUtilsTest.createVectorSchemaRoot(size);
     Schema schema = root.getSchema();
@@ -115,7 +115,7 @@ public class ArrowSerializersTest {
     assertTableEqual(newTable, table);
 
     // test in band serialization.
-    fury = Fury.builder().disableSecureMode().build();
+    fury = Fury.builder().requireClassRegistration(false).build();
     newTable = (ArrowTable) fury.deserialize(fury.serialize(table));
     assertTableEqual(newTable, table);
   }

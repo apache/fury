@@ -98,7 +98,7 @@ public abstract class FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .withCodegen(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
@@ -106,7 +106,7 @@ public abstract class FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
             .withCodegen(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
@@ -114,7 +114,7 @@ public abstract class FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .withCodegen(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
@@ -122,7 +122,7 @@ public abstract class FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
             .withCodegen(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
     };
@@ -137,7 +137,7 @@ public abstract class FuryTestBase {
             .withRefTracking(true)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
@@ -146,7 +146,7 @@ public abstract class FuryTestBase {
             .withRefTracking(false)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
@@ -155,7 +155,7 @@ public abstract class FuryTestBase {
             .withRefTracking(true)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
@@ -164,7 +164,7 @@ public abstract class FuryTestBase {
             .withRefTracking(false)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
     };

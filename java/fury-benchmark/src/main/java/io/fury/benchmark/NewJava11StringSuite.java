@@ -47,7 +47,8 @@ public class NewJava11StringSuite {
       ReflectionUtils.getFieldOffset(String.class, "coder");
 
   private static String stubStr = new String(new char[] {Character.MAX_VALUE, Character.MIN_VALUE});
-  private static Fury fury = Fury.builder().withStringCompressed(true).disableSecureMode().build();
+  private static Fury fury =
+      Fury.builder().withStringCompressed(true).requireClassRegistration(false).build();
   private static StringSerializer stringSerializer = new StringSerializer(fury);
   private static MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(512);
 

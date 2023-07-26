@@ -153,21 +153,21 @@ public class Example {
     // multiple serializations of different objects.
     {
       Fury fury = Fury.builder().withLanguage(Language.JAVA)
-        // Allow to deserialize objects unknown types,
-        // more flexible but less secure.
-        // .withSecureMode(false)
+        // Allow to deserialize objects unknown types, more flexible 
+        // but may be insecure if the classes contains malicious code.
+        // .requireClassRegistration(false)
         .build();
       // Registering types can reduce class name serialization overhead, but not mandatory.
-      // If secure mode enabled, all custom types must be registered.
+      // If class registration enabled, all custom types must be registered.
       fury.register(SomeClass.class);
       byte[] bytes = fury.serialize(object);
       System.out.println(fury.deserialize(bytes));
     }
     {
       ThreadSafeFury fury = Fury.builder().withLanguage(Language.JAVA)
-        // Allow to deserialize objects unknown types,
-        // more flexible but less secure.
-        // .withSecureMode(false)
+        // Allow to deserialize objects unknown types, more flexible 
+        // but may be insecure if the classes contains malicious code.
+        // .requireClassRegistration(false)
         .buildThreadSafeFury();
       byte[] bytes = fury.serialize(object);
       System.out.println(fury.deserialize(bytes));
@@ -356,8 +356,8 @@ Static serialization are secure. But dynamic serialization such as fury java/pyt
 
 For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risks.
 
-Fury provides a secure mode option and enabled by default for such protocols, which allows only deserializing trusted registered types or built-in types.
- **Do not disable secure mode or class registration checks unless you can ensure your environment is indeed secure**.
+Fury provides a class registration option and enabled by default for such protocols, which allows only deserializing trusted registered types or built-in types.
+ **Do not disable class registration or class registration checks unless you can ensure your environment is indeed secure**.
 
 ## RoadMap
 - Meta compression, auto meta sharing and cross-language schema compatibility.

@@ -117,7 +117,7 @@ public class ForwardSerializer {
           .withLanguage(Language.JAVA)
           .withRefTracking(true)
           .withClassLoader(loader)
-          .disableSecureMode()
+          .requireClassRegistration(false)
           .build();
     }
 

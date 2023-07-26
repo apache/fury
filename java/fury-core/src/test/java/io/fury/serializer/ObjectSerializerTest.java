@@ -44,7 +44,7 @@ public class ObjectSerializerTest {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     ObjectSerializer serializer = new ObjectSerializer(fury, Foo.class);
     MemoryBuffer buffer = MemoryUtils.buffer(32);
@@ -73,7 +73,7 @@ public class ObjectSerializerTest {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     ObjectSerializer serializer = new ObjectSerializer(fury, foo.getClass());
     MemoryBuffer buffer = MemoryUtils.buffer(32);
@@ -89,7 +89,7 @@ public class ObjectSerializerTest {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
 
@@ -121,7 +121,7 @@ public class ObjectSerializerTest {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     ObjectSerializer<A> serializer = new ObjectSerializer<>(fury, A.class);

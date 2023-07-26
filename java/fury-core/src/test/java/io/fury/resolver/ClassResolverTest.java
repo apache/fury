@@ -75,7 +75,7 @@ public class ClassResolverTest extends FuryTestBase {
 
   @Test
   public void testPrimitivesClassId() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     ClassResolver classResolver = fury.getClassResolver();
     for (List<Class<?>> classes :
         ImmutableList.of(
@@ -95,7 +95,7 @@ public class ClassResolverTest extends FuryTestBase {
 
   @Test
   public void testRegisterClass() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     ClassResolver classResolver = fury.getClassResolver();
     classResolver.register(io.fury.test.bean.Foo.class);
     Assert.assertThrows(
@@ -109,7 +109,8 @@ public class ClassResolverTest extends FuryTestBase {
   @Test
   public void testGetSerializerClass() {
     {
-      Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      Fury fury =
+          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
       // serialize class first will create a class info with serializer null.
       serDeCheck(fury, BeanB.class);
       Assert.assertTrue(
@@ -119,10 +120,11 @@ public class ClassResolverTest extends FuryTestBase {
       serDeCheck(fury, BeanB.createBeanB(2));
     }
     {
-      Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      Fury fury =
+          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
       serDeCheck(fury, new Object[] {BeanB.class, BeanB.createBeanB(2)});
     }
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     ClassResolver classResolver = fury.getClassResolver();
     assertEquals(
         classResolver.getSerializerClass(ArrayList.class),
@@ -181,7 +183,7 @@ public class ClassResolverTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Primitives.allPrimitiveTypes()
         .forEach(cls -> assertSame(cls, fury.deserialize(fury.serialize(cls))));
@@ -204,7 +206,7 @@ public class ClassResolverTest extends FuryTestBase {
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withRefTracking(true)
-              .disableSecureMode()
+              .requireClassRegistration(false)
               .build();
       ClassResolver classResolver = fury.getClassResolver();
       MemoryBuffer buffer = MemoryUtils.buffer(32);
@@ -219,7 +221,7 @@ public class ClassResolverTest extends FuryTestBase {
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withRefTracking(true)
-              .disableSecureMode()
+              .requireClassRegistration(false)
               .build();
       ClassResolver classResolver = fury.getClassResolver();
       MemoryBuffer buffer = MemoryUtils.buffer(32);
@@ -262,7 +264,7 @@ public class ClassResolverTest extends FuryTestBase {
   }
 
   @Test
-  public void testSecureModeInit() {
+  public void testClassRegistrationInit() {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(false).build();
     serDeCheck(fury, new HashMap<>(ImmutableMap.of("a", 1, "b", 2)));
   }
@@ -278,7 +280,7 @@ public class ClassResolverTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     ClassResolver classResolver = fury.getClassResolver();
     Assert.assertFalse(classResolver.needToWriteRef(TestNeedToWriteReferenceClass.class));
@@ -291,7 +293,7 @@ public class ClassResolverTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     ClassResolver classResolver = fury.getClassResolver();
     {
@@ -328,7 +330,7 @@ public class ClassResolverTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     ClassResolver classResolver = fury.getClassResolver();
     Assert.assertThrows(() -> Serializers.newSerializer(fury, Foo.class, ErrorSerializer.class));

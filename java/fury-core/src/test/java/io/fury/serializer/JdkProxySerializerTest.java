@@ -47,7 +47,7 @@ public class JdkProxySerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Function function =
         (Function)

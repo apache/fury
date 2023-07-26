@@ -49,7 +49,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .withAsyncCompilationEnabled(true)
             .buildThreadSafeFuryPool(5, 10);
     for (int i = 0; i < 2000; i++) {
@@ -77,7 +77,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .withAsyncCompilationEnabled(true)
             .buildThreadSafeFury();
     ExecutorService executorService = Executors.newFixedThreadPool(12);
@@ -103,12 +103,15 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   @Test
   public void testSerializeWithMetaShare() throws InterruptedException {
     ThreadSafeFury fury1 =
-        Fury.builder().withLanguage(Language.JAVA).disableSecureMode().buildThreadSafeFury();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .buildThreadSafeFury();
     ThreadSafeFury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withMetaContextShareEnabled(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .buildThreadSafeFury();
     BeanA beanA = BeanA.createBeanA(2);
     ExecutorService executorService = Executors.newFixedThreadPool(12);

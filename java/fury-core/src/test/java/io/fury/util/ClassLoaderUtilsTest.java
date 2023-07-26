@@ -47,7 +47,7 @@ public class ClassLoaderUtilsTest {
     compiler.cook(new StringReader(classCode));
     ClassLoader classLoader = compiler.getClassLoader();
     Class<?> clz = classLoader.loadClass("demo.pkg1." + classname);
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     Thread.currentThread().setContextClassLoader(classLoader);
     byte[] bytes = fury.serialize(clz.newInstance());
     fury.deserialize(bytes);

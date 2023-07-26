@@ -47,7 +47,7 @@ public class SerializersTest extends FuryTestBase {
 
   @Test
   public void testUint8Serializer() {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.XLANG).requireClassRegistration(false).build();
     Serializers.Uint8Serializer serializer = new Serializers.Uint8Serializer(fury);
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(8);
     serializer.xwrite(buffer, 0);
@@ -60,7 +60,7 @@ public class SerializersTest extends FuryTestBase {
 
   @Test
   public void testUint16Serializer() {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG).disableSecureMode().build();
+    Fury fury = Fury.builder().withLanguage(Language.XLANG).requireClassRegistration(false).build();
     Serializers.Uint16Serializer serializer = new Serializers.Uint16Serializer(fury);
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(16);
     serializer.xwrite(buffer, 0);
@@ -77,7 +77,7 @@ public class SerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
-            .disableSecureMode();
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals("str", serDe(fury1, fury2, "str"));
@@ -109,7 +109,7 @@ public class SerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
-            .disableSecureMode();
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals(EnumFoo.A, serDe(fury1, fury2, EnumFoo.A));
@@ -124,7 +124,7 @@ public class SerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
-            .disableSecureMode();
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals(BigInteger.valueOf(100), serDe(fury1, fury2, BigInteger.valueOf(100)));
@@ -192,7 +192,7 @@ public class SerializersTest extends FuryTestBase {
 
   @Test
   public void testSerializeClass() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     // serialize both TestReplaceClassSerialization object and class.
     // Scala `object` native serialization will return ModuleSerializationProxy will write original
     // class.

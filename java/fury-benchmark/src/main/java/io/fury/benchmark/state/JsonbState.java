@@ -169,7 +169,7 @@ public class JsonbState {
 
   public static void testLambda() {
     Function<String, String> f = (Function<String, String> & Serializable) String::toLowerCase;
-    Fury fury = Fury.builder().disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     fury.deserialize(fury.serialize(f));
     byte[] data = JSONB.toBytes(f, getJsonbWriterConfig(true));
     JSONB.parseObject(data, Object.class, getJsonbReaderConfig(true));
@@ -190,7 +190,7 @@ public class JsonbState {
                 Thread.currentThread().getContextClassLoader(),
                 new Class[] {Function.class},
                 new TestInvocationHandler());
-    Fury fury = Fury.builder().disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     fury.deserialize(fury.serialize(function));
     byte[] data1 = JSONB.toBytes(function, getJsonbWriterConfig(true));
     System.out.println(JSONB.parseObject(data1, Object.class, getJsonbReaderConfig(true)));
@@ -221,7 +221,7 @@ public class JsonbState {
     C c = new C();
     c.f1 = new A();
     c.f2 = new B();
-    Fury fury = Fury.builder().disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     System.out.println(fury.serialize(c).length);
     System.out.println(fury.serialize(c).length);
     byte[] bytes = JSONB.toBytes(c, getJsonbWriterConfig(true));

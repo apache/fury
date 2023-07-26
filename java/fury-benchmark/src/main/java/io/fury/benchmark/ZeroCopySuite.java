@@ -69,7 +69,7 @@ public class ZeroCopySuite {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Object o1 = fury.deserialize(fury.serialize(o));
     Preconditions.checkArgument(o.equals(o1));
@@ -157,7 +157,7 @@ public class ZeroCopySuite {
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)
               .withRefTracking(references)
-              .disableSecureMode()
+              .requireClassRegistration(false)
               .build();
       switch (bufferType) {
         case array:
