@@ -807,8 +807,8 @@ cdef class Fury:
         """
        :param require_class_registration:
         Whether to require registering classes for serialization, enabled by default.
-         If disabled, unknown insecure classes can be deserialized, which can be insecure
-         and cause remote code execution attack if the classes
+         If disabled, unknown insecure classes can be deserialized, which can be
+         insecure and cause remote code execution attack if the classes
          `__new__`/`__init__`/`__eq__`/`__hash__` method contain malicious code.
          Do not disable class registration if you can't ensure your environment are
          *indeed secure*. We are not responsible for security risks if
@@ -823,7 +823,8 @@ cdef class Fury:
         self.serialization_context = SerializationContext()
         self.buffer = Buffer.allocate(32)
         if not require_class_registration:
-            warnings.warn("Class registration is disabled, unknown classes can be deserialized which may be insecure.")
+            warnings.warn("Class registration is disabled, unknown classes can be deserialized "
+                          "which may be insecure.")
             self.pickler = pickle.Pickler(self.buffer)
         else:
             self.pickler = _PicklerStub(self.buffer)
