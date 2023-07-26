@@ -326,7 +326,9 @@ class RegisterClass:
 
 
 def test_register_py_serializer():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True, require_class_registration=False)
+    fury = Fury(
+        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+    )
 
     class Serializer(pyfury.Serializer):
         def write(self, buffer, value):
@@ -378,7 +380,9 @@ def test_register_class():
 
 
 def test_pickle_fallback():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True, require_class_registration=False)
+    fury = Fury(
+        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+    )
     o1 = [1, True, np.dtype(np.int32)]
     data1 = fury.serialize(o1)
     new_o1 = fury.deserialize(data1)
@@ -481,7 +485,9 @@ def test_cache_serializer():
 
 
 def test_pandas_range_index():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True, require_class_registration=False)
+    fury = Fury(
+        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+    )
     fury.register_serializer(pd.RangeIndex, pyfury.PandasRangeIndexSerializer(fury))
     index = pd.RangeIndex(1, 100, 2, name="a")
     new_index = ser_de(fury, index)

@@ -5,6 +5,7 @@ import enum
 import logging
 import os
 import sys
+import warnings
 from dataclasses import dataclass
 from typing import Dict, Tuple, TypeVar, Optional, Union, Iterable
 
@@ -592,8 +593,20 @@ class Fury:
         ref_tracking: bool = False,
         require_class_registration: bool = True,
     ):
+        """
+        :param require_class_registration:
+         Whether to require registering classes for serialization, enabled by default.
+          If disabled, unknown insecure classes can be deserialized, which can be insecure
+          and cause remote code execution attack if the classes
+          `__new__`/`__init__`/`__eq__`/`__hash__` method contain malicious code.
+          Do not disable class registration if you can't ensure your environment are
+          *indeed secure*. We are not responsible for security risks if
+          you disable this option.
+        """
         self.language = language
-        self.require_class_registration = _ENABLE_SECURITY_MODE_FORCIBLY or require_class_registration
+        self.require_class_registration = (
+            _ENABLE_CLASS_REGISTRATION_FORCIBLY or require_class_registration
+        )
         self.ref_tracking = ref_tracking
         if self.ref_tracking:
             self.ref_resolver = MapRefResolver()
@@ -604,6 +617,9 @@ class Fury:
         self.serialization_context = SerializationContext()
         self.buffer = Buffer.allocate(32)
         if not require_class_registration:
+            warnings.warn(
+                "Class registration is disabled, unknown classes can be deserialized which may be insecure."
+            )
             self.pickler = pickle.Pickler(self.buffer)
         else:
             self.pickler = _PicklerStub(self.buffer)
@@ -986,7 +1002,9 @@ class Fury:
         self.reset_read()
 
 
-_ENABLE_SECURITY_MODE_FORCIBLY = os.getenv("ENABLE_SECURITY_MODE_FORCIBLY", "0") in {
+_ENABLE_CLASS_REGISTRATION_FORCIBLY = os.getenv(
+    "ENABLE_CLASS_REGISTRATION_FORCIBLY", "0"
+) in {
     "1",
     "true",
 }

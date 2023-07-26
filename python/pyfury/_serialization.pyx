@@ -9,11 +9,13 @@ import enum
 import logging
 import os
 import sys
+import warnings
 from typing import TypeVar, Union, Iterable, get_type_hints
 
 from pyfury._util import get_bit, set_bit, clear_bit
 from pyfury._fury import Language, OpaqueObject
-from pyfury._fury import _PicklerStub, _UnpicklerStub, _ENABLE_SECURITY_MODE_FORCIBLY
+from pyfury._fury import _PicklerStub, _UnpicklerStub
+from pyfury._fury import _ENABLE_CLASS_REGISTRATION_FORCIBLY
 from pyfury.error import ClassNotCompatibleError
 from pyfury.lib import mmh3
 from pyfury.type import is_primitive_type, FuryType, Int8Type, Int16Type, Int32Type, \
@@ -802,8 +804,18 @@ cdef class Fury:
         ref_tracking: bool = False,
         require_class_registration: bool = True,
      ):
+        """
+       :param require_class_registration:
+        Whether to require registering classes for serialization, enabled by default.
+         If disabled, unknown insecure classes can be deserialized, which can be insecure
+         and cause remote code execution attack if the classes
+         `__new__`/`__init__`/`__eq__`/`__hash__` method contain malicious code.
+         Do not disable class registration if you can't ensure your environment are
+         *indeed secure*. We are not responsible for security risks if
+         you disable this option.
+       """
         self.language = language
-        self.require_class_registration = _ENABLE_SECURITY_MODE_FORCIBLY or require_class_registration
+        self.require_class_registration = _ENABLE_CLASS_REGISTRATION_FORCIBLY or require_class_registration
         self.ref_tracking = ref_tracking
         self.ref_resolver = MapRefResolver(ref_tracking)
         self.class_resolver = ClassResolver(self)
@@ -811,6 +823,7 @@ cdef class Fury:
         self.serialization_context = SerializationContext()
         self.buffer = Buffer.allocate(32)
         if not require_class_registration:
+            warnings.warn("Class registration is disabled, unknown classes can be deserialized which may be insecure.")
             self.pickler = pickle.Pickler(self.buffer)
         else:
             self.pickler = _PicklerStub(self.buffer)

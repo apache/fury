@@ -1256,7 +1256,7 @@ public final class Fury {
       String flagValue =
           System.getProperty(
               "fury.enable_fury_security_mode_forcibly",
-              System.getenv("ENABLE_SECURITY_MODE_FORCIBLY"));
+              System.getenv("ENABLE_CLASS_REGISTRATION_FORCIBLY"));
       if (flagValue == null) {
         flagValue = "false";
       }
@@ -1359,7 +1359,7 @@ public final class Fury {
 
     /**
      * Whether to require registering classes for serialization, enabled by default. If disabled,
-     * unknown insecure classes can be deserialized, which can be insure and cause remote code
+     * unknown insecure classes can be deserialized, which can be insecure and cause remote code
      * execution attack if the classes `constructor`/`equals`/`hashCode` method contain malicious
      * code. Do not disable class registration if you can't ensure your environment are *indeed
      * secure*. We are not responsible for security risks if you disable this option.

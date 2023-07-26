@@ -443,7 +443,15 @@ def test_serialize_simple_struct(data_file_path):
     debug_print(f"len {len(data_bytes)}")
     new_obj = fury.deserialize(data_bytes)
     print(new_obj)
-    list_ = [True, False, "str", -1.1, 1, np.full(10, 1, dtype=np.int32), np.full(20, 1.0, dtype=np.double)]
+    list_ = [
+        True,
+        False,
+        "str",
+        -1.1,
+        1,
+        np.full(10, 1, dtype=np.int32),
+        np.full(20, 1.0, dtype=np.double),
+    ]
     map_ = {"k1": "v1", "k2": list_, "k3": -1}
     new_map = fury.serialize(map_)
     # struct_round_back(data_file_path, fury, obj)
