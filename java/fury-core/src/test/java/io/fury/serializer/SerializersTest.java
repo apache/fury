@@ -192,7 +192,7 @@ public class SerializersTest extends FuryTestBase {
 
   @Test
   public void testSerializeClass() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     // serialize both TestReplaceClassSerialization object and class.
     // Scala `object` native serialization will return ModuleSerializationProxy will write original
     // class.
