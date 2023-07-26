@@ -619,7 +619,9 @@ class Fury:
         if not require_class_registration:
             warnings.warn(
                 "Class registration is disabled, unknown classes can be deserialized "
-                "which may be insecure."
+                "which may be insecure.",
+                RuntimeWarning,
+                stacklevel=2,
             )
             self.pickler = pickle.Pickler(self.buffer)
         else:

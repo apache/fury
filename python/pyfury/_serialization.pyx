@@ -823,8 +823,12 @@ cdef class Fury:
         self.serialization_context = SerializationContext()
         self.buffer = Buffer.allocate(32)
         if not require_class_registration:
-            warnings.warn("Class registration is disabled, unknown classes can be deserialized "
-                          "which may be insecure.")
+            warnings.warn(
+                "Class registration is disabled, unknown classes can be deserialized "
+                "which may be insecure.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
             self.pickler = pickle.Pickler(self.buffer)
         else:
             self.pickler = _PicklerStub(self.buffer)

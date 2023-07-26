@@ -4,8 +4,6 @@ import math
 import os
 import typing
 
-import numpy as np
-
 import pyfury
 import pytest
 from dataclasses import dataclass
@@ -438,23 +436,9 @@ def test_serialize_simple_struct_local():
 @cross_language_test
 def test_serialize_simple_struct(data_file_path):
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    with open(data_file_path, "rb") as f:
-        data_bytes = f.read()
-    debug_print(f"len {len(data_bytes)}")
-    new_obj = fury.deserialize(data_bytes)
-    print(new_obj)
-    list_ = [
-        True,
-        False,
-        "str",
-        -1.1,
-        1,
-        np.full(10, 1, dtype=np.int32),
-        np.full(20, 1.0, dtype=np.double),
-    ]
-    map_ = {"k1": "v1", "k2": list_, "k3": -1}
-    new_map = fury.serialize(map_)
-    # struct_round_back(data_file_path, fury, obj)
+    fury.register_class_tag(ComplexObject2, "test.ComplexObject2")
+    obj = ComplexObject2(f1=True, f2={-1: 2})
+    struct_round_back(data_file_path, fury, obj)
 
 
 @cross_language_test
