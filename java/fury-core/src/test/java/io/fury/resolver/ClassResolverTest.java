@@ -264,7 +264,7 @@ public class ClassResolverTest extends FuryTestBase {
   }
 
   @Test
-  public void testSecureModeInit() {
+  public void testClassRegistrationInit() {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(false).build();
     serDeCheck(fury, new HashMap<>(ImmutableMap.of("a", 1, "b", 2)));
   }

@@ -403,7 +403,7 @@ public class FuryTest extends FuryTestBase {
   }
 
   @Test
-  public void testSecureMode() {
+  public void testClassRegistration() {
     Fury fury = Fury.builder().requireClassRegistration(true).build();
     class A {}
     assertThrows(InsecureException.class, () -> fury.serialize(new A()));
