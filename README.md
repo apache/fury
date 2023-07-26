@@ -153,8 +153,8 @@ public class Example {
     // multiple serializations of different objects.
     {
       Fury fury = Fury.builder().withLanguage(Language.JAVA)
-        // Allow to deserialize objects unknown types,
-        // more flexible but less secure.
+        // Allow to deserialize objects unknown types, more flexible 
+        // but may be insecure if the classes contains malicious code.
         // .requireClassRegistration(false)
         .build();
       // Registering types can reduce class name serialization overhead, but not mandatory.
@@ -165,8 +165,8 @@ public class Example {
     }
     {
       ThreadSafeFury fury = Fury.builder().withLanguage(Language.JAVA)
-        // Allow to deserialize objects unknown types,
-        // more flexible but less secure.
+        // Allow to deserialize objects unknown types, more flexible 
+        // but may be insecure if the classes contains malicious code.
         // .requireClassRegistration(false)
         .buildThreadSafeFury();
       byte[] bytes = fury.serialize(object);
