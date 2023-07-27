@@ -19,7 +19,7 @@ jobs:
           server-username: OSSRH_ID
           server-password: OSSRH_KEY
       - name: Publish java packages
-        run: cd java && mvn --batch-mode deploy -Prelease
+        run: cd java && mvn --batch-mode deploy -Prelease -Dgpg.skip
         env:
           OSSRH_ID: ${{ secrets.OSSRH_ID }}
           OSSRH_KEY: ${{ secrets.OSSRH_KEY }}
