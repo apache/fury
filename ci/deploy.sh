@@ -17,11 +17,13 @@ WHEEL_DIR="$ROOT/.whl"
 
 PYTHONS=("cp36-cp36m"
          "cp37-cp37m"
-         "cp38-cp38")
+         "cp38-cp38"
+         "cp39-cp39")
 
 VERSIONS=("3.6"
           "3.7"
-          "3.8")
+          "3.8"
+          "3.9")
 
 source $(conda info --base)/etc/profile.d/conda.sh
 

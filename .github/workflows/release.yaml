@@ -1,0 +1,48 @@
+name: Publish Fury 📦
+
+on:
+  push:
+    branches:
+      - main
+      - 'releases/**'
+      - 'deploy/**'
+      - '*'
+    tags:
+      - 'v*'
+
+jobs:
+  release-python:
+    name: Build and publish Python 🐍 distributions 📦 to PyPI
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Update version in setup.py
+        run: >-
+          echo "GITHUB_REF: $GITHUB_REF" 
+          tag=$(echo $GITHUB_REF | cut -d / -f 3)
+          echo "tag: $tag"
+          version=${tag:1}
+          echo "version $version"
+          ci/deploy.sh bump_version version
+      - name: Build a binary wheel
+        run: >-
+          pip install pyarrow==4.0.0 Cython wheel numpy pytest
+          cd python
+          pip list
+          export PATH=~/bin:$PATH
+          echo "Build pyfury"
+          python setup.py bdist_wheel
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: python/dist/
