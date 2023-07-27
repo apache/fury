@@ -26,7 +26,7 @@ jobs:
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Update version in setup.py
-        run: >-
+        run: |
           echo "GITHUB_REF: $GITHUB_REF" 
           tag=$(echo $GITHUB_REF | cut -d / -f 3)
           echo "tag: $tag"
@@ -34,7 +34,7 @@ jobs:
           echo "version $version"
           ci/deploy.sh bump_version version
       - name: Build a binary wheel
-        run: >-
+        run: |
           pip install pyarrow==4.0.0 Cython wheel numpy pytest
           cd python
           pip list
