@@ -205,7 +205,6 @@ format_all() {
       if command -v mvn >/dev/null ; then
         echo "Maven installed"
         cd "$ROOT/java"
-        mvn -T10 license:format
         mvn -T10 spotless:apply
         mvn -T10 checkstyle:check
       else
@@ -267,7 +266,6 @@ format_changed() {
           if command -v mvn >/dev/null ; then
             echo "Maven installed"
             cd "$ROOT/java"
-            mvn -T10 license:format
             mvn -T10 spotless:apply
             mvn -T10 checkstyle:check
           else

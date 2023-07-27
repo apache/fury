@@ -74,8 +74,6 @@ Run all checks：`bash ci/format.sh --all`
 ### Java
 ```bash
 cd java
-# license format
-mvn -T10 license:format
 # code format
 mvn spotless:apply
 # code format check
