@@ -352,8 +352,7 @@ def load_class(classname: str):
         raise Exception(f"Can't import class {cls_name} from module {mod_name}") from ex
 
 
-# from https://github.com/ericvsmith/dataclasses/blob/master/dataclass_tools.py
-# released under Apache License 2.0
+# This method is derived from https://github.com/ericvsmith/dataclasses/blob/5f6568c3468f872e8f447dc20666628387786397/dataclass_tools.py.
 def dataslots(cls):
     # Need to create a new class, since we can't set __slots__
     #  after a class has been created.

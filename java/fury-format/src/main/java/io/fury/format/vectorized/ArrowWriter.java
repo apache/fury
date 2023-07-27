@@ -1,11 +1,12 @@
 /*
- * Copyright 2023 The Fury Authors
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,9 +48,9 @@ import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.types.DateUnit;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 
+// Drived from https://github.com/apache/spark/blob/921fb289f003317d89120faa6937e4abd359195c/sql/catalyst/src/main/scala/org/apache/spark/sql/execution/arrow/ArrowWriter.scala.
+
 /** Converter between fury {@link Row} and arrow {@link ArrowRecordBatch}. */
-// Modified from
-// https://github.com/apache/spark/blob/master/sql/catalyst/src/main/scala/org/apache/spark/sql/execution/arrow/ArrowWriter.scala
 public class ArrowWriter {
   private int rowCount = 0;
   private final VectorSchemaRoot root;

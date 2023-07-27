@@ -1,11 +1,12 @@
 /*
- * Copyright 2023 The Fury Authors
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,13 +24,14 @@ import java.io.ObjectStreamClass;
 import java.io.StreamCorruptedException;
 import java.lang.reflect.Proxy;
 
+// Derived from https://github.com/apache/commons-io/blob/5168fa5e9de9dd2ff6ace3f34226397a4faebc14/src/main/java/org/apache/commons/io/input/ClassLoaderObjectInputStream.java.
+
 /**
  * A special ObjectInputStream that loads a class based on a specified <code>ClassLoader</code>
  * rather than the system default.
  *
  * <p>This is useful in dynamic container environments.
  */
-// Copied from org.apache.commons.io.input.ClassLoaderObjectInputStream
 public class ClassLoaderObjectInputStream extends ObjectInputStream {
 
   /** The class loader to use. */

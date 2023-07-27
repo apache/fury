@@ -30,8 +30,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.TimeZone;
 
-// Modified from
-// https://github.com/apache/spark/blob/master/sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/util/DateTimeUtils.scala
 public class DateTimeUtils {
 
   public static TimeZone DEFAULT_TIMEZONE = TimeZone.getDefault();

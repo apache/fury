@@ -22,8 +22,6 @@ import static io.fury.codegen.Code.LiteralValue.TrueLiteral;
 import java.util.Objects;
 
 /** Class for represented generated code in codegen. */
-// Modified from
-// https://github.com/apache/spark/blob/master/sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/expressions/codegen/javaCode.scala
 public interface Code {
   /**
    * The code for a sequence of statements to evaluate the expression in a scope. If no code needs

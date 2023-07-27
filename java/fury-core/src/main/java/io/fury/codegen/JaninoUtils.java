@@ -46,9 +46,7 @@ import org.codehaus.janino.util.resource.Resource;
 import org.slf4j.Logger;
 
 /**
- * A util to compile code to bytecode and create classloader to load generated class. Based on
- * org.codehaus.janino.tests.CompilerTest#testInMemoryCompilation, see (<a
- * href="https://github.com/janino-compiler/janino/issues/52">janino issue#52</a>)
+ * A util to compile code to bytecode and create classloader to load generated class.
  *
  * @author chaokunyang
  */

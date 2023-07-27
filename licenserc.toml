@@ -14,7 +14,25 @@
 
 headerPath = "Apache-2.0.txt"
 
+excludes = [
+    # Generated
+    "integration_tests/src/main/java/io/fury/integration_tests/state/generated/**",
+    
+    # Derived
+    "java/fury-benchmark/src/main/java/io/fury/benchmark/Identity2IdMap.java",
+    "java/fury-core/src/main/java/io/fury/collection/FuryObjectMap.java",
+    "java/fury-core/src/main/java/io/fury/collection/IdentityMap.java",
+    "java/fury-core/src/main/java/io/fury/collection/IdentityObjectIntMap.java",
+    "java/fury-core/src/main/java/io/fury/collection/LongMap.java",
+    "java/fury-core/src/main/java/io/fury/collection/ObjectIntMap.java",
+    "java/fury-core/src/main/java/io/fury/io/ClassLoaderObjectInputStream.java",
+    "java/fury-core/src/main/java/io/fury/memory/MemoryBuffer.java",
+    "java/fury-core/src/main/java/io/fury/util/Platform.java",
+    "java/fury-format/src/main/java/io/fury/format/vectorized/ArrowWriter.java",
+    "javascript/packages/hps/src/v8-fast-api-calls.h",
+    "src/fury/thirdparty/MurmurHash3.*",
+]
+
 [properties]
 inceptionYear = 2023
 copyrightOwner = "The Fury Authors"
-

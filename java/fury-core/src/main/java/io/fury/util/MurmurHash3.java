@@ -16,6 +16,10 @@
 
 package io.fury.util;
 
+// Derived from https://github.com/yonik/java_util/blob/435ae306d2f2c077d981ab4de5c9ac3c45f92a4b/src/util/hash/MurmurHash3.java.
+
+// This implementtion is 3.5x faster than Guava's Hashing.murmur3_128.
+
 /**
  * The MurmurHash3 algorithm was created by Austin Appleby and placed in the public domain. This
  * java port was authored by Yonik Seeley and also placed into the public domain. The author hereby
@@ -37,8 +41,6 @@ package io.fury.util;
  * <p>This java port is faster than guava and consistent cross-language for all seeds, see <a
  * href="https://yonik.com/murmurhash3-for-java/>murmurhash3-for-java</a>
  */
-// copied from https://github.com/yonik/java_util/blob/master/src/util/hash/MurmurHash3.java
-// 3.5x faster than guava Hashing.murmur3_128
 public final class MurmurHash3 {
 
   public static int fmix32(int h) {

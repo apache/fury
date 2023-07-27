@@ -21,11 +21,9 @@ import java.math.BigDecimal;
 import org.apache.arrow.vector.types.pojo.Field;
 
 /**
- * Getter methods for row format. `isNullAt` must be checked before attempting to retrieve a value
- * that might be null.
+ * Getter methods for row format. {@link #isNullAt(int)} must be checked before attempting to
+ * retrieve a nullable value.
  */
-// Modified from
-// https://github.com/apache/spark/blob/master/sql/catalyst/src/main/java/org/apache/spark/sql/catalyst/expressions/SpecializedGetters.java
 public interface Getters {
 
   boolean isNullAt(int ordinal);

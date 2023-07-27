@@ -25,7 +25,6 @@ import io.fury.resolver.ClassInfo;
  * generics more efficiently. For example, avoid push and pop Map KV generics repeatedly in the
  * loop.
  */
-// Modified from `com.esotericsoftware.kryo.util.DefaultGenerics.java`.
 public class Generics {
   private final Fury fury;
   private int genericTypesSize;

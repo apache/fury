@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Fury Authors
+ * Copyright 2014 Ruediger Moeller.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ import io.fury.util.Platform;
 import java.util.ArrayList;
 import java.util.List;
 
-// based on fst Identity2IdMap, but with some jit inline optimization.
+// Drived from https://github.com/RuedigerMoeller/fast-serialization/blob/e8da5591daa09452791dcd992ea4f83b20937be7/src/main/java/org/nustaq/serialization/util/FSTIdentity2IdMap.java,
+// with extra JIT inline optimization.
 public class Identity2IdMap {
   private static final int RESERVE = 4;
   private static final int MAX_DEPTH = 4;

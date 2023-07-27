@@ -20,8 +20,6 @@ package io.fury.memory;
  * Util class for bits related operations. We assume that the bitmap data is word-aligned (that is,
  * a multiple of 8 bytes in length).
  */
-// Modified from org.apache.spark.unsafe.bitset.BitSetMethods and
-// org.apache.arrow.vector.BitVectorHelper
 public class BitUtils {
 
   private static final int WORD_SIZE = 8;
