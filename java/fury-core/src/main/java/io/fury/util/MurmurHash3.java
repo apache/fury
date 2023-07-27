@@ -16,7 +16,8 @@
 
 package io.fury.util;
 
-// Derived from https://github.com/yonik/java_util/blob/435ae306d2f2c077d981ab4de5c9ac3c45f92a4b/src/util/hash/MurmurHash3.java.
+// Derived from
+// https://github.com/yonik/java_util/blob/435ae306d2f2c077d981ab4de5c9ac3c45f92a4b/src/util/hash/MurmurHash3.java.
 
 // This implementtion is 3.5x faster than Guava's Hashing.murmur3_128.
 

@@ -37,7 +37,8 @@ import org.slf4j.Logger;
 public class ClassLoaderUtils {
   private static final Logger LOG = LoggerFactory.getLogger(ClassLoaderUtils.class);
 
-  // Derived from https://github.com/apache/spark/blob/921fb289f003317d89120faa6937e4abd359195c/core/src/main/java/org/apache/spark/util/ParentClassLoader.java.
+  // Derived from
+  // https://github.com/apache/spark/blob/921fb289f003317d89120faa6937e4abd359195c/core/src/main/java/org/apache/spark/util/ParentClassLoader.java.
   /** A class loader which makes some protected methods in ClassLoader accessible. */
   public static class ParentClassLoader extends ClassLoader {
     static {
@@ -59,7 +60,8 @@ public class ClassLoaderUtils {
     }
   }
 
-  // Derived from https://github.com/apache/spark/blob/921fb289f003317d89120faa6937e4abd359195c/core/src/main/java/org/apache/spark/util/ChildFirstURLClassLoader.java.
+  // Derived from
+  // https://github.com/apache/spark/blob/921fb289f003317d89120faa6937e4abd359195c/core/src/main/java/org/apache/spark/util/ChildFirstURLClassLoader.java.
   /**
    * A mutable class loader that gives preference to its own URLs over the parent class loader when
    * loading classes and resources.

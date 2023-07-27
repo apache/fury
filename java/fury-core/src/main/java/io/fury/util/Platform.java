@@ -26,11 +26,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import sun.misc.Unsafe;
 
-// Derived from https://github.com/apache/spark/blob/921fb289f003317d89120faa6937e4abd359195c/common/unsafe/src/main/java/org/apache/spark/unsafe/Platform.java.
+// Derived from
+// https://github.com/apache/spark/blob/921fb289f003317d89120faa6937e4abd359195c/common/unsafe/src/main/java/org/apache/spark/unsafe/Platform.java.
 
-/**
- * A utility class for unsafe memory operations.
- */
+/** A utility class for unsafe memory operations. */
 @SuppressWarnings("restriction")
 public final class Platform {
   @SuppressWarnings("restriction")

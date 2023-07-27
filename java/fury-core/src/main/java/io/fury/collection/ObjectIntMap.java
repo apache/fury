@@ -23,7 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-// Derived from https://github.com/EsotericSoftware/kryo/blob/135df69526615bb3f6b34846e58ba3fec3b631c3/src/com/esotericsoftware/kryo/util/ObjectIntMap.java.
+// Derived from
+// https://github.com/EsotericSoftware/kryo/blob/135df69526615bb3f6b34846e58ba3fec3b631c3/src/com/esotericsoftware/kryo/util/ObjectIntMap.java.
 
 @SuppressWarnings("unchecked")
 public class ObjectIntMap<K> {

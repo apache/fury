@@ -53,7 +53,8 @@ import java.nio.ReadOnlyBufferException;
  */
 // FIXME Buffer operations is most common, and jvm inline and branch elimination
 // is not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually.
-// Note: This class is based on org.apache.flink.core.memory.MemorySegment and org.apache.arrow.memory.ArrowBuf.
+// Note: This class is based on org.apache.flink.core.memory.MemorySegment and
+// org.apache.arrow.memory.ArrowBuf.
 public final class MemoryBuffer {
   // The unsafe handle for transparent memory copied (heap/off-heap).
   private static final sun.misc.Unsafe UNSAFE = Platform.UNSAFE;
@@ -1614,8 +1615,8 @@ public final class MemoryBuffer {
   }
 
   /**
-   * Write long using variable length encoding. If the value is positive, use
-   * {@link #writePositiveVarLong} to save one bit.
+   * Write long using variable length encoding. If the value is positive, use {@link
+   * #writePositiveVarLong} to save one bit.
    */
   public int writeVarLong(long value) {
     ensure(writerIndex + 9);

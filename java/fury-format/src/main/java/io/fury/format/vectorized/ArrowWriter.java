@@ -48,7 +48,8 @@ import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.types.DateUnit;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 
-// Drived from https://github.com/apache/spark/blob/921fb289f003317d89120faa6937e4abd359195c/sql/catalyst/src/main/scala/org/apache/spark/sql/execution/arrow/ArrowWriter.scala.
+// Drived from
+// https://github.com/apache/spark/blob/921fb289f003317d89120faa6937e4abd359195c/sql/catalyst/src/main/scala/org/apache/spark/sql/execution/arrow/ArrowWriter.scala.
 
 /** Converter between fury {@link Row} and arrow {@link ArrowRecordBatch}. */
 public class ArrowWriter {
