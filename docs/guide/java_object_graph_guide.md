@@ -109,7 +109,7 @@ Fury fury=Fury.builder()
   // disable it for small size and better performance.
   // .withCompatibleMode(CompatibleMode.COMPATIBLE)
   // enable async multi-threaded compilation.
-  .withAsyncCompilationEnabled(true)
+  .withAsyncCompilation(true)
   .build();
   byte[]bytes=fury.serialize(object);
   System.out.println(fury.deserialize(bytes));
@@ -130,7 +130,7 @@ ThreadSafeFury fury=Fury.builder()
   // disable it for small size and better performance.
   // .withCompatibleMode(CompatibleMode.COMPATIBLE)
   // enable async multi-threaded compilation.
-  .withAsyncCompilationEnabled(true)
+  .withAsyncCompilation(true)
   .buildThreadSafeFury();
   byte[]bytes=fury.serialize(object);
   System.out.println(fury.deserialize(bytes));
@@ -206,7 +206,7 @@ forward/backward compatibility automatically.
 //   .withLanguage(Language.JAVA)
 //   .withRefTracking(false)
 //   // share meta across serialization.
-//   .withMetaContextShareEnabled(true)
+//   .withMetaContextShare(true)
 // Not thread-safe fury.
 MetaContext context=xxx;
   fury.getSerializationContext().setMetaContext(context);
@@ -234,14 +234,14 @@ MetaContext context=xxx;
 
 ### Deserialize un-exited classes.
 
-Fury support deserializing unexisted classes, this feature can be enabled
-by `FuryBuilder#withDeserializeUnExistClassEnabled(true)`. When enabled, and metadata sharing enabled, Fury will store
+Fury support deserializing Unexisted classes, this feature can be enabled
+by `FuryBuilder#deserializeUnexistedClass(true)`. When enabled, and metadata sharing enabled, Fury will store
 the deserialized data of this type in a lazy subclass of Map. By using the lazy map implemented by Fury, the rebalance
 cost of filling map during deserialization can be avoided, which further improves performance. If this data is sent to
 another process and the class exists in this process, the data will be deserialized into the object of this type without
 losing any information.
 
-If metadata sharing is not enabled, the new class data will be skipped and a UnExistedSkipClass stub object will be
+If metadata sharing is not enabled, the new class data will be skipped and a UnexistedSkipClass stub object will be
 returned.
 
 ## Migration

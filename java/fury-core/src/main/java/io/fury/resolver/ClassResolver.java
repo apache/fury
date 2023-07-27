@@ -252,7 +252,7 @@ public class ClassResolver {
     this.fury = fury;
     enumStringResolver = fury.getEnumStringResolver();
     classInfoCache = NIL_CLASS_INFO;
-    metaContextShareEnabled = fury.getConfig().isMetaContextShareEnabled();
+    metaContextShareEnabled = fury.getConfig().shareMetaContext();
     extRegistry = new ExtRegistry();
   }
 
@@ -474,7 +474,7 @@ public class ClassResolver {
    */
   public boolean isFinal(Class<?> clz) {
     if (Modifier.isFinal(clz.getModifiers())) {
-      if (fury.getConfig().isMetaContextShareEnabled()) {
+      if (fury.getConfig().shareMetaContext()) {
         boolean isInnerClass = isInnerClass(clz);
         if (!isInnerClass) {
           return false;
@@ -1210,8 +1210,8 @@ public class ClassResolver {
         new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
     if (cls == UnexistedMetaSharedClass.class) {
       classInfo.serializer = new UnexistedClassSerializer(fury, classDef);
-      // ensure `UnExistedMetaSharedClass` registered to write fixed-length class def,
-      // so we can rewrite it in `UnExistedClassSerializer`.
+      // ensure `UnexistedMetaSharedClass` registered to write fixed-length class def,
+      // so we can rewrite it in `UnexistedClassSerializer`.
       Preconditions.checkNotNull(classId);
       return classInfo;
     }
@@ -1542,7 +1542,7 @@ public class ClassResolver {
             String.format(
                 "Class %s not found from classloaders [%s, %s]",
                 className, fury.getClassLoader(), Thread.currentThread().getContextClassLoader());
-        if (fury.getConfig().isDeserializeUnExistClassEnabled()) {
+        if (fury.getConfig().deserializeUnexistedClass()) {
           // ex.printStackTrace();
           LOG.error(msg, e);
           // FIXME create a subclass dynamically may be better?

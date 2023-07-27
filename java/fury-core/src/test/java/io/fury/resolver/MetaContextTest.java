@@ -40,7 +40,7 @@ public class MetaContextTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .requireClassRegistration(false)
             .build();
     for (Object o : new Object[] {Foo.create(), BeanB.createBeanB(2), BeanA.createBeanA(2)}) {
@@ -54,7 +54,7 @@ public class MetaContextTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withCodegen(enableCodegen)
             .requireClassRegistration(false)
@@ -99,7 +99,7 @@ public class MetaContextTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withCodegen(enableCodegen)
             .requireClassRegistration(false)

@@ -65,7 +65,7 @@ import org.slf4j.Logger;
  * @see MetaSharedCodecBuilder
  * @see CompatibleMode#COMPATIBLE
  * @see CompatibleSerializer
- * @see Fury.FuryBuilder#withMetaContextShareEnabled
+ * @see Fury.FuryBuilder#withMetaContextShare
  * @see Platform#objectFieldOffset
  * @author chaokunyang
  */

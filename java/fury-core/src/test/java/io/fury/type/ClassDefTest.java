@@ -84,7 +84,7 @@ public class ClassDefTest extends FuryTestBase {
 
   @Test
   public void testClassDefSerialization() throws NoSuchFieldException {
-    Fury fury = Fury.builder().withMetaContextShareEnabled(true).build();
+    Fury fury = Fury.builder().withMetaContextShare(true).build();
     {
       ClassDef classDef =
           ClassDef.buildClassDef(
@@ -133,7 +133,7 @@ public class ClassDefTest extends FuryTestBase {
 
   @Test
   public void testDuplicateFieldsClass() {
-    Fury fury = Fury.builder().withMetaContextShareEnabled(true).build();
+    Fury fury = Fury.builder().withMetaContextShare(true).build();
     {
       ClassDef classDef =
           ClassDef.buildClassDef(
@@ -154,7 +154,7 @@ public class ClassDefTest extends FuryTestBase {
 
   @Test
   public void testContainerClass() {
-    Fury fury = Fury.builder().withMetaContextShareEnabled(true).build();
+    Fury fury = Fury.builder().withMetaContextShare(true).build();
     {
       ClassDef classDef =
           ClassDef.buildClassDef(
