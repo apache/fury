@@ -1284,21 +1284,28 @@ public final class Fury {
 
     private FuryBuilder() {}
 
+    /**
+     * Whether cross-language serialize the object. If you used fury for java only, please set
+     * language to {@link Language#JAVA}, which will have much better performance.
+     */
     public FuryBuilder withLanguage(Language language) {
       this.language = language;
       return this;
     }
 
+    /** Whether track shared or circular references. */
     public FuryBuilder withRefTracking(boolean refTracking) {
       this.refTracking = refTracking;
       return this;
     }
 
+    /** Whether ignore basic types shared reference. */
     public FuryBuilder ignoreBasicTypesRef(boolean ignoreBasicTypesRef) {
       this.basicTypesRefIgnored = ignoreBasicTypesRef;
       return this;
     }
 
+    /** Whether ignore string shared reference. */
     public FuryBuilder ignoreStringRef(boolean ignoreStringRef) {
       this.stringRefIgnored = ignoreStringRef;
       return this;
@@ -1321,26 +1328,46 @@ public final class Fury {
       return this;
     }
 
+    /** Whether compress string for small size. */
     public FuryBuilder withStringCompressed(boolean compressString) {
       this.compressString = compressString;
       return this;
     }
 
+    /**
+     * Set classloader for fury to load classes, this classloader can't up updated. Fury will cache
+     * the class meta data, if classloader can be updated, there may be class meta collision if
+     * different classloaders have classes with same name.
+     *
+     * <p>If you want to change classloader, please use {@link io.fury.util.LoaderBinding} or {@link
+     * ThreadSafeFury} to setup mapping between classloaders and fury instances.
+     */
     public FuryBuilder withClassLoader(ClassLoader classLoader) {
       this.classLoader = classLoader;
       return this;
     }
 
+    /**
+     * Set class schema compatible mode.
+     *
+     * @see CompatibleMode
+     */
     public FuryBuilder withCompatibleMode(CompatibleMode compatibleMode) {
       this.compatibleMode = compatibleMode;
       return this;
     }
 
+    /**
+     * Whether check class schema consistency, will be disabled automatically when {@link
+     * CompatibleMode#COMPATIBLE} is enabled. Do not disable this option unless you can ensure the
+     * class won't evolve.
+     */
     public FuryBuilder withClassVersionCheck(boolean checkClassVersion) {
       this.checkClassVersion = checkClassVersion;
       return this;
     }
 
+    /** Whether check classes under `java.*` implement {@link java.io.Serializable}. */
     public FuryBuilder withJdkClassSerializableCheck(boolean jdkClassSerializableCheck) {
       this.jdkClassSerializableCheck = jdkClassSerializableCheck;
       return this;
@@ -1385,6 +1412,10 @@ public final class Fury {
       return this;
     }
 
+    /**
+     * Whether enable jit for serialization. When disabled, the first serialization will be faster
+     * since no need to generate code, but later will be much slower compared jit mode.
+     */
     public FuryBuilder withCodegen(boolean codeGenEnabled) {
       this.codeGenEnabled = codeGenEnabled;
       return this;
