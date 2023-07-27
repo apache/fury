@@ -3,7 +3,7 @@ name: Publish Fury Java 📦
 on:
   push:
     branches:
-      - "*"
+      - main
 
 jobs:
   publish-java:
