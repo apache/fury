@@ -6,7 +6,7 @@ on:
       - "*"
 
 jobs:
-  publish:
+  publish-java:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -18,8 +18,8 @@ jobs:
           server-id: ossrh
           server-username: OSSRH_ID
           server-password: OSSRH_KEY
-      - name: Publish package
-        run: mvn --batch-mode deploy -Prelease
+      - name: Publish java packages
+        run: cd java && mvn --batch-mode deploy -Prelease
         env:
           OSSRH_ID: ${{ secrets.OSSRH_ID }}
           OSSRH_KEY: ${{ secrets.OSSRH_KEY }}
