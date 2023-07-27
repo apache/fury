@@ -2,11 +2,6 @@ name: Publish Fury 📦
 
 on:
   push:
-    branches:
-      - main
-      - 'releases/**'
-      - 'deploy/**'
-      - '*'
     tags:
       - 'v*'
 
@@ -41,7 +36,7 @@ jobs:
           export PATH=~/bin:$PATH
           echo "Build pyfury"
           python setup.py bdist_wheel
-      - name: Publish distribution 📦 to PyPI
+      - name: Publish wheel 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@master
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
