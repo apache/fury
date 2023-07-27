@@ -6,10 +6,10 @@ set -x
 set -e
 
 # configure ~/.pypirc before run this script
-if [ ! -f ~/.pypirc ]; then
-  echo  "Please configure .pypirc before run this script"
-  exit 1
-fi
+#if [ ! -f ~/.pypirc ]; then
+#  echo  "Please configure .pypirc before run this script"
+#  exit 1
+#fi
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
