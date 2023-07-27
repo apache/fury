@@ -1,0 +1,31 @@
+name: Publish Fury Java 📦
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish-java:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Maven Central Repository
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+          server-id: ossrh
+          server-username: OSSRH_ID
+          server-password: OSSRH_KEY
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Install python
+        run: ./ci/run_ci.sh install_python
+      - name: Install pyfury
+        run: ./ci/run_ci.sh install_pyfury
+      - name: Publish java packages
+        run: export PATH="$HOME/miniconda/bin:$PATH" && cd java && mvn --batch-mode -q deploy -Prelease -Dgpg.skip
+        env:
+          OSSRH_ID: ${{ secrets.OSSRH_ID }}
+          OSSRH_KEY: ${{ secrets.OSSRH_KEY }}
