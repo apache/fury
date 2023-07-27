@@ -159,13 +159,15 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
         print(final_df)
         libs = final_df.columns.to_frame()["Lib"]
         color = [plot_color_map[lib] for lib in libs]
-        sub_plot = final_df.plot.bar(title=title, color=color, ax=ax, figsize=(7, 7), width=0.7)
+        sub_plot = final_df.plot.bar(
+            title=title, color=color, ax=ax, figsize=(7, 7), width=0.7
+        )
         for container in ax.containers:
             ax.bar_label(container)
         ax.set_xlabel("enable_references")
         ax.set_ylabel(ylable)
         libs = libs.str.replace("metashared", "meta\nshared")
-        ax.legend(libs, loc="upper right", prop={'size': 13})
+        ax.legend(libs, loc="upper right", prop={"size": 13})
         save_dir = get_plot_dir(file_dir)
         sub_plot.get_figure().savefig(save_dir + "/" + save_filename)
 
@@ -213,7 +215,7 @@ def plot_zero_copy(df: pd.DataFrame, file_dir, filename, column="Tps"):
             ax.bar_label(container)
         ax.set_xlabel("array_size")
         ax.set_ylabel(ylable)
-        ax.legend(libs, bbox_to_anchor=(0.23, 0.99), prop={'size': 13})
+        ax.legend(libs, bbox_to_anchor=(0.23, 0.99), prop={"size": 13})
         save_dir = get_plot_dir(file_dir)
         sub_plot.get_figure().savefig(save_dir + "/" + save_filename)
 
@@ -260,9 +262,7 @@ if __name__ == "__main__":
     file_dir = f"{dir_path}/../../docs/benchmarks/data"
     zero_copy_bench, bench = process_data(os.path.join(file_dir, file_name))
     if zero_copy_bench.shape[0] > 0:
-        to_markdown(
-            zero_copy_bench, str(Path(file_name).with_suffix(".zero_copy.md"))
-        )
+        to_markdown(zero_copy_bench, str(Path(file_name).with_suffix(".zero_copy.md")))
         plot_zero_copy(zero_copy_bench, file_dir, "zero_copy_bench", column="Tps")
     if bench.shape[0] > 0:
         to_markdown(bench, str(Path(file_name).with_suffix(".bench.md")))
