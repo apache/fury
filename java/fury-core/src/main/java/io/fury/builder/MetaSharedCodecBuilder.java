@@ -52,7 +52,7 @@ import java.util.Collection;
  * info for those types.
  *
  * @see CompatibleMode
- * @see Fury.FuryBuilder#withMetaContextShareEnabled
+ * @see Fury.FuryBuilder#withMetaContextShare
  * @see GeneratedMetaSharedSerializer
  * @see MetaSharedSerializer
  * @author chaokunyang

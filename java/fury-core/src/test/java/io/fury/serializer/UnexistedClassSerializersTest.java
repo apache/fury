@@ -64,11 +64,11 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
         .withLanguage(Language.JAVA)
         .withCompatibleMode(CompatibleMode.COMPATIBLE)
         .requireClassRegistration(false)
-        .withDeserializeUnExistClassEnabled(true);
+        .withDeserializeUnexistedClass(true);
   }
 
   @Test(dataProvider = "config")
-  public void testSkipUnExisted(
+  public void testSkipUnexisted(
       boolean referenceTracking,
       boolean compressNumber,
       boolean enableCodegen1,
@@ -83,8 +83,8 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          Struct.createNumberStructClass("TestSkipUnExistedClass1", 2),
-          Struct.createStructClass("TestSkipUnExistedClass1", 2)
+          Struct.createNumberStructClass("TestSkipUnexistedClass1", 2),
+          Struct.createStructClass("TestSkipUnexistedClass1", 2)
         }) {
       Object pojo = Struct.createPOJO(structClass);
       byte[] bytes = fury.serialize(pojo);
@@ -101,7 +101,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "metaShareConfig")
-  public void testDeserializeUnExistedNewFury(
+  public void testDeserializeUnexistedNewFury(
       boolean referenceTracking,
       boolean compressNumber,
       boolean enableCodegen1,
@@ -112,13 +112,13 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
             .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .build();
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          Struct.createNumberStructClass("TestSkipUnExistedClass1", 2),
-          Struct.createStructClass("TestSkipUnExistedClass1", 2)
+          Struct.createNumberStructClass("TestSkipUnexistedClass1", 2),
+          Struct.createStructClass("TestSkipUnexistedClass1", 2)
         }) {
       Object pojo = Struct.createPOJO(structClass);
       MetaContext context1 = new MetaContext();
@@ -129,7 +129,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
               .withRefTracking(referenceTracking)
               .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen2)
-              .withMetaContextShareEnabled(true)
+              .withMetaContextShare(true)
               .withClassLoader(classLoader)
               .build();
       MetaContext context2 = new MetaContext();
@@ -143,7 +143,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
               .withRefTracking(referenceTracking)
               .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen3)
-              .withMetaContextShareEnabled(true)
+              .withMetaContextShare(true)
               .withClassLoader(pojo.getClass().getClassLoader())
               .build();
       MetaContext context3 = new MetaContext();
@@ -155,7 +155,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "metaShareConfig")
-  public void testDeserializeUnExisted(
+  public void testDeserializeUnexisted(
       boolean referenceTracking,
       boolean compressNumber,
       boolean enableCodegen1,
@@ -166,7 +166,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
             .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .build();
     MetaContext context1 = new MetaContext();
     MetaContext context2 = new MetaContext();
@@ -174,15 +174,15 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          Struct.createNumberStructClass("TestSkipUnExistedClass1", 2),
-          Struct.createStructClass("TestSkipUnExistedClass1", 2)
+          Struct.createNumberStructClass("TestSkipUnexistedClass1", 2),
+          Struct.createStructClass("TestSkipUnexistedClass1", 2)
         }) {
       Fury fury2 =
           builder()
               .withRefTracking(referenceTracking)
               .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen2)
-              .withMetaContextShareEnabled(true)
+              .withMetaContextShare(true)
               .withClassLoader(classLoader)
               .build();
       Fury fury3 =
@@ -190,7 +190,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
               .withRefTracking(referenceTracking)
               .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen3)
-              .withMetaContextShareEnabled(true)
+              .withMetaContextShare(true)
               .withClassLoader(structClass.getClassLoader())
               .build();
       for (int i = 0; i < 2; i++) {
@@ -214,12 +214,12 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
 
   @Test
   public void testThrowExceptionIfClassNotExist() {
-    Fury fury = builder().withDeserializeUnExistClassEnabled(false).build();
+    Fury fury = builder().withDeserializeUnexistedClass(false).build();
     ClassLoader classLoader = getClass().getClassLoader();
-    Class<?> structClass = Struct.createNumberStructClass("TestSkipUnExistedClass1", 2);
+    Class<?> structClass = Struct.createNumberStructClass("TestSkipUnexistedClass1", 2);
     Object pojo = Struct.createPOJO(structClass);
     Fury fury2 =
-        builder().withDeserializeUnExistClassEnabled(false).withClassLoader(classLoader).build();
+        builder().withDeserializeUnexistedClass(false).withClassLoader(classLoader).build();
     byte[] bytes = fury.serialize(pojo);
     Assert.assertThrows(RuntimeException.class, () -> fury2.deserialize(bytes));
   }

@@ -50,7 +50,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .requireClassRegistration(false)
-            .withAsyncCompilationEnabled(true)
+            .withAsyncCompilation(true)
             .buildThreadSafeFuryPool(5, 10);
     for (int i = 0; i < 2000; i++) {
       new Thread(
@@ -78,7 +78,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .requireClassRegistration(false)
-            .withAsyncCompilationEnabled(true)
+            .withAsyncCompilation(true)
             .buildThreadSafeFury();
     ExecutorService executorService = Executors.newFixedThreadPool(12);
     for (int i = 0; i < 2000; i++) {
@@ -110,7 +110,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     ThreadSafeFury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .requireClassRegistration(false)
             .buildThreadSafeFury();
     BeanA beanA = BeanA.createBeanA(2);
