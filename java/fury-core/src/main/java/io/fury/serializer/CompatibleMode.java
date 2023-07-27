@@ -19,6 +19,11 @@
 package io.fury.serializer;
 
 public enum CompatibleMode {
+  /** Class schema must be consistent between serialization peer and deserialization peer. */
   SCHEMA_CONSISTENT,
+  /**
+   * Class schema can be different between serialization peer and deserialization peer. They can
+   * add/delete fields independently.
+   */
   COMPATIBLE
 }
