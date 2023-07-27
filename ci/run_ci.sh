@@ -52,12 +52,8 @@ case $1 in
     java8)
       echo "Executing fury java tests"
       cd "$ROOT/java"
-      # check google java style
-      mvn -T16 -B spotless:check
-      # check naming and others
-      mvn -T16 checkstyle:check
       set +e
-      mvn -T16 test
+      mvn -T16 --batch-mode test
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
@@ -68,12 +64,8 @@ case $1 in
       java -version
       echo "Executing fury java tests"
       cd "$ROOT/java"
-      # check google java style
-      mvn -T16 -B spotless:check
-      # check naming and others
-      mvn -T16 checkstyle:check
       set +e
-      mvn -T16 test
+      mvn -T16 --batch-mode test
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
@@ -84,12 +76,8 @@ case $1 in
       java -version
       echo "Executing fury java tests"
       cd "$ROOT/java"
-      # check google java style
-      mvn -T16 -B spotless:check
-      # check naming and others
-      mvn -T16 checkstyle:check
       set +e
-      mvn -T16 test -pl '!fury-format,!fury-testsuite,!fury-benchmark'
+      mvn -T16 --batch-mode test -pl '!fury-format,!fury-testsuite,!fury-benchmark'
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
@@ -153,7 +141,8 @@ case $1 in
       echo "Executing format check"
       bash ci/format.sh
       cd "$ROOT/java"
-      mvn -T10 checkstyle:check
+      mvn -T10 -B spotless:check
+      mvn -T10 -B checkstyle:check
       echo "Executing format check succeeds"
     ;;
     *)
