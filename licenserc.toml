@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-fury-project/fury-sites@main:
-  - source: docs/guide/
-    dest: docs/guide/
+headerPath = "Apache-2.0.txt"
 
-  - source: docs/benchmarks/
-    dest: public/benchmarks/
+[properties]
+inceptionYear = 2023
+copyrightOwner = "The Fury Authors"
+
