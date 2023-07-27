@@ -74,7 +74,7 @@ jobs:
     name: C++ CI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:
@@ -92,7 +92,7 @@ jobs:
       matrix:
         python-version: [3.6, 3.9]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -101,11 +101,13 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Run Python CI
         run: ./ci/run_ci.sh python
-  Lint:
+  lint:
     name: Code Style Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - name: Check License Header
+        uses: korandoru/hawkeye@v3
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:
