@@ -6,26 +6,20 @@ on:
       - "*"
 
 jobs:
-  release-java:
-    name: Build and publish Java
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 8
+      - name: Set up Maven Central Repository
         uses: actions/setup-java@v3
         with:
-          java-version: 8
-          distribution: 'temurin'
-      - name: Bump version
-        run: >-
-          echo "OSSRH_ID ${OSSRH_ID}"
-          echo "GITHUB_REF: $GITHUB_REF" 
-          tag=$(echo $GITHUB_REF | cut -d / -f 3)
-          echo "tag: $tag"
-          version=${tag:1}
-          echo "version $version"
-          ci/deploy.sh bump_version version
-        with:
+          java-version: '8'
+          distribution: 'adopt'
+          server-id: ossrh
+          server-username: OSSRH_ID
+          server-password: OSSRH_KEY
+      - name: Publish package
+        run: mvn --batch-mode deploy -Prelease
+        env:
           OSSRH_ID: ${{ secrets.OSSRH_ID }}
-      - name: Release Java
-        run: cd java && mvn -T10 clean deploy -DskipTests -Prelease
+          OSSRH_KEY: ${{ secrets.OSSRH_KEY }}
