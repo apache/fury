@@ -25,7 +25,7 @@ jobs:
       - name: Install pyfury
         run: ./ci/run_ci.sh install_pyfury
       - name: Publish java packages
-        run: PATH="$HOME/miniconda/bin:$PATH" cd java && mvn --batch-mode deploy -Prelease -Dgpg.skip
+        run: export PATH="$HOME/miniconda/bin:$PATH" && cd java && mvn --batch-mode -q deploy -Prelease -Dgpg.skip
         env:
           OSSRH_ID: ${{ secrets.OSSRH_ID }}
           OSSRH_KEY: ${{ secrets.OSSRH_KEY }}
