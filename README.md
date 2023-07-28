@@ -51,9 +51,8 @@ Different serialization frameworks are suitable for different scenarios, and ben
 
 If you need to benchmark for your specific scenario, make sure all serialization frameworks are appropriately configured for that scenario.
 
-Dynamic serialization frameworks supports polymorphism and reference, which has more cost compared 
-to static serialization frameworks, unless it uses the jit techniques as fury did.
-Since fury will generate code at runtime, please **warm up** before collecting benchmark statistics.
+Dynamic serialization frameworks support polymorphism and references, but they often come with a higher cost compared to static serialization frameworks, unless they utilize JIT techniques like Fury does.
+Because Fury generates code at runtime, it is recommended to **warm up** the system before collecting benchmark statistics.
 
 ### Java Serialization
 Title containing "compatible" represent schema compatible mode: support type forward/backward compatibility.
