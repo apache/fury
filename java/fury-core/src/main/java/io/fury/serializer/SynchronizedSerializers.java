@@ -1,24 +1,25 @@
 /*
- * Copyright 2010 Martin Grotzke
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Copyright 2023 The Fury authors
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package io.fury.serializer;
 
 import io.fury.Fury;
-import io.fury.exception.FuryException;
+import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.CollectionSerializers.CollectionSerializer;
 import io.fury.serializer.MapSerializers.MapSerializer;
@@ -40,13 +41,10 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 import org.slf4j.Logger;
 
 /** Serializer for synchronized Collections and Maps created via Collections. */
-// modified from
-// https://github.com/magro/kryo-serializers/blob/master/src/main/java/de/javakaffee/kryoserializers/SynchronizedCollectionSerializer.java
-// but faster by using unsafe instead of reflection.
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SynchronizedSerializers {
   private static final Logger LOG = LoggerFactory.getLogger(SynchronizedSerializers.class);
@@ -77,129 +75,55 @@ public class SynchronizedSerializers {
 
   public static final class SynchronizedCollectionSerializer
       extends CollectionSerializer<Collection> {
-    private final SynchronizedFactory synchronizedFactory;
 
-    public SynchronizedCollectionSerializer(
-        Fury fury, Class cls, SynchronizedFactory synchronizedFactory) {
+    private final Function factory;
+    private final long offset;
+
+    public SynchronizedCollectionSerializer(Fury fury, Class cls, Function factory, long offset) {
       super(fury, cls, false, false);
-      this.synchronizedFactory = synchronizedFactory;
+      this.factory = factory;
+      this.offset = offset;
     }
 
     @Override
     public void write(MemoryBuffer buffer, Collection object) {
       // the ordinal could be replaced by s.th. else (e.g. a explicitly managed "id")
-      Object unwrapped = Platform.getObject(object, synchronizedFactory.sourceFieldOffset);
-      fury.writeRef(buffer, unwrapped);
+      Object unwrapped = Platform.getObject(object, offset);
+      synchronized (object) {
+        fury.writeRef(buffer, unwrapped);
+      }
     }
 
     @Override
     public Collection read(MemoryBuffer buffer) {
       final Object sourceCollection = fury.readRef(buffer);
-      return (Collection) synchronizedFactory.create(sourceCollection);
+      return (Collection) factory.apply(sourceCollection);
     }
   }
 
   public static final class SynchronizedMapSerializer extends MapSerializer<Map> {
-    private final SynchronizedFactory synchronizedFactory;
+    private final Function factory;
+    private final long offset;
 
-    public SynchronizedMapSerializer(
-        Fury fury, Class cls, SynchronizedFactory synchronizedFactory) {
+    public SynchronizedMapSerializer(Fury fury, Class cls, Function factory, long offset) {
       super(fury, cls, false, false);
-      this.synchronizedFactory = synchronizedFactory;
+      this.factory = factory;
+      this.offset = offset;
     }
 
     @Override
     public void write(MemoryBuffer buffer, Map object) {
       // the ordinal could be replaced by s.th. else (e.g. a explicitly managed "id")
-      Object unwrapped = Platform.getObject(object, synchronizedFactory.sourceFieldOffset);
-      fury.writeRef(buffer, unwrapped);
+      Object unwrapped = Platform.getObject(object, offset);
+      synchronized (object) {
+        fury.writeRef(buffer, unwrapped);
+      }
     }
 
     @Override
     public Map read(MemoryBuffer buffer) {
       final Object sourceCollection = fury.readRef(buffer);
-      return (Map) synchronizedFactory.create(sourceCollection);
-    }
-  }
-
-  enum SynchronizedFactory {
-    COLLECTION(
-        Collections.synchronizedCollection(Arrays.asList("")).getClass(),
-        SOURCE_COLLECTION_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.synchronizedCollection((Collection<?>) sourceCollection);
-      }
-    },
-    RANDOM_ACCESS_LIST(
-        Collections.synchronizedList(new ArrayList<Void>()).getClass(),
-        SOURCE_COLLECTION_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.synchronizedList((List<?>) sourceCollection);
-      }
-    },
-    LIST(
-        Collections.synchronizedList(new LinkedList<Void>()).getClass(),
-        SOURCE_COLLECTION_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.synchronizedList((List<?>) sourceCollection);
-      }
-    },
-    SET(
-        Collections.synchronizedSet(new HashSet<Void>()).getClass(),
-        SOURCE_COLLECTION_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.synchronizedSet((Set<?>) sourceCollection);
-      }
-    },
-    SORTED_SET(
-        Collections.synchronizedSortedSet(new TreeSet<>()).getClass(),
-        SOURCE_COLLECTION_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.synchronizedSortedSet((SortedSet<?>) sourceCollection);
-      }
-    },
-    MAP(
-        Collections.synchronizedMap(new HashMap<Void, Void>()).getClass(),
-        SOURCE_MAP_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.synchronizedMap((Map<?, ?>) sourceCollection);
-      }
-    },
-    SORTED_MAP(
-        Collections.synchronizedSortedMap(new TreeMap<>()).getClass(), SOURCE_MAP_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.synchronizedSortedMap((SortedMap<?, ?>) sourceCollection);
-      }
-    };
-
-    private final Class<?> type;
-    private final long sourceFieldOffset;
-
-    SynchronizedFactory(final Class<?> type, long sourceFieldOffset) {
-      this.type = type;
-      this.sourceFieldOffset = sourceFieldOffset;
-    }
-
-    public boolean isCollection() {
-      return Collection.class.isAssignableFrom(type);
-    }
-
-    public abstract Object create(Object sourceCollection);
-
-    static SynchronizedFactory valueOfType(final Class<?> type) {
-      for (final SynchronizedFactory item : values()) {
-        if (item.type.equals(type)) {
-          return item;
-        }
-      }
-      throw new IllegalArgumentException("The type " + type + " is not supported.");
+      return (Map) factory.apply(sourceCollection);
     }
   }
 
@@ -215,22 +139,76 @@ public class SynchronizedSerializers {
    */
   public static void registerSerializers(Fury fury) {
     if (SOURCE_COLLECTION_FIELD != null && SOURCE_MAP_FIELD != null) {
-      Set<? extends Class<?>> classSet =
-          Arrays.stream(SynchronizedFactory.values()).map(c -> c.type).collect(Collectors.toSet());
-      if (classSet.size() != SynchronizedFactory.values().length) {
-        throw new FuryException(
-            String.format(
-                "Enum types %s duplicate.", Arrays.toString(SynchronizedFactory.values())));
-      }
-      for (SynchronizedFactory factory : SynchronizedFactory.values()) {
-        if (factory.isCollection()) {
-          fury.registerSerializer(
-              factory.type, new SynchronizedCollectionSerializer(fury, factory.type, factory));
-        } else {
-          fury.registerSerializer(
-              factory.type, new SynchronizedMapSerializer(fury, factory.type, factory));
-        }
+      for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
+        fury.registerSerializer(factory.f0, createSerializer(fury, factory));
       }
     }
+  }
+
+  static Function getFactory(Class<?> cls) {
+    for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
+      if (factory.f0 == cls) {
+        return factory.f1;
+      }
+    }
+    throw new IllegalArgumentException("Unsupported type " + cls);
+  }
+
+  static Serializer createSerializer(Fury fury, Class<?> cls) {
+    for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
+      if (factory.f0 == cls) {
+        return createSerializer(fury, factory);
+      }
+    }
+    throw new IllegalArgumentException("Unsupported type " + cls);
+  }
+
+  private static Serializer<?> createSerializer(Fury fury, Tuple2<Class<?>, Function> factory) {
+    if (Collection.class.isAssignableFrom(factory.f0)) {
+      return new SynchronizedCollectionSerializer(
+          fury, factory.f0, factory.f1, SOURCE_COLLECTION_FIELD_OFFSET);
+    } else {
+      return new SynchronizedMapSerializer(fury, factory.f0, factory.f1, SOURCE_MAP_FIELD_OFFSET);
+    }
+  }
+
+  static Tuple2<Class<?>, Function>[] synchronizedFactories() {
+    Tuple2<Class<?>, Function> collectionFactory =
+        Tuple2.of(
+            Collections.synchronizedCollection(Arrays.asList("")).getClass(),
+            o -> Collections.synchronizedCollection((Collection) o));
+    Tuple2<Class<?>, Function> randomListFactory =
+        Tuple2.of(
+            Collections.synchronizedList(new ArrayList<Void>()).getClass(),
+            o -> Collections.synchronizedList((List<?>) o));
+    Tuple2<Class<?>, Function> listFactory =
+        Tuple2.of(
+            Collections.synchronizedList(new LinkedList<Void>()).getClass(),
+            o -> Collections.synchronizedList((List<?>) o));
+    Tuple2<Class<?>, Function> setFactory =
+        Tuple2.of(
+            Collections.synchronizedSet(new HashSet<Void>()).getClass(),
+            o -> Collections.synchronizedSet((Set<?>) o));
+    Tuple2<Class<?>, Function> sortedsetFactory =
+        Tuple2.of(
+            Collections.synchronizedSortedSet(new TreeSet<>()).getClass(),
+            o -> Collections.synchronizedSortedSet((TreeSet<?>) o));
+    Tuple2<Class<?>, Function> mapFactory =
+        Tuple2.of(
+            Collections.synchronizedMap(new HashMap<Void, Void>()).getClass(),
+            o -> Collections.synchronizedMap((Map) o));
+    Tuple2<Class<?>, Function> sortedmapFactory =
+        Tuple2.of(
+            Collections.synchronizedSortedMap(new TreeMap<>()).getClass(),
+            o -> Collections.synchronizedSortedMap((SortedMap) o));
+    return new Tuple2[] {
+      collectionFactory,
+      randomListFactory,
+      listFactory,
+      setFactory,
+      sortedsetFactory,
+      mapFactory,
+      sortedmapFactory
+    };
   }
 }
