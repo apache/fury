@@ -166,7 +166,7 @@ public class SynchronizedSerializers {
   private static Serializer<?> createSerializer(Fury fury, Tuple2<Class<?>, Function> factory) {
     if (Collection.class.isAssignableFrom(factory.f0)) {
       return new SynchronizedCollectionSerializer(
-        fury, factory.f0, factory.f1, SOURCE_COLLECTION_FIELD_OFFSET);
+          fury, factory.f0, factory.f1, SOURCE_COLLECTION_FIELD_OFFSET);
     } else {
       return new SynchronizedMapSerializer(fury, factory.f0, factory.f1, SOURCE_MAP_FIELD_OFFSET);
     }

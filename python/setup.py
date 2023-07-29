@@ -115,8 +115,12 @@ setup(
     long_description=io.open(
         os.path.join(setup_dir, os.path.pardir, "README.md"), "r", encoding="utf-8"
     ).read(),
+    long_description_content_type="text/markdown",
     keywords="fury serialization multi-language arrow row-format jit "
     + "vectorization zero-copy",
+    classfiers=[
+        "Development Status :: 4 - Beta",
+    ],
     zip_safe=False,
     install_requires=[
         'dataclasses; python_version<"3.7"',
