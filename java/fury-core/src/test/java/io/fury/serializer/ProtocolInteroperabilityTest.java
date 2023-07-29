@@ -228,14 +228,14 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                 new Object[] {
                   Fury.builder()
                       .withLanguage(Language.JAVA)
-                      .withMetaContextShareEnabled(true)
+                      .withMetaContextShare(true)
                       .withCompatibleMode((CompatibleMode) c[0])
                       .withCodegen(false)
                       .requireClassRegistration(false)
                       .build(),
                   Fury.builder()
                       .withLanguage(Language.JAVA)
-                      .withMetaContextShareEnabled(true)
+                      .withMetaContextShare(true)
                       .withCompatibleMode((CompatibleMode) c[0])
                       .withCodegen(true)
                       .requireClassRegistration(false)

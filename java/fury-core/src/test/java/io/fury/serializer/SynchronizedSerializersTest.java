@@ -27,7 +27,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.test.bean.CollectionFields;
 import io.fury.util.Platform;
-import java.lang.reflect.Field;
+import io.fury.util.ReflectionUtils;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,6 +43,14 @@ import java.util.TreeSet;
 import org.testng.annotations.Test;
 
 public class SynchronizedSerializersTest extends FuryTestBase {
+
+  static long SOURCE_COLLECTION_FIELD_OFFSET =
+      ReflectionUtils.getFieldOffset(
+          Collections.synchronizedCollection(Collections.emptyList()).getClass(), "c");
+  static long SOURCE_MAP_FIELD_OFFSET =
+      ReflectionUtils.getFieldOffset(
+          Collections.synchronizedMap(Collections.emptyMap()).getClass(), "m");
+
   @Test
   public void testWrite() throws Exception {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
@@ -61,29 +69,14 @@ public class SynchronizedSerializersTest extends FuryTestBase {
     for (Object value : values) {
       buffer.writerIndex(0);
       buffer.readerIndex(0);
-      Serializer serializer;
-      if (value instanceof Collection) {
-        serializer =
-            new SynchronizedSerializers.SynchronizedCollectionSerializer(
-                fury,
-                value.getClass(),
-                SynchronizedSerializers.SynchronizedFactory.valueOfType(value.getClass()));
-      } else {
-        serializer =
-            new SynchronizedSerializers.SynchronizedMapSerializer(
-                fury,
-                value.getClass(),
-                SynchronizedSerializers.SynchronizedFactory.valueOfType(value.getClass()));
-      }
+      Serializer serializer = SynchronizedSerializers.createSerializer(fury, value.getClass());
       serializer.write(buffer, value);
       Object newObj = serializer.read(buffer);
       assertEquals(newObj.getClass(), value.getClass());
-      SynchronizedSerializers.SynchronizedFactory synchronizedFactory =
-          SynchronizedSerializers.SynchronizedFactory.valueOfType(newObj.getClass());
-      Field field =
-          SynchronizedSerializers.SynchronizedFactory.class.getDeclaredField("sourceFieldOffset");
-      field.setAccessible(true);
-      long sourceCollectionFieldOffset = (long) field.get(synchronizedFactory);
+      long sourceCollectionFieldOffset =
+          Collection.class.isAssignableFrom(value.getClass())
+              ? SOURCE_COLLECTION_FIELD_OFFSET
+              : SOURCE_MAP_FIELD_OFFSET;
       Object innerValue = Platform.getObject(value, sourceCollectionFieldOffset);
       Object newValue = Platform.getObject(newObj, sourceCollectionFieldOffset);
       assertEquals(innerValue, newValue);

@@ -202,7 +202,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       RefResolver refResolver,
       ClassResolver classResolver) {
     FinalTypeField[] finalFields = this.finalFields;
-    boolean metaContextShareEnabled = fury.getConfig().isMetaContextShareEnabled();
+    boolean metaContextShareEnabled = fury.getConfig().shareMetaContext();
     for (int i = 0; i < finalFields.length; i++) {
       FinalTypeField fieldInfo = finalFields[i];
       UnsafeFieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
@@ -294,7 +294,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     }
     // read order: primitive,boxed,final,other,collection,map
     FinalTypeField[] finalFields = this.finalFields;
-    boolean metaContextShareEnabled = fury.getConfig().isMetaContextShareEnabled();
+    boolean metaContextShareEnabled = fury.getConfig().shareMetaContext();
     for (int i = 0; i < finalFields.length; i++) {
       FinalTypeField fieldInfo = finalFields[i];
       boolean isFinal = !metaContextShareEnabled || this.isFinal[i];

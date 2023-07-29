@@ -29,7 +29,7 @@ import java.io.Serializable;
 @SuppressWarnings({"rawtypes"})
 public class Config implements Serializable {
   private final Language language;
-  private final boolean refTracking;
+  private final boolean trackingRef;
   private final boolean basicTypesRefIgnored;
   private final boolean stringRefIgnored;
   private final boolean timeRefIgnored;
@@ -42,17 +42,17 @@ public class Config implements Serializable {
   private final boolean compressNumber;
   private final boolean requireClassRegistration;
   private final boolean registerGuavaTypes;
-  private final boolean metaContextShareEnabled;
+  private final boolean shareMetaContext;
   private final boolean asyncCompilationEnabled;
-  private final boolean deserializeUnExistClassEnabled;
+  private final boolean deserializeUnexistedClass;
   private transient int configHash;
 
   Config(Fury.FuryBuilder builder) {
     language = builder.language;
-    refTracking = builder.refTracking;
-    basicTypesRefIgnored = !refTracking || builder.basicTypesRefIgnored;
-    stringRefIgnored = !refTracking || builder.stringRefIgnored;
-    timeRefIgnored = !refTracking || builder.timeRefIgnored;
+    trackingRef = builder.trackingRef;
+    basicTypesRefIgnored = !trackingRef || builder.basicTypesRefIgnored;
+    stringRefIgnored = !trackingRef || builder.stringRefIgnored;
+    timeRefIgnored = !trackingRef || builder.timeRefIgnored;
     compressString = builder.compressString;
     compressNumber = builder.compressNumber;
     requireClassRegistration = builder.requireClassRegistration;
@@ -60,15 +60,14 @@ public class Config implements Serializable {
     codeGenEnabled = builder.codeGenEnabled;
     checkClassVersion = builder.checkClassVersion;
     compatibleMode = builder.compatibleMode;
-    checkJdkClassSerializable = builder.jdkClassSerializableCheck;
+    checkJdkClassSerializable = builder.checkJdkClassSerializable;
     defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
-    metaContextShareEnabled = builder.metaContextShareEnabled;
-    deserializeUnExistClassEnabled = builder.deserializeUnExistClassEnabled;
-    if (deserializeUnExistClassEnabled) {
+    shareMetaContext = builder.shareMetaContext;
+    deserializeUnexistedClass = builder.deserializeUnexistedClass;
+    if (deserializeUnexistedClass) {
       // Only in meta share mode or compatibleMode, fury knows how to deserialize
       // exist class by type info in data.
-      Preconditions.checkArgument(
-          metaContextShareEnabled || compatibleMode == CompatibleMode.COMPATIBLE);
+      Preconditions.checkArgument(shareMetaContext || compatibleMode == CompatibleMode.COMPATIBLE);
     }
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
   }
@@ -78,7 +77,7 @@ public class Config implements Serializable {
   }
 
   public boolean trackingRef() {
-    return refTracking;
+    return trackingRef;
   }
 
   public boolean isBasicTypesRefIgnored() {
@@ -143,16 +142,16 @@ public class Config implements Serializable {
     return defaultJDKStreamSerializerType;
   }
 
-  public boolean isMetaContextShareEnabled() {
-    return metaContextShareEnabled;
+  public boolean shareMetaContext() {
+    return shareMetaContext;
   }
 
   /**
    * Whether deserialize/skip data of un-existed class. If not enabled, an exception will be thrown
    * if class not exist.
    */
-  public boolean isDeserializeUnExistClassEnabled() {
-    return deserializeUnExistClassEnabled;
+  public boolean deserializeUnexistedClass() {
+    return deserializeUnexistedClass;
   }
 
   /**

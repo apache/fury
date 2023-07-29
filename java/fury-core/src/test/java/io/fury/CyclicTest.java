@@ -52,7 +52,7 @@ public class CyclicTest extends FuryTestBase {
                   Fury.builder()
                       .withLanguage(Language.JAVA)
                       .withCodegen((Boolean) c[0])
-                      .withAsyncCompilationEnabled((Boolean) c[1])
+                      .withAsyncCompilation((Boolean) c[1])
                       .withCompatibleMode((CompatibleMode) c[2])
                       .requireClassRegistration(false)
                 })
@@ -61,7 +61,7 @@ public class CyclicTest extends FuryTestBase {
 
   @Test(dataProvider = "fury")
   public void testBean(Fury.FuryBuilder builder) {
-    Fury fury = builder.withMetaContextShareEnabled(false).withRefTracking(true).build();
+    Fury fury = builder.withMetaContextShare(false).withRefTracking(true).build();
     for (Object[] objects : beans()) {
       Object notCyclic = objects[0];
       Object cyclic = objects[1];
@@ -83,7 +83,7 @@ public class CyclicTest extends FuryTestBase {
 
   @Test(dataProvider = "fury")
   public void testBeanMetaShared(Fury.FuryBuilder builder) {
-    Fury fury = builder.withMetaContextShareEnabled(true).withRefTracking(true).build();
+    Fury fury = builder.withMetaContextShare(true).withRefTracking(true).build();
     for (Object[] objects : beans()) {
       Object notCyclic = objects[0];
       Object cyclic = objects[1];

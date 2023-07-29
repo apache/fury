@@ -45,7 +45,7 @@ public final class UnexistedClassSerializers {
    * A class for hold deserialization data when the class doesn't exist in this process. When {@link
    * CompatibleMode#COMPATIBLE} is enabled
    *
-   * @see Config#isMetaContextShareEnabled()
+   * @see Config#shareMetaContext()
    */
   public interface UnexistedClass {}
 
@@ -91,13 +91,13 @@ public final class UnexistedClassSerializers {
       this.classDef = classDef;
       classInfoCache = fury.getClassResolver().nilClassInfoCache();
       fieldsInfoMap = new LongMap<>();
-      Preconditions.checkArgument(fury.getConfig().isMetaContextShareEnabled());
+      Preconditions.checkArgument(fury.getConfig().shareMetaContext());
     }
 
     /**
-     * Multiple un existed class will correspond to this `UnExistedMetaSharedClass`. When querying
-     * classinfo by `class`, it may dispatch to same `UnExistedClassSerializer`, so we can't use
-     * `classDef` in this serializer, but use `classDef` in `UnExistedMetaSharedClass` instead.
+     * Multiple un existed class will correspond to this `UnexistedMetaSharedClass`. When querying
+     * classinfo by `class`, it may dispatch to same `UnexistedClassSerializer`, so we can't use
+     * `classDef` in this serializer, but use `classDef` in `UnexistedMetaSharedClass` instead.
      */
     private void writeClassDef(MemoryBuffer buffer, UnexistedMetaSharedClass value) {
       // Register NotFoundClass ahead to skip write meta shared info,
@@ -169,7 +169,7 @@ public final class UnexistedClassSerializers {
     private ClassFieldsInfo getClassFieldsInfo(ClassDef classDef) {
       ClassFieldsInfo fieldsInfo = fieldsInfoMap.get(classDef.getId());
       if (fieldsInfo == null) {
-        // Use `UnExistedSkipClass` since it doesn't have any field.
+        // Use `UnexistedSkipClass` since it doesn't have any field.
         Collection<Descriptor> descriptors =
             MetaSharedSerializer.consolidateFields(
                 fury.getClassResolver(), UnexistedSkipClass.class, classDef);

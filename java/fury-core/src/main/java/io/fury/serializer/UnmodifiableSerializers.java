@@ -18,6 +18,7 @@ package io.fury.serializer;
 
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
+import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.CollectionSerializers.CollectionSerializer;
 import io.fury.util.LoggerFactory;
@@ -37,9 +38,11 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 import org.slf4j.Logger;
 
 /** Serializer for unmodifiable Collections and Maps created via Collections. */
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class UnmodifiableSerializers {
   private static final Logger LOG = LoggerFactory.getLogger(UnmodifiableSerializers.class);
   private static Field SOURCE_COLLECTION_FIELD;
@@ -67,130 +70,109 @@ public class UnmodifiableSerializers {
 
   public static final class UnmodifiableCollectionSerializer
       extends CollectionSerializer<Collection> {
-    private final UnmodifiableFactory unmodifiableFactory;
+    private final Function factory;
+    private final long offset;
 
-    public UnmodifiableCollectionSerializer(
-        Fury fury, Class<Collection> cls, UnmodifiableFactory unmodifiableFactory) {
+    public UnmodifiableCollectionSerializer(Fury fury, Class cls, Function factory, long offset) {
       super(fury, cls, false, false);
-      this.unmodifiableFactory = unmodifiableFactory;
+      this.factory = factory;
+      this.offset = offset;
     }
 
     @Override
     public void write(MemoryBuffer buffer, Collection value) {
       Preconditions.checkArgument(value.getClass() == type);
-      Object fieldValue = Platform.getObject(value, unmodifiableFactory.sourceFieldOffset);
+      Object fieldValue = Platform.getObject(value, offset);
       fury.writeRef(buffer, fieldValue);
     }
 
     @Override
     public Collection read(MemoryBuffer buffer) {
       final Object sourceCollection = fury.readRef(buffer);
-      return (Collection) unmodifiableFactory.create(sourceCollection);
+      return (Collection) factory.apply(sourceCollection);
     }
   }
 
   public static final class UnmodifiableMapSerializer extends MapSerializers.MapSerializer<Map> {
-    private final UnmodifiableFactory unmodifiableFactory;
+    private final Function factory;
+    private final long offset;
 
-    public UnmodifiableMapSerializer(
-        Fury fury, Class<Map> cls, UnmodifiableFactory unmodifiableFactory) {
+    public UnmodifiableMapSerializer(Fury fury, Class cls, Function factory, long offset) {
       super(fury, cls, false, false);
-      this.unmodifiableFactory = unmodifiableFactory;
+      this.factory = factory;
+      this.offset = offset;
     }
 
     @Override
     public void write(MemoryBuffer buffer, Map value) {
       Preconditions.checkArgument(value.getClass() == type);
-      Object fieldValue = Platform.getObject(value, unmodifiableFactory.sourceFieldOffset);
+      Object fieldValue = Platform.getObject(value, offset);
       fury.writeRef(buffer, fieldValue);
     }
 
     @Override
     public Map read(MemoryBuffer buffer) {
       final Object sourceCollection = fury.readRef(buffer);
-      return (Map) unmodifiableFactory.create(sourceCollection);
+      return (Map) factory.apply(sourceCollection);
     }
   }
 
-  enum UnmodifiableFactory {
-    COLLECTION(
-        Collections.unmodifiableCollection(Collections.singletonList("")).getClass(),
-        SOURCE_COLLECTION_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.unmodifiableCollection((Collection<?>) sourceCollection);
+  static Serializer createSerializer(Fury fury, Class<?> cls) {
+    for (Tuple2<Class<?>, Function> factory : unmodifiableFactories()) {
+      if (factory.f0 == cls) {
+        return createSerializer(fury, factory);
       }
-    },
-    RANDOM_ACCESS_LIST(
-        Collections.unmodifiableList(new ArrayList<Void>()).getClass(),
-        SOURCE_COLLECTION_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.unmodifiableList((List<?>) sourceCollection);
-      }
-    },
-    LIST(
-        Collections.unmodifiableList(new LinkedList<Void>()).getClass(),
-        SOURCE_COLLECTION_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.unmodifiableList((List<?>) sourceCollection);
-      }
-    },
-    SET(
-        Collections.unmodifiableSet(new HashSet<Void>()).getClass(),
-        SOURCE_COLLECTION_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.unmodifiableSet((Set<?>) sourceCollection);
-      }
-    },
-    SORTED_SET(
-        Collections.unmodifiableSortedSet(new TreeSet<>()).getClass(),
-        SOURCE_COLLECTION_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.unmodifiableSortedSet((SortedSet<?>) sourceCollection);
-      }
-    },
-    MAP(
-        Collections.unmodifiableMap(new HashMap<Void, Void>()).getClass(),
-        SOURCE_MAP_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.unmodifiableMap((Map<?, ?>) sourceCollection);
-      }
-    },
-    SORTED_MAP(
-        Collections.unmodifiableSortedMap(new TreeMap<>()).getClass(), SOURCE_MAP_FIELD_OFFSET) {
-      @Override
-      public Object create(final Object sourceCollection) {
-        return Collections.unmodifiableSortedMap((SortedMap<?, ?>) sourceCollection);
-      }
+    }
+    throw new IllegalArgumentException("Unsupported type " + cls);
+  }
+
+  private static Serializer<?> createSerializer(Fury fury, Tuple2<Class<?>, Function> factory) {
+    if (Collection.class.isAssignableFrom(factory.f0)) {
+      return new UnmodifiableCollectionSerializer(
+          fury, factory.f0, factory.f1, SOURCE_COLLECTION_FIELD_OFFSET);
+    } else {
+      return new UnmodifiableMapSerializer(fury, factory.f0, factory.f1, SOURCE_MAP_FIELD_OFFSET);
+    }
+  }
+
+  static Tuple2<Class<?>, Function>[] unmodifiableFactories() {
+    Tuple2<Class<?>, Function> collectionFactory =
+        Tuple2.of(
+            Collections.unmodifiableCollection(Collections.singletonList("")).getClass(),
+            o -> Collections.unmodifiableCollection((Collection) o));
+    Tuple2<Class<?>, Function> randomAccessListFactory =
+        Tuple2.of(
+            Collections.unmodifiableList(new ArrayList<Void>()).getClass(),
+            o -> Collections.unmodifiableList((List<?>) o));
+    Tuple2<Class<?>, Function> listFactory =
+        Tuple2.of(
+            Collections.unmodifiableList(new LinkedList<Void>()).getClass(),
+            o -> Collections.unmodifiableList((List<?>) o));
+    Tuple2<Class<?>, Function> setFactory =
+        Tuple2.of(
+            Collections.unmodifiableSet(new HashSet<Void>()).getClass(),
+            o -> Collections.unmodifiableSet((Set<?>) o));
+    Tuple2<Class<?>, Function> sortedsetFactory =
+        Tuple2.of(
+            Collections.unmodifiableSortedSet(new TreeSet<>()).getClass(),
+            o -> Collections.unmodifiableSortedSet((SortedSet<?>) o));
+    Tuple2<Class<?>, Function> mapFactory =
+        Tuple2.of(
+            Collections.unmodifiableMap(new HashMap<>()).getClass(),
+            o -> Collections.unmodifiableMap((Map) o));
+    Tuple2<Class<?>, Function> sortedmapFactory =
+        Tuple2.of(
+            Collections.unmodifiableSortedMap(new TreeMap<>()).getClass(),
+            o -> Collections.unmodifiableSortedMap((SortedMap) o));
+    return new Tuple2[] {
+      collectionFactory,
+      randomAccessListFactory,
+      listFactory,
+      setFactory,
+      sortedsetFactory,
+      mapFactory,
+      sortedmapFactory
     };
-
-    private final Class<?> type;
-    private final long sourceFieldOffset;
-
-    UnmodifiableFactory(Class<?> type, long sourceFieldOffset) {
-      this.type = type;
-      this.sourceFieldOffset = sourceFieldOffset;
-    }
-
-    public abstract Object create(Object sourceCollection);
-
-    public boolean isCollection() {
-      return Collection.class.isAssignableFrom(type);
-    }
-
-    static UnmodifiableFactory valueOfType(final Class<?> type) {
-      for (final UnmodifiableFactory item : values()) {
-        if (item.type == type) {
-          return item;
-        }
-      }
-      throw new IllegalArgumentException("The type " + type + " is not supported.");
-    }
   }
 
   /**
@@ -204,20 +186,10 @@ public class UnmodifiableSerializers {
    * @see Collections#unmodifiableMap(Map)
    * @see Collections#unmodifiableSortedMap(SortedMap)
    */
-  @SuppressWarnings("unchecked")
   public static void registerSerializers(Fury fury) {
     if (SOURCE_COLLECTION_FIELD != null && SOURCE_MAP_FIELD != null) {
-      for (UnmodifiableFactory factory : UnmodifiableFactory.values()) {
-        if (factory.isCollection()) {
-          fury.registerSerializer(
-              factory.type,
-              new UnmodifiableCollectionSerializer(
-                  fury, (Class<Collection>) factory.type, factory));
-        } else {
-          fury.registerSerializer(
-              factory.type,
-              new UnmodifiableMapSerializer(fury, (Class<Map>) factory.type, factory));
-        }
+      for (Tuple2<Class<?>, Function> factory : unmodifiableFactories()) {
+        fury.registerSerializer(factory.f0, createSerializer(fury, factory));
       }
     }
   }

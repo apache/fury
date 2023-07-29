@@ -46,10 +46,10 @@ public class FuryInitPerf {
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withNumberCompressed(true)
-              .withMetaContextShareEnabled(true)
+              .withMetaContextShare(true)
               .requireClassRegistration(false)
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
-              .withAsyncCompilationEnabled(true)
+              .withAsyncCompilation(true)
               .withCodegen(true)
               .build();
       double duration = (System.nanoTime() - start) / 1000_000.0;
@@ -73,10 +73,10 @@ public class FuryInitPerf {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withNumberCompressed(true)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .requireClassRegistration(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withAsyncCompilationEnabled(true)
+            .withAsyncCompilation(true)
             .withCodegen(false)
             .build();
     List<Double> durations = new ArrayList<>(num);
@@ -94,10 +94,10 @@ public class FuryInitPerf {
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withNumberCompressed(true)
-              .withMetaContextShareEnabled(true)
+              .withMetaContextShare(true)
               .requireClassRegistration(false)
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
-              .withAsyncCompilationEnabled(true)
+              .withAsyncCompilation(true)
               .withCodegen(false)
               .build();
       long start = System.nanoTime();

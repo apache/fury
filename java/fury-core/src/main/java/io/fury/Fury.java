@@ -114,7 +114,7 @@ public final class Fury {
     // `io.fury.ThreadSafeFury.clearClassLoader` is called.
     config = new Config(builder);
     this.language = builder.language;
-    this.refTracking = builder.refTracking;
+    this.refTracking = builder.trackingRef;
     compressNumber = builder.compressNumber;
     if (refTracking) {
       this.refResolver = new MapRefResolver();
@@ -223,7 +223,7 @@ public final class Fury {
       }
       buffer.put(maskIndex, bitmap);
       if (language == Language.JAVA) {
-        if (config.isMetaContextShareEnabled()) {
+        if (config.shareMetaContext()) {
           int startOffset = buffer.writerIndex();
           buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
           writeRef(buffer, obj);
@@ -667,7 +667,7 @@ public final class Fury {
       if (isTargetXLang) {
         obj = xdeserializeInternal(buffer);
       } else {
-        if (config.isMetaContextShareEnabled()) {
+        if (config.shareMetaContext()) {
           classResolver.readClassDefs(buffer);
         }
         obj = readRef(buffer);
@@ -923,7 +923,7 @@ public final class Fury {
   public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
-      if (config.isMetaContextShareEnabled()) {
+      if (config.shareMetaContext()) {
         int startOffset = buffer.writerIndex();
         buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
         if (!refResolver.writeRefOrNull(buffer, obj)) {
@@ -967,7 +967,7 @@ public final class Fury {
   @SuppressWarnings("unchecked")
   public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
     try {
-      if (config.isMetaContextShareEnabled()) {
+      if (config.shareMetaContext()) {
         classResolver.readClassDefs(buffer);
       }
       T obj;
@@ -1009,7 +1009,7 @@ public final class Fury {
   public void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
-      if (config.isMetaContextShareEnabled()) {
+      if (config.shareMetaContext()) {
         int startOffset = buffer.writerIndex();
         buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
         writeRef(buffer, obj);
@@ -1047,7 +1047,7 @@ public final class Fury {
   public Object deserializeJavaObjectAndClass(MemoryBuffer buffer) {
     try {
       jitContext.lock();
-      if (config.isMetaContextShareEnabled()) {
+      if (config.shareMetaContext()) {
         classResolver.readClassDefs(buffer);
       }
       return readRef(buffer);
@@ -1263,7 +1263,7 @@ public final class Fury {
 
     boolean checkClassVersion = true;
     Language language = Language.JAVA;
-    boolean refTracking = false;
+    boolean trackingRef = false;
     boolean basicTypesRefIgnored = true;
     boolean stringRefIgnored = true;
     boolean timeRefIgnored = true;
@@ -1271,12 +1271,12 @@ public final class Fury {
     boolean compressNumber = false;
     boolean compressString = true;
     CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
-    boolean jdkClassSerializableCheck = true;
+    boolean checkJdkClassSerializable = true;
     Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
     boolean requireClassRegistration = true;
-    boolean metaContextShareEnabled = false;
+    boolean shareMetaContext = false;
     boolean codeGenEnabled = true;
-    public boolean deserializeUnExistClassEnabled = false;
+    public boolean deserializeUnexistedClass = false;
     public boolean asyncCompilationEnabled = false;
     public boolean registerGuavaTypes = true;
 
@@ -1292,8 +1292,8 @@ public final class Fury {
     }
 
     /** Whether track shared or circular references. */
-    public FuryBuilder withRefTracking(boolean refTracking) {
-      this.refTracking = refTracking;
+    public FuryBuilder withRefTracking(boolean trackingRef) {
+      this.trackingRef = trackingRef;
       return this;
     }
 
@@ -1321,14 +1321,14 @@ public final class Fury {
     }
 
     /** Use variable length encoding for int/long. */
-    public FuryBuilder withNumberCompressed(boolean compressNumber) {
-      this.compressNumber = compressNumber;
+    public FuryBuilder withNumberCompressed(boolean numberCompressed) {
+      this.compressNumber = numberCompressed;
       return this;
     }
 
     /** Whether compress string for small size. */
-    public FuryBuilder withStringCompressed(boolean compressString) {
-      this.compressString = compressString;
+    public FuryBuilder withStringCompressed(boolean stringCompressed) {
+      this.compressString = stringCompressed;
       return this;
     }
 
@@ -1366,8 +1366,8 @@ public final class Fury {
     }
 
     /** Whether check classes under `java.*` implement {@link java.io.Serializable}. */
-    public FuryBuilder withJdkClassSerializableCheck(boolean jdkClassSerializableCheck) {
-      this.jdkClassSerializableCheck = jdkClassSerializableCheck;
+    public FuryBuilder withJdkClassSerializableCheck(boolean checkJdkClassSerializable) {
+      this.checkJdkClassSerializable = checkJdkClassSerializable;
       return this;
     }
 
@@ -1395,18 +1395,18 @@ public final class Fury {
     }
 
     /** Whether to enable meta share mode. */
-    public FuryBuilder withMetaContextShareEnabled(boolean shareMetaContext) {
-      this.metaContextShareEnabled = shareMetaContext;
+    public FuryBuilder withMetaContextShare(boolean shareMetaContext) {
+      this.shareMetaContext = shareMetaContext;
       return this;
     }
 
     /**
      * Whether deserialize/skip data of un-existed class.
      *
-     * @see Config#isDeserializeUnExistClassEnabled()
+     * @see Config#deserializeUnexistedClass()
      */
-    public FuryBuilder withDeserializeUnExistClassEnabled(boolean deserializeUnExistClassEnabled) {
-      this.deserializeUnExistClassEnabled = deserializeUnExistClassEnabled;
+    public FuryBuilder withDeserializeUnexistedClass(boolean deserializeUnexistedClass) {
+      this.deserializeUnexistedClass = deserializeUnexistedClass;
       return this;
     }
 
@@ -1414,8 +1414,8 @@ public final class Fury {
      * Whether enable jit for serialization. When disabled, the first serialization will be faster
      * since no need to generate code, but later will be much slower compared jit mode.
      */
-    public FuryBuilder withCodegen(boolean codeGenEnabled) {
-      this.codeGenEnabled = codeGenEnabled;
+    public FuryBuilder withCodegen(boolean codeGen) {
+      this.codeGenEnabled = codeGen;
       return this;
     }
 
@@ -1426,8 +1426,8 @@ public final class Fury {
      *
      * @see Config#isAsyncCompilationEnabled()
      */
-    public FuryBuilder withAsyncCompilationEnabled(boolean asyncCompilationEnabled) {
-      this.asyncCompilationEnabled = asyncCompilationEnabled;
+    public FuryBuilder withAsyncCompilation(boolean asyncCompilation) {
+      this.asyncCompilationEnabled = asyncCompilation;
       return this;
     }
 

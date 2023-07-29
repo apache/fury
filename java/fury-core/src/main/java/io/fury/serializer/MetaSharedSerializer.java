@@ -52,7 +52,7 @@ import java.util.SortedMap;
  * info for those types.
  *
  * @see CompatibleMode
- * @see Fury.FuryBuilder#withMetaContextShareEnabled
+ * @see Fury.FuryBuilder#withMetaContextShare
  * @see MetaSharedCodecBuilder
  * @see ObjectSerializer
  * @author chaokunyang
@@ -77,8 +77,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     Preconditions.checkArgument(
         !fury.getConfig().checkClassVersion(),
         "Class version check should be disabled when compatible mode is enabled.");
-    Preconditions.checkArgument(
-        fury.getConfig().isMetaContextShareEnabled(), "Meta share must be enabled.");
+    Preconditions.checkArgument(fury.getConfig().shareMetaContext(), "Meta share must be enabled.");
     Collection<Descriptor> descriptors = consolidateFields(fury.getClassResolver(), type, classDef);
     DescriptorGrouper descriptorGrouper =
         DescriptorGrouper.createDescriptorGrouper(descriptors, true, fury.compressNumber());

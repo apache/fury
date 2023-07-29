@@ -57,7 +57,7 @@ public class JITContextTest extends FuryTestBase {
             .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
             .requireClassRegistration(false)
-            .withAsyncCompilationEnabled(true)
+            .withAsyncCompilation(true)
             .build();
     BeanB beanB = BeanB.createBeanB(2);
     BeanA beanA = BeanA.createBeanA(2);
@@ -97,7 +97,7 @@ public class JITContextTest extends FuryTestBase {
             .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
             .requireClassRegistration(false)
-            .withAsyncCompilationEnabled(true)
+            .withAsyncCompilation(true)
             .build();
     BeanB beanB = BeanB.createBeanB(2);
     BeanA beanA = BeanA.createBeanA(2);
