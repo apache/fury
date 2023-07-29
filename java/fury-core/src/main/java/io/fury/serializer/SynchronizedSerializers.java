@@ -127,33 +127,6 @@ public class SynchronizedSerializers {
     }
   }
 
-  /**
-   * Registering serializers for synchronized Collections and Maps created via {@link Collections}.
-   *
-   * @see Collections#synchronizedCollection(Collection)
-   * @see Collections#synchronizedList(List)
-   * @see Collections#synchronizedSet(Set)
-   * @see Collections#synchronizedSortedSet(SortedSet)
-   * @see Collections#synchronizedMap(Map)
-   * @see Collections#synchronizedSortedMap(SortedMap)
-   */
-  public static void registerSerializers(Fury fury) {
-    if (SOURCE_COLLECTION_FIELD != null && SOURCE_MAP_FIELD != null) {
-      for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
-        fury.registerSerializer(factory.f0, createSerializer(fury, factory));
-      }
-    }
-  }
-
-  static Function getFactory(Class<?> cls) {
-    for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
-      if (factory.f0 == cls) {
-        return factory.f1;
-      }
-    }
-    throw new IllegalArgumentException("Unsupported type " + cls);
-  }
-
   static Serializer createSerializer(Fury fury, Class<?> cls) {
     for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
       if (factory.f0 == cls) {
@@ -210,5 +183,23 @@ public class SynchronizedSerializers {
       mapFactory,
       sortedmapFactory
     };
+  }
+
+  /**
+   * Registering serializers for synchronized Collections and Maps created via {@link Collections}.
+   *
+   * @see Collections#synchronizedCollection(Collection)
+   * @see Collections#synchronizedList(List)
+   * @see Collections#synchronizedSet(Set)
+   * @see Collections#synchronizedSortedSet(SortedSet)
+   * @see Collections#synchronizedMap(Map)
+   * @see Collections#synchronizedSortedMap(SortedMap)
+   */
+  public static void registerSerializers(Fury fury) {
+    if (SOURCE_COLLECTION_FIELD != null && SOURCE_MAP_FIELD != null) {
+      for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
+        fury.registerSerializer(factory.f0, createSerializer(fury, factory));
+      }
+    }
   }
 }
