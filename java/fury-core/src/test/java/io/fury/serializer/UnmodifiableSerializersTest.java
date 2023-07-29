@@ -18,6 +18,7 @@
 
 package io.fury.serializer;
 
+import static io.fury.serializer.UnmodifiableSerializers.createSerializer;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -30,7 +31,7 @@ import io.fury.memory.MemoryUtils;
 import io.fury.test.bean.CollectionFields;
 import io.fury.test.bean.MapFields;
 import io.fury.util.Platform;
-import java.lang.reflect.Field;
+import io.fury.util.ReflectionUtils;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -52,6 +53,12 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class UnmodifiableSerializersTest extends FuryTestBase {
+  static long SOURCE_COLLECTION_FIELD_OFFSET =
+      ReflectionUtils.getFieldOffset(
+          Collections.synchronizedCollection(Collections.emptyList()).getClass(), "c");
+  static long SOURCE_MAP_FIELD_OFFSET =
+      ReflectionUtils.getFieldOffset(
+          Collections.synchronizedMap(Collections.emptyMap()).getClass(), "m");
 
   @SuppressWarnings("unchecked")
   @Test
@@ -72,29 +79,14 @@ public class UnmodifiableSerializersTest extends FuryTestBase {
     for (Object value : values) {
       buffer.writerIndex(0);
       buffer.readerIndex(0);
-      Serializer serializer;
-      if (value instanceof Collection) {
-        serializer =
-            new UnmodifiableSerializers.UnmodifiableCollectionSerializer(
-                fury,
-                (Class<Collection>) value.getClass(),
-                UnmodifiableSerializers.UnmodifiableFactory.valueOfType(value.getClass()));
-      } else {
-        serializer =
-            new UnmodifiableSerializers.UnmodifiableMapSerializer(
-                fury,
-                (Class<Map>) value.getClass(),
-                UnmodifiableSerializers.UnmodifiableFactory.valueOfType(value.getClass()));
-      }
+      Serializer serializer = createSerializer(fury, value.getClass());
       serializer.write(buffer, value);
       Object newObj = serializer.read(buffer);
       assertEquals(newObj.getClass(), value.getClass());
-      UnmodifiableSerializers.UnmodifiableFactory unmodifiableFactory =
-          UnmodifiableSerializers.UnmodifiableFactory.valueOfType(newObj.getClass());
-      Field field =
-          UnmodifiableSerializers.UnmodifiableFactory.class.getDeclaredField("sourceFieldOffset");
-      field.setAccessible(true);
-      long sourceCollectionFieldOffset = (long) field.get(unmodifiableFactory);
+      long sourceCollectionFieldOffset =
+          Collection.class.isAssignableFrom(value.getClass())
+              ? SOURCE_COLLECTION_FIELD_OFFSET
+              : SOURCE_MAP_FIELD_OFFSET;
       Object innerValue = Platform.getObject(value, sourceCollectionFieldOffset);
       Object newValue = Platform.getObject(newObj, sourceCollectionFieldOffset);
       assertEquals(innerValue, newValue);
