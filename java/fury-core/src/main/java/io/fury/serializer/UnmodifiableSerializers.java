@@ -120,7 +120,7 @@ public class UnmodifiableSerializers {
   }
 
   static Serializer createSerializer(Fury fury, Class<?> cls) {
-    for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
+    for (Tuple2<Class<?>, Function> factory : unmodifiableFactories()) {
       if (factory.f0 == cls) {
         return createSerializer(fury, factory);
       }
@@ -137,7 +137,7 @@ public class UnmodifiableSerializers {
     }
   }
 
-  static Tuple2<Class<?>, Function>[] synchronizedFactories() {
+  static Tuple2<Class<?>, Function>[] unmodifiableFactories() {
     Tuple2<Class<?>, Function> collectionFactory =
         Tuple2.of(
             Collections.unmodifiableCollection(Collections.singletonList("")).getClass(),
@@ -190,7 +190,7 @@ public class UnmodifiableSerializers {
    */
   public static void registerSerializers(Fury fury) {
     if (SOURCE_COLLECTION_FIELD != null && SOURCE_MAP_FIELD != null) {
-      for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
+      for (Tuple2<Class<?>, Function> factory : unmodifiableFactories()) {
         fury.registerSerializer(factory.f0, createSerializer(fury, factory));
       }
     }
