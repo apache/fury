@@ -27,7 +27,7 @@ jobs:
           echo "tag: $tag"
           version=${tag:1}
           echo "version $version"
-          ci/deploy.sh bump_version $version
+          ci/deploy.sh bump_py_version $version
       - name: Build a binary wheel
         run: |
           pip install pyarrow==4.0.0 Cython wheel numpy pytest

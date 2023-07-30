@@ -82,10 +82,10 @@ bump_javascript_version() {
   cd "$ROOT/javascript"
   echo "Set fury javascript version to $version"
   pushd packages/fury
-  sed -i '' -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
+  sed -i -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
   popd
   pushd packages/hps
-  sed -i '' -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
+  sed -i -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
   popd
 }
 
