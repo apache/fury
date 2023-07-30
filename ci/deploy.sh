@@ -35,7 +35,7 @@ create_py_envs() {
 }
 
 rename_linux_wheels() {
-  for path in "$WHEEL_DIR"/*.whl; do
+  for path in "$1"/*.whl; do
     if [ -f "${path}" ]; then
       mv "${path}" "${path//linux/manylinux1}"
     fi
@@ -119,7 +119,7 @@ deploy_python() {
     mv dist/pyfury*.whl "$WHEEL_DIR"
   done
   if [[ "$OSTYPE" == "linux"* ]]; then
-    rename_linux_wheels
+    rename_linux_wheels "$WHEEL_DIR"
   fi
   if [[ "$OSTYPE" == "darwin"* ]]; then
     rename_mac_wheels
