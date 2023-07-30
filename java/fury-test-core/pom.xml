@@ -15,7 +15,7 @@
   <parent>
     <artifactId>fury-parent</artifactId>
     <groupId>org.furyio</groupId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0-alpha.5</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
