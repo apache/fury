@@ -110,7 +110,7 @@ Release version:
 <dependency>
   <groupId>org.furyio</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.1.0-alpha.2</version>
+  <version>0.1.0-alpha.3</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
@@ -122,11 +122,8 @@ Release version:
 
 ### Python
 ```bash
-# Python whl will be released soon. 
-# Currently you need to install from the source.
-git clone https://github.com/alipay/fury.git
-cd fury/python
-pip install -v -e .
+# Release version will be provided in the future.
+pip install pyfury --pre
 ```
 ### JavaScript
 ```bash
