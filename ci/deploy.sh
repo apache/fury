@@ -125,7 +125,7 @@ deploy_python() {
     rename_mac_wheels
   fi
   twine check "$WHEEL_DIR"/pyfury*.whl
-  twine upload -r pypiantfin "$WHEEL_DIR"/pyfury*.whl
+  twine upload -r pypi "$WHEEL_DIR"/pyfury*.whl
 }
 
 case "$1" in
