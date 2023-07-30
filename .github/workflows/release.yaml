@@ -9,6 +9,11 @@ jobs:
   release-python:
     name: Publish Python 📦 to PyPI
     runs-on: ubuntu-20.04
+    environment:
+      name: pypi
+      url: https://pypi.org/project/pyfury
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
