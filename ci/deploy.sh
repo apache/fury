@@ -69,8 +69,11 @@ bump_java_version() {
 
 bump_py_version() {
   version=$1
-  cd "$ROOT/python/pyfury"
   echo "Set fury python version to $version"
+  cd "$ROOT/python/pyfury"
+  version=${version/alpha./a}
+  version=${version/beta./b}
+  echo "Bump fury python version to $version"
   sed -i '' -E "s/__version__ = .*/__version__ = \"$version\"/" __init__.py
 }
 
