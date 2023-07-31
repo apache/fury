@@ -17,15 +17,20 @@
 package io.fury.codegen;
 
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 import io.fury.Fury;
 import io.fury.builder.ObjectCodecBuilder;
+import io.fury.collection.MultiKeyWeakMap;
 import io.fury.test.bean.Foo;
 import io.fury.util.ClassLoaderUtils;
 import io.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
+import java.lang.ref.SoftReference;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +39,36 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class CodeGeneratorTest {
+  private static WeakHashMap<ClassLoader, SoftReference<CodeGenerator>> sharedCodeGenerator;
+  private static MultiKeyWeakMap<SoftReference<CodeGenerator>> sharedCodeGenerator2;
+
+  static {
+    try {
+      Field field1 = CodeGenerator.class.getDeclaredField("sharedCodeGenerator");
+      field1.setAccessible(true);
+      sharedCodeGenerator = (WeakHashMap) field1.get(null);
+      Field field2 = CodeGenerator.class.getDeclaredField("sharedCodeGenerator2");
+      field2.setAccessible(true);
+      sharedCodeGenerator2 = (MultiKeyWeakMap) field2.get(null);
+    } catch (IllegalAccessException | NoSuchFieldException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void testGetSharedCodeGenerator() {
+    CodeGenerator.getSharedCodeGenerator(getClass().getClassLoader());
+    System.gc();
+    assertNotNull(sharedCodeGenerator.get(getClass().getClassLoader()).get());
+    CodeGenerator.getSharedCodeGenerator(getClass().getClassLoader(), Fury.class.getClassLoader());
+    System.gc();
+    assertNotNull(
+        sharedCodeGenerator2
+            .get(new Object[] {getClass().getClassLoader(), Fury.class.getClassLoader()})
+            .get());
+  }
 
   @Test
   public void tryDuplicateCompileConcurrent() throws InterruptedException {
