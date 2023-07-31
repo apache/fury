@@ -23,7 +23,7 @@ export const BinaryWriter = (config: Config) => {
   let byteLength: number;
   let arrayBuffer: Buffer;
   let dataView: DataView;
-  let reserved: number = 0;
+  let reserved = 0;
 
   function initPoll() {
     byteLength = 1024 * 100;
