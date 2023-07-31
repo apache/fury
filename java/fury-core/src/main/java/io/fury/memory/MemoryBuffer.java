@@ -1,10 +1,11 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -28,7 +29,7 @@ import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
 
 /**
- * A class for operations on memory managed by fury. The buffer may be backed by heap memory (byte
+ * A class for operations on memory managed by Fury. The buffer may be backed by heap memory (byte
  * array) or by off-heap memory. Note that the buffer can auto grow on write operations and change
  * into a heap buffer when growing.
  *
@@ -49,13 +50,11 @@ import java.nio.ReadOnlyBufferException;
  * <p>TODO(chaokunyang) Let grow/readerIndex/writerIndex handled in this class and Make immutable
  * part as separate class, and use composition in this class. In this way, all fields can be final
  * and access will be much faster.
- *
- * @author chaokunyang
  */
 // FIXME Buffer operations is most common, and jvm inline and branch elimination
-//  is not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually.
+// is not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually.
 // Note: This class is based on org.apache.flink.core.memory.MemorySegment and
-//  org.apache.arrow.memory.ArrowBuf.
+// org.apache.arrow.memory.ArrowBuf.
 public final class MemoryBuffer {
   // The unsafe handle for transparent memory copied (heap/off-heap).
   private static final sun.misc.Unsafe UNSAFE = Platform.UNSAFE;

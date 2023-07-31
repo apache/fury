@@ -70,12 +70,19 @@ go test -v fury_xlang_test.go
 ```
 
 ## Styling 😎
-Run all checks：`bash ci/format.sh --all`
+
+Run all checks: `bash ci/format.sh --all`
+
+### License headers
+
+```bash
+docker run --rm -v $(pwd):/github/workspace ghcr.io/korandoru/hawkeye-native:v3 format
+```
+
 ### Java
+
 ```bash
 cd java
-# license format
-mvn -T10 license:format
 # code format
 mvn spotless:apply
 # code format check
@@ -83,6 +90,7 @@ mvn spotless:check
 mvn checkstyle:check
 ```
 ### Python
+
 ```bash
 cd python 
 # install dependencies fro styling
@@ -90,11 +98,15 @@ pip install black==22.1.0 flake8==3.9.1 flake8-quotes flake8-bugbear
 # format python code
 black pyfury
 ```
+
 ### C++
+
 ```bash
 git ls-files -- '*.cc' '*.h' | xargs -P 5 clang-format -i
 ```
+
 ### GoLang
+
 ```bash
 cd go/fury
 gofmt -s -w .

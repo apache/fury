@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# This script is derived from https://github.com/ray-project/ray/blob/5ce25a57a0949673d17f3a8784f05b2d65290524/ci/lint/format.sh.
+
 # Black + Clang formatter (if installed). This script formats all changed files from the last mergebase.
 # You are encouraged to run this locally before pushing changes for review.
 
@@ -190,7 +193,6 @@ format_all() {
       if command -v mvn >/dev/null ; then
         echo "Maven installed"
         cd "$ROOT/java"
-        mvn -T10 license:format
         mvn -T10 spotless:apply
         mvn -T10 checkstyle:check
       else
@@ -252,7 +254,6 @@ format_changed() {
           if command -v mvn >/dev/null ; then
             echo "Maven installed"
             cd "$ROOT/java"
-            mvn -T10 license:format
             mvn -T10 spotless:apply
             mvn -T10 checkstyle:check
           else

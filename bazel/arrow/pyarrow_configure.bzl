@@ -1,5 +1,6 @@
-"""Setup pyarrow as external dependency.
- See https://github.com/tensorflow/tensorflow/blob/5a244072f2b33d2347e803146c244c179c1ddb75/third_party/py/python_configure.bzl """
+"""Setup pyarrow as external dependency."""
+
+# This file is derived from https://github.com/tensorflow/tensorflow/blob/5a244072f2b33d2347e803146c244c179c1ddb75/third_party/py/python_configure.bzl.
 
 def _tpl(repository_ctx, tpl, substitutions = {}, out = None):
     if not out:

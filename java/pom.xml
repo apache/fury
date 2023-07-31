@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2023 FURY. Licensed to the Apache Software Foundation (ASF) under one or more contributor
-  license agreements. See the NOTICE file distributed with this work for additional
-  information regarding copyright ownership. The ASF licenses this file to
-  You under the Apache License, Version 2.0 (the "License"); you may not use
-  this file except in compliance with the License. You may obtain a copy of
-  the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required
-  by applicable law or agreed to in writing, software distributed under the
-  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
-  OF ANY KIND, either express or implied. See the License for the specific
-  language governing permissions and limitations under the License. -->
+<!--
+
+    Copyright 2023 The Fury Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -69,7 +76,6 @@
     <arrow.version>5.0.0</arrow.version>
     <jackson-bom.version>2.13.2.20220328</jackson-bom.version>
     <commons_codec.version>1.13</commons_codec.version>
-    <license.maven.plugin>4.2</license.maven.plugin>
     <fury.java.rootdir>${basedir}</fury.java.rootdir>
   </properties>
 
@@ -275,78 +281,6 @@
             </googleJavaFormat>
           </java>
         </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>com.mycila</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <version>${license.maven.plugin}</version>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <!-- <goal>remove</goal> -->
-              <!-- <goal>format</goal> -->
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <properties>
-            <project.inceptionYear>2023</project.inceptionYear>
-          </properties>
-          <quiet>true</quiet>
-          <header>${fury.java.rootdir}/HEADER</header>
-          <includes>
-            <include>**/src/main/java/**</include>
-            <include>**/src/test/java/**</include>
-          </includes>
-          <excludes>
-            <exclude>**/util/Platform.java</exclude>
-            <exclude>**/util/StringUtils.java</exclude>
-            <exclude>**/util/MurmurHash3.java</exclude>
-            <exclude>**/util/ClassLoaderUtils.java</exclude>
-            <exclude>**/util/DateTimeUtils.java</exclude>
-            <exclude>**/util/unsafe/_Lookup.java</exclude>
-            <exclude>**/memory/MemoryBuffer.java</exclude>
-            <exclude>**/memory/BitUtils.java</exclude>
-            <exclude>**/codegen/Code.java</exclude>
-            <exclude>**/collection/FuryObjectMap.java</exclude>
-            <exclude>**/collection/ObjectIntMap.java</exclude>
-            <exclude>**/collection/IdentityObjectIntMap.java</exclude>
-            <exclude>**/collection/IdentityMap.java</exclude>
-            <exclude>**/collection/LongMap.java</exclude>
-            <exclude>**/type/Generics.java</exclude>
-            <exclude>**/io/ClassLoaderObjectInputStream.java</exclude>
-            <exclude>**/fury/format/row/**</exclude>
-            <exclude>**/fury/format/vectorized/ArrowWriter.java</exclude>
-            <exclude>**/fury/benchmark/data/Data.java</exclude>
-            <exclude>**/fury/benchmark/data/Image.java</exclude>
-            <exclude>**/fury/benchmark/data/Media.java</exclude>
-            <exclude>**/fury/benchmark/data/MediaContent.java</exclude>
-            <exclude>**/fury/benchmark/data/Sample.java</exclude>
-            <exclude>**/fury/benchmark/state/KryoState.java</exclude>
-            <exclude>**/fury/benchmark/state/BufferType.java</exclude>
-            <exclude>**/fury/benchmark/state/ObjectType.java</exclude>
-            <exclude>**/fury/benchmark/Identity2IdMap.java</exclude>
-            <exclude>**/type/Generics.java</exclude>
-            <exclude>**/type/GenericsTest.java</exclude>
-          </excludes>
-          <strictCheck>true</strictCheck>
-          <headerDefinitions>
-            <headerDefinition>${fury.java.rootdir}/license-format.xml</headerDefinition>
-          </headerDefinitions>
-          <mapping>
-            <java>SLASHSTART_WITH_BLANKLINE_STYLE</java>
-          </mapping>
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>com.mycila</groupId>
-            <artifactId>license-maven-plugin-git</artifactId>
-            <!-- make sure same version as license-maven-plugin -->
-            <version>${license.maven.plugin}</version>
-          </dependency>
-        </dependencies>
       </plugin>
     </plugins>
   </build>

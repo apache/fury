@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,9 +22,10 @@ import static io.fury.codegen.Code.LiteralValue.TrueLiteral;
 
 import java.util.Objects;
 
+// Derived from
+// https://github.com/apache/spark/blob/ea3061beedf7dc10f14e8de27d540dbcc5894fe7/sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/expressions/codegen/javaCode.scala
+
 /** Class for represented generated code in codegen. */
-// Modified from
-// https://github.com/apache/spark/blob/master/sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/expressions/codegen/javaCode.scala
 public interface Code {
   /**
    * The code for a sequence of statements to evaluate the expression in a scope. If no code needs

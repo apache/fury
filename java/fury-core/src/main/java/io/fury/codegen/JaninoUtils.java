@@ -1,11 +1,9 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2023 The Fury Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -48,9 +46,7 @@ import org.codehaus.janino.util.resource.Resource;
 import org.slf4j.Logger;
 
 /**
- * A util to compile code to bytecode and create classloader to load generated class. Based on
- * org.codehaus.janino.tests.CompilerTest#testInMemoryCompilation, see (<a
- * href="https://github.com/janino-compiler/janino/issues/52">janino issue#52</a>)
+ * A util to compile code to bytecode and create classloader to load generated class.
  *
  * @author chaokunyang
  */

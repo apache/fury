@@ -2,7 +2,7 @@
 exclude =
   python/build/
   python/.eggs/
-max-line-length = 88
+max-line-length = 150
 inline-quotes = "
 ignore =
   C408

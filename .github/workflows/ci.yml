@@ -1,3 +1,17 @@
+# Copyright 2023 The Fury Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 name: Fury CI
 
 on:
@@ -67,7 +81,7 @@ jobs:
     name: C++ CI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:
@@ -85,7 +99,7 @@ jobs:
       matrix:
         python-version: [3.6, 3.9]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -94,11 +108,13 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Run Python CI
         run: ./ci/run_ci.sh python
-  Lint:
+  lint:
     name: Code Style Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - name: Check License Header
+        uses: korandoru/hawkeye@v3
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:

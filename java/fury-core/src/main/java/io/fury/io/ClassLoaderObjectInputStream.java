@@ -24,13 +24,15 @@ import java.io.ObjectStreamClass;
 import java.io.StreamCorruptedException;
 import java.lang.reflect.Proxy;
 
+// Derived from
+// https://github.com/apache/commons-io/blob/5168fa5e9de9dd2ff6ace3f34226397a4faebc14/src/main/java/org/apache/commons/io/input/ClassLoaderObjectInputStream.java.
+
 /**
  * A special ObjectInputStream that loads a class based on a specified <code>ClassLoader</code>
  * rather than the system default.
  *
  * <p>This is useful in dynamic container environments.
  */
-// Copied from org.apache.commons.io.input.ClassLoaderObjectInputStream
 public class ClassLoaderObjectInputStream extends ObjectInputStream {
 
   /** The class loader to use. */
