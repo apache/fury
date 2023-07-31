@@ -29,7 +29,7 @@ import io.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
 import io.fury.util.LoggerFactory;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -66,10 +66,10 @@ public class CodeGenerator {
 
   // FIXME The classloaders will only be reclaimed when the generated class are not be referenced.
   // FIXME CodeGenerator may reference to classloader, thus cause circular reference, neither can
-  // be gc.
-  private static final WeakHashMap<ClassLoader, WeakReference<CodeGenerator>> sharedCodeGenerator =
+  //  be gc.
+  private static final WeakHashMap<ClassLoader, SoftReference<CodeGenerator>> sharedCodeGenerator =
       new WeakHashMap<>();
-  private static final MultiKeyWeakMap<WeakReference<CodeGenerator>> sharedCodeGenerator2 =
+  private static final MultiKeyWeakMap<SoftReference<CodeGenerator>> sharedCodeGenerator2 =
       new MultiKeyWeakMap<>();
 
   // use this package when bean class name starts with java.
@@ -293,11 +293,11 @@ public class CodeGenerator {
   }
 
   public static synchronized CodeGenerator getSharedCodeGenerator(ClassLoader... classLoaders) {
-    WeakReference<CodeGenerator> codeGeneratorWeakRef = sharedCodeGenerator2.get(classLoaders);
+    SoftReference<CodeGenerator> codeGeneratorWeakRef = sharedCodeGenerator2.get(classLoaders);
     CodeGenerator codeGenerator = codeGeneratorWeakRef != null ? codeGeneratorWeakRef.get() : null;
     if (codeGenerator == null) {
       codeGenerator = new CodeGenerator(new ClassLoaderUtils.ComposedClassLoader(classLoaders));
-      sharedCodeGenerator2.put(classLoaders, new WeakReference<>(codeGenerator));
+      sharedCodeGenerator2.put(classLoaders, new SoftReference<>(codeGenerator));
     }
     return codeGenerator;
   }
@@ -306,11 +306,11 @@ public class CodeGenerator {
     if (classLoader == null) {
       classLoader = CodeGenerator.class.getClassLoader();
     }
-    WeakReference<CodeGenerator> codeGeneratorWeakRef = sharedCodeGenerator.get(classLoader);
+    SoftReference<CodeGenerator> codeGeneratorWeakRef = sharedCodeGenerator.get(classLoader);
     CodeGenerator codeGenerator = codeGeneratorWeakRef != null ? codeGeneratorWeakRef.get() : null;
     if (codeGenerator == null) {
       codeGenerator = new CodeGenerator(classLoader);
-      sharedCodeGenerator.put(classLoader, new WeakReference<>(codeGenerator));
+      sharedCodeGenerator.put(classLoader, new SoftReference<>(codeGenerator));
     }
     return codeGenerator;
   }
