@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.furyio</groupId>
     <artifactId>fury-parent</artifactId>
-    <version>0.1.0-alpha.5</version>
+    <version>0.1.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 

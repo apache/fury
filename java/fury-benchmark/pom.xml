@@ -23,7 +23,7 @@
   <parent>
     <artifactId>fury-parent</artifactId>
     <groupId>org.furyio</groupId>
-    <version>0.1.0-alpha.5</version>
+    <version>0.1.0</version>
   </parent>
 
   <artifactId>fury-benchmark</artifactId>
