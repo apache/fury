@@ -43,6 +43,11 @@
     <developer>
       <organizationUrl>https://furyio.org</organizationUrl>
     </developer>
+    <developer>
+      <name>chaokunyang</name>
+      <email>shawn.ck.yang@gmail.com</email>
+      <url>https://github.com/chaokunyang</url>
+    </developer>
   </developers>
   <distributionManagement>
     <snapshotRepository>

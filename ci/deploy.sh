@@ -50,7 +50,7 @@ create_py_envs() {
 }
 
 rename_linux_wheels() {
-  for path in "$WHEEL_DIR"/*.whl; do
+  for path in "$1"/*.whl; do
     if [ -f "${path}" ]; then
       mv "${path}" "${path//linux/manylinux1}"
     fi
@@ -84,9 +84,12 @@ bump_java_version() {
 
 bump_py_version() {
   version=$1
-  cd "$ROOT/python/pyfury"
   echo "Set fury python version to $version"
-  sed -i '' -E "s/__version__ = .*/__version__ = \"$version\"/" __init__.py
+  cd "$ROOT/python/pyfury"
+  pyversion=${version/-alpha./.a}  # version will override
+  pyversion=${pyversion/-beta./.b}
+  echo "Bump fury python version to $pyversion"
+  sed -i -E "s/__version__ = .*/__version__ = \"$pyversion\"/" __init__.py
 }
 
 bump_javascript_version() {
@@ -94,10 +97,10 @@ bump_javascript_version() {
   cd "$ROOT/javascript"
   echo "Set fury javascript version to $version"
   pushd packages/fury
-  sed -i '' -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
+  sed -i -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
   popd
   pushd packages/hps
-  sed -i '' -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
+  sed -i -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
   popd
 }
 
@@ -131,13 +134,13 @@ deploy_python() {
     mv dist/pyfury*.whl "$WHEEL_DIR"
   done
   if [[ "$OSTYPE" == "linux"* ]]; then
-    rename_linux_wheels
+    rename_linux_wheels "$WHEEL_DIR"
   fi
   if [[ "$OSTYPE" == "darwin"* ]]; then
     rename_mac_wheels
   fi
   twine check "$WHEEL_DIR"/pyfury*.whl
-  twine upload -r pypiantfin "$WHEEL_DIR"/pyfury*.whl
+  twine upload -r pypi "$WHEEL_DIR"/pyfury*.whl
 }
 
 case "$1" in

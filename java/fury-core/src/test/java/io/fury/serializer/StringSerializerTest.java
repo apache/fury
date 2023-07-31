@@ -34,6 +34,7 @@ import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -365,5 +366,24 @@ public class StringSerializerTest extends FuryTestBase {
     assertFalse(StringSerializer.isAscii("abc\u1234".toCharArray()));
     assertFalse(StringSerializer.isAscii("abcd\u1234".toCharArray()));
     assertFalse(StringSerializer.isAscii("Javaone Keynote\u1234".toCharArray()));
+  }
+
+  @Test
+  public void testReadUtf8String() {
+    Fury fury = getJavaFury();
+    for (MemoryBuffer buffer :
+        new MemoryBuffer[] {
+          MemoryUtils.buffer(32), MemoryUtils.wrap(ByteBuffer.allocateDirect(2048))
+        }) {
+      StringSerializer serializer = new StringSerializer(fury);
+      serializer.write(buffer, "abc你好");
+      assertEquals(serializer.read(buffer), "abc你好");
+      byte UTF8 = 2;
+      buffer.writeByte(UTF8);
+      buffer.writePositiveVarInt("abc你好".getBytes(StandardCharsets.UTF_8).length);
+      buffer.writeBytes("abc你好".getBytes(StandardCharsets.UTF_8));
+      assertEquals(serializer.read(buffer), "abc你好");
+      assertEquals(buffer.readerIndex(), buffer.writerIndex());
+    }
   }
 }

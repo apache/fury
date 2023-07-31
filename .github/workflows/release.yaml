@@ -23,6 +23,9 @@ jobs:
   release-python:
     name: Publish Python 📦 to PyPI
     runs-on: ubuntu-20.04
+    environment:
+      name: pypi
+      url: https://pypi.org/project/pyfury
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
@@ -41,7 +44,7 @@ jobs:
           echo "tag: $tag"
           version=${tag:1}
           echo "version $version"
-          ci/deploy.sh bump_version $version
+          ci/deploy.sh bump_py_version $version
       - name: Build a binary wheel
         run: |
           pip install pyarrow==4.0.0 Cython wheel numpy pytest
@@ -49,9 +52,11 @@ jobs:
           pip list
           export PATH=~/bin:$PATH
           echo "Build pyfury"
-          python setup.py bdist_wheel
+          python setup.py bdist_wheel --dist-dir=../dist
+          ../ci/deploy.sh rename_linux_wheels $PWD/../dist
       - name: Publish wheel 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-          packages-dir: python/dist/
+          packages-dir: dist

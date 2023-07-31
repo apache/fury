@@ -63,6 +63,7 @@ public final class StringSerializer extends Serializer<String> {
   private static final Byte LATIN1_BOXED = LATIN1;
   private static final byte UTF16 = 1;
   private static final Byte UTF16_BOXED = UTF16;
+  private static final byte UTF8 = 2;
   private static final int DEFAULT_BUFFER_SIZE = 1024;
   // A long mask used to clear all-higher bits of char in a super-word way.
   private static final long MULTI_CHARS_NON_ASCII_MASK;
@@ -231,6 +232,11 @@ public final class StringSerializer extends Serializer<String> {
           }
         }
       }
+      if (coder == UTF8) {
+        String str = new String(heapMemory, arrIndex, numBytes, StandardCharsets.UTF_8);
+        buffer.increaseReaderIndexUnsafe(arrIndex - targetIndex + numBytes);
+        return str;
+      }
       final byte[] bytes = new byte[numBytes];
       System.arraycopy(heapMemory, arrIndex, bytes, 0, numBytes);
       buffer.increaseReaderIndexUnsafe(arrIndex - targetIndex + numBytes);
@@ -239,6 +245,9 @@ public final class StringSerializer extends Serializer<String> {
       byte coder = buffer.readByte();
       final int numBytes = buffer.readPositiveVarInt();
       byte[] bytes = buffer.readBytes(numBytes);
+      if (coder == UTF8) {
+        return new String(bytes, 0, numBytes, StandardCharsets.UTF_8);
+      }
       return newJava11StringByZeroCopy(coder, bytes);
     }
   }
@@ -329,8 +338,13 @@ public final class StringSerializer extends Serializer<String> {
         byte coder = buffer.readByte();
         if (coder == LATIN1) {
           return newJava8StringByZeroCopy(readAsciiChars(buffer));
-        } else {
+        } else if (coder == UTF16) {
           return newJava8StringByZeroCopy(readUTF16Chars(buffer, coder));
+        } else {
+          if (coder != UTF8) {
+            throw new UnsupportedOperationException("Unsupported encoding: " + coder);
+          }
+          return readUTF8String(buffer);
         }
       } else {
         return newJava8StringByZeroCopy(buffer.readCharsWithSizeEmbedded());
@@ -678,8 +692,17 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   public String readUTF8String(MemoryBuffer buffer) {
-    int len = buffer.readPositiveVarInt();
-    byte[] bytes = buffer.readBytes(len);
-    return new String(bytes, StandardCharsets.UTF_8);
+    int numBytes = buffer.readPositiveVarInt();
+    final byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      String str =
+          new String(targetArray, buffer.unsafeHeapReaderIndex(), numBytes, StandardCharsets.UTF_8);
+      buffer.increaseReaderIndex(numBytes);
+      return str;
+    } else {
+      final byte[] tmpArray = getByteArray(numBytes);
+      buffer.readBytes(tmpArray, 0, numBytes);
+      return new String(tmpArray, 0, numBytes, StandardCharsets.UTF_8);
+    }
   }
 }

@@ -29,6 +29,22 @@
   <artifactId>fury-core</artifactId>
   <packaging>jar</packaging>
 
+  <scm>
+    <url>https://github.com/alipay/fury</url>
+    <connection>git@github.com:alipay/fury.git</connection>
+    <developerConnection>scm:git:ssh://github.com:alipay/fury.git</developerConnection>
+  </scm>
+  <developers>
+    <developer>
+      <organizationUrl>https://furyio.org</organizationUrl>
+    </developer>
+    <developer>
+      <name>chaokunyang</name>
+      <email>shawn.ck.yang@gmail.com</email>
+      <url>https://github.com/chaokunyang</url>
+    </developer>
+  </developers>
+
   <properties>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
