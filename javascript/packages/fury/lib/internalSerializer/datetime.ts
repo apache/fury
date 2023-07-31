@@ -15,23 +15,22 @@
  */
 
 import  {Fury} from "../type";
-import { InternalSerializerType, RefFlags } from "../type";
+import { InternalSerializerType } from "../type";
 
 const epoch =  new Date('1970/01/01 00:00').getTime();
 
 export const timestampSerializer = (fury: Fury) => {
-    const { binaryView, binaryWriter} = fury;
-    const { writeInt8, writeInt64, writeInt16 } = binaryWriter;
-    const { readInt64} = binaryView;
+    const { binaryReader, binaryWriter, referenceResolver} = fury;
+    const { int64: writeInt64 } = binaryWriter;
+    const { int64: readInt64} = binaryReader;
+
     return {
-        read: () => {
+        ...referenceResolver.deref(() => {
             return new Date(Number(readInt64()));
-        },
-        write: (v: Date) => {
-            writeInt8(RefFlags.NotNullValueFlag);
-            writeInt16(InternalSerializerType.TIMESTAMP);
+        }),
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.TIMESTAMP, (v: Date) => {
             writeInt64(BigInt(v.getTime()));
-        },
+        }),
         config: () => {
             return {
                 reserve: 11
@@ -41,21 +40,19 @@ export const timestampSerializer = (fury: Fury) => {
 }
 
 export const dateSerializer = (fury: Fury) => {
-    const { binaryView, binaryWriter} = fury;
-    const { writeInt8, writeInt32, writeInt16 } = binaryWriter;
-    const { readInt32} = binaryView;
+    const { binaryReader, binaryWriter, referenceResolver} = fury;
+    const { int32: writeInt32 } = binaryWriter;
+    const { int32: readInt32} = binaryReader;
     return {
-        read: () => {
+        ...referenceResolver.deref(() => {
             const day = readInt32();
             return new Date(epoch + (day * (24*60*60) * 1000));
-        },
-        write: (v: Date) => {
+        }),
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.DATE, (v: Date) => {
             const diff = v.getTime() - epoch;
             const day = Math.floor(diff / 1000 / (24*60*60))
-            writeInt8(RefFlags.NotNullValueFlag);
-            writeInt16(InternalSerializerType.DATE);
             writeInt32(day);
-        },
+        }),
         config: () => {
             return {
                 reserve: 7,

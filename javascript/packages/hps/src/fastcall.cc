@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "v8-fast-api-calls.h"
 #include <nan.h>
+#include "v8-fast-api-calls.h"
+
 
 void IsLatin1Slow(const v8::FunctionCallbackInfo<v8::Value> &info) {
   v8::Local<v8::String> input = info[0].As<v8::String>();
@@ -52,33 +53,7 @@ void StringCopyFast(v8::Local<v8::Value> receiver,
   uint8_t *ptr;
   ab.getStorageIfAligned(&ptr);
   int32_t i = 0;
-
   memcpy(ptr + offset, source.data, source.length);
-
-  // {
-  //   int32_t len = source.length - 7;
-  //   while (i < len)
-  //   {
-  //     *(u_int64_t*)(ptr + offset) = *(u_int64_t*)(source.data + i);
-  //     i += 8;
-  //     offset += 8;
-  //   }
-  // }
-
-  // {
-  //   int32_t len = source.length - 3;
-  //   while (i < len)
-  //   {
-  //     *(u_int32_t*)(ptr + offset) = *(u_int32_t*)(source.data + i);
-  //     i += 4;
-  //     offset += 4;
-  //   }
-  // }
-
-  // for (; i < source.length; i++)
-  // {
-  //   *(ptr + (offset++)) = *(source.data + i);
-  // }
 }
 
 static v8::CFunction string_copy_fast(v8::CFunction::Make(StringCopyFast));

@@ -15,38 +15,32 @@
  */
 
 import { Fury } from "../type";
-import { InternalSerializerType, RefFlags } from "../type";
+import { InternalSerializerType } from "../type";
 
 
 export default (fury: Fury) => {
-    const { binaryView, binaryWriter, referenceResolver, writeNullOrRef } = fury;
-    const { writeInt8, writeInt16, writeUInt8, writeInt32, writeBuffer } = binaryWriter;
-    const { readUInt8, readInt32, readBuffer } = binaryView;
-    const { pushReadObject, pushWriteObject } = referenceResolver;
-    
+    const { binaryReader, binaryWriter, referenceResolver } = fury;
+
+    const { uint8: writeUInt8, int32: writeInt32, buffer: writeBuffer } = binaryWriter;
+    const { uint8: readUInt8, int32: readInt32, buffer: readBuffer } = binaryReader;
+    const { pushReadObject } = referenceResolver;
+
     return {
-        read: () => {
+        ...referenceResolver.deref(() => {
             readUInt8(); // isInBand
             const len = readInt32();
             const result = readBuffer(len);
             pushReadObject(result);
             return result
-        },
-        write: (v: Uint8Array) => {
-            if (writeNullOrRef(v)) {
-                return;
-            }
-            writeInt8(RefFlags.RefValueFlag);
-            writeInt16(InternalSerializerType.BINARY);
-            pushWriteObject(v);
+        }),
+        write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.BINARY, (v: Uint8Array) => {
             writeUInt8(1); // is inBand
             writeInt32(v.byteLength);
             writeBuffer(v);
-        },
+        }),
         config: () => {
             return {
                 reserve: 8,
-                refType: true,
             }
         }
     }

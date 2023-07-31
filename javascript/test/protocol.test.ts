@@ -21,14 +21,14 @@ import { describe, expect, test } from '@jest/globals';
 describe('protocol', () => {
     test('should py bin work', () => {
         const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-        const fury = new Fury({ hps });
+        const fury = new Fury({ refTracking: true, hps });
         const { deserialize } = fury.registerSerializer({
             type: InternalSerializerType.FURY_TYPE_TAG,
             options: {
                 tag: "example.ComplexObject",
                 props: {
                     f1: Type.string(),
-                    f2: Type.map(),
+                    f2: Type.map(Type.string(), Type.string()),
                     f3: Type.int8(),
                     f4: Type.int16(),
                     f5: Type.int32(),
@@ -36,7 +36,7 @@ describe('protocol', () => {
                     f7: Type.float(),
                     f8: Type.double(),
                     f9: Type.array(Type.int16()),
-                    f10: Type.map(),
+                    f10: Type.map(Type.int32(), Type.double()),
                 }
             }
         });

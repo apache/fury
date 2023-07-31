@@ -14,42 +14,41 @@
  * limitations under the License.
  */
 
-import { Fury } from "../type";
+import { Fury, LATIN1 } from "../type";
 import { InternalSerializerType, RefFlags } from "../type";
 
 
 
 export default (fury: Fury) => {
-    const { binaryView, binaryWriter, writeNull } = fury;
-    const { writeInt8, writeInt16, writeStringOfVarInt32 } = binaryWriter
-    const { readVarInt32, readStringUtf8 } = binaryView;
+    const { binaryReader, binaryWriter, referenceResolver } = fury;
+    const { stringOfVarInt32: writeStringOfVarInt32, int8 } = binaryWriter
+    const { varInt32: readVarInt32, stringUtf8: readStringUtf8, uint8: readUInt8, stringLatin1, } = binaryReader;
 
     return {
-        read: () => {
-            // todo support latin1
-            //const type = readUInt8();
+        ...referenceResolver.deref(fury.config.useLatin1 ? () => {
+            const type = readUInt8();
+            const len = readVarInt32();
+            const result = type === LATIN1 ? stringLatin1(len) : readStringUtf8(len);
+            return result;
+        } : () => {
             const len = readVarInt32();
             const result = readStringUtf8(len);
             return result;
-        },
-        write: (v: string) => {
-            if (writeNull(v)) {
-                return;
-            }
-            writeInt8(RefFlags.NotNullValueFlag);
-            writeInt16(InternalSerializerType.STRING);
+        }),
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.STRING, (v: string) => {
             writeStringOfVarInt32(v);
-        },
-        writeWithOutType: (v: string) => {
-            if (writeNull(v)) {
+        }),
+        writeWithoutType: (v: string) => {
+            if (v === null) {
+                binaryWriter.int8(RefFlags.NullFlag);
                 return;
             }
-            writeInt8(RefFlags.NotNullValueFlag);
+            int8(RefFlags.NotNullValueFlag);
             writeStringOfVarInt32(v);
         },
         config: () => {
             return {
-                reserve: 7,
+                reserve: 8,
             }
         }
     }

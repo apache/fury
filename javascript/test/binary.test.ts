@@ -32,13 +32,13 @@ describe('binary', () => {
             }
         };
         const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-        const fury = new Fury({ hps });    
+        const fury = new Fury({ refTracking: true, hps });    
         const serializer = fury.registerSerializer(description).serializer;
         const input = fury.serialize({ a: new Uint8Array([1, 2, 3]) }, serializer);
         const result = fury.deserialize(
             input
         );
-        expect(result).toEqual({ a: new Uint8Array([1, 2, 3]) })
+        expect(result).toEqual({ a: Buffer.from([1, 2, 3]) })
     });
 });
 

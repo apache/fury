@@ -39,7 +39,7 @@ describe('object', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });
+    const fury = new Fury({ refTracking: true, hps });
     const { serialize, deserialize } = fury.registerSerializer(description);
     const input = serialize({ a: { b: "hel" } });
     const result = deserialize(
@@ -74,7 +74,7 @@ describe('object', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });
+    const fury = new Fury({ refTracking: true, hps });
     const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({ a: [{ b: "hel" }] }, serializer);
     const result = fury.deserialize(
@@ -110,7 +110,7 @@ describe('object', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });
+    const fury = new Fury({ refTracking: true, hps });
     const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({ a: { b: "hel" }, a2: { b: "hel2" } }, serializer);
     const result = fury.deserialize(
@@ -146,7 +146,7 @@ describe('object', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });
+    const fury = new Fury({ refTracking: true, hps });
     const serialize = fury.registerSerializer(description).serializer;
     const param: any = {};
     param.a = { b: "hel" };
@@ -169,7 +169,7 @@ describe('object', () => {
       }),
     })
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });
+    const fury = new Fury({ refTracking: true, hps });
     const { serialize, deserialize } = fury.registerSerializer(description);
     const input = serialize({ a: { b: "hel", c: [{ d: "hello" }] } });
     const result = deserialize(

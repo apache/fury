@@ -16,7 +16,10 @@
 
 import { InternalSerializerType, MaxInt32, RefFlags, Fury } from './type';
 import { replaceBackslashAndQuote, safePropAccessor, safePropName } from './util';
-
+import mapSerializer from './internalSerializer/map';
+import setSerializer from './internalSerializer/set';
+import anySerializer from './internalSerializer/any';
+import { arraySerializer } from './internalSerializer/array';
 
 export interface TypeDescription {
     type: InternalSerializerType,
@@ -36,13 +39,26 @@ export interface ArrayTypeDescription extends TypeDescription {
     }
 }
 
+export interface SetTypeDescription extends TypeDescription {
+    options: {
+        key: TypeDescription;
+    }
+}
+
+export interface MapTypeDescription extends TypeDescription {
+    options: {
+        key: TypeDescription;
+        value: TypeDescription
+    }
+}
+
 export function Cast<T1 extends TypeDescription>(p: TypeDescription) {
     return p as unknown as T1;
 }
 
 
 
-const BASIC_TYPES  = [
+const BASIC_TYPES = [
     InternalSerializerType.BOOL,
     InternalSerializerType.INT8,
     InternalSerializerType.INT16,
@@ -80,7 +96,7 @@ export const computeStructHash = (description: TypeDescription) => {
     return hash;
 }
 
-function typeHandlerDeclaration(readOrWrite: 'read' | 'write') {
+function typeHandlerDeclaration(fury: Fury) {
     let declarations: string[] = [];
     let count = 0;
     const exists = new Set();
@@ -94,33 +110,54 @@ function typeHandlerDeclaration(readOrWrite: 'read' | 'write') {
     }
 
     const genBuiltinDeclaration = (type: number) => {
-        const name = `type_${type}_${readOrWrite}`;
-        if (readOrWrite === 'read') {
-            return addDeclar(name, `
-                const ${name} = buildRefTypeReader(classResolver.getSerializerById(${type}).read)`);
-        }
+        const name = `type_${type}`;
         return addDeclar(name, `
-        const ${name} = classResolver.getSerializerById(${type}).${readOrWrite};`)
+        const ${name} = classResolver.getSerializerById(${type})`);
     }
+
     const genTagDeclaration = (tag: string) => {
-        const name = `tag_${count++}_${readOrWrite}`;
-        if (readOrWrite === 'read') {
+        const name = `tag_${count++}`;
+        return addDeclar(name, `
+        const ${name} = classResolver.getSerializerByTag("${replaceBackslashAndQuote(tag)}")`);
+    }
+
+    const genDeclaration = (description: TypeDescription): string => {
+        if (description.type === InternalSerializerType.FURY_TYPE_TAG) {
+            genSerializer(fury, description);
+            return genTagDeclaration(Cast<ObjectTypeDescription>(description).options.tag);
+        }
+        if (description.type === InternalSerializerType.ARRAY) {
+            const inner = genDeclaration(Cast<ArrayTypeDescription>(description).options.inner);
+            const name = `array_${inner}`;
             return addDeclar(name, `
-            const ${name} = (serializer => buildRefTypeReader(() => {
-                return serializer.read();
-            }))(classResolver.getSerializerByTag("${replaceBackslashAndQuote(tag)}"))`)
-        } else {
-            return addDeclar(name, `
-            const ${name} = classResolver.getSerializerByTag("${replaceBackslashAndQuote(tag)}");`
+                const ${name} = arraySerializer(fury, ${inner})`
             )
         }
+        if (description.type === InternalSerializerType.FURY_SET) {
+            const inner = genDeclaration(Cast<SetTypeDescription>(description).options.key);
+            const name = `set_${inner}`;
+            return addDeclar(name, `
+                const ${name} = setSerializer(fury, ${inner})`
+            )
+        }
+        if (description.type === InternalSerializerType.MAP) {
+            const key = genDeclaration(Cast<MapTypeDescription>(description).options.key);
+            const value = genDeclaration(Cast<MapTypeDescription>(description).options.value);
 
+            const name = `map_${key}_${value}`;
+            return addDeclar(name, `
+                const ${name} = mapSerializer(fury, ${key}, ${value})`
+            )
+        }
+        return genBuiltinDeclaration(description.type);
     }
     return {
-        genBuiltinDeclaration,
-        genTagDeclaration,
+        genDeclaration,
         finish() {
-            const result = declarations;
+            const result = {
+                declarations,
+                names: [...exists.values()]
+            };
             declarations = [];
             exists.clear();
             return result;
@@ -128,151 +165,72 @@ function typeHandlerDeclaration(readOrWrite: 'read' | 'write') {
     }
 }
 
-export const genReadSerializer = (fury: Fury, description: TypeDescription, stack: string[] = []) => {
-    const { genBuiltinDeclaration, genTagDeclaration, finish } = typeHandlerDeclaration('read');
-    const descriptionReadExpression = (key: string, description: TypeDescription): string => {
-        if (description.type === InternalSerializerType.ARRAY) {
-            const readFunction = genBuiltinDeclaration(description.type);
-            return `
-            {
-                const array = ${readFunction}();
-                if (array) {
-                    for (let i = 0; i < array.length; i++) {
-                        ${descriptionReadExpression('array[i]', Cast<ArrayTypeDescription>(description).options!.inner)}
-                    }
-                }
-                ${key} = array;
-            }
-            `
-        }
-        if (description.type === InternalSerializerType.FURY_TYPE_TAG) {
-            genReadSerializer(fury, description, stack);
-            return `${key} = ${genTagDeclaration(Cast<ObjectTypeDescription>(description).options!.tag!)}();`;
-        }
-        return `${key} = ${genBuiltinDeclaration(description.type)}();`;
-    }
-    const genEntry = (description: TypeDescription) => {
-        return `
-            {
-                // relation tag: ${Cast<ObjectTypeDescription>(description).options?.tag}
-                const result = {
-                    ${Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key]) => {
-            return `${safePropName(key)}: null,`
-        }).join('\n')}
-                };
-                pushReadObject(result);
-                ${Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key, value]) => {
-            return descriptionReadExpression(`result${safePropAccessor(key)}`, value);
-        }).join('\n')}
-                return result;
-            }
-        `;
-    }
-    if (description.type !== InternalSerializerType.FURY_TYPE_TAG || !Cast<ObjectTypeDescription>(description).options?.tag) {
-        throw new Error('root type should be object')
-    }
-    const tag = Cast<ObjectTypeDescription>(description).options!.tag;
-    if (fury.classResolver.existsTagReadSerializer(tag) || stack.includes(tag)) {
+export const genSerializer = (fury: Fury, description: TypeDescription) => {
+    const { genDeclaration, finish } = typeHandlerDeclaration(fury);
+    const tag = Cast<ObjectTypeDescription>(description).options?.tag;
+    if (fury.classResolver.getSerializerByTag(tag)) {
         return;
     }
-    stack.push(tag);
-    const entry = genEntry(description);
+    fury.classResolver.registerSerializerByTag(tag, anySerializer(fury));
+    const tagByteLen = Buffer.from(tag).byteLength;
     const expectHash = computeStructHash(description);
-    fury.classResolver.registerReadSerializerByTag(tag, new Function(
+    const read = `
+    // relation tag: ${Cast<ObjectTypeDescription>(description).options?.tag}
+    const result = {
+        ${Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key]) => {
+        return `${safePropName(key)}: null`
+    }).join(',\n')}
+    };
+    pushReadObject(result);
+    ${Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key, value]) => {
+        return `result${safePropAccessor(key)} = ${genDeclaration(value)}.read()`;
+    }).join(';\n')
+        }
+    return result;
+`;
+    const write = Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key, value]) => {
+        return `${genDeclaration(value)}.write(v${safePropAccessor(key)})`;
+    }).join(';\n');
+    const { names, declarations} = finish();
+    return fury.classResolver.registerSerializerByTag(tag, new Function(
         `
-    return function(fury) {
-        const { referenceResolver, binaryView, classResolver, skipType, buildRefTypeReader } = fury; 
-        const { pushReadObject, readRefFlag, getReadObjectByRefId } = referenceResolver;
-
-        ${finish().join('\n')}
-        return function() {
-            const hash = binaryView.readInt32();
+return function (fury, scope) {
+    const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
+    const { writeNullOrRef, pushReadObject } = referenceResolver;
+    const { RefFlags, InternalSerializerType, arraySerializer, mapSerializer, setSerializer } = scope;
+        ${declarations.join('')}
+    const tagBuffer = Buffer.from("${replaceBackslashAndQuote(tag)}");
+    const bufferLen = ${tagByteLen};
+    const reserves = ${names.map(x => `${x}.config().reserve`).join(' + ')};
+    return {
+        ...referenceResolver.deref(() => {
+            const hash = binaryReader.int32();
             if (hash !== ${expectHash}) {
                 throw new Error("validate hash failed: ${replaceBackslashAndQuote(tag)}. expect ${expectHash}, but got" + hash);
             }
-            ${entry};
-        }
-    }
-`
-    )()(fury));
-}
-
-
-
-export const genWriteSerializer = (fury: Fury, description: TypeDescription, stack: string[] = []) => {
-    const { genBuiltinDeclaration, genTagDeclaration, finish } = typeHandlerDeclaration('write');
-    const genTagWriterStmt = (v: string, description: TypeDescription): string => {
-        if (description.type === InternalSerializerType.ARRAY) {
-            const inner = genTagWriterStmt("item", Cast<ArrayTypeDescription>(description).options?.inner);
-            return `
-            ${genBuiltinDeclaration(description.type)}(${v});
-            for (const item of ${v}) {
-                        ${inner}
+            {
+                ${read}
             }
-            `
-        }
-        if (description.type === InternalSerializerType.FURY_TYPE_TAG) {
-            const tag = Cast<ObjectTypeDescription>(description).options?.tag;
-            genWriteSerializer(fury, description, stack);
-            return `
-            ${genTagDeclaration(tag!)}.write(${v});`
-
-        }
-        return `
-            ${genBuiltinDeclaration(description.type)}(${v});`
-    }
-    const genEntry = (description: TypeDescription) => {
-        return Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key, value]) => {
-            return `${genTagWriterStmt(`v${safePropAccessor(key)}`, value)}`
-        }).join('');
-    }
-    if (description.type !== InternalSerializerType.FURY_TYPE_TAG || !Cast<ObjectTypeDescription>(description).options?.tag) {
-        throw new Error('root type should be object')
-    }
-    const tag = Cast<ObjectTypeDescription>(description).options?.tag;
-    if (fury.classResolver.existsTagWriteSerializer(tag) || stack.includes(tag)) {
-        return;
-    }
-    stack.push(tag);
-    const entry = genEntry(description);
-    const tagByteLen = Buffer.from(tag).byteLength;
-    fury.classResolver.registerWriteSerializerByTag(tag, new Function(
-        `
-    return function(fury, enums) {
-        const { referenceResolver, binaryWriter, classResolver, writeNullOrRef } = fury; 
-        const { pushWriteObject } = referenceResolver;
-        ${finish().join('')}
-        const tagBuffer = Buffer.from("${replaceBackslashAndQuote(tag)}");
-        const bufferLen = ${tagByteLen};
-        return function(v) {
-            // relation tag: ${tag}
-            const { RefFlags, InternalSerializerType } = enums;
-            // is ref
-            if (writeNullOrRef(v)) {
-                return;
-            }
-            binaryWriter.reserves(${Object.values(Cast<ObjectTypeDescription>(description).options.props).map(x => {
-            const serializer = fury.classResolver.getSerializerById(x.type);
-            if (serializer && serializer.config) {
-                return serializer.config().reserve;
-            }
-            return 0;
-        }).reduce((accumulator, currentValue) => accumulator + currentValue, 0)});
-            // write ref ant typeId
-            binaryWriter.writeInt8(RefFlags.RefValueFlag);
-            pushWriteObject(v);
-            binaryWriter.writeInt16(InternalSerializerType.FURY_TYPE_TAG);
+        }),
+        write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_TYPE_TAG, (v) => {
             classResolver.writeTag(binaryWriter, "${replaceBackslashAndQuote(tag)}", tagBuffer, bufferLen);
-            binaryWriter.writeInt32(${computeStructHash(description)});
-            ${entry}
+            binaryWriter.int32(${computeStructHash(description)});
+            binaryWriter.reserve(reserves);
+            ${write}
+        }),
+        config() {
+            return {
+                reserve: ${tagByteLen + 8},
+            }
         }
     }
+}
 `
     )()(fury, {
         InternalSerializerType,
-        RefFlags
-    }), {
-        reserve: tagByteLen + 7,
-        refType: true
-    });
+        RefFlags,
+        arraySerializer,
+        mapSerializer,
+        setSerializer,
+    }));
 }

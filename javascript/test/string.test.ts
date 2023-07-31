@@ -20,7 +20,7 @@ import {describe, expect, test} from '@jest/globals';
 describe('string', () => {
   test('should string work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const input = fury.serialize("123")
     const result = fury.deserialize(
         input

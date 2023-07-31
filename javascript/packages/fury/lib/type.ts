@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-import { BinaryReader, BinaryWriter } from "./io";
+import type { BinaryWriter } from "./writer";
+import type { BinaryReader } from "./reader";
 import type FuryFunc from "./fury";
 
 export type Fury = ReturnType<typeof FuryFunc>;
 export type BinaryWriter = ReturnType<typeof BinaryWriter>
 export type BinaryReader = ReturnType<typeof BinaryReader>
-export interface Hps {
-    isLatin1: (str: string) => boolean
-    stringCopy: (str: string, dist: Uint8Array, offset: number) => void
-}
+
 
 export enum InternalSerializerType{
     STRING = 13,
@@ -72,7 +70,6 @@ export type SerializerWrite<T = any> = (
 export type SerializerConfig = (
 ) => {
 	reserve: number,
-	refType?: boolean,
 }
 
 
@@ -80,6 +77,8 @@ export type SerializerConfig = (
 export type Serializer<T = any, T2 = any> = {
 	read: SerializerRead<T2>, 
 	write: SerializerWrite<T>,
+	readWithoutType?: SerializerRead<T2>, 
+	writeWithoutType?: SerializerWrite<T>,
 	config: SerializerConfig,
 };
 
@@ -99,3 +98,15 @@ export enum RefFlags {
 export const MaxInt32  = 2147483647;
 export const LATIN1 = 0;
 export const UTF8 = 1;
+
+export interface Hps {
+    isLatin1: (str: string) => boolean
+    stringCopy: (str: string, dist: Uint8Array, offset: number) => void
+}
+
+export interface Config {
+	hps?: Hps,
+	refTracking?: boolean,
+	useLatin1?: boolean,
+	useSliceString?: boolean,
+}

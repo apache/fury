@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-
-
 export const utf8Encoder = new TextEncoder();
 
 
