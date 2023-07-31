@@ -22,7 +22,7 @@ package io.fury.collection;
 import java.util.Arrays;
 
 // Derived from
-// https://github.com/EsotericSoftware/kryo/blob/135df69526615bb3f6b34846e58ba3fec3b631c3/src/com/esotericsoftware/kryo/util/LongMap.java.
+// https://github.com/EsotericSoftware/kryo/blob/135df69526615bb3f6b34846e58ba3fec3b631c3/src/com/esotericsoftware/kryo/util/IntMap.java.
 
 /**
  * An unordered map where the keys are unboxed longs and values are objects. No allocation is done

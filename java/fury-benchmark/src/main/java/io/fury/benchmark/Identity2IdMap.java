@@ -22,6 +22,7 @@ import java.util.List;
 
 // Drived from
 // https://github.com/RuedigerMoeller/fast-serialization/blob/e8da5591daa09452791dcd992ea4f83b20937be7/src/main/java/org/nustaq/serialization/util/FSTIdentity2IdMap.java.
+// Modified to include JIT inline optimization.
 public class Identity2IdMap {
   private static final int RESERVE = 4;
   private static final int MAX_DEPTH = 4;
