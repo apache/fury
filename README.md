@@ -79,33 +79,6 @@ See [benchmarks](https://github.com/alipay/fury/tree/main/docs/benchmarks) for m
 
 ## Installation
 ### Java
-Nightly snapshot:
-```xml
-<repositories>
-  <repository>
-    <id>sonatype</id>
-    <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-    <releases>
-      <enabled>false</enabled>
-    </releases>
-    <snapshots>
-      <enabled>true</enabled>
-    </snapshots>
-  </repository>
-</repositories>
-<dependency>
-  <groupId>org.furyio</groupId>
-  <artifactId>fury-core</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
-</dependency>
-<!-- row/arrow format support -->
-<!-- <dependency>
-  <groupId>org.furyio</groupId>
-  <artifactId>fury-format</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
-</dependency> -->
-```
-Release version:
 ```xml
 <dependency>
   <groupId>org.furyio</groupId>
