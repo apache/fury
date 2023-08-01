@@ -55,22 +55,6 @@ export function Cast<T1 extends TypeDescription>(p: TypeDescription) {
     return p as unknown as T1;
 }
 
-
-
-const BASIC_TYPES = [
-    InternalSerializerType.BOOL,
-    InternalSerializerType.INT8,
-    InternalSerializerType.INT16,
-    InternalSerializerType.INT32,
-    InternalSerializerType.INT64,
-    InternalSerializerType.FLOAT,
-    InternalSerializerType.DOUBLE,
-    InternalSerializerType.STRING,
-    InternalSerializerType.BINARY,
-    InternalSerializerType.DATE,
-    InternalSerializerType.TIMESTAMP,
-];
-
 function computeFieldHash(hash: number, id: number): number {
     let newHash = (hash) * 31 + (id);
     while (newHash >= MaxInt32) {
@@ -79,18 +63,32 @@ function computeFieldHash(hash: number, id: number): number {
     return newHash
 }
 
+export const computeStringHash = (str: string) => {
+    const bytes = new TextEncoder().encode(str);
+    let hash = 17
+    bytes.forEach(b => {
+        hash = hash * 31 + b
+        while (hash >= MaxInt32) {
+            hash = Math.floor(hash / 7)
+        }
+    });
+    return hash;
+}
+
 export const computeStructHash = (description: TypeDescription) => {
     if (description.type !== InternalSerializerType.FURY_TYPE_TAG) {
         throw new Error('only object is hashable');
     }
     let hash = 17;
     for (const [, value] of Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort()) {
+        let id = value.type;
         if (value.type === InternalSerializerType.ARRAY || value.type === InternalSerializerType.MAP) {
-            hash = computeFieldHash(hash, value.type);
+            // TODO add map key&value type into schema hash
+            id = value.type;
+        } else if (value.type === InternalSerializerType.FURY_TYPE_TAG) {
+            id = computeStringHash(Cast<ObjectTypeDescription>(value).options.tag);
         }
-        if (BASIC_TYPES.includes(value.type)) {
-            hash = computeFieldHash(hash, value.type);
-        }
+        hash = computeFieldHash(hash, id);
     }
     return hash;
 }

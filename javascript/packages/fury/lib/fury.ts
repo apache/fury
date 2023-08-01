@@ -39,7 +39,7 @@ export default (config: Config) => {
     classResolver.init(fury);
 
 
-    function deserialize<T = any>(bytes: Buffer): T | null {
+    function deserialize<T = any>(bytes: Buffer, serializer?: Serializer): T | null {
         referenceResolver.reset();
         classResolver.reset();
         binaryReader.reset(bytes);
@@ -62,7 +62,11 @@ export default (config: Config) => {
         }
         binaryReader.int32(); // native object offset. should skip.  javascript support cross mode only
         binaryReader.int32(); // native object size. should skip.
-        return classResolver.getSerializerById(InternalSerializerType.ANY).read();
+        if (serializer) {
+            return serializer.read();
+        } else {
+            return classResolver.getSerializerById(InternalSerializerType.ANY).read();
+        }
     }
 
     function serialize<T = any>(data: T, serializer?: Serializer) {
@@ -77,13 +81,15 @@ export default (config: Config) => {
         bitmap |= ConfigFlags.isCrossLanguageFlag
         binaryWriter.uint8(bitmap);
         binaryWriter.uint8(4); // todo: replace with javascript
-        binaryWriter.skip(4) // preserve 4-byte for nativeObjects start offsets.
-        binaryWriter.skip(4) // preserve 4-byte for nativeObjects length.
+        const cursor = binaryWriter.getCursor();
+        binaryWriter.skip(4); // preserve 4-byte for nativeObjects start offsets.
+        binaryWriter.uint32(0); // nativeObjects length.
         if (serializer) {
             serializer.write(data);
         } else {
             classResolver.getSerializerById(InternalSerializerType.ANY).write(data);
         }
+        binaryWriter.setUint32Position(cursor, binaryWriter.getCursor()); // nativeObjects start offsets;
         return binaryWriter.dump();
     }
     return fury;
