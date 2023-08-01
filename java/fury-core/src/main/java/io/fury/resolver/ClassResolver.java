@@ -1023,11 +1023,14 @@ public class ClassResolver {
     return Serializers.newSerializer(fury, cls, serializerClass);
   }
 
-  private static boolean isSecure(IdentityMap<Class<?>, Short> registeredClasses, Class<?> cls) {
+  private boolean isSecure(IdentityMap<Class<?>, Short> registeredClasses, Class<?> cls) {
     if (BlackList.getDefaultBlackList().contains(cls.getName())) {
       return false;
     }
     if (registeredClasses.containsKey(cls)) {
+      return true;
+    }
+    if (fury.getLanguage() == Language.XLANG && getSerializer(cls, false) != null) {
       return true;
     }
     if (cls.isArray()) {
