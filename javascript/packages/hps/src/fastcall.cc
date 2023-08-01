@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-#include <nan.h>
 #include "v8-fast-api-calls.h"
-
+#include <nan.h>
 
 void IsLatin1Slow(const v8::FunctionCallbackInfo<v8::Value> &info) {
   v8::Local<v8::String> input = info[0].As<v8::String>();
