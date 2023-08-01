@@ -22,13 +22,6 @@ import { InternalSerializerType, RefFlags } from "../type";
 
 export default (fury: Fury) => {
     const { binaryReader, binaryWriter, referenceResolver, classResolver } = fury;
-    const { write: writeInt64, config: int64Config } = classResolver.getSerializerById(InternalSerializerType.INT64);
-    const { write: writeBool, config: boolConfig } = classResolver.getSerializerById(InternalSerializerType.BOOL);
-    const { write: stringWrite, config: stringConfig } = classResolver.getSerializerById(InternalSerializerType.STRING);
-    const { write: arrayWrite, config: arrayConfig } = classResolver.getSerializerById(InternalSerializerType.ARRAY);
-    const { write: mapWrite, config: mapConfig } = classResolver.getSerializerById(InternalSerializerType.MAP);
-    const { write: setWrite, config: setConfig } = classResolver.getSerializerById(InternalSerializerType.FURY_SET);
-    const { write: timestampWrite, config: timestampConfig } = classResolver.getSerializerById(InternalSerializerType.TIMESTAMP);
 
 
     function readSerializer(cursor: number) {
@@ -63,6 +56,14 @@ export default (fury: Fury) => {
             }
         },
         write: (v: any) => {
+            const { write: writeInt64, config: int64Config } = classResolver.getSerializerById(InternalSerializerType.INT64);
+            const { write: writeBool, config: boolConfig } = classResolver.getSerializerById(InternalSerializerType.BOOL);
+            const { write: stringWrite, config: stringConfig } = classResolver.getSerializerById(InternalSerializerType.STRING);
+            const { write: arrayWrite, config: arrayConfig } = classResolver.getSerializerById(InternalSerializerType.ARRAY);
+            const { write: mapWrite, config: mapConfig } = classResolver.getSerializerById(InternalSerializerType.MAP);
+            const { write: setWrite, config: setConfig } = classResolver.getSerializerById(InternalSerializerType.FURY_SET);
+            const { write: timestampWrite, config: timestampConfig } = classResolver.getSerializerById(InternalSerializerType.TIMESTAMP);
+        
             // NullFlag
             if (v === null || v === undefined) {
                 binaryWriter.reserve(1);

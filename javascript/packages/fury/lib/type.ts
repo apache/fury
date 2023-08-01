@@ -50,6 +50,7 @@ export enum InternalSerializerType{
 	FURY_PRIMITIVE_FLOAT_ARRAY = 262,
 	FURY_PRIMITIVE_DOUBLE_ARRAY = 263,
 	FURY_STRING_ARRAY = 264,
+	ANY = -1,
 }
 
 
