@@ -389,6 +389,7 @@ public class ClassResolver {
           "Java serialization should register class by "
               + "Fury#register(Class) or Fury.register(Class<?>, Short)");
     }
+    register(cls);
     Preconditions.checkArgument(!typeTagToClassXLangMap.containsKey(typeTag));
     addSerializer(cls, new StructSerializer<>(fury, cls, typeTag));
   }
