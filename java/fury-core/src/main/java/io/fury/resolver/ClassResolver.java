@@ -389,6 +389,7 @@ public class ClassResolver {
           "Java serialization should register class by "
               + "Fury#register(Class) or Fury.register(Class<?>, Short)");
     }
+    register(cls);
     Preconditions.checkArgument(!typeTagToClassXLangMap.containsKey(typeTag));
     addSerializer(cls, new StructSerializer<>(fury, cls, typeTag));
   }
@@ -1023,14 +1024,11 @@ public class ClassResolver {
     return Serializers.newSerializer(fury, cls, serializerClass);
   }
 
-  private boolean isSecure(IdentityMap<Class<?>, Short> registeredClasses, Class<?> cls) {
+  private static boolean isSecure(IdentityMap<Class<?>, Short> registeredClasses, Class<?> cls) {
     if (BlackList.getDefaultBlackList().contains(cls.getName())) {
       return false;
     }
     if (registeredClasses.containsKey(cls)) {
-      return true;
-    }
-    if (fury.getLanguage() == Language.XLANG && getSerializer(cls, false) != null) {
       return true;
     }
     if (cls.isArray()) {
