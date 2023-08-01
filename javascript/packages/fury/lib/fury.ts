@@ -18,8 +18,7 @@ import ClassResolver from './classResolver';
 import { BinaryWriter } from './writer';
 import { BinaryReader } from './reader';
 import { ReferenceResolver } from './referenceResolver';
-import { ConfigFlags, Serializer, Config } from './type';
-import anySerializer from './internalSerializer/any';
+import { ConfigFlags, Serializer, Config, InternalSerializerType } from './type';
 
 export default (config: Config) => {
     const binaryReader = BinaryReader(config);
@@ -63,7 +62,7 @@ export default (config: Config) => {
         }
         binaryReader.int32(); // native object offset. should skip.  javascript support cross mode only
         binaryReader.int32(); // native object size. should skip.
-        return anySerializer(fury).read();
+        return classResolver.getSerializerById(InternalSerializerType.ANY).read();
     }
 
     function serialize<T = any>(data: T, serializer?: Serializer) {
@@ -83,7 +82,7 @@ export default (config: Config) => {
         if (serializer) {
             serializer.write(data);
         } else {
-            anySerializer(fury).write(data);
+            classResolver.getSerializerById(InternalSerializerType.ANY).write(data);
         }
         return binaryWriter.dump();
     }

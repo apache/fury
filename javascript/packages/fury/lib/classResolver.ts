@@ -28,27 +28,19 @@ import anySerializer from './internalSerializer/any';
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1
 
-const unreachable = () => {
-    throw new Error('unreachable serializer')
-}
-
-export const unreachableSerializer = () => {
-    return {
-        read: unreachable,
-        write: unreachable
-    }
-}
 export default class SerializerResolver {
-    private internalSerializer: Serializer[] = new Array(300).fill(unreachableSerializer());
+    private internalSerializer: Serializer[] = new Array(300);
     private customSerializer: { [key: string]: Serializer } = {
     };
     private readStringPool: string[] = [];
     private writeStringIndex: string[] = [];
 
     private initInternalSerializer(fury: Fury) {
+        const _anySerializer = anySerializer(fury);
+        this.internalSerializer[InternalSerializerType.ANY] = _anySerializer;
         this.internalSerializer[InternalSerializerType.STRING] = stringSerializer(fury);
-        this.internalSerializer[InternalSerializerType.ARRAY] = arraySerializer(fury, anySerializer(fury));
-        this.internalSerializer[InternalSerializerType.MAP] = mapSerializer(fury, anySerializer(fury), anySerializer(fury));
+        this.internalSerializer[InternalSerializerType.ARRAY] = arraySerializer(fury, _anySerializer);
+        this.internalSerializer[InternalSerializerType.MAP] = mapSerializer(fury, _anySerializer, _anySerializer);
         this.internalSerializer[InternalSerializerType.BOOL] = boolSerializer(fury);
         this.internalSerializer[InternalSerializerType.UINT8] = uInt8Serializer(fury);
         this.internalSerializer[InternalSerializerType.INT8] = int8Serializer(fury);
@@ -90,7 +82,7 @@ export default class SerializerResolver {
         if (this.customSerializer[tag]) {
             Object.assign(this.customSerializer[tag], serializer);
         } else {
-            this.customSerializer[tag] = serializer;
+            this.customSerializer[tag] = {...serializer};
         }
         return this.customSerializer[tag]
     }

@@ -18,7 +18,6 @@ import { InternalSerializerType, MaxInt32, RefFlags, Fury } from './type';
 import { replaceBackslashAndQuote, safePropAccessor, safePropName } from './util';
 import mapSerializer from './internalSerializer/map';
 import setSerializer from './internalSerializer/set';
-import anySerializer from './internalSerializer/any';
 import { arraySerializer } from './internalSerializer/array';
 
 export interface TypeDescription {
@@ -99,18 +98,19 @@ export const computeStructHash = (description: TypeDescription) => {
 function typeHandlerDeclaration(fury: Fury) {
     let declarations: string[] = [];
     let count = 0;
-    const exists = new Set();
-    function addDeclar(name: string, declar: string) {
-        if (exists.has(name)) {
-            return name;
+    const exists = new Map<string, string>();
+    function addDeclar(name: string, declar: string, uniqueKey?: string) {
+        const unique = uniqueKey || name;
+        if (exists.has(unique)) {
+            return exists.get(unique)!;
         }
         declarations.push(declar);
-        exists.add(name);
+        exists.set(unique, name);
         return name;
     }
 
     const genBuiltinDeclaration = (type: number) => {
-        const name = `type_${type}`;
+        const name = `type_${type}`.replace('-', '_');
         return addDeclar(name, `
         const ${name} = classResolver.getSerializerById(${type})`);
     }
@@ -118,7 +118,7 @@ function typeHandlerDeclaration(fury: Fury) {
     const genTagDeclaration = (tag: string) => {
         const name = `tag_${count++}`;
         return addDeclar(name, `
-        const ${name} = classResolver.getSerializerByTag("${replaceBackslashAndQuote(tag)}")`);
+        const ${name} = classResolver.getSerializerByTag("${replaceBackslashAndQuote(tag)}")`, tag);
     }
 
     const genDeclaration = (description: TypeDescription): string => {
@@ -171,7 +171,8 @@ export const genSerializer = (fury: Fury, description: TypeDescription) => {
     if (fury.classResolver.getSerializerByTag(tag)) {
         return;
     }
-    fury.classResolver.registerSerializerByTag(tag, anySerializer(fury));
+    
+    fury.classResolver.registerSerializerByTag(tag, fury.classResolver.getSerializerById(InternalSerializerType.ANY));
     const tagByteLen = Buffer.from(tag).byteLength;
     const expectHash = computeStructHash(description);
     const read = `

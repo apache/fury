@@ -19,6 +19,27 @@ import { describe, expect, test } from '@jest/globals';
 
 
 describe('protocol', () => {
+    test('should polymorphic work', () => {
+        const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+        const fury = new Fury({ refTracking: true, hps });
+        const { serialize, deserialize } = fury.registerSerializer(Type.object("example.foo", {
+            foo: Type.any(),
+            bar: Type.any(),
+            map: Type.map(Type.any(), Type.any()),
+            set: Type.set(Type.any()),
+            list: Type.array(Type.any()),
+        }));
+        const obj = {
+            foo: "123",
+            bar: 123,
+            map: new Map([["hello", 1], ["world", 2]]),
+            set: new Set([1, 2, "123"]),
+            list: ["123", 123, true]
+        };
+        const bf = serialize(obj);
+        const result = deserialize(bf);
+        expect(result).toEqual(obj);
+    });
     test('should py bin work', () => {
         const hps = process.env.enableHps ? require('@furyjs/hps') : null;
         const fury = new Fury({ refTracking: true, hps });
@@ -28,7 +49,7 @@ describe('protocol', () => {
                 tag: "example.ComplexObject",
                 props: {
                     f1: Type.string(),
-                    f2: Type.map(Type.string(), Type.string()),
+                    f2: Type.map(Type.string(), Type.any()),
                     f3: Type.int8(),
                     f4: Type.int16(),
                     f5: Type.int32(),
@@ -57,7 +78,18 @@ describe('protocol', () => {
             253,
         ]));
 
-        console.log(obj);
+        expect(obj).toEqual({
+            f1: "str",
+            f10: new Map([[1, 1 / 3], [100, 2 / 7]]),
+            f2: new Map([['k1', -1], ['k2', 2]]),
+            f3: 2**7 - 1,
+            f4: 2**15 - 1,
+            f5: 2**31 - 1,
+            f6: 2**63 - 1,
+            f7: 1 / 2,
+            f8: 2 / 3,
+            f9: [1, 2]
+        })
     });
 });
 
