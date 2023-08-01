@@ -15,4 +15,4 @@ Fury provides a **class registration secure option** and **enabled by default** 
 
 **Do not disable class registration unless you can ensure your environment is indeed secure. We are not responsible for security risks if you disable this option**.
 
-When this option is disabled, a **class blacklist** is used to mitigate security risks. The blacklist is **limited, incomplete, not actively updated, maintained by community**, and can't prevent all risks. We'd like to accept blacklist updates, but we do not assume any responsibility for this.
+When this option is disabled, a **class blacklist** is used to mitigate security risks. The blacklist is **limited, incomplete, not actively updated, maintained by community**, and can't prevent all risks. We'd like to accept blacklist updates, but we do not assume any responsibility for blacklist mode security.
