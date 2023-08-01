@@ -265,7 +265,7 @@ export default class {
                 return this.fury.serialize(data, serializer);
             },
             deserialize: (bytes: Buffer) => {
-                return this.fury.deserialize(bytes) as ToRecordType<T>;
+                return this.fury.deserialize(bytes, serializer) as ToRecordType<T>;
             },
         };
     }

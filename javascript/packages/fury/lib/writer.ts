@@ -195,7 +195,7 @@ export const BinaryWriter = (config: Config) => {
     if (isLatin1) {
       if (len < 40) {
         for (let index = 0; index < v.length; index++) {
-          arrayBuffer[cursor + 1] = v.charCodeAt(index);
+          arrayBuffer[cursor + index] = v.charCodeAt(index);
         }
       } else {
         (arrayBuffer as any).latin1Write(v, cursor);
@@ -262,6 +262,14 @@ export const BinaryWriter = (config: Config) => {
     return result;
   }
 
+  function getCursor() {
+    return cursor;
+  }
+
+  function setUint32Position(offset: number, v: number) {
+    dataView.setUint32(offset, v, true);
+  }
+
   return {
     skip,
     reset,
@@ -284,5 +292,7 @@ export const BinaryWriter = (config: Config) => {
     int64,
     uint32,
     int32,
+    getCursor,
+    setUint32Position,
   };
 };
