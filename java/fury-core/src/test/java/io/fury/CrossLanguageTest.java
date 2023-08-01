@@ -709,4 +709,27 @@ public class CrossLanguageTest {
       Assert.assertEquals(data.get(i), newObj.get(i));
     }
   }
+
+  @Data
+  static class ArrayStruct {
+    ArrayField[] f1;
+  }
+
+  @Data
+  static class ArrayField {
+    public String a;
+  }
+
+  @Test
+  public void testStructArrayField() {
+    Fury fury = Fury.builder().withLanguage(Language.XLANG).requireClassRegistration(true).build();
+    fury.register(ArrayStruct.class, "example.bar");
+    fury.register(ArrayField.class, "example.foo");
+
+    ArrayField a = new ArrayField();
+    a.a = "123";
+    ArrayStruct struct = new ArrayStruct();
+    struct.f1 = new ArrayField[] {a};
+    Assert.assertEquals(serDe(fury, struct), struct);
+  }
 }
