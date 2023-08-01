@@ -19,16 +19,18 @@ import { InternalSerializerType, RefFlags } from "../type";
 
 
 export default (fury: Fury) => {
-    const { binaryView, binaryWriter } = fury;
-    const { readUInt8 } = binaryView;
-    const { writeInt8, writeInt16, writeUInt8 } = binaryWriter;
+    const { binaryReader, binaryWriter, referenceResolver } = fury;
+    const { uint8: readUInt8 } = binaryReader;
+    const { int8: writeInt8, uint8: writeUInt8 } = binaryWriter;
     return {
-        read: () => {
+        ...referenceResolver.deref(() => {
             return readUInt8() === 0 ? false : true
-        },
-        write: (v: boolean) => {
+        }),
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.BOOL, (v: boolean) => {
+            writeUInt8(v ? 1 : 0)
+        }),
+        writeWithoutType: (v: boolean) => {
             writeInt8(RefFlags.NotNullValueFlag);
-            writeInt16(InternalSerializerType.BOOL);
             writeUInt8(v ? 1 : 0)
         },
         config: () => {

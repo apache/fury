@@ -52,33 +52,7 @@ void StringCopyFast(v8::Local<v8::Value> receiver,
   uint8_t *ptr;
   ab.getStorageIfAligned(&ptr);
   int32_t i = 0;
-
   memcpy(ptr + offset, source.data, source.length);
-
-  // {
-  //   int32_t len = source.length - 7;
-  //   while (i < len)
-  //   {
-  //     *(u_int64_t*)(ptr + offset) = *(u_int64_t*)(source.data + i);
-  //     i += 8;
-  //     offset += 8;
-  //   }
-  // }
-
-  // {
-  //   int32_t len = source.length - 3;
-  //   while (i < len)
-  //   {
-  //     *(u_int32_t*)(ptr + offset) = *(u_int32_t*)(source.data + i);
-  //     i += 4;
-  //     offset += 4;
-  //   }
-  // }
-
-  // for (; i < source.length; i++)
-  // {
-  //   *(ptr + (offset++)) = *(source.data + i);
-  // }
 }
 
 static v8::CFunction string_copy_fast(v8::CFunction::Make(StringCopyFast));

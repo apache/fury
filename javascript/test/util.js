@@ -45,6 +45,25 @@ const mockData2Description = (data, tag) => {
             label: "string",
         }
     }
+    if (data instanceof Set) {
+        return {
+            type: InternalSerializerType.FURY_SET,
+            label: "set",
+            options: {
+                key: mockData2Description([...data.values()][0], tag),
+            }
+        }
+    }
+    if (data instanceof Map) {
+        return {
+            type: InternalSerializerType.MAP,
+            label: "map",
+            options: {
+                key: mockData2Description([...data.keys()][0], tag),
+                value: mockData2Description([...data.values()][0], tag),
+            }
+        }
+    }
     if (typeof data === 'boolean') {
         return {
             type: InternalSerializerType.BOOL,

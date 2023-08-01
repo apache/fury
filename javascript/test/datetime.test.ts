@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-
 import Fury, { TypeDescription, InternalSerializerType } from '@furyjs/fury';
 import {describe, expect, test} from '@jest/globals';
 
 describe('datetime', () => {
   test('should date work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const now = new Date();
     const input = fury.serialize(now);
     const result = fury.deserialize(
@@ -45,7 +44,7 @@ describe('datetime', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const serializer = fury.registerSerializer(description).serializer;
     const d = new Date('2021/10/20 09:13');
     const input = fury.serialize({ a:  d, b: d}, serializer);

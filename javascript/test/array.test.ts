@@ -26,7 +26,7 @@ describe('array', () => {
         a: Type.string()
       }))
     });
-    const fury = new Fury({ hps });
+    const fury = new Fury({ refTracking: true, hps });
     const { serialize, deserialize } = fury.registerSerializer(description);
     const o = { a: "123" };
     expect(deserialize(serialize({ c: [o, o] }))).toEqual({ c: [o, o] })
@@ -59,7 +59,7 @@ describe('array', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps }); const serializer = fury.registerSerializer(description).serializer;
+    const fury = new Fury({ refTracking: true, hps }); const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({
       a: [true, false],
       a2: [1, 2, 3],
@@ -93,7 +93,7 @@ describe('array', () => {
       }
     };
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps }); const serialize = fury.registerSerializer(description).serializer;
+    const fury = new Fury({ refTracking: true, hps }); const serialize = fury.registerSerializer(description).serializer;
     const input = fury.serialize({
       a5: [2.43, 654.4, 55],
     }, serialize);

@@ -14,43 +14,37 @@
  * limitations under the License.
  */
 
-import { Fury } from "../type";
-import { InternalSerializerType, RefFlags } from "../type";
+import { Fury, Serializer } from "../type";
+import { InternalSerializerType } from "../type";
 
 
-export default (fury: Fury) => {
-    const { binaryView, binaryWriter, writeNullOrRef, referenceResolver, write, read } = fury;
-    const { writeInt8, writeInt16, writeVarInt32 } = binaryWriter;
-    const { readVarInt32 } = binaryView;
-
-    const { pushReadObject, pushWriteObject } = referenceResolver;
+export default (fury: Fury, nestedSerializer: Serializer) => {
+    const { binaryReader, binaryWriter, referenceResolver } = fury;
+    const { varInt32: writeVarInt32, reserve: reserves } = binaryWriter;
+    const { varInt32: readVarInt32 } = binaryReader;
+    const { pushReadObject } = referenceResolver;
+    const innerHeadSize = nestedSerializer.config().reserve;
     return {
-        read: () => {
+        ...referenceResolver.deref(() => {
             const len = readVarInt32();
             const result = new Set();
             pushReadObject(result);
             for (let index = 0; index < len; index++) {
-                result.add(read());
+                result.add(nestedSerializer.read());
             }
             return result;
-        },
-        write: (v: Set<any>) => {
-            if (writeNullOrRef(v)) {
-                return;
-            }
-            writeInt8(RefFlags.RefValueFlag);
-            writeInt16(InternalSerializerType.FURY_SET);
-            pushWriteObject(v);
+        }),
+        write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_SET, (v: Set<any>) => {
             const len = v.size;
             writeVarInt32(len);
+            reserves(innerHeadSize * v.size);
             for (const value of v.values()) {
-                write(value);
+                nestedSerializer.write(value);
             }
-        },
+        }),
         config: () => {
             return {
                 reserve: 7,
-                refType: true,
             }
         }
     }

@@ -17,7 +17,7 @@
 const Fury = require("@furyjs/fury");
 const utils = require("../test/util");
 const hps = require('@furyjs/hps');
-const fury = new Fury.default({ hps });
+const fury = new Fury.default({ hps, refTracking: false, useLatin1: true, useSliceString: true });
 const Benchmark = require("benchmark");
 const protobuf = require("protobufjs");
 const path = require('path');
@@ -140,7 +140,7 @@ async function start() {
   {
     console.log('sample json size: ', `${(sampleJson.length / 1000).toFixed()}k`);
     assert(JSON.stringify(protobufDecode(protobufBf)) === sampleJson);
-    assert(JSON.stringify(deserialize(furyAb)) === sampleJson);
+    assert.deepEqual(deserialize(furyAb), sample);
   }
   let result = {
     fury: {

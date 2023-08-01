@@ -14,46 +14,41 @@
  * limitations under the License.
  */
 
-import { InternalSerializerType, RefFlags, Fury } from "../type";
+import { InternalSerializerType, Fury, Serializer } from "../type";
 
 
 
-export default (fury: Fury) => {
-    const { binaryView, binaryWriter, writeNullOrRef, read, referenceResolver, write } = fury;
-    const { readVarInt32 } = binaryView;
-    const { writeInt8, writeInt16, writeVarInt32 } = binaryWriter;
-    const { pushReadObject, pushWriteObject } = referenceResolver;
+export default (fury: Fury, keySerializer: Serializer, valueSerializer: Serializer) => {
+    const { binaryReader, binaryWriter, referenceResolver } = fury;
+    const { varInt32: readVarInt32 } = binaryReader;
 
+    const { varInt32: writeVarInt32, reserve: reserves } = binaryWriter;
+    const { pushReadObject } = referenceResolver;
+    const innerHeadSize = keySerializer.config().reserve + valueSerializer.config().reserve;
     return {
-        read: () => {
+        ...referenceResolver.deref(() => {
             const len = readVarInt32();
             const result = new Map();
             pushReadObject(result);
             for (let index = 0; index < len; index++) {
-                const key = read();
-                const value = read();
+                const key = keySerializer.read();
+                const value = valueSerializer.read();
                 result.set(key, value);
             }
             return result;
-        },
-        write: (v: Map<any, any>) => {
-            if (writeNullOrRef(v)) {
-                return;
-            }
-            writeInt8(RefFlags.RefValueFlag);
-            writeInt16(InternalSerializerType.MAP);
-            pushWriteObject(v);
+        }),
+        write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.MAP, (v: Map<any, any>) => {
             const len = v.size;
             writeVarInt32(len);
+            reserves(innerHeadSize * v.size);
             for (const [key, value] of v.entries()) {
-                write(key);
-                write(value);
+                keySerializer.write(key);
+                valueSerializer.write(value);
             }
-        },
+        }),
         config: () => {
             return {
                 reserve: 7,
-                refType: true,
             }
         }
     }

@@ -20,7 +20,7 @@ import { describe, expect, test } from '@jest/globals';
 describe('number', () => {
   test('should i8 work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const serialize = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -40,7 +40,7 @@ describe('number', () => {
   });
   test('should i16 work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const serialize = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -60,7 +60,7 @@ describe('number', () => {
   });
   test('should i32 work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -80,7 +80,7 @@ describe('number', () => {
   });
   test('should i64 work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -100,7 +100,7 @@ describe('number', () => {
   });
   test('should u8 work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -120,7 +120,7 @@ describe('number', () => {
   });
   test('should u16 work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -140,7 +140,7 @@ describe('number', () => {
   });
   test('should u32 work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -160,7 +160,7 @@ describe('number', () => {
   });
   test('should u64 work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -180,7 +180,7 @@ describe('number', () => {
   });
   test('should float work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -200,7 +200,7 @@ describe('number', () => {
   });
   test('should double work', () => {
     const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ hps });    
+    const fury = new Fury({ refTracking: true, hps });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {

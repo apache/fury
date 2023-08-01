@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { Cast, genReadSerializer, genWriteSerializer, ObjectTypeDescription, TypeDescription, ArrayTypeDescription } from './lib/codeGen';
-import { Serializer, Fury, InternalSerializerType, Hps } from './lib/type';
+import { Cast, genSerializer, ObjectTypeDescription, TypeDescription, ArrayTypeDescription } from './lib/codeGen';
+import { Serializer, Fury, InternalSerializerType, Config } from './lib/type';
 import FuryInternal from './lib/fury';
 
 export {
@@ -41,9 +41,21 @@ export const Type = {
             }
         }
     },
-    map() {
+    map<T1 extends TypeDescription, T2 extends TypeDescription>(key: T1, value: T2) {
         return {
             type: InternalSerializerType.MAP as const,
+            options: {
+                key,
+                value
+            }
+        }
+    },
+    set<T extends TypeDescription>(key: T) {
+        return {
+            type: InternalSerializerType.FURY_SET as const,
+            options: {
+                key
+            }
         }
     },
     bool() {
@@ -143,6 +155,19 @@ type InnerProps<T> = T extends {
     }
 } ? ToRecordType<T2>[] : unknown
 
+type MapProps<T> = T extends {
+    options: {
+        key: infer T2 extends TypeDescription
+        value: infer T3 extends TypeDescription
+    }
+} ? Map<ToRecordType<T2>, ToRecordType<T3>> : unknown
+
+type SetProps<T> = T extends {
+    options: {
+        key: infer T2 extends TypeDescription
+    }
+} ? Set<ToRecordType<T2>> : unknown
+
 export type ToRecordType<T> = T extends {
     type: InternalSerializerType.FURY_TYPE_TAG
 } ? (
@@ -171,7 +196,12 @@ export type ToRecordType<T> = T extends {
                 T extends {
                     type: InternalSerializerType.MAP
                 } ? (
-                    Map<any, any>
+                    MapProps<T>
+                ) :
+                T extends {
+                    type: InternalSerializerType.FURY_SET
+                } ? (
+                    SetProps<T>
                 ) : (
                     T extends {
                         type: InternalSerializerType.ARRAY
@@ -211,26 +241,19 @@ export type ToRecordType<T> = T extends {
 
 
 export default class {
-    constructor(private config?: {
-        hps: Hps | null;
-    }) {
+    constructor(private config?: Config) {
 
     }
-    private fury: Fury = FuryInternal(this.config);
+    private fury: Fury = FuryInternal(this.config || {});
 
     registerSerializer<T extends TypeDescription>(description: T) {
         if (description.type !== InternalSerializerType.FURY_TYPE_TAG || !Cast<ObjectTypeDescription>(description)?.options.tag) {
             throw new Error('root type should be object')
         }
-        genReadSerializer(
+        const serializer = genSerializer(
             this.fury,
             description,
         );
-        genWriteSerializer(
-            this.fury,
-            description
-        );
-        const serializer = this.fury.classResolver.getSerializerByTag(Cast<ObjectTypeDescription>(description)?.options.tag);
         return {
             serializer,
             serialize: (data: ToRecordType<T>) => {
