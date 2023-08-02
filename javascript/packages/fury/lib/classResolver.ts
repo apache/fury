@@ -91,7 +91,7 @@ export default class SerializerResolver {
         return this.customSerializer[tag];
     }
 
-    writeTag(binaryWriter: BinaryWriter, tag: string, tagBuffer: Buffer, bufferLen: number) {
+    writeTag(binaryWriter: BinaryWriter, tag: string, tagHash: number, tagBuffer: Buffer, bufferLen: number) {
         const index = this.writeStringIndex.indexOf(tag);
         if (index > -1) {
             binaryWriter.uint8(USESTRINGID)
@@ -100,7 +100,7 @@ export default class SerializerResolver {
         }
         this.writeStringIndex.push(tag);
         binaryWriter.uint8(USESTRINGVALUE);
-        binaryWriter.skip(8); // todo: support tag hash. skip
+        binaryWriter.uint64(tagHash); 
         binaryWriter.utf8StringOfInt16(tagBuffer, bufferLen);
     }
 
