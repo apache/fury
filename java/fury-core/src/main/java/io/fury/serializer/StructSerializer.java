@@ -225,7 +225,11 @@ public class StructSerializer<T> extends Serializer<T> {
     } else {
       try {
         Serializer<?> serializer = fury.getClassResolver().getSerializer(fieldGeneric.getCls());
-        id = Math.abs(serializer.getXtypeId());
+        short xtypeId = serializer.getXtypeId();
+        if (xtypeId == Fury.NOT_SUPPORT_CROSS_LANGUAGE) {
+          return hash;
+        }
+        id = Math.abs(xtypeId);
         if (id == Type.FURY_TYPE_TAG.getId()) {
           id = TypeUtils.computeStringHash(serializer.getCrossLanguageTypeTag());
         }

@@ -684,6 +684,28 @@ public class Serializers {
     }
   }
 
+  /**
+   * Serializer for empty object of type {@link Object}. Fury disabled serialization for jdk
+   * internal types which doesn't implement {@link java.io.Serializable} for security, but empty
+   * object is safe and used sometimes, so fury should support its serialization without disable
+   * serializable or class registration checks.
+   */
+  // Use a separate serializer to avoid codegen for emtpy object.
+  public static final class EmptyObjectSerializer extends Serializer<Object> {
+
+    public EmptyObjectSerializer(Fury fury) {
+      super(fury, Object.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Object value) {}
+
+    @Override
+    public Object read(MemoryBuffer buffer) {
+      return new Object();
+    }
+  }
+
   public static void registerDefaultSerializers(Fury fury) {
     // primitive types will be boxed.
     fury.registerSerializer(boolean.class, new BooleanSerializer(fury, boolean.class));
@@ -715,5 +737,6 @@ public class Serializers {
     fury.registerSerializer(URI.class, new URISerializer(fury));
     fury.registerSerializer(Pattern.class, new RegexSerializer(fury));
     fury.registerSerializer(UUID.class, new UUIDSerializer(fury));
+    fury.registerSerializer(Object.class, new EmptyObjectSerializer(fury));
   }
 }

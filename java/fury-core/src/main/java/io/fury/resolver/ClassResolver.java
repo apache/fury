@@ -197,6 +197,7 @@ public class ClassResolver {
   public static final short HASHMAP_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 4);
   public static final short HASHSET_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 5);
   public static final short CLASS_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 6);
+  public static final short EMPTY_OBJECT_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 7);
   private static final int initialCapacity = 128;
   // use a lower load factor to minimize hash collision
   private static final float loadFactor = 0.25f;
@@ -291,6 +292,7 @@ public class ClassResolver {
     registerWithCheck(HashMap.class, HASHMAP_CLASS_ID);
     registerWithCheck(HashSet.class, HASHSET_CLASS_ID);
     registerWithCheck(Class.class, CLASS_CLASS_ID);
+    registerWithCheck(Object.class, EMPTY_OBJECT_ID);
     addDefaultSerializers();
     registerDefaultClasses();
     innerEndClassId = extRegistry.registeredClassIdCounter;
