@@ -17,6 +17,7 @@
 package io.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
@@ -203,5 +204,11 @@ public class SerializersTest extends FuryTestBase {
     serDeCheckSerializer(fury, TestClassSerialization.class, "ClassSerializer");
     serDeCheckSerializer(fury, TestReplaceClassSerialization.class, "ClassSerializer");
     serDe(fury, new TestReplaceClassSerialization());
+  }
+
+  @Test
+  public void testEmptyObject() {
+    Fury fury = Fury.builder().requireClassRegistration(true).build();
+    assertSame(serDe(fury, new Object()).getClass(), Object.class);
   }
 }
