@@ -44,4 +44,4 @@ export const safePropName = (prop: string) => {
     return prop;
 }
 
-
+export const isNodeEnv = typeof process === "object" && process.env.ECMA_ONLY === 'true' && typeof require === "function";

@@ -24,6 +24,7 @@ import boolSerializer from "./internalSerializer/bool";
 import { uInt16Serializer, int16Serializer, int32Serializer, uInt32Serializer, uInt64Serializer, floatSerializer, doubleSerializer, uInt8Serializer, int64Serializer, int8Serializer } from "./internalSerializer/number";
 import { InternalSerializerType, Serializer, Fury, BinaryReader, BinaryWriter } from "./type";
 import anySerializer from './internalSerializer/any';
+import { PlatformBuffer } from "./platformBuffer";
 
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1
@@ -91,7 +92,7 @@ export default class SerializerResolver {
         return this.customSerializer[tag];
     }
 
-    writeTag(binaryWriter: BinaryWriter, tag: string, tagHash: number, tagBuffer: Buffer, bufferLen: number) {
+    writeTag(binaryWriter: BinaryWriter, tag: string, tagHash: number, tagBuffer: PlatformBuffer, bufferLen: number) {
         const index = this.writeStringIndex.indexOf(tag);
         if (index > -1) {
             binaryWriter.uint8(USESTRINGID)

@@ -238,7 +238,7 @@ export type ToRecordType<T> = T extends {
     : T extends {
         type: InternalSerializerType.BINARY;
     }
-    ? Buffer
+    ? Uint8Array
     : T extends {
         type: InternalSerializerType.ANY;
     }
@@ -264,7 +264,7 @@ export default class {
             serialize: (data: ToRecordType<T>) => {
                 return this.fury.serialize(data, serializer);
             },
-            deserialize: (bytes: Buffer) => {
+            deserialize: (bytes: Uint8Array) => {
                 return this.fury.deserialize(bytes, serializer) as ToRecordType<T>;
             },
         };
@@ -274,7 +274,7 @@ export default class {
         return this.fury.serialize(v, serialize);
     }
 
-    deserialize(bytes: Buffer) {
+    deserialize(bytes: Uint8Array) {
         return this.fury.deserialize(bytes);
     }
 }
