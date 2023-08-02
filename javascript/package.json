@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "npm run build && enableHps=true jest && ECMA_ONLY=true jest",
+    "test": "npm run build && jest",
     "build": "npm run build -w packages/fury -w packages/hps",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix"

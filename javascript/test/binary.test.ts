@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType, ObjectTypeDescription } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType, ObjectTypeDescription } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 
@@ -31,8 +31,8 @@ describe('binary', () => {
                 tag: "example.foo"
             }
         };
-        const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-        const fury = new Fury({ refTracking: true, hps });    
+        
+        const fury = new Fury({ refTracking: true });    
         const serializer = fury.registerSerializer(description).serializer;
         const input = fury.serialize({ a: new Uint8Array([1, 2, 3]) }, serializer);
         const result = fury.deserialize(

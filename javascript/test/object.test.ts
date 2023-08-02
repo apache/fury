@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType, Type } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('object', () => {
@@ -38,8 +38,8 @@ describe('object', () => {
         tag: "example.foo"
       }
     };
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });
+    
+    const fury = new Fury({ refTracking: true });
     const { serialize, deserialize } = fury.registerSerializer(description);
     const input = serialize({ a: { b: "hel" } });
     const result = deserialize(
@@ -48,24 +48,20 @@ describe('object', () => {
     expect(result).toEqual({ a: { b: "hel" } })
   });
 
-  test('should object in array work', () => {
+
+  test('should null value work', () => {
     const description = {
-      type: InternalSerializerType.FURY_TYPE_TAG,
+      type: InternalSerializerType.FURY_TYPE_TAG as const,
       options: {
         props: {
           a: {
-            type: InternalSerializerType.ARRAY,
+            type: InternalSerializerType.FURY_TYPE_TAG as const,
             options: {
-              inner: {
-                type: InternalSerializerType.FURY_TYPE_TAG,
-                options: {
-                  tag: "example.bar",
-                  props: {
-                    b: {
-                      type: InternalSerializerType.STRING
-                    },
-                  }
-                }
+              tag: "example.bar",
+              props: {
+                b: {
+                  type: InternalSerializerType.STRING as const,
+                },
               }
             }
           }
@@ -73,14 +69,35 @@ describe('object', () => {
         tag: "example.foo"
       }
     };
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });
+    
+    const fury = new Fury({ refTracking: true });
+    const { serialize, deserialize } = fury.registerSerializer(description);
+    const input = serialize({ a: null });
+    const result = deserialize(
+      input
+    );
+    expect(result).toEqual({ a: null })
+  });
+
+  test('should object in array work', () => {
+    const description = Type.object('example.foo', {
+      a: Type.array(Type.object('example.bar', {
+        b: Type.string(),
+        c: Type.bool(),
+        d: Type.uint32(),
+        e: Type.uint64(),
+        f: Type.binary(),
+      }))
+    })
+    
+    const fury = new Fury({ refTracking: true });
     const serializer = fury.registerSerializer(description).serializer;
-    const input = fury.serialize({ a: [{ b: "hel" }] }, serializer);
+    const input = fury.serialize({ a: [{ b: "hel", c: true, d: 123, e: 123, f: new Uint8Array([1,2,3]) }] }, serializer);
     const result = fury.deserialize(
       input
     );
-    expect(result).toEqual({ a: [{ b: "hel" }] })
+    result.a.forEach(x => x.e = Number(x.e))
+    expect(result).toEqual({ a: [{ b: "hel", c: true, d: 123, e: 123, f: Buffer.from([1,2,3]) }] })
   });
 
   test('should write tag and read tag work', () => {
@@ -109,8 +126,8 @@ describe('object', () => {
         tag: "example.foo"
       }
     };
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });
+    
+    const fury = new Fury({ refTracking: true });
     const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({ a: { b: "hel" }, a2: { b: "hel2" } }, serializer);
     const result = fury.deserialize(
@@ -145,8 +162,8 @@ describe('object', () => {
         tag: "example.foo"
       }
     };
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });
+    
+    const fury = new Fury({ refTracking: true });
     const serialize = fury.registerSerializer(description).serializer;
     const param: any = {};
     param.a = { b: "hel" };
@@ -159,6 +176,26 @@ describe('object', () => {
     expect(result.a2).toEqual(result)
   });
 
+  test('should dot prop accessor work', () => {
+    const description = Type.object("example.foo", {
+      "+a": Type.object("example.bar", {
+        "delete": Type.string(),
+        c: Type.array(Type.object("example.foo2", {
+          d: Type.string(),
+        }))
+      }),
+    })
+    
+    const fury = new Fury({ refTracking: true });
+    const { serialize, deserialize } = fury.registerSerializer(description);
+    const input = serialize({ "+a": { "delete": "hel", c: [{ d: "hello" }] } });
+    const result = deserialize(
+      input
+    );
+    expect(result).toEqual({ "+a": { "delete": "hel", c: [{ d: "hello" }] } })
+  });
+
+
   test('should type function tools work', () => {
     const description = Type.object("example.foo", {
       a: Type.object("example\".bar", {
@@ -168,14 +205,25 @@ describe('object', () => {
         }))
       }),
     })
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });
+    
+    const fury = new Fury({ refTracking: true });
     const { serialize, deserialize } = fury.registerSerializer(description);
     const input = serialize({ a: { b: "hel", c: [{ d: "hello" }] } });
     const result = deserialize(
       input
     );
     expect(result).toEqual({ a: { b: "hel", c: [{ d: "hello" }] } })
+  });
+
+  test('should register work', () => {
+    const description = Type.string();
+    const fury = new Fury({ refTracking: true });
+    try {
+      fury.registerSerializer(description);
+      throw new Error('unreachable code')
+    } catch (error) {
+      expect(error.message).toBe("root type should be object");
+    }
   });
 });
 

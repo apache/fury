@@ -14,19 +14,60 @@
  * limitations under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages/fury/index';
 import {describe, expect, test} from '@jest/globals';
+const hps = require('@furyjs/hps');
+[
+  {
+    hps,
+    useLatin1: true
+  },
+  {
+    hps: null,
+    useLatin1: false
+  }
+].forEach(config => {
+  describe('string', () => {
+    test('should latin1 string work', () => {
+      
+      const fury = new Fury(config);    
+      const input = fury.serialize("123")
+      const result = fury.deserialize(
+          input
+      );
+      expect(result).toEqual("123")
+    });
+  
+    test('should utf8 string work', () => {
+      
+      const fury = new Fury(config);    
+      const input = fury.serialize("我是Fury, 你好！😁א")
+      const result = fury.deserialize(
+          input
+      );
+      expect(result).toEqual("我是Fury, 你好！😁א")
+    });
 
-describe('string', () => {
-  test('should string work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
-    const input = fury.serialize("123")
-    const result = fury.deserialize(
-        input
-    );
-    expect(result).toEqual("123")
+    test('should long latin1 string work', () => {
+      const str = new Array(100).fill("123").join();
+      const fury = new Fury(config);    
+      const input = fury.serialize(str)
+      const result = fury.deserialize(
+          input
+      );
+      expect(result).toEqual(str)
+    });
+  
+    test('should long utf8 string work', () => {
+      const str = new Array(10).fill("我是Fury, 你好！😁א").join();
+      const fury = new Fury(config);    
+      const input = fury.serialize(str)
+      const result = fury.deserialize(
+          input
+      );
+      expect(result).toEqual(str)
+    });
   });
-});
-
+  
+})
 

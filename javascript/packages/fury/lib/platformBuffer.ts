@@ -21,13 +21,47 @@ export interface PlatformBuffer extends Uint8Array {
     utf8Slice(start: number, end: number): string,
     latin1Write(v: string, offset: number): void,
     utf8Write(v: string, offset: number): void,
-    copy(target: Uint8Array, targetStart?: number, sourceStart?: number, sourceEnd?: number): Uint8Array
+    copy(target: Uint8Array, targetStart?: number, sourceStart?: number, sourceEnd?: number): void
 }
 
 
-class BrowserBuffer extends Uint8Array {
+export class BrowserBuffer extends Uint8Array implements PlatformBuffer {
     static alloc(size: number) {
         return new BrowserBuffer(new Uint8Array(size));
+    }
+
+    latin1Write(string: string, offset: number) {
+        for (let index = 0; index < string.length; index++) {
+            this[offset++] = string.charCodeAt(index);
+        }
+    }
+
+    utf8Write(string: string, offset: number) {
+        let c1: number;
+        let c2: number;
+        for (let i = 0; i < string.length; ++i) {
+            c1 = string.charCodeAt(i);
+            if (c1 < 128) {
+                this[offset++] = c1;
+            } else if (c1 < 2048) {
+                this[offset++] = (c1 >> 6) | 192;
+                this[offset++] = (c1 & 63) | 128;
+            } else if (
+                (c1 & 0xfc00) === 0xd800 &&
+                ((c2 = string.charCodeAt(i + 1)) & 0xfc00) === 0xdc00
+            ) {
+                c1 = 0x10000 + ((c1 & 0x03ff) << 10) + (c2 & 0x03ff);
+                ++i;
+                this[offset++] = (c1 >> 18) | 240;
+                this[offset++] = ((c1 >> 12) & 63) | 128;
+                this[offset++] = ((c1 >> 6) & 63) | 128;
+                this[offset++] = (c1 & 63) | 128;
+            } else {
+                this[offset++] = (c1 >> 12) | 224;
+                this[offset++] = ((c1 >> 6) & 63) | 128;
+                this[offset++] = (c1 & 63) | 128;
+            }
+        }
     }
 
     latin1Slice(start: number, end: number) {
@@ -60,52 +94,14 @@ class BrowserBuffer extends Uint8Array {
                 str += String.fromCharCode(0xDC00 + (t2 & 0x3FF));
             }
         }
-
         return str;
     }
 
     copy(target: Uint8Array, targetStart?: number, sourceStart?: number, sourceEnd?: number) {
         target.set(this.subarray(sourceStart, sourceEnd), targetStart);
     }
-}
 
-export function fromString(str: string) {
-    if (isNodeEnv) {
-        return Buffer.from(str);
-    } else {
-        return new BrowserBuffer(new TextEncoder().encode(str))
-    }
-}
-
-export function fromUint8Array(ab: Buffer | Uint8Array): PlatformBuffer {
-    if (isNodeEnv) {
-        if (!Buffer.isBuffer(ab)) {
-            return (Buffer.from(ab) as unknown as PlatformBuffer)
-        } else {
-            return ab as unknown as PlatformBuffer;
-        }
-    } else {
-        const result = new BrowserBuffer(ab);
-        return result as unknown as PlatformBuffer;
-    }
-}
-
-
-
-export function alloc(size: number): PlatformBuffer {
-    if (isNodeEnv) {
-        return Buffer.allocUnsafe(size) as unknown as PlatformBuffer;
-    } else {
-        const result = BrowserBuffer.alloc(size);
-        return result as PlatformBuffer;
-    }
-}
-
-
-export function strByteLength(str: string): number {
-    if (isNodeEnv) {
-        return Buffer.byteLength(str);
-    } else {
+    static byteLength(str: string) {
         let len = 0;
         let c = 0;
         for (let i = 0; i < str.length; ++i) {
@@ -123,3 +119,17 @@ export function strByteLength(str: string): number {
         return len;
     }
 }
+
+export const fromUint8Array = isNodeEnv ?
+    (ab: Buffer | Uint8Array) => {
+        if (!Buffer.isBuffer(ab)) {
+            return (Buffer.from(ab) as unknown as PlatformBuffer)
+        } else {
+            return ab as unknown as PlatformBuffer;
+        }
+    } :
+    (ab: Buffer | Uint8Array) => new BrowserBuffer(ab)
+
+export const alloc = (isNodeEnv ? Buffer.allocUnsafe : BrowserBuffer.alloc) as unknown as (size: number) => PlatformBuffer
+
+export const strByteLength = isNodeEnv ? Buffer.byteLength : BrowserBuffer.byteLength

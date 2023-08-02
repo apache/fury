@@ -72,13 +72,13 @@ export const BinaryReader = (config: Config) => {
   function int64() {
     const result = dataView.getBigInt64(cursor, true);
     cursor += 8;
-    return Number(result);
+    return result;
   }
 
   function uint64() {
     const result = dataView.getBigUint64(cursor, true);
     cursor += 8;
-    return Number(result);
+    return result;
   }
 
   function float() {

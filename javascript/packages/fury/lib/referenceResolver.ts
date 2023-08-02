@@ -24,6 +24,10 @@ import {
 } from "./type";
 import type ClassResolver from "./classResolver";
 
+export const makeHead = (flag: RefFlags, type: InternalSerializerType) => {
+  return (((type << 16) >>> 16) << 8) | ((flag << 24) >>> 24)
+}
+
 export const ReferenceResolver = (
   config: {
     refTracking?: boolean;
@@ -77,7 +81,7 @@ export const ReferenceResolver = (
     fn: SerializerWrite<T>
   ) {
     const int24 = binaryWriter.int24;
-    const head = (RefFlags.RefValueFlag << 24) | (type << 8);
+    const head = makeHead(RefFlags.RefValueFlag, type);
     if (config.refTracking) {
       return (v: T) => {
         if (v !== null) {
@@ -110,7 +114,7 @@ export const ReferenceResolver = (
     type: InternalSerializerType,
     fn: SerializerWrite<T>
   ) {
-    const head = (RefFlags.NotNullValueFlag << 24) | (type << 8);
+    const head = makeHead(RefFlags.NotNullValueFlag, type);
     const int24 = binaryWriter.int24;
     return (v: T) => {
       int24(head);

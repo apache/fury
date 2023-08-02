@@ -18,7 +18,7 @@ import ClassResolver from './classResolver';
 import { BinaryWriter } from './writer';
 import { BinaryReader } from './reader';
 import { ReferenceResolver } from './referenceResolver';
-import { ConfigFlags, Serializer, Config, InternalSerializerType } from './type';
+import { ConfigFlags, Serializer, Config, InternalSerializerType, Language } from './type';
 
 export default (config: Config) => {
     const binaryReader = BinaryReader(config);
@@ -55,7 +55,7 @@ export default (config: Config) => {
         if (!isCrossLanguage) {
             throw new Error('support crosslanguage mode only')
         }
-        binaryReader.uint8(); // skip language type
+        binaryReader.uint8(); // skip language
         const isOutOfBandEnabled = (bitmap & ConfigFlags.isOutOfBandFlag) === ConfigFlags.isOutOfBandFlag;
         if (isOutOfBandEnabled) {
             throw new Error('outofband mode is not supported now')
@@ -80,7 +80,7 @@ export default (config: Config) => {
         bitmap |= ConfigFlags.isLittleEndianFlag;
         bitmap |= ConfigFlags.isCrossLanguageFlag
         binaryWriter.uint8(bitmap);
-        binaryWriter.uint8(4); // todo: replace with javascript
+        binaryWriter.uint8(Language.XLANG); 
         const cursor = binaryWriter.getCursor();
         binaryWriter.skip(4); // preserve 4-byte for nativeObjects start offsets.
         binaryWriter.uint32(0); // nativeObjects length.

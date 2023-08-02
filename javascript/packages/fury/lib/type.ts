@@ -97,6 +97,9 @@ export enum RefFlags {
 }
 
 export const MaxInt32  = 2147483647;
+export const MinInt32  = -2147483648;
+
+
 export const LATIN1 = 0;
 export const UTF8 = 1;
 
@@ -110,4 +113,13 @@ export interface Config {
 	refTracking?: boolean,
 	useLatin1?: boolean,
 	useSliceString?: boolean,
+}
+
+ 
+export enum Language {
+    XLANG = 0,
+    JAVA = 1,
+    PYTHON = 2,
+    CPP = 3,
+    GO = 4,
 }

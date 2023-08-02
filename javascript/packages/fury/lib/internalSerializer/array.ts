@@ -55,9 +55,6 @@ export const buildArray = (fury: Fury, item: Serializer, type: InternalSerialize
 
 const buildTypedArray = (fury: Fury, serializeType: InternalSerializerType, typeArrayType: InternalSerializerType) => {
     const serializer = fury.classResolver.getSerializerById(serializeType);
-    if (!serializer.readWithoutType || !serializer.writeWithoutType) {
-        throw new Error(`${serializeType} should implements readWithoutType and writeWithoutType`)
-    }
     return buildArray(fury, {
         read: serializer.readWithoutType!,
         write: serializer.writeWithoutType!,

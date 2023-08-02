@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType, Type } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('set', () => {
     test('should set work', () => {
-        const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-        const fury = new Fury({ refTracking: true, hps });    
+        
+        const fury = new Fury({ refTracking: true });    
         const input = fury.serialize(new Set(["foo1", "bar1", "cc2"]));
         const result = fury.deserialize(
             input
@@ -31,8 +31,8 @@ describe('set', () => {
         const description = Type.object("example.foo", {
             a: Type.set(Type.string())
         });
-        const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-        const fury = new Fury({ refTracking: true, hps });    
+        
+        const fury = new Fury({ refTracking: true });    
         const { serialize, deserialize } = fury.registerSerializer(description);
         const input = serialize({ a: new Set(["foo1", "bar2"]) });
         const result = deserialize(

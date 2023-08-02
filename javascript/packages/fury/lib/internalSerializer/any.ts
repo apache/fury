@@ -15,8 +15,9 @@
  */
 
 
-import { Fury, Serializer } from "../type";
+import { Fury, MaxInt32, MinInt32, Serializer } from "../type";
 import { InternalSerializerType, RefFlags } from "../type";
+
 
 
 
@@ -24,11 +25,11 @@ export default (fury: Fury) => {
     const { binaryReader, binaryWriter, referenceResolver, classResolver } = fury;
 
 
-    function readSerializer(cursor: number) {
+    function detectSerializer(cursor: number) {
         const typeId = binaryReader.int16();
         let serializer: Serializer;
         if (typeId === InternalSerializerType.FURY_TYPE_TAG) {
-            serializer = classResolver.getSerializerByTag(classResolver.skipTag(binaryReader));
+            serializer = classResolver.getSerializerByTag(classResolver.detectTag(binaryReader));
         } else {
             serializer = classResolver.getSerializerById(typeId);
         }
@@ -46,17 +47,19 @@ export default (fury: Fury) => {
             const flag = referenceResolver.readRefFlag();
             switch (flag) {
                 case RefFlags.RefValueFlag:
-                    return readSerializer(cursor).read();
+                    return detectSerializer(cursor).read();
                 case RefFlags.RefFlag:
                     return referenceResolver.getReadObjectByRefId(binaryReader.varInt32());
                 case RefFlags.NullFlag:
                     return null;
                 case RefFlags.NotNullValueFlag:
-                    return readSerializer(cursor).read();
+                    return detectSerializer(cursor).read();
             }
         },
         write: (v: any) => {
             const { write: writeInt64, config: int64Config } = classResolver.getSerializerById(InternalSerializerType.INT64);
+            const { write: writeDouble, config: doubleConfig } = classResolver.getSerializerById(InternalSerializerType.DOUBLE);
+            const { write: writeInt32, config: int32Config } = classResolver.getSerializerById(InternalSerializerType.INT32);
             const { write: writeBool, config: boolConfig } = classResolver.getSerializerById(InternalSerializerType.BOOL);
             const { write: stringWrite, config: stringConfig } = classResolver.getSerializerById(InternalSerializerType.STRING);
             const { write: arrayWrite, config: arrayConfig } = classResolver.getSerializerById(InternalSerializerType.ARRAY);
@@ -73,10 +76,28 @@ export default (fury: Fury) => {
 
             // NotNullValueFlag
             if (typeof v === "number") {
-                binaryWriter.reserve(int64Config().reserve);
-                writeInt64(BigInt(v));
-                return;
+                if (Number.isNaN(v) || !Number.isFinite(v)) {
+                    binaryWriter.reserve(1);
+                    binaryWriter.int8(RefFlags.NullFlag); // null
+                    return;
+                }
+                if (Number.isInteger(v)) {
+                    if (v > MaxInt32 || v < MinInt32) {
+                        binaryWriter.reserve(int64Config().reserve);
+                        writeInt64(BigInt(v));
+                        return;
+                    } else {
+                        binaryWriter.reserve(int32Config().reserve);
+                        writeInt32(v);
+                        return;
+                    }
+                } else {
+                    binaryWriter.reserve(doubleConfig().reserve);
+                    writeDouble(v);
+                    return;
+                }
             }
+            
             if (typeof v === "bigint") {
                 binaryWriter.reserve(int64Config().reserve);
                 writeInt64(v)
@@ -101,16 +122,6 @@ export default (fury: Fury) => {
                 return;
             }
 
-            // RefFlag
-            const existsId = referenceResolver.existsWriteObject(v);
-            if (typeof existsId === 'number') {
-                binaryWriter.reserve(5);
-                binaryWriter.int8(RefFlags.RefFlag);
-                binaryWriter.varInt32(existsId);
-                return;
-            }
-
-            // RefValueFlag
             if (v instanceof Map) {
                 binaryWriter.reserve(5);
                 binaryWriter.reserve(mapConfig().reserve);

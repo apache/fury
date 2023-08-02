@@ -19,42 +19,7 @@ import { replaceBackslashAndQuote, safePropAccessor, safePropName } from './util
 import mapSerializer from './internalSerializer/map';
 import setSerializer from './internalSerializer/set';
 import { arraySerializer } from './internalSerializer/array';
-import { x64hash128 } from './murmurHash3';
-import { fromString } from './platformBuffer';
-export interface TypeDescription {
-    type: InternalSerializerType,
-    label?: string,
-}
-
-export interface ObjectTypeDescription extends TypeDescription {
-    options: {
-        props: { [key: string]: TypeDescription },
-        tag: string,
-    }
-}
-
-export interface ArrayTypeDescription extends TypeDescription {
-    options: {
-        inner: TypeDescription;
-    }
-}
-
-export interface SetTypeDescription extends TypeDescription {
-    options: {
-        key: TypeDescription;
-    }
-}
-
-export interface MapTypeDescription extends TypeDescription {
-    options: {
-        key: TypeDescription;
-        value: TypeDescription
-    }
-}
-
-export function Cast<T1 extends TypeDescription>(p: TypeDescription) {
-    return p as unknown as T1;
-}
+import { ArrayTypeDescription, Cast, MapTypeDescription, ObjectTypeDescription, SetTypeDescription, TypeDescription } from './description';
 
 function computeFieldHash(hash: number, id: number): number {
     let newHash = (hash) * 31 + (id);
@@ -64,7 +29,7 @@ function computeFieldHash(hash: number, id: number): number {
     return newHash
 }
 
-export const computeStringHash = (str: string) => {
+const computeStringHash = (str: string) => {
     const bytes = new TextEncoder().encode(str);
     let hash = 17
     bytes.forEach(b => {
@@ -76,16 +41,12 @@ export const computeStringHash = (str: string) => {
     return hash;
 }
 
-export const computeStructHash = (description: TypeDescription) => {
-    if (description.type !== InternalSerializerType.FURY_TYPE_TAG) {
-        throw new Error('only object is hashable');
-    }
+const computeStructHash = (description: TypeDescription) => {
     let hash = 17;
     for (const [, value] of Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort()) {
         let id = value.type;
         if (value.type === InternalSerializerType.ARRAY || value.type === InternalSerializerType.MAP) {
-            // TODO add map key&value type into schema hash
-            id = value.type;
+            id = value.type;  // TODO add map key&value type into schema hash
         } else if (value.type === InternalSerializerType.FURY_TYPE_TAG) {
             id = computeStringHash(Cast<ObjectTypeDescription>(value).options.tag);
         }
@@ -172,7 +133,6 @@ export const genSerializer = (fury: Fury, description: TypeDescription) => {
     }
     
     fury.classResolver.registerSerializerByTag(tag, fury.classResolver.getSerializerById(InternalSerializerType.ANY));
-    const tagByteLen = fromString(tag).byteLength;
     const expectHash = computeStructHash(description);
     const read = `
     // relation tag: ${Cast<ObjectTypeDescription>(description).options?.tag}
@@ -198,14 +158,11 @@ export const genSerializer = (fury: Fury, description: TypeDescription) => {
 return function (fury, scope) {
     const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
     const { writeNullOrRef, pushReadObject } = referenceResolver;
-    const { RefFlags, InternalSerializerType, arraySerializer, mapSerializer, setSerializer, x64hash128, fromString } = scope;
+    const { RefFlags, InternalSerializerType, arraySerializer, mapSerializer, setSerializer } = scope;
         ${declarations.join('')}
-    const tagBuffer = fromString("${validTag}");
-    let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
-    if (tagHash == 0) {
-        tagHash = 1;
-    }
-    const bufferLen = ${tagByteLen};
+    const tagBuffer = classResolver.tagToBuffer("${validTag}");
+    const bufferLen = tagBuffer.byteLength;
+
     const reserves = ${names.map(x => `${x}.config().reserve`).join(' + ')};
     return {
         ...referenceResolver.deref(() => {
@@ -218,14 +175,14 @@ return function (fury, scope) {
             }
         }),
         write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_TYPE_TAG, (v) => {
-            classResolver.writeTag(binaryWriter, "${validTag}", tagHash, tagBuffer, bufferLen);
-            binaryWriter.int32(${computeStructHash(description)});
+            classResolver.writeTag(binaryWriter, "${validTag}", tagBuffer, bufferLen);
+            binaryWriter.int32(${expectHash});
             binaryWriter.reserve(reserves);
             ${write}
         }),
         config() {
             return {
-                reserve: ${tagByteLen + 8},
+                reserve: bufferLen + 8,
             }
         }
     }
@@ -237,7 +194,5 @@ return function (fury, scope) {
         arraySerializer,
         mapSerializer,
         setSerializer,
-        x64hash128,
-        fromString,
     }));
 }

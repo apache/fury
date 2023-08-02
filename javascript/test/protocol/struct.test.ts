@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType, Type } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType, Type } from '../../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 
 describe('protocol', () => {
     test('should polymorphic work', () => {
-        const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-        const fury = new Fury({ refTracking: true, hps });
+        
+        const fury = new Fury({ refTracking: true });
         const { serialize, deserialize } = fury.registerSerializer(Type.object("example.foo", {
             foo: Type.any(),
             bar: Type.any(),
@@ -41,8 +41,8 @@ describe('protocol', () => {
         expect(result).toEqual(obj);
     });
     test('should py bin work', () => {
-        const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-        const fury = new Fury({ refTracking: true, hps });
+        
+        const fury = new Fury({ refTracking: true });
         const { deserialize } = fury.registerSerializer({
             type: InternalSerializerType.FURY_TYPE_TAG,
             options: {
@@ -77,6 +77,7 @@ describe('protocol', () => {
             0, 0, 0, 0, 0, 0, 0, 255, 11, 0, 171, 170, 170, 62, 255, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             253,
         ]));
+        obj.f6 = Number(obj.f6)
 
         expect(obj).toEqual({
             f1: "str",
