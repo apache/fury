@@ -19,7 +19,7 @@ import { replaceBackslashAndQuote, safePropAccessor, safePropName } from './util
 import mapSerializer from './internalSerializer/map';
 import setSerializer from './internalSerializer/set';
 import { arraySerializer } from './internalSerializer/array';
-
+import { x64hash128 } from './murmurHash3';
 export interface TypeDescription {
     type: InternalSerializerType,
     label?: string,
@@ -191,28 +191,33 @@ export const genSerializer = (fury: Fury, description: TypeDescription) => {
         return `${genDeclaration(value)}.write(v${safePropAccessor(key)})`;
     }).join(';\n');
     const { names, declarations} = finish();
+    const validTag = replaceBackslashAndQuote(tag);
     return fury.classResolver.registerSerializerByTag(tag, new Function(
         `
 return function (fury, scope) {
     const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
     const { writeNullOrRef, pushReadObject } = referenceResolver;
-    const { RefFlags, InternalSerializerType, arraySerializer, mapSerializer, setSerializer } = scope;
+    const { RefFlags, InternalSerializerType, arraySerializer, mapSerializer, setSerializer, x64hash128 } = scope;
         ${declarations.join('')}
-    const tagBuffer = Buffer.from("${replaceBackslashAndQuote(tag)}");
+    const tagBuffer = Buffer.from("${validTag}");
+    let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
+    if (tagHash == 0) {
+        tagHash = 1;
+    }
     const bufferLen = ${tagByteLen};
     const reserves = ${names.map(x => `${x}.config().reserve`).join(' + ')};
     return {
         ...referenceResolver.deref(() => {
             const hash = binaryReader.int32();
             if (hash !== ${expectHash}) {
-                throw new Error("validate hash failed: ${replaceBackslashAndQuote(tag)}. expect ${expectHash}, but got" + hash);
+                throw new Error("validate hash failed: ${validTag}. expect ${expectHash}, but got" + hash);
             }
             {
                 ${read}
             }
         }),
         write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_TYPE_TAG, (v) => {
-            classResolver.writeTag(binaryWriter, "${replaceBackslashAndQuote(tag)}", tagBuffer, bufferLen);
+            classResolver.writeTag(binaryWriter, "${validTag}", tagHash, tagBuffer, bufferLen);
             binaryWriter.int32(${computeStructHash(description)});
             binaryWriter.reserve(reserves);
             ${write}
@@ -231,5 +236,6 @@ return function (fury, scope) {
         arraySerializer,
         mapSerializer,
         setSerializer,
+        x64hash128,
     }));
 }
