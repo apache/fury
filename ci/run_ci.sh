@@ -64,6 +64,20 @@ install_bazel() {
 }
 
 case $1 in
+    javascript)
+      set +e
+      echo "Executing fury javascript tests"
+      cd "$ROOT/javascript"
+      npm install
+      node ./node_modules/.bin/jest --ci --reporters=default --reporters=jest-junit
+      testcode=$?
+      if [[ $testcode -ne 0 ]]; then
+        echo "Executing fury javascript tests failed"
+        # TODO(bigtech) enable js ci
+        # exit $testcode
+      fi
+      echo "Executing fury javascript tests succeeds"
+    ;;
     java8)
       echo "Executing fury java tests"
       cd "$ROOT/java"
@@ -87,7 +101,7 @@ case $1 in
       fi
       echo "Executing fury java tests succeeds"
     ;;
-   java17)
+   java*)
       java -version
       echo "Executing fury java tests"
       cd "$ROOT/java"
@@ -98,20 +112,6 @@ case $1 in
         exit $testcode
       fi
       echo "Executing fury java tests succeeds"
-    ;;
-    javascript)
-      set +e
-      echo "Executing fury javascript tests"
-      cd "$ROOT/javascript"
-      npm install
-      node ./node_modules/.bin/jest --ci --reporters=default --reporters=jest-junit
-      testcode=$?
-      if [[ $testcode -ne 0 ]]; then
-        echo "Executing fury javascript tests failed"
-        # TODO(bigtech) enable js ci
-        # exit $testcode
-      fi
-      echo "Executing fury javascript tests succeeds"
     ;;
     rust)
       set +e
