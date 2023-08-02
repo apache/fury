@@ -20,6 +20,7 @@ import mapSerializer from './internalSerializer/map';
 import setSerializer from './internalSerializer/set';
 import { arraySerializer } from './internalSerializer/array';
 import { x64hash128 } from './murmurHash3';
+import { fromString } from './platformBuffer';
 export interface TypeDescription {
     type: InternalSerializerType,
     label?: string,
@@ -171,7 +172,7 @@ export const genSerializer = (fury: Fury, description: TypeDescription) => {
     }
     
     fury.classResolver.registerSerializerByTag(tag, fury.classResolver.getSerializerById(InternalSerializerType.ANY));
-    const tagByteLen = Buffer.from(tag).byteLength;
+    const tagByteLen = fromString(tag).byteLength;
     const expectHash = computeStructHash(description);
     const read = `
     // relation tag: ${Cast<ObjectTypeDescription>(description).options?.tag}
@@ -197,9 +198,9 @@ export const genSerializer = (fury: Fury, description: TypeDescription) => {
 return function (fury, scope) {
     const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
     const { writeNullOrRef, pushReadObject } = referenceResolver;
-    const { RefFlags, InternalSerializerType, arraySerializer, mapSerializer, setSerializer, x64hash128 } = scope;
+    const { RefFlags, InternalSerializerType, arraySerializer, mapSerializer, setSerializer, x64hash128, fromString } = scope;
         ${declarations.join('')}
-    const tagBuffer = Buffer.from("${validTag}");
+    const tagBuffer = fromString("${validTag}");
     let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
     if (tagHash == 0) {
         tagHash = 1;
@@ -237,5 +238,6 @@ return function (fury, scope) {
         mapSerializer,
         setSerializer,
         x64hash128,
+        fromString,
     }));
 }

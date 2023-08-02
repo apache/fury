@@ -15,19 +15,23 @@
  */
 
 import { Config, LATIN1, UTF8 } from "./type";
+import { PlatformBuffer, alloc, strByteLength } from './platformBuffer';
 
 const MAX_POOL_SIZE = 1024 * 1024 * 3; // 3MB
+
+
+
 
 export const BinaryWriter = (config: Config) => {
   let cursor = 0;
   let byteLength: number;
-  let arrayBuffer: Buffer;
+  let arrayBuffer: PlatformBuffer;
   let dataView: DataView;
   let reserved = 0;
 
   function initPoll() {
     byteLength = 1024 * 100;
-    arrayBuffer = Buffer.allocUnsafe(byteLength);
+    arrayBuffer = alloc(byteLength);
     dataView = new DataView(arrayBuffer.buffer);
   }
 
@@ -36,7 +40,9 @@ export const BinaryWriter = (config: Config) => {
   function reserve(len: number) {
     reserved += len;
     if (byteLength - cursor <= reserved) {
-      arrayBuffer = Buffer.concat([arrayBuffer, Buffer.allocUnsafe(byteLength + len)]);
+      const newAb = alloc(byteLength + len);
+      arrayBuffer.copy(newAb, 0);
+      arrayBuffer = newAb;
       byteLength = arrayBuffer.byteLength;
       dataView = new DataView(arrayBuffer.buffer);
     }
@@ -121,13 +127,13 @@ export const BinaryWriter = (config: Config) => {
     cursor += 8;
   }
 
-  function utf8StringOfInt16(bf: Buffer, bufferLen: number) {
+  function utf8StringOfInt16(bf: PlatformBuffer, bufferLen: number) {
     int16(bufferLen);
     bf.copy(arrayBuffer, cursor);
     cursor += bufferLen;
   }
 
-  function fastWriteStringUtf8(string: string, buffer: Buffer, offset: number) {
+  function fastWriteStringUtf8(string: string, buffer: Uint8Array, offset: number) {
     let c1: number;
     let c2: number;
     for (let i = 0; i < string.length; ++i) {
@@ -165,7 +171,7 @@ export const BinaryWriter = (config: Config) => {
     const { isLatin1: detectIsLatin1, stringCopy } = config!.hps!;
     return function (v: string) {
       const isLatin1 = detectIsLatin1(v);
-      const len = isLatin1 ? v.length : Buffer.byteLength(v);
+      const len = isLatin1 ? v.length : strByteLength(v);
       if (config.useLatin1) {
         dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
       }
@@ -177,7 +183,7 @@ export const BinaryWriter = (config: Config) => {
         if (len < 40) {
           fastWriteStringUtf8(v, arrayBuffer, cursor);
         } else {
-          (arrayBuffer as any).utf8Write(v, cursor);
+          arrayBuffer.utf8Write(v, cursor);
         }
       }
       cursor += len;
@@ -185,7 +191,7 @@ export const BinaryWriter = (config: Config) => {
   }
 
   function stringOfVarInt32Slow(v: string) {
-    const len = Buffer.byteLength(v);
+    const len = strByteLength(v);
     const isLatin1 = len === v.length;
     if (config.useLatin1) {
       dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
@@ -198,13 +204,13 @@ export const BinaryWriter = (config: Config) => {
           arrayBuffer[cursor + index] = v.charCodeAt(index);
         }
       } else {
-        (arrayBuffer as any).latin1Write(v, cursor);
+        arrayBuffer.latin1Write(v, cursor);
       }
     } else {
       if (len < 40) {
         fastWriteStringUtf8(v, arrayBuffer, cursor);
       } else {
-        (arrayBuffer as any).utf8Write(v, cursor);
+        arrayBuffer.utf8Write(v, cursor);
       }
     }
     cursor += len;
@@ -256,7 +262,7 @@ export const BinaryWriter = (config: Config) => {
   }
 
   function dump() {
-    const result = Buffer.allocUnsafe(cursor);
+    const result = alloc(cursor);
     arrayBuffer.copy(result, 0, 0, cursor);
     tryFreePool();
     return result;

@@ -38,7 +38,10 @@ describe('binary', () => {
         const result = fury.deserialize(
             input
         );
-        expect(result).toEqual({ a: Buffer.from([1, 2, 3]) })
+        expect(result instanceof Uint8Array)
+        expect(result.a[0] === 1);
+        expect(result.a[1] === 2);
+        expect(result.a[2] === 3);
     });
 });
 

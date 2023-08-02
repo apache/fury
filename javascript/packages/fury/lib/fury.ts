@@ -39,7 +39,7 @@ export default (config: Config) => {
     classResolver.init(fury);
 
 
-    function deserialize<T = any>(bytes: Buffer, serializer?: Serializer): T | null {
+    function deserialize<T = any>(bytes: Uint8Array, serializer?: Serializer): T | null {
         referenceResolver.reset();
         classResolver.reset();
         binaryReader.reset(bytes);
