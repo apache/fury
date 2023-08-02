@@ -43,6 +43,7 @@ excludes = [
     "java/fury-core/src/test/java/io/fury/type/GenericsTest.java",
     "java/fury-format/src/main/java/io/fury/format/vectorized/ArrowWriter.java",
     "javascript/packages/hps/src/v8-fast-api-calls.h",
+    "javascript/packages/fury/lib/murmurHash3.ts",
     "src/fury/thirdparty/MurmurHash3.*",
 ]
 
