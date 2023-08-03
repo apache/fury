@@ -83,7 +83,7 @@ integration_tests() {
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$jdk"
      export PATH=$JAVA_HOME/bin:$PATH
-     mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest.testAndPrepareData
+     mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest#testAndPrepareData
   done
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$jdk"
