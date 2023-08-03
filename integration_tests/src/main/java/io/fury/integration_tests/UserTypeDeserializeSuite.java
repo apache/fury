@@ -21,9 +21,8 @@ import io.fury.integration_tests.state.FlatBuffersState;
 import io.fury.integration_tests.state.FlatBuffersState.FlatBuffersUserTypeState;
 import io.fury.integration_tests.state.ProtoBuffersState;
 import io.fury.integration_tests.state.ProtoBuffersState.ProtoBuffersUserTypeState;
-import java.io.IOException;
-
 import io.fury.util.Platform;
+import java.io.IOException;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
