@@ -84,12 +84,12 @@ integration_tests() {
   cd "$ROOT"/integration_tests
   mvn -T10 -B clean test
   for jdk in "${JDKS[@]}"; do
-     export JAVA_HOME="$jdk"
+     export JAVA_HOME="$PWD/$jdk"
      export PATH=$JAVA_HOME/bin:$PATH
      mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
   done
   for jdk in "${JDKS[@]}"; do
-     export JAVA_HOME="$jdk"
+     export JAVA_HOME="$PWD/$jdk"
      export PATH=$JAVA_HOME/bin:$PATH
      mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
   done
