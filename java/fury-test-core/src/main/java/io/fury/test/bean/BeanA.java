@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import lombok.Data;
-import org.apache.commons.lang3.RandomStringUtils;
 
 @Data
 public class BeanA implements Serializable {
@@ -63,8 +62,8 @@ public class BeanA implements Serializable {
     beanA.setBeanB(BeanB.createBeanB(arrSize));
     BigDecimal decimal = new BigDecimal(new BigInteger("122222222222222225454657712222222222"), 18);
     beanA.setF16(decimal);
-    beanA.setF17(RandomStringUtils.randomAlphabetic(40));
-    beanA.setLongStringField(RandomStringUtils.randomAlphabetic(20));
+    beanA.setF17(TestUtils.random(40, 1));
+    beanA.setLongStringField(TestUtils.random(20, 1));
 
     if (arrSize > 0) {
       {
