@@ -65,7 +65,7 @@ jobs:
         with:
           java-version: 8
           distribution: 'temurin'
-      - name: Run CI with Maven
+      - name: Run CI
         run: ./ci/run_ci.sh integration_tests
   javascript:
     name: Javascript CI

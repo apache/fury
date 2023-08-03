@@ -72,6 +72,7 @@ JDKS=(
 )
 
 install_jdks() {
+  cd "$ROOT"
   for jdk in "${JDKS[@]}"; do
     wget -q https://cdn.azul.com/zulu/bin/"$jdk".tar.gz -O "$jdk".tar.gz
     tar zxf "$jdk".tar.gz
@@ -84,12 +85,12 @@ integration_tests() {
   cd "$ROOT"/integration_tests
   mvn -T10 -B clean test
   for jdk in "${JDKS[@]}"; do
-     export JAVA_HOME="$PWD/$jdk"
+     export JAVA_HOME="$ROOT/$jdk"
      export PATH=$JAVA_HOME/bin:$PATH
      mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
   done
   for jdk in "${JDKS[@]}"; do
-     export JAVA_HOME="$PWD/$jdk"
+     export JAVA_HOME="$ROOT/$jdk"
      export PATH=$JAVA_HOME/bin:$PATH
      mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
   done
