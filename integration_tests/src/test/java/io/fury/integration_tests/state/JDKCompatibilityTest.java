@@ -24,36 +24,40 @@ import io.fury.util.Platform;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class JDKCompatibilityTest {
-  io.fury.Fury.FuryBuilder builder =
-      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
+
+  io.fury.Fury.FuryBuilder builder() {
+    return Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
+  }
 
   @Test
   public void testAndPrepareData() throws IOException {
     {
-      Fury fury = builder.build();
+      Fury fury = builder().build();
       BeanA beanA = BeanA.createBeanA(2);
+      Assert.assertEquals(BeanA.createBeanA(2), beanA);
       byte[] serialized = fury.serialize(beanA);
       Assert.assertEquals(fury.deserialize(serialized), beanA);
-      Files.write(Paths.get("bean_schema_consistent" + Platform.JAVA_VERSION), serialized);
+      write("bean_schema_consistent" + Platform.JAVA_VERSION, serialized);
     }
     {
-      Fury fury = builder.withCompatibleMode(CompatibleMode.COMPATIBLE).build();
+      Fury fury = builder().withCompatibleMode(CompatibleMode.COMPATIBLE).build();
       BeanA beanA = BeanA.createBeanA(2);
       byte[] serialized = fury.serialize(beanA);
       Assert.assertEquals(fury.deserialize(serialized), beanA);
-      Files.write(Paths.get("bean_schema_compatible" + Platform.JAVA_VERSION), serialized);
+      write("bean_schema_compatible" + Platform.JAVA_VERSION, serialized);
     }
   }
 
   @Test
   public void testSchemaConsist() throws IOException {
     BeanA beanA = BeanA.createBeanA(2);
-    Fury fury = builder.build();
+    Fury fury = builder().build();
     File dir = new File(".");
     File[] files = dir.listFiles((d, name) -> name.startsWith("bean_schema_consistent"));
     assert files != null;
@@ -63,7 +67,7 @@ public class JDKCompatibilityTest {
   @Test
   public void testSchemaCompatible() throws IOException {
     BeanA beanA = BeanA.createBeanA(2);
-    Fury fury = builder.withCompatibleMode(CompatibleMode.COMPATIBLE).build();
+    Fury fury = builder().withCompatibleMode(CompatibleMode.COMPATIBLE).build();
     File dir = new File(".");
     File[] files = dir.listFiles((d, name) -> name.startsWith("bean_schema_compatible"));
     assert files != null;
@@ -73,6 +77,7 @@ public class JDKCompatibilityTest {
   private static void check(BeanA beanA, Fury fury, File[] files) throws IOException {
     for (File file : files) {
       byte[] bytes = Files.readAllBytes(file.toPath());
+      Assert.assertEquals(fury.serialize(beanA).length, bytes.length);
       try {
         Object o = fury.deserialize(bytes);
         Assert.assertEquals(o, beanA);
@@ -80,6 +85,16 @@ public class JDKCompatibilityTest {
         throw new RuntimeException(
             "Check failed for " + file + " under JDK " + Platform.JAVA_VERSION, e);
       }
+    }
+  }
+
+  private void write(String path, byte[] data) {
+    try {
+      Path p = Paths.get(path);
+      Files.deleteIfExists(p);
+      Files.write(p, data);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }
