@@ -29,21 +29,20 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class JDKCompatibilityTest {
+  io.fury.Fury.FuryBuilder builder =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
+
   @Test
   public void testAndPrepareData() throws IOException {
     {
-      Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
+      Fury fury = builder.build();
       BeanA beanA = BeanA.createBeanA(2);
       byte[] serialized = fury.serialize(beanA);
       Assert.assertEquals(fury.deserialize(serialized), beanA);
       Files.write(Paths.get("bean_schema_consistent" + Platform.JAVA_VERSION), serialized);
     }
     {
-      Fury fury =
-          Fury.builder()
-              .withLanguage(Language.JAVA)
-              .withCompatibleMode(CompatibleMode.COMPATIBLE)
-              .build();
+      Fury fury = builder.withCompatibleMode(CompatibleMode.COMPATIBLE).build();
       BeanA beanA = BeanA.createBeanA(2);
       byte[] serialized = fury.serialize(beanA);
       Assert.assertEquals(fury.deserialize(serialized), beanA);
@@ -54,7 +53,7 @@ public class JDKCompatibilityTest {
   @Test
   public void testSchemaConsist() throws IOException {
     BeanA beanA = BeanA.createBeanA(2);
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
+    Fury fury = builder.build();
     File dir = new File(".");
     File[] files = dir.listFiles((d, name) -> name.startsWith("bean_schema_consistent"));
     assert files != null;
@@ -64,11 +63,7 @@ public class JDKCompatibilityTest {
   @Test
   public void testSchemaCompatible() throws IOException {
     BeanA beanA = BeanA.createBeanA(2);
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .build();
+    Fury fury = builder.withCompatibleMode(CompatibleMode.COMPATIBLE).build();
     File dir = new File(".");
     File[] files = dir.listFiles((d, name) -> name.startsWith("bean_schema_compatible"));
     assert files != null;
