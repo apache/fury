@@ -24,8 +24,9 @@ import boolSerializer from "./internalSerializer/bool";
 import { uInt16Serializer, int16Serializer, int32Serializer, uInt32Serializer, uInt64Serializer, floatSerializer, doubleSerializer, uInt8Serializer, int64Serializer, int8Serializer } from "./internalSerializer/number";
 import { InternalSerializerType, Serializer, Fury, BinaryReader, BinaryWriter } from "./type";
 import anySerializer from './internalSerializer/any';
-import { PlatformBuffer } from "./platformBuffer";
-
+import { PlatformBuffer, fromUint8Array } from "./platformBuffer";
+import { x64hash128 } from "./murmurHash3";
+import { BinaryWriter as BufferWriter } from './writer'
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1
 
@@ -92,7 +93,22 @@ export default class SerializerResolver {
         return this.customSerializer[tag];
     }
 
-    writeTag(binaryWriter: BinaryWriter, tag: string, tagHash: number, tagBuffer: PlatformBuffer, bufferLen: number) {
+    tagToBuffer(tag: string) {
+        const tagBuffer = fromUint8Array(new TextEncoder().encode(tag));
+        let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
+        if (tagHash === BigInt(0)) {
+            tagHash = BigInt(1);
+        }
+        const bufferLen =tagBuffer.byteLength;
+        const writer = BufferWriter({});
+        writer.uint8(USESTRINGVALUE);
+        writer.uint64(tagHash); 
+        writer.int16(bufferLen);
+        writer.bufferWithoutMemCheck(tagBuffer, bufferLen);
+        return writer.dump();
+    }
+
+    writeTag(binaryWriter: BinaryWriter, tag: string, bf: PlatformBuffer, byteLength: number) {
         const index = this.writeStringIndex.indexOf(tag);
         if (index > -1) {
             binaryWriter.uint8(USESTRINGID)
@@ -100,17 +116,14 @@ export default class SerializerResolver {
             return;
         }
         this.writeStringIndex.push(tag);
-        binaryWriter.uint8(USESTRINGVALUE);
-        binaryWriter.uint64(tagHash); 
-        binaryWriter.utf8StringOfInt16(tagBuffer, bufferLen);
+        binaryWriter.bufferWithoutMemCheck(bf, byteLength);
     }
 
 
-    skipTag(binaryReader: BinaryReader) {
+    detectTag(binaryReader: BinaryReader) {
         const flag = binaryReader.uint8();
         if (flag === USESTRINGVALUE) {
-            // todo: support tag hash. skip
-            binaryReader.skip(8);
+            binaryReader.skip(8); // The tag hash is not needed at the moment.
             const str = binaryReader.stringUtf8(binaryReader.int16());
             return str
         } else {
@@ -121,8 +134,7 @@ export default class SerializerResolver {
     readTag(binaryReader: BinaryReader) {
         const flag = binaryReader.uint8();
         if (flag === USESTRINGVALUE) {
-            // todo: support tag hash. skip
-            binaryReader.skip(8);
+            binaryReader.skip(8);  // The tag hash is not needed at the moment.
             const str = binaryReader.stringUtf8(binaryReader.int16());
             this.readStringPool.push(str);
             return str

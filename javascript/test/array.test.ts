@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType, ObjectTypeDescription, Type } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType, ObjectTypeDescription, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('array', () => {
   test('should array work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
+    
 
     const description = Type.object("example.bar", {
       c: Type.array(Type.object("example.foo", {
         a: Type.string()
       }))
     });
-    const fury = new Fury({ refTracking: true, hps });
+    const fury = new Fury({ refTracking: true });
     const { serialize, deserialize } = fury.registerSerializer(description);
     const o = { a: "123" };
     expect(deserialize(serialize({ c: [o, o] }))).toEqual({ c: [o, o] })
@@ -58,26 +58,77 @@ describe('array', () => {
         tag: "example.foo"
       }
     };
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps }); const serializer = fury.registerSerializer(description).serializer;
+    
+    const fury = new Fury({ refTracking: true }); const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({
       a: [true, false],
       a2: [1, 2, 3],
       a3: [3, 5, 76],
       a4: [634, 564, 76],
       a6: [234243.555, 55654.6786],
-      a7: ["hello", "world"]
+      a7: ["hello", "world", null]
     }, serializer);
     const result = fury.deserialize(
       input
     );
+    result.a4 = result.a4.map(x => Number(x));
     expect(result).toEqual({
       a: [true, false],
       a2: [1, 2, 3],
       a3: [3, 5, 76],
       a4: [634, 564, 76],
       a6: [234243.555, 55654.6786],
-      a7: ["hello", "world"]
+      a7: ["hello", "world", null]
+    })
+  });
+  test('should string array work', () => {
+    const description = {
+      type: InternalSerializerType.FURY_TYPE_TAG,
+      options: {
+        props: {
+          a7: {
+            type: InternalSerializerType.FURY_STRING_ARRAY
+          },
+        },
+        tag: "example.foo"
+      }
+    };
+    
+    const fury = new Fury({ refTracking: true }); 
+    const serializer = fury.registerSerializer(description).serializer;
+    const input = fury.serialize({
+      a7: ["hello", "world", null]
+    }, serializer);
+    const result = fury.deserialize(
+      input
+    );
+    expect(result).toEqual({
+      a7: ["hello", "world", null]
+    })
+  });
+  test('should string array work when latin1 enable', () => {
+    const description = {
+      type: InternalSerializerType.FURY_TYPE_TAG,
+      options: {
+        props: {
+          a7: {
+            type: InternalSerializerType.FURY_STRING_ARRAY
+          },
+        },
+        tag: "example.foo"
+      }
+    };
+    
+    const fury = new Fury({ refTracking: true, useLatin1: true }); 
+    const serializer = fury.registerSerializer(description).serializer;
+    const input = fury.serialize({
+      a7: ["hello", "world", null]
+    }, serializer);
+    const result = fury.deserialize(
+      input
+    );
+    expect(result).toEqual({
+      a7: ["hello", "world", null]
     })
   });
   test('should floatarray work', () => {
@@ -92,8 +143,8 @@ describe('array', () => {
         tag: "example.foo"
       }
     };
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps }); const serialize = fury.registerSerializer(description).serializer;
+    
+    const fury = new Fury({ refTracking: true }); const serialize = fury.registerSerializer(description).serializer;
     const input = fury.serialize({
       a5: [2.43, 654.4, 55],
     }, serialize);

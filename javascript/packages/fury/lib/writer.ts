@@ -32,7 +32,7 @@ export const BinaryWriter = (config: Config) => {
   function initPoll() {
     byteLength = 1024 * 100;
     arrayBuffer = alloc(byteLength);
-    dataView = new DataView(arrayBuffer.buffer);
+    dataView = new DataView(arrayBuffer.buffer, arrayBuffer.byteOffset);
   }
 
   initPoll();
@@ -40,11 +40,11 @@ export const BinaryWriter = (config: Config) => {
   function reserve(len: number) {
     reserved += len;
     if (byteLength - cursor <= reserved) {
-      const newAb = alloc(byteLength + len);
+      const newAb = alloc(byteLength*2 + len);
       arrayBuffer.copy(newAb, 0);
       arrayBuffer = newAb;
       byteLength = arrayBuffer.byteLength;
-      dataView = new DataView(arrayBuffer.buffer);
+      dataView = new DataView(arrayBuffer.buffer, arrayBuffer.byteOffset);
     }
   }
 
@@ -127,10 +127,9 @@ export const BinaryWriter = (config: Config) => {
     cursor += 8;
   }
 
-  function utf8StringOfInt16(bf: PlatformBuffer, bufferLen: number) {
-    int16(bufferLen);
+  function bufferWithoutMemCheck(bf: PlatformBuffer, byteLen: number) {
     bf.copy(arrayBuffer, cursor);
-    cursor += bufferLen;
+    cursor += byteLen;
   }
 
   function fastWriteStringUtf8(string: string, buffer: Uint8Array, offset: number) {
@@ -216,43 +215,13 @@ export const BinaryWriter = (config: Config) => {
     cursor += len;
   }
 
-  function varInt32(value: number) {
-    if (value >> 7 == 0) {
-      arrayBuffer[cursor++] = value;
-      return;
+  function varInt32(val: number) {
+    val = val >>> 0;
+    while (val > 127) {
+        arrayBuffer[cursor++] = val & 127 | 128;
+        val >>>= 7;
     }
-    if (value >> 14 == 0) {
-      const u1 = (value & 0x7f) | 0x80;
-      const u2 = value >> 7;
-      dataView.setUint16(cursor, (u1 << 8) | u2);
-      cursor += 2;
-      return;
-    }
-    if (value >> 21 == 0) {
-      const u1 = (value & 0x7f) | 0x80;
-      const u2 = (value >> 7) | 0x80;
-      dataView.setUint16(cursor, (u1 << 8) | u2);
-      arrayBuffer[cursor + 2] = value >> 14;
-      cursor += 3;
-      return;
-    }
-    if (value >> 28 == 0) {
-      const u1 = (value & 0x7f) | 0x80;
-      const u2 = (value >> 7) | 0x80;
-      const u3 = (value >> 14) | 0x80;
-      const u4 = (value >> 21) | 0x80;
-      dataView.setUint32(cursor, (u1 << 24) | (u2 << 16) | (u3 << 8) | u4);
-      cursor += 4;
-      return;
-    }
-    const u1 = (value & 0x7f) | 0x80;
-    const u2 = (value >> 7) | 0x80;
-    const u3 = (value >> 14) | 0x80;
-    const u4 = (value >> 21) | 0x80;
-    dataView.setUint32(cursor, (u1 << 24) | (u2 << 16) | (u3 << 8) | u4);
-    arrayBuffer[cursor + 4] = value >> 28;
-    cursor += 5;
-    return;
+    arrayBuffer[cursor++] = val;
   }
 
   function tryFreePool() {
@@ -276,8 +245,18 @@ export const BinaryWriter = (config: Config) => {
     dataView.setUint32(offset, v, true);
   }
 
+  function getByteLen() {
+    return byteLength;
+  }
+
+  function getReserved() {
+    return reserved;
+  }
+
   return {
     skip,
+    getByteLen,
+    getReserved,
     reset,
     reserve,
     uint16,
@@ -290,7 +269,7 @@ export const BinaryWriter = (config: Config) => {
     stringOfVarInt32: config?.hps
       ? stringOfVarInt32Fast()
       : stringOfVarInt32Slow,
-    utf8StringOfInt16: utf8StringOfInt16,
+    bufferWithoutMemCheck,
     uint64,
     buffer,
     double,

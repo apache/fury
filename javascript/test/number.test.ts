@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('number', () => {
   test('should i8 work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
+    
+    const fury = new Fury({ refTracking: true });    
     const serialize = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -39,8 +39,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should i16 work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
+    
+    const fury = new Fury({ refTracking: true });    
     const serialize = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -59,8 +59,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should i32 work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
+    
+    const fury = new Fury({ refTracking: true });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -79,8 +79,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should i64 work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
+    
+    const fury = new Fury({ refTracking: true });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -96,22 +96,16 @@ describe('number', () => {
     const result = fury.deserialize(
       input
     );
+    result.a = Number(result.a)
     expect(result).toEqual({ a: 1 })
   });
   test('should u8 work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
-    const serializer = fury.registerSerializer({
-      type: InternalSerializerType.FURY_TYPE_TAG,
-      options: {
-        tag: "example.foo",
-        props: {
-          a: {
-            type: InternalSerializerType.UINT8,
-          }
-        }
-      }
-    }).serializer;
+    
+    const fury = new Fury({ refTracking: true });   
+    const description = Type.object("example.foo", {
+      a: Type.uint8()
+    }) 
+    const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({ a: 1 }, serializer);
     const result = fury.deserialize(
       input
@@ -119,19 +113,12 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should u16 work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
-    const serializer = fury.registerSerializer({
-      type: InternalSerializerType.FURY_TYPE_TAG,
-      options: {
-        tag: "example.foo",
-        props: {
-          a: {
-            type: InternalSerializerType.UINT16
-          }
-        }
-      }
-    }).serializer;
+    
+    const fury = new Fury({ refTracking: true });    
+    const description = Type.object("example.foo", {
+      a: Type.uint16(),
+    })
+    const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({ a: 1 }, serializer);
     const result = fury.deserialize(
       input
@@ -139,8 +126,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should u32 work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
+    
+    const fury = new Fury({ refTracking: true });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -159,8 +146,8 @@ describe('number', () => {
     expect(result).toEqual({ a: 1 })
   });
   test('should u64 work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
+    
+    const fury = new Fury({ refTracking: true });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -176,11 +163,12 @@ describe('number', () => {
     const result = fury.deserialize(
       input
     );
+    result.a = Number(result.a)
     expect(result).toEqual({ a: 1 })
   });
   test('should float work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
+    
+    const fury = new Fury({ refTracking: true });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {
@@ -199,8 +187,8 @@ describe('number', () => {
     expect(result.a).toBeCloseTo(1.2)
   });
   test('should double work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
+    
+    const fury = new Fury({ refTracking: true });    
     const serializer = fury.registerSerializer({
       type: InternalSerializerType.FURY_TYPE_TAG,
       options: {

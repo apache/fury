@@ -15,8 +15,6 @@ export type u64 = Brand<'u64', [u32, u32]>;
 type u64spill = Brand<'u64spill', [u32, u32, u32, u32]>;
 
 
-export const strToBuf = TextEncoder.prototype.encode.bind(new TextEncoder());
-
 const hexLUT = Array.from({ length: 256 }, (_, i) => `00${i.toString(16)}`.slice(-2));
 
 export function bufToHex(buf: Uint8Array = new Uint8Array(0)): string {
@@ -181,13 +179,9 @@ export type x64hash128State = {
 
 
 export function x64hash128(
-  buf: Uint8Array | string = new Uint8Array(0),
+  buf: Uint8Array = new Uint8Array(0),
   state: u32 = 0x0,
 ): DataView {
-  if (typeof buf === 'string') {
-    buf = strToBuf(buf);
-  }
-  
   let h1: u64;
   let h2: u64;
   let i: number;

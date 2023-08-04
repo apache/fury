@@ -16,6 +16,28 @@
 
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
+  collectCoverage: true,
   preset: 'ts-jest',
   testEnvironment: 'node',
+  collectCoverageFrom: [
+    "**/*.ts",
+    "!**/dist/**",
+    "!**/build/**",
+    "!packages/fury/lib/murmurHash3.ts"
+  ],
+  transform: {
+    '\\.ts$': ['ts-jest', {
+      diagnostics: {
+        ignoreCodes: [151001]
+      }
+    }],
+  },
+  coverageThreshold: {
+    global: {
+      branches: 91,
+      functions: 99,
+      lines: 98,
+      statements: 98
+    }
+  }
 };

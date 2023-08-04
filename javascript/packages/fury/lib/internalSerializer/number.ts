@@ -27,10 +27,6 @@ export const uInt8Serializer = (fury: Fury) => {
         write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT8, (v: number) => {
             writeUInt8(v);
         }),
-        writeWithoutType: (v: number) => {
-            writeInt8(RefFlags.NotNullValueFlag);
-            writeUInt8(v);
-        },
         config: () => {
             return {
                 reserve: 4,
@@ -98,10 +94,6 @@ export const int8Serializer = (fury: Fury) => {
         write: referenceResolver.withNotNullableWriter(InternalSerializerType.INT8, (v: number) => {
             writeInt8(v);
         }),
-        writeWithoutType: (v: number) => {
-            writeInt8(RefFlags.NotNullValueFlag);
-            writeInt8(v);
-        },
         config: () => {
             return {
                 reserve: 4,
@@ -122,10 +114,6 @@ export const uInt16Serializer = (fury: Fury) => {
         write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT16, (v: number) => {
             writeUInt16(v);
         }),
-        writeWithoutType: (v: number) => {
-            writeInt8(RefFlags.NotNullValueFlag);
-            writeUInt16(v);
-        },
         config: () => {
             return {
                 reserve: 5,
@@ -170,10 +158,6 @@ export const uInt32Serializer = (fury: Fury) => {
         write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT32, (v: number) => {
             writeUInt32(v);
         }),
-        writeWithoutType: (v: number) => {
-            writeInt8(RefFlags.NotNullValueFlag);
-            writeUInt32(v);
-        },
         config: () => {
             return {
                 reserve: 7,
@@ -218,10 +202,6 @@ export const uInt64Serializer = (fury: Fury) => {
         write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT64, (v: bigint) => {
             writeUInt64(v);
         }),
-        writeWithoutType: (v: bigint) => {
-            writeInt8(RefFlags.NotNullValueFlag);
-            writeUInt64(v);
-        },
         config: () => {
             return {
                 reserve: 11,

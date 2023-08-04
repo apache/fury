@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType } from '@furyjs/fury';
+import Fury, { TypeDescription, InternalSerializerType } from '../packages/fury/index';
 import {describe, expect, test} from '@jest/globals';
 
 describe('bool', () => {
   test('should false work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
+    
+    const fury = new Fury({ refTracking: true });    
     const input = fury.serialize(false);
     const result = fury.deserialize(
         input
@@ -28,8 +28,8 @@ describe('bool', () => {
     expect(result).toEqual(false)
   });
   test('should true work', () => {
-    const hps = process.env.enableHps ? require('@furyjs/hps') : null;
-    const fury = new Fury({ refTracking: true, hps });    
+    
+    const fury = new Fury({ refTracking: true });    
     const input = fury.serialize(true);
     const result = fury.deserialize(
         input
