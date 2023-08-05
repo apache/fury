@@ -334,7 +334,12 @@ public class ClassResolver {
       } catch (NoSuchMethodException e) {
         throw new IllegalStateException("unreachable", e);
       } catch (InvocationTargetException | IllegalAccessException e) {
-        throw new RuntimeException(e);
+        if (e instanceof InvocationTargetException) {
+          Throwable cause = e.getCause();
+          LOG.warn("Load arrow serialized failed at: ", cause);
+        } else {
+          throw new RuntimeException(e);
+        }
       }
     }
   }

@@ -33,14 +33,13 @@ import io.fury.integration_tests.state.generated.FBSImage;
 import io.fury.integration_tests.state.generated.FBSMedia;
 import io.fury.integration_tests.state.generated.FBSMediaContent;
 import io.fury.integration_tests.state.generated.FBSSample;
+import io.fury.util.Platform;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-
-import io.fury.util.Platform;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;

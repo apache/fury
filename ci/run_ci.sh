@@ -63,6 +63,39 @@ install_bazel() {
   grep "jobs" ~/.bazelrc
 }
 
+JDKS=(
+"zulu17.44.17-ca-crac-jdk17.0.8-linux_x64"
+"zulu15.46.17-ca-jdk15.0.10-linux_x64"
+"zulu13.54.17-ca-jdk13.0.14-linux_x64"
+"zulu11.66.15-ca-jdk11.0.20-linux_x64"
+"zulu8.72.0.17-ca-jdk8.0.382-linux_x64"
+)
+
+install_jdks() {
+  cd "$ROOT"
+  for jdk in "${JDKS[@]}"; do
+    wget -q https://cdn.azul.com/zulu/bin/"$jdk".tar.gz -O "$jdk".tar.gz
+    tar zxf "$jdk".tar.gz
+  done
+}
+
+integration_tests() {
+  cd "$ROOT"/java
+  mvn -T10 -B clean install -DskipTests
+  cd "$ROOT"/integration_tests
+  mvn -T10 -B clean test
+  for jdk in "${JDKS[@]}"; do
+     export JAVA_HOME="$ROOT/$jdk"
+     export PATH=$JAVA_HOME/bin:$PATH
+     mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
+  done
+  for jdk in "${JDKS[@]}"; do
+     export JAVA_HOME="$ROOT/$jdk"
+     export PATH=$JAVA_HOME/bin:$PATH
+     mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
+  done
+}
+
 case $1 in
     java8)
       echo "Executing fury java tests"
@@ -99,6 +132,13 @@ case $1 in
       fi
       echo "Executing fury java tests succeeds"
     ;;
+    integration_tests)
+      echo "Install jdk"
+      install_jdks
+      echo "Executing fury integration tests"
+      integration_tests
+      echo "Executing fury integration tests succeeds"
+     ;;
     javascript)
       set +e
       echo "Executing fury javascript tests"
