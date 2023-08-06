@@ -90,7 +90,7 @@ integration_tests() {
   mvn -T10 -B --no-transfer-progress clean test
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$ROOT/$jdk"
-     export PATH=$JAVA_HOME/bin:
+     export PATH=$JAVA_HOME/bin:$PATH
      echo "First round for generate data: ${jdk}"
      mvn -T10 --no-transfer-progress clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
   done
