@@ -103,7 +103,7 @@ public class Descriptor {
     this.name = field.getName();
     this.modifier = field.getModifiers();
     this.declaringClass = field.getDeclaringClass().getName();
-    this.readMethod = null;
+    this.readMethod = readMethod;
     this.writeMethod = null;
     this.typeToken = null;
   }
