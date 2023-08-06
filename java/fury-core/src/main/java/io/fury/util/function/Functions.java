@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package io.fury.util;
+package io.fury.util.function;
 
 import com.google.common.base.Preconditions;
+import io.fury.util.ReflectionUtils;
+import io.fury.util.unsafe._JDKAccess;
 import java.io.Serializable;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -81,6 +85,19 @@ public class Functions {
     default <V> TriFunction<A, B, C, V> andThen(Function<? super R, ? extends V> after) {
       Preconditions.checkNotNull(after);
       return (A a, B b, C c) -> after.apply(apply(a, b, c));
+    }
+  }
+
+  public static Object makeGetterFunction(Method method) {
+    MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(method.getDeclaringClass());
+    try {
+      // Why `lookup.findGetter` doesn't work?
+      // MethodHandle handle = lookup.findGetter(field.getDeclaringClass(), field.getName(),
+      // field.getType());
+      MethodHandle handle = lookup.unreflect(method);
+      return _JDKAccess.makeGetterFunction(lookup, handle, method.getReturnType());
+    } catch (IllegalAccessException ex) {
+      throw new RuntimeException(ex);
     }
   }
 }
