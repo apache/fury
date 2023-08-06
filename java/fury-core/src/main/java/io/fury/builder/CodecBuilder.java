@@ -109,7 +109,7 @@ public abstract class CodecBuilder {
   /** Returns an expression that get field value from <code>bean</code>. */
   protected Expression getFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
     TypeToken<?> fieldType = descriptor.getTypeToken();
-    // No public field type is cast to public parent classes in subclasses of this class.
+    // No public field type is cast to public parent classes in DescriptorGrouper#createDescriptor
     Preconditions.checkArgument(
         Modifier.isPublic(getRawType(fieldType).getModifiers()),
         "Field type should be public for codegen-based access");
