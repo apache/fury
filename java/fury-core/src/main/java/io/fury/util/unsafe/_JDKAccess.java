@@ -18,17 +18,29 @@ package io.fury.util.unsafe;
 
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Primitives;
+import io.fury.collection.Tuple2;
 import io.fury.util.Utils;
+import io.fury.util.function.ToByteFunction;
+import io.fury.util.function.ToCharFunction;
+import io.fury.util.function.ToFloatFunction;
+import io.fury.util.function.ToShortFunction;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 import sun.misc.Unsafe;
 
 // CHECKSTYLE.OFF:TypeName
@@ -224,6 +236,51 @@ public class _JDKAccess {
               interfaceType);
       // FIXME(chaokunyang) why use invokeExact will fail.
       return (T) callSite.getTarget().invoke();
+    } catch (Throwable e) {
+      UNSAFE.throwException(e);
+      throw new IllegalStateException(e);
+    }
+  }
+
+  private static final Map<Class<?>, Tuple2<Class<?>, String>> methodMap = new HashMap<>();
+
+  static {
+    methodMap.put(boolean.class, Tuple2.of(Predicate.class, "test"));
+    methodMap.put(byte.class, Tuple2.of(ToByteFunction.class, "applyAsByte"));
+    methodMap.put(char.class, Tuple2.of(ToCharFunction.class, "applyAsChar"));
+    methodMap.put(short.class, Tuple2.of(ToShortFunction.class, "applyAsShort"));
+    methodMap.put(int.class, Tuple2.of(ToIntFunction.class, "applyAsInt"));
+    methodMap.put(long.class, Tuple2.of(ToLongFunction.class, "applyAsLong"));
+    methodMap.put(float.class, Tuple2.of(ToFloatFunction.class, "applyAsFloat"));
+    methodMap.put(double.class, Tuple2.of(ToDoubleFunction.class, "applyAsDouble"));
+  }
+
+  public static Object makeGetterFunction(
+      MethodHandles.Lookup lookup, MethodHandle handle, Class<?> returnType) {
+    Tuple2<Class<?>, String> methodInfo = methodMap.get(returnType);
+    MethodType factoryType;
+    if (methodInfo == null) {
+      methodInfo = Tuple2.of(Function.class, "apply");
+      factoryType = jdkFunctionMethodType;
+    } else {
+      factoryType = MethodType.methodType(returnType, Object.class);
+    }
+    try {
+      CallSite callSite =
+          LambdaMetafactory.metafactory(
+              lookup,
+              methodInfo.f1,
+              MethodType.methodType(methodInfo.f0),
+              factoryType,
+              handle,
+              handle.type());
+      // Can't use invokeExact, since we can't specify exact target type for return variable.
+      return callSite.getTarget().invoke();
+    } catch (ClassNotFoundException | NoClassDefFoundError e) {
+      // ToByteFunction/ToBoolFunction/.. are not defined in jdk, if the classloader of
+      // fury functions `ToByteFunction/..` isn't parent classloader of classloader for getter
+      // represented by handle, then exception will be thrown.
+      return makeGetterFunction(lookup, handle, Object.class);
     } catch (Throwable e) {
       UNSAFE.throwException(e);
       throw new IllegalStateException(e);
