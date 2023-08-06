@@ -82,7 +82,11 @@ install_jdks() {
 integration_tests() {
   cd "$ROOT"/java
   mvn -T10 -B clean install -DskipTests
-  cd "$ROOT"/integration_tests
+  echo "Start perf tests"
+  cd "$ROOT"/integration_tests/perftests
+  mvn -T10 -B clean test
+  echo "Start jdk compatibility tests"
+  cd "$ROOT"/integration_tests/jdk_compatibility_tests
   mvn -T10 -B clean test
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$ROOT/$jdk"

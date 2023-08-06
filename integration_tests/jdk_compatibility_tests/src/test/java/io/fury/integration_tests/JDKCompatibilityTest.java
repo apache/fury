@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury.integration_tests.state;
+package io.fury.integration_tests;
 
 import io.fury.Fury;
 import io.fury.Language;
