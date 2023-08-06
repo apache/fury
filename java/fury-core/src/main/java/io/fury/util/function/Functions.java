@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package io.fury.util;
+package io.fury.util.function;
 
 import com.google.common.base.Preconditions;
+import io.fury.util.ReflectionUtils;
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;

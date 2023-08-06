@@ -29,8 +29,8 @@ import io.fury.codegen.Expression;
 import io.fury.format.row.binary.BinaryArray;
 import io.fury.format.row.binary.BinaryUtils;
 import io.fury.type.TypeUtils;
-import io.fury.util.Functions;
 import io.fury.util.StringUtils;
+import io.fury.util.function.Functions;
 
 /**
  * Expression for iterate {@link io.fury.format.row.ArrayData} with specified not null element
