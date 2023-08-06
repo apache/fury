@@ -22,7 +22,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.collection.Tuple3;
 import io.fury.util.function.Functions;
+import io.fury.util.unsafe._JDKAccess;
 import java.io.ObjectStreamClass;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -94,6 +98,20 @@ public class ReflectionUtils {
       }
     }
     return constructor;
+  }
+
+  public static <T> MethodHandle getExecutableNoArgConstructorHandle(Class<T> cls) {
+    Constructor<T> ctr = getExecutableNoArgConstructor(cls);
+    if (ctr == null) {
+      return null;
+    }
+    MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(ctr.getDeclaringClass());
+    try {
+      return lookup.findConstructor(ctr.getDeclaringClass(), MethodType.methodType(void.class));
+    } catch (NoSuchMethodException | IllegalAccessException e) {
+      Platform.throwException(e);
+      throw new IllegalStateException("unreachable");
+    }
   }
 
   /**

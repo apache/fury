@@ -21,6 +21,11 @@ import io.fury.util.Utils;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
+/**
+ * Unsafe collection utils.
+ *
+ * @author chaokunyang
+ */
 // CHECKSTYLE.OFF:TypeName
 public class _Collections {
   // CHECKSTYLE.ON:TypeName

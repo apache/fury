@@ -29,9 +29,11 @@ import io.fury.type.ClassDef;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
 import io.fury.type.Generics;
+import io.fury.util.FieldAccessor;
+import io.fury.util.Platform;
+import io.fury.util.RecordUtils;
 import io.fury.util.ReflectionUtils;
-import io.fury.util.UnsafeFieldAccessor;
-import java.lang.reflect.Constructor;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,6 +59,7 @@ import java.util.SortedMap;
  * @see ObjectSerializer
  * @author chaokunyang
  */
+@SuppressWarnings({"unchecked"})
 public class MetaSharedSerializer<T> extends Serializer<T> {
   private final ObjectSerializer.FinalTypeField[] finalFields;
   /**
@@ -68,7 +71,8 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
 
   private final ObjectSerializer.GenericTypeField[] otherFields;
   private final ObjectSerializer.GenericTypeField[] containerFields;
-  private final Constructor<T> constructor;
+  private final boolean isRecord;
+  private final MethodHandle constructor;
   private Serializer<T> serializer;
   private final ClassInfoCache classInfoCache;
 
@@ -82,7 +86,12 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     DescriptorGrouper descriptorGrouper =
         DescriptorGrouper.createDescriptorGrouper(descriptors, true, fury.compressNumber());
     // d.getField() may be null if not exists in this class when meta share enabled.
-    this.constructor = ReflectionUtils.getExecutableNoArgConstructor(type);
+    isRecord = RecordUtils.isRecord(type);
+    if (isRecord) {
+      constructor = RecordUtils.getRecordConstructor(type).f1;
+    } else {
+      this.constructor = ReflectionUtils.getExecutableNoArgConstructorHandle(type);
+    }
     Tuple3<
             Tuple2<ObjectSerializer.FinalTypeField[], boolean[]>,
             ObjectSerializer.GenericTypeField[],
@@ -107,6 +116,16 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
 
   @Override
   public T read(MemoryBuffer buffer) {
+    if (isRecord) {
+      Object[] fieldValues =
+          new Object[finalFields.length + otherFields.length + containerFields.length];
+      readFields(buffer, fieldValues);
+      try {
+        return (T) constructor.invoke(fieldValues);
+      } catch (Throwable e) {
+        Platform.throwException(e);
+      }
+    }
     T obj = ObjectSerializer.newBean(constructor, type);
     Fury fury = this.fury;
     RefResolver refResolver = fury.getRefResolver();
@@ -117,7 +136,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     for (int i = 0; i < finalFields.length; i++) {
       ObjectSerializer.FinalTypeField fieldInfo = finalFields[i];
       boolean isFinal = this.isFinal[i];
-      UnsafeFieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
+      FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       if (fieldAccessor != null) {
         short classId = fieldInfo.classId;
         if (ObjectSerializer.readPrimitiveFieldValueFailed(
@@ -144,7 +163,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     }
     for (ObjectSerializer.GenericTypeField fieldInfo : otherFields) {
       Object fieldValue = ObjectSerializer.readOtherFieldValue(fury, fieldInfo, buffer);
-      UnsafeFieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
+      FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       if (fieldAccessor != null) {
         fieldAccessor.putObject(obj, fieldValue);
       }
@@ -153,12 +172,63 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     for (ObjectSerializer.GenericTypeField fieldInfo : containerFields) {
       Object fieldValue =
           ObjectSerializer.readContainerFieldValue(fury, generics, fieldInfo, buffer);
-      UnsafeFieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
+      FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       if (fieldAccessor != null) {
         fieldAccessor.putObject(obj, fieldValue);
       }
     }
     return obj;
+  }
+
+  private void readFields(MemoryBuffer buffer, Object[] fields) {
+    int counter = 0;
+    Fury fury = this.fury;
+    RefResolver refResolver = fury.getRefResolver();
+    ClassResolver classResolver = fury.getClassResolver();
+    // read order: primitive,boxed,final,other,collection,map
+    ObjectSerializer.FinalTypeField[] finalFields = this.finalFields;
+    for (int i = 0; i < finalFields.length; i++) {
+      ObjectSerializer.FinalTypeField fieldInfo = finalFields[i];
+      boolean isFinal = this.isFinal[i];
+      if (fieldInfo.fieldAccessor != null) {
+        assert fieldInfo.classInfo != null;
+        short classId = fieldInfo.classId;
+        // primitive field won't write null flag.
+        if (classId >= ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID
+            && classId <= ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID) {
+          fields[counter++] = Serializers.readPrimitiveValue(fury, buffer, classId);
+        } else {
+          Object fieldValue =
+              ObjectSerializer.readFinalObjectFieldValue(
+                  fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+          fields[counter++] = fieldValue;
+        }
+      } else {
+        if (skipPrimitiveFieldValueFailed(fury, fieldInfo.classId, buffer)) {
+          if (fieldInfo.classInfo == null) {
+            // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
+            fury.readRef(buffer, classInfoCache);
+          } else {
+            ObjectSerializer.readFinalObjectFieldValue(
+                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+          }
+        }
+      }
+    }
+    for (ObjectSerializer.GenericTypeField fieldInfo : otherFields) {
+      Object fieldValue = ObjectSerializer.readOtherFieldValue(fury, fieldInfo, buffer);
+      if (fieldInfo.fieldAccessor != null) {
+        fields[counter++] = fieldValue;
+      }
+    }
+    Generics generics = fury.getGenerics();
+    for (ObjectSerializer.GenericTypeField fieldInfo : containerFields) {
+      Object fieldValue =
+          ObjectSerializer.readContainerFieldValue(fury, generics, fieldInfo, buffer);
+      if (fieldInfo.fieldAccessor != null) {
+        fields[counter++] = fieldValue;
+      }
+    }
   }
 
   /** Skip primitive primitive field value since it doesn't write null flag. */

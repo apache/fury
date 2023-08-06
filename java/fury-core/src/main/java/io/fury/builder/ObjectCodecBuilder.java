@@ -66,7 +66,6 @@ import java.util.Objects;
  * @see ObjectCodecOptimizer for code stats and split heuristics.
  * @author chaokunyang
  */
-@SuppressWarnings("UnstableApiUsage")
 public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   public static final String BUFFER_NAME = "buffer";
   private final Literal classVersionHash;
