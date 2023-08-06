@@ -43,6 +43,11 @@ import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import sun.misc.Unsafe;
 
+/**
+ * Unsafe JDK utils.
+ *
+ * @author chaokunyang
+ */
 // CHECKSTYLE.OFF:TypeName
 public class _JDKAccess {
   // CHECKSTYLE.ON:TypeName
