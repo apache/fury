@@ -73,11 +73,19 @@ public class _JDKAccess {
     }
   }
 
+  private static final ClassValue<Lookup> lookupCache =
+      new ClassValue<Lookup>() {
+        @Override
+        protected Lookup computeValue(Class type) {
+          return _Lookup._trustedLookup(type);
+        }
+      };
+
   // CHECKSTYLE.OFF:MethodName
 
   public static Lookup _trustedLookup(Class<?> objectClass) {
     // CHECKSTYLE.ON:MethodName
-    return _Lookup._trustedLookup(objectClass);
+    return lookupCache.get(objectClass);
   }
 
   public static <T> T tryMakeFunction(
