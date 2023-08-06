@@ -90,12 +90,14 @@ integration_tests() {
   mvn -T10 -B clean test
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$ROOT/$jdk"
-     export PATH=$JAVA_HOME/bin:$PATH
+     export PATH=$JAVA_HOME/bin:
+     echo "First round for generate too: ${jdk}"
      mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
   done
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$ROOT/$jdk"
      export PATH=$JAVA_HOME/bin:$PATH
+     echo "Second round for compatibility: ${jdk}"
      mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
   done
 }
