@@ -20,6 +20,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.primitives.Primitives;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
+import io.fury.resolver.ClassResolver;
 import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.Utils;
@@ -98,6 +99,39 @@ public class Serializers {
       Platform.throwException(t);
     }
     throw new IllegalStateException("unreachable");
+  }
+
+  public static Object readPrimitiveValue(Fury fury, MemoryBuffer buffer, short classId) {
+    switch (classId) {
+      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+        return buffer.readBoolean();
+      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+        return buffer.readByte();
+      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+        return buffer.readChar();
+      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+        return buffer.readShort();
+      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+        if (fury.compressNumber()) {
+          return buffer.readVarInt();
+        } else {
+          return buffer.readInt();
+        }
+      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+        return buffer.readFloat();
+      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+        if (fury.compressNumber()) {
+          return buffer.readVarLong();
+        } else {
+          return buffer.readLong();
+        }
+      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+        return buffer.readDouble();
+      default:
+        {
+          throw new IllegalStateException("unreachable");
+        }
+    }
   }
 
   public abstract static class CrossLanguageCompatibleSerializer<T> extends Serializer<T> {

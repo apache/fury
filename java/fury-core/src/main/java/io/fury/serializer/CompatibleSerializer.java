@@ -23,10 +23,11 @@ import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.FieldResolver;
 import io.fury.resolver.RefResolver;
+import io.fury.util.FieldAccessor;
 import io.fury.util.Platform;
-import io.fury.util.UnsafeFieldAccessor;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import io.fury.util.RecordUtils;
+import io.fury.util.ReflectionUtils;
+import java.lang.invoke.MethodHandle;
 import java.util.Collection;
 import java.util.Map;
 
@@ -34,8 +35,8 @@ import java.util.Map;
  * This Serializer provides both forward and backward compatibility: fields can be added or removed
  * without invalidating previously serialized bytes.
  *
- * @see FieldResolver
  * @author chaokunyang
+ * @see FieldResolver
  */
 // TODO(chaokunyang) support generics optimization for {@code SomeClass<T>}
 // TODO(chaokunyang) support generics optimization for nested collection/map fields.
@@ -45,7 +46,8 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private final RefResolver refResolver;
   private final ClassResolver classResolver;
   private final FieldResolver fieldResolver;
-  private final Constructor<T> constructor;
+  private final boolean isRecord;
+  private final MethodHandle constructor;
   private final boolean compressNumber;
 
   public CompatibleSerializer(Fury fury, Class<T> cls) {
@@ -55,16 +57,12 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     // Use `setSerializerIfAbsent` to avoid overwriting existing serializer for class when used
     // as data serializer.
     classResolver.setSerializerIfAbsent(cls, this);
-    Constructor<T> constructor;
-    try {
-      constructor = cls.getConstructor();
-      if (!constructor.isAccessible()) {
-        constructor.setAccessible(true);
-      }
-    } catch (Exception e) {
-      constructor = null;
+    isRecord = RecordUtils.isRecord(type);
+    if (isRecord) {
+      constructor = RecordUtils.getRecordConstructor(type).f1;
+    } else {
+      this.constructor = ReflectionUtils.getExecutableNoArgConstructorHandle(type);
     }
-    this.constructor = constructor;
     fieldResolver = classResolver.getFieldResolver(cls);
     compressNumber = fury.compressNumber();
   }
@@ -73,6 +71,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     super(fury, cls);
     this.refResolver = fury.getRefResolver();
     this.classResolver = fury.getClassResolver();
+    isRecord = RecordUtils.isRecord(type);
     this.constructor = null;
     this.fieldResolver = fieldResolver;
     compressNumber = fury.compressNumber();
@@ -131,11 +130,12 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
 
   private void readAndWriteFieldValue(
       MemoryBuffer buffer, FieldResolver.FieldInfo fieldInfo, Object targetObject) {
-    UnsafeFieldAccessor fieldAccessor = fieldInfo.getUnsafeFieldAccessor();
+    FieldAccessor fieldAccessor = fieldInfo.getFieldAccessor();
     short classId = fieldInfo.getEmbeddedClassId();
     if (ObjectSerializer.writePrimitiveFieldValueFailed(
         fury, buffer, targetObject, fieldAccessor, classId)) {
-      Object fieldValue = fieldAccessor.getObject(targetObject);
+      Object fieldValue;
+      fieldValue = fieldAccessor.getObject(targetObject);
       if (ObjectSerializer.writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId)) {
         if (classId == ClassResolver.NO_CLASS_ID) { // SEPARATE_TYPES_HASH
           writeSeparateFieldValue(fieldInfo, buffer, fieldValue);
@@ -282,6 +282,16 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   @SuppressWarnings("unchecked")
   @Override
   public T read(MemoryBuffer buffer) {
+    if (isRecord) {
+      Object[] fieldValues = new Object[fieldResolver.getNumFields()];
+      readFields(buffer, fieldValues);
+      assert constructor != null;
+      try {
+        return (T) constructor.invoke(fieldValues);
+      } catch (Throwable e) {
+        Platform.throwException(e);
+      }
+    }
     T obj = (T) newBean();
     refResolver.reference(obj);
     return readAndSetFields(buffer, obj);
@@ -527,7 +537,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
 
   private void readAndSetFieldValue(
       FieldResolver.FieldInfo fieldInfo, MemoryBuffer buffer, Object targetObject) {
-    UnsafeFieldAccessor fieldAccessor = fieldInfo.getUnsafeFieldAccessor();
+    FieldAccessor fieldAccessor = fieldInfo.getFieldAccessor();
     short classId = fieldInfo.getEmbeddedClassId();
     if (ObjectSerializer.readPrimitiveFieldValueFailed(
             fury, buffer, targetObject, fieldAccessor, classId)
@@ -589,8 +599,8 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private Object newBean() {
     if (constructor != null) {
       try {
-        return constructor.newInstance();
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        return constructor.invokeExact();
+      } catch (Throwable e) {
         Platform.throwException(e);
       }
     }
