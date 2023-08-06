@@ -91,7 +91,7 @@ integration_tests() {
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$ROOT/$jdk"
      export PATH=$JAVA_HOME/bin:
-     echo "First round for generate too: ${jdk}"
+     echo "First round for generate data: ${jdk}"
      mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
   done
   for jdk in "${JDKS[@]}"; do
