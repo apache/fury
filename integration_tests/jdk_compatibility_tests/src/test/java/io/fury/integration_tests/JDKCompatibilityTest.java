@@ -27,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -36,7 +35,7 @@ public class JDKCompatibilityTest {
   io.fury.Fury.FuryBuilder builder() {
     return Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
   }
-  
+
   Object createObject() {
     // test non latin1 string
     return Arrays.asList("Hello", "Hello，你好", BeanA.createBeanA(2));
