@@ -64,6 +64,17 @@ public class RecordUtils {
     GET_ACCESSOR = getAccessor;
   }
 
+  private static final ClassValue<Boolean> isRecordCache = new ClassValue<Boolean>() {
+    @Override
+    protected Boolean computeValue(Class<?> type) {
+      try {
+        return (boolean) IS_RECORD.invoke(type);
+      } catch (IllegalAccessException | InvocationTargetException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  };
+
   private static final ClassValue<RecordComponent[]> recordComponentsCache =
     new ClassValue<RecordComponent[]>() {
       @Override
@@ -141,13 +152,8 @@ public class RecordUtils {
     if (IS_RECORD == null) {
       return false;
     }
-    try {
-      return (boolean) IS_RECORD.invoke(cls);
-    } catch (IllegalAccessException | InvocationTargetException e) {
-      throw new RuntimeException(e);
-    }
+    return isRecordCache.get(cls);
   }
-
 
   /**
    * Returns an array of {@code RecordComponent} objects representing all the
