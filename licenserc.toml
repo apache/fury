@@ -18,7 +18,7 @@ excludes = [
     "*.txt",
 
     # Generated
-    "integration_tests/src/main/java/io/fury/integration_tests/state/generated/**",
+    "integration_tests/perftests/src/main/java/io/fury/integration_tests/state/generated/**",
     
     # Derived
     "ci/format.sh",
