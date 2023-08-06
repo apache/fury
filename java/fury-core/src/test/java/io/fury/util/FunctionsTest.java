@@ -16,6 +16,7 @@
 
 package io.fury.util;
 
+import io.fury.util.function.Functions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.function.Consumer;

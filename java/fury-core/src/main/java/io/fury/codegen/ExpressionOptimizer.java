@@ -21,7 +21,7 @@ import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
 import io.fury.codegen.Expression.Reference;
-import io.fury.util.Functions;
+import io.fury.util.function.Functions;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
