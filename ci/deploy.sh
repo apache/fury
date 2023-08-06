@@ -108,7 +108,7 @@ bump_javascript_version() {
 
 deploy_jars() {
   cd "$ROOT/java"
-  mvn -T10 clean deploy -DskipTests -Prelease
+  mvn -T10 clean deploy --no-transfer-progress -DskipTests -Prelease
 }
 
 deploy_python() {
