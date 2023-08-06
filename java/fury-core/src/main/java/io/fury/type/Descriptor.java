@@ -26,6 +26,9 @@ import com.google.common.reflect.TypeToken;
 import io.fury.annotation.Ignore;
 import io.fury.annotation.Internal;
 import io.fury.collection.Tuple2;
+import io.fury.util.Platform;
+import io.fury.util.RecordComponent;
+import io.fury.util.RecordUtils;
 import io.fury.util.StringUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -85,16 +88,6 @@ public class Descriptor {
     this.typeToken = typeToken;
   }
 
-  public Descriptor(Field field) {
-    this.field = field;
-    this.name = field.getName();
-    this.modifier = field.getModifiers();
-    this.declaringClass = field.getDeclaringClass().getName();
-    this.readMethod = null;
-    this.writeMethod = null;
-    this.typeToken = null;
-  }
-
   public Descriptor(TypeToken<?> typeToken, String name, int modifier, String declaringClass) {
     this.field = null;
     this.name = name;
@@ -105,7 +98,17 @@ public class Descriptor {
     this.writeMethod = null;
   }
 
-  public Descriptor(
+  private Descriptor(Field field, Method readMethod) {
+    this.field = field;
+    this.name = field.getName();
+    this.modifier = field.getModifiers();
+    this.declaringClass = field.getDeclaringClass().getName();
+    this.readMethod = null;
+    this.writeMethod = null;
+    this.typeToken = null;
+  }
+
+  private Descriptor(
       TypeToken<?> typeToken,
       String name,
       int modifier,
@@ -301,6 +304,21 @@ public class Descriptor {
     Class<?> clazz = clz;
     // TODO(chaokunyang) use fury compiler thread pool
     ExecutorService compilationService = ForkJoinPool.commonPool();
+    if (RecordUtils.isRecord(clz)) {
+      RecordComponent[] components = RecordUtils.getRecordComponents(clazz);
+      assert components != null;
+      try {
+        for (RecordComponent component : components) {
+          Field field = clz.getDeclaredField(component.getName());
+          descriptorMap.put(field, new Descriptor(field, component.getAccessor()));
+        }
+      } catch (NoSuchFieldException e) {
+        // impossible
+        Platform.throwException(e);
+      }
+      currentDescriptorMap = new TreeMap<>(descriptorMap);
+      return Tuple2.of(descriptorMap, currentDescriptorMap);
+    }
     do {
       Field[] fields = clazz.getDeclaredFields();
       for (Field field : fields) {
@@ -310,7 +328,7 @@ public class Descriptor {
         if (!Modifier.isTransient(modifiers)
             && !Modifier.isStatic(modifiers)
             && !field.isAnnotationPresent(Ignore.class)) {
-          descriptorMap.put(field, new Descriptor(field));
+          descriptorMap.put(field, new Descriptor(field, null));
         }
       }
       if (clazz == clz) {

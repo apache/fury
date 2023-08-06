@@ -41,7 +41,6 @@ import java.util.function.Function;
  *
  * @author chaokunyang
  */
-@SuppressWarnings("UnstableApiUsage")
 public class DescriptorGrouper {
   // sort primitive descriptors from largest to smallest, if size is the same,
   // sort by field name to fix order.

@@ -43,6 +43,7 @@ import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassInfoCache;
 import io.fury.type.Descriptor;
 import io.fury.util.Platform;
+import io.fury.util.RecordUtils;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.lang.reflect.Field;
@@ -77,6 +78,7 @@ public abstract class CodecBuilder {
   protected final CodegenContext ctx;
   protected final TypeToken<?> beanType;
   protected final Class<?> beanClass;
+  protected final boolean isRecord;
   private final Set<String> duplicatedFields;
   protected Reference furyRef = new Reference(FURY_NAME, TypeToken.of(Fury.class));
   private final Map<String, Reference> fieldMap = new HashMap<>();
@@ -85,6 +87,7 @@ public abstract class CodecBuilder {
     this.ctx = ctx;
     this.beanType = beanType;
     this.beanClass = getRawType(beanType);
+    isRecord = RecordUtils.isRecord(beanClass);
     duplicatedFields =
         Descriptor.getSortedDuplicatedFields(Descriptor.getAllDescriptorsMap(beanClass)).keySet();
     // don't ctx.addImport beanClass, because it maybe causes name collide.

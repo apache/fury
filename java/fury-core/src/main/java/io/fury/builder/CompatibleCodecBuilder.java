@@ -62,6 +62,10 @@ import io.fury.serializer.CompatibleSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
 import io.fury.util.Functions;
+import io.fury.util.Platform;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,7 +79,6 @@ import java.util.Map;
  *
  * @author chaokunyang
  */
-@SuppressWarnings("UnstableApiUsage")
 public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   public static final String FIELD_RESOLVER_NAME = "fieldResolver";
   private final FieldResolver fieldResolver;
@@ -123,6 +126,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   private Descriptor createDescriptor(FieldInfo fieldInfo) {
     TypeToken<?> typeToken;
+    Field field = fieldInfo.getField();
     if (fieldInfo instanceof MapFieldInfo) {
       MapFieldInfo mapFieldInfo = (MapFieldInfo) fieldInfo;
       // Remove nested generics such as `Map<Integer, Map<Integer, Collection<Integer>>>` to keep
@@ -133,9 +137,18 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
           TypeUtils.mapOf(
               mapFieldInfo.getType(), mapFieldInfo.getKeyType(), mapFieldInfo.getValueType());
     } else {
-      typeToken = TypeToken.of(fieldInfo.getField().getGenericType());
+      typeToken = TypeToken.of(field.getGenericType());
     }
-    return new Descriptor(fieldInfo.getField(), typeToken, null, null);
+    Method readerMethod = null;
+    if (isRecord) {
+      try {
+        readerMethod = field.getDeclaringClass().getDeclaredMethod(field.getName());
+      } catch (NoSuchMethodException e) {
+        // impossible
+        Platform.throwException(e);
+      }
+    }
+    return new Descriptor(field, typeToken, readerMethod, null);
   }
 
   private Expression invokeGenerated(
