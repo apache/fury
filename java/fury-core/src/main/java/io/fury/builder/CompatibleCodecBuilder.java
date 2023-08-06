@@ -61,9 +61,8 @@ import io.fury.resolver.FieldResolver.MapFieldInfo;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
-import io.fury.util.Functions;
 import io.fury.util.Platform;
-
+import io.fury.util.function.Functions;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

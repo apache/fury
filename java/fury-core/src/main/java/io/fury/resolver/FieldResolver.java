@@ -35,9 +35,9 @@ import io.fury.serializer.MapSerializers;
 import io.fury.serializer.Serializers;
 import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
+import io.fury.util.FieldAccessor;
 import io.fury.util.MurmurHash3;
 import io.fury.util.ReflectionUtils;
-import io.fury.util.UnsafeFieldAccessor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
@@ -693,7 +693,7 @@ public class FieldResolver {
     private final short classId;
     private final long encodedFieldInfo;
     protected final ClassResolver classResolver;
-    private final UnsafeFieldAccessor unsafeFieldAccessor;
+    private final FieldAccessor fieldAccessor;
     private final ClassInfoCache classInfoCache;
 
     public FieldInfo(
@@ -715,9 +715,9 @@ public class FieldResolver {
       this.classResolver = fury.getClassResolver();
       this.classInfoCache = classResolver.nilClassInfoCache();
       if (field == null || field == STUB_FIELD) {
-        unsafeFieldAccessor = null;
+        fieldAccessor = null;
       } else {
-        unsafeFieldAccessor = new UnsafeFieldAccessor(field);
+        fieldAccessor = FieldAccessor.createAccessor(field);
       }
     }
 
@@ -810,8 +810,8 @@ public class FieldResolver {
       return encodedFieldInfo;
     }
 
-    public UnsafeFieldAccessor getUnsafeFieldAccessor() {
-      return unsafeFieldAccessor;
+    public FieldAccessor getFieldAccessor() {
+      return fieldAccessor;
     }
 
     public ClassInfoCache getClassInfoCache() {

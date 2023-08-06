@@ -44,7 +44,7 @@ import io.fury.codegen.ExpressionVisitor;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
-import io.fury.util.Functions;
+import io.fury.util.function.Functions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
