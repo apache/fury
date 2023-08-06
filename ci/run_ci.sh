@@ -107,7 +107,7 @@ case $1 in
       echo "Executing fury java tests"
       cd "$ROOT/java"
       set +e
-      mvn -T16 --batch-mode test
+      mvn -T16 --batch-mode --no-transfer-progress test
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
@@ -119,7 +119,7 @@ case $1 in
       echo "Executing fury java tests"
       cd "$ROOT/java"
       set +e
-      mvn -T16 --batch-mode test
+      mvn -T16 --batch-mode --no-transfer-progress test
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
@@ -131,7 +131,7 @@ case $1 in
       echo "Executing fury java tests"
       cd "$ROOT/java"
       set +e
-      mvn -T16 --batch-mode test -pl '!fury-format,!fury-testsuite,!fury-benchmark'
+      mvn -T16 --batch-mode --no-transfer-progress test -pl '!fury-format,!fury-testsuite,!fury-benchmark'
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
@@ -202,8 +202,8 @@ case $1 in
       echo "Executing format check"
       bash ci/format.sh
       cd "$ROOT/java"
-      mvn -T10 -B spotless:check
-      mvn -T10 -B checkstyle:check
+      mvn -T10 -B --no-transfer-progress spotless:check
+      mvn -T10 -B --no-transfer-progress checkstyle:check
       echo "Executing format check succeeds"
     ;;
     *)
