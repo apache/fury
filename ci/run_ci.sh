@@ -81,24 +81,24 @@ install_jdks() {
 
 integration_tests() {
   cd "$ROOT"/java
-  mvn -T10 -B clean install -DskipTests
+  mvn -T10 -B --no-transfer-progress clean install -DskipTests
   echo "Start perf tests"
   cd "$ROOT"/integration_tests/perftests
-  mvn -T10 -B clean test
+  mvn -T10 -B --no-transfer-progress clean test
   echo "Start jdk compatibility tests"
   cd "$ROOT"/integration_tests/jdk_compatibility_tests
-  mvn -T10 -B clean test
+  mvn -T10 -B --no-transfer-progress clean test
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$ROOT/$jdk"
      export PATH=$JAVA_HOME/bin:
      echo "First round for generate data: ${jdk}"
-     mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
+     mvn -T10 --no-transfer-progress clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
   done
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$ROOT/$jdk"
      export PATH=$JAVA_HOME/bin:$PATH
      echo "Second round for compatibility: ${jdk}"
-     mvn -T10 clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
+     mvn -T10 --no-transfer-progress clean test -Dtest=io.fury.integration_tests.state.JDKCompatibilityTest
   done
 }
 
