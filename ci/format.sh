@@ -193,8 +193,8 @@ format_all() {
       if command -v mvn >/dev/null ; then
         echo "Maven installed"
         cd "$ROOT/java"
-        mvn -T10 spotless:apply
-        mvn -T10 checkstyle:check
+        mvn -T10 --no-transfer-progress spotless:apply
+        mvn -T10 --no-transfer-progress checkstyle:check
       else
         echo "Maven not installed, skip java check"
       fi
@@ -254,8 +254,8 @@ format_changed() {
           if command -v mvn >/dev/null ; then
             echo "Maven installed"
             cd "$ROOT/java"
-            mvn -T10 spotless:apply
-            mvn -T10 checkstyle:check
+            mvn -T10 --no-transfer-progress spotless:apply
+            mvn -T10 --no-transfer-progress checkstyle:check
           else
             echo "Maven not installed, skip java check"
           fi
