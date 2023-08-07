@@ -17,6 +17,8 @@
 package io.fury.integration_tests;
 
 import io.fury.Fury;
+import io.fury.serializer.CompatibleMode;
+import io.fury.test.bean.Struct;
 import io.fury.util.RecordComponent;
 import io.fury.util.RecordUtils;
 import java.lang.reflect.ParameterizedType;
@@ -26,6 +28,9 @@ import java.util.Arrays;
 import java.util.List;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import static io.fury.collection.Collections.ofArrayList;
+import static io.fury.collection.Maps.ofHashMap;
 
 public class RecordSerializersTest {
 
@@ -62,5 +67,23 @@ public class RecordSerializersTest {
     Fury fury = Fury.builder().requireClassRegistration(false).withCodegen(false).build();
     Foo foo = new Foo(10, "abc", new ArrayList<>(Arrays.asList("a", "b")), 'x');
     Assert.assertEquals(fury.deserialize(fury.serialize(foo)), foo);
+  }
+
+  @Test
+  public void testRecordCompatible() throws Throwable {
+    Class<?> cls1 = createRecordClass();
+    Object record1 = RecordUtils.getRecordConstructor(cls1).f1.invoke(
+      1, "abc", ofArrayList("a", "b"), 'a',
+      ofHashMap("a", 1));
+    Fury fury = Fury.builder().requireClassRegistration(false).withCodegen(false)
+      .withCompatibleMode(CompatibleMode.COMPATIBLE).build();
+    System.out.println(fury.deserialize(fury.serialize(record1)));
+    System.out.println(record1);
+  }
+
+  public static Class<?> createRecordClass() {
+    String code = "import java.util.*;" +
+      "public record TestRecord(int f1, String f2, List<String> f3, char f4, Map<String, Integer> f5) {}";
+    return Struct.createStructClass("TestRecord", code);
   }
 }

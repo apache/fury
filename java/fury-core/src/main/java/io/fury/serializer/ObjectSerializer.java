@@ -35,16 +35,13 @@ import io.fury.type.GenericType;
 import io.fury.type.Generics;
 import io.fury.util.FieldAccessor;
 import io.fury.util.Platform;
-import io.fury.util.RecordComponent;
 import io.fury.util.RecordUtils;
 import io.fury.util.ReflectionUtils;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -102,7 +99,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     isRecord = RecordUtils.isRecord(cls);
     if (isRecord) {
       constructor = RecordUtils.getRecordConstructor(cls).f1;
-      recordComponentsIndex = buildRecordComponentMapping(cls, descriptorGrouper);
+      recordComponentsIndex = Serializers.buildRecordComponentMapping(cls, getSortedDescriptors(descriptorGrouper));
       assert recordComponentsIndex != null;
       recordComponents = new Object[recordComponentsIndex.length];
     } else {
@@ -173,26 +170,6 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       containerFields[cnt++] = buildContainerField(fury, d);
     }
     return Tuple3.of(Tuple2.of(finalFields, isFinal), otherFields, containerFields);
-  }
-
-  static int[] buildRecordComponentMapping(Class<?> cls, DescriptorGrouper grouper) {
-    List<Descriptor> descriptors = getSortedDescriptors(grouper);
-    Map<String, Integer> fieldOrderIndex = new HashMap<>(descriptors.size());
-    int counter = 0;
-    for (Descriptor descriptor : descriptors) {
-      fieldOrderIndex.put(descriptor.getName(), counter++);
-    }
-    RecordComponent[] components = RecordUtils.getRecordComponents(cls);
-    if (components == null) {
-      return null;
-    }
-    int[] mapping = new int[components.length];
-    for (int i = 0; i < mapping.length; i++) {
-      RecordComponent component = components[i];
-      Integer index = fieldOrderIndex.get(component.getName());
-      mapping[i] = index;
-    }
-    return mapping;
   }
 
   public static List<Descriptor> getSortedDescriptors(DescriptorGrouper grouper) {
