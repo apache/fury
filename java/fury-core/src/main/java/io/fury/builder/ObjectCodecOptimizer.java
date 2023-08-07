@@ -23,7 +23,7 @@ import io.fury.codegen.ExpressionOptimizer;
 import io.fury.collection.Tuple3;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
-import io.fury.util.function.Functions;
+import io.fury.util.function.SerializableSupplier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -130,7 +130,7 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
   }
 
   Expression invokeGenerated(
-      Functions.SerializableSupplier<Expression> groupExpressionsGenerator, String methodPrefix) {
+      SerializableSupplier<Expression> groupExpressionsGenerator, String methodPrefix) {
     return invokeGenerated(ctx, groupExpressionsGenerator, methodPrefix);
   }
 

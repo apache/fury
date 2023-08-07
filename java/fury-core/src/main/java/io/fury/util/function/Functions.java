@@ -26,10 +26,7 @@ import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * Utility for lambda functions.
@@ -66,26 +63,6 @@ public class Functions {
       }
     }
     return variables;
-  }
-
-  public interface SerializableBiFunction<T, U, R> extends BiFunction<T, U, R>, Serializable {}
-
-  public interface SerializableFunction<T, R> extends Function<T, R>, Serializable {}
-
-  public interface SerializableSupplier<T> extends Supplier<T>, Serializable {}
-
-  public interface SerializableTriFunction<A, B, C, R>
-      extends TriFunction<A, B, C, R>, Serializable {}
-
-  @FunctionalInterface
-  public interface TriFunction<A, B, C, R> {
-
-    R apply(A a, B b, C c);
-
-    default <V> TriFunction<A, B, C, V> andThen(Function<? super R, ? extends V> after) {
-      Preconditions.checkNotNull(after);
-      return (A a, B b, C c) -> after.apply(apply(a, b, c));
-    }
   }
 
   public static Object makeGetterFunction(Method method) {

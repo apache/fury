@@ -44,7 +44,7 @@ import io.fury.codegen.ExpressionVisitor;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
-import io.fury.util.function.Functions;
+import io.fury.util.function.SerializableSupplier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -152,7 +152,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
 
   private Expression serializeGroup(
       List<Descriptor> group, Expression bean, Expression buffer, boolean inline) {
-    Functions.SerializableSupplier<Expression> expressionSupplier =
+    SerializableSupplier<Expression> expressionSupplier =
         () -> {
           ListExpression groupExpressions = new ListExpression();
           for (Descriptor d : group) {
@@ -390,7 +390,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
 
   protected Expression deserializeGroup(
       List<Descriptor> group, Expression bean, Expression buffer, boolean inline) {
-    Functions.SerializableSupplier<Expression> exprSupplier =
+    SerializableSupplier<Expression> exprSupplier =
         () -> {
           ListExpression groupExpressions = new ListExpression();
           // use Reference to cut-off expr dependency.
