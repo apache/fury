@@ -30,7 +30,8 @@ import io.fury.format.row.binary.BinaryArray;
 import io.fury.format.row.binary.BinaryUtils;
 import io.fury.type.TypeUtils;
 import io.fury.util.StringUtils;
-import io.fury.util.function.Functions;
+import io.fury.util.function.SerializableBiFunction;
+import io.fury.util.function.SerializableFunction;
 
 /**
  * Expression for iterate {@link io.fury.format.row.ArrayData} with specified not null element
@@ -45,9 +46,9 @@ public class ArrayDataForEach implements Expression {
   private final TypeToken<?> elemType;
 
   @ClosureVisitable
-  private final Functions.SerializableBiFunction<Expression, Expression, Expression> notNullAction;
+  private final SerializableBiFunction<Expression, Expression, Expression> notNullAction;
 
-  @ClosureVisitable private final Functions.SerializableFunction<Expression, Expression> nullAction;
+  @ClosureVisitable private final SerializableFunction<Expression, Expression> nullAction;
 
   /**
    * inputArrayData.type() must be multi-dimension array or Collection, not allowed to be primitive
@@ -56,7 +57,7 @@ public class ArrayDataForEach implements Expression {
   public ArrayDataForEach(
       Expression inputArrayData,
       TypeToken<?> elemType,
-      Functions.SerializableBiFunction<Expression, Expression, Expression> notNullAction) {
+      SerializableBiFunction<Expression, Expression, Expression> notNullAction) {
     this(inputArrayData, elemType, notNullAction, null);
   }
 
@@ -67,8 +68,8 @@ public class ArrayDataForEach implements Expression {
   public ArrayDataForEach(
       Expression inputArrayData,
       TypeToken<?> elemType,
-      Functions.SerializableBiFunction<Expression, Expression, Expression> notNullAction,
-      Functions.SerializableFunction<Expression, Expression> nullAction) {
+      SerializableBiFunction<Expression, Expression, Expression> notNullAction,
+      SerializableFunction<Expression, Expression> nullAction) {
     Preconditions.checkArgument(getRawType(inputArrayData.type()) == BinaryArray.class);
     this.inputArrayData = inputArrayData;
     this.accessMethod = BinaryUtils.getElemAccessMethodName(elemType);

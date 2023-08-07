@@ -21,7 +21,7 @@ import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
 import io.fury.codegen.Expression.Reference;
-import io.fury.util.function.Functions;
+import io.fury.util.function.SerializableSupplier;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -40,7 +40,7 @@ public class ExpressionOptimizer {
 
   public static Expression invokeGenerated(
       CodegenContext ctx,
-      Functions.SerializableSupplier<Expression> groupExpressionsGenerator,
+      SerializableSupplier<Expression> groupExpressionsGenerator,
       String methodPrefix) {
     List<Expression> cutPoint =
         ExpressionUtils.extractCapturedExpressions(groupExpressionsGenerator);
@@ -50,7 +50,7 @@ public class ExpressionOptimizer {
 
   public static Expression invokeGenerated(
       CodegenContext ctx,
-      Functions.SerializableSupplier<Expression> groupExpressionsGenerator,
+      SerializableSupplier<Expression> groupExpressionsGenerator,
       String methodPrefix,
       boolean inlineInvoke) {
     List<Expression> cutPoint =

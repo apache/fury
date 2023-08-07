@@ -52,6 +52,10 @@ import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import io.fury.util.function.Functions;
+import io.fury.util.function.SerializableBiFunction;
+import io.fury.util.function.SerializableFunction;
+import io.fury.util.function.SerializableSupplier;
+import io.fury.util.function.SerializableTriFunction;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -1978,7 +1982,7 @@ public interface Expression {
       this(predicate, action, new Expression[0]);
     }
 
-    public While(BinaryOperator predicate, Functions.SerializableSupplier<Expression> action) {
+    public While(BinaryOperator predicate, SerializableSupplier<Expression> action) {
       this(
           predicate,
           action.get(),
@@ -2035,7 +2039,7 @@ public interface Expression {
     private Expression inputObject;
 
     @ClosureVisitable
-    private final Functions.SerializableBiFunction<Expression, Expression, Expression> action;
+    private final SerializableBiFunction<Expression, Expression, Expression> action;
 
     private final TypeToken<?> elementType;
 
@@ -2044,8 +2048,7 @@ public interface Expression {
      * array
      */
     public ForEach(
-        Expression inputObject,
-        Functions.SerializableBiFunction<Expression, Expression, Expression> action) {
+        Expression inputObject, SerializableBiFunction<Expression, Expression, Expression> action) {
       this.inputObject = inputObject;
       this.action = action;
       TypeToken elementType;
@@ -2060,7 +2063,7 @@ public interface Expression {
     public ForEach(
         Expression inputObject,
         TypeToken<?> beanType,
-        Functions.SerializableBiFunction<Expression, Expression, Expression> action) {
+        SerializableBiFunction<Expression, Expression, Expression> action) {
       this.inputObject = inputObject;
       this.action = action;
       this.elementType = beanType;
@@ -2161,13 +2164,12 @@ public interface Expression {
     private Expression right;
 
     @ClosureVisitable
-    private final Functions.SerializableTriFunction<Expression, Expression, Expression, Expression>
-        action;
+    private final SerializableTriFunction<Expression, Expression, Expression, Expression> action;
 
     public ZipForEach(
         Expression left,
         Expression right,
-        Functions.SerializableTriFunction<Expression, Expression, Expression, Expression> action) {
+        SerializableTriFunction<Expression, Expression, Expression, Expression> action) {
       this.left = left;
       this.right = right;
       this.action = action;
@@ -2302,13 +2304,13 @@ public interface Expression {
     public Expression end;
     public Expression step;
 
-    @ClosureVisitable public final Functions.SerializableFunction<Expression, Expression> action;
+    @ClosureVisitable public final SerializableFunction<Expression, Expression> action;
 
     public ForLoop(
         Expression start,
         Expression end,
         Expression step,
-        Functions.SerializableFunction<Expression, Expression> action) {
+        SerializableFunction<Expression, Expression> action) {
       this.start = start;
       this.end = end;
       this.step = step;
