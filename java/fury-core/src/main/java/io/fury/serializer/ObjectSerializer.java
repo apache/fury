@@ -35,17 +35,15 @@ import io.fury.type.GenericType;
 import io.fury.type.Generics;
 import io.fury.util.FieldAccessor;
 import io.fury.util.Platform;
-import io.fury.util.RecordComponent;
 import io.fury.util.RecordUtils;
 import io.fury.util.ReflectionUtils;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * A schema-consistent serializer used only for java serialization.
@@ -102,7 +100,11 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     isRecord = RecordUtils.isRecord(cls);
     if (isRecord) {
       constructor = RecordUtils.getRecordConstructor(cls).f1;
-      recordComponentsIndex = buildRecordComponentMapping(cls, descriptorGrouper);
+      List<String> fieldNames =
+          getSortedDescriptors(descriptorGrouper).stream()
+              .map(Descriptor::getName)
+              .collect(Collectors.toList());
+      recordComponentsIndex = Serializers.buildRecordComponentMapping(cls, fieldNames);
       assert recordComponentsIndex != null;
       recordComponents = new Object[recordComponentsIndex.length];
     } else {
@@ -173,26 +175,6 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       containerFields[cnt++] = buildContainerField(fury, d);
     }
     return Tuple3.of(Tuple2.of(finalFields, isFinal), otherFields, containerFields);
-  }
-
-  static int[] buildRecordComponentMapping(Class<?> cls, DescriptorGrouper grouper) {
-    List<Descriptor> descriptors = getSortedDescriptors(grouper);
-    Map<String, Integer> fieldOrderIndex = new HashMap<>(descriptors.size());
-    int counter = 0;
-    for (Descriptor descriptor : descriptors) {
-      fieldOrderIndex.put(descriptor.getName(), counter++);
-    }
-    RecordComponent[] components = RecordUtils.getRecordComponents(cls);
-    if (components == null) {
-      return null;
-    }
-    int[] mapping = new int[components.length];
-    for (int i = 0; i < mapping.length; i++) {
-      RecordComponent component = components[i];
-      Integer index = fieldOrderIndex.get(component.getName());
-      mapping[i] = index;
-    }
-    return mapping;
   }
 
   public static List<Descriptor> getSortedDescriptors(DescriptorGrouper grouper) {
@@ -331,12 +313,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
   public T read(MemoryBuffer buffer) {
     if (isRecord) {
       Object[] fields = readFields(buffer);
-      Object[] recordComponents = this.recordComponents;
-      int[] recordComponentsIndex = this.recordComponentsIndex;
-      for (int i = 0; i < recordComponentsIndex.length; i++) {
-        int index = recordComponentsIndex[i];
-        recordComponents[i] = fields[index];
-      }
+      Serializers.remapping(recordComponentsIndex, fields, recordComponents);
       try {
         T obj = (T) constructor.invokeWithArguments(recordComponents);
         Arrays.fill(recordComponents, null);

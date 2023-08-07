@@ -28,8 +28,11 @@ import io.fury.util.Platform;
 import io.fury.util.RecordUtils;
 import io.fury.util.ReflectionUtils;
 import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * This Serializer provides both forward and backward compatibility: fields can be added or removed
@@ -49,6 +52,8 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private final boolean isRecord;
   private final MethodHandle constructor;
   private final boolean compressNumber;
+  private final int[] recordComponentsIndex;
+  private final Object[] recordComponents;
 
   public CompatibleSerializer(Fury fury, Class<T> cls) {
     super(fury, cls);
@@ -64,6 +69,13 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       this.constructor = ReflectionUtils.getExecutableNoArgConstructorHandle(type);
     }
     fieldResolver = classResolver.getFieldResolver(cls);
+    List<String> fieldNames =
+        fieldResolver.getAllFieldsList().stream()
+            .map(FieldResolver.FieldInfo::getName)
+            .collect(Collectors.toList());
+    recordComponentsIndex = Serializers.buildRecordComponentMapping(cls, fieldNames);
+    assert recordComponentsIndex != null;
+    recordComponents = new Object[recordComponentsIndex.length];
     compressNumber = fury.compressNumber();
   }
 
@@ -72,6 +84,9 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     this.refResolver = fury.getRefResolver();
     this.classResolver = fury.getClassResolver();
     isRecord = RecordUtils.isRecord(type);
+    Preconditions.checkArgument(!isRecord, cls);
+    recordComponentsIndex = null;
+    recordComponents = null;
     this.constructor = null;
     this.fieldResolver = fieldResolver;
     compressNumber = fury.compressNumber();
@@ -285,9 +300,12 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     if (isRecord) {
       Object[] fieldValues = new Object[fieldResolver.getNumFields()];
       readFields(buffer, fieldValues);
+      Serializers.remapping(recordComponentsIndex, fieldValues, recordComponents);
       assert constructor != null;
       try {
-        return (T) constructor.invoke(fieldValues);
+        T t = (T) constructor.invokeWithArguments(recordComponents);
+        Arrays.fill(recordComponents, null);
+        return t;
       } catch (Throwable e) {
         Platform.throwException(e);
       }

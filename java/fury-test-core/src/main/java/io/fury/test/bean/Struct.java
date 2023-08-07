@@ -16,7 +16,6 @@
 
 package io.fury.test.bean;
 
-import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -279,8 +278,8 @@ public final class Struct implements Serializable {
       int result =
           compiler.run(
               null,
-              new ByteArrayOutputStream(), // ignore output
-              new ByteArrayOutputStream(), // ignore output
+              System.out, // ignore output
+              System.err, // ignore output
               "-classpath",
               System.getProperty("java.class.path"),
               path.toString());
