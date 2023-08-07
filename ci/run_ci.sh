@@ -84,6 +84,10 @@ integration_tests() {
   mvn -T10 -B --no-transfer-progress clean install -DskipTests
   echo "Start perf tests"
   cd "$ROOT"/integration_tests/perftests
+  echo "Start latest jdk tests"
+  cd "$ROOT"/integration_tests/latest_jdk_tests
+  export JAVA_HOME="$ROOT/zulu17.44.17-ca-crac-jdk17.0.8-linux_x64"
+  export PATH=$JAVA_HOME/bin:$PATH
   mvn -T10 -B --no-transfer-progress clean test
   echo "Start jdk compatibility tests"
   cd "$ROOT"/integration_tests/jdk_compatibility_tests
