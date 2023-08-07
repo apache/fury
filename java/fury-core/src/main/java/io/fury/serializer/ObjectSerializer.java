@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * A schema-consistent serializer used only for java serialization.
@@ -99,7 +100,10 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     isRecord = RecordUtils.isRecord(cls);
     if (isRecord) {
       constructor = RecordUtils.getRecordConstructor(cls).f1;
-      recordComponentsIndex = Serializers.buildRecordComponentMapping(cls, getSortedDescriptors(descriptorGrouper));
+      List<String> fieldNames = getSortedDescriptors(descriptorGrouper).stream()
+        .map(Descriptor::getName)
+        .collect(Collectors.toList());
+      recordComponentsIndex = Serializers.buildRecordComponentMapping(cls, fieldNames);
       assert recordComponentsIndex != null;
       recordComponents = new Object[recordComponentsIndex.length];
     } else {
@@ -308,12 +312,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
   public T read(MemoryBuffer buffer) {
     if (isRecord) {
       Object[] fields = readFields(buffer);
-      Object[] recordComponents = this.recordComponents;
-      int[] recordComponentsIndex = this.recordComponentsIndex;
-      for (int i = 0; i < recordComponentsIndex.length; i++) {
-        int index = recordComponentsIndex[i];
-        recordComponents[i] = fields[index];
-      }
+      Serializers.remapping(recordComponentsIndex, fields, recordComponents);
       try {
         T obj = (T) constructor.invokeWithArguments(recordComponents);
         Arrays.fill(recordComponents, null);

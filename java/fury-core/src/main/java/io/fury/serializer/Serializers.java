@@ -141,11 +141,11 @@ public class Serializers {
     }
   }
 
-  static int[] buildRecordComponentMapping(Class<?> cls, List<Descriptor> descriptors) {
-    Map<String, Integer> fieldOrderIndex = new HashMap<>(descriptors.size());
+  static int[] buildRecordComponentMapping(Class<?> cls, List<String> fields) {
+    Map<String, Integer> fieldOrderIndex = new HashMap<>(fields.size());
     int counter = 0;
-    for (Descriptor descriptor : descriptors) {
-      fieldOrderIndex.put(descriptor.getName(), counter++);
+    for (String fieldName : fields) {
+      fieldOrderIndex.put(fieldName, counter++);
     }
     RecordComponent[] components = RecordUtils.getRecordComponents(cls);
     if (components == null) {
@@ -158,6 +158,13 @@ public class Serializers {
       mapping[i] = index;
     }
     return mapping;
+  }
+
+  public static void remapping(int[] recordComponentsIndex, Object[] fields, Object[] recordComponents) {
+    for (int i = 0; i < recordComponentsIndex.length; i++) {
+      int index = recordComponentsIndex[i];
+      recordComponents[i] = fields[index];
+    }
   }
 
   public abstract static class CrossLanguageCompatibleSerializer<T> extends Serializer<T> {
