@@ -21,6 +21,6 @@ test --build_tests_only
 test --cache_test_results=no
 test --test_output=all
 
-build:linux --cxxopt="-std=c++11"
-build:macos --cxxopt="-std=c++11"
-build:clang-cl --cxxopt="-std=c++11"
+build:linux --cxxopt="-std=c++17"
+build:macos --cxxopt="-std=c++17"
+build:clang-cl --cxxopt="-std=c++17"

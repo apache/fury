@@ -12,9 +12,6 @@ from pyfury.includes.libutil cimport(
     CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo
 )
 
-cdef extern from "Python.h":
-    const char* PyUnicode_AsUTF8AndSize(object obj, Py_ssize_t *l) except NULL
-
 cdef int32_t max_buffer_size = 2 ** 31 - 1
 
 
