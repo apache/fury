@@ -279,8 +279,8 @@ public final class Struct implements Serializable {
       int result =
           compiler.run(
               null,
-              new ByteArrayOutputStream(), // ignore output
-              new ByteArrayOutputStream(), // ignore output
+              System.out, // ignore output
+            System.err, // ignore output
               "-classpath",
               System.getProperty("java.class.path"),
               path.toString());
