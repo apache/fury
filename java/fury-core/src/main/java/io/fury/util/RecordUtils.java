@@ -191,7 +191,7 @@ public class RecordUtils {
     return recordComponentsCache.get(cls);
   }
 
-  /** Returns the record canonical constructor */
+  /** Returns the record canonical constructor. */
   public static Tuple2<Constructor, MethodHandle> getRecordConstructor(Class<?> cls) {
     return ctrCache.get(cls);
   }
