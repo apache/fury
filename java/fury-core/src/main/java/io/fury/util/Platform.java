@@ -262,6 +262,12 @@ public final class Platform {
     }
   }
 
+  public static Object[] copyObjectArray(Object[] arr) {
+    Object[] objects = new Object[arr.length];
+    System.arraycopy(arr, 0, objects, 0, arr.length);
+    return objects;
+  }
+
   /**
    * Optimized byte array equality check for byte arrays.
    *
