@@ -199,6 +199,20 @@ public class RecordUtils {
     return ctrCache.get(cls);
   }
 
+  // Invoked by jit
+  public static MethodHandle getRecordCtrHandle(Class<?> cls) {
+    return getRecordConstructor(cls).f1;
+  }
+
+  // Invoked by jit
+  public static Object invokeRecordCtrHandle(MethodHandle handle, Object[] fields) {
+    try {
+      return handle.invokeWithArguments(fields);
+    } catch (Throwable e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static Object[] buildRecordComponentDefaultValues(Class<?> cls) {
     RecordComponent[] components = RecordUtils.getRecordComponents(cls);
     assert components != null;
@@ -228,6 +242,7 @@ public class RecordUtils {
     return defaultValues;
   }
 
+  /** Build mapping from record component to read field. */
   public static int[] buildRecordComponentMapping(Class<?> cls, List<String> fields) {
     Map<String, Integer> fieldOrderIndex = new HashMap<>(fields.size());
     int counter = 0;
@@ -242,6 +257,29 @@ public class RecordUtils {
     for (int i = 0; i < mapping.length; i++) {
       RecordComponent component = components[i];
       Integer index = fieldOrderIndex.get(component.getName());
+      if (index == null) {
+        // field missing in current process.
+        mapping[i] = -1;
+      } else {
+        mapping[i] = index;
+      }
+    }
+    return mapping;
+  }
+
+  /** Build reversed mapping from read field to record component. */
+  public static int[] buildReversedRecordComponentMapping(Class<?> cls, List<String> fields) {
+    RecordComponent[] components = getRecordComponents(cls);
+    assert components != null;
+    Map<String, Integer> recordComponentsIndex = new HashMap<>(components.length);
+    int counter = 0;
+    for (RecordComponent component : components) {
+      recordComponentsIndex.put(component.getName(), counter++);
+    }
+    int[] mapping = new int[fields.size()];
+    for (int i = 0; i < fields.size(); i++) {
+      String fieldName = fields.get(i);
+      Integer index = recordComponentsIndex.get(fieldName);
       if (index == null) {
         // field missing in current process.
         mapping[i] = -1;

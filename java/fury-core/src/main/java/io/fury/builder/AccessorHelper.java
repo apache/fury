@@ -26,6 +26,7 @@ import io.fury.util.ClassLoaderUtils;
 import io.fury.util.LoggerFactory;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
+import io.fury.util.record.RecordUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -73,6 +74,7 @@ public class AccessorHelper {
     ctx.setPackage(CodeGenerator.getPackage(beanClass));
     String className = accessorClassName(beanClass);
     ctx.setClassName(className);
+    boolean isRecord = RecordUtils.isRecord(beanClass);
     // filter out super classes
     Collection<Descriptor> descriptors = Descriptor.getAllDescriptorsMap(beanClass, false).values();
     for (Descriptor descriptor : descriptors) {
@@ -109,6 +111,17 @@ public class AccessorHelper {
               descriptor.getRawType(),
               FIELD_VALUE);
         }
+      } else if (isRecord) {
+        String methodName = descriptor.getName();
+        String codeBody =
+            StringUtils.format(
+                "return ${obj}.${fieldName}();",
+                "obj",
+                OBJ_NAME,
+                "fieldName",
+                descriptor.getName());
+        Class<?> returnType = descriptor.getRawType();
+        ctx.addStaticMethod(methodName, codeBody, returnType, beanClass, OBJ_NAME);
       }
       // getter/setter may lose some inner state of an object, so we set them to null to avoid
       // creating getter/setter accessor.

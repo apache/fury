@@ -45,7 +45,9 @@ import io.fury.type.Descriptor;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
+import io.fury.util.function.Functions;
 import io.fury.util.record.RecordUtils;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -68,8 +70,8 @@ import sun.misc.Unsafe;
 @SuppressWarnings("UnstableApiUsage")
 public abstract class CodecBuilder {
   protected static final String ROOT_OBJECT_NAME = "obj";
+  // avoid user class has field with name fury.
   protected static final String FURY_NAME = "fury";
-
   static TypeToken<Object[]> objectArrayTypeToken = TypeToken.of(Object[].class);
   static TypeToken<MemoryBuffer> bufferTypeToken = TypeToken.of(MemoryBuffer.class);
   static TypeToken<ClassInfo> classInfoTypeToken = TypeToken.of(ClassInfo.class);
@@ -106,6 +108,23 @@ public abstract class CodecBuilder {
   // left null check in sub class encode method to reduce data dependence.
   private final boolean fieldNullable = false;
 
+  protected Reference getRecordCtrHandle() {
+    String fieldName = "_record_ctr_";
+    Reference fieldRef = fieldMap.get(fieldName);
+    if (fieldRef == null) {
+      StaticInvoke getRecordCtrHandle =
+          new StaticInvoke(
+              RecordUtils.class,
+              "getRecordCtrHandle",
+              TypeToken.of(MethodHandle.class),
+              beanClassExpr());
+      ctx.addField(ctx.type(MethodHandle.class), fieldName, getRecordCtrHandle);
+      fieldRef = new Reference(fieldName, TypeToken.of(MethodHandle.class));
+      fieldMap.put(fieldName, fieldRef);
+    }
+    return fieldRef;
+  }
+
   /** Returns an expression that get field value from <code>bean</code>. */
   protected Expression getFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
     TypeToken<?> fieldType = descriptor.getTypeToken();
@@ -114,6 +133,9 @@ public abstract class CodecBuilder {
         Modifier.isPublic(getRawType(fieldType).getModifiers()),
         "Field type should be public for codegen-based access");
     String fieldName = descriptor.getName();
+    if (isRecord) {
+      return getRecordFieldValue(inputBeanExpr, descriptor);
+    }
     if (duplicatedFields.contains(fieldName) || !Modifier.isPublic(beanClass.getModifiers())) {
       return unsafeAccessField(inputBeanExpr, beanClass, descriptor);
     }
@@ -147,6 +169,30 @@ public abstract class CodecBuilder {
         }
       }
       return unsafeAccessField(inputBeanExpr, beanClass, descriptor);
+    }
+  }
+
+  private Expression getRecordFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
+    TypeToken<?> fieldType = descriptor.getTypeToken();
+    String fieldName = descriptor.getName();
+    if (Modifier.isPublic(beanClass.getModifiers())) {
+      Preconditions.checkNotNull(descriptor.getReadMethod());
+      return new Expression.Invoke(
+          inputBeanExpr, descriptor.getReadMethod().getName(), fieldName, fieldType, fieldNullable);
+    } else {
+      String key = "_" + fieldName + "_getter_";
+      Reference ref = fieldMap.get(key);
+      if (ref == null) {
+        Object getterFunction = Functions.makeGetterFunction(beanClass, fieldName);
+        TypeToken<?> getterType = TypeToken.of(getterFunction.getClass());
+        StaticInvoke getter =
+            new StaticInvoke(
+                Functions.class, "makeGetterFunction", getterType, Literal.ofString(fieldName));
+        ctx.addField(getterFunction.getClass(), key, getter);
+        ref = new Reference(fieldName, getterType);
+        fieldMap.put(fieldName, ref);
+      }
+      return ref;
     }
   }
 

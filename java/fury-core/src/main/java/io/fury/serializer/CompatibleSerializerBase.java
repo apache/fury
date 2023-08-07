@@ -30,5 +30,8 @@ public abstract class CompatibleSerializerBase<T> extends Serializer<T> {
     super(fury, type);
   }
 
-  public abstract T readAndSetFields(MemoryBuffer buffer, T obj);
+  public T readAndSetFields(MemoryBuffer buffer, T obj) {
+    // java record object doesn't support update state.
+    throw new UnsupportedOperationException();
+  }
 }

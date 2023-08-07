@@ -21,6 +21,7 @@ import static io.fury.codegen.Expression.Reference.fieldRef;
 import static io.fury.codegen.ExpressionUtils.cast;
 import static io.fury.codegen.ExpressionUtils.eq;
 import static io.fury.codegen.ExpressionUtils.lessThan;
+import static io.fury.type.TypeUtils.OBJECT_ARRAY_TYPE;
 import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
@@ -36,6 +37,7 @@ import io.fury.builder.Generated.GeneratedCompatibleSerializer;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Assign;
+import io.fury.codegen.Expression.AssignArrayElem;
 import io.fury.codegen.Expression.BitAnd;
 import io.fury.codegen.Expression.BitOr;
 import io.fury.codegen.Expression.BitShift;
@@ -47,6 +49,7 @@ import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.Return;
+import io.fury.codegen.Expression.StaticInvoke;
 import io.fury.codegen.Expression.While;
 import io.fury.codegen.ExpressionOptimizer;
 import io.fury.codegen.ExpressionUtils;
@@ -63,6 +66,7 @@ import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
 import io.fury.util.Platform;
 import io.fury.util.function.SerializableSupplier;
+import io.fury.util.record.RecordUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -72,6 +76,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A jit-version of {@link CompatibleSerializer}.
@@ -80,7 +85,11 @@ import java.util.Map;
  */
 public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   public static final String FIELD_RESOLVER_NAME = "fieldResolver";
+  public static final Reference recordComponentDefaultValues =
+      new Reference("recordComponentDefaultValues", OBJECT_ARRAY_TYPE);
   private final FieldResolver fieldResolver;
+  private int[] recordReversedMapping;
+  private int readRecordFieldCounter;
   private final Reference fieldResolverRef;
   private final Literal endTagLiteral;
   private final Map<String, Expression> methodCache;
@@ -94,6 +103,15 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
     // `CompatibleSerializerBase.readAndSetFields`.
     super(beanType, fury, superSerializerClass);
     this.fieldResolver = fieldResolver;
+    if (isRecord) {
+      List<String> fieldNames =
+          fieldResolver.getAllFieldsList().stream()
+              .map(FieldResolver.FieldInfo::getName)
+              .collect(Collectors.toList());
+      recordReversedMapping =
+          RecordUtils.buildReversedRecordComponentMapping(beanClass, fieldNames);
+    }
+    ctx.reserveName(FIELD_RESOLVER_NAME);
     endTagLiteral = new Literal(fieldResolver.getEndTag(), PRIMITIVE_LONG_TYPE);
     TypeToken<FieldResolver> fieldResolverTypeToken = TypeToken.of(FieldResolver.class);
     fieldResolverRef = fieldRef(FIELD_RESOLVER_NAME, fieldResolverTypeToken);
@@ -104,6 +122,16 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             fieldResolverTypeToken,
             Literal.ofClass(getRawType(beanType)));
     ctx.addField(ctx.type(fieldResolverTypeToken), FIELD_RESOLVER_NAME, fieldResolverExpr);
+    if (isRecord) {
+      ctx.reserveName(recordComponentDefaultValues.name());
+      StaticInvoke expr =
+          new StaticInvoke(
+              RecordUtils.class,
+              "buildRecordComponentDefaultValues",
+              OBJECT_ARRAY_TYPE,
+              beanClassExpr());
+      ctx.addField(Object[].class, recordComponentDefaultValues.name(), expr);
+    }
     methodCache = new HashMap<>();
   }
 
@@ -335,6 +363,9 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   @Override
   public Expression buildDecodeExpression() {
+    if (isRecord) {
+      return buildRecordDecodeExpression();
+    }
     Reference buffer = new Reference(BUFFER_NAME, bufferTypeToken, false);
     ListExpression expressionBuilder = new ListExpression();
     Expression bean = newBean();
@@ -362,6 +393,51 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
     }
     expressionBuilder.add(new Return(bean));
     return expressionBuilder;
+  }
+
+  public Expression buildRecordDecodeExpression() {
+    Reference buffer = new Reference(BUFFER_NAME, bufferTypeToken, false);
+    StaticInvoke components =
+        new StaticInvoke(
+            Platform.class, "copyObjectArray", OBJECT_ARRAY_TYPE, recordComponentDefaultValues);
+    ListExpression readAndSetFieldsExpr = new ListExpression();
+    Expression partFieldInfo = new Invoke(buffer, "readInt", "partFieldInfo", PRIMITIVE_LONG_TYPE);
+    readAndSetFieldsExpr.add(partFieldInfo);
+    readEmbedTypes4Fields(buffer, readAndSetFieldsExpr, components, partFieldInfo);
+    BitOr newPartFieldInfo =
+        new BitOr(
+            new BitShift("<<", new Invoke(buffer, "readInt", PRIMITIVE_LONG_TYPE), 32),
+            new BitAnd(partFieldInfo, new Literal(0x00000000ffffffffL, PRIMITIVE_LONG_TYPE)));
+    readAndSetFieldsExpr.add(new Assign(partFieldInfo, newPartFieldInfo));
+    readEmbedTypes9Fields(buffer, readAndSetFieldsExpr, components, partFieldInfo);
+    readEmbedTypesHashFields(buffer, readAndSetFieldsExpr, components, partFieldInfo);
+    readSeparateTypesHashFields(buffer, readAndSetFieldsExpr, components, partFieldInfo);
+    readAndSetFieldsExpr.add(new Return(components));
+    Expression readActions =
+        ExpressionOptimizer.invokeGenerated(
+            ctx,
+            new LinkedHashSet<>(Arrays.asList(buffer, components)),
+            readAndSetFieldsExpr.add(components),
+            "private",
+            "readFields",
+            false);
+    StaticInvoke record =
+        new StaticInvoke(
+            RecordUtils.class,
+            "invokeRecordCtrHandle",
+            OBJECT_TYPE,
+            getRecordCtrHandle(),
+            components);
+    return new ListExpression(buffer, components, readActions, new Return(record));
+  }
+
+  @Override
+  protected Expression setFieldValue(Expression bean, Descriptor d, Expression value) {
+    if (isRecord) {
+      int index = recordReversedMapping[readRecordFieldCounter];
+      return new AssignArrayElem(bean, value, Literal.ofInt(index));
+    }
+    return super.setFieldValue(bean, d, value);
   }
 
   private ListExpression readAndSetFields(Reference buffer, Expression bean) {
@@ -420,6 +496,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                     tryReadField,
                                     false,
                                     PRIMITIVE_VOID_TYPE));
+                            readRecordFieldCounter++;
                           }
                           groupExpressions.add(new Return(partFieldInfo));
                           return groupExpressions;
@@ -553,6 +630,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                     fieldInfo.getEncodedFieldInfo(),
                                     FieldResolver.EMBED_TYPES_9_FLAG,
                                     fieldInfo));
+                            readRecordFieldCounter++;
                           }
                           groupExpressions.add(new Return(partFieldInfo));
                           return groupExpressions;
@@ -599,6 +677,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                     fieldInfo.getEncodedFieldInfo(),
                                     FieldResolver.EMBED_TYPES_HASH_FLAG,
                                     fieldInfo));
+                            readRecordFieldCounter++;
                           }
                           groupExpressions.add(new Return(partFieldInfo));
                           return groupExpressions;
@@ -702,6 +781,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                         new Literal(encodedFieldInfo, PRIMITIVE_LONG_TYPE)),
                                     readField,
                                     tryReadField));
+                            readRecordFieldCounter++;
                           }
                           groupExpressions.add(new Return(partFieldInfo));
                           return groupExpressions;
