@@ -114,8 +114,8 @@ setup(
     maintainer_email="shawn.ck.yang@gmail.com",
     package_data={
         "pyfury": [
-            "*.pxd",
-            "*.pyx",
+            "**/*.pxd",
+            "**/*.pyx",
             "includes/*.pxd",
             "**/*.so",
             "**/*.dylib",
