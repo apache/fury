@@ -100,9 +100,10 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     isRecord = RecordUtils.isRecord(cls);
     if (isRecord) {
       constructor = RecordUtils.getRecordConstructor(cls).f1;
-      List<String> fieldNames = getSortedDescriptors(descriptorGrouper).stream()
-        .map(Descriptor::getName)
-        .collect(Collectors.toList());
+      List<String> fieldNames =
+          getSortedDescriptors(descriptorGrouper).stream()
+              .map(Descriptor::getName)
+              .collect(Collectors.toList());
       recordComponentsIndex = Serializers.buildRecordComponentMapping(cls, fieldNames);
       assert recordComponentsIndex != null;
       recordComponents = new Object[recordComponentsIndex.length];

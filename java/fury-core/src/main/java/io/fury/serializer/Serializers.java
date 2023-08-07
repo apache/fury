@@ -21,8 +21,6 @@ import com.google.common.primitives.Primitives;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
-import io.fury.type.Descriptor;
-import io.fury.type.DescriptorGrouper;
 import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.RecordComponent;
@@ -160,7 +158,8 @@ public class Serializers {
     return mapping;
   }
 
-  public static void remapping(int[] recordComponentsIndex, Object[] fields, Object[] recordComponents) {
+  public static void remapping(
+      int[] recordComponentsIndex, Object[] fields, Object[] recordComponents) {
     for (int i = 0; i < recordComponentsIndex.length; i++) {
       int index = recordComponentsIndex[i];
       recordComponents[i] = fields[index];

@@ -69,9 +69,10 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       this.constructor = ReflectionUtils.getExecutableNoArgConstructorHandle(type);
     }
     fieldResolver = classResolver.getFieldResolver(cls);
-    List<String> fieldNames = fieldResolver.getAllFieldsList().stream()
-      .map(FieldResolver.FieldInfo::getName)
-      .collect(Collectors.toList());
+    List<String> fieldNames =
+        fieldResolver.getAllFieldsList().stream()
+            .map(FieldResolver.FieldInfo::getName)
+            .collect(Collectors.toList());
     recordComponentsIndex = Serializers.buildRecordComponentMapping(cls, fieldNames);
     assert recordComponentsIndex != null;
     recordComponents = new Object[recordComponentsIndex.length];
