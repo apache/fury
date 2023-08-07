@@ -71,19 +71,28 @@ public class RecordSerializersTest {
 
   @Test
   public void testRecordCompatible() throws Throwable {
-    Class<?> cls1 = createRecordClass();
+    String code1 = "import java.util.*;" +
+      "public record TestRecord(int f1, String f2, List<String> f3, char f4, Map<String, Integer> f5) {}";
+    Class<?> cls1 = Struct.createStructClass("TestRecord", code1);
     Object record1 = RecordUtils.getRecordConstructor(cls1).f1.invoke(
       1, "abc", ofArrayList("a", "b"), 'a',
       ofHashMap("a", 1));
     Fury fury = Fury.builder().requireClassRegistration(false).withCodegen(false)
       .withCompatibleMode(CompatibleMode.COMPATIBLE).build();
-    System.out.println(fury.deserialize(fury.serialize(record1)));
-    System.out.println(record1);
+    byte[] bytes1 = fury.serialize(record1);
+    Object o = fury.deserialize(bytes1);
+    Assert.assertEquals(record1, o);
+    String code2 = "import java.util.*;" +
+      "public record TestRecord(int f1, String f2, char f4, Map<String, Integer> f5) {}";
+    Class<?> cls2 = Struct.createStructClass("TestRecord", code2);
+    Object record2 = RecordUtils.getRecordConstructor(cls2).f1.invoke(
+      1, "abc", 'a', ofHashMap("a", 1));
+    Fury fury2 = Fury.builder().requireClassRegistration(false).withCodegen(false)
+      .withCompatibleMode(CompatibleMode.COMPATIBLE).build();
+    Object o2 = fury2.deserialize(fury2.serialize(record2));
+    Assert.assertEquals(record2, o2);
+    // test compatible
+    Assert.assertEquals(fury2.deserialize(bytes1), record2);
   }
 
-  public static Class<?> createRecordClass() {
-    String code = "import java.util.*;" +
-      "public record TestRecord(int f1, String f2, List<String> f3, char f4, Map<String, Integer> f5) {}";
-    return Struct.createStructClass("TestRecord", code);
-  }
 }
