@@ -26,14 +26,13 @@ import io.fury.util.ClassLoaderUtils;
 import io.fury.util.LoggerFactory;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
+import io.fury.util.record.RecordUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Map;
 import java.util.WeakHashMap;
-
-import io.fury.util.record.RecordUtils;
 import org.slf4j.Logger;
 
 /**
@@ -115,12 +114,12 @@ public class AccessorHelper {
       } else if (isRecord) {
         String methodName = descriptor.getName();
         String codeBody =
-          StringUtils.format(
-            "return ${obj}.${fieldName}();",
-            "obj",
-            OBJ_NAME,
-            "fieldName",
-            descriptor.getName());
+            StringUtils.format(
+                "return ${obj}.${fieldName}();",
+                "obj",
+                OBJ_NAME,
+                "fieldName",
+                descriptor.getName());
         Class<?> returnType = descriptor.getRawType();
         ctx.addStaticMethod(methodName, codeBody, returnType, beanClass, OBJ_NAME);
       }
