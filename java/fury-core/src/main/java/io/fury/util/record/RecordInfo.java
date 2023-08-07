@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury.util;
+package io.fury.util.record;
 
 import java.util.List;
 
