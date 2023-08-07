@@ -27,6 +27,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Utils for java.lang.Record.
@@ -194,5 +197,73 @@ public class RecordUtils {
   /** Returns the record canonical constructor. */
   public static Tuple2<Constructor, MethodHandle> getRecordConstructor(Class<?> cls) {
     return ctrCache.get(cls);
+  }
+
+  public static Object[] buildRecordComponentDefaultValues(Class<?> cls) {
+    RecordComponent[] components = RecordUtils.getRecordComponents(cls);
+    assert components != null;
+    Object[] defaultValues = new Object[components.length];
+    for (int i = 0; i < components.length; i++) {
+      Class<?> type = components[i].getType();
+      Object defaultValue = null;
+      if (type == boolean.class) {
+        defaultValue = false;
+      } else if (type == byte.class) {
+        defaultValue = (byte) 0;
+      } else if (type == short.class) {
+        defaultValue = (short) 0;
+      } else if (type == char.class) {
+        defaultValue = (char) 0;
+      } else if (type == int.class) {
+        defaultValue = 0;
+      } else if (type == long.class) {
+        defaultValue = (long) 0;
+      } else if (type == double.class) {
+        defaultValue = (double) 0;
+      } else if (type == float.class) {
+        defaultValue = (float) 0;
+      }
+      defaultValues[i] = defaultValue;
+    }
+    return defaultValues;
+  }
+
+  public static int[] buildRecordComponentMapping(Class<?> cls, List<String> fields) {
+    Map<String, Integer> fieldOrderIndex = new HashMap<>(fields.size());
+    int counter = 0;
+    for (String fieldName : fields) {
+      fieldOrderIndex.put(fieldName, counter++);
+    }
+    RecordComponent[] components = getRecordComponents(cls);
+    if (components == null) {
+      return null;
+    }
+    int[] mapping = new int[components.length];
+    for (int i = 0; i < mapping.length; i++) {
+      RecordComponent component = components[i];
+      Integer index = fieldOrderIndex.get(component.getName());
+      if (index == null) {
+        // field missing in current process.
+        mapping[i] = -1;
+      } else {
+        mapping[i] = index;
+      }
+    }
+    return mapping;
+  }
+
+  public static void remapping(RecordInfo recordInfo, Object[] fields) {
+    int[] recordComponentsIndex = recordInfo.getRecordComponentsIndex();
+    Object[] recordComponents = recordInfo.getRecordComponents();
+    Object[] recordComponentsDefaultValues = recordInfo.getRecordComponentsDefaultValues();
+    for (int i = 0; i < recordComponentsIndex.length; i++) {
+      int index = recordComponentsIndex[i];
+      if (index != -1) {
+        recordComponents[i] = fields[index];
+      } else {
+        // field missing in peer process.
+        recordComponents[i] = recordComponentsDefaultValues[i];
+      }
+    }
   }
 }

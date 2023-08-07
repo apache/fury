@@ -25,6 +25,7 @@ import io.fury.resolver.FieldResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.util.FieldAccessor;
 import io.fury.util.Platform;
+import io.fury.util.RecordInfo;
 import io.fury.util.RecordUtils;
 import io.fury.util.ReflectionUtils;
 import java.lang.invoke.MethodHandle;
@@ -52,8 +53,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private final boolean isRecord;
   private final MethodHandle constructor;
   private final boolean compressNumber;
-  private final int[] recordComponentsIndex;
-  private final Object[] recordComponents;
+  private final RecordInfo recordInfo;
 
   public CompatibleSerializer(Fury fury, Class<T> cls) {
     super(fury, cls);
@@ -62,20 +62,19 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     // Use `setSerializerIfAbsent` to avoid overwriting existing serializer for class when used
     // as data serializer.
     classResolver.setSerializerIfAbsent(cls, this);
+    fieldResolver = classResolver.getFieldResolver(cls);
     isRecord = RecordUtils.isRecord(type);
     if (isRecord) {
       constructor = RecordUtils.getRecordConstructor(type).f1;
+      List<String> fieldNames =
+          fieldResolver.getAllFieldsList().stream()
+              .map(FieldResolver.FieldInfo::getName)
+              .collect(Collectors.toList());
+      recordInfo = new RecordInfo(cls, fieldNames);
     } else {
       this.constructor = ReflectionUtils.getExecutableNoArgConstructorHandle(type);
+      recordInfo = null;
     }
-    fieldResolver = classResolver.getFieldResolver(cls);
-    List<String> fieldNames =
-        fieldResolver.getAllFieldsList().stream()
-            .map(FieldResolver.FieldInfo::getName)
-            .collect(Collectors.toList());
-    recordComponentsIndex = Serializers.buildRecordComponentMapping(cls, fieldNames);
-    assert recordComponentsIndex != null;
-    recordComponents = new Object[recordComponentsIndex.length];
     compressNumber = fury.compressNumber();
   }
 
@@ -85,8 +84,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     this.classResolver = fury.getClassResolver();
     isRecord = RecordUtils.isRecord(type);
     Preconditions.checkArgument(!isRecord, cls);
-    recordComponentsIndex = null;
-    recordComponents = null;
+    recordInfo = null;
     this.constructor = null;
     this.fieldResolver = fieldResolver;
     compressNumber = fury.compressNumber();
@@ -300,11 +298,11 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     if (isRecord) {
       Object[] fieldValues = new Object[fieldResolver.getNumFields()];
       readFields(buffer, fieldValues);
-      Serializers.remapping(recordComponentsIndex, fieldValues, recordComponents);
+      RecordUtils.remapping(recordInfo, fieldValues);
       assert constructor != null;
       try {
-        T t = (T) constructor.invokeWithArguments(recordComponents);
-        Arrays.fill(recordComponents, null);
+        T t = (T) constructor.invokeWithArguments(recordInfo.getRecordComponents());
+        Arrays.fill(recordInfo.getRecordComponents(), null);
         return t;
       } catch (Throwable e) {
         Platform.throwException(e);
