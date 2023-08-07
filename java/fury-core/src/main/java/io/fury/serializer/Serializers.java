@@ -23,8 +23,6 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.type.Type;
 import io.fury.util.Platform;
-import io.fury.util.RecordComponent;
-import io.fury.util.RecordUtils;
 import io.fury.util.Utils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -33,10 +31,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Currency;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -136,33 +131,6 @@ public class Serializers {
         {
           throw new IllegalStateException("unreachable");
         }
-    }
-  }
-
-  static int[] buildRecordComponentMapping(Class<?> cls, List<String> fields) {
-    Map<String, Integer> fieldOrderIndex = new HashMap<>(fields.size());
-    int counter = 0;
-    for (String fieldName : fields) {
-      fieldOrderIndex.put(fieldName, counter++);
-    }
-    RecordComponent[] components = RecordUtils.getRecordComponents(cls);
-    if (components == null) {
-      return null;
-    }
-    int[] mapping = new int[components.length];
-    for (int i = 0; i < mapping.length; i++) {
-      RecordComponent component = components[i];
-      Integer index = fieldOrderIndex.get(component.getName());
-      mapping[i] = index;
-    }
-    return mapping;
-  }
-
-  public static void remapping(
-      int[] recordComponentsIndex, Object[] fields, Object[] recordComponents) {
-    for (int i = 0; i < recordComponentsIndex.length; i++) {
-      int index = recordComponentsIndex[i];
-      recordComponents[i] = fields[index];
     }
   }
 
