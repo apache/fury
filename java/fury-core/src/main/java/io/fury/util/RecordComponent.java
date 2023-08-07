@@ -24,6 +24,7 @@ import java.lang.reflect.Type;
  * class.
  *
  * <p>See more details in java.lang.reflect.RecordComponent.
+ *
  * @author chaokunyang
  */
 public final class RecordComponent {
