@@ -1,6 +1,6 @@
 {
   "name": "@furyjs/fury",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A blazing fast multi-language serialization framework powered by jit and zero-copy",
   "main": "dist/index.js",
   "scripts": {

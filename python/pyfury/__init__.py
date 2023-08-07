@@ -68,4 +68,4 @@ try:
 except (AttributeError, ImportError):
     pass
 
-__version__ = "0.1.0.a5"
+__version__ = "0.1.1"

@@ -24,7 +24,7 @@
   <groupId>org.furyio</groupId>
   <artifactId>fury-parent</artifactId>
   <packaging>pom</packaging>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <name>Fury Project Parent POM</name>
   <description>A blazing fast multi-language serialization framework powered by jit and zero-copy.</description>
   <url>https://github.com/alipay/fury</url>
