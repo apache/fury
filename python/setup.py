@@ -141,13 +141,13 @@ setup(
         'pickle5; python_version<"3.8"',
     ],
     extras_require={
-        "format": ["pyarrow == 4.0.0"],
-        "all": ["pyarrow == 4.0.0"],
+        "format": ["pyarrow == 7.0.0"],
+        "all": ["pyarrow == 7.0.0"],
     },
     setup_requires=[
         "cython >= 0.29.14",
         "wheel",
-        "pyarrow == 4.0.0",
+        "pyarrow == 7.0.0",
         "numpy" 'dataclasses; python_version<"3.7"',
         'pickle5; python_version<"3.8"',
     ],
