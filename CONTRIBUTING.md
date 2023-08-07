@@ -12,7 +12,7 @@ mvn clean compile -DskipTests
 ### Building Fury Python
 ```bash
 cd python
-pip install pyarrow==7.0.0 Cython wheel numpy pytest
+pip install pyarrow==6.0.1 Cython wheel numpy pytest
 pip install -v -e .
 ```
 
@@ -23,7 +23,7 @@ bazel build //src/fury/util:fury_util
 ```
 Build fury row format：
 ```bash
-pip install pyarrow==7.0.0
+pip install pyarrow==6.0.1
 bazel build //src/fury/row:fury_row_format
 ```
 

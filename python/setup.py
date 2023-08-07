@@ -35,7 +35,7 @@ try:
 except FileExistsError:
     pass
 
-
+pyarrow_version = "6.0.1"
 # Check if we're running 64-bit Python
 if not sys.maxsize > 2**32:
     raise RuntimeError("Not supported on 32-bit")
@@ -141,13 +141,13 @@ setup(
         'pickle5; python_version<"3.8"',
     ],
     extras_require={
-        "format": ["pyarrow == 7.0.0"],
-        "all": ["pyarrow == 7.0.0"],
+        "format": [f"pyarrow == {pyarrow_version}"],
+        "all": [f"pyarrow == {pyarrow_version}"],
     },
     setup_requires=[
         "cython >= 0.29.14",
         "wheel",
-        "pyarrow == 7.0.0",
+        f"pyarrow == {pyarrow_version}",
         "numpy" 'dataclasses; python_version<"3.7"',
         'pickle5; python_version<"3.8"',
     ],
