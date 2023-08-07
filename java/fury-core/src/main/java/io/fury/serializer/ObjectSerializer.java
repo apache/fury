@@ -35,6 +35,7 @@ import io.fury.type.GenericType;
 import io.fury.type.Generics;
 import io.fury.util.FieldAccessor;
 import io.fury.util.Platform;
+import io.fury.util.RecordInfo;
 import io.fury.util.RecordUtils;
 import io.fury.util.ReflectionUtils;
 import java.lang.invoke.MethodHandle;
@@ -66,8 +67,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
   private final RefResolver refResolver;
   private final ClassResolver classResolver;
   private final boolean isRecord;
-  private final Object[] recordComponents;
-  private final int[] recordComponentsIndex;
+  private final RecordInfo recordInfo;
   private final FinalTypeField[] finalFields;
   /**
    * Whether write class def for non-inner final types.
@@ -104,13 +104,10 @@ public final class ObjectSerializer<T> extends Serializer<T> {
           getSortedDescriptors(descriptorGrouper).stream()
               .map(Descriptor::getName)
               .collect(Collectors.toList());
-      recordComponentsIndex = Serializers.buildRecordComponentMapping(cls, fieldNames);
-      assert recordComponentsIndex != null;
-      recordComponents = new Object[recordComponentsIndex.length];
+      recordInfo = new RecordInfo(cls, fieldNames);
     } else {
       this.constructor = ReflectionUtils.getExecutableNoArgConstructorHandle(cls);
-      recordComponentsIndex = null;
-      recordComponents = null;
+      recordInfo = null;
     }
     if (fury.checkClassVersion()) {
       classVersionHash = computeVersionHash(descriptors);
@@ -313,10 +310,10 @@ public final class ObjectSerializer<T> extends Serializer<T> {
   public T read(MemoryBuffer buffer) {
     if (isRecord) {
       Object[] fields = readFields(buffer);
-      Serializers.remapping(recordComponentsIndex, fields, recordComponents);
+      RecordUtils.remapping(recordInfo, fields);
       try {
-        T obj = (T) constructor.invokeWithArguments(recordComponents);
-        Arrays.fill(recordComponents, null);
+        T obj = (T) constructor.invokeWithArguments(recordInfo.getRecordComponents());
+        Arrays.fill(recordInfo.getRecordComponents(), null);
         return obj;
       } catch (Throwable e) {
         Platform.throwException(e);

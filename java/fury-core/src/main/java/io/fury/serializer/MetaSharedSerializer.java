@@ -16,6 +16,8 @@
 
 package io.fury.serializer;
 
+import static io.fury.serializer.ObjectSerializer.getSortedDescriptors;
+
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.builder.MetaSharedCodecBuilder;
@@ -31,16 +33,19 @@ import io.fury.type.DescriptorGrouper;
 import io.fury.type.Generics;
 import io.fury.util.FieldAccessor;
 import io.fury.util.Platform;
+import io.fury.util.RecordInfo;
 import io.fury.util.RecordUtils;
 import io.fury.util.ReflectionUtils;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.stream.Collectors;
 
 /**
  * A meta-shared compatible deserializer builder based on {@link ClassDef}. This serializer will
@@ -73,6 +78,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
   private final ObjectSerializer.GenericTypeField[] containerFields;
   private final boolean isRecord;
   private final MethodHandle constructor;
+  private final RecordInfo recordInfo;
   private Serializer<T> serializer;
   private final ClassInfoCache classInfoCache;
 
@@ -102,6 +108,15 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     otherFields = infos.f1;
     containerFields = infos.f2;
     classInfoCache = fury.getClassResolver().nilClassInfoCache();
+    if (isRecord) {
+      List<String> fieldNames =
+          getSortedDescriptors(descriptorGrouper).stream()
+              .map(Descriptor::getName)
+              .collect(Collectors.toList());
+      recordInfo = new RecordInfo(type, fieldNames);
+    } else {
+      recordInfo = null;
+    }
   }
 
   @Override
@@ -120,8 +135,11 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
       Object[] fieldValues =
           new Object[finalFields.length + otherFields.length + containerFields.length];
       readFields(buffer, fieldValues);
+      RecordUtils.remapping(recordInfo, fieldValues);
       try {
-        return (T) constructor.invoke(fieldValues);
+        T t = (T) constructor.invokeWithArguments(recordInfo.getRecordComponents());
+        Arrays.fill(recordInfo.getRecordComponents(), null);
+        return t;
       } catch (Throwable e) {
         Platform.throwException(e);
       }
@@ -213,21 +231,18 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
                 fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
           }
         }
+        fields[counter++] = null;
       }
     }
     for (ObjectSerializer.GenericTypeField fieldInfo : otherFields) {
       Object fieldValue = ObjectSerializer.readOtherFieldValue(fury, fieldInfo, buffer);
-      if (fieldInfo.fieldAccessor != null) {
-        fields[counter++] = fieldValue;
-      }
+      fields[counter++] = fieldValue;
     }
     Generics generics = fury.getGenerics();
     for (ObjectSerializer.GenericTypeField fieldInfo : containerFields) {
       Object fieldValue =
           ObjectSerializer.readContainerFieldValue(fury, generics, fieldInfo, buffer);
-      if (fieldInfo.fieldAccessor != null) {
-        fields[counter++] = fieldValue;
-      }
+      fields[counter++] = fieldValue;
     }
   }
 

@@ -20,6 +20,7 @@ import static io.fury.collection.Collections.ofArrayList;
 import static io.fury.collection.Maps.ofHashMap;
 
 import io.fury.Fury;
+import io.fury.resolver.MetaContext;
 import io.fury.serializer.CompatibleMode;
 import io.fury.test.bean.Struct;
 import io.fury.util.RecordComponent;
@@ -104,5 +105,50 @@ public class RecordSerializersTest {
     Assert.assertEquals(record2, o2);
     // test compatible
     Assert.assertEquals(fury2.deserialize(bytes1), record2);
+  }
+
+  @Test
+  public void testRecordMetaShare() throws Throwable {
+    String code1 =
+        "import java.util.*;"
+            + "public record TestRecord(int f1, String f2, List<String> f3, char f4, Map<String, Integer> f5) {}";
+    Class<?> cls1 = Struct.createStructClass("TestRecord", code1);
+    Object record1 =
+        RecordUtils.getRecordConstructor(cls1)
+            .f1
+            .invoke(1, "abc", ofArrayList("a", "b"), 'a', ofHashMap("a", 1));
+    Fury fury1 =
+        Fury.builder()
+            .requireClassRegistration(false)
+            .withCodegen(false)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withMetaContextShare(true)
+            .withClassLoader(cls1.getClassLoader())
+            .build();
+    String code2 =
+        "import java.util.*;"
+            + "public record TestRecord(String f2, char f4, Map<String, Integer> f5) {}";
+    Class<?> cls2 = Struct.createStructClass("TestRecord", code2);
+    Object record2 =
+        RecordUtils.getRecordConstructor(cls2).f1.invoke("abc", 'a', ofHashMap("a", 1));
+    Fury fury2 =
+        Fury.builder()
+            .requireClassRegistration(false)
+            .withCodegen(false)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withMetaContextShare(true)
+            .withClassLoader(cls2.getClassLoader())
+            .build();
+    MetaContext metaContext1 = new MetaContext();
+    MetaContext metaContext2 = new MetaContext();
+    fury1.getSerializationContext().setMetaContext(metaContext1);
+    byte[] bytes1 = fury1.serialize(record1);
+    fury2.getSerializationContext().setMetaContext(metaContext2);
+    Object o21 = fury2.deserialize(bytes1);
+    fury2.getSerializationContext().setMetaContext(metaContext2);
+    byte[] bytes2 = fury2.serialize(o21);
+    fury1.getSerializationContext().setMetaContext(metaContext1);
+    Object o12 = fury1.deserialize(bytes2);
+    System.out.println(o12);
   }
 }
