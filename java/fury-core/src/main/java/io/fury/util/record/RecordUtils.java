@@ -199,6 +199,10 @@ public class RecordUtils {
     return ctrCache.get(cls);
   }
 
+  public static MethodHandle getRecordCtrHandle(Class<?> cls) {
+    return getRecordConstructor(cls).f1;
+  }
+
   public static Object[] buildRecordComponentDefaultValues(Class<?> cls) {
     RecordComponent[] components = RecordUtils.getRecordComponents(cls);
     assert components != null;

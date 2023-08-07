@@ -126,7 +126,11 @@ public interface Expression {
     protected boolean inlineCall = false;
 
     public Inlineable inline() {
-      inlineCall = true;
+      return inline(true);
+    }
+
+    public Inlineable inline(boolean inlineCall) {
+      this.inlineCall = inlineCall;
       return this;
     }
   }
@@ -257,6 +261,10 @@ public interface Expression {
 
     public static Literal ofClass(Class<?> v) {
       return new Literal(v, CLASS_TYPE);
+    }
+
+    public static Literal ofString(String v) {
+      return new Literal(v, STRING_TYPE);
     }
 
     @Override

@@ -65,6 +65,14 @@ public class Functions {
     return variables;
   }
 
+  public static Object makeGetterFunction(Class<?> cls, String methodName) {
+    try {
+      return makeGetterFunction(cls.getDeclaredMethod(methodName));
+    } catch (NoSuchMethodException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static Object makeGetterFunction(Method method) {
     MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(method.getDeclaringClass());
     try {
