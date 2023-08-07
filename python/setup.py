@@ -114,15 +114,15 @@ setup(
     maintainer_email="shawn.ck.yang@gmail.com",
     package_data={
         "pyfury": [
-            "*.pxd",
-            "*.pyx",
+            "**/*.pxd",
+            "**/*.pyx",
             "includes/*.pxd",
-            "*.so",
-            "*.dylib",
-            "*.dll",
-            "lib/**/*.so",
+            "**/*.so",
+            "**/*.dylib",
+            "**/*.dll",
         ]
     },
+    include_package_data=True,
     packages=find_packages(),
     description="Fury is a blazing fast multi-language serialization "
     + "framework powered by jit, vectorization and zero-copy",
