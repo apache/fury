@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class RecordSerializersTest {
@@ -70,8 +71,13 @@ public class RecordSerializersTest {
     Assert.assertEquals(fury.deserialize(fury.serialize(foo)), foo);
   }
 
-  @Test
-  public void testRecordCompatible() throws Throwable {
+  @DataProvider
+  public static Object[][] codegen() {
+    return new Object[][] {{false}, {true}};
+  }
+
+  @Test(dataProvider = "codegen")
+  public void testRecordCompatible(boolean codegen) throws Throwable {
     String code1 =
         "import java.util.*;"
             + "public record TestRecord(int f1, String f2, List<String> f3, char f4, Map<String, Integer> f5) {}";
@@ -83,7 +89,7 @@ public class RecordSerializersTest {
     Fury fury =
         Fury.builder()
             .requireClassRegistration(false)
-            .withCodegen(false)
+            .withCodegen(codegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
     byte[] bytes1 = fury.serialize(record1);
@@ -98,7 +104,7 @@ public class RecordSerializersTest {
     Fury fury2 =
         Fury.builder()
             .requireClassRegistration(false)
-            .withCodegen(false)
+            .withCodegen(codegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
     Object o2 = fury2.deserialize(fury2.serialize(record2));
