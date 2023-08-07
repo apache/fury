@@ -136,9 +136,6 @@ deploy_python() {
   if [[ "$OSTYPE" == "linux"* ]]; then
     rename_linux_wheels "$WHEEL_DIR"
   fi
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    rename_mac_wheels
-  fi
   twine check "$WHEEL_DIR"/pyfury*.whl
   twine upload -r pypi "$WHEEL_DIR"/pyfury*.whl
 }
