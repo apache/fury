@@ -28,6 +28,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -154,6 +155,17 @@ public class DescriptorGrouper {
         otherDescriptors.add(descriptorUpdator.apply(descriptor));
       }
     }
+  }
+
+  public List<Descriptor> getSortedDescriptors() {
+    List<Descriptor> descriptors = new ArrayList<>(getNumDescriptors());
+    descriptors.addAll(getPrimitiveDescriptors());
+    descriptors.addAll(getBoxedDescriptors());
+    descriptors.addAll(getFinalDescriptors());
+    descriptors.addAll(getCollectionDescriptors());
+    descriptors.addAll(getMapDescriptors());
+    descriptors.addAll(getOtherDescriptors());
+    return descriptors;
   }
 
   public Collection<Descriptor> getPrimitiveDescriptors() {

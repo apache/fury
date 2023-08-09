@@ -16,6 +16,7 @@
 
 package io.fury.builder;
 
+import static io.fury.type.TypeUtils.OBJECT_ARRAY_TYPE;
 import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
@@ -46,12 +47,14 @@ import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import io.fury.util.function.Functions;
+import io.fury.util.record.RecordComponent;
 import io.fury.util.record.RecordUtils;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import sun.misc.Unsafe;
 
@@ -83,13 +86,19 @@ public abstract class CodecBuilder {
   protected final boolean isRecord;
   private final Set<String> duplicatedFields;
   protected Reference furyRef = new Reference(FURY_NAME, TypeToken.of(Fury.class));
+  public static final Reference recordComponentDefaultValues =
+      new Reference("recordComponentDefaultValues", OBJECT_ARRAY_TYPE);
   private final Map<String, Reference> fieldMap = new HashMap<>();
+  protected boolean recordCtrAccessible;
 
   public CodecBuilder(CodegenContext ctx, TypeToken<?> beanType) {
     this.ctx = ctx;
     this.beanType = beanType;
     this.beanClass = getRawType(beanType);
     isRecord = RecordUtils.isRecord(beanClass);
+    if (isRecord) {
+      recordCtrAccessible = recordCtrAccessible(beanClass);
+    }
     duplicatedFields =
         Descriptor.getSortedDuplicatedFields(Descriptor.getAllDescriptorsMap(beanClass)).keySet();
     // don't ctx.addImport beanClass, because it maybe causes name collide.
@@ -123,6 +132,11 @@ public abstract class CodecBuilder {
       fieldMap.put(fieldName, fieldRef);
     }
     return fieldRef;
+  }
+
+  protected Expression buildDefaultComponentsArray() {
+    return new StaticInvoke(
+        Platform.class, "copyObjectArray", OBJECT_ARRAY_TYPE, recordComponentDefaultValues);
   }
 
   /** Returns an expression that get field value from <code>bean</code>. */
@@ -337,6 +351,30 @@ public abstract class CodecBuilder {
     } else {
       return new StaticInvoke(Platform.class, "newInstance", OBJECT_TYPE, beanClassExpr());
     }
+  }
+
+  protected void buildRecordComponentDefaultValues() {
+    ctx.reserveName(recordComponentDefaultValues.name());
+    StaticInvoke expr =
+        new StaticInvoke(
+            RecordUtils.class,
+            "buildRecordComponentDefaultValues",
+            OBJECT_ARRAY_TYPE,
+            beanClassExpr());
+    ctx.addField(Object[].class, recordComponentDefaultValues.name(), expr);
+  }
+
+  static boolean recordCtrAccessible(Class<?> cls) {
+    // support unexported packages in module
+    if (!Modifier.isPublic(cls.getModifiers())) {
+      return false;
+    }
+    for (RecordComponent component : Objects.requireNonNull(RecordUtils.getRecordComponents(cls))) {
+      if (!Modifier.isPublic(component.getType().getModifiers())) {
+        return false;
+      }
+    }
+    return true;
   }
 
   protected Expression beanClassExpr() {

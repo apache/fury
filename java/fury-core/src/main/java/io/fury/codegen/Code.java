@@ -150,8 +150,8 @@ public interface Code {
 
   /** A literal java expression. */
   class LiteralValue extends ExprValue {
-    static LiteralValue TrueLiteral = new LiteralValue(boolean.class, "true");
-    static LiteralValue FalseLiteral = new LiteralValue(boolean.class, "false");
+    public static LiteralValue TrueLiteral = new LiteralValue(boolean.class, "true");
+    public static LiteralValue FalseLiteral = new LiteralValue(boolean.class, "false");
 
     private final String value;
 
