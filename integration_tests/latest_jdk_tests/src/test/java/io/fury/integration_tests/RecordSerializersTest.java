@@ -64,16 +64,32 @@ public class RecordSerializersTest {
     Assert.assertEquals(parameterizedType.getActualTypeArguments()[0], String.class);
   }
 
-  @Test
-  public void testSimpleRecord() {
-    Fury fury = Fury.builder().requireClassRegistration(false).withCodegen(false).build();
+  @DataProvider
+  public static Object[][] codegen() {
+    return new Object[][] {{false}, {true}};
+  }
+
+  @Test(dataProvider = "codegen")
+  public void testSimpleRecord(boolean codegen) {
+    Fury fury = Fury.builder().requireClassRegistration(false).withCodegen(codegen).build();
     Foo foo = new Foo(10, "abc", new ArrayList<>(Arrays.asList("a", "b")), 'x');
     Assert.assertEquals(fury.deserialize(fury.serialize(foo)), foo);
   }
 
-  @DataProvider
-  public static Object[][] codegen() {
-    return new Object[][] {{false}, {true}};
+  @Test(dataProvider = "codegen")
+  public void testSimpleRecordMetaShared(boolean codegen) {
+    Fury fury =
+        Fury.builder()
+            .requireClassRegistration(false)
+            .withCodegen(codegen)
+            .withMetaContextShare(true)
+            .build();
+    Foo foo = new Foo(10, "abc", new ArrayList<>(Arrays.asList("a", "b")), 'x');
+    MetaContext context = new MetaContext();
+    fury.getSerializationContext().setMetaContext(context);
+    byte[] bytes = fury.serialize(foo);
+    fury.getSerializationContext().setMetaContext(context);
+    Assert.assertEquals(fury.deserialize(bytes), foo);
   }
 
   @Test(dataProvider = "codegen")

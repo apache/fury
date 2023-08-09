@@ -24,6 +24,7 @@ import io.fury.Fury;
 import io.fury.builder.Generated.GeneratedMetaSharedSerializer;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Literal;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.CodegenSerializer;
 import io.fury.serializer.CompatibleMode;
@@ -36,7 +37,10 @@ import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
 import io.fury.util.StringUtils;
 import io.fury.util.Utils;
+import io.fury.util.record.RecordComponent;
+import io.fury.util.record.RecordUtils;
 import java.util.Collection;
+import java.util.SortedMap;
 
 /**
  * A meta-shared compatible deserializer builder based on {@link ClassDef}. This builder will
@@ -137,6 +141,26 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
   @Override
   public Expression buildEncodeExpression() {
     throw new IllegalStateException("unreachable");
+  }
+
+  @Override
+  protected Expression buildComponentsArray() {
+    return buildDefaultComponentsArray();
+  }
+
+  protected Expression createRecord(SortedMap<Integer, Expression> recordComponents) {
+    RecordComponent[] components = RecordUtils.getRecordComponents(beanClass);
+    Object[] defaultValues = RecordUtils.buildRecordComponentDefaultValues(beanClass);
+    for (int i = 0; i < defaultValues.length; i++) {
+      if (!recordComponents.containsKey(i)) {
+        Object defaultValue = defaultValues[i];
+        assert components != null;
+        RecordComponent component = components[i];
+        recordComponents.put(i, new Literal(defaultValue, TypeToken.of(component.getType())));
+      }
+    }
+    Expression[] params = recordComponents.values().toArray(new Expression[0]);
+    return new Expression.NewInstance(beanType, params);
   }
 
   @Override
