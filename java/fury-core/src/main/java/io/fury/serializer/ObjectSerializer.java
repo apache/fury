@@ -101,7 +101,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     if (isRecord) {
       constructor = RecordUtils.getRecordConstructor(cls).f1;
       List<String> fieldNames =
-          getSortedDescriptors(descriptorGrouper).stream()
+          descriptorGrouper.getSortedDescriptors().stream()
               .map(Descriptor::getName)
               .collect(Collectors.toList());
       recordInfo = new RecordInfo(cls, fieldNames);
@@ -172,17 +172,6 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       containerFields[cnt++] = buildContainerField(fury, d);
     }
     return Tuple3.of(Tuple2.of(finalFields, isFinal), otherFields, containerFields);
-  }
-
-  public static List<Descriptor> getSortedDescriptors(DescriptorGrouper grouper) {
-    List<Descriptor> descriptors = new ArrayList<>(grouper.getNumDescriptors());
-    descriptors.addAll(grouper.getPrimitiveDescriptors());
-    descriptors.addAll(grouper.getBoxedDescriptors());
-    descriptors.addAll(grouper.getFinalDescriptors());
-    descriptors.addAll(grouper.getCollectionDescriptors());
-    descriptors.addAll(grouper.getMapDescriptors());
-    descriptors.addAll(grouper.getOtherDescriptors());
-    return descriptors;
   }
 
   private static FinalTypeField buildFinalTypeField(Fury fury, Descriptor d) {

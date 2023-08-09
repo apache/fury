@@ -16,8 +16,6 @@
 
 package io.fury.serializer;
 
-import static io.fury.serializer.ObjectSerializer.getSortedDescriptors;
-
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.builder.MetaSharedCodecBuilder;
@@ -110,7 +108,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     classInfoCache = fury.getClassResolver().nilClassInfoCache();
     if (isRecord) {
       List<String> fieldNames =
-          getSortedDescriptors(descriptorGrouper).stream()
+          descriptorGrouper.getSortedDescriptors().stream()
               .map(Descriptor::getName)
               .collect(Collectors.toList());
       recordInfo = new RecordInfo(type, fieldNames);

@@ -85,11 +85,8 @@ import java.util.stream.Collectors;
  */
 public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   public static final String FIELD_RESOLVER_NAME = "fieldResolver";
-  public static final Reference recordComponentDefaultValues =
-      new Reference("recordComponentDefaultValues", OBJECT_ARRAY_TYPE);
   private final FieldResolver fieldResolver;
-  private int[] recordReversedMapping;
-  private int readRecordFieldCounter;
+  private Map<String, Integer> recordReversedMapping;
   private final Reference fieldResolverRef;
   private final Literal endTagLiteral;
   private final Map<String, Expression> methodCache;
@@ -108,8 +105,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
           fieldResolver.getAllFieldsList().stream()
               .map(FieldResolver.FieldInfo::getName)
               .collect(Collectors.toList());
-      recordReversedMapping =
-          RecordUtils.buildReversedRecordComponentMapping(beanClass, fieldNames);
+      recordReversedMapping = RecordUtils.buildFieldToComponentMapping(beanClass);
     }
     ctx.reserveName(FIELD_RESOLVER_NAME);
     endTagLiteral = new Literal(fieldResolver.getEndTag(), PRIMITIVE_LONG_TYPE);
@@ -123,14 +119,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             Literal.ofClass(getRawType(beanType)));
     ctx.addField(ctx.type(fieldResolverTypeToken), FIELD_RESOLVER_NAME, fieldResolverExpr);
     if (isRecord) {
-      ctx.reserveName(recordComponentDefaultValues.name());
-      StaticInvoke expr =
-          new StaticInvoke(
-              RecordUtils.class,
-              "buildRecordComponentDefaultValues",
-              OBJECT_ARRAY_TYPE,
-              beanClassExpr());
-      ctx.addField(Object[].class, recordComponentDefaultValues.name(), expr);
+      buildRecordComponentDefaultValues();
     }
     methodCache = new HashMap<>();
   }
@@ -434,7 +423,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   @Override
   protected Expression setFieldValue(Expression bean, Descriptor d, Expression value) {
     if (isRecord) {
-      int index = recordReversedMapping[readRecordFieldCounter];
+      int index = recordReversedMapping.get(d.getName());
       return new AssignArrayElem(bean, value, Literal.ofInt(index));
     }
     return super.setFieldValue(bean, d, value);
@@ -496,7 +485,6 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                     tryReadField,
                                     false,
                                     PRIMITIVE_VOID_TYPE));
-                            readRecordFieldCounter++;
                           }
                           groupExpressions.add(new Return(partFieldInfo));
                           return groupExpressions;
@@ -630,7 +618,6 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                     fieldInfo.getEncodedFieldInfo(),
                                     FieldResolver.EMBED_TYPES_9_FLAG,
                                     fieldInfo));
-                            readRecordFieldCounter++;
                           }
                           groupExpressions.add(new Return(partFieldInfo));
                           return groupExpressions;
@@ -677,7 +664,6 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                     fieldInfo.getEncodedFieldInfo(),
                                     FieldResolver.EMBED_TYPES_HASH_FLAG,
                                     fieldInfo));
-                            readRecordFieldCounter++;
                           }
                           groupExpressions.add(new Return(partFieldInfo));
                           return groupExpressions;
@@ -781,7 +767,6 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                         new Literal(encodedFieldInfo, PRIMITIVE_LONG_TYPE)),
                                     readField,
                                     tryReadField));
-                            readRecordFieldCounter++;
                           }
                           groupExpressions.add(new Return(partFieldInfo));
                           return groupExpressions;

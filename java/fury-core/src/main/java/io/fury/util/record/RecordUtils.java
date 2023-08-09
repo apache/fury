@@ -268,7 +268,7 @@ public class RecordUtils {
   }
 
   /** Build reversed mapping from read field to record component. */
-  public static int[] buildReversedRecordComponentMapping(Class<?> cls, List<String> fields) {
+  public static Map<String, Integer> buildFieldToComponentMapping(Class<?> cls) {
     RecordComponent[] components = getRecordComponents(cls);
     assert components != null;
     Map<String, Integer> recordComponentsIndex = new HashMap<>(components.length);
@@ -276,18 +276,7 @@ public class RecordUtils {
     for (RecordComponent component : components) {
       recordComponentsIndex.put(component.getName(), counter++);
     }
-    int[] mapping = new int[fields.size()];
-    for (int i = 0; i < fields.size(); i++) {
-      String fieldName = fields.get(i);
-      Integer index = recordComponentsIndex.get(fieldName);
-      if (index == null) {
-        // field missing in current process.
-        mapping[i] = -1;
-      } else {
-        mapping[i] = index;
-      }
-    }
-    return mapping;
+    return recordComponentsIndex;
   }
 
   public static void remapping(RecordInfo recordInfo, Object[] fields) {
