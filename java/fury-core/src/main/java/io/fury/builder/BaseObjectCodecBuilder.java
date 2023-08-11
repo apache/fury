@@ -52,6 +52,7 @@ import io.fury.codegen.Expression.Cast;
 import io.fury.codegen.Expression.If;
 import io.fury.codegen.Expression.Invoke;
 import io.fury.codegen.Expression.ListExpression;
+import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.Return;
 import io.fury.codegen.ExpressionOptimizer;
@@ -271,14 +272,11 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression action =
           new ListExpression(
               new Invoke(
-                  buffer,
-                  "writeByte",
-                  new Expression.Literal(Fury.REF_VALUE_FLAG, PRIMITIVE_BYTE_TYPE)),
+                  buffer, "writeByte", new Literal(Fury.REF_VALUE_FLAG, PRIMITIVE_BYTE_TYPE)),
               serializeForNotNull(inputObject, buffer, typeToken, generateNewMethod));
       return new If(
           ExpressionUtils.eqNull(inputObject),
-          new Invoke(
-              buffer, "writeByte", new Expression.Literal(Fury.NULL_FLAG, PRIMITIVE_BYTE_TYPE)),
+          new Invoke(buffer, "writeByte", new Literal(Fury.NULL_FLAG, PRIMITIVE_BYTE_TYPE)),
           action);
     }
   }
@@ -435,11 +433,17 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         serializerClass = Serializer.class;
       }
       TypeToken<? extends Serializer> serializerTypeToken = TypeToken.of(serializerClass);
-      Expression.Literal clzLiteral = new Expression.Literal(ctx.type(cls) + ".class");
+      Expression.StaticInvoke fieldTypeExpr =
+          new Expression.StaticInvoke(
+              ReflectionUtils.class,
+              "loadClass",
+              CLASS_TYPE,
+              beanClassExpr(),
+              Literal.ofString(cls.getSimpleName() + ".class"));
       // Don't invoke `Serializer.newSerializer` here, since it(ex. ObjectSerializer) may set itself
       // as global serializer, which overwrite serializer updates in jit callback.
       Expression newSerializerExpr =
-          inlineInvoke(classResolverRef, "getSerializer", SERIALIZER_TYPE, clzLiteral);
+          inlineInvoke(classResolverRef, "getSerializer", SERIALIZER_TYPE, fieldTypeExpr);
       String name = ctx.newName(StringUtils.uncapitalize(serializerClass.getSimpleName()));
       // It's ok it jit already finished and this method return false, in such cases
       // `serializerClass` is already jit generated class.
@@ -475,7 +479,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       if (classInfoRef != null) {
         return Tuple2.of(classInfoRef, false);
       }
-      Expression clsExpr = new Expression.Literal(cls, CLASS_TYPE);
+      Expression clsExpr = new Literal(cls, CLASS_TYPE);
       classInfoExpr = inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeToken, clsExpr);
       // Use `ctx.freshName(cls)` to avoid wrong name for arr type.
       String name = ctx.newName(ctx.newName(cls) + "ClassInfo");
@@ -544,7 +548,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Expression clsExpr;
     if (isFinal(clz)) {
       serializer = getOrCreateSerializer(clz);
-      clsExpr = new Expression.Literal(clz, CLASS_TYPE);
+      clsExpr = new Literal(clz, CLASS_TYPE);
     } else {
       ListExpression writeClassAction = new ListExpression();
       Tuple2<Reference, Boolean> classInfoRef = addClassInfoField(clz);
@@ -576,7 +580,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       // if type hierarchy no interact, cast will compile error.
       hookWrite =
           new If(
-              eq(clsExpr, new Expression.Literal(ArrayList.class, CLASS_TYPE)),
+              eq(clsExpr, new Literal(ArrayList.class, CLASS_TYPE)),
               writeListCodegen(buffer, collection, serializer, elementType),
               writeCollectionCodegen(buffer, collection, serializer, elementType),
               false);
@@ -617,8 +621,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression buffer, Expression collection, Expression serializer, TypeToken<?> elementType) {
     Expression list =
         new Cast(collection, TypeUtils.arrayListOf(getRawType(elementType)), "arrList");
-    Expression start = new Expression.Literal(0, PRIMITIVE_INT_TYPE);
-    Expression step = new Expression.Literal(1, PRIMITIVE_INT_TYPE);
+    Expression start = new Literal(0, PRIMITIVE_INT_TYPE);
+    Expression step = new Literal(1, PRIMITIVE_INT_TYPE);
     Invoke size = new Invoke(collection, "size", PRIMITIVE_INT_TYPE);
     Invoke writeSize = new Invoke(buffer, "writePositiveVarInt", size);
     Invoke writeHeader = new Invoke(serializer, "writeHeader", buffer, collection);
@@ -779,8 +783,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression refId = tryPreserveRefId(buffer);
       // indicates that the object is first read.
       Expression needDeserialize =
-          ExpressionUtils.egt(
-              refId, new Expression.Literal(Fury.NOT_NULL_VALUE_FLAG, PRIMITIVE_BYTE_TYPE));
+          ExpressionUtils.egt(refId, new Literal(Fury.NOT_NULL_VALUE_FLAG, PRIMITIVE_BYTE_TYPE));
       Expression deserializedValue = deserializeForNotNull(buffer, typeToken, generateNewMethod);
       Expression setReadObject =
           new Invoke(refResolverRef, "setReadObject", refId, deserializedValue);
@@ -801,7 +804,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression notNull =
           neq(
               inlineInvoke(buffer, "readByte", PRIMITIVE_BYTE_TYPE),
-              new Expression.Literal(Fury.NULL_FLAG, PRIMITIVE_BYTE_TYPE));
+              new Literal(Fury.NULL_FLAG, PRIMITIVE_BYTE_TYPE));
       Expression value = deserializeForNotNull(buffer, typeToken, generateNewMethod);
       // use false to ignore null.
       return new If(
@@ -913,8 +916,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
 
   protected Expression readCollectionCodegen(
       Expression buffer, Expression collection, Expression size, TypeToken<?> elementType) {
-    Expression start = new Expression.Literal(0, PRIMITIVE_INT_TYPE);
-    Expression step = new Expression.Literal(1, PRIMITIVE_INT_TYPE);
+    Expression start = new Literal(0, PRIMITIVE_INT_TYPE);
+    Expression step = new Literal(1, PRIMITIVE_INT_TYPE);
     ExpressionVisitor.ExprHolder exprHolder =
         ExpressionVisitor.ExprHolder.of("collection", collection, "buffer", buffer);
     Expression.ForLoop readElements =
@@ -957,8 +960,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Invoke supportHook = inlineInvoke(serializer, "supportCodegenHook", PRIMITIVE_BOOLEAN_TYPE);
     Expression size = new Invoke(buffer, "readPositiveVarInt", "size", PRIMITIVE_INT_TYPE);
     Expression newMap = new Invoke(serializer, "newMap", MAP_TYPE, buffer, size);
-    Expression start = new Expression.Literal(0, PRIMITIVE_INT_TYPE);
-    Expression step = new Expression.Literal(1, PRIMITIVE_INT_TYPE);
+    Expression start = new Literal(0, PRIMITIVE_INT_TYPE);
+    Expression step = new Literal(1, PRIMITIVE_INT_TYPE);
     ExpressionVisitor.ExprHolder exprHolder =
         ExpressionVisitor.ExprHolder.of("map", newMap, "buffer", buffer);
     Expression.ForLoop readKeyValues =

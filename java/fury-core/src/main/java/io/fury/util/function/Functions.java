@@ -17,6 +17,7 @@
 package io.fury.util.function;
 
 import com.google.common.base.Preconditions;
+import io.fury.collection.Tuple2;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.unsafe._JDKAccess;
 import java.io.Serializable;
@@ -84,5 +85,9 @@ public class Functions {
     } catch (IllegalAccessException ex) {
       throw new RuntimeException(ex);
     }
+  }
+
+  public static Tuple2<Class<?>, String> getterMethodInfo(Class<?> type) {
+    return _JDKAccess.getterMethodInfo(type);
   }
 }

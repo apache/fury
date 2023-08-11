@@ -283,7 +283,7 @@ public interface Expression {
         return new ExprCode(null, TrueLiteral, defaultLiteral);
       } else {
         if (javaType == String.class) {
-          return new ExprCode(FalseLiteral, new LiteralValue(value));
+          return new ExprCode(FalseLiteral, new LiteralValue("\"" + value + "\""));
         } else if (javaType == Boolean.class || javaType == Integer.class) {
           return new ExprCode(null, FalseLiteral, new LiteralValue(javaType, value.toString()));
         } else if (javaType == Float.class) {

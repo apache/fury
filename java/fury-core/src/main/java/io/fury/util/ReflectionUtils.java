@@ -398,6 +398,15 @@ public class ReflectionUtils {
     return pkg;
   }
 
+  // Invoked by JIT.
+  public Class<?> loadClass(Class<?> neighbor, String className) {
+    try {
+      return neighbor.getClassLoader().loadClass(className);
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static <T> T unsafeCopy(T obj) {
     @SuppressWarnings("unchecked")
     T newInstance = (T) Platform.newInstance(obj.getClass());

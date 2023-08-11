@@ -260,6 +260,10 @@ public class _JDKAccess {
     methodMap.put(double.class, Tuple2.of(ToDoubleFunction.class, "applyAsDouble"));
   }
 
+  public static Tuple2<Class<?>, String> getterMethodInfo(Class<?> type) {
+    return methodMap.get(type);
+  }
+
   public static Object makeGetterFunction(
       MethodHandles.Lookup lookup, MethodHandle handle, Class<?> returnType) {
     Tuple2<Class<?>, String> methodInfo = methodMap.get(returnType);
