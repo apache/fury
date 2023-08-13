@@ -74,11 +74,6 @@ public class ExpressionUtils {
     return new Literal(null, type);
   }
 
-  public static Literal literalStr(String value) {
-    value = String.format("\"%s\"", value);
-    return new Literal(value);
-  }
-
   public static Comparator eq(Expression left, Expression right) {
     return new Comparator("==", left, right, true);
   }

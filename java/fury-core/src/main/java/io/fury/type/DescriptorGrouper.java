@@ -20,8 +20,6 @@ import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Primitives;
-import com.google.common.reflect.TypeToken;
-import io.fury.util.ReflectionUtils;
 import io.fury.util.record.RecordUtils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

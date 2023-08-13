@@ -97,7 +97,7 @@ public class ArrayDataForEach implements Expression {
     // elemValue is only used in notNullAction, so set elemValueRef'nullable to false.
     Reference elemValueRef = new Reference(elemValue, elemType);
     Code.ExprCode notNullElemExprCode =
-        notNullAction.apply(new Literal(i), elemValueRef).genCode(ctx);
+        notNullAction.apply(new Reference(i), elemValueRef).genCode(ctx);
     if (nullAction == null) {
       String code =
           StringUtils.format(
@@ -127,7 +127,7 @@ public class ArrayDataForEach implements Expression {
               CodeGenerator.alignIndent(notNullElemExprCode.code(), 8));
       codeBuilder.append(code);
     } else {
-      Code.ExprCode nullExprCode = nullAction.apply(new Literal(i)).genCode(ctx);
+      Code.ExprCode nullExprCode = nullAction.apply(new Reference(i)).genCode(ctx);
       String code =
           StringUtils.format(
               ""

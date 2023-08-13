@@ -39,7 +39,6 @@ import io.fury.codegen.Expression.Invoke;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.StaticInvoke;
-import io.fury.codegen.ExpressionUtils;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
@@ -329,7 +328,7 @@ public abstract class CodecBuilder {
       TypeToken<Field> fieldTypeToken = TypeToken.of(Field.class);
       String fieldRefName = ctx.newName(fieldName + "Field");
       Preconditions.checkArgument(Modifier.isPublic(cls.getModifiers()));
-      Literal clzLiteral = new Literal(ctx.type(cls) + ".class");
+      Literal clzLiteral = Literal.ofClass(cls);
       StaticInvoke fieldExpr =
           new StaticInvoke(
               ReflectionUtils.class,
@@ -337,8 +336,8 @@ public abstract class CodecBuilder {
               fieldTypeToken,
               false,
               clzLiteral,
-              ExpressionUtils.literalStr(fieldName));
-      Invoke setAccessible = new Invoke(fieldExpr, "setAccessible", new Literal("true"));
+              Literal.ofString(fieldName));
+      Invoke setAccessible = new Invoke(fieldExpr, "setAccessible", Literal.True);
       Expression.ListExpression createField =
           new Expression.ListExpression(setAccessible, fieldExpr);
       ctx.addField(ctx.type(Field.class), fieldRefName, createField);

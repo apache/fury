@@ -2092,7 +2092,7 @@ public interface Expression {
       String i = ctx.newName("i");
       String elemValue = ctx.newName("elemValue");
       Expression elementExpr =
-          action.apply(new Literal(i), new Reference(elemValue, elementType, false));
+          action.apply(new Reference(i), new Reference(elemValue, elementType, false));
       ExprCode elementExprCode = elementExpr.genCode(ctx);
 
       if (inputObject.type().isArray()) {
@@ -2227,7 +2227,7 @@ public interface Expression {
       rightElemType = ReflectionUtils.getPublicSuperType(rightElemType);
       Expression elemExpr =
           action.apply(
-              new Literal(i),
+              new Reference(i),
               new Reference(leftElemValue, leftElemType, true),
               // elemValue nullability check use isNullAt inside action, so elemValueRef'nullable is
               // false.
