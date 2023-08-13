@@ -20,8 +20,6 @@ import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Primitives;
-import com.google.common.reflect.TypeToken;
-import io.fury.util.ReflectionUtils;
 import io.fury.util.record.RecordUtils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -197,20 +195,11 @@ public class DescriptorGrouper {
     if (readMethod != null && !RecordUtils.isRecord(readMethod.getDeclaringClass())) {
       readMethod = null;
     }
-    if (!Modifier.isPublic(d.getRawType().getModifiers())) {
-      // Non-public class can't be accessed from generated code.
-      // (Ignore protected/package level access for simplicity.
-      // Since class members whose type are non-public class are rare,
-      // it doesn't have much impact on performance.)
-      TypeToken<?> publicSuperType = ReflectionUtils.getPublicSuperType(d.getTypeToken());
-      return d.copy(publicSuperType, readMethod, null);
-    } else {
-      // getter/setter may lose some inner state of an object, so we set them to null.
-      if (readMethod == null && d.getWriteMethod() == null) {
-        return d;
-      }
-      return d.copy(d.getTypeToken(), readMethod, null);
+    // getter/setter may lose some inner state of an object, so we set them to null.
+    if (readMethod == null && d.getWriteMethod() == null) {
+      return d;
     }
+    return d.copy(d.getTypeToken(), readMethod, null);
   }
 
   public static DescriptorGrouper createDescriptorGrouper(

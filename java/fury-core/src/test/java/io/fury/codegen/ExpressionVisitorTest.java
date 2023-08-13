@@ -20,6 +20,7 @@ import static org.testng.Assert.assertEquals;
 
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
+import io.fury.codegen.Expression.Literal;
 import io.fury.util.ReflectionUtils;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.InvocationTargetException;
@@ -36,9 +37,9 @@ public class ExpressionVisitorTest {
     Expression.Reference ref =
         new Expression.Reference("a", TypeToken.of(ExpressionVisitorTest.class));
     Expression e1 = new Expression.Invoke(ref, "testTraverseExpression");
-    Expression.Literal start = new Expression.Literal("0");
-    Expression.Literal end = new Expression.Literal("10");
-    Expression.Literal step = new Expression.Literal("1");
+    Literal start = Literal.ofInt(0);
+    Literal end = Literal.ofInt(10);
+    Literal step = Literal.ofInt(1);
     ExpressionVisitor.ExprHolder holder =
         ExpressionVisitor.ExprHolder.of("e1", e1, "e2", new Expression.ListExpression());
     // FIXME ListExpression#add in lambda don't get executed, so ListExpression is the last expr.

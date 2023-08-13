@@ -35,10 +35,11 @@ import io.fury.Fury;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Inlineable;
+import io.fury.codegen.Expression.Invoke;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.StaticInvoke;
-import io.fury.codegen.ExpressionUtils;
+import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassInfoCache;
@@ -142,10 +143,9 @@ public abstract class CodecBuilder {
   /** Returns an expression that get field value from <code>bean</code>. */
   protected Expression getFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
     TypeToken<?> fieldType = descriptor.getTypeToken();
-    // No public field type is cast to public parent classes in DescriptorGrouper#createDescriptor
-    Preconditions.checkArgument(
-        Modifier.isPublic(getRawType(fieldType).getModifiers()),
-        "Field type should be public for codegen-based access");
+    if (!Modifier.isPublic(getRawType(fieldType).getModifiers())) {
+      fieldType = OBJECT_TYPE;
+    }
     String fieldName = descriptor.getName();
     if (isRecord) {
       return getRecordFieldValue(inputBeanExpr, descriptor);
@@ -158,7 +158,7 @@ public abstract class CodecBuilder {
       return new Expression.FieldValue(inputBeanExpr, fieldName, fieldType, fieldNullable, false);
     } else if (descriptor.getReadMethod() != null
         && Modifier.isPublic(descriptor.getReadMethod().getModifiers())) {
-      return new Expression.Invoke(
+      return new Invoke(
           inputBeanExpr, descriptor.getReadMethod().getName(), fieldName, fieldType, fieldNullable);
     } else {
       if (!Modifier.isPrivate(descriptor.getModifiers())) {
@@ -191,22 +191,28 @@ public abstract class CodecBuilder {
     String fieldName = descriptor.getName();
     if (Modifier.isPublic(beanClass.getModifiers())) {
       Preconditions.checkNotNull(descriptor.getReadMethod());
-      return new Expression.Invoke(
+      return new Invoke(
           inputBeanExpr, descriptor.getReadMethod().getName(), fieldName, fieldType, fieldNullable);
     } else {
       String key = "_" + fieldName + "_getter_";
       Reference ref = fieldMap.get(key);
+      Tuple2<Class<?>, String> methodInfo = Functions.getterMethodInfo(descriptor.getRawType());
       if (ref == null) {
-        Object getterFunction = Functions.makeGetterFunction(beanClass, fieldName);
-        TypeToken<?> getterType = TypeToken.of(getterFunction.getClass());
-        StaticInvoke getter =
+        Class<?> funcInterface = methodInfo.f0;
+        TypeToken<?> getterType = TypeToken.of(funcInterface);
+        Expression getter =
             new StaticInvoke(
-                Functions.class, "makeGetterFunction", getterType, Literal.ofString(fieldName));
-        ctx.addField(getterFunction.getClass(), key, getter);
-        ref = new Reference(fieldName, getterType);
-        fieldMap.put(fieldName, ref);
+                Functions.class,
+                "makeGetterFunction",
+                OBJECT_TYPE,
+                beanClassExpr(),
+                Literal.ofString(fieldName));
+        getter = new Expression.Cast(getter, getterType);
+        ctx.addField(funcInterface, key, getter);
+        ref = new Reference(key, getterType);
+        fieldMap.put(key, ref);
       }
-      return ref;
+      return new Invoke(ref, methodInfo.f1, fieldType, fieldNullable, inputBeanExpr);
     }
   }
 
@@ -215,8 +221,7 @@ public abstract class CodecBuilder {
       Expression inputObject, Class<?> cls, Descriptor descriptor) {
     Reference fieldRef = getOrCreateField(cls, descriptor.getName());
     // boolean fieldNullable = !descriptor.getTypeToken().isPrimitive();
-    Expression.Invoke getObj =
-        new Expression.Invoke(fieldRef, "get", OBJECT_TYPE, fieldNullable, inputObject);
+    Invoke getObj = new Invoke(fieldRef, "get", OBJECT_TYPE, fieldNullable, inputObject);
     return new Expression.Cast(getObj, descriptor.getTypeToken(), descriptor.getName());
   }
 
@@ -245,7 +250,8 @@ public abstract class CodecBuilder {
               fieldNullable,
               inputObject,
               fieldOffsetExpr);
-      return new Expression.Cast(getObj, descriptor.getTypeToken(), fieldName);
+      TypeToken<?> publicSuperType = ReflectionUtils.getPublicSuperType(descriptor.getTypeToken());
+      return new Expression.Cast(getObj, publicSuperType, fieldName);
     }
   }
 
@@ -267,7 +273,7 @@ public abstract class CodecBuilder {
     if (!Modifier.isFinal(d.getModifiers()) && Modifier.isPublic(d.getModifiers())) {
       return new Expression.SetField(bean, fieldName, value);
     } else if (d.getWriteMethod() != null && Modifier.isPublic(d.getWriteMethod().getModifiers())) {
-      return new Expression.Invoke(bean, d.getWriteMethod().getName(), value);
+      return new Invoke(bean, d.getWriteMethod().getName(), value);
     } else {
       if (!Modifier.isFinal(d.getModifiers()) && !Modifier.isPrivate(d.getModifiers())) {
         if (AccessorHelper.defineAccessor(d.getField())) {
@@ -295,7 +301,7 @@ public abstract class CodecBuilder {
     // populate fieldMap
     Reference fieldRef = getOrCreateField(getRawType(bean.type()), fieldName);
     Preconditions.checkNotNull(fieldRef);
-    return new Expression.Invoke(fieldRef, "set", bean, value);
+    return new Invoke(fieldRef, "set", bean, value);
   }
 
   /**
@@ -323,7 +329,7 @@ public abstract class CodecBuilder {
       TypeToken<Field> fieldTypeToken = TypeToken.of(Field.class);
       String fieldRefName = ctx.newName(fieldName + "Field");
       Preconditions.checkArgument(Modifier.isPublic(cls.getModifiers()));
-      Literal clzLiteral = new Literal(ctx.type(cls) + ".class");
+      Literal clzLiteral = Literal.ofClass(cls);
       StaticInvoke fieldExpr =
           new StaticInvoke(
               ReflectionUtils.class,
@@ -331,9 +337,8 @@ public abstract class CodecBuilder {
               fieldTypeToken,
               false,
               clzLiteral,
-              ExpressionUtils.literalStr(fieldName));
-      Expression.Invoke setAccessible =
-          new Expression.Invoke(fieldExpr, "setAccessible", new Literal("true"));
+              Literal.ofString(fieldName));
+      Invoke setAccessible = new Invoke(fieldExpr, "setAccessible", Literal.True);
       Expression.ListExpression createField =
           new Expression.ListExpression(setAccessible, fieldExpr);
       ctx.addField(ctx.type(Field.class), fieldRefName, createField);

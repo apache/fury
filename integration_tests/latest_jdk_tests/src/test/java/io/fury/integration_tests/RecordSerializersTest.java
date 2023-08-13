@@ -129,8 +129,8 @@ public class RecordSerializersTest {
     Assert.assertEquals(fury2.deserialize(bytes1), record2);
   }
 
-  @Test
-  public void testRecordMetaShare() throws Throwable {
+  @Test(dataProvider = "codegen")
+  public void testRecordMetaShare(boolean codegen) throws Throwable {
     String code1 =
         "import java.util.*;"
             + "public record TestRecord(int f1, String f2, List<String> f3, char f4, Map<String, Integer> f5) {}";
@@ -142,7 +142,7 @@ public class RecordSerializersTest {
     Fury fury1 =
         Fury.builder()
             .requireClassRegistration(false)
-            .withCodegen(false)
+            .withCodegen(codegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withMetaContextShare(true)
             .withClassLoader(cls1.getClassLoader())
@@ -156,7 +156,7 @@ public class RecordSerializersTest {
     Fury fury2 =
         Fury.builder()
             .requireClassRegistration(false)
-            .withCodegen(false)
+            .withCodegen(codegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withMetaContextShare(true)
             .withClassLoader(cls2.getClassLoader())
@@ -172,5 +172,43 @@ public class RecordSerializersTest {
     fury1.getSerializationContext().setMetaContext(metaContext1);
     Object o12 = fury1.deserialize(bytes2);
     System.out.println(o12);
+  }
+
+  @Test(dataProvider = "codegen")
+  public void testPrivateRecords(boolean codegen) {
+    {
+      Fury fury = Fury.builder().requireClassRegistration(false).withCodegen(codegen).build();
+      Object o1 = Records.createPrivateRecord(11);
+      Assert.assertEquals(fury.deserialize(fury.serialize(o1)), o1);
+      Object o2 = Records.createPublicRecord(11, o1);
+      Assert.assertEquals(fury.deserialize(fury.serialize(o2)), o2);
+    }
+    {
+      Fury fury =
+          Fury.builder()
+              .requireClassRegistration(false)
+              .withCodegen(codegen)
+              .withCompatibleMode(CompatibleMode.COMPATIBLE)
+              .build();
+      Object o1 = Records.createPrivateRecord(11);
+      Assert.assertEquals(fury.deserialize(fury.serialize(o1)), o1);
+      Object o2 = Records.createPublicRecord(11, o1);
+      Assert.assertEquals(fury.deserialize(fury.serialize(o2)), o2);
+    }
+    {
+      Fury fury =
+          Fury.builder()
+              .requireClassRegistration(false)
+              .withCodegen(codegen)
+              .withMetaContextShare(true)
+              .build();
+      Object o1 = Records.createPrivateRecord(11);
+      Object o2 = Records.createPublicRecord(11, o1);
+      MetaContext context = new MetaContext();
+      fury.getSerializationContext().setMetaContext(context);
+      byte[] bytes = fury.serialize(o2);
+      fury.getSerializationContext().setMetaContext(context);
+      Assert.assertEquals(fury.deserialize(bytes), o2);
+    }
   }
 }

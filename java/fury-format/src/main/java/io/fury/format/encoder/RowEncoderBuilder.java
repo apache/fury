@@ -27,6 +27,7 @@ import io.fury.builder.CodecBuilder;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.format.row.ArrayData;
@@ -81,12 +82,12 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     ctx.reserveName(BEAN_CLASS_NAME);
     Expression clsExpr;
     if (Modifier.isPublic(beanClass.getModifiers())) {
-      clsExpr = new Expression.Literal(ctx.type(beanClass) + ".class");
+      clsExpr = Literal.ofClass(beanClass);
     } else {
       // non-public class is not accessible in other class.
       clsExpr =
           new Expression.StaticInvoke(
-              Class.class, "forName", CLASS_TYPE, false, Expression.Literal.ofClass(beanClass));
+              Class.class, "forName", CLASS_TYPE, false, Literal.ofClass(beanClass));
     }
     ctx.addField(Class.class, "beanClass", clsExpr);
     ctx.addImports(Field.class, Schema.class);
@@ -165,7 +166,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       Preconditions.checkNotNull(d);
       TypeToken<?> fieldType = d.getTypeToken();
       Expression fieldValue = getFieldValue(bean, d);
-      Expression.Literal ordinal = new Expression.Literal(String.valueOf(i));
+      Literal ordinal = Literal.ofInt(i);
       Expression.StaticInvoke field =
           new Expression.StaticInvoke(
               DataTypes.class, "fieldOfSchema", ARROW_FIELD_TYPE, false, schemaExpr, ordinal);
@@ -191,7 +192,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     expressions.add(bean);
     // schema field's name must correspond to descriptor's name.
     for (int i = 0; i < numFields; i++) {
-      Expression.Literal ordinal = new Expression.Literal(String.valueOf(i));
+      Literal ordinal = Literal.ofInt(i);
       Descriptor d = getDescriptorByFieldName(schema.getFields().get(i).getName());
       TypeToken<?> fieldType = d.getTypeToken();
       Expression.Invoke isNullAt =
