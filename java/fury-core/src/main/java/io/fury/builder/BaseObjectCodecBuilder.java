@@ -55,6 +55,7 @@ import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.Return;
+import io.fury.codegen.Expression.StaticInvoke;
 import io.fury.codegen.ExpressionOptimizer;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.codegen.ExpressionVisitor;
@@ -433,13 +434,18 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         serializerClass = Serializer.class;
       }
       TypeToken<? extends Serializer> serializerTypeToken = TypeToken.of(serializerClass);
-      Expression.StaticInvoke fieldTypeExpr =
-          new Expression.StaticInvoke(
-              ReflectionUtils.class,
-              "loadClass",
-              CLASS_TYPE,
-              beanClassExpr(),
-              Literal.ofString(cls.getName()));
+      Expression fieldTypeExpr;
+      if (Modifier.isPublic(cls.getModifiers())) {
+        fieldTypeExpr = Literal.ofClass(cls);
+      } else {
+        fieldTypeExpr =
+            new StaticInvoke(
+                ReflectionUtils.class,
+                "loadClass",
+                CLASS_TYPE,
+                beanClassExpr(),
+                Literal.ofString(cls.getName()));
+      }
       // Don't invoke `Serializer.newSerializer` here, since it(ex. ObjectSerializer) may set itself
       // as global serializer, which overwrite serializer updates in jit callback.
       Expression newSerializerExpr =
