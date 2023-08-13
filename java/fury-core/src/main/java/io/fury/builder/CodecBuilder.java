@@ -250,7 +250,8 @@ public abstract class CodecBuilder {
               fieldNullable,
               inputObject,
               fieldOffsetExpr);
-      return new Expression.Cast(getObj, descriptor.getTypeToken(), fieldName);
+      TypeToken<?> publicSuperType = ReflectionUtils.getPublicSuperType(descriptor.getTypeToken());
+      return new Expression.Cast(getObj, publicSuperType, fieldName);
     }
   }
 

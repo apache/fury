@@ -25,6 +25,7 @@ import io.fury.Language;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CompileUnit;
 import io.fury.codegen.JaninoUtils;
+import io.fury.test.bean.AccessBeans;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
 import io.fury.test.bean.Foo;
@@ -159,5 +160,12 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     nestedContainer.map1 = map1;
     serDeCheck(fury, nestedContainer);
     checkMethodSize(NestedContainer.class, fury);
+  }
+
+  @Test
+  public void testAccessLevel() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    AccessBeans.PublicClass object = AccessBeans.createPublicClassObject();
+    serDeCheckSerializer(fury, object, "Codec");
   }
 }
