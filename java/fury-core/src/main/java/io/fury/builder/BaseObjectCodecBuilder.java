@@ -439,7 +439,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               "loadClass",
               CLASS_TYPE,
               beanClassExpr(),
-              Literal.ofString(cls.getSimpleName() + ".class"));
+              Literal.ofString(cls.getName()));
       // Don't invoke `Serializer.newSerializer` here, since it(ex. ObjectSerializer) may set itself
       // as global serializer, which overwrite serializer updates in jit callback.
       Expression newSerializerExpr =

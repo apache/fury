@@ -399,7 +399,7 @@ public class ReflectionUtils {
   }
 
   // Invoked by JIT.
-  public Class<?> loadClass(Class<?> neighbor, String className) {
+  public static Class<?> loadClass(Class<?> neighbor, String className) {
     try {
       return neighbor.getClassLoader().loadClass(className);
     } catch (ClassNotFoundException e) {
