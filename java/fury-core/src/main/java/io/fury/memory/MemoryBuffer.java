@@ -27,6 +27,7 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
+import java.util.Arrays;
 
 /**
  * A class for operations on memory managed by Fury. The buffer may be backed by heap memory (byte
@@ -2013,9 +2014,14 @@ public final class MemoryBuffer {
           String.format(
               "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, length, size, this));
     }
+    byte[] heapMemory = this.heapMemory;
     final byte[] bytes = new byte[length];
-    Platform.UNSAFE.copyMemory(
-        this.heapMemory, address + readerIdx, bytes, Platform.BYTE_ARRAY_OFFSET, length);
+    if (heapMemory != null) {
+      // System.arraycopy faster for some jdk than Unsafe.
+      System.arraycopy(heapMemory, heapOffset + readerIdx, bytes, 0, length);
+    } else {
+      Platform.copyMemory(null, address + readerIdx, bytes, Platform.BYTE_ARRAY_OFFSET, length);
+    }
     readerIndex = readerIdx + length;
     return bytes;
   }
@@ -2063,8 +2069,13 @@ public final class MemoryBuffer {
               readerIdx, numBytes, size, this));
     }
     final byte[] arr = new byte[numBytes];
-    Platform.UNSAFE.copyMemory(
-        this.heapMemory, address + readerIdx, arr, Platform.BYTE_ARRAY_OFFSET, numBytes);
+    byte[] heapMemory = this.heapMemory;
+    if (heapMemory != null) {
+      System.arraycopy(heapMemory, heapOffset + readerIdx, arr, 0, numBytes);
+    } else {
+      Platform.UNSAFE.copyMemory(
+          null, address + readerIdx, arr, Platform.BYTE_ARRAY_OFFSET, numBytes);
+    }
     readerIndex = readerIdx + numBytes;
     return arr;
   }
@@ -2257,6 +2268,10 @@ public final class MemoryBuffer {
   }
 
   public byte[] getBytes(int index, int length) {
+    if (index == 0 && heapMemory != null && heapOffset == 0) {
+      // Arrays.copyOf is an intrinsics, which is faster
+      return Arrays.copyOf(heapMemory, length);
+    }
     if (index + length > size) {
       throw new IllegalArgumentException();
     }
