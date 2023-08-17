@@ -737,6 +737,6 @@ public class Serializers {
     fury.registerSerializer(URI.class, new URISerializer(fury));
     fury.registerSerializer(Pattern.class, new RegexSerializer(fury));
     fury.registerSerializer(UUID.class, new UUIDSerializer(fury));
-    fury.registerSerializer(Object.class, new EmptyObjectSerializer(fury));
+    // fury.registerSerializer(Object.class, new EmptyObjectSerializer(fury));
   }
 }

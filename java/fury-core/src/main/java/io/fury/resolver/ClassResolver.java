@@ -292,7 +292,6 @@ public class ClassResolver {
     registerWithCheck(HashMap.class, HASHMAP_CLASS_ID);
     registerWithCheck(HashSet.class, HASHSET_CLASS_ID);
     registerWithCheck(Class.class, CLASS_CLASS_ID);
-    registerWithCheck(Object.class, EMPTY_OBJECT_ID);
     addDefaultSerializers();
     registerDefaultClasses();
     innerEndClassId = extRegistry.registeredClassIdCounter;
@@ -696,6 +695,9 @@ public class ClassResolver {
       // serialized, which will create a class info with serializer null, see `#writeClassInternal`
       return classInfo.serializer.getClass();
     } else {
+      if (cls == Object.class) {
+        return Serializers.EmptyObjectSerializer.class;
+      }
       if (cls.isEnum()) {
         return Serializers.EnumSerializer.class;
       } else if (Enum.class.isAssignableFrom(cls) && cls != Enum.class) {
