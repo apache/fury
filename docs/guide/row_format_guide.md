@@ -18,7 +18,7 @@ public class Foo {
   List<Bar> f4;
 }
 
-Encoder<Foo> encoder = Encoders.bean(Foo.class);
+RowEncoder<Foo> encoder = Encoders.bean(Foo.class);
 Foo foo = new Foo();
 foo.f1 = 10;
 foo.f2 = IntStream.range(0, 1000000).boxed().collect(Collectors.toList());
@@ -38,13 +38,13 @@ Foo newFoo = encoder.fromRow(binaryRow);
 // zero-copy read List<Integer> f2
 BinaryArray binaryArray2 = binaryRow.getArray(1);
 // zero-copy read List<Bar> f4
-BinaryArray binaryArray4 = binaryRow.getArray(4);
+BinaryArray binaryArray4 = binaryRow.getArray(3);
 // zero-copy read 11th element of `readList<Bar> f4`
 BinaryRow barStruct = binaryArray4.getStruct(10);
 
 // zero-copy read 6th of f2 of 11th element of `readList<Bar> f4`
 barStruct.getArray(1).getLong(5);
-Encoder<Bar> barEncoder = Encoders.bean(Bar.class);
+RowEncoder<Bar> barEncoder = Encoders.bean(Bar.class);
 // deserialize part of data.
 Bar newBar = barEncoder.fromRow(barStruct);
 Bar newBar2 = barEncoder.fromRow(binaryArray4.getStruct(20));
