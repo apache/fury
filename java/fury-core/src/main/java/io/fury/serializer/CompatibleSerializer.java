@@ -52,7 +52,6 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private final FieldResolver fieldResolver;
   private final boolean isRecord;
   private final MethodHandle constructor;
-  private final boolean compressNumber;
   private final RecordInfo recordInfo;
 
   public CompatibleSerializer(Fury fury, Class<T> cls) {
@@ -75,7 +74,6 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       this.constructor = ReflectionUtils.getExecutableNoArgConstructorHandle(type);
       recordInfo = null;
     }
-    compressNumber = fury.compressNumber();
   }
 
   public CompatibleSerializer(Fury fury, Class<T> cls, FieldResolver fieldResolver) {
@@ -87,7 +85,6 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     recordInfo = null;
     this.constructor = null;
     this.fieldResolver = fieldResolver;
-    compressNumber = fury.compressNumber();
   }
 
   @Override
@@ -179,7 +176,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         buffer.writeShort((Short) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
-        if (compressNumber) {
+        if (fury.compressInt()) {
           buffer.writeVarInt((Integer) fieldValue);
         } else {
           buffer.writeInt((Integer) fieldValue);
@@ -189,7 +186,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         buffer.writeFloat((Float) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        if (compressNumber) {
+        if (fury.compressLong()) {
           buffer.writeVarLong((Long) fieldValue);
         } else {
           buffer.writeLong((Long) fieldValue);
@@ -584,7 +581,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
         return buffer.readShort();
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
-        if (compressNumber) {
+        if (fury.compressInt()) {
           return buffer.readVarInt();
         } else {
           return buffer.readInt();
@@ -592,7 +589,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
         return buffer.readFloat();
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        if (compressNumber) {
+        if (fury.compressLong()) {
           return buffer.readVarLong();
         } else {
           return buffer.readLong();

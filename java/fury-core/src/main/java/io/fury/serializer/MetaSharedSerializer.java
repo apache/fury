@@ -88,7 +88,8 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     Preconditions.checkArgument(fury.getConfig().shareMetaContext(), "Meta share must be enabled.");
     Collection<Descriptor> descriptors = consolidateFields(fury.getClassResolver(), type, classDef);
     DescriptorGrouper descriptorGrouper =
-        DescriptorGrouper.createDescriptorGrouper(descriptors, true, fury.compressNumber());
+        DescriptorGrouper.createDescriptorGrouper(
+            descriptors, true, fury.compressInt(), fury.compressLong());
     // d.getField() may be null if not exists in this class when meta share enabled.
     isRecord = RecordUtils.isRecord(type);
     if (isRecord) {
@@ -260,7 +261,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         buffer.increaseReaderIndex(2);
         return false;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
-        if (fury.compressNumber()) {
+        if (fury.compressInt()) {
           buffer.readVarInt();
         } else {
           buffer.increaseReaderIndex(4);
@@ -270,7 +271,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         buffer.increaseReaderIndex(4);
         return false;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        if (fury.compressNumber()) {
+        if (fury.compressLong()) {
           buffer.readVarLong();
         } else {
           buffer.increaseReaderIndex(8);

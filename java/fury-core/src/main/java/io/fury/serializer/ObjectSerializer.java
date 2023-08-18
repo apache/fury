@@ -96,7 +96,8 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     Collection<Descriptor> descriptors =
         fury.getClassResolver().getAllDescriptorsMap(cls, resolveParent).values();
     DescriptorGrouper descriptorGrouper =
-        DescriptorGrouper.createDescriptorGrouper(descriptors, false, fury.compressNumber());
+        DescriptorGrouper.createDescriptorGrouper(
+            descriptors, false, fury.compressInt(), fury.compressLong());
     isRecord = RecordUtils.isRecord(cls);
     if (isRecord) {
       constructor = RecordUtils.getRecordConstructor(cls).f1;
@@ -490,7 +491,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         {
           int fieldValue = (Integer) fieldAccessor.get(targetObject);
-          if (fury.compressNumber()) {
+          if (fury.compressInt()) {
             buffer.writeVarInt(fieldValue);
           } else {
             buffer.writeInt(fieldValue);
@@ -503,7 +504,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
         {
           long fieldValue = (long) fieldAccessor.get(targetObject);
-          if (fury.compressNumber()) {
+          if (fury.compressLong()) {
             buffer.writeVarLong(fieldValue);
           } else {
             buffer.writeLong(fieldValue);
@@ -536,7 +537,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         {
           int fieldValue = Platform.getInt(targetObject, fieldOffset);
-          if (fury.compressNumber()) {
+          if (fury.compressInt()) {
             buffer.writeVarInt(fieldValue);
           } else {
             buffer.writeInt(fieldValue);
@@ -549,7 +550,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
         {
           long fieldValue = Platform.getLong(targetObject, fieldOffset);
-          if (fury.compressNumber()) {
+          if (fury.compressLong()) {
             buffer.writeVarLong(fieldValue);
           } else {
             buffer.writeLong(fieldValue);
@@ -625,7 +626,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            if (fury.compressNumber()) {
+            if (fury.compressInt()) {
               buffer.writeVarInt((Integer) (fieldValue));
             } else {
               buffer.writeInt((Integer) (fieldValue));
@@ -649,7 +650,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            if (fury.compressNumber()) {
+            if (fury.compressLong()) {
               buffer.writeVarLong((Long) (fieldValue));
             } else {
               buffer.writeLong((Long) (fieldValue));
@@ -702,7 +703,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         fieldAccessor.set(targetObject, buffer.readShort());
         return false;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
-        if (fury.compressNumber()) {
+        if (fury.compressInt()) {
           fieldAccessor.set(targetObject, buffer.readVarInt());
         } else {
           fieldAccessor.set(targetObject, buffer.readInt());
@@ -712,7 +713,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         fieldAccessor.set(targetObject, buffer.readFloat());
         return false;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        if (fury.compressNumber()) {
+        if (fury.compressLong()) {
           fieldAccessor.set(targetObject, buffer.readVarLong());
         } else {
           fieldAccessor.set(targetObject, buffer.readLong());
@@ -747,7 +748,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         Platform.putShort(targetObject, fieldOffset, buffer.readShort());
         return false;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
-        if (fury.compressNumber()) {
+        if (fury.compressInt()) {
           Platform.putInt(targetObject, fieldOffset, buffer.readVarInt());
         } else {
           Platform.putInt(targetObject, fieldOffset, buffer.readInt());
@@ -757,7 +758,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         Platform.putFloat(targetObject, fieldOffset, buffer.readFloat());
         return false;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        if (fury.compressNumber()) {
+        if (fury.compressLong()) {
           Platform.putLong(targetObject, fieldOffset, buffer.readVarLong());
         } else {
           Platform.putLong(targetObject, fieldOffset, buffer.readLong());
@@ -831,7 +832,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
           if (buffer.readByte() == Fury.NULL_FLAG) {
             fieldAccessor.putObject(targetObject, null);
           } else {
-            if (fury.compressNumber()) {
+            if (fury.compressInt()) {
               fieldAccessor.putObject(targetObject, buffer.readVarInt());
             } else {
               fieldAccessor.putObject(targetObject, buffer.readInt());
@@ -853,7 +854,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
           if (buffer.readByte() == Fury.NULL_FLAG) {
             fieldAccessor.putObject(targetObject, null);
           } else {
-            if (fury.compressNumber()) {
+            if (fury.compressLong()) {
               fieldAccessor.putObject(targetObject, buffer.readVarLong());
             } else {
               fieldAccessor.putObject(targetObject, buffer.readLong());

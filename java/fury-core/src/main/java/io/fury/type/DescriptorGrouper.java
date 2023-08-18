@@ -18,7 +18,6 @@ package io.fury.type;
 
 import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Primitives;
 import io.fury.util.record.RecordUtils;
 import java.lang.reflect.Method;
@@ -27,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 
@@ -45,7 +43,7 @@ import java.util.function.Function;
 public class DescriptorGrouper {
   // sort primitive descriptors from largest to smallest, if size is the same,
   // sort by field name to fix order.
-  public static final Comparator<Descriptor> PRIMITIVE_COMPARATOR =
+  private static final Comparator<Descriptor> PRIMITIVE_COMPARATOR =
       (d1, d2) -> {
         int c =
             getSizeOfPrimitiveType(Primitives.unwrap(d2.getRawType()))
@@ -56,30 +54,48 @@ public class DescriptorGrouper {
         return c;
       };
 
-  private static final Set<Class<?>> COMPRESS_TYPES =
-      ImmutableSet.of(int.class, Integer.class, long.class, Long.class);
+  /**
+   * When compress disabled, sort primitive descriptors from largest to smallest, if size is the
+   * same, sort by field name to fix order.
+   *
+   * <p>When compress enabled, sort primitive descriptors from largest to smallest but let compress
+   * fields ends in tail. if size is the same, sort by field name to fix order.
+   */
+  public static Comparator<Descriptor> getPrimitiveComparator(
+      boolean compressInt, boolean compressLong) {
+    if (!compressInt && !compressLong) {
+      return PRIMITIVE_COMPARATOR;
+    }
+    return (d1, d2) -> {
+      Class<?> t1 = Primitives.unwrap(d1.getRawType());
+      Class<?> t2 = Primitives.unwrap(d2.getRawType());
+      boolean t1Compress = isCompressedType(t1, compressInt, compressLong);
+      boolean t2Compress = isCompressedType(t2, compressInt, compressLong);
+      if ((t1Compress && t2Compress) || (!t1Compress && !t2Compress)) {
+        int c = getSizeOfPrimitiveType(t2) - getSizeOfPrimitiveType(t1);
+        if (c == 0) {
+          c = DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME.compare(d1, d2);
+        }
+        return c;
+      }
+      if (t1Compress) {
+        return 1;
+      }
+      // t2 compress
+      return -1;
+    };
+  }
 
-  // sort primitive descriptors from largest to smallest but let compress fields ends
-  // in tail. if size is the same, sort by field name to fix order.
-  public static final Comparator<Descriptor> PRIMITIVE_COMPRESSED_COMPARATOR =
-      (d1, d2) -> {
-        Class<?> t1 = Primitives.unwrap(d1.getRawType());
-        Class<?> t2 = Primitives.unwrap(d2.getRawType());
-        boolean t1Compress = COMPRESS_TYPES.contains(t1);
-        boolean t2Compress = COMPRESS_TYPES.contains(t2);
-        if ((t1Compress && t2Compress) || (!t1Compress && !t2Compress)) {
-          int c = getSizeOfPrimitiveType(t2) - getSizeOfPrimitiveType(t1);
-          if (c == 0) {
-            c = DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME.compare(d1, d2);
-          }
-          return c;
-        }
-        if (t1Compress) {
-          return 1;
-        }
-        // t2 compress
-        return -1;
-      };
+  private static boolean isCompressedType(Class<?> cls, boolean compressInt, boolean compressLong) {
+    cls = Primitives.unwrap(cls);
+    if (cls == int.class) {
+      return compressInt;
+    }
+    if (cls == long.class) {
+      return compressLong;
+    }
+    return false;
+  }
 
   /** Comparator based on field type, name and declaring class. */
   public static final Comparator<Descriptor> COMPARATOR_BY_TYPE_AND_NAME =
@@ -205,9 +221,9 @@ public class DescriptorGrouper {
   public static DescriptorGrouper createDescriptorGrouper(
       Collection<Descriptor> descriptors,
       boolean descriptorsGroupedOrdered,
-      boolean compressNumber) {
-    Comparator<Descriptor> comparator =
-        compressNumber ? PRIMITIVE_COMPRESSED_COMPARATOR : PRIMITIVE_COMPARATOR;
+      boolean compressInt,
+      boolean compressLong) {
+    Comparator<Descriptor> comparator = getPrimitiveComparator(compressInt, compressLong);
     return new DescriptorGrouper(
         descriptors,
         descriptorsGroupedOrdered,

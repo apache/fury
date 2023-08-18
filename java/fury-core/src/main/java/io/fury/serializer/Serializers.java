@@ -112,7 +112,7 @@ public class Serializers {
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
         return buffer.readShort();
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
-        if (fury.compressNumber()) {
+        if (fury.compressInt()) {
           return buffer.readVarInt();
         } else {
           return buffer.readInt();
@@ -120,7 +120,7 @@ public class Serializers {
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
         return buffer.readFloat();
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        if (fury.compressNumber()) {
+        if (fury.compressLong()) {
           return buffer.readVarLong();
         } else {
           return buffer.readLong();
@@ -295,7 +295,7 @@ public class Serializers {
           (Class) cls,
           Type.INT32.getId(),
           !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
-      compressNumber = fury.compressNumber();
+      compressNumber = fury.compressInt();
     }
 
     @Override
@@ -337,7 +337,7 @@ public class Serializers {
           (Class) cls,
           Type.INT64.getId(),
           !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
-      compressNumber = fury.compressNumber();
+      compressNumber = fury.compressLong();
     }
 
     @Override

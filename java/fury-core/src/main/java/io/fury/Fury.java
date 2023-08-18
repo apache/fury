@@ -101,7 +101,8 @@ public final class Fury {
   private final List<Object> nativeObjects;
   private final StringSerializer stringSerializer;
   private final Language language;
-  private final boolean compressNumber;
+  private final boolean compressInt;
+  private final boolean compressLong;
   private final Generics generics;
   private Language peerLanguage;
   private BufferCallback bufferCallback;
@@ -115,7 +116,8 @@ public final class Fury {
     config = new Config(builder);
     this.language = builder.language;
     this.refTracking = builder.trackingRef;
-    compressNumber = builder.compressNumber;
+    compressInt = builder.compressInt;
+    compressLong = builder.compressLong;
     if (refTracking) {
       this.refResolver = new MapRefResolver();
     } else {
@@ -455,7 +457,7 @@ public final class Fury {
         buffer.writeShort((Short) obj);
         break;
       case ClassResolver.INTEGER_CLASS_ID:
-        if (compressNumber) {
+        if (compressInt) {
           buffer.writeVarInt((Integer) obj);
         } else {
           buffer.writeInt((Integer) obj);
@@ -465,7 +467,7 @@ public final class Fury {
         buffer.writeFloat((Float) obj);
         break;
       case ClassResolver.LONG_CLASS_ID:
-        if (compressNumber) {
+        if (compressLong) {
           buffer.writeVarLong((Long) obj);
         } else {
           buffer.writeLong((Long) obj);
@@ -798,7 +800,7 @@ public final class Fury {
       case ClassResolver.SHORT_CLASS_ID:
         return buffer.readShort();
       case ClassResolver.INTEGER_CLASS_ID:
-        if (compressNumber) {
+        if (compressInt) {
           return buffer.readVarInt();
         } else {
           return buffer.readInt();
@@ -806,7 +808,7 @@ public final class Fury {
       case ClassResolver.FLOAT_CLASS_ID:
         return buffer.readFloat();
       case ClassResolver.LONG_CLASS_ID:
-        if (compressNumber) {
+        if (compressLong) {
           return buffer.readVarLong();
         } else {
           return buffer.readLong();
@@ -1239,8 +1241,12 @@ public final class Fury {
     return config.compressString();
   }
 
-  public boolean compressNumber() {
-    return compressNumber;
+  public boolean compressInt() {
+    return compressInt;
+  }
+
+  public boolean compressLong() {
+    return compressLong;
   }
 
   public static FuryBuilder builder() {
@@ -1268,7 +1274,8 @@ public final class Fury {
     boolean stringRefIgnored = true;
     boolean timeRefIgnored = true;
     ClassLoader classLoader;
-    boolean compressNumber = false;
+    boolean compressInt = false;
+    boolean compressLong = false;
     boolean compressString = true;
     CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
     boolean checkJdkClassSerializable = true;
@@ -1322,7 +1329,20 @@ public final class Fury {
 
     /** Use variable length encoding for int/long. */
     public FuryBuilder withNumberCompressed(boolean numberCompressed) {
-      this.compressNumber = numberCompressed;
+      this.compressInt = numberCompressed;
+      this.compressLong = numberCompressed;
+      return this;
+    }
+
+    /** Use variable length encoding for int. */
+    public FuryBuilder withIntCompressed(boolean intCompressed) {
+      this.compressInt = intCompressed;
+      return this;
+    }
+
+    /** Use variable length encoding for long. */
+    public FuryBuilder withLongCompressed(boolean longCompressed) {
+      this.compressLong = longCompressed;
       return this;
     }
 

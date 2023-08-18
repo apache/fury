@@ -88,7 +88,7 @@ public class DescriptorGrouperTest {
       descriptors.add(new Descriptor(TypeToken.of(aClass), "f" + index++, -1, "TestClass"));
     }
     Collections.shuffle(descriptors, new Random(7));
-    descriptors.sort(DescriptorGrouper.PRIMITIVE_COMPARATOR);
+    descriptors.sort(DescriptorGrouper.getPrimitiveComparator(false, false));
     List<? extends Class<?>> classes =
         descriptors.stream().map(Descriptor::getRawType).collect(Collectors.toList());
     List<Class<?>> expected =
@@ -113,7 +113,7 @@ public class DescriptorGrouperTest {
       descriptors.add(new Descriptor(TypeToken.of(aClass), "f" + index++, -1, "TestClass"));
     }
     Collections.shuffle(descriptors, new Random(7));
-    descriptors.sort(DescriptorGrouper.PRIMITIVE_COMPRESSED_COMPARATOR);
+    descriptors.sort(DescriptorGrouper.getPrimitiveComparator(true, true));
     List<? extends Class<?>> classes =
         descriptors.stream().map(Descriptor::getRawType).collect(Collectors.toList());
     List<Class<?>> expected =
@@ -147,7 +147,7 @@ public class DescriptorGrouperTest {
     descriptors.add(
         new Descriptor(new TypeToken<Map<String, String>>() {}, "c" + index++, -1, "TestClass"));
     DescriptorGrouper grouper =
-        DescriptorGrouper.createDescriptorGrouper(descriptors, false, false);
+        DescriptorGrouper.createDescriptorGrouper(descriptors, false, false, false);
     {
       List<? extends Class<?>> classes =
           grouper.getPrimitiveDescriptors().stream()
@@ -222,7 +222,7 @@ public class DescriptorGrouperTest {
   @Test
   public void testCompressedPrimitiveGrouper() {
     DescriptorGrouper grouper =
-        DescriptorGrouper.createDescriptorGrouper(createDescriptors(), false, true);
+        DescriptorGrouper.createDescriptorGrouper(createDescriptors(), false, true, true);
     {
       List<? extends Class<?>> classes =
           grouper.getPrimitiveDescriptors().stream()
