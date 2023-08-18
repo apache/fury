@@ -17,7 +17,7 @@
 package io.fury.integration_tests;
 
 import static io.fury.collection.Collections.ofArrayList;
-import static io.fury.collection.Maps.ofHashMap;
+import static io.fury.collection.Collections.ofHashMap;
 
 import io.fury.Fury;
 import io.fury.resolver.MetaContext;

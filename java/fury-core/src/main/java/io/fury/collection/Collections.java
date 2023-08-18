@@ -20,6 +20,7 @@ import static io.fury.util.unsafe._Collections.setArrayListElements;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -40,5 +41,20 @@ public class Collections {
     ArrayList list = new ArrayList(elements.length);
     setArrayListElements(list, elements);
     return list;
+  }
+
+  /** Create a {@link HashMap} from provided kv pairs. */
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public static <K, V> HashMap<K, V> ofHashMap(Object... kv) {
+    if (kv.length % 2 != 0) {
+      throw new IllegalArgumentException(
+          String.format("entries got %d objects, which aren't pairs", kv.length));
+    }
+    int size = kv.length / 2;
+    HashMap map = new HashMap<>(size);
+    for (int i = 0; i < kv.length; i += 2) {
+      map.put(kv[i], kv[i + 1]);
+    }
+    return map;
   }
 }

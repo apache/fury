@@ -19,7 +19,9 @@ package io.fury.collection;
 import static org.testng.Assert.*;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import org.testng.annotations.Test;
 
 public class CollectionsTest {
@@ -27,5 +29,10 @@ public class CollectionsTest {
   @Test
   public void testOfArrayList() {
     assertEquals(Collections.ofArrayList(1, 2), new ArrayList<>(ImmutableList.of(1, 2)));
+  }
+
+  @Test
+  public void testOfHashMap() {
+    assertEquals(Collections.ofHashMap(1, 2, 3, 4), new HashMap<>(ImmutableMap.of(1, 2, 3, 4)));
   }
 }
