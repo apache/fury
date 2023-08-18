@@ -27,12 +27,12 @@ import io.fury.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.test.bean.Cyclic;
-import io.fury.test.bean.Struct;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class CodegenSerializerTest extends FuryTestBase {
@@ -120,17 +120,74 @@ public class CodegenSerializerTest extends FuryTestBase {
     serDe(fury, obj);
   }
 
-  @Test(dataProvider = "compressNumber")
-  public void testCompressInt(boolean compressNumber) {
+  @Data
+  private static class CompressTestClass {
+    int f1;
+    int f2;
+    long f3;
+    long f4;
+    float f5;
+    double f6;
+    Integer f7;
+    Long f8;
+  }
+
+  @Test
+  public void testCompressInt() {
+    CompressTestClass pojo = new CompressTestClass();
+    pojo.f1 = 1;
+    pojo.f2 = 2;
+    pojo.f3 = 2;
+    pojo.f4 = 2;
+    pojo.f5 = 2;
+    pojo.f6 = 2;
+    pojo.f7 = 2;
+    pojo.f8 = 2L;
+    int length =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withNumberCompressed(false)
+            .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
+            .requireClassRegistration(false)
+            .build()
+            .serialize(pojo)
+            .length;
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withNumberCompressed(compressNumber)
+            .withNumberCompressed(true)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
             .requireClassRegistration(false)
             .build();
-    Class<?> structClass = Struct.createNumberStructClass("CompressInt", 50);
-    serDeCheck(fury, Struct.createPOJO(structClass));
+    serDeCheck(fury, pojo);
+    byte[] bytes = fury.serialize(pojo);
+    {
+      Fury fury1 =
+          Fury.builder()
+              .withLanguage(Language.JAVA)
+              .withIntCompressed(true)
+              .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
+              .requireClassRegistration(false)
+              .build();
+      serDeCheck(fury1, pojo);
+      Assert.assertNotSame(
+          fury1.getClassResolver().getSerializerClass(CompressTestClass.class),
+          fury.getClassResolver().getSerializerClass(CompressTestClass.class));
+      Assert.assertTrue(fury1.serialize(pojo).length > bytes.length);
+      Assert.assertTrue(fury1.serialize(pojo).length < length);
+    }
+    {
+      Fury fury1 =
+          Fury.builder()
+              .withLanguage(Language.JAVA)
+              .withLongCompressed(true)
+              .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
+              .requireClassRegistration(false)
+              .build();
+      serDeCheck(fury1, pojo);
+      Assert.assertTrue(fury1.serialize(pojo).length > bytes.length);
+      Assert.assertTrue(fury1.serialize(pojo).length < length);
+    }
   }
 
   @Data

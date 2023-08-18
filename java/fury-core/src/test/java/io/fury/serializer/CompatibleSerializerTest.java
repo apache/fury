@@ -392,7 +392,7 @@ public class CompatibleSerializerTest extends FuryTestBase {
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .requireClassRegistration(false)
             .build();
-    Class<?> structClass = Struct.createNumberStructClass("CompatibleCompressIntStruct", 50);
+    Class<?> structClass = Struct.createNumberStructClass("CompatibleCompressIntStruct", 2);
     serDeCheck(fury, Struct.createPOJO(structClass));
   }
 }

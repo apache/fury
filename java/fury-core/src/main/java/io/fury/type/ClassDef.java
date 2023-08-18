@@ -242,9 +242,7 @@ public class ClassDef implements Serializable {
 
   public static ClassDef buildClassDef(Class<?> cls, Fury fury) {
     Comparator<Descriptor> comparator =
-        fury.compressNumber()
-            ? DescriptorGrouper.PRIMITIVE_COMPRESSED_COMPARATOR
-            : DescriptorGrouper.PRIMITIVE_COMPARATOR;
+        DescriptorGrouper.getPrimitiveComparator(fury.compressInt(), fury.compressLong());
     DescriptorGrouper descriptorGrouper =
         new DescriptorGrouper(
             fury.getClassResolver().getAllDescriptorsMap(cls, true).values(),

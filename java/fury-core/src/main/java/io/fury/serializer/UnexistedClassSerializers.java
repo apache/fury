@@ -174,7 +174,8 @@ public final class UnexistedClassSerializers {
             MetaSharedSerializer.consolidateFields(
                 fury.getClassResolver(), UnexistedSkipClass.class, classDef);
         DescriptorGrouper descriptorGrouper =
-            DescriptorGrouper.createDescriptorGrouper(descriptors, true, fury.compressNumber());
+            DescriptorGrouper.createDescriptorGrouper(
+                descriptors, true, fury.compressInt(), fury.compressLong());
         Tuple3<
                 Tuple2<ObjectSerializer.FinalTypeField[], boolean[]>,
                 ObjectSerializer.GenericTypeField[],

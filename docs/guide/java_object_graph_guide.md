@@ -102,8 +102,6 @@ Fury fury=Fury.builder()
   // enable referecne tracking for shared/circular reference.
   // Disable it will have better performance if no duplciate reference.
   .withRefTracking(false)
-  // compress int/long for smaller size
-  // .withNumberCompressed(true)
   .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
   // enable type forward/backward compatibility
   // disable it for small size and better performance.
@@ -123,8 +121,10 @@ ThreadSafeFury fury=Fury.builder()
   // enable referecne tracking for shared/circular reference.
   // Disable it will have better performance if no duplciate reference.
   .withRefTracking(false)
-  // compress int/long for smaller size
-  // .withNumberCompressed(true)
+  // compress int for smaller size
+  // .withIntCompressed(true)
+  // compress long for smaller size
+  // .withLongCompressed(true)
   .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
   // enable type forward/backward compatibility
   // disable it for small size and better performance.
@@ -135,6 +135,11 @@ ThreadSafeFury fury=Fury.builder()
   byte[]bytes=fury.serialize(object);
   System.out.println(fury.deserialize(bytes));
 ```
+
+### Smaller size
+`FuryBuilder#withIntCompressed`/`FuryBuilder#withLongCompressed` can be used to compress int/long for smaller size.
+Normally compress int is enough. If a number use long, it can't be represented by smaller bytes mostly. In such cases,
+compressing
 
 ### Security & Class Registration
 

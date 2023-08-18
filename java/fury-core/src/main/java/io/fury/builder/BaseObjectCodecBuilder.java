@@ -312,10 +312,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (clz == short.class || clz == Short.class) {
         return new Invoke(buffer, "writeShort", inputObject);
       } else if (clz == int.class || clz == Integer.class) {
-        String func = fury.compressNumber() ? "writeVarInt" : "writeInt";
+        String func = fury.compressInt() ? "writeVarInt" : "writeInt";
         return new Invoke(buffer, func, inputObject);
       } else if (clz == long.class || clz == Long.class) {
-        String func = fury.compressNumber() ? "writeVarLong" : "writeLong";
+        String func = fury.compressLong() ? "writeVarLong" : "writeLong";
         return new Invoke(buffer, func, inputObject);
       } else if (clz == float.class || clz == Float.class) {
         return new Invoke(buffer, "writeFloat", inputObject);
@@ -839,10 +839,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (cls == short.class || cls == Short.class) {
         return new Invoke(buffer, "readShort", PRIMITIVE_SHORT_TYPE);
       } else if (cls == int.class || cls == Integer.class) {
-        String func = fury.compressNumber() ? "readVarInt" : "readInt";
+        String func = fury.compressInt() ? "readVarInt" : "readInt";
         return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
       } else if (cls == long.class || cls == Long.class) {
-        String func = fury.compressNumber() ? "readVarLong" : "readLong";
+        String func = fury.compressLong() ? "readVarLong" : "readLong";
         return new Invoke(buffer, func, PRIMITIVE_LONG_TYPE);
       } else if (cls == float.class || cls == Float.class) {
         return new Invoke(buffer, "readFloat", PRIMITIVE_FLOAT_TYPE);

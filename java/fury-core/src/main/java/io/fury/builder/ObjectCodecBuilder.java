@@ -90,7 +90,8 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     classVersionHash =
         new Literal(ObjectSerializer.computeVersionHash(descriptors), PRIMITIVE_INT_TYPE);
     DescriptorGrouper grouper =
-        DescriptorGrouper.createDescriptorGrouper(descriptors, false, fury.compressNumber());
+        DescriptorGrouper.createDescriptorGrouper(
+            descriptors, false, fury.compressInt(), fury.compressLong());
     objectCodecOptimizer =
         new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
     if (isRecord) {
@@ -203,7 +204,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     if (totalSize == 0) {
       return new ArrayList<>();
     }
-    if (fury.compressNumber()) {
+    if (fury.compressInt() || fury.compressLong()) {
       return serializePrimitivesCompressed(bean, buffer, primitiveGroups, totalSize);
     } else {
       return serializePrimitivesUnCompressed(bean, buffer, primitiveGroups, totalSize);
@@ -326,20 +327,30 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
           groupExpressions.add(unsafePutDouble(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 8;
         } else if (clz == int.class) {
-          if (!compressStarted) {
-            // int/long are sorted in the last.
-            addIncWriterIndexExpr(groupExpressions, buffer, acc);
-            compressStarted = true;
+          if (!fury.compressInt()) {
+            groupExpressions.add(unsafePutInt(base, getWriterPos(writerAddr, acc), fieldValue));
+            acc += 4;
+          } else {
+            if (!compressStarted) {
+              // int/long are sorted in the last.
+              addIncWriterIndexExpr(groupExpressions, buffer, acc);
+              compressStarted = true;
+            }
+            groupExpressions.add(new Invoke(buffer, "unsafeWriteVarInt", fieldValue));
+            acc += 0;
           }
-          groupExpressions.add(new Invoke(buffer, "unsafeWriteVarInt", fieldValue));
-          acc += 0;
         } else if (clz == long.class) {
-          if (!compressStarted) {
-            // int/long are sorted in the last.
-            addIncWriterIndexExpr(groupExpressions, buffer, acc);
-            compressStarted = true;
+          if (!fury.compressLong()) {
+            groupExpressions.add(unsafePutLong(base, getWriterPos(writerAddr, acc), fieldValue));
+            acc += 8;
+          } else {
+            if (!compressStarted) {
+              // int/long are sorted in the last.
+              addIncWriterIndexExpr(groupExpressions, buffer, acc);
+              compressStarted = true;
+            }
+            groupExpressions.add(new Invoke(buffer, "unsafeWriteVarLong", fieldValue));
           }
-          groupExpressions.add(new Invoke(buffer, "unsafeWriteVarLong", fieldValue));
         } else {
           throw new IllegalStateException("impossible");
         }
@@ -547,7 +558,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     if (totalSize == 0) {
       return new ArrayList<>();
     }
-    if (fury.compressNumber()) {
+    if (fury.compressInt() || fury.compressLong()) {
       return deserializeCompressedPrimitives(bean, buffer, primitiveGroups);
     } else {
       return deserializeUnCompressedPrimitives(bean, buffer, primitiveGroups, totalSize);
@@ -660,17 +671,27 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
           fieldValue = unsafeGetDouble(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 8;
         } else if (clz == int.class) {
-          if (!compressStarted) {
-            compressStarted = true;
-            addIncReaderIndexExpr(groupExpressions, buffer, acc);
+          if (!fury.compressInt()) {
+            fieldValue = unsafeGetInt(heapBuffer, getReaderAddress(readerAddr, acc));
+            acc += 4;
+          } else {
+            if (!compressStarted) {
+              compressStarted = true;
+              addIncReaderIndexExpr(groupExpressions, buffer, acc);
+            }
+            fieldValue = new Invoke(buffer, "readVarInt", PRIMITIVE_INT_TYPE);
           }
-          fieldValue = new Invoke(buffer, "readVarInt", PRIMITIVE_INT_TYPE);
         } else if (clz == long.class) {
-          if (!compressStarted) {
-            compressStarted = true;
-            addIncReaderIndexExpr(groupExpressions, buffer, acc);
+          if (!fury.compressLong()) {
+            fieldValue = unsafeGetLong(heapBuffer, getReaderAddress(readerAddr, acc));
+            acc += 8;
+          } else {
+            if (!compressStarted) {
+              compressStarted = true;
+              addIncReaderIndexExpr(groupExpressions, buffer, acc);
+            }
+            fieldValue = new Invoke(buffer, "readVarLong", PRIMITIVE_LONG_TYPE);
           }
-          fieldValue = new Invoke(buffer, "readVarLong", PRIMITIVE_LONG_TYPE);
         } else {
           throw new IllegalStateException("impossible");
         }
