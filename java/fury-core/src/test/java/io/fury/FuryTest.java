@@ -214,6 +214,12 @@ public class FuryTest extends FuryTestBase {
     assertEquals(beanA, o);
   }
 
+  @Test
+  public void testSerializeException() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).withRefTracking(true).build();
+    fury.serialize(new Exception());
+  }
+
   @Test(dataProvider = "referenceTrackingConfig")
   public void registerTest(boolean referenceTracking) {
     Fury fury =

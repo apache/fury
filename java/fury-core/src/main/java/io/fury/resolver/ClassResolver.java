@@ -85,6 +85,7 @@ import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import io.fury.util.function.Functions;
 import java.io.Externalizable;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -371,6 +372,12 @@ public class ClassResolver {
     register(EnumSet.allOf(Language.class).getClass());
     register(EnumSet.of(Language.JAVA).getClass());
     register(UnexistedMetaSharedClass.class, UnexistedSkipClass.class);
+    register(Throwable.class, StackTraceElement.class, Exception.class, RuntimeException.class);
+    register(NullPointerException.class);
+    register(IOException.class);
+    register(IllegalArgumentException.class);
+    register(IllegalStateException.class);
+    register(IndexOutOfBoundsException.class, ArrayIndexOutOfBoundsException.class);
   }
 
   /** register class. */
