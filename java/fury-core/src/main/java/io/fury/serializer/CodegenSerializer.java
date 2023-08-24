@@ -102,7 +102,8 @@ public final class CodegenSerializer {
             checkArgument(
                 Generated.GeneratedSerializer.class.isAssignableFrom(sc),
                 "Expect jit serializer but got %s for class %s",
-                sc, type);
+                sc,
+                type);
             serializer = Serializers.newSerializer(fury, type, sc);
             fury.getClassResolver().setSerializer(type, serializer);
             return serializer;
