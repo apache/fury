@@ -87,6 +87,38 @@ public class CodegenSerializerTest extends FuryTestBase {
     assertEquals(cyclic1, cyclic);
   }
 
+  private static final class Circular1 {
+    public int f1;
+    public Circular1 circular1;
+    public Circular2 circular2;
+  }
+
+  private static final class Circular2 {
+    public int f1;
+    public Circular1 circular1;
+    public Circular2 circular2;
+  }
+
+  @Test
+  public void testComplexCircular() {
+    Circular1 circular1 = new Circular1();
+    Circular2 circular2 = new Circular2();
+    circular1.circular1 = circular1;
+    circular1.circular2 = circular2;
+    circular2.circular1 = circular1;
+    circular2.circular2 = circular2;
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .build();
+    serDe(fury, circular1);
+    serDe(fury, circular1);
+    serDe(fury, circular2);
+    serDe(fury, circular2);
+  }
+
   @Data
   public static class NonFinalPublic {}
 
