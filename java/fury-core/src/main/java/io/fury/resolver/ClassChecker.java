@@ -17,7 +17,8 @@
 package io.fury.resolver;
 
 /**
- * Check whether class or objects of class should be serialized.
+ * Check whether class or objects of class should be serialized. If class checker will be invoked by
+ * multiple {@link ClassResolver}, class checker should be thread safe.
  *
  * @author chaokunyang
  */

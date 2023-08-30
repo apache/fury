@@ -19,6 +19,8 @@ package io.fury.resolver;
 import static org.testng.Assert.*;
 
 import io.fury.Fury;
+import io.fury.ThreadLocalFury;
+import io.fury.ThreadSafeFury;
 import io.fury.exception.InsecureException;
 import org.testng.annotations.Test;
 
@@ -70,5 +72,26 @@ public class AllowListCheckerTest {
       checker.disallowClass("io.fury.*");
       assertThrows(InsecureException.class, () -> fury.serialize(new AllowListCheckerTest()));
     }
+  }
+
+  @Test
+  public void testThreadSafeFury() {
+    AllowListChecker checker = new AllowListChecker(AllowListChecker.CheckLevel.STRICT);
+    ThreadSafeFury fury =
+        new ThreadLocalFury(
+            classLoader -> {
+              Fury f =
+                  Fury.builder()
+                      .requireClassRegistration(false)
+                      .withClassLoader(classLoader)
+                      .build();
+              f.getClassResolver().setClassChecker(checker);
+              checker.addListener(f.getClassResolver());
+              return f;
+            });
+    checker.allowClass("io.fury.*");
+    fury.serialize(new AllowListCheckerTest());
+    checker.disallowClass("io.fury.*");
+    assertThrows(InsecureException.class, () -> fury.serialize(new AllowListCheckerTest()));
   }
 }
