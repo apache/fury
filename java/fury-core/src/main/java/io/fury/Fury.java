@@ -43,6 +43,7 @@ import io.fury.serializer.TimeSerializers;
 import io.fury.type.Generics;
 import io.fury.type.Type;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Platform;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -1489,7 +1490,7 @@ public final class Fury {
       // clear classLoader to avoid `LoaderBinding#furyFactory` lambda capture classLoader by
       // capturing `FuryBuilder`, which make `classLoader` not able to be gc.
       this.classLoader = null;
-      return new Fury(this, loader);
+      return newFury(this, loader);
     }
 
     /** Build thread safe fury. */
@@ -1505,7 +1506,7 @@ public final class Fury {
       // capturing `FuryBuilder`,  which make `classLoader` not able to be gc.
       this.classLoader = null;
       ThreadLocalFury threadSafeFury =
-          new ThreadLocalFury(classLoader -> new Fury(FuryBuilder.this, classLoader));
+          new ThreadLocalFury(classLoader -> newFury(FuryBuilder.this, classLoader));
       threadSafeFury.setClassLoader(loader);
       return threadSafeFury;
     }
@@ -1543,13 +1544,29 @@ public final class Fury {
       this.classLoader = null;
       ThreadSafeFury threadSafeFury =
           new ThreadPoolFury(
-              classLoader -> new Fury(FuryBuilder.this, classLoader),
+              classLoader -> newFury(FuryBuilder.this, classLoader),
               minPoolSize,
               maxPoolSize,
               expireTime,
               timeUnit);
       threadSafeFury.setClassLoader(loader);
       return threadSafeFury;
+    }
+  }
+
+  /**
+   * Create Fury and print exception when failed. Many application will create fury as a static
+   * variable, Fury creation exception will be swallowed by {@link NoClassDefFoundError}. We print
+   * exception explicitly for better debugging.
+   */
+  private static Fury newFury(FuryBuilder builder, ClassLoader classLoader) {
+    try {
+      return new Fury(builder, classLoader);
+    } catch (Throwable t) {
+      t.printStackTrace();
+      LOG.error("Fury creation failed with classloader {}", classLoader);
+      Platform.throwException(t);
+      throw new RuntimeException(t);
     }
   }
 }
