@@ -100,8 +100,4 @@ public class ThreadLocalFury implements ThreadSafeFury {
   public void clearClassLoader(ClassLoader loader) {
     bindingThreadLocal.get().clearClassLoader(loader);
   }
-
-  public Fury getCurrentFury() {
-    return bindingThreadLocal.get().get();
-  }
 }

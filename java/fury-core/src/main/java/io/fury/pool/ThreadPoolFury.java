@@ -126,14 +126,4 @@ public class ThreadPoolFury implements ThreadSafeFury {
   public void clearClassLoader(ClassLoader loader) {
     furyPooledObjectFactory.clearClassLoader(loader);
   }
-
-  public Fury getCurrentFury() {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury;
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
-  }
 }
