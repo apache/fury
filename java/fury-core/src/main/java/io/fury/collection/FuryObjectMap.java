@@ -20,6 +20,10 @@
 package io.fury.collection;
 
 import com.google.common.base.Preconditions;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.BiConsumer;
 
 // Derived from
 // https://github.com/EsotericSoftware/kryo/blob/135df69526615bb3f6b34846e58ba3fec3b631c3/src/com/esotericsoftware/kryo/util/ObjectMap.java.
@@ -283,6 +287,46 @@ public class FuryObjectMap<K, V> {
     return false;
   }
 
+  public void forEach(BiConsumer<? super K, ? super V> action) {
+    Objects.requireNonNull(action);
+    K[] keyTable = this.keyTable;
+    V[] valueTable = this.valueTable;
+    int i = keyTable.length;
+    while (i-- > 0) {
+      K key = keyTable[i];
+      if (key == null) {
+        continue;
+      }
+      V value = valueTable[i];
+      action.accept(key, value);
+    }
+  }
+
+  /** Returns an Iterable for the entries in the map. Remove isn't supported. */
+  public Iterable<Map.Entry<K, V>> iterable() {
+    return MapIterator::new;
+  }
+
+  private class MapIterator implements Iterator<Map.Entry<K, V>> {
+    private int nextIndex;
+
+    @Override
+    public boolean hasNext() {
+      for (int i = nextIndex; i < keyTable.length; i++) {
+        if (keyTable[i] != null) {
+          nextIndex = i;
+          return true;
+        }
+      }
+      return false;
+    }
+
+    @Override
+    public Map.Entry<K, V> next() {
+      return new MapEntry<>(keyTable[nextIndex], valueTable[nextIndex++]);
+    }
+  }
+
   final void resize(int newSize) {
     int oldCapacity = keyTable.length;
     threshold = (int) (newSize * loadFactor);
@@ -372,17 +416,6 @@ public class FuryObjectMap<K, V> {
     K[] keyTable = this.keyTable;
     V[] valueTable = this.valueTable;
     int i = keyTable.length;
-    while (i-- > 0) {
-      K key = keyTable[i];
-      if (key == null) {
-        continue;
-      }
-      buffer.append(key == this ? "(this)" : key);
-      buffer.append('=');
-      V value = valueTable[i];
-      buffer.append(value == this ? "(this)" : value);
-      break;
-    }
     while (i-- > 0) {
       K key = keyTable[i];
       if (key == null) {
