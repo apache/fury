@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A context for managing jit serialization code generation in async multithreaded environment.
@@ -96,7 +95,7 @@ public class JITContext {
               future,
               new FutureCallback<T>() {
                 @Override
-                public void onSuccess(@Nullable T result) {
+                public void onSuccess(T result) {
                   try {
                     lock();
                     callback.onSuccess(result);
