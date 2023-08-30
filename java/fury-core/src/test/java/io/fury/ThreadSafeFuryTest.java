@@ -187,7 +187,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     byte[] bytes1 = fury.serialize(struct1);
     Assert.assertEquals(fury.deserialize(bytes1), struct1);
     Class<? extends Serializer> serializerClass1 =
-        fury.getCurrentFury().getClassResolver().getSerializerClass(structClass1);
+        fury.execute(f -> f.getClassResolver().getSerializerClass(structClass1));
     Assert.assertTrue(serializerClass1.getName().contains("Codec"));
 
     Class<?> structClass2 = Struct.createStructClass(className, 2);
@@ -207,7 +207,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     fury.setClassLoader(structClass2.getClassLoader());
     Assert.assertEquals(fury.deserialize(bytes2), struct2);
     Class<? extends Serializer> serializerClass2 =
-        fury.getCurrentFury().getClassResolver().getSerializerClass(structClass2);
+        fury.execute(f -> f.getClassResolver().getSerializerClass(structClass2));
     Assert.assertTrue(serializerClass2.getName().contains("Codec"));
     Assert.assertNotSame(serializerClass2, serializerClass1);
 

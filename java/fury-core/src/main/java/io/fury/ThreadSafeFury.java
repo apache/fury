@@ -82,6 +82,4 @@ public interface ThreadSafeFury {
    * @see LoaderBinding#clearClassLoader(ClassLoader)
    */
   void clearClassLoader(ClassLoader loader);
-
-  Fury getCurrentFury();
 }
