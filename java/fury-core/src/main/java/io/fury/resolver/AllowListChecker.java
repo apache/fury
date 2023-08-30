@@ -16,7 +16,10 @@
 
 package io.fury.resolver;
 
+import io.fury.Fury;
 import io.fury.exception.InsecureException;
+import io.fury.memory.MemoryBuffer;
+import io.fury.serializer.Serializer;
 import io.fury.util.LoggerFactory;
 import java.util.HashSet;
 import java.util.Set;
@@ -86,6 +89,10 @@ public class AllowListChecker implements ClassChecker {
         }
         return true;
       case STRICT:
+        if (containsPrefix(disallowList, disallowListPrefix, className)) {
+          throw new InsecureException(
+              String.format("Class %s is forbidden for serialization.", className));
+        }
         if (!containsPrefix(allowList, allowListPrefix, className)) {
           throw new InsecureException(
               String.format(
@@ -143,12 +150,28 @@ public class AllowListChecker implements ClassChecker {
     try {
       lock.writeLock().lock();
       if (classNameOrPrefix.endsWith("*")) {
-        disallowListPrefix.add(classNameOrPrefix.substring(0, classNameOrPrefix.length() - 1));
+        String prefix = classNameOrPrefix.substring(0, classNameOrPrefix.length() - 1);
+        disallowListPrefix.add(prefix);
+        for (ClassResolver classResolver : listeners.keySet()) {
+          try {
+            classResolver.getFury().getJITContext().lock();
+            // clear serializer may throw NullPointerException for field serialization.
+            classResolver.setSerializers(prefix, DisallowSerializer.class);
+          } finally {
+            classResolver.getFury().getJITContext().unlock();
+          }
+        }
       } else {
         disallowList.add(classNameOrPrefix);
-      }
-      for (ClassResolver classResolver : listeners.keySet()) {
-        classResolver.clearSerializers(classNameOrPrefix);
+        for (ClassResolver classResolver : listeners.keySet()) {
+          try {
+            classResolver.getFury().getJITContext().lock();
+            // clear serializer may throw NullPointerException for field serialization.
+            classResolver.setSerializer(classNameOrPrefix, DisallowSerializer.class);
+          } finally {
+            classResolver.getFury().getJITContext().unlock();
+          }
+        }
       }
     } finally {
       lock.writeLock().unlock();
@@ -160,6 +183,28 @@ public class AllowListChecker implements ClassChecker {
    * future serialization will be refused.
    */
   public void addListener(ClassResolver classResolver) {
-    listeners.put(classResolver, true);
+    try {
+      lock.writeLock().lock();
+    } finally {
+      listeners.put(classResolver, true);
+    }
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private static class DisallowSerializer extends Serializer {
+
+    public DisallowSerializer(Fury fury, Class type) {
+      super(fury, type);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Object value) {
+      throw new InsecureException(String.format("Class %s not allowed for serialization.", type));
+    }
+
+    @Override
+    public Object read(MemoryBuffer buffer) {
+      throw new InsecureException(String.format("Class %s not allowed for serialization.", type));
+    }
   }
 }
