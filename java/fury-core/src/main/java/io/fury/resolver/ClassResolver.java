@@ -1055,9 +1055,9 @@ public class ClassResolver {
     if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
       String msg =
           String.format(
-              "%s is not registered, if it's not the type you want to serialize, "
-                  + "it may be a **vulnerability**. Otherwise registering class by "
-                  + "`Fury#register` can skip serialize classname, thus have better performance",
+              "%s is not registered, please check whether it's the type you want to serialize or "
+                  + "a **vulnerability**. If safe, registering class by "
+                  + "`Fury#register` will have better performance by skipping classname serialization",
               cls);
       boolean forbidden = BlackList.getDefaultBlackList().contains(cls.getName());
       if (forbidden || !isSecure(extRegistry.registeredClassIdMap, cls)) {
