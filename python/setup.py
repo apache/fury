@@ -105,6 +105,16 @@ def parse_version():
         return match.group(1)
 
 
+_pkg_files = [
+    "**/*.pxd",
+    "**/*.pyx",
+    "**/*.pxd",
+    "*.so",
+    "*.dylib",
+    "*.dll",
+]
+
+
 setup(
     name="pyfury",
     version=parse_version(),
@@ -113,14 +123,9 @@ setup(
     maintainer="https://github.com/chaokunyang",
     maintainer_email="shawn.ck.yang@gmail.com",
     package_data={
-        "pyfury": [
-            "**/*.pxd",
-            "**/*.pyx",
-            "includes/*.pxd",
-            "**/*.so",
-            "**/*.dylib",
-            "**/*.dll",
-        ]
+        "pyfury": _pkg_files,
+        "pyfury.format": _pkg_files,
+        "pyfury.lib.mmh3": _pkg_files,
     },
     include_package_data=True,
     packages=find_packages(),
