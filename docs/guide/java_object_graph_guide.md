@@ -160,9 +160,30 @@ should have same registration order.
 
 ```java
 Fury fury=xxx;
-  fury.register(SomeClass.class);
-  fury.register(SomeClass1.class,200);
+fury.register(SomeClass.class);
+fury.register(SomeClass1.class, 200);
 ```
+
+If you invoke `FuryBuilder#requireClassRegistration(false)` to disable class registration check,
+you can set `io.fury.resolver.ClassChecker` by `ClassResolver#setClassChecker` to control which classes are allowed 
+for serialization. For example,you can allow classes started with `org.example.*` by:
+```java
+Fury fury = xxx;
+fury.getClassResolver().setClassChecker((classResolver, className) -> className.startsWith("org.example."));
+```
+```java
+AllowListChecker checker = new AllowListChecker(AllowListChecker.CheckLevel.STRICT);
+ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
+  Fury f = Fury.builder().requireClassRegistration(false).withClassLoader(classLoader).build();
+  f.getClassResolver().setClassChecker(checker);
+  checker.addListener(f.getClassResolver());
+  return f;
+});
+checker.allowClass("org.example.*");
+```
+
+Fury also provided a `io.fury.resolver.AllowListChecker` which is white/blacklist based checker to simplify 
+the customization of class check mechanism. You can use this checker or implement more sophisticated checker by yourself.
 
 ### Serializer Registration
 

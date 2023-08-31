@@ -1405,10 +1405,12 @@ public final class Fury {
 
     /**
      * Whether to require registering classes for serialization, enabled by default. If disabled,
-     * unknown insecure classes can be deserialized, which can be insecure and cause remote code
-     * execution attack if the classes `constructor`/`equals`/`hashCode` method contain malicious
-     * code. Do not disable class registration if you can't ensure your environment are *indeed
-     * secure*. We are not responsible for security risks if you disable this option.
+     * unknown classes can be deserialized, which may be insecure and cause remote code execution
+     * attack if the classes `constructor`/`equals`/`hashCode` method contain malicious code. Do not
+     * disable class registration if you can't ensure your environment are *indeed secure*. We are
+     * not responsible for security risks if you disable this option. If you disable this option,
+     * you can configure {@link io.fury.resolver.ClassChecker} by {@link
+     * ClassResolver#setClassChecker} to control which classes are allowed being serialized.
      */
     public FuryBuilder requireClassRegistration(boolean requireClassRegistration) {
       this.requireClassRegistration = requireClassRegistration;
@@ -1478,9 +1480,10 @@ public final class Fury {
       }
       if (!requireClassRegistration) {
         LOG.warn(
-            "Class registration isn't forced, unknown insecure classes can be deserialized. "
+            "Class registration isn't forced, unknown classes can be deserialized. "
                 + "If the environment isn't 100% secure, please enable class registration by "
-                + "`FuryBuilder#requireClassRegistration(true)`.");
+                + "`FuryBuilder#requireClassRegistration(true)` or configure ClassChecker by "
+                + "`ClassResolver.setClassChecker`");
       }
     }
 

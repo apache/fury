@@ -246,6 +246,7 @@ public class ClassResolver {
     // TODO(chaokunyang) Better to  use soft reference, see ObjectStreamClass.
     private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Field, Descriptor>>
         descriptorsCache = new ConcurrentHashMap<>();
+    private ClassChecker classChecker = (classResolver, className) -> true;
   }
 
   public ClassResolver(Fury fury) {
@@ -453,7 +454,7 @@ public class ClassResolver {
     if (extRegistry.registeredClassIdMap.containsKey(cls)) {
       throw new IllegalArgumentException(
           String.format(
-              "" + "Class %s already registered with id %s.",
+              "Class %s already registered with id %s.",
               cls, extRegistry.registeredClassIdMap.get(cls)));
     }
     register(cls, id);
@@ -599,6 +600,40 @@ public class ClassResolver {
    */
   public <T> void setSerializer(Class<T> cls, Serializer<T> serializer) {
     addSerializer(cls, serializer);
+  }
+
+  /** Set serializer for class whose name is {@code className}. */
+  public void setSerializer(String className, Class<? extends Serializer> serializer) {
+    for (Map.Entry<Class<?>, ClassInfo> entry : classInfoMap.iterable()) {
+      if (extRegistry.registeredClasses.containsKey(className)) {
+        LOG.warn("Skip clear serializer for registered class {}", className);
+        return;
+      }
+      Class<?> cls = entry.getKey();
+      if (cls.getName().equals(className)) {
+        LOG.info("Clear serializer for class {}.", className);
+        entry.getValue().serializer = Serializers.newSerializer(fury, cls, serializer);
+        classInfoCache = NIL_CLASS_INFO;
+        return;
+      }
+    }
+  }
+
+  /** Set serializer for classes starts with {@code classNamePrefix}. */
+  public void setSerializers(String classNamePrefix, Class<? extends Serializer> serializer) {
+    for (Map.Entry<Class<?>, ClassInfo> entry : classInfoMap.iterable()) {
+      Class<?> cls = entry.getKey();
+      String className = cls.getName();
+      if (extRegistry.registeredClasses.containsKey(className)) {
+        LOG.debug("Skip clear serializer for registered class {}", className);
+        continue;
+      }
+      if (className.startsWith(classNamePrefix)) {
+        LOG.info("Clear serializer for class {}.", className);
+        entry.getValue().serializer = Serializers.newSerializer(fury, cls, serializer);
+        classInfoCache = NIL_CLASS_INFO;
+      }
+    }
   }
 
   /**
@@ -880,6 +915,14 @@ public class ClassResolver {
     }
   }
 
+  public ClassChecker getClassChecker() {
+    return extRegistry.classChecker;
+  }
+
+  public void setClassChecker(ClassChecker classChecker) {
+    extRegistry.classChecker = classChecker;
+  }
+
   public FieldResolver getFieldResolver(Class<?> cls) {
     // can't use computeIfAbsent, since there may be recursive multiple
     // `getFieldResolver` thus multiple updates, which cause concurrent
@@ -1012,15 +1055,12 @@ public class ClassResolver {
     if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
       String msg =
           String.format(
-              "%s is not registered, if it's not the type you want to serialize, "
-                  + "it may be a **vulnerability**. If it's not a vulnerability, "
-                  + "registering class by `Fury#register` will have better performance, "
-                  + "otherwise class name will be serialized too.",
+              "%s is not registered, please check whether it's the type you want to serialize or "
+                  + "a **vulnerability**. If safe, registering class by "
+                  + "`Fury#register` will have better performance by skipping classname serialization",
               cls);
       boolean forbidden = BlackList.getDefaultBlackList().contains(cls.getName());
-      if (forbidden
-          || (fury.getConfig().requireClassRegistration()
-              && !isSecure(extRegistry.registeredClassIdMap, cls))) {
+      if (forbidden || !isSecure(extRegistry.registeredClassIdMap, cls)) {
         throw new InsecureException(msg);
       } else {
         if (!Functions.isLambda(cls) && !ReflectionUtils.isJdkProxy(cls)) {
@@ -1038,7 +1078,7 @@ public class ClassResolver {
     return Serializers.newSerializer(fury, cls, serializerClass);
   }
 
-  private static boolean isSecure(IdentityMap<Class<?>, Short> registeredClasses, Class<?> cls) {
+  private boolean isSecure(IdentityMap<Class<?>, Short> registeredClasses, Class<?> cls) {
     if (BlackList.getDefaultBlackList().contains(cls.getName())) {
       return false;
     }
@@ -1048,13 +1088,17 @@ public class ClassResolver {
     if (cls.isArray()) {
       return isSecure(registeredClasses, TypeUtils.getArrayComponent(cls));
     }
+    if (fury.getConfig().requireClassRegistration()) {
+      return Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls);
+    } else {
+      return extRegistry.classChecker.checkClass(this, cls.getName());
+    }
     // Don't take java Exception as secure in case future JDK introduce insecure JDK exception.
     // if (Exception.class.isAssignableFrom(cls)
     //     && cls.getName().startsWith("java.")
     //     && !cls.getName().startsWith("java.sql")) {
     //   return true;
     // }
-    return Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls);
   }
 
   /**
@@ -1545,6 +1589,7 @@ public class ClassResolver {
   }
 
   private Class<?> loadClass(String className) {
+    extRegistry.classChecker.checkClass(this, className);
     try {
       return Class.forName(className, false, fury.getClassLoader());
     } catch (ClassNotFoundException e) {
