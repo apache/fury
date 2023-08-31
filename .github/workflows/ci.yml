@@ -118,6 +118,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Run Python CI
         run: ./ci/run_ci.sh python
   lint:
