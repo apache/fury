@@ -328,6 +328,9 @@ For example, the deserialization may invoke `init` constructor or `equals`/`hash
 Fury provides a class registration option and enabled by default for such protocols, which allows only deserializing trusted registered types or built-in types.
  **Do not disable class registration unless you can ensure your environment is indeed secure**.
 
+If this option is disabled, you are responsible for serialization security. You can configure `io.fury.resolver.ClassChecker` by
+`ClassResolver#setClassChecker` to control which classes are allowed for serialization.
+
 ## RoadMap
 - Meta compression, auto meta sharing and cross-language schema compatibility.
 - AOT Framework for c++/golang/rust to generate code statically.
