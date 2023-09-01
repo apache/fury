@@ -1461,9 +1461,9 @@ public final class Fury {
       if (!requireClassRegistration) {
         LOG.warn(
             "Class registration isn't forced, unknown classes can be deserialized. "
-                + "If the environment isn't 100% secure, please enable class registration by "
+                + "If the environment isn't secure, please enable class registration by "
                 + "`FuryBuilder#requireClassRegistration(true)` or configure ClassChecker by "
-                + "`ClassResolver.setClassChecker`");
+                + "`ClassResolver#setClassChecker`");
       }
     }
 

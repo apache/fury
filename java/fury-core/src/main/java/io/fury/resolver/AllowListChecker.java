@@ -21,6 +21,7 @@ import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.Serializer;
 import io.fury.util.LoggerFactory;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -49,7 +50,7 @@ public class AllowListChecker implements ClassChecker {
     STRICT
   }
 
-  private final CheckLevel checkLevel;
+  private volatile CheckLevel checkLevel;
   private final Set<String> allowList;
   private final Set<String> allowListPrefix;
   private final Set<String> disallowList;
@@ -71,8 +72,25 @@ public class AllowListChecker implements ClassChecker {
     listeners = new WeakHashMap<>();
   }
 
+  public CheckLevel getCheckLevel() {
+    return checkLevel;
+  }
+
+  public void setCheckLevel(CheckLevel checkLevel) {
+    this.checkLevel = checkLevel;
+  }
+
   @Override
   public boolean checkClass(ClassResolver classResolver, String className) {
+    try {
+      lock.readLock().lock();
+      return check(className);
+    } finally {
+      lock.readLock().unlock();
+    }
+  }
+
+  private boolean check(String className) {
     switch (checkLevel) {
       case DISABLE:
         return true;
@@ -106,38 +124,53 @@ public class AllowListChecker implements ClassChecker {
     }
   }
 
-  boolean containsPrefix(Set<String> set, Set<String> prefixSet, String className) {
-    try {
-      lock.readLock().lock();
-      if (set.contains(className)) {
+  static boolean containsPrefix(Set<String> set, Set<String> prefixSet, String className) {
+    if (set.contains(className)) {
+      return true;
+    }
+    for (String prefix : prefixSet) {
+      if (className.startsWith(prefix)) {
         return true;
       }
-      for (String prefix : prefixSet) {
-        if (className.startsWith(prefix)) {
-          return true;
-        }
-      }
-      return false;
-    } finally {
-      lock.readLock().unlock();
     }
+    return false;
   }
 
   /**
    * Add class to allow list.
    *
-   * @param classNameOrPrefix class name or class name prefix ends with *.
+   * @param classNameOrPrefix class name or name prefix ends with *.
    */
   public void allowClass(String classNameOrPrefix) {
     try {
       lock.writeLock().lock();
-      if (classNameOrPrefix.endsWith("*")) {
-        allowListPrefix.add(classNameOrPrefix.substring(0, classNameOrPrefix.length() - 1));
-      } else {
-        allowList.add(classNameOrPrefix);
+      allow(classNameOrPrefix);
+    } finally {
+      lock.writeLock().unlock();
+    }
+  }
+
+  /**
+   * Add classes to allow list.
+   *
+   * @param classNamesOrPrefixes class names or name prefixes ends with *.
+   */
+  public void allowClasses(Collection<String> classNamesOrPrefixes) {
+    try {
+      lock.writeLock().lock();
+      for (String namesOrPrefix : classNamesOrPrefixes) {
+        allow(namesOrPrefix);
       }
     } finally {
       lock.writeLock().unlock();
+    }
+  }
+
+  private void allow(String classNameOrPrefix) {
+    if (classNameOrPrefix.endsWith("*")) {
+      allowListPrefix.add(classNameOrPrefix.substring(0, classNameOrPrefix.length() - 1));
+    } else {
+      allowList.add(classNameOrPrefix);
     }
   }
 
@@ -149,32 +182,52 @@ public class AllowListChecker implements ClassChecker {
   public void disallowClass(String classNameOrPrefix) {
     try {
       lock.writeLock().lock();
-      if (classNameOrPrefix.endsWith("*")) {
-        String prefix = classNameOrPrefix.substring(0, classNameOrPrefix.length() - 1);
-        disallowListPrefix.add(prefix);
-        for (ClassResolver classResolver : listeners.keySet()) {
-          try {
-            classResolver.getFury().getJITContext().lock();
-            // clear serializer may throw NullPointerException for field serialization.
-            classResolver.setSerializers(prefix, DisallowSerializer.class);
-          } finally {
-            classResolver.getFury().getJITContext().unlock();
-          }
-        }
-      } else {
-        disallowList.add(classNameOrPrefix);
-        for (ClassResolver classResolver : listeners.keySet()) {
-          try {
-            classResolver.getFury().getJITContext().lock();
-            // clear serializer may throw NullPointerException for field serialization.
-            classResolver.setSerializer(classNameOrPrefix, DisallowSerializer.class);
-          } finally {
-            classResolver.getFury().getJITContext().unlock();
-          }
-        }
+      disallow(classNameOrPrefix);
+    } finally {
+      lock.writeLock().unlock();
+    }
+  }
+
+  /**
+   * Add classes to disallow list.
+   *
+   * @param classNamesOrPrefixes class names or name prefixes ends with *.
+   */
+  public void disallowClasses(Collection<String> classNamesOrPrefixes) {
+    try {
+      lock.writeLock().lock();
+      for (String prefix : classNamesOrPrefixes) {
+        disallow(prefix);
       }
     } finally {
       lock.writeLock().unlock();
+    }
+  }
+
+  private void disallow(String classNameOrPrefix) {
+    if (classNameOrPrefix.endsWith("*")) {
+      String prefix = classNameOrPrefix.substring(0, classNameOrPrefix.length() - 1);
+      disallowListPrefix.add(prefix);
+      for (ClassResolver classResolver : listeners.keySet()) {
+        try {
+          classResolver.getFury().getJITContext().lock();
+          // clear serializer may throw NullPointerException for field serialization.
+          classResolver.setSerializers(prefix, DisallowSerializer.class);
+        } finally {
+          classResolver.getFury().getJITContext().unlock();
+        }
+      }
+    } else {
+      disallowList.add(classNameOrPrefix);
+      for (ClassResolver classResolver : listeners.keySet()) {
+        try {
+          classResolver.getFury().getJITContext().lock();
+          // clear serializer may throw NullPointerException for field serialization.
+          classResolver.setSerializer(classNameOrPrefix, DisallowSerializer.class);
+        } finally {
+          classResolver.getFury().getJITContext().unlock();
+        }
+      }
     }
   }
 
