@@ -110,13 +110,13 @@ Release version:
 <dependency>
   <groupId>org.furyio</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.furyio</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency> -->
 ```
 
@@ -370,6 +370,8 @@ If this option is disabled, you are responsible for serialization security. You 
 ## How to Contribute
 
 Please read the [CONTRIBUTING](CONTRIBUTING.md) guide.
+
+For ecosystem projects, please see https://github.com/fury-project
 
 ## Getting involved
 
