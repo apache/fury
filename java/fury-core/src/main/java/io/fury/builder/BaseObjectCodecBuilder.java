@@ -903,6 +903,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     // if add branch by `ArrayList`, generated code will be > 325 bytes.
     // and List#add is more likely be inlined if there is only one subclass.
     Expression hookRead = readCollectionCodegen(buffer, collection, size, elementType);
+    hookRead = new Invoke(serializer, "onCollectionRead", COLLECTION_TYPE, hookRead);
     Expression action =
         new If(
             supportHook,
@@ -988,6 +989,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             });
     // first newMap to create map, last newMap as expr value
     Expression hookRead = new ListExpression(size, newMap, readKeyValues, newMap);
+    hookRead = new Invoke(serializer, "onMapRead", MAP_TYPE, hookRead);
     Expression action =
         new If(supportHook, hookRead, new Invoke(serializer, "read", MAP_TYPE, buffer), false);
     if (generateNewMethod) {

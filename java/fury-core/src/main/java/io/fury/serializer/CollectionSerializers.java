@@ -228,13 +228,13 @@ public class CollectionSerializers {
     @Override
     public T read(MemoryBuffer buffer) {
       int numElements = buffer.readPositiveVarInt();
-      T collection = newCollection(buffer, numElements);
+      Collection collection = newCollection(buffer, numElements);
       readElements(fury, buffer, collection, numElements);
-      return collection;
+      return onCollectionRead(collection);
     }
 
     protected final void readElements(
-        Fury fury, MemoryBuffer buffer, T collection, int numElements) {
+        Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
       Serializer elemSerializer = this.elemSerializer;
       // clear the elemSerializer to avoid conflict if the nested
       // serialization has collection field.
@@ -267,7 +267,7 @@ public class CollectionSerializers {
     private void javaReadWithGenerics(
         Fury fury,
         MemoryBuffer buffer,
-        T collection,
+        Collection collection,
         int numElements,
         GenericType elemGenericType) {
       Serializer elemSerializer;
@@ -306,9 +306,9 @@ public class CollectionSerializers {
     @Override
     public T xread(MemoryBuffer buffer) {
       int numElements = buffer.readPositiveVarInt();
-      T collection = newCollection(buffer, numElements);
+      Collection collection = newCollection(buffer, numElements);
       xreadElements(fury, buffer, collection, numElements);
-      return collection;
+      return onCollectionRead(collection);
     }
 
     public static void xreadElements(
@@ -382,7 +382,7 @@ public class CollectionSerializers {
      *   <li>read elements
      * </ol>
      */
-    public T newCollection(MemoryBuffer buffer, int numElements) {
+    public Collection newCollection(MemoryBuffer buffer, int numElements) {
       if (constructor == null) {
         constructor = ReflectionUtils.newAccessibleNoArgConstructor(type);
       }
@@ -394,6 +394,10 @@ public class CollectionSerializers {
         throw new IllegalArgumentException(
             "Please provide public no arguments constructor for class " + type, e);
       }
+    }
+
+    public T onCollectionRead(Collection collection) {
+      return (T) collection;
     }
   }
 

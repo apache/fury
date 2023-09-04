@@ -61,4 +61,14 @@ public class _Collections {
       }
     }
   }
+
+  /** Try to return internal data of {@link ArrayList} in a zero-copy shared way. */
+  public static Object[] getArrayListElements(ArrayList list) {
+    if (ARRAY_LIST_SIZE_OFFSET != -1) {
+      Object object = Platform.getObject(list, ARRAY_LIST_ARRAY_OFFSET);
+      return (Object[]) object;
+    } else {
+      return list.toArray();
+    }
+  }
 }
