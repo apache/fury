@@ -110,3 +110,33 @@ class SortedMapContainer<K, V> extends MapContainer<K, V> {
     this.comparator = comparator;
   }
 }
+
+/**
+ * A map container to hold map key and value elements in one array.
+ *
+ * @author chaokunyang
+ */
+class JDKImmutableMapContainer<K, V> extends AbstractMap<K, V> {
+  final Object[] array;
+  private int offset;
+
+  JDKImmutableMapContainer(int mapCapacity) {
+    array = new Object[mapCapacity << 1];
+  }
+
+  @Override
+  public Set<Entry<K, V>> entrySet() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public V put(K key, V value) {
+    array[offset++] = key;
+    array[offset++] = value;
+    return null;
+  }
+
+  public int size() {
+    return offset >> 1;
+  }
+}
