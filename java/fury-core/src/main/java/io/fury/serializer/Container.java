@@ -22,6 +22,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 
+class Container {}
+
 /**
  * A collection container to hold collection elements by array.
  *
