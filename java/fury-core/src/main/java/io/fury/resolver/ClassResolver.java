@@ -55,6 +55,7 @@ import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.ExternalizableSerializer;
 import io.fury.serializer.GuavaSerializers;
+import io.fury.serializer.ImmutableCollectionSerializers;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.JdkProxySerializer;
 import io.fury.serializer.LambdaSerializer;
@@ -321,6 +322,7 @@ public class ClassResolver {
         new ReplaceResolveSerializer(fury, ReplaceResolveSerializer.ReplaceStub.class));
     SynchronizedSerializers.registerSerializers(fury);
     UnmodifiableSerializers.registerSerializers(fury);
+    ImmutableCollectionSerializers.registerSerializers(fury);
     if (metaContextShareEnabled) {
       addDefaultSerializer(
           UnexistedMetaSharedClass.class, new UnexistedClassSerializer(fury, null));
