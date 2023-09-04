@@ -134,8 +134,8 @@ public class ChildContainerSerializers {
       }
     }
 
-    public T newCollection(MemoryBuffer buffer, int numElements) {
-      T collection = super.newCollection(buffer, numElements);
+    public Collection newCollection(MemoryBuffer buffer, int numElements) {
+      Collection collection = super.newCollection(buffer, numElements);
       readAndSetFields(buffer, collection, slotsSerializers);
       return collection;
     }
@@ -149,7 +149,7 @@ public class ChildContainerSerializers {
 
     @Override
     public T newCollection(MemoryBuffer buffer, int numElements) {
-      T collection = super.newCollection(buffer, numElements);
+      T collection = (T) super.newCollection(buffer, numElements);
       collection.ensureCapacity(numElements);
       return collection;
     }
@@ -180,8 +180,8 @@ public class ChildContainerSerializers {
     }
 
     @Override
-    public T newMap(MemoryBuffer buffer, int numElements) {
-      T map = super.newMap(buffer, numElements);
+    public Map newMap(MemoryBuffer buffer, int numElements) {
+      Map map = super.newMap(buffer, numElements);
       readAndSetFields(buffer, map, slotsSerializers);
       return map;
     }

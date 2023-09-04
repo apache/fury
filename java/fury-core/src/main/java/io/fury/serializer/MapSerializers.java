@@ -187,7 +187,7 @@ public class MapSerializers {
     private void javaWriteWithKVSerializers(
         Fury fury,
         MemoryBuffer buffer,
-        T map,
+        Map map,
         Serializer keySerializer,
         Serializer valueSerializer) {
       for (Object object : map.entrySet()) {
@@ -252,7 +252,7 @@ public class MapSerializers {
     private void javaKVTypesFinalWrite(
         Fury fury,
         MemoryBuffer buffer,
-        T map,
+        Map map,
         GenericType keyGenericType,
         GenericType valueGenericType,
         Generics generics) {
@@ -272,7 +272,7 @@ public class MapSerializers {
     private void javaKeyTypeFinalWrite(
         Fury fury,
         MemoryBuffer buffer,
-        T map,
+        Map map,
         GenericType keyGenericType,
         GenericType valueGenericType,
         Generics generics) {
@@ -301,7 +301,7 @@ public class MapSerializers {
     private void javaValueTypeFinalWrite(
         Fury fury,
         MemoryBuffer buffer,
-        T map,
+        Map map,
         GenericType keyGenericType,
         GenericType valueGenericType,
         Generics generics) {
@@ -330,7 +330,7 @@ public class MapSerializers {
     private void javaKVTypesNonFinalWrite(
         Fury fury,
         MemoryBuffer buffer,
-        T map,
+        Map map,
         GenericType keyGenericType,
         GenericType valueGenericType,
         Generics generics) {
@@ -449,21 +449,21 @@ public class MapSerializers {
     @Override
     public T read(MemoryBuffer buffer) {
       int size = buffer.readPositiveVarInt();
-      T map = newMap(buffer, size);
+      Map map = newMap(buffer, size);
       readElements(buffer, size, map);
-      return map;
+      return onMapRead(map);
     }
 
     @Override
     public T xread(MemoryBuffer buffer) {
       int size = buffer.readPositiveVarInt();
-      T map = newMap(buffer, size);
+      Map map = newMap(buffer, size);
       xreadElements(fury, buffer, map, size);
-      return map;
+      return onMapRead(map);
     }
 
     @SuppressWarnings("unchecked")
-    protected final void readElements(MemoryBuffer buffer, int size, T map) {
+    protected final void readElements(MemoryBuffer buffer, int size, Map map) {
       Serializer keySerializer = this.keySerializer;
       Serializer valueSerializer = this.valueSerializer;
       // clear the elemSerializer to avoid conflict if the nested
@@ -493,7 +493,7 @@ public class MapSerializers {
       }
     }
 
-    private void genericJavaRead(Fury fury, MemoryBuffer buffer, T map, int size) {
+    private void genericJavaRead(Fury fury, MemoryBuffer buffer, Map map, int size) {
       Generics generics = fury.getGenerics();
       GenericType genericType = generics.nextGenericType();
       if (genericType == null) {
@@ -533,7 +533,7 @@ public class MapSerializers {
     private void javaKVTypesFinalRead(
         Fury fury,
         MemoryBuffer buffer,
-        T map,
+        Map map,
         GenericType keyGenericType,
         GenericType valueGenericType,
         Generics generics,
@@ -554,7 +554,7 @@ public class MapSerializers {
     private void javaKeyTypeFinalRead(
         Fury fury,
         MemoryBuffer buffer,
-        T map,
+        Map map,
         GenericType keyGenericType,
         GenericType valueGenericType,
         Generics generics,
@@ -578,7 +578,7 @@ public class MapSerializers {
     private void javaValueTypeFinalRead(
         Fury fury,
         MemoryBuffer buffer,
-        T map,
+        Map map,
         GenericType keyGenericType,
         GenericType valueGenericType,
         Generics generics,
@@ -601,7 +601,7 @@ public class MapSerializers {
     private void javaKVTypesNonFinalRead(
         Fury fury,
         MemoryBuffer buffer,
-        T map,
+        Map map,
         GenericType keyGenericType,
         GenericType valueGenericType,
         Generics generics,
@@ -624,7 +624,7 @@ public class MapSerializers {
       }
     }
 
-    private void generalJavaRead(Fury fury, MemoryBuffer buffer, T map, int size) {
+    private void generalJavaRead(Fury fury, MemoryBuffer buffer, Map map, int size) {
       for (int i = 0; i < size; i++) {
         Object key = fury.readRef(buffer, keyClassInfoReadCache);
         Object value = fury.readRef(buffer, valueClassInfoReadCache);
@@ -719,7 +719,7 @@ public class MapSerializers {
      *   <li>read keys/values
      * </ol>
      */
-    public T newMap(MemoryBuffer buffer, int numElements) {
+    public Map newMap(MemoryBuffer buffer, int numElements) {
       if (constructor == null) {
         constructor = ReflectionUtils.newAccessibleNoArgConstructor(type);
       }
@@ -731,6 +731,10 @@ public class MapSerializers {
         throw new IllegalArgumentException(
             "Please provide public no arguments constructor for class " + type, e);
       }
+    }
+
+    public T onMapRead(Map map) {
+      return (T) map;
     }
 
     /** Check null first to avoid ref tracking for some types with ref tracking disabled. */
@@ -849,7 +853,6 @@ public class MapSerializers {
   }
 
   public static class SortedMapSerializer<T extends SortedMap> extends MapSerializer<T> {
-    private Constructor<?> constructor;
 
     public SortedMapSerializer(Fury fury, Class<T> cls) {
       super(fury, cls, true, false);
@@ -872,7 +875,7 @@ public class MapSerializers {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T newMap(MemoryBuffer buffer, int numElements) {
+    public Map newMap(MemoryBuffer buffer, int numElements) {
       T map;
       Comparator comparator = (Comparator) fury.readRef(buffer);
       if (type == TreeMap.class) {

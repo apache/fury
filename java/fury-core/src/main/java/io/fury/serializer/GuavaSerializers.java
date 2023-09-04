@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassInfoCache;
 import io.fury.serializer.CollectionSerializers.CollectionSerializer;
 import io.fury.serializer.MapSerializers.MapSerializer;
 import io.fury.type.Type;
@@ -49,35 +48,11 @@ import java.util.function.Function;
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class GuavaSerializers {
-  // TODO(chaokunyang) support jit optimization for guava types.
-
   abstract static class GuavaCollectionSerializer<T extends Collection>
       extends CollectionSerializer<T> {
-    private ReplaceResolveSerializer serializer;
-
     public GuavaCollectionSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, true, false);
       fury.getClassResolver().setSerializer(cls, this);
-    }
-
-    protected ReplaceResolveSerializer getOrCreateSerializer() {
-      // reduce cost of fury creation, ReplaceResolveSerializer will jit-generate serializer.
-      ReplaceResolveSerializer serializer = this.serializer;
-      if (serializer == null) {
-        this.serializer = serializer = new ReplaceResolveSerializer(fury, type);
-      }
-      return serializer;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public T read(MemoryBuffer buffer) {
-      return (T) getOrCreateSerializer().read(buffer);
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, T value) {
-      getOrCreateSerializer().write(buffer, value);
     }
 
     @Override
@@ -101,21 +76,16 @@ public class GuavaSerializers {
     }
 
     @Override
-    public void write(MemoryBuffer buffer, T value) {
-      buffer.writePositiveVarInt(value.size());
-      for (Object o : value) {
-        fury.writeRef(buffer, o, elementClassInfoWriteCache);
-      }
+    public Collection newCollection(MemoryBuffer buffer, int numElements) {
+      return new CollectionContainer<>(numElements);
     }
 
     @Override
-    public T read(MemoryBuffer buffer) {
-      int size = buffer.readPositiveVarInt();
-      Object[] array = new Object[size];
-      for (int i = 0; i < size; i++) {
-        array[i] = fury.readRef(buffer, elementClassInfoReadCache);
-      }
-      return (T) ImmutableList.copyOf(array);
+    public T onCollectionRead(Collection collection) {
+      Object[] elements = ((CollectionContainer) collection).elements;
+      ImmutableList list = ImmutableList.copyOf(elements);
+      fury.getRefResolver().reference(list);
+      return (T) list;
     }
 
     @Override
@@ -154,35 +124,25 @@ public class GuavaSerializers {
 
   public static final class RegularImmutableListSerializer<T extends ImmutableList>
       extends GuavaCollectionSerializer<T> {
-    private final long offset;
     private final Function<Object[], ImmutableList> function;
-    private final ClassInfoCache classInfoCache;
 
     public RegularImmutableListSerializer(Fury fury, Class<T> cls) {
       super(fury, cls);
       Object[] cache = regularImmutableListInvoke();
-      offset = (long) cache[1];
       function = (Function<Object[], ImmutableList>) cache[2];
-      classInfoCache = fury.getClassResolver().nilClassInfoCache();
     }
 
     @Override
-    public void write(MemoryBuffer buffer, T value) {
-      Object[] array = (Object[]) Platform.getObject(value, offset);
-      buffer.writePositiveVarInt(array.length);
-      for (Object o : array) {
-        fury.writeRef(buffer, o, classInfoCache);
-      }
+    public Collection newCollection(MemoryBuffer buffer, int numElements) {
+      return new CollectionContainer(numElements);
     }
 
     @Override
-    public T read(MemoryBuffer buffer) {
-      int len = buffer.readPositiveVarInt();
-      Object[] array = new Object[len];
-      for (int i = 0; i < len; i++) {
-        array[i] = fury.readRef(buffer, classInfoCache);
-      }
-      return (T) function.apply(array);
+    public T onCollectionRead(Collection collection) {
+      Object[] elements = ((CollectionContainer) collection).elements;
+      T t = (T) function.apply(elements);
+      fury.getRefResolver().reference(t);
+      return t;
     }
 
     @Override
@@ -204,21 +164,16 @@ public class GuavaSerializers {
     }
 
     @Override
-    public void write(MemoryBuffer buffer, T value) {
-      buffer.writePositiveVarInt(value.size());
-      for (Object o : value) {
-        fury.writeRef(buffer, o, elementClassInfoWriteCache);
-      }
+    public Collection newCollection(MemoryBuffer buffer, int numElements) {
+      return new CollectionContainer<>(numElements);
     }
 
     @Override
-    public T read(MemoryBuffer buffer) {
-      int size = buffer.readPositiveVarInt();
-      Object[] array = new Object[size];
-      for (int i = 0; i < size; i++) {
-        array[i] = fury.readRef(buffer, elementClassInfoReadCache);
-      }
-      return (T) ImmutableSet.copyOf(array);
+    public T onCollectionRead(Collection collection) {
+      Object[] elements = ((CollectionContainer) collection).elements;
+      T t = (T) ImmutableSet.copyOf(elements);
+      fury.getRefResolver().reference(t);
+      return t;
     }
 
     @Override
@@ -241,55 +196,53 @@ public class GuavaSerializers {
     }
 
     @Override
-    public void write(MemoryBuffer buffer, T value) {
+    public void writeHeader(MemoryBuffer buffer, T value) {
       fury.writeRef(buffer, value.comparator());
-      buffer.writePositiveVarInt(value.size());
-      for (Object o : value) {
-        fury.writeRef(buffer, o, elementClassInfoWriteCache);
-      }
     }
 
     @Override
-    public T read(MemoryBuffer buffer) {
+    public Collection newCollection(MemoryBuffer buffer, int numElements) {
       Comparator comparator = (Comparator) fury.readRef(buffer);
-      int size = buffer.readPositiveVarInt();
-      Object[] array = new Object[size];
-      for (int i = 0; i < size; i++) {
-        array[i] = fury.readRef(buffer, elementClassInfoReadCache);
-      }
-      return (T) new ImmutableSortedSet.Builder<>(comparator).add(array).build();
+      return new SortedCollectionContainer(comparator, numElements);
+    }
+
+    @Override
+    public T onCollectionRead(Collection collection) {
+      SortedCollectionContainer data = (SortedCollectionContainer) collection;
+      Object[] elements = data.elements;
+      T t = (T) new ImmutableSortedSet.Builder<>(data.comparator).add(elements).build();
+      fury.getRefResolver().reference(t);
+      return t;
     }
   }
 
   abstract static class GuavaMapSerializer<T extends Map> extends MapSerializer<T> {
 
     public GuavaMapSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, true, false);
       fury.getClassResolver().setSerializer(cls, this);
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, T value) {
-      buffer.writePositiveVarInt(value.size());
-      simpleWriteElements(fury, buffer, value);
     }
 
     protected abstract ImmutableMap.Builder makeBuilder(int size);
 
     @Override
-    public T read(MemoryBuffer buffer) {
-      int size = buffer.readPositiveVarInt();
+    public Map newMap(MemoryBuffer buffer, int numElements) {
+      return new MapContainer(numElements);
+    }
+
+    @Override
+    public T onMapRead(Map map) {
+      MapContainer container = (MapContainer) map;
+      int size = container.size;
       ImmutableMap.Builder builder = makeBuilder(size);
-      Fury fury = this.fury;
-      ClassInfoCache keyClassInfoReadCache = this.keyClassInfoReadCache;
-      ClassInfoCache valueClassInfoReadCache = this.valueClassInfoReadCache;
+      Object[] keyArray = container.keyArray;
+      Object[] valueArray = container.valueArray;
       for (int i = 0; i < size; i++) {
-        // reuse classInfoCache for key/value
-        Object key = fury.readRef(buffer, keyClassInfoReadCache);
-        Object value = fury.readRef(buffer, valueClassInfoReadCache);
-        builder.put(key, value);
+        builder.put(keyArray[i], valueArray[i]);
       }
-      return (T) builder.buildOrThrow();
+      T t = (T) builder.build();
+      fury.getRefResolver().reference(t);
+      return t;
     }
 
     @Override
@@ -368,30 +321,34 @@ public class GuavaSerializers {
       extends MapSerializer<T> {
 
     public ImmutableSortedMapSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls);
       fury.getClassResolver().setSerializer(cls, this);
     }
 
     @Override
-    public void write(MemoryBuffer buffer, T value) {
+    public void writeHeader(MemoryBuffer buffer, T value) {
       fury.writeRef(buffer, value.comparator());
-      buffer.writePositiveVarInt(value.size());
-      simpleWriteElements(fury, buffer, value);
     }
 
     @Override
-    public T read(MemoryBuffer buffer) {
+    public Map newMap(MemoryBuffer buffer, int numElements) {
       Comparator comparator = (Comparator) fury.readRef(buffer);
-      ImmutableMap.Builder builder = new ImmutableSortedMap.Builder(comparator);
-      int size = buffer.readPositiveVarInt();
-      ClassInfoCache keyClassInfoReadCache = this.keyClassInfoReadCache;
-      ClassInfoCache valueClassInfoReadCache = this.valueClassInfoReadCache;
+      return new SortedMapContainer<>(comparator, numElements);
+    }
+
+    @Override
+    public T onMapRead(Map map) {
+      SortedMapContainer mapContainer = (SortedMapContainer) map;
+      ImmutableMap.Builder builder = new ImmutableSortedMap.Builder(mapContainer.comparator);
+      int size = mapContainer.size;
+      Object[] keyArray = mapContainer.keyArray;
+      Object[] valueArray = mapContainer.valueArray;
       for (int i = 0; i < size; i++) {
-        Object key = fury.readRef(buffer, keyClassInfoReadCache);
-        Object value = fury.readRef(buffer, valueClassInfoReadCache);
-        builder.put(key, value);
+        builder.put(keyArray[i], valueArray[i]);
       }
-      return (T) builder.buildOrThrow();
+      T t = (T) builder.build();
+      fury.getRefResolver().reference(t);
+      return t;
     }
   }
 
