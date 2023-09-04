@@ -80,12 +80,19 @@ public class ImmutableCollectionSerializers {
     } else {
       // Use stub class as placeholder to ensure jdk8 registered id consistent with JDK9+.
       class List12Stub {}
+
       class ListNStub {}
+
       class SubListStub {}
+
       class Set12Stub {}
+
       class SetNStub {}
+
       class Map1Stub {}
+
       class MapNStub {}
+
       List12 = List12Stub.class;
       ListN = ListNStub.class;
       SubList = SubListStub.class;
