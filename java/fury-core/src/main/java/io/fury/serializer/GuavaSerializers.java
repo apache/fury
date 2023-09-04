@@ -28,7 +28,6 @@ import io.fury.serializer.CollectionSerializers.CollectionSerializer;
 import io.fury.serializer.MapSerializers.MapSerializer;
 import io.fury.type.Type;
 import io.fury.util.Platform;
-import io.fury.util.ReflectionUtils;
 import io.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -99,27 +98,21 @@ public class GuavaSerializers {
   }
 
   private static final String pkg = "com.google.common.collect";
-  private static volatile Object[] regularImmutableListInvokeCache;
+  private static Function regularImmutableListInvokeCache;
 
-  private static Object[] regularImmutableListInvoke() {
-    Object[] regularImmutableListInvoke = regularImmutableListInvokeCache;
-    if (regularImmutableListInvoke == null) {
-      regularImmutableListInvoke = new Object[3];
+  private static synchronized Function regularImmutableListInvoke() {
+    if (regularImmutableListInvokeCache == null) {
       Class<?> cls = loadClass(pkg + ".RegularImmutableList", ImmutableList.of(1, 2).getClass());
-      regularImmutableListInvoke[0] = cls;
-      regularImmutableListInvoke[1] = ReflectionUtils.getFieldOffset(cls, "array");
       MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(cls);
+      MethodHandle ctr = null;
       try {
-        MethodHandle ctr =
-            lookup.findConstructor(cls, MethodType.methodType(void.class, Object[].class));
-        Function func = _JDKAccess.makeJDKFunction(lookup, ctr);
-        regularImmutableListInvoke[2] = func;
+        ctr = lookup.findConstructor(cls, MethodType.methodType(void.class, Object[].class));
       } catch (NoSuchMethodException | IllegalAccessException e) {
         Platform.throwException(e);
       }
-      regularImmutableListInvokeCache = regularImmutableListInvoke;
+      regularImmutableListInvokeCache = _JDKAccess.makeJDKFunction(lookup, ctr);
     }
-    return regularImmutableListInvoke;
+    return regularImmutableListInvokeCache;
   }
 
   public static final class RegularImmutableListSerializer<T extends ImmutableList>
@@ -128,8 +121,7 @@ public class GuavaSerializers {
 
     public RegularImmutableListSerializer(Fury fury, Class<T> cls) {
       super(fury, cls);
-      Object[] cache = regularImmutableListInvoke();
-      function = (Function<Object[], ImmutableList>) cache[2];
+      function = (Function<Object[], ImmutableList>) regularImmutableListInvoke();
     }
 
     @Override
@@ -261,18 +253,23 @@ public class GuavaSerializers {
     }
 
     protected abstract T xnewInstance(Map map);
-
-    protected static Function builderCtr(Class<?> builderClass) {
-      MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(builderClass);
-      MethodHandle ctr = null;
-      try {
-        ctr = lookup.findConstructor(builderClass, MethodType.methodType(void.class, int.class));
-      } catch (NoSuchMethodException | IllegalAccessException e) {
-        Platform.throwException(e);
-      }
-      return _JDKAccess.makeJDKFunction(lookup, ctr);
-    }
   }
+
+  private static final ClassValue<Function> builderCtrCache =
+      new ClassValue<Function>() {
+        @Override
+        protected Function computeValue(Class<?> builderClass) {
+          MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(builderClass);
+          MethodHandle ctr = null;
+          try {
+            ctr =
+                lookup.findConstructor(builderClass, MethodType.methodType(void.class, int.class));
+          } catch (NoSuchMethodException | IllegalAccessException e) {
+            Platform.throwException(e);
+          }
+          return _JDKAccess.makeJDKFunction(lookup, ctr);
+        }
+      };
 
   public static final class ImmutableMapSerializer<T extends ImmutableMap>
       extends GuavaMapSerializer<T> {
@@ -281,7 +278,7 @@ public class GuavaSerializers {
 
     public ImmutableMapSerializer(Fury fury, Class<T> cls) {
       super(fury, cls);
-      builderCtr = builderCtr(ImmutableMap.Builder.class);
+      builderCtr = builderCtrCache.get(ImmutableMap.Builder.class);
       fury.getClassResolver().setSerializer(cls, this);
     }
 
@@ -302,7 +299,7 @@ public class GuavaSerializers {
 
     public ImmutableBiMapSerializer(Fury fury, Class<T> cls) {
       super(fury, cls);
-      builderCtr = builderCtr(ImmutableBiMap.Builder.class);
+      builderCtr = builderCtrCache.get(ImmutableBiMap.Builder.class);
       fury.getClassResolver().setSerializer(cls, this);
     }
 
