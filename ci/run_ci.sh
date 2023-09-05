@@ -64,6 +64,7 @@ install_bazel() {
 }
 
 JDKS=(
+"zulu20.32.11-ca-jdk20.0.2-linux_x64"
 "zulu17.44.17-ca-crac-jdk17.0.8-linux_x64"
 "zulu15.46.17-ca-jdk15.0.10-linux_x64"
 "zulu13.54.17-ca-jdk13.0.14-linux_x64"
