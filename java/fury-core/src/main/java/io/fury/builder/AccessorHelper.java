@@ -157,13 +157,10 @@ public class AccessorHelper {
         long startTime = System.nanoTime();
         String code = genCode(beanClass);
         long durationMs = (System.nanoTime() - startTime) / 1000_000;
-        startTime = System.nanoTime();
         LOG.info("Generate code {} take {} ms", qualifiedClassName, durationMs);
         String pkg = CodeGenerator.getPackage(beanClass);
         CompileUnit compileUnit = new CompileUnit(pkg, accessorClassName(beanClass), code);
         Map<String, byte[]> classByteCodes = JaninoUtils.toBytecode(classLoader, compileUnit);
-        durationMs = (System.nanoTime() - startTime) / 1000_000;
-        LOG.info("Compile {} take {} ms", qualifiedClassName, durationMs);
         boolean succeed =
             ClassLoaderUtils.tryDefineClassesInClassLoader(
                     qualifiedClassName,

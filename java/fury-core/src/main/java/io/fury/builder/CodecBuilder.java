@@ -100,8 +100,7 @@ public abstract class CodecBuilder {
     if (isRecord) {
       recordCtrAccessible = recordCtrAccessible(beanClass);
     }
-    duplicatedFields =
-        Descriptor.getSortedDuplicatedFields(Descriptor.getAllDescriptorsMap(beanClass)).keySet();
+    duplicatedFields = Descriptor.getSortedDuplicatedFields(beanClass).keySet();
     // don't ctx.addImport beanClass, because it maybe causes name collide.
     ctx.reserveName(FURY_NAME);
     ctx.reserveName(ROOT_OBJECT_NAME);

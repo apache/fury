@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -193,7 +194,12 @@ public class FieldResolver {
     // all fields of class and super classes should be a consistent order between jvm process.
     SortedMap<Field, Descriptor> allFieldsMap =
         fury.getClassResolver().getAllDescriptorsMap(type, resolveParent);
-    Set<String> duplicatedFields = Descriptor.getSortedDuplicatedFields(allFieldsMap).keySet();
+    Set<String> duplicatedFields;
+    if (resolveParent) {
+      duplicatedFields = Descriptor.getSortedDuplicatedFields(type).keySet();
+    } else {
+      duplicatedFields = new HashSet<>();
+    }
     List<ClassField> allFields =
         allFieldsMap.keySet().stream().map(ClassField::new).collect(Collectors.toList());
     return new FieldResolver(fury, type, ignoreCollectionType, allFields, duplicatedFields);

@@ -214,6 +214,33 @@ public class Descriptor {
     return map;
   }
 
+  private static final ClassValue<Map<String, List<Field>>> sortedDuplicatedFields =
+      new ClassValue<Map<String, List<Field>>>() {
+        @Override
+        protected Map<String, List<Field>> computeValue(Class<?> type) {
+          SortedMap<Field, Descriptor> allFields = Descriptor.getAllDescriptorsMap(type);
+          Map<String, List<Field>> duplicated = Descriptor.getDuplicateNameFields(allFields);
+          Map<String, List<Field>> map = new HashMap<>();
+          for (Map.Entry<String, List<Field>> e : duplicated.entrySet()) {
+            e.getValue()
+                .sort(
+                    (f1, f2) -> {
+                      if (f1.getDeclaringClass() == f2.getDeclaringClass()) {
+                        return 0;
+                      } else {
+                        return f1.getDeclaringClass().isAssignableFrom(f2.getDeclaringClass())
+                            ? -1
+                            : 1;
+                      }
+                    });
+            if (map.put(e.getKey(), e.getValue()) != null) {
+              throw new IllegalStateException("Duplicate key");
+            }
+          }
+          return map;
+        }
+      };
+
   public static Map<String, List<Field>> getDuplicateNameFields(
       SortedMap<Field, Descriptor> allDescriptorsMap) {
     Map<String, List<Field>> duplicateNameFields = new HashMap<>();
@@ -233,25 +260,12 @@ public class Descriptor {
     return duplicateNameFields;
   }
 
-  public static Map<String, List<Field>> getSortedDuplicatedFields(
-      SortedMap<Field, Descriptor> allFields) {
-    Map<String, List<Field>> duplicated = Descriptor.getDuplicateNameFields(allFields);
-    Map<String, List<Field>> map = new HashMap<>();
-    for (Map.Entry<String, List<Field>> e : duplicated.entrySet()) {
-      e.getValue()
-          .sort(
-              (f1, f2) -> {
-                if (f1.getDeclaringClass() == f2.getDeclaringClass()) {
-                  return 0;
-                } else {
-                  return f1.getDeclaringClass().isAssignableFrom(f2.getDeclaringClass()) ? -1 : 1;
-                }
-              });
-      if (map.put(e.getKey(), e.getValue()) != null) {
-        throw new IllegalStateException("Duplicate key");
-      }
-    }
-    return map;
+  public static Map<String, List<Field>> getSortedDuplicatedFields(Class<?> cls) {
+    return sortedDuplicatedFields.get(cls);
+  }
+
+  public static boolean hasDuplicateNameFields(Class<?> clz) {
+    return !getSortedDuplicatedFields(clz).isEmpty();
   }
 
   /**
