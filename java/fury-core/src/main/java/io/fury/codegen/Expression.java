@@ -722,7 +722,7 @@ public interface Expression {
       this.castedValueNamePrefix = castedValueNamePrefix;
       inlineCall = inline;
       this.ignoreUpcast = ignoreUpcast;
-      checkArgument(ReflectionUtils.isPublic(type), "Type %s is not public", type);
+      checkArgument(!ReflectionUtils.isPrivate(type), "Type %s is private", type);
     }
 
     @Override

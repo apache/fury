@@ -34,6 +34,7 @@ import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Cast;
 import io.fury.codegen.Expression.Inlineable;
 import io.fury.codegen.Expression.Invoke;
 import io.fury.codegen.Expression.Literal;
@@ -206,7 +207,7 @@ public abstract class CodecBuilder {
                 OBJECT_TYPE,
                 beanClassExpr(),
                 Literal.ofString(fieldName));
-        getter = new Expression.Cast(getter, getterType);
+        getter = new Cast(getter, getterType);
         ctx.addField(funcInterface, key, getter);
         ref = new Reference(key, getterType);
         fieldMap.put(key, ref);
@@ -221,7 +222,7 @@ public abstract class CodecBuilder {
     Reference fieldRef = getOrCreateField(cls, descriptor.getName());
     // boolean fieldNullable = !descriptor.getTypeToken().isPrimitive();
     Invoke getObj = new Invoke(fieldRef, "get", OBJECT_TYPE, fieldNullable, inputObject);
-    return new Expression.Cast(getObj, descriptor.getTypeToken(), descriptor.getName());
+    return new Cast(getObj, descriptor.getTypeToken(), descriptor.getName());
   }
 
   /** Returns an expression that get field value> from <code>bean</code> using {@link Unsafe}. */
@@ -250,7 +251,7 @@ public abstract class CodecBuilder {
               inputObject,
               fieldOffsetExpr);
       TypeToken<?> publicSuperType = ReflectionUtils.getPublicSuperType(descriptor.getTypeToken());
-      return new Expression.Cast(getObj, publicSuperType, fieldName);
+      return new Cast(getObj, publicSuperType, fieldName);
     }
   }
 
@@ -277,6 +278,9 @@ public abstract class CodecBuilder {
       if (!Modifier.isFinal(d.getModifiers()) && !Modifier.isPrivate(d.getModifiers())) {
         if (AccessorHelper.defineAccessor(d.getField())) {
           Class<?> accessorClass = AccessorHelper.getAccessorClass(d.getField());
+          if (!value.type().equals(d.getTypeToken())) {
+            value = new Cast(value, d.getTypeToken());
+          }
           return new StaticInvoke(
               accessorClass, d.getName(), PRIMITIVE_VOID_TYPE, false, bean, value);
         }
@@ -284,6 +288,9 @@ public abstract class CodecBuilder {
       if (d.getWriteMethod() != null && !Modifier.isPrivate(d.getWriteMethod().getModifiers())) {
         if (AccessorHelper.defineAccessor(d.getWriteMethod())) {
           Class<?> accessorClass = AccessorHelper.getAccessorClass(d.getWriteMethod());
+          if (!value.type().equals(d.getTypeToken())) {
+            value = new Cast(value, d.getTypeToken());
+          }
           return new StaticInvoke(
               accessorClass, d.getWriteMethod().getName(), PRIMITIVE_VOID_TYPE, false, bean, value);
         }
