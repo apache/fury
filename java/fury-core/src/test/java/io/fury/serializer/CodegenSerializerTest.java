@@ -261,16 +261,19 @@ public class CodegenSerializerTest extends FuryTestBase {
   }
 
   private interface PrivateInterface extends Serializable {
-    void t();
+    Object t();
   }
 
   public static class TestClass1 {
-    PrivateInterface a = () -> {};
+    PrivateInterface a = () -> 1;
+    private PrivateInterface b = () -> 2;
   }
 
   @Test
   public void testPrivateInterfaceField() {
     Fury fury = Fury.builder().requireClassRegistration(false).build();
-    serDe(fury, new TestClass1());
+    TestClass1 o = serDe(fury, new TestClass1());
+    Assert.assertEquals(o.a.t(), 1);
+    Assert.assertEquals(o.b.t(), 2);
   }
 }
