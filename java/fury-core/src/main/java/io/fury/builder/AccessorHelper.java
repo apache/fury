@@ -205,11 +205,17 @@ public class AccessorHelper {
   }
 
   public static boolean defineAccessor(Field field) {
+    if (ReflectionUtils.isPrivate(field.getType())) {
+      return false;
+    }
     Class<?> beanClass = field.getDeclaringClass();
     return defineAccessorClass(beanClass);
   }
 
   public static boolean defineAccessor(Method method) {
+    if (ReflectionUtils.isPrivate(method.getReturnType())) {
+      return false;
+    }
     Class<?> beanClass = method.getDeclaringClass();
     return defineAccessorClass(beanClass);
   }

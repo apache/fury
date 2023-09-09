@@ -27,6 +27,7 @@ import io.fury.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.test.bean.Cyclic;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -257,5 +258,22 @@ public class CodegenSerializerTest extends FuryTestBase {
     fury.register(Get.class);
     Get get = new Get(Lists.newArrayList(new Column(new byte[] {1}, new byte[] {2}, "abc")));
     serDeCheck(fury, get);
+  }
+
+  private interface PrivateInterface extends Serializable {
+    Object t();
+  }
+
+  public static class TestClass1 {
+    PrivateInterface a = () -> 1;
+    private PrivateInterface b = () -> 2;
+  }
+
+  @Test
+  public void testPrivateInterfaceField() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    TestClass1 o = serDe(fury, new TestClass1());
+    Assert.assertEquals(o.a.t(), 1);
+    Assert.assertEquals(o.b.t(), 2);
   }
 }

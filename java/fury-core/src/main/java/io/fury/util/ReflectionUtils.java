@@ -16,6 +16,7 @@
 
 package io.fury.util;
 
+import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
@@ -40,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -364,17 +366,35 @@ public class ReflectionUtils {
     return Modifier.isPublic(type.getModifiers());
   }
 
+  public static boolean isPrivate(TypeToken<?> targetType) {
+    return Modifier.isPrivate(getRawType(targetType).getModifiers());
+  }
+
+  public static boolean isPrivate(Class<?> cls) {
+    return Modifier.isPrivate(cls.getModifiers());
+  }
+
   public static boolean isFinal(Class<?> targetType) {
     return Modifier.isFinal(targetType.getModifiers());
   }
 
   public static TypeToken getPublicSuperType(TypeToken typeToken) {
     if (!isPublic(typeToken)) {
-      Class<?> cls = getRawType(typeToken);
-      while (!isPublic(cls)) {
+      Class<?> rawType = Objects.requireNonNull(getRawType(typeToken));
+      Class<?> cls = rawType;
+      while (cls != null && !isPublic(cls)) {
         cls = cls.getSuperclass();
       }
-      return TypeToken.of(cls);
+      if (cls == null) {
+        for (Class<?> typeInterface : rawType.getInterfaces()) {
+          if (isPublic(typeInterface)) {
+            return TypeToken.of(typeInterface);
+          }
+        }
+        return OBJECT_TYPE;
+      } else {
+        return TypeToken.of(cls);
+      }
     } else {
       return typeToken;
     }
