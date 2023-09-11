@@ -420,12 +420,21 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, StringBuilder value) {
-      stringSerializer.writeJavaString(buffer, value.toString());
+      int length = value.length();
+      buffer.writeInt(length);
+      for (int i = 0; i < length; i++) {
+        buffer.writeChar(value.charAt(i));
+      }
     }
 
     @Override
     public StringBuilder read(MemoryBuffer buffer) {
-      return new StringBuilder(stringSerializer.readJavaString(buffer));
+      int length = buffer.readInt();
+      StringBuilder stringBuilder = new StringBuilder(length);
+      for (int i = 0; i < length; i++) {
+        stringBuilder.append(buffer.readChar());
+      }
+      return stringBuilder;
     }
   }
 
@@ -444,7 +453,11 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, StringBuffer value) {
-      stringSerializer.writeJavaString(buffer, value.toString());
+      int length = value.length();
+      buffer.writeInt(length);
+      for (int i = 0; i < length; i++) {
+        buffer.writeChar(value.charAt(i));
+      }
     }
 
     @Override
@@ -454,7 +467,12 @@ public class Serializers {
 
     @Override
     public StringBuffer read(MemoryBuffer buffer) {
-      return new StringBuffer(stringSerializer.readJavaString(buffer));
+      int length = buffer.readInt();
+      StringBuffer stringBuffer = new StringBuffer(length);
+      for (int i = 0; i < length; i++) {
+        stringBuffer.append(buffer.readChar());
+      }
+      return stringBuffer;
     }
 
     @Override
