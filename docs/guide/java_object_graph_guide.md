@@ -287,3 +287,14 @@ if(JavaSerializer.serializedByJDK(bytes)){
   return fury.deserialize(bytes);
   }
 ```
+
+## Trouble shooting
+### Class inconsistency and class version check
+If you create fury without setting `CompatibleMode` to `io.fury.serializer.CompatibleMode.COMPATIBLE`, and you got a strange
+serialization error, it may be caused by class inconsistency between serialization peer and deserialization peer.
+
+In such cases, you can invoke `FuryBuilder#withClassVersionCheck` to create fury to validate it, if deserialization throws `io.fury.exception.ClassNotCompatibleException`, it shows class are inconsistent, and you should create fury with 
+`FuryBuilder#withCompaibleMode(CompatibleMode.COMPATIBLE)`.
+
+`CompatibleMode.COMPATIBLE` has more performance and space cost, do not set it by default if your classes are always consistent between serialization and deserialization.
+
