@@ -21,7 +21,7 @@ import os
 import sys
 import warnings
 from dataclasses import dataclass
-from typing import Dict, Tuple, TypeVar, Optional, Union, Iterable
+from typing import Dict, Tuple, TypeVar, Union, Iterable
 
 from pyfury.lib import mmh3
 
