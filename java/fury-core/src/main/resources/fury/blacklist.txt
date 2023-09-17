@@ -163,6 +163,11 @@ org.datanucleus.store.rdbms.datasource.dbcp.datasources.SharedPoolDataSource;
 org.eclipse.jetty.util.log.LoggerLog
 org.geotools.filter.ConstantExpression
 org.h2.value.ValueJavaObject
+org.h2.message.Trace
+org.h2.message.TraceObject
+org.h2.message.TraceSystem
+org.h2.message.TraceWriterAdapter
+org.h2.jdbcx.JdbcDataSource
 org.hibernate.engine.spi.TypedValue
 org.hibernate.tuple.component.AbstractComponentTuplizer
 org.hibernate.tuple.component.PojoComponentTuplizer
