@@ -129,13 +129,13 @@ class Serializer(ABC):
         """
         return NOT_SUPPORT_CROSS_LANGUAGE
 
-    @abstractmethod
     def get_xtype_tag(self):
         """
         Returns
         -------
             a type tag used for setup type mapping between languages.
         """
+        raise RuntimeError("Tag is only for struct.")
 
     def write(self, buffer, value):
         raise NotImplementedError

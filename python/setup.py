@@ -155,6 +155,7 @@ setup(
         f"pyarrow == {pyarrow_version}",
         "numpy" 'dataclasses; python_version<"3.7"',
         'pickle5; python_version<"3.8"',
+        "cloudpickle",
     ],
     distclass=BinaryDistribution,
     ext_modules=ext_modules,
