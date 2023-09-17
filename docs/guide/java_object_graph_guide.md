@@ -141,6 +141,44 @@ ThreadSafeFury fury=Fury.builder()
 Normally compress int is enough. If a number use long, it can't be represented by smaller bytes mostly. In such cases,
 compressing
 
+### Implement a customized serializer
+In some cases, you may want to implement a serializer for your type, especially some class customize serialization by JDK
+writeObject/writeReplace/readObject/readResolve, which is very inefficient. For example, you don't want following `Foo#writeObject`
+got invoked, you can take following `FooSerializer` as an example:
+```java
+class Foo {
+  public long f1;
+  private void writeObject(ObjectOutputStream s) throws IOException {
+    System.out.println(f1);
+    s.defaultWriteObject();
+  }
+}
+
+class FooSerializer implements Serializer<Foo> {
+  public FooSerializer(Fury fury) {
+    super(fury, Foo.class);
+  }
+  
+  @Override
+  public void write(MemoryBuffer buffer, Foo value) {
+    buffer.writeLong(value.f1);
+  }
+
+  @Override
+  public Foo read(MemoryBuffer buffer) {
+    Foo foo = new Foo();
+    foo.f1 = buffer.readLong();
+    return foo;
+  }
+}
+```
+
+Register serializer:
+```java
+Fury fury = getFury();
+fury.registerSerializer(Foo.class, new FooSerializer(fury));
+```
+
 ### Security & Class Registration
 
 `FuryBuilder#requireClassRegistration` can be used to disable class registration, this will allow to deserialize objects
@@ -298,3 +336,10 @@ In such cases, you can invoke `FuryBuilder#withClassVersionCheck` to create fury
 
 `CompatibleMode.COMPATIBLE` has more performance and space cost, do not set it by default if your classes are always consistent between serialization and deserialization.
 
+### Use wrong API for deserialization
+If you serialize an object by invoking `Fury#serialize`, you should invoke `Fury#deserialize` for deserialization instead of 
+`Fury#deserializeJavaObject`.
+
+If you serialize an object by invoking `Fury#serializeJavaObject`, you should invoke `Fury#deserializeJavaObject` for deserialization instead of `Fury#deserializeJavaObjectAndClass`/`Fury#deserialize`.
+
+If you serialize an object by invoking `Fury#serializeJavaObjectAndClass`, you should invoke `Fury#deserializeJavaObjectAndClass` for deserialization instead of `Fury#deserializeJavaObject`/`Fury#deserialize`.
