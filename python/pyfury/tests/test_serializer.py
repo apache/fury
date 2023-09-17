@@ -535,7 +535,7 @@ def test_py_serialize_dataclass():
     assert ser_de(fury, obj2) == obj2
 
 
-def test_lambda():
+def test_function():
     fury = Fury(
         language=Language.PYTHON, ref_tracking=True, require_class_registration=False
     )
@@ -547,3 +547,7 @@ def test_lambda():
 
     c = fury.deserialize(fury.serialize(func))
     assert c(2) == 4
+
+    df = pd.DataFrame({"a": list(range(10))})
+    df_sum = fury.deserialize(fury.serialize(df.sum))
+    assert df_sum().equals(df.sum())
