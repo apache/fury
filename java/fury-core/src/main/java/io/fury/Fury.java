@@ -1268,7 +1268,7 @@ public final class Fury {
       ENABLE_CLASS_REGISTRATION_FORCIBLY = "true".equals(flagValue) || "1".equals(flagValue);
     }
 
-    boolean checkClassVersion = true;
+    boolean checkClassVersion = false;
     Language language = Language.JAVA;
     boolean trackingRef = false;
     boolean basicTypesRefIgnored = true;
