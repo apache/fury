@@ -144,7 +144,7 @@ setup(
     install_requires=[
         'dataclasses; python_version<"3.7"',
         'pickle5; python_version<"3.8"',
-        'cloudpickle',
+        "cloudpickle",
     ],
     extras_require={
         "format": [f"pyarrow == {pyarrow_version}"],
