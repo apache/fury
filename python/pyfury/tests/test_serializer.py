@@ -402,6 +402,10 @@ def test_pickle_fallback():
     new_o1 = fury.deserialize(data1)
     assert o1 == new_o1
 
+    df = pd.DataFrame({"a": list(range(10))})
+    df2 = fury.deserialize(fury.serialize(df))
+    assert df2.equals(df)
+
 
 def test_unsupported_callback():
     fury = Fury(language=Language.PYTHON, ref_tracking=True)
@@ -529,3 +533,17 @@ def test_py_serialize_dataclass():
         f1=None, f2=-2.0, f3="abc", f4=None, f5="xyz", f6=None, f7=None
     )
     assert ser_de(fury, obj2) == obj2
+
+
+def test_lambda():
+    fury = Fury(
+        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+    )
+    c = fury.deserialize(fury.serialize(lambda x: x * 2))
+    assert c(2) == 4
+
+    def func(x):
+        return x * 2
+
+    c = fury.deserialize(fury.serialize(func))
+    assert c(2) == 4
