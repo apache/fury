@@ -144,6 +144,7 @@ setup(
     install_requires=[
         'dataclasses; python_version<"3.7"',
         'pickle5; python_version<"3.8"',
+        "cloudpickle",
     ],
     extras_require={
         "format": [f"pyarrow == {pyarrow_version}"],
@@ -155,6 +156,7 @@ setup(
         f"pyarrow == {pyarrow_version}",
         "numpy" 'dataclasses; python_version<"3.7"',
         'pickle5; python_version<"3.8"',
+        "cloudpickle",
     ],
     distclass=BinaryDistribution,
     ext_modules=ext_modules,
