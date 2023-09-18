@@ -420,21 +420,12 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, StringBuilder value) {
-      int length = value.length();
-      buffer.writeInt(length);
-      for (int i = 0; i < length; i++) {
-        buffer.writeChar(value.charAt(i));
-      }
+      stringSerializer.writeJavaStringBuilder(buffer, value);
     }
 
     @Override
     public StringBuilder read(MemoryBuffer buffer) {
-      int length = buffer.readInt();
-      StringBuilder stringBuilder = new StringBuilder(length);
-      for (int i = 0; i < length; i++) {
-        stringBuilder.append(buffer.readChar());
-      }
-      return stringBuilder;
+      return stringSerializer.readJavaStringBuilder(buffer);
     }
   }
 

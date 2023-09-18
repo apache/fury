@@ -299,7 +299,6 @@ public final class StringSerializer extends Serializer<String> {
       }
     }
   }
-
   public static boolean isAscii(char[] chars) {
     int numChars = chars.length;
     int vectorizedLen = numChars >> 2;
@@ -704,5 +703,118 @@ public final class StringSerializer extends Serializer<String> {
       buffer.readBytes(tmpArray, 0, numBytes);
       return new String(tmpArray, 0, numBytes, StandardCharsets.UTF_8);
     }
+  }
+
+  public void writeJavaStringBuilder(MemoryBuffer buffer, StringBuilder value) {
+    if (isJDK8StringBuilder()) {
+      writeJDK8StringBuilder(buffer, value);
+    } else {
+      writeJDK9PlusStringBuilder(buffer, value);
+    }
+  }
+
+  private void writeJDK8StringBuilder(MemoryBuffer buffer, StringBuilder value) {
+    int length = value.length();
+    buffer.writePositiveVarInt(length);
+    buffer.ensure(buffer.writerIndex() + length);
+    byte[] targetArray = buffer.getHeapMemory();
+    int writerIndex = buffer.writerIndex();
+    if (targetArray != null) {
+      int arrIndex = buffer.unsafeHeapWriterIndex();
+      for (int i = 0; i < length; i++) {
+        targetArray[arrIndex + i] = (byte) value.charAt(i);
+      }
+      buffer.unsafeWriterIndex(writerIndex + length);
+    } else {
+      for (int i = 0; i < length; i++) {
+        buffer.unsafePut(writerIndex++, (byte) value.charAt(i));
+      }
+      buffer.unsafeWriterIndex(writerIndex);
+    }
+  }
+
+  private void writeJDK9PlusStringBuilder(MemoryBuffer buffer, StringBuilder value) {
+    byte[] bytes = getJDK9PlusInternalByteArray(value);
+    int bytesLen = bytes.length;
+    buffer.ensure(buffer.writerIndex() + 9 + bytesLen);
+    byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int targetIndex = buffer.unsafeHeapWriterIndex();
+      int arrIndex = targetIndex;
+      targetArray[arrIndex++] = 0;
+      arrIndex += MemoryUtils.writePositiveVarInt(targetArray, arrIndex, bytesLen);
+      System.arraycopy(bytes, 0, targetArray, arrIndex, bytesLen);
+      buffer.unsafeWriterIndex(buffer.writerIndex() + arrIndex - targetIndex + bytesLen);
+    } else {
+      buffer.unsafePut(buffer.writerIndex(), (byte) 0);
+      buffer.unsafePutPositiveVarInt(buffer.writerIndex() + 1, bytesLen);
+      long offHeapAddress = buffer.getUnsafeAddress();
+      Platform.copyMemory(bytes, Platform.BYTE_ARRAY_OFFSET, null, offHeapAddress + buffer.writerIndex() + 9,
+              bytesLen);
+      buffer.unsafeWriterIndex(buffer.writerIndex() + 9 + bytesLen);
+    }
+  }
+
+  private byte[] getJDK9PlusInternalByteArray(StringBuilder sb) {
+    try {
+      Field valueField = StringBuilder.class.getDeclaredField("value");
+      valueField.setAccessible(true);
+      char[] charArray = (char[]) valueField.get(sb);
+      byte[] byteArray = new byte[charArray.length * 2];
+      for (int i = 0, j = 0; i < charArray.length; i++) {
+        char ch = charArray[i];
+        byteArray[j++] = (byte) (ch >> 8);
+        byteArray[j++] = (byte) ch;
+      }
+      return byteArray;
+    } catch (NoSuchFieldException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public StringBuilder readJavaStringBuilder(MemoryBuffer buffer) {
+    if (isJDK8StringBuilder()) {
+      return readJDK8StringBuilder(buffer);
+    } else {
+      return readJDK9PlusStringBuilder(buffer);
+    }
+  }
+
+  private StringBuilder readJDK8StringBuilder(MemoryBuffer buffer) {
+    int length = buffer.readPositiveVarInt();
+    StringBuilder sb = new StringBuilder(length);
+    byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int arrIndex = buffer.readerIndex();
+      for (int i = 0; i < length; i++) {
+        sb.append((char) (targetArray[arrIndex++] & 0xFF));
+      }
+      buffer.readerIndex(arrIndex);
+    } else {
+      for (int i = 0; i < length; i++) {
+        sb.append((char) (buffer.readByte() & 0xFF));
+      }
+    }
+    return sb;
+  }
+
+  private StringBuilder readJDK9PlusStringBuilder(MemoryBuffer buffer) {
+    int length = buffer.readInt();
+    byte[] bytes = new byte[length];
+    buffer.readBytes(bytes);
+    return new StringBuilder(new String(bytes, StandardCharsets.UTF_8));
+  }
+
+  public boolean isJDK8StringBuilder() {
+    String version = System.getProperty("java.version");
+    if (version.startsWith("1.")) {
+      version = version.substring(2, 3);
+    } else {
+      int dot = version.indexOf(".");
+      if (dot != -1) {
+        version = version.substring(0, dot);
+      }
+    }
+    return Integer.parseInt(version) == 8;
   }
 }
