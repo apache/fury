@@ -254,3 +254,4 @@ sun.rmi.transport.tcp.TCPEndpoint
 sun.swing.SwingLazyValue
 weblogic.ejb20.internal.LocalHomeHandleImpl
 weblogic.jms.common.ObjectMessageImpl
+com.atomikos.icatch.jta.RemoteClientUserTransaction
