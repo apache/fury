@@ -541,6 +541,13 @@ public class ClassResolver {
     if (Externalizable.class.isAssignableFrom(clz)) {
       return false;
     } else {
+      // `AnnotationInvocationHandler#readObject` may invoke `toString` of object, which may be
+      // risky.
+      // For example, JsonObject#toString may invoke `getter`.
+      // Use fury serialization to avoid this.
+      if ("sun.reflect.annotation.AnnotationInvocationHandler".equals(clz.getName())) {
+        return false;
+      }
       return JavaSerializer.getReadObjectMethod(clz) != null
           || JavaSerializer.getWriteObjectMethod(clz) != null;
     }
