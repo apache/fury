@@ -415,7 +415,90 @@ public class Serializers {
     }
   }
 
+  static Tuple2<ToByteFunction, Function> builderCache;
 
+  private static synchronized Tuple2<ToByteFunction, Function> getBuilderFunc() {
+    if (builderCache == null) {
+      Function getValue =
+          (Function) Functions.makeGetterFunction(StringBuilder.class.getSuperclass(), "getValue");
+      if (Platform.JAVA_VERSION > 8) {
+        ToByteFunction getCoder =
+            (ToByteFunction)
+                Functions.makeGetterFunction(StringBuilder.class.getSuperclass(), "getCoder");
+        builderCache = Tuple2.of(getCoder, getValue);
+      } else {
+        builderCache = Tuple2.of(null, getValue);
+      }
+    }
+    return builderCache;
+  }
+
+  public abstract static class AbstractStringBuilderSerializer<T> extends Serializer<T> {
+    protected final ToByteFunction getCoder;
+    protected final Function getValue;
+    protected final StringSerializer stringSerializer;
+
+    public AbstractStringBuilderSerializer(Fury fury, Class<T> type) {
+      super(fury, type);
+      Tuple2<ToByteFunction, Function> builderFunc = getBuilderFunc();
+      getCoder = builderFunc.f0;
+      getValue = builderFunc.f1;
+      stringSerializer = new StringSerializer(fury);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, T value) {
+      if (Platform.JAVA_VERSION > 8) {
+        byte[] v = new byte[0];
+        byte coder = getCoder.applyAsByte(value);
+        try {
+          Method getValueMethod =
+              StringBuilder.class.getSuperclass().getDeclaredMethod("getVCoder");
+          getValueMethod.setAccessible(true);
+          Object valueArray = getValueMethod.invoke(value);
+          v = (byte[]) valueArray;
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+          e.printStackTrace();
+        }
+        if (v.length == 0) {
+          return;
+        }
+        buffer.writeByte(coder);
+        buffer.writePositiveVarInt(v.length);
+        buffer.writeBytes(v, 0, v.length);
+      } else {
+        char[] v = new char[0];
+        try {
+          StringBuilder sb = (StringBuilder) value;
+          int len = sb.length();
+          v = new char[len];
+          Method getCharsMethod =
+              StringBuilder.class
+                  .getSuperclass()
+                  .getDeclaredMethod("getChars", int.class, int.class, char[].class, int.class);
+          getCharsMethod.setAccessible(true);
+          getCharsMethod.invoke(sb, 0, len, v, 0);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+          e.printStackTrace();
+        }
+        if (v.length == 0) {
+          return;
+        }
+        if (StringSerializer.isAscii(v)) {
+          stringSerializer.writeJDK8Ascii(buffer, v);
+        } else {
+          stringSerializer.writeJDK8UTF16(buffer, v);
+        }
+      }
+    }
+  }
+
+  public static final class StringBuilderSerializer
+      extends AbstractStringBuilderSerializer<StringBuilder> {
+
+    public StringBuilderSerializer(Fury fury) {
+      super(fury, StringBuilder.class);
+    }
 
     @Override
     public StringBuilder read(MemoryBuffer buffer) {
