@@ -299,6 +299,7 @@ public final class StringSerializer extends Serializer<String> {
       }
     }
   }
+
   public static boolean isAscii(char[] chars) {
     int numChars = chars.length;
     int vectorizedLen = numChars >> 2;
@@ -706,7 +707,7 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   public void writeJavaStringBuilder(MemoryBuffer buffer, StringBuilder value) {
-    if (isJDK8StringBuilder()) {
+    if (Platform.JAVA_VERSION <= 8) {
       writeJDK8StringBuilder(buffer, value);
     } else {
       writeJDK9PlusStringBuilder(buffer, value);
@@ -734,8 +735,14 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   private void writeJDK9PlusStringBuilder(MemoryBuffer buffer, StringBuilder value) {
-    byte[] bytes = getJDK9PlusInternalByteArray(value);
-    int bytesLen = bytes.length;
+    byte[] bytes = null;
+    if (value != null) {
+      bytes = getJDK9PlusInternalByteArray(value);
+    }
+    int bytesLen = 0;
+    if (bytes != null) {
+      bytesLen = bytes.length;
+    }
     buffer.ensure(buffer.writerIndex() + 9 + bytesLen);
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
@@ -743,37 +750,36 @@ public final class StringSerializer extends Serializer<String> {
       int arrIndex = targetIndex;
       targetArray[arrIndex++] = 0;
       arrIndex += MemoryUtils.writePositiveVarInt(targetArray, arrIndex, bytesLen);
-      System.arraycopy(bytes, 0, targetArray, arrIndex, bytesLen);
+      if (bytes != null) {
+        System.arraycopy(bytes, 0, targetArray, arrIndex, bytesLen);
+      }
       buffer.unsafeWriterIndex(buffer.writerIndex() + arrIndex - targetIndex + bytesLen);
     } else {
       buffer.unsafePut(buffer.writerIndex(), (byte) 0);
       buffer.unsafePutPositiveVarInt(buffer.writerIndex() + 1, bytesLen);
       long offHeapAddress = buffer.getUnsafeAddress();
-      Platform.copyMemory(bytes, Platform.BYTE_ARRAY_OFFSET, null, offHeapAddress + buffer.writerIndex() + 9,
-              bytesLen);
+      Platform.copyMemory(
+          bytes,
+          Platform.BYTE_ARRAY_OFFSET,
+          null,
+          offHeapAddress + buffer.writerIndex() + 9,
+          bytesLen);
       buffer.unsafeWriterIndex(buffer.writerIndex() + 9 + bytesLen);
     }
   }
 
   private byte[] getJDK9PlusInternalByteArray(StringBuilder sb) {
     try {
-      Field valueField = StringBuilder.class.getDeclaredField("value");
+      Field valueField = sb.getClass().getSuperclass().getDeclaredField("value");
       valueField.setAccessible(true);
-      char[] charArray = (char[]) valueField.get(sb);
-      byte[] byteArray = new byte[charArray.length * 2];
-      for (int i = 0, j = 0; i < charArray.length; i++) {
-        char ch = charArray[i];
-        byteArray[j++] = (byte) (ch >> 8);
-        byteArray[j++] = (byte) ch;
-      }
-      return byteArray;
+      return (byte[]) valueField.get(sb);
     } catch (NoSuchFieldException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }
   }
 
   public StringBuilder readJavaStringBuilder(MemoryBuffer buffer) {
-    if (isJDK8StringBuilder()) {
+    if (Platform.JAVA_VERSION <= 8) {
       return readJDK8StringBuilder(buffer);
     } else {
       return readJDK9PlusStringBuilder(buffer);
@@ -799,22 +805,10 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   private StringBuilder readJDK9PlusStringBuilder(MemoryBuffer buffer) {
-    int length = buffer.readInt();
+    byte coder = buffer.readByte();
+    int length = buffer.readPositiveVarInt();
     byte[] bytes = new byte[length];
     buffer.readBytes(bytes);
     return new StringBuilder(new String(bytes, StandardCharsets.UTF_8));
-  }
-
-  public boolean isJDK8StringBuilder() {
-    String version = System.getProperty("java.version");
-    if (version.startsWith("1.")) {
-      version = version.substring(2, 3);
-    } else {
-      int dot = version.indexOf(".");
-      if (dot != -1) {
-        version = version.substring(0, dot);
-      }
-    }
-    return Integer.parseInt(version) == 8;
   }
 }
