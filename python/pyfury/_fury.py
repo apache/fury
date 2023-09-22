@@ -21,7 +21,7 @@ import os
 import sys
 import warnings
 from dataclasses import dataclass
-from typing import Dict, Tuple, TypeVar, Optional, Union, Iterable
+from typing import Dict, Tuple, TypeVar, Union, Iterable
 
 from pyfury.lib import mmh3
 
@@ -75,10 +75,12 @@ try:
 except ImportError:
     np = None
 
+from cloudpickle import Pickler
+
 if sys.version_info[:2] < (3, 8):  # pragma: no cover
-    import pickle5 as pickle  # nosec  # pylint: disable=import_pickle
+    from pickle5 import Unpickler
 else:
-    import pickle  # nosec  # pylint: disable=import_pickle
+    from pickle import Unpickler
 
 logger = logging.getLogger(__name__)
 
@@ -599,7 +601,6 @@ class Fury:
         "_native_objects",
     )
     serialization_context: "SerializationContext"
-    unpickler: Optional[pickle.Unpickler]
 
     def __init__(
         self,
@@ -637,7 +638,7 @@ class Fury:
                 RuntimeWarning,
                 stacklevel=2,
             )
-            self.pickler = pickle.Pickler(self.buffer)
+            self.pickler = Pickler(self.buffer)
         else:
             self.pickler = _PicklerStub(self.buffer)
         self.unpickler = None
@@ -685,7 +686,7 @@ class Fury:
         self._buffer_callback = buffer_callback
         self._unsupported_callback = unsupported_callback
         if buffer is not None:
-            self.pickler = pickle.Pickler(buffer)
+            self.pickler = Pickler(buffer)
         else:
             self.buffer.writer_index = 0
             buffer = self.buffer
@@ -832,7 +833,7 @@ class Fury:
         if self.require_class_registration:
             self.unpickler = _UnpicklerStub(buffer)
         else:
-            self.unpickler = pickle.Unpickler(buffer)
+            self.unpickler = Unpickler(buffer)
         if unsupported_objects is not None:
             self._unsupported_objects = iter(unsupported_objects)
         reader_index = buffer.reader_index

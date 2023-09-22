@@ -24,75 +24,75 @@ cdef class Getter:
     cdef inline c_bool is_null_at(self, int i):
         return self.getter.IsNullAt(i)
 
-    cdef get_boolean(self, int i):
+    cpdef get_boolean(self, int i):
         if self.is_null_at(i):
             return None
         return self.getter.GetBoolean(i)
 
-    cdef get_int8(self, int i):
+    cpdef get_int8(self, int i):
         if self.is_null_at(i):
             return None
         return self.getter.GetInt8(i)
 
-    cdef get_int16(self, int i):
+    cpdef get_int16(self, int i):
         if self.is_null_at(i):
             return None
         return self.getter.GetInt16(i)
 
-    cdef get_int32(self, int i):
+    cpdef get_int32(self, int i):
         if self.is_null_at(i):
             return None
         return self.getter.GetInt32(i)
 
-    cdef get_int64(self, int i):
+    cpdef get_int64(self, int i):
         if self.is_null_at(i):
             return None
         return self.getter.GetInt64(i)
 
-    cdef get_float(self, int i):
+    cpdef get_float(self, int i):
         if self.is_null_at(i):
             return None
         return self.getter.GetFloat(i)
 
-    cdef get_double(self, int i):
+    cpdef get_double(self, int i):
         if self.is_null_at(i):
             return None
         return self.getter.GetDouble(i)
 
-    cdef get_date(self, int i):
+    cpdef get_date(self, int i):
         if self.is_null_at(i):
             return None
         cdef int32_t days = self.getter.GetInt32(i)
         return date(1970, 1, 1) + timedelta(days=days)
 
-    cdef get_datetime(self, int i):
+    cpdef get_datetime(self, int i):
         if self.is_null_at(i):
             return None
         cdef int64_t timestamp = self.getter.GetInt64(i)
         # TimestampType represent micro seconds
         return datetime.fromtimestamp(float(timestamp) / 1000000)
 
-    cdef get_binary(self, int i):
+    cpdef get_binary(self, int i):
         if self.is_null_at(i):
             return None
         cdef unsigned char* binary_data
         cdef int32_t size = self.getter.GetBinary(i, &binary_data)
         return binary_data[:size]
 
-    cdef get_str(self, int i):
+    cpdef get_str(self, int i):
         if self.is_null_at(i):
             return None
         cdef unsigned char* binary_data
         cdef int32_t size = self.getter.GetBinary(i, &binary_data)
         return binary_data[:size].decode("UTF-8")
 
-    cdef RowData get_struct(self, int i):
+    cpdef RowData get_struct(self, int i):
         pass
 
-    cdef ArrayData get_array_data(self, int i):
+    cpdef ArrayData get_array_data(self, int i):
         pass
 
-    cdef MapData get_map_data(self, int i):
+    cpdef MapData get_map_data(self, int i):
         pass
 
 
@@ -126,20 +126,20 @@ cdef class ArrayData(Getter):
     def size_bytes(self) -> int:
         return self.data.get().size_bytes()
 
-    cdef RowData get_struct(self, int i):
+    cpdef RowData get_struct(self, int i):
         cdef DataType data_type = self.type_.value_type
         # assert_type(i, data_type, StructType)
         if self.is_null_at(i):
             return None
         return RowData.wrap(self.data.get().GetStruct(i), pa.schema(data_type))
 
-    cdef ArrayData get_array_data(self, int i):
+    cpdef ArrayData get_array_data(self, int i):
         cdef DataType data_type = self.type_.value_type
         if self.is_null_at(i):
             return None
         return ArrayData.wrap(self.data.get().GetArray(i), data_type)
 
-    cdef MapData get_map_data(self, int i):
+    cpdef MapData get_map_data(self, int i):
         cdef DataType data_type = self.type_.value_type
         if self.is_null_at(i):
             return None
@@ -156,7 +156,7 @@ cdef class ArrayData(Getter):
         key = id(self.type_.value_type)
         reader = reader_map.get(key)
         if reader is None:
-            reader = get_reader(self.type_.value_type, self)
+            reader = get_reader(self.type_.value_type, type(self))
             reader_map[key] = reader
         if self.is_null_at(i):
             return None
@@ -172,7 +172,7 @@ cdef class ArrayData(Getter):
             int length = self.num_elements
             int i
             str result = "["
-        getter = get_reader(self.type_.value_type, self)
+        getter = get_reader(self.type_.value_type, type(self))
         for i in range(length):
             if i != 0:
                 result += ','
@@ -276,20 +276,20 @@ cdef class RowData(Getter):
         end_offset = self.base_offset() + self.size_bytes()
         return self.buffer().to_bytes()[self.base_offset():end_offset]
 
-    cdef RowData get_struct(self, int i):
+    cpdef RowData get_struct(self, int i):
         if self.is_null_at(i):
             return None
         cdef DataType data_type = self.schema.field(i).type
         # assert_type(i, self.schema.field(i).type, StructType)
         return RowData.wrap(self.data.get().GetStruct(i), pa.schema(data_type))
 
-    cdef ArrayData get_array_data(self, int i):
+    cpdef ArrayData get_array_data(self, int i):
         if self.is_null_at(i):
             return None
         cdef DataType data_type = self.schema.field(i).type
         return ArrayData.wrap(self.data.get().GetArray(i), data_type)
 
-    cdef MapData get_map_data(self, int i):
+    cpdef MapData get_map_data(self, int i):
         if self.is_null_at(i):
             return None
         cdef DataType data_type = self.schema.field(i).type
@@ -315,7 +315,7 @@ cdef class RowData(Getter):
             readers = []
             for field_index in range(len(self.schema)):
                 readers.append(get_reader(
-                    self.schema.field(field_index).type, self))
+                    self.schema.field(field_index).type, type(self)))
             reader_map[key] = readers
 
         if self.is_null_at(i):
@@ -336,7 +336,7 @@ cdef class RowData(Getter):
             if i != 0:
                 result += ','
             field = self.schema.field(i)
-            getter = get_reader(field.type, self)
+            getter = get_reader(field.type, type(self))
             result += field.name
             result += '='
             if self.is_null_at(i):
@@ -353,33 +353,33 @@ def assert_type(i, data_type, type_cls):
                         format(i, data_type, type_cls))
 
 
-cdef get_reader(DataType data_type, Getter obj):
+def get_reader(data_type, type_):
     if types.is_boolean(data_type):
-        return obj.get_boolean
+        return type_.get_boolean
     elif types.is_int8(data_type):
-        return obj.get_int8
+        return type_.get_int8
     elif types.is_int16(data_type):
-        return obj.get_int16
+        return type_.get_int16
     elif types.is_int32(data_type):
-        return obj.get_int32
+        return type_.get_int32
     elif types.is_int64(data_type):
-        return obj.get_int64
+        return type_.get_int64
     elif types.is_float32(data_type):
-        return obj.get_float
+        return type_.get_float
     elif types.is_float64(data_type):
-        return obj.get_double
+        return type_.get_double
     elif types.is_date32(data_type):
-        return obj.get_date
+        return type_.get_date
     elif types.is_timestamp(data_type):
-        return obj.get_datetime
+        return type_.get_datetime
     elif types.is_binary(data_type):
-        return obj.get_binary
+        return type_.get_binary
     elif types.is_string(data_type):
-        return obj.get_str
+        return type_.get_str
     elif types.is_struct(data_type):
-        return obj.get_struct
+        return type_.get_struct
     elif types.is_list(data_type):
-        return obj.get_array_data
+        return type_.get_array_data
     elif types.is_map(data_type):
-        return obj.get_map_data
+        return type_.get_map_data
     raise TypeError("Unsupported type: " + str(data_type))

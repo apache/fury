@@ -14,7 +14,7 @@ from typing import TypeVar, Union, Iterable, get_type_hints
 
 from pyfury._util import get_bit, set_bit, clear_bit
 from pyfury._fury import Language, OpaqueObject
-from pyfury._fury import _PicklerStub, _UnpicklerStub
+from pyfury._fury import _PicklerStub, _UnpicklerStub, Pickler, Unpickler
 from pyfury._fury import _ENABLE_CLASS_REGISTRATION_FORCIBLY
 from pyfury.error import ClassNotCompatibleError
 from pyfury.lib import mmh3
@@ -832,7 +832,7 @@ cdef class Fury:
                 RuntimeWarning,
                 stacklevel=2,
             )
-            self.pickler = pickle.Pickler(self.buffer)
+            self.pickler = Pickler(self.buffer)
         else:
             self.pickler = _PicklerStub(self.buffer)
         self.unpickler = None
@@ -872,7 +872,7 @@ cdef class Fury:
         self._buffer_callback = buffer_callback
         self._unsupported_callback = unsupported_callback
         if buffer is not None:
-            self.pickler = pickle.Pickler(self.buffer)
+            self.pickler = Pickler(self.buffer)
         else:
             self.buffer.writer_index = 0
             buffer = self.buffer
@@ -1032,7 +1032,7 @@ cdef class Fury:
         if self.require_class_registration:
             self.unpickler = _UnpicklerStub(buffer)
         else:
-            self.unpickler = pickle.Unpickler(buffer)
+            self.unpickler = Unpickler(buffer)
         if unsupported_objects is not None:
             self._unsupported_objects = iter(unsupported_objects)
         cdef int32_t reader_index = buffer.reader_index
