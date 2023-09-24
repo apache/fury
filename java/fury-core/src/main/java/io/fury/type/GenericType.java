@@ -39,6 +39,8 @@ import java.util.function.Predicate;
 // TODO(chaokunyang) refine generics which can be inspired by spring ResolvableType.
 @SuppressWarnings("UnstableApiUsage")
 public class GenericType {
+  public static GenericType OBJECT_TYPE = GenericType.build(Object.class);
+
   static final Predicate<Type> defaultFinalPredicate =
       type -> {
         if (type.getClass() == Class.class) {
@@ -58,6 +60,7 @@ public class GenericType {
   final boolean isFinal;
   // Used to cache serializer for final class to avoid hash lookup for serializer.
   Serializer<?> serializer;
+  private Boolean trackingRef;
 
   public GenericType(TypeToken<?> typeToken, boolean isFinal, GenericType... typeParameters) {
     this.typeToken = typeToken;
@@ -197,6 +200,14 @@ public class GenericType {
     } else {
       return null;
     }
+  }
+
+  public boolean trackingRef(ClassResolver classResolver) {
+     Boolean trackingRef = this.trackingRef;
+    if (trackingRef == null) {
+      trackingRef = this.trackingRef = classResolver.needToWriteRef(cls);
+    }
+    return trackingRef;
   }
 
   public boolean hasGenericParameters() {
