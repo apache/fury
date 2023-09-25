@@ -29,7 +29,6 @@ import io.fury.util.function.Functions;
 import io.fury.util.function.ToByteFunction;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -454,23 +453,7 @@ public class Serializers {
         buffer.writeByte(coder);
         buffer.writeBytesWithSizeEmbedded(v);
       } else {
-        char[] v = new char[0];
-        try {
-          StringBuilder sb = (StringBuilder) value;
-          int len = sb.length();
-          v = new char[len];
-          Method getCharsMethod =
-              StringBuilder.class
-                  .getSuperclass()
-                  .getDeclaredMethod("getChars", int.class, int.class, char[].class, int.class);
-          getCharsMethod.setAccessible(true);
-          getCharsMethod.invoke(sb, 0, len, v, 0);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-          e.printStackTrace();
-        }
-        if (v.length == 0) {
-          return;
-        }
+        char[] v = (char[]) getValue.apply(value);
         if (StringSerializer.isAscii(v)) {
           stringSerializer.writeJDK8Ascii(buffer, v);
         } else {
@@ -493,73 +476,8 @@ public class Serializers {
     }
   }
 
-  static Tuple2<ToByteFunction, Function> bufferCache;
-
-  private static synchronized Tuple2<ToByteFunction, Function> getBufferFunc() {
-    if (bufferCache == null) {
-      Function getValue =
-          (Function) Functions.makeGetterFunction(StringBuffer.class.getSuperclass(), "getValue");
-      if (Platform.JAVA_VERSION > 8) {
-        ToByteFunction getCoder =
-            (ToByteFunction)
-                Functions.makeGetterFunction(StringBuffer.class.getSuperclass(), "getCoder");
-        bufferCache = Tuple2.of(getCoder, getValue);
-      } else {
-        bufferCache = Tuple2.of(null, getValue);
-      }
-    }
-    return bufferCache;
-  }
-
-  public abstract static class AbstractStringBufferSerializer<T> extends Serializer<T> {
-    protected final ToByteFunction getCoder;
-    protected final Function getValue;
-    protected final StringSerializer stringSerializer;
-
-    public AbstractStringBufferSerializer(Fury fury, Class type) {
-      super(fury, type);
-      Tuple2<ToByteFunction, Function> bufferFunc = getBufferFunc();
-      getCoder = bufferFunc.f0;
-      getValue = bufferFunc.f1;
-      stringSerializer = new StringSerializer(fury);
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, T value) {
-      if (Platform.JAVA_VERSION > 8) {
-        byte coder = getCoder.applyAsByte(value);
-        byte[] v = (byte[]) getValue.apply(value);
-        buffer.writeByte(coder);
-        buffer.writeBytesWithSizeEmbedded(v);
-      } else {
-        char[] v = new char[0];
-        try {
-          StringBuffer sb = (StringBuffer) value;
-          int len = sb.length();
-          v = new char[len];
-          Method getCharsMethod =
-              StringBuffer.class
-                  .getSuperclass()
-                  .getDeclaredMethod("getChars", int.class, int.class, char[].class, int.class);
-          getCharsMethod.setAccessible(true);
-          getCharsMethod.invoke(sb, 0, len, v, 0);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-          e.printStackTrace();
-        }
-        if (v.length == 0) {
-          return;
-        }
-        if (StringSerializer.isAscii(v)) {
-          stringSerializer.writeJDK8Ascii(buffer, v);
-        } else {
-          stringSerializer.writeJDK8UTF16(buffer, v);
-        }
-      }
-    }
-  }
-
   public static final class StringBufferSerializer
-      extends AbstractStringBufferSerializer<StringBuffer> {
+      extends AbstractStringBuilderSerializer<StringBuffer> {
 
     public StringBufferSerializer(Fury fury) {
       super(fury, StringBuffer.class);
