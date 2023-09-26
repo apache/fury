@@ -26,9 +26,9 @@ import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.Utils;
 import io.fury.util.function.Functions;
-import io.fury.util.function.ToByteFunction;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -414,15 +414,23 @@ public class Serializers {
     }
   }
 
-  static Tuple2<ToByteFunction, Function> builderCache;
+  static Tuple2<Function, Function> builderCache;
 
-  private static synchronized Tuple2<ToByteFunction, Function> getBuilderFunc() {
+  private static synchronized Tuple2<Function, Function> getBuilderFunc() {
     if (builderCache == null) {
       Function getValue =
           (Function) Functions.makeGetterFunction(StringBuilder.class.getSuperclass(), "getValue");
       if (Platform.JAVA_VERSION > 8) {
-        ToByteFunction getCoder =
-            (ToByteFunction)
+        Method getCoderMethod;
+        try {
+          getCoderMethod = StringBuilder.class.getSuperclass().getDeclaredMethod("getCoder");
+        } catch (NoSuchMethodException e) {
+          throw new RuntimeException(e);
+        }
+        //        ToIntFunction<CharSequence> o = (ToIntFunction<CharSequence>)
+        // makeGetterFunction(lookup, lookup.unreflect(getCoder), int.class);
+        Function getCoder =
+            (Function)
                 Functions.makeGetterFunction(StringBuilder.class.getSuperclass(), "getCoder");
         builderCache = Tuple2.of(getCoder, getValue);
       } else {
@@ -434,13 +442,13 @@ public class Serializers {
 
   public abstract static class AbstractStringBuilderSerializer<T extends CharSequence>
       extends Serializer<T> {
-    protected final ToByteFunction getCoder;
+    protected final Function getCoder;
     protected final Function getValue;
     protected final StringSerializer stringSerializer;
 
     public AbstractStringBuilderSerializer(Fury fury, Class<T> type) {
       super(fury, type);
-      Tuple2<ToByteFunction, Function> builderFunc = getBuilderFunc();
+      Tuple2<Function, Function> builderFunc = getBuilderFunc();
       getCoder = builderFunc.f0;
       getValue = builderFunc.f1;
       stringSerializer = new StringSerializer(fury);
@@ -449,7 +457,7 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, T value) {
       if (Platform.JAVA_VERSION > 8) {
-        byte coder = getCoder.applyAsByte(value);
+        byte coder = (byte) getCoder.apply(value);
         byte[] v = (byte[]) getValue.apply(value);
         buffer.writeByte(coder);
         buffer.writeBytesWithSizeEmbedded(v);
