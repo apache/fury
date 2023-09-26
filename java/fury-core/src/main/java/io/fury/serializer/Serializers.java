@@ -16,6 +16,8 @@
 
 package io.fury.serializer;
 
+import static io.fury.util.function.Functions.makeGetterFunction;
+
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Primitives;
 import io.fury.Fury;
@@ -25,7 +27,6 @@ import io.fury.resolver.ClassResolver;
 import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.Utils;
-import io.fury.util.function.Functions;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -41,6 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 
 /**
@@ -414,25 +416,22 @@ public class Serializers {
     }
   }
 
-  static Tuple2<Function, Function> builderCache;
+  static Tuple2<ToIntFunction, Function> builderCache;
 
-  private static synchronized Tuple2<Function, Function> getBuilderFunc() {
+  private static synchronized Tuple2<ToIntFunction, Function> getBuilderFunc() {
     if (builderCache == null) {
       Function getValue =
-          (Function) Functions.makeGetterFunction(StringBuilder.class.getSuperclass(), "getValue");
+          (Function) makeGetterFunction(StringBuilder.class.getSuperclass(), "getValue");
       if (Platform.JAVA_VERSION > 8) {
-        Method getCoderMethod;
         try {
-          getCoderMethod = StringBuilder.class.getSuperclass().getDeclaredMethod("getCoder");
+          Method getCoderMethod = StringBuilder.class.getSuperclass().getDeclaredMethod("getCoder");
+          ToIntFunction<CharSequence> getCoder =
+              (ToIntFunction<CharSequence>) makeGetterFunction(getCoderMethod, int.class);
+          builderCache = Tuple2.of(getCoder, getValue);
         } catch (NoSuchMethodException e) {
           throw new RuntimeException(e);
         }
-        //        ToIntFunction<CharSequence> o = (ToIntFunction<CharSequence>)
-        // makeGetterFunction(lookup, lookup.unreflect(getCoder), int.class);
-        Function getCoder =
-            (Function)
-                Functions.makeGetterFunction(StringBuilder.class.getSuperclass(), "getCoder");
-        builderCache = Tuple2.of(getCoder, getValue);
+
       } else {
         builderCache = Tuple2.of(null, getValue);
       }
@@ -442,22 +441,27 @@ public class Serializers {
 
   public abstract static class AbstractStringBuilderSerializer<T extends CharSequence>
       extends Serializer<T> {
-    protected final Function getCoder;
+    protected final ToIntFunction getCoder;
     protected final Function getValue;
     protected final StringSerializer stringSerializer;
 
     public AbstractStringBuilderSerializer(Fury fury, Class<T> type) {
       super(fury, type);
-      Tuple2<Function, Function> builderFunc = getBuilderFunc();
+      Tuple2<ToIntFunction, Function> builderFunc = getBuilderFunc();
       getCoder = builderFunc.f0;
       getValue = builderFunc.f1;
       stringSerializer = new StringSerializer(fury);
     }
 
     @Override
+    public short getXtypeId() {
+      return (short) -Type.STRING.getId();
+    }
+
+    @Override
     public void write(MemoryBuffer buffer, T value) {
       if (Platform.JAVA_VERSION > 8) {
-        byte coder = (byte) getCoder.apply(value);
+        int coder = getCoder.applyAsInt(value);
         byte[] v = (byte[]) getValue.apply(value);
         buffer.writeByte(coder);
         buffer.writeBytesWithSizeEmbedded(v);
