@@ -432,7 +432,8 @@ public class Serializers {
     return builderCache;
   }
 
-  public abstract static class AbstractStringBuilderSerializer<T> extends Serializer<T> {
+  public abstract static class AbstractStringBuilderSerializer<T extends CharSequence>
+      extends Serializer<T> {
     protected final ToByteFunction getCoder;
     protected final Function getValue;
     protected final StringSerializer stringSerializer;
@@ -455,9 +456,9 @@ public class Serializers {
       } else {
         char[] v = (char[]) getValue.apply(value);
         if (StringSerializer.isAscii(v)) {
-          stringSerializer.writeJDK8Ascii(buffer, v);
+          stringSerializer.writeJDK8Ascii(buffer, v, v.length);
         } else {
-          stringSerializer.writeJDK8UTF16(buffer, v);
+          stringSerializer.writeJDK8UTF16(buffer, v, v.length);
         }
       }
     }
