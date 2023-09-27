@@ -481,7 +481,7 @@ public class Serializers {
       } else {
         char[] v = (char[]) getValue.apply(value);
         if (StringSerializer.isAscii(v)) {
-          stringSerializer.writeJDK8Ascii(buffer, v, v.length);
+          stringSerializer.writeJDK8Ascii(buffer, v, value.length());
         } else {
           stringSerializer.writeJDK8UTF16(buffer, v, v.length);
         }
