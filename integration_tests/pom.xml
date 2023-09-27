@@ -21,7 +21,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.furyio</groupId>
-  <version>0.1.1</version>
+  <version>0.1.2</version>
   <artifactId>fury-integration-tests</artifactId>
   <packaging>jar</packaging>
 
