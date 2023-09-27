@@ -454,6 +454,11 @@ public class Serializers {
     }
 
     @Override
+    public void xwrite(MemoryBuffer buffer, T value) {
+      stringSerializer.writeUTF8String(buffer, value.toString());
+    }
+
+    @Override
     public short getXtypeId() {
       return (short) -Type.STRING.getId();
     }
@@ -464,7 +469,15 @@ public class Serializers {
         int coder = getCoder.applyAsInt(value);
         byte[] v = (byte[]) getValue.apply(value);
         buffer.writeByte(coder);
-        buffer.writeBytesWithSizeEmbedded(v);
+        if (coder == 0) {
+          buffer.writePrimitiveArrayWithSizeEmbedded(v, Platform.BYTE_ARRAY_OFFSET, value.length());
+        } else {
+          if (coder != 1) {
+            throw new UnsupportedOperationException("Unsupported coder " + coder);
+          }
+          buffer.writePrimitiveArrayWithSizeEmbedded(
+              v, Platform.BYTE_ARRAY_OFFSET, value.length() << 1);
+        }
       } else {
         char[] v = (char[]) getValue.apply(value);
         if (StringSerializer.isAscii(v)) {
@@ -487,6 +500,11 @@ public class Serializers {
     public StringBuilder read(MemoryBuffer buffer) {
       return new StringBuilder(stringSerializer.readJavaString(buffer));
     }
+
+    @Override
+    public StringBuilder xread(MemoryBuffer buffer) {
+      return new StringBuilder(stringSerializer.readUTF8String(buffer));
+    }
   }
 
   public static final class StringBufferSerializer
@@ -499,6 +517,11 @@ public class Serializers {
     @Override
     public StringBuffer read(MemoryBuffer buffer) {
       return new StringBuffer(stringSerializer.readJavaString(buffer));
+    }
+
+    @Override
+    public StringBuffer xread(MemoryBuffer buffer) {
+      return new StringBuffer(stringSerializer.readUTF8String(buffer));
     }
   }
 
