@@ -483,7 +483,7 @@ public class Serializers {
         if (StringSerializer.isAscii(v)) {
           stringSerializer.writeJDK8Ascii(buffer, v, value.length());
         } else {
-          stringSerializer.writeJDK8UTF16(buffer, v, v.length);
+          stringSerializer.writeJDK8UTF16(buffer, v, value.length());
         }
       }
     }
