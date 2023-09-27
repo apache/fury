@@ -16,9 +16,12 @@
 
 package io.fury.serializer;
 
+import static io.fury.util.function.Functions.makeGetterFunction;
+
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Primitives;
 import io.fury.Fury;
+import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.type.Type;
@@ -26,6 +29,7 @@ import io.fury.util.Platform;
 import io.fury.util.Utils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -37,6 +41,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 
 /**
@@ -410,31 +416,46 @@ public class Serializers {
     }
   }
 
-  public static final class StringBuilderSerializer extends Serializer<StringBuilder> {
-    private final StringSerializer stringSerializer;
+  static Tuple2<ToIntFunction, Function> builderCache;
 
-    public StringBuilderSerializer(Fury fury) {
-      super(fury, StringBuilder.class);
-      stringSerializer = new StringSerializer(fury);
-    }
+  private static synchronized Tuple2<ToIntFunction, Function> getBuilderFunc() {
+    if (builderCache == null) {
+      Function getValue =
+          (Function) makeGetterFunction(StringBuilder.class.getSuperclass(), "getValue");
+      if (Platform.JAVA_VERSION > 8) {
+        try {
+          Method getCoderMethod = StringBuilder.class.getSuperclass().getDeclaredMethod("getCoder");
+          ToIntFunction<CharSequence> getCoder =
+              (ToIntFunction<CharSequence>) makeGetterFunction(getCoderMethod, int.class);
+          builderCache = Tuple2.of(getCoder, getValue);
+        } catch (NoSuchMethodException e) {
+          throw new RuntimeException(e);
+        }
 
-    @Override
-    public void write(MemoryBuffer buffer, StringBuilder value) {
-      stringSerializer.writeJavaString(buffer, value.toString());
+      } else {
+        builderCache = Tuple2.of(null, getValue);
+      }
     }
-
-    @Override
-    public StringBuilder read(MemoryBuffer buffer) {
-      return new StringBuilder(stringSerializer.readJavaString(buffer));
-    }
+    return builderCache;
   }
 
-  public static final class StringBufferSerializer extends Serializer<StringBuffer> {
-    private final StringSerializer stringSerializer;
+  public abstract static class AbstractStringBuilderSerializer<T extends CharSequence>
+      extends Serializer<T> {
+    protected final ToIntFunction getCoder;
+    protected final Function getValue;
+    protected final StringSerializer stringSerializer;
 
-    public StringBufferSerializer(Fury fury) {
-      super(fury, StringBuffer.class);
+    public AbstractStringBuilderSerializer(Fury fury, Class<T> type) {
+      super(fury, type);
+      Tuple2<ToIntFunction, Function> builderFunc = getBuilderFunc();
+      getCoder = builderFunc.f0;
+      getValue = builderFunc.f1;
       stringSerializer = new StringSerializer(fury);
+    }
+
+    @Override
+    public void xwrite(MemoryBuffer buffer, T value) {
+      stringSerializer.writeUTF8String(buffer, value.toString());
     }
 
     @Override
@@ -443,13 +464,54 @@ public class Serializers {
     }
 
     @Override
-    public void write(MemoryBuffer buffer, StringBuffer value) {
-      stringSerializer.writeJavaString(buffer, value.toString());
+    public void write(MemoryBuffer buffer, T value) {
+      if (Platform.JAVA_VERSION > 8) {
+        int coder = getCoder.applyAsInt(value);
+        byte[] v = (byte[]) getValue.apply(value);
+        buffer.writeByte(coder);
+        if (coder == 0) {
+          buffer.writePrimitiveArrayWithSizeEmbedded(v, Platform.BYTE_ARRAY_OFFSET, value.length());
+        } else {
+          if (coder != 1) {
+            throw new UnsupportedOperationException("Unsupported coder " + coder);
+          }
+          buffer.writePrimitiveArrayWithSizeEmbedded(
+              v, Platform.BYTE_ARRAY_OFFSET, value.length() << 1);
+        }
+      } else {
+        char[] v = (char[]) getValue.apply(value);
+        if (StringSerializer.isAscii(v)) {
+          stringSerializer.writeJDK8Ascii(buffer, v, value.length());
+        } else {
+          stringSerializer.writeJDK8UTF16(buffer, v, value.length());
+        }
+      }
+    }
+  }
+
+  public static final class StringBuilderSerializer
+      extends AbstractStringBuilderSerializer<StringBuilder> {
+
+    public StringBuilderSerializer(Fury fury) {
+      super(fury, StringBuilder.class);
     }
 
     @Override
-    public void xwrite(MemoryBuffer buffer, StringBuffer value) {
-      stringSerializer.writeUTF8String(buffer, value.toString());
+    public StringBuilder read(MemoryBuffer buffer) {
+      return new StringBuilder(stringSerializer.readJavaString(buffer));
+    }
+
+    @Override
+    public StringBuilder xread(MemoryBuffer buffer) {
+      return new StringBuilder(stringSerializer.readUTF8String(buffer));
+    }
+  }
+
+  public static final class StringBufferSerializer
+      extends AbstractStringBuilderSerializer<StringBuffer> {
+
+    public StringBufferSerializer(Fury fury) {
+      super(fury, StringBuffer.class);
     }
 
     @Override

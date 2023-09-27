@@ -156,9 +156,9 @@ public final class StringSerializer extends Serializer<String> {
   public void writeJava8StringCompressed(MemoryBuffer buffer, String value) {
     final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
     if (isAscii(chars)) {
-      writeJDK8Ascii(buffer, chars);
+      writeJDK8Ascii(buffer, chars, chars.length);
     } else {
-      writeJDK8UTF16(buffer, chars);
+      writeJDK8UTF16(buffer, chars, chars.length);
     }
   }
 
@@ -289,9 +289,9 @@ public final class StringSerializer extends Serializer<String> {
       final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
       if (compressString) {
         if (isAscii(chars)) {
-          writeJDK8Ascii(buffer, chars);
+          writeJDK8Ascii(buffer, chars, chars.length);
         } else {
-          writeJDK8UTF16(buffer, chars);
+          writeJDK8UTF16(buffer, chars, chars.length);
         }
       } else {
         int numBytes = MathUtils.doubleExact(value.length());
@@ -382,8 +382,7 @@ public final class StringSerializer extends Serializer<String> {
     buffer.unsafeWriterIndex(writerIndex);
   }
 
-  public void writeJDK8Ascii(MemoryBuffer buffer, char[] chars) {
-    final int strLen = chars.length;
+  public void writeJDK8Ascii(MemoryBuffer buffer, char[] chars, final int strLen) {
     int writerIndex = buffer.writerIndex();
     // The `ensure` ensure next operations are safe without bound checks,
     // and inner heap buffer doesn't change.
@@ -413,8 +412,7 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  public void writeJDK8UTF16(MemoryBuffer buffer, char[] chars) {
-    int strLen = chars.length;
+  public void writeJDK8UTF16(MemoryBuffer buffer, char[] chars, int strLen) {
     int numBytes = MathUtils.doubleExact(strLen);
     if (Platform.IS_LITTLE_ENDIAN) {
       buffer.writeByte(UTF16);
