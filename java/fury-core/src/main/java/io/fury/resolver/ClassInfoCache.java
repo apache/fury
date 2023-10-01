@@ -16,6 +16,8 @@
 
 package io.fury.resolver;
 
+import io.fury.serializer.Serializer;
+
 /**
  * A helper class for caching {@link ClassInfo} to reduce map loop up.
  *
@@ -26,6 +28,10 @@ public class ClassInfoCache {
 
   public ClassInfoCache(ClassInfo classInfo) {
     this.classInfo = classInfo;
+  }
+
+  public Serializer<?> getSerializer() {
+    return classInfo.serializer;
   }
 
   @Override

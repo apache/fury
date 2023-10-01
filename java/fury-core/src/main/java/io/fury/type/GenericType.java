@@ -39,8 +39,6 @@ import java.util.function.Predicate;
 // TODO(chaokunyang) refine generics which can be inspired by spring ResolvableType.
 @SuppressWarnings("UnstableApiUsage")
 public class GenericType {
-  public static GenericType OBJECT_TYPE = GenericType.build(Object.class);
-
   static final Predicate<Type> defaultFinalPredicate =
       type -> {
         if (type.getClass() == Class.class) {
@@ -81,6 +79,14 @@ public class GenericType {
     }
   }
 
+  public static GenericType build(TypeToken<?> type) {
+    return build(type.getType());
+  }
+
+  public static GenericType build(Type type) {
+    return build(type, defaultFinalPredicate);
+  }
+
   /**
    * Build generics based on an {@code context} which capture generic type information.
    *
@@ -102,10 +108,6 @@ public class GenericType {
     return build(context, type, defaultFinalPredicate);
   }
 
-  public static GenericType build(TypeToken<?> context, Type type, Predicate<Type> finalPredicate) {
-    return build(context.resolveType(type).getType(), finalPredicate);
-  }
-
   public static GenericType build(Class<?> context, Type type) {
     return build(context, type, defaultFinalPredicate);
   }
@@ -114,12 +116,8 @@ public class GenericType {
     return build(TypeToken.of(context), type, finalPredicate);
   }
 
-  public static GenericType build(TypeToken<?> type) {
-    return build(type.getType());
-  }
-
-  public static GenericType build(Type type) {
-    return build(type, defaultFinalPredicate);
+  public static GenericType build(TypeToken<?> context, Type type, Predicate<Type> finalPredicate) {
+    return build(context.resolveType(type).getType(), finalPredicate);
   }
 
   @SuppressWarnings("rawtypes")
@@ -203,7 +201,7 @@ public class GenericType {
   }
 
   public boolean trackingRef(ClassResolver classResolver) {
-     Boolean trackingRef = this.trackingRef;
+    Boolean trackingRef = this.trackingRef;
     if (trackingRef == null) {
       trackingRef = this.trackingRef = classResolver.needToWriteRef(cls);
     }

@@ -66,18 +66,19 @@ import java.util.concurrent.ConcurrentSkipListSet;
 public class CollectionSerializers {
   /**
    * Default unset bitmap flags:
-   *   <ul>
-   *     <li>HAS_NULL: false</li>
-   *     <li>TRACKING_REF: false</li>
-   *     <li>NOT_DECL_ELEMENT_TYPE: false</li>
-   *     <li>NOT_SAME_TYPE: false</li>
-   *   </ul>
+   *
+   * <ul>
+   *   <li>TRACKING_REF: false
+   *   <li>HAS_NULL: false
+   *   <li>NOT_DECL_ELEMENT_TYPE: false
+   *   <li>NOT_SAME_TYPE: false
+   * </ul>
    */
   public static class Flags {
-    /** Whether collection has null. */
-    public static int HAS_NULL = 0b1;
     /** Whether track elements ref. */
-    public static int TRACKING_REF = 0b10;
+    public static int TRACKING_REF = 0b1;
+    /** Whether collection has null. */
+    public static int HAS_NULL = 0b10;
     /** Whether collection elements type is not declare type. */
     public static int NOT_DECL_ELEMENT_TYPE = 0b100;
     /** Whether collection elements type different. */
@@ -162,29 +163,31 @@ public class CollectionSerializers {
      *   <li>write elements
      * </ol>
      */
-    public void writeHeader(MemoryBuffer buffer, T value) {
-    }
+    public void writeHeader(MemoryBuffer buffer, T value) {}
 
     /**
-     * Write elements data header.
+     * Write elements data header. Keep this consistent with
+     * `BaseObjectCodecBuilder#writeElementsHeader`.
      *
      * @return a bitmap, higher 24 bits are reserved.
      */
     protected final int writeElementsHeader(MemoryBuffer buffer, T value) {
       GenericType elemGenericType = getElementGenericType(fury);
       if (elemGenericType != null) {
+        boolean trackingRef = elemGenericType.trackingRef(fury.getClassResolver());
         if (elemGenericType.isFinal()) {
-          if (elemGenericType.trackingRef(fury.getClassResolver())) {
+          if (trackingRef) {
             buffer.writeByte(Flags.TRACKING_REF);
             return Flags.TRACKING_REF;
           } else {
             return writeNullabilityHeader(buffer, value);
           }
         } else {
-          if (elemGenericType.trackingRef(fury.getClassResolver())) {
-            return writeTypeHeader(buffer, value, elemGenericType.getCls());
+          if (trackingRef) {
+            return writeTypeHeader(buffer, value, elemGenericType.getCls(), elementClassInfoCache);
           } else {
-            return writeTypeNullabilityHeader(buffer, value, elemGenericType.getCls());
+            return writeTypeNullabilityHeader(
+                buffer, value, elemGenericType.getCls(), elementClassInfoCache);
           }
         }
       } else {
@@ -197,17 +200,15 @@ public class CollectionSerializers {
           }
         } else {
           if (fury.trackingRef()) {
-            return writeTypeHeader(buffer, value, Object.class);
+            return writeTypeHeader(buffer, value, elementClassInfoCache);
           } else {
-            return writeTypeNullabilityHeader(buffer, value, Object.class);
+            return writeTypeNullabilityHeader(buffer, value, null, elementClassInfoCache);
           }
         }
       }
     }
 
-    /**
-     * Element type is final, write whether any elements is null.
-     */
+    /** Element type is final, write whether any elements is null. */
     @CodegenInvoke
     public int writeNullabilityHeader(MemoryBuffer buffer, T value) {
       for (Object elem : value) {
@@ -220,12 +221,11 @@ public class CollectionSerializers {
       return 0;
     }
 
-    /**
-     * Need to track elements ref, can't check elements nullability.
-     */
+    /** Need to track elements ref, can't check elements nullability. */
     @CodegenInvoke
-    public int writeTypeHeader(MemoryBuffer buffer, T value, Class<?> declareElementType) {
-      int bitmap = 0;
+    public int writeTypeHeader(
+        MemoryBuffer buffer, T value, Class<?> declareElementType, ClassInfoCache cache) {
+      int bitmap = Flags.TRACKING_REF;
       boolean hasDifferentClass = false;
       Class<?> elemClass = null;
       for (Object elem : value) {
@@ -250,9 +250,45 @@ public class CollectionSerializers {
           bitmap |= Flags.NOT_DECL_ELEMENT_TYPE;
           buffer.writeByte(bitmap);
           ClassResolver classResolver = fury.getClassResolver();
-          ClassInfo classInfo = classResolver.getClassInfo(elemClass, elementClassInfoCache);
+          ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
           classResolver.writeClass(buffer, classInfo);
         }
+      }
+      return bitmap;
+    }
+
+    /** Maybe track elements ref, or write elements nullability. */
+    @CodegenInvoke
+    public int writeTypeHeader(MemoryBuffer buffer, T value, ClassInfoCache cache) {
+      int bitmap = Flags.NOT_DECL_ELEMENT_TYPE;
+      boolean hasDifferentClass = false;
+      Class<?> elemClass = null;
+      boolean containsNull = false;
+      for (Object elem : value) {
+        if (elem == null) {
+          containsNull = true;
+        } else if (elemClass == null) {
+          elemClass = elem.getClass();
+        } else {
+          if (!hasDifferentClass && elem.getClass() != elemClass) {
+            hasDifferentClass = true;
+          }
+        }
+      }
+      if (containsNull) {
+        bitmap |= Flags.HAS_NULL;
+      }
+      if (hasDifferentClass) {
+        bitmap |= Flags.NOT_SAME_TYPE | Flags.TRACKING_REF;
+        buffer.writeByte(bitmap);
+      } else {
+        ClassResolver classResolver = fury.getClassResolver();
+        ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
+        if (classInfo.getSerializer().needToWriteRef) {
+          bitmap |= Flags.TRACKING_REF;
+        }
+        buffer.writeByte(bitmap);
+        classResolver.writeClass(buffer, classInfo);
       }
       return bitmap;
     }
@@ -262,20 +298,8 @@ public class CollectionSerializers {
      * Elements ref tracking is disabled, write whether any elements is null.
      */
     @CodegenInvoke
-    public int writeTypeNullabilityHeader(MemoryBuffer buffer, T value, Class<?> declareElementType) {
-      // EMPTY, skip length header and element class header.
-      // TRACKING_REF
-      // HAS_NULL // only effective if we don't track element ref
-      // HAS_DIFFERENT_ELEMENTS_TYPE
-
-      //   public static int HAS_NULL = 0b0;
-      //     public static int HAS_DIFFERENT_ELEMENTS_TYPE = 0b10;
-      //     public static int TRACKING_REF = 0b100;
-
-      // JIT可以提前部分判断：是否元素类型final，是否需要写引用
-      // 可以判断的部分提前一个branch，无法判断的部分走通用逻辑，每个元素内部走if else，避免生成过多代码，可能存在微小损耗，但相比实际数据写入
-      // 要小。
-
+    public int writeTypeNullabilityHeader(
+        MemoryBuffer buffer, T value, Class<?> declareElementType, ClassInfoCache cache) {
       int bitmap = 0;
       boolean containsNull = false;
       boolean hasDifferentClass = false;
@@ -295,32 +319,15 @@ public class CollectionSerializers {
         bitmap |= Flags.HAS_NULL;
       }
       if (hasDifferentClass) {
-        bitmap |= Flags.NOT_SAME_TYPE;
+        bitmap |= Flags.NOT_SAME_TYPE | Flags.NOT_DECL_ELEMENT_TYPE;
         buffer.writeByte(bitmap);
       } else {
         if (elemClass != declareElementType) {
           bitmap |= Flags.NOT_DECL_ELEMENT_TYPE;
           buffer.writeByte(bitmap);
           ClassResolver classResolver = fury.getClassResolver();
-          ClassInfo classInfo = classResolver.getClassInfo(elemClass, elementClassInfoCache);
+          ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
           classResolver.writeClass(buffer, classInfo);
-        }
-      }
-      return bitmap;
-    }
-
-    @CodegenInvoke
-    public Serializer getCachedElemSerializer() {
-      return elementClassInfoCache.classInfo.getSerializer();
-    }
-
-    public final int readElementsHeader(MemoryBuffer buffer, int numElements) {
-      Preconditions.checkArgument(numElements > 0);
-      int bitmap = buffer.readByte();
-      if ((bitmap & Flags.NOT_SAME_TYPE) != Flags.NOT_SAME_TYPE) {
-        if ((bitmap & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE) {
-          ClassResolver classResolver = fury.getClassResolver();
-          classResolver.readClassInfo(buffer, elementClassInfoCache);
         }
       }
       return bitmap;
@@ -367,67 +374,119 @@ public class CollectionSerializers {
 
     protected final void writeElements(Fury fury, MemoryBuffer buffer, T value) {
       int flags = writeElementsHeader(buffer, value);
-      Serializer elemSerializer = this.elemSerializer;
+      Serializer serializer = this.elemSerializer;
       // clear the elemSerializer to avoid conflict if the nested
       // serialization has collection field.
-      // TODO use generics for compatible serializer.
       this.elemSerializer = null;
-      RefResolver refResolver = fury.getRefResolver();
-      if (elemSerializer == null) {
+      if (serializer == null) {
         GenericType elemGenericType = getElementGenericType(fury);
         if (elemGenericType != null) {
-          javaWriteWithGenerics(fury, buffer, value, refResolver, elemGenericType);
+          javaWriteWithGenerics(fury, buffer, value, elemGenericType, flags);
         } else {
-          for (Object elem : value) {
-            fury.writeRef(buffer, elem);
-          }
+          generalJavaWrite(fury, buffer, value, flags);
         }
       } else {
+        compatibleRead(fury, buffer, value, serializer, flags);
+      }
+    }
+
+    // TODO use generics for compatible serializer.
+    private static <T extends Collection> void compatibleRead(
+        Fury fury, MemoryBuffer buffer, T value, Serializer serializer, int flags) {
+      if (serializer.needToWriteRef) {
         for (Object elem : value) {
-          fury.writeRef(buffer, elem, elemSerializer);
+          fury.writeRef(buffer, elem, serializer);
+        }
+      } else {
+        boolean hasNull = (flags & Flags.HAS_NULL) == Flags.HAS_NULL;
+        if (hasNull) {
+          for (Object elem : value) {
+            if (elem == null) {
+              buffer.writeByte(Fury.NULL_FLAG);
+            } else {
+              buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+              serializer.write(buffer, elem);
+            }
+          }
+        } else {
+          for (Object elem : value) {
+            serializer.write(buffer, elem);
+          }
         }
       }
     }
 
     private void javaWriteWithGenerics(
-      Fury fury,
-      MemoryBuffer buffer,
-      T value,
-      RefResolver refResolver,
-      GenericType elemGenericType) {
-      ClassResolver classResolver = fury.getClassResolver();
-      Serializer elemSerializer;
+        Fury fury, MemoryBuffer buffer, T collection, GenericType elemGenericType, int flags) {
       boolean hasGenericParameters = elemGenericType.hasGenericParameters();
       if (hasGenericParameters) {
         fury.getGenerics().pushGenericType(elemGenericType);
       }
-      // Note: ObjectSerializer should mark `FinalElemType` in `Collection<FinalElemType>` as
-      // non-final to
-      // write class def when meta share is enabled.
+      // Note: ObjectSerializer should mark `FinalElemType` in `Collection<FinalElemType>`
+      // as non-final to write class def when meta share is enabled.
       if (elemGenericType.isFinal()) {
-        elemSerializer = elemGenericType.getSerializer(classResolver);
-        for (Object elem : value) {
-          fury.writeRef(buffer, elem, elemSerializer);
+        Serializer serializer = elemGenericType.getSerializer(fury.getClassResolver());
+        writeSameTypeElements(fury, buffer, serializer, flags, collection);
+      } else {
+        generalJavaWrite(fury, buffer, collection, flags);
+      }
+      if (hasGenericParameters) {
+        fury.getGenerics().popGenericType();
+      }
+    }
+
+    private void generalJavaWrite(Fury fury, MemoryBuffer buffer, T collection, int flags) {
+      if ((flags & Flags.NOT_SAME_TYPE) != Flags.NOT_SAME_TYPE) {
+        Serializer serializer = elementClassInfoCache.getSerializer();
+        writeSameTypeElements(fury, buffer, serializer, flags, collection);
+      } else {
+        writeDifferentTypeElements(fury, buffer, flags, collection);
+      }
+    }
+
+    private static <T extends Collection> void writeSameTypeElements(
+        Fury fury, MemoryBuffer buffer, Serializer serializer, int flags, T collection) {
+      if ((flags & Flags.TRACKING_REF) == Flags.TRACKING_REF) {
+        RefResolver refResolver = fury.getRefResolver();
+        for (Object elem : collection) {
+          if (!refResolver.writeRefOrNull(buffer, elem)) {
+            serializer.write(buffer, elem);
+          }
         }
       } else {
-        // whether ignore all subclass ref tracking.
-        if (fury.getClassResolver().needToWriteRef(elemGenericType.getCls())) {
-          for (Object elem : value) {
-            fury.writeRef(buffer, elem);
+        if ((flags & Flags.HAS_NULL) != Flags.HAS_NULL) {
+          for (Object elem : collection) {
+            serializer.write(buffer, elem);
           }
         } else {
-          for (Object elem : value) {
-            if (!refResolver.writeNullFlag(buffer, elem)) {
-              fury.writeRef(
-                buffer,
-                elem,
-                classResolver.getClassInfo(elem.getClass(), elementClassInfoCache));
+          for (Object elem : collection) {
+            if (elem == null) {
+              buffer.writeByte(Fury.NULL_FLAG);
+            } else {
+              buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+              serializer.write(buffer, elem);
             }
           }
         }
       }
-      if (hasGenericParameters) {
-        fury.getGenerics().popGenericType();
+    }
+
+    private static <T extends Collection> void writeDifferentTypeElements(
+        Fury fury, MemoryBuffer buffer, int flags, T collection) {
+      if ((flags & Flags.TRACKING_REF) == Flags.TRACKING_REF) {
+        for (Object elem : collection) {
+          fury.writeRef(buffer, elem);
+        }
+      } else {
+        if ((flags & Flags.HAS_NULL) != Flags.HAS_NULL) {
+          for (Object elem : collection) {
+            fury.writeNonRef(buffer, elem);
+          }
+        } else {
+          for (Object elem : collection) {
+            fury.writeNullable(buffer, elem);
+          }
+        }
       }
     }
 
@@ -475,66 +534,147 @@ public class CollectionSerializers {
       return onCollectionRead(collection);
     }
 
-    protected final void readElements(
-      Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
-      Serializer elemSerializer = this.elemSerializer;
+    private void readElements(
+        Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
+      int flags = buffer.readByte();
+      Serializer serializer = this.elemSerializer;
       // clear the elemSerializer to avoid conflict if the nested
       // serialization has collection field.
       // TODO use generics for compatible serializer.
       this.elemSerializer = null;
-      if (elemSerializer == null) {
+      if (serializer == null) {
         GenericType elemGenericType = getElementGenericType(fury);
         if (elemGenericType != null) {
-          javaReadWithGenerics(fury, buffer, collection, numElements, elemGenericType);
+          javaReadWithGenerics(fury, buffer, collection, numElements, elemGenericType, flags);
         } else {
-          for (int i = 0; i < numElements; i++) {
-            Object elem = fury.readRef(buffer, elementClassInfoCache);
-            collection.add(elem);
-          }
+          generalJavaRead(fury, buffer, collection, numElements, flags, null);
         }
       } else {
+        compatibleRead(fury, buffer, collection, numElements, serializer, flags);
+      }
+    }
+
+    /** Code path for {@link CompatibleSerializer}. */
+    private static void compatibleRead(
+        Fury fury,
+        MemoryBuffer buffer,
+        Collection collection,
+        int numElements,
+        Serializer serializer,
+        int flags) {
+      if (serializer.needToWriteRef) {
         for (int i = 0; i < numElements; i++) {
-          collection.add(fury.readRef(buffer, elemSerializer));
+          collection.add(fury.readRef(buffer, serializer));
+        }
+      } else {
+        if ((flags & Flags.HAS_NULL) == Flags.HAS_NULL) {
+          for (int i = 0; i < numElements; i++) {
+            if (buffer.readByte() == Fury.NULL_FLAG) {
+              collection.add(null);
+            } else {
+              Object elem = serializer.read(buffer);
+              collection.add(elem);
+            }
+          }
+        } else {
+          for (int i = 0; i < numElements; i++) {
+            Object elem = serializer.read(buffer);
+            collection.add(elem);
+          }
         }
       }
     }
 
     private void javaReadWithGenerics(
-      Fury fury,
-      MemoryBuffer buffer,
-      Collection collection,
-      int numElements,
-      GenericType elemGenericType) {
-      Serializer elemSerializer;
+        Fury fury,
+        MemoryBuffer buffer,
+        Collection collection,
+        int numElements,
+        GenericType elemGenericType,
+        int flags) {
       boolean hasGenericParameters = elemGenericType.hasGenericParameters();
       if (hasGenericParameters) {
         fury.getGenerics().pushGenericType(elemGenericType);
       }
       if (elemGenericType.isFinal()) {
-        elemSerializer = elemGenericType.getSerializer(fury.getClassResolver());
+        Serializer serializer = elemGenericType.getSerializer(fury.getClassResolver());
+        readSameTypeElements(fury, buffer, serializer, flags, collection, numElements);
+      } else {
+        generalJavaRead(fury, buffer, collection, numElements, flags, elemGenericType);
+      }
+      if (hasGenericParameters) {
+        fury.getGenerics().popGenericType();
+      }
+    }
+
+    private void generalJavaRead(
+        Fury fury,
+        MemoryBuffer buffer,
+        Collection collection,
+        int numElements,
+        int flags,
+        GenericType elemGenericType) {
+      if ((flags & Flags.NOT_SAME_TYPE) != Flags.NOT_SAME_TYPE) {
+        Serializer serializer;
+        ClassResolver classResolver = fury.getClassResolver();
+        if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE) {
+          serializer = classResolver.readClassInfo(buffer, elementClassInfoCache).getSerializer();
+        } else {
+          Preconditions.checkNotNull(elemGenericType);
+          serializer = elemGenericType.getSerializer(classResolver);
+        }
+        readSameTypeElements(fury, buffer, serializer, flags, collection, numElements);
+      } else {
+        readDifferentTypeElements(fury, buffer, flags, collection, numElements);
+      }
+    }
+
+    /** Read elements whose type are same. */
+    private static <T extends Collection> void readSameTypeElements(
+        Fury fury,
+        MemoryBuffer buffer,
+        Serializer serializer,
+        int flags,
+        T collection,
+        int numElements) {
+      if ((flags & Flags.TRACKING_REF) == Flags.TRACKING_REF) {
         for (int i = 0; i < numElements; i++) {
-          Object elem = fury.readRef(buffer, elemSerializer);
-          collection.add(elem);
+          collection.add(fury.readRef(buffer, serializer));
         }
       } else {
-        if (fury.getClassResolver().needToWriteRef(elemGenericType.getCls())) {
+        if ((flags & Flags.HAS_NULL) != Flags.HAS_NULL) {
           for (int i = 0; i < numElements; i++) {
-            Object elem = fury.readRef(buffer);
-            collection.add(elem);
+            collection.add(serializer.read(buffer));
           }
         } else {
           for (int i = 0; i < numElements; i++) {
             if (buffer.readByte() == Fury.NULL_FLAG) {
               collection.add(null);
             } else {
-              Object elem = fury.readNonRef(buffer, elementClassInfoCache);
-              collection.add(elem);
+              collection.add(serializer.read(buffer));
             }
           }
         }
       }
-      if (hasGenericParameters) {
-        fury.getGenerics().popGenericType();
+    }
+
+    /** Read elements whose type are different. */
+    private static <T extends Collection> void readDifferentTypeElements(
+        Fury fury, MemoryBuffer buffer, int flags, T collection, int numElements) {
+      if ((flags & Flags.TRACKING_REF) == Flags.TRACKING_REF) {
+        for (int i = 0; i < numElements; i++) {
+          collection.add(fury.readRef(buffer));
+        }
+      } else {
+        if ((flags & Flags.HAS_NULL) != Flags.HAS_NULL) {
+          for (int i = 0; i < numElements; i++) {
+            collection.add(fury.readNonRef(buffer));
+          }
+        } else {
+          for (int i = 0; i < numElements; i++) {
+            collection.add(fury.readNullable(buffer));
+          }
+        }
       }
     }
 
@@ -547,7 +687,7 @@ public class CollectionSerializers {
     }
 
     public void xreadElements(
-      Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
+        Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
       GenericType elemGenericType = getElementGenericType(fury);
       if (elemGenericType != null) {
         boolean hasGenericParameters = elemGenericType.hasGenericParameters();

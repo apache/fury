@@ -987,6 +987,7 @@ public class ClassResolver {
     return classInfo;
   }
 
+  /** Get classinfo by cache, update cache if miss. */
   public ClassInfo getClassInfo(Class<?> cls, ClassInfoCache classInfoCache) {
     ClassInfo classInfo = classInfoCache.classInfo;
     if (classInfo.getCls() != cls) {
