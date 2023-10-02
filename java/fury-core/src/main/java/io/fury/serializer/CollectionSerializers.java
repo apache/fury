@@ -244,14 +244,15 @@ public class CollectionSerializers {
         bitmap |= Flags.NOT_SAME_TYPE | Flags.NOT_DECL_ELEMENT_TYPE;
         buffer.writeByte(bitmap);
       } else {
+        // Update classinfo, the caller will use it.
+        ClassResolver classResolver = fury.getClassResolver();
+        ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
         // Write class in case peer doesn't have this class.
         if (!fury.getConfig().shareMetaContext() && elemClass == declareElementType) {
           buffer.writeByte(bitmap);
         } else {
           bitmap |= Flags.NOT_DECL_ELEMENT_TYPE;
           buffer.writeByte(bitmap);
-          ClassResolver classResolver = fury.getClassResolver();
-          ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
           classResolver.writeClass(buffer, classInfo);
         }
       }
@@ -323,14 +324,14 @@ public class CollectionSerializers {
         bitmap |= Flags.NOT_SAME_TYPE | Flags.NOT_DECL_ELEMENT_TYPE;
         buffer.writeByte(bitmap);
       } else {
+        ClassResolver classResolver = fury.getClassResolver();
+        ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
         // Write class in case peer doesn't have this class.
         if (!fury.getConfig().shareMetaContext() && elemClass == declareElementType) {
           buffer.writeByte(bitmap);
         } else {
           bitmap |= Flags.NOT_DECL_ELEMENT_TYPE;
           buffer.writeByte(bitmap);
-          ClassResolver classResolver = fury.getClassResolver();
-          ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
           classResolver.writeClass(buffer, classInfo);
         }
       }
