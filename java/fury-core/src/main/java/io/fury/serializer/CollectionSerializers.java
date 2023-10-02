@@ -447,6 +447,7 @@ public class CollectionSerializers {
 
     private static <T extends Collection> void writeSameTypeElements(
         Fury fury, MemoryBuffer buffer, Serializer serializer, int flags, T collection) {
+      fury.incDepth(1);
       if ((flags & Flags.TRACKING_REF) == Flags.TRACKING_REF) {
         RefResolver refResolver = fury.getRefResolver();
         for (Object elem : collection) {
@@ -470,6 +471,7 @@ public class CollectionSerializers {
           }
         }
       }
+      fury.incDepth(-1);
     }
 
     private static <T extends Collection> void writeDifferentTypeElements(
@@ -638,6 +640,7 @@ public class CollectionSerializers {
         int flags,
         T collection,
         int numElements) {
+      fury.incDepth(1);
       if ((flags & Flags.TRACKING_REF) == Flags.TRACKING_REF) {
         for (int i = 0; i < numElements; i++) {
           collection.add(fury.readRef(buffer, serializer));
@@ -657,6 +660,7 @@ public class CollectionSerializers {
           }
         }
       }
+      fury.incDepth(-1);
     }
 
     /** Read elements whose type are different. */

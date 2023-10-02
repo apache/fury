@@ -1218,6 +1218,10 @@ public final class Fury {
     this.depth = depth;
   }
 
+  public void incDepth(int diff) {
+    this.depth += diff;
+  }
+
   // Invoked by jit
   public StringSerializer getStringSerializer() {
     return stringSerializer;
