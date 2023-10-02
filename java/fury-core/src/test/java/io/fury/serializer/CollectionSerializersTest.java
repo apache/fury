@@ -17,6 +17,7 @@
 package io.fury.serializer;
 
 import static io.fury.collection.Collections.ofArrayList;
+import static io.fury.collection.Collections.ofHashMap;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
@@ -47,6 +48,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
@@ -268,6 +270,26 @@ public class CollectionSerializersTest extends FuryTestBase {
               .getName()
               .contains("Codec"));
     }
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class NotFinal {
+    int f1;
+  }
+
+  @Data
+  public static class Container {
+    public List<NotFinal> list1;
+    public Map<String, NotFinal> map1;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testContainer(Fury fury) {
+    Container container = new Container();
+    container.list1 = ofArrayList(new NotFinal(1));
+    container.map1 = ofHashMap("k", new NotFinal(2));
+    serDeCheck(fury, container);
   }
 
   @Data
