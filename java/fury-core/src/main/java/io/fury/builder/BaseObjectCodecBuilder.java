@@ -19,6 +19,7 @@ package io.fury.builder;
 import static io.fury.codegen.CodeGenerator.getPackage;
 import static io.fury.codegen.Expression.Invoke.inlineInvoke;
 import static io.fury.codegen.Expression.Reference.fieldRef;
+import static io.fury.codegen.ExpressionOptimizer.invokeGenerated;
 import static io.fury.codegen.ExpressionUtils.eq;
 import static io.fury.codegen.ExpressionUtils.gt;
 import static io.fury.codegen.ExpressionUtils.neq;
@@ -63,7 +64,6 @@ import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.Return;
 import io.fury.codegen.Expression.StaticInvoke;
-import io.fury.codegen.ExpressionOptimizer;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.codegen.ExpressionVisitor.ExprHolder;
 import io.fury.collection.Tuple2;
@@ -84,6 +84,7 @@ import io.fury.type.FinalObjectTypeStub;
 import io.fury.type.TypeUtils;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
+import io.fury.util.function.SerializableSupplier;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
@@ -453,7 +454,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             PRIMITIVE_VOID_TYPE,
             buffer,
             inputObject));
-    return ExpressionOptimizer.invokeGenerated(
+    return invokeGenerated(
         ctx,
         ImmutableSet.of(buffer, inputObject),
         writeClassAndObject,
@@ -672,7 +673,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         writeClassAction.add(serializer, new Return(serializer));
         // Spit this into a separate method to avoid method too big to inline.
         serializer =
-            ExpressionOptimizer.invokeGenerated(
+            invokeGenerated(
                 ctx,
                 ImmutableSet.of(buffer, clsExpr),
                 writeClassAction,
@@ -691,7 +692,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             new Invoke(serializer, "write", buffer, collection));
     actions.add(write);
     if (generateNewMethod) {
-      return ExpressionOptimizer.invokeGenerated(
+      return invokeGenerated(
           ctx, ImmutableSet.of(buffer, collection, serializer), actions, "writeCollection", false);
     }
     return actions;
@@ -730,25 +731,32 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           new If(
               sameElementClass,
               castSerializer(writeElementsHeader.f1.inline(), serializerType),
-              nullValue(serializerType), false);
+              nullValue(serializerType),
+              false);
       builder.add(sameElementClass, elemSerializer);
       Expression action;
       if (trackingRef) {
+        SerializableSupplier<Expression> write1 =
+            () ->
+                writeContainerElements(
+                    elementType, true, elemSerializer, null, buffer, collection, size);
         action =
             new If(
                 sameElementClass,
-                writeContainerElements(
-                    elementType, true, elemSerializer, null, buffer, collection, size),
+                invokeGenerated(ctx, write1, "writeContainerElements"),
                 writeContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
         Literal hasNullFlag = Literal.ofInt(CollectionSerializers.Flags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
         builder.add(hasNull);
+        SerializableSupplier<Expression> write1 =
+            () ->
+                writeContainerElements(
+                    elementType, false, elemSerializer, hasNull, buffer, collection, size);
         action =
             new If(
                 sameElementClass,
-                writeContainerElements(
-                    elementType, false, elemSerializer, hasNull, buffer, collection, size),
+                invokeGenerated(ctx, write1, "writeContainerElements"),
                 writeContainerElements(
                     elementType, false, null, hasNull, buffer, collection, size));
       }
@@ -981,7 +989,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         writeClassAction.add(serializer, new Return(serializer));
         // Spit this into a separate method to avoid method too big to inline.
         serializer =
-            ExpressionOptimizer.invokeGenerated(
+            invokeGenerated(
                 ctx, ImmutableSet.of(buffer, map), writeClassAction, "writeMapClassInfo", false);
       }
     } else if (!MapSerializer.class.isAssignableFrom(serializer.type().getRawType())) {
@@ -1024,8 +1032,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             new Invoke(serializer, "write", buffer, map));
     actions.add(write);
     if (generateNewMethod) {
-      return ExpressionOptimizer.invokeGenerated(
-          ctx, ImmutableSet.of(buffer, map), actions, "writeMap", false);
+      return invokeGenerated(ctx, ImmutableSet.of(buffer, map), actions, "writeMap", false);
     }
     return actions;
   }
@@ -1212,7 +1219,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             false);
     if (cutPoint != null && cutPoint.genNewMethod) {
       cutPoint.add(buffer);
-      return ExpressionOptimizer.invokeGenerated(
+      return invokeGenerated(
           ctx,
           cutPoint.cutPoints,
           new ListExpression(action, new Return(action)),
@@ -1251,46 +1258,61 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
       Invoke serializer =
           inlineInvoke(readClassInfo(elemClass, buffer), "getSerializer", SERIALIZER_TYPE);
-      Expression elemSerializer;
       TypeToken<?> serializerType = getSerializerType(elementType);
+      Expression elemSerializer; // make it in scope of `if(sameElementClass)`
       if (visitFury(f -> f.getClassResolver().isSerializable(elemClass))) {
         elemSerializer =
             new If(
-                sameElementClass,
-                new If(
-                    isDeclType,
-                    getOrCreateSerializer(elemClass),
-                    castSerializer(serializer, elementType),
-                    false,
-                    serializerType),
-                nullValue(serializerType),
-                false);
-      } else {
-        elemSerializer =
-            new If(
-                sameElementClass,
+                isDeclType,
+                getOrCreateSerializer(elemClass),
                 castSerializer(serializer, elementType),
-                nullValue(serializerType),
-                false);
+                false,
+                serializerType);
+      } else {
+        elemSerializer = castSerializer(serializer, elementType);
       }
-      builder.add(sameElementClass, elemSerializer);
+      builder.add(sameElementClass);
       Expression action;
       if (trackingRef) {
+        // Same element class read start
+        ListExpression readBuilder = new ListExpression(elemSerializer);
+        readBuilder.add(
+            readContainerElements(
+                elementType, true, elemSerializer, null, buffer, collection, size));
+        Expression sameElementClassRead =
+            invokeGenerated(
+                ctx,
+                ImmutableSet.of(buffer, collection, size, flags),
+                readBuilder,
+                "sameElementClassRead",
+                false);
+        // Same element class read end
         action =
             new If(
                 sameElementClass,
-                readContainerElements(
-                    elementType, true, elemSerializer, null, buffer, collection, size),
+                sameElementClassRead,
                 readContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
         Literal hasNullFlag = Literal.ofInt(CollectionSerializers.Flags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
         builder.add(hasNull);
+        // Same element class read start
+        ListExpression readBuilder = new ListExpression(elemSerializer);
+        readBuilder.add(
+            readContainerElements(
+                elementType, false, elemSerializer, hasNull, buffer, collection, size));
+        // Same element class read end
+        Expression sameElementClassRead =
+            invokeGenerated(
+                ctx,
+                ImmutableSet.of(buffer, collection, size, hasNull, flags),
+                readBuilder,
+                "sameElementClassRead",
+                false);
         action =
             new If(
                 sameElementClass,
-                readContainerElements(
-                    elementType, false, elemSerializer, hasNull, buffer, collection, size),
+                sameElementClassRead,
                 readContainerElements(elementType, false, null, hasNull, buffer, collection, size));
       }
       builder.add(action);
@@ -1444,7 +1466,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         new If(supportHook, hookRead, new Invoke(serializer, "read", MAP_TYPE, buffer), false);
     if (cutPoint != null && cutPoint.genNewMethod) {
       cutPoint.add(buffer);
-      return ExpressionOptimizer.invokeGenerated(
+      return invokeGenerated(
           ctx,
           cutPoint.cutPoints,
           new ListExpression(action, new Return(action)),
