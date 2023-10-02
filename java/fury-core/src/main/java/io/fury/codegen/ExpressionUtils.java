@@ -92,6 +92,12 @@ public class ExpressionUtils {
     return neq(left, right, true);
   }
 
+  public static Comparator neq(Expression left, Expression right, String valuePrefix) {
+    Comparator comparator = new Comparator("!=", left, right, false);
+    comparator.valuePrefix = valuePrefix;
+    return comparator;
+  }
+
   public static Comparator neq(Expression left, Expression right, boolean inline) {
     return new Comparator("!=", left, right, inline);
   }

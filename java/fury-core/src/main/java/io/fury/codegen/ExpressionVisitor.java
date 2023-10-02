@@ -54,11 +54,15 @@ public class ExpressionVisitor {
   public static final class ExprHolder {
     private final Map<Object, Expression> expressionsMap;
 
+    /** Null value will be skipped. */
     private ExprHolder(Object... kv) {
       Preconditions.checkArgument(kv.length % 2 == 0);
       expressionsMap = new HashMap<>();
       for (int i = 0; i < kv.length; i += 2) {
-        expressionsMap.put(kv[i], (Expression) kv[i + 1]);
+        Object value = kv[i + 1];
+        if (value != null) {
+          expressionsMap.put(kv[i], (Expression) value);
+        }
       }
     }
 
@@ -201,7 +205,7 @@ public class ExpressionVisitor {
                 capturedArg.getClass(), capturedArg, closure, serializedLambda));
       }
       if (capturedArg instanceof ExprHolder) {
-        traverseMap(expr, ((ExprHolder) capturedArg).expressionsMap, func);
+        traverseMap(expr, ((ExprHolder) capturedArg).getExpressionsMap(), func);
       }
     }
   }

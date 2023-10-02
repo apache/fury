@@ -832,7 +832,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                   // deserializeForNotNull won't read field type if it's final
                   deserializedValue.add(skipFinalClassInfo(clz, buffer));
                 }
-                deserializedValue.add(deserializeForNotNull(buffer, typeToken, false));
+                deserializedValue.add(deserializeForNotNull(buffer, typeToken, null));
               }
               Expression setReadObject =
                   new Invoke(refResolverRef, "setReadObject", refId, deserializedValue);
