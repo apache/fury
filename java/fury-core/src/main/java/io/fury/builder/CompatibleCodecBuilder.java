@@ -808,7 +808,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                           inlineInvoke(buffer, "readByte", PRIMITIVE_BYTE_TYPE),
                           expectType));
               if (type == FieldTypes.OBJECT) {
-                deserializedValue.add(readForNotNullNonFinal(buffer, typeToken));
+                deserializedValue.add(readForNotNullNonFinal(buffer, typeToken, null));
               } else {
                 if (type == FieldTypes.COLLECTION_ELEMENT_FINAL) {
                   deserializedValue.add(

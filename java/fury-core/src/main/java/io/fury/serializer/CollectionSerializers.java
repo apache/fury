@@ -65,7 +65,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class CollectionSerializers {
   /**
-   * Default unset bitmap flags:
+   * Default unset bitmap flags.
    *
    * <ul>
    *   <li>TRACKING_REF: false
@@ -244,7 +244,8 @@ public class CollectionSerializers {
         bitmap |= Flags.NOT_SAME_TYPE | Flags.NOT_DECL_ELEMENT_TYPE;
         buffer.writeByte(bitmap);
       } else {
-        if (elemClass == declareElementType) {
+        // Write class in case peer doesn't have this class.
+        if (!fury.getConfig().shareMetaContext() && elemClass == declareElementType) {
           buffer.writeByte(bitmap);
         } else {
           bitmap |= Flags.NOT_DECL_ELEMENT_TYPE;
@@ -386,12 +387,12 @@ public class CollectionSerializers {
           generalJavaWrite(fury, buffer, value, flags);
         }
       } else {
-        compatibleRead(fury, buffer, value, serializer, flags);
+        compatibleWrite(fury, buffer, value, serializer, flags);
       }
     }
 
     // TODO use generics for compatible serializer.
-    private static <T extends Collection> void compatibleRead(
+    private static <T extends Collection> void compatibleWrite(
         Fury fury, MemoryBuffer buffer, T value, Serializer serializer, int flags) {
       if (serializer.needToWriteRef) {
         for (Object elem : value) {

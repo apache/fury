@@ -336,9 +336,7 @@ public final class Fury {
     }
   }
 
-  /**
-   * Write object class and data without tracking ref.
-   */
+  /** Write object class and data without tracking ref. */
   public void writeNullable(MemoryBuffer buffer, Object obj) {
     if (obj == null) {
       buffer.writeByte(Fury.NULL_FLAG);
@@ -348,9 +346,7 @@ public final class Fury {
     }
   }
 
-  /**
-   * Write object class and data without tracking ref.
-   */
+  /** Write object class and data without tracking ref. */
   public void writeNullable(MemoryBuffer buffer, Object obj, ClassInfoCache classInfoCache) {
     if (obj == null) {
       buffer.writeByte(Fury.NULL_FLAG);
@@ -796,9 +792,7 @@ public final class Fury {
     return readDataInternal(buffer, classResolver.readClassInfo(buffer, classInfoCache));
   }
 
-  /**
-   * Read object class and data without tracking ref.
-   */
+  /** Read object class and data without tracking ref. */
   public Object readNullable(MemoryBuffer buffer) {
     byte headFlag = buffer.readByte();
     if (headFlag == Fury.NULL_FLAG) {

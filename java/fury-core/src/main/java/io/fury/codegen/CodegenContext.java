@@ -486,6 +486,16 @@ public class CodegenContext {
     return params;
   }
 
+  /** Returns true if class has field with name {@code fieldName}. */
+  public boolean hasField(String fieldName) {
+    for (Tuple3<Boolean, String, String> field : fields) {
+      if (fieldName.equals(field.f2)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * Add a field to class.
    *
