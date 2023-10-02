@@ -706,7 +706,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     ListExpression builder = new ListExpression();
     Class<?> elemClass = TypeUtils.getRawType(elementType);
     boolean trackingRef = visitFury(fury -> fury.getClassResolver().needToWriteRef(elemClass));
-    Tuple2<Expression, Expression> writeElementsHeader =
+    Tuple2<Expression, Invoke> writeElementsHeader =
         writeElementsHeader(elemClass, trackingRef, serializer, buffer, collection);
     Expression flags = writeElementsHeader.f0;
     builder.add(flags);
@@ -725,13 +725,12 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     } else {
       Literal flag = Literal.ofInt(CollectionSerializers.Flags.NOT_SAME_TYPE);
       Expression sameElementClass = neq(new BitAnd(flags, flag), flag, "sameElementClass");
-      Expression elemSerializer = writeElementsHeader.f1;
       TypeToken<?> serializerType = getSerializerType(elementType);
-      elemSerializer =
+      Expression elemSerializer =
           new If(
               sameElementClass,
-              castSerializer(elemSerializer, serializerType),
-              nullValue(serializerType));
+              castSerializer(writeElementsHeader.f1.inline(), serializerType),
+              nullValue(serializerType), false);
       builder.add(sameElementClass, elemSerializer);
       Expression action;
       if (trackingRef) {
@@ -765,7 +764,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    *
    * @return Tuple(flags, Nullable ( element serializer))
    */
-  private Tuple2<Expression, Expression> writeElementsHeader(
+  private Tuple2<Expression, Invoke> writeElementsHeader(
       Class<?> elementType,
       boolean trackingRef,
       Expression collectionSerializer,
@@ -821,7 +820,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                 elementTypeExpr,
                 classInfoHolder);
       }
-      Expression serializer = new Invoke(classInfoHolder, "getSerializer", SERIALIZER_TYPE);
+      Invoke serializer = new Invoke(classInfoHolder, "getSerializer", SERIALIZER_TYPE);
       return Tuple2.of(bitmap, serializer);
     }
   }
