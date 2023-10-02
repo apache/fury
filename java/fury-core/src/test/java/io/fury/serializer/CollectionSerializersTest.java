@@ -16,6 +16,7 @@
 
 package io.fury.serializer;
 
+import static io.fury.collection.Collections.ofArrayList;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
@@ -55,6 +56,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.LongStream;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -359,6 +361,32 @@ public class CollectionSerializersTest extends FuryTestBase {
               .getName()
               .contains("Codec"));
     }
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class NestedCollection1 {
+    public List<Collection<Integer>> list1;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testNestedCollection1(Fury fury) {
+    ArrayList<Integer> list = ofArrayList(1, 2);
+    NestedCollection1 o = new NestedCollection1(ofArrayList(list));
+    Assert.assertEquals(serDe(fury, o), o);
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class NestedCollection2 {
+    public List<Collection<Collection<Integer>>> list1;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testNestedCollection2(Fury fury) {
+    ArrayList<Integer> list = ofArrayList(1, 2);
+    NestedCollection2 o = new NestedCollection2(ofArrayList(ofArrayList(list)));
+    Assert.assertEquals(serDe(fury, o), o);
   }
 
   public static class TestClassForDefaultCollectionSerializer extends AbstractCollection<String> {
