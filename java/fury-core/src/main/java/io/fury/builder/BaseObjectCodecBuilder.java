@@ -88,6 +88,7 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -100,6 +101,7 @@ import java.util.function.Supplier;
  * reduces space overhead introduced by aligning. Codegen only for time-consuming field, others
  * delegate to fury.
  */
+@SuppressWarnings("unchecked")
 public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   public static final String BUFFER_NAME = "buffer";
   public static final String REF_RESOLVER_NAME = "refResolver";
@@ -120,9 +122,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   protected final Fury fury;
   protected final Reference stringSerializerRef;
   private final Map<Class<?>, Reference> serializerMap = new HashMap<>();
-  private final Map<Class<?>, Reference> classInfoMap = new HashMap<>();
+  private final Map<String, Object> sharedFieldMap = new HashMap<>();
   protected final Class<?> parentSerializerClass;
   private final Map<String, String> jitCallbackUpdateFields;
+  protected LinkedList<String> walkPath = new LinkedList<>();
 
   public BaseObjectCodecBuilder(TypeToken<?> beanType, Fury fury, Class<?> parentSerializerClass) {
     super(new CodegenContext(), beanType);
@@ -537,36 +540,54 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   protected Tuple2<Reference, Boolean> addClassInfoField(Class<?> cls) {
     Expression classInfoExpr;
     boolean needUpdate = !ReflectionUtils.isFinal(cls);
+    String key;
     if (!needUpdate) {
-      Reference classInfoRef = classInfoMap.get(cls);
-      if (classInfoRef != null) {
-        return Tuple2.of(classInfoRef, false);
-      }
+      key = "classInfo:" + cls;
+    } else {
+      key = "classInfo:" + cls + walkPath;
+    }
+    Tuple2<Reference, Boolean> classInfoRef = (Tuple2<Reference, Boolean>) sharedFieldMap.get(key);
+    if (classInfoRef != null) {
+      return classInfoRef;
+    }
+    if (!needUpdate) {
       Expression clsExpr = new Literal(cls, CLASS_TYPE);
       classInfoExpr = inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeToken, clsExpr);
       // Use `ctx.freshName(cls)` to avoid wrong name for arr type.
       String name = ctx.newName(ctx.newName(cls) + "ClassInfo");
       ctx.addField(ctx.type(ClassInfo.class), name, classInfoExpr, true);
-      classInfoRef = fieldRef(name, classInfoTypeToken);
-      classInfoMap.put(cls, classInfoRef);
-      return Tuple2.of(classInfoRef, false);
+      classInfoRef = Tuple2.of(fieldRef(name, classInfoTypeToken), false);
     } else {
       classInfoExpr = inlineInvoke(classResolverRef, "nilClassInfo", classInfoTypeToken);
       String name = ctx.newName(StringUtils.uncapitalize(cls.getSimpleName()) + "ClassInfo");
       ctx.addField(ctx.type(ClassInfo.class), name, classInfoExpr, false);
       // Can't use fieldRef, since the field is not final.
-      return Tuple2.of(new Reference(name, classInfoTypeToken), true);
+      classInfoRef = Tuple2.of(new Reference(name, classInfoTypeToken), true);
     }
+    sharedFieldMap.put(key, classInfoRef);
+    return classInfoRef;
   }
 
   protected Reference addClassInfoCacheField(Class<?> cls) {
-    Preconditions.checkArgument(!Modifier.isFinal(cls.getModifiers()), cls);
+    // Final type need to write classinfo when meta share enabled.
+    String key;
+    if (Modifier.isFinal(cls.getModifiers())) {
+      key = "classInfoHolder:" + cls;
+    } else {
+      key = "classInfoHolder:" + cls + walkPath;
+    }
+    Reference reference = (Reference) sharedFieldMap.get(key);
+    if (reference != null) {
+      return reference;
+    }
     Expression classInfoCacheExpr =
         inlineInvoke(classResolverRef, "nilClassInfoCache", classInfoCacheTypeToken);
     String name = ctx.newName(cls, "ClassInfoCache");
     ctx.addField(ctx.type(ClassInfoCache.class), name, classInfoCacheExpr, true);
     // The class info field read only once, no need to shallow.
-    return new Reference(name, classInfoCacheTypeToken);
+    reference = new Reference(name, classInfoCacheTypeToken);
+    sharedFieldMap.put(key, reference);
+    return reference;
   }
 
   protected Expression readClassInfo(Class<?> cls, Expression buffer) {
@@ -681,6 +702,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Expression size = new Invoke(collection, "size", PRIMITIVE_INT_TYPE);
     Invoke writeSize = new Invoke(buffer, "writePositiveVarInt", size);
     Invoke writeHeader = new Invoke(serializer, "writeHeader", buffer, collection);
+    walkPath.add(elementType.toString());
     ListExpression builder = new ListExpression();
     Class<?> elemClass = TypeUtils.getRawType(elementType);
     boolean trackingRef = visitFury(fury -> fury.getClassResolver().needToWriteRef(elemClass));
@@ -691,7 +713,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     boolean finalType = isFinal(elemClass);
     if (finalType) {
       if (trackingRef) {
-        writeContainerElements(elementType, true, null, null, buffer, collection, size);
+        builder.add(
+            writeContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
         Literal hasNullFlag = Literal.ofInt(CollectionSerializers.Flags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
@@ -732,6 +755,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       }
       builder.add(action);
     }
+    walkPath.removeLast();
     return new ListExpression(writeSize, writeHeader, new If(gt(size, Literal.ofInt(0)), builder));
   }
 
@@ -979,13 +1003,19 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               key = tryCastIfPublic(key, keyType, "key");
               Expression value = new Invoke(entry, "getValue", "valueObj", OBJECT_TYPE);
               value = tryCastIfPublic(value, valueType, "value");
+              walkPath.add("key:" + keyType);
               boolean genMethodForKey =
                   useCollectionSerialization(keyType) || useMapSerialization(keyType);
+              Expression keyAction =
+                  serializeFor(key, exprHolder.get("buffer"), keyType, genMethodForKey);
+              walkPath.removeLast();
+              walkPath.add("value:" + valueType);
               boolean genMethodForValue =
                   useCollectionSerialization(valueType) || useMapSerialization(valueType);
-              return new ListExpression(
-                  serializeFor(key, exprHolder.get("buffer"), keyType, genMethodForKey),
-                  serializeFor(value, exprHolder.get("buffer"), valueType, genMethodForValue));
+              Expression valueAction =
+                  serializeFor(value, exprHolder.get("buffer"), valueType, genMethodForValue);
+              walkPath.removeLast();
+              return new ListExpression(keyAction, valueAction);
             });
     Expression hookWrite = new ListExpression(writeSize, writeHeader, writeKeyValues);
     Expression write =
@@ -1199,11 +1229,12 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Invoke flags = new Invoke(buffer, "readByte", "flags", PRIMITIVE_INT_TYPE, false);
     builder.add(flags);
     Class<?> elemClass = TypeUtils.getRawType(elementType);
+    walkPath.add(elementType.toString());
     boolean finalType = isFinal(elemClass);
     boolean trackingRef = visitFury(fury -> fury.getClassResolver().needToWriteRef(elemClass));
     if (finalType) {
       if (trackingRef) {
-        readContainerElements(elementType, true, null, null, buffer, collection, size);
+        builder.add(readContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
         Literal hasNullFlag = Literal.ofInt(CollectionSerializers.Flags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
@@ -1265,6 +1296,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       }
       builder.add(action);
     }
+    walkPath.removeLast();
     // place newCollection as last as expr value
     return new ListExpression(
         size, collection, new If(gt(size, Literal.ofInt(0)), builder), collection);
@@ -1394,13 +1426,17 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   useCollectionSerialization(keyType) || useMapSerialization(keyType);
               boolean genValueMethod =
                   useCollectionSerialization(valueType) || useMapSerialization(valueType);
-              return new Invoke(
-                  exprHolder.get("map"),
-                  "put",
+              walkPath.add("key:" + keyType);
+              Expression keyAction =
                   deserializeFor(
-                      exprHolder.get("buffer"), keyType, e -> e, new CutPoint(genKeyMethod)),
+                      exprHolder.get("buffer"), keyType, e -> e, new CutPoint(genKeyMethod));
+              walkPath.removeLast();
+              walkPath.add("value:" + valueType);
+              Expression valueAction =
                   deserializeFor(
-                      exprHolder.get("buffer"), valueType, e -> e, new CutPoint(genValueMethod)));
+                      exprHolder.get("buffer"), valueType, e -> e, new CutPoint(genValueMethod));
+              walkPath.removeLast();
+              return new Invoke(exprHolder.get("map"), "put", keyAction, valueAction);
             });
     // first newMap to create map, last newMap as expr value
     Expression hookRead = new ListExpression(size, newMap, readKeyValues, newMap);
