@@ -18,6 +18,7 @@ package io.fury.serializer;
 
 import static com.google.common.collect.ImmutableList.of;
 import static io.fury.TestUtils.mapOf;
+import static io.fury.collection.Collections.ofArrayList;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -90,12 +91,12 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
 
   @Test(dataProvider = "fury")
   public void testGenericCollectionBound(Fury fury, Fury furyJIT) {
-    ArrayList<Integer> list = new ArrayList<>(of(1, 2));
+    ArrayList<Integer> list = ofArrayList(1, 2);
     roundCheck(
         fury,
         furyJIT,
         new GenericBoundTest(
-            new ArrayList<>(of(new ArrayList<>(of(list)))),
+            ofArrayList(ofArrayList(list)),
             of(list),
             new ArrayList<>(of(new ArrayList<>(of(list))))));
   }
@@ -280,8 +281,7 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
     metaShareRoundCheck(
         fury,
         furyJIT,
-        new OuterPojo1(
-            new ArrayList<>(of(1, 2)), new ArrayList<>(of(new InnerPojo(10), new InnerPojo(10)))));
+        new OuterPojo1(ofArrayList(1, 2), ofArrayList(new InnerPojo(10), new InnerPojo(10))));
     metaShareRoundCheck(
         fury,
         furyJIT,
