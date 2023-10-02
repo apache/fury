@@ -198,8 +198,13 @@ public abstract class FuryTestBase {
   }
 
   public static <T> T serDe(Fury fury, T obj) {
-    byte[] bytes = fury.serialize(obj);
-    return (T) (fury.deserialize(bytes));
+    try {
+      byte[] bytes = fury.serialize(obj);
+      return (T) (fury.deserialize(bytes));
+    } catch (Throwable t) {
+      // Catch for add breakpoint for debugging.
+      throw t;
+    }
   }
 
   public static Object serDe(Fury fury1, Fury fury2, MemoryBuffer buffer, Object obj) {

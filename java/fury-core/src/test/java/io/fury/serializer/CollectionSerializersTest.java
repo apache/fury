@@ -248,6 +248,27 @@ public class CollectionSerializersTest extends FuryTestBase {
   }
 
   @Data
+  public static class SimpleBeanCollectionFields {
+    public List<String> list;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testSimpleBeanCollectionFields(Fury fury) {
+    SimpleBeanCollectionFields obj = new SimpleBeanCollectionFields();
+    obj.list = new ArrayList<>();
+    obj.list.add("a");
+    obj.list.add("b");
+    Assert.assertEquals(serDe(fury, obj).toString(), obj.toString());
+    if (fury.getConfig().isCodeGenEnabled()) {
+      Assert.assertTrue(
+          fury.getClassResolver()
+              .getSerializerClass(SimpleBeanCollectionFields.class)
+              .getName()
+              .contains("Codec"));
+    }
+  }
+
+  @Data
   public static class CollectionFieldsClass {
     public ArrayList<String> arrayList;
     public List<String> arrayList2;

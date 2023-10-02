@@ -16,7 +16,11 @@
 
 package io.fury.benchmark;
 
+import io.fury.memory.MemoryBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;
@@ -44,22 +48,84 @@ public class ArraySuite {
     }
   }
 
-  @Benchmark
+  // @Benchmark
   public Object clearObjectArray(ArrayState state) {
     Arrays.fill(state.objects, null);
     return state.objects;
   }
 
-  @Benchmark
+  // @Benchmark
   public Object clearObjectArrayByCopy(ArrayState state) {
     System.arraycopy(state.nilArray, 0, state.objects, 0, state.objects.length);
     return state.objects;
   }
 
-  @Benchmark
+  // @Benchmark
   public Object clearIntArray(ArrayState state) {
     Arrays.fill(state.ints, 0);
     return state.ints;
+  }
+
+  private static Integer[] array = new Integer[100];
+  private static List<Integer> list = new ArrayList<>(100);
+
+  private static MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
+
+  static {
+    Random random = new Random(7);
+    for (int i = 0; i < 100; i++) {
+      int x = random.nextInt();
+      array[i] = x;
+      list.add(i, x);
+    }
+  }
+
+  @Benchmark
+  public Object iterateArray() {
+    int count = 0;
+    for (Integer o : array) {
+      if (o != null) {
+        count += o;
+      }
+    }
+    return count;
+  }
+
+  @Benchmark
+  public Object iterateList() {
+    int count = 0;
+    for (Integer o : list) {
+      if (o != null) {
+        count += o;
+      }
+    }
+    return count;
+  }
+
+  @Benchmark
+  public Object iterateList2() {
+    int count = 0;
+    int size = list.size();
+    for (int i = 0; i < size; i++) {
+      Integer o = list.get(i);
+      if (o != null) {
+        count += o;
+      }
+    }
+    return count;
+  }
+
+  @Benchmark
+  public Object serializeList() {
+    buffer.writerIndex(0);
+    int size = list.size();
+    for (int i = 0; i < size; i++) {
+      Integer o = list.get(i);
+      if (o != null) {
+        buffer.writeVarInt(o);
+      }
+    }
+    return buffer;
   }
 
   // Mac Monterey 12.1: 2.6 GHz 6-Core Intel Core i7
