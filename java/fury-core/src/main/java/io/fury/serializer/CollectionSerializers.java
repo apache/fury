@@ -323,7 +323,10 @@ public class CollectionSerializers {
         bitmap |= Flags.NOT_SAME_TYPE | Flags.NOT_DECL_ELEMENT_TYPE;
         buffer.writeByte(bitmap);
       } else {
-        if (elemClass != declareElementType) {
+        // Write class in case peer doesn't have this class.
+        if (!fury.getConfig().shareMetaContext() && elemClass == declareElementType) {
+          buffer.writeByte(bitmap);
+        } else {
           bitmap |= Flags.NOT_DECL_ELEMENT_TYPE;
           buffer.writeByte(bitmap);
           ClassResolver classResolver = fury.getClassResolver();
