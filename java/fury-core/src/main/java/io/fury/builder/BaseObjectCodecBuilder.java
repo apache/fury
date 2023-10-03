@@ -71,7 +71,7 @@ import io.fury.codegen.ExpressionVisitor.ExprHolder;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.serializer.CollectionSerializers;
@@ -275,7 +275,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   protected void addCommonImports() {
     ctx.addImports(List.class, Map.class, Set.class);
     ctx.addImports(Fury.class, MemoryBuffer.class, fury.getRefResolver().getClass());
-    ctx.addImports(ClassInfo.class, ClassInfoCache.class, ClassResolver.class);
+    ctx.addImports(ClassInfo.class, ClassInfoHolder.class, ClassResolver.class);
     ctx.addImport(Generated.class);
     ctx.addImports(LazyInitBeanSerializer.class, Serializers.EnumSerializer.class);
     ctx.addImports(Serializer.class, StringSerializer.class);
@@ -570,7 +570,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     return classInfoRef;
   }
 
-  protected Reference addClassInfoCacheField(Class<?> cls) {
+  protected Reference addClassInfoHolderField(Class<?> cls) {
     // Final type need to write classinfo when meta share enabled.
     String key;
     if (Modifier.isFinal(cls.getModifiers())) {
@@ -582,12 +582,12 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     if (reference != null) {
       return reference;
     }
-    Expression classInfoCacheExpr =
-        inlineInvoke(classResolverRef, "nilClassInfoCache", classInfoCacheTypeToken);
-    String name = ctx.newName(cls, "ClassInfoCache");
-    ctx.addField(ctx.type(ClassInfoCache.class), name, classInfoCacheExpr, true);
+    Expression classInfoHolderExpr =
+        inlineInvoke(classResolverRef, "nilClassInfoHolder", classInfoHolderTypeToken);
+    String name = ctx.newName(cls, "ClassInfoHolder");
+    ctx.addField(ctx.type(ClassInfoHolder.class), name, classInfoHolderExpr, true);
     // The class info field read only once, no need to shallow.
-    reference = new Reference(name, classInfoCacheTypeToken);
+    reference = new Reference(name, classInfoHolderTypeToken);
     sharedFieldMap.put(key, reference);
     return reference;
   }
@@ -607,13 +607,13 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             classResolverRef, "readClassInfo", classInfoTypeToken, buffer, classInfoRef);
       }
     }
-    Reference classInfoCacheRef = addClassInfoCacheField(cls);
+    Reference classInfoHolderRef = addClassInfoHolderField(cls);
     if (inlineReadClassInfo) {
       return inlineInvoke(
-          classResolverRef, "readClassInfo", classInfoTypeToken, buffer, classInfoCacheRef);
+          classResolverRef, "readClassInfo", classInfoTypeToken, buffer, classInfoHolderRef);
     } else {
       return new Invoke(
-          classResolverRef, "readClassInfo", classInfoTypeToken, buffer, classInfoCacheRef);
+          classResolverRef, "readClassInfo", classInfoTypeToken, buffer, classInfoHolderRef);
     }
   }
 
@@ -814,7 +814,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       return Tuple2.of(bitmap, null);
     } else {
       Expression elementTypeExpr = getClassExpr(elementType);
-      Expression classInfoHolder = addClassInfoCacheField(elementType);
+      Expression classInfoHolder = addClassInfoHolderField(elementType);
       Expression bitmap;
       if (trackingRef) {
         if (elementType == Object.class) {

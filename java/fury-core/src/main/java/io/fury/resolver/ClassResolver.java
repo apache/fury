@@ -214,7 +214,7 @@ public class ClassResolver {
   // IdentityMap has better lookup performance, when loadFactor is 0.05f, performance is better
   private final IdentityMap<Class<?>, ClassInfo> classInfoMap =
       new IdentityMap<>(initialCapacity, furyMapLoadFactor);
-  private ClassInfo classInfoCache;
+  private ClassInfo classInfoHolder;
   private final ObjectMap<EnumStringBytes, Class<?>> classNameBytes2Class =
       new ObjectMap<>(initialCapacity, furyMapLoadFactor);
   // Every deserialization for unregistered class will query it, performance is important.
@@ -253,7 +253,7 @@ public class ClassResolver {
   public ClassResolver(Fury fury) {
     this.fury = fury;
     enumStringResolver = fury.getEnumStringResolver();
-    classInfoCache = NIL_CLASS_INFO;
+    classInfoHolder = NIL_CLASS_INFO;
     metaContextShareEnabled = fury.getConfig().shareMetaContext();
     extRegistry = new ExtRegistry();
   }
@@ -622,7 +622,7 @@ public class ClassResolver {
       if (cls.getName().equals(className)) {
         LOG.info("Clear serializer for class {}.", className);
         entry.getValue().serializer = Serializers.newSerializer(fury, cls, serializer);
-        classInfoCache = NIL_CLASS_INFO;
+        classInfoHolder = NIL_CLASS_INFO;
         return;
       }
     }
@@ -640,7 +640,7 @@ public class ClassResolver {
       if (className.startsWith(classNamePrefix)) {
         LOG.info("Clear serializer for class {}.", className);
         entry.getValue().serializer = Serializers.newSerializer(fury, cls, serializer);
-        classInfoCache = NIL_CLASS_INFO;
+        classInfoHolder = NIL_CLASS_INFO;
       }
     }
   }
@@ -851,8 +851,8 @@ public class ClassResolver {
             @Override
             public void onSuccess(Class<? extends Serializer> result) {
               setSerializer(clz, Serializers.newSerializer(fury, clz, result));
-              if (classInfoCache.cls == clz) {
-                classInfoCache = NIL_CLASS_INFO; // clear class info cache
+              if (classInfoHolder.cls == clz) {
+                classInfoHolder = NIL_CLASS_INFO; // clear class info cache
               }
               Preconditions.checkState(getSerializer(clz).getClass() == result);
             }
@@ -1004,15 +1004,15 @@ public class ClassResolver {
   }
 
   /** Get classinfo by cache, update cache if miss. */
-  public ClassInfo getClassInfo(Class<?> cls, ClassInfoCache classInfoCache) {
-    ClassInfo classInfo = classInfoCache.classInfo;
+  public ClassInfo getClassInfo(Class<?> cls, ClassInfoHolder classInfoHolder) {
+    ClassInfo classInfo = classInfoHolder.classInfo;
     if (classInfo.getCls() != cls) {
       classInfo = classInfoMap.get(cls);
       if (classInfo == null || classInfo.serializer == null) {
         addSerializer(cls, createSerializer(cls));
         classInfo = Objects.requireNonNull(classInfoMap.get(cls));
       }
-      classInfoCache.classInfo = classInfo;
+      classInfoHolder.classInfo = classInfo;
     }
     assert classInfo.serializer != null;
     return classInfo;
@@ -1038,27 +1038,27 @@ public class ClassResolver {
 
   @Internal
   public ClassInfo getOrUpdateClassInfo(Class<?> cls) {
-    ClassInfo classInfo = classInfoCache;
+    ClassInfo classInfo = classInfoHolder;
     if (classInfo.cls != cls) {
       classInfo = classInfoMap.get(cls);
       if (classInfo == null || classInfo.serializer == null) {
         addSerializer(cls, createSerializer(cls));
         classInfo = classInfoMap.get(cls);
       }
-      classInfoCache = classInfo;
+      classInfoHolder = classInfo;
     }
     return classInfo;
   }
 
   private ClassInfo getOrUpdateClassInfo(short classId) {
-    ClassInfo classInfo = classInfoCache;
+    ClassInfo classInfo = classInfoHolder;
     if (classInfo.classId != classId) {
       classInfo = registeredId2ClassInfo[classId];
       if (classInfo.serializer == null) {
         addSerializer(classInfo.cls, createSerializer(classInfo.cls));
         classInfo = classInfoMap.get(classInfo.cls);
       }
-      classInfoCache = classInfo;
+      classInfoHolder = classInfo;
     }
     return classInfo;
   }
@@ -1152,8 +1152,9 @@ public class ClassResolver {
   // The jit-compiled native code fot this method will be too big for inline, so we generated
   // `getClassInfo`
   // in fury-jit, see `BaseSeqCodecBuilder#writeAndGetClassInfo`
-  // public ClassInfo writeClass(MemoryBuffer buffer, Class<?> cls, ClassInfoCache classInfoCache) {
-  //   ClassInfo classInfo = getClassInfo(cls, classInfoCache);
+  // public ClassInfo writeClass(MemoryBuffer buffer, Class<?> cls, ClassInfoHolder classInfoHolder)
+  // {
+  //   ClassInfo classInfo = getClassInfo(cls, classInfoHolder);
   //   writeClass(buffer, classInfo);
   //   return classInfo;
   // }
@@ -1441,7 +1442,7 @@ public class ClassResolver {
   /**
    * Read serialized java classname. Note that the object of the class can be non-serializable. For
    * serializable object, {@link #readClassAndUpdateCache(MemoryBuffer)} or {@link
-   * #readClassInfo(MemoryBuffer, ClassInfoCache)} should be invoked.
+   * #readClassInfo(MemoryBuffer, ClassInfoHolder)} should be invoked.
    */
   public Class<?> readClassInternal(MemoryBuffer buffer) {
     if (buffer.readByte() == USE_CLASS_VALUE) {
@@ -1463,16 +1464,16 @@ public class ClassResolver {
     }
   }
 
-  public ClassInfo readAndUpdateClassInfoCache(MemoryBuffer buffer) {
+  public ClassInfo readAndUpdateClassInfoHolder(MemoryBuffer buffer) {
     if (buffer.readByte() == USE_CLASS_VALUE) {
       ClassInfo classInfo;
       if (metaContextShareEnabled) {
         classInfo =
             readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
       } else {
-        classInfo = readClassInfoFromBytes(buffer, classInfoCache);
+        classInfo = readClassInfoFromBytes(buffer, classInfoHolder);
       }
-      classInfoCache = classInfo;
+      classInfoHolder = classInfo;
       currentReadClass = classInfo.cls;
       return classInfo;
     } else {
@@ -1492,9 +1493,9 @@ public class ClassResolver {
         classInfo =
             readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
       } else {
-        classInfo = readClassInfoFromBytes(buffer, classInfoCache);
+        classInfo = readClassInfoFromBytes(buffer, classInfoHolder);
       }
-      classInfoCache = classInfo;
+      classInfoHolder = classInfo;
       currentReadClass = classInfo.cls;
       return classInfo.cls;
     } else {
@@ -1508,12 +1509,12 @@ public class ClassResolver {
   }
 
   // Called by fury Java serialization JIT.
-  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache) {
+  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoHolder) {
     if (buffer.readByte() == USE_CLASS_VALUE) {
       if (metaContextShareEnabled) {
         return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
       }
-      return readClassInfoFromBytes(buffer, classInfoCache);
+      return readClassInfoFromBytes(buffer, classInfoHolder);
     } else {
       // use classId
       short classId = buffer.readShort();
@@ -1522,12 +1523,12 @@ public class ClassResolver {
   }
 
   // Called by fury Java serialization JIT.
-  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoCache classInfoCache) {
+  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
     if (buffer.readByte() == USE_CLASS_VALUE) {
       if (metaContextShareEnabled) {
         return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
       }
-      return readClassInfoFromBytes(buffer, classInfoCache);
+      return readClassInfoFromBytes(buffer, classInfoHolder);
     } else {
       // use classId
       short classId = buffer.readShort();
@@ -1535,16 +1536,16 @@ public class ClassResolver {
     }
   }
 
-  private ClassInfo readClassInfoFromBytes(MemoryBuffer buffer, ClassInfoCache classInfoCache) {
-    ClassInfo classInfo = readClassInfoFromBytes(buffer, classInfoCache.classInfo);
-    classInfoCache.classInfo = classInfo;
+  private ClassInfo readClassInfoFromBytes(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
+    ClassInfo classInfo = readClassInfoFromBytes(buffer, classInfoHolder.classInfo);
+    classInfoHolder.classInfo = classInfo;
     return classInfo;
   }
 
-  private ClassInfo readClassInfoFromBytes(MemoryBuffer buffer, ClassInfo classInfoCache) {
-    EnumStringBytes simpleClassNameBytesCache = classInfoCache.classNameBytes;
+  private ClassInfo readClassInfoFromBytes(MemoryBuffer buffer, ClassInfo classInfoHolder) {
+    EnumStringBytes simpleClassNameBytesCache = classInfoHolder.classNameBytes;
     if (simpleClassNameBytesCache != null) {
-      EnumStringBytes packageNameBytesCache = classInfoCache.packageNameBytes;
+      EnumStringBytes packageNameBytesCache = classInfoHolder.packageNameBytes;
       EnumStringBytes packageBytes =
           enumStringResolver.readEnumStringBytes(buffer, packageNameBytesCache);
       assert packageNameBytesCache != null;
@@ -1552,7 +1553,7 @@ public class ClassResolver {
           enumStringResolver.readEnumStringBytes(buffer, simpleClassNameBytesCache);
       if (simpleClassNameBytesCache.hashCode == simpleClassNameBytes.hashCode
           && packageNameBytesCache.hashCode == packageBytes.hashCode) {
-        return classInfoCache;
+        return classInfoHolder;
       } else {
         Class<?> cls = loadBytesToClass(packageBytes, simpleClassNameBytes);
         return getClassInfo(cls);
@@ -1712,8 +1713,8 @@ public class ClassResolver {
     return new ClassInfo(this, null, null, null, NO_CLASS_ID);
   }
 
-  public ClassInfoCache nilClassInfoCache() {
-    return new ClassInfoCache(nilClassInfo());
+  public ClassInfoHolder nilClassInfoHolder() {
+    return new ClassInfoHolder(nilClassInfo());
   }
 
   public boolean isPrimitive(short classId) {

@@ -25,7 +25,7 @@ import io.fury.collection.Tuple3;
 import io.fury.exception.FuryException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.type.Descriptor;
@@ -206,9 +206,9 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       Object fieldValue = fieldAccessor.getObject(value);
       if (fieldInfo.trackingRef) {
-        fury.writeRef(buffer, fieldValue, fieldInfo.classInfoCache);
+        fury.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
       } else {
-        fury.writeNullable(buffer, fieldValue, fieldInfo.classInfoCache);
+        fury.writeNullable(buffer, fieldValue, fieldInfo.classInfoHolder);
       }
     }
     writeContainerFields(buffer, value, fury, refResolver, classResolver);
@@ -276,7 +276,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     if (fieldInfo.trackingRef) {
       if (!refResolver.writeRefOrNull(buffer, fieldValue)) {
         ClassInfo classInfo =
-            classResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoCache);
+            classResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder);
         generics.pushGenericType(fieldInfo.genericType);
         fury.writeNonRef(buffer, fieldValue, classInfo);
         generics.popGenericType();
@@ -290,7 +290,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         fury.writeNonRef(
             buffer,
             fieldValue,
-            classResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoCache));
+            classResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder));
         generics.popGenericType();
       }
     }
@@ -433,13 +433,13 @@ public final class ObjectSerializer<T> extends Serializer<T> {
   static Object readOtherFieldValue(Fury fury, GenericTypeField fieldInfo, MemoryBuffer buffer) {
     Object fieldValue;
     if (fieldInfo.trackingRef) {
-      fieldValue = fury.readRef(buffer, fieldInfo.classInfoCache);
+      fieldValue = fury.readRef(buffer, fieldInfo.classInfoHolder);
     } else {
       byte headFlag = buffer.readByte();
       if (headFlag == Fury.NULL_FLAG) {
         fieldValue = null;
       } else {
-        fieldValue = fury.readNonRef(buffer, fieldInfo.classInfoCache);
+        fieldValue = fury.readNonRef(buffer, fieldInfo.classInfoHolder);
       }
     }
     return fieldValue;
@@ -450,7 +450,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     Object fieldValue;
     if (fieldInfo.trackingRef) {
       generics.pushGenericType(fieldInfo.genericType);
-      fieldValue = fury.readRef(buffer, fieldInfo.classInfoCache);
+      fieldValue = fury.readRef(buffer, fieldInfo.classInfoHolder);
       generics.popGenericType();
     } else {
       byte headFlag = buffer.readByte();
@@ -458,7 +458,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         fieldValue = null;
       } else {
         generics.pushGenericType(fieldInfo.genericType);
-        fieldValue = fury.readNonRef(buffer, fieldInfo.classInfoCache);
+        fieldValue = fury.readNonRef(buffer, fieldInfo.classInfoHolder);
         generics.popGenericType();
       }
     }
@@ -930,7 +930,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
 
   static final class GenericTypeField extends InternalFieldInfo {
     private final GenericType genericType;
-    final ClassInfoCache classInfoCache;
+    final ClassInfoHolder classInfoHolder;
     final boolean trackingRef;
 
     private GenericTypeField(
@@ -938,7 +938,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       super(getRegisteredClassId(fury, cls), qualifiedFieldName, accessor);
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
       genericType = fury.getClassResolver().buildGenericType(cls);
-      classInfoCache = fury.getClassResolver().nilClassInfoCache();
+      classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       trackingRef = fury.getClassResolver().needToWriteRef(cls);
     }
 
@@ -947,7 +947,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       super(getRegisteredClassId(fury, getRawType(typeToken)), qualifiedFieldName, accessor);
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
       genericType = fury.getClassResolver().buildGenericType(typeToken);
-      classInfoCache = fury.getClassResolver().nilClassInfoCache();
+      classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       trackingRef = fury.getClassResolver().needToWriteRef(getRawType(typeToken));
     }
 
