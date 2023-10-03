@@ -52,7 +52,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -165,7 +164,7 @@ public class ClassResolverTest extends FuryTestBase {
         CollectionSerializers.DefaultJavaCollectionSerializer.class);
     assertEquals(
         classResolver.getSerializerClass(Class.forName("io.fury.serializer.MapContainer")),
-      MapSerializers.DefaultJavaMapSerializer.class);
+        MapSerializers.DefaultJavaMapSerializer.class);
   }
 
   interface Interface1 {}

@@ -26,6 +26,7 @@ import static io.fury.codegen.ExpressionUtils.neq;
 import static io.fury.codegen.ExpressionUtils.not;
 import static io.fury.codegen.ExpressionUtils.nullValue;
 import static io.fury.codegen.ExpressionUtils.uninline;
+import static io.fury.collection.Collections.ofHashSet;
 import static io.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
 import static io.fury.type.TypeUtils.CLASS_TYPE;
 import static io.fury.type.TypeUtils.COLLECTION_TYPE;
@@ -675,7 +676,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         serializer =
             invokeGenerated(
                 ctx,
-                ImmutableSet.of(buffer, clsExpr),
+                ImmutableSet.of(buffer, collection),
                 writeClassAction,
                 "writeCollectionClassInfo",
                 false);
@@ -727,9 +728,23 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Literal flag = Literal.ofInt(CollectionSerializers.Flags.NOT_SAME_TYPE);
       Expression sameElementClass = neq(new BitAnd(flags, flag), flag, "sameElementClass");
       builder.add(sameElementClass);
-      // Make it inside scope of `if(sameElementClass)`
-      Expression elemSerializer =
-          castSerializer(writeElementsHeader.f1.inline(), getSerializerType(elementType));
+      //  if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE)
+      Literal notDeclTypeFlag = Literal.ofInt(CollectionSerializers.Flags.NOT_DECL_ELEMENT_TYPE);
+      Expression isDeclType =
+          neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
+      Expression elemSerializer; // make it in scope of `if(sameElementClass)`
+      boolean maybeDecl = visitFury(f -> f.getClassResolver().isSerializable(elemClass));
+      if (maybeDecl) {
+        elemSerializer =
+            new If(
+                isDeclType,
+                getOrCreateSerializer(elemClass),
+                castSerializer(writeElementsHeader.f1.inline(), elementType),
+                false,
+                getSerializerType(elementType));
+      } else {
+        elemSerializer = castSerializer(writeElementsHeader.f1.inline(), elementType);
+      }
       elemSerializer = uninline(elemSerializer);
       Expression action;
       if (trackingRef) {
@@ -737,34 +752,31 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         writeBuilder.add(
             writeContainerElements(
                 elementType, true, elemSerializer, null, buffer, collection, size));
+        Set<Expression> cutPoint = ofHashSet(buffer, collection, size);
+        if (maybeDecl) {
+          cutPoint.add(flags);
+        }
         action =
             new If(
                 sameElementClass,
-                invokeGenerated(
-                    ctx,
-                    ImmutableSet.of(buffer, collection, size),
-                    writeBuilder,
-                    "sameElementClassWrite",
-                    false),
+                invokeGenerated(ctx, cutPoint, writeBuilder, "sameElementClassWrite", false),
                 writeContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
         Literal hasNullFlag = Literal.ofInt(CollectionSerializers.Flags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
         builder.add(hasNull);
-
         ListExpression writeBuilder = new ListExpression(elemSerializer);
         writeBuilder.add(
             writeContainerElements(
                 elementType, false, elemSerializer, hasNull, buffer, collection, size));
+        Set<Expression> cutPoint = ofHashSet(buffer, collection, size, hasNull);
+        if (maybeDecl) {
+          cutPoint.add(flags);
+        }
         action =
             new If(
                 sameElementClass,
-                invokeGenerated(
-                    ctx,
-                    ImmutableSet.of(buffer, collection, size, hasNull),
-                    writeBuilder,
-                    "sameElementClassWrite",
-                    false),
+                invokeGenerated(ctx, cutPoint, writeBuilder, "sameElementClassWrite", false),
                 writeContainerElements(
                     elementType, false, null, hasNull, buffer, collection, size));
       }
@@ -1268,16 +1280,17 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           inlineInvoke(readClassInfo(elemClass, buffer), "getSerializer", SERIALIZER_TYPE);
       TypeToken<?> serializerType = getSerializerType(elementType);
       Expression elemSerializer; // make it in scope of `if(sameElementClass)`
-      if (visitFury(f -> f.getClassResolver().isSerializable(elemClass))) {
+      boolean maybeDecl = visitFury(f -> f.getClassResolver().isSerializable(elemClass));
+      if (maybeDecl) {
         elemSerializer =
             new If(
                 isDeclType,
                 getOrCreateSerializer(elemClass),
-                castSerializer(serializer, elementType),
+                castSerializer(serializer.inline(), elementType),
                 false,
                 serializerType);
       } else {
-        elemSerializer = castSerializer(serializer, elementType);
+        elemSerializer = castSerializer(serializer.inline(), elementType);
       }
       elemSerializer = uninline(elemSerializer);
       builder.add(sameElementClass);
@@ -1288,13 +1301,12 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         readBuilder.add(
             readContainerElements(
                 elementType, true, elemSerializer, null, buffer, collection, size));
+        Set<Expression> cutPoint = ofHashSet(buffer, collection, size);
+        if (maybeDecl) { // For `isDeclType`
+          cutPoint.add(flags);
+        }
         Expression sameElementClassRead =
-            invokeGenerated(
-                ctx,
-                ImmutableSet.of(buffer, collection, size),
-                readBuilder,
-                "sameElementClassRead",
-                false);
+            invokeGenerated(ctx, cutPoint, readBuilder, "sameElementClassRead", false);
         // Same element class read end
         action =
             new If(
@@ -1310,14 +1322,13 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         readBuilder.add(
             readContainerElements(
                 elementType, false, elemSerializer, hasNull, buffer, collection, size));
+        Set<Expression> cutPoint = ofHashSet(buffer, collection, size, hasNull);
+        if (maybeDecl) { // For `isDeclType`
+          cutPoint.add(flags);
+        }
         // Same element class read end
         Expression sameElementClassRead =
-            invokeGenerated(
-                ctx,
-                ImmutableSet.of(buffer, collection, size, hasNull, flags),
-                readBuilder,
-                "sameElementClassRead",
-                false);
+            invokeGenerated(ctx, cutPoint, readBuilder, "sameElementClassRead", false);
         action =
             new If(
                 sameElementClass,
