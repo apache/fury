@@ -14,29 +14,16 @@
  * limitations under the License.
  */
 
-package io.fury.resolver;
+package io.fury.annotation;
 
-import io.fury.serializer.Serializer;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * A helper class for caching {@link ClassInfo} to reduce map loop up.
+ * An annotation to mark a method will be invoked by generated method. This annotation is used for
+ * documentation only.
  *
  * @author chaokunyang
  */
-@SuppressWarnings("rawtypes")
-public class ClassInfoCache {
-  public ClassInfo classInfo;
-
-  public ClassInfoCache(ClassInfo classInfo) {
-    this.classInfo = classInfo;
-  }
-
-  public Serializer getSerializer() {
-    return classInfo.serializer;
-  }
-
-  @Override
-  public String toString() {
-    return "ClassInfoCache{" + classInfo + '}';
-  }
-}
+@Retention(RetentionPolicy.SOURCE)
+public @interface CodegenInvoke {}

@@ -47,8 +47,38 @@ Which encoding to choose:
 - For JDK9+: fury use `coder` in `String` object for encoding, `ascii`/`utf-16` will be used for encoding.
 - If the string is encoded by `utf-8`, then fury will use `utf-8` to decode the data. But currently fury doesn't enable utf-8 encoding by default for java. Cross-language string serialization of fury use `utf-8` by default.
 
-## Collection
+## Array
 
+## Collection
+> All collection serializer must extends `io.fury.serializer.CollectionSerializers.CollectionSerializer`.
+
+Format:
+```java
+length(positive varint) | collection header | elements header | elements data
+```
+
+### collection header
+- For `ArrayList/LinkedArrayList/HashSet/LinkedHashSet`, this will be empty.
+- For `TreeSet`, this will be `Comparator`
+- For subclass of `ArrayList`, this may be extra object field info.
+
+### elements header
+In most cases, all collection elements are same type and not null, elements header will encode those homogeneous 
+information to avoid the cost of writing it for every elements. Specifically, there are four kinds of information 
+which will be encoded by elements header, each use one bit:
+- Whether track elements ref, use first bit `0b1` of header to flag it.
+- Whether collection has null, use second bit `0b10` of header to flag it. If ref tracking is enabled for this 
+element type, this flag is invalid.
+- Whether collection elements type is not declare type, use 3rd bit `0b100` of header to flag it. 
+- Whether collection elements type different, use 4rd bit `0b1000` of header to flag it.
+
+By default, all bits are unset, which means all elements won't track ref, all elements are same type,, not null and the 
+actual element is the declare type in custom class field.
+
+### elements data
+Based on the elements header, the serialization of elements data may skip `ref flag`/`null flag`/`element class info`.
+
+`io.fury.serializer.CollectionSerializers.CollectionSerializer#write/read` can be taken as an example.
 
 ## Map
 

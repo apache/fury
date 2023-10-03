@@ -87,6 +87,9 @@ public class ExpressionOptimizer {
       boolean inlineInvoke) {
     LinkedHashMap<Expression, Reference> cutExprMap = new LinkedHashMap<>();
     for (Expression expression : cutPoint) {
+      if (expression == null) {
+        continue;
+      }
       Preconditions.checkArgument(
           expression.type() != PRIMITIVE_VOID_TYPE, "Cut on block is not supported currently.");
       String param = ctx.newName(getRawType(expression.type()));

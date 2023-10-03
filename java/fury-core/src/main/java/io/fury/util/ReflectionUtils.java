@@ -54,6 +54,9 @@ import java.util.stream.Stream;
 @SuppressWarnings("UnstableApiUsage")
 public class ReflectionUtils {
   public static boolean isAbstract(Class<?> clazz) {
+    if (clazz.isArray()) {
+      return false;
+    }
     return Modifier.isAbstract(clazz.getModifiers());
   }
 

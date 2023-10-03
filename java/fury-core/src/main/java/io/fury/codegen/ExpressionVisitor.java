@@ -32,6 +32,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -53,11 +54,15 @@ public class ExpressionVisitor {
   public static final class ExprHolder {
     private final Map<Object, Expression> expressionsMap;
 
+    /** Null value will be skipped. */
     private ExprHolder(Object... kv) {
       Preconditions.checkArgument(kv.length % 2 == 0);
       expressionsMap = new HashMap<>();
       for (int i = 0; i < kv.length; i += 2) {
-        expressionsMap.put(kv[i], (Expression) kv[i + 1]);
+        Object value = kv[i + 1];
+        if (value != null) {
+          expressionsMap.put(kv[i], (Expression) value);
+        }
       }
     }
 
@@ -74,8 +79,24 @@ public class ExpressionVisitor {
       return new ExprHolder(k1, v1, k2, v2, k3, v3);
     }
 
+    public static ExprHolder of(
+        String k1,
+        Expression v1,
+        String k2,
+        Expression v2,
+        String k3,
+        Expression v3,
+        String k4,
+        Expression v4) {
+      return new ExprHolder(k1, v1, k2, v2, k3, v3, k4, v4);
+    }
+
     public Expression get(String key) {
       return expressionsMap.get(key);
+    }
+
+    public void add(String key, Expression expr) {
+      expressionsMap.put(key, expr);
     }
 
     public Map<Object, Expression> getExpressionsMap() {
@@ -133,7 +154,7 @@ public class ExpressionVisitor {
     if (expr instanceof ListExpression) {
       traverseList(expr, ((ListExpression) expr).expressions(), func);
     } else {
-      for (Field field : ReflectionUtils.getFields(expr.getClass(), true)) {
+      for (Field field : ReflectionUtils.getFields(Objects.requireNonNull(expr).getClass(), true)) {
         if (!Modifier.isStatic(field.getModifiers())) {
           try {
             if (Expression.class.isAssignableFrom(field.getType())) {
@@ -184,7 +205,7 @@ public class ExpressionVisitor {
                 capturedArg.getClass(), capturedArg, closure, serializedLambda));
       }
       if (capturedArg instanceof ExprHolder) {
-        traverseMap(expr, ((ExprHolder) capturedArg).expressionsMap, func);
+        traverseMap(expr, ((ExprHolder) capturedArg).getExpressionsMap(), func);
       }
     }
   }

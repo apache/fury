@@ -183,7 +183,9 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
           for (Descriptor d : group) {
             // `bean` will be replaced by `Reference` to cut-off expr dependency.
             Expression fieldValue = getFieldValue(bean, d);
+            walkPath.add(d.getDeclaringClass() + d.getName());
             Expression fieldExpr = serializeFor(fieldValue, buffer, d.getTypeToken());
+            walkPath.removeLast();
             groupExpressions.add(fieldExpr);
           }
           return groupExpressions;
@@ -505,6 +507,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
           // use Reference to cut-off expr dependency.
           for (Descriptor d : group) {
             ExpressionVisitor.ExprHolder exprHolder = ExpressionVisitor.ExprHolder.of("bean", bean);
+            walkPath.add(d.getDeclaringClass() + d.getName());
             Expression action =
                 deserializeFor(
                     buffer,
@@ -514,6 +517,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
                     expr ->
                         setFieldValue(
                             exprHolder.get("bean"), d, tryInlineCast(expr, d.getTypeToken())));
+            walkPath.removeLast();
             groupExpressions.add(action);
           }
           return groupExpressions;

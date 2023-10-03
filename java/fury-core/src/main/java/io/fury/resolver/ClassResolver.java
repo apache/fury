@@ -736,6 +736,18 @@ public class ClassResolver {
     return (Serializer<T>) getOrUpdateClassInfo(cls).serializer;
   }
 
+  public boolean isSerializable(Class<?> cls) {
+    if (ReflectionUtils.isAbstract(cls) || cls.isInterface()) {
+      return false;
+    }
+    try {
+      getSerializerClass(cls, false);
+      return true;
+    } catch (Throwable t) {
+      return false;
+    }
+  }
+
   public Class<? extends Serializer> getSerializerClass(Class<?> cls) {
     boolean codegen =
         supportCodegenForJavaSerialization(cls) && fury.getConfig().isCodeGenEnabled();
@@ -743,6 +755,10 @@ public class ClassResolver {
   }
 
   public Class<? extends Serializer> getSerializerClass(Class<?> cls, boolean codegen) {
+    if (ReflectionUtils.isAbstract(cls) || cls.isInterface()) {
+      throw new UnsupportedOperationException(
+          String.format("Class %s doesn't support serialization.", cls));
+    }
     if (cls.isPrimitive()) {
       cls = Primitives.wrap(cls);
     }
@@ -987,6 +1003,7 @@ public class ClassResolver {
     return classInfo;
   }
 
+  /** Get classinfo by cache, update cache if miss. */
   public ClassInfo getClassInfo(Class<?> cls, ClassInfoCache classInfoCache) {
     ClassInfo classInfo = classInfoCache.classInfo;
     if (classInfo.getCls() != cls) {

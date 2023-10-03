@@ -336,6 +336,17 @@ public final class Fury {
     }
   }
 
+  /** Write object class and data without tracking ref. */
+  public void writeNullable(MemoryBuffer buffer, Object obj) {
+    if (obj == null) {
+      buffer.writeByte(Fury.NULL_FLAG);
+    } else {
+      buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+      writeNonRef(buffer, obj);
+    }
+  }
+
+  /** Write object class and data without tracking ref. */
   public void writeNullable(MemoryBuffer buffer, Object obj, ClassInfoCache classInfoCache) {
     if (obj == null) {
       buffer.writeByte(Fury.NULL_FLAG);
@@ -781,6 +792,16 @@ public final class Fury {
     return readDataInternal(buffer, classResolver.readClassInfo(buffer, classInfoCache));
   }
 
+  /** Read object class and data without tracking ref. */
+  public Object readNullable(MemoryBuffer buffer) {
+    byte headFlag = buffer.readByte();
+    if (headFlag == Fury.NULL_FLAG) {
+      return null;
+    } else {
+      return readNonRef(buffer);
+    }
+  }
+
   /** Class should be read already. */
   public Object readData(MemoryBuffer buffer, ClassInfo classInfo) {
     depth++;
@@ -1195,6 +1216,10 @@ public final class Fury {
 
   public void setDepth(int depth) {
     this.depth = depth;
+  }
+
+  public void incDepth(int diff) {
+    this.depth += diff;
   }
 
   // Invoked by jit

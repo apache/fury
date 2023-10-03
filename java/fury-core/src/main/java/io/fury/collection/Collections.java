@@ -21,6 +21,7 @@ import static io.fury.util.unsafe._Collections.setArrayListElements;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -56,5 +57,11 @@ public class Collections {
       map.put(kv[i], kv[i + 1]);
     }
     return map;
+  }
+
+  public static <E> HashSet<E> ofHashSet(E... elements) {
+    HashSet<E> set = new HashSet<>(elements.length);
+    java.util.Collections.addAll(set, elements);
+    return set;
   }
 }

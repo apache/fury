@@ -16,6 +16,9 @@
 
 package io.fury.builder;
 
+import static io.fury.collection.Collections.ofArrayList;
+import static io.fury.collection.Collections.ofHashMap;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -25,6 +28,7 @@ import io.fury.Language;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CompileUnit;
 import io.fury.codegen.JaninoUtils;
+import io.fury.serializer.CollectionSerializersTest;
 import io.fury.test.bean.AccessBeans;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
@@ -139,6 +143,16 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
                     String.format(
                         "Method %s for class %s has size %d > 325",
                         e.getKey(), compileUnit.getQualifiedClassName(), e.getValue())));
+  }
+
+  @Test
+  public void testContainer() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+    CollectionSerializersTest.Container container = new CollectionSerializersTest.Container();
+    container.list1 = ofArrayList(new CollectionSerializersTest.NotFinal(1));
+    container.map1 = ofHashMap("k", new CollectionSerializersTest.NotFinal(2));
+    serDeCheck(fury, container);
+    checkMethodSize(CollectionSerializersTest.Container.class, fury);
   }
 
   @Data

@@ -75,7 +75,11 @@ public class ExpressionUtils {
   }
 
   public static Comparator eq(Expression left, Expression right) {
-    return new Comparator("==", left, right, true);
+    return eq(left, right, true);
+  }
+
+  public static Comparator eq(Expression left, Expression right, boolean inline) {
+    return new Comparator("==", left, right, inline);
   }
 
   public static Comparator eq(Expression left, Expression right, String valuePrefix) {
@@ -85,7 +89,17 @@ public class ExpressionUtils {
   }
 
   public static Comparator neq(Expression left, Expression right) {
-    return new Comparator("!=", left, right, true);
+    return neq(left, right, true);
+  }
+
+  public static Comparator neq(Expression left, Expression right, String valuePrefix) {
+    Comparator comparator = new Comparator("!=", left, right, false);
+    comparator.valuePrefix = valuePrefix;
+    return comparator;
+  }
+
+  public static Comparator neq(Expression left, Expression right, boolean inline) {
+    return new Comparator("!=", left, right, inline);
   }
 
   public static Comparator egt(Expression left, Expression right) {
@@ -95,6 +109,11 @@ public class ExpressionUtils {
   public static Comparator egt(Expression left, Expression right, String valuePrefix) {
     Comparator comparator = new Comparator(">=", left, right, false);
     comparator.valuePrefix = valuePrefix;
+    return comparator;
+  }
+
+  public static Comparator gt(Expression left, Expression right) {
+    Comparator comparator = new Comparator(">", left, right, true);
     return comparator;
   }
 
@@ -124,6 +143,13 @@ public class ExpressionUtils {
 
   public static Cast cast(Expression value, TypeToken<?> typeToken) {
     return new Cast(value, typeToken);
+  }
+
+  public static Expression uninline(Expression expression) {
+    if (expression instanceof Expression.Inlineable) {
+      ((Expression.Inlineable) (expression)).inline(false);
+    }
+    return expression;
   }
 
   public static StaticInvoke invokeStaticInline(

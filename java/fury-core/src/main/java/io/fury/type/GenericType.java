@@ -58,6 +58,7 @@ public class GenericType {
   final boolean isFinal;
   // Used to cache serializer for final class to avoid hash lookup for serializer.
   Serializer<?> serializer;
+  private Boolean trackingRef;
 
   public GenericType(TypeToken<?> typeToken, boolean isFinal, GenericType... typeParameters) {
     this.typeToken = typeToken;
@@ -76,6 +77,14 @@ public class GenericType {
     } else {
       typeParameter1 = null;
     }
+  }
+
+  public static GenericType build(TypeToken<?> type) {
+    return build(type.getType());
+  }
+
+  public static GenericType build(Type type) {
+    return build(type, defaultFinalPredicate);
   }
 
   /**
@@ -99,10 +108,6 @@ public class GenericType {
     return build(context, type, defaultFinalPredicate);
   }
 
-  public static GenericType build(TypeToken<?> context, Type type, Predicate<Type> finalPredicate) {
-    return build(context.resolveType(type).getType(), finalPredicate);
-  }
-
   public static GenericType build(Class<?> context, Type type) {
     return build(context, type, defaultFinalPredicate);
   }
@@ -111,12 +116,8 @@ public class GenericType {
     return build(TypeToken.of(context), type, finalPredicate);
   }
 
-  public static GenericType build(TypeToken<?> type) {
-    return build(type.getType());
-  }
-
-  public static GenericType build(Type type) {
-    return build(type, defaultFinalPredicate);
+  public static GenericType build(TypeToken<?> context, Type type, Predicate<Type> finalPredicate) {
+    return build(context.resolveType(type).getType(), finalPredicate);
   }
 
   @SuppressWarnings("rawtypes")
@@ -197,6 +198,14 @@ public class GenericType {
     } else {
       return null;
     }
+  }
+
+  public boolean trackingRef(ClassResolver classResolver) {
+    Boolean trackingRef = this.trackingRef;
+    if (trackingRef == null) {
+      trackingRef = this.trackingRef = classResolver.needToWriteRef(cls);
+    }
+    return trackingRef;
   }
 
   public boolean hasGenericParameters() {

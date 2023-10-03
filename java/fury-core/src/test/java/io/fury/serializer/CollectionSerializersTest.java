@@ -16,6 +16,8 @@
 
 package io.fury.serializer;
 
+import static io.fury.collection.Collections.ofArrayList;
+import static io.fury.collection.Collections.ofHashMap;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
@@ -46,6 +48,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
@@ -55,6 +58,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.LongStream;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -248,6 +252,47 @@ public class CollectionSerializersTest extends FuryTestBase {
   }
 
   @Data
+  public static class SimpleBeanCollectionFields {
+    public List<String> list;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testSimpleBeanCollectionFields(Fury fury) {
+    SimpleBeanCollectionFields obj = new SimpleBeanCollectionFields();
+    obj.list = new ArrayList<>();
+    obj.list.add("a");
+    obj.list.add("b");
+    Assert.assertEquals(serDe(fury, obj).toString(), obj.toString());
+    if (fury.getConfig().isCodeGenEnabled()) {
+      Assert.assertTrue(
+          fury.getClassResolver()
+              .getSerializerClass(SimpleBeanCollectionFields.class)
+              .getName()
+              .contains("Codec"));
+    }
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class NotFinal {
+    int f1;
+  }
+
+  @Data
+  public static class Container {
+    public List<NotFinal> list1;
+    public Map<String, NotFinal> map1;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testContainer(Fury fury) {
+    Container container = new Container();
+    container.list1 = ofArrayList(new NotFinal(1));
+    container.map1 = ofHashMap("k", new NotFinal(2));
+    serDeCheck(fury, container);
+  }
+
+  @Data
   public static class CollectionFieldsClass {
     public ArrayList<String> arrayList;
     public List<String> arrayList2;
@@ -338,6 +383,32 @@ public class CollectionSerializersTest extends FuryTestBase {
               .getName()
               .contains("Codec"));
     }
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class NestedCollection1 {
+    public List<Collection<Integer>> list1;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testNestedCollection1(Fury fury) {
+    ArrayList<Integer> list = ofArrayList(1, 2);
+    NestedCollection1 o = new NestedCollection1(ofArrayList(list));
+    Assert.assertEquals(serDe(fury, o), o);
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class NestedCollection2 {
+    public List<Collection<Collection<Integer>>> list1;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testNestedCollection2(Fury fury) {
+    ArrayList<Integer> list = ofArrayList(1, 2);
+    NestedCollection2 o = new NestedCollection2(ofArrayList(ofArrayList(list)));
+    Assert.assertEquals(serDe(fury, o), o);
   }
 
   public static class TestClassForDefaultCollectionSerializer extends AbstractCollection<String> {

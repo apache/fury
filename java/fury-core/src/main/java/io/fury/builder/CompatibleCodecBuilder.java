@@ -267,6 +267,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                   new Literal(
                                       fieldInfo.getEncodedFieldInfo(), PRIMITIVE_LONG_TYPE)));
                           Descriptor descriptor = createDescriptor(fieldInfo);
+                          walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
                           byte fieldType = fieldInfo.getFieldType();
                           Expression writeFieldAction =
                               invokeGenerated(
@@ -330,6 +331,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                   },
                                   "writeField",
                                   fieldInfo.getEncodedFieldInfo());
+                          walkPath.removeLast();
                           groupExpressions.add(writeFieldAction);
                         }
                         return groupExpressions;
@@ -346,7 +348,9 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   private Expression writeEmbedTypeFieldValue(
       Expression bean, Expression buffer, FieldInfo fieldInfo) {
     Descriptor descriptor = createDescriptor(fieldInfo);
+    walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
     Expression fieldValue = getFieldValue(bean, descriptor);
+    walkPath.removeLast();
     return serializeFor(fieldValue, buffer, descriptor.getTypeToken());
   }
 
@@ -465,6 +469,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                           for (FieldInfo fieldInfo : group) {
                             long encodedFieldInfo = fieldInfo.getEncodedFieldInfo();
                             Descriptor descriptor = createDescriptor(fieldInfo);
+                            walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
                             Expression readField =
                                 readEmbedTypes4(bean, buffer, descriptor, partFieldInfo);
                             Expression tryReadField =
@@ -485,6 +490,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                     tryReadField,
                                     false,
                                     PRIMITIVE_VOID_TYPE));
+                            walkPath.removeLast();
                           }
                           groupExpressions.add(new Return(partFieldInfo));
                           return groupExpressions;
@@ -688,6 +694,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
       FieldInfo fieldInfo) {
     long encodedFieldInfo = fieldInfo.getEncodedFieldInfo();
     Descriptor descriptor = createDescriptor(fieldInfo);
+    walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
     Expression readField = readEmbedTypes8Field(bean, buffer, descriptor, partFieldInfo);
     Expression tryReadField =
         new ListExpression(
@@ -695,6 +702,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             new If(
                 eq(partFieldInfo, new Literal(encodedFieldInfo, PRIMITIVE_LONG_TYPE)),
                 readEmbedTypes8Field(bean, buffer, descriptor, partFieldInfo)));
+    walkPath.removeLast();
     return new If(
         eq(partFieldInfo, new Literal(encodedFieldInfo, PRIMITIVE_LONG_TYPE)),
         readField,
@@ -742,6 +750,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                           for (FieldInfo fieldInfo : group) {
                             long encodedFieldInfo = fieldInfo.getEncodedFieldInfo();
                             Descriptor descriptor = createDescriptor(fieldInfo);
+                            walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
                             Expression readField =
                                 readObjectField(fieldInfo, bean, buffer, descriptor, partFieldInfo);
                             Expression tryReadField =
@@ -760,6 +769,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                             new Literal(encodedFieldInfo, PRIMITIVE_LONG_TYPE)),
                                         readObjectField(
                                             fieldInfo, bean, buffer, descriptor, partFieldInfo)));
+                            walkPath.removeLast();
                             groupExpressions.add(
                                 new If(
                                     eq(
@@ -808,7 +818,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                           inlineInvoke(buffer, "readByte", PRIMITIVE_BYTE_TYPE),
                           expectType));
               if (type == FieldTypes.OBJECT) {
-                deserializedValue.add(readForNotNullNonFinal(buffer, typeToken));
+                deserializedValue.add(readForNotNullNonFinal(buffer, typeToken, null));
               } else {
                 if (type == FieldTypes.COLLECTION_ELEMENT_FINAL) {
                   deserializedValue.add(
@@ -832,7 +842,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                   // deserializeForNotNull won't read field type if it's final
                   deserializedValue.add(skipFinalClassInfo(clz, buffer));
                 }
-                deserializedValue.add(deserializeForNotNull(buffer, typeToken, false));
+                deserializedValue.add(deserializeForNotNull(buffer, typeToken, null));
               }
               Expression setReadObject =
                   new Invoke(refResolverRef, "setReadObject", refId, deserializedValue);

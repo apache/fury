@@ -35,7 +35,6 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   public static Object[][] config() {
     return Sets.cartesianProduct(
             ImmutableSet.of(true, false), // referenceTracking
-            ImmutableSet.of(true, false), // compress number
             ImmutableSet.of(true, false), // fury1 enable codegen
             ImmutableSet.of(true, false) // fury2 enable codegen
             )
@@ -48,10 +47,9 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   public static Object[][] metaShareConfig() {
     return Sets.cartesianProduct(
             ImmutableSet.of(true, false), // referenceTracking
-            ImmutableSet.of(true, false), // compress number
             ImmutableSet.of(true, false), // fury1 enable codegen
             ImmutableSet.of(true, false), // fury2 enable codegen
-            ImmutableSet.of(true, false))
+            ImmutableSet.of(true, false)) // fury3 enable codegen
         .stream()
         .map(List::toArray)
         .toArray(Object[][]::new);
@@ -67,14 +65,10 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "config")
   public void testSkipUnexisted(
-      boolean referenceTracking,
-      boolean compressNumber,
-      boolean enableCodegen1,
-      boolean enableCodegen2) {
+      boolean referenceTracking, boolean enableCodegen1, boolean enableCodegen2) {
     Fury fury =
         builder()
             .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
@@ -89,7 +83,6 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       Fury fury2 =
           builder()
               .withRefTracking(referenceTracking)
-              .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen2)
               .withClassLoader(classLoader)
               .build();
@@ -101,22 +94,24 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   @Test(dataProvider = "metaShareConfig")
   public void testDeserializeUnexistedNewFury(
       boolean referenceTracking,
-      boolean compressNumber,
       boolean enableCodegen1,
       boolean enableCodegen2,
       boolean enableCodegen3) {
     Fury fury =
         builder()
             .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
             .withMetaContextShare(true)
             .build();
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          Struct.createNumberStructClass("TestSkipUnexistedClass1", 2),
-          Struct.createStructClass("TestSkipUnexistedClass1", 2)
+          // Serialization may crash at `G1ParScanThreadState::copy_to_survivor_space` in
+          // ubuntu22 and jdk11/17. It's a jvm bug, see:
+          // https://github.com/alipay/fury/pull/923#issuecomment-1745035339
+          // Workaround by disable cache.
+          Struct.createNumberStructClass("TestSkipUnexistedClass2", 2, false),
+          Struct.createStructClass("TestSkipUnexistedClass2", 2, false)
         }) {
       Object pojo = Struct.createPOJO(structClass);
       MetaContext context1 = new MetaContext();
@@ -125,7 +120,6 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       Fury fury2 =
           builder()
               .withRefTracking(referenceTracking)
-              .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen2)
               .withMetaContextShare(true)
               .withClassLoader(classLoader)
@@ -139,7 +133,6 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       Fury fury3 =
           builder()
               .withRefTracking(referenceTracking)
-              .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen3)
               .withMetaContextShare(true)
               .withClassLoader(pojo.getClass().getClassLoader())
@@ -155,14 +148,12 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   @Test(dataProvider = "metaShareConfig")
   public void testDeserializeUnexisted(
       boolean referenceTracking,
-      boolean compressNumber,
       boolean enableCodegen1,
       boolean enableCodegen2,
       boolean enableCodegen3) {
     Fury fury =
         builder()
             .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
             .withMetaContextShare(true)
             .build();
@@ -172,13 +163,16 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          Struct.createNumberStructClass("TestSkipUnexistedClass1", 2),
-          Struct.createStructClass("TestSkipUnexistedClass1", 2)
+          // Serialization may crash at `G1ParScanThreadState::copy_to_survivor_space` in
+          // ubuntu22 and jdk11/17. It's a jvm bug, see:
+          // https://github.com/alipay/fury/pull/923#issuecomment-1745035339
+          // Workaround by disable cache.
+          Struct.createNumberStructClass("TestSkipUnexistedClass3", 2, false),
+          Struct.createStructClass("TestSkipUnexistedClass3", 2, false)
         }) {
       Fury fury2 =
           builder()
               .withRefTracking(referenceTracking)
-              .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen2)
               .withMetaContextShare(true)
               .withClassLoader(classLoader)
@@ -186,7 +180,6 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       Fury fury3 =
           builder()
               .withRefTracking(referenceTracking)
-              .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen3)
               .withMetaContextShare(true)
               .withClassLoader(structClass.getClassLoader())
@@ -214,7 +207,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   public void testThrowExceptionIfClassNotExist() {
     Fury fury = builder().withDeserializeUnexistedClass(false).build();
     ClassLoader classLoader = getClass().getClassLoader();
-    Class<?> structClass = Struct.createNumberStructClass("TestSkipUnexistedClass1", 2);
+    Class<?> structClass = Struct.createNumberStructClass("TestSkipUnexistedClass1", 2, false);
     Object pojo = Struct.createPOJO(structClass);
     Fury fury2 =
         builder().withDeserializeUnexistedClass(false).withClassLoader(classLoader).build();

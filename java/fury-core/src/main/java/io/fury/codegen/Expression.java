@@ -1567,7 +1567,7 @@ public interface Expression {
 
     @Override
     public ExprCode doGenCode(CodegenContext ctx) {
-      ExprCode condEval = predicate.doGenCode(ctx);
+      ExprCode condEval = predicate.genCode(ctx);
       ExprCode trueEval = trueExpr.doGenCode(ctx);
       StringBuilder codeBuilder = new StringBuilder();
       if (StringUtils.isNotBlank(condEval.code())) {
@@ -1797,25 +1797,34 @@ public interface Expression {
     }
 
     public BinaryOperator(boolean inline, String operator, Expression left, Expression right) {
+      this(inline, operator, left, right, null);
+    }
+
+    protected BinaryOperator(
+        boolean inline, String operator, Expression left, Expression right, TypeToken<?> t) {
       this.inline = inline;
       this.operator = operator;
       this.left = left;
       this.right = right;
-      if (isPrimitive(getRawType(left.type()))) {
-        Preconditions.checkArgument(isPrimitive(getRawType(right.type())));
-        type =
-            getSizeOfPrimitiveType(left.type()) > getSizeOfPrimitiveType(right.type())
-                ? left.type()
-                : right.type();
-      } else {
-        if (left.type().isSupertypeOf(right.type())) {
-          type = left.type();
-        } else if (left.type().isSubtypeOf(right.type())) {
-          type = right.type();
+      if (t == null) {
+        if (isPrimitive(getRawType(left.type()))) {
+          Preconditions.checkArgument(isPrimitive(getRawType(right.type())));
+          type =
+              getSizeOfPrimitiveType(left.type()) > getSizeOfPrimitiveType(right.type())
+                  ? left.type()
+                  : right.type();
         } else {
-          throw new IllegalArgumentException(
-              String.format("Arguments type %s vs %s inconsistent", left.type(), right.type()));
+          if (left.type().isSupertypeOf(right.type())) {
+            type = left.type();
+          } else if (left.type().isSubtypeOf(right.type())) {
+            type = right.type();
+          } else {
+            throw new IllegalArgumentException(
+                String.format("Arguments type %s vs %s inconsistent", left.type(), right.type()));
+          }
         }
+      } else {
+        type = t;
       }
     }
 
@@ -1873,12 +1882,7 @@ public interface Expression {
 
   class Comparator extends BinaryOperator {
     public Comparator(String operator, Expression left, Expression right, boolean inline) {
-      super(inline, operator, left, right);
-    }
-
-    @Override
-    public TypeToken<?> type() {
-      return PRIMITIVE_BOOLEAN_TYPE;
+      super(inline, operator, left, right, PRIMITIVE_BOOLEAN_TYPE);
     }
   }
 
