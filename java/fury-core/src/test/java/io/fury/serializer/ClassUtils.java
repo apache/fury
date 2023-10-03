@@ -27,7 +27,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.ConcurrentHashMap;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import org.testng.Assert;
@@ -123,7 +122,6 @@ public class ClassUtils {
             + "}";
     return loadClass(MapFields.class, code, ClassUtils.class + "createCompatibleClass3");
   }
-
 
   static Class<?> loadClass(Class<?> cls, String code, Object cacheKey) {
     return Struct.loadClass(cacheKey, () -> compileClass(cls, code));
