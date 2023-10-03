@@ -441,7 +441,7 @@ public class FuryTest extends FuryTestBase {
     TestUtils.triggerOOMForSoftGC(
         () -> {
           System.out.printf("Wait map keys %s gc.\n", map.keySet());
-          return map.size() > 0;
+          return !map.isEmpty();
         });
     Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
   }

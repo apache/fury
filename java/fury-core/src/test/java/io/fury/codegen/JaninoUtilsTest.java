@@ -168,7 +168,7 @@ public class JaninoUtilsTest {
     WeakReference<? extends Class<?>> clsRef = new WeakReference<>(compileClassByJaninoCompiler());
     while (clsRef.get() != null) {
       System.gc();
-      Thread.sleep(1000);
+      Thread.sleep(50);
       System.out.printf("Wait cls %s gc.\n", clsRef.get());
     }
   }
@@ -212,10 +212,10 @@ public class JaninoUtilsTest {
   @Test
   public void testJaninoCompileDependentClass() throws Exception {
     WeakReference<? extends Class<?>> clsRef =
-        janinoCompileDependentClass(Struct.createStructClass("A", 1));
+        janinoCompileDependentClass(Struct.createStructClass("A", 1, false));
     while (clsRef.get() != null) {
       System.gc();
-      Thread.sleep(1000);
+      Thread.sleep(10);
       System.out.printf("Wait cls %s gc.\n", clsRef.get());
     }
   }
@@ -287,10 +287,9 @@ public class JaninoUtilsTest {
   @Test(timeOut = 60000)
   public void testJaninoGeneratedClassGC() throws InterruptedException {
     WeakReference<Class<?>> clsRef = janinoGenerateClass();
-    ;
     while (clsRef.get() != null) {
       System.gc();
-      Thread.sleep(1000);
+      Thread.sleep(10);
       System.out.printf("Wait cls %s gc.\n", clsRef.get());
     }
   }
@@ -322,13 +321,13 @@ public class JaninoUtilsTest {
     WeakReference<Class<?>> clsRef = jdkGenerateClass();
     while (clsRef.get() != null) {
       System.gc();
-      Thread.sleep(1000);
+      Thread.sleep(10);
       System.out.printf("Wait cls %s gc.\n", clsRef.get());
     }
   }
 
   private WeakReference<Class<?>> jdkGenerateClass() {
-    Class<?> cls = Struct.createStructClass("TestGeneratedClassGC", 1);
+    Class<?> cls = Struct.createStructClass("TestGeneratedClassGC", 1, false);
     return new WeakReference<>(cls);
   }
 }

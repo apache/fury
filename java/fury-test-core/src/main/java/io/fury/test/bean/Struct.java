@@ -190,6 +190,13 @@ public final class Struct implements Serializable {
       new ConcurrentHashMap<>();
 
   public static Class<?> loadClass(Object key, Supplier<Class<?>> func) {
+    return loadClass(key, true, func);
+  }
+
+  public static Class<?> loadClass(Object key, boolean cache, Supplier<Class<?>> func) {
+    if (!cache) {
+      return func.get();
+    }
     Object lock = cacheLock.computeIfAbsent(key, k -> new Object());
     synchronized (lock) {
       SoftReference<Class<?>> ref = classCache.get(key);
@@ -254,13 +261,17 @@ public final class Struct implements Serializable {
 
   /** Create Class. */
   public static Class<?> createStructClass(String classname, int repeat) {
+    return createStructClass(classname, repeat, true);
+  }
+
+  public static Class<?> createStructClass(String classname, int repeat, boolean cache) {
     if (StringUtils.isBlank(classname)) {
       throw new IllegalArgumentException("Class name is empty");
     }
     String key = "createStructClass" + classname + repeat;
-
     return loadClass(
         key,
+        cache,
         () -> {
           StringBuilder classCode =
               new StringBuilder(
