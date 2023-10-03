@@ -97,7 +97,9 @@ public class RecordSerializersTest {
     String code1 =
         "import java.util.*;"
             + "public record TestRecord(int f1, String f2, List<String> f3, char f4, Map<String, Integer> f5) {}";
-    Class<?> cls1 = Struct.createStructClass("TestRecord", code1);
+    Class<?> cls1 =
+        Struct.createStructClass(
+            "TestRecord", code1, RecordSerializersTest.class + "testRecordCompatible_1");
     Object record1 =
         RecordUtils.getRecordConstructor(cls1)
             .f1
@@ -114,7 +116,9 @@ public class RecordSerializersTest {
     String code2 =
         "import java.util.*;"
             + "public record TestRecord(int f1, String f2, char f4, Map<String, Integer> f5) {}";
-    Class<?> cls2 = Struct.createStructClass("TestRecord", code2);
+    Class<?> cls2 =
+        Struct.createStructClass(
+            "TestRecord", code2, RecordSerializersTest.class + "testRecordCompatible_2");
     Object record2 =
         RecordUtils.getRecordConstructor(cls2).f1.invoke(1, "abc", 'a', ofHashMap("a", 1));
     Fury fury2 =
@@ -134,7 +138,9 @@ public class RecordSerializersTest {
     String code1 =
         "import java.util.*;"
             + "public record TestRecord(int f1, String f2, List<String> f3, char f4, Map<String, Integer> f5) {}";
-    Class<?> cls1 = Struct.createStructClass("TestRecord", code1);
+    Class<?> cls1 =
+        Struct.createStructClass(
+            "TestRecord", code1, RecordSerializersTest.class + "testRecordMetaShare_1");
     Object record1 =
         RecordUtils.getRecordConstructor(cls1)
             .f1
@@ -150,7 +156,9 @@ public class RecordSerializersTest {
     String code2 =
         "import java.util.*;"
             + "public record TestRecord(String f2, char f4, Map<String, Integer> f5) {}";
-    Class<?> cls2 = Struct.createStructClass("TestRecord", code2);
+    Class<?> cls2 =
+        Struct.createStructClass(
+            "TestRecord", code2, RecordSerializersTest.class + "testRecordMetaShare_2");
     Object record2 =
         RecordUtils.getRecordConstructor(cls2).f1.invoke("abc", 'a', ofHashMap("a", 1));
     Fury fury2 =

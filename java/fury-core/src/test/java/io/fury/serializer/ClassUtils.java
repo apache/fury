@@ -62,7 +62,7 @@ public class ClassUtils {
             + "  private int[][] int2DArray;\n"
             + "  private int[][] int2DArray_added;\n"
             + "}";
-    return loadClass(BeanA.class, code);
+    return loadClass(BeanA.class, code, ClassUtils.class + "createCompatibleClass1");
   }
 
   public static Class<?> createCompatibleClass2() {
@@ -89,7 +89,7 @@ public class ClassUtils {
             + "  public Map<String, String> map2;\n"
             + "  public SortedMap<Integer, Integer> sortedMap3;"
             + "}";
-    return loadClass(CollectionFields.class, code);
+    return loadClass(CollectionFields.class, code, ClassUtils.class + "createCompatibleClass2");
   }
 
   public static Class<?> createCompatibleClass3() {
@@ -120,10 +120,14 @@ public class ClassUtils {
             + "  public Map singletonMap;\n"
             + "  public Map<String, Integer> singletonMap2;\n"
             + "}";
-    return loadClass(MapFields.class, code);
+    return loadClass(MapFields.class, code, ClassUtils.class + "createCompatibleClass3");
   }
 
-  static Class<?> loadClass(Class<?> cls, String code) {
+  static Class<?> loadClass(Class<?> cls, String code, Object cacheKey) {
+    return Struct.loadClass(cacheKey, () -> compileClass(cls, code));
+  }
+
+  private static Class<?> compileClass(Class<?> cls, String code) {
     String pkg = ReflectionUtils.getPackage(cls);
     Path path = Paths.get(pkg.replace(".", "/") + "/" + cls.getSimpleName() + ".java");
     try {

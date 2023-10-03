@@ -213,7 +213,11 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
             + "  private Iterable<BeanB> beanBIterable;\n"
             + "  private List<BeanB> beanBList;\n"
             + "}";
-    Class<?> cls1 = loadClass(BeanA.class, code);
+    Class<?> cls1 =
+        loadClass(
+            BeanA.class,
+            code,
+            MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_1");
     Fury fury1 =
         Fury.builder()
             .withLanguage(Language.JAVA)
@@ -237,7 +241,11 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
             + "  private List<Double> doubleList;\n"
             + "  private Iterable<BeanB> beanBIterable;\n"
             + "}";
-    Class<?> cls2 = loadClass(BeanA.class, code);
+    Class<?> cls2 =
+        loadClass(
+            BeanA.class,
+            code,
+            MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_2");
     Object o2 = cls2.newInstance();
     ReflectionUtils.unsafeCopy(beanA, o2);
     Fury fury2 =

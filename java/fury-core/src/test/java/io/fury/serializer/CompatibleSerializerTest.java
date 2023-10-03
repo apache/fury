@@ -226,7 +226,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
             + "  private int[][] int2DArray;\n"
             + "  private int[][] int2DArray_added;\n"
             + "}";
-    return ClassUtils.loadClass(BeanA.class, code);
+    return ClassUtils.loadClass(
+        BeanA.class, code, CompatibleSerializerTest.class + "createCompatibleClass1");
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -304,7 +305,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
             + "  public Map<String, String> map2;\n"
             + "  public SortedMap<Integer, Integer> sortedMap3;"
             + "}";
-    return ClassUtils.loadClass(CollectionFields.class, code);
+    return ClassUtils.loadClass(
+        CollectionFields.class, code, CompatibleSerializerTest.class + "createCompatibleClass2");
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -380,7 +382,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
             + "  public Map singletonMap;\n"
             + "  public Map<String, Integer> singletonMap2;\n"
             + "}";
-    return ClassUtils.loadClass(MapFields.class, code);
+    return ClassUtils.loadClass(
+        MapFields.class, code, CompatibleSerializerTest.class + "createCompatibleClass3");
   }
 
   @Test(dataProvider = "compressNumber")
