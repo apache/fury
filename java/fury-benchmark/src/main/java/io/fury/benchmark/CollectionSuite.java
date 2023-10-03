@@ -17,13 +17,12 @@
 package io.fury.benchmark;
 
 import io.fury.Fury;
+import java.util.ArrayList;
+import java.util.List;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Test suite for collection.
@@ -45,6 +44,7 @@ public class CollectionSuite {
   private static Fury fury = Fury.builder().build();
   private static List<Integer> list1 = new ArrayList<>(1024);
   private static byte[] list1Bytes;
+
   static {
     for (int i = 0; i < 1024; i++) {
       list1.add(i % 255);

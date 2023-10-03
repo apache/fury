@@ -214,12 +214,17 @@ public final class Struct implements Serializable {
 
   /** Create class. */
   public static Class<?> createNumberStructClass(String classname, int repeat) {
+    return createNumberStructClass(classname, repeat, true);
+  }
+
+  public static Class<?> createNumberStructClass(String classname, int repeat, boolean cache) {
     if (StringUtils.isBlank(classname)) {
       throw new IllegalArgumentException("Class name is empty");
     }
     String key = "createNumberStructClass" + classname + repeat;
     return loadClass(
         key,
+        cache,
         () -> {
           StringBuilder classCode =
               new StringBuilder(

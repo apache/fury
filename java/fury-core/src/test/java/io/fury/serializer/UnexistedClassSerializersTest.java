@@ -104,7 +104,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       boolean compressNumber,
       boolean enableCodegen1,
       boolean enableCodegen2,
-      boolean enableCodegen3) throws Exception {
+      boolean enableCodegen3) {
     Fury fury =
         builder()
             .withRefTracking(referenceTracking)
@@ -115,8 +115,12 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          Struct.createNumberStructClass("TestSkipUnexistedClass1", 2),
-          Struct.createStructClass("TestSkipUnexistedClass1", 2)
+          // Serialization may crash at `G1ParScanThreadState::copy_to_survivor_space` in
+          // ubuntu22 and jdk11/17. It's a jvm bug, see:
+          // https://github.com/alipay/fury/pull/923#issuecomment-1745035339
+          // Workaround by disable cache.
+          Struct.createNumberStructClass("TestSkipUnexistedClass2", 2, false),
+          Struct.createStructClass("TestSkipUnexistedClass2", 2, false)
         }) {
       Object pojo = Struct.createPOJO(structClass);
       MetaContext context1 = new MetaContext();
@@ -146,12 +150,6 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
               .build();
       MetaContext context3 = new MetaContext();
       fury3.getSerializationContext().setMetaContext(context3);
-      // This may crash at `G1ParScanThreadState::copy_to_survivor_space` in
-      // ubuntu22 and jdk11/17. It's a jvm bug, see:
-      // https://github.com/alipay/fury/pull/923#issuecomment-1745035339
-      // Workaround by gc manually.
-      System.gc();
-      Thread.sleep(50);
       Object o3 = fury3.deserialize(bytes2);
       assertEquals(o3.getClass(), structClass);
       assertEquals(o3, pojo);
@@ -178,8 +176,12 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          Struct.createNumberStructClass("TestSkipUnexistedClass1", 2),
-          Struct.createStructClass("TestSkipUnexistedClass1", 2)
+          // Serialization may crash at `G1ParScanThreadState::copy_to_survivor_space` in
+          // ubuntu22 and jdk11/17. It's a jvm bug, see:
+          // https://github.com/alipay/fury/pull/923#issuecomment-1745035339
+          // Workaround by disable cache.
+          Struct.createNumberStructClass("TestSkipUnexistedClass3", 2, false),
+          Struct.createStructClass("TestSkipUnexistedClass3", 2, false)
         }) {
       Fury fury2 =
           builder()
@@ -220,7 +222,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   public void testThrowExceptionIfClassNotExist() {
     Fury fury = builder().withDeserializeUnexistedClass(false).build();
     ClassLoader classLoader = getClass().getClassLoader();
-    Class<?> structClass = Struct.createNumberStructClass("TestSkipUnexistedClass1", 2);
+    Class<?> structClass = Struct.createNumberStructClass("TestSkipUnexistedClass1", 2, false);
     Object pojo = Struct.createPOJO(structClass);
     Fury fury2 =
         builder().withDeserializeUnexistedClass(false).withClassLoader(classLoader).build();
