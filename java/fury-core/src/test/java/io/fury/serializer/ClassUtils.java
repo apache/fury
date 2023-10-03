@@ -27,6 +27,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import org.testng.Assert;
@@ -123,7 +124,13 @@ public class ClassUtils {
     return loadClass(MapFields.class, code);
   }
 
+  private static final ConcurrentHashMap<String, Class<?>> classCache = new ConcurrentHashMap<>();
+
   static Class<?> loadClass(Class<?> cls, String code) {
+    return classCache.computeIfAbsent(code, k -> compileClass(cls, code));
+  }
+
+  private static Class<?> compileClass(Class<?> cls, String code) {
     String pkg = ReflectionUtils.getPackage(cls);
     Path path = Paths.get(pkg.replace(".", "/") + "/" + cls.getSimpleName() + ".java");
     try {
