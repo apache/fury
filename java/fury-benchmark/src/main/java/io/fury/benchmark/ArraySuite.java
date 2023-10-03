@@ -80,6 +80,11 @@ public class ArraySuite {
     }
   }
 
+  // Benchmark                  Mode  Cnt         Score          Error  Units
+  // ArraySuite.iterateArray   thrpt    3  18107614.727 ± 25969433.513  ops/s
+  // ArraySuite.iterateList    thrpt    3   9448162.588 ± 13139664.082  ops/s
+  // ArraySuite.iterateList2   thrpt    3  14678631.109 ± 14579521.954  ops/s
+  // ArraySuite.serializeList  thrpt    3   1659718.571 ±  1323226.629  ops/s
   @Benchmark
   public Object iterateArray() {
     int count = 0;
