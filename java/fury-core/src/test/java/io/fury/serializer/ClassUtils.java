@@ -124,10 +124,9 @@ public class ClassUtils {
     return loadClass(MapFields.class, code, ClassUtils.class + "createCompatibleClass3");
   }
 
-  private static final ConcurrentHashMap<Object, Class<?>> classCache = new ConcurrentHashMap<>();
 
   static Class<?> loadClass(Class<?> cls, String code, Object cacheKey) {
-    return classCache.computeIfAbsent(cacheKey, k -> compileClass(cls, code));
+    return Struct.loadClass(cacheKey, () -> compileClass(cls, code));
   }
 
   private static Class<?> compileClass(Class<?> cls, String code) {

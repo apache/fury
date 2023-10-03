@@ -17,6 +17,7 @@
 package io.fury.test.bean;
 
 import java.io.Serializable;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.net.URL;
@@ -30,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.tools.JavaCompiler;
@@ -183,7 +184,25 @@ public final class Struct implements Serializable {
     }
   }
 
-  private static final ConcurrentHashMap<Object, Class<?>> classCache = new ConcurrentHashMap<>();
+  private static final Object cacheLock = new Object();
+  private static final Map<Object, SoftReference<Class<?>>> classCache = new HashMap<>();
+
+  public static Class<?> loadClass(Object key, Supplier<Class<?>> func) {
+    synchronized (cacheLock) {
+      SoftReference<Class<?>> ref = classCache.get(key);
+      if (ref != null) {
+        Class<?> cls = ref.get();
+        if (cls != null) {
+          return cls;
+        }
+      }
+    }
+    synchronized (cacheLock) {
+      Class<?> cls = func.get();
+      classCache.put(key, new SoftReference<>(cls));
+      return cls;
+    }
+  }
 
   /** Create class. */
   public static Class<?> createNumberStructClass(String classname, int repeat) {
@@ -191,45 +210,43 @@ public final class Struct implements Serializable {
       throw new IllegalArgumentException("Class name is empty");
     }
     String key = "createNumberStructClass" + classname + repeat;
-    return classCache.computeIfAbsent(
-        key,
-        k -> {
-          StringBuilder classCode =
-              new StringBuilder(
-                  String.format(
-                      ""
-                          + "import java.util.*;\n"
-                          + "public final class %s implements java.io.Serializable {\n"
-                          + "  public String toString() {\n"
-                          + "   return io.fury.test.bean.Struct.toString(this);\n"
-                          + "  }\n"
-                          + "  public boolean equals(Object o) {\n"
-                          + "   return io.fury.test.bean.Struct.equalsWith(this, o);\n"
-                          + "  }\n",
-                      classname));
+    return loadClass(key, () -> {
+      StringBuilder classCode =
+        new StringBuilder(
+          String.format(
+            ""
+              + "import java.util.*;\n"
+              + "public final class %s implements java.io.Serializable {\n"
+              + "  public String toString() {\n"
+              + "   return io.fury.test.bean.Struct.toString(this);\n"
+              + "  }\n"
+              + "  public boolean equals(Object o) {\n"
+              + "   return io.fury.test.bean.Struct.equalsWith(this, o);\n"
+              + "  }\n",
+            classname));
 
-          String fields =
-              ""
-                  + "  public boolean f%s;\n"
-                  + "  public byte f%s;\n"
-                  + "  public short f%s;\n"
-                  + "  public int f%s;\n"
-                  + "  public int f%s;\n"
-                  + "  public long f%s;\n"
-                  + "  public long f%s;\n"
-                  + "  public float f%s;\n"
-                  + "  public double f%s;\n"
-                  + "  public Integer f%s;\n";
-          int numFields = 10;
-          for (int i = 0; i < repeat; i++) {
-            classCode.append(
-                String.format(
-                    fields,
-                    IntStream.range(i * numFields, i * numFields + numFields).boxed().toArray()));
-          }
-          classCode.append("}");
-          return compile(classname, classCode.toString());
-        });
+      String fields =
+        ""
+          + "  public boolean f%s;\n"
+          + "  public byte f%s;\n"
+          + "  public short f%s;\n"
+          + "  public int f%s;\n"
+          + "  public int f%s;\n"
+          + "  public long f%s;\n"
+          + "  public long f%s;\n"
+          + "  public float f%s;\n"
+          + "  public double f%s;\n"
+          + "  public Integer f%s;\n";
+      int numFields = 10;
+      for (int i = 0; i < repeat; i++) {
+        classCode.append(
+          String.format(
+            fields,
+            IntStream.range(i * numFields, i * numFields + numFields).boxed().toArray()));
+      }
+      classCode.append("}");
+      return compile(classname, classCode.toString());
+    });
   }
 
   /** Create Class. */
@@ -238,9 +255,10 @@ public final class Struct implements Serializable {
       throw new IllegalArgumentException("Class name is empty");
     }
     String key = "createStructClass" + classname + repeat;
-    return classCache.computeIfAbsent(
+
+    return loadClass(
         key,
-        k -> {
+        () -> {
           StringBuilder classCode =
               new StringBuilder(
                   String.format(
@@ -286,7 +304,7 @@ public final class Struct implements Serializable {
     if (cache == null) {
       return compile(classname, classCode);
     }
-    return classCache.computeIfAbsent(cache, k -> compile(classname, classCode));
+    return loadClass(cache, () -> compile(classname, classCode));
   }
 
   /** Create class. */
