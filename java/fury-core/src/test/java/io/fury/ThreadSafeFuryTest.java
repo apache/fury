@@ -228,8 +228,9 @@ public class ThreadSafeFuryTest extends FuryTestBase {
           if (!map.isEmpty()) {
             System.out.printf("Wait classes %s gc.\n", map.keySet());
             return true;
+          } else {
+            return false;
           }
-          return false;
         });
   }
 
@@ -238,7 +239,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     String className = "DuplicateStruct";
     WeakHashMap<Class<?>, Boolean> map = new WeakHashMap<>();
     {
-      Class<?> structClass1 = Struct.createStructClass(className, 1);
+      Class<?> structClass1 = Struct.createStructClass(className, 1, false);
       Object struct1 = Struct.createPOJO(structClass1);
       byte[] bytes = fury.serialize(struct1);
       Assert.assertEquals(fury.deserialize(bytes), struct1);
@@ -248,7 +249,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
           structClass1.hashCode(), structClass1.getClassLoader().hashCode());
     }
     {
-      Class<?> structClass2 = Struct.createStructClass(className, 2);
+      Class<?> structClass2 = Struct.createStructClass(className, 2, false);
       map.put(structClass2, true);
       System.out.printf(
           "structClass2 %s %s\n ",
