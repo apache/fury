@@ -1004,15 +1004,15 @@ public class ClassResolver {
   }
 
   /** Get classinfo by cache, update cache if miss. */
-  public ClassInfo getClassInfo(Class<?> cls, ClassInfoCache classInfoCache) {
-    ClassInfo classInfo = classInfoCache.classInfo;
+  public ClassInfo getClassInfo(Class<?> cls, ClassInfoHolder classInfoHolder) {
+    ClassInfo classInfo = classInfoHolder.classInfo;
     if (classInfo.getCls() != cls) {
       classInfo = classInfoMap.get(cls);
       if (classInfo == null || classInfo.serializer == null) {
         addSerializer(cls, createSerializer(cls));
         classInfo = Objects.requireNonNull(classInfoMap.get(cls));
       }
-      classInfoCache.classInfo = classInfo;
+      classInfoHolder.classInfo = classInfo;
     }
     assert classInfo.serializer != null;
     return classInfo;
@@ -1441,7 +1441,7 @@ public class ClassResolver {
   /**
    * Read serialized java classname. Note that the object of the class can be non-serializable. For
    * serializable object, {@link #readClassAndUpdateCache(MemoryBuffer)} or {@link
-   * #readClassInfo(MemoryBuffer, ClassInfoCache)} should be invoked.
+   * #readClassInfo(MemoryBuffer, ClassInfoHolder)} should be invoked.
    */
   public Class<?> readClassInternal(MemoryBuffer buffer) {
     if (buffer.readByte() == USE_CLASS_VALUE) {
@@ -1522,12 +1522,12 @@ public class ClassResolver {
   }
 
   // Called by fury Java serialization JIT.
-  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoCache classInfoCache) {
+  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
     if (buffer.readByte() == USE_CLASS_VALUE) {
       if (metaContextShareEnabled) {
         return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
       }
-      return readClassInfoFromBytes(buffer, classInfoCache);
+      return readClassInfoFromBytes(buffer, classInfoHolder);
     } else {
       // use classId
       short classId = buffer.readShort();
@@ -1535,9 +1535,9 @@ public class ClassResolver {
     }
   }
 
-  private ClassInfo readClassInfoFromBytes(MemoryBuffer buffer, ClassInfoCache classInfoCache) {
-    ClassInfo classInfo = readClassInfoFromBytes(buffer, classInfoCache.classInfo);
-    classInfoCache.classInfo = classInfo;
+  private ClassInfo readClassInfoFromBytes(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
+    ClassInfo classInfo = readClassInfoFromBytes(buffer, classInfoHolder.classInfo);
+    classInfoHolder.classInfo = classInfo;
     return classInfo;
   }
 
@@ -1712,8 +1712,8 @@ public class ClassResolver {
     return new ClassInfo(this, null, null, null, NO_CLASS_ID);
   }
 
-  public ClassInfoCache nilClassInfoCache() {
-    return new ClassInfoCache(nilClassInfo());
+  public ClassInfoHolder nilClassInfoCache() {
+    return new ClassInfoHolder(nilClassInfo());
   }
 
   public boolean isPrimitive(short classId) {

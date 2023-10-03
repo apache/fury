@@ -71,7 +71,7 @@ import io.fury.codegen.ExpressionVisitor.ExprHolder;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.serializer.CollectionSerializers;
@@ -275,7 +275,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   protected void addCommonImports() {
     ctx.addImports(List.class, Map.class, Set.class);
     ctx.addImports(Fury.class, MemoryBuffer.class, fury.getRefResolver().getClass());
-    ctx.addImports(ClassInfo.class, ClassInfoCache.class, ClassResolver.class);
+    ctx.addImports(ClassInfo.class, ClassInfoHolder.class, ClassResolver.class);
     ctx.addImport(Generated.class);
     ctx.addImports(LazyInitBeanSerializer.class, Serializers.EnumSerializer.class);
     ctx.addImports(Serializer.class, StringSerializer.class);
@@ -585,7 +585,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Expression classInfoCacheExpr =
         inlineInvoke(classResolverRef, "nilClassInfoCache", classInfoCacheTypeToken);
     String name = ctx.newName(cls, "ClassInfoCache");
-    ctx.addField(ctx.type(ClassInfoCache.class), name, classInfoCacheExpr, true);
+    ctx.addField(ctx.type(ClassInfoHolder.class), name, classInfoCacheExpr, true);
     // The class info field read only once, no need to shallow.
     reference = new Reference(name, classInfoCacheTypeToken);
     sharedFieldMap.put(key, reference);

@@ -22,7 +22,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.pool.ThreadPoolFury;
 import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.EnumStringResolver;
 import io.fury.resolver.MapRefResolver;
@@ -287,9 +287,9 @@ public final class Fury {
     }
   }
 
-  public void writeRef(MemoryBuffer buffer, Object obj, ClassInfoCache classInfoCache) {
+  public void writeRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
     if (!refResolver.writeRefOrNull(buffer, obj)) {
-      ClassInfo classInfo = classResolver.getClassInfo(obj.getClass(), classInfoCache);
+      ClassInfo classInfo = classResolver.getClassInfo(obj.getClass(), classInfoHolder);
       classResolver.writeClass(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
@@ -347,12 +347,12 @@ public final class Fury {
   }
 
   /** Write object class and data without tracking ref. */
-  public void writeNullable(MemoryBuffer buffer, Object obj, ClassInfoCache classInfoCache) {
+  public void writeNullable(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
     if (obj == null) {
       buffer.writeByte(Fury.NULL_FLAG);
     } else {
       buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-      writeNonRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
+      writeNonRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
     }
   }
 
@@ -748,12 +748,12 @@ public final class Fury {
     }
   }
 
-  public Object readRef(MemoryBuffer buffer, ClassInfoCache classInfoCache) {
+  public Object readRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
     RefResolver refResolver = this.refResolver;
     int nextReadRefId = refResolver.tryPreserveRefId(buffer);
     if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
       // ref value or not-null value
-      Object o = readDataInternal(buffer, classResolver.readClassInfo(buffer, classInfoCache));
+      Object o = readDataInternal(buffer, classResolver.readClassInfo(buffer, classInfoHolder));
       refResolver.setReadObject(nextReadRefId, o);
       return o;
     } else {
@@ -788,8 +788,8 @@ public final class Fury {
     return readDataInternal(buffer, classResolver.readAndUpdateClassInfoCache(buffer));
   }
 
-  public Object readNonRef(MemoryBuffer buffer, ClassInfoCache classInfoCache) {
-    return readDataInternal(buffer, classResolver.readClassInfo(buffer, classInfoCache));
+  public Object readNonRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
+    return readDataInternal(buffer, classResolver.readClassInfo(buffer, classInfoHolder));
   }
 
   /** Read object class and data without tracking ref. */

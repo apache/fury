@@ -43,7 +43,7 @@ import io.fury.codegen.Expression.StaticInvoke;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.type.Descriptor;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
@@ -80,7 +80,7 @@ public abstract class CodecBuilder {
   static TypeToken<Object[]> objectArrayTypeToken = TypeToken.of(Object[].class);
   static TypeToken<MemoryBuffer> bufferTypeToken = TypeToken.of(MemoryBuffer.class);
   static TypeToken<ClassInfo> classInfoTypeToken = TypeToken.of(ClassInfo.class);
-  static TypeToken<ClassInfoCache> classInfoCacheTypeToken = TypeToken.of(ClassInfoCache.class);
+  static TypeToken<ClassInfoHolder> classInfoCacheTypeToken = TypeToken.of(ClassInfoHolder.class);
 
   protected final CodegenContext ctx;
   protected final TypeToken<?> beanType;

@@ -27,7 +27,7 @@ import io.fury.collection.IdentityMap;
 import io.fury.collection.LazyMap;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.type.GenericType;
@@ -65,10 +65,10 @@ public class MapSerializers {
     protected final boolean supportCodegenHook;
     private Serializer keySerializer;
     private Serializer valueSerializer;
-    protected final ClassInfoCache keyClassInfoWriteCache;
-    protected final ClassInfoCache keyClassInfoReadCache;
-    protected final ClassInfoCache valueClassInfoWriteCache;
-    protected final ClassInfoCache valueClassInfoReadCache;
+    protected final ClassInfoHolder keyClassInfoWriteCache;
+    protected final ClassInfoHolder keyClassInfoReadCache;
+    protected final ClassInfoHolder valueClassInfoWriteCache;
+    protected final ClassInfoHolder valueClassInfoReadCache;
     // support map subclass whose key or value generics only are available,
     // or one of types is already instantiated in subclass, ex: `Subclass<T> implements Map<String,
     // T>`
@@ -175,8 +175,8 @@ public class MapSerializers {
     }
 
     protected final void simpleWriteElements(Fury fury, MemoryBuffer buffer, T map) {
-      ClassInfoCache keyClassInfoWriteCache = this.keyClassInfoWriteCache;
-      ClassInfoCache valueClassInfoWriteCache = this.valueClassInfoWriteCache;
+      ClassInfoHolder keyClassInfoWriteCache = this.keyClassInfoWriteCache;
+      ClassInfoHolder valueClassInfoWriteCache = this.valueClassInfoWriteCache;
       for (Object o : map.entrySet()) {
         Map.Entry entry = (Map.Entry) o;
         fury.writeRef(buffer, entry.getKey(), keyClassInfoWriteCache);
@@ -744,9 +744,9 @@ public class MapSerializers {
         RefResolver refResolver,
         MemoryBuffer buffer,
         Object obj,
-        ClassInfoCache classInfoCache) {
+        ClassInfoHolder classInfoHolder) {
       if (!refResolver.writeNullFlag(buffer, obj)) {
-        fury.writeRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
+        fury.writeRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
       }
     }
 
@@ -757,17 +757,17 @@ public class MapSerializers {
         boolean trackingRef,
         MemoryBuffer buffer,
         Object obj,
-        ClassInfoCache classInfoCache) {
+        ClassInfoHolder classInfoHolder) {
       if (trackingRef) {
         if (!refResolver.writeNullFlag(buffer, obj)) {
-          fury.writeRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
+          fury.writeRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
         }
       } else {
         if (obj == null) {
           buffer.writeByte(Fury.NULL_FLAG);
         } else {
           buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-          fury.writeNonRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
+          fury.writeNonRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
         }
       }
     }
@@ -777,11 +777,11 @@ public class MapSerializers {
         RefResolver refResolver,
         boolean trackingRef,
         MemoryBuffer buffer,
-        ClassInfoCache classInfoCache) {
+        ClassInfoHolder classInfoHolder) {
       if (trackingRef) {
         int nextReadRefId = refResolver.tryPreserveRefId(buffer);
         if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
-          Object obj = fury.readNonRef(buffer, classInfoCache);
+          Object obj = fury.readNonRef(buffer, classInfoHolder);
           refResolver.setReadObject(nextReadRefId, obj);
           return obj;
         } else {
@@ -792,7 +792,7 @@ public class MapSerializers {
         if (headFlag == Fury.NULL_FLAG) {
           return null;
         } else {
-          return fury.readNonRef(buffer, classInfoCache);
+          return fury.readNonRef(buffer, classInfoHolder);
         }
       }
     }

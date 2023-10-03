@@ -19,15 +19,15 @@ package io.fury.resolver;
 import io.fury.serializer.Serializer;
 
 /**
- * A helper class for caching {@link ClassInfo} to reduce map loop up.
+ * A helper class for holding and update {@link ClassInfo} to reduce map look-up.
  *
  * @author chaokunyang
  */
 @SuppressWarnings("rawtypes")
-public class ClassInfoCache {
+public class ClassInfoHolder {
   public ClassInfo classInfo;
 
-  public ClassInfoCache(ClassInfo classInfo) {
+  public ClassInfoHolder(ClassInfo classInfo) {
     this.classInfo = classInfo;
   }
 
@@ -37,6 +37,6 @@ public class ClassInfoCache {
 
   @Override
   public String toString() {
-    return "ClassInfoCache{" + classInfo + '}';
+    return "Holder{" + classInfo + '}';
   }
 }

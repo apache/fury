@@ -22,7 +22,7 @@ import io.fury.builder.MetaSharedCodecBuilder;
 import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
 import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.type.ClassDef;
@@ -78,7 +78,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
   private final MethodHandle constructor;
   private final RecordInfo recordInfo;
   private Serializer<T> serializer;
-  private final ClassInfoCache classInfoCache;
+  private final ClassInfoHolder classInfoHolder;
 
   public MetaSharedSerializer(Fury fury, Class<T> type, ClassDef classDef) {
     super(fury, type);
@@ -106,7 +106,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     isFinal = infos.f0.f1;
     otherFields = infos.f1;
     containerFields = infos.f2;
-    classInfoCache = fury.getClassResolver().nilClassInfoCache();
+    classInfoHolder = fury.getClassResolver().nilClassInfoCache();
     if (isRecord) {
       List<String> fieldNames =
           descriptorGrouper.getSortedDescriptors().stream()
@@ -170,7 +170,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         if (skipPrimitiveFieldValueFailed(fury, fieldInfo.classId, buffer)) {
           if (fieldInfo.classInfo == null) {
             // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
-            fury.readRef(buffer, classInfoCache);
+            fury.readRef(buffer, classInfoHolder);
           } else {
             ObjectSerializer.readFinalObjectFieldValue(
                 fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
@@ -224,7 +224,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         if (skipPrimitiveFieldValueFailed(fury, fieldInfo.classId, buffer)) {
           if (fieldInfo.classInfo == null) {
             // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
-            fury.readRef(buffer, classInfoCache);
+            fury.readRef(buffer, classInfoHolder);
           } else {
             ObjectSerializer.readFinalObjectFieldValue(
                 fury, refResolver, classResolver, fieldInfo, isFinal, buffer);

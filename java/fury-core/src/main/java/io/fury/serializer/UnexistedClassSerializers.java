@@ -27,7 +27,7 @@ import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.MetaContext;
 import io.fury.resolver.RefResolver;
@@ -83,13 +83,13 @@ public final class UnexistedClassSerializers {
 
   public static final class UnexistedClassSerializer extends Serializer {
     private final ClassDef classDef;
-    private final ClassInfoCache classInfoCache;
+    private final ClassInfoHolder classInfoHolder;
     private final LongMap<ClassFieldsInfo> fieldsInfoMap;
 
     public UnexistedClassSerializer(Fury fury, ClassDef classDef) {
       super(fury, UnexistedMetaSharedClass.class);
       this.classDef = classDef;
-      classInfoCache = fury.getClassResolver().nilClassInfoCache();
+      classInfoHolder = fury.getClassResolver().nilClassInfoCache();
       fieldsInfoMap = new LongMap<>();
       Preconditions.checkArgument(fury.getConfig().shareMetaContext());
     }
@@ -153,9 +153,9 @@ public final class UnexistedClassSerializers {
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.otherFields) {
         Object fieldValue = value.get(fieldInfo.qualifiedFieldName);
         if (fieldInfo.trackingRef) {
-          fury.writeRef(buffer, fieldValue, fieldInfo.classInfoCache);
+          fury.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
         } else {
-          fury.writeNullable(buffer, fieldValue, fieldInfo.classInfoCache);
+          fury.writeNullable(buffer, fieldValue, fieldInfo.classInfoHolder);
         }
       }
       Generics generics = fury.getGenerics();
@@ -209,7 +209,7 @@ public final class UnexistedClassSerializers {
         Object fieldValue;
         if (fieldInfo.classInfo == null) {
           // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
-          fieldValue = fury.readRef(buffer, classInfoCache);
+          fieldValue = fury.readRef(buffer, classInfoHolder);
         } else {
           if (classResolver.isPrimitive(fieldInfo.classId)) {
             fieldValue = fieldInfo.classInfo.getSerializer().read(buffer);

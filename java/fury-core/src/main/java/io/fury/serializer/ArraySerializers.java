@@ -20,7 +20,7 @@ import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.type.Type;
@@ -42,7 +42,7 @@ public class ArraySerializers {
   public static final class ObjectArraySerializer<T> extends Serializer<T[]> {
     private final Class<T> innerType;
     private final Serializer componentTypeSerializer;
-    private final ClassInfoCache classInfoCache;
+    private final ClassInfoHolder classInfoHolder;
     private final int dimension;
     private final int[] stubDims;
 
@@ -69,7 +69,7 @@ public class ArraySerializers {
         this.componentTypeSerializer = null;
       }
       this.stubDims = new int[dimension];
-      classInfoCache = fury.getClassResolver().nilClassInfoCache();
+      classInfoHolder = fury.getClassResolver().nilClassInfoCache();
     }
 
     @Override
@@ -139,13 +139,13 @@ public class ArraySerializers {
         }
       } else {
         Fury fury = this.fury;
-        ClassInfoCache classInfoCache = this.classInfoCache;
+        ClassInfoHolder classInfoHolder = this.classInfoHolder;
         for (int i = 0; i < numElements; i++) {
           int nextReadRefId = refResolver.tryPreserveRefId(buffer);
           Object o;
           if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
             // ref value or not-null value
-            o = fury.readNonRef(buffer, classInfoCache);
+            o = fury.readNonRef(buffer, classInfoHolder);
             refResolver.setReadObject(nextReadRefId, o);
           } else {
             o = refResolver.getReadObject();
