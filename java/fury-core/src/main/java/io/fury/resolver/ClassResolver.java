@@ -1152,7 +1152,8 @@ public class ClassResolver {
   // The jit-compiled native code fot this method will be too big for inline, so we generated
   // `getClassInfo`
   // in fury-jit, see `BaseSeqCodecBuilder#writeAndGetClassInfo`
-  // public ClassInfo writeClass(MemoryBuffer buffer, Class<?> cls, ClassInfoHolder classInfoHolder) {
+  // public ClassInfo writeClass(MemoryBuffer buffer, Class<?> cls, ClassInfoHolder classInfoHolder)
+  // {
   //   ClassInfo classInfo = getClassInfo(cls, classInfoHolder);
   //   writeClass(buffer, classInfo);
   //   return classInfo;
