@@ -104,7 +104,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       boolean compressNumber,
       boolean enableCodegen1,
       boolean enableCodegen2,
-      boolean enableCodegen3) {
+      boolean enableCodegen3) throws Exception {
     Fury fury =
         builder()
             .withRefTracking(referenceTracking)
@@ -151,6 +151,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       // https://github.com/alipay/fury/pull/923#issuecomment-1745035339
       // Workaround by gc manually.
       System.gc();
+      Thread.sleep(50);
       Object o3 = fury3.deserialize(bytes2);
       assertEquals(o3.getClass(), structClass);
       assertEquals(o3, pojo);
