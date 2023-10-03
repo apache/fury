@@ -244,15 +244,15 @@ public class CollectionSerializers {
         bitmap |= Flags.NOT_SAME_TYPE | Flags.NOT_DECL_ELEMENT_TYPE;
         buffer.writeByte(bitmap);
       } else {
-        // Update classinfo, the caller will use it.
-        ClassResolver classResolver = fury.getClassResolver();
-        ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
         // Write class in case peer doesn't have this class.
         if (!fury.getConfig().shareMetaContext() && elemClass == declareElementType) {
           buffer.writeByte(bitmap);
         } else {
           bitmap |= Flags.NOT_DECL_ELEMENT_TYPE;
           buffer.writeByte(bitmap);
+          // Update classinfo, the caller will use it.
+          ClassResolver classResolver = fury.getClassResolver();
+          ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
           classResolver.writeClass(buffer, classInfo);
         }
       }
@@ -324,14 +324,14 @@ public class CollectionSerializers {
         bitmap |= Flags.NOT_SAME_TYPE | Flags.NOT_DECL_ELEMENT_TYPE;
         buffer.writeByte(bitmap);
       } else {
-        ClassResolver classResolver = fury.getClassResolver();
-        ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
         // Write class in case peer doesn't have this class.
         if (!fury.getConfig().shareMetaContext() && elemClass == declareElementType) {
           buffer.writeByte(bitmap);
         } else {
           bitmap |= Flags.NOT_DECL_ELEMENT_TYPE;
           buffer.writeByte(bitmap);
+          ClassResolver classResolver = fury.getClassResolver();
+          ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
           classResolver.writeClass(buffer, classInfo);
         }
       }
@@ -388,7 +388,7 @@ public class CollectionSerializers {
         if (elemGenericType != null) {
           javaWriteWithGenerics(fury, buffer, value, elemGenericType, flags);
         } else {
-          generalJavaWrite(fury, buffer, value, flags);
+          generalJavaWrite(fury, buffer, value, elemGenericType, flags);
         }
       } else {
         compatibleWrite(fury, buffer, value, serializer, flags);
@@ -433,16 +433,22 @@ public class CollectionSerializers {
         Serializer serializer = elemGenericType.getSerializer(fury.getClassResolver());
         writeSameTypeElements(fury, buffer, serializer, flags, collection);
       } else {
-        generalJavaWrite(fury, buffer, collection, flags);
+        generalJavaWrite(fury, buffer, collection, elemGenericType, flags);
       }
       if (hasGenericParameters) {
         fury.getGenerics().popGenericType();
       }
     }
 
-    private void generalJavaWrite(Fury fury, MemoryBuffer buffer, T collection, int flags) {
+    private void generalJavaWrite(
+        Fury fury, MemoryBuffer buffer, T collection, GenericType elemGenericType, int flags) {
       if ((flags & Flags.NOT_SAME_TYPE) != Flags.NOT_SAME_TYPE) {
-        Serializer serializer = elementClassInfoCache.getSerializer();
+        Serializer serializer;
+        if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) != Flags.NOT_DECL_ELEMENT_TYPE) {
+          serializer = elemGenericType.getSerializer(fury.getClassResolver());
+        } else {
+          serializer = elementClassInfoCache.getSerializer();
+        }
         writeSameTypeElements(fury, buffer, serializer, flags, collection);
       } else {
         writeDifferentTypeElements(fury, buffer, flags, collection);
