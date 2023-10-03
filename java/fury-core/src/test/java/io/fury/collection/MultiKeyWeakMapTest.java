@@ -34,7 +34,7 @@ public class MultiKeyWeakMapTest {
     referencesField.setAccessible(true);
     Set<Reference<?>> references = (Set<Reference<?>>) referencesField.get(null);
     System.gc();
-    Thread.sleep(1000);
+    Thread.sleep(50);
     LOG.info("Before references: {}", references);
     int size = references.size();
     Object o1 = new Object();
@@ -47,7 +47,7 @@ public class MultiKeyWeakMapTest {
 
     // `references` is global and may contain references put by others.
     while (references.size() != size) {
-      Thread.sleep(1000);
+      Thread.sleep(10);
       System.gc();
       LOG.info("wait object gc, references: {}", references);
     }

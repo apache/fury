@@ -25,7 +25,6 @@ import io.fury.serializer.Serializer;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.Struct;
 import io.fury.util.LoaderBinding.StagingType;
-import java.util.ArrayList;
 import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -224,21 +223,15 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   public void testClassGC() throws Exception {
     // Can't inline `generateClassForGC` in current method, generated classes won't be gc.
     WeakHashMap<Class<?>, Boolean> map = generateClassForGC();
-    while (map.size() > 0) {
-      // Force an OoM
-      try {
-        final ArrayList<Object[]> allocations = new ArrayList<>();
-        int size;
-        while ((size =
-                Math.min(Math.abs((int) Runtime.getRuntime().freeMemory()), Integer.MAX_VALUE))
-            > 0) allocations.add(new Object[size]);
-      } catch (OutOfMemoryError e) {
-        System.out.println("Trigger OOM to clear LoaderBinding.furySoftMap soft references.");
-      }
-      System.gc();
-      Thread.sleep(1000);
-      System.out.printf("Wait classes %s gc.\n", map.keySet());
-    }
+    TestUtils.triggerOOMForSoftGC(
+        () -> {
+          if (!map.isEmpty()) {
+            System.out.printf("Wait classes %s gc.\n", map.keySet());
+            return true;
+          } else {
+            return false;
+          }
+        });
   }
 
   private WeakHashMap<Class<?>, Boolean> generateClassForGC() {
@@ -246,7 +239,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     String className = "DuplicateStruct";
     WeakHashMap<Class<?>, Boolean> map = new WeakHashMap<>();
     {
-      Class<?> structClass1 = Struct.createStructClass(className, 1);
+      Class<?> structClass1 = Struct.createStructClass(className, 1, false);
       Object struct1 = Struct.createPOJO(structClass1);
       byte[] bytes = fury.serialize(struct1);
       Assert.assertEquals(fury.deserialize(bytes), struct1);
@@ -256,7 +249,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
           structClass1.hashCode(), structClass1.getClassLoader().hashCode());
     }
     {
-      Class<?> structClass2 = Struct.createStructClass(className, 2);
+      Class<?> structClass2 = Struct.createStructClass(className, 2, false);
       map.put(structClass2, true);
       System.out.printf(
           "structClass2 %s %s\n ",

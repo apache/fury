@@ -45,8 +45,22 @@ public class TestUtils {
    * @param predicate whether stop Trigger OOM.
    */
   public static void triggerOOMForSoftGC(Supplier<Boolean> predicate) {
+    System.gc();
     while (predicate.get()) {
-      // Force an OoM
+      triggerOOM();
+      System.gc();
+      System.out.printf("Wait gc.");
+      try {
+        Thread.sleep(50);
+      } catch (InterruptedException e1) {
+        throw new RuntimeException(e1);
+      }
+    }
+  }
+
+  private static void triggerOOM() {
+    while (true) {
+      // Force an OOM
       try {
         final ArrayList<Object[]> allocations = new ArrayList<>();
         int size;
@@ -54,15 +68,9 @@ public class TestUtils {
                 Math.min(Math.abs((int) Runtime.getRuntime().freeMemory()), Integer.MAX_VALUE))
             > 0) allocations.add(new Object[size]);
       } catch (OutOfMemoryError e) {
-        System.out.println("Trigger OOM to clear LoaderBinding.furySoftMap soft references.");
+        System.out.println("Met OOM.");
+        break;
       }
-      System.gc();
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-      System.out.printf("Wait gc.");
     }
   }
 }

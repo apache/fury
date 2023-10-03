@@ -441,14 +441,14 @@ public class FuryTest extends FuryTestBase {
     TestUtils.triggerOOMForSoftGC(
         () -> {
           System.out.printf("Wait map keys %s gc.\n", map.keySet());
-          return map.size() > 0;
+          return !map.isEmpty();
         });
     Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
   }
 
   private void furyGC(WeakHashMap<Object, Boolean> map) {
     Fury fury = Fury.builder().requireClassRegistration(false).build();
-    Class<?> structClass1 = Struct.createStructClass("TestClassGC", 1);
+    Class<?> structClass1 = Struct.createStructClass("TestClassGC", 1, false);
     System.out.println(structClass1.hashCode());
     Object struct1 = Struct.createPOJO(structClass1);
     serDe(fury, struct1);

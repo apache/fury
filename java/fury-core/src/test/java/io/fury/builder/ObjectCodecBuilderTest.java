@@ -58,7 +58,8 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     // System.out.println(code);
     new ObjectCodecBuilder(BeanA.class, fury).genCode();
     new ObjectCodecBuilder(BeanB.class, fury).genCode();
-    new ObjectCodecBuilder(Struct.createStructClass("", 1), fury).genCode();
+    new ObjectCodecBuilder(Struct.createStructClass("ObjectCodecBuilderTestStruct", 1), fury)
+        .genCode();
   }
 
   @Test

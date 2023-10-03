@@ -144,7 +144,11 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
             + "  private Iterable<BeanB> beanBIterable;\n"
             + "  private List<BeanB> beanBList;\n"
             + "}";
-    Class<?> cls1 = loadClass(BeanA.class, code);
+    Class<?> cls1 =
+        loadClass(
+            BeanA.class,
+            code,
+            CodegenCompatibleSerializerTest.class + "testWriteCompatibleCollectionBasic_1");
     Fury fury1 =
         Fury.builder()
             .withLanguage(Language.JAVA)
@@ -165,7 +169,11 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
             + "  private List<Double> doubleList;\n"
             + "  private Iterable<BeanB> beanBIterable;\n"
             + "}";
-    Class<?> cls2 = loadClass(BeanA.class, code);
+    Class<?> cls2 =
+        loadClass(
+            BeanA.class,
+            code,
+            CodegenCompatibleSerializerTest.class + "testWriteCompatibleCollectionBasic_2");
     Object newBeanA = cls2.newInstance();
     ReflectionUtils.unsafeCopy(beanA, newBeanA);
     Fury fury2 =

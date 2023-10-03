@@ -23,7 +23,7 @@ public class StructTest {
 
   @Test
   public void testStruct() {
-    Class<?> structClass = Struct.createStructClass("", 1);
+    Class<?> structClass = Struct.createStructClass("StructTestClass", 1);
     Assert.assertEquals(Struct.createPOJO(structClass), Struct.createPOJO(structClass));
   }
 }
