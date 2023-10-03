@@ -67,10 +67,6 @@ import org.testng.annotations.Test;
 public class ClassResolverTest extends FuryTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(ClassResolverTest.class);
 
-  public abstract static class A implements List {}
-
-  public abstract static class B implements Map {}
-
   @Test
   public void testPrimitivesClassId() {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
@@ -105,7 +101,7 @@ public class ClassResolverTest extends FuryTestBase {
   }
 
   @Test
-  public void testGetSerializerClass() {
+  public void testGetSerializerClass() throws ClassNotFoundException {
     {
       Fury fury =
           Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
@@ -165,10 +161,11 @@ public class ClassResolverTest extends FuryTestBase {
         classResolver.getSerializerClass(ConcurrentHashMap.class),
         MapSerializers.ConcurrentHashMapSerializer.class);
     assertEquals(
-        classResolver.getSerializerClass(A.class),
+        classResolver.getSerializerClass(Class.forName("io.fury.serializer.CollectionContainer")),
         CollectionSerializers.DefaultJavaCollectionSerializer.class);
     assertEquals(
-        classResolver.getSerializerClass(B.class), MapSerializers.DefaultJavaMapSerializer.class);
+        classResolver.getSerializerClass(Class.forName("io.fury.serializer.MapContainer")),
+      MapSerializers.DefaultJavaMapSerializer.class);
   }
 
   interface Interface1 {}
