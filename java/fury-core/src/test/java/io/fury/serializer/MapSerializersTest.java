@@ -25,6 +25,7 @@ import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
+import io.fury.collection.MapEntry;
 import io.fury.serializer.CollectionSerializersTest.TestEnum;
 import io.fury.test.bean.MapFields;
 import io.fury.type.GenericType;
@@ -232,44 +233,33 @@ public class MapSerializersTest extends FuryTestBase {
     return obj;
   }
 
-  public static class TestClassForDefaultMapSerializer extends AbstractMap<String, Object> {
-    private final Set<Entry<String, Object>> data = new HashSet<>();
+  public static class TestClass1ForDefaultMap extends AbstractMap<String, Object> {
+    private final Set<MapEntry> data = new HashSet<>();
 
     @Override
     public Set<Entry<String, Object>> entrySet() {
+      Set data = this.data;
       return data;
-    }
-
-    public static class MapEntry implements Entry<String, Object> {
-      private final String k;
-      private Object v;
-
-      public MapEntry(String k, Object v) {
-        this.k = k;
-        this.v = v;
-      }
-
-      @Override
-      public String getKey() {
-        return k;
-      }
-
-      @Override
-      public Object getValue() {
-        return v;
-      }
-
-      @Override
-      public Object setValue(Object value) {
-        Object o = v;
-        v = value;
-        return o;
-      }
     }
 
     @Override
     public Object put(String key, Object value) {
-      return data.add(new MapEntry(key, value));
+      return data.add(new MapEntry<>(key, value));
+    }
+  }
+
+  public static class TestClass2ForDefaultMap extends AbstractMap<String, Object> {
+    private final Set<Entry<String, Object>> data = new HashSet<>();
+
+    @Override
+    public Set<Entry<String, Object>> entrySet() {
+      Set data = this.data;
+      return data;
+    }
+
+    @Override
+    public Object put(String key, Object value) {
+      return data.add(new MapEntry<>(key, value));
     }
   }
 
@@ -281,13 +271,21 @@ public class MapSerializersTest extends FuryTestBase {
             .withCodegen(enableCodegen)
             .requireClassRegistration(false)
             .build();
-    TestClassForDefaultMapSerializer map = new TestClassForDefaultMapSerializer();
+    TestClass1ForDefaultMap map = new TestClass1ForDefaultMap();
     map.put("a", 1);
     map.put("b", 2);
     Assert.assertSame(
-        fury.getClassResolver().getSerializerClass(TestClassForDefaultMapSerializer.class),
+        fury.getClassResolver().getSerializerClass(TestClass1ForDefaultMap.class),
         MapSerializers.DefaultJavaMapSerializer.class);
     serDeCheck(fury, map);
+
+    TestClass2ForDefaultMap map2 = new TestClass2ForDefaultMap();
+    map.put("a", 1);
+    map.put("b", 2);
+    Assert.assertSame(
+        fury.getClassResolver().getSerializerClass(TestClass2ForDefaultMap.class),
+        MapSerializers.DefaultJavaMapSerializer.class);
+    serDeCheck(fury, map2);
   }
 
   @Data
