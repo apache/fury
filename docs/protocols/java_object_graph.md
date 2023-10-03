@@ -60,6 +60,7 @@ length(positive varint) | collection header | elements header | elements data
 ### collection header
 - For `ArrayList/LinkedArrayList/HashSet/LinkedHashSet`, this will be empty.
 - For `TreeSet`, this will be `Comparator`
+- For subclass of `ArrayList`, this may be extra object field info.
 
 ### elements header
 In most cases, all collection elements are same type and not null, elements header will encode those homogeneous 
