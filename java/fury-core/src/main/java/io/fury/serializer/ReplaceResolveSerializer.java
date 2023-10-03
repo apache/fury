@@ -187,7 +187,7 @@ public class ReplaceResolveSerializer extends Serializer {
   private final ClassResolver classResolver;
   private final JDKReplaceResolveMethodInfoCache jdkMethodInfoWriteCache;
   private final ClassInfo writeClassInfo;
-  private final Map<Class<?>, JDKReplaceResolveMethodInfoCache> classClassInfoCacheMap =
+  private final Map<Class<?>, JDKReplaceResolveMethodInfoCache> classClassInfoHolderMap =
       new HashMap<>();
 
   public ReplaceResolveSerializer(Fury fury, Class type) {
@@ -201,7 +201,7 @@ public class ReplaceResolveSerializer extends Serializer {
     classResolver.setSerializerIfAbsent(type, this);
     if (type != ReplaceStub.class) {
       jdkMethodInfoWriteCache = newJDKMethodInfoCache(type, fury);
-      classClassInfoCacheMap.put(type, jdkMethodInfoWriteCache);
+      classClassInfoHolderMap.put(type, jdkMethodInfoWriteCache);
       // FIXME new classinfo may miss serializer update in async compilation mode.
       writeClassInfo = classResolver.newClassInfo(type, this, ClassResolver.NO_CLASS_ID);
     } else {
@@ -268,7 +268,7 @@ public class ReplaceResolveSerializer extends Serializer {
       int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
         // ref value or not-null value
-        Object o = fury.readData(buffer, classResolver.readAndUpdateClassInfoCache(buffer));
+        Object o = fury.readData(buffer, classResolver.readAndUpdateClassInfoHolder(buffer));
         refResolver.setReadObject(nextReadRefId, o);
         refResolver.setReadObject(outerRefId, o);
         return o;
@@ -295,10 +295,10 @@ public class ReplaceResolveSerializer extends Serializer {
 
   private Object readObject(MemoryBuffer buffer) {
     Class cls = classResolver.readClassInternal(buffer);
-    JDKReplaceResolveMethodInfoCache jdkMethodInfoCache = classClassInfoCacheMap.get(cls);
+    JDKReplaceResolveMethodInfoCache jdkMethodInfoCache = classClassInfoHolderMap.get(cls);
     if (jdkMethodInfoCache == null) {
       jdkMethodInfoCache = newJDKMethodInfoCache(cls, fury);
-      classClassInfoCacheMap.put(cls, jdkMethodInfoCache);
+      classClassInfoHolderMap.put(cls, jdkMethodInfoCache);
     }
     Object o = jdkMethodInfoCache.objectSerializer.read(buffer);
     Method readResolveMethod = jdkMethodInfoCache.readResolveMethod;

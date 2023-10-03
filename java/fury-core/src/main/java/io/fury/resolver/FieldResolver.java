@@ -239,7 +239,7 @@ public class FieldResolver {
         classResolver.getRegisteredClassId(TypeUtils.getSortedPrimitiveClasses().get(8));
     intSerializer = (Serializers.IntSerializer) classResolver.getSerializer(int.class);
     longSerializer = (Serializers.LongSerializer) classResolver.getSerializer(long.class);
-    classInfoHolder = classResolver.nilClassInfoCache();
+    classInfoHolder = classResolver.nilClassInfoHolder();
     // Using `comparingLong` to avoid  overflow in f1.getEncodedFieldInfo() -
     // f2.getEncodedFieldInfo().
     Comparator<FieldInfo> fieldInfoComparator =
@@ -548,7 +548,7 @@ public class FieldResolver {
       if (fieldType == FieldTypes.OBJECT) {
         o =
             fury.readData(
-                buffer, classResolver.readClassInfo(buffer, fieldInfo.getClassInfoCache()));
+                buffer, classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder()));
       } else {
         o = readObjectWithFinal(buffer, fieldType, fieldInfo);
       }
@@ -600,7 +600,7 @@ public class FieldResolver {
     Object o;
     if (fieldType == FieldTypes.COLLECTION_ELEMENT_FINAL) {
       ClassInfo elementClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoCache());
+      ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
       CollectionSerializers.CollectionSerializer collectionSerializer =
           (CollectionSerializers.CollectionSerializer) classInfo.getSerializer();
       collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
@@ -608,7 +608,7 @@ public class FieldResolver {
     } else if (fieldType == FieldTypes.MAP_KV_FINAL) {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoCache());
+      ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
       MapSerializers.MapSerializer mapSerializer =
           (MapSerializers.MapSerializer) classInfo.getSerializer();
       mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
@@ -616,7 +616,7 @@ public class FieldResolver {
       o = mapSerializer.read(buffer);
     } else if (fieldType == FieldTypes.MAP_KEY_FINAL) {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoCache());
+      ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
       MapSerializers.MapSerializer mapSerializer =
           (MapSerializers.MapSerializer) classInfo.getSerializer();
       mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
@@ -624,7 +624,7 @@ public class FieldResolver {
     } else {
       Preconditions.checkArgument(fieldType == FieldTypes.MAP_VALUE_FINAL);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoCache());
+      ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
       MapSerializers.MapSerializer mapSerializer =
           (MapSerializers.MapSerializer) classInfo.getSerializer();
       mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
@@ -719,7 +719,7 @@ public class FieldResolver {
       this.encodedFieldInfo = encodedFieldInfo;
       this.classId = classId;
       this.classResolver = fury.getClassResolver();
-      this.classInfoHolder = classResolver.nilClassInfoCache();
+      this.classInfoHolder = classResolver.nilClassInfoHolder();
       if (field == null || field == STUB_FIELD) {
         fieldAccessor = null;
       } else {
@@ -820,7 +820,7 @@ public class FieldResolver {
       return fieldAccessor;
     }
 
-    public ClassInfoHolder getClassInfoCache() {
+    public ClassInfoHolder getClassInfoHolder() {
       return classInfoHolder;
     }
 
@@ -884,7 +884,7 @@ public class FieldResolver {
       Preconditions.checkArgument(field != STUB_FIELD);
       this.elementTypeToken = elementTypeToken;
       this.elementType = getRawType(elementTypeToken);
-      elementClassInfoHolder = classResolver.nilClassInfoCache();
+      elementClassInfoHolder = classResolver.nilClassInfoHolder();
     }
 
     public ClassInfo getElementClassInfo() {
@@ -937,10 +937,10 @@ public class FieldResolver {
       this.valueTypeToken = valueTypeToken;
       keyType = getRawType(keyTypeToken);
       isKeyTypeFinal = Modifier.isFinal(keyType.getModifiers());
-      keyClassInfoHolder = classResolver.nilClassInfoCache();
+      keyClassInfoHolder = classResolver.nilClassInfoHolder();
       valueType = getRawType(valueTypeToken);
       isValueTypeFinal = Modifier.isFinal(valueType.getModifiers());
-      valueClassInfoHolder = classResolver.nilClassInfoCache();
+      valueClassInfoHolder = classResolver.nilClassInfoHolder();
     }
 
     public boolean isKeyTypeFinal() {

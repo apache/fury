@@ -105,7 +105,7 @@ public class CollectionSerializers {
         Fury fury, Class<T> cls, boolean supportCodegenHook, boolean inferGenerics) {
       super(fury, cls);
       this.supportCodegenHook = supportCodegenHook;
-      elementClassInfoHolder = fury.getClassResolver().nilClassInfoCache();
+      elementClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       if (inferGenerics) {
         TypeToken<?> elementType = TypeUtils.getElementType(TypeToken.of(cls));
         if (getRawType(elementType) != Object.class) {

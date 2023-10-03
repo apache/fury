@@ -740,7 +740,7 @@ public final class Fury {
     int nextReadRefId = refResolver.tryPreserveRefId(buffer);
     if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
       // ref value or not-null value
-      Object o = readDataInternal(buffer, classResolver.readAndUpdateClassInfoCache(buffer));
+      Object o = readDataInternal(buffer, classResolver.readAndUpdateClassInfoHolder(buffer));
       refResolver.setReadObject(nextReadRefId, o);
       return o;
     } else {
@@ -785,7 +785,7 @@ public final class Fury {
 
   /** Deserialize not-null and non-reference object from <code>buffer</code>. */
   public Object readNonRef(MemoryBuffer buffer) {
-    return readDataInternal(buffer, classResolver.readAndUpdateClassInfoCache(buffer));
+    return readDataInternal(buffer, classResolver.readAndUpdateClassInfoHolder(buffer));
   }
 
   public Object readNonRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {

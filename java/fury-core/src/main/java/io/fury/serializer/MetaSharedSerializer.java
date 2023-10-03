@@ -106,7 +106,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     isFinal = infos.f0.f1;
     otherFields = infos.f1;
     containerFields = infos.f2;
-    classInfoHolder = fury.getClassResolver().nilClassInfoCache();
+    classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
     if (isRecord) {
       List<String> fieldNames =
           descriptorGrouper.getSortedDescriptors().stream()

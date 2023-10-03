@@ -80,7 +80,7 @@ public abstract class CodecBuilder {
   static TypeToken<Object[]> objectArrayTypeToken = TypeToken.of(Object[].class);
   static TypeToken<MemoryBuffer> bufferTypeToken = TypeToken.of(MemoryBuffer.class);
   static TypeToken<ClassInfo> classInfoTypeToken = TypeToken.of(ClassInfo.class);
-  static TypeToken<ClassInfoHolder> classInfoCacheTypeToken = TypeToken.of(ClassInfoHolder.class);
+  static TypeToken<ClassInfoHolder> classInfoHolderTypeToken = TypeToken.of(ClassInfoHolder.class);
 
   protected final CodegenContext ctx;
   protected final TypeToken<?> beanType;

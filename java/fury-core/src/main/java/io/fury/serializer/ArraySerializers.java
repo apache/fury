@@ -69,7 +69,7 @@ public class ArraySerializers {
         this.componentTypeSerializer = null;
       }
       this.stubDims = new int[dimension];
-      classInfoHolder = fury.getClassResolver().nilClassInfoCache();
+      classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
     }
 
     @Override

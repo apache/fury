@@ -90,10 +90,10 @@ public class MapSerializers {
         Fury fury, Class<T> cls, boolean supportCodegenHook, boolean inferGenerics) {
       super(fury, cls);
       this.supportCodegenHook = supportCodegenHook;
-      keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoCache();
-      keyClassInfoReadCache = fury.getClassResolver().nilClassInfoCache();
-      valueClassInfoWriteCache = fury.getClassResolver().nilClassInfoCache();
-      valueClassInfoReadCache = fury.getClassResolver().nilClassInfoCache();
+      keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
+      keyClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
+      valueClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
+      valueClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
       partialGenericKVTypeMap = new IdentityMap<>();
       if (inferGenerics) {
         Tuple2<TypeToken<?>, TypeToken<?>> kvTypes =

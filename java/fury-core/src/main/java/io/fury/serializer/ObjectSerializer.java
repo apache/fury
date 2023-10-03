@@ -938,7 +938,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       super(getRegisteredClassId(fury, cls), qualifiedFieldName, accessor);
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
       genericType = fury.getClassResolver().buildGenericType(cls);
-      classInfoHolder = fury.getClassResolver().nilClassInfoCache();
+      classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       trackingRef = fury.getClassResolver().needToWriteRef(cls);
     }
 
@@ -947,7 +947,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       super(getRegisteredClassId(fury, getRawType(typeToken)), qualifiedFieldName, accessor);
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
       genericType = fury.getClassResolver().buildGenericType(typeToken);
-      classInfoHolder = fury.getClassResolver().nilClassInfoCache();
+      classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       trackingRef = fury.getClassResolver().needToWriteRef(getRawType(typeToken));
     }
 

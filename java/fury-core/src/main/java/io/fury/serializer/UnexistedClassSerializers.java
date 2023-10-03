@@ -89,7 +89,7 @@ public final class UnexistedClassSerializers {
     public UnexistedClassSerializer(Fury fury, ClassDef classDef) {
       super(fury, UnexistedMetaSharedClass.class);
       this.classDef = classDef;
-      classInfoHolder = fury.getClassResolver().nilClassInfoCache();
+      classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       fieldsInfoMap = new LongMap<>();
       Preconditions.checkArgument(fury.getConfig().shareMetaContext());
     }
