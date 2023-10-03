@@ -53,6 +53,8 @@ jobs:
         run: ./ci/run_ci.sh install_python
       - name: Install pyfury
         run: ./ci/run_ci.sh install_pyfury
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Run CI with Maven
         run: PATH="$HOME/miniconda/bin:$PATH" ./ci/run_ci.sh java${{ matrix.java-version }}
   integration_tests:
