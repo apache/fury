@@ -25,6 +25,7 @@ import static io.fury.codegen.ExpressionUtils.gt;
 import static io.fury.codegen.ExpressionUtils.neq;
 import static io.fury.codegen.ExpressionUtils.not;
 import static io.fury.codegen.ExpressionUtils.nullValue;
+import static io.fury.codegen.ExpressionUtils.uninline;
 import static io.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
 import static io.fury.type.TypeUtils.CLASS_TYPE;
 import static io.fury.type.TypeUtils.COLLECTION_TYPE;
@@ -84,7 +85,6 @@ import io.fury.type.FinalObjectTypeStub;
 import io.fury.type.TypeUtils;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
-import io.fury.util.function.SerializableSupplier;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
@@ -726,37 +726,45 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     } else {
       Literal flag = Literal.ofInt(CollectionSerializers.Flags.NOT_SAME_TYPE);
       Expression sameElementClass = neq(new BitAnd(flags, flag), flag, "sameElementClass");
-      TypeToken<?> serializerType = getSerializerType(elementType);
+      builder.add(sameElementClass);
+      // Make it inside scope of `if(sameElementClass)`
       Expression elemSerializer =
-          new If(
-              sameElementClass,
-              castSerializer(writeElementsHeader.f1.inline(), serializerType),
-              nullValue(serializerType),
-              false);
-      builder.add(sameElementClass, elemSerializer);
+          castSerializer(writeElementsHeader.f1.inline(), getSerializerType(elementType));
+      elemSerializer = uninline(elemSerializer);
       Expression action;
       if (trackingRef) {
-        SerializableSupplier<Expression> write1 =
-            () ->
-                writeContainerElements(
-                    elementType, true, elemSerializer, null, buffer, collection, size);
+        ListExpression writeBuilder = new ListExpression(elemSerializer);
+        writeBuilder.add(
+            writeContainerElements(
+                elementType, true, elemSerializer, null, buffer, collection, size));
         action =
             new If(
                 sameElementClass,
-                invokeGenerated(ctx, write1, "writeContainerElements"),
+                invokeGenerated(
+                    ctx,
+                    ImmutableSet.of(buffer, collection, size),
+                    writeBuilder,
+                    "sameElementClassWrite",
+                    false),
                 writeContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
         Literal hasNullFlag = Literal.ofInt(CollectionSerializers.Flags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
         builder.add(hasNull);
-        SerializableSupplier<Expression> write1 =
-            () ->
-                writeContainerElements(
-                    elementType, false, elemSerializer, hasNull, buffer, collection, size);
+
+        ListExpression writeBuilder = new ListExpression(elemSerializer);
+        writeBuilder.add(
+            writeContainerElements(
+                elementType, false, elemSerializer, hasNull, buffer, collection, size));
         action =
             new If(
                 sameElementClass,
-                invokeGenerated(ctx, write1, "writeContainerElements"),
+                invokeGenerated(
+                    ctx,
+                    ImmutableSet.of(buffer, collection, size, hasNull),
+                    writeBuilder,
+                    "sameElementClassWrite",
+                    false),
                 writeContainerElements(
                     elementType, false, null, hasNull, buffer, collection, size));
       }
@@ -1271,6 +1279,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else {
         elemSerializer = castSerializer(serializer, elementType);
       }
+      elemSerializer = uninline(elemSerializer);
       builder.add(sameElementClass);
       Expression action;
       if (trackingRef) {
@@ -1282,7 +1291,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         Expression sameElementClassRead =
             invokeGenerated(
                 ctx,
-                ImmutableSet.of(buffer, collection, size, flags),
+                ImmutableSet.of(buffer, collection, size),
                 readBuilder,
                 "sameElementClassRead",
                 false);

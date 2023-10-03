@@ -737,6 +737,9 @@ public class ClassResolver {
   }
 
   public boolean isSerializable(Class<?> cls) {
+    if (ReflectionUtils.isAbstract(cls) || cls.isInterface()) {
+      return false;
+    }
     try {
       getSerializerClass(cls, false);
       return true;

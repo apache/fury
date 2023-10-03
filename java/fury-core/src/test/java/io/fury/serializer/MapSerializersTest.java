@@ -284,10 +284,10 @@ public class MapSerializersTest extends FuryTestBase {
     TestClassForDefaultMapSerializer map = new TestClassForDefaultMapSerializer();
     map.put("a", 1);
     map.put("b", 2);
-    serDeCheck(fury, map);
     Assert.assertSame(
         fury.getClassResolver().getSerializerClass(TestClassForDefaultMapSerializer.class),
         MapSerializers.DefaultJavaMapSerializer.class);
+    serDeCheck(fury, map);
   }
 
   @Data

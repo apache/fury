@@ -145,6 +145,13 @@ public class ExpressionUtils {
     return new Cast(value, typeToken);
   }
 
+  public static Expression uninline(Expression expression) {
+    if (expression instanceof Expression.Inlineable) {
+      ((Expression.Inlineable) (expression)).inline(false);
+    }
+    return expression;
+  }
+
   public static StaticInvoke invokeStaticInline(
       Class<?> staticObject, String functionName, TypeToken<?> type, Expression... arguments) {
     return new StaticInvoke(staticObject, functionName, "", type, false, true, arguments);

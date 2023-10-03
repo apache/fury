@@ -23,6 +23,7 @@ import io.fury.serializer.Serializer;
  *
  * @author chaokunyang
  */
+@SuppressWarnings("rawtypes")
 public class ClassInfoCache {
   public ClassInfo classInfo;
 
@@ -30,7 +31,7 @@ public class ClassInfoCache {
     this.classInfo = classInfo;
   }
 
-  public Serializer<?> getSerializer() {
+  public Serializer getSerializer() {
     return classInfo.serializer;
   }
 
