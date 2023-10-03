@@ -228,7 +228,7 @@ public final class Struct implements Serializable {
                     IntStream.range(i * numFields, i * numFields + numFields).boxed().toArray()));
           }
           classCode.append("}");
-          return createStructClass(classname, classCode.toString());
+          return compile(classname, classCode.toString());
         });
   }
 
@@ -277,13 +277,20 @@ public final class Struct implements Serializable {
                     IntStream.range(i * numFields, i * numFields + numFields).boxed().toArray()));
           }
           classCode.append("}");
-          return createStructClass(classname, classCode.toString());
+          return compile(classname, classCode.toString());
         });
   }
 
   /** Create class. */
-  private static Class<?> createStructClass(String classname, String classCode) {
+  public static Class<?> createStructClass(String classname, String classCode, Object cache) {
+    if (cache == null) {
+      return compile(classname, classCode);
+    }
+    return classCache.computeIfAbsent(cache, k -> compile(classname, classCode));
+  }
 
+  /** Create class. */
+  private static Class<?> compile(String classname, String classCode) {
     Path path = Paths.get(classname + ".java");
     try {
       Files.deleteIfExists(path);
