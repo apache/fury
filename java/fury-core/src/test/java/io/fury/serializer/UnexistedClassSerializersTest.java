@@ -146,6 +146,11 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
               .build();
       MetaContext context3 = new MetaContext();
       fury3.getSerializationContext().setMetaContext(context3);
+      // This may crash at `G1ParScanThreadState::copy_to_survivor_space` in
+      // ubuntu22 and jdk11/17. It's a jvm bug, see:
+      // https://github.com/alipay/fury/pull/923#issuecomment-1745035339
+      // Workaround by gc manually.
+      System.gc();
       Object o3 = fury3.deserialize(bytes2);
       assertEquals(o3.getClass(), structClass);
       assertEquals(o3, pojo);

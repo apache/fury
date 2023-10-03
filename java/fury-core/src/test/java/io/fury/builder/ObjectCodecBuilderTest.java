@@ -133,7 +133,7 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     byte[] bytecode =
         JaninoUtils.toBytecode(clz.getClassLoader(), compileUnit).values().iterator().next();
     JaninoUtils.CodeStats classStats = JaninoUtils.getClassStats(bytecode);
-    System.out.println(classStats);
+    // System.out.println(classStats);
     classStats.methodsSize.entrySet().stream()
         .filter(e -> !e.getKey().equals("<init>"))
         .forEach(
@@ -152,7 +152,7 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     container.list1 = ofArrayList(new CollectionSerializersTest.NotFinal(1));
     container.map1 = ofHashMap("k", new CollectionSerializersTest.NotFinal(2));
     serDeCheck(fury, container);
-    checkMethodSize(NestedContainer.class, fury);
+    checkMethodSize(CollectionSerializersTest.Container.class, fury);
   }
 
   @Data
