@@ -448,7 +448,7 @@ public class FuryTest extends FuryTestBase {
 
   private void furyGC(WeakHashMap<Object, Boolean> map) {
     Fury fury = Fury.builder().requireClassRegistration(false).build();
-    Class<?> structClass1 = Struct.createStructClass("TestClassGC", 1);
+    Class<?> structClass1 = Struct.createStructClass("TestClassGC", 1, false);
     System.out.println(structClass1.hashCode());
     Object struct1 = Struct.createPOJO(structClass1);
     serDe(fury, struct1);
