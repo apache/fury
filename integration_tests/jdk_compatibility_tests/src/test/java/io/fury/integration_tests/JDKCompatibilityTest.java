@@ -17,8 +17,9 @@
 package io.fury.integration_tests;
 
 import io.fury.Fury;
-import io.fury.config.Language;
 import io.fury.config.CompatibleMode;
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
 import io.fury.test.bean.BeanA;
 import io.fury.util.Platform;
 import java.io.File;
@@ -32,7 +33,7 @@ import org.testng.annotations.Test;
 
 public class JDKCompatibilityTest {
 
-  io.fury.config.FuryBuilder builder() {
+  FuryBuilder builder() {
     return Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
   }
 
