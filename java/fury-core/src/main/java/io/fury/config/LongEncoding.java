@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury;
+package io.fury.config;
 
 /**
  * Encoding option for long.
