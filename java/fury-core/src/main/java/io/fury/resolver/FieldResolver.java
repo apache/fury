@@ -32,7 +32,7 @@ import io.fury.exception.ClassNotCompatibleException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.CollectionSerializers;
 import io.fury.serializer.MapSerializers;
-import io.fury.serializer.Serializers;
+import io.fury.serializer.PrimitiveSerializers;
 import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
 import io.fury.util.FieldAccessor;
@@ -218,8 +218,8 @@ public class FieldResolver {
   private final FieldInfo[] separateTypesHashFields;
   private final short minPrimitiveClassId;
   private final short maxPrimitiveClassId;
-  private final Serializers.IntSerializer intSerializer;
-  private final Serializers.LongSerializer longSerializer;
+  private final PrimitiveSerializers.IntSerializer intSerializer;
+  private final PrimitiveSerializers.LongSerializer longSerializer;
 
   public FieldResolver(
       Fury fury,
@@ -237,8 +237,8 @@ public class FieldResolver {
         classResolver.getRegisteredClassId(TypeUtils.getSortedPrimitiveClasses().get(0));
     this.maxPrimitiveClassId =
         classResolver.getRegisteredClassId(TypeUtils.getSortedPrimitiveClasses().get(8));
-    intSerializer = (Serializers.IntSerializer) classResolver.getSerializer(int.class);
-    longSerializer = (Serializers.LongSerializer) classResolver.getSerializer(long.class);
+    intSerializer = (PrimitiveSerializers.IntSerializer) classResolver.getSerializer(int.class);
+    longSerializer = (PrimitiveSerializers.LongSerializer) classResolver.getSerializer(long.class);
     classInfoHolder = classResolver.nilClassInfoHolder();
     // Using `comparingLong` to avoid  overflow in f1.getEncodedFieldInfo() -
     // f2.getEncodedFieldInfo().
