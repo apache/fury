@@ -213,6 +213,7 @@ public class CodegenSerializerTest extends FuryTestBase {
       Fury fury1 =
           Fury.builder()
               .withLanguage(Language.JAVA)
+              .withIntCompressed(false)
               .withLongCompressed(true)
               .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
               .requireClassRegistration(false)
