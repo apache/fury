@@ -21,6 +21,7 @@ package io.fury.memory;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Preconditions;
+import io.fury.annotation.CodegenInvoke;
 import io.fury.util.Platform;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
@@ -1633,6 +1634,7 @@ public final class MemoryBuffer {
     return unsafeWritePositiveVarLong(value);
   }
 
+  @CodegenInvoke
   public int unsafeWriteVarLong(long value) {
     value = (value << 1) ^ (value >> 63);
     return unsafeWritePositiveVarLong(value);
@@ -1816,6 +1818,92 @@ public final class MemoryBuffer {
       }
     }
     return result;
+  }
+
+  /**
+   * Write long using fury SLI(Small long as int) encoding. If long is in [0xc0000000, 0x3fffffff],
+   * encode as 4 bytes int: | little-endian: ((int) value) << 1 |; Otherwise write as 9 bytes: | 0b1
+   * | little-endian 8bytes long |
+   */
+  public int writeSliLong(long value) {
+    ensure(writerIndex + 9);
+    return unsafeWriteSliLong(value);
+  }
+
+  private static final int HALF_MAX_INT_VALUE = Integer.MAX_VALUE / 2;
+  private static final int HALF_MIN_INT_VALUE = Integer.MIN_VALUE / 2;
+  private static final byte BIG_LONG_FLAG = 0b1; // bit 0 set, means big long.
+
+  /** Write long using fury SLI(Small Long as Int) encoding. */
+  public int unsafeWriteSliLong(long value) {
+    final int writerIndex = this.writerIndex;
+    final long pos = address + writerIndex;
+    if (value >= HALF_MIN_INT_VALUE && value <= HALF_MAX_INT_VALUE) {
+      // write:
+      // 00xxx -> 0xxx
+      // 11xxx -> 1xxx
+      // read:
+      // 0xxx -> 00xxx
+      // 1xxx -> 11xxx
+      int v = ((int) value) << 1; // bit 0 unset, means int.
+      if (LITTLE_ENDIAN) {
+        UNSAFE.putInt(heapMemory, pos, v);
+      } else {
+        UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(v));
+      }
+      this.writerIndex += 4;
+      return 4;
+    } else {
+      UNSAFE.putByte(heapMemory, pos, BIG_LONG_FLAG);
+      if (LITTLE_ENDIAN) {
+        UNSAFE.putLong(heapMemory, pos + 1, value);
+      } else {
+        UNSAFE.putLong(heapMemory, pos + 1, Long.reverseBytes(value));
+      }
+      this.writerIndex += 9;
+      return 9;
+    }
+  }
+
+  /** Read fury SLI(Small Long as Int) encoded long. */
+  public long readSliLong() {
+    int readIdx = readerIndex;
+    final long pos = address + readIdx;
+    int size = this.size;
+    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readIdx > size - 4) {
+      throwIndexOutOfBoundsException(readIdx, size, 4);
+    }
+    if (LITTLE_ENDIAN) {
+      int i = UNSAFE.getInt(heapMemory, pos);
+      if ((i & 0b1) != 0b1) {
+        readerIndex = readIdx + 4;
+        return i >> 1;
+      } else {
+        if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readIdx > size - 9) {
+          throwIndexOutOfBoundsException(readIdx, size, 9);
+        }
+        readerIndex = readIdx + 9;
+        return UNSAFE.getLong(heapMemory, pos + 1);
+      }
+    } else {
+      int i = Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos));
+      if ((i & 0b1) != 0b1) {
+        readerIndex = readIdx + 4;
+        return i >> 1;
+      } else {
+        if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readIdx > size - 9) {
+          throwIndexOutOfBoundsException(readIdx, size, 9);
+        }
+        readerIndex = readIdx + 9;
+        return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos + 1));
+      }
+    }
+  }
+
+  private void throwIndexOutOfBoundsException(int readIdx, int size, int need) {
+    throw new IndexOutOfBoundsException(
+        String.format(
+            "readerIndex(%d) + length(%d) exceeds size(%d): %s", readIdx, need, size, this));
   }
 
   public void writeBytes(byte[] bytes) {
