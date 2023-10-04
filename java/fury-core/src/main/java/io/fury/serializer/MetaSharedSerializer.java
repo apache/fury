@@ -21,6 +21,8 @@ import io.fury.Fury;
 import io.fury.builder.MetaSharedCodecBuilder;
 import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
+import io.fury.config.CompatibleMode;
+import io.fury.config.FuryBuilder;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
@@ -57,7 +59,7 @@ import java.util.stream.Collectors;
  * info for those types.
  *
  * @see CompatibleMode
- * @see Fury.FuryBuilder#withMetaContextShare
+ * @see FuryBuilder#withMetaContextShare
  * @see MetaSharedCodecBuilder
  * @see ObjectSerializer
  * @author chaokunyang

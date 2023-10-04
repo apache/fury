@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package io.fury;
+package io.fury.config;
 
 /**
- * Language supported by fury.
+ * Type forward/backward compatibility config.
  *
  * @author chaokunyang
  */
-public enum Language {
-  XLANG,
-  JAVA,
-  PYTHON,
-  CPP,
-  GO,
+public enum CompatibleMode {
+  /** Class schema must be consistent between serialization peer and deserialization peer. */
+  SCHEMA_CONSISTENT,
+  /**
+   * Class schema can be different between serialization peer and deserialization peer. They can
+   * add/delete fields independently.
+   */
+  COMPATIBLE
 }

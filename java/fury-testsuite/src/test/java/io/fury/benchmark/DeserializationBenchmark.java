@@ -22,7 +22,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.format.encoder.Encoders;
 import io.fury.format.encoder.RowEncoder;
 import io.fury.format.row.binary.BinaryRow;

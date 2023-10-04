@@ -18,7 +18,6 @@ package io.fury.benchmark.state;
 
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
-import io.fury.Language;
 import io.fury.benchmark.IntsSerializationSuite;
 import io.fury.benchmark.LongStringSerializationSuite;
 import io.fury.benchmark.LongsSerializationSuite;
@@ -30,10 +29,12 @@ import io.fury.benchmark.data.Image;
 import io.fury.benchmark.data.Media;
 import io.fury.benchmark.data.MediaContent;
 import io.fury.benchmark.data.Struct;
+import io.fury.config.CompatibleMode;
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.resolver.MetaContext;
-import io.fury.serializer.CompatibleMode;
 import io.fury.util.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -117,7 +118,7 @@ public class FuryState {
       setupBuffer();
       object = ObjectType.createObject(objectType, references);
       Thread.currentThread().setContextClassLoader(object.getClass().getClassLoader());
-      Fury.FuryBuilder furyBuilder =
+      FuryBuilder furyBuilder =
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)

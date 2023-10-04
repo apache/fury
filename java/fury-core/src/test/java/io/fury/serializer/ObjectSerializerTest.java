@@ -20,7 +20,7 @@ import static org.testng.Assert.assertEquals;
 
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.test.bean.Cyclic;

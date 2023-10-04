@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.Language;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

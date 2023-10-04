@@ -19,7 +19,7 @@ package io.fury.serializer;
 import static org.testng.Assert.*;
 
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import org.testng.annotations.Test;
 

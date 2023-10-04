@@ -23,7 +23,7 @@ import static io.fury.format.vectorized.ArrowUtilsTest.createVectorSchemaRoot;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.format.encoder.Encoders;
 import io.fury.format.encoder.RowEncoder;
 import io.fury.format.row.binary.BinaryRow;

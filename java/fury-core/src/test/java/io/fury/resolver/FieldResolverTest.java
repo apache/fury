@@ -24,7 +24,7 @@ import static io.fury.resolver.FieldResolver.encodingBytesLength;
 import static io.fury.resolver.FieldResolver.of;
 
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

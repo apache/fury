@@ -17,8 +17,9 @@
 package io.fury;
 
 import com.google.common.reflect.TypeToken;
+import io.fury.config.CompatibleMode;
+import io.fury.config.Language;
 import io.fury.resolver.MetaContext;
-import io.fury.serializer.CompatibleMode;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
 import io.fury.test.bean.Foo;

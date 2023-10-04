@@ -18,6 +18,8 @@ package io.fury;
 
 import static org.testng.Assert.assertEquals;
 
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,7 +35,7 @@ public class OutOfBandTest extends FuryTestBase {
 
   @Test(dataProvider = "referenceTrackingConfig")
   public void testByteBuffer(boolean referenceTracking) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)

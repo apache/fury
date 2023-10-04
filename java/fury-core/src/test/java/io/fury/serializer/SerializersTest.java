@@ -22,7 +22,8 @@ import static org.testng.Assert.assertTrue;
 
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -44,7 +45,7 @@ public class SerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testStringBuilder(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
@@ -76,7 +77,7 @@ public class SerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testEnumSerialization(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
@@ -91,7 +92,7 @@ public class SerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testBigInt(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)

@@ -19,6 +19,7 @@ package io.fury.serializer;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import io.fury.Fury;
+import io.fury.config.CompatibleMode;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.FieldResolver;

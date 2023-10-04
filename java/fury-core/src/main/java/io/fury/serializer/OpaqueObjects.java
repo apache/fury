@@ -16,7 +16,7 @@
 
 package io.fury.serializer;
 
-import io.fury.Language;
+import io.fury.config.Language;
 
 /**
  * Stub objects for unsupported cross-language serializing type.

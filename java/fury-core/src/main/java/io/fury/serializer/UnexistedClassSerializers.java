@@ -17,7 +17,6 @@
 package io.fury.serializer;
 
 import com.google.common.base.Preconditions;
-import io.fury.Config;
 import io.fury.Fury;
 import io.fury.collection.IdentityObjectIntMap;
 import io.fury.collection.LazyMap;
@@ -25,6 +24,8 @@ import io.fury.collection.LongMap;
 import io.fury.collection.MapEntry;
 import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
+import io.fury.config.CompatibleMode;
+import io.fury.config.Config;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassInfoHolder;

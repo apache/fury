@@ -17,9 +17,9 @@
 package io.fury.util;
 
 import io.fury.Fury;
-import io.fury.Language;
 import io.fury.codegen.CompileUnit;
 import io.fury.codegen.JaninoUtils;
+import io.fury.config.Language;
 import java.io.StringReader;
 import org.codehaus.janino.SimpleCompiler;
 import org.testng.Assert;

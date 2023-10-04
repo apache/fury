@@ -18,7 +18,7 @@ package io.fury.serializer;
 
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.util.DateTimeUtils;
 import java.sql.Timestamp;
 import java.time.Duration;

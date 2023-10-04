@@ -25,6 +25,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.fury.annotation.Ignore;
 import io.fury.builder.Generated;
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
 import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
@@ -99,7 +101,7 @@ public class FuryTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void basicTest(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)

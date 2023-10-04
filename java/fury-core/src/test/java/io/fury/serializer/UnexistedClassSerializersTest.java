@@ -22,7 +22,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.CompatibleMode;
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
 import io.fury.resolver.MetaContext;
 import io.fury.test.bean.Struct;
 import java.util.List;
@@ -55,7 +57,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
         .toArray(Object[][]::new);
   }
 
-  private Fury.FuryBuilder builder() {
+  private FuryBuilder builder() {
     return Fury.builder()
         .withLanguage(Language.JAVA)
         .withCompatibleMode(CompatibleMode.COMPATIBLE)

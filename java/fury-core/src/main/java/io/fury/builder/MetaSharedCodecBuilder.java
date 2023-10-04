@@ -25,9 +25,10 @@ import io.fury.builder.Generated.GeneratedMetaSharedSerializer;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Literal;
+import io.fury.config.CompatibleMode;
+import io.fury.config.FuryBuilder;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.CodegenSerializer;
-import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.MetaSharedSerializer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.Serializer;
@@ -54,7 +55,7 @@ import java.util.SortedMap;
  * info for those types.
  *
  * @see CompatibleMode
- * @see Fury.FuryBuilder#withMetaContextShare
+ * @see FuryBuilder#withMetaContextShare
  * @see GeneratedMetaSharedSerializer
  * @see MetaSharedSerializer
  * @author chaokunyang

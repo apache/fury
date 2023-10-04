@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package io.fury.serializer;
+package io.fury.config;
 
-public enum CompatibleMode {
-  /** Class schema must be consistent between serialization peer and deserialization peer. */
-  SCHEMA_CONSISTENT,
-  /**
-   * Class schema can be different between serialization peer and deserialization peer. They can
-   * add/delete fields independently.
-   */
-  COMPATIBLE
+/**
+ * Language supported by fury.
+ *
+ * @author chaokunyang
+ */
+public enum Language {
+  XLANG,
+  JAVA,
+  PYTHON,
+  CPP,
+  GO,
 }
