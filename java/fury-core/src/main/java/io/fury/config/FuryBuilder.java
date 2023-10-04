@@ -21,7 +21,6 @@ import io.fury.ThreadLocalFury;
 import io.fury.ThreadSafeFury;
 import io.fury.pool.ThreadPoolFury;
 import io.fury.resolver.ClassResolver;
-import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.ObjectStreamSerializer;
 import io.fury.serializer.Serializer;

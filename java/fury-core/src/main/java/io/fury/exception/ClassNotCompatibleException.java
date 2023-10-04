@@ -16,7 +16,7 @@
 
 package io.fury.exception;
 
-import io.fury.serializer.CompatibleMode;
+import io.fury.config.CompatibleMode;
 
 /**
  * Exception for class compatibility. If {@link CompatibleMode#COMPATIBLE} is not enabled, and the

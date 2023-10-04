@@ -24,6 +24,7 @@ import io.fury.collection.LongMap;
 import io.fury.collection.MapEntry;
 import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
+import io.fury.config.CompatibleMode;
 import io.fury.config.Config;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;

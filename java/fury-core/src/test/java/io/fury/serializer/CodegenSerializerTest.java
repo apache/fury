@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
+import io.fury.config.CompatibleMode;
 import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;

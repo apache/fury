@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
+import io.fury.config.CompatibleMode;
 import io.fury.config.Language;
 import java.util.ArrayDeque;
 import java.util.ArrayList;

@@ -16,12 +16,12 @@
 
 package io.fury;
 
+import io.fury.config.CompatibleMode;
 import io.fury.config.Language;
 import io.fury.io.ClassLoaderObjectInputStream;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.MetaContext;
 import io.fury.serializer.BufferObject;
-import io.fury.serializer.CompatibleMode;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import java.io.ByteArrayInputStream;

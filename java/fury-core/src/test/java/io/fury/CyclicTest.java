@@ -18,9 +18,9 @@ package io.fury;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import io.fury.config.CompatibleMode;
 import io.fury.config.FuryBuilder;
 import io.fury.config.Language;
-import io.fury.serializer.CompatibleMode;
 import io.fury.test.bean.Cyclic;
 import io.fury.test.bean.FinalCyclic;
 import java.util.ArrayList;

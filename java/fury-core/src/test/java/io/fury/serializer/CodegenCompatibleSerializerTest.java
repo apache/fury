@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
+import io.fury.config.CompatibleMode;
 import io.fury.config.Language;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;

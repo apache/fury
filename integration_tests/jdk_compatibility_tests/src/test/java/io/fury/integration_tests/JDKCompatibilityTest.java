@@ -17,8 +17,8 @@
 package io.fury.integration_tests;
 
 import io.fury.Fury;
-import io.fury.Language;
-import io.fury.serializer.CompatibleMode;
+import io.fury.config.Language;
+import io.fury.config.CompatibleMode;
 import io.fury.test.bean.BeanA;
 import io.fury.util.Platform;
 import java.io.File;

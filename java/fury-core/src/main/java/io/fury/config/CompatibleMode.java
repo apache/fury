@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-package io.fury.serializer;
+package io.fury.config;
 
+/**
+ * Type forward/backward compatibility config.
+ *
+ * @author chaokunyang
+ */
 public enum CompatibleMode {
   /** Class schema must be consistent between serialization peer and deserialization peer. */
   SCHEMA_CONSISTENT,

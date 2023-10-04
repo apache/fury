@@ -18,7 +18,6 @@ package io.fury.config;
 
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
-import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.TimeSerializers;
 import io.fury.util.MurmurHash3;

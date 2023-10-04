@@ -18,6 +18,7 @@ package io.fury;
 
 import com.google.common.base.Preconditions;
 import io.fury.builder.JITContext;
+import io.fury.config.CompatibleMode;
 import io.fury.config.Config;
 import io.fury.config.FuryBuilder;
 import io.fury.config.Language;
@@ -34,7 +35,6 @@ import io.fury.resolver.SerializationContext;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferCallback;
 import io.fury.serializer.BufferObject;
-import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.OpaqueObjects;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;

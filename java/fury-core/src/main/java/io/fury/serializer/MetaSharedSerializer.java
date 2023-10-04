@@ -21,6 +21,7 @@ import io.fury.Fury;
 import io.fury.builder.MetaSharedCodecBuilder;
 import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
+import io.fury.config.CompatibleMode;
 import io.fury.config.FuryBuilder;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfoHolder;
