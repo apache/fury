@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
 
 public class JDKCompatibilityTest {
 
-  io.fury.Fury.FuryBuilder builder() {
+  io.fury.config.FuryBuilder builder() {
     return Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
   }
 
