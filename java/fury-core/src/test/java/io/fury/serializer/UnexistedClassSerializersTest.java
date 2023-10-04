@@ -106,12 +106,8 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          // Serialization may crash at `G1ParScanThreadState::copy_to_survivor_space` in
-          // ubuntu22 and jdk11/17. It's a jvm bug, see:
-          // https://github.com/alipay/fury/pull/923#issuecomment-1745035339
-          // Workaround by disable cache.
-          Struct.createNumberStructClass("TestSkipUnexistedClass2", 2, false),
-          Struct.createStructClass("TestSkipUnexistedClass2", 2, false)
+          Struct.createNumberStructClass("TestSkipUnexistedClass2", 2),
+          Struct.createStructClass("TestSkipUnexistedClass2", 2)
         }) {
       Object pojo = Struct.createPOJO(structClass);
       MetaContext context1 = new MetaContext();
@@ -163,12 +159,8 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          // Serialization may crash at `G1ParScanThreadState::copy_to_survivor_space` in
-          // ubuntu22 and jdk11/17. It's a jvm bug, see:
-          // https://github.com/alipay/fury/pull/923#issuecomment-1745035339
-          // Workaround by disable cache.
-          Struct.createNumberStructClass("TestSkipUnexistedClass3", 2, false),
-          Struct.createStructClass("TestSkipUnexistedClass3", 2, false)
+          Struct.createNumberStructClass("TestSkipUnexistedClass3", 2),
+          Struct.createStructClass("TestSkipUnexistedClass3", 2)
         }) {
       Fury fury2 =
           builder()
@@ -207,7 +199,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   public void testThrowExceptionIfClassNotExist() {
     Fury fury = builder().withDeserializeUnexistedClass(false).build();
     ClassLoader classLoader = getClass().getClassLoader();
-    Class<?> structClass = Struct.createNumberStructClass("TestSkipUnexistedClass1", 2, false);
+    Class<?> structClass = Struct.createNumberStructClass("TestSkipUnexistedClass1", 2);
     Object pojo = Struct.createPOJO(structClass);
     Fury fury2 =
         builder().withDeserializeUnexistedClass(false).withClassLoader(classLoader).build();

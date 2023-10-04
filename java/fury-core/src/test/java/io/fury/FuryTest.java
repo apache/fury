@@ -464,9 +464,18 @@ public class FuryTest extends FuryTestBase {
 
   @Test
   public void testSerializeJavaObject() {
-    Fury fury = Fury.builder().requireClassRegistration(false).withLanguage(Language.JAVA).build();
+    Fury fury =
+        Fury.builder()
+            .requireClassRegistration(false)
+            .withClassVersionCheck(false)
+            .withLanguage(Language.JAVA)
+            .build();
     BeanA beanA = BeanA.createBeanA(2);
     assertEquals(fury.deserializeJavaObject(fury.serializeJavaObject(beanA), BeanA.class), beanA);
+    // Without class version check, janino generated code may crash jvm.
+    // The ArraySerializers.IntArraySerializer will read num elements: 153756481.
+    // For some reason, if BeanACodec are compiled iby janino in JDK11, it will crash.
+    // but if compile BeanACodec using javac, no crash will happen.
     assertThrows(
         Exception.class,
         () -> fury.deserializeJavaObject(fury.serializeJavaObjectAndClass(beanA), BeanA.class));
