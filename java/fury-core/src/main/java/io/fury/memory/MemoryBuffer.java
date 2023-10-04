@@ -1211,8 +1211,8 @@ public final class MemoryBuffer {
   }
 
   /**
-   * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes
-   * using long to avoid using two memory operations.
+   * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
+   * to avoid using two memory operations.
    */
   public int unsafeWriteVarInt(int v) {
     // Ensure negatives close to zero is encode in little bytes.
@@ -1227,8 +1227,8 @@ public final class MemoryBuffer {
   }
 
   /**
-   * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes
-   * using long to avoid using two memory operations.
+   * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
+   * to avoid using two memory operations.
    */
   public int unsafeWritePositiveVarInt(int v) {
     // The encoding algorithm are based on kryo UnsafeMemoryOutput.writeVarInt
