@@ -64,6 +64,7 @@ import io.fury.serializer.MapSerializers;
 import io.fury.serializer.MetaSharedSerializer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.OptionalSerializers;
+import io.fury.serializer.PrimitiveSerializers;
 import io.fury.serializer.ReplaceResolveSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
@@ -304,8 +305,9 @@ public class ClassResolver {
   private void addDefaultSerializers() {
     // primitive types will be boxed.
     addDefaultSerializer(String.class, new StringSerializer(fury));
-    Serializers.registerDefaultSerializers(fury);
+    PrimitiveSerializers.registerDefaultSerializers(fury);
     ArraySerializers.registerDefaultSerializers(fury);
+    Serializers.registerDefaultSerializers(fury);
     TimeSerializers.registerDefaultSerializers(fury);
     OptionalSerializers.registerDefaultSerializers(fury);
     CollectionSerializers.registerDefaultSerializers(fury);

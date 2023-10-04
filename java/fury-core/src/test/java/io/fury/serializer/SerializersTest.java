@@ -18,13 +18,11 @@ package io.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.Language;
-import io.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -43,32 +41,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class SerializersTest extends FuryTestBase {
-
-  @Test
-  public void testUint8Serializer() {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG).requireClassRegistration(false).build();
-    Serializers.Uint8Serializer serializer = new Serializers.Uint8Serializer(fury);
-    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(8);
-    serializer.xwrite(buffer, 0);
-    assertEquals(serializer.xread(buffer), Integer.valueOf(0));
-    serializer.xwrite(buffer, 255);
-    assertEquals(serializer.xread(buffer), Integer.valueOf(255));
-    assertThrows(IllegalArgumentException.class, () -> serializer.xwrite(buffer, -1));
-    assertThrows(IllegalArgumentException.class, () -> serializer.xwrite(buffer, 256));
-  }
-
-  @Test
-  public void testUint16Serializer() {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG).requireClassRegistration(false).build();
-    Serializers.Uint16Serializer serializer = new Serializers.Uint16Serializer(fury);
-    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(16);
-    serializer.xwrite(buffer, 0);
-    assertEquals(serializer.xread(buffer), Integer.valueOf(0));
-    serializer.xwrite(buffer, 65535);
-    assertEquals(serializer.xread(buffer), Integer.valueOf(65535));
-    assertThrows(IllegalArgumentException.class, () -> serializer.xwrite(buffer, -1));
-    assertThrows(IllegalArgumentException.class, () -> serializer.xwrite(buffer, 65536));
-  }
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testStringBuilder(boolean referenceTracking, Language language) {
