@@ -542,27 +542,25 @@ public class MemoryBufferTest {
     checkSliLong(buf, -1, 4);
     for (int i = 0; i < 10; i++) {
       for (int j = 0; j < i; j++) {
-        buf.writeByte(1);
-        buf.readByte();
-        checkSliLong(buf, -1, 4);
-        checkSliLong(buf, 1, 4);
-        checkSliLong(buf, 1L << 6, 4);
-        checkSliLong(buf, 1L << 7, 4);
-        checkSliLong(buf, -(2 << 5), 4);
-        checkSliLong(buf, -(2 << 6), 4);
-        checkSliLong(buf, 1L << 28, 4);
-        checkSliLong(buf, Integer.MAX_VALUE / 2, 4);
-        checkSliLong(buf, Integer.MIN_VALUE / 2, 4);
-        checkSliLong(buf, -1L << 30, 4);
-        checkSliLong(buf, 1L << 30, 9);
-        checkSliLong(buf, Integer.MAX_VALUE, 9);
-        checkSliLong(buf, Integer.MIN_VALUE, 9);
-        checkSliLong(buf, -1L << 31, 9);
-        checkSliLong(buf, 1L << 31, 9);
-        checkSliLong(buf, -1L << 32, 9);
-        checkSliLong(buf, 1L << 32, 9);
-        checkSliLong(buf, Long.MAX_VALUE, 9);
-        checkSliLong(buf, Long.MIN_VALUE, 9);
+        checkSliLong(buf(i), -1, 4);
+        checkSliLong(buf(i), 1, 4);
+        checkSliLong(buf(i), 1L << 6, 4);
+        checkSliLong(buf(i), 1L << 7, 4);
+        checkSliLong(buf(i), -(2 << 5), 4);
+        checkSliLong(buf(i), -(2 << 6), 4);
+        checkSliLong(buf(i), 1L << 28, 4);
+        checkSliLong(buf(i), Integer.MAX_VALUE / 2, 4);
+        checkSliLong(buf(i), Integer.MIN_VALUE / 2, 4);
+        checkSliLong(buf(i), -1L << 30, 4);
+        checkSliLong(buf(i), 1L << 30, 9);
+        checkSliLong(buf(i), Integer.MAX_VALUE, 9);
+        checkSliLong(buf(i), Integer.MIN_VALUE, 9);
+        checkSliLong(buf(i), -1L << 31, 9);
+        checkSliLong(buf(i), 1L << 31, 9);
+        checkSliLong(buf(i), -1L << 32, 9);
+        checkSliLong(buf(i), 1L << 32, 9);
+        checkSliLong(buf(i), Long.MAX_VALUE, 9);
+        checkSliLong(buf(i), Long.MIN_VALUE, 9);
       }
     }
   }
