@@ -26,6 +26,7 @@ import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.builder.MetaSharedCodecBuilder;
 import io.fury.collection.IdentityObjectIntMap;
+import io.fury.config.FuryBuilder;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.resolver.ClassResolver;
@@ -63,7 +64,7 @@ import org.slf4j.Logger;
  * @see MetaSharedCodecBuilder
  * @see CompatibleMode#COMPATIBLE
  * @see CompatibleSerializer
- * @see Fury.FuryBuilder#withMetaContextShare
+ * @see FuryBuilder#withMetaContextShare
  * @see Platform#objectFieldOffset
  * @author chaokunyang
  */

@@ -21,7 +21,8 @@ import static org.testng.Assert.assertTrue;
 
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
 import io.fury.test.bean.ArraysData;
 import io.fury.type.Descriptor;
 import io.fury.util.ReflectionUtils;
@@ -36,7 +37,7 @@ public class ArraySerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testObjectArraySerialization(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
@@ -67,7 +68,7 @@ public class ArraySerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testMultiArraySerialization(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
@@ -87,7 +88,7 @@ public class ArraySerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testPrimitiveArray(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
@@ -115,7 +116,7 @@ public class ArraySerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "referenceTrackingConfig")
   public void testArrayZeroCopy(boolean referenceTracking) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
@@ -135,7 +136,7 @@ public class ArraySerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "referenceTrackingConfig")
   public void testArrayStructZeroCopy(boolean referenceTracking) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)

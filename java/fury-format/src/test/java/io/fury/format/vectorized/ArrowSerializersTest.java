@@ -20,7 +20,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.io.FuryWritableByteChannel;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;

@@ -18,6 +18,8 @@ package io.fury;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
 import io.fury.serializer.CompatibleMode;
 import io.fury.test.bean.Cyclic;
 import io.fury.test.bean.FinalCyclic;
@@ -60,7 +62,7 @@ public class CyclicTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "fury")
-  public void testBean(Fury.FuryBuilder builder) {
+  public void testBean(FuryBuilder builder) {
     Fury fury = builder.withMetaContextShare(false).withRefTracking(true).build();
     for (Object[] objects : beans()) {
       Object notCyclic = objects[0];
@@ -82,7 +84,7 @@ public class CyclicTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "fury")
-  public void testBeanMetaShared(Fury.FuryBuilder builder) {
+  public void testBeanMetaShared(FuryBuilder builder) {
     Fury fury = builder.withMetaContextShare(true).withRefTracking(true).build();
     for (Object[] objects : beans()) {
       Object notCyclic = objects[0];

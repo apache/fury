@@ -17,7 +17,7 @@
 package io.fury.resolver;
 
 import com.google.common.base.Preconditions;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.serializer.Serializer;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.function.Functions;

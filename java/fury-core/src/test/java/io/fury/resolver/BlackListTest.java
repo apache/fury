@@ -18,7 +18,7 @@ package io.fury.resolver;
 
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.exception.InsecureException;
 import io.fury.util.Platform;
 import java.rmi.server.UnicastRemoteObject;

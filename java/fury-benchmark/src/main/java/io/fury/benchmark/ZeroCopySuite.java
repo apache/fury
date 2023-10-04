@@ -29,7 +29,7 @@ import com.esotericsoftware.kryo.io.UnsafeMemoryInput;
 import com.esotericsoftware.kryo.io.UnsafeMemoryOutput;
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.benchmark.data.ComparableByteArray;
 import io.fury.benchmark.data.SerializableByteBuffer;
 import io.fury.benchmark.state.BufferType;

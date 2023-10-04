@@ -28,7 +28,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.serializer.CollectionSerializers.JDKCompatibleCollectionSerializer;

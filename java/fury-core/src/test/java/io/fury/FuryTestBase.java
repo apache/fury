@@ -16,6 +16,7 @@
 
 package io.fury;
 
+import io.fury.config.Language;
 import io.fury.io.ClassLoaderObjectInputStream;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.MetaContext;

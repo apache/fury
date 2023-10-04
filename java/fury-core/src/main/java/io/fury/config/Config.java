@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package io.fury;
+package io.fury.config;
 
 import com.google.common.base.Preconditions;
+import io.fury.Fury;
 import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.TimeSerializers;
@@ -26,6 +27,11 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
+/**
+ * Config for fury, all {@link Fury} related config can be found here.
+ *
+ * @author chaokunyang
+ */
 @SuppressWarnings({"rawtypes"})
 public class Config implements Serializable {
   private final Language language;
@@ -48,7 +54,7 @@ public class Config implements Serializable {
   private final boolean deserializeUnexistedClass;
   private transient int configHash;
 
-  Config(Fury.FuryBuilder builder) {
+  public Config(FuryBuilder builder) {
     language = builder.language;
     trackingRef = builder.trackingRef;
     basicTypesRefIgnored = !trackingRef || builder.basicTypesRefIgnored;

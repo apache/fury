@@ -17,7 +17,7 @@
 package io.fury.test;
 
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;

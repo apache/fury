@@ -19,7 +19,7 @@ package io.fury.serializer;
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.exception.ClassNotCompatibleException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.type.Descriptor;

@@ -20,8 +20,8 @@ import static org.testng.Assert.assertEquals;
 
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
 import io.fury.builder.CodecUtils;
+import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import lombok.EqualsAndHashCode;

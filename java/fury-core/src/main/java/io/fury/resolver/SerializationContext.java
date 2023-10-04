@@ -16,7 +16,7 @@
 
 package io.fury.resolver;
 
-import io.fury.Fury;
+import io.fury.config.FuryBuilder;
 import java.util.IdentityHashMap;
 
 /**
@@ -49,7 +49,7 @@ public final class SerializationContext {
    * Set meta context, which can be used to share data across multiple serialization call. Note that
    * {@code metaContext} will be cleared after the serialization is finished. Please set the context
    * before every serialization if metaShare is enabled by {@link
-   * Fury.FuryBuilder#withMetaContextShare(boolean)}
+   * FuryBuilder#withMetaContextShare(boolean)}
    */
   public void setMetaContext(MetaContext metaContext) {
     this.metaContext = metaContext;
