@@ -1193,23 +1193,27 @@ public final class MemoryBuffer {
    * #writePositiveVarInt} to save one bit.
    */
   public int writeVarInt(int v) {
-    ensure(writerIndex + 5);
+    ensure(writerIndex + 8);
     return unsafeWriteVarInt(v);
   }
 
   /**
-   * Writes a 1-9 byte int.
+   * Writes a 1-5 byte int.
    *
    * @return The number of bytes written.
    */
   public int writePositiveVarInt(int v) {
-    // ensure at least 9 bytes are writable at once, so jvm-jit
+    // ensure at least 8 bytes are writable at once, so jvm-jit
     // generated code is smaller. Otherwise, `MapRefResolver.writeRefOrNull`
     // may be `callee is too large`/`already compiled into a big method`
-    ensure(writerIndex + 5);
+    ensure(writerIndex + 8);
     return unsafeWritePositiveVarInt(v);
   }
 
+  /**
+   * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
+   * to avoid using two memory operations.
+   */
   public int unsafeWriteVarInt(int v) {
     // Ensure negatives close to zero is encode in little bytes.
     v = (v << 1) ^ (v >> 31);
@@ -1222,6 +1226,10 @@ public final class MemoryBuffer {
     return (r >>> 1) ^ -(r & 1);
   }
 
+  /**
+   * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
+   * to avoid using two memory operations.
+   */
   public int unsafeWritePositiveVarInt(int v) {
     // The encoding algorithm are based on kryo UnsafeMemoryOutput.writeVarInt
     // varint are written using little endian byte order.
