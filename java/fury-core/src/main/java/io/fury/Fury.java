@@ -1300,7 +1300,7 @@ public final class Fury {
     boolean stringRefIgnored = true;
     boolean timeRefIgnored = true;
     ClassLoader classLoader;
-    boolean compressInt = false;
+    boolean compressInt = true;
     boolean compressLong = false;
     boolean compressString = true;
     CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
