@@ -138,8 +138,12 @@ ThreadSafeFury fury=Fury.builder()
 
 ### Smaller size
 `FuryBuilder#withIntCompressed`/`FuryBuilder#withLongCompressed` can be used to compress int/long for smaller size.
-Normally compress int is enough. If a number use long, it can't be represented by smaller bytes mostly. In such cases,
-compressing
+Normally compress int is enough. If a number are `long` type, it can't be represented by smaller bytes mostly, 
+the compression won't get good enough result, not worthy compared to performance cost.
+
+Both compression are enabled by default, if the serialized is not important, for example, you use flatbuffers for 
+serialization before, which doesn't compress anything, then you should disable compression. If your data are all numbers,
+the compression can bring 80% performance regression.
 
 ### Implement a customized serializer
 In some cases, you may want to implement a serializer for your type, especially some class customize serialization by JDK
