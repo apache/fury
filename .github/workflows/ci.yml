@@ -120,6 +120,22 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Run Python CI
         run: ./ci/run_ci.sh python
+  go:
+    name: Golang CI
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [ '1.13', '1.18' ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Display Go version
+        run: go version
+      - name: Run Golang CI
+        run: ./ci/run_ci.sh go
   lint:
     name: Code Style Check
     runs-on: ubuntu-latest

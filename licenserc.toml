@@ -45,7 +45,12 @@ excludes = [
     "javascript/packages/hps/src/v8-fast-api-calls.h",
     "javascript/packages/fury/lib/murmurHash3.ts",
     "src/fury/thirdparty/MurmurHash3.*",
+    "go/fury/go.sum",
 ]
+
+[mapping.DOUBLESLASH_STYLE]
+extensions = ['go']
+filenames = ['go.mod']
 
 [properties]
 inceptionYear = 2023
