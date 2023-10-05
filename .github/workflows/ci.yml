@@ -134,8 +134,14 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Display Go version
         run: go version
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Install python
+        run: ./ci/run_ci.sh install_python
+      - name: Install pyfury
+        run: ./ci/run_ci.sh install_pyfury
       - name: Run Golang CI
-        run: ./ci/run_ci.sh go
+        run: PATH="$HOME/miniconda/bin:$PATH" ./ci/run_ci.sh go
   lint:
     name: Code Style Check
     runs-on: ubuntu-latest
