@@ -1,4 +1,4 @@
-module gitlab.alipay-inc.com/ray-project/fury/go/fury
+module github.com/alipay/fury/go/fury
 
 go 1.13
 
