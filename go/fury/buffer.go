@@ -317,3 +317,9 @@ func (b *ByteBuffer) ReadVarInt32() int32 {
 	b.readerIndex = readerIndex
 	return result
 }
+
+type BufferObject interface {
+	TotalBytes() int
+	WriteTo(buf *ByteBuffer)
+	ToBuffer() *ByteBuffer
+}
