@@ -329,7 +329,7 @@ func (s stringSliceSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Val
 		return err
 	}
 	for _, str := range v {
-		if refWritten, err := f.refResolver.WriteReferenceOrNull(buf, reflect.ValueOf(str)); err == nil {
+		if refWritten, err := f.refResolver.WriteRefOrNull(buf, reflect.ValueOf(str)); err == nil {
 			if !refWritten {
 				if err := writeString(buf, str); err != nil {
 					return err
@@ -347,10 +347,10 @@ func (s stringSliceSerializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type
 	r := make([]string, length, length)
 	f.refResolver.Reference(reflect.ValueOf(r))
 	for i := 0; i < length; i++ {
-		if refFlag := f.refResolver.ReadReferenceOrNull(buf); refFlag == RefValueFlag || refFlag == NotNullValueFlag {
+		if refFlag := f.refResolver.ReadRefOrNull(buf); refFlag == RefValueFlag || refFlag == NotNullValueFlag {
 			var nextReadRefId int32
 			if refFlag == RefValueFlag {
-				nextReadRefId, err = f.refResolver.PreserveReferenceId()
+				nextReadRefId, err = f.refResolver.PreserveRefId()
 				if err != nil {
 					return err
 				}
