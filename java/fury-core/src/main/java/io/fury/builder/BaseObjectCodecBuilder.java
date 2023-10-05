@@ -499,7 +499,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       // Don't invoke `Serializer.newSerializer` here, since it(ex. ObjectSerializer) may set itself
       // as global serializer, which overwrite serializer updates in jit callback.
       Expression newSerializerExpr =
-          inlineInvoke(classResolverRef, "getSerializer", SERIALIZER_TYPE, fieldTypeExpr);
+          inlineInvoke(classResolverRef, "getRawSerializer", SERIALIZER_TYPE, fieldTypeExpr);
       String name = ctx.newName(StringUtils.uncapitalize(serializerClass.getSimpleName()));
       // It's ok it jit already finished and this method return false, in such cases
       // `serializerClass` is already jit generated class.
