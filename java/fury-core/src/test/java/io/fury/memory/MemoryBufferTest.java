@@ -535,4 +535,44 @@ public class MemoryBufferTest {
     assertEquals(MemoryBuffer.getShortB(data, 0), (short) 0xaced);
     assertEquals(MemoryBuffer.fromByteArray(data).getShortB(0), (short) 0xaced);
   }
+
+  @Test
+  public void testWriteSliLong() {
+    MemoryBuffer buf = MemoryUtils.buffer(8);
+    checkSliLong(buf, -1, 4);
+    for (int i = 0; i < 10; i++) {
+      for (int j = 0; j < i; j++) {
+        checkSliLong(buf(i), -1, 4);
+        checkSliLong(buf(i), 1, 4);
+        checkSliLong(buf(i), 1L << 6, 4);
+        checkSliLong(buf(i), 1L << 7, 4);
+        checkSliLong(buf(i), -(2 << 5), 4);
+        checkSliLong(buf(i), -(2 << 6), 4);
+        checkSliLong(buf(i), 1L << 28, 4);
+        checkSliLong(buf(i), Integer.MAX_VALUE / 2, 4);
+        checkSliLong(buf(i), Integer.MIN_VALUE / 2, 4);
+        checkSliLong(buf(i), -1L << 30, 4);
+        checkSliLong(buf(i), 1L << 30, 9);
+        checkSliLong(buf(i), Integer.MAX_VALUE, 9);
+        checkSliLong(buf(i), Integer.MIN_VALUE, 9);
+        checkSliLong(buf(i), -1L << 31, 9);
+        checkSliLong(buf(i), 1L << 31, 9);
+        checkSliLong(buf(i), -1L << 32, 9);
+        checkSliLong(buf(i), 1L << 32, 9);
+        checkSliLong(buf(i), Long.MAX_VALUE, 9);
+        checkSliLong(buf(i), Long.MIN_VALUE, 9);
+      }
+    }
+  }
+
+  private void checkSliLong(MemoryBuffer buf, long value, int bytesWritten) {
+    int readerIndex = buf.readerIndex();
+    assertEquals(buf.writerIndex(), readerIndex);
+    int actualBytesWritten = buf.writeSliLong(value);
+    assertEquals(actualBytesWritten, bytesWritten);
+    long varLong = buf.readSliLong();
+    assertEquals(buf.writerIndex(), buf.readerIndex());
+    assertEquals(value, varLong);
+    assertEquals(buf.slice(readerIndex, buf.readerIndex() - readerIndex).readSliLong(), value);
+  }
 }

@@ -16,8 +16,13 @@
 
 package io.fury.serializer;
 
+import static io.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
+
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
+import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Invoke;
+import io.fury.config.LongEncoding;
 import io.fury.memory.MemoryBuffer;
 import io.fury.type.Type;
 
@@ -198,7 +203,7 @@ public class PrimitiveSerializers {
 
   public static final class LongSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Long> {
-    private final boolean compressNumber;
+    private final LongEncoding longEncoding;
 
     public LongSerializer(Fury fury, Class<?> cls) {
       super(
@@ -206,24 +211,71 @@ public class PrimitiveSerializers {
           (Class) cls,
           Type.INT64.getId(),
           !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
-      compressNumber = fury.compressLong();
+      longEncoding = fury.longEncoding();
     }
 
     @Override
     public void write(MemoryBuffer buffer, Long value) {
-      if (compressNumber) {
-        buffer.writeVarLong(value);
-      } else {
-        buffer.writeLong(value);
-      }
+      writeLong(buffer, value, longEncoding);
     }
 
     @Override
     public Long read(MemoryBuffer buffer) {
-      if (compressNumber) {
-        return buffer.readVarLong();
+      return readLong(buffer, longEncoding);
+    }
+
+    public static String writeLongFunc(LongEncoding longEncoding, boolean ensureBounds) {
+      switch (longEncoding) {
+        case LE_RAW_BYTES:
+          return ensureBounds ? "writeLong" : "unsafeWriteVarLong";
+        case SLI:
+          return ensureBounds ? "writeSliLong" : "unsafeWriteSliLong";
+        case PVL:
+          return ensureBounds ? "writeVarLong" : "unsafeWriteVarLong";
+        default:
+          throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
+      }
+    }
+
+    public static Expression writeLong(
+        Expression buffer, Expression v, LongEncoding longEncoding, boolean ensureBounds) {
+      return new Invoke(buffer, writeLongFunc(longEncoding, ensureBounds), v);
+    }
+
+    public static void writeLong(MemoryBuffer buffer, long value, LongEncoding longEncoding) {
+      if (longEncoding == LongEncoding.SLI) {
+        buffer.writeSliLong(value);
+      } else if (longEncoding == LongEncoding.LE_RAW_BYTES) {
+        buffer.writeLong(value);
       } else {
+        buffer.writeVarLong(value);
+      }
+    }
+
+    public static long readLong(MemoryBuffer buffer, LongEncoding longEncoding) {
+      if (longEncoding == LongEncoding.SLI) {
+        return buffer.readSliLong();
+      } else if (longEncoding == LongEncoding.LE_RAW_BYTES) {
         return buffer.readLong();
+      } else {
+        return buffer.readVarLong();
+      }
+    }
+
+    public static Expression readLong(Expression buffer, LongEncoding longEncoding) {
+      return new Invoke(buffer, readLongFunc(longEncoding), PRIMITIVE_LONG_TYPE);
+    }
+
+    public static String readLongFunc(LongEncoding longEncoding) {
+      switch (longEncoding) {
+        case LE_RAW_BYTES:
+          return "readLong";
+        case SLI:
+          return "readSliLong";
+        case PVL:
+          return "readVarLong";
+        default:
+          throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
       }
     }
 

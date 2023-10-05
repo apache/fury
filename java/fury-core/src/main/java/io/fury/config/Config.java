@@ -46,6 +46,7 @@ public class Config implements Serializable {
   private final boolean compressString;
   private final boolean compressInt;
   private final boolean compressLong;
+  private final LongEncoding longEncoding;
   private final boolean requireClassRegistration;
   private final boolean registerGuavaTypes;
   private final boolean shareMetaContext;
@@ -61,7 +62,8 @@ public class Config implements Serializable {
     timeRefIgnored = !trackingRef || builder.timeRefIgnored;
     compressString = builder.compressString;
     compressInt = builder.compressInt;
-    compressLong = builder.compressLong;
+    longEncoding = builder.longEncoding;
+    compressLong = longEncoding != LongEncoding.LE_RAW_BYTES;
     requireClassRegistration = builder.requireClassRegistration;
     registerGuavaTypes = builder.registerGuavaTypes;
     codeGenEnabled = builder.codeGenEnabled;
@@ -135,6 +137,11 @@ public class Config implements Serializable {
 
   public boolean compressLong() {
     return compressLong;
+  }
+
+  /** Returns long encoding. */
+  public LongEncoding longEncoding() {
+    return longEncoding;
   }
 
   public boolean requireClassRegistration() {
