@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Primitives;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
+import io.fury.annotation.CodegenInvoke;
 import io.fury.annotation.Internal;
 import io.fury.builder.CodecUtils;
 import io.fury.builder.Generated;
@@ -736,6 +737,17 @@ public class ClassResolver {
   public <T> Serializer<T> getSerializer(Class<T> cls) {
     Preconditions.checkNotNull(cls);
     return (Serializer<T>) getOrUpdateClassInfo(cls).serializer;
+  }
+
+  /**
+   * Return serializer without generics for specified class. The cast of Serializer to subclass
+   * serializer with generic is easy to raise compiler error for javac, so just use raw type.
+   */
+  @Internal
+  @CodegenInvoke
+  public Serializer<?> getRawSerializer(Class<?> cls) {
+    Preconditions.checkNotNull(cls);
+    return getOrUpdateClassInfo(cls).serializer;
   }
 
   public boolean isSerializable(Class<?> cls) {
