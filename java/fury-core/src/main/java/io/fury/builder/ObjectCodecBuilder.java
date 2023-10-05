@@ -289,14 +289,25 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   private List<Expression> serializePrimitivesCompressed(
       Expression bean, Expression buffer, List<List<Descriptor>> primitiveGroups, int totalSize) {
     List<Expression> expressions = new ArrayList<>();
-    int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
     // int/long may need extra one-byte for writing.
-    int growSize = (int) (totalSize + primitiveGroups.stream().mapToLong(Collection::size).sum());
+    int extraSize = 0;
+    for (List<Descriptor> group : primitiveGroups) {
+      for (Descriptor d : group) {
+        if (d.getRawType() == int.class) {
+          // varint may be written as 5bytes, use 8bytes for written as long to reduce cost.
+          extraSize += 4;
+        } else if (d.getRawType() == long.class) {
+          extraSize += 1; // long use 1~9 bytes.
+        }
+      }
+    }
+    int growSize = totalSize + extraSize;
     // After this grow, following writes can be unsafe without checks.
     expressions.add(new Invoke(buffer, "grow", Literal.ofInt(growSize)));
     // Must grow first, otherwise may get invalid address.
     Expression base = new Invoke(buffer, "getHeapMemory", "base", PRIMITIVE_BYTE_ARRAY_TYPE);
     expressions.add(base);
+    int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
     for (List<Descriptor> group : primitiveGroups) {
       ListExpression groupExpressions = new ListExpression();
       Expression writerAddr =
