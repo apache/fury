@@ -1500,7 +1500,10 @@ public class ClassResolver {
     }
   }
 
-  /** Read class info from java data <code>buffer</code>. */
+  /**
+   * Read class info from java data <code>buffer</code>. {@link #readClassInfo(MemoryBuffer,
+   * ClassInfo)} is faster since it use a non-global class info cache.
+   */
   public ClassInfo readClassInfo(MemoryBuffer buffer) {
     byte flag = buffer.readByte();
     if (flag == USE_CLASS_VALUE_FLAG) {
@@ -1522,7 +1525,10 @@ public class ClassResolver {
     }
   }
 
-  /** Read class info from java data <code>buffer</code>. */
+  /**
+   * Read class info from java data <code>buffer</code>. `classInfoCache` is used as a cache to
+   * reduce map lookup to load class from binary.
+   */
   @CodegenInvoke
   public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache) {
     byte flag = buffer.readByte();
