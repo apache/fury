@@ -60,7 +60,7 @@ public final class FuryBuilder {
   boolean timeRefIgnored = true;
   ClassLoader classLoader;
   boolean compressInt = true;
-  boolean compressLong = false;
+  public LongEncoding longEncoding;
   boolean compressString = true;
   CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
   boolean checkJdkClassSerializable = true;
@@ -115,7 +115,7 @@ public final class FuryBuilder {
   /** Use variable length encoding for int/long. */
   public FuryBuilder withNumberCompressed(boolean numberCompressed) {
     this.compressInt = numberCompressed;
-    this.compressLong = numberCompressed;
+    this.longEncoding = LongEncoding.SLI;
     return this;
   }
 
@@ -127,7 +127,12 @@ public final class FuryBuilder {
 
   /** Use variable length encoding for long. */
   public FuryBuilder withLongCompressed(boolean longCompressed) {
-    this.compressLong = longCompressed;
+    return withLongCompressed(longCompressed ? LongEncoding.SLI : LongEncoding.LE_RAW_BYTES);
+  }
+
+  /** Use variable length encoding for long. */
+  public FuryBuilder withLongCompressed(LongEncoding longEncoding) {
+    this.longEncoding = longEncoding;
     return this;
   }
 
