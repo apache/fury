@@ -141,7 +141,7 @@ jobs:
       - name: Install pyfury
         run: ./ci/run_ci.sh install_pyfury
       - name: Run Golang CI
-        run: ./ci/run_ci.sh go
+        run: PATH="$HOME/miniconda/bin:$PATH" ./ci/run_ci.sh go
   lint:
     name: Code Style Check
     runs-on: ubuntu-latest
