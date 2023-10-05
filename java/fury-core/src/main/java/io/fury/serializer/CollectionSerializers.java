@@ -1107,7 +1107,7 @@ public class CollectionSerializers {
 
     @Override
     public EnumSet read(MemoryBuffer buffer) {
-      Class elemClass = fury.getClassResolver().readClassAndUpdateCache(buffer);
+      Class elemClass = fury.getClassResolver().readClassInfo(buffer).getCls();
       EnumSet object = EnumSet.noneOf(elemClass);
       Serializer elemSerializer = fury.getClassResolver().getSerializer(elemClass);
       int length = buffer.readPositiveAlignedVarInt();

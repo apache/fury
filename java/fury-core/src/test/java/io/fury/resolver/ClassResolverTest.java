@@ -221,8 +221,8 @@ public class ClassResolverTest extends FuryTestBase {
       MemoryBuffer buffer = MemoryUtils.buffer(32);
       classResolver.writeClassAndUpdateCache(buffer, getClass());
       classResolver.writeClassAndUpdateCache(buffer, getClass());
-      Assert.assertSame(classResolver.readClassAndUpdateCache(buffer), getClass());
-      Assert.assertSame(classResolver.readClassAndUpdateCache(buffer), getClass());
+      Assert.assertSame(classResolver.readClassInfo(buffer).getCls(), getClass());
+      Assert.assertSame(classResolver.readClassInfo(buffer).getCls(), getClass());
       classResolver.reset();
       buffer.writerIndex(0);
       buffer.readerIndex(0);

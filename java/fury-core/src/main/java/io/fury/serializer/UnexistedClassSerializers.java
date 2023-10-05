@@ -104,8 +104,8 @@ public final class UnexistedClassSerializers {
       // Register NotFoundClass ahead to skip write meta shared info,
       // then revert written class id to write class info here,
       // since it's the only place to hold class def for not found class.
-      buffer.increaseWriterIndex(-3);
-      buffer.writeByte(ClassResolver.USE_CLASS_VALUE);
+      buffer.increaseWriterIndex(-2);
+      buffer.writeByte(ClassResolver.USE_CLASS_VALUE_FLAG);
       MetaContext metaContext = fury.getSerializationContext().getMetaContext();
       IdentityObjectIntMap classMap = metaContext.classMap;
       int newId = classMap.size;
