@@ -16,8 +16,6 @@
 
 package io.fury.serializer;
 
-import static io.fury.type.TypeUtils.getRawType;
-
 import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.annotation.CodegenInvoke;
@@ -85,6 +83,7 @@ public class CollectionSerializers {
 
   /**
    * Serializer for {@link Collection}. All collection serializer should extend this class.
+   *
    * @param <T>
    */
   public static class CollectionSerializer<T extends Collection> extends Serializer<T> {
@@ -100,13 +99,13 @@ public class CollectionSerializers {
     // we can't do it when jit `Serializer` for some class which contains one of such collection
     // field. So we will write this extra element class to keep protocol consistency between
     // interpreter and jit mode although it seems unnecessary.
+    // With elements header, we can write this element class only once, the cost won't be too much.
 
     public CollectionSerializer(Fury fury, Class<T> cls) {
       this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls));
     }
 
-    public CollectionSerializer(
-        Fury fury, Class<T> cls, boolean supportCodegenHook) {
+    public CollectionSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
       super(fury, cls);
       this.supportCodegenHook = supportCodegenHook;
       elementClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();

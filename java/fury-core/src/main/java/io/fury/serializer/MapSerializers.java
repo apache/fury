@@ -17,7 +17,6 @@
 package io.fury.serializer;
 
 import static io.fury.type.TypeUtils.MAP_TYPE;
-import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
@@ -82,13 +81,13 @@ public class MapSerializers {
     // we can't do it when jit `Serializer` for some class which contains one of such map
     // field. So we will write those extra kv classes to keep protocol consistency between
     // interpreter and jit mode although it seems unnecessary.
+    // With kv header in future, we can write this kv classes only once, the cost won't be too much.
 
     public MapSerializer(Fury fury, Class<T> cls) {
       this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls));
     }
 
-    public MapSerializer(
-        Fury fury, Class<T> cls, boolean supportCodegenHook) {
+    public MapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
       super(fury, cls);
       this.supportCodegenHook = supportCodegenHook;
       keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
