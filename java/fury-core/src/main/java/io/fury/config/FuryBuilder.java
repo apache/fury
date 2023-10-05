@@ -116,7 +116,7 @@ public final class FuryBuilder {
   /** Use variable length encoding for int/long. */
   public FuryBuilder withNumberCompressed(boolean numberCompressed) {
     this.compressInt = numberCompressed;
-    this.longEncoding = LongEncoding.SLI;
+    withLongCompressed(numberCompressed);
     return this;
   }
 
