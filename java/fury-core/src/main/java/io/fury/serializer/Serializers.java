@@ -126,11 +126,7 @@ public class Serializers {
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
         return buffer.readFloat();
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        if (fury.compressLong()) {
-          return buffer.readVarLong();
-        } else {
-          return buffer.readLong();
-        }
+        return fury.readLong(buffer);
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
         return buffer.readDouble();
       default:

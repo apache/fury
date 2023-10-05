@@ -22,6 +22,7 @@ import io.fury.config.CompatibleMode;
 import io.fury.config.Config;
 import io.fury.config.FuryBuilder;
 import io.fury.config.Language;
+import io.fury.config.LongEncoding;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.resolver.ClassInfo;
@@ -36,6 +37,7 @@ import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferCallback;
 import io.fury.serializer.BufferObject;
 import io.fury.serializer.OpaqueObjects;
+import io.fury.serializer.PrimitiveSerializers.LongSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.StringSerializer;
@@ -100,7 +102,7 @@ public final class Fury {
   private final StringSerializer stringSerializer;
   private final Language language;
   private final boolean compressInt;
-  private final boolean compressLong;
+  private final LongEncoding longEncoding;
   private final Generics generics;
   private Language peerLanguage;
   private BufferCallback bufferCallback;
@@ -115,7 +117,7 @@ public final class Fury {
     this.language = config.getLanguage();
     this.refTracking = config.trackingRef();
     compressInt = config.compressInt();
-    compressLong = config.compressLong();
+    longEncoding = config.longEncoding();
     if (refTracking) {
       this.refResolver = new MapRefResolver();
     } else {
@@ -476,11 +478,7 @@ public final class Fury {
         buffer.writeFloat((Float) obj);
         break;
       case ClassResolver.LONG_CLASS_ID:
-        if (compressLong) {
-          buffer.writeVarLong((Long) obj);
-        } else {
-          buffer.writeLong((Long) obj);
-        }
+        LongSerializer.writeLong(buffer, (Long) obj, longEncoding);
         break;
       case ClassResolver.DOUBLE_CLASS_ID:
         buffer.writeDouble((Double) obj);
@@ -609,6 +607,14 @@ public final class Fury {
 
   public String readJavaString(MemoryBuffer buffer) {
     return stringSerializer.readJavaString(buffer);
+  }
+
+  public void writeLong(MemoryBuffer buffer, long value) {
+    LongSerializer.writeLong(buffer, value, longEncoding);
+  }
+
+  public long readLong(MemoryBuffer buffer) {
+    return LongSerializer.readLong(buffer, longEncoding);
   }
 
   /** Deserialize <code>obj</code> from a byte array. */
@@ -827,11 +833,7 @@ public final class Fury {
       case ClassResolver.FLOAT_CLASS_ID:
         return buffer.readFloat();
       case ClassResolver.LONG_CLASS_ID:
-        if (compressLong) {
-          return buffer.readVarLong();
-        } else {
-          return buffer.readLong();
-        }
+        return LongSerializer.readLong(buffer, longEncoding);
       case ClassResolver.DOUBLE_CLASS_ID:
         return buffer.readDouble();
       case ClassResolver.STRING_CLASS_ID:
@@ -1268,8 +1270,12 @@ public final class Fury {
     return compressInt;
   }
 
+  public LongEncoding longEncoding() {
+    return longEncoding;
+  }
+
   public boolean compressLong() {
-    return compressLong;
+    return config.compressLong();
   }
 
   public static FuryBuilder builder() {

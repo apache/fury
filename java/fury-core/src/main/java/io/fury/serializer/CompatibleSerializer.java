@@ -186,11 +186,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         buffer.writeFloat((Float) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        if (fury.compressLong()) {
-          buffer.writeVarLong((Long) fieldValue);
-        } else {
-          buffer.writeLong((Long) fieldValue);
-        }
+        fury.writeLong(buffer, (Long) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
         buffer.writeDouble((Double) fieldValue);
@@ -589,11 +585,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
         return buffer.readFloat();
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        if (fury.compressLong()) {
-          return buffer.readVarLong();
-        } else {
-          return buffer.readLong();
-        }
+        return fury.readLong(buffer);
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
         return buffer.readDouble();
       case ClassResolver.STRING_CLASS_ID:

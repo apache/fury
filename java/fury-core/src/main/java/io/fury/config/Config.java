@@ -139,9 +139,7 @@ public class Config implements Serializable {
     return compressLong;
   }
 
-  /**
-   * Returns long encoding.
-   */
+  /** Returns long encoding. */
   public LongEncoding longEncoding() {
     return longEncoding;
   }

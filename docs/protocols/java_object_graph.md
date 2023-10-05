@@ -20,17 +20,17 @@ The data are serialized using little endian order overall.
 
 ### int
 - size: 1~5 byte
-- positive int format: first bit in every byte indicate whether has next byte. if first bit is set i.e. `b & 0x80 == 0x80`, then next byte should be read util first bit is unset.
+- positive int format: first bit in every byte indicate whether has next byte. if first bit is set i.e. `b & 0x80 == 0x80`, then next byte should be read util first bit of next byte is unset.
 - Negative number will be converted to positive number by ` (v << 1) ^ (v >> 31)` to reduce cost of small negative numbers.
 
 ### long
 - size: 1~9 byte
+- Fury SLI(Small long as int) Encoding:
+  - If long is in [-1073741824, 1073741823], encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
+  - Otherwise write as 9 bytes: `| 0b1 | little-endian 8bytes long |`
 - Fury PVL(Progressive Variable-length Long) Encoding:
   - positive long format: first bit in every byte indicate whether has next byte. if first bit is set i.e. `b & 0x80 == 0x80`, then next byte should be read util first bit is unset.
   - Negative number will be converted to positive number by ` (v << 1) ^ (v >> 63)` to reduce cost of small negative numbers.
-- Fury SLI(Small long as int) Encoding:
-  - If long is in [0xc0000000, 0x3fffffff], encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
-  - Otherwise write as 9 bytes: `| 0b1 | little-endian 8bytes long |`
 
 ### float
 - size: 4 byte

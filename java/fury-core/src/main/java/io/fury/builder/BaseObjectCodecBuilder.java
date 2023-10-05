@@ -37,7 +37,6 @@ import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_DOUBLE_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_FLOAT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
-import static io.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static io.fury.type.TypeUtils.SET_TYPE;
@@ -79,6 +78,7 @@ import io.fury.serializer.CollectionSerializers.CollectionSerializer;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.MapSerializers.MapSerializer;
 import io.fury.serializer.ObjectSerializer;
+import io.fury.serializer.PrimitiveSerializers.LongSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
@@ -122,6 +122,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   protected final Reference classResolverRef =
       fieldRef(CLASS_RESOLVER_NAME, CLASS_RESOLVER_TYPE_TOKEN);
   protected final Fury fury;
+  protected final ClassResolver classResolver;
   protected final Reference stringSerializerRef;
   private final Map<Class<?>, Reference> serializerMap = new HashMap<>();
   private final Map<String, Object> sharedFieldMap = new HashMap<>();
@@ -132,6 +133,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   public BaseObjectCodecBuilder(TypeToken<?> beanType, Fury fury, Class<?> parentSerializerClass) {
     super(new CodegenContext(), beanType);
     this.fury = fury;
+    this.classResolver = fury.getClassResolver();
     this.parentSerializerClass = parentSerializerClass;
     addCommonImports();
     ctx.reserveName(REF_RESOLVER_NAME);
@@ -371,8 +373,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         String func = fury.compressInt() ? "writeVarInt" : "writeInt";
         return new Invoke(buffer, func, inputObject);
       } else if (clz == long.class || clz == Long.class) {
-        String func = fury.compressLong() ? "writeVarLong" : "writeLong";
-        return new Invoke(buffer, func, inputObject);
+        return LongSerializer.writeLong(buffer, inputObject, fury.longEncoding(), true);
       } else if (clz == float.class || clz == Float.class) {
         return new Invoke(buffer, "writeFloat", inputObject);
       } else if (clz == double.class || clz == Double.class) {
@@ -1159,8 +1160,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         String func = fury.compressInt() ? "readVarInt" : "readInt";
         return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
       } else if (cls == long.class || cls == Long.class) {
-        String func = fury.compressLong() ? "readVarLong" : "readLong";
-        return new Invoke(buffer, func, PRIMITIVE_LONG_TYPE);
+        return LongSerializer.readLong(buffer, fury.longEncoding());
       } else if (cls == float.class || cls == Float.class) {
         return new Invoke(buffer, "readFloat", PRIMITIVE_FLOAT_TYPE);
       } else if (cls == double.class || cls == Double.class) {

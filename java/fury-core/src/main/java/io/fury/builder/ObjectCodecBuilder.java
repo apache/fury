@@ -48,6 +48,7 @@ import io.fury.codegen.Expression.ReplaceStub;
 import io.fury.codegen.Expression.StaticInvoke;
 import io.fury.codegen.ExpressionVisitor;
 import io.fury.serializer.ObjectSerializer;
+import io.fury.serializer.PrimitiveSerializers.LongSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
 import io.fury.util.Platform;
@@ -86,7 +87,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   public ObjectCodecBuilder(Class<?> beanClass, Fury fury) {
     super(TypeToken.of(beanClass), fury, Generated.GeneratedObjectSerializer.class);
     Collection<Descriptor> descriptors =
-        fury.getClassResolver().getAllDescriptorsMap(beanClass, true).values();
+        classResolver.getAllDescriptorsMap(beanClass, true).values();
     classVersionHash =
         new Literal(ObjectSerializer.computeVersionHash(descriptors), PRIMITIVE_INT_TYPE);
     DescriptorGrouper grouper =
@@ -352,7 +353,8 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               addIncWriterIndexExpr(groupExpressions, buffer, acc);
               compressStarted = true;
             }
-            groupExpressions.add(new Invoke(buffer, "unsafeWriteVarLong", fieldValue));
+            groupExpressions.add(
+                LongSerializer.writeLong(buffer, fieldValue, fury.longEncoding(), false));
           }
         } else {
           throw new IllegalStateException("impossible");
@@ -695,7 +697,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               compressStarted = true;
               addIncReaderIndexExpr(groupExpressions, buffer, acc);
             }
-            fieldValue = new Invoke(buffer, "readVarLong", PRIMITIVE_LONG_TYPE);
+            fieldValue = LongSerializer.readLong(buffer, fury.longEncoding());
           }
         } else {
           throw new IllegalStateException("impossible");

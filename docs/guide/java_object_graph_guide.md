@@ -138,12 +138,25 @@ ThreadSafeFury fury=Fury.builder()
 
 ### Smaller size
 `FuryBuilder#withIntCompressed`/`FuryBuilder#withLongCompressed` can be used to compress int/long for smaller size.
-Normally compress int is enough. If a number are `long` type, it can't be represented by smaller bytes mostly, 
-the compression won't get good enough result, not worthy compared to performance cost.
+Normally compress int is enough.
 
 Both compression are enabled by default, if the serialized is not important, for example, you use flatbuffers for 
 serialization before, which doesn't compress anything, then you should disable compression. If your data are all numbers,
-the compression can bring 80% performance regression.
+the compression may bring 80% performance regression.
+
+For int compression, fury use 1~5 bytes for encoding. First bit in every byte indicate whether has next byte. if first bit is set, then next byte will be read util first bit of next byte is unset.
+
+For long compression, fury support two encoding:
+- Fury SLI(Small long as int) Encoding (**used by default**):
+    - If long is in [-1073741824, 1073741823], encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
+    - Otherwise write as 9 bytes: `| 0b1 | little-endian 8bytes long |`
+- Fury PVL(Progressive Variable-length Long) Encoding:
+    - First bit in every byte indicate whether has next byte. if first bit is set, then next byte will be read util first bit of next byte is unset.
+    - Negative number will be converted to positive number by ` (v << 1) ^ (v >> 63)` to reduce cost of small negative numbers.
+
+If a number are `long` type, it can't be represented by smaller bytes mostly, the compression won't get good enough result, 
+not worthy compared to performance cost. Maybe you should try to disable long compression if you find it didn't bring much
+space savings.
 
 ### Implement a customized serializer
 In some cases, you may want to implement a serializer for your type, especially some class customize serialization by JDK

@@ -27,6 +27,7 @@ import io.fury.serializer.Serializer;
 import io.fury.serializer.TimeSerializers;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
@@ -60,7 +61,7 @@ public final class FuryBuilder {
   boolean timeRefIgnored = true;
   ClassLoader classLoader;
   boolean compressInt = true;
-  public LongEncoding longEncoding;
+  public LongEncoding longEncoding = LongEncoding.SLI;
   boolean compressString = true;
   CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
   boolean checkJdkClassSerializable = true;
@@ -125,14 +126,17 @@ public final class FuryBuilder {
     return this;
   }
 
-  /** Use variable length encoding for long. */
+  /**
+   * Use variable length encoding for long. Enabled by default, use {@link LongEncoding#SLI} (Small
+   * long as int) for long encoding.
+   */
   public FuryBuilder withLongCompressed(boolean longCompressed) {
     return withLongCompressed(longCompressed ? LongEncoding.SLI : LongEncoding.LE_RAW_BYTES);
   }
 
   /** Use variable length encoding for long. */
   public FuryBuilder withLongCompressed(LongEncoding longEncoding) {
-    this.longEncoding = longEncoding;
+    this.longEncoding = Objects.requireNonNull(longEncoding);
     return this;
   }
 
