@@ -105,7 +105,7 @@ public class ImmutableCollectionSerializers {
 
   public static class ImmutableListSerializer extends CollectionSerializers.CollectionSerializer {
     public ImmutableListSerializer(Fury fury, Class cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
     }
 
     @Override
@@ -136,7 +136,7 @@ public class ImmutableCollectionSerializers {
 
   public static class ImmutableSetSerializer extends CollectionSerializers.CollectionSerializer {
     public ImmutableSetSerializer(Fury fury, Class cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
     }
 
     @Override

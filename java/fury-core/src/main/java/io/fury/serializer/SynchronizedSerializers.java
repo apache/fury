@@ -78,7 +78,7 @@ public class SynchronizedSerializers {
     private final long offset;
 
     public SynchronizedCollectionSerializer(Fury fury, Class cls, Function factory, long offset) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
       this.factory = factory;
       this.offset = offset;
     }
