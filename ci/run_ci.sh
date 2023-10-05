@@ -200,7 +200,13 @@ case $1 in
         exit $testcode
       fi
       echo "Executing fury python tests succeeds"
-      ;;
+    ;;
+    go)
+      echo "Executing fury go tests for go"
+      cd "$ROOT/go/fury"
+      go test -v
+      echo "Executing fury go tests succeeds"
+    ;;
     format)
       echo "Install format tools"
       pip install black==22.1.0 flake8==3.9.1 flake8-quotes flake8-bugbear click==8.0.2
