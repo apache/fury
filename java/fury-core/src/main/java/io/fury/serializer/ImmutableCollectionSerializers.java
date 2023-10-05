@@ -167,7 +167,7 @@ public class ImmutableCollectionSerializers {
 
   public static class ImmutableMapSerializer extends MapSerializers.MapSerializer {
     public ImmutableMapSerializer(Fury fury, Class cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
     }
 
     @Override

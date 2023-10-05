@@ -211,7 +211,7 @@ public class GuavaSerializers {
   abstract static class GuavaMapSerializer<T extends Map> extends MapSerializer<T> {
 
     public GuavaMapSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
       fury.getClassResolver().setSerializer(cls, this);
     }
 

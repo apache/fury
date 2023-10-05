@@ -96,10 +96,10 @@ public class CollectionSerializers {
     // For subclass whose element type are instantiated already, such as
     // `Subclass extends ArrayList<String>`. If declared `Collection` doesn't specify
     // instantiated element type, then the serialization will need to write this element
-    // type again. Although we can extract this generics when creating this serializer,
+    // type. Although we can extract this generics when creating the serializer,
     // we can't do it when jit `Serializer` for some class which contains one of such collection
-    // field. So we will write this extra element class although it seems unnecessary to keep
-    // protocol consistency between interpreter and jit mode.
+    // field. So we will write this extra element class to keep protocol consistency between
+    // interpreter and jit mode although it seems unnecessary.
 
     public CollectionSerializer(Fury fury, Class<T> cls) {
       this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls));
