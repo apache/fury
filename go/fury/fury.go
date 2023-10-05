@@ -262,6 +262,11 @@ func (f *Fury) writeValue(buffer *ByteBuffer, value reflect.Value, serializer Se
 	if typeId != NotSupportCrossLanguage {
 		if typeId == FURY_TYPE_TAG {
 			var typeTag string
+			if value.Kind() == reflect.Ptr {
+				typeTag = serializer.(*ptrToStructSerializer).typeTag
+			} else {
+				typeTag = serializer.(*structSerializer).typeTag
+			}
 			if err := f.typeResolver.writeTypeTag(buffer, typeTag); err != nil {
 				return err
 			}
