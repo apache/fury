@@ -1040,7 +1040,7 @@ public class MapSerializers {
 
     @Override
     public EnumMap newMap(MemoryBuffer buffer, int numElements) {
-      Class<?> keyType = fury.getClassResolver().readClassAndUpdateCache(buffer);
+      Class<?> keyType = fury.getClassResolver().readClassInfo(buffer).getCls();
       return new EnumMap(keyType);
     }
   }

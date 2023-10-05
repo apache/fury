@@ -268,7 +268,7 @@ public class ReplaceResolveSerializer extends Serializer {
       int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
         // ref value or not-null value
-        Object o = fury.readData(buffer, classResolver.readAndUpdateClassInfoHolder(buffer));
+        Object o = fury.readData(buffer, classResolver.readClassInfo(buffer));
         refResolver.setReadObject(nextReadRefId, o);
         refResolver.setReadObject(outerRefId, o);
         return o;
