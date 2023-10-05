@@ -83,8 +83,6 @@ public class CollectionSerializers {
 
   /**
    * Serializer for {@link Collection}. All collection serializer should extend this class.
-   *
-   * @param <T>
    */
   public static class CollectionSerializer<T extends Collection> extends Serializer<T> {
     private Constructor<?> constructor;
