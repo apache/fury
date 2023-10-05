@@ -48,6 +48,12 @@ excludes = [
     "go/fury/go.sum",
 ]
 
+[mapping.DOUBLESLASH_STYLE]
+extensions = ['go']
+
+[mapping.DOUBLESLASH_STYLE]
+filenames = ['go.mod']
+
 [properties]
 inceptionYear = 2023
 copyrightOwner = "The Fury Authors"
