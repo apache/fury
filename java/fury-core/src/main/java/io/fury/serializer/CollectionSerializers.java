@@ -81,9 +81,7 @@ public class CollectionSerializers {
     public static int NOT_SAME_TYPE = 0b1000;
   }
 
-  /**
-   * Serializer for {@link Collection}. All collection serializer should extend this class.
-   */
+  /** Serializer for {@link Collection}. All collection serializer should extend this class. */
   public static class CollectionSerializer<T extends Collection> extends Serializer<T> {
     private Constructor<?> constructor;
     private final boolean supportCodegenHook;
