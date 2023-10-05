@@ -485,7 +485,7 @@ public class CollectionSerializersTest extends FuryTestBase {
   public static class SubListSerializer extends CollectionSerializers.CollectionSerializer {
 
     public SubListSerializer(Fury fury, Class cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
     }
 
     @Override

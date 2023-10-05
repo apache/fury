@@ -74,7 +74,7 @@ public class UnmodifiableSerializers {
     private final long offset;
 
     public UnmodifiableCollectionSerializer(Fury fury, Class cls, Function factory, long offset) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
       this.factory = factory;
       this.offset = offset;
     }
@@ -98,7 +98,7 @@ public class UnmodifiableSerializers {
     private final long offset;
 
     public UnmodifiableMapSerializer(Fury fury, Class cls, Function factory, long offset) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
       this.factory = factory;
       this.offset = offset;
     }

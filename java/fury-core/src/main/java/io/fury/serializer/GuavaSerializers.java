@@ -50,7 +50,7 @@ public class GuavaSerializers {
   abstract static class GuavaCollectionSerializer<T extends Collection>
       extends CollectionSerializer<T> {
     public GuavaCollectionSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
       fury.getClassResolver().setSerializer(cls, this);
     }
 
@@ -183,7 +183,7 @@ public class GuavaSerializers {
       extends CollectionSerializer<T> {
 
     public ImmutableSortedSetSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
       fury.getClassResolver().setSerializer(cls, this);
     }
 
@@ -211,7 +211,7 @@ public class GuavaSerializers {
   abstract static class GuavaMapSerializer<T extends Map> extends MapSerializer<T> {
 
     public GuavaMapSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
       fury.getClassResolver().setSerializer(cls, this);
     }
 

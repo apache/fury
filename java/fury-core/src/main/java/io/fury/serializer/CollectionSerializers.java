@@ -16,10 +16,7 @@
 
 package io.fury.serializer;
 
-import static io.fury.type.TypeUtils.getRawType;
-
 import com.google.common.base.Preconditions;
-import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.annotation.CodegenInvoke;
 import io.fury.config.Language;
@@ -31,7 +28,6 @@ import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.type.GenericType;
 import io.fury.type.Type;
-import io.fury.type.TypeUtils;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Constructor;
@@ -85,46 +81,34 @@ public class CollectionSerializers {
     public static int NOT_SAME_TYPE = 0b1000;
   }
 
+  /** Serializer for {@link Collection}. All collection serializer should extend this class. */
   public static class CollectionSerializer<T extends Collection> extends Serializer<T> {
     private Constructor<?> constructor;
     private final boolean supportCodegenHook;
     // TODO remove elemSerializer, support generics in CompatibleSerializer.
     private Serializer<?> elemSerializer;
     protected final ClassInfoHolder elementClassInfoHolder;
-    // support subclass whose element type are instantiated already, such as
-    // `Subclass extends ArrayList<String>`.
-    // nested generics such as `Subclass extends ArrayList<List<Integer>>` can only be passed by
-    // `pushGenerics` instead of set element serializers.
-    private final GenericType collectionGenericType;
+    // For subclass whose element type are instantiated already, such as
+    // `Subclass extends ArrayList<String>`. If declared `Collection` doesn't specify
+    // instantiated element type, then the serialization will need to write this element
+    // type. Although we can extract this generics when creating the serializer,
+    // we can't do it when jit `Serializer` for some class which contains one of such collection
+    // field. So we will write this extra element class to keep protocol consistency between
+    // interpreter and jit mode although it seems unnecessary.
+    // With elements header, we can write this element class only once, the cost won't be too much.
 
     public CollectionSerializer(Fury fury, Class<T> cls) {
-      this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls), true);
+      this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls));
     }
 
-    public CollectionSerializer(
-        Fury fury, Class<T> cls, boolean supportCodegenHook, boolean inferGenerics) {
+    public CollectionSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
       super(fury, cls);
       this.supportCodegenHook = supportCodegenHook;
       elementClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
-      if (inferGenerics) {
-        TypeToken<?> elementType = TypeUtils.getElementType(TypeToken.of(cls));
-        if (getRawType(elementType) != Object.class) {
-          collectionGenericType =
-              fury.getClassResolver()
-                  .buildGenericType(TypeUtils.collectionOf(elementType).getType());
-        } else {
-          collectionGenericType = null;
-        }
-      } else {
-        collectionGenericType = null;
-      }
     }
 
     private GenericType getElementGenericType(Fury fury) {
       GenericType genericType = fury.getGenerics().nextGenericType();
-      if (genericType == null || genericType.getTypeParametersCount() < 1) {
-        genericType = collectionGenericType;
-      }
       GenericType elemGenericType = null;
       if (genericType != null) {
         elemGenericType = genericType.getTypeParameter0();
@@ -735,7 +719,7 @@ public class CollectionSerializers {
 
   public static final class ArrayListSerializer extends CollectionSerializer<ArrayList> {
     public ArrayListSerializer(Fury fury) {
-      super(fury, ArrayList.class, true, false);
+      super(fury, ArrayList.class, true);
     }
 
     @Override
@@ -755,7 +739,7 @@ public class CollectionSerializers {
     private final long arrayFieldOffset;
 
     public ArraysAsListSerializer(Fury fury, Class<List<?>> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
       try {
         Field arrayField = Class.forName("java.util.Arrays$ArrayList").getDeclaredField("a");
         arrayFieldOffset = ReflectionUtils.getFieldOffset(arrayField);
@@ -806,7 +790,7 @@ public class CollectionSerializers {
 
   public static final class HashSetSerializer extends CollectionSerializer<HashSet> {
     public HashSetSerializer(Fury fury) {
-      super(fury, HashSet.class, true, false);
+      super(fury, HashSet.class, true);
     }
 
     @Override
@@ -824,7 +808,7 @@ public class CollectionSerializers {
 
   public static final class LinkedHashSetSerializer extends CollectionSerializer<LinkedHashSet> {
     public LinkedHashSetSerializer(Fury fury) {
-      super(fury, LinkedHashSet.class, true, false);
+      super(fury, LinkedHashSet.class, true);
     }
 
     @Override
@@ -844,7 +828,7 @@ public class CollectionSerializers {
     private Constructor<?> constructor;
 
     public SortedSetSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
       if (cls != TreeSet.class) {
         try {
           this.constructor = cls.getConstructor(Comparator.class);
@@ -889,7 +873,7 @@ public class CollectionSerializers {
   public static final class EmptyListSerializer extends CollectionSerializer<List<?>> {
 
     public EmptyListSerializer(Fury fury, Class<List<?>> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
     }
 
     @Override
@@ -921,7 +905,7 @@ public class CollectionSerializers {
   public static final class EmptySetSerializer extends CollectionSerializer<Set<?>> {
 
     public EmptySetSerializer(Fury fury, Class<Set<?>> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
     }
 
     @Override
@@ -953,7 +937,7 @@ public class CollectionSerializers {
   public static final class EmptySortedSetSerializer extends CollectionSerializer<SortedSet<?>> {
 
     public EmptySortedSetSerializer(Fury fury, Class<SortedSet<?>> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
     }
 
     @Override
@@ -969,7 +953,7 @@ public class CollectionSerializers {
       extends CollectionSerializer<List<?>> {
 
     public CollectionsSingletonListSerializer(Fury fury, Class<List<?>> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
     }
 
     @Override
@@ -1003,7 +987,7 @@ public class CollectionSerializers {
   public static final class CollectionsSingletonSetSerializer extends CollectionSerializer<Set<?>> {
 
     public CollectionsSingletonSetSerializer(Fury fury, Class<Set<?>> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
     }
 
     @Override
@@ -1053,7 +1037,7 @@ public class CollectionSerializers {
   public static final class VectorSerializer extends CollectionSerializer<Vector> {
 
     public VectorSerializer(Fury fury, Class<Vector> cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
     }
 
     @Override
@@ -1067,7 +1051,7 @@ public class CollectionSerializers {
   public static final class ArrayDequeSerializer extends CollectionSerializer<ArrayDeque> {
 
     public ArrayDequeSerializer(Fury fury, Class<ArrayDeque> cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
     }
 
     @Override
@@ -1082,7 +1066,7 @@ public class CollectionSerializers {
     public EnumSetSerializer(Fury fury, Class<EnumSet> type) {
       // getElementType(EnumSet.class) will be `E` without Enum as bound.
       // so no need to infer generics in init.
-      super(fury, type, false, false);
+      super(fury, type, false);
     }
 
     @Override
@@ -1139,7 +1123,7 @@ public class CollectionSerializers {
 
   public static class PriorityQueueSerializer extends CollectionSerializer<PriorityQueue> {
     public PriorityQueueSerializer(Fury fury, Class<PriorityQueue> cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
     }
 
     public void writeHeader(MemoryBuffer buffer, PriorityQueue value) {
@@ -1165,7 +1149,7 @@ public class CollectionSerializers {
     private Serializer<T> dataSerializer;
 
     public DefaultJavaCollectionSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
       Preconditions.checkArgument(
           fury.getLanguage() == Language.JAVA,
           "Python default collection serializer should use " + CollectionSerializer.class);
@@ -1196,7 +1180,7 @@ public class CollectionSerializers {
     private final Serializer serializer;
 
     public JDKCompatibleCollectionSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
       // Collection which defined `writeReplace` may use this serializer, so check replace/resolve
       // is necessary.
       Class<? extends Serializer> serializerType =
@@ -1227,7 +1211,7 @@ public class CollectionSerializers {
     Class arrayAsListClass = Arrays.asList(1, 2).getClass();
     fury.registerSerializer(arrayAsListClass, new ArraysAsListSerializer(fury, arrayAsListClass));
     fury.registerSerializer(
-        LinkedList.class, new CollectionSerializer(fury, LinkedList.class, true, false));
+        LinkedList.class, new CollectionSerializer(fury, LinkedList.class, true));
     fury.registerSerializer(HashSet.class, new HashSetSerializer(fury));
     fury.registerSerializer(LinkedHashSet.class, new LinkedHashSetSerializer(fury));
     fury.registerSerializer(TreeSet.class, new SortedSetSerializer<>(fury, TreeSet.class));

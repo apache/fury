@@ -17,7 +17,6 @@
 package io.fury.serializer;
 
 import static io.fury.type.TypeUtils.MAP_TYPE;
-import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
@@ -74,20 +73,21 @@ public class MapSerializers {
     // T>`
     private final IdentityMap<GenericType, Tuple2<GenericType, GenericType>>
         partialGenericKVTypeMap;
-    // support subclass whose kv types are instantiated already, such as
-    // `Subclass implements Map<String, Long>`.
-    // nested generics such as `Subclass extends HashMap<String, List<Integer>>` can only be passed
-    // by
-    // `pushGenerics` instead of set value serializers.
-    private final GenericType mapGenericType;
     private final GenericType objType = fury.getClassResolver().buildGenericType(Object.class);
+    // For subclass whose kv type are instantiated already, such as
+    // `Subclass implements Map<String, Long>`. If declared `Map` doesn't specify
+    // instantiated kv type, then the serialization will need to write those kv
+    // types. Although we can extract this generics when creating the serializer,
+    // we can't do it when jit `Serializer` for some class which contains one of such map
+    // field. So we will write those extra kv classes to keep protocol consistency between
+    // interpreter and jit mode although it seems unnecessary.
+    // With kv header in future, we can write this kv classes only once, the cost won't be too much.
 
     public MapSerializer(Fury fury, Class<T> cls) {
-      this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls), true);
+      this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls));
     }
 
-    public MapSerializer(
-        Fury fury, Class<T> cls, boolean supportCodegenHook, boolean inferGenerics) {
+    public MapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
       super(fury, cls);
       this.supportCodegenHook = supportCodegenHook;
       keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
@@ -95,19 +95,6 @@ public class MapSerializers {
       valueClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
       valueClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
       partialGenericKVTypeMap = new IdentityMap<>();
-      if (inferGenerics) {
-        Tuple2<TypeToken<?>, TypeToken<?>> kvTypes =
-            TypeUtils.getMapKeyValueType(TypeToken.of(cls));
-        if (getRawType(kvTypes.f0) != Object.class || getRawType(kvTypes.f1) != Object.class) {
-          mapGenericType =
-              fury.getClassResolver()
-                  .buildGenericType(TypeUtils.mapOf(kvTypes.f0, kvTypes.f1).getType());
-        } else {
-          mapGenericType = null;
-        }
-      } else {
-        mapGenericType = null;
-      }
     }
 
     /**
@@ -202,9 +189,6 @@ public class MapSerializers {
     private void genericJavaWrite(Fury fury, MemoryBuffer buffer, T map) {
       Generics generics = fury.getGenerics();
       GenericType genericType = generics.nextGenericType();
-      if (genericType == null) {
-        genericType = mapGenericType;
-      }
       if (genericType == null) {
         generalJavaWrite(fury, buffer, map);
       } else {
@@ -496,9 +480,6 @@ public class MapSerializers {
     private void genericJavaRead(Fury fury, MemoryBuffer buffer, Map map, int size) {
       Generics generics = fury.getGenerics();
       GenericType genericType = generics.nextGenericType();
-      if (genericType == null) {
-        genericType = mapGenericType;
-      }
       if (genericType == null) {
         generalJavaRead(fury, buffer, map, size);
       } else {
@@ -801,7 +782,7 @@ public class MapSerializers {
 
   public static final class HashMapSerializer extends MapSerializer<HashMap> {
     public HashMapSerializer(Fury fury) {
-      super(fury, HashMap.class, true, false);
+      super(fury, HashMap.class, true);
     }
 
     @Override
@@ -819,7 +800,7 @@ public class MapSerializers {
 
   public static final class LinkedHashMapSerializer extends MapSerializer<LinkedHashMap> {
     public LinkedHashMapSerializer(Fury fury) {
-      super(fury, LinkedHashMap.class, true, false);
+      super(fury, LinkedHashMap.class, true);
     }
 
     @Override
@@ -837,7 +818,7 @@ public class MapSerializers {
 
   public static final class LazyMapSerializer extends MapSerializer<LazyMap> {
     public LazyMapSerializer(Fury fury) {
-      super(fury, LazyMap.class, true, false);
+      super(fury, LazyMap.class, true);
     }
 
     @Override
@@ -856,7 +837,7 @@ public class MapSerializers {
   public static class SortedMapSerializer<T extends SortedMap> extends MapSerializer<T> {
 
     public SortedMapSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, true, false);
+      super(fury, cls, true);
       if (cls != TreeMap.class) {
         try {
           this.constructor = cls.getConstructor(Comparator.class);
@@ -896,7 +877,7 @@ public class MapSerializers {
   public static final class EmptyMapSerializer extends MapSerializer<Map<?, ?>> {
 
     public EmptyMapSerializer(Fury fury, Class<Map<?, ?>> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
     }
 
     @Override
@@ -927,7 +908,7 @@ public class MapSerializers {
 
   public static final class EmptySortedMapSerializer extends MapSerializer<SortedMap<?, ?>> {
     public EmptySortedMapSerializer(Fury fury, Class<SortedMap<?, ?>> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
     }
 
     @Override
@@ -942,7 +923,7 @@ public class MapSerializers {
   public static final class SingletonMapSerializer extends MapSerializer<Map<?, ?>> {
 
     public SingletonMapSerializer(Fury fury, Class<Map<?, ?>> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
     }
 
     @Override
@@ -984,7 +965,7 @@ public class MapSerializers {
   public static final class ConcurrentHashMapSerializer extends MapSerializer<ConcurrentHashMap> {
 
     public ConcurrentHashMapSerializer(Fury fury, Class<ConcurrentHashMap> type) {
-      super(fury, type, true, false);
+      super(fury, type, true);
     }
 
     @Override
@@ -1027,7 +1008,7 @@ public class MapSerializers {
     public EnumMapSerializer(Fury fury, Class<EnumMap> cls) {
       // getMapKeyValueType(EnumMap.class) will be `K, V` without Enum as key bound.
       // so no need to infer key generics in init.
-      super(fury, cls, true, false);
+      super(fury, cls, true);
       Field field = ReflectionUtils.getDeclaredField(EnumMap.class, "keyType");
       keyTypeFieldOffset = ReflectionUtils.getFieldOffset(field);
     }
@@ -1054,7 +1035,7 @@ public class MapSerializers {
     private Serializer<T> dataSerializer;
 
     public DefaultJavaMapSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
       Preconditions.checkArgument(
           fury.getLanguage() == Language.JAVA,
           "Python default map serializer should use " + MapSerializer.class);
@@ -1084,7 +1065,7 @@ public class MapSerializers {
     private final Serializer serializer;
 
     public JDKCompatibleMapSerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, false, false);
+      super(fury, cls, false);
       // Map which defined `writeReplace` may use this serializer, so check replace/resolve
       // is necessary.
       Class<? extends Serializer> serializerType =
