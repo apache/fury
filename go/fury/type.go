@@ -158,7 +158,9 @@ var (
 	intType            = reflect.TypeOf((*int)(nil)).Elem()
 	float32Type        = reflect.TypeOf((*float32)(nil)).Elem()
 	float64Type        = reflect.TypeOf((*float64)(nil)).Elem()
+	dateType           = reflect.TypeOf((*Date)(nil)).Elem()
 	timestampType      = reflect.TypeOf((*time.Time)(nil)).Elem()
+	genericSetType     = reflect.TypeOf((*GenericSet)(nil)).Elem()
 )
 
 type typeResolver struct {
@@ -196,8 +198,10 @@ func newTypeResolver() *typeResolver {
 		float32Type,
 		float64Type,
 		stringType,
+		dateType,
 		timestampType,
 		interfaceType,
+		genericSetType, // FIXME set should be a generic type
 	} {
 		r.typeInfoToType[t.String()] = t
 		r.typeToTypeInfo[t] = t.String()
@@ -210,7 +214,31 @@ func (r *typeResolver) initialize() {
 	serializers := []struct {
 		reflect.Type
 		Serializer
-	}{{}}
+	}{{stringType, stringSerializer{}},
+		{stringPtrType, ptrToStringSerializer{}},
+		{stringSliceType, stringSliceSerializer{}},
+		{byteSliceType, byteSliceSerializer{}},
+		{boolSliceType, boolSliceSerializer{}},
+		{int16SliceType, int16SliceSerializer{}},
+		{int32SliceType, int32SliceSerializer{}},
+		{int64SliceType, int64SliceSerializer{}},
+		{float32SliceType, float32SliceSerializer{}},
+		{float64SliceType, float64SliceSerializer{}},
+		{interfaceSliceType, sliceSerializer{}},
+		{interfaceMapType, mapSerializer{}},
+		{boolType, boolSerializer{}},
+		{byteType, byteSerializer{}},
+		{int8Type, int8Serializer{}},
+		{int16Type, int16Serializer{}},
+		{int32Type, int32Serializer{}},
+		{int64Type, int64Serializer{}},
+		{intType, intSerializer{}},
+		{float32Type, float32Serializer{}},
+		{float64Type, float64Serializer{}},
+		{dateType, dateSerializer{}},
+		{timestampType, timeSerializer{}},
+		{genericSetType, setSerializer{}},
+	}
 	for _, elem := range serializers {
 		if err := r.RegisterSerializer(elem.Type, elem.Serializer); err != nil {
 			panic(fmt.Errorf("impossible error: %s", err))
@@ -236,6 +264,24 @@ func (r *typeResolver) RegisterSerializer(type_ reflect.Type, s Serializer) erro
 }
 
 func (r *typeResolver) RegisterTypeTag(type_ reflect.Type, tag string) error {
+	if prev, ok := r.typeToSerializers[type_]; ok {
+		return fmt.Errorf("type %s already has a serializer %s registered", type_, prev)
+	}
+	serializer := &structSerializer{type_: type_, typeTag: tag}
+	r.typeToSerializers[type_] = serializer
+	// multiple struct with same name defined inside function will have same `type_.String()`, but they are
+	// different types. so we use tag to encode type info.
+	// tagged type encode as `@$tag`/`*@$tag`.
+	r.typeToTypeInfo[type_] = "@" + tag
+	r.typeInfoToType["@"+tag] = type_
+
+	ptrType := reflect.PtrTo(type_)
+	ptrSerializer := &ptrToStructSerializer{structSerializer: *serializer, type_: ptrType}
+	r.typeToSerializers[ptrType] = ptrSerializer
+	// use `ptrToStructSerializer` as default deserializer when deserializing data from other languages.
+	r.typeTagToSerializers[tag] = ptrSerializer
+	r.typeToTypeInfo[ptrType] = "*@" + tag
+	r.typeInfoToType["*@"+tag] = ptrType
 	return nil
 }
 
@@ -266,6 +312,74 @@ func (r *typeResolver) getSerializerByTypeTag(typeTag string) (Serializer, error
 }
 
 func (r *typeResolver) createSerializer(type_ reflect.Type) (s Serializer, err error) {
+	kind := type_.Kind()
+	switch kind {
+	case reflect.Ptr:
+		if elemKind := type_.Elem().Kind(); elemKind == reflect.Ptr || elemKind == reflect.Interface {
+			return nil, fmt.Errorf("pointer to pinter/interface are not supported but got type %s", type_)
+		}
+		valueSerializer, err := r.getSerializerByType(type_.Elem())
+		if err != nil {
+			return nil, err
+		}
+		return &ptrToValueSerializer{valueSerializer}, nil
+	case reflect.Slice:
+		elem := type_.Elem()
+		if isDynamicType(elem) {
+			return sliceSerializer{}, nil
+		} else {
+			elemSerializer, err := r.getSerializerByType(type_.Elem())
+			if err != nil {
+				return nil, err
+			}
+			return &sliceConcreteValueSerializer{
+				type_:          type_,
+				elemSerializer: elemSerializer,
+				referencable:   nullable(type_.Elem()),
+			}, nil
+		}
+	case reflect.Array:
+		elem := type_.Elem()
+		if isDynamicType(elem) {
+			return arraySerializer{}, nil
+		} else {
+			elemSerializer, err := r.getSerializerByType(type_.Elem())
+			if err != nil {
+				return nil, err
+			}
+			return &arrayConcreteValueSerializer{
+				type_:          type_,
+				elemSerializer: elemSerializer,
+				referencable:   nullable(type_.Elem()),
+			}, nil
+		}
+	case reflect.Map:
+		hasKeySerializer, hasValueSerializer := !isDynamicType(type_.Key()), !isDynamicType(type_.Elem())
+		if hasKeySerializer || hasValueSerializer {
+			var keySerializer, valueSerializer Serializer
+			if hasKeySerializer {
+				keySerializer, err = r.getSerializerByType(type_.Key())
+				if err != nil {
+					return nil, err
+				}
+			}
+			if hasValueSerializer {
+				valueSerializer, err = r.getSerializerByType(type_.Elem())
+				if err != nil {
+					return nil, err
+				}
+			}
+			return &mapConcreteKeyValueSerializer{
+				type_:             type_,
+				keySerializer:     keySerializer,
+				valueSerializer:   valueSerializer,
+				keyReferencable:   nullable(type_.Key()),
+				valueReferencable: nullable(type_.Elem()),
+			}, nil
+		} else {
+			return mapSerializer{}, nil
+		}
+	}
 	return nil, fmt.Errorf("type %s not supported", type_.String())
 }
 
@@ -408,7 +522,11 @@ func (r *typeResolver) writeTypeTag(buffer *ByteBuffer, typeTag string) error {
 }
 
 func (r *typeResolver) readTypeByReadTag(buffer *ByteBuffer) (reflect.Type, error) {
-	return nil, nil
+	enumString, err := r.readEnumString(buffer)
+	if err != nil {
+		return nil, err
+	}
+	return r.typeTagToSerializers[enumString].(*ptrToStructSerializer).type_, err
 }
 
 func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (string, error) {
