@@ -22,7 +22,7 @@ import (
 )
 
 func TestReferenceResolver(t *testing.T) {
-	refResolver := newReferenceResolver(true)
+	refResolver := newRefResolver(true)
 	buf := NewByteBuffer(nil)
 	var values []interface{}
 	values = append(values, commonSlice()...)
@@ -31,36 +31,36 @@ func TestReferenceResolver(t *testing.T) {
 	bar := Bar{}
 	values = append(values, "", "str", &foo, &bar)
 	for _, data := range values {
-		refWritten, err := refResolver.WriteReferenceOrNull(buf, reflect.ValueOf(data))
+		refWritten, err := refResolver.WriteRefOrNull(buf, reflect.ValueOf(data))
 		require.Nil(t, err)
 		require.False(t, refWritten)
-		refWritten, err = refResolver.WriteReferenceOrNull(buf, reflect.ValueOf(data))
+		refWritten, err = refResolver.WriteRefOrNull(buf, reflect.ValueOf(data))
 		require.Nil(t, err)
 		require.True(t, refWritten)
 	}
 	refResolver.readObjects = make([]reflect.Value, len(refResolver.writtenObjects))
 	for range values {
-		require.Equal(t, refResolver.ReadReferenceOrNull(buf), RefValueFlag)
-		require.Equal(t, refResolver.ReadReferenceOrNull(buf), RefFlag)
+		require.Equal(t, refResolver.ReadRefOrNull(buf), RefValueFlag)
+		require.Equal(t, refResolver.ReadRefOrNull(buf), RefFlag)
 	}
 	{
 		s := []int{1, 2, 3}
 		require.True(t, same(s, s))
 		require.False(t, same(s, s[1:]))
-		refWritten, err := refResolver.WriteReferenceOrNull(buf, reflect.ValueOf(s))
+		refWritten, err := refResolver.WriteRefOrNull(buf, reflect.ValueOf(s))
 		require.Nil(t, err)
 		require.False(t, refWritten)
-		refWritten, err = refResolver.WriteReferenceOrNull(buf, reflect.ValueOf(s))
+		refWritten, err = refResolver.WriteRefOrNull(buf, reflect.ValueOf(s))
 		require.Nil(t, err)
 		require.True(t, refWritten)
-		refWritten, err = refResolver.WriteReferenceOrNull(buf, reflect.ValueOf(s[1:]))
+		refWritten, err = refResolver.WriteRefOrNull(buf, reflect.ValueOf(s[1:]))
 		require.Nil(t, err)
 		require.False(t, refWritten)
 	}
 }
 
 func TestNonReferenceResolver(t *testing.T) {
-	refResolver := newReferenceResolver(false)
+	refResolver := newRefResolver(false)
 	buf := NewByteBuffer(nil)
 	var values []interface{}
 	values = append(values, commonSlice()...)
@@ -69,16 +69,16 @@ func TestNonReferenceResolver(t *testing.T) {
 	bar := Bar{}
 	values = append(values, "", "str", &foo, &bar)
 	for _, data := range values {
-		refWritten, err := refResolver.WriteReferenceOrNull(buf, reflect.ValueOf(data))
+		refWritten, err := refResolver.WriteRefOrNull(buf, reflect.ValueOf(data))
 		require.Nil(t, err)
 		require.False(t, refWritten)
-		refWritten, err = refResolver.WriteReferenceOrNull(buf, reflect.ValueOf(data))
+		refWritten, err = refResolver.WriteRefOrNull(buf, reflect.ValueOf(data))
 		require.Nil(t, err)
 		require.False(t, refWritten)
 	}
 	for range values {
-		require.Equal(t, refResolver.ReadReferenceOrNull(buf), NotNullValueFlag)
-		require.Equal(t, refResolver.ReadReferenceOrNull(buf), NotNullValueFlag)
+		require.Equal(t, refResolver.ReadRefOrNull(buf), NotNullValueFlag)
+		require.Equal(t, refResolver.ReadRefOrNull(buf), NotNullValueFlag)
 	}
 }
 

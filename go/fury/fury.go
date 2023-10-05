@@ -24,7 +24,7 @@ import (
 func NewFury(referenceTracking bool) *Fury {
 	fury := &Fury{
 		typeResolver:      newTypeResolver(),
-		refResolver:       newReferenceResolver(referenceTracking),
+		refResolver:       newRefResolver(referenceTracking),
 		referenceTracking: referenceTracking,
 		language:          XLANG,
 		buffer:            NewByteBuffer(nil),
@@ -89,7 +89,7 @@ const (
 
 type Fury struct {
 	typeResolver      *typeResolver
-	refResolver       *ReferenceResolver
+	refResolver       *RefResolver
 	referenceTracking bool
 	language          Language
 	bufferCallback    BufferCallback
@@ -226,7 +226,7 @@ func (f *Fury) WriteReferencable(buffer *ByteBuffer, value reflect.Value) error 
 }
 
 func (f *Fury) writeReferencableBySerializer(buffer *ByteBuffer, value reflect.Value, serializer Serializer) error {
-	if refWritten, err := f.refResolver.WriteReferenceOrNull(buffer, value); err == nil && !refWritten {
+	if refWritten, err := f.refResolver.WriteRefOrNull(buffer, value); err == nil && !refWritten {
 		// check ptr
 		if value.Kind() == reflect.Ptr {
 			switch value.Elem().Kind() {
@@ -353,7 +353,7 @@ func (f *Fury) ReadReferencable(buffer *ByteBuffer, value reflect.Value) error {
 }
 
 func (f *Fury) readReferencableBySerializer(buf *ByteBuffer, value reflect.Value, serializer Serializer) (err error) {
-	refId, err := f.refResolver.TryPreserveReferenceId(buf)
+	refId, err := f.refResolver.TryPreserveRefId(buf)
 	if err != nil {
 		return err
 	}
