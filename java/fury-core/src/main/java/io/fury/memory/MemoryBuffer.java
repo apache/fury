@@ -1830,14 +1830,15 @@ public final class MemoryBuffer {
     return unsafeWriteSliLong(value);
   }
 
-  private static final int HALF_MAX_INT_VALUE = Integer.MAX_VALUE / 2;
-  private static final int HALF_MIN_INT_VALUE = Integer.MIN_VALUE / 2;
+  private static final long HALF_MAX_INT_VALUE = Integer.MAX_VALUE / 2;
+  private static final long HALF_MIN_INT_VALUE = Integer.MIN_VALUE / 2;
   private static final byte BIG_LONG_FLAG = 0b1; // bit 0 set, means big long.
 
   /** Write long using fury SLI(Small Long as Int) encoding. */
   public int unsafeWriteSliLong(long value) {
     final int writerIndex = this.writerIndex;
     final long pos = address + writerIndex;
+    final byte[] heapMemory = this.heapMemory;
     if (value >= HALF_MIN_INT_VALUE && value <= HALF_MAX_INT_VALUE) {
       // write:
       // 00xxx -> 0xxx
@@ -1851,7 +1852,7 @@ public final class MemoryBuffer {
       } else {
         UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(v));
       }
-      this.writerIndex += 4;
+      this.writerIndex = writerIndex + 4;
       return 4;
     } else {
       UNSAFE.putByte(heapMemory, pos, BIG_LONG_FLAG);
@@ -1860,16 +1861,17 @@ public final class MemoryBuffer {
       } else {
         UNSAFE.putLong(heapMemory, pos + 1, Long.reverseBytes(value));
       }
-      this.writerIndex += 9;
+      this.writerIndex = writerIndex + 9;
       return 9;
     }
   }
 
   /** Read fury SLI(Small Long as Int) encoded long. */
   public long readSliLong() {
-    int readIdx = readerIndex;
+    final int readIdx = readerIndex;
     final long pos = address + readIdx;
-    int size = this.size;
+    final int size = this.size;
+    final byte[] heapMemory = this.heapMemory;
     if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readIdx > size - 4) {
       throwIndexOutOfBoundsException(readIdx, size, 4);
     }
