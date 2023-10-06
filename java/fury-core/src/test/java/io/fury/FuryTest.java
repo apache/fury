@@ -16,7 +16,6 @@
 
 package io.fury;
 
-import static io.fury.FuryTestBase.getJavaFury;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
@@ -541,12 +540,12 @@ public class FuryTest extends FuryTestBase {
   public void testDeserializationAutotypeCast() {
     Fury fury = getJavaFury();
     byte[] bytes = fury.serialize(1);
-    Integer i = fury.deserialize(bytes);
+    Integer i = fury.deserializeTyped(bytes);
     Assert.assertEquals(i, 1);
     Assert.assertThrows(
         ClassCastException.class,
         () -> {
-          String str = fury.deserialize(bytes);
+          String str = fury.deserializeTyped(bytes);
           System.out.println(str);
         });
   }

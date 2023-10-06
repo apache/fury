@@ -239,12 +239,5 @@ public class JsonbState {
     state.setup();
     state.bufferType = BufferType.directBuffer;
     state.setup();
-
-    ;
-    JSONObject json = new JSONObject();
-    json.put("k", 1);
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
-    byte[] bytes = fury.serialize(json);
-    System.out.println(fury.deserialize(bytes));
   }
 }

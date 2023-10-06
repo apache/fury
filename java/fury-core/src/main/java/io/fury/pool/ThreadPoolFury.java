@@ -71,7 +71,17 @@ public class ThreadPoolFury implements ThreadSafeFury {
     }
   }
 
-  public <T> T deserialize(byte[] bytes) {
+  public <T> T deserializeTyped(byte[] bytes) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      return fury.deserializeTyped(bytes);
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
+  public Object deserialize(byte[] bytes) {
     Fury fury = null;
     try {
       fury = furyPooledObjectFactory.getFury();
@@ -81,7 +91,7 @@ public class ThreadPoolFury implements ThreadSafeFury {
     }
   }
 
-  public <T> T deserialize(long address, int size) {
+  public Object deserialize(long address, int size) {
     Fury fury = null;
     try {
       fury = furyPooledObjectFactory.getFury();
@@ -91,7 +101,7 @@ public class ThreadPoolFury implements ThreadSafeFury {
     }
   }
 
-  public <T> T deserialize(MemoryBuffer buffer) {
+  public Object deserialize(MemoryBuffer buffer) {
     Fury fury = null;
     try {
       fury = furyPooledObjectFactory.getFury();
@@ -101,7 +111,7 @@ public class ThreadPoolFury implements ThreadSafeFury {
     }
   }
 
-  public <T> T deserialize(ByteBuffer byteBuffer) {
+  public Object deserialize(ByteBuffer byteBuffer) {
     Fury fury = null;
     try {
       fury = furyPooledObjectFactory.getFury();

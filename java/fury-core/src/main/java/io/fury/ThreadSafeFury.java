@@ -39,13 +39,15 @@ public interface ThreadSafeFury {
 
   MemoryBuffer serialize(MemoryBuffer buffer, Object obj);
 
-  <T> T deserialize(byte[] bytes);
+  <T> T deserializeTyped(byte[] bytes);
 
-  <T> T deserialize(long address, int size);
+  Object deserialize(byte[] bytes);
 
-  <T> T deserialize(MemoryBuffer buffer);
+  Object deserialize(long address, int size);
 
-  <T> T deserialize(ByteBuffer byteBuffer);
+  Object deserialize(MemoryBuffer buffer);
+
+  Object deserialize(ByteBuffer byteBuffer);
 
   /**
    * Set classLoader of serializer for current thread only.

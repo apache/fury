@@ -86,6 +86,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
               try {
                 fury.setClassLoader(beanA.getClass().getClassLoader());
                 assertEquals(fury.deserialize(fury.serialize(beanA)), beanA);
+                assertEquals(fury.deserializeTyped(fury.serialize(beanA)), beanA);
               } catch (Exception e) {
                 hasException = true;
                 e.printStackTrace();
