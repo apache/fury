@@ -70,6 +70,7 @@ import org.slf4j.Logger;
  * @author chaokunyang
  */
 @NotThreadSafe
+@SuppressWarnings("unchecked")
 public final class Fury {
   private static final Logger LOG = LoggerFactory.getLogger(Fury.class);
 
@@ -618,11 +619,11 @@ public final class Fury {
   }
 
   /** Deserialize <code>obj</code> from a byte array. */
-  public Object deserialize(byte[] bytes) {
+  public <T> T deserialize(byte[] bytes) {
     return deserialize(MemoryUtils.wrap(bytes), null);
   }
 
-  public Object deserialize(byte[] bytes, Iterable<MemoryBuffer> outOfBandBuffers) {
+  public <T> T deserialize(byte[] bytes, Iterable<MemoryBuffer> outOfBandBuffers) {
     return deserialize(MemoryUtils.wrap(bytes), outOfBandBuffers);
   }
 
@@ -630,12 +631,12 @@ public final class Fury {
    * Deserialize <code>obj</code> from a off-heap buffer specified by <code>address</code> and
    * <code>size</code>.
    */
-  public Object deserialize(long address, int size) {
+  public <T> T deserialize(long address, int size) {
     return deserialize(MemoryUtils.buffer(address, size), null);
   }
 
   /** Deserialize <code>obj</code> from a <code>buffer</code>. */
-  public Object deserialize(MemoryBuffer buffer) {
+  public <T> T deserialize(MemoryBuffer buffer) {
     return deserialize(buffer, null);
   }
 
@@ -652,7 +653,7 @@ public final class Fury {
    *     It is an error for <code>outOfBandBuffers</code> to be null if the serialized stream was
    *     produced with a non-null `bufferCallback`.
    */
-  public Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
+  public <T> T deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
       jitContext.lock();
       byte bitmap = buffer.readByte();
@@ -689,7 +690,7 @@ public final class Fury {
         }
         obj = readRef(buffer);
       }
-      return obj;
+      return (T) obj;
     } finally {
       resetRead();
       jitContext.unlock();
@@ -1059,7 +1060,7 @@ public final class Fury {
    * Deserialize class info and java object from binary, serialization should use {@link
    * #serializeJavaObjectAndClass}.
    */
-  public Object deserializeJavaObjectAndClass(byte[] data) {
+  public <T> T deserializeJavaObjectAndClass(byte[] data) {
     return deserializeJavaObjectAndClass(MemoryBuffer.fromByteArray(data));
   }
 
@@ -1067,13 +1068,13 @@ public final class Fury {
    * Deserialize class info and java object from binary, serialization should use {@link
    * #serializeJavaObjectAndClass}.
    */
-  public Object deserializeJavaObjectAndClass(MemoryBuffer buffer) {
+  public <T> T deserializeJavaObjectAndClass(MemoryBuffer buffer) {
     try {
       jitContext.lock();
       if (config.shareMetaContext()) {
         classResolver.readClassDefs(buffer);
       }
-      return readRef(buffer);
+      return (T) readRef(buffer);
     } finally {
       resetRead();
       jitContext.unlock();
@@ -1084,7 +1085,7 @@ public final class Fury {
    * Deserialize class info and java object from binary, serialization should use {@link
    * #serializeJavaObjectAndClass}.
    */
-  public Object deserializeJavaObjectAndClass(InputStream inputStream) {
+  public <T> T deserializeJavaObjectAndClass(InputStream inputStream) {
     return deserializeFromStream(inputStream, this::deserializeJavaObjectAndClass);
   }
 
@@ -1117,8 +1118,7 @@ public final class Fury {
     }
   }
 
-  private Object deserializeFromStream(
-      InputStream inputStream, Function<MemoryBuffer, Object> function) {
+  private <T> T deserializeFromStream(InputStream inputStream, Function<MemoryBuffer, T> function) {
     buffer.readerIndex(0);
     try {
       boolean isBis = inputStream.getClass() == ByteArrayInputStream.class;
@@ -1135,7 +1135,7 @@ public final class Fury {
         read = inputStream.read(buffer.getHeapMemory(), 4, size);
         Preconditions.checkArgument(read == size);
       }
-      Object o = function.apply(buffer);
+      T o = function.apply(buffer);
       if (isBis) {
         inputStream.skip(buffer.readerIndex());
         buffer.pointTo(oldBytes, 0, oldBytes.length);
