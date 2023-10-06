@@ -39,7 +39,28 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java-version: ["8", "11", "17", "21"]
+        java-version: ["8", "11", "17"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'temurin' # temurin hasn't release for jdk21
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Install python
+        run: ./ci/run_ci.sh install_python
+      - name: Install pyfury
+        run: ./ci/run_ci.sh install_pyfury
+      - name: Run CI with Maven
+        run: PATH="$HOME/miniconda/bin:$PATH" ./ci/run_ci.sh java${{ matrix.java-version }}
+  java21:
+    name: Java CI
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: ["21"]
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ matrix.java-version }}
