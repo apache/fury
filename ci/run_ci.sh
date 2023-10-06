@@ -87,10 +87,6 @@ integration_tests() {
   cd "$ROOT"/integration_tests/perftests
   echo "Start latest jdk tests"
   cd "$ROOT"/integration_tests/latest_jdk_tests
-  echo "latest_jdk_tests: JDK 17"
-  export JAVA_HOME="$ROOT/zulu17.44.17-ca-crac-jdk17.0.8-linux_x64"
-  export PATH=$JAVA_HOME/bin:$PATH
-  mvn -T10 -B --no-transfer-progress clean test
   echo "latest_jdk_tests: JDK 21"
   export JAVA_HOME="$ROOT/zulu21.28.85-ca-jdk21.0.0-linux_x64"
   export PATH=$JAVA_HOME/bin:$PATH
@@ -112,6 +108,23 @@ integration_tests() {
   done
 }
 
+jdk17_plus_tests() {
+  java -version
+  echo "Executing fury java tests"
+  cd "$ROOT/java"
+  set +e
+  mvn -T16 --batch-mode --no-transfer-progress test -pl '!fury-format,!fury-testsuite,!fury-benchmark'
+  testcode=$?
+  if [[ $testcode -ne 0 ]]; then
+    exit $testcode
+  fi
+  echo "Executing fury java tests succeeds"
+  echo "Executing latest_jdk_tests"
+  cd "$ROOT"/integration_tests/latest_jdk_tests
+  mvn -T10 -B --no-transfer-progress clean test
+  echo "Executing latest_jdk_tests succeeds"
+}
+
 case $1 in
     java8)
       echo "Executing fury java tests"
@@ -124,7 +137,7 @@ case $1 in
       fi
       echo "Executing fury java tests succeeds"
     ;;
-   java11)
+    java11)
       java -version
       echo "Executing fury java tests"
       cd "$ROOT/java"
@@ -136,17 +149,11 @@ case $1 in
       fi
       echo "Executing fury java tests succeeds"
     ;;
-   java17)
-      java -version
-      echo "Executing fury java tests"
-      cd "$ROOT/java"
-      set +e
-      mvn -T16 --batch-mode --no-transfer-progress test -pl '!fury-format,!fury-testsuite,!fury-benchmark'
-      testcode=$?
-      if [[ $testcode -ne 0 ]]; then
-        exit $testcode
-      fi
-      echo "Executing fury java tests succeeds"
+    java17)
+      jdk17_plus_tests
+    ;;
+    java21)
+      jdk17_plus_tests
     ;;
     integration_tests)
       echo "Install jdk"
