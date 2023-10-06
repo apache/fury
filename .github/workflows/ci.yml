@@ -46,7 +46,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java-version }}
-          distribution: 'temurin'
+          distribution: 'oracle'
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
