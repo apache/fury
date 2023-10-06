@@ -618,7 +618,23 @@ public final class Fury {
     return LongSerializer.readLong(buffer, longEncoding);
   }
 
-  /** Deserialize <code>obj</code> from a byte array. */
+  /**
+   * Deserialize <code>obj</code> from a byte array. Note declared result type must be a class or
+   * superclass/interface of the serialized object, otherwise a {@link ClassCastException} will be
+   * thrown.
+   *
+   * <p>For example, if you serialized an object of type `Integer`, then your declared deserialized
+   * type is `String`, the deserialization will just throw a {@link ClassCastException}.
+   *
+   * <pre>{@code
+   * byte[] bytes = fury.serialize(1);
+   * String o = fury.deserialize(bytes); // throw ClassCastException.
+   * }</pre>
+   *
+   * @param bytes serialized data.
+   * @param <T> result type of the data.
+   * @return deserialized object.
+   */
   public <T> T deserialize(byte[] bytes) {
     return deserialize(MemoryUtils.wrap(bytes), null);
   }
