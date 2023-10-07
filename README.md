@@ -342,8 +342,11 @@ print(foo_row.f2[100000], foo_row.f4[100000].f1, foo_row.f4[200000].f2[5])
 Fury java object graph serialization support class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
 
 We plan to add support cross-language serialization after [meta compression](https://github.com/alipay/fury/issues/203) are finished.
+
 ### Binary Compatibility
-We are still improving our protocols, binary compatibility are not ensured between fury releases for now. Please `shade` fury if you will upgrade fury in the future.
+We are still improving our protocols, binary compatibility are not ensured between fury major releases for now.
+it's ensured between minor version only. Please
+`versioning` your data by fury major version if you will upgrade fury in the future, see [how to upgrade fury](https://github.com/alipay/fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
 
 Binary compatibility will be ensured before fury 1.0.
 
@@ -353,7 +356,7 @@ Static serialization are secure. But dynamic serialization such as fury java/pyt
 For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risks.
 
 Fury provides a class registration option and enabled by default for such protocols, which allows only deserializing trusted registered types or built-in types.
- **Do not disable class registration unless you can ensure your environment is indeed secure**.
+ **Do not disable class registration unless you can ensure your environment is secure**.
 
 If this option is disabled, you are responsible for serialization security. You can configure `io.fury.resolver.ClassChecker` by
 `ClassResolver#setClassChecker` to control which classes are allowed for serialization.

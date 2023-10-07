@@ -202,7 +202,7 @@ fury.registerSerializer(Foo.class, new FooSerializer(fury));
 unknown types,
 more flexible but **may be insecure if the classes contains malicious code**.
 
-**Do not disable class registration unless you can ensure your environment is indeed secure**.
+**Do not disable class registration unless you can ensure your environment is secure**.
 Malicious code in `init/equals/hashCode` can be executed when deserializing unknown/untrusted types when this option
 disabled.
 
@@ -338,10 +338,34 @@ then upgrade serialization to fury in an async rolling-up way:
 if(JavaSerializer.serializedByJDK(bytes)){
   ObjectInputStream objectInputStream=xxx;
   return objectInputStream.readObject();
-  }else{
+} else {
   return fury.deserialize(bytes);
-  }
+}
 ```
+
+### Upgrade fury
+Currently binary compatibility is ensured for minor versions only. 
+
+For example, if you are using fury`v0.2.0`, binary compatibility will be provided if you upgrade to fury `v0.2.1`.
+But if upgrade to fury `v0.3.0`, no  binary compatibility are ensured. In order to not break binary compatibility, you 
+need to write fury version as header to serialized data. For example, you can write version by:
+```java
+MemoryBuffer buffer = xxx;
+buffer.writeVarInt(2);
+fury.serialize(buffer, obj);
+```
+Then for deserialization, you can:
+```java
+MemoryBuffer buffer = xxx;
+int furyVersion = buffer.readVarInt()
+Fury fury = getFury(furyVersion);
+fury.deserialize(buffer);
+```
+`getFury` is a method to load corresponding fury, you can shade and relocate different version of fury to different 
+package, and load fury by version.
+
+If you upgrade fury by minor version, or you won't have data serialized by older fury, you can upgrade fury directly,
+no need to `versioning` the data.
 
 ## Trouble shooting
 ### Class inconsistency and class version check
