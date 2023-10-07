@@ -344,17 +344,15 @@ if(JavaSerializer.serializedByJDK(bytes)){
 ```
 
 ### Upgrade fury
-Currently binary compatibility is ensured for minor versions only. 
-
-For example, if you are using fury`v0.2.0`, binary compatibility will be provided if you upgrade to fury `v0.2.1`.
-But if upgrade to fury `v0.3.0`, no  binary compatibility are ensured. In order to not break binary compatibility, you 
-need to write fury version as header to serialized data. For example, you can write version by:
+Currently binary compatibility is ensured for minor versions only. For example, if you are using fury`v0.2.0`, binary compatibility will 
+be provided if you upgrade to fury `v0.2.1`. But if upgrade to fury `v0.3.0`, no  binary compatibility are ensured. In order to not 
+break binary compatibility, you need to write fury version as header to serialized data using following code:
 ```java
 MemoryBuffer buffer = xxx;
 buffer.writeVarInt(2);
 fury.serialize(buffer, obj);
 ```
-Then for deserialization, you can:
+Then for deserialization, you need:
 ```java
 MemoryBuffer buffer = xxx;
 int furyVersion = buffer.readVarInt()
