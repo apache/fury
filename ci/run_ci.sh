@@ -113,7 +113,7 @@ jdk17_plus_tests() {
   echo "Executing fury java tests"
   cd "$ROOT/java"
   set +e
-  mvn -T16 --batch-mode --no-transfer-progress test -pl '!fury-format,!fury-testsuite,!fury-benchmark'
+  mvn -T10 --batch-mode --no-transfer-progress test install -pl '!fury-format,!fury-testsuite,!fury-benchmark'
   testcode=$?
   if [[ $testcode -ne 0 ]]; then
     exit $testcode
