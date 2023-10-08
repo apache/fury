@@ -21,6 +21,7 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 import io.fury.config.Language;
+import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.MetaContext;
 import io.fury.serializer.Serializer;
 import io.fury.test.bean.BeanA;
@@ -262,5 +263,20 @@ public class ThreadSafeFuryTest extends FuryTestBase {
       fury.clearClassLoader(structClass2.getClassLoader());
     }
     return map;
+  }
+
+  @Test
+  public void testSerializeJavaObject() {
+    for (ThreadSafeFury fury :
+        new ThreadSafeFury[] {
+          Fury.builder().requireClassRegistration(false).buildThreadSafeFury(),
+          Fury.builder().requireClassRegistration(false).buildThreadSafeFuryPool(2, 2)
+        }) {
+      byte[] bytes = fury.serializeJavaObject("abc");
+      Assert.assertEquals(fury.deserializeJavaObject(bytes, String.class), "abc");
+      MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(8);
+      fury.serializeJavaObject(buffer, "abc");
+      Assert.assertEquals(fury.deserializeJavaObject(buffer, String.class), "abc");
+    }
   }
 }

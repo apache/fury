@@ -65,6 +65,11 @@ public class ThreadLocalFury implements ThreadSafeFury {
     return buffer.getBytes(0, buffer.writerIndex());
   }
 
+  @Override
+  public MemoryBuffer serialize(Object obj, long address, int size) {
+    return bindingThreadLocal.get().get().serialize(obj, address, size);
+  }
+
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj) {
     return bindingThreadLocal.get().get().serialize(buffer, obj);
   }
@@ -83,6 +88,26 @@ public class ThreadLocalFury implements ThreadSafeFury {
 
   public Object deserialize(ByteBuffer byteBuffer) {
     return bindingThreadLocal.get().get().deserialize(MemoryUtils.wrap(byteBuffer));
+  }
+
+  @Override
+  public byte[] serializeJavaObject(Object obj) {
+    return bindingThreadLocal.get().get().serializeJavaObject(obj);
+  }
+
+  @Override
+  public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
+    bindingThreadLocal.get().get().serializeJavaObject(buffer, obj);
+  }
+
+  @Override
+  public <T> T deserializeJavaObject(byte[] data, Class<T> cls) {
+    return bindingThreadLocal.get().get().deserializeJavaObject(data, cls);
+  }
+
+  @Override
+  public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
+    return bindingThreadLocal.get().get().deserializeJavaObject(buffer, cls);
   }
 
   public void setClassLoader(ClassLoader classLoader) {

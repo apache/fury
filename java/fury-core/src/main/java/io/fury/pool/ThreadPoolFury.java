@@ -61,6 +61,17 @@ public class ThreadPoolFury implements ThreadSafeFury {
     }
   }
 
+  @Override
+  public MemoryBuffer serialize(Object obj, long address, int size) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      return fury.serialize(obj, address, size);
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj) {
     Fury fury = null;
     try {
@@ -106,6 +117,50 @@ public class ThreadPoolFury implements ThreadSafeFury {
     try {
       fury = furyPooledObjectFactory.getFury();
       return fury.deserialize(MemoryUtils.wrap(byteBuffer));
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
+  @Override
+  public byte[] serializeJavaObject(Object obj) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      return fury.serializeJavaObject(obj);
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
+  @Override
+  public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      fury.serializeJavaObject(buffer, obj);
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
+  @Override
+  public <T> T deserializeJavaObject(byte[] data, Class<T> cls) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      return fury.deserializeJavaObject(data, cls);
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
+  @Override
+  public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      return fury.deserializeJavaObject(buffer, cls);
     } finally {
       furyPooledObjectFactory.returnFury(fury);
     }
