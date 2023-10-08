@@ -535,4 +535,18 @@ public class FuryTest extends FuryTestBase {
       assertEquals(newObj, beanA);
     }
   }
+
+  @Test
+  public void testDeserializationAutotypeCast() {
+    Fury fury = getJavaFury();
+    byte[] bytes = fury.serialize(1);
+    Integer i = fury.deserializeTyped(bytes);
+    Assert.assertEquals(i, 1);
+    Assert.assertThrows(
+        ClassCastException.class,
+        () -> {
+          String str = fury.deserializeTyped(bytes);
+          System.out.println(str);
+        });
+  }
 }

@@ -39,6 +39,8 @@ public interface ThreadSafeFury {
 
   MemoryBuffer serialize(MemoryBuffer buffer, Object obj);
 
+  <T> T deserializeTyped(byte[] bytes);
+
   Object deserialize(byte[] bytes);
 
   Object deserialize(long address, int size);

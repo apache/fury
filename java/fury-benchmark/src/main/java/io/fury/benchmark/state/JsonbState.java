@@ -18,7 +18,6 @@ package io.fury.benchmark.state;
 
 import com.alibaba.fastjson2.JSONB;
 import com.alibaba.fastjson2.JSONFactory;
-import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONReader;
 import com.alibaba.fastjson2.JSONWriter;
 import com.alibaba.fastjson2.reader.ObjectReaderProvider;
@@ -239,12 +238,5 @@ public class JsonbState {
     state.setup();
     state.bufferType = BufferType.directBuffer;
     state.setup();
-
-    ;
-    JSONObject json = new JSONObject();
-    json.put("k", 1);
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
-    byte[] bytes = fury.serialize(json);
-    System.out.println(fury.deserialize(bytes));
   }
 }

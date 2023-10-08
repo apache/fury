@@ -69,6 +69,10 @@ public class ThreadLocalFury implements ThreadSafeFury {
     return bindingThreadLocal.get().get().serialize(buffer, obj);
   }
 
+  public <T> T deserializeTyped(byte[] bytes) {
+    return bindingThreadLocal.get().get().deserializeTyped(bytes);
+  }
+
   public Object deserialize(byte[] bytes) {
     return bindingThreadLocal.get().get().deserialize(bytes);
   }

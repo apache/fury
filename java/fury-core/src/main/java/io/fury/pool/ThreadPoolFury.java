@@ -71,6 +71,16 @@ public class ThreadPoolFury implements ThreadSafeFury {
     }
   }
 
+  public <T> T deserializeTyped(byte[] bytes) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      return fury.deserializeTyped(bytes);
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
   public Object deserialize(byte[] bytes) {
     Fury fury = null;
     try {
