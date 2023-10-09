@@ -139,6 +139,7 @@ If you don't have cross-language requirements, using this mode will
 have better performance.
 ```java
 import io.fury.*;
+import io.fury.config.*;
 import java.util.*;
 
 public class Example {
@@ -185,6 +186,7 @@ public class Example {
 **Java**
 ```java
 import io.fury.*;
+import io.fury.config.*;
 import java.util.*;
 
 public class ReferenceExample {

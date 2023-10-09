@@ -13,6 +13,7 @@ Common types can be serialized automatically: primitive numeric types, string, b
 
 ```java
 import io.fury.*;
+import io.fury.config.*;
 
 import java.util.*;
 
@@ -104,6 +105,7 @@ Serializing user-defined types needs registering the custom type using the regis
 
 ```java
 import io.fury.*;
+import io.fury.config.*;
 import java.util.*;
 
 public class Example2 {
@@ -295,6 +297,7 @@ Shared reference and circular reference can be serialized automatically, no dupl
 
 ```java
 import io.fury.*;
+import io.fury.config.*;
 import java.util.*;
 
 public class ReferenceExample {
@@ -390,6 +393,7 @@ func main() {
 
 ```java
 import io.fury.*;
+import io.fury.config.*;
 import io.fury.serializers.BufferObject;
 import io.fury.memory.MemoryBuffer;
 
