@@ -136,9 +136,11 @@ const (
 )
 
 var (
-	interfaceType      = reflect.TypeOf((*interface{})(nil)).Elem()
-	stringType         = reflect.TypeOf((*string)(nil)).Elem()
-	stringPtrType      = reflect.TypeOf((**string)(nil)).Elem()
+	interfaceType = reflect.TypeOf((*interface{})(nil)).Elem()
+	stringType    = reflect.TypeOf((*string)(nil)).Elem()
+	// Make compilation support tinygo
+	stringPtrType = reflect.TypeOf((*string)(nil))
+	//stringPtrType      = reflect.TypeOf((**string)(nil)).Elem()
 	stringSliceType    = reflect.TypeOf((*[]string)(nil)).Elem()
 	byteSliceType      = reflect.TypeOf((*[]byte)(nil)).Elem()
 	boolSliceType      = reflect.TypeOf((*[]bool)(nil)).Elem()
