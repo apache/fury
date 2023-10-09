@@ -242,7 +242,7 @@ print(fury.deserialize(data))
 ```go
 package main
 
-import furygo "github.com/alipay/fury/fury/go/fury"
+import furygo "github.com/alipay/fury/go/fury"
 import "fmt"
 
 func main() {
