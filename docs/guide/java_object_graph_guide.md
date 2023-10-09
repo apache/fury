@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Arrays;
 
 import io.fury.*;
+import io.fury.config.*;
 
 public class Example {
   public static void main(String[] args) {
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.Arrays;
 
 import io.fury.*;
+import io.fury.config.*;
 
 public class Example {
   public static void main(String[] args) {
@@ -73,6 +75,7 @@ import java.util.List;
 import java.util.Arrays;
 
 import io.fury.*;
+import io.fury.config.*;
 
 public class Example {
   // reuse fury.
@@ -250,6 +253,7 @@ Or implement `java.io.Externalizable` for a class.
 
 ```java
 import io.fury.*;
+import io.fury.config.*;
 import io.fury.serializers.BufferObject;
 import io.fury.memory.MemoryBuffer;
 

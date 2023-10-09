@@ -139,6 +139,7 @@ If you don't have cross-language requirements, using this mode will
 have better performance.
 ```java
 import io.fury.*;
+import io.fury.config.*;
 import java.util.*;
 
 public class Example {
@@ -185,6 +186,7 @@ public class Example {
 **Java**
 ```java
 import io.fury.*;
+import io.fury.config.*;
 import java.util.*;
 
 public class ReferenceExample {
@@ -347,7 +349,7 @@ We are still improving our protocols, binary compatibility are not ensured betwe
 it's ensured between minor version only. Please
 `versioning` your data by fury major version if you will upgrade fury in the future, see [how to upgrade fury](https://github.com/alipay/fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
 
-Binary compatibility will be ensured before fury 1.0.
+Binary compatibility will be ensured when fury 1.0 is released.
 
 ## Security
 Static serialization are secure. But dynamic serialization such as fury java/python native serialization supports deserialize unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
