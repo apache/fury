@@ -30,6 +30,7 @@ import io.fury.type.GenericType;
 import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -83,7 +84,7 @@ public class CollectionSerializers {
 
   /** Serializer for {@link Collection}. All collection serializer should extend this class. */
   public static class CollectionSerializer<T extends Collection> extends Serializer<T> {
-    private Constructor<?> constructor;
+    private MethodHandle constructor;
     private final boolean supportCodegenHook;
     // TODO remove elemSerializer, support generics in CompatibleSerializer.
     private Serializer<?> elemSerializer;
@@ -335,13 +336,13 @@ public class CollectionSerializers {
      */
     public Collection newCollection(MemoryBuffer buffer, int numElements) {
       if (constructor == null) {
-        constructor = ReflectionUtils.newAccessibleNoArgConstructor(type);
+        constructor = ReflectionUtils.getCtrHandle(type, true);
       }
       try {
-        T instance = (T) constructor.newInstance();
+        T instance = (T) constructor.invoke();
         fury.getRefResolver().reference(instance);
         return instance;
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      } catch (Throwable e) {
         throw new IllegalArgumentException(
             "Please provide public no arguments constructor for class " + type, e);
       }

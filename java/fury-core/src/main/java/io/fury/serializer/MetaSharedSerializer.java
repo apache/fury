@@ -97,7 +97,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     if (isRecord) {
       constructor = RecordUtils.getRecordConstructor(type).f1;
     } else {
-      this.constructor = ReflectionUtils.getExecutableNoArgConstructorHandle(type);
+      this.constructor = ReflectionUtils.getCtrHandle(type, false);
     }
     Tuple3<
             Tuple2<ObjectSerializer.FinalTypeField[], boolean[]>,

@@ -44,8 +44,8 @@ import java.io.ObjectStreamClass;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -78,7 +78,7 @@ import org.slf4j.Logger;
 public class ObjectStreamSerializer extends Serializer {
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStreamSerializer.class);
 
-  private final Constructor constructor;
+  private final MethodHandle constructor;
   private final ClassResolver classResolver;
   private final SlotsInfo[] slotsInfos;
 
@@ -96,18 +96,9 @@ public class ObjectStreamSerializer extends Serializer {
         Externalizable.class.getCanonicalName());
     // stream serializer may be data serializer of ReplaceResolver serializer.
     fury.getClassResolver().setSerializerIfAbsent(type, this);
-    Constructor constructor;
-    try {
-      constructor = type.getConstructor();
-      if (!constructor.isAccessible()) {
-        constructor.setAccessible(true);
-      }
-    } catch (Exception e) {
-      constructor =
-          (Constructor) ReflectionUtils.getObjectFieldValue(ObjectStreamClass.lookup(type), "cons");
-    }
+
     this.classResolver = fury.getClassResolver();
-    this.constructor = constructor;
+    this.constructor = ReflectionUtils.getCtrHandle(type, false);
     List<SlotsInfo> slotsInfoList = new ArrayList<>();
     Class<?> end = type;
     // locate closest non-serializable superclass
@@ -167,8 +158,8 @@ public class ObjectStreamSerializer extends Serializer {
     Object obj = null;
     if (constructor != null) {
       try {
-        obj = constructor.newInstance();
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        obj = constructor.invoke();
+      } catch (Throwable e) {
         Platform.throwException(e);
       }
     } else {

@@ -71,7 +71,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
               .collect(Collectors.toList());
       recordInfo = new RecordInfo(cls, fieldNames);
     } else {
-      this.constructor = ReflectionUtils.getExecutableNoArgConstructorHandle(type);
+      this.constructor = ReflectionUtils.getCtrHandle(type, false);
       recordInfo = null;
     }
   }
