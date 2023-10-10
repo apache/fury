@@ -107,7 +107,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
               .collect(Collectors.toList());
       recordInfo = new RecordInfo(cls, fieldNames);
     } else {
-      this.constructor = ReflectionUtils.getExecutableNoArgConstructorHandle(cls);
+      this.constructor = ReflectionUtils.getCtrHandle(cls, false);
       recordInfo = null;
     }
     if (fury.checkClassVersion()) {

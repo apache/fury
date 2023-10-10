@@ -21,10 +21,10 @@ import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
+import io.fury.annotation.Internal;
 import io.fury.collection.Tuple3;
 import io.fury.util.function.Functions;
 import io.fury.util.unsafe._JDKAccess;
-import java.io.ObjectStreamClass;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -51,7 +51,8 @@ import java.util.stream.Stream;
  *
  * @author chaokunyang
  */
-@SuppressWarnings("UnstableApiUsage")
+@Internal
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class ReflectionUtils {
   public static boolean isAbstract(Class<?> clazz) {
     if (clazz.isArray()) {
@@ -69,14 +70,14 @@ public class ReflectionUtils {
     return constructor != null && Modifier.isPublic(constructor.getModifiers());
   }
 
-  public static Constructor<?> getNoArgConstructor(Class<?> clazz) {
+  static <T> Constructor<T> getNoArgConstructor(Class<T> clazz) {
     if (clazz.isInterface()) {
       return null;
     }
     if (Modifier.isAbstract(clazz.getModifiers())) {
       return null;
     }
-    Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+    Constructor[] constructors = clazz.getDeclaredConstructors();
     if (constructors.length == 0) {
       return null;
     } else {
@@ -87,26 +88,16 @@ public class ReflectionUtils {
     }
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public static <T> Constructor<T> getExecutableNoArgConstructor(Class<T> cls) {
-    Constructor constructor = null;
-    try {
-      constructor = getNoArgConstructor(cls);
-      if (constructor != null && !constructor.isAccessible()) {
-        // Some class may fail this for JDK9+
-        constructor.setAccessible(true);
-      }
-    } catch (Exception e) {
-      ObjectStreamClass streamClass = ObjectStreamClass.lookup(cls);
-      if (streamClass != null) { // streamClass will be null if cls is not `Serializable`.
-        constructor = (Constructor) ReflectionUtils.getObjectFieldValue(streamClass, "cons");
-      }
-    }
-    return constructor;
-  }
+  private static final ClassValue<MethodHandle> ctrHandleCache =
+      new ClassValue<MethodHandle>() {
+        @Override
+        protected MethodHandle computeValue(Class<?> type) {
+          return createNoArgCtrHandle(type);
+        }
+      };
 
-  public static <T> MethodHandle getExecutableNoArgConstructorHandle(Class<T> cls) {
-    Constructor<T> ctr = getExecutableNoArgConstructor(cls);
+  private static MethodHandle createNoArgCtrHandle(Class<?> cls) {
+    Constructor<?> ctr = getNoArgConstructor(cls);
     if (ctr == null) {
       return null;
     }
@@ -120,24 +111,24 @@ public class ReflectionUtils {
   }
 
   /**
-   * Returns an accessible no-argument constructor for provided class.
-   *
-   * @throws IllegalArgumentException if not exists or not accessible.
+   * Returns no-arg constructor handle for provided class. Returns null if class doesn't have a
+   * no-arg constructor if `checked` not enabled, throws exception if `check` enabled.
    */
-  public static Constructor<?> newAccessibleNoArgConstructor(Class<?> clz) {
+  public static MethodHandle getCtrHandle(Class<?> cls, boolean checked) {
+    MethodHandle methodHandle = ctrHandleCache.get(cls);
+    if (checked && methodHandle == null) {
+      throw new RuntimeException(String.format("Class %s doesn't have a no-arg constructor", cls));
+    }
+    return methodHandle;
+  }
+
+  public static MethodHandle getCtrHandle(Class<?> cls, Class<?>... types) {
+    MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(cls);
     try {
-      Constructor<?> constructor = getNoArgConstructor(clz);
-      if (constructor == null) {
-        throw new IllegalArgumentException(
-            String.format("Please an accessible no argument constructor for class %s", clz));
-      }
-      if (!constructor.isAccessible()) {
-        constructor.setAccessible(true);
-      }
-      return constructor;
-    } catch (Exception e) {
-      throw new IllegalArgumentException(
-          String.format("Please an accessible no argument constructor for class %s", clz), e);
+      return lookup.findConstructor(cls, MethodType.methodType(void.class, types));
+    } catch (NoSuchMethodException | IllegalAccessException e) {
+      Platform.throwException(e);
+      throw new IllegalStateException("unreachable");
     }
   }
 

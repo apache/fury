@@ -35,9 +35,8 @@ import io.fury.type.Type;
 import io.fury.type.TypeUtils;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
-import java.lang.reflect.Constructor;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -60,7 +59,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 public class MapSerializers {
 
   public static class MapSerializer<T extends Map> extends Serializer<T> {
-    protected Constructor<?> constructor;
+    protected MethodHandle constructor;
     protected final boolean supportCodegenHook;
     private Serializer keySerializer;
     private Serializer valueSerializer;
@@ -699,16 +698,24 @@ public class MapSerializers {
      *   <li>newMap
      *   <li>read keys/values
      * </ol>
+     *
+     * <p>Map must have default constructor to be invoked by fury, otherwise created object can't be
+     * used to adding elements. For example:
+     *
+     * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
+     *
+     * <p>without default constructor, created list will have elementData as null, adding elements
+     * will raise NPE.
      */
     public Map newMap(MemoryBuffer buffer, int numElements) {
       if (constructor == null) {
-        constructor = ReflectionUtils.newAccessibleNoArgConstructor(type);
+        constructor = ReflectionUtils.getCtrHandle(type, true);
       }
       try {
-        T instance = (T) constructor.newInstance();
+        T instance = (T) constructor.invoke();
         fury.getRefResolver().reference(instance);
         return instance;
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      } catch (Throwable e) {
         throw new IllegalArgumentException(
             "Please provide public no arguments constructor for class " + type, e);
       }
@@ -839,14 +846,7 @@ public class MapSerializers {
     public SortedMapSerializer(Fury fury, Class<T> cls) {
       super(fury, cls, true);
       if (cls != TreeMap.class) {
-        try {
-          this.constructor = cls.getConstructor(Comparator.class);
-          if (!constructor.isAccessible()) {
-            constructor.setAccessible(true);
-          }
-        } catch (Exception e) {
-          throw new UnsupportedOperationException(e);
-        }
+        this.constructor = ReflectionUtils.getCtrHandle(cls, Comparator.class);
       }
     }
 
@@ -864,8 +864,8 @@ public class MapSerializers {
         map = (T) new TreeMap(comparator);
       } else {
         try {
-          map = (T) constructor.newInstance(comparator);
-        } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+          map = (T) constructor.invoke(comparator);
+        } catch (Throwable e) {
           throw new RuntimeException(e);
         }
       }
