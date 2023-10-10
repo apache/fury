@@ -27,7 +27,10 @@ import io.fury.resolver.ClassResolver;
 import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.Utils;
-import java.lang.reflect.Constructor;
+import io.fury.util.unsafe._JDKAccess;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -67,29 +70,32 @@ public class Serializers {
       if (serializerClass == CompatibleSerializer.class) {
         return new CompatibleSerializer(fury, type);
       }
+      // reflection
+      MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(serializerClass);
       try {
-        Constructor<? extends Serializer> ctr =
-            serializerClass.getConstructor(Fury.class, Class.class);
-        ctr.setAccessible(true);
-        return ctr.newInstance(fury, type);
+        MethodHandle ctr =
+            lookup.findConstructor(
+                serializerClass, MethodType.methodType(void.class, Fury.class, Class.class));
+        return (Serializer<T>) ctr.invoke(fury, type);
       } catch (NoSuchMethodException e) {
         Utils.ignore(e);
       }
       try {
-        Constructor<? extends Serializer> ctr = serializerClass.getConstructor(Fury.class);
-        ctr.setAccessible(true);
-        return ctr.newInstance(fury);
+        MethodHandle ctr =
+            lookup.findConstructor(serializerClass, MethodType.methodType(void.class, Fury.class));
+        return (Serializer<T>) ctr.invoke(fury);
       } catch (NoSuchMethodException e) {
         Utils.ignore(e);
       }
       try {
-        Constructor<? extends Serializer> ctr = serializerClass.getConstructor(Class.class);
-        ctr.setAccessible(true);
-        return ctr.newInstance(type);
+        MethodHandle ctr =
+            lookup.findConstructor(serializerClass, MethodType.methodType(void.class, Class.class));
+        return (Serializer<T>) ctr.invoke(type);
       } catch (NoSuchMethodException e) {
-        Utils.ignore(e);
+        MethodHandle ctr =
+            lookup.findConstructor(serializerClass, MethodType.methodType(void.class));
+        return (Serializer<T>) ctr.invoke();
       }
-      return serializerClass.newInstance();
     } catch (InvocationTargetException e) {
       fury.getClassResolver().resetSerializer(type, serializer);
       if (e.getCause() != null) {
