@@ -62,6 +62,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.WeakHashMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -534,5 +535,36 @@ public class FuryTest extends FuryTestBase {
       newObj = fury.deserializeJavaObjectAndClass(bis);
       assertEquals(newObj, beanA);
     }
+  }
+
+  @Data
+  static class DomainObject {
+    UUID id;
+  }
+
+  static class UUIDSerializer extends Serializer<UUID> {
+    public UUIDSerializer(Fury fury) {
+      super(fury, UUID.class);
+    }
+
+    @Override
+    public UUID read(MemoryBuffer buffer) {
+      return new UUID(buffer.readLong(), buffer.readLong());
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, UUID value) {
+      buffer.writeLong(value.getMostSignificantBits());
+      buffer.writeLong(value.getLeastSignificantBits());
+    }
+  }
+
+  @Test
+  public void testRegisterPrivateSerializer() {
+    Fury fury = Fury.builder().withRefTracking(true).requireClassRegistration(false).build();
+    fury.registerSerializer(UUID.class, new UUIDSerializer(fury));
+    DomainObject obj = new DomainObject();
+    obj.id = UUID.randomUUID();
+    serDeCheckSerializer(fury, obj, "Codec");
   }
 }
