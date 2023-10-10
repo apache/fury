@@ -334,9 +334,13 @@ public class CollectionSerializers {
      *   <li>read elements
      * </ol>
      *
-     * Collection must have default constructor to be invoked by fury, otherwise created object can't
-     * be used to adding elements. For example: `new ArrayList<Integer> { add(1);}`, without default
-     * constructor, created list will have elementData as null, adding elements will raise NPE.
+     * Collection must have default constructor to be invoked by fury, otherwise created object
+     * can't be used to adding elements. For example:
+     *
+     * <pre>new ArrayList<Integer> {add(1);}</pre>
+     *
+     * , without default constructor, created list will have elementData as null, adding elements
+     * will raise NPE.
      */
     public Collection newCollection(MemoryBuffer buffer, int numElements) {
       if (constructor == null) {
