@@ -57,6 +57,13 @@ public class ChildContainerSerializers {
     if (ClassResolver.useReplaceResolveSerializer(cls)) {
       return null;
     }
+    // Collection/Map must have default constructor to be invoked by fury, otherwise created object
+    // can't be used to adding elements.
+    // For example: `new ArrayList<Integer> { add(1);}`, without default constructor, created
+    // list will have elementData as null, adding elements will raise NPE.
+    if (!ReflectionUtils.hasNoArgConstructor(cls)) {
+      return null;
+    }
     while (cls != Object.class) {
       if (ChildCollectionSerializer.superClasses.contains(cls)) {
         if (cls == ArrayList.class) {
@@ -82,6 +89,10 @@ public class ChildContainerSerializers {
     if (ClassResolver.useReplaceResolveSerializer(cls)) {
       return null;
     }
+    // Collection/Map must have default constructor to be invoked by fury, otherwise created object
+    // can't be used to adding elements.
+    // For example: `new ArrayList<Integer> { add(1);}`, without default constructor, created
+    // list will have elementData as null, adding elements will raise NPE.
     if (!ReflectionUtils.hasNoArgConstructor(cls)) {
       return null;
     }

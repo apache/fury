@@ -698,6 +698,10 @@ public class MapSerializers {
      *   <li>newMap
      *   <li>read keys/values
      * </ol>
+     *
+     * Map must have default constructor to be invoked by fury, otherwise created object can't
+     * be used to adding elements. For example: `new ArrayList<Integer> { add(1);}`, without default
+     * constructor, created list will have elementData as null, adding elements will raise NPE.
      */
     public Map newMap(MemoryBuffer buffer, int numElements) {
       if (constructor == null) {
