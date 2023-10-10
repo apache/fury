@@ -481,18 +481,25 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           beanClass.getClassLoader() == null
               ? Thread.currentThread().getContextClassLoader()
               : beanClass.getClassLoader();
-      try {
-        beanClassClassLoader.loadClass(serializerClass.getName());
-      } catch (ClassNotFoundException e) {
-        // If `cls` is loaded in another class different from `beanClassClassLoader`,
-        // then serializerClass is loaded in another class different from `beanClassClassLoader`.
-        serializerClass = LazyInitBeanSerializer.class;
-      }
-      if (serializerClass == LazyInitBeanSerializer.class
-          || serializerClass == ObjectSerializer.class
-          || serializerClass == CompatibleSerializer.class) {
-        // field init may get jit serializer, which will cause cast exception if not use base type.
+      if (!ReflectionUtils.isPublic(serializerClass)) {
+        // TODO(chaokunyang) add jdk17+ unexported class check.
+        // non-public class can't be accessed in generated class.
         serializerClass = Serializer.class;
+      } else {
+        try {
+          beanClassClassLoader.loadClass(serializerClass.getName());
+        } catch (ClassNotFoundException e) {
+          // If `cls` is loaded in another class different from `beanClassClassLoader`,
+          // then serializerClass is loaded in another class different from `beanClassClassLoader`.
+          serializerClass = LazyInitBeanSerializer.class;
+        }
+        if (serializerClass == LazyInitBeanSerializer.class
+            || serializerClass == ObjectSerializer.class
+            || serializerClass == CompatibleSerializer.class) {
+          // field init may get jit serializer, which will cause cast exception if not use base
+          // type.
+          serializerClass = Serializer.class;
+        }
       }
       TypeToken<? extends Serializer> serializerTypeToken = TypeToken.of(serializerClass);
       Expression fieldTypeExpr = getClassExpr(cls);
