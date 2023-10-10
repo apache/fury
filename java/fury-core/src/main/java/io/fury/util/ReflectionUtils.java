@@ -96,8 +96,8 @@ public class ReflectionUtils {
         }
       };
 
-  private static <T> MethodHandle createNoArgCtrHandle(Class<T> cls) {
-    Constructor<T> ctr = getNoArgConstructor(cls);
+  private static MethodHandle createNoArgCtrHandle(Class<?> cls) {
+    Constructor<?> ctr = getNoArgConstructor(cls);
     if (ctr == null) {
       return null;
     }
@@ -114,7 +114,7 @@ public class ReflectionUtils {
    * Returns no-arg constructor handle for provided class. Returns null if class doesn't have a
    * no-arg constructor if `checked` not enabled, throws exception if `check` enabled.
    */
-  public static <T> MethodHandle getCtrHandle(Class<T> cls, boolean checked) {
+  public static MethodHandle getCtrHandle(Class<?> cls, boolean checked) {
     MethodHandle methodHandle = ctrHandleCache.get(cls);
     if (checked && methodHandle == null) {
       throw new RuntimeException(String.format("Class %s doesn't have a no-arg constructor", cls));
@@ -122,7 +122,7 @@ public class ReflectionUtils {
     return methodHandle;
   }
 
-  public static <T> MethodHandle getCtrHandle(Class<T> cls, Class<?>... types) {
+  public static MethodHandle getCtrHandle(Class<?> cls, Class<?>... types) {
     MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(cls);
     try {
       return lookup.findConstructor(cls, MethodType.methodType(void.class, types));

@@ -57,9 +57,6 @@ public class ChildContainerSerializers {
     if (ClassResolver.useReplaceResolveSerializer(cls)) {
       return null;
     }
-    if (!ReflectionUtils.hasPublicNoArgConstructor(cls)) {
-      return null;
-    }
     while (cls != Object.class) {
       if (ChildCollectionSerializer.superClasses.contains(cls)) {
         if (cls == ArrayList.class) {
@@ -83,9 +80,6 @@ public class ChildContainerSerializers {
       return null;
     }
     if (ClassResolver.useReplaceResolveSerializer(cls)) {
-      return null;
-    }
-    if (!ReflectionUtils.hasPublicNoArgConstructor(cls)) {
       return null;
     }
     if (!ReflectionUtils.hasNoArgConstructor(cls)) {

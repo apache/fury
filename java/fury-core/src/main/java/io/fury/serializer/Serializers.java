@@ -26,6 +26,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.type.Type;
 import io.fury.util.Platform;
+import io.fury.util.ReflectionUtils;
 import io.fury.util.Utils;
 import io.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.MethodHandle;
@@ -92,9 +93,7 @@ public class Serializers {
             lookup.findConstructor(serializerClass, MethodType.methodType(void.class, Class.class));
         return (Serializer<T>) ctr.invoke(type);
       } catch (NoSuchMethodException e) {
-        MethodHandle ctr =
-            lookup.findConstructor(serializerClass, MethodType.methodType(void.class));
-        return (Serializer<T>) ctr.invoke();
+        return (Serializer<T>) ReflectionUtils.getCtrHandle(serializerClass).invoke();
       }
     } catch (InvocationTargetException e) {
       fury.getClassResolver().resetSerializer(type, serializer);
