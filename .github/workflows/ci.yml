@@ -30,7 +30,6 @@ on:
       - 'LICENSE'
       - '.vscode/**'
       - '.gitignore'
-      - '.github/**'
     types: ['opened', 'reopened', 'synchronize']
 
 jobs:
@@ -49,6 +48,8 @@ jobs:
           distribution: 'temurin' # temurin hasn't release for jdk21
       - name: Maven Dependency Tree Dependency Submission
         uses: advanced-security/maven-dependency-submission-action@v3.0.2
+        with:
+          directory: java
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
