@@ -220,9 +220,9 @@ public class RecordSerializersTest {
     }
   }
 
-  @Test
-  public void testPrivateRecord() {
-    Fury fury = Fury.builder().build();
+  @Test(dataProvider = "codegen")
+  public void testPrivateRecord(boolean codegen) {
+    Fury fury = Fury.builder().withCodegen(codegen).build();
     fury.register(PrivateRecord.class);
     byte[] serialized = fury.serialize(new PrivateRecord("foo")); // fails
     Object deserialized = fury.deserialize(serialized);
