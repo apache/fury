@@ -219,4 +219,16 @@ public class RecordSerializersTest {
       Assert.assertEquals(fury.deserialize(bytes), o2);
     }
   }
+
+  @Test(dataProvider = "codegen")
+  public void testPrivateRecord(boolean codegen) {
+    Fury fury = Fury.builder().withCodegen(codegen).build();
+    fury.register(PrivateRecord.class);
+    byte[] serialized = fury.serialize(new PrivateRecord("foo")); // fails
+    Object deserialized = fury.deserialize(serialized);
+    System.out.println(deserialized);
+  }
+
+  private record PrivateRecord(String foo) {
+  }
 }
