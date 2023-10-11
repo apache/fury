@@ -263,7 +263,7 @@ public class _JDKAccess {
   public static Tuple2<Class<?>, String> getterMethodInfo(Class<?> type) {
     Tuple2<Class<?>, String> info = methodMap.get(type);
     if (info == null) {
-      return  Tuple2.of(Function.class, "apply");
+      return Tuple2.of(Function.class, "apply");
     }
     return info;
   }

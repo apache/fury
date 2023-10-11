@@ -126,14 +126,14 @@ public abstract class CodecBuilder {
   }
 
   protected Expression tryCastIfPublic(
-    Expression expression, TypeToken<?> targetType, boolean inline) {
+      Expression expression, TypeToken<?> targetType, boolean inline) {
     if (getRawType(targetType) == FinalObjectTypeStub.class) {
       // final field doesn't exist in this class, skip cast.
       return expression;
     }
     if (inline) {
       if (ReflectionUtils.isPublic(targetType)
-        && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
+          && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
         return new Cast(expression, targetType);
       } else {
         return expression;
@@ -143,9 +143,9 @@ public abstract class CodecBuilder {
   }
 
   protected Expression tryCastIfPublic(
-    Expression expression, TypeToken<?> targetType, String valuePrefix) {
+      Expression expression, TypeToken<?> targetType, String valuePrefix) {
     if (ReflectionUtils.isPublic(targetType)
-      && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
+        && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
       return new Cast(expression, targetType, valuePrefix);
     }
     return expression;
@@ -250,7 +250,8 @@ public abstract class CodecBuilder {
       }
       if (!fieldType.isPrimitive()) {
         Expression v = inlineInvoke(ref, methodInfo.f1, OBJECT_TYPE, fieldNullable, inputBeanExpr);
-        TypeToken<?> publicSuperType = ReflectionUtils.getPublicSuperType(descriptor.getTypeToken());
+        TypeToken<?> publicSuperType =
+            ReflectionUtils.getPublicSuperType(descriptor.getTypeToken());
         return new Cast(v, publicSuperType, fieldName);
       } else {
         return new Invoke(ref, methodInfo.f1, fieldType, fieldNullable, inputBeanExpr);

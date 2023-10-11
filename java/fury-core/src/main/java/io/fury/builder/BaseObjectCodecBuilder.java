@@ -82,7 +82,6 @@ import io.fury.serializer.PrimitiveSerializers.LongSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
-import io.fury.type.FinalObjectTypeStub;
 import io.fury.type.TypeUtils;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
