@@ -946,40 +946,6 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     return new ListExpression(elem, write);
   }
 
-  protected Expression tryInlineCast(Expression expression, TypeToken<?> targetType) {
-    return tryCastIfPublic(expression, targetType, true);
-  }
-
-  protected Expression tryCastIfPublic(Expression expression, TypeToken<?> targetType) {
-    return tryCastIfPublic(expression, targetType, false);
-  }
-
-  protected Expression tryCastIfPublic(
-      Expression expression, TypeToken<?> targetType, boolean inline) {
-    if (getRawType(targetType) == FinalObjectTypeStub.class) {
-      // final field doesn't exist in this class, skip cast.
-      return expression;
-    }
-    if (inline) {
-      if (ReflectionUtils.isPublic(targetType)
-          && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
-        return new Cast(expression, targetType);
-      } else {
-        return expression;
-      }
-    }
-    return tryCastIfPublic(expression, targetType, "castedValue");
-  }
-
-  protected Expression tryCastIfPublic(
-      Expression expression, TypeToken<?> targetType, String valuePrefix) {
-    if (ReflectionUtils.isPublic(targetType)
-        && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
-      return new Cast(expression, targetType, valuePrefix);
-    }
-    return expression;
-  }
-
   /**
    * Return an expression to write a map to <code>buffer</code>. This expression can have better
    * efficiency for final key/value type. For final key/value type, it doesn't have to write class

@@ -16,6 +16,7 @@
 
 package io.fury.builder;
 
+import static io.fury.codegen.Expression.Invoke.inlineInvoke;
 import static io.fury.type.TypeUtils.OBJECT_ARRAY_TYPE;
 import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
@@ -45,6 +46,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassInfoHolder;
 import io.fury.type.Descriptor;
+import io.fury.type.FinalObjectTypeStub;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
@@ -114,6 +116,40 @@ public abstract class CodecBuilder {
 
   /** Returns an expression that serialize java bean of type {@link CodecBuilder#beanClass}. */
   public abstract Expression buildEncodeExpression();
+
+  protected Expression tryInlineCast(Expression expression, TypeToken<?> targetType) {
+    return tryCastIfPublic(expression, targetType, true);
+  }
+
+  protected Expression tryCastIfPublic(Expression expression, TypeToken<?> targetType) {
+    return tryCastIfPublic(expression, targetType, false);
+  }
+
+  protected Expression tryCastIfPublic(
+    Expression expression, TypeToken<?> targetType, boolean inline) {
+    if (getRawType(targetType) == FinalObjectTypeStub.class) {
+      // final field doesn't exist in this class, skip cast.
+      return expression;
+    }
+    if (inline) {
+      if (ReflectionUtils.isPublic(targetType)
+        && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
+        return new Cast(expression, targetType);
+      } else {
+        return expression;
+      }
+    }
+    return tryCastIfPublic(expression, targetType, "castedValue");
+  }
+
+  protected Expression tryCastIfPublic(
+    Expression expression, TypeToken<?> targetType, String valuePrefix) {
+    if (ReflectionUtils.isPublic(targetType)
+      && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
+      return new Cast(expression, targetType, valuePrefix);
+    }
+    return expression;
+  }
 
   // left null check in sub class encode method to reduce data dependence.
   private final boolean fieldNullable = false;
@@ -212,7 +248,13 @@ public abstract class CodecBuilder {
         ref = new Reference(key, getterType);
         fieldMap.put(key, ref);
       }
-      return new Invoke(ref, methodInfo.f1, fieldType, fieldNullable, inputBeanExpr);
+      if (!fieldType.isPrimitive()) {
+        Expression v = inlineInvoke(ref, methodInfo.f1, OBJECT_TYPE, fieldNullable, inputBeanExpr);
+        TypeToken<?> publicSuperType = ReflectionUtils.getPublicSuperType(descriptor.getTypeToken());
+        return new Cast(v, publicSuperType, fieldName);
+      } else {
+        return new Invoke(ref, methodInfo.f1, fieldType, fieldNullable, inputBeanExpr);
+      }
     }
   }
 
