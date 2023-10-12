@@ -21,6 +21,7 @@ import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
+import io.fury.annotation.CodegenInvoke;
 import io.fury.annotation.Internal;
 import io.fury.collection.Tuple3;
 import io.fury.util.function.Functions;
@@ -412,10 +413,18 @@ public class ReflectionUtils {
     return pkg;
   }
 
-  // Invoked by JIT.
+  @CodegenInvoke
   public static Class<?> loadClass(Class<?> neighbor, String className) {
     try {
-      return neighbor.getClassLoader().loadClass(className);
+      if (className.equals(neighbor.getName())) {
+        return neighbor;
+      }
+      ClassLoader classLoader = neighbor.getClassLoader();
+      if (classLoader == null) {
+        // jdk class are loaded by bootstrap class loader, which will return null.
+        classLoader = Thread.currentThread().getContextClassLoader();
+      }
+      return classLoader.loadClass(className);
     } catch (ClassNotFoundException e) {
       throw new RuntimeException(e);
     }

@@ -116,7 +116,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             classResolverRef,
             "getFieldResolver",
             fieldResolverTypeToken,
-            Literal.ofClass(getRawType(beanType)));
+            getClassExpr(getRawType(beanType)));
     ctx.addField(ctx.type(fieldResolverTypeToken), FIELD_RESOLVER_NAME, fieldResolverExpr);
     if (isRecord) {
       buildRecordComponentDefaultValues();
