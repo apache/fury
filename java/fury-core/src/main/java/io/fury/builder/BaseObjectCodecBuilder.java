@@ -560,7 +560,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       return classInfoRef;
     }
     if (!needUpdate) {
-      Expression clsExpr = new Literal(cls, CLASS_TYPE);
+      Expression clsExpr = getClassExpr(cls);
       classInfoExpr = inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeToken, clsExpr);
       // Use `ctx.freshName(cls)` to avoid wrong name for arr type.
       String name = ctx.newName(ctx.newName(cls) + "ClassInfo");
