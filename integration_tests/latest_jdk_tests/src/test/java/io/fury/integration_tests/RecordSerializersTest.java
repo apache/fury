@@ -20,8 +20,8 @@ import static io.fury.collection.Collections.ofArrayList;
 import static io.fury.collection.Collections.ofHashMap;
 
 import io.fury.Fury;
-import io.fury.resolver.MetaContext;
 import io.fury.config.CompatibleMode;
+import io.fury.resolver.MetaContext;
 import io.fury.test.bean.Struct;
 import io.fury.util.record.RecordComponent;
 import io.fury.util.record.RecordUtils;
@@ -229,6 +229,5 @@ public class RecordSerializersTest {
     System.out.println(deserialized);
   }
 
-  private record PrivateRecord(String foo) {
-  }
+  private record PrivateRecord(String foo) {}
 }
