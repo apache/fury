@@ -36,13 +36,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.codehaus.janino.ByteArrayClassLoader;
+import org.codehaus.commons.compiler.util.reflect.ByteArrayClassLoader;
+import org.codehaus.commons.compiler.util.resource.MapResourceCreator;
+import org.codehaus.commons.compiler.util.resource.MapResourceFinder;
+import org.codehaus.commons.compiler.util.resource.Resource;
 import org.codehaus.janino.ClassLoaderIClassLoader;
 import org.codehaus.janino.Compiler;
 import org.codehaus.janino.util.ClassFile;
-import org.codehaus.janino.util.resource.MapResourceCreator;
-import org.codehaus.janino.util.resource.MapResourceFinder;
-import org.codehaus.janino.util.resource.Resource;
 import org.slf4j.Logger;
 
 /**
