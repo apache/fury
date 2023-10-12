@@ -17,7 +17,6 @@
 package org.test;
 
 import io.fury.Fury;
-import io.fury.ThreadSafeFury;
 import io.fury.config.CompatibleMode;
 import io.fury.config.Language;
 import java.io.Serializable;
@@ -40,10 +39,11 @@ public class Org implements Serializable {
     this.children = children;
   }
 
-  // test for https://github.com/alipay/fury/issues/1005
+  // test for class name same with package name:
+  // https://github.com/janino-compiler/janino/issues/165
   @Test
   public void testOrgPackage() {
-    ThreadSafeFury fury =
+    Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
@@ -52,7 +52,7 @@ public class Org implements Serializable {
             .withDeserializeUnexistedClass(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withRefTracking(true)
-            .buildThreadSafeFury();
+            .build();
 
     // If the class name is not Org, it can be serialized normally
     byte[] bytes = fury.serialize(new Org());
