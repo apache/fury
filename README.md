@@ -371,7 +371,7 @@ If this option is disabled, you are responsible for serialization security. You 
 - Protocols for features and knowledge graph serialization
 - Continuously improve our serialization infrastructure for any new protocols
 
-## How to Contribute
+## How to Build
 
 Please read the [CONTRIBUTING](CONTRIBUTING.md) guide.
 
