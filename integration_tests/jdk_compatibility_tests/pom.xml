@@ -23,7 +23,7 @@
 
   <groupId>org.furyio</groupId>
   <artifactId>jdk_compatibility_tests</artifactId>
-  <version>0.2.1-alpha.1</version>
+  <version>0.2.1</version>
 
   <properties>
     <maven.compiler.source>8</maven.compiler.source>
