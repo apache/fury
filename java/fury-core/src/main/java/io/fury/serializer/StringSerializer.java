@@ -66,7 +66,7 @@ public final class StringSerializer extends Serializer<String> {
   private static final byte UTF8 = 2;
   private static final int DEFAULT_BUFFER_SIZE = 1024;
   // A long mask used to clear all-higher bits of char in a super-word way.
-  private static final long MULTI_CHARS_NON_ASCII_MASK;
+  private static final long MULTI_CHARS_NON_LATIN_MASK;
 
   static {
     Field valueField = ReflectionUtils.getFieldNullable(String.class, "value");
@@ -81,13 +81,13 @@ public final class StringSerializer extends Serializer<String> {
     Preconditions.checkArgument(STRING_OFFSET_FIELD_OFFSET == -1, "Current jdk not supported");
     Preconditions.checkArgument(STRING_COUNT_FIELD_OFFSET == -1, "Current jdk not supported");
     if (Platform.IS_LITTLE_ENDIAN) {
-      // ascii chars will be 0xXX,0x00;0xXX,0x00 in byte order;
-      // Using 0x00,0xff(0xff00) to clear ascii bits.
-      MULTI_CHARS_NON_ASCII_MASK = 0xff00ff00ff00ff00L;
+      // latin chars will be 0xXX,0x00;0xXX,0x00 in byte order;
+      // Using 0x00,0xff(0xff00) to clear latin bits.
+      MULTI_CHARS_NON_LATIN_MASK = 0xff00ff00ff00ff00L;
     } else {
-      // ascii chars will be 0x00,0xXX;0x00,0xXX in byte order;
-      // Using 0x00,0xff(0x00ff) to clear ascii bits.
-      MULTI_CHARS_NON_ASCII_MASK = 0x00ff00ff00ff00ffL;
+      // latin chars will be 0x00,0xXX;0x00,0xXX in byte order;
+      // Using 0x00,0xff(0x00ff) to clear latin bits.
+      MULTI_CHARS_NON_LATIN_MASK = 0x00ff00ff00ff00ffL;
     }
   }
 
@@ -155,8 +155,8 @@ public final class StringSerializer extends Serializer<String> {
   // Invoked by jit
   public void writeJava8StringCompressed(MemoryBuffer buffer, String value) {
     final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    if (isAscii(chars)) {
-      writeJDK8Ascii(buffer, chars, chars.length);
+    if (isLatin(chars)) {
+      writeJDK8Latin(buffer, chars, chars.length);
     } else {
       writeJDK8UTF16(buffer, chars, chars.length);
     }
@@ -256,7 +256,7 @@ public final class StringSerializer extends Serializer<String> {
   public String readJava8CompressedString(MemoryBuffer buffer) {
     byte coder = buffer.readByte();
     if (coder == LATIN1) {
-      return newJava8StringByZeroCopy(readAsciiChars(buffer));
+      return newJava8StringByZeroCopy(readLatinChars(buffer));
     } else {
       return newJava8StringByZeroCopy(readUTF16Chars(buffer, coder));
     }
@@ -288,8 +288,8 @@ public final class StringSerializer extends Serializer<String> {
       }
       final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
       if (compressString) {
-        if (isAscii(chars)) {
-          writeJDK8Ascii(buffer, chars, chars.length);
+        if (isLatin(chars)) {
+          writeJDK8Latin(buffer, chars, chars.length);
         } else {
           writeJDK8UTF16(buffer, chars, chars.length);
         }
@@ -300,30 +300,30 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  public static boolean isAscii(char[] chars) {
+  public static boolean isLatin(char[] chars) {
     int numChars = chars.length;
     int vectorizedLen = numChars >> 2;
     int vectorizedChars = vectorizedLen << 2;
     int endOffset = Platform.CHAR_ARRAY_OFFSET + (vectorizedChars << 1);
-    boolean isAscii = true;
+    boolean isLatin = true;
     for (int offset = Platform.CHAR_ARRAY_OFFSET; offset < endOffset; offset += 8) {
       // check 4 chars in a vectorized way, 4 times faster than scalar check loop.
-      // See benchmark in CompressStringSuite.asciiSuperWordCheck.
+      // See benchmark in CompressStringSuite.latinSuperWordCheck.
       long multiChars = Platform.getLong(chars, offset);
-      if ((multiChars & MULTI_CHARS_NON_ASCII_MASK) != 0) {
-        isAscii = false;
+      if ((multiChars & MULTI_CHARS_NON_LATIN_MASK) != 0) {
+        isLatin = false;
         break;
       }
     }
-    if (isAscii) {
+    if (isLatin) {
       for (int i = vectorizedChars; i < numChars; i++) {
         if (chars[i] > 0xFF) {
-          isAscii = false;
+          isLatin = false;
           break;
         }
       }
     }
-    return isAscii;
+    return isLatin;
   }
 
   // Invoked by fury JIT
@@ -337,7 +337,7 @@ public final class StringSerializer extends Serializer<String> {
       if (compressString) {
         byte coder = buffer.readByte();
         if (coder == LATIN1) {
-          return newJava8StringByZeroCopy(readAsciiChars(buffer));
+          return newJava8StringByZeroCopy(readLatinChars(buffer));
         } else if (coder == UTF16) {
           return newJava8StringByZeroCopy(readUTF16Chars(buffer, coder));
         } else {
@@ -382,7 +382,7 @@ public final class StringSerializer extends Serializer<String> {
     buffer.unsafeWriterIndex(writerIndex);
   }
 
-  public void writeJDK8Ascii(MemoryBuffer buffer, char[] chars, final int strLen) {
+  public void writeJDK8Latin(MemoryBuffer buffer, char[] chars, final int strLen) {
     int writerIndex = buffer.writerIndex();
     // The `ensure` ensure next operations are safe without bound checks,
     // and inner heap buffer doesn't change.
@@ -454,7 +454,7 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  private char[] readAsciiChars(MemoryBuffer buffer) {
+  private char[] readLatinChars(MemoryBuffer buffer) {
     final int numBytes = buffer.readPositiveVarInt();
     char[] chars = new char[numBytes];
     byte[] targetArray = buffer.getHeapMemory();
@@ -519,8 +519,8 @@ public final class StringSerializer extends Serializer<String> {
       getJava8StringZeroCopyCtr();
   private static final BiFunction<byte[], Byte, String> JAVA11_STRING_ZERO_COPY_CTR =
       getJava11StringZeroCopyCtr();
-  private static final Function<byte[], String> JAVA11_ASCII_STRING_ZERO_COPY_CTR =
-      getJava11AsciiStringZeroCopyCtr();
+  private static final Function<byte[], String> JAVA11_LATIN_STRING_ZERO_COPY_CTR =
+      getJava11LatinStringZeroCopyCtr();
 
   public static String newJava8StringByZeroCopy(char[] data) {
     if (Platform.JAVA_VERSION != 8) {
@@ -561,8 +561,8 @@ public final class StringSerializer extends Serializer<String> {
       // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
       // string length 230.
       // 50% faster than unsafe put field in java11 for string length 10.
-      if (JAVA11_ASCII_STRING_ZERO_COPY_CTR != null) {
-        return JAVA11_ASCII_STRING_ZERO_COPY_CTR.apply(data);
+      if (JAVA11_LATIN_STRING_ZERO_COPY_CTR != null) {
+        return JAVA11_LATIN_STRING_ZERO_COPY_CTR.apply(data);
       } else {
         // JDK17 removed newStringLatin1
         return JAVA11_STRING_ZERO_COPY_CTR.apply(data, LATIN1_BOXED);
@@ -630,7 +630,7 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  private static Function<byte[], String> getJava11AsciiStringZeroCopyCtr() {
+  private static Function<byte[], String> getJava11LatinStringZeroCopyCtr() {
     if (Platform.JAVA_VERSION < 9) {
       return null;
     }

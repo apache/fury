@@ -288,19 +288,19 @@ public class StringSerializerTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "endian")
-  public void testVectorizedAsciiCheckAlgorithm(boolean endian) {
-    // assertTrue(isAscii("Fury".toCharArray(), endian));
-    // assertTrue(isAscii(StringUtils.random(8 * 10).toCharArray(), endian));
+  public void testVectorizedLatinCheckAlgorithm(boolean endian) {
+    // assertTrue(isLatin("Fury".toCharArray(), endian));
+    // assertTrue(isLatin(StringUtils.random(8 * 10).toCharArray(), endian));
     // test unaligned
-    assertTrue(isAscii((StringUtils.random(8 * 10) + "1").toCharArray(), endian));
-    assertTrue(isAscii((StringUtils.random(8 * 10) + "12").toCharArray(), endian));
-    assertTrue(isAscii((StringUtils.random(8 * 10) + "123").toCharArray(), endian));
-    assertFalse(isAscii("你好, Fury".toCharArray(), endian));
-    assertFalse(isAscii((StringUtils.random(8 * 10) + "你好").toCharArray(), endian));
-    assertFalse(isAscii((StringUtils.random(8 * 10) + "1你好").toCharArray(), endian));
+    assertTrue(isLatin((StringUtils.random(8 * 10) + "1").toCharArray(), endian));
+    assertTrue(isLatin((StringUtils.random(8 * 10) + "12").toCharArray(), endian));
+    assertTrue(isLatin((StringUtils.random(8 * 10) + "123").toCharArray(), endian));
+    assertFalse(isLatin("你好, Fury".toCharArray(), endian));
+    assertFalse(isLatin((StringUtils.random(8 * 10) + "你好").toCharArray(), endian));
+    assertFalse(isLatin((StringUtils.random(8 * 10) + "1你好").toCharArray(), endian));
   }
 
-  private boolean isAscii(char[] chars, boolean isLittle) {
+  private boolean isLatin(char[] chars, boolean isLittle) {
     boolean reverseBytes =
         (Platform.IS_LITTLE_ENDIAN && !isLittle) || (!Platform.IS_LITTLE_ENDIAN && !isLittle);
     if (reverseBytes) {
@@ -310,62 +310,62 @@ public class StringSerializerTest extends FuryTestBase {
     }
     long mask;
     if (isLittle) {
-      // ascii chars will be 0xXX,0x00;0xXX,0x00 in byte order;
-      // Using 0x00,0xff(0xff00) to clear ascii bits.
+      // latin chars will be 0xXX,0x00;0xXX,0x00 in byte order;
+      // Using 0x00,0xff(0xff00) to clear latin bits.
       mask = 0xff00ff00ff00ff00L;
     } else {
-      // ascii chars will be 0x00,0xXX;0x00,0xXX in byte order;
-      // Using 0x00,0xff(0x00ff) to clear ascii bits.
+      // latin chars will be 0x00,0xXX;0x00,0xXX in byte order;
+      // Using 0x00,0xff(0x00ff) to clear latin bits.
       mask = 0x00ff00ff00ff00ffL;
     }
     int numChars = chars.length;
     int vectorizedLen = numChars >> 2;
     int vectorizedChars = vectorizedLen << 2;
     int endOffset = Platform.CHAR_ARRAY_OFFSET + (vectorizedChars << 1);
-    boolean isAscii = true;
+    boolean isLatin = true;
     for (int offset = Platform.CHAR_ARRAY_OFFSET; offset < endOffset; offset += 8) {
       // check 4 chars in a vectorized way, 4 times faster than scalar check loop.
       long multiChars = Platform.getLong(chars, offset);
       if ((multiChars & mask) != 0) {
-        isAscii = false;
+        isLatin = false;
         break;
       }
     }
-    if (isAscii) {
+    if (isLatin) {
       for (int i = vectorizedChars; i < numChars; i++) {
         char c = chars[i];
         if (reverseBytes) {
           c = Character.reverseBytes(c);
         }
         if (c > 0xFF) {
-          isAscii = false;
+          isLatin = false;
           break;
         }
       }
     }
-    return isAscii;
+    return isLatin;
   }
 
   @Test
-  public void testAsciiCheck() {
-    assertTrue(StringSerializer.isAscii("Fury".toCharArray()));
-    assertTrue(StringSerializer.isAscii(StringUtils.random(8 * 10).toCharArray()));
+  public void testLatinCheck() {
+    assertTrue(StringSerializer.isLatin("Fury".toCharArray()));
+    assertTrue(StringSerializer.isLatin(StringUtils.random(8 * 10).toCharArray()));
     // test unaligned
-    assertTrue(StringSerializer.isAscii((StringUtils.random(8 * 10) + "1").toCharArray()));
-    assertTrue(StringSerializer.isAscii((StringUtils.random(8 * 10) + "12").toCharArray()));
-    assertTrue(StringSerializer.isAscii((StringUtils.random(8 * 10) + "123").toCharArray()));
-    assertFalse(StringSerializer.isAscii("你好, Fury".toCharArray()));
-    assertFalse(StringSerializer.isAscii((StringUtils.random(8 * 10) + "你好").toCharArray()));
-    assertFalse(StringSerializer.isAscii((StringUtils.random(8 * 10) + "1你好").toCharArray()));
-    assertFalse(StringSerializer.isAscii((StringUtils.random(11) + "你").toCharArray()));
-    assertFalse(StringSerializer.isAscii((StringUtils.random(10) + "你好").toCharArray()));
-    assertFalse(StringSerializer.isAscii((StringUtils.random(9) + "性能好").toCharArray()));
-    assertFalse(StringSerializer.isAscii("\u1234".toCharArray()));
-    assertFalse(StringSerializer.isAscii("a\u1234".toCharArray()));
-    assertFalse(StringSerializer.isAscii("ab\u1234".toCharArray()));
-    assertFalse(StringSerializer.isAscii("abc\u1234".toCharArray()));
-    assertFalse(StringSerializer.isAscii("abcd\u1234".toCharArray()));
-    assertFalse(StringSerializer.isAscii("Javaone Keynote\u1234".toCharArray()));
+    assertTrue(StringSerializer.isLatin((StringUtils.random(8 * 10) + "1").toCharArray()));
+    assertTrue(StringSerializer.isLatin((StringUtils.random(8 * 10) + "12").toCharArray()));
+    assertTrue(StringSerializer.isLatin((StringUtils.random(8 * 10) + "123").toCharArray()));
+    assertFalse(StringSerializer.isLatin("你好, Fury".toCharArray()));
+    assertFalse(StringSerializer.isLatin((StringUtils.random(8 * 10) + "你好").toCharArray()));
+    assertFalse(StringSerializer.isLatin((StringUtils.random(8 * 10) + "1你好").toCharArray()));
+    assertFalse(StringSerializer.isLatin((StringUtils.random(11) + "你").toCharArray()));
+    assertFalse(StringSerializer.isLatin((StringUtils.random(10) + "你好").toCharArray()));
+    assertFalse(StringSerializer.isLatin((StringUtils.random(9) + "性能好").toCharArray()));
+    assertFalse(StringSerializer.isLatin("\u1234".toCharArray()));
+    assertFalse(StringSerializer.isLatin("a\u1234".toCharArray()));
+    assertFalse(StringSerializer.isLatin("ab\u1234".toCharArray()));
+    assertFalse(StringSerializer.isLatin("abc\u1234".toCharArray()));
+    assertFalse(StringSerializer.isLatin("abcd\u1234".toCharArray()));
+    assertFalse(StringSerializer.isLatin("Javaone Keynote\u1234".toCharArray()));
   }
 
   @Test

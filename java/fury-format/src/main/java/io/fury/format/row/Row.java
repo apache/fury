@@ -21,7 +21,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
 /**
  * Interface for row in row format. Row is inspired by Apache Spark tungsten, the differences are
  * <li>Use arrow schema to describe meta.
- * <li>String support ascii/utf16/utf8 encoding.
+ * <li>String support latin/utf16/utf8 encoding.
  * <li>Decimal use arrow decimal format.
  * <li>Variable-size field can be inline in fixed-size region if small enough.
  * <li>Allow skip padding bye generate Row using aot to put offsets in generated code.

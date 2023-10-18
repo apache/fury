@@ -42,13 +42,13 @@ The data are serialized using little endian order overall.
 
 ## String
 Format:
-- one byte for encoding: 0 for `ascii`, 1 for `utf-16`, 2 for `utf-8`.
+- one byte for encoding: 0 for `latin`, 1 for `utf-16`, 2 for `utf-8`.
 - positive varint for encoded string binary length.
-- encoded string binary data based on encoding: `ascii/utf-16/utf-8`.
+- encoded string binary data based on encoding: `latin/utf-16/utf-8`.
 
 Which encoding to choose:
-- For JDK8: fury detect `ascii` at runtime, if string is `ascii` string, then use `ascii` encoding, otherwise use `utf-16`.
-- For JDK9+: fury use `coder` in `String` object for encoding, `ascii`/`utf-16` will be used for encoding.
+- For JDK8: fury detect `latin` at runtime, if string is `latin` string, then use `latin` encoding, otherwise use `utf-16`.
+- For JDK9+: fury use `coder` in `String` object for encoding, `latin`/`utf-16` will be used for encoding.
 - If the string is encoded by `utf-8`, then fury will use `utf-8` to decode the data. But currently fury doesn't enable utf-8 encoding by default for java. Cross-language string serialization of fury use `utf-8` by default.
 
 ## Array
