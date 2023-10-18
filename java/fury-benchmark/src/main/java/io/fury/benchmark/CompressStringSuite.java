@@ -85,21 +85,21 @@ public class CompressStringSuite {
   }
 
   @Benchmark
-  public Object asciiScalarCheck() {
+  public Object latinScalarCheck() {
     char[] chars = latinStrChars;
-    boolean isAscii = true;
+    boolean isLatin = true;
     for (char c : chars) {
       if (c > 0xFF) {
-        isAscii = false;
+        isLatin = false;
         break;
       }
     }
-    return isAscii;
+    return isLatin;
   }
 
   @Benchmark
-  public Object asciiSuperWordCheck() {
-    return StringSerializer.isAscii(latinStrChars);
+  public Object latinSuperWordCheck() {
+    return StringSerializer.isLatin(latinStrChars);
   }
 
   public static void main(String[] args) throws Exception {
@@ -107,7 +107,7 @@ public class CompressStringSuite {
     System.out.printf("latinStrChars length %s\n", latinStrChars.length);
     if (args.length == 0) {
       String commandLine =
-          "io.*CompressStringSuite.ascii* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+          "io.*CompressStringSuite.latin* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }
