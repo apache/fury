@@ -129,7 +129,9 @@ pip install pyfury --pre
 npm install @furyjs/fury
 ```
 ### Golang
-Coming soon.
+```bash
+go get github.com/alipay/fury/go/fury
+```
 
 ## Quickstart
 Here we give a quick start about how to use fury, see [user guide](https://github.com/alipay/fury/blob/main/docs/README.md) for more details about [java](https://github.com/alipay/fury/blob/main/docs/guide/java_object_graph_guide.md), [cross language](https://github.com/alipay/fury/blob/main/docs/guide/xlang_object_graph_guide.md), and [row format](https://github.com/alipay/fury/blob/main/docs/guide/row_format_guide.md).
