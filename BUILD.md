@@ -1,4 +1,4 @@
-# How to contribute to Fury
+# How to build to Fury
 ## Get the source code
 Github repo: https://github.com/alipay/fury
 
