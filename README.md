@@ -366,7 +366,7 @@ If this option is disabled, you are responsible for serialization security. You 
 
 ## How to Build
 
-Please read the [BUILD](BUILDING.md) guide for instructions on how to build.
+Please read the [BUILD](docs/guide/DEVELOPMENT.md) guide for instructions on how to build.
 
 ## How to Contribute
 
