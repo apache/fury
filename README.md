@@ -364,18 +364,13 @@ Fury provides a class registration option that is enabled by default for such pr
 If this option is disabled, you are responsible for serialization security. You can configure `io.fury.resolver.ClassChecker` by
 `ClassResolver#setClassChecker` to control which classes are allowed for serialization.
 
-## RoadMap
-- Meta compression, auto meta sharing and cross-language schema compatibility.
-- AOT Framework for c++/golang/rust to generate code statically.
-- C++/Rust object graph serialization support.
-- Golang/Rust/NodeJS row format support.
-- ProtoBuffer compatibility support.
-- Protocols for features and knowledge graph serialization.
-- Continuously improve our serialization infrastructure for any new protocols.
+## How to Build
+
+Please read the [BUILD](BUILDING.md) guide for instructions on how to build.
 
 ## How to Build
 
-Please read the [CONTRIBUTING](CONTRIBUTING.md) guide for instructions on how to build.
+Please read the [CONTRIBUTING](CONTRIBUTING.md) guide for instructions on how to contribute.
 
 For ecosystem projects, please see https://github.com/fury-project
 
