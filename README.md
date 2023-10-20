@@ -358,7 +358,7 @@ Static serialization are secure. But dynamic serialization such as fury java/pyt
 
 For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risks.
 
-Fury provides a class registration option and enabled by default for such protocols, which allows only deserializing trusted registered types or built-in types.
+Fury provides a class registration option that is enabled by default for such protocols, allowing only deserialization of trusted registered types or built-in types.
  **Do not disable class registration unless you can ensure your environment is secure**.
 
 If this option is disabled, you are responsible for serialization security. You can configure `io.fury.resolver.ClassChecker` by
@@ -367,15 +367,15 @@ If this option is disabled, you are responsible for serialization security. You 
 ## RoadMap
 - Meta compression, auto meta sharing and cross-language schema compatibility.
 - AOT Framework for c++/golang/rust to generate code statically.
-- C++/Rust object graph serialization support
-- Golang/Rust/NodeJS row format support
-- ProtoBuffer compatibility support
-- Protocols for features and knowledge graph serialization
-- Continuously improve our serialization infrastructure for any new protocols
+- C++/Rust object graph serialization support.
+- Golang/Rust/NodeJS row format support.
+- ProtoBuffer compatibility support.
+- Protocols for features and knowledge graph serialization.
+- Continuously improve our serialization infrastructure for any new protocols.
 
 ## How to Build
 
-Please read the [CONTRIBUTING](CONTRIBUTING.md) guide.
+Please read the [CONTRIBUTING](CONTRIBUTING.md) guide for instructions on how to build.
 
 For ecosystem projects, please see https://github.com/fury-project
 
