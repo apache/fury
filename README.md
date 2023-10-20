@@ -9,8 +9,6 @@
 
 Fury is a blazing fast multi-language serialization framework powered by **jit(just-in-time compilation)** and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
-https://furyio.org
-
 ## Features
 - **Multiple languages**: Java/Python/C++/Golang/Javascript/Rust.
 - **Zero-copy**: cross-language out-of-band serialization inspired
