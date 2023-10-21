@@ -6,6 +6,11 @@ Github repo: https://github.com/alipay/fury
 
 ## Building Fury 🏋🏿‍♀️
 
+### Environment Requirements
+
+- java 1.8+
+- maven 3.6.3+
+
 ### Building Fury Java
 
 ```bash
