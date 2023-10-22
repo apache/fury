@@ -13,6 +13,11 @@ cd java
 mvn clean compile -DskipTests
 ```
 
+#### Environment Requirements
+
+- java 1.8+
+- maven 3.6.3+
+
 ### Building Fury Python
 
 ```bash
@@ -20,6 +25,10 @@ cd python
 pip install pyarrow==6.0.1 Cython wheel numpy pytest
 pip install -v -e .
 ```
+
+#### Environment Requirements
+
+- python3.6+
 
 ### Building Fury C++
 
@@ -36,6 +45,11 @@ pip install pyarrow==6.0.1
 bazel build //src/fury/row:fury_row_format
 ```
 
+#### Environment Requirements
+
+- cpp 11+
+- bazel 4.2
+
 ### Building Fury GoLang
 
 ```bash
@@ -46,3 +60,6 @@ go test -v
 go test -v fury_xlang_test.go
 ```
 
+#### Environment Requirements
+
+- go1.3+
