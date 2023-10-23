@@ -102,8 +102,8 @@ Single thread fury:
 ```java
 Fury fury=Fury.builder()
   .withLanguage(Language.JAVA)
-  // enable referecne tracking for shared/circular reference.
-  // Disable it will have better performance if no duplciate reference.
+  // enable reference tracking for shared/circular reference.
+  // Disable it will have better performance if no duplicate reference.
   .withRefTracking(false)
   .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
   // enable type forward/backward compatibility
@@ -121,8 +121,8 @@ Thread-safe fury:
 ```java
 ThreadSafeFury fury=Fury.builder()
   .withLanguage(Language.JAVA)
-  // enable referecne tracking for shared/circular reference.
-  // Disable it will have better performance if no duplciate reference.
+  // enable reference tracking for shared/circular reference.
+  // Disable it will have better performance if no duplicate reference.
   .withRefTracking(false)
   // compress int for smaller size
   // .withIntCompressed(true)
