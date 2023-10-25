@@ -114,6 +114,7 @@ export const BinaryReader = (config: Config) => {
   function binary(len: number) {
     const result = alloc(len);
     buffer.copy(result, 0, cursor, cursor + len);
+    cursor += len;
     return result;
   }
 
