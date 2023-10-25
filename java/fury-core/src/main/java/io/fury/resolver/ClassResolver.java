@@ -1132,8 +1132,10 @@ public class ClassResolver {
       String msg =
           String.format(
               "%s is not registered, please check whether it's the type you want to serialize or "
-                  + "a **vulnerability**. If safe, registering class by "
-                  + "`Fury#register` will have better performance by skipping classname serialization",
+                  + "a **vulnerability**. If safe, you should invoke `Fury#register` to register class, "
+                  + " which will have better performance by skipping classname serialization. "
+                  + "If your env is 100%% secure, you can also avoid this exception by disabling class "
+                  + "registration check using `FuryBuilder#requireClassRegistration(false)`",
               cls);
       boolean forbidden = BlackList.getDefaultBlackList().contains(cls.getName());
       if (forbidden || !isSecure(extRegistry.registeredClassIdMap, cls)) {
