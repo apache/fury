@@ -70,6 +70,11 @@ public abstract class Serializer<T> {
     throw new UnsupportedOperationException();
   }
 
+  public T copy(T value) {
+    throw new UnsupportedOperationException(
+        String.format("Copy for %s is not supported", value.getClass()));
+  }
+
   public Serializer(Fury fury, Class<T> type) {
     this.fury = fury;
     this.type = type;

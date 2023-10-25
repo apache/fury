@@ -31,7 +31,7 @@ public class Example {
     Fury fury = Fury.builder().withLanguage(Language.JAVA)
       // Allow to deserialize objects unknown types, more flexible 
       // but may be insecure if the classes contains malicious code.
-      // .requireClassRegistration(false)
+      .requireClassRegistration(false)
       .build();
     // Registering types can reduce class name serialization overhead, but not mandatory.
     // If class registration enabled, all custom types must be registered.
