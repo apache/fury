@@ -49,3 +49,11 @@ println(fury.deserialize(fury.serialize(seq)))
 println(fury.deserialize(fury.serialize(list)))
 println(fury.deserialize(fury.serialize(map)))
 ```
+
+# Performance
+Scala collections and generics doesn't follow java collection framework, and is not fully integrated with Fury JIT, 
+the execution will invoke JDK serialization API with fury `ObjectStream` implementation for scala collections, 
+the performance won't be as good as java collections. In future we may provide jit support for scala collections to
+get better performance, see https://github.com/alipay/fury/issues/682.
+
+`case` object are support by fury jit well, the performance will be very good.
