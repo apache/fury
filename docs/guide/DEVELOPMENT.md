@@ -1,3 +1,7 @@
+<!-- fury_frontmatter --
+title: Java Object Graph Guide
+order: 5
+-- fury_frontmatter -->
 # How to build to Fury
 
 ## Get the source code
