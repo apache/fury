@@ -1,5 +1,5 @@
 <!-- fury_frontmatter --
-title: Java Object Graph Guide
+title: Development
 order: 5
 -- fury_frontmatter -->
 # How to build to Fury

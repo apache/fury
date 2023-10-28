@@ -1,5 +1,5 @@
 <!-- fury_frontmatter --
-title: Java Object Graph Guide
+title: Scala Serialization Guide
 order: 4
 -- fury_frontmatter -->
 
@@ -53,7 +53,7 @@ println(fury.deserialize(fury.serialize(map)))
 # Performance
 Scala collections and generics doesn't follow java collection framework, and is not fully integrated with Fury JIT, 
 the execution will invoke JDK serialization API with fury `ObjectStream` implementation for scala collections, 
-the performance won't be as good as java collections. In future we may provide jit support for scala collections to
+the performance won't be as good as fury collections serialization for java. In future we may provide jit support for scala collections to
 get better performance, see https://github.com/alipay/fury/issues/682.
 
-`case` object are support by fury jit well, the performance will be very good.
+`case` object are supported by fury jit well, the performance is as good as fury java.
