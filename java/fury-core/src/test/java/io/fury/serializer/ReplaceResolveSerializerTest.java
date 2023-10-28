@@ -21,12 +21,15 @@ import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.config.Language;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -432,5 +435,53 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     roundCheck(fury1, fury2, ImmutableMap.of("k", 2));
     roundCheck(fury1, fury2, ImmutableMap.of(1, 2));
     roundCheck(fury1, fury2, new SimpleMapTest(ImmutableMap.of("k", 2), ImmutableMap.of(1, 2)));
+  }
+
+  public static class InheritanceTestClass {
+    private byte f1;
+
+    public InheritanceTestClass(byte f1) {
+      this.f1 = f1;
+    }
+
+    public Object writeReplace() {
+      return new InheritanceTestClassProxy(f1);
+    }
+  }
+
+  public static class InheritanceTestClassProxyBase implements Serializable {
+    // Mark as transient to make object serializer unable to work, then only
+    // `writeObject/readObject` can be used for serialization.
+    transient byte[] data;
+
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+      stream.write(data.length);
+      stream.write(data);
+    }
+
+    private void readObject(ObjectInputStream stream) throws IOException {
+      int size = stream.read();
+      data = new byte[size];
+      int read = stream.read(data);
+      Preconditions.checkArgument(read == size);
+    }
+  }
+
+  public static class InheritanceTestClassProxy extends InheritanceTestClassProxyBase {
+    public InheritanceTestClassProxy(byte f1) {
+      data = new byte[] {f1};
+    }
+
+    public Object readResolve() {
+      return new InheritanceTestClass(data[0]);
+    }
+  }
+
+  @Test
+  public void testInheritance() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    byte[] bytes = fury.serialize(new InheritanceTestClass((byte) 10));
+    InheritanceTestClass o = (InheritanceTestClass) fury.deserialize(bytes);
+    assertEquals(o.f1, 10);
   }
 }
