@@ -707,7 +707,14 @@ public final class Fury {
       Preconditions.checkArgument(read == 4);
       int size = buffer.readInt();
       buffer.ensure(size + 4);
-      read = inputStream.read(buffer.getHeapMemory(), 4, size);
+      read = 0;
+      while (read < size) {
+        int count;
+        if ((count = inputStream.read(buffer.getHeapMemory(), read + 4, size - read)) == -1) {
+          break;
+        }
+        read += count;
+      }
       Preconditions.checkArgument(read == size);
       return deserialize(buffer, outOfBandBuffers);
     } catch (IOException e) {
@@ -1132,7 +1139,14 @@ public final class Fury {
         Preconditions.checkArgument(read == 4);
         int size = buffer.readInt();
         buffer.ensure(4 + size);
-        read = inputStream.read(buffer.getHeapMemory(), 4, size);
+        read = 0;
+        while (read < size) {
+          int count;
+          if ((count = inputStream.read(buffer.getHeapMemory(), read + 4, size - read)) == -1) {
+            break;
+          }
+          read += count;
+        }
         Preconditions.checkArgument(read == size);
       }
       Object o = function.apply(buffer);
