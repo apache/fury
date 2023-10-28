@@ -115,7 +115,7 @@ public class ReplaceResolveSerializer extends Serializer {
   }
 
   static JDKReplaceResolveMethodInfoCache newJDKMethodInfoCache(Class<?> cls, Fury fury) {
-    Method writeReplaceMethod, readResolveMethod, writeObjectMethod, readObjectMethod;
+    Method writeReplaceMethod, readResolveMethod;
     // In JDK17, set private jdk method accessible will fail by default, use ObjectStreamClass
     // instead, since it set accessible.
     if (Serializable.class.isAssignableFrom(cls)) {
@@ -124,18 +124,12 @@ public class ReplaceResolveSerializer extends Serializer {
           (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "writeReplaceMethod");
       readResolveMethod =
           (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "readResolveMethod");
-      writeObjectMethod =
-          (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "writeObjectMethod");
-      readObjectMethod =
-          (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "readObjectMethod");
     } else {
       // FIXME class with `writeReplace` method defined should be Serializable,
       //  but hessian ignores this check and many existing system are using hessian,
       //  so we just warn it to keep compatibility with most applications.
       writeReplaceMethod = JavaSerializer.getWriteReplaceMethod(cls);
       readResolveMethod = JavaSerializer.getReadResolveMethod(cls);
-      writeObjectMethod = JavaSerializer.getWriteObjectMethod(cls);
-      readObjectMethod = JavaSerializer.getReadObjectMethod(cls);
       if (writeReplaceMethod != null) {
         LOG.warn(
             "{} doesn't implement {}, but defined writeReplace method {}",
@@ -153,10 +147,9 @@ public class ReplaceResolveSerializer extends Serializer {
     }
     JDKReplaceResolveMethodInfoCache methodInfoCache =
         new JDKReplaceResolveMethodInfoCache(writeReplaceMethod, readResolveMethod, null);
-    boolean hasJDKWriteObjectMethod = writeObjectMethod != null;
-    boolean hasJDKReadObjectMethod = readObjectMethod != null;
     Class<? extends Serializer> serializerClass;
-    if (!hasJDKWriteObjectMethod && !hasJDKReadObjectMethod) {
+    if (JavaSerializer.getReadObjectMethod(cls, true) == null
+        && JavaSerializer.getWriteObjectMethod(cls, true) == null) {
       serializerClass =
           fury.getClassResolver()
               .getObjectSerializerClass(
