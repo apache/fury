@@ -142,18 +142,18 @@ public abstract class CodecBuilder {
     return tryCastIfPublic(expression, targetType, "castedValue");
   }
 
-  /** Returns true if class is accessible from source. */
-  private boolean sourceAccessible(Class<?> clz) {
-    return ReflectionUtils.isPublic(clz) && clz.getCanonicalName() != null;
-  }
-
   protected Expression tryCastIfPublic(
-      Expression expression, TypeToken<?> targetType, String valuePrefix) {
+    Expression expression, TypeToken<?> targetType, String valuePrefix) {
     Class<?> rawType = getRawType(targetType);
     if (sourceAccessible(rawType) && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
       return new Cast(expression, targetType, valuePrefix);
     }
     return expression;
+  }
+
+  /** Returns true if class is accessible from source. */
+  private boolean sourceAccessible(Class<?> clz) {
+    return ReflectionUtils.isPublic(clz) && clz.getCanonicalName() != null;
   }
 
   // left null check in sub class encode method to reduce data dependence.
