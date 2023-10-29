@@ -416,7 +416,8 @@ public class ReflectionUtils {
   /**
    * Returns the canonical name of the underlying class as defined by <cite>The Java Language
    * Specification</cite>. Throw {@link IllegalArgumentException} if the underlying class does not
-   * have a canonical
+   * have a canonical name(i.e., if it is a local or anonymous class or an array whose component
+   * type does not have a canonical name).
    *
    * @throws IllegalArgumentException if the canonical name of the underlying class doesn't exist.
    */

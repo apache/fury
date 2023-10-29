@@ -34,6 +34,8 @@ public final class CodegenSerializer {
 
   public static boolean supportCodegenForJavaSerialization(Class<?> cls) {
     // bean class can be static nested class, but can't be a non-static inner class
+    // If a class is a static class, the enclosing class must not be null.
+    // If enclosing class is null, it must not be a static class.
     return cls.getEnclosingClass() == null || Modifier.isStatic(cls.getModifiers());
   }
 
