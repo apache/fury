@@ -330,7 +330,7 @@ public interface Expression {
           if (valueClass.isArray()) {
             v = String.format("%s.class", TypeUtils.getArrayType((Class<?>) value));
           } else {
-            v = String.format("%s.class", ((Class<?>) (value)).getCanonicalName());
+            v = String.format("%s.class", ReflectionUtils.getCanonicalName((Class<?>) (value)));
           }
           return new ExprCode(FalseLiteral, new LiteralValue(javaType, v));
         } else {
@@ -547,7 +547,6 @@ public interface Expression {
       if (StringUtils.isNotBlank(targetExprCode.code())) {
         codeBuilder.append(targetExprCode.code()).append("\n");
       }
-
       Class<?> rawType = getRawType(type);
       // although isNull is not always used, we place it outside and get freshNames simultaneously
       // to have same suffix, thus get more readability.
@@ -593,7 +592,7 @@ public interface Expression {
             StringUtils.format(
                 "${type} ${value} = ${target}.${fieldName};",
                 "type",
-                getRawType(type).getCanonicalName(),
+                ctx.type(type),
                 "value",
                 value,
                 "target",
@@ -601,8 +600,7 @@ public interface Expression {
                 "fieldName",
                 fieldName);
         codeBuilder.append(code);
-        return new ExprCode(
-            codeBuilder.toString(), FalseLiteral, Code.variable(getRawType(type), value));
+        return new ExprCode(codeBuilder.toString(), FalseLiteral, Code.variable(rawType, value));
       }
     }
 
@@ -723,6 +721,10 @@ public interface Expression {
       inlineCall = inline;
       this.ignoreUpcast = ignoreUpcast;
       checkArgument(!ReflectionUtils.isPrivate(type), "Type %s is private", type);
+      checkArgument(
+          TypeUtils.getRawType(type).getCanonicalName() != null,
+          "Local/Anonymous type %s isn't supported.",
+          type);
     }
 
     @Override
@@ -1152,6 +1154,7 @@ public interface Expression {
 
   class NewInstance implements Expression {
     private TypeToken<?> type;
+    private final Class<?> rawType;
     private String unknownClassName;
     private List<Expression> arguments;
     private Expression outerPointer;
@@ -1178,6 +1181,7 @@ public interface Expression {
 
     private NewInstance(TypeToken<?> type, List<Expression> arguments, Expression outerPointer) {
       this.type = type;
+      rawType = getRawType(type);
       this.outerPointer = outerPointer;
       this.arguments = arguments;
       this.needOuterPointer =
@@ -1192,7 +1196,7 @@ public interface Expression {
     private void check() {
       Preconditions.checkArgument(
           !type.isArray(), "Please use " + NewArray.class + " to create array.");
-      if (unknownClassName == null && arguments.size() > 0) {
+      if (unknownClassName == null && !arguments.isEmpty()) {
         // If unknownClassName is not null, we don't have actual type object,
         // we assume we can create instance of unknownClassName.
         // If arguments size is 0, we can always create instance of class, even by
@@ -1208,6 +1212,8 @@ public interface Expression {
           throw new IllegalArgumentException(msg);
         }
       }
+      checkArgument(
+          rawType.getCanonicalName() != null, "Local/Anonymous type %s isn't supported.", type);
     }
 
     @Override

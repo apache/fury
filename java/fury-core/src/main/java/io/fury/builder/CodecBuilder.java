@@ -127,13 +127,13 @@ public abstract class CodecBuilder {
 
   protected Expression tryCastIfPublic(
       Expression expression, TypeToken<?> targetType, boolean inline) {
-    if (getRawType(targetType) == FinalObjectTypeStub.class) {
+    Class<?> rawType = getRawType(targetType);
+    if (rawType == FinalObjectTypeStub.class) {
       // final field doesn't exist in this class, skip cast.
       return expression;
     }
     if (inline) {
-      if (ReflectionUtils.isPublic(targetType)
-          && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
+      if (sourceAccessible(rawType) && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
         return new Cast(expression, targetType);
       } else {
         return expression;
@@ -142,10 +142,15 @@ public abstract class CodecBuilder {
     return tryCastIfPublic(expression, targetType, "castedValue");
   }
 
+  /** Returns true if class is accessible from source. */
+  private boolean sourceAccessible(Class<?> clz) {
+    return ReflectionUtils.isPublic(clz) && clz.getCanonicalName() != null;
+  }
+
   protected Expression tryCastIfPublic(
       Expression expression, TypeToken<?> targetType, String valuePrefix) {
-    if (ReflectionUtils.isPublic(targetType)
-        && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
+    Class<?> rawType = getRawType(targetType);
+    if (sourceAccessible(rawType) && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
       return new Cast(expression, targetType, valuePrefix);
     }
     return expression;
@@ -310,7 +315,7 @@ public abstract class CodecBuilder {
     if (value instanceof Inlineable) {
       ((Inlineable) value).inline();
     }
-    if (duplicatedFields.contains(fieldName) || !Modifier.isPublic(beanClass.getModifiers())) {
+    if (duplicatedFields.contains(fieldName) || !sourceAccessible(beanClass)) {
       return unsafeSetField(bean, d, value);
     }
     if (!Modifier.isFinal(d.getModifiers()) && Modifier.isPublic(d.getModifiers())) {
@@ -400,7 +405,7 @@ public abstract class CodecBuilder {
   /** Returns an Expression that create a new java object of type {@link CodecBuilder#beanClass}. */
   protected Expression newBean() {
     // TODO allow default access-level class.
-    if (Modifier.isPublic(beanClass.getModifiers())) {
+    if (sourceAccessible(beanClass)) {
       return new Expression.NewInstance(beanType);
     } else {
       return new StaticInvoke(Platform.class, "newInstance", OBJECT_TYPE, beanClassExpr());

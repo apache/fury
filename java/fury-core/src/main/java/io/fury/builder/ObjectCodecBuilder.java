@@ -41,7 +41,6 @@ import io.fury.codegen.Expression.Inlineable;
 import io.fury.codegen.Expression.Invoke;
 import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Literal;
-import io.fury.codegen.Expression.NewArray;
 import io.fury.codegen.Expression.NewInstance;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.ReplaceStub;
@@ -465,9 +464,6 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   }
 
   protected Expression buildComponentsArray() {
-    new NewArray(
-        OBJECT_TYPE,
-        Literal.ofInt(Objects.requireNonNull(RecordUtils.getRecordComponents(beanClass)).length));
     return new StaticInvoke(
         Platform.class, "copyObjectArray", OBJECT_ARRAY_TYPE, recordComponentDefaultValues);
   }

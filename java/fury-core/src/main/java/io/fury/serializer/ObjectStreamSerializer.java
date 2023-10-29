@@ -92,8 +92,8 @@ public class ObjectStreamSerializer extends Serializer {
         "{} customized jdk serialization, which is inefficient. "
             + "Please replace it with a {} or implements {}",
         type,
-        Serializer.class.getCanonicalName(),
-        Externalizable.class.getCanonicalName());
+        Serializer.class.getName(),
+        Externalizable.class.getName());
     // stream serializer may be data serializer of ReplaceResolver serializer.
     fury.getClassResolver().setSerializerIfAbsent(type, this);
     Constructor constructor;
