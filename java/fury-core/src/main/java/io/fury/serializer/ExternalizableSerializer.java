@@ -65,7 +65,7 @@ public class ExternalizableSerializer<T extends Externalizable> extends Serializ
     T t;
     if (constructor != null) {
       try {
-        t = (T) constructor.invokeWithArguments();
+        t = (T) constructor.invoke();
       } catch (Throwable e) {
         throw new RuntimeException(e);
       }
