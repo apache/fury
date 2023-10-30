@@ -515,12 +515,12 @@ public final class StringSerializer extends Serializer<String> {
 
   private static final MethodHandles.Lookup STRING_LOOK_UP =
       _JDKAccess._trustedLookup(String.class);
-  private static final BiFunction<char[], Boolean, String> JAVA8_STRING_ZERO_COPY_CTR =
+  private static final BiFunction<char[], Boolean, String> CHARS_STRING_ZERO_COPY_CTR =
       getCharsStringZeroCopyCtr();
-  private static final BiFunction<byte[], Byte, String> JAVA11_STRING_ZERO_COPY_CTR =
+  private static final BiFunction<byte[], Byte, String> BYTES_STRING_ZERO_COPY_CTR =
       getBytesStringZeroCopyCtr();
-  private static final Function<byte[], String> JAVA11_LATIN_STRING_ZERO_COPY_CTR =
-      getJava11LatinStringZeroCopyCtr();
+  private static final Function<byte[], String> LATIN_BYTES_STRING_ZERO_COPY_CTR =
+      getLatinBytesStringZeroCopyCtr();
 
   public static String newCharsStringZeroCopy(char[] data) {
     if (!STRING_VALUE_FIELD_IS_CHARS) {
@@ -529,7 +529,7 @@ public final class StringSerializer extends Serializer<String> {
               "String value isn't char[], current java %s isn't supported", Platform.JAVA_VERSION));
     }
     try {
-      if (JAVA8_STRING_ZERO_COPY_CTR == null) {
+      if (CHARS_STRING_ZERO_COPY_CTR == null) {
         // 1. As documented in `Subsequent Modification of final Fields` in
         // https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#d5e34106
         // Maybe we can use `UNSAFE.putObject` to update String field to avoid reflection overhead.
@@ -544,7 +544,7 @@ public final class StringSerializer extends Serializer<String> {
         return str;
       } else {
         // 25% faster than unsafe put field, only 10% slower than `new String(str)`
-        return JAVA8_STRING_ZERO_COPY_CTR.apply(data, Boolean.TRUE);
+        return CHARS_STRING_ZERO_COPY_CTR.apply(data, Boolean.TRUE);
       }
     } catch (Throwable e) {
       throw new RuntimeException(e);
@@ -563,22 +563,22 @@ public final class StringSerializer extends Serializer<String> {
       // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
       // string length 230.
       // 50% faster than unsafe put field in java11 for string length 10.
-      if (JAVA11_LATIN_STRING_ZERO_COPY_CTR != null) {
-        return JAVA11_LATIN_STRING_ZERO_COPY_CTR.apply(data);
+      if (LATIN_BYTES_STRING_ZERO_COPY_CTR != null) {
+        return LATIN_BYTES_STRING_ZERO_COPY_CTR.apply(data);
       } else {
         // JDK17 removed newStringLatin1
-        return JAVA11_STRING_ZERO_COPY_CTR.apply(data, LATIN1_BOXED);
+        return BYTES_STRING_ZERO_COPY_CTR.apply(data, LATIN1_BOXED);
       }
     } else if (coder == UTF16) {
       // avoid byte box cost.
-      return JAVA11_STRING_ZERO_COPY_CTR.apply(data, UTF16_BOXED);
+      return BYTES_STRING_ZERO_COPY_CTR.apply(data, UTF16_BOXED);
     } else {
       // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
       // string length 230.
       // 50% faster than unsafe put field in java11 for string length 10.
       // `invokeExact` must pass exact params with exact types:
       // `(Object) data, coder` will throw WrongMethodTypeException
-      return JAVA11_STRING_ZERO_COPY_CTR.apply(data, coder);
+      return BYTES_STRING_ZERO_COPY_CTR.apply(data, coder);
     }
   }
 
@@ -632,7 +632,7 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  private static Function<byte[], String> getJava11LatinStringZeroCopyCtr() {
+  private static Function<byte[], String> getLatinBytesStringZeroCopyCtr() {
     if (!STRING_VALUE_FIELD_IS_BYTES) {
       return null;
     }
@@ -640,7 +640,7 @@ public final class StringSerializer extends Serializer<String> {
       return null;
     }
     try {
-      Class clazz = Class.forName("java.lang.StringCoding");
+      Class<?> clazz = Class.forName("java.lang.StringCoding");
       MethodHandles.Lookup caller = STRING_LOOK_UP.in(clazz);
       // JDK17 removed this method.
       MethodHandle handle =
