@@ -701,7 +701,6 @@ public final class Fury {
   }
 
   public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
-    buffer.readerIndex(0);
     try {
       transferObjectFromStream(inputStream, buffer);
       return deserialize(buffer, outOfBandBuffers);
@@ -1114,11 +1113,11 @@ public final class Fury {
 
   private Object deserializeFromStream(
       InputStream inputStream, Function<MemoryBuffer, Object> function) {
-    buffer.readerIndex(0);
     try {
       boolean isBis = inputStream.getClass() == ByteArrayInputStream.class;
       byte[] oldBytes = null;
       if (isBis) {
+        buffer.readerIndex(0);
         oldBytes = buffer.getHeapMemory(); // Note: This should not be null.
         MemoryUtils.wrap((ByteArrayInputStream) inputStream, buffer);
         buffer.increaseReaderIndex(4); // skip size.
@@ -1138,6 +1137,7 @@ public final class Fury {
 
   private static void transferObjectFromStream(InputStream inputStream, MemoryBuffer buffer)
       throws IOException {
+    buffer.readerIndex(0);
     int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
     Preconditions.checkArgument(read == 4);
     int size = buffer.readInt();
