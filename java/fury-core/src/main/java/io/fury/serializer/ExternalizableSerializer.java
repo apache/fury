@@ -21,11 +21,10 @@ import io.fury.io.FuryObjectInput;
 import io.fury.io.FuryObjectOutput;
 import io.fury.memory.MemoryBuffer;
 import io.fury.util.Platform;
-import io.fury.util.Utils;
+import io.fury.util.ReflectionUtils;
 import java.io.Externalizable;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.invoke.MethodHandle;
 
 /**
  * Serializer for class implements {@link Externalizable}.
@@ -33,18 +32,13 @@ import java.lang.reflect.InvocationTargetException;
  * @author chaokunyang
  */
 public class ExternalizableSerializer<T extends Externalizable> extends Serializer<T> {
-  private Constructor<T> constructor;
+  private final MethodHandle constructor;
   private final FuryObjectInput objectInput;
   private final FuryObjectOutput objectOutput;
 
   public ExternalizableSerializer(Fury fury, Class<T> cls) {
     super(fury, cls);
-    try {
-      constructor = cls.getConstructor();
-      constructor.setAccessible(true);
-    } catch (NoSuchMethodException e) {
-      Utils.ignore(e);
-    }
+    constructor = ReflectionUtils.getCtrHandle(cls, false);
 
     objectInput = new FuryObjectInput(fury, null);
     objectOutput = new FuryObjectOutput(fury, null);
@@ -66,12 +60,13 @@ public class ExternalizableSerializer<T extends Externalizable> extends Serializ
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public T read(MemoryBuffer buffer) {
     T t;
     if (constructor != null) {
       try {
-        t = constructor.newInstance();
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        t = (T) constructor.invokeWithArguments();
+      } catch (Throwable e) {
         throw new RuntimeException(e);
       }
     } else {
