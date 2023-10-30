@@ -702,7 +702,7 @@ public final class Fury {
 
   public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
-      transferObjectFromStream(inputStream, buffer);
+      readToBufferFromStream(inputStream, buffer);
       return deserialize(buffer, outOfBandBuffers);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -1122,7 +1122,7 @@ public final class Fury {
         MemoryUtils.wrap((ByteArrayInputStream) inputStream, buffer);
         buffer.increaseReaderIndex(4); // skip size.
       } else {
-        transferObjectFromStream(inputStream, buffer);
+        readToBufferFromStream(inputStream, buffer);
       }
       Object o = function.apply(buffer);
       if (isBis) {
@@ -1135,7 +1135,7 @@ public final class Fury {
     }
   }
 
-  private static void transferObjectFromStream(InputStream inputStream, MemoryBuffer buffer)
+  private static void readToBufferFromStream(InputStream inputStream, MemoryBuffer buffer)
       throws IOException {
     buffer.readerIndex(0);
     int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
