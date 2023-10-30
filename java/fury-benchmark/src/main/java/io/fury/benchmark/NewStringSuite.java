@@ -51,7 +51,7 @@ public class NewStringSuite {
 
   // @Benchmark
   public Object createJDK8StringByMethodHandle() {
-    return StringSerializer.newJava8StringByZeroCopy(strData);
+    return StringSerializer.newCharsStringZeroCopy(strData);
   }
 
   // @Benchmark

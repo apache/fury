@@ -236,9 +236,9 @@ public class Serializers {
       } else {
         char[] v = (char[]) getValue.apply(value);
         if (StringSerializer.isLatin(v)) {
-          stringSerializer.writeJDK8Latin(buffer, v, value.length());
+          stringSerializer.writeCharsLatin(buffer, v, value.length());
         } else {
-          stringSerializer.writeJDK8UTF16(buffer, v, value.length());
+          stringSerializer.writeCharsUTF16(buffer, v, value.length());
         }
       }
     }

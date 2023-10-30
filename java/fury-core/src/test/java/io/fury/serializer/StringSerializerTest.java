@@ -16,7 +16,7 @@
 
 package io.fury.serializer;
 
-import static io.fury.serializer.StringSerializer.newJava11StringByZeroCopy;
+import static io.fury.serializer.StringSerializer.newBytesStringZeroCopy;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -83,7 +83,7 @@ public class StringSerializerTest extends FuryTestBase {
       if (STRING_VALUE_FIELD_IS_BYTES) {
         return readJDK11String(buffer);
       } else if (STRING_VALUE_FIELD_IS_CHARS) {
-        return StringSerializer.newJava8StringByZeroCopy(buffer.readCharsWithSizeEmbedded());
+        return StringSerializer.newCharsStringZeroCopy(buffer.readCharsWithSizeEmbedded());
       }
       return null;
     } catch (Exception e) {
@@ -94,7 +94,7 @@ public class StringSerializerTest extends FuryTestBase {
   static String readJDK11String(MemoryBuffer buffer) {
     byte coder = buffer.readByte();
     byte[] value = buffer.readBytesWithSizeEmbedded();
-    return newJava11StringByZeroCopy(coder, value);
+    return newBytesStringZeroCopy(coder, value);
   }
 
   private static boolean writeJavaStringZeroCopy(MemoryBuffer buffer, String value) {
@@ -108,7 +108,7 @@ public class StringSerializerTest extends FuryTestBase {
       valueIsCharsField.setAccessible(true);
       boolean STRING_VALUE_FIELD_IS_CHARS = (Boolean) valueIsCharsField.get(null);
       if (STRING_VALUE_FIELD_IS_BYTES) {
-        StringSerializer.writeJDK11String(buffer, value);
+        StringSerializer.writeBytesString(buffer, value);
       } else if (STRING_VALUE_FIELD_IS_CHARS) {
         writeJDK8String(buffer, value);
       } else {
