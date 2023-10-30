@@ -39,7 +39,6 @@ import io.fury.test.bean.Struct;
 import io.fury.type.Descriptor;
 import io.fury.util.DateTimeUtils;
 import io.fury.util.Platform;
-
 import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
@@ -507,12 +506,13 @@ public class FuryTest extends FuryTestBase {
     fury.serialize(bas, beanA);
     fury.serialize(bas, beanA);
     bas.flush();
-    InputStream bis = new BufferedInputStream(new ByteArrayInputStream(bas.toByteArray())) {
-      @Override
-      public synchronized int read(byte[] b, int off, int len) throws IOException {
-        return in.read(b, off, Math.min(len, 100));
-      }
-    };
+    InputStream bis =
+        new BufferedInputStream(new ByteArrayInputStream(bas.toByteArray())) {
+          @Override
+          public synchronized int read(byte[] b, int off, int len) throws IOException {
+            return in.read(b, off, Math.min(len, 100));
+          }
+        };
     bis.mark(10);
     Object newObj = fury.deserialize(bis);
     assertEquals(newObj, beanA);

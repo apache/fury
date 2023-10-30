@@ -1136,7 +1136,8 @@ public final class Fury {
     }
   }
 
-  private static void transferObjectFromStream(InputStream inputStream, MemoryBuffer buffer) throws IOException {
+  private static void transferObjectFromStream(InputStream inputStream, MemoryBuffer buffer)
+      throws IOException {
     int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
     Preconditions.checkArgument(read == 4);
     int size = buffer.readInt();
