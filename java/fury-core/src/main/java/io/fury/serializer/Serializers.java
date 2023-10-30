@@ -177,16 +177,12 @@ public class Serializers {
     if (builderCache == null) {
       Function getValue =
           (Function) makeGetterFunction(StringBuilder.class.getSuperclass(), "getValue");
-      if (Platform.JAVA_VERSION > 8) {
-        try {
-          Method getCoderMethod = StringBuilder.class.getSuperclass().getDeclaredMethod("getCoder");
-          ToIntFunction<CharSequence> getCoder =
-              (ToIntFunction<CharSequence>) makeGetterFunction(getCoderMethod, int.class);
-          builderCache = Tuple2.of(getCoder, getValue);
-        } catch (NoSuchMethodException e) {
-          builderCache = Tuple2.of(null, getValue);
-        }
-      } else {
+      try {
+        Method getCoderMethod = StringBuilder.class.getSuperclass().getDeclaredMethod("getCoder");
+        ToIntFunction<CharSequence> getCoder =
+            (ToIntFunction<CharSequence>) makeGetterFunction(getCoderMethod, int.class);
+        builderCache = Tuple2.of(getCoder, getValue);
+      } catch (NoSuchMethodException e) {
         builderCache = Tuple2.of(null, getValue);
       }
     }
