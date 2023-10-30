@@ -60,8 +60,8 @@ public class JavaSerializer extends Serializer {
           "{} use java built-in serialization, which is inefficient. "
               + "Please replace it with a {} or implements {}",
           cls,
-          Serializer.class.getCanonicalName(),
-          Externalizable.class.getCanonicalName());
+          Serializer.class.getName(),
+          Externalizable.class.getName());
     }
     objectInput = new FuryObjectInput(fury, null);
     objectOutput = new FuryObjectOutput(fury, null);

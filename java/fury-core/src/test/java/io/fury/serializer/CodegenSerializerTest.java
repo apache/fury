@@ -17,6 +17,7 @@
 package io.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
@@ -274,9 +275,37 @@ public class CodegenSerializerTest extends FuryTestBase {
 
   @Test
   public void testPrivateInterfaceField() {
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
-    TestClass1 o = serDe(fury, new TestClass1());
+    TestClass1 o = serDe(getJavaFury(), new TestClass1());
     Assert.assertEquals(o.a.t(), 1);
     Assert.assertEquals(o.b.t(), 2);
+  }
+
+  private static final Object subclassObject = new B() {};
+
+  @Test
+  public void testAnonymousClass() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    // anonymous class never static
+    serDeCheckSerializer(fury, subclassObject, "Serializer");
+  }
+
+  @Test
+  public void testLocalClass() {
+    class A {
+      int f1;
+    }
+    A a = new A();
+    a.f1 = 10;
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    A o = serDe(fury, a);
+    assertEquals(o.f1, a.f1);
+    // local class never static
+    assertSame(fury.getClassResolver().getSerializer(A.class).getClass(), ObjectSerializer.class);
+    // TODO how to create a class with `Class#getCanonicalName` returns null and static still.
+    // for scala 3:
+    // `enum ColorEnum { case Red, Green, Blue }`
+    // `case class Colors(set: Set[ColorEnum])`
+    // ColorEnum.Green.getClass is a static local class.
+    // see https://github.com/alipay/fury/issues/1033
   }
 }

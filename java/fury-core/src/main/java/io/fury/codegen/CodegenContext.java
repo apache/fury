@@ -29,6 +29,7 @@ import com.google.common.reflect.TypeToken;
 import io.fury.codegen.Expression.Reference;
 import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
+import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -208,19 +209,7 @@ public class CodegenContext {
     if (clz1.isArray()) {
       return newNames("arr", name2);
     } else {
-      String type = type(clz1);
-      int index = type.lastIndexOf(".");
-      String name;
-      if (index >= 0) {
-        name = StringUtils.uncapitalize(type.substring(index + 1));
-      } else {
-        name = StringUtils.uncapitalize(type);
-      }
-      if (JAVA_RESERVED_WORDS.contains(name)) {
-        return newNames("value", name2);
-      } else {
-        return newNames(name, name2);
-      }
+      return newNames(namePrefix(clz1), name2);
     }
   }
 
@@ -257,7 +246,8 @@ public class CodegenContext {
     if (clz.isArray()) {
       return "arr";
     } else {
-      String type = type(clz);
+      String canonicalName = clz.getCanonicalName();
+      String type = canonicalName != null ? type(clz) : "Object";
       int index = type.lastIndexOf(".");
       String name;
       if (index >= 0) {
@@ -265,7 +255,6 @@ public class CodegenContext {
       } else {
         name = StringUtils.uncapitalize(type);
       }
-
       if (JAVA_RESERVED_WORDS.contains(name)) {
         return "value";
       } else {
@@ -285,7 +274,7 @@ public class CodegenContext {
     if (clz.isArray()) {
       return getArrayType(clz);
     }
-    String type = clz.getCanonicalName();
+    String type = ReflectionUtils.getCanonicalName(clz);
     if (type.startsWith("java.lang")) {
       if (!type.substring("java.lang.".length()).contains(".")) {
         return clz.getSimpleName();
@@ -335,7 +324,7 @@ public class CodegenContext {
    */
   public void addImports(Class<?>... classes) {
     for (Class<?> clz : classes) {
-      imports.add(clz.getCanonicalName());
+      imports.add(ReflectionUtils.getCanonicalName(clz));
     }
   }
 
@@ -357,7 +346,7 @@ public class CodegenContext {
    * @param cls class to be imported
    */
   public void addImport(Class<?> cls) {
-    this.imports.add(cls.getCanonicalName());
+    this.imports.add(ReflectionUtils.getCanonicalName(cls));
   }
 
   /**

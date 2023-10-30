@@ -22,6 +22,7 @@ import com.google.common.reflect.TypeParameter;
 import com.google.common.reflect.TypeToken;
 import io.fury.collection.IdentityMap;
 import io.fury.collection.Tuple2;
+import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
@@ -374,7 +375,7 @@ public class TypeUtils {
   /** Returns s string that represents array type declaration of type. */
   public static String getArrayType(Class<?> type) {
     Tuple2<Class<?>, Integer> info = getArrayComponentInfo(type);
-    StringBuilder typeBuilder = new StringBuilder(info.f0.getCanonicalName());
+    StringBuilder typeBuilder = new StringBuilder(ReflectionUtils.getCanonicalName(info.f0));
     for (int i = 0; i < info.f1; i++) {
       typeBuilder.append("[]");
     }
@@ -383,7 +384,7 @@ public class TypeUtils {
 
   /** Create an array type declaration from elemType and dimensions. */
   public static String getArrayType(Class<?> elemType, int[] dimensions) {
-    StringBuilder typeBuilder = new StringBuilder(elemType.getCanonicalName());
+    StringBuilder typeBuilder = new StringBuilder(ReflectionUtils.getCanonicalName(elemType));
     for (int i = 0; i < dimensions.length; i++) {
       typeBuilder.append('[').append(dimensions[i]).append(']');
     }
