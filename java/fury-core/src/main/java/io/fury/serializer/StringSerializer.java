@@ -136,7 +136,7 @@ public final class StringSerializer extends Serializer<String> {
   public Expression writeStringExpr(Expression strSerializer, Expression buffer, Expression str) {
     if (isJava) {
       if (STRING_VALUE_FIELD_IS_BYTES) {
-        return new StaticInvoke(StringSerializer.class, "writeJDK11String", buffer, str);
+        return new StaticInvoke(StringSerializer.class, "writeBytesString", buffer, str);
       } else {
         if (!STRING_VALUE_FIELD_IS_CHARS) {
           throw new UnsupportedOperationException();
