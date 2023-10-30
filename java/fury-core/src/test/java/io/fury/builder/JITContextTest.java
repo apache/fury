@@ -48,7 +48,7 @@ public class JITContextTest extends FuryTestBase {
         .toArray(Object[][]::new);
   }
 
-  @Test(dataProvider = "config1")
+  @Test(dataProvider = "config1", timeOut = 60_000)
   public void testAsyncCompilation(boolean referenceTracking, CompatibleMode compatibleMode)
       throws InterruptedException {
     Fury fury =
@@ -88,7 +88,7 @@ public class JITContextTest extends FuryTestBase {
     }
   }
 
-  @Test(dataProvider = "config1")
+  @Test(dataProvider = "config1", timeOut = 60_000)
   public void testAsyncCompilationMetaShared(
       boolean referenceTracking, CompatibleMode compatibleMode) throws InterruptedException {
     Fury fury =
