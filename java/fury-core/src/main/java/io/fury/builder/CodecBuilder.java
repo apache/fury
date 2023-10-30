@@ -143,7 +143,7 @@ public abstract class CodecBuilder {
   }
 
   protected Expression tryCastIfPublic(
-    Expression expression, TypeToken<?> targetType, String valuePrefix) {
+      Expression expression, TypeToken<?> targetType, String valuePrefix) {
     Class<?> rawType = getRawType(targetType);
     if (sourceAccessible(rawType) && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
       return new Cast(expression, targetType, valuePrefix);
