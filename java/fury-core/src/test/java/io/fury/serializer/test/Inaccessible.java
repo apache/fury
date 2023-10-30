@@ -23,18 +23,22 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import lombok.Data;
 
+/**
+ * Package-private class for testing {@link io.fury.serializer.ExternalizableSerializer} when the
+ * serialized class is inaccessible to the serializer.
+ */
 @Data
-class A implements Externalizable {
+class Inaccessible implements Externalizable {
   private int x;
   private int y;
   private byte[] bytes;
 
-  static A create(int x, int y, byte[] bytes) {
-    A a = new A();
-    a.x = x;
-    a.y = y;
-    a.bytes = bytes;
-    return a;
+  static Inaccessible create(int x, int y, byte[] bytes) {
+    Inaccessible i = new Inaccessible();
+    i.x = x;
+    i.y = y;
+    i.bytes = bytes;
+    return i;
   }
 
   @Override

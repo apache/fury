@@ -27,8 +27,8 @@ import org.testng.annotations.Test;
 public class ExternalizableSerializerTest {
 
   @Test
-  public void testExternalizable() {
-    Externalizable a = Factory.newA(1, 1, "bytes".getBytes());
+  public void testInaccessibleExternalizable() {
+    Externalizable e = Factory.newInstance(1, 1, "bytes".getBytes());
 
     Fury fury =
         Fury.builder()
@@ -36,6 +36,6 @@ public class ExternalizableSerializerTest {
             .withRefTracking(false)
             .requireClassRegistration(false)
             .build();
-    assertEquals(a, fury.deserialize(fury.serialize(a)));
+    assertEquals(e, fury.deserialize(fury.serialize(e)));
   }
 }

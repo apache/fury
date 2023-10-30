@@ -18,8 +18,12 @@ package io.fury.serializer.test;
 
 import java.io.Externalizable;
 
+/**
+ * Since {@link Inaccessible} must not be public for the test, we instead provide a public factory
+ * method so that the test can create instances.
+ */
 public class Factory {
-  public static Externalizable newA(int x, int y, byte[] bytes) {
-    return A.create(x, y, bytes);
+  public static Externalizable newInstance(int x, int y, byte[] bytes) {
+    return Inaccessible.create(x, y, bytes);
   }
 }
