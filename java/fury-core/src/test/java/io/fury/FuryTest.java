@@ -39,10 +39,7 @@ import io.fury.test.bean.Struct;
 import io.fury.type.Descriptor;
 import io.fury.util.DateTimeUtils;
 import io.fury.util.Platform;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -487,6 +484,36 @@ public class FuryTest extends FuryTestBase {
     fury.serialize(bas, beanA);
     bas.flush();
     ByteArrayInputStream bis = new ByteArrayInputStream(bas.toByteArray());
+    Object newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+    newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+
+    fury = Fury.builder().requireClassRegistration(false).build();
+    // test reader buffer grow
+    bis = new ByteArrayInputStream(bas.toByteArray());
+    newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+    newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+  }
+
+  @Test
+  public void testBufferedStream() throws IOException {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    ByteArrayOutputStream bas = new ByteArrayOutputStream();
+    BeanA beanA = BeanA.createBeanA(2);
+    fury.serialize(bas, beanA);
+    fury.serialize(bas, beanA);
+    bas.flush();
+    InputStream bis =
+        new BufferedInputStream(new ByteArrayInputStream(bas.toByteArray())) {
+          @Override
+          public synchronized int read(byte[] b, int off, int len) throws IOException {
+            return in.read(b, off, Math.min(len, 100));
+          }
+        };
+    bis.mark(10);
     Object newObj = fury.deserialize(bis);
     assertEquals(newObj, beanA);
     newObj = fury.deserialize(bis);

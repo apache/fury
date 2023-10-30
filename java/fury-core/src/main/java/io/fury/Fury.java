@@ -701,14 +701,8 @@ public final class Fury {
   }
 
   public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
-    buffer.readerIndex(0);
     try {
-      int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
-      Preconditions.checkArgument(read == 4);
-      int size = buffer.readInt();
-      buffer.ensure(size + 4);
-      read = inputStream.read(buffer.getHeapMemory(), 4, size);
-      Preconditions.checkArgument(read == size);
+      readToBufferFromStream(inputStream, buffer);
       return deserialize(buffer, outOfBandBuffers);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -1119,21 +1113,16 @@ public final class Fury {
 
   private Object deserializeFromStream(
       InputStream inputStream, Function<MemoryBuffer, Object> function) {
-    buffer.readerIndex(0);
     try {
       boolean isBis = inputStream.getClass() == ByteArrayInputStream.class;
       byte[] oldBytes = null;
       if (isBis) {
+        buffer.readerIndex(0);
         oldBytes = buffer.getHeapMemory(); // Note: This should not be null.
         MemoryUtils.wrap((ByteArrayInputStream) inputStream, buffer);
         buffer.increaseReaderIndex(4); // skip size.
       } else {
-        int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
-        Preconditions.checkArgument(read == 4);
-        int size = buffer.readInt();
-        buffer.ensure(4 + size);
-        read = inputStream.read(buffer.getHeapMemory(), 4, size);
-        Preconditions.checkArgument(read == size);
+        readToBufferFromStream(inputStream, buffer);
       }
       Object o = function.apply(buffer);
       if (isBis) {
@@ -1144,6 +1133,24 @@ public final class Fury {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private static void readToBufferFromStream(InputStream inputStream, MemoryBuffer buffer)
+      throws IOException {
+    buffer.readerIndex(0);
+    int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
+    Preconditions.checkArgument(read == 4);
+    int size = buffer.readInt();
+    buffer.ensure(4 + size);
+    read = 0;
+    while (read < size) {
+      int count;
+      if ((count = inputStream.read(buffer.getHeapMemory(), read + 4, size - read)) == -1) {
+        break;
+      }
+      read += count;
+    }
+    Preconditions.checkArgument(read == size);
   }
 
   public void reset() {
