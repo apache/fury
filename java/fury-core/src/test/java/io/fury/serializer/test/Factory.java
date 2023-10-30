@@ -14,28 +14,16 @@
  * limitations under the License.
  */
 
-package io.fury.serializer;
+package io.fury.serializer.test;
 
-import static org.testng.Assert.assertEquals;
-
-import io.fury.Fury;
-import io.fury.config.Language;
-import io.fury.serializer.test.Factory;
 import java.io.Externalizable;
-import org.testng.annotations.Test;
 
-public class ExternalizableSerializerTest {
-
-  @Test
-  public void testInaccessibleExternalizable() {
-    Externalizable e = Factory.newInstance(1, 1, "bytes".getBytes());
-
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(false)
-            .requireClassRegistration(false)
-            .build();
-    assertEquals(e, fury.deserialize(fury.serialize(e)));
+/**
+ * Since {@link Inaccessible} must not be public for the test, we instead provide a public factory
+ * method so that the test can create instances.
+ */
+public class Factory {
+  public static Externalizable newInstance(int x, int y, byte[] bytes) {
+    return Inaccessible.create(x, y, bytes);
   }
 }
