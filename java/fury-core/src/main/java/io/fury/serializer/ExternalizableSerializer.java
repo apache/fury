@@ -41,6 +41,7 @@ public class ExternalizableSerializer<T extends Externalizable> extends Serializ
     super(fury, cls);
     try {
       constructor = cls.getConstructor();
+      constructor.setAccessible(true);
     } catch (NoSuchMethodException e) {
       Utils.ignore(e);
     }
