@@ -184,9 +184,8 @@ public class Serializers {
               (ToIntFunction<CharSequence>) makeGetterFunction(getCoderMethod, int.class);
           builderCache = Tuple2.of(getCoder, getValue);
         } catch (NoSuchMethodException e) {
-          throw new RuntimeException(e);
+          builderCache = Tuple2.of(null, getValue);
         }
-
       } else {
         builderCache = Tuple2.of(null, getValue);
       }
@@ -220,7 +219,7 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, T value) {
-      if (Platform.JAVA_VERSION > 8) {
+      if (getCoder != null) {
         int coder = getCoder.applyAsInt(value);
         byte[] v = (byte[]) getValue.apply(value);
         buffer.writeByte(coder);
