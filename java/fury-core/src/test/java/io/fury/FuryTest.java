@@ -594,4 +594,20 @@ public class FuryTest extends FuryTestBase {
     obj.id = UUID.randomUUID();
     serDeCheckSerializer(fury, obj, "Codec");
   }
+
+  @Test
+  public void testCircularReferenceStackOverflowMessage() {
+    class A {
+      A f;
+    }
+    A a = new A();
+    a.f = a;
+    Fury fury = Fury.builder().withRefTracking(false).requireClassRegistration(false).build();
+    try {
+      fury.serialize(a);
+      throw new IllegalStateException("StackOverflowError not raised.");
+    } catch (StackOverflowError e) {
+      Assert.assertTrue(e.getMessage().contains("reference"));
+    }
+  }
 }
