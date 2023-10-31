@@ -77,6 +77,7 @@
     <jackson-bom.version>2.13.2.20220328</jackson-bom.version>
     <commons_codec.version>1.13</commons_codec.version>
     <fury.java.rootdir>${basedir}</fury.java.rootdir>
+    <maven-spotless-plugin.version>2.5.0</maven-spotless-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -272,7 +273,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>2.5.0</version>
+        <version>${maven-spotless-plugin.version}</version>
         <configuration>
           <java>
             <googleJavaFormat>
