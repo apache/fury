@@ -16,7 +16,7 @@ https://furyio.org
 - **Zero-copy**: cross-language out-of-band serialization inspired
   by [pickle5](https://peps.python.org/pep-0574/) and off-heap read/write.
 - **High performance**: A highly-extensible JIT framework to generate serializer code at runtime in an async multi-thread way to speed serialization, providing 20-170x speed up by:
-    - reduce memory access by inline variables in generated code.
+    - reduce memory access by inlining variables in generated code.
     - reduce virtual method invocation by inline call in generated code.
     - reduce conditional branching.
     - reduce hash lookup.
@@ -25,8 +25,9 @@ https://furyio.org
 In addition to cross-language serialization, Fury also features at:
 
 - Drop-in replace Java serialization frameworks such as JDK/Kryo/Hessian without modifying any code, but 100x faster. 
-  It can greatly improve the efficiency of high-performance RPC calls, data transfer and object persistence.
-- JDK serialization **100% compatible**: JDK `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` serialization API supported, **JDK8~21** supported.
+  It can greatly improve the efficiency of high-performance RPC calls, data transfer, and object persistence.
+- **100% compatible** with JDK serialization: supporting JDK `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` serialization API. 
+- Supports **Java 8~21**, Java 17+ `record` is supported too.
 - Supports shared and circular reference object serialization for golang.
 - Supports [scala object serialization](https://github.com/alipay/fury/blob/main/docs/guide/scala_guide.md)
 - Supports automatic object serialization for golang.
@@ -43,7 +44,7 @@ multiple binary protocols for those requirements:
 - **Row format protocol**: a cache-friendly binary random access format, supports skipping serialization and partial serialization,
   and can convert to column-format automatically.
 
-New protocols can be added easily based on fury existing buffer, encoding, meta, codegen and other capabilities. All of those share same codebase, and the optimization for one protocol
+New protocols can be easily added based on fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol
 can be reused by another protocol.
 
 ## Benchmarks
@@ -57,7 +58,7 @@ Because Fury generates code at runtime, it is recommended to **warm up** the sys
 ### Java Serialization
 Title containing "compatible" represent schema compatible mode: support type forward/backward compatibility.
 
-Title without "compatible" represent schema consistent mode: class schema must be same between serialization and deserialization.
+Title without "compatible" represent schema consistent mode: class schema must be the same between serialization and deserialization.
 
 `Struct` is a class with [100 primitive fields](https://github.com/alipay/fury/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
 
@@ -345,17 +346,17 @@ print(foo_row.f2[100000], foo_row.f4[100000].f1, foo_row.f4[200000].f2[5])
 ### Schema Compatibility
 Fury java object graph serialization support class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
 
-We plan to add support cross-language serialization after [meta compression](https://github.com/alipay/fury/issues/203) are finished.
+We plan to add support cross-language serialization after [meta compression](https://github.com/alipay/fury/issues/203) is finished.
 
 ### Binary Compatibility
-We are still improving our protocols, binary compatibility are not ensured between fury major releases for now.
-it's ensured between minor version only. Please
+We are still improving our protocols, binary compatibility is not ensured between fury major releases for now.
+it's ensured between minor versions only. Please
 `versioning` your data by fury major version if you will upgrade fury in the future, see [how to upgrade fury](https://github.com/alipay/fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
 
 Binary compatibility will be ensured when fury 1.0 is released.
 
 ## Security
-Static serialization are secure. But dynamic serialization such as fury java/python native serialization supports deserialize unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
+Static serialization is secure. But dynamic serialization such as fury java/python native serialization supports deserialize unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
 
 For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risks.
 
