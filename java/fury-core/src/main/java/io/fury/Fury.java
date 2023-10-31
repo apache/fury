@@ -45,6 +45,7 @@ import io.fury.type.Generics;
 import io.fury.type.Type;
 import io.fury.util.ExceptionUtils;
 import io.fury.util.LoggerFactory;
+import io.fury.util.StringUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -57,8 +58,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
-
-import io.fury.util.StringUtils;
 import org.slf4j.Logger;
 
 /**
