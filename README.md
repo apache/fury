@@ -7,7 +7,7 @@
 [![Twitter](https://img.shields.io/twitter/follow/fury_community?logo=twitter&style=for-the-badge)](https://twitter.com/fury_community)
 
 
-Fury is a blazing fast multi-language serialization framework powered by **jit(just-in-time compilation)** and **zero-copy**, providing up to 170x performance and ultimate ease of use.
+Fury is a blazing-fast multi-language serialization framework powered by **jit(just-in-time compilation)** and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
 https://furyio.org
 
@@ -356,9 +356,9 @@ it's ensured between minor versions only. Please
 Binary compatibility will be ensured when fury 1.0 is released.
 
 ## Security
-Static serialization is secure. But dynamic serialization such as fury java/python native serialization supports deserialize unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
+Static serialization is secure. But dynamic serialization such as fury java/python native serialization supports deserializing unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
 
-For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risks.
+For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risk.
 
 Fury provides a class registration option that is enabled by default for such protocols, allowing only deserialization of trusted registered types or built-in types.
  **Do not disable class registration unless you can ensure your environment is secure**.
