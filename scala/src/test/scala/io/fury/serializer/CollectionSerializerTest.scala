@@ -25,6 +25,7 @@ class CollectionSerializerTest extends AnyWordSpec with Matchers {
   val fury: Fury = Fury.builder()
     .withLanguage(Language.JAVA)
     .withRefTracking(true)
+    .withScalaOptimizationEnabled(true)
     .requireClassRegistration(false).build()
 
   "fury scala collection support" should {

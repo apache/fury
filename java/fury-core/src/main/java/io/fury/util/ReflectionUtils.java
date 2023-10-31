@@ -609,4 +609,14 @@ public class ReflectionUtils {
     // TODO(chaokunyang) add cglib check
     return Functions.isLambda(cls) || isJdkProxy(cls);
   }
+
+  /** Returns true if a class is a scala `object` singleton. */
+  public static boolean isScalaSingletonObject(Class<?> cls) {
+    try {
+      cls.getDeclaredField("MODULE$");
+      return true;
+    } catch (NoSuchFieldException e) {
+      return false;
+    }
+  }
 }

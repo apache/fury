@@ -76,6 +76,7 @@ import io.fury.serializer.UnexistedClassSerializers.UnexistedClassSerializer;
 import io.fury.serializer.UnexistedClassSerializers.UnexistedMetaSharedClass;
 import io.fury.serializer.UnexistedClassSerializers.UnexistedSkipClass;
 import io.fury.serializer.UnmodifiableSerializers;
+import io.fury.serializer.scala.SingletonObjectSerializer;
 import io.fury.type.ClassDef;
 import io.fury.type.Descriptor;
 import io.fury.type.GenericType;
@@ -848,6 +849,10 @@ public class ClassResolver {
           throw new UnsupportedOperationException(
               String.format("Class %s doesn't support serialization.", cls));
         }
+      }
+      if (fury.getConfig().isScalaOptimizationEnabled()
+          && ReflectionUtils.isScalaSingletonObject(cls)) {
+        return SingletonObjectSerializer.class;
       }
       if (Collection.class.isAssignableFrom(cls)) {
         // Serializer of common collection such as ArrayList/LinkedList should be registered
