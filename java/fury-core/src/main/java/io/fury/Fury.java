@@ -257,12 +257,11 @@ public final class Fury {
     }
   }
 
-
   private StackOverflowError processStackOverflowError(StackOverflowError e) {
     if (!refTracking) {
       String msg =
-        "Object may contain circular references, please enable ref tracking "
-          + "by `FuryBuilder#withRefTracking(true)`";
+          "Object may contain circular references, please enable ref tracking "
+              + "by `FuryBuilder#withRefTracking(true)`";
       String rawMessage = e.getMessage();
       if (StringUtils.isNotBlank(rawMessage)) {
         msg += ": " + rawMessage;
