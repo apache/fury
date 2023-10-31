@@ -43,6 +43,7 @@ import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.StringSerializer;
 import io.fury.type.Generics;
 import io.fury.type.Type;
+import io.fury.util.ExceptionUtils;
 import io.fury.util.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -56,6 +57,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
+
+import io.fury.util.StringUtils;
 import org.slf4j.Logger;
 
 /**
@@ -197,50 +200,73 @@ public final class Fury {
 
   /** Serialize <code>obj</code> to a <code>buffer</code>. */
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj, BufferCallback callback) {
+    this.bufferCallback = callback;
+    int maskIndex = buffer.writerIndex();
+    // 1byte used for bit mask
+    buffer.ensure(maskIndex + 1);
+    buffer.writerIndex(maskIndex + 1);
+    byte bitmap = 0;
+    if (obj == null) {
+      bitmap |= isNilFlag;
+      buffer.put(maskIndex, bitmap);
+      return buffer;
+    }
+    // set endian.
+    if (isLittleEndian) {
+      bitmap |= isLittleEndianFlag;
+    }
+    if (language != Language.JAVA) {
+      // set reader as x_lang.
+      bitmap |= isCrossLanguageFlag;
+      // set writer language.
+      buffer.writeByte((byte) Language.JAVA.ordinal());
+    }
+    if (bufferCallback != null) {
+      bitmap |= isOutOfBandFlag;
+    }
+    buffer.put(maskIndex, bitmap);
     try {
       jitContext.lock();
-      this.bufferCallback = callback;
-      int maskIndex = buffer.writerIndex();
-      // 1byte used for bit mask
-      buffer.ensure(maskIndex + 1);
-      buffer.writerIndex(maskIndex + 1);
-      byte bitmap = 0;
-      if (obj == null) {
-        bitmap |= isNilFlag;
-        buffer.put(maskIndex, bitmap);
-        return buffer;
-      }
-      // set endian.
-      if (isLittleEndian) {
-        bitmap |= isLittleEndianFlag;
-      }
-      if (language != Language.JAVA) {
-        // set reader as x_lang.
-        bitmap |= isCrossLanguageFlag;
-        // set writer language.
-        buffer.writeByte((byte) Language.JAVA.ordinal());
-      }
-      if (bufferCallback != null) {
-        bitmap |= isOutOfBandFlag;
-      }
-      buffer.put(maskIndex, bitmap);
       if (language == Language.JAVA) {
-        if (config.shareMetaContext()) {
-          int startOffset = buffer.writerIndex();
-          buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
-          writeRef(buffer, obj);
-          buffer.putInt(startOffset, buffer.writerIndex());
-          classResolver.writeClassDefs(buffer);
-        } else {
-          writeRef(buffer, obj);
-        }
+        write(buffer, obj);
       } else {
         xserializeInternal(buffer, obj);
       }
       return buffer;
+    } catch (StackOverflowError t) {
+      throw processStackOverflowError(t);
     } finally {
       resetWrite();
       jitContext.unlock();
+    }
+  }
+
+  private StackOverflowError processStackOverflowError(StackOverflowError e) {
+    if (!refTracking) {
+      String msg =
+          "Object may contain circular references, please enable ref tracking "
+              + "by `FuryBuilder#withRefTracking(true)`";
+      String rawMessage = e.getMessage();
+      if (StringUtils.isNotBlank(rawMessage)) {
+        msg += ": " + rawMessage;
+      }
+      StackOverflowError t1 = ExceptionUtils.trySetStackOverflowErrorMessage(e, msg);
+      if (t1 != null) {
+        return t1;
+      }
+    }
+    throw e;
+  }
+
+  private void write(MemoryBuffer buffer, Object obj) {
+    if (config.shareMetaContext()) {
+      int startOffset = buffer.writerIndex();
+      buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
+      writeRef(buffer, obj);
+      buffer.putInt(startOffset, buffer.writerIndex());
+      classResolver.writeClassDefs(buffer);
+    } else {
+      writeRef(buffer, obj);
     }
   }
 
@@ -955,6 +981,8 @@ public final class Fury {
           writeData(buffer, classInfo, obj);
         }
       }
+    } catch (StackOverflowError t) {
+      throw processStackOverflowError(t);
     } finally {
       resetWrite();
       jitContext.unlock();
@@ -1026,15 +1054,9 @@ public final class Fury {
   public void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
-      if (config.shareMetaContext()) {
-        int startOffset = buffer.writerIndex();
-        buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
-        writeRef(buffer, obj);
-        buffer.putInt(startOffset, buffer.writerIndex());
-        classResolver.writeClassDefs(buffer);
-      } else {
-        writeRef(buffer, obj);
-      }
+      write(buffer, obj);
+    } catch (StackOverflowError t) {
+      throw processStackOverflowError(t);
     } finally {
       resetWrite();
       jitContext.unlock();
