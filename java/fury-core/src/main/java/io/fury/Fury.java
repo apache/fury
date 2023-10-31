@@ -240,11 +240,29 @@ public final class Fury {
     }
   }
 
+  public void serialize(OutputStream outputStream, Object obj) {
+    serialize(outputStream, obj, null);
+  }
+
+  public void serialize(OutputStream outputStream, Object obj, BufferCallback callback) {
+    buffer.writerIndex(0);
+    buffer.writeInt(-1);
+    serialize(buffer, obj, callback);
+
+    buffer.putInt(0, buffer.writerIndex() - 4);
+    try {
+      outputStream.write(buffer.getBytes(0, buffer.writerIndex()));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+
   private StackOverflowError processStackOverflowError(StackOverflowError e) {
     if (!refTracking) {
       String msg =
-          "Object may contain circular references, please enable ref tracking "
-              + "by `FuryBuilder#withRefTracking(true)`";
+        "Object may contain circular references, please enable ref tracking "
+          + "by `FuryBuilder#withRefTracking(true)`";
       String rawMessage = e.getMessage();
       if (StringUtils.isNotBlank(rawMessage)) {
         msg += ": " + rawMessage;
@@ -266,23 +284,6 @@ public final class Fury {
       classResolver.writeClassDefs(buffer);
     } else {
       writeRef(buffer, obj);
-    }
-  }
-
-  public void serialize(OutputStream outputStream, Object obj) {
-    serialize(outputStream, obj, null);
-  }
-
-  public void serialize(OutputStream outputStream, Object obj, BufferCallback callback) {
-    buffer.writerIndex(0);
-    buffer.writeInt(-1);
-    serialize(buffer, obj, callback);
-
-    buffer.putInt(0, buffer.writerIndex() - 4);
-    try {
-      outputStream.write(buffer.getBytes(0, buffer.writerIndex()));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     }
   }
 
