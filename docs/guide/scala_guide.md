@@ -3,7 +3,7 @@ title: Scala Serialization Guide
 order: 4
 -- fury_frontmatter -->
 
-# Scala object graph serialization
+# Scala serialization
 Fury supports all scala object serialization by keeping compatible with JDK serialization API: `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable`:
 - `case` class serialization supported
 - `object` singleton serialization supported
@@ -11,15 +11,17 @@ Fury supports all scala object serialization by keeping compatible with JDK seri
 - other types such as `tuple/either` and basic types are all supported too.
 
 ## Fury creation
-When using fury for scala serialization, you should create fury by disabling class registration:
+When using fury for scala serialization, you should create fury at least with following options:
 ```scala
-val fury = Fury.builder().requireClassRegistration(false).build()
+val fury = Fury.builder().requireClassRegistration(false).withRefTracking(true).build()
 ```
 Otherwise if you serialize some scala types such as `object/Enumeration`, you will need to register some scala internal types, such as:
 ```scala
 fury.register(classOf[ModuleSerializationProxy])
 fury.register(Class.forName("scala.Enumeration.Val"))
 ```
+And circular references are common in scala, `Reference tracking` should be enabled by `FuryBuilder#withRefTracking(true)`. If you don't enable reference tracking, [StackOverflowError](https://github.com/alipay/fury/issues/1032) may happen for some scala versions when serializing scala Enumeration.
+
 Note that fury instance should be shared between multiple serialization, the creation of fury instance is not cheap.
 
 If you use shared fury instance across multiple threads, you should create `ThreadSafeFury` instead by `FuryBuilder#buildThreadSafeFury()` instead.
