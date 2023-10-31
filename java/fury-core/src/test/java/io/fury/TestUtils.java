@@ -20,6 +20,9 @@ import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
 import io.fury.util.FieldAccessor;
 import io.fury.util.ReflectionUtils;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.function.Supplier;
 
@@ -71,6 +74,22 @@ public class TestUtils {
         System.out.println("Met OOM.");
         break;
       }
+    }
+  }
+
+  public static byte[] jdkSerialize(Object data) {
+    ByteArrayOutputStream bas = new ByteArrayOutputStream();
+    jdkSerialize(bas, data);
+    return bas.toByteArray();
+  }
+
+  public static void jdkSerialize(ByteArrayOutputStream bas, Object data) {
+    bas.reset();
+    try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bas)) {
+      objectOutputStream.writeObject(data);
+      objectOutputStream.flush();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }

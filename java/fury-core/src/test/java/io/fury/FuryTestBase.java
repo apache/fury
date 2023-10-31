@@ -173,12 +173,12 @@ public abstract class FuryTestBase {
     Assert.assertEquals(serDeCheckSerializer(fury, obj, classRegex), obj);
   }
 
-  public static Object serDeCheckSerializer(Fury fury, Object obj, String classRegex) {
+  public static <T> T serDeCheckSerializer(Fury fury, Object obj, String classRegex) {
     byte[] bytes = fury.serialize(obj);
     String serializerName = fury.getClassResolver().getSerializerClass(obj.getClass()).getName();
     Matcher matcher = Pattern.compile(classRegex).matcher(serializerName);
     Assert.assertTrue(matcher.find());
-    return fury.deserialize(bytes);
+    return (T) fury.deserialize(bytes);
   }
 
   public static Object serDe(Fury fury1, Fury fury2, Object obj) {

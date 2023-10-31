@@ -27,8 +27,11 @@ import com.google.common.collect.ImmutableMap;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.config.Language;
+import java.io.Externalizable;
 import java.io.IOException;
+import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.List;
@@ -483,5 +486,89 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     byte[] bytes = fury.serialize(new InheritanceTestClass((byte) 10));
     InheritanceTestClass o = (InheritanceTestClass) fury.deserialize(bytes);
     assertEquals(o.f1, 10);
+  }
+
+  static class WriteReplaceExternalizable implements Externalizable {
+    private transient int f1;
+
+    public WriteReplaceExternalizable(int f1) {
+      this.f1 = f1;
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+      throw new RuntimeException();
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+      throw new RuntimeException();
+    }
+
+    private Object writeReplace() {
+      return new ReplaceExternalizableProxy(f1);
+    }
+  }
+
+  static class ReplaceExternalizableProxy implements Serializable {
+    private int f1;
+
+    public ReplaceExternalizableProxy(int f1) {
+      this.f1 = f1;
+    }
+
+    private Object readResolve() {
+      return new WriteReplaceExternalizable(f1);
+    }
+  }
+
+  @Test
+  public void testWriteReplaceExternalizable() {
+    WriteReplaceExternalizable o =
+        serDeCheckSerializer(
+            getJavaFury(),
+            new WriteReplaceExternalizable(10),
+            ReplaceResolveSerializer.class.getName());
+    assertEquals(o.f1, 10);
+  }
+
+  static class ReplaceSelfExternalizable implements Externalizable {
+    private transient int f1;
+    private transient boolean newInstance;
+
+    public ReplaceSelfExternalizable(int f1, boolean newInstance) {
+      this.f1 = f1;
+      this.newInstance = newInstance;
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+      out.writeInt(f1);
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+      f1 = in.readInt();
+    }
+
+    private Object writeReplace() {
+      return newInstance ? new ReplaceSelfExternalizable(f1, false) : this;
+    }
+  }
+
+  @Test
+  public void testWriteReplaceSelfExternalizable() {
+    ReplaceSelfExternalizable o =
+        serDeCheckSerializer(
+            getJavaFury(),
+            new ReplaceSelfExternalizable(10, false),
+            ReplaceResolveSerializer.class.getName());
+    assertEquals(o.f1, 10);
+    ReplaceSelfExternalizable o1 =
+        serDeCheckSerializer(
+            getJavaFury(),
+            new ReplaceSelfExternalizable(10, true),
+            ReplaceResolveSerializer.class.getName());
+    assertEquals(o1.f1, 10);
   }
 }

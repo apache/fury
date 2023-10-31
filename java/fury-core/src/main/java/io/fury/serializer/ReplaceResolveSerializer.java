@@ -26,6 +26,7 @@ import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.unsafe._JDKAccess;
+import java.io.Externalizable;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandles;
@@ -148,7 +149,9 @@ public class ReplaceResolveSerializer extends Serializer {
     JDKReplaceResolveMethodInfoCache methodInfoCache =
         new JDKReplaceResolveMethodInfoCache(writeReplaceMethod, readResolveMethod, null);
     Class<? extends Serializer> serializerClass;
-    if (JavaSerializer.getReadObjectMethod(cls, true) == null
+    if (Externalizable.class.isAssignableFrom(cls)) {
+      serializerClass = ExternalizableSerializer.class;
+    } else if (JavaSerializer.getReadObjectMethod(cls, true) == null
         && JavaSerializer.getWriteObjectMethod(cls, true) == null) {
       serializerClass =
           fury.getClassResolver()
