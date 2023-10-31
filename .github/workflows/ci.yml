@@ -75,6 +75,16 @@ jobs:
         run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
         run: PATH="$HOME/miniconda/bin:$PATH" ./ci/run_ci.sh java${{ matrix.java-version }}
+  scala:
+    name: Scala CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: olafurpg/setup-scala@v11
+      - name: Install fury java
+        run: cd java && mvn -T10 clean install -DskipTests && cd -
+      - name: Test
+        run: cd scala && sbt test && cd -
   integration_tests:
     name: integration_tests
     runs-on: ubuntu-latest
