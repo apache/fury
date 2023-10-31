@@ -29,7 +29,7 @@ In addition to cross-language serialization, Fury also features at:
 - **100% compatible** with JDK serialization: supporting JDK `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` serialization API. 
 - Supports **Java 8~21**, Java 17+ `record` is supported too.
 - Supports shared and circular reference object serialization for golang.
-- Supports [scala object serialization](https://github.com/alipay/fury/blob/main/docs/guide/scala_guide.md)
+- Supports [scala serialization](https://github.com/alipay/fury/blob/main/docs/guide/scala_guide.md)
 - Supports automatic object serialization for golang.
 
 ## Protocols
