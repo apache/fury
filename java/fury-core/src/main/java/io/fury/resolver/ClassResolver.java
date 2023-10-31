@@ -840,8 +840,6 @@ public class ClassResolver {
         return TimeSerializers.ZoneIdSerializer.class;
       } else if (TimeZone.class.isAssignableFrom(cls)) {
         return TimeSerializers.TimeZoneSerializer.class;
-      } else if (Externalizable.class.isAssignableFrom(cls)) {
-        return ExternalizableSerializer.class;
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {
         return BufferSerializers.ByteBufferSerializer.class;
       }
@@ -888,6 +886,9 @@ public class ClassResolver {
       }
       if (useReplaceResolveSerializer(cls)) {
         return ReplaceResolveSerializer.class;
+      }
+      if (Externalizable.class.isAssignableFrom(cls)) {
+        return ExternalizableSerializer.class;
       }
       if (requireJavaSerialization(cls)) {
         return getJavaSerializer(cls);
