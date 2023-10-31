@@ -69,9 +69,10 @@ public final class FuryBuilder {
   boolean requireClassRegistration = true;
   boolean shareMetaContext = false;
   boolean codeGenEnabled = true;
-  public boolean deserializeUnexistedClass = false;
-  public boolean asyncCompilationEnabled = false;
-  public boolean registerGuavaTypes = true;
+  boolean deserializeUnexistedClass = false;
+  boolean asyncCompilationEnabled = false;
+  boolean registerGuavaTypes = true;
+  boolean scalaOptimizationEnabled = false;
 
   public FuryBuilder() {}
 
@@ -244,6 +245,12 @@ public final class FuryBuilder {
    */
   public FuryBuilder withAsyncCompilation(boolean asyncCompilation) {
     this.asyncCompilationEnabled = asyncCompilation;
+    return this;
+  }
+
+  /** Whether enable scala-specific serialization optimization. */
+  public FuryBuilder withScalaOptimizationEnabled(boolean enableScalaOptimization) {
+    this.scalaOptimizationEnabled = enableScalaOptimization;
     return this;
   }
 

@@ -52,6 +52,7 @@ public class Config implements Serializable {
   private final boolean shareMetaContext;
   private final boolean asyncCompilationEnabled;
   private final boolean deserializeUnexistedClass;
+  private final boolean scalaOptimizationEnabled;
   private transient int configHash;
 
   public Config(FuryBuilder builder) {
@@ -79,6 +80,7 @@ public class Config implements Serializable {
       Preconditions.checkArgument(shareMetaContext || compatibleMode == CompatibleMode.COMPATIBLE);
     }
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
+    scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
   }
 
   public Language getLanguage() {
@@ -188,6 +190,11 @@ public class Config implements Serializable {
    */
   public boolean isAsyncCompilationEnabled() {
     return asyncCompilationEnabled;
+  }
+
+  /** Whether enable scala-specific serialization optimization. */
+  public boolean isScalaOptimizationEnabled() {
+    return scalaOptimizationEnabled;
   }
 
   public int getConfigHash() {
