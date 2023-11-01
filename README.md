@@ -12,15 +12,15 @@ Fury is a blazing-fast multi-language serialization framework powered by **jit(j
 https://furyio.org
 
 ## Features
-- **Multiple languages**: Java/Python/C++/Golang/Javascript/Rust.
-- **Zero-copy**: cross-language out-of-band serialization inspired
+- **Multiple languages**: Java/Python/C++/Golang/Javascript/Rust/Cython/Typescript.
+- **Zero-copy**: Cross-language out-of-band serialization inspired
   by [pickle5](https://peps.python.org/pep-0574/) and off-heap read/write.
 - **High performance**: A highly-extensible JIT framework to generate serializer code at runtime in an async multi-thread way to speed serialization, providing 20-170x speed up by:
     - reduce memory access by inlining variables in generated code.
     - reduce virtual method invocation by inline call in generated code.
     - reduce conditional branching.
     - reduce hash lookup.
-- **Multiple binary protocols**: object graph, row format, and so on.
+- **Multiple binary protocols**: Object graph, row format, and so on.
 
 In addition to cross-language serialization, Fury also features at:
 
@@ -40,8 +40,8 @@ multiple binary protocols for those requirements:
     conversion.
   - Support shared reference and circular reference, no duplicate data or recursion error.
   - Support object polymorphism.
-- **Native java/python object graph protocol**: highly-optimized based on type system of the language.
-- **Row format protocol**: a cache-friendly binary random access format, supports skipping serialization and partial serialization,
+- **Native java/python object graph protocol**: Highly-optimized based on type system of the language.
+- **Row format protocol**: A cache-friendly binary random access format, supports skipping serialization and partial serialization,
   and can convert to column-format automatically.
 
 New protocols can be easily added based on fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol
