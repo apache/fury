@@ -144,11 +144,13 @@ public class CollectionSerializers {
      *   In codegen, follows is call order:
      *   <li>write collection class if not final
      *   <li>write collection size
-     *   <li>writeHeader
+     *   <li>onCollectionWrite
      *   <li>write elements
      * </ol>
      */
-    public void writeHeader(MemoryBuffer buffer, T value) {}
+    public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
+      return value;
+    }
 
     /**
      * Write elements data header. Keep this consistent with
@@ -156,7 +158,7 @@ public class CollectionSerializers {
      *
      * @return a bitmap, higher 24 bits are reserved.
      */
-    protected final int writeElementsHeader(MemoryBuffer buffer, T value) {
+    protected final int writeElementsHeader(MemoryBuffer buffer, Collection value) {
       GenericType elemGenericType = getElementGenericType(fury);
       if (elemGenericType != null) {
         boolean trackingRef = elemGenericType.trackingRef(fury.getClassResolver());
@@ -195,7 +197,7 @@ public class CollectionSerializers {
 
     /** Element type is final, write whether any elements is null. */
     @CodegenInvoke
-    public int writeNullabilityHeader(MemoryBuffer buffer, T value) {
+    public int writeNullabilityHeader(MemoryBuffer buffer, Collection value) {
       for (Object elem : value) {
         if (elem == null) {
           buffer.writeByte(Flags.HAS_NULL);
@@ -209,7 +211,7 @@ public class CollectionSerializers {
     /** Need to track elements ref, can't check elements nullability. */
     @CodegenInvoke
     public int writeTypeHeader(
-        MemoryBuffer buffer, T value, Class<?> declareElementType, ClassInfoHolder cache) {
+        MemoryBuffer buffer, Collection value, Class<?> declareElementType, ClassInfoHolder cache) {
       int bitmap = Flags.TRACKING_REF;
       boolean hasDifferentClass = false;
       Class<?> elemClass = null;
@@ -246,7 +248,7 @@ public class CollectionSerializers {
 
     /** Maybe track elements ref, or write elements nullability. */
     @CodegenInvoke
-    public int writeTypeHeader(MemoryBuffer buffer, T value, ClassInfoHolder cache) {
+    public int writeTypeHeader(MemoryBuffer buffer, Collection value, ClassInfoHolder cache) {
       int bitmap = Flags.NOT_DECL_ELEMENT_TYPE;
       boolean hasDifferentClass = false;
       Class<?> elemClass = null;
@@ -286,7 +288,7 @@ public class CollectionSerializers {
      */
     @CodegenInvoke
     public int writeTypeNullabilityHeader(
-        MemoryBuffer buffer, T value, Class<?> declareElementType, ClassInfoHolder cache) {
+        MemoryBuffer buffer, Collection value, Class<?> declareElementType, ClassInfoHolder cache) {
       int bitmap = 0;
       boolean containsNull = false;
       boolean hasDifferentClass = false;
@@ -364,13 +366,12 @@ public class CollectionSerializers {
     public void write(MemoryBuffer buffer, T value) {
       int len = value.size();
       buffer.writePositiveVarInt(len);
-      writeHeader(buffer, value);
       if (len != 0) {
-        writeElements(fury, buffer, value);
+        writeElements(fury, buffer, onCollectionWrite(buffer, value));
       }
     }
 
-    protected final void writeElements(Fury fury, MemoryBuffer buffer, T value) {
+    protected final void writeElements(Fury fury, MemoryBuffer buffer, Collection value) {
       int flags = writeElementsHeader(buffer, value);
       Serializer serializer = this.elemSerializer;
       // clear the elemSerializer to avoid conflict if the nested
@@ -381,7 +382,7 @@ public class CollectionSerializers {
         if (elemGenericType != null) {
           javaWriteWithGenerics(fury, buffer, value, elemGenericType, flags);
         } else {
-          generalJavaWrite(fury, buffer, value, elemGenericType, flags);
+          generalJavaWrite(fury, buffer, value, null, flags);
         }
       } else {
         compatibleWrite(fury, buffer, value, serializer, flags);
@@ -415,7 +416,11 @@ public class CollectionSerializers {
     }
 
     private void javaWriteWithGenerics(
-        Fury fury, MemoryBuffer buffer, T collection, GenericType elemGenericType, int flags) {
+        Fury fury,
+        MemoryBuffer buffer,
+        Collection collection,
+        GenericType elemGenericType,
+        int flags) {
       boolean hasGenericParameters = elemGenericType.hasGenericParameters();
       if (hasGenericParameters) {
         fury.getGenerics().pushGenericType(elemGenericType);
@@ -434,7 +439,11 @@ public class CollectionSerializers {
     }
 
     private void generalJavaWrite(
-        Fury fury, MemoryBuffer buffer, T collection, GenericType elemGenericType, int flags) {
+        Fury fury,
+        MemoryBuffer buffer,
+        Collection collection,
+        GenericType elemGenericType,
+        int flags) {
       if ((flags & Flags.NOT_SAME_TYPE) != Flags.NOT_SAME_TYPE) {
         Serializer serializer;
         if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) != Flags.NOT_DECL_ELEMENT_TYPE) {
@@ -851,8 +860,9 @@ public class CollectionSerializers {
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, T value) {
+    public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
       fury.writeRef(buffer, value.comparator());
+      return value;
     }
 
     @SuppressWarnings("unchecked")
@@ -1135,8 +1145,9 @@ public class CollectionSerializers {
       super(fury, cls, true);
     }
 
-    public void writeHeader(MemoryBuffer buffer, PriorityQueue value) {
+    public Collection onCollectionWrite(MemoryBuffer buffer, PriorityQueue value) {
       fury.writeRef(buffer, value.comparator());
+      return value;
     }
 
     @Override

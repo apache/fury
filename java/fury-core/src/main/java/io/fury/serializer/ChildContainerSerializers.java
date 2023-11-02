@@ -130,10 +130,11 @@ public class ChildContainerSerializers {
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, T value) {
+    public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
       for (Serializer slotsSerializer : slotsSerializers) {
         slotsSerializer.write(buffer, value);
       }
+      return value;
     }
 
     public Collection newCollection(MemoryBuffer buffer, int numElements) {
@@ -175,10 +176,11 @@ public class ChildContainerSerializers {
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, T value) {
+    public Map onMapWrite(MemoryBuffer buffer, T value) {
       for (Serializer slotsSerializer : slotsSerializers) {
         slotsSerializer.write(buffer, value);
       }
+      return value;
     }
 
     @Override

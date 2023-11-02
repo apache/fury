@@ -115,8 +115,7 @@ public class MapSerializers {
     @Override
     public void write(MemoryBuffer buffer, T value) {
       buffer.writePositiveVarInt(value.size());
-      writeHeader(buffer, value);
-      writeElements(fury, buffer, value);
+      writeElements(fury, buffer, onMapWrite(buffer, value));
     }
 
     @Override
@@ -125,7 +124,7 @@ public class MapSerializers {
       xwriteElements(fury, buffer, value);
     }
 
-    protected final void writeElements(Fury fury, MemoryBuffer buffer, T map) {
+    protected final void writeElements(Fury fury, MemoryBuffer buffer, Map map) {
       Serializer keySerializer = this.keySerializer;
       Serializer valueSerializer = this.valueSerializer;
       // clear the elemSerializer to avoid conflict if the nested
@@ -185,7 +184,7 @@ public class MapSerializers {
       }
     }
 
-    private void genericJavaWrite(Fury fury, MemoryBuffer buffer, T map) {
+    private void genericJavaWrite(Fury fury, MemoryBuffer buffer, Map map) {
       Generics generics = fury.getGenerics();
       GenericType genericType = generics.nextGenericType();
       if (genericType == null) {
@@ -346,7 +345,7 @@ public class MapSerializers {
       }
     }
 
-    private void generalJavaWrite(Fury fury, MemoryBuffer buffer, T map) {
+    private void generalJavaWrite(Fury fury, MemoryBuffer buffer, Map map) {
       ClassResolver classResolver = fury.getClassResolver();
       RefResolver refResolver = fury.getRefResolver();
       for (Object object : map.entrySet()) {
@@ -682,11 +681,13 @@ public class MapSerializers {
      *   In codegen, follows is call order:
      *   <li>write map class if not final
      *   <li>write map size
-     *   <li>writeHeader
+     *   <li>onCollectionWrite
      *   <li>write keys/values
      * </ol>
      */
-    public void writeHeader(MemoryBuffer buffer, T value) {}
+    public Map onMapWrite(MemoryBuffer buffer, T value) {
+      return value;
+    }
 
     /**
      * Read data except size and elements, return empty map to be filled.
@@ -851,8 +852,9 @@ public class MapSerializers {
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, T value) {
+    public Map onMapWrite(MemoryBuffer buffer, T value) {
       fury.writeRef(buffer, value.comparator());
+      return value;
     }
 
     @SuppressWarnings("unchecked")
@@ -1014,9 +1016,10 @@ public class MapSerializers {
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, EnumMap value) {
+    public Map onMapWrite(MemoryBuffer buffer, EnumMap value) {
       Class keyType = (Class) Platform.getObject(value, keyTypeFieldOffset);
       fury.getClassResolver().writeClassAndUpdateCache(buffer, keyType);
+      return value;
     }
 
     @Override

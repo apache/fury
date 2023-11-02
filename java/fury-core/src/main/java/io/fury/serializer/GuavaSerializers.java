@@ -188,8 +188,9 @@ public class GuavaSerializers {
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, T value) {
+    public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
       fury.writeRef(buffer, value.comparator());
+      return value;
     }
 
     @Override
@@ -323,8 +324,9 @@ public class GuavaSerializers {
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, T value) {
+    public Map onMapWrite(MemoryBuffer buffer, T value) {
       fury.writeRef(buffer, value.comparator());
+      return value;
     }
 
     @Override

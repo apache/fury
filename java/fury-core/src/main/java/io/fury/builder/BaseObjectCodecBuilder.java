@@ -710,7 +710,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression buffer, Expression collection, Expression serializer, TypeToken<?> elementType) {
     Expression size = new Invoke(collection, "size", PRIMITIVE_INT_TYPE);
     Invoke writeSize = new Invoke(buffer, "writePositiveVarInt", size);
-    Invoke writeHeader = new Invoke(serializer, "writeHeader", buffer, collection);
+    Invoke onCollectionWrite = new Invoke(serializer, "onCollectionWrite", buffer, collection);
+    collection = onCollectionWrite;
     walkPath.add(elementType.toString());
     ListExpression builder = new ListExpression();
     Class<?> elemClass = TypeUtils.getRawType(elementType);
@@ -790,7 +791,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       builder.add(action);
     }
     walkPath.removeLast();
-    return new ListExpression(writeSize, writeHeader, new If(gt(size, Literal.ofInt(0)), builder));
+    return new ListExpression(
+        writeSize, onCollectionWrite, new If(gt(size, Literal.ofInt(0)), builder));
   }
 
   /**
@@ -991,7 +993,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     ListExpression actions = new ListExpression();
     Invoke size = new Invoke(map, "size", PRIMITIVE_INT_TYPE);
     Invoke writeSize = new Invoke(buffer, "writePositiveVarInt", size);
-    Invoke writeHeader = new Invoke(serializer, "writeHeader", buffer, map);
+    Invoke onMapWrite = new Invoke(serializer, "onMapWrite", buffer, map);
+    map = onMapWrite;
     Invoke entrySet = new Invoke(map, "entrySet", "entrySet", SET_TYPE);
     ExprHolder exprHolder = ExprHolder.of("buffer", buffer);
     ForEach writeKeyValues =
@@ -1017,7 +1020,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               walkPath.removeLast();
               return new ListExpression(keyAction, valueAction);
             });
-    Expression hookWrite = new ListExpression(writeSize, writeHeader, writeKeyValues);
+    Expression hookWrite = new ListExpression(writeSize, onMapWrite, writeKeyValues);
     Expression write =
         new If(
             inlineInvoke(serializer, "supportCodegenHook", PRIMITIVE_BOOLEAN_TYPE),
