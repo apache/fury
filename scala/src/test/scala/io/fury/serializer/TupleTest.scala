@@ -21,6 +21,8 @@ import io.fury.config.Language
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+case class Struct(tuple2: (String, String), tuple4: (String, String, String, String))
+
 class TupleTest extends AnyWordSpec with Matchers {
   val fury: Fury = Fury.builder()
     .withLanguage(Language.JAVA)
@@ -28,24 +30,51 @@ class TupleTest extends AnyWordSpec with Matchers {
     .withScalaOptimizationEnabled(true)
     .requireClassRegistration(false).build()
 
-  "fury scala collection support" should {
-    "serialize/deserialize Seq" in {
-      val seq = Seq(100, 10000L)
-      fury.deserialize(fury.serialize(seq)) shouldEqual seq
+  "fury scala tuple support" should {
+    "serialize/deserialize tuple1" in {
+      val tuple = Tuple1("str")
+      fury.deserialize(fury.serialize(tuple)) shouldEqual tuple
     }
-    "serialize/deserialize List" in {
-      val list = List(100, 10000L)
-      fury.deserialize(fury.serialize(list)) shouldEqual list
+    "serialize/deserialize tuple2" in {
+      val tuple = Tuple2(100, 10000L)
+      fury.deserialize(fury.serialize(tuple)) shouldEqual tuple
     }
-    "serialize/deserialize Set" in {
-      val set = Set(100, 10000L)
-      fury.deserialize(fury.serialize(set)) shouldEqual set
+    "serialize/deserialize tuple3" in {
+      val tuple = Tuple3(100, 10000L, 10000L)
+      fury.deserialize(fury.serialize(tuple)) shouldEqual tuple
+    }
+    "serialize/deserialize tuple4" in {
+      val tuple = Tuple4(100, 10000L, 10000L, "str")
+      fury.deserialize(fury.serialize(tuple)) shouldEqual tuple
+    }
+    "serialize/deserialize tuple5" in {
+      val tuple = Tuple5(100, 10000L, 10000L, "str", "str")
+      fury.deserialize(fury.serialize(tuple)) shouldEqual tuple
+    }
+    "serialize/deserialize tuple6" in {
+      val tuple = Tuple6(100, 10000L, 10000L, "str", "str", "a")
+      fury.deserialize(fury.serialize(tuple)) shouldEqual tuple
+    }
+    "serialize/deserialize tuple20" in {
+      val tuple = Tuple20(100, 10000L, 10000L, "str", "str", "a", "str", "str", "a",
+        "str", "str", "a", "str", "str", "a", "str", "str", "a", "str", "str")
+      fury.deserialize(fury.serialize(tuple)) shouldEqual tuple
+    }
+    "serialize/deserialize tuple21" in {
+      val tuple = Tuple21(100, 10000L, 10000L, "str", "str", "a", "str", "str", "a",
+        "str", "str", "a", "str", "str", "a", "str", "str", "a", "str", "str", 10)
+      fury.deserialize(fury.serialize(tuple)) shouldEqual tuple
+    }
+    "serialize/deserialize tuple22" in {
+      val tuple = Tuple22(100, 10000L, 10000L, "str", "str", "a", "str", "str", "a",
+        "str", "str", "a", "str", "str", "a", "str", "str", "a", "str", "str", 10, 20)
+      fury.deserialize(fury.serialize(tuple)) shouldEqual tuple
     }
   }
-  "fury scala map support" should {
-    "serialize/deserialize Map" in {
-      val map = Map("a" -> 100, "b" -> 10000L)
-      fury.deserialize(fury.serialize(map)) shouldEqual map
+  "fury scala tuple struct" should {
+    "serialize/deserialize Struct" in {
+      val struct = Struct(("a", "b"), ("a", "b", "c", "d"))
+      fury.deserialize(fury.serialize(struct)) shouldEqual struct
     }
   }
 }
