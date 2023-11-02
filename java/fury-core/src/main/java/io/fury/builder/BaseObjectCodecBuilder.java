@@ -402,11 +402,13 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected boolean useCollectionSerialization(TypeToken<?> typeToken) {
-    return COLLECTION_TYPE.isSupertypeOf(typeToken);
+    return COLLECTION_TYPE.isSupertypeOf(typeToken) ||
+      (fury.getConfig().isScalaOptimizationEnabled() && TypeUtils.getScalaIterableType().isSupertypeOf(typeToken));
   }
 
   protected boolean useMapSerialization(TypeToken<?> typeToken) {
-    return MAP_TYPE.isSupertypeOf(typeToken);
+    return MAP_TYPE.isSupertypeOf(typeToken) ||
+      (fury.getConfig().isScalaOptimizationEnabled() && TypeUtils.getScalaMapType().isSupertypeOf(typeToken));
   }
 
   /**
@@ -710,7 +712,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression buffer, Expression collection, Expression serializer, TypeToken<?> elementType) {
     Expression size = new Invoke(collection, "size", PRIMITIVE_INT_TYPE);
     Invoke writeSize = new Invoke(buffer, "writePositiveVarInt", size);
-    Invoke onCollectionWrite = new Invoke(serializer, "onCollectionWrite", buffer, collection);
+    Invoke onCollectionWrite = new Invoke(serializer, "onCollectionWrite", TypeUtils.collectionOf(elementType),  buffer, collection);
     collection = onCollectionWrite;
     walkPath.add(elementType.toString());
     ListExpression builder = new ListExpression();
@@ -961,6 +963,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Tuple2<TypeToken<?>, TypeToken<?>> keyValueType = TypeUtils.getMapKeyValueType(typeToken);
     TypeToken<?> keyType = keyValueType.f0;
     TypeToken<?> valueType = keyValueType.f1;
+    Expression rawMap = map;
     if (serializer == null) {
       Class<?> clz = getRawType(typeToken);
       if (isFinal(clz)) {
@@ -993,7 +996,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     ListExpression actions = new ListExpression();
     Invoke size = new Invoke(map, "size", PRIMITIVE_INT_TYPE);
     Invoke writeSize = new Invoke(buffer, "writePositiveVarInt", size);
-    Invoke onMapWrite = new Invoke(serializer, "onMapWrite", buffer, map);
+    Invoke onMapWrite = new Invoke(serializer, "onMapWrite",  TypeUtils.mapOf(keyType, valueType), buffer, map);
     map = onMapWrite;
     Invoke entrySet = new Invoke(map, "entrySet", "entrySet", SET_TYPE);
     ExprHolder exprHolder = ExprHolder.of("buffer", buffer);
@@ -1025,7 +1028,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         new If(
             inlineInvoke(serializer, "supportCodegenHook", PRIMITIVE_BOOLEAN_TYPE),
             hookWrite,
-            new Invoke(serializer, "write", buffer, map));
+            new Invoke(serializer, "write", buffer, rawMap));
     actions.add(write);
     if (generateNewMethod) {
       return invokeGenerated(ctx, ImmutableSet.of(buffer, map), actions, "writeMap", false);

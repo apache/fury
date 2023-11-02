@@ -26,6 +26,7 @@ import io.fury.annotation.Internal;
 import io.fury.collection.Tuple3;
 import io.fury.util.function.Functions;
 import io.fury.util.unsafe._JDKAccess;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -83,19 +84,19 @@ public class ReflectionUtils {
       return null;
     } else {
       return Stream.of(constructors)
-          .filter((c) -> c.getParameterCount() == 0)
-          .findAny()
-          .orElse(null);
+        .filter((c) -> c.getParameterCount() == 0)
+        .findAny()
+        .orElse(null);
     }
   }
 
   private static final ClassValue<MethodHandle> ctrHandleCache =
-      new ClassValue<MethodHandle>() {
-        @Override
-        protected MethodHandle computeValue(Class<?> type) {
-          return createNoArgCtrHandle(type);
-        }
-      };
+    new ClassValue<MethodHandle>() {
+      @Override
+      protected MethodHandle computeValue(Class<?> type) {
+        return createNoArgCtrHandle(type);
+      }
+    };
 
   private static MethodHandle createNoArgCtrHandle(Class<?> cls) {
     Constructor<?> ctr = getNoArgConstructor(cls);
@@ -199,7 +200,9 @@ public class ReflectionUtils {
     }
   }
 
-  /** Returns true if any method named {@code methodName} has exception. */
+  /**
+   * Returns true if any method named {@code methodName} has exception.
+   */
   public static boolean hasException(Class<?> cls, String methodName) {
     List<Method> methods = findMethods(cls, methodName);
     if (methods.isEmpty()) {
@@ -209,7 +212,9 @@ public class ReflectionUtils {
     return methods.get(0).getExceptionTypes().length > 0;
   }
 
-  /** Returns true if any method named {@code methodName} has checked exception. */
+  /**
+   * Returns true if any method named {@code methodName} has checked exception.
+   */
   public static boolean hasCheckedException(Class<?> cls, String methodName) {
     List<Method> methods = findMethods(cls, methodName);
     if (methods.isEmpty()) {
@@ -231,7 +236,7 @@ public class ReflectionUtils {
       throw new IllegalArgumentException(msg);
     }
     Set<? extends Class<?>> returnTypes =
-        methods.stream().map(Method::getReturnType).collect(Collectors.toSet());
+      methods.stream().map(Method::getReturnType).collect(Collectors.toSet());
     Preconditions.checkArgument(returnTypes.size() == 1);
     return methods.get(0).getReturnType();
   }
@@ -275,10 +280,10 @@ public class ReflectionUtils {
   /**
    * Get fields.
    *
-   * @param cls class
+   * @param cls          class
    * @param searchParent true if return super classes fields.
    * @return all fields of class. And all fields of super classes in order from subclass to super
-   *     classes if <code>searchParent</code> is true
+   * classes if <code>searchParent</code> is true
    */
   public static List<Field> getFields(Class<?> cls, boolean searchParent) {
     Preconditions.checkNotNull(cls);
@@ -295,7 +300,9 @@ public class ReflectionUtils {
     return fields;
   }
 
-  /** Get fields values from provided object. */
+  /**
+   * Get fields values from provided object.
+   */
   public static List<Object> getFieldValues(Collection<Field> fields, Object o) {
     List<Object> results = new ArrayList<>(fields.size());
     for (Field field : fields) {
@@ -395,7 +402,9 @@ public class ReflectionUtils {
     }
   }
 
-  /** Returns package of a class. If package is absent, return empty string. */
+  /**
+   * Returns package of a class. If package is absent, return empty string.
+   */
   public static String getPackage(Class<?> cls) {
     String pkg;
     // Janino generated class's package might be null
@@ -444,6 +453,22 @@ public class ReflectionUtils {
     }
   }
 
+  public static Class<?> loadClass(String className) {
+    try {
+      return Class.forName(className);
+    } catch (ClassNotFoundException e) {
+      try {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (loader != null) {
+          return loader.loadClass(className);
+        }
+      } catch (ClassNotFoundException ex) {
+        throw new RuntimeException(ex);
+      }
+      throw new RuntimeException(e);
+    }
+  }
+
   public static <T> T unsafeCopy(T obj) {
     @SuppressWarnings("unchecked")
     T newInstance = (T) Platform.newInstance(obj.getClass());
@@ -460,7 +485,7 @@ public class ReflectionUtils {
 
   public static void unsafeCopy(Object from, Object to) {
     Tuple3<Set<String>, Map<String, Field>, Map<String, Field>> commonFieldsInfo =
-        getCommonFields(from.getClass(), to.getClass());
+      getCommonFields(from.getClass(), to.getClass());
     Map<String, Field> fieldMap1 = commonFieldsInfo.f1;
     Map<String, Field> fieldMap2 = commonFieldsInfo.f2;
     for (String commonField : commonFieldsInfo.f0) {
@@ -479,7 +504,7 @@ public class ReflectionUtils {
       return false;
     }
     Tuple3<Set<String>, Map<String, Field>, Map<String, Field>> commonFieldsInfo =
-        getCommonFields(o1.getClass(), o2.getClass());
+      getCommonFields(o1.getClass(), o2.getClass());
     if (commonFieldsInfo.f1.size() != fields1.size()) {
       return false;
     }
@@ -491,28 +516,28 @@ public class ReflectionUtils {
 
   public static boolean objectFieldsEquals(Set<String> fields, Object o1, Object o2) {
     Tuple3<Set<String>, Map<String, Field>, Map<String, Field>> commonFieldsInfo =
-        getCommonFields(o1.getClass(), o2.getClass());
+      getCommonFields(o1.getClass(), o2.getClass());
     Map<String, Field> map1 =
-        commonFieldsInfo.f1.entrySet().stream()
-            .filter(e -> fields.contains(e.getKey()))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+      commonFieldsInfo.f1.entrySet().stream()
+        .filter(e -> fields.contains(e.getKey()))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     Map<String, Field> map2 =
-        commonFieldsInfo.f2.entrySet().stream()
-            .filter(e -> fields.contains(e.getKey()))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+      commonFieldsInfo.f2.entrySet().stream()
+        .filter(e -> fields.contains(e.getKey()))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     return objectCommonFieldsEquals(Tuple3.of(fields, map1, map2), o1, o2);
   }
 
   public static boolean objectCommonFieldsEquals(Object o1, Object o2) {
     Tuple3<Set<String>, Map<String, Field>, Map<String, Field>> commonFieldsInfo =
-        getCommonFields(o1.getClass(), o2.getClass());
+      getCommonFields(o1.getClass(), o2.getClass());
     return objectCommonFieldsEquals(commonFieldsInfo, o1, o2);
   }
 
   private static boolean objectCommonFieldsEquals(
-      Tuple3<Set<String>, Map<String, Field>, Map<String, Field>> commonFieldsInfo,
-      Object o1,
-      Object o2) {
+    Tuple3<Set<String>, Map<String, Field>, Map<String, Field>> commonFieldsInfo,
+    Object o1,
+    Object o2) {
 
     for (String commonField : commonFieldsInfo.f0) {
       Field field1 = commonFieldsInfo.f1.get(commonField);
@@ -575,27 +600,27 @@ public class ReflectionUtils {
   }
 
   public static Tuple3<Set<String>, Map<String, Field>, Map<String, Field>> getCommonFields(
-      Class<?> cls1, Class<?> cls2) {
+    Class<?> cls1, Class<?> cls2) {
     List<Field> fields1 = getFields(cls1, true);
     List<Field> fields2 = getFields(cls2, true);
     return getCommonFields(fields1, fields2);
   }
 
   public static Tuple3<Set<String>, Map<String, Field>, Map<String, Field>> getCommonFields(
-      List<Field> fields1, List<Field> fields2) {
+    List<Field> fields1, List<Field> fields2) {
     Map<String, Field> fieldMap1 =
-        fields1.stream()
-            .collect(
-                Collectors.toMap(
-                    // don't use `getGenericType` since janino doesn't support generics.
-                    f -> f.getDeclaringClass().getSimpleName() + f.getType() + f.getName(),
-                    f -> f));
+      fields1.stream()
+        .collect(
+          Collectors.toMap(
+            // don't use `getGenericType` since janino doesn't support generics.
+            f -> f.getDeclaringClass().getSimpleName() + f.getType() + f.getName(),
+            f -> f));
     Map<String, Field> fieldMap2 =
-        fields2.stream()
-            .collect(
-                Collectors.toMap(
-                    f -> f.getDeclaringClass().getSimpleName() + f.getType() + f.getName(),
-                    f -> f));
+      fields2.stream()
+        .collect(
+          Collectors.toMap(
+            f -> f.getDeclaringClass().getSimpleName() + f.getType() + f.getName(),
+            f -> f));
     Set<String> commonFields = fieldMap1.keySet();
     commonFields.retainAll(fieldMap2.keySet());
     return Tuple3.of(commonFields, fieldMap1, fieldMap2);
@@ -610,7 +635,9 @@ public class ReflectionUtils {
     return Functions.isLambda(cls) || isJdkProxy(cls);
   }
 
-  /** Returns true if a class is a scala `object` singleton. */
+  /**
+   * Returns true if a class is a scala `object` singleton.
+   */
   public static boolean isScalaSingletonObject(Class<?> cls) {
     try {
       cls.getDeclaredField("MODULE$");

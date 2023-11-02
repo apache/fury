@@ -23,6 +23,7 @@ import com.google.common.reflect.TypeToken;
 import io.fury.collection.IdentityMap;
 import io.fury.collection.Tuple2;
 import io.fury.util.ReflectionUtils;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
@@ -170,28 +171,28 @@ public class TypeUtils {
 
   // sorted by size
   private static final List<Class<?>> sortedPrimitiveClasses =
-      ImmutableList.of(
-          void.class,
-          boolean.class,
-          byte.class,
-          char.class,
-          short.class,
-          int.class,
-          float.class,
-          long.class,
-          double.class);
+    ImmutableList.of(
+      void.class,
+      boolean.class,
+      byte.class,
+      char.class,
+      short.class,
+      int.class,
+      float.class,
+      long.class,
+      double.class);
   private static final List<Class<?>> sortedBoxedClasses =
-      ImmutableList.of(
-          Void.class,
-          Boolean.class,
-          Byte.class,
-          Character.class,
-          Short.class,
-          Integer.class,
-          Float.class,
-          Long.class,
-          Double.class);
-  private static final int[] sortedSizes = new int[] {0, 1, 1, 2, 2, 4, 4, 8, 8};
+    ImmutableList.of(
+      Void.class,
+      Boolean.class,
+      Byte.class,
+      Character.class,
+      Short.class,
+      Integer.class,
+      Float.class,
+      Long.class,
+      Double.class);
+  private static final int[] sortedSizes = new int[]{0, 1, 1, 2, 2, 4, 4, 8, 8};
   private static final IdentityMap<Class<?>, Class<?>> primToWrap = new IdentityMap<>(9);
   private static final IdentityMap<Class<?>, Class<?>> wrapToPrim = new IdentityMap<>(9);
 
@@ -208,10 +209,10 @@ public class TypeUtils {
   }
 
   private static void add(
-      IdentityMap<Class<?>, Class<?>> forward,
-      IdentityMap<Class<?>, Class<?>> backward,
-      Class<?> key,
-      Class<?> value) {
+    IdentityMap<Class<?>, Class<?>> forward,
+    IdentityMap<Class<?>, Class<?>> backward,
+    Class<?> key,
+    Class<?> value) {
     forward.put(key, value);
     backward.put(value, key);
   }
@@ -238,7 +239,9 @@ public class TypeUtils {
     return sortedBoxedClasses;
   }
 
-  /** Returns a primitive type class that has has max size between numericTypes. */
+  /**
+   * Returns a primitive type class that has has max size between numericTypes.
+   */
   public static Class<?> maxType(Class<?>... numericTypes) {
     Preconditions.checkArgument(numericTypes.length >= 2);
     int maxIndex = 0;
@@ -251,14 +254,16 @@ public class TypeUtils {
       }
       if (index == -1) {
         throw new IllegalArgumentException(
-            String.format("Wrong numericTypes %s", Arrays.toString(numericTypes)));
+          String.format("Wrong numericTypes %s", Arrays.toString(numericTypes)));
       }
       maxIndex = Math.max(maxIndex, index);
     }
     return sortedPrimitiveClasses.get(maxIndex);
   }
 
-  /** Returns size of primitive type. */
+  /**
+   * Returns size of primitive type.
+   */
   public static int getSizeOfPrimitiveType(TypeToken<?> numericType) {
     return getSizeOfPrimitiveType(getRawType(numericType));
   }
@@ -273,12 +278,16 @@ public class TypeUtils {
     }
   }
 
-  /** Returns default value of class. */
+  /**
+   * Returns default value of class.
+   */
   public static String defaultValue(Class<?> type) {
     return defaultValue(type.getSimpleName(), false);
   }
 
-  /** Returns default value of class. */
+  /**
+   * Returns default value of class.
+   */
   public static String defaultValue(String type) {
     return defaultValue(type, false);
   }
@@ -286,7 +295,7 @@ public class TypeUtils {
   /**
    * Returns the representation of default value for a given Java Type.
    *
-   * @param type the string name of the Java type
+   * @param type      the string name of the Java type
    * @param typedNull if true, for null literals, return a typed (with a cast) version
    */
   public static String defaultValue(String type, boolean typedNull) {
@@ -314,7 +323,9 @@ public class TypeUtils {
     }
   }
 
-  /** Faster method to get raw type from {@link TypeToken} than {@link TypeToken#getRawType}. */
+  /**
+   * Faster method to get raw type from {@link TypeToken} than {@link TypeToken#getRawType}.
+   */
   public static Class<?> getRawType(TypeToken<?> typeToken) {
     Type type = typeToken.getType();
     if (type.getClass() == Class.class) {
@@ -324,7 +335,9 @@ public class TypeUtils {
     }
   }
 
-  /** Faster method to get raw type from {@link TypeToken} than {@link TypeToken#getRawType}. */
+  /**
+   * Faster method to get raw type from {@link TypeToken} than {@link TypeToken#getRawType}.
+   */
   public static Class<?> getRawType(Type type) {
     if (type instanceof TypeVariable) {
       return getRawType(((TypeVariable<?>) type).getBounds()[0]);
@@ -342,12 +355,16 @@ public class TypeUtils {
     }
   }
 
-  /** Returns dimensions of multi-dimension array. */
+  /**
+   * Returns dimensions of multi-dimension array.
+   */
   public static int getArrayDimensions(TypeToken<?> type) {
     return getArrayDimensions(getRawType(type));
   }
 
-  /** Returns dimensions of multi-dimension array. */
+  /**
+   * Returns dimensions of multi-dimension array.
+   */
   public static int getArrayDimensions(Class<?> type) {
     return getArrayComponentInfo(type).f1;
   }
@@ -367,12 +384,16 @@ public class TypeUtils {
     return Tuple2.of(t, dimension);
   }
 
-  /** Returns s string that represents array type declaration of type. */
+  /**
+   * Returns s string that represents array type declaration of type.
+   */
   public static String getArrayType(TypeToken<?> type) {
     return getArrayType(getRawType(type));
   }
 
-  /** Returns s string that represents array type declaration of type. */
+  /**
+   * Returns s string that represents array type declaration of type.
+   */
   public static String getArrayType(Class<?> type) {
     Tuple2<Class<?>, Integer> info = getArrayComponentInfo(type);
     StringBuilder typeBuilder = new StringBuilder(ReflectionUtils.getCanonicalName(info.f0));
@@ -382,7 +403,9 @@ public class TypeUtils {
     return typeBuilder.toString();
   }
 
-  /** Create an array type declaration from elemType and dimensions. */
+  /**
+   * Create an array type declaration from elemType and dimensions.
+   */
   public static String getArrayType(Class<?> elemType, int[] dimensions) {
     StringBuilder typeBuilder = new StringBuilder(ReflectionUtils.getCanonicalName(elemType));
     for (int i = 0; i < dimensions.length; i++) {
@@ -405,7 +428,9 @@ public class TypeUtils {
     return t;
   }
 
-  /** Returns element type of iterable. */
+  /**
+   * Returns element type of iterable.
+   */
   public static TypeToken<?> getElementType(TypeToken<?> typeToken) {
     Type type = typeToken.getType();
     if (type instanceof ParameterizedType) {
@@ -421,18 +446,20 @@ public class TypeUtils {
     }
     @SuppressWarnings("unchecked")
     TypeToken<?> supertype =
-        ((TypeToken<? extends Iterable<?>>) typeToken).getSupertype(Iterable.class);
+      ((TypeToken<? extends Iterable<?>>) typeToken).getSupertype(Iterable.class);
     return supertype.resolveType(ITERATOR_RETURN_TYPE).resolveType(NEXT_RETURN_TYPE);
   }
 
   public static TypeToken<?> getCollectionType(TypeToken<?> typeToken) {
     @SuppressWarnings("unchecked")
     TypeToken<?> supertype =
-        ((TypeToken<? extends Iterable<?>>) typeToken).getSupertype(Iterable.class);
+      ((TypeToken<? extends Iterable<?>>) typeToken).getSupertype(Iterable.class);
     return supertype.getSubtype(Collection.class);
   }
 
-  /** Returns key/value type of map. */
+  /**
+   * Returns key/value type of map.
+   */
   public static Tuple2<TypeToken<?>, TypeToken<?>> getMapKeyValueType(TypeToken<?> typeToken) {
     Type type = typeToken.getType();
     if (type instanceof ParameterizedType) {
@@ -441,10 +468,10 @@ public class TypeUtils {
         Type[] actualTypeArguments = (parameterizedType).getActualTypeArguments();
         Preconditions.checkState(actualTypeArguments.length == 2);
         if (actualTypeArguments[0].getClass() == Class.class
-            && actualTypeArguments[1].getClass() == Class.class) {
+          && actualTypeArguments[1].getClass() == Class.class) {
           // if actualTypeArguments are wild type, upper should be parsed.
           return Tuple2.of(
-              TypeToken.of(actualTypeArguments[0]), TypeToken.of(actualTypeArguments[1]));
+            TypeToken.of(actualTypeArguments[0]), TypeToken.of(actualTypeArguments[1]));
         }
       }
     }
@@ -456,11 +483,15 @@ public class TypeUtils {
   }
 
   public static <E> TypeToken<ArrayList<E>> arrayListOf(Class<E> elemType) {
-    return new TypeToken<ArrayList<E>>() {}.where(new TypeParameter<E>() {}, elemType);
+    return new TypeToken<ArrayList<E>>() {
+    }.where(new TypeParameter<E>() {
+    }, elemType);
   }
 
   public static <E> TypeToken<List<E>> listOf(Class<E> elemType) {
-    return new TypeToken<List<E>>() {}.where(new TypeParameter<E>() {}, elemType);
+    return new TypeToken<List<E>>() {
+    }.where(new TypeParameter<E>() {
+    }, elemType);
   }
 
   public static <E> TypeToken<Collection<E>> collectionOf(Class<E> elemType) {
@@ -468,7 +499,9 @@ public class TypeUtils {
   }
 
   public static <E> TypeToken<Collection<E>> collectionOf(TypeToken<E> elemType) {
-    return new TypeToken<Collection<E>>() {}.where(new TypeParameter<E>() {}, elemType);
+    return new TypeToken<Collection<E>>() {
+    }.where(new TypeParameter<E>() {
+    }, elemType);
   }
 
   public static <K, V> TypeToken<Map<K, V>> mapOf(Class<K> keyType, Class<V> valueType) {
@@ -476,25 +509,31 @@ public class TypeUtils {
   }
 
   public static <K, V> TypeToken<Map<K, V>> mapOf(TypeToken<K> keyType, TypeToken<V> valueType) {
-    return new TypeToken<Map<K, V>>() {}.where(new TypeParameter<K>() {}, keyType)
-        .where(new TypeParameter<V>() {}, valueType);
+    return new TypeToken<Map<K, V>>() {
+    }.where(new TypeParameter<K>() {
+      }, keyType)
+      .where(new TypeParameter<V>() {
+      }, valueType);
   }
 
   public static <K, V> TypeToken<? extends Map<K, V>> mapOf(
-      Class<?> mapType, TypeToken<K> keyType, TypeToken<V> valueType) {
+    Class<?> mapType, TypeToken<K> keyType, TypeToken<V> valueType) {
     TypeToken<Map<K, V>> mapTypeToken = mapOf(keyType, valueType);
     return mapTypeToken.getSubtype(mapType);
   }
 
   public static <K, V> TypeToken<? extends Map<K, V>> mapOf(
-      Class<?> mapType, Class<K> keyType, Class<V> valueType) {
+    Class<?> mapType, Class<K> keyType, Class<V> valueType) {
     TypeToken<Map<K, V>> mapTypeToken = mapOf(keyType, valueType);
     return mapTypeToken.getSubtype(mapType);
   }
 
   public static <K, V> TypeToken<HashMap<K, V>> hashMapOf(Class<K> keyType, Class<V> valueType) {
-    return new TypeToken<HashMap<K, V>>() {}.where(new TypeParameter<K>() {}, keyType)
-        .where(new TypeParameter<V>() {}, valueType);
+    return new TypeToken<HashMap<K, V>>() {
+    }.where(new TypeParameter<K>() {
+      }, keyType)
+      .where(new TypeParameter<V>() {
+      }, valueType);
   }
 
   public static boolean isCollection(Class<?> cls) {
@@ -541,21 +580,21 @@ public class TypeUtils {
         return false;
       }
       boolean maybe =
-          !SUPPORTED_TYPES.contains(typeToken)
-              && !typeToken.isArray()
-              && !cls.isEnum()
-              && !ITERABLE_TYPE.isSupertypeOf(typeToken)
-              && !MAP_TYPE.isSupertypeOf(typeToken);
+        !SUPPORTED_TYPES.contains(typeToken)
+          && !typeToken.isArray()
+          && !cls.isEnum()
+          && !ITERABLE_TYPE.isSupertypeOf(typeToken)
+          && !MAP_TYPE.isSupertypeOf(typeToken);
       if (maybe) {
         return Descriptor.getDescriptors(cls).stream()
-            .allMatch(
-                d -> {
-                  TypeToken<?> t = d.getTypeToken();
-                  // do field modifiers and getter/setter validation here, not in getDescriptors.
-                  // If Modifier.isFinal(d.getModifiers()), use reflection
-                  // private field that doesn't have getter/setter will be handled by reflection.
-                  return isSupported(t, newTypePath) || isBean(t, newTypePath);
-                });
+          .allMatch(
+            d -> {
+              TypeToken<?> t = d.getTypeToken();
+              // do field modifiers and getter/setter validation here, not in getDescriptors.
+              // If Modifier.isFinal(d.getModifiers()), use reflection
+              // private field that doesn't have getter/setter will be handled by reflection.
+              return isSupported(t, newTypePath) || isBean(t, newTypePath);
+            });
       } else {
         return false;
       }
@@ -564,13 +603,15 @@ public class TypeUtils {
     }
   }
 
-  /** Check if <code>typeToken</code> is supported by row-format. */
+  /**
+   * Check if <code>typeToken</code> is supported by row-format.
+   */
   public static boolean isSupported(TypeToken<?> typeToken) {
     return isSupported(typeToken, new LinkedHashSet<>());
   }
 
   private static boolean isSupported(
-      TypeToken<?> typeToken, LinkedHashSet<TypeToken> walkedTypePath) {
+    TypeToken<?> typeToken, LinkedHashSet<TypeToken> walkedTypePath) {
     Class<?> cls = getRawType(typeToken);
     if (!Modifier.isPublic(cls.getModifiers())) {
       return false;
@@ -588,7 +629,7 @@ public class TypeUtils {
       boolean isSuperOfArrayList = cls.isAssignableFrom(ArrayList.class);
       boolean isSuperOfHashSet = cls.isAssignableFrom(HashSet.class);
       if ((!isSuperOfArrayList && !isSuperOfHashSet)
-          && (cls.isInterface() || Modifier.isAbstract(cls.getModifiers()))) {
+        && (cls.isInterface() || Modifier.isAbstract(cls.getModifiers()))) {
         return false;
       }
       return isSupported(getElementType(typeToken));
@@ -602,7 +643,7 @@ public class TypeUtils {
     } else {
       if (walkedTypePath.contains(typeToken)) {
         throw new UnsupportedOperationException(
-            "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
+          "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
       } else {
         LinkedHashSet<TypeToken> newTypePath = new LinkedHashSet<>(walkedTypePath);
         newTypePath.add(typeToken);
@@ -616,14 +657,14 @@ public class TypeUtils {
    *
    * @param beanClass beanClass
    * @return a bean classes list in this <code>beanClass</code>, all its fields and all type
-   *     parameters recursively
+   * parameters recursively
    */
   public static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(Class<?> beanClass) {
     return listBeansRecursiveInclusive(beanClass, new LinkedHashSet<>());
   }
 
   private static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(
-      Class<?> beanClass, LinkedHashSet<TypeToken<?>> walkedTypePath) {
+    Class<?> beanClass, LinkedHashSet<TypeToken<?>> walkedTypePath) {
     LinkedHashSet<Class<?>> beans = new LinkedHashSet<>();
     if (isBean(beanClass)) {
       beans.add(beanClass);
@@ -637,20 +678,20 @@ public class TypeUtils {
     }
 
     typeTokens.stream()
-        .filter(typeToken -> isBean(getRawType(typeToken)))
-        .forEach(
-            typeToken -> {
-              Class<?> cls = getRawType(typeToken);
-              beans.add(cls);
-              if (walkedTypePath.contains(typeToken)) {
-                throw new UnsupportedOperationException(
-                    "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
-              } else {
-                LinkedHashSet<TypeToken<?>> newPath = new LinkedHashSet<>(walkedTypePath);
-                newPath.add(typeToken);
-                beans.addAll(listBeansRecursiveInclusive(cls, newPath));
-              }
-            });
+      .filter(typeToken -> isBean(getRawType(typeToken)))
+      .forEach(
+        typeToken -> {
+          Class<?> cls = getRawType(typeToken);
+          beans.add(cls);
+          if (walkedTypePath.contains(typeToken)) {
+            throw new UnsupportedOperationException(
+              "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
+          } else {
+            LinkedHashSet<TypeToken<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+            newPath.add(typeToken);
+            beans.addAll(listBeansRecursiveInclusive(cls, newPath));
+          }
+        });
     return beans;
   }
 
@@ -666,13 +707,15 @@ public class TypeUtils {
     return (int) hash;
   }
 
-  /** Returns generic type arguments of <code>typeToken</code>. */
+  /**
+   * Returns generic type arguments of <code>typeToken</code>.
+   */
   public static List<TypeToken<?>> getTypeArguments(TypeToken typeToken) {
     if (typeToken.getType() instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) typeToken.getType();
       return Arrays.stream(parameterizedType.getActualTypeArguments())
-          .map(TypeToken::of)
-          .collect(Collectors.toList());
+        .map(TypeToken::of)
+        .collect(Collectors.toList());
     } else {
       return new ArrayList<>();
     }
@@ -690,5 +733,31 @@ public class TypeUtils {
     }
 
     return new ArrayList<>(allTypeArguments);
+  }
+
+  private static volatile TypeToken<?> scalaMapType;
+  private static volatile TypeToken<?> scalaSeqType;
+  private static volatile TypeToken<?> scalaIterableType;
+
+
+  public static TypeToken<?> getScalaMapType() {
+    if (scalaMapType == null) {
+      scalaMapType = TypeToken.of(ReflectionUtils.loadClass("scala.collection.Map"));
+    }
+    return scalaMapType;
+  }
+
+  public static TypeToken<?> getScalaSeqType() {
+    if (scalaSeqType == null) {
+      scalaSeqType = TypeToken.of(ReflectionUtils.loadClass("scala.collection.Seq"));
+    }
+    return scalaSeqType;
+  }
+
+  public static TypeToken<?> getScalaIterableType() {
+    if (scalaIterableType == null) {
+      scalaIterableType = TypeToken.of(ReflectionUtils.loadClass("scala.collection.Iterable"));
+    }
+    return scalaIterableType;
   }
 }
