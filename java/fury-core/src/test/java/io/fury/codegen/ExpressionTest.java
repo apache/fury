@@ -17,7 +17,9 @@
 package io.fury.codegen;
 
 import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
+import static org.testng.Assert.assertNull;
 
+import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.Return;
@@ -62,6 +64,15 @@ public class ExpressionTest {
               + "    value = false;\n"
               + "}\n";
       Assert.assertEquals(code, expected);
+    }
+  }
+
+  @Test
+  public void testListExpression() {
+    {
+      ListExpression exp = new ListExpression();
+      String code = exp.genCode(new CodegenContext()).code();
+      assertNull(code);
     }
   }
 }

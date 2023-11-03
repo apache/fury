@@ -182,12 +182,16 @@ public interface Expression {
           hasCode = true;
         }
       }
-      ExprCode lastExprCode = last.genCode(ctx);
       String code = codeBuilder.toString();
       if (!hasCode) {
         code = null;
       }
-      return new ExprCode(code, lastExprCode.isNull(), lastExprCode.value());
+      if (code != null) {
+        ExprCode lastExprCode = last.genCode(ctx);
+        return new ExprCode(code, lastExprCode.isNull(), lastExprCode.value());
+      } else {
+        return new ExprCode(code);
+      }
     }
 
     @Override
