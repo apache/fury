@@ -179,6 +179,7 @@ public class ChildContainerSerializers {
 
     @Override
     public Map onMapWrite(MemoryBuffer buffer, T value) {
+      buffer.writePositiveVarInt(value.size());
       for (Serializer slotsSerializer : slotsSerializers) {
         slotsSerializer.write(buffer, value);
       }
@@ -186,8 +187,8 @@ public class ChildContainerSerializers {
     }
 
     @Override
-    public Map newMap(MemoryBuffer buffer, int numElements) {
-      Map map = super.newMap(buffer, numElements);
+    public Map newMap(MemoryBuffer buffer) {
+      Map map = super.newMap(buffer);
       readAndSetFields(buffer, map, slotsSerializers);
       return map;
     }

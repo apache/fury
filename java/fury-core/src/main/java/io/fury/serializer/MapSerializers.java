@@ -58,7 +58,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class MapSerializers {
 
-  public static class MapSerializer<T extends Map> extends Serializer<T> {
+  public abstract static class BaseMapSerializer<T> extends Serializer<T> {
     protected MethodHandle constructor;
     protected final boolean supportCodegenHook;
     private Serializer keySerializer;
@@ -81,12 +81,13 @@ public class MapSerializers {
     // field. So we will write those extra kv classes to keep protocol consistency between
     // interpreter and jit mode although it seems unnecessary.
     // With kv header in future, we can write this kv classes only once, the cost won't be too much.
+    protected int numElements;
 
-    public MapSerializer(Fury fury, Class<T> cls) {
+    public BaseMapSerializer(Fury fury, Class<T> cls) {
       this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls));
     }
 
-    public MapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
+    public BaseMapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
       super(fury, cls);
       this.supportCodegenHook = supportCodegenHook;
       keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
@@ -114,14 +115,14 @@ public class MapSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, T value) {
-      buffer.writePositiveVarInt(value.size());
-      writeElements(fury, buffer, onMapWrite(buffer, value));
+      Map map = onMapWrite(buffer, value);
+      writeElements(fury, buffer, map);
     }
 
     @Override
     public void xwrite(MemoryBuffer buffer, T value) {
-      buffer.writePositiveVarInt(value.size());
-      xwriteElements(fury, buffer, value);
+      Map map = onMapWrite(buffer, value);
+      xwriteElements(fury, buffer, map);
     }
 
     protected final void writeElements(Fury fury, MemoryBuffer buffer, Map map) {
@@ -156,16 +157,6 @@ public class MapSerializers {
         }
       } else {
         genericJavaWrite(fury, buffer, map);
-      }
-    }
-
-    protected final void simpleWriteElements(Fury fury, MemoryBuffer buffer, T map) {
-      ClassInfoHolder keyClassInfoWriteCache = this.keyClassInfoWriteCache;
-      ClassInfoHolder valueClassInfoWriteCache = this.valueClassInfoWriteCache;
-      for (Object o : map.entrySet()) {
-        Map.Entry entry = (Map.Entry) o;
-        fury.writeRef(buffer, entry.getKey(), keyClassInfoWriteCache);
-        fury.writeRef(buffer, entry.getValue(), valueClassInfoWriteCache);
       }
     }
 
@@ -431,7 +422,7 @@ public class MapSerializers {
     @Override
     public T read(MemoryBuffer buffer) {
       int size = buffer.readPositiveVarInt();
-      Map map = newMap(buffer, size);
+      Map map = newMap(buffer);
       readElements(buffer, size, map);
       return onMapRead(map);
     }
@@ -439,7 +430,7 @@ public class MapSerializers {
     @Override
     public T xread(MemoryBuffer buffer) {
       int size = buffer.readPositiveVarInt();
-      Map map = newMap(buffer, size);
+      Map map = newMap(buffer);
       xreadElements(fury, buffer, map, size);
       return onMapRead(map);
     }
@@ -685,9 +676,7 @@ public class MapSerializers {
      *   <li>write keys/values
      * </ol>
      */
-    public Map onMapWrite(MemoryBuffer buffer, T value) {
-      return value;
-    }
+    public abstract Map onMapWrite(MemoryBuffer buffer, T value);
 
     /**
      * Read data except size and elements, return empty map to be filled.
@@ -695,8 +684,7 @@ public class MapSerializers {
      * <ol>
      *   In codegen, follows is call order:
      *   <li>read map class if not final
-     *   <li>read map size
-     *   <li>newMap
+     *   <li>newMap: read and set map size, read map header and create map.
      *   <li>read keys/values
      * </ol>
      *
@@ -708,18 +696,26 @@ public class MapSerializers {
      * <p>without default constructor, created list will have elementData as null, adding elements
      * will raise NPE.
      */
-    public Map newMap(MemoryBuffer buffer, int numElements) {
+    public Map newMap(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       if (constructor == null) {
         constructor = ReflectionUtils.getCtrHandle(type, true);
       }
       try {
-        T instance = (T) constructor.invoke();
+        Map instance = (Map) constructor.invoke();
         fury.getRefResolver().reference(instance);
         return instance;
       } catch (Throwable e) {
         throw new IllegalArgumentException(
             "Please provide public no arguments constructor for class " + type, e);
       }
+    }
+
+    /**
+     * Get numElements of deserializing collection. Should be called after {@link #newMap}.
+     */
+    public int getNumElements() {
+      return numElements;
     }
 
     public T onMapRead(Map map) {
@@ -788,6 +784,22 @@ public class MapSerializers {
     }
   }
 
+  public abstract static class MapSerializer<T extends Map> extends BaseMapSerializer<T> {
+    public MapSerializer(Fury fury, Class<T> cls) {
+      super(fury, cls);
+    }
+
+    public MapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
+      super(fury, cls, supportCodegenHook);
+    }
+
+    @Override
+    public Map onMapWrite(MemoryBuffer buffer, T value) {
+      buffer.writePositiveVarInt(value.size());
+      return value;
+    }
+  }
+
   public static final class HashMapSerializer extends MapSerializer<HashMap> {
     public HashMapSerializer(Fury fury) {
       super(fury, HashMap.class, true);
@@ -799,8 +811,8 @@ public class MapSerializers {
     }
 
     @Override
-    public HashMap newMap(MemoryBuffer buffer, int size) {
-      HashMap hashMap = new HashMap(size);
+    public HashMap newMap(MemoryBuffer buffer) {
+      HashMap hashMap = new HashMap(numElements = buffer.readPositiveVarInt());
       fury.getRefResolver().reference(hashMap);
       return hashMap;
     }
@@ -817,8 +829,8 @@ public class MapSerializers {
     }
 
     @Override
-    public LinkedHashMap newMap(MemoryBuffer buffer, int size) {
-      LinkedHashMap hashMap = new LinkedHashMap(size);
+    public LinkedHashMap newMap(MemoryBuffer buffer) {
+      LinkedHashMap hashMap = new LinkedHashMap(numElements = buffer.readPositiveVarInt());
       fury.getRefResolver().reference(hashMap);
       return hashMap;
     }
@@ -835,8 +847,8 @@ public class MapSerializers {
     }
 
     @Override
-    public LazyMap newMap(MemoryBuffer buffer, int size) {
-      LazyMap map = new LazyMap(size);
+    public LazyMap newMap(MemoryBuffer buffer) {
+      LazyMap map = new LazyMap(numElements = buffer.readPositiveVarInt());
       fury.getRefResolver().reference(map);
       return map;
     }
@@ -853,13 +865,15 @@ public class MapSerializers {
 
     @Override
     public Map onMapWrite(MemoryBuffer buffer, T value) {
+      buffer.writePositiveVarInt(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Map newMap(MemoryBuffer buffer, int numElements) {
+    public Map newMap(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       T map;
       Comparator comparator = (Comparator) fury.readRef(buffer);
       if (type == TreeMap.class) {
@@ -971,8 +985,8 @@ public class MapSerializers {
     }
 
     @Override
-    public ConcurrentHashMap newMap(MemoryBuffer buffer, int size) {
-      ConcurrentHashMap map = new ConcurrentHashMap(size);
+    public ConcurrentHashMap newMap(MemoryBuffer buffer) {
+      ConcurrentHashMap map = new ConcurrentHashMap(numElements = buffer.readPositiveVarInt());
       fury.getRefResolver().reference(map);
       return map;
     }
@@ -991,7 +1005,8 @@ public class MapSerializers {
     }
 
     @Override
-    public ConcurrentSkipListMap newMap(MemoryBuffer buffer, int numElements) {
+    public ConcurrentSkipListMap newMap(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       Comparator comparator = (Comparator) fury.readRef(buffer);
       ConcurrentSkipListMap map = new ConcurrentSkipListMap(comparator);
       fury.getRefResolver().reference(map);
@@ -1017,13 +1032,15 @@ public class MapSerializers {
 
     @Override
     public Map onMapWrite(MemoryBuffer buffer, EnumMap value) {
+      buffer.writePositiveVarInt(value.size());
       Class keyType = (Class) Platform.getObject(value, keyTypeFieldOffset);
       fury.getClassResolver().writeClassAndUpdateCache(buffer, keyType);
       return value;
     }
 
     @Override
-    public EnumMap newMap(MemoryBuffer buffer, int numElements) {
+    public EnumMap newMap(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       Class<?> keyType = fury.getClassResolver().readClassInfo(buffer).getCls();
       return new EnumMap(keyType);
     }

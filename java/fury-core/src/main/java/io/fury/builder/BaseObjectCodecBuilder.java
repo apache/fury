@@ -1011,11 +1011,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Tuple2<TypeToken<?>, TypeToken<?>> keyValueType = TypeUtils.getMapKeyValueType(typeToken);
     TypeToken<?> keyType = keyValueType.f0;
     TypeToken<?> valueType = keyValueType.f1;
-    Invoke size = new Invoke(map, "size", PRIMITIVE_INT_TYPE);
-    Invoke writeSize = new Invoke(buffer, "writePositiveVarInt", size);
     Invoke onMapWrite =
         new Invoke(serializer, "onMapWrite", TypeUtils.mapOf(keyType, valueType), buffer, map);
     map = onMapWrite;
+    Invoke size = new Invoke(map, "size", PRIMITIVE_INT_TYPE);
     Invoke entrySet = new Invoke(map, "entrySet", "entrySet", SET_TYPE);
     ExprHolder exprHolder = ExprHolder.of("buffer", buffer);
     ForEach writeKeyValues =
@@ -1041,7 +1040,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               walkPath.removeLast();
               return new ListExpression(keyAction, valueAction);
             });
-    return new ListExpression(writeSize, onMapWrite, writeKeyValues);
+    return new ListExpression(onMapWrite, writeKeyValues);
   }
 
   protected Expression readRefOrNull(Expression buffer) {
@@ -1438,8 +1437,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           serializer.type());
     }
     Invoke supportHook = inlineInvoke(serializer, "supportCodegenHook", PRIMITIVE_BOOLEAN_TYPE);
-    Expression size = new Invoke(buffer, "readPositiveVarInt", "size", PRIMITIVE_INT_TYPE);
-    Expression newMap = new Invoke(serializer, "newMap", MAP_TYPE, buffer, size);
+    Expression newMap = new Invoke(serializer, "newMap", MAP_TYPE, buffer);
+    Expression size = new Invoke(serializer, "getNumElements", "size", PRIMITIVE_INT_TYPE);
     Expression start = new Literal(0, PRIMITIVE_INT_TYPE);
     Expression step = new Literal(1, PRIMITIVE_INT_TYPE);
     ExprHolder exprHolder = ExprHolder.of("map", newMap, "buffer", buffer);

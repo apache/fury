@@ -223,8 +223,8 @@ public class GuavaSerializers {
     protected abstract ImmutableMap.Builder makeBuilder(int size);
 
     @Override
-    public Map newMap(MemoryBuffer buffer, int numElements) {
-      return new MapContainer(numElements);
+    public Map newMap(MemoryBuffer buffer) {
+      return new MapContainer(numElements = buffer.readPositiveVarInt());
     }
 
     @Override
@@ -329,12 +329,14 @@ public class GuavaSerializers {
 
     @Override
     public Map onMapWrite(MemoryBuffer buffer, T value) {
+      buffer.writePositiveVarInt(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
     }
 
     @Override
-    public Map newMap(MemoryBuffer buffer, int numElements) {
+    public Map newMap(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       Comparator comparator = (Comparator) fury.readRef(buffer);
       return new SortedMapContainer<>(comparator, numElements);
     }
