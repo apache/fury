@@ -20,7 +20,8 @@ import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.CollectionSerializers.CollectionSerializer;
+import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.map.MapSerializer;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
@@ -93,7 +94,7 @@ public class UnmodifiableSerializers {
     }
   }
 
-  public static final class UnmodifiableMapSerializer extends MapSerializers.MapSerializer<Map> {
+  public static final class UnmodifiableMapSerializer extends MapSerializer<Map> {
     private final Function factory;
     private final long offset;
 

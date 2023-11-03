@@ -50,7 +50,6 @@ import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
 import io.fury.serializer.ChildContainerSerializers;
 import io.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
-import io.fury.serializer.CollectionSerializers;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.ExternalizableSerializer;
 import io.fury.serializer.GuavaSerializers;
@@ -59,7 +58,6 @@ import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.JdkProxySerializer;
 import io.fury.serializer.LambdaSerializer;
 import io.fury.serializer.LocaleSerializer;
-import io.fury.serializer.MapSerializers;
 import io.fury.serializer.MetaSharedSerializer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.OptionalSerializers;
@@ -76,6 +74,10 @@ import io.fury.serializer.UnexistedClassSerializers.UnexistedClassSerializer;
 import io.fury.serializer.UnexistedClassSerializers.UnexistedMetaSharedClass;
 import io.fury.serializer.UnexistedClassSerializers.UnexistedSkipClass;
 import io.fury.serializer.UnmodifiableSerializers;
+import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.collection.CollectionSerializers;
+import io.fury.serializer.map.MapSerializer;
+import io.fury.serializer.map.MapSerializers;
 import io.fury.serializer.scala.SingletonObjectSerializer;
 import io.fury.type.ClassDef;
 import io.fury.type.Descriptor;
@@ -868,7 +870,7 @@ public class ClassResolver {
         if (fury.getLanguage() == Language.JAVA) {
           return CollectionSerializers.DefaultJavaCollectionSerializer.class;
         } else {
-          return CollectionSerializers.CollectionSerializer.class;
+          return CollectionSerializer.class;
         }
       } else if (Map.class.isAssignableFrom(cls)) {
         // Serializer of common map such as HashMap/LinkedHashMap should be registered already.
@@ -883,7 +885,7 @@ public class ClassResolver {
         if (fury.getLanguage() == Language.JAVA) {
           return MapSerializers.DefaultJavaMapSerializer.class;
         } else {
-          return MapSerializers.MapSerializer.class;
+          return MapSerializer.class;
         }
       }
       if (fury.getLanguage() != Language.JAVA) {

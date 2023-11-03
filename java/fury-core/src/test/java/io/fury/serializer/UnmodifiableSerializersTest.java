@@ -26,6 +26,7 @@ import io.fury.FuryTestBase;
 import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.serializer.collection.CollectionSerializersTest;
 import io.fury.test.bean.CollectionFields;
 import io.fury.test.bean.MapFields;
 import io.fury.util.Platform;

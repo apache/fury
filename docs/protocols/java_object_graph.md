@@ -54,7 +54,7 @@ Which encoding to choose:
 ## Array
 
 ## Collection
-> All collection serializer must extends `io.fury.serializer.CollectionSerializers.CollectionSerializer`.
+> All collection serializer must extends `io.fury.serializer.collection.CollectionSerializer`.
 
 Format:
 ```java
@@ -82,7 +82,7 @@ actual element is the declare type in custom class field.
 ### elements data
 Based on the elements header, the serialization of elements data may skip `ref flag`/`null flag`/`element class info`.
 
-`io.fury.serializer.CollectionSerializers.CollectionSerializer#write/read` can be taken as an example.
+`io.fury.serializer.collection.CollectionSerializer#write/read` can be taken as an example.
 
 ## Map
 

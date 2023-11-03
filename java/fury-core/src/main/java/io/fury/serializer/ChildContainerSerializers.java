@@ -23,6 +23,8 @@ import io.fury.config.CompatibleMode;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.FieldResolver;
+import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.map.MapSerializer;
 import io.fury.util.ReflectionUtils;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -115,7 +117,7 @@ public class ChildContainerSerializers {
    * serialization in those classes.
    */
   public static class ChildCollectionSerializer<T extends Collection>
-      extends CollectionSerializers.CollectionSerializer<T> {
+      extends CollectionSerializer<T> {
     public static Set<Class<?>> superClasses =
         ImmutableSet.of(
             ArrayList.class, LinkedList.class, ArrayDeque.class, Vector.class, HashSet.class
@@ -163,7 +165,7 @@ public class ChildContainerSerializers {
    * Serializer for subclasses of {@link ChildMapSerializer#superClasses} if no jdk custom
    * serialization in those classes.
    */
-  public static class ChildMapSerializer<T extends Map> extends MapSerializers.MapSerializer<T> {
+  public static class ChildMapSerializer<T extends Map> extends MapSerializer<T> {
     public static Set<Class<?>> superClasses =
         ImmutableSet.of(
             HashMap.class, LinkedHashMap.class, ConcurrentHashMap.class

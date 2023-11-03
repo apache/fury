@@ -22,6 +22,7 @@ import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.config.CompatibleMode;
 import io.fury.config.Language;
+import io.fury.serializer.collection.CollectionSerializers;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
