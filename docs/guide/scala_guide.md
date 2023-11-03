@@ -39,8 +39,9 @@ If you use shared fury instance across multiple threads, you should create `Thre
 ## Serialize case object
 ```scala
 case class Person(github: String, age: Int, id: Long)
-println(fury.deserialize(fury.serialize(Person("https://github.com/chaokunyang", 28, 1))))
-println(fury.deserializeJavaObject(fury.serializeJavaObject(Person("https://github.com/chaokunyang", 28, 1))))
+val p = Person("https://github.com/chaokunyang", 18, 1)
+println(fury.deserialize(fury.serialize(p)))
+println(fury.deserializeJavaObject(fury.serializeJavaObject(p)))
 ```
 
 ## Serialize pojo
@@ -48,7 +49,7 @@ println(fury.deserializeJavaObject(fury.serializeJavaObject(Person("https://gith
 class Foo(f1: Int, f2: String) {
   override def toString: String = s"Foo($f1, $f2)"
 }
-println(fury.deserialize(fury.serialize(Person("chaokunyang", 28, 1))))
+println(fury.deserialize(fury.serialize(Foo(1, "chaokunyang"))))
 ```
 
 ## Serialize object singleton
