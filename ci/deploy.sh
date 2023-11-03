@@ -82,6 +82,8 @@ bump_java_version() {
   mvn versions:set -DnewVersion="$version"
   cd "$ROOT/integration_tests/perftests"
   mvn versions:set -DnewVersion="$version"
+  cd "$ROOT/integration_tests/latest_jdk_tests"
+  mvn versions:set -DnewVersion="$version"
 }
 
 bump_py_version() {
