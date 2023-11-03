@@ -712,8 +712,6 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
 
   protected Expression writeCollectionData(
       Expression buffer, Expression collection, Expression serializer, TypeToken<?> elementType) {
-    Expression size = new Invoke(collection, "size", PRIMITIVE_INT_TYPE);
-    Invoke writeSize = new Invoke(buffer, "writePositiveVarInt", size);
     Invoke onCollectionWrite =
         new Invoke(
             serializer,
@@ -722,6 +720,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             buffer,
             collection);
     collection = onCollectionWrite;
+    Expression size = new Invoke(collection, "size", PRIMITIVE_INT_TYPE);
     walkPath.add(elementType.toString());
     ListExpression builder = new ListExpression();
     Class<?> elemClass = TypeUtils.getRawType(elementType);
@@ -801,8 +800,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       builder.add(action);
     }
     walkPath.removeLast();
-    return new ListExpression(
-        writeSize, onCollectionWrite, new If(gt(size, Literal.ofInt(0)), builder));
+    return new ListExpression(onCollectionWrite, new If(gt(size, Literal.ofInt(0)), builder));
   }
 
   /**
@@ -1213,8 +1211,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           serializer.type());
     }
     Invoke supportHook = inlineInvoke(serializer, "supportCodegenHook", PRIMITIVE_BOOLEAN_TYPE);
-    Expression size = new Invoke(buffer, "readPositiveVarInt", "size", PRIMITIVE_INT_TYPE);
-    Expression collection = new Invoke(serializer, "newCollection", COLLECTION_TYPE, buffer, size);
+    Expression collection = new Invoke(serializer, "newCollection", COLLECTION_TYPE, buffer);
+    Expression size = new Invoke(serializer, "getNumElements", "size", PRIMITIVE_INT_TYPE);
     // if add branch by `ArrayList`, generated code will be > 325 bytes.
     // and List#add is more likely be inlined if there is only one subclass.
     Expression hookRead = readCollectionCodegen(buffer, collection, size, elementType);
