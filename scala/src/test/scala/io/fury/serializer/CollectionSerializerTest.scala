@@ -31,7 +31,6 @@ class CollectionSerializerTest extends AnyWordSpec with Matchers {
   "fury scala collection support" should {
     "serialize/deserialize Seq" in {
       val seq = Seq(100, 10000L)
-      Set(1,2).size
       fury.deserialize(fury.serialize(seq)) shouldEqual seq
     }
     "serialize/deserialize List" in {

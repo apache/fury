@@ -402,15 +402,11 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected boolean useCollectionSerialization(TypeToken<?> typeToken) {
-    return COLLECTION_TYPE.isSupertypeOf(typeToken)
-        || (fury.getConfig().isScalaOptimizationEnabled()
-            && TypeUtils.getScalaIterableType().isSupertypeOf(typeToken));
+    return COLLECTION_TYPE.isSupertypeOf(typeToken);
   }
 
   protected boolean useMapSerialization(TypeToken<?> typeToken) {
-    return MAP_TYPE.isSupertypeOf(typeToken)
-        || (fury.getConfig().isScalaOptimizationEnabled()
-            && TypeUtils.getScalaMapType().isSupertypeOf(typeToken));
+    return MAP_TYPE.isSupertypeOf(typeToken);
   }
 
   /**
