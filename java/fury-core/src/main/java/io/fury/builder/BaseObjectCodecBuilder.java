@@ -81,7 +81,7 @@ import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
 import io.fury.serializer.collection.AbstractCollectionSerializer;
 import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.map.MapSerializer;
+import io.fury.serializer.collection.MapSerializer;
 import io.fury.type.TypeUtils;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;

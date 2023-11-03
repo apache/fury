@@ -24,7 +24,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.FieldResolver;
 import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.map.MapSerializer;
+import io.fury.serializer.collection.MapSerializer;
 import io.fury.util.ReflectionUtils;
 import java.util.ArrayDeque;
 import java.util.ArrayList;

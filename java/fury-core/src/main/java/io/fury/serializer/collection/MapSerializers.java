@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury.serializer.map;
+package io.fury.serializer.collection;
 
 import com.google.common.base.Preconditions;
 import io.fury.Fury;

@@ -39,7 +39,7 @@ import io.fury.serializer.Serializer;
 import io.fury.serializer.Serializers;
 import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.serializer.collection.CollectionSerializers;
-import io.fury.serializer.map.MapSerializers;
+import io.fury.serializer.collection.MapSerializers;
 import io.fury.test.bean.BeanB;
 import io.fury.type.TypeUtils;
 import io.fury.util.LoggerFactory;
