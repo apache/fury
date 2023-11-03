@@ -172,6 +172,10 @@ public interface Expression {
 
     @Override
     public ExprCode doGenCode(CodegenContext ctx) {
+      if (last == null) {
+        return new ExprCode(null, null, null);
+      }
+
       StringBuilder codeBuilder = new StringBuilder();
       boolean hasCode = false;
       for (Expression expr : expressions) {
@@ -182,16 +186,12 @@ public interface Expression {
           hasCode = true;
         }
       }
+      ExprCode lastExprCode = last.genCode(ctx);
       String code = codeBuilder.toString();
       if (!hasCode) {
         code = null;
       }
-      if (code != null) {
-        ExprCode lastExprCode = last.genCode(ctx);
-        return new ExprCode(code, lastExprCode.isNull(), lastExprCode.value());
-      } else {
-        return new ExprCode(code);
-      }
+      return new ExprCode(code, lastExprCode.isNull(), lastExprCode.value());
     }
 
     @Override
