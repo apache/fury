@@ -11,6 +11,11 @@ Fury supports all scala object serialization:
 - `collection` serialization supported
 - other types such as `tuple/either` and basic types are all supported too.
 
+## Install
+```sbt
+libraryDependencies += "org.furyio" % "fury-core" % "0.3.0"
+```
+
 ## Fury creation
 When using fury for scala serialization, you should create fury at least with following options:
 ```scala
@@ -33,9 +38,18 @@ If you use shared fury instance across multiple threads, you should create `Thre
 
 ## Serialize case object
 ```scala
-case class Person(name: String, age: Int, id: Long)
-println(fury.deserialize(fury.serialize(Person("chaokunyang", 28, 1))))
-println(fury.deserializeJavaObject(fury.serializeJavaObject(Person("chaokunyang", 28, 1))))
+case class Person(github: String, age: Int, id: Long)
+val p = Person("https://github.com/chaokunyang", 18, 1)
+println(fury.deserialize(fury.serialize(p)))
+println(fury.deserializeJavaObject(fury.serializeJavaObject(p)))
+```
+
+## Serialize pojo
+```scala
+class Foo(f1: Int, f2: String) {
+  override def toString: String = s"Foo($f1, $f2)"
+}
+println(fury.deserialize(fury.serialize(Foo(1, "chaokunyang"))))
 ```
 
 ## Serialize object singleton
@@ -57,6 +71,37 @@ println(fury.deserialize(fury.serialize(list)))
 println(fury.deserialize(fury.serialize(map)))
 ```
 
+## Serialize Tuple
+```scala
+val tuple = Tuple2(100, 10000L)
+println(fury.deserialize(fury.serialize(tuple)))
+val tuple = Tuple4(100, 10000L, 10000L, "str")
+println(fury.deserialize(fury.serialize(tuple)))
+```
+
+## Serialize Enum
+### Scala3 Enum
+```scala
+enum Color { case Red, Green, Blue }
+println(fury.deserialize(fury.serialize(Color.Green)))
+```
+### Scala2 Enum
+```scala
+object ColorEnum extends Enumeration {
+  type ColorEnum = Value
+  val Red, Green, Blue = Value
+}
+println(fury.deserialize(fury.serialize(ColorEnum.Green)))
+```
+
+## Serialize Option
+```scala
+val opt: Option[Long] = Some(100)
+println(fury.deserialize(fury.serialize(opt)))
+val opt1: Option[Long] = None
+println(fury.deserialize(fury.serialize(opt1)))
+```
+
 # Performance
 Scala `pojo/bean/case/object` are supported by fury jit well, the performance is as good as fury java.
 
@@ -64,5 +109,5 @@ Scala collections and generics doesn't follow java collection framework, and is 
 
 The execution for scala collections will invoke Java serialization API `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` with fury `ObjectStream` implementation. Although `io.fury.serializer.ObjectStreamSerializer` is much faster than JDK `ObjectOutputStream/ObjectInputStream`, but it still doesn't know how use scala collection generics.
 
-In future we may provide jit support for scala collections to
-get better performance, see https://github.com/alipay/fury/issues/682.
+In future we plan provide jit support for scala collections to
+get better performance, see https://github.com/alipay/fury/issues/682, stay tuned!
