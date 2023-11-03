@@ -186,7 +186,7 @@ def _get_pyarrow_include(repository_ctx, python_bin="python"):
 def _get_pyarrow_shared_library(repository_ctx, library_name, python_bin="python"):
     """Gets the pyarrow shared library path."""
     code = """import pyarrow, os, glob;print(glob.glob(os.path.join(""" +\
-        """os.path.dirname(pyarrow.__file__), 'lib{}.*.*'))[0])""".format(library_name)
+        """os.path.dirname(pyarrow.__file__), 'lib{}.*'))[0])""".format(library_name)
     result = _execute(
         repository_ctx, [
             python_bin, "-c", code
