@@ -159,10 +159,12 @@ public class ClassResolverTest extends FuryTestBase {
         classResolver.getSerializerClass(ConcurrentHashMap.class),
         MapSerializers.ConcurrentHashMapSerializer.class);
     assertEquals(
-        classResolver.getSerializerClass(Class.forName("io.fury.serializer.CollectionContainer")),
+        classResolver.getSerializerClass(
+            Class.forName("io.fury.serializer.collection.CollectionContainer")),
         CollectionSerializers.DefaultJavaCollectionSerializer.class);
     assertEquals(
-        classResolver.getSerializerClass(Class.forName("io.fury.serializer.MapContainer")),
+        classResolver.getSerializerClass(
+            Class.forName("io.fury.serializer.collection.MapContainer")),
         MapSerializers.DefaultJavaMapSerializer.class);
   }
 
