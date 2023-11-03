@@ -172,6 +172,10 @@ public interface Expression {
 
     @Override
     public ExprCode doGenCode(CodegenContext ctx) {
+      if (last == null) {
+        return new ExprCode(null, null, null);
+      }
+
       StringBuilder codeBuilder = new StringBuilder();
       boolean hasCode = false;
       for (Expression expr : expressions) {
