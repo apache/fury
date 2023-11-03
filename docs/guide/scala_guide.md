@@ -11,6 +11,8 @@ Fury supports all scala object serialization:
 - `collection` serialization supported
 - other types such as `tuple/either` and basic types are all supported too.
 
+Scala 2 and 3 are both supported.
+
 ## Install
 ```sbt
 libraryDependencies += "org.furyio" % "fury-core" % "0.3.0"
