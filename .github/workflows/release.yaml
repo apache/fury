@@ -49,8 +49,8 @@ jobs:
         run: |
           pyversion=$(python -V | cut -d' ' -f2)
           if [[ $pyversion  ==  3.11.*  || $pyversion == 3.12.* ]]; then
-            pip install pyarrow==8.0.0
-            sed -i -E "s/pyarrow_version = .*/pyarrow_version = \"8.0.0\"/" python/setup.py
+            pip install pyarrow==14.0.0
+            sed -i -E "s/pyarrow_version = .*/pyarrow_version = \"14.0.0\"/" python/setup.py
           else
             pip install pyarrow==6.0.1
           fi
