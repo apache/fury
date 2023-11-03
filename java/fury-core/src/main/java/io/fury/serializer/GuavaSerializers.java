@@ -75,7 +75,8 @@ public class GuavaSerializers {
     }
 
     @Override
-    public Collection newCollection(MemoryBuffer buffer, int numElements) {
+    public Collection newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       return new CollectionContainer<>(numElements);
     }
 
@@ -125,7 +126,8 @@ public class GuavaSerializers {
     }
 
     @Override
-    public Collection newCollection(MemoryBuffer buffer, int numElements) {
+    public Collection newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       return new CollectionContainer(numElements);
     }
 
@@ -156,7 +158,8 @@ public class GuavaSerializers {
     }
 
     @Override
-    public Collection newCollection(MemoryBuffer buffer, int numElements) {
+    public Collection newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       return new CollectionContainer<>(numElements);
     }
 
@@ -181,19 +184,21 @@ public class GuavaSerializers {
 
   public static final class ImmutableSortedSetSerializer<T extends ImmutableSortedSet>
       extends CollectionSerializer<T> {
-
     public ImmutableSortedSetSerializer(Fury fury, Class<T> cls) {
       super(fury, cls, false);
       fury.getClassResolver().setSerializer(cls, this);
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, T value) {
+    public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
+      buffer.writePositiveVarInt(value.size());
       fury.writeRef(buffer, value.comparator());
+      return value;
     }
 
     @Override
-    public Collection newCollection(MemoryBuffer buffer, int numElements) {
+    public Collection newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       Comparator comparator = (Comparator) fury.readRef(buffer);
       return new SortedCollectionContainer(comparator, numElements);
     }
@@ -218,8 +223,8 @@ public class GuavaSerializers {
     protected abstract ImmutableMap.Builder makeBuilder(int size);
 
     @Override
-    public Map newMap(MemoryBuffer buffer, int numElements) {
-      return new MapContainer(numElements);
+    public Map newMap(MemoryBuffer buffer) {
+      return new MapContainer(numElements = buffer.readPositiveVarInt());
     }
 
     @Override
@@ -323,12 +328,15 @@ public class GuavaSerializers {
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, T value) {
+    public Map onMapWrite(MemoryBuffer buffer, T value) {
+      buffer.writePositiveVarInt(value.size());
       fury.writeRef(buffer, value.comparator());
+      return value;
     }
 
     @Override
-    public Map newMap(MemoryBuffer buffer, int numElements) {
+    public Map newMap(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       Comparator comparator = (Comparator) fury.readRef(buffer);
       return new SortedMapContainer<>(comparator, numElements);
     }

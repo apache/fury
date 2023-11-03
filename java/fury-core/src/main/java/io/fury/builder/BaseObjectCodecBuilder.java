@@ -708,9 +708,15 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
 
   protected Expression writeCollectionData(
       Expression buffer, Expression collection, Expression serializer, TypeToken<?> elementType) {
+    Invoke onCollectionWrite =
+        new Invoke(
+            serializer,
+            "onCollectionWrite",
+            TypeUtils.collectionOf(elementType),
+            buffer,
+            collection);
+    collection = onCollectionWrite;
     Expression size = new Invoke(collection, "size", PRIMITIVE_INT_TYPE);
-    Invoke writeSize = new Invoke(buffer, "writePositiveVarInt", size);
-    Invoke writeHeader = new Invoke(serializer, "writeHeader", buffer, collection);
     walkPath.add(elementType.toString());
     ListExpression builder = new ListExpression();
     Class<?> elemClass = TypeUtils.getRawType(elementType);
@@ -790,7 +796,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       builder.add(action);
     }
     walkPath.removeLast();
-    return new ListExpression(writeSize, writeHeader, new If(gt(size, Literal.ofInt(0)), builder));
+    return new ListExpression(onCollectionWrite, new If(gt(size, Literal.ofInt(0)), builder));
   }
 
   /**
@@ -956,9 +962,6 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       TypeToken<?> typeToken,
       Expression serializer,
       boolean generateNewMethod) {
-    Tuple2<TypeToken<?>, TypeToken<?>> keyValueType = TypeUtils.getMapKeyValueType(typeToken);
-    TypeToken<?> keyType = keyValueType.f0;
-    TypeToken<?> valueType = keyValueType.f1;
     if (serializer == null) {
       Class<?> clz = getRawType(typeToken);
       if (isFinal(clz)) {
@@ -988,10 +991,26 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     } else if (!MapSerializer.class.isAssignableFrom(serializer.type().getRawType())) {
       serializer = new Cast(serializer, TypeToken.of(MapSerializer.class), "mapSerializer");
     }
-    ListExpression actions = new ListExpression();
+    Expression write =
+        new If(
+            inlineInvoke(serializer, "supportCodegenHook", PRIMITIVE_BOOLEAN_TYPE),
+            jitWriteMap(buffer, map, serializer, typeToken),
+            new Invoke(serializer, "write", buffer, map));
+    if (generateNewMethod) {
+      return invokeGenerated(ctx, ImmutableSet.of(buffer, map), write, "writeMap", false);
+    }
+    return write;
+  }
+
+  private Expression jitWriteMap(
+      Expression buffer, Expression map, Expression serializer, TypeToken<?> typeToken) {
+    Tuple2<TypeToken<?>, TypeToken<?>> keyValueType = TypeUtils.getMapKeyValueType(typeToken);
+    TypeToken<?> keyType = keyValueType.f0;
+    TypeToken<?> valueType = keyValueType.f1;
+    Invoke onMapWrite =
+        new Invoke(serializer, "onMapWrite", TypeUtils.mapOf(keyType, valueType), buffer, map);
+    map = onMapWrite;
     Invoke size = new Invoke(map, "size", PRIMITIVE_INT_TYPE);
-    Invoke writeSize = new Invoke(buffer, "writePositiveVarInt", size);
-    Invoke writeHeader = new Invoke(serializer, "writeHeader", buffer, map);
     Invoke entrySet = new Invoke(map, "entrySet", "entrySet", SET_TYPE);
     ExprHolder exprHolder = ExprHolder.of("buffer", buffer);
     ForEach writeKeyValues =
@@ -1017,17 +1036,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               walkPath.removeLast();
               return new ListExpression(keyAction, valueAction);
             });
-    Expression hookWrite = new ListExpression(writeSize, writeHeader, writeKeyValues);
-    Expression write =
-        new If(
-            inlineInvoke(serializer, "supportCodegenHook", PRIMITIVE_BOOLEAN_TYPE),
-            hookWrite,
-            new Invoke(serializer, "write", buffer, map));
-    actions.add(write);
-    if (generateNewMethod) {
-      return invokeGenerated(ctx, ImmutableSet.of(buffer, map), actions, "writeMap", false);
-    }
-    return actions;
+    return new ListExpression(onMapWrite, writeKeyValues);
   }
 
   protected Expression readRefOrNull(Expression buffer) {
@@ -1197,8 +1206,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           serializer.type());
     }
     Invoke supportHook = inlineInvoke(serializer, "supportCodegenHook", PRIMITIVE_BOOLEAN_TYPE);
-    Expression size = new Invoke(buffer, "readPositiveVarInt", "size", PRIMITIVE_INT_TYPE);
-    Expression collection = new Invoke(serializer, "newCollection", COLLECTION_TYPE, buffer, size);
+    Expression collection = new Invoke(serializer, "newCollection", COLLECTION_TYPE, buffer);
+    Expression size = new Invoke(serializer, "getNumElements", "size", PRIMITIVE_INT_TYPE);
     // if add branch by `ArrayList`, generated code will be > 325 bytes.
     // and List#add is more likely be inlined if there is only one subclass.
     Expression hookRead = readCollectionCodegen(buffer, collection, size, elementType);
@@ -1424,8 +1433,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           serializer.type());
     }
     Invoke supportHook = inlineInvoke(serializer, "supportCodegenHook", PRIMITIVE_BOOLEAN_TYPE);
-    Expression size = new Invoke(buffer, "readPositiveVarInt", "size", PRIMITIVE_INT_TYPE);
-    Expression newMap = new Invoke(serializer, "newMap", MAP_TYPE, buffer, size);
+    Expression newMap = new Invoke(serializer, "newMap", MAP_TYPE, buffer);
+    Expression size = new Invoke(serializer, "getNumElements", "size", PRIMITIVE_INT_TYPE);
     Expression start = new Literal(0, PRIMITIVE_INT_TYPE);
     Expression step = new Literal(1, PRIMITIVE_INT_TYPE);
     ExprHolder exprHolder = ExprHolder.of("map", newMap, "buffer", buffer);
@@ -1452,7 +1461,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               return new Invoke(exprHolder.get("map"), "put", keyAction, valueAction);
             });
     // first newMap to create map, last newMap as expr value
-    Expression hookRead = new ListExpression(size, newMap, readKeyValues, newMap);
+    Expression hookRead = new ListExpression(newMap, size, readKeyValues, newMap);
     hookRead = new Invoke(serializer, "onMapRead", MAP_TYPE, hookRead);
     Expression action =
         new If(supportHook, hookRead, new Invoke(serializer, "read", MAP_TYPE, buffer), false);

@@ -691,4 +691,29 @@ public class TypeUtils {
 
     return new ArrayList<>(allTypeArguments);
   }
+
+  private static volatile TypeToken<?> scalaMapType;
+  private static volatile TypeToken<?> scalaSeqType;
+  private static volatile TypeToken<?> scalaIterableType;
+
+  public static TypeToken<?> getScalaMapType() {
+    if (scalaMapType == null) {
+      scalaMapType = TypeToken.of(ReflectionUtils.loadClass("scala.collection.Map"));
+    }
+    return scalaMapType;
+  }
+
+  public static TypeToken<?> getScalaSeqType() {
+    if (scalaSeqType == null) {
+      scalaSeqType = TypeToken.of(ReflectionUtils.loadClass("scala.collection.Seq"));
+    }
+    return scalaSeqType;
+  }
+
+  public static TypeToken<?> getScalaIterableType() {
+    if (scalaIterableType == null) {
+      scalaIterableType = TypeToken.of(ReflectionUtils.loadClass("scala.collection.Iterable"));
+    }
+    return scalaIterableType;
+  }
 }

@@ -444,6 +444,22 @@ public class ReflectionUtils {
     }
   }
 
+  public static Class<?> loadClass(String className) {
+    try {
+      return Class.forName(className);
+    } catch (ClassNotFoundException e) {
+      try {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (loader != null) {
+          return loader.loadClass(className);
+        }
+      } catch (ClassNotFoundException ex) {
+        throw new RuntimeException(ex);
+      }
+      throw new RuntimeException(e);
+    }
+  }
+
   public static <T> T unsafeCopy(T obj) {
     @SuppressWarnings("unchecked")
     T newInstance = (T) Platform.newInstance(obj.getClass());

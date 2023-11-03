@@ -109,7 +109,8 @@ public class ImmutableCollectionSerializers {
     }
 
     @Override
-    public Collection newCollection(MemoryBuffer buffer, int numElements) {
+    public Collection newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       if (Platform.JAVA_VERSION > 8) {
         return new CollectionContainer<>(numElements);
       } else {
@@ -140,7 +141,8 @@ public class ImmutableCollectionSerializers {
     }
 
     @Override
-    public Collection newCollection(MemoryBuffer buffer, int numElements) {
+    public Collection newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       if (Platform.JAVA_VERSION > 8) {
         return new CollectionContainer<>(numElements);
       } else {
@@ -171,7 +173,8 @@ public class ImmutableCollectionSerializers {
     }
 
     @Override
-    public Map newMap(MemoryBuffer buffer, int numElements) {
+    public Map newMap(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       if (Platform.JAVA_VERSION > 8) {
         return new JDKImmutableMapContainer(numElements);
       } else {

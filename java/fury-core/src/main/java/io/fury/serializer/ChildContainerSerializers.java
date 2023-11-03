@@ -130,14 +130,16 @@ public class ChildContainerSerializers {
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, T value) {
+    public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
+      buffer.writePositiveVarInt(value.size());
       for (Serializer slotsSerializer : slotsSerializers) {
         slotsSerializer.write(buffer, value);
       }
+      return value;
     }
 
-    public Collection newCollection(MemoryBuffer buffer, int numElements) {
-      Collection collection = super.newCollection(buffer, numElements);
+    public Collection newCollection(MemoryBuffer buffer) {
+      Collection collection = super.newCollection(buffer);
       readAndSetFields(buffer, collection, slotsSerializers);
       return collection;
     }
@@ -150,8 +152,8 @@ public class ChildContainerSerializers {
     }
 
     @Override
-    public T newCollection(MemoryBuffer buffer, int numElements) {
-      T collection = (T) super.newCollection(buffer, numElements);
+    public T newCollection(MemoryBuffer buffer) {
+      T collection = (T) super.newCollection(buffer);
       collection.ensureCapacity(numElements);
       return collection;
     }
@@ -175,15 +177,17 @@ public class ChildContainerSerializers {
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, T value) {
+    public Map onMapWrite(MemoryBuffer buffer, T value) {
+      buffer.writePositiveVarInt(value.size());
       for (Serializer slotsSerializer : slotsSerializers) {
         slotsSerializer.write(buffer, value);
       }
+      return value;
     }
 
     @Override
-    public Map newMap(MemoryBuffer buffer, int numElements) {
-      Map map = super.newMap(buffer, numElements);
+    public Map newMap(MemoryBuffer buffer) {
+      Map map = super.newMap(buffer);
       readAndSetFields(buffer, map, slotsSerializers);
       return map;
     }

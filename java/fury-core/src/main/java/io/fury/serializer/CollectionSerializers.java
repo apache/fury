@@ -83,8 +83,9 @@ public class CollectionSerializers {
   }
 
   /** Serializer for {@link Collection}. All collection serializer should extend this class. */
-  public static class CollectionSerializer<T extends Collection> extends Serializer<T> {
+  public abstract static class BaseCollectionSerializer<T> extends Serializer<T> {
     private MethodHandle constructor;
+    protected int numElements;
     private final boolean supportCodegenHook;
     // TODO remove elemSerializer, support generics in CompatibleSerializer.
     private Serializer<?> elemSerializer;
@@ -98,11 +99,11 @@ public class CollectionSerializers {
     // interpreter and jit mode although it seems unnecessary.
     // With elements header, we can write this element class only once, the cost won't be too much.
 
-    public CollectionSerializer(Fury fury, Class<T> cls) {
+    public BaseCollectionSerializer(Fury fury, Class<T> cls) {
       this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls));
     }
 
-    public CollectionSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
+    public BaseCollectionSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
       super(fury, cls);
       this.supportCodegenHook = supportCodegenHook;
       elementClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
@@ -144,11 +145,11 @@ public class CollectionSerializers {
      *   In codegen, follows is call order:
      *   <li>write collection class if not final
      *   <li>write collection size
-     *   <li>writeHeader
+     *   <li>onCollectionWrite
      *   <li>write elements
      * </ol>
      */
-    public void writeHeader(MemoryBuffer buffer, T value) {}
+    public abstract Collection onCollectionWrite(MemoryBuffer buffer, T value);
 
     /**
      * Write elements data header. Keep this consistent with
@@ -156,7 +157,7 @@ public class CollectionSerializers {
      *
      * @return a bitmap, higher 24 bits are reserved.
      */
-    protected final int writeElementsHeader(MemoryBuffer buffer, T value) {
+    protected final int writeElementsHeader(MemoryBuffer buffer, Collection value) {
       GenericType elemGenericType = getElementGenericType(fury);
       if (elemGenericType != null) {
         boolean trackingRef = elemGenericType.trackingRef(fury.getClassResolver());
@@ -195,7 +196,7 @@ public class CollectionSerializers {
 
     /** Element type is final, write whether any elements is null. */
     @CodegenInvoke
-    public int writeNullabilityHeader(MemoryBuffer buffer, T value) {
+    public int writeNullabilityHeader(MemoryBuffer buffer, Collection value) {
       for (Object elem : value) {
         if (elem == null) {
           buffer.writeByte(Flags.HAS_NULL);
@@ -209,7 +210,7 @@ public class CollectionSerializers {
     /** Need to track elements ref, can't check elements nullability. */
     @CodegenInvoke
     public int writeTypeHeader(
-        MemoryBuffer buffer, T value, Class<?> declareElementType, ClassInfoHolder cache) {
+        MemoryBuffer buffer, Collection value, Class<?> declareElementType, ClassInfoHolder cache) {
       int bitmap = Flags.TRACKING_REF;
       boolean hasDifferentClass = false;
       Class<?> elemClass = null;
@@ -246,7 +247,7 @@ public class CollectionSerializers {
 
     /** Maybe track elements ref, or write elements nullability. */
     @CodegenInvoke
-    public int writeTypeHeader(MemoryBuffer buffer, T value, ClassInfoHolder cache) {
+    public int writeTypeHeader(MemoryBuffer buffer, Collection value, ClassInfoHolder cache) {
       int bitmap = Flags.NOT_DECL_ELEMENT_TYPE;
       boolean hasDifferentClass = false;
       Class<?> elemClass = null;
@@ -286,7 +287,7 @@ public class CollectionSerializers {
      */
     @CodegenInvoke
     public int writeTypeNullabilityHeader(
-        MemoryBuffer buffer, T value, Class<?> declareElementType, ClassInfoHolder cache) {
+        MemoryBuffer buffer, Collection value, Class<?> declareElementType, ClassInfoHolder cache) {
       int bitmap = 0;
       boolean containsNull = false;
       boolean hasDifferentClass = false;
@@ -323,54 +324,16 @@ public class CollectionSerializers {
       return bitmap;
     }
 
-    /**
-     * Read data except size and elements, return empty collection to be filled.
-     *
-     * <ol>
-     *   In codegen, follows is call order:
-     *   <li>read collection class if not final
-     *   <li>read collection size
-     *   <li>newCollection
-     *   <li>read elements
-     * </ol>
-     *
-     * <p>Collection must have default constructor to be invoked by fury, otherwise created object
-     * can't be used to adding elements. For example:
-     *
-     * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
-     *
-     * <p>without default constructor, created list will have elementData as null, adding elements
-     * will raise NPE.
-     */
-    public Collection newCollection(MemoryBuffer buffer, int numElements) {
-      if (constructor == null) {
-        constructor = ReflectionUtils.getCtrHandle(type, true);
-      }
-      try {
-        T instance = (T) constructor.invoke();
-        fury.getRefResolver().reference(instance);
-        return instance;
-      } catch (Throwable e) {
-        throw new IllegalArgumentException(
-            "Please provide public no arguments constructor for class " + type, e);
-      }
-    }
-
-    public T onCollectionRead(Collection collection) {
-      return (T) collection;
-    }
-
     @Override
     public void write(MemoryBuffer buffer, T value) {
-      int len = value.size();
-      buffer.writePositiveVarInt(len);
-      writeHeader(buffer, value);
+      Collection collection = onCollectionWrite(buffer, value);
+      int len = collection.size();
       if (len != 0) {
-        writeElements(fury, buffer, value);
+        writeElements(fury, buffer, collection);
       }
     }
 
-    protected final void writeElements(Fury fury, MemoryBuffer buffer, T value) {
+    protected final void writeElements(Fury fury, MemoryBuffer buffer, Collection value) {
       int flags = writeElementsHeader(buffer, value);
       Serializer serializer = this.elemSerializer;
       // clear the elemSerializer to avoid conflict if the nested
@@ -381,7 +344,7 @@ public class CollectionSerializers {
         if (elemGenericType != null) {
           javaWriteWithGenerics(fury, buffer, value, elemGenericType, flags);
         } else {
-          generalJavaWrite(fury, buffer, value, elemGenericType, flags);
+          generalJavaWrite(fury, buffer, value, null, flags);
         }
       } else {
         compatibleWrite(fury, buffer, value, serializer, flags);
@@ -415,7 +378,11 @@ public class CollectionSerializers {
     }
 
     private void javaWriteWithGenerics(
-        Fury fury, MemoryBuffer buffer, T collection, GenericType elemGenericType, int flags) {
+        Fury fury,
+        MemoryBuffer buffer,
+        Collection collection,
+        GenericType elemGenericType,
+        int flags) {
       boolean hasGenericParameters = elemGenericType.hasGenericParameters();
       if (hasGenericParameters) {
         fury.getGenerics().pushGenericType(elemGenericType);
@@ -434,7 +401,11 @@ public class CollectionSerializers {
     }
 
     private void generalJavaWrite(
-        Fury fury, MemoryBuffer buffer, T collection, GenericType elemGenericType, int flags) {
+        Fury fury,
+        MemoryBuffer buffer,
+        Collection collection,
+        GenericType elemGenericType,
+        int flags) {
       if ((flags & Flags.NOT_SAME_TYPE) != Flags.NOT_SAME_TYPE) {
         Serializer serializer;
         if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) != Flags.NOT_DECL_ELEMENT_TYPE) {
@@ -498,9 +469,10 @@ public class CollectionSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, T value) {
-      int len = value.size();
+      Collection collection = (Collection) value;
+      int len = collection.size();
       buffer.writePositiveVarInt(len);
-      xwriteElements(fury, buffer, value);
+      xwriteElements(fury, buffer, collection);
     }
 
     private void xwriteElements(Fury fury, MemoryBuffer buffer, Collection value) {
@@ -531,16 +503,52 @@ public class CollectionSerializers {
     }
 
     @Override
-    public T read(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
-      Collection collection = newCollection(buffer, numElements);
-      if (numElements != 0) {
-        readElements(fury, buffer, collection, numElements);
+    public abstract T read(MemoryBuffer buffer);
+
+    /**
+     * Read data except size and elements, return empty collection to be filled.
+     *
+     * <ol>
+     *   In codegen, follows is call order:
+     *   <li>read collection class if not final
+     *   <li>newCollection: read and set collection size, read collection header and create
+     *       collection.
+     *   <li>read elements
+     * </ol>
+     *
+     * <p>Collection must have default constructor to be invoked by fury, otherwise created object
+     * can't be used to adding elements. For example:
+     *
+     * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
+     *
+     * <p>without default constructor, created list will have elementData as null, adding elements
+     * will raise NPE.
+     */
+    public Collection newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
+      if (constructor == null) {
+        constructor = ReflectionUtils.getCtrHandle(type, true);
       }
-      return onCollectionRead(collection);
+      try {
+        T instance = (T) constructor.invoke();
+        fury.getRefResolver().reference(instance);
+        return (Collection) instance;
+      } catch (Throwable e) {
+        throw new IllegalArgumentException(
+            "Please provide public no arguments constructor for class " + type, e);
+      }
     }
 
-    private void readElements(
+    /**
+     * Get numElements of deserializing collection. Should be called after {@link #newCollection}.
+     */
+    public int getNumElements() {
+      return numElements;
+    }
+
+    public abstract T onCollectionRead(Collection collection);
+
+    protected void readElements(
         Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
       int flags = buffer.readByte();
       Serializer serializer = this.elemSerializer;
@@ -688,8 +696,7 @@ public class CollectionSerializers {
 
     @Override
     public T xread(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
-      Collection collection = newCollection(buffer, numElements);
+      Collection collection = newCollection(buffer);
       xreadElements(fury, buffer, collection, numElements);
       return onCollectionRead(collection);
     }
@@ -726,6 +733,37 @@ public class CollectionSerializers {
     }
   }
 
+  public static class CollectionSerializer<T extends Collection>
+      extends BaseCollectionSerializer<T> {
+    public CollectionSerializer(Fury fury, Class<T> type) {
+      super(fury, type);
+    }
+
+    public CollectionSerializer(Fury fury, Class<T> type, boolean supportCodegenHook) {
+      super(fury, type, supportCodegenHook);
+    }
+
+    @Override
+    public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
+      buffer.writePositiveVarInt(value.size());
+      return value;
+    }
+
+    @Override
+    public T onCollectionRead(Collection collection) {
+      return (T) collection;
+    }
+
+    @Override
+    public T read(MemoryBuffer buffer) {
+      Collection collection = newCollection(buffer);
+      if (numElements != 0) {
+        readElements(fury, buffer, collection, numElements);
+      }
+      return onCollectionRead(collection);
+    }
+  }
+
   public static final class ArrayListSerializer extends CollectionSerializer<ArrayList> {
     public ArrayListSerializer(Fury fury) {
       super(fury, ArrayList.class, true);
@@ -737,7 +775,8 @@ public class CollectionSerializers {
     }
 
     @Override
-    public ArrayList newCollection(MemoryBuffer buffer, int numElements) {
+    public ArrayList newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       ArrayList arrayList = new ArrayList(numElements);
       fury.getRefResolver().reference(arrayList);
       return arrayList;
@@ -808,7 +847,8 @@ public class CollectionSerializers {
     }
 
     @Override
-    public HashSet newCollection(MemoryBuffer buffer, int numElements) {
+    public HashSet newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       HashSet hashSet = new HashSet(numElements);
       fury.getRefResolver().reference(hashSet);
       return hashSet;
@@ -826,7 +866,8 @@ public class CollectionSerializers {
     }
 
     @Override
-    public LinkedHashSet newCollection(MemoryBuffer buffer, int numElements) {
+    public LinkedHashSet newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       LinkedHashSet hashSet = new LinkedHashSet(numElements);
       fury.getRefResolver().reference(hashSet);
       return hashSet;
@@ -851,13 +892,16 @@ public class CollectionSerializers {
     }
 
     @Override
-    public void writeHeader(MemoryBuffer buffer, T value) {
+    public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
+      buffer.writePositiveVarInt(value.size());
       fury.writeRef(buffer, value.comparator());
+      return value;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public T newCollection(MemoryBuffer buffer, int numElements) {
+    public T newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       T collection;
       Comparator comparator = (Comparator) fury.readRef(buffer);
       if (type == TreeSet.class) {
@@ -1035,7 +1079,8 @@ public class CollectionSerializers {
     }
 
     @Override
-    public ConcurrentSkipListSet newCollection(MemoryBuffer buffer, int numElements) {
+    public ConcurrentSkipListSet newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       Comparator comparator = (Comparator) fury.readRef(buffer);
       ConcurrentSkipListSet skipListSet = new ConcurrentSkipListSet(comparator);
       fury.getRefResolver().reference(skipListSet);
@@ -1050,7 +1095,8 @@ public class CollectionSerializers {
     }
 
     @Override
-    public Vector newCollection(MemoryBuffer buffer, int numElements) {
+    public Vector newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       Vector<Object> vector = new Vector<>(numElements);
       fury.getRefResolver().reference(vector);
       return vector;
@@ -1064,7 +1110,8 @@ public class CollectionSerializers {
     }
 
     @Override
-    public ArrayDeque newCollection(MemoryBuffer buffer, int numElements) {
+    public ArrayDeque newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       ArrayDeque deque = new ArrayDeque(numElements);
       fury.getRefResolver().reference(deque);
       return deque;
@@ -1135,12 +1182,15 @@ public class CollectionSerializers {
       super(fury, cls, true);
     }
 
-    public void writeHeader(MemoryBuffer buffer, PriorityQueue value) {
+    public Collection onCollectionWrite(MemoryBuffer buffer, PriorityQueue value) {
+      buffer.writePositiveVarInt(value.size());
       fury.writeRef(buffer, value.comparator());
+      return value;
     }
 
     @Override
-    public PriorityQueue newCollection(MemoryBuffer buffer, int numElements) {
+    public PriorityQueue newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
       Comparator comparator = (Comparator) fury.readRef(buffer);
       PriorityQueue queue = new PriorityQueue(comparator);
       fury.getRefResolver().reference(queue);
