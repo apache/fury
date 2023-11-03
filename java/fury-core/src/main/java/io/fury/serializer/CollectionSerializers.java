@@ -504,13 +504,15 @@ public class CollectionSerializers {
 
     @Override
     public abstract T read(MemoryBuffer buffer);
+
     /**
      * Read data except size and elements, return empty collection to be filled.
      *
      * <ol>
      *   In codegen, follows is call order:
      *   <li>read collection class if not final
-     *   <li>newCollection: read and set collection size, read collection header and create collection.
+     *   <li>newCollection: read and set collection size, read collection header and create
+     *       collection.
      *   <li>read elements
      * </ol>
      *
@@ -533,7 +535,7 @@ public class CollectionSerializers {
         return (Collection) instance;
       } catch (Throwable e) {
         throw new IllegalArgumentException(
-          "Please provide public no arguments constructor for class " + type, e);
+            "Please provide public no arguments constructor for class " + type, e);
       }
     }
 
@@ -731,7 +733,8 @@ public class CollectionSerializers {
     }
   }
 
-  public static class CollectionSerializer<T extends Collection> extends BaseCollectionSerializer<T> {
+  public static class CollectionSerializer<T extends Collection>
+      extends BaseCollectionSerializer<T> {
     public CollectionSerializer(Fury fury, Class<T> type) {
       super(fury, type);
     }

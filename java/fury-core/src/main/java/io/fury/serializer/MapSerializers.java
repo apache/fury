@@ -737,13 +737,11 @@ public class MapSerializers {
         return instance;
       } catch (Throwable e) {
         throw new IllegalArgumentException(
-          "Please provide public no arguments constructor for class " + type, e);
+            "Please provide public no arguments constructor for class " + type, e);
       }
     }
 
-    /**
-     * Get numElements of deserializing collection. Should be called after {@link #newMap}.
-     */
+    /** Get numElements of deserializing collection. Should be called after {@link #newMap}. */
     public int getNumElements() {
       return numElements;
     }
@@ -751,11 +749,11 @@ public class MapSerializers {
     public abstract T onMapRead(Map map);
 
     private Object readJavaRefOptimized(
-      Fury fury,
-      RefResolver refResolver,
-      boolean trackingRef,
-      MemoryBuffer buffer,
-      ClassInfoHolder classInfoHolder) {
+        Fury fury,
+        RefResolver refResolver,
+        boolean trackingRef,
+        MemoryBuffer buffer,
+        ClassInfoHolder classInfoHolder) {
       if (trackingRef) {
         int nextReadRefId = refResolver.tryPreserveRefId(buffer);
         if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
