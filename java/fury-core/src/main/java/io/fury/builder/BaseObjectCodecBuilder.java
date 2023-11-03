@@ -1465,7 +1465,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               return new Invoke(exprHolder.get("map"), "put", keyAction, valueAction);
             });
     // first newMap to create map, last newMap as expr value
-    Expression hookRead = new ListExpression(size, newMap, readKeyValues, newMap);
+    Expression hookRead = new ListExpression(newMap, size, readKeyValues, newMap);
     hookRead = new Invoke(serializer, "onMapRead", MAP_TYPE, hookRead);
     Expression action =
         new If(supportHook, hookRead, new Invoke(serializer, "read", MAP_TYPE, buffer), false);

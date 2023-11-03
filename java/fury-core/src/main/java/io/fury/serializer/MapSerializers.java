@@ -421,9 +421,8 @@ public class MapSerializers {
 
     @Override
     public T xread(MemoryBuffer buffer) {
-      int size = buffer.readPositiveVarInt();
       Map map = newMap(buffer);
-      xreadElements(fury, buffer, map, size);
+      xreadElements(fury, buffer, map, numElements);
       return onMapRead(map);
     }
 
