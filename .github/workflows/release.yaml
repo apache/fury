@@ -47,7 +47,7 @@ jobs:
           ci/deploy.sh bump_py_version $version
       - name: Build a binary wheel
         run: |
-          pyversion = $(python -V | cut -d' ' -f2)
+          pyversion=$(python -V | cut -d' ' -f2)
           if [[ $pyversion  ==  3.11.*  || $pyversion == 3.12.* ]]; then
             pip install pyarrow==7.0.1
             sed -i -E "s/pyarrow_version = .*/pyarrow_version = \"7.0.1\"/" python/setup.py
