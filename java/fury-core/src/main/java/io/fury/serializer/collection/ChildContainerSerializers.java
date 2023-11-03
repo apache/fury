@@ -27,8 +27,6 @@ import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.Serializer;
-import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.collection.MapSerializer;
 import io.fury.util.ReflectionUtils;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
