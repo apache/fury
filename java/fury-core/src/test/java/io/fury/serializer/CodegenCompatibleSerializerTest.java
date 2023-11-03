@@ -24,6 +24,7 @@ import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.config.CompatibleMode;
 import io.fury.config.Language;
+import io.fury.serializer.collection.UnmodifiableSerializersTest;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
 import io.fury.test.bean.CollectionFields;

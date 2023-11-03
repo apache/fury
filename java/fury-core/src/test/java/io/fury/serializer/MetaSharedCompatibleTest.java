@@ -26,6 +26,7 @@ import io.fury.builder.MetaSharedCodecBuilder;
 import io.fury.config.CompatibleMode;
 import io.fury.config.Language;
 import io.fury.resolver.MetaContext;
+import io.fury.serializer.collection.UnmodifiableSerializersTest;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
 import io.fury.test.bean.CollectionFields;

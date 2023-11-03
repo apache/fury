@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury.serializer;
+package io.fury.serializer.collection;
 
 public class SubListSerializers {
   // ArrayListSubListSerializer

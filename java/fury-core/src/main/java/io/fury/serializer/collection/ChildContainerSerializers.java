@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury.serializer;
+package io.fury.serializer.collection;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -23,6 +23,10 @@ import io.fury.config.CompatibleMode;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.FieldResolver;
+import io.fury.serializer.CompatibleSerializer;
+import io.fury.serializer.JavaSerializer;
+import io.fury.serializer.ObjectSerializer;
+import io.fury.serializer.Serializer;
 import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.serializer.collection.MapSerializer;
 import io.fury.util.ReflectionUtils;

@@ -31,7 +31,6 @@ import io.fury.FuryTestBase;
 import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
-import io.fury.serializer.GuavaSerializers;
 import io.fury.serializer.collection.CollectionSerializers.JDKCompatibleCollectionSerializer;
 import io.fury.type.GenericType;
 import java.io.Serializable;
@@ -477,7 +476,7 @@ public class CollectionSerializersTest extends FuryTestBase {
 
     assertSame(
         fury.getClassResolver().getSerializer(setClass).getClass(),
-        GuavaSerializers.ImmutableSortedSetSerializer.class);
+        GuavaCollectionSerializers.ImmutableSortedSetSerializer.class);
     buffer.writerIndex(0);
     buffer.readerIndex(0);
     assertEquals(set, fury.deserialize(fury.serialize(buffer, set)));

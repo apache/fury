@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury.serializer;
+package io.fury.serializer.collection;
 
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
@@ -24,8 +24,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.collection.MapSerializer;
 import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.unsafe._JDKAccess;
@@ -46,7 +44,7 @@ import java.util.function.Function;
  * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class GuavaSerializers {
+public class GuavaCollectionSerializers {
   abstract static class GuavaCollectionSerializer<T extends Collection>
       extends CollectionSerializer<T> {
     public GuavaCollectionSerializer(Fury fury, Class<T> cls) {

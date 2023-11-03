@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury.serializer;
+package io.fury.serializer.collection;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -22,6 +22,7 @@ import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.config.CompatibleMode;
 import io.fury.config.Language;
+import io.fury.serializer.collection.ChildContainerSerializers;
 import io.fury.serializer.collection.CollectionSerializers;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
