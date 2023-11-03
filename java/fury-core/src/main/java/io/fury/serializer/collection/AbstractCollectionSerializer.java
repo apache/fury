@@ -28,7 +28,6 @@ import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.type.GenericType;
 import io.fury.util.ReflectionUtils;
-
 import java.lang.invoke.MethodHandle;
 import java.util.Collection;
 
@@ -74,16 +73,15 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   /**
-   * Set element serializer for next serialization, the <code>serializer</code> will be cleared
-   * when next serialization finished.
+   * Set element serializer for next serialization, the <code>serializer</code> will be cleared when
+   * next serialization finished.
    */
   public void setElementSerializer(Serializer serializer) {
     elemSerializer = serializer;
   }
 
   /**
-   * Hook for java serialization codegen, read/write elements will call collection.get/add
-   * methods.
+   * Hook for java serialization codegen, read/write elements will call collection.get/add methods.
    *
    * <p>For key/value type which is final, using codegen may get a big performance gain
    *
@@ -128,7 +126,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
           return writeTypeHeader(buffer, value, elemGenericType.getCls(), elementClassInfoHolder);
         } else {
           return writeTypeNullabilityHeader(
-            buffer, value, elemGenericType.getCls(), elementClassInfoHolder);
+              buffer, value, elemGenericType.getCls(), elementClassInfoHolder);
         }
       }
     } else {
@@ -149,9 +147,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     }
   }
 
-  /**
-   * Element type is final, write whether any elements is null.
-   */
+  /** Element type is final, write whether any elements is null. */
   @CodegenInvoke
   public int writeNullabilityHeader(MemoryBuffer buffer, Collection value) {
     for (Object elem : value) {
@@ -164,12 +160,10 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     return 0;
   }
 
-  /**
-   * Need to track elements ref, can't check elements nullability.
-   */
+  /** Need to track elements ref, can't check elements nullability. */
   @CodegenInvoke
   public int writeTypeHeader(
-    MemoryBuffer buffer, Collection value, Class<?> declareElementType, ClassInfoHolder cache) {
+      MemoryBuffer buffer, Collection value, Class<?> declareElementType, ClassInfoHolder cache) {
     int bitmap = Flags.TRACKING_REF;
     boolean hasDifferentClass = false;
     Class<?> elemClass = null;
@@ -204,9 +198,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     return bitmap;
   }
 
-  /**
-   * Maybe track elements ref, or write elements nullability.
-   */
+  /** Maybe track elements ref, or write elements nullability. */
   @CodegenInvoke
   public int writeTypeHeader(MemoryBuffer buffer, Collection value, ClassInfoHolder cache) {
     int bitmap = Flags.NOT_DECL_ELEMENT_TYPE;
@@ -248,7 +240,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
    */
   @CodegenInvoke
   public int writeTypeNullabilityHeader(
-    MemoryBuffer buffer, Collection value, Class<?> declareElementType, ClassInfoHolder cache) {
+      MemoryBuffer buffer, Collection value, Class<?> declareElementType, ClassInfoHolder cache) {
     int bitmap = 0;
     boolean containsNull = false;
     boolean hasDifferentClass = false;
@@ -314,7 +306,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
 
   // TODO use generics for compatible serializer.
   private static <T extends Collection> void compatibleWrite(
-    Fury fury, MemoryBuffer buffer, T value, Serializer serializer, int flags) {
+      Fury fury, MemoryBuffer buffer, T value, Serializer serializer, int flags) {
     if (serializer.needToWriteRef()) {
       for (Object elem : value) {
         fury.writeRef(buffer, elem, serializer);
@@ -339,11 +331,11 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   private void javaWriteWithGenerics(
-    Fury fury,
-    MemoryBuffer buffer,
-    Collection collection,
-    GenericType elemGenericType,
-    int flags) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Collection collection,
+      GenericType elemGenericType,
+      int flags) {
     boolean hasGenericParameters = elemGenericType.hasGenericParameters();
     if (hasGenericParameters) {
       fury.getGenerics().pushGenericType(elemGenericType);
@@ -362,11 +354,11 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   private void generalJavaWrite(
-    Fury fury,
-    MemoryBuffer buffer,
-    Collection collection,
-    GenericType elemGenericType,
-    int flags) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Collection collection,
+      GenericType elemGenericType,
+      int flags) {
     if ((flags & Flags.NOT_SAME_TYPE) != Flags.NOT_SAME_TYPE) {
       Serializer serializer;
       if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) != Flags.NOT_DECL_ELEMENT_TYPE) {
@@ -381,7 +373,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   private static <T extends Collection> void writeSameTypeElements(
-    Fury fury, MemoryBuffer buffer, Serializer serializer, int flags, T collection) {
+      Fury fury, MemoryBuffer buffer, Serializer serializer, int flags, T collection) {
     fury.incDepth(1);
     if ((flags & Flags.TRACKING_REF) == Flags.TRACKING_REF) {
       RefResolver refResolver = fury.getRefResolver();
@@ -410,7 +402,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   private static <T extends Collection> void writeDifferentTypeElements(
-    Fury fury, MemoryBuffer buffer, int flags, T collection) {
+      Fury fury, MemoryBuffer buffer, int flags, T collection) {
     if ((flags & Flags.TRACKING_REF) == Flags.TRACKING_REF) {
       for (Object elem : collection) {
         fury.writeRef(buffer, elem);
@@ -496,13 +488,11 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       return (Collection) instance;
     } catch (Throwable e) {
       throw new IllegalArgumentException(
-        "Please provide public no arguments constructor for class " + type, e);
+          "Please provide public no arguments constructor for class " + type, e);
     }
   }
 
-  /**
-   * Get numElements of deserializing collection. Should be called after {@link #newCollection}.
-   */
+  /** Get numElements of deserializing collection. Should be called after {@link #newCollection}. */
   public int getNumElements() {
     return numElements;
   }
@@ -510,7 +500,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   public abstract T onCollectionRead(Collection collection);
 
   protected void readElements(
-    Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
+      Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
     int flags = buffer.readByte();
     Serializer serializer = this.elemSerializer;
     // clear the elemSerializer to avoid conflict if the nested
@@ -529,16 +519,14 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     }
   }
 
-  /**
-   * Code path for {@link CompatibleSerializer}.
-   */
+  /** Code path for {@link CompatibleSerializer}. */
   private static void compatibleRead(
-    Fury fury,
-    MemoryBuffer buffer,
-    Collection collection,
-    int numElements,
-    Serializer serializer,
-    int flags) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Collection collection,
+      int numElements,
+      Serializer serializer,
+      int flags) {
     if (serializer.needToWriteRef()) {
       for (int i = 0; i < numElements; i++) {
         collection.add(fury.readRef(buffer, serializer));
@@ -563,12 +551,12 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   private void javaReadWithGenerics(
-    Fury fury,
-    MemoryBuffer buffer,
-    Collection collection,
-    int numElements,
-    GenericType elemGenericType,
-    int flags) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Collection collection,
+      int numElements,
+      GenericType elemGenericType,
+      int flags) {
     boolean hasGenericParameters = elemGenericType.hasGenericParameters();
     if (hasGenericParameters) {
       fury.getGenerics().pushGenericType(elemGenericType);
@@ -585,12 +573,12 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   private void generalJavaRead(
-    Fury fury,
-    MemoryBuffer buffer,
-    Collection collection,
-    int numElements,
-    int flags,
-    GenericType elemGenericType) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Collection collection,
+      int numElements,
+      int flags,
+      GenericType elemGenericType) {
     if ((flags & Flags.NOT_SAME_TYPE) != Flags.NOT_SAME_TYPE) {
       Serializer serializer;
       ClassResolver classResolver = fury.getClassResolver();
@@ -606,16 +594,14 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     }
   }
 
-  /**
-   * Read elements whose type are same.
-   */
+  /** Read elements whose type are same. */
   private static <T extends Collection> void readSameTypeElements(
-    Fury fury,
-    MemoryBuffer buffer,
-    Serializer serializer,
-    int flags,
-    T collection,
-    int numElements) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Serializer serializer,
+      int flags,
+      T collection,
+      int numElements) {
     fury.incDepth(1);
     if ((flags & Flags.TRACKING_REF) == Flags.TRACKING_REF) {
       for (int i = 0; i < numElements; i++) {
@@ -639,11 +625,9 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     fury.incDepth(-1);
   }
 
-  /**
-   * Read elements whose type are different.
-   */
+  /** Read elements whose type are different. */
   private static <T extends Collection> void readDifferentTypeElements(
-    Fury fury, MemoryBuffer buffer, int flags, T collection, int numElements) {
+      Fury fury, MemoryBuffer buffer, int flags, T collection, int numElements) {
     if ((flags & Flags.TRACKING_REF) == Flags.TRACKING_REF) {
       for (int i = 0; i < numElements; i++) {
         collection.add(fury.readRef(buffer));
@@ -669,7 +653,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   public void xreadElements(
-    Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
+      Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
     GenericType elemGenericType = getElementGenericType(fury);
     if (elemGenericType != null) {
       boolean hasGenericParameters = elemGenericType.hasGenericParameters();

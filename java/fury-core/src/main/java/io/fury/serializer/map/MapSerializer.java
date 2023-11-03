@@ -18,7 +18,6 @@ package io.fury.serializer.map;
 
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
-
 import java.util.Map;
 
 /**

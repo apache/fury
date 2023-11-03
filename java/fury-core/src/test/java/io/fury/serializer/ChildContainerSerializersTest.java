@@ -22,6 +22,7 @@ import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.config.CompatibleMode;
 import io.fury.config.Language;
+import io.fury.serializer.collection.CollectionSerializers;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,8 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-
-import io.fury.serializer.collection.CollectionSerializers;
 import lombok.Data;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;

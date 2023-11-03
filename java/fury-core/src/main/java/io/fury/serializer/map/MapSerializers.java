@@ -28,7 +28,6 @@ import io.fury.serializer.Serializers;
 import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
-
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;

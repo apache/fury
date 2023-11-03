@@ -16,6 +16,8 @@
 
 package io.fury.serializer.map;
 
+import static io.fury.type.TypeUtils.MAP_TYPE;
+
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.collection.IdentityMap;
@@ -29,11 +31,8 @@ import io.fury.type.GenericType;
 import io.fury.type.Generics;
 import io.fury.type.TypeUtils;
 import io.fury.util.ReflectionUtils;
-
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
-
-import static io.fury.type.TypeUtils.MAP_TYPE;
 
 /**
  * Serializer for all map-like objects.
@@ -53,8 +52,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   // support map subclass whose key or value generics only are available,
   // or one of types is already instantiated in subclass, ex: `Subclass<T> implements Map<String,
   // T>`
-  private final IdentityMap<GenericType, Tuple2<GenericType, GenericType>>
-    partialGenericKVTypeMap;
+  private final IdentityMap<GenericType, Tuple2<GenericType, GenericType>> partialGenericKVTypeMap;
   private final GenericType objType = fury.getClassResolver().buildGenericType(Object.class);
   // For subclass whose kv type are instantiated already, such as
   // `Subclass implements Map<String, Long>`. If declared `Map` doesn't specify
@@ -126,7 +124,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         fury.writeRef(buffer, entry.getKey(), keySerializer);
         Object value = entry.getValue();
         writeJavaRefOptimized(
-          fury, classResolver, refResolver, buffer, value, valueClassInfoWriteCache);
+            fury, classResolver, refResolver, buffer, value, valueClassInfoWriteCache);
       }
     } else if (valueSerializer != null) {
       ClassResolver classResolver = fury.getClassResolver();
@@ -135,7 +133,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         Map.Entry entry = (Map.Entry) object;
         Object key = entry.getKey();
         writeJavaRefOptimized(
-          fury, classResolver, refResolver, buffer, key, keyClassInfoWriteCache);
+            fury, classResolver, refResolver, buffer, key, keyClassInfoWriteCache);
         fury.writeRef(buffer, entry.getValue(), valueSerializer);
       }
     } else {
@@ -144,11 +142,11 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   private void javaWriteWithKVSerializers(
-    Fury fury,
-    MemoryBuffer buffer,
-    Map map,
-    Serializer keySerializer,
-    Serializer valueSerializer) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Map map,
+      Serializer keySerializer,
+      Serializer valueSerializer) {
     for (Object object : map.entrySet()) {
       Map.Entry entry = (Map.Entry) object;
       Object key = entry.getKey();
@@ -206,12 +204,12 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   private void javaKVTypesFinalWrite(
-    Fury fury,
-    MemoryBuffer buffer,
-    Map map,
-    GenericType keyGenericType,
-    GenericType valueGenericType,
-    Generics generics) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Map map,
+      GenericType keyGenericType,
+      GenericType valueGenericType,
+      Generics generics) {
     Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
     Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
     for (Object object : map.entrySet()) {
@@ -226,12 +224,12 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   private void javaKeyTypeFinalWrite(
-    Fury fury,
-    MemoryBuffer buffer,
-    Map map,
-    GenericType keyGenericType,
-    GenericType valueGenericType,
-    Generics generics) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Map map,
+      GenericType keyGenericType,
+      GenericType valueGenericType,
+      Generics generics) {
     ClassResolver classResolver = fury.getClassResolver();
     RefResolver refResolver = fury.getRefResolver();
     boolean trackingValueRef = fury.getClassResolver().needToWriteRef(valueGenericType.getCls());
@@ -243,24 +241,24 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
       writeJavaRefOptimized(
-        fury,
-        classResolver,
-        refResolver,
-        trackingValueRef,
-        buffer,
-        entry.getValue(),
-        valueClassInfoWriteCache);
+          fury,
+          classResolver,
+          refResolver,
+          trackingValueRef,
+          buffer,
+          entry.getValue(),
+          valueClassInfoWriteCache);
       generics.popGenericType();
     }
   }
 
   private void javaValueTypeFinalWrite(
-    Fury fury,
-    MemoryBuffer buffer,
-    Map map,
-    GenericType keyGenericType,
-    GenericType valueGenericType,
-    Generics generics) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Map map,
+      GenericType keyGenericType,
+      GenericType valueGenericType,
+      Generics generics) {
     ClassResolver classResolver = fury.getClassResolver();
     RefResolver refResolver = fury.getRefResolver();
     boolean trackingKeyRef = fury.getClassResolver().needToWriteRef(keyGenericType.getCls());
@@ -269,13 +267,13 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       Map.Entry entry = (Map.Entry) object;
       generics.pushGenericType(keyGenericType);
       writeJavaRefOptimized(
-        fury,
-        classResolver,
-        refResolver,
-        trackingKeyRef,
-        buffer,
-        entry.getKey(),
-        keyClassInfoWriteCache);
+          fury,
+          classResolver,
+          refResolver,
+          trackingKeyRef,
+          buffer,
+          entry.getKey(),
+          keyClassInfoWriteCache);
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
       fury.writeRef(buffer, entry.getValue(), valueSerializer);
@@ -284,12 +282,12 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   private void javaKVTypesNonFinalWrite(
-    Fury fury,
-    MemoryBuffer buffer,
-    Map map,
-    GenericType keyGenericType,
-    GenericType valueGenericType,
-    Generics generics) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Map map,
+      GenericType keyGenericType,
+      GenericType valueGenericType,
+      Generics generics) {
     ClassResolver classResolver = fury.getClassResolver();
     RefResolver refResolver = fury.getRefResolver();
     boolean trackingKeyRef = fury.getClassResolver().needToWriteRef(keyGenericType.getCls());
@@ -298,23 +296,23 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       Map.Entry entry = (Map.Entry) object;
       generics.pushGenericType(keyGenericType);
       writeJavaRefOptimized(
-        fury,
-        classResolver,
-        refResolver,
-        trackingKeyRef,
-        buffer,
-        entry.getKey(),
-        keyClassInfoWriteCache);
+          fury,
+          classResolver,
+          refResolver,
+          trackingKeyRef,
+          buffer,
+          entry.getKey(),
+          keyClassInfoWriteCache);
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
       writeJavaRefOptimized(
-        fury,
-        classResolver,
-        refResolver,
-        trackingValueRef,
-        buffer,
-        entry.getValue(),
-        valueClassInfoWriteCache);
+          fury,
+          classResolver,
+          refResolver,
+          trackingValueRef,
+          buffer,
+          entry.getValue(),
+          valueClassInfoWriteCache);
       generics.popGenericType();
     }
   }
@@ -325,9 +323,9 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     for (Object object : map.entrySet()) {
       Map.Entry entry = (Map.Entry) object;
       writeJavaRefOptimized(
-        fury, classResolver, refResolver, buffer, entry.getKey(), keyClassInfoWriteCache);
+          fury, classResolver, refResolver, buffer, entry.getKey(), keyClassInfoWriteCache);
       writeJavaRefOptimized(
-        fury, classResolver, refResolver, buffer, entry.getValue(), valueClassInfoWriteCache);
+          fury, classResolver, refResolver, buffer, entry.getValue(), valueClassInfoWriteCache);
     }
   }
 
@@ -391,12 +389,11 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         partialGenericKVTypeMap.put(genericType, typeTuple);
         return typeTuple;
       }
-      Tuple2<TypeToken<?>, TypeToken<?>> mapKeyValueType =
-        TypeUtils.getMapKeyValueType(typeToken);
+      Tuple2<TypeToken<?>, TypeToken<?>> mapKeyValueType = TypeUtils.getMapKeyValueType(typeToken);
       genericTypes =
-        Tuple2.of(
-          fury.getClassResolver().buildGenericType(mapKeyValueType.f0.getType()),
-          fury.getClassResolver().buildGenericType(mapKeyValueType.f1.getType()));
+          Tuple2.of(
+              fury.getClassResolver().buildGenericType(mapKeyValueType.f0.getType()),
+              fury.getClassResolver().buildGenericType(mapKeyValueType.f1.getType()));
       partialGenericKVTypeMap.put(genericType, genericTypes);
     }
     return genericTypes;
@@ -464,24 +461,23 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       } else if (keyGenericTypeFinal) {
         javaKeyTypeFinalRead(fury, buffer, map, keyGenericType, valueGenericType, generics, size);
       } else if (valueGenericTypeFinal) {
-        javaValueTypeFinalRead(
-          fury, buffer, map, keyGenericType, valueGenericType, generics, size);
+        javaValueTypeFinalRead(fury, buffer, map, keyGenericType, valueGenericType, generics, size);
       } else {
         javaKVTypesNonFinalRead(
-          fury, buffer, map, keyGenericType, valueGenericType, generics, size);
+            fury, buffer, map, keyGenericType, valueGenericType, generics, size);
       }
       generics.popGenericType();
     }
   }
 
   private void javaKVTypesFinalRead(
-    Fury fury,
-    MemoryBuffer buffer,
-    Map map,
-    GenericType keyGenericType,
-    GenericType valueGenericType,
-    Generics generics,
-    int size) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Map map,
+      GenericType keyGenericType,
+      GenericType valueGenericType,
+      Generics generics,
+      int size) {
     Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
     Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
     for (int i = 0; i < size; i++) {
@@ -496,13 +492,13 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   private void javaKeyTypeFinalRead(
-    Fury fury,
-    MemoryBuffer buffer,
-    Map map,
-    GenericType keyGenericType,
-    GenericType valueGenericType,
-    Generics generics,
-    int size) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Map map,
+      GenericType keyGenericType,
+      GenericType valueGenericType,
+      Generics generics,
+      int size) {
     RefResolver refResolver = fury.getRefResolver();
     boolean trackingValueRef = fury.getClassResolver().needToWriteRef(valueGenericType.getCls());
     Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
@@ -512,28 +508,28 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
       Object value =
-        readJavaRefOptimized(
-          fury, refResolver, trackingValueRef, buffer, valueClassInfoWriteCache);
+          readJavaRefOptimized(
+              fury, refResolver, trackingValueRef, buffer, valueClassInfoWriteCache);
       generics.popGenericType();
       map.put(key, value);
     }
   }
 
   private void javaValueTypeFinalRead(
-    Fury fury,
-    MemoryBuffer buffer,
-    Map map,
-    GenericType keyGenericType,
-    GenericType valueGenericType,
-    Generics generics,
-    int size) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Map map,
+      GenericType keyGenericType,
+      GenericType valueGenericType,
+      Generics generics,
+      int size) {
     boolean trackingKeyRef = fury.getClassResolver().needToWriteRef(keyGenericType.getCls());
     Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
     RefResolver refResolver = fury.getRefResolver();
     for (int i = 0; i < size; i++) {
       generics.pushGenericType(keyGenericType);
       Object key =
-        readJavaRefOptimized(fury, refResolver, trackingKeyRef, buffer, keyClassInfoWriteCache);
+          readJavaRefOptimized(fury, refResolver, trackingKeyRef, buffer, keyClassInfoWriteCache);
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
       Object value = fury.readRef(buffer, valueSerializer);
@@ -543,13 +539,13 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   private void javaKVTypesNonFinalRead(
-    Fury fury,
-    MemoryBuffer buffer,
-    Map map,
-    GenericType keyGenericType,
-    GenericType valueGenericType,
-    Generics generics,
-    int size) {
+      Fury fury,
+      MemoryBuffer buffer,
+      Map map,
+      GenericType keyGenericType,
+      GenericType valueGenericType,
+      Generics generics,
+      int size) {
     ClassResolver classResolver = fury.getClassResolver();
     RefResolver refResolver = fury.getRefResolver();
     boolean trackingKeyRef = classResolver.needToWriteRef(keyGenericType.getCls());
@@ -557,12 +553,12 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     for (int i = 0; i < size; i++) {
       generics.pushGenericType(keyGenericType);
       Object key =
-        readJavaRefOptimized(fury, refResolver, trackingKeyRef, buffer, keyClassInfoWriteCache);
+          readJavaRefOptimized(fury, refResolver, trackingKeyRef, buffer, keyClassInfoWriteCache);
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
       Object value =
-        readJavaRefOptimized(
-          fury, refResolver, trackingValueRef, buffer, valueClassInfoWriteCache);
+          readJavaRefOptimized(
+              fury, refResolver, trackingValueRef, buffer, valueClassInfoWriteCache);
       generics.popGenericType();
       map.put(key, value);
     }
@@ -652,29 +648,27 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
    */
   public abstract Map onMapWrite(MemoryBuffer buffer, T value);
 
-  /**
-   * Check null first to avoid ref tracking for some types with ref tracking disabled.
-   */
+  /** Check null first to avoid ref tracking for some types with ref tracking disabled. */
   private void writeJavaRefOptimized(
-    Fury fury,
-    ClassResolver classResolver,
-    RefResolver refResolver,
-    MemoryBuffer buffer,
-    Object obj,
-    ClassInfoHolder classInfoHolder) {
+      Fury fury,
+      ClassResolver classResolver,
+      RefResolver refResolver,
+      MemoryBuffer buffer,
+      Object obj,
+      ClassInfoHolder classInfoHolder) {
     if (!refResolver.writeNullFlag(buffer, obj)) {
       fury.writeRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
     }
   }
 
   private void writeJavaRefOptimized(
-    Fury fury,
-    ClassResolver classResolver,
-    RefResolver refResolver,
-    boolean trackingRef,
-    MemoryBuffer buffer,
-    Object obj,
-    ClassInfoHolder classInfoHolder) {
+      Fury fury,
+      ClassResolver classResolver,
+      RefResolver refResolver,
+      boolean trackingRef,
+      MemoryBuffer buffer,
+      Object obj,
+      ClassInfoHolder classInfoHolder) {
     if (trackingRef) {
       if (!refResolver.writeNullFlag(buffer, obj)) {
         fury.writeRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
@@ -684,8 +678,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
         buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-        fury.writeNonRef(
-          buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
+        fury.writeNonRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
       }
     }
   }
@@ -722,13 +715,11 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       return instance;
     } catch (Throwable e) {
       throw new IllegalArgumentException(
-        "Please provide public no arguments constructor for class " + type, e);
+          "Please provide public no arguments constructor for class " + type, e);
     }
   }
 
-  /**
-   * Get numElements of deserializing collection. Should be called after {@link #newMap}.
-   */
+  /** Get numElements of deserializing collection. Should be called after {@link #newMap}. */
   public int getNumElements() {
     return numElements;
   }
@@ -736,11 +727,11 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   public abstract T onMapRead(Map map);
 
   private Object readJavaRefOptimized(
-    Fury fury,
-    RefResolver refResolver,
-    boolean trackingRef,
-    MemoryBuffer buffer,
-    ClassInfoHolder classInfoHolder) {
+      Fury fury,
+      RefResolver refResolver,
+      boolean trackingRef,
+      MemoryBuffer buffer,
+      ClassInfoHolder classInfoHolder) {
     if (trackingRef) {
       int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {

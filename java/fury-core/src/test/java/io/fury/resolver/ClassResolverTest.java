@@ -33,13 +33,13 @@ import io.fury.memory.MemoryUtils;
 import io.fury.resolver.longlongpkg.C1;
 import io.fury.resolver.longlongpkg.C2;
 import io.fury.resolver.longlongpkg.C3;
-import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.collection.CollectionSerializers;
 import io.fury.serializer.CompatibleSerializer;
-import io.fury.serializer.map.MapSerializers;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.Serializers;
+import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.collection.CollectionSerializers;
+import io.fury.serializer.map.MapSerializers;
 import io.fury.test.bean.BeanB;
 import io.fury.type.TypeUtils;
 import io.fury.util.LoggerFactory;
@@ -126,9 +126,7 @@ public class ClassResolverTest extends FuryTestBase {
     assertEquals(
         classResolver.getSerializerClass(Arrays.asList(1, 2).getClass()),
         CollectionSerializers.ArraysAsListSerializer.class);
-    assertEquals(
-        classResolver.getSerializerClass(LinkedList.class),
-        CollectionSerializer.class);
+    assertEquals(classResolver.getSerializerClass(LinkedList.class), CollectionSerializer.class);
 
     assertEquals(
         classResolver.getSerializerClass(HashSet.class),

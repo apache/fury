@@ -73,15 +73,15 @@ import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
-import io.fury.serializer.collection.AbstractCollectionSerializer;
-import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.serializer.CompatibleSerializer;
-import io.fury.serializer.map.MapSerializer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.PrimitiveSerializers.LongSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
+import io.fury.serializer.collection.AbstractCollectionSerializer;
+import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.map.MapSerializer;
 import io.fury.type.TypeUtils;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
@@ -742,7 +742,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression sameElementClass = neq(new BitAnd(flags, flag), flag, "sameElementClass");
       builder.add(sameElementClass);
       //  if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE)
-      Literal notDeclTypeFlag = Literal.ofInt(AbstractCollectionSerializer.Flags.NOT_DECL_ELEMENT_TYPE);
+      Literal notDeclTypeFlag =
+          Literal.ofInt(AbstractCollectionSerializer.Flags.NOT_DECL_ELEMENT_TYPE);
       Expression isDeclType =
           neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
       Expression elemSerializer; // make it in scope of `if(sameElementClass)`
@@ -817,7 +818,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         bitmap =
             new ListExpression(
                 new Invoke(
-                    buffer, "writeByte", Literal.ofInt(AbstractCollectionSerializer.Flags.TRACKING_REF)),
+                    buffer,
+                    "writeByte",
+                    Literal.ofInt(AbstractCollectionSerializer.Flags.TRACKING_REF)),
                 Literal.ofInt(AbstractCollectionSerializer.Flags.TRACKING_REF));
       } else {
         bitmap =
@@ -1254,7 +1257,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression sameElementClass =
           neq(new BitAnd(flags, notSameTypeFlag), notSameTypeFlag, "sameElementClass");
       //  if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE)
-      Literal notDeclTypeFlag = Literal.ofInt(AbstractCollectionSerializer.Flags.NOT_DECL_ELEMENT_TYPE);
+      Literal notDeclTypeFlag =
+          Literal.ofInt(AbstractCollectionSerializer.Flags.NOT_DECL_ELEMENT_TYPE);
       Expression isDeclType =
           neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
       Invoke serializer =

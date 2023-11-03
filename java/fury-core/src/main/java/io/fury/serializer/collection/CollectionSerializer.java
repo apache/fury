@@ -18,7 +18,6 @@ package io.fury.serializer.collection;
 
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
-
 import java.util.Collection;
 
 /**
@@ -27,8 +26,7 @@ import java.util.Collection;
  * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class CollectionSerializer<T extends Collection>
-  extends AbstractCollectionSerializer<T> {
+public class CollectionSerializer<T extends Collection> extends AbstractCollectionSerializer<T> {
   public CollectionSerializer(Fury fury, Class<T> type) {
     super(fury, type);
   }
