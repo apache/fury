@@ -121,15 +121,22 @@ Release version:
 </dependency> -->
 ```
 
+### Scala
+```sbt
+libraryDependencies += "org.furyio" % "fury-core" % "0.3.0"
+```
+
 ### Python
 ```bash
 # Release version will be provided in the future.
 pip install pyfury --pre
 ```
+
 ### JavaScript
 ```bash
 npm install @furyjs/fury
 ```
+
 ### Golang
 ```bash
 go get github.com/alipay/fury/go/fury
