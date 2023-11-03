@@ -73,10 +73,10 @@ import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
-import io.fury.serializer.collection.BaseCollectionSerializer;
+import io.fury.serializer.collection.AbstractCollectionSerializer;
 import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.serializer.CompatibleSerializer;
-import io.fury.serializer.MapSerializers.MapSerializer;
+import io.fury.serializer.map.MapSerializer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.PrimitiveSerializers.LongSerializer;
 import io.fury.serializer.Serializer;
@@ -731,18 +731,18 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         builder.add(
             writeContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
-        Literal hasNullFlag = Literal.ofInt(BaseCollectionSerializer.Flags.HAS_NULL);
+        Literal hasNullFlag = Literal.ofInt(AbstractCollectionSerializer.Flags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
         builder.add(
             hasNull,
             writeContainerElements(elementType, false, null, hasNull, buffer, collection, size));
       }
     } else {
-      Literal flag = Literal.ofInt(BaseCollectionSerializer.Flags.NOT_SAME_TYPE);
+      Literal flag = Literal.ofInt(AbstractCollectionSerializer.Flags.NOT_SAME_TYPE);
       Expression sameElementClass = neq(new BitAnd(flags, flag), flag, "sameElementClass");
       builder.add(sameElementClass);
       //  if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE)
-      Literal notDeclTypeFlag = Literal.ofInt(BaseCollectionSerializer.Flags.NOT_DECL_ELEMENT_TYPE);
+      Literal notDeclTypeFlag = Literal.ofInt(AbstractCollectionSerializer.Flags.NOT_DECL_ELEMENT_TYPE);
       Expression isDeclType =
           neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
       Expression elemSerializer; // make it in scope of `if(sameElementClass)`
@@ -775,7 +775,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                 invokeGenerated(ctx, cutPoint, writeBuilder, "sameElementClassWrite", false),
                 writeContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
-        Literal hasNullFlag = Literal.ofInt(BaseCollectionSerializer.Flags.HAS_NULL);
+        Literal hasNullFlag = Literal.ofInt(AbstractCollectionSerializer.Flags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
         builder.add(hasNull);
         ListExpression writeBuilder = new ListExpression(elemSerializer);
@@ -817,8 +817,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         bitmap =
             new ListExpression(
                 new Invoke(
-                    buffer, "writeByte", Literal.ofInt(BaseCollectionSerializer.Flags.TRACKING_REF)),
-                Literal.ofInt(BaseCollectionSerializer.Flags.TRACKING_REF));
+                    buffer, "writeByte", Literal.ofInt(AbstractCollectionSerializer.Flags.TRACKING_REF)),
+                Literal.ofInt(AbstractCollectionSerializer.Flags.TRACKING_REF));
       } else {
         bitmap =
             new Invoke(
@@ -1243,18 +1243,18 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       if (trackingRef) {
         builder.add(readContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
-        Literal hasNullFlag = Literal.ofInt(BaseCollectionSerializer.Flags.HAS_NULL);
+        Literal hasNullFlag = Literal.ofInt(AbstractCollectionSerializer.Flags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
         builder.add(
             hasNull,
             readContainerElements(elementType, false, null, hasNull, buffer, collection, size));
       }
     } else {
-      Literal notSameTypeFlag = Literal.ofInt(BaseCollectionSerializer.Flags.NOT_SAME_TYPE);
+      Literal notSameTypeFlag = Literal.ofInt(AbstractCollectionSerializer.Flags.NOT_SAME_TYPE);
       Expression sameElementClass =
           neq(new BitAnd(flags, notSameTypeFlag), notSameTypeFlag, "sameElementClass");
       //  if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE)
-      Literal notDeclTypeFlag = Literal.ofInt(BaseCollectionSerializer.Flags.NOT_DECL_ELEMENT_TYPE);
+      Literal notDeclTypeFlag = Literal.ofInt(AbstractCollectionSerializer.Flags.NOT_DECL_ELEMENT_TYPE);
       Expression isDeclType =
           neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
       Invoke serializer =
@@ -1295,7 +1295,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                 sameElementClassRead,
                 readContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
-        Literal hasNullFlag = Literal.ofInt(BaseCollectionSerializer.Flags.HAS_NULL);
+        Literal hasNullFlag = Literal.ofInt(AbstractCollectionSerializer.Flags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
         builder.add(hasNull);
         // Same element class read start

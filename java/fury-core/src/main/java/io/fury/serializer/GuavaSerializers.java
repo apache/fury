@@ -25,7 +25,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.MapSerializers.MapSerializer;
+import io.fury.serializer.map.MapSerializer;
 import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.unsafe._JDKAccess;

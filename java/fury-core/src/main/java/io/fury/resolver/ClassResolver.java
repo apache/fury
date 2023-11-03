@@ -60,7 +60,8 @@ import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.JdkProxySerializer;
 import io.fury.serializer.LambdaSerializer;
 import io.fury.serializer.LocaleSerializer;
-import io.fury.serializer.MapSerializers;
+import io.fury.serializer.map.MapSerializer;
+import io.fury.serializer.map.MapSerializers;
 import io.fury.serializer.MetaSharedSerializer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.OptionalSerializers;
@@ -884,7 +885,7 @@ public class ClassResolver {
         if (fury.getLanguage() == Language.JAVA) {
           return MapSerializers.DefaultJavaMapSerializer.class;
         } else {
-          return MapSerializers.MapSerializer.class;
+          return MapSerializer.class;
         }
       }
       if (fury.getLanguage() != Language.JAVA) {

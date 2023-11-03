@@ -19,6 +19,7 @@ package io.fury.serializer;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.map.MapSerializer;
 import io.fury.util.Platform;
 import io.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.MethodHandle;
@@ -168,7 +169,7 @@ public class ImmutableCollectionSerializers {
     }
   }
 
-  public static class ImmutableMapSerializer extends MapSerializers.MapSerializer {
+  public static class ImmutableMapSerializer extends MapSerializer {
     public ImmutableMapSerializer(Fury fury, Class cls) {
       super(fury, cls, true);
     }

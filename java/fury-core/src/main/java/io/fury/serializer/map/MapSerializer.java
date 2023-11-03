@@ -14,46 +14,43 @@
  * limitations under the License.
  */
 
-package io.fury.serializer.collection;
+package io.fury.serializer.map;
 
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 
-import java.util.Collection;
+import java.util.Map;
 
 /**
- * Base serializer for all java collections.
+ * Base serializer for all java maps.
  *
  * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class CollectionSerializer<T extends Collection>
-  extends AbstractCollectionSerializer<T> {
-  public CollectionSerializer(Fury fury, Class<T> type) {
-    super(fury, type);
+public class MapSerializer<T extends Map> extends AbstractMapSerializer<T> {
+  public MapSerializer(Fury fury, Class<T> cls) {
+    super(fury, cls);
   }
 
-  public CollectionSerializer(Fury fury, Class<T> type, boolean supportCodegenHook) {
-    super(fury, type, supportCodegenHook);
+  public MapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
+    super(fury, cls, supportCodegenHook);
   }
 
   @Override
-  public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
+  public Map onMapWrite(MemoryBuffer buffer, T value) {
     buffer.writePositiveVarInt(value.size());
     return value;
   }
 
   @Override
-  public T onCollectionRead(Collection collection) {
-    return (T) collection;
+  public T read(MemoryBuffer buffer) {
+    Map map = newMap(buffer);
+    readElements(buffer, numElements, map);
+    return onMapRead(map);
   }
 
   @Override
-  public T read(MemoryBuffer buffer) {
-    Collection collection = newCollection(buffer);
-    if (numElements != 0) {
-      readElements(fury, buffer, collection, numElements);
-    }
-    return onCollectionRead(collection);
+  public T onMapRead(Map map) {
+    return (T) map;
   }
 }

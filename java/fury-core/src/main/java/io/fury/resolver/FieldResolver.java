@@ -31,7 +31,7 @@ import io.fury.collection.Tuple2;
 import io.fury.exception.ClassNotCompatibleException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.MapSerializers;
+import io.fury.serializer.map.MapSerializer;
 import io.fury.serializer.PrimitiveSerializers;
 import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
@@ -572,24 +572,24 @@ public class FieldResolver {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      MapSerializers.MapSerializer mapSerializer =
-          (MapSerializers.MapSerializer) classInfo.getSerializer();
+      MapSerializer mapSerializer =
+          (MapSerializer) classInfo.getSerializer();
       mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
       mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
       o = mapSerializer.read(buffer);
     } else if (fieldType == FieldTypes.MAP_KEY_FINAL) {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      MapSerializers.MapSerializer mapSerializer =
-          (MapSerializers.MapSerializer) classInfo.getSerializer();
+      MapSerializer mapSerializer =
+          (MapSerializer) classInfo.getSerializer();
       mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
       o = mapSerializer.read(buffer);
     } else {
       Preconditions.checkArgument(fieldType == FieldTypes.MAP_VALUE_FINAL);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      MapSerializers.MapSerializer mapSerializer =
-          (MapSerializers.MapSerializer) classInfo.getSerializer();
+      MapSerializer mapSerializer =
+          (MapSerializer) classInfo.getSerializer();
       mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
       o = mapSerializer.read(buffer);
     }
@@ -609,24 +609,24 @@ public class FieldResolver {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
-      MapSerializers.MapSerializer mapSerializer =
-          (MapSerializers.MapSerializer) classInfo.getSerializer();
+      MapSerializer mapSerializer =
+          (MapSerializer) classInfo.getSerializer();
       mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
       mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
       o = mapSerializer.read(buffer);
     } else if (fieldType == FieldTypes.MAP_KEY_FINAL) {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
-      MapSerializers.MapSerializer mapSerializer =
-          (MapSerializers.MapSerializer) classInfo.getSerializer();
+      MapSerializer mapSerializer =
+          (MapSerializer) classInfo.getSerializer();
       mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
       o = mapSerializer.read(buffer);
     } else {
       Preconditions.checkArgument(fieldType == FieldTypes.MAP_VALUE_FINAL);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
-      MapSerializers.MapSerializer mapSerializer =
-          (MapSerializers.MapSerializer) classInfo.getSerializer();
+      MapSerializer mapSerializer =
+          (MapSerializer) classInfo.getSerializer();
       mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
       o = mapSerializer.read(buffer);
     }

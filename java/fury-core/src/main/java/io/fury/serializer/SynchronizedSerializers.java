@@ -20,7 +20,7 @@ import io.fury.Fury;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.MapSerializers.MapSerializer;
+import io.fury.serializer.map.MapSerializer;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;

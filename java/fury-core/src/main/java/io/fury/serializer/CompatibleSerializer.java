@@ -24,6 +24,7 @@ import io.fury.resolver.ClassResolver;
 import io.fury.resolver.FieldResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.map.MapSerializer;
 import io.fury.util.FieldAccessor;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
@@ -253,8 +254,8 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     // following write is consistent with `BaseSeqCodecBuilder.serializeForMap`
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
     classResolver.writeClass(buffer, classInfo);
-    MapSerializers.MapSerializer mapSerializer =
-        (MapSerializers.MapSerializer) classInfo.getSerializer();
+    MapSerializer mapSerializer =
+        (MapSerializer) classInfo.getSerializer();
     mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
     mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
     mapSerializer.write(buffer, fieldValue);
@@ -267,8 +268,8 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     // following write is consistent with `BaseSeqCodecBuilder.serializeForMap`
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
     classResolver.writeClass(buffer, classInfo);
-    MapSerializers.MapSerializer mapSerializer =
-        (MapSerializers.MapSerializer) classInfo.getSerializer();
+    MapSerializer mapSerializer =
+        (MapSerializer) classInfo.getSerializer();
     mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
     mapSerializer.write(buffer, fieldValue);
   }
@@ -280,8 +281,8 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     // following write is consistent with `BaseSeqCodecBuilder.serializeForMap`
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
     classResolver.writeClass(buffer, classInfo);
-    MapSerializers.MapSerializer mapSerializer =
-        (MapSerializers.MapSerializer) classInfo.getSerializer();
+    MapSerializer mapSerializer =
+        (MapSerializer) classInfo.getSerializer();
     mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
     mapSerializer.write(buffer, fieldValue);
   }

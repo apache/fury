@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 The Fury Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.fury.serializer.collection;
 
 import com.google.common.base.Preconditions;
@@ -17,9 +33,12 @@ import java.lang.invoke.MethodHandle;
 import java.util.Collection;
 
 /**
- * Serializer for {@link Collection}. All collection serializer should extend this class.
+ * Serializer for all collection like object. All collection serializer should extend this class.
+ *
+ * @author chaokunyang
  */
-public abstract class BaseCollectionSerializer<T> extends Serializer<T> {
+@SuppressWarnings({"unchecked", "rawtypes"})
+public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   private MethodHandle constructor;
   protected int numElements;
   private final boolean supportCodegenHook;
@@ -35,11 +54,11 @@ public abstract class BaseCollectionSerializer<T> extends Serializer<T> {
   // interpreter and jit mode although it seems unnecessary.
   // With elements header, we can write this element class only once, the cost won't be too much.
 
-  public BaseCollectionSerializer(Fury fury, Class<T> cls) {
+  public AbstractCollectionSerializer(Fury fury, Class<T> cls) {
     this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls));
   }
 
-  public BaseCollectionSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
+  public AbstractCollectionSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
     super(fury, cls);
     this.supportCodegenHook = supportCodegenHook;
     elementClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();

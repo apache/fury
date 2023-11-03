@@ -27,6 +27,7 @@ import io.fury.FuryTestBase;
 import io.fury.collection.MapEntry;
 import io.fury.config.Language;
 import io.fury.serializer.CollectionSerializersTest.TestEnum;
+import io.fury.serializer.map.MapSerializers;
 import io.fury.test.bean.MapFields;
 import io.fury.type.GenericType;
 import java.io.Serializable;
