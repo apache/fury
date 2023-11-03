@@ -420,14 +420,6 @@ public class MapSerializers {
     }
 
     @Override
-    public T read(MemoryBuffer buffer) {
-      int size = buffer.readPositiveVarInt();
-      Map map = newMap(buffer);
-      readElements(buffer, size, map);
-      return onMapRead(map);
-    }
-
-    @Override
     public T xread(MemoryBuffer buffer) {
       int size = buffer.readPositiveVarInt();
       Map map = newMap(buffer);
@@ -678,50 +670,6 @@ public class MapSerializers {
      */
     public abstract Map onMapWrite(MemoryBuffer buffer, T value);
 
-    /**
-     * Read data except size and elements, return empty map to be filled.
-     *
-     * <ol>
-     *   In codegen, follows is call order:
-     *   <li>read map class if not final
-     *   <li>newMap: read and set map size, read map header and create map.
-     *   <li>read keys/values
-     * </ol>
-     *
-     * <p>Map must have default constructor to be invoked by fury, otherwise created object can't be
-     * used to adding elements. For example:
-     *
-     * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
-     *
-     * <p>without default constructor, created list will have elementData as null, adding elements
-     * will raise NPE.
-     */
-    public Map newMap(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
-      if (constructor == null) {
-        constructor = ReflectionUtils.getCtrHandle(type, true);
-      }
-      try {
-        Map instance = (Map) constructor.invoke();
-        fury.getRefResolver().reference(instance);
-        return instance;
-      } catch (Throwable e) {
-        throw new IllegalArgumentException(
-            "Please provide public no arguments constructor for class " + type, e);
-      }
-    }
-
-    /**
-     * Get numElements of deserializing collection. Should be called after {@link #newMap}.
-     */
-    public int getNumElements() {
-      return numElements;
-    }
-
-    public T onMapRead(Map map) {
-      return (T) map;
-    }
-
     /** Check null first to avoid ref tracking for some types with ref tracking disabled. */
     private void writeJavaRefOptimized(
         Fury fury,
@@ -758,12 +706,57 @@ public class MapSerializers {
       }
     }
 
+    @Override
+    public abstract T read(MemoryBuffer buffer);
+
+    /**
+     * Read data except size and elements, return empty map to be filled.
+     *
+     * <ol>
+     *   In codegen, follows is call order:
+     *   <li>read map class if not final
+     *   <li>newMap: read and set map size, read map header and create map.
+     *   <li>read keys/values
+     * </ol>
+     *
+     * <p>Map must have default constructor to be invoked by fury, otherwise created object can't be
+     * used to adding elements. For example:
+     *
+     * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
+     *
+     * <p>without default constructor, created list will have elementData as null, adding elements
+     * will raise NPE.
+     */
+    public Map newMap(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
+      if (constructor == null) {
+        constructor = ReflectionUtils.getCtrHandle(type, true);
+      }
+      try {
+        Map instance = (Map) constructor.invoke();
+        fury.getRefResolver().reference(instance);
+        return instance;
+      } catch (Throwable e) {
+        throw new IllegalArgumentException(
+          "Please provide public no arguments constructor for class " + type, e);
+      }
+    }
+
+    /**
+     * Get numElements of deserializing collection. Should be called after {@link #newMap}.
+     */
+    public int getNumElements() {
+      return numElements;
+    }
+
+    public abstract T onMapRead(Map map);
+
     private Object readJavaRefOptimized(
-        Fury fury,
-        RefResolver refResolver,
-        boolean trackingRef,
-        MemoryBuffer buffer,
-        ClassInfoHolder classInfoHolder) {
+      Fury fury,
+      RefResolver refResolver,
+      boolean trackingRef,
+      MemoryBuffer buffer,
+      ClassInfoHolder classInfoHolder) {
       if (trackingRef) {
         int nextReadRefId = refResolver.tryPreserveRefId(buffer);
         if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
@@ -797,6 +790,18 @@ public class MapSerializers {
     public Map onMapWrite(MemoryBuffer buffer, T value) {
       buffer.writePositiveVarInt(value.size());
       return value;
+    }
+
+    @Override
+    public T read(MemoryBuffer buffer) {
+      Map map = newMap(buffer);
+      readElements(buffer, numElements, map);
+      return onMapRead(map);
+    }
+
+    @Override
+    public T onMapRead(Map map) {
+      return (T) map;
     }
   }
 

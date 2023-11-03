@@ -324,55 +324,10 @@ public class CollectionSerializers {
       return bitmap;
     }
 
-    /**
-     * Read data except size and elements, return empty collection to be filled.
-     *
-     * <ol>
-     *   In codegen, follows is call order:
-     *   <li>read collection class if not final
-     *   <li>newCollection: read and set collection size, read collection header and create collection.
-     *   <li>read elements
-     * </ol>
-     *
-     * <p>Collection must have default constructor to be invoked by fury, otherwise created object
-     * can't be used to adding elements. For example:
-     *
-     * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
-     *
-     * <p>without default constructor, created list will have elementData as null, adding elements
-     * will raise NPE.
-     */
-    public Collection newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
-      if (constructor == null) {
-        constructor = ReflectionUtils.getCtrHandle(type, true);
-      }
-      try {
-        T instance = (T) constructor.invoke();
-        fury.getRefResolver().reference(instance);
-        return (Collection) instance;
-      } catch (Throwable e) {
-        throw new IllegalArgumentException(
-            "Please provide public no arguments constructor for class " + type, e);
-      }
-    }
-
-    /**
-     * Get numElements of deserializing collection. Should be called after {@link #newCollection}.
-     */
-    public int getNumElements() {
-      return numElements;
-    }
-
-    public T onCollectionRead(Collection collection) {
-      return (T) collection;
-    }
-
     @Override
     public void write(MemoryBuffer buffer, T value) {
       Collection collection = onCollectionWrite(buffer, value);
       int len = collection.size();
-      buffer.writePositiveVarInt(len);
       if (len != 0) {
         writeElements(fury, buffer, collection);
       }
@@ -548,15 +503,50 @@ public class CollectionSerializers {
     }
 
     @Override
-    public T read(MemoryBuffer buffer) {
-      Collection collection = newCollection(buffer);
-      if (numElements != 0) {
-        readElements(fury, buffer, collection, numElements);
+    public abstract T read(MemoryBuffer buffer);
+    /**
+     * Read data except size and elements, return empty collection to be filled.
+     *
+     * <ol>
+     *   In codegen, follows is call order:
+     *   <li>read collection class if not final
+     *   <li>newCollection: read and set collection size, read collection header and create collection.
+     *   <li>read elements
+     * </ol>
+     *
+     * <p>Collection must have default constructor to be invoked by fury, otherwise created object
+     * can't be used to adding elements. For example:
+     *
+     * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
+     *
+     * <p>without default constructor, created list will have elementData as null, adding elements
+     * will raise NPE.
+     */
+    public Collection newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
+      if (constructor == null) {
+        constructor = ReflectionUtils.getCtrHandle(type, true);
       }
-      return onCollectionRead(collection);
+      try {
+        T instance = (T) constructor.invoke();
+        fury.getRefResolver().reference(instance);
+        return (Collection) instance;
+      } catch (Throwable e) {
+        throw new IllegalArgumentException(
+          "Please provide public no arguments constructor for class " + type, e);
+      }
     }
 
-    private void readElements(
+    /**
+     * Get numElements of deserializing collection. Should be called after {@link #newCollection}.
+     */
+    public int getNumElements() {
+      return numElements;
+    }
+
+    public abstract T onCollectionRead(Collection collection);
+
+    protected void readElements(
         Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
       int flags = buffer.readByte();
       Serializer serializer = this.elemSerializer;
@@ -754,6 +744,20 @@ public class CollectionSerializers {
     public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
       buffer.writePositiveVarInt(value.size());
       return value;
+    }
+
+    @Override
+    public T onCollectionRead(Collection collection) {
+      return (T) collection;
+    }
+
+    @Override
+    public T read(MemoryBuffer buffer) {
+      Collection collection = newCollection(buffer);
+      if (numElements != 0) {
+        readElements(fury, buffer, collection, numElements);
+      }
+      return onCollectionRead(collection);
     }
   }
 
