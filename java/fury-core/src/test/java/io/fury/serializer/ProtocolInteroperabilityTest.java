@@ -28,7 +28,7 @@ import io.fury.config.CompatibleMode;
 import io.fury.config.Language;
 import io.fury.resolver.MetaContext;
 import io.fury.serializer.collection.CollectionSerializersTest;
-import io.fury.serializer.map.MapSerializersTest;
+import io.fury.serializer.collection.MapSerializersTest;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
 import io.fury.test.bean.MapFields;

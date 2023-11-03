@@ -24,7 +24,7 @@ import io.fury.resolver.ClassResolver;
 import io.fury.resolver.FieldResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.map.MapSerializer;
+import io.fury.serializer.collection.MapSerializer;
 import io.fury.util.FieldAccessor;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;

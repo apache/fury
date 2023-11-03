@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury.serializer.map;
+package io.fury.serializer.collection;
 
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;

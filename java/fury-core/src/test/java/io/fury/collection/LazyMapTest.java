@@ -23,7 +23,7 @@ import static org.testng.Assert.assertTrue;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.config.Language;
-import io.fury.serializer.map.MapSerializers;
+import io.fury.serializer.collection.MapSerializers;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -39,7 +39,7 @@ import io.fury.serializer.Serializer;
 import io.fury.serializer.Serializers;
 import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.serializer.collection.CollectionSerializers;
-import io.fury.serializer.map.MapSerializers;
+import io.fury.serializer.collection.MapSerializers;
 import io.fury.test.bean.BeanB;
 import io.fury.type.TypeUtils;
 import io.fury.util.LoggerFactory;
@@ -159,10 +159,12 @@ public class ClassResolverTest extends FuryTestBase {
         classResolver.getSerializerClass(ConcurrentHashMap.class),
         MapSerializers.ConcurrentHashMapSerializer.class);
     assertEquals(
-        classResolver.getSerializerClass(Class.forName("io.fury.serializer.CollectionContainer")),
+        classResolver.getSerializerClass(
+            Class.forName("io.fury.serializer.collection.CollectionContainer")),
         CollectionSerializers.DefaultJavaCollectionSerializer.class);
     assertEquals(
-        classResolver.getSerializerClass(Class.forName("io.fury.serializer.MapContainer")),
+        classResolver.getSerializerClass(
+            Class.forName("io.fury.serializer.collection.MapContainer")),
         MapSerializers.DefaultJavaMapSerializer.class);
   }
 

@@ -32,7 +32,7 @@ import io.fury.exception.ClassNotCompatibleException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.PrimitiveSerializers;
 import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.map.MapSerializer;
+import io.fury.serializer.collection.MapSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
 import io.fury.util.FieldAccessor;

@@ -25,6 +25,7 @@ import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.ObjectStreamSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.TimeSerializers;
+import io.fury.serializer.collection.GuavaCollectionSerializers;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import java.util.Objects;
@@ -190,7 +191,7 @@ public final class FuryBuilder {
    * Whether pre-register guava types such as `RegularImmutableMap`/`RegularImmutableList`. Those
    * types are not public API, but seems pretty stable.
    *
-   * @see io.fury.serializer.GuavaSerializers
+   * @see GuavaCollectionSerializers
    */
   public FuryBuilder registerGuavaTypes(boolean register) {
     this.registerGuavaTypes = register;

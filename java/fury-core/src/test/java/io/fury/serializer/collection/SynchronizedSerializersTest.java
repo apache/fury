@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury.serializer;
+package io.fury.serializer.collection;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -25,6 +25,7 @@ import io.fury.FuryTestBase;
 import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.serializer.Serializer;
 import io.fury.test.bean.CollectionFields;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
