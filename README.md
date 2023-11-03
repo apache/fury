@@ -97,13 +97,13 @@ Nightly snapshot:
 <dependency>
   <groupId>org.furyio</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.3.0-SNAPSHOT</version>
+  <version>0.4.0-SNAPSHOT</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.furyio</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.3.0-SNAPSHOT</version>
+  <version>0.4.0-SNAPSHOT</version>
 </dependency> -->
 ```
 Release version:
@@ -111,13 +111,13 @@ Release version:
 <dependency>
   <groupId>org.furyio</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.2.1</version>
+  <version>0.3.0</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.furyio</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.2.1</version>
+  <version>0.3.0</version>
 </dependency> -->
 ```
 
