@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury.serializer;
+package io.fury.serializer.map;
 
 import static com.google.common.collect.ImmutableList.of;
 import static io.fury.TestUtils.mapOf;
@@ -26,8 +26,7 @@ import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.collection.MapEntry;
 import io.fury.config.Language;
-import io.fury.serializer.CollectionSerializersTest.TestEnum;
-import io.fury.serializer.map.MapSerializers;
+import io.fury.serializer.collection.CollectionSerializersTest.TestEnum;
 import io.fury.test.bean.MapFields;
 import io.fury.type.GenericType;
 import java.io.Serializable;

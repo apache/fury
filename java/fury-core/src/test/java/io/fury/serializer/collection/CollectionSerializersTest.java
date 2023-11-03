@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.fury.serializer;
+package io.fury.serializer.collection;
 
 import static io.fury.collection.Collections.ofArrayList;
 import static io.fury.collection.Collections.ofHashMap;
@@ -31,8 +31,7 @@ import io.fury.FuryTestBase;
 import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
-import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.collection.CollectionSerializers;
+import io.fury.serializer.GuavaSerializers;
 import io.fury.serializer.collection.CollectionSerializers.JDKCompatibleCollectionSerializer;
 import io.fury.type.GenericType;
 import java.io.Serializable;
@@ -165,7 +164,7 @@ public class CollectionSerializersTest extends FuryTestBase {
         getJavaFury(), new ArrayDeque<>(Arrays.asList("a", "b", "c")), "ArrayDeque");
   }
 
-  enum TestEnum {
+  public enum TestEnum {
     A,
     B,
     C,

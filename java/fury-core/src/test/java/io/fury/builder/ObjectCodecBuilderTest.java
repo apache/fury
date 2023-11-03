@@ -28,7 +28,7 @@ import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CompileUnit;
 import io.fury.codegen.JaninoUtils;
 import io.fury.config.Language;
-import io.fury.serializer.CollectionSerializersTest;
+import io.fury.serializer.collection.CollectionSerializersTest;
 import io.fury.test.bean.AccessBeans;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
