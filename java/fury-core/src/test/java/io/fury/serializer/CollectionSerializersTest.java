@@ -31,7 +31,9 @@ import io.fury.FuryTestBase;
 import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
-import io.fury.serializer.CollectionSerializers.JDKCompatibleCollectionSerializer;
+import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.collection.CollectionSerializers;
+import io.fury.serializer.collection.CollectionSerializers.JDKCompatibleCollectionSerializer;
 import io.fury.type.GenericType;
 import java.io.Serializable;
 import java.util.AbstractCollection;
@@ -482,7 +484,7 @@ public class CollectionSerializersTest extends FuryTestBase {
     assertEquals(set, fury.deserialize(fury.serialize(buffer, set)));
   }
 
-  public static class SubListSerializer extends CollectionSerializers.CollectionSerializer {
+  public static class SubListSerializer extends CollectionSerializer {
 
     public SubListSerializer(Fury fury, Class cls) {
       super(fury, cls, true);

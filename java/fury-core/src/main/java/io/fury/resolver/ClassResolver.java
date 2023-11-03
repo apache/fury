@@ -50,7 +50,8 @@ import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
 import io.fury.serializer.ChildContainerSerializers;
 import io.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
-import io.fury.serializer.CollectionSerializers;
+import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.collection.CollectionSerializers;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.ExternalizableSerializer;
 import io.fury.serializer.GuavaSerializers;
@@ -868,7 +869,7 @@ public class ClassResolver {
         if (fury.getLanguage() == Language.JAVA) {
           return CollectionSerializers.DefaultJavaCollectionSerializer.class;
         } else {
-          return CollectionSerializers.CollectionSerializer.class;
+          return CollectionSerializer.class;
         }
       } else if (Map.class.isAssignableFrom(cls)) {
         // Serializer of common map such as HashMap/LinkedHashMap should be registered already.

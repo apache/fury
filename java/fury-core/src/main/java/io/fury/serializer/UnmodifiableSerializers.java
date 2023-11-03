@@ -20,7 +20,7 @@ import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.CollectionSerializers.CollectionSerializer;
+import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;

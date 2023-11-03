@@ -23,6 +23,7 @@ import io.fury.config.CompatibleMode;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.FieldResolver;
+import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.util.ReflectionUtils;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -115,7 +116,7 @@ public class ChildContainerSerializers {
    * serialization in those classes.
    */
   public static class ChildCollectionSerializer<T extends Collection>
-      extends CollectionSerializers.CollectionSerializer<T> {
+      extends CollectionSerializer<T> {
     public static Set<Class<?>> superClasses =
         ImmutableSet.of(
             ArrayList.class, LinkedList.class, ArrayDeque.class, Vector.class, HashSet.class

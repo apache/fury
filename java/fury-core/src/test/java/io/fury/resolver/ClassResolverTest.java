@@ -33,7 +33,8 @@ import io.fury.memory.MemoryUtils;
 import io.fury.resolver.longlongpkg.C1;
 import io.fury.resolver.longlongpkg.C2;
 import io.fury.resolver.longlongpkg.C3;
-import io.fury.serializer.CollectionSerializers;
+import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.collection.CollectionSerializers;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.MapSerializers;
 import io.fury.serializer.ObjectSerializer;
@@ -127,7 +128,7 @@ public class ClassResolverTest extends FuryTestBase {
         CollectionSerializers.ArraysAsListSerializer.class);
     assertEquals(
         classResolver.getSerializerClass(LinkedList.class),
-        CollectionSerializers.CollectionSerializer.class);
+        CollectionSerializer.class);
 
     assertEquals(
         classResolver.getSerializerClass(HashSet.class),

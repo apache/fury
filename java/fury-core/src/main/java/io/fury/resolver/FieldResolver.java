@@ -30,7 +30,7 @@ import io.fury.Fury;
 import io.fury.collection.Tuple2;
 import io.fury.exception.ClassNotCompatibleException;
 import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.CollectionSerializers;
+import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.serializer.MapSerializers;
 import io.fury.serializer.PrimitiveSerializers;
 import io.fury.type.Descriptor;
@@ -564,8 +564,8 @@ public class FieldResolver {
     if (fieldType == FieldTypes.COLLECTION_ELEMENT_FINAL) {
       ClassInfo elementClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      CollectionSerializers.CollectionSerializer collectionSerializer =
-          (CollectionSerializers.CollectionSerializer) classInfo.getSerializer();
+      CollectionSerializer collectionSerializer =
+          (CollectionSerializer) classInfo.getSerializer();
       collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
       o = collectionSerializer.read(buffer);
     } else if (fieldType == FieldTypes.MAP_KV_FINAL) {
@@ -601,8 +601,8 @@ public class FieldResolver {
     if (fieldType == FieldTypes.COLLECTION_ELEMENT_FINAL) {
       ClassInfo elementClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
-      CollectionSerializers.CollectionSerializer collectionSerializer =
-          (CollectionSerializers.CollectionSerializer) classInfo.getSerializer();
+      CollectionSerializer collectionSerializer =
+          (CollectionSerializer) classInfo.getSerializer();
       collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
       o = collectionSerializer.read(buffer);
     } else if (fieldType == FieldTypes.MAP_KV_FINAL) {

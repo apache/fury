@@ -18,6 +18,7 @@ package io.fury.serializer;
 
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
+import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.util.Platform;
 import io.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.MethodHandle;
@@ -103,7 +104,7 @@ public class ImmutableCollectionSerializers {
     }
   }
 
-  public static class ImmutableListSerializer extends CollectionSerializers.CollectionSerializer {
+  public static class ImmutableListSerializer extends CollectionSerializer {
     public ImmutableListSerializer(Fury fury, Class cls) {
       super(fury, cls, true);
     }
@@ -135,7 +136,7 @@ public class ImmutableCollectionSerializers {
     }
   }
 
-  public static class ImmutableSetSerializer extends CollectionSerializers.CollectionSerializer {
+  public static class ImmutableSetSerializer extends CollectionSerializer {
     public ImmutableSetSerializer(Fury fury, Class cls) {
       super(fury, cls, true);
     }

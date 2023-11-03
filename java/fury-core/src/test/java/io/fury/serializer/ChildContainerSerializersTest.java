@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+
+import io.fury.serializer.collection.CollectionSerializers;
 import lombok.Data;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
