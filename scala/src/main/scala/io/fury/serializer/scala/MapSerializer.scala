@@ -25,7 +25,7 @@ import java.util
 import scala.collection.{Factory, mutable}
 
 /**
- * Serializer for scala map.
+ * Base serializer for scala map.
  *
  * @author chaokunyang
  */
@@ -52,7 +52,12 @@ abstract class AbstractScalaMapSerializer[K, V, T](fury: Fury, cls: Class[T])
   }
 }
 
-class MapAdapter[K, V](var map: scala.collection.Map[K, V])
+/**
+ * A [[util.Map]] adapter to wrap scala map as a java [[util.Map]].
+ *
+ * @author chaokunyang
+ */
+private class MapAdapter[K, V](var map: scala.collection.Map[K, V])
   extends util.AbstractMap[K, V] {
   override def entrySet(): util.Set[util.Map.Entry[K, V]] = new util.AbstractSet[util.Map.Entry[K, V]] {
     override def size(): Int = map.size
@@ -70,6 +75,11 @@ class MapAdapter[K, V](var map: scala.collection.Map[K, V])
   }
 }
 
+/**
+ * A [[util.Map]] adapter to build scala [[scala.collection.Map]] from elements.
+ *
+ * @author chaokunyang
+ */
 private class MapBuilder[K, V, T](val builder: mutable.Builder[(K, V), T])
   extends util.AbstractMap[K, V] {
   override def entrySet(): util.Set[util.Map.Entry[K, V]] = ???
@@ -80,6 +90,11 @@ private class MapBuilder[K, V, T](val builder: mutable.Builder[(K, V), T])
   }
 }
 
+/**
+ * Serializer for scala map.
+ *
+ * @author chaokunyang
+ */
 class ScalaMapSerializer[K, V, T <: scala.collection.Map[K, V]](fury: Fury, cls: Class[T])
   extends AbstractScalaMapSerializer[K, V, T](fury, cls) {
 
@@ -91,6 +106,11 @@ class ScalaMapSerializer[K, V, T <: scala.collection.Map[K, V]](fury: Fury, cls:
   }
 }
 
+/**
+ * Serializer for scala sorted map.
+ *
+ * @author chaokunyang
+ */
 class ScalaSortedMapSerializer[K, V, T <: scala.collection.SortedMap[K, V]](fury: Fury, cls: Class[T])
   extends AbstractScalaMapSerializer[K, V, T](fury, cls) {
   override def onMapWrite(buffer: MemoryBuffer, value: T): util.Map[_, _] = {
