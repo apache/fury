@@ -51,7 +51,7 @@ public class ScalaDispatcher implements SerializerFactory {
       } else if (scala.collection.SortedSet.class.isAssignableFrom(clz)) {
         return new ScalaSortedSetSerializer(fury, clz);
       } else if (scala.collection.Seq.class.isAssignableFrom(clz)) {
-        return new ScalaListSerializer(fury, clz);
+        return new ScalaSeqSerializer(fury, clz);
       } else {
         return new ScalaCollectionSerializer(fury, clz);
       }

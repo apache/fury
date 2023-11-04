@@ -155,7 +155,7 @@ class ScalaSortedSetSerializer[A, T <: scala.collection.SortedSet[A]](fury: Fury
  *
  * @author chaokunyang
  */
-class ScalaListSerializer[A, T <: scala.collection.Seq[A]](fury: Fury, cls: Class[T])
+class ScalaSeqSerializer[A, T <: scala.collection.Seq[A]](fury: Fury, cls: Class[T])
   extends AbstractScalaCollectionSerializer[A, T](fury, cls)  {
   override def onCollectionWrite(buffer: MemoryBuffer, value: T): util.Collection[_] = {
     buffer.writePositiveVarInt(value.size)
