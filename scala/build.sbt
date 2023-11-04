@@ -8,15 +8,3 @@ libraryDependencies ++= Seq(
   "org.furyio" % "fury-core" % furyVersion,
   "org.scalatest" %% "scalatest" % "3.2.17",
 )
-
-Test / unmanagedSourceDirectories ++= {
-  if (scalaBinaryVersion.value.startsWith("2.12")) {
-    Seq(
-      (LocalRootProject / baseDirectory).value / "src" / "test" / "scala-2.12"
-    )
-  } else {
-    Seq(
-      (LocalRootProject / baseDirectory).value / "src" / "test" / "scala-2.13+"
-    )
-  }
-}
