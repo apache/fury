@@ -87,7 +87,7 @@ private trait JavaIterable[A] extends java.lang.Iterable[A] {
  *
  * @author chaokunyang
  */
-private class CollectionAdapter[A, T](var coll: scala.collection.Iterable[A])
+private class CollectionAdapter[A, T](coll: scala.collection.Iterable[A])
   extends util.AbstractCollection[A] with JavaIterable[A] {
   private var length: Int = -1
 
@@ -99,6 +99,8 @@ private class CollectionAdapter[A, T](var coll: scala.collection.Iterable[A])
   }
 
   override protected def createIterator(): Iterator[A] = coll.iterator
+
+  override def spliterator(): util.Spliterator[A] = super.spliterator()
 }
 
 /**
@@ -106,11 +108,13 @@ private class CollectionAdapter[A, T](var coll: scala.collection.Iterable[A])
  *
  * @author chaokunyang
  */
-private class ListAdapter[A](var coll: scala.collection.Seq[A])
+private class ListAdapter[A](coll: scala.collection.Seq[A])
   extends util.AbstractList[A] with JavaIterable[A] {
   override def get(index: Int): A = coll(index)
 
   override protected def createIterator(): Iterator[A] = coll.iterator
+
+  override def spliterator(): util.Spliterator[A] = super.spliterator()
 
   override def size(): Int = coll.size
 }
