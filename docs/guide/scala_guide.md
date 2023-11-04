@@ -107,9 +107,10 @@ println(fury.deserialize(fury.serialize(opt1)))
 # Performance
 Scala `pojo/bean/case/object` are supported by fury jit well, the performance is as good as fury java.
 
-Scala collections and generics doesn't follow java collection framework, and is not fully integrated with Fury JIT. The performance won't be as good as fury collections serialization for java.
+Scala collections and generics doesn't follow java collection framework, and is not fully integrated with Fury JIT in current release version. The performance won't be as good as fury collections serialization for java.
 
 The execution for scala collections will invoke Java serialization API `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` with fury `ObjectStream` implementation. Although `io.fury.serializer.ObjectStreamSerializer` is much faster than JDK `ObjectOutputStream/ObjectInputStream`, but it still doesn't know how use scala collection generics.
 
-In future we plan provide jit support for scala collections to
-get better performance, see https://github.com/alipay/fury/issues/682, stay tuned!
+In future we plan to provide more optimization for scala types, see https://github.com/alipay/fury/issues/682, stay tuned!
+
+Scala collections serialization is finished in https://github.com/alipay/fury/pull/1073, if you want better performance, please use fury snapshot version.
