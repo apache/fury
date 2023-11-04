@@ -281,7 +281,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     ctx.addImports(LazyInitBeanSerializer.class, Serializers.EnumSerializer.class);
     ctx.addImports(Serializer.class, StringSerializer.class);
     ctx.addImports(ObjectSerializer.class, CompatibleSerializer.class);
-    ctx.addImports(AbstractCollectionSerializer.class, AbstractMapSerializer.class, ObjectSerializer.class);
+    ctx.addImports(AbstractCollectionSerializer.class, AbstractMapSerializer.class);
   }
 
   protected Expression serializeFor(
@@ -402,18 +402,16 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected boolean useCollectionSerialization(TypeToken<?> typeToken) {
-    return COLLECTION_TYPE.isSupertypeOf(typeToken) || (
-      fury.getConfig().isScalaOptimizationEnabled() && (
-        !ScalaTypes.getScalaMapType().isAssignableFrom(typeToken.getRawType()) &&
-        ScalaTypes.getScalaIterableType().isAssignableFrom(typeToken.getRawType()))
-      );
+    return COLLECTION_TYPE.isSupertypeOf(typeToken)
+        || (fury.getConfig().isScalaOptimizationEnabled()
+            && (!ScalaTypes.getScalaMapType().isAssignableFrom(typeToken.getRawType())
+                && ScalaTypes.getScalaIterableType().isAssignableFrom(typeToken.getRawType())));
   }
 
   protected boolean useMapSerialization(TypeToken<?> typeToken) {
-    return MAP_TYPE.isSupertypeOf(typeToken) || (
-      fury.getConfig().isScalaOptimizationEnabled() &&
-        ScalaTypes.getScalaMapType().isAssignableFrom(typeToken.getRawType())
-    );
+    return MAP_TYPE.isSupertypeOf(typeToken)
+        || (fury.getConfig().isScalaOptimizationEnabled()
+            && ScalaTypes.getScalaMapType().isAssignableFrom(typeToken.getRawType()));
   }
 
   /**
@@ -696,7 +694,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                 false);
       }
     } else if (!TypeToken.of(AbstractCollectionSerializer.class).isSupertypeOf(serializer.type())) {
-      serializer = new Cast(serializer, TypeToken.of(AbstractCollectionSerializer.class), "colSerializer");
+      serializer =
+          new Cast(serializer, TypeToken.of(AbstractCollectionSerializer.class), "colSerializer");
     }
     // write collection data.
     ListExpression actions = new ListExpression();
@@ -1207,7 +1206,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         Expression classInfo = readClassInfo(cls, buffer);
         serializer = new Invoke(classInfo, "getSerializer", "serializer", SERIALIZER_TYPE, false);
         serializer =
-            new Cast(serializer, TypeToken.of(AbstractCollectionSerializer.class), "collectionSerializer");
+            new Cast(
+                serializer,
+                TypeToken.of(AbstractCollectionSerializer.class),
+                "collectionSerializer");
       }
     } else {
       checkArgument(
@@ -1435,7 +1437,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else {
         Expression classInfo = readClassInfo(cls, buffer);
         serializer = new Invoke(classInfo, "getSerializer", SERIALIZER_TYPE);
-        serializer = new Cast(serializer, TypeToken.of(AbstractMapSerializer.class), "mapSerializer");
+        serializer =
+            new Cast(serializer, TypeToken.of(AbstractMapSerializer.class), "mapSerializer");
       }
     } else {
       checkArgument(

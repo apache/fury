@@ -19,7 +19,6 @@ package io.fury.type;
 import com.google.common.reflect.TypeToken;
 import io.fury.collection.Tuple2;
 import io.fury.util.ReflectionUtils;
-
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
@@ -64,8 +63,7 @@ public class ScalaTypes {
 
   public static TypeToken<?> getElementType(TypeToken typeToken) {
     TypeToken<?> supertype = typeToken.getSupertype(getScalaIterableType());
-    return supertype.resolveType(SCALA_ITERATOR_RETURN_TYPE)
-      .resolveType(SCALA_NEXT_RETURN_TYPE);
+    return supertype.resolveType(SCALA_ITERATOR_RETURN_TYPE).resolveType(SCALA_NEXT_RETURN_TYPE);
   }
 
   /** Returns key/value type of scala map. */

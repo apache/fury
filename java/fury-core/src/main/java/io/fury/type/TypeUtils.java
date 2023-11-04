@@ -420,7 +420,7 @@ public class TypeUtils {
       }
     }
     if (typeToken.getType().getTypeName().startsWith("scala.collection")) {
-     return ScalaTypes.getElementType(typeToken);
+      return ScalaTypes.getElementType(typeToken);
     }
     TypeToken<?> supertype =
         ((TypeToken<? extends Iterable<?>>) typeToken).getSupertype(Iterable.class);
