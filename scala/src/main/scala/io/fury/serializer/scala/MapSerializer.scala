@@ -25,7 +25,21 @@ import java.util
 import scala.collection.{Factory, mutable}
 
 /**
- * Base serializer for scala map.
+ * Serializer for scala map.
+ *
+ * The main processes for map serialization:
+ * <li>`onMapWrite`: write map size and scala map factory, then
+ * return a [[java.util.Map]] adapter for fury java map framework to invoke.</li>
+ * <li>Fury java map framework write all map elements by fury protocol.</li>
+ *
+ * The main processes for map deserialization:
+ * <li>`newMap`: read and set map size, read map factory,
+ * create a new [[java.util.Map]] adapter with the map builder
+ * by factory for java map framework to invoke.
+ * </li>
+ * <li>Fury java map framework read all map elements by fury protocol,
+ * invoke [[java.util.Map#put]] to add it into builder.</li>
+ * <li>`onMapRead`: create scala map from builder.</li>
  *
  * @author chaokunyang
  */

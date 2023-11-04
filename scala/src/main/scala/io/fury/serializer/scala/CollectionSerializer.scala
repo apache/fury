@@ -26,6 +26,20 @@ import scala.collection.{Factory, Iterable, mutable}
 /**
  * Serializer for scala collection.
  *
+ * The main processes for collection serialization:
+ * <li>`onCollectionWrite`: write collection size and scala collection factory, then
+ * return a [[java.util.Collection]] adapter for fury java collection framework to invoke.</li>
+ * <li>Fury java collection framework write all collection elements by fury protocol.</li>
+ *
+ * The main processes for collection deserialization:
+ * <li>`newCollection`: read and set collection size, read collection factory,
+ * create a new [[java.util.Collection]] adapter with the collection builder
+ * by factory for java collection framework to invoke.
+ * </li>
+ * <li>Fury java collection framework read all collection elements by fury protocol,
+ * invoke [[java.util.Collection#add]] to add it into builder.</li>
+ * <li>`onCollectionRead`: create scala collection from builder.</li>
+ *
  * @author chaokunyang
  */
 abstract class AbstractScalaCollectionSerializer[A, T <: Iterable[A]](fury: Fury, cls: Class[T])
