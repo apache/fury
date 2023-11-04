@@ -41,20 +41,20 @@ public class ScalaDispatcher implements SerializerFactory {
    */
   @Override
   public Serializer createSerializer(Fury fury, Class<?> clz) {
+    // Many map/seq/set types doesn't extends DefaultSerializable.
+    if (scala.collection.SortedMap.class.isAssignableFrom(clz)) {
+      return new ScalaSortedMapSerializer(fury, clz);
+    } else if (scala.collection.Map.class.isAssignableFrom(clz)) {
+      return new ScalaMapSerializer(fury, clz);
+    } else if (scala.collection.SortedSet.class.isAssignableFrom(clz)) {
+      return new ScalaSortedSetSerializer(fury, clz);
+    } else if (scala.collection.Seq.class.isAssignableFrom(clz)) {
+      return new ScalaSeqSerializer(fury, clz);
+    }
     if (DefaultSerializable.class.isAssignableFrom(clz)) {
       Method replaceMethod = JavaSerializer.getWriteReplaceMethod(clz);
       Preconditions.checkNotNull(replaceMethod);
-      if (scala.collection.SortedMap.class.isAssignableFrom(clz)) {
-        return new ScalaSortedMapSerializer(fury, clz);
-      } else if (scala.collection.Map.class.isAssignableFrom(clz)) {
-        return new ScalaMapSerializer(fury, clz);
-      } else if (scala.collection.SortedSet.class.isAssignableFrom(clz)) {
-        return new ScalaSortedSetSerializer(fury, clz);
-      } else if (scala.collection.Seq.class.isAssignableFrom(clz)) {
-        return new ScalaSeqSerializer(fury, clz);
-      } else {
-        return new ScalaCollectionSerializer(fury, clz);
-      }
+      return new ScalaCollectionSerializer(fury, clz);
     }
     return null;
   }

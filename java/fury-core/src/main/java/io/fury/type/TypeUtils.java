@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
  *
  * @author chaokunyang
  */
-@SuppressWarnings("UnstableApiUsage")
+@SuppressWarnings({"UnstableApiUsage", "unchecked"})
 public class TypeUtils {
   public static final String JAVA_BOOLEAN = "boolean";
   public static final String JAVA_BYTE = "byte";
@@ -419,7 +419,9 @@ public class TypeUtils {
         }
       }
     }
-    @SuppressWarnings("unchecked")
+    if (typeToken.getType().getTypeName().startsWith("scala.collection")) {
+     return ScalaTypes.getElementType(typeToken);
+    }
     TypeToken<?> supertype =
         ((TypeToken<? extends Iterable<?>>) typeToken).getSupertype(Iterable.class);
     return supertype.resolveType(ITERATOR_RETURN_TYPE).resolveType(NEXT_RETURN_TYPE);
@@ -447,6 +449,9 @@ public class TypeUtils {
               TypeToken.of(actualTypeArguments[0]), TypeToken.of(actualTypeArguments[1]));
         }
       }
+    }
+    if (typeToken.getType().getTypeName().startsWith("scala.collection")) {
+      return ScalaTypes.getMapKeyValueType(typeToken);
     }
     @SuppressWarnings("unchecked")
     TypeToken<?> supertype = ((TypeToken<? extends Map<?, ?>>) typeToken).getSupertype(Map.class);
@@ -690,30 +695,5 @@ public class TypeUtils {
     }
 
     return new ArrayList<>(allTypeArguments);
-  }
-
-  private static volatile TypeToken<?> scalaMapType;
-  private static volatile TypeToken<?> scalaSeqType;
-  private static volatile TypeToken<?> scalaIterableType;
-
-  public static TypeToken<?> getScalaMapType() {
-    if (scalaMapType == null) {
-      scalaMapType = TypeToken.of(ReflectionUtils.loadClass("scala.collection.Map"));
-    }
-    return scalaMapType;
-  }
-
-  public static TypeToken<?> getScalaSeqType() {
-    if (scalaSeqType == null) {
-      scalaSeqType = TypeToken.of(ReflectionUtils.loadClass("scala.collection.Seq"));
-    }
-    return scalaSeqType;
-  }
-
-  public static TypeToken<?> getScalaIterableType() {
-    if (scalaIterableType == null) {
-      scalaIterableType = TypeToken.of(ReflectionUtils.loadClass("scala.collection.Iterable"));
-    }
-    return scalaIterableType;
   }
 }
