@@ -1148,7 +1148,7 @@ public class ClassResolver {
       boolean forbidden = BlackList.getDefaultBlackList().contains(cls.getName());
       if (forbidden || !isSecure(extRegistry.registeredClassIdMap, cls)) {
         throw new InsecureException(msg);
-      } else {
+      } else if(fury.getConfig().requireClassRegistration()) {
         if (!Functions.isLambda(cls) && !ReflectionUtils.isJdkProxy(cls)) {
           LOG.warn(msg);
         }
