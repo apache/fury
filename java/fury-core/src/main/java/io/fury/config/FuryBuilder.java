@@ -213,7 +213,7 @@ public final class FuryBuilder {
     return this;
   }
 
-  /** Only takes effect when using `FuryBuilder#requireClassRegistration(false)` */
+  /** Only takes effect when using `FuryBuilder#requireClassRegistration(false)`. */
   public FuryBuilder classRegistrationWarningIgnored(boolean classRegistrationWarningIgnored) {
     this.classRegistrationWarningIgnored = classRegistrationWarningIgnored;
     return this;
