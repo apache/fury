@@ -48,6 +48,7 @@ public class Config implements Serializable {
   private final boolean compressLong;
   private final LongEncoding longEncoding;
   private final boolean requireClassRegistration;
+  private final boolean classRegistrationWarningIgnored;
   private final boolean registerGuavaTypes;
   private final boolean shareMetaContext;
   private final boolean asyncCompilationEnabled;
@@ -66,6 +67,7 @@ public class Config implements Serializable {
     longEncoding = builder.longEncoding;
     compressLong = longEncoding != LongEncoding.LE_RAW_BYTES;
     requireClassRegistration = builder.requireClassRegistration;
+    classRegistrationWarningIgnored = builder.classRegistrationWarningIgnored;
     registerGuavaTypes = builder.registerGuavaTypes;
     codeGenEnabled = builder.codeGenEnabled;
     checkClassVersion = builder.checkClassVersion;
@@ -148,6 +150,10 @@ public class Config implements Serializable {
 
   public boolean requireClassRegistration() {
     return requireClassRegistration;
+  }
+
+  public boolean classRegistrationWarningIgnored() {
+    return classRegistrationWarningIgnored;
   }
 
   public boolean registerGuavaTypes() {

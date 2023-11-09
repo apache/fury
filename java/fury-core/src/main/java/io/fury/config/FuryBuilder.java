@@ -68,6 +68,7 @@ public final class FuryBuilder {
   boolean checkJdkClassSerializable = true;
   Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
   boolean requireClassRegistration = true;
+  boolean classRegistrationWarningIgnored = false;
   boolean shareMetaContext = false;
   boolean codeGenEnabled = true;
   boolean deserializeUnexistedClass = false;
@@ -209,6 +210,14 @@ public final class FuryBuilder {
    */
   public FuryBuilder requireClassRegistration(boolean requireClassRegistration) {
     this.requireClassRegistration = requireClassRegistration;
+    return this;
+  }
+
+  /**
+   * Only takes effect when using `FuryBuilder#requireClassRegistration(false)`
+   */
+  public FuryBuilder classRegistrationWarningIgnored(boolean classRegistrationWarningIgnored) {
+    this.classRegistrationWarningIgnored = classRegistrationWarningIgnored;
     return this;
   }
 
