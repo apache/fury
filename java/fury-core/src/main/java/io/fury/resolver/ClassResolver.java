@@ -1149,7 +1149,7 @@ public class ClassResolver {
       if (forbidden || !isSecure(extRegistry.registeredClassIdMap, cls)) {
         throw new InsecureException(msg);
       } else {
-        if (!Functions.isLambda(cls) && !ReflectionUtils.isJdkProxy(cls)) {
+        if (!fury.getConfig().requireClassRegistration() && !Functions.isLambda(cls) && !ReflectionUtils.isJdkProxy(cls)) {
           LOG.warn(msg);
         }
       }
