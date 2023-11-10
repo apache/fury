@@ -48,6 +48,7 @@ public class Config implements Serializable {
   private final boolean compressLong;
   private final LongEncoding longEncoding;
   private final boolean requireClassRegistration;
+  private final boolean suppressClassRegistrationWarnings;
   private final boolean registerGuavaTypes;
   private final boolean shareMetaContext;
   private final boolean asyncCompilationEnabled;
@@ -66,6 +67,7 @@ public class Config implements Serializable {
     longEncoding = builder.longEncoding;
     compressLong = longEncoding != LongEncoding.LE_RAW_BYTES;
     requireClassRegistration = builder.requireClassRegistration;
+    suppressClassRegistrationWarnings = builder.suppressClassRegistrationWarnings;
     registerGuavaTypes = builder.registerGuavaTypes;
     codeGenEnabled = builder.codeGenEnabled;
     checkClassVersion = builder.checkClassVersion;
@@ -148,6 +150,14 @@ public class Config implements Serializable {
 
   public boolean requireClassRegistration() {
     return requireClassRegistration;
+  }
+
+  /**
+   * Whether suppress class registration warnings when class registration is disabled. The warnings
+   * can be used for security audit, but may be annoying.
+   */
+  public boolean suppressClassRegistrationWarnings() {
+    return suppressClassRegistrationWarnings;
   }
 
   public boolean registerGuavaTypes() {

@@ -37,6 +37,9 @@ import org.slf4j.Logger;
  *
  * @author chaokunyang
  */
+// Method naming style for this builder:
+// - withXXX: withCodegen
+// - verbXXX: requireClassRegistration
 @SuppressWarnings("rawtypes")
 public final class FuryBuilder {
   private static final Logger LOG = LoggerFactory.getLogger(FuryBuilder.class);
@@ -74,6 +77,7 @@ public final class FuryBuilder {
   boolean asyncCompilationEnabled = false;
   boolean registerGuavaTypes = true;
   boolean scalaOptimizationEnabled = false;
+  Boolean suppressClassRegistrationWarnings;
 
   public FuryBuilder() {}
 
@@ -212,6 +216,17 @@ public final class FuryBuilder {
     return this;
   }
 
+  /**
+   * Whether suppress class registration warnings when class registration is disabled. The warnings
+   * can be used for security audit, but may be annoying.
+   *
+   * @see Config#suppressClassRegistrationWarnings()
+   */
+  public FuryBuilder suppressClassRegistrationWarnings(boolean suppress) {
+    this.suppressClassRegistrationWarnings = suppress;
+    return this;
+  }
+
   /** Whether to enable meta share mode. */
   public FuryBuilder withMetaContextShare(boolean shareMetaContext) {
     this.shareMetaContext = shareMetaContext;
@@ -285,6 +300,9 @@ public final class FuryBuilder {
               + "If the environment isn't secure, please enable class registration by "
               + "`FuryBuilder#requireClassRegistration(true)` or configure ClassChecker by "
               + "`ClassResolver#setClassChecker`");
+    }
+    if (suppressClassRegistrationWarnings == null) {
+      suppressClassRegistrationWarnings = !requireClassRegistration;
     }
   }
 
