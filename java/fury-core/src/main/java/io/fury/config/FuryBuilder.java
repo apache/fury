@@ -219,6 +219,7 @@ public final class FuryBuilder {
   /**
    * Whether suppress class registration warnings when class registration is disabled. The warnings
    * can be used for security audit, but may be annoying.
+   * When `requireClassRegistration=false`, this suppression will be enabled by default.
    *
    * @see Config#suppressClassRegistrationWarnings()
    */
