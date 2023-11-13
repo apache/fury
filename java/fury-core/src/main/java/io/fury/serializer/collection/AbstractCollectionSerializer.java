@@ -16,7 +16,6 @@
 
 package io.fury.serializer.collection;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.annotation.CodegenInvoke;
 import io.fury.memory.MemoryBuffer;
@@ -260,6 +259,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       bitmap |= Flags.HAS_NULL;
     }
     if (hasDifferentClass) {
+      // If collection contains null only, the type header will be meaningless
       bitmap |= Flags.NOT_SAME_TYPE | Flags.NOT_DECL_ELEMENT_TYPE;
       buffer.writeByte(bitmap);
     } else {
@@ -362,6 +362,11 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     if ((flags & Flags.NOT_SAME_TYPE) != Flags.NOT_SAME_TYPE) {
       Serializer serializer;
       if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) != Flags.NOT_DECL_ELEMENT_TYPE) {
+        // When serialize a collection with all elements null directly, the declare type
+        // will be equal to element type: null
+        if (elemGenericType == null) {
+          elemGenericType = fury.getClassResolver().getObjectGenericType();
+        }
         serializer = elemGenericType.getSerializer(fury.getClassResolver());
       } else {
         serializer = elementClassInfoHolder.getSerializer();
@@ -585,7 +590,11 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE) {
         serializer = classResolver.readClassInfo(buffer, elementClassInfoHolder).getSerializer();
       } else {
-        Preconditions.checkNotNull(elemGenericType);
+        // When serialize a collection with all elements null directly, the declare type
+        // will be equal to element type: null
+        if (elemGenericType == null) {
+          elemGenericType = fury.getClassResolver().getObjectGenericType();
+        }
         serializer = elemGenericType.getSerializer(classResolver);
       }
       readSameTypeElements(fury, buffer, serializer, flags, collection, numElements);

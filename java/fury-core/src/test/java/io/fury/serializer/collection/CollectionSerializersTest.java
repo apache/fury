@@ -515,4 +515,14 @@ public class CollectionSerializersTest extends FuryTestBase {
     //     Object o = deserialize(new Hessian2Input(new ByteArrayInputStream(bas.toByteArray())));
     //     System.out.println(o.getClass());
   }
+
+  @Test
+  public void testCollectionNullElements() {
+    // When serialize a collection with all elements null directly, the declare type
+    // will be equal to element type: null
+    List data = new ArrayList<>();
+    data.add(null);
+    Fury f = Fury.builder().withLanguage(Language.JAVA).build();
+    serDeCheck(f, data);
+  }
 }
