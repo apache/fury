@@ -93,6 +93,7 @@ public class CollectionSerializersTest extends FuryTestBase {
     fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<List<String>>() {}));
     byte[] bytes2 = fury.serialize(data);
     Assert.assertTrue(bytes1.length > bytes2.length);
+    assertEquals(fury.deserialize(bytes2), data);
     fury.getGenerics().popGenericType();
     Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(bytes2));
   }
@@ -514,5 +515,15 @@ public class CollectionSerializersTest extends FuryTestBase {
     //     serialize(hessian2Output, list.subList(0 ,2));
     //     Object o = deserialize(new Hessian2Input(new ByteArrayInputStream(bas.toByteArray())));
     //     System.out.println(o.getClass());
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testCollectionNullElements(boolean refTracking) {
+    // When serialize a collection with all elements null directly, the declare type
+    // will be equal to element type: null
+    List data = new ArrayList<>();
+    data.add(null);
+    Fury f = Fury.builder().withLanguage(Language.JAVA).withRefTracking(refTracking).build();
+    serDeCheck(f, data);
   }
 }

@@ -21,6 +21,7 @@ import static io.fury.codegen.ExpressionUtils.eq;
 import static io.fury.serializer.CodegenSerializer.loadCodegenSerializer;
 import static io.fury.serializer.CodegenSerializer.loadCompatibleCodegenSerializer;
 import static io.fury.serializer.CodegenSerializer.supportCodegenForJavaSerialization;
+import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
@@ -263,6 +264,7 @@ public class ClassResolver {
     private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Field, Descriptor>>
         descriptorsCache = new ConcurrentHashMap<>();
     private ClassChecker classChecker = (classResolver, className) -> true;
+    private GenericType objectGenericType;
   }
 
   public ClassResolver(Fury fury) {
@@ -271,6 +273,7 @@ public class ClassResolver {
     classInfoCache = NIL_CLASS_INFO;
     metaContextShareEnabled = fury.getConfig().shareMetaContext();
     extRegistry = new ExtRegistry();
+    extRegistry.objectGenericType = buildGenericType(OBJECT_TYPE);
   }
 
   public void initialize() {
@@ -1749,6 +1752,10 @@ public class ClassResolver {
             return isFinal(getRawType(t));
           }
         });
+  }
+
+  public GenericType getObjectGenericType() {
+    return extRegistry.objectGenericType;
   }
 
   public ClassInfo newClassInfo(Class<?> cls, Serializer<?> serializer, short classId) {

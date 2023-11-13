@@ -224,6 +224,11 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       buffer.writeByte(bitmap);
     } else {
       ClassResolver classResolver = fury.getClassResolver();
+      // When serialize a collection with all elements null directly, the declare type
+      // will be equal to element type: null
+      if (elemClass == null) {
+        elemClass = Object.class;
+      }
       ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
       if (classInfo.getSerializer().needToWriteRef()) {
         bitmap |= Flags.TRACKING_REF;
@@ -260,9 +265,15 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       bitmap |= Flags.HAS_NULL;
     }
     if (hasDifferentClass) {
+      // If collection contains null only, the type header will be meaningless
       bitmap |= Flags.NOT_SAME_TYPE | Flags.NOT_DECL_ELEMENT_TYPE;
       buffer.writeByte(bitmap);
     } else {
+      // When serialize a collection with all elements null directly, the declare type
+      // will be equal to element type: null
+      if (elemClass == null) {
+        elemClass = Object.class;
+      }
       // Write class in case peer doesn't have this class.
       if (!fury.getConfig().shareMetaContext() && elemClass == declareElementType) {
         buffer.writeByte(bitmap);
@@ -362,6 +373,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     if ((flags & Flags.NOT_SAME_TYPE) != Flags.NOT_SAME_TYPE) {
       Serializer serializer;
       if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) != Flags.NOT_DECL_ELEMENT_TYPE) {
+        Preconditions.checkNotNull(elemGenericType);
         serializer = elemGenericType.getSerializer(fury.getClassResolver());
       } else {
         serializer = elementClassInfoHolder.getSerializer();
