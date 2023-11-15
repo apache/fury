@@ -30,10 +30,6 @@ Buffer::Buffer() {
 }
 
 Buffer::Buffer(Buffer &&buffer) noexcept {
-  if (own_data_) {
-    delete data_;
-    data_ = nullptr;
-  }
   data_ = buffer.data_;
   size_ = buffer.size_;
   own_data_ = buffer.own_data_;
