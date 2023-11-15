@@ -14,18 +14,18 @@
 
 use chrono::{NaiveDate, NaiveDateTime};
 use fury::{from_buffer, to_buffer};
-use fury_derive::{Deserialize, FuryMeta, Serialize};
+use fury_derive::Fury;
 use std::collections::HashMap;
 
 #[test]
 fn complex_struct() {
-    #[derive(FuryMeta, Serialize, Deserialize, Debug, PartialEq)]
+    #[derive(Fury, Debug, PartialEq)]
     #[tag("example.foo2")]
     struct Animal {
         category: String,
     }
 
-    #[derive(FuryMeta, Serialize, Deserialize, Debug, PartialEq)]
+    #[derive(Fury, Debug, PartialEq)]
     #[tag("example.foo")]
     struct Person {
         c1: Vec<u8>,  // binary
@@ -70,13 +70,13 @@ fn complex_struct() {
 
 #[test]
 fn decode_py_struct() {
-    #[derive(FuryMeta, Serialize, Deserialize, Debug, PartialEq)]
+    #[derive(Fury, Debug, PartialEq)]
     #[tag("example.foo2")]
     struct Animal {
         category: String,
     }
 
-    #[derive(FuryMeta, Serialize, Deserialize, Debug, PartialEq)]
+    #[derive(Fury, Debug, PartialEq)]
     #[tag("example.ComplexObject")]
     struct Person {
         f1: String,
@@ -113,13 +113,13 @@ fn decode_py_struct() {
 
 #[test]
 fn encode_to_obin() {
-    #[derive(FuryMeta, Serialize, Deserialize, Debug, PartialEq)]
+    #[derive(Fury, Debug, PartialEq)]
     #[tag("example.foo2")]
     struct Animal {
         category: String,
     }
 
-    #[derive(FuryMeta, Serialize, Deserialize, Debug, PartialEq)]
+    #[derive(Fury, Debug, PartialEq)]
     #[tag("example.ComplexObject")]
     struct Person {
         f1: String,

@@ -22,7 +22,7 @@ fn sorted_fields(fields: &Fields) -> Vec<&Field> {
     fields
 }
 
-#[proc_macro_derive(FuryMeta, attributes(tag))]
+#[proc_macro_derive(Fury, attributes(tag))]
 pub fn proc_macro_derive_fury_meta(input: proc_macro::TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let tag = input
@@ -37,8 +37,14 @@ pub fn proc_macro_derive_fury_meta(input: proc_macro::TokenStream) -> TokenStrea
             panic!("tag should be string")
         }
     };
-    derive_fury_meta(&input, tag)
-}
+    let mut token_stream = derive_fury_meta(&input, tag);
+    // append serialize impl
+    token_stream.extend(derive_serialize(&input));
+    // append deserialize impl
+    token_stream.extend(derive_deserilize(&input));
+    token_stream
+}   
+
 
 fn derive_fury_meta(ast: &syn::DeriveInput, tag: String) -> TokenStream {
     let name = &ast.ident;
@@ -81,11 +87,6 @@ fn derive_fury_meta(ast: &syn::DeriveInput, tag: String) -> TokenStream {
     gen.into()
 }
 
-#[proc_macro_derive(Serialize, attributes(tag))]
-pub fn proc_macro_derive_serialize(input: proc_macro::TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-    derive_serialize(&input)
-}
 
 fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
@@ -134,11 +135,6 @@ fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
     gen.into()
 }
 
-#[proc_macro_derive(Deserialize, attributes(tag))]
-pub fn proc_macro_derive_deserialize(input: proc_macro::TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-    derive_deserilize(&input)
-}
 
 fn derive_deserilize(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
@@ -177,3 +173,4 @@ fn derive_deserilize(ast: &syn::DeriveInput) -> TokenStream {
     };
     gen.into()
 }
+
