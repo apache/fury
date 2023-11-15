@@ -126,7 +126,7 @@ public class FuryPooledObjectFactory {
     classLoaderLocal.remove();
   }
 
-  /** get cache or put newly added pooledFury */
+  /** Get cache or put new added pooledFury. */
   private synchronized ClassLoaderFuryPooled getOrAddCache(ClassLoader classLoader) {
     ClassLoaderFuryPooled classLoaderFuryPooled =
         classLoaderFuryPooledCache.getIfPresent(classLoader);
