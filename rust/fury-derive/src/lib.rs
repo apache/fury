@@ -43,8 +43,7 @@ pub fn proc_macro_derive_fury_meta(input: proc_macro::TokenStream) -> TokenStrea
     // append deserialize impl
     token_stream.extend(derive_deserilize(&input));
     token_stream
-}   
-
+}
 
 fn derive_fury_meta(ast: &syn::DeriveInput, tag: String) -> TokenStream {
     let name = &ast.ident;
@@ -86,7 +85,6 @@ fn derive_fury_meta(ast: &syn::DeriveInput, tag: String) -> TokenStream {
     };
     gen.into()
 }
-
 
 fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
@@ -135,7 +133,6 @@ fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
     gen.into()
 }
 
-
 fn derive_deserilize(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let fields = match &ast.data {
@@ -173,4 +170,3 @@ fn derive_deserilize(ast: &syn::DeriveInput) -> TokenStream {
     };
     gen.into()
 }
-
