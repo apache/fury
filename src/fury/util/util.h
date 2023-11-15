@@ -174,13 +174,11 @@ static inline T ToLittleEndian(T value) {
 }
 
 // Convert from big/little endian format to the machine's native endian format.
-template <typename T>
-static inline T FromBigEndian(T value) {
+template <typename T> static inline T FromBigEndian(T value) {
   return ToBigEndian(value);
 }
 
-template <typename T>
-static inline T FromLittleEndian(T value) {
+template <typename T> static inline T FromLittleEndian(T value) {
   return ToLittleEndian(value);
 }
 
