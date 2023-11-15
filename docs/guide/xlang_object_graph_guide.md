@@ -95,7 +95,19 @@ func main() {
 **JavaScript**
 
 ```javascript
-// Coming soon
+import Fury from '@furyjs/fury';
+
+/**
+ * @furyjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
+ * Experimental feature, installation success cannot be guaranteed at this moment
+ * If you are unable to install the module, replace it with `const hps = null;`
+ **/
+import hps from '@furyjs/hps';
+
+const fury = new Fury({ hps });
+const input = fury.serialize('hello fury');
+const result = fury.deserialize(input);
+console.log(result);
 ```
 
 ### Serialize custom types
@@ -287,7 +299,24 @@ func main() {
 **JavaScript**
 
 ```javascript
-// Coming soon
+import Fury, { Type, InternalSerializerType } from '@furyjs/fury';
+
+/**
+ * @furyjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
+ * Experimental feature, installation success cannot be guaranteed at this moment
+ * If you are unable to install the module, replace it with `const hps = null;`
+ **/
+import hps from '@furyjs/hps';
+
+// Now we describe data structures using JSON, but in the future, we will use more ways.
+const description = Type.object('example.foo', {
+  foo: Type.string(),
+});
+const fury = new Fury({ hps });
+const { serialize, deserialize } = fury.registerSerializer(description);
+const input = serialize({ foo: 'hello fury' });
+const result = deserialize(input);
+console.log(result);
 ```
 
 ### Serialize Shared Reference and Circular Reference
@@ -384,7 +413,28 @@ func main() {
 **JavaScript**
 
 ```javascript
-// Coming soon
+import Fury, { Type } from '@furyjs/fury';
+/**
+ * @furyjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
+ * Experimental feature, installation success cannot be guaranteed at this moment
+ * If you are unable to install the module, replace it with `const hps = null;`
+ **/
+import hps from '@furyjs/hps';
+
+const description = Type.object('example.foo', {
+  foo: Type.string(),
+  bar: Type.object('example.foo'),
+});
+
+const fury = new Fury({ hps });
+const { serialize, deserialize } = fury.registerSerializer(description);
+const data: any = {
+  foo: 'hello fury',
+};
+data.bar = data;
+const input = serialize(data);
+const result = deserialize(input);
+console.log(result.bar.foo === result.foo);
 ```
 
 ### Zero-Copy Serialization
