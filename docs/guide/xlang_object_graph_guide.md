@@ -110,6 +110,21 @@ const result = fury.deserialize(input);
 console.log(result);
 ```
 
+**Rust**
+
+```rust
+use chrono::{NaiveDate, NaiveDateTime};
+use fury::{from_buffer, to_buffer};
+use fury_derive::Fury;
+use std::collections::HashMap;
+
+fn run() {
+    let bin: Vec<u8> = to_buffer(&"hello".to_string());
+    let obj: String = from_buffer(&bin2).expect("should success");
+    assert_eq!("hello".to_string(), obj);
+}
+```
+
 ### Serialize custom types
 Serializing user-defined types needs registering the custom type using the register API to establish the mapping relationship between the type in different languages.
 
@@ -319,6 +334,66 @@ const result = deserialize(input);
 console.log(result);
 ```
 
+**Rust**
+
+```rust
+use chrono::{NaiveDate, NaiveDateTime};
+use fury::{from_buffer, to_buffer};
+use fury_derive::Fury;
+use std::collections::HashMap;
+
+#[test]
+fn complex_struct() {
+    #[derive(Fury, Debug, PartialEq)]
+    #[tag("example.foo2")]
+    struct Animal {
+        category: String,
+    }
+
+    #[derive(Fury, Debug, PartialEq)]
+    #[tag("example.foo")]
+    struct Person {
+        c1: Vec<u8>,  // binary
+        c2: Vec<i16>, // primitive array
+        animal: Vec<Animal>,
+        c3: Vec<Vec<u8>>,
+        name: String,
+        c4: HashMap<String, String>,
+        age: u16,
+        op: Option<String>,
+        op2: Option<String>,
+        date: NaiveDate,
+        time: NaiveDateTime,
+        c5: f32,
+        c6: f64,
+    }
+    let person: Person = Person {
+        c1: vec![1, 2, 3],
+        c2: vec![5, 6, 7],
+        c3: vec![vec![1, 2], vec![1, 3]],
+        animal: vec![Animal {
+            category: "Dog".to_string(),
+        }],
+        c4: HashMap::from([
+            ("hello1".to_string(), "hello2".to_string()),
+            ("hello2".to_string(), "hello3".to_string()),
+        ]),
+        age: 12,
+        name: "helo".to_string(),
+        op: Some("option".to_string()),
+        op2: None,
+        date: NaiveDate::from_ymd_opt(2025, 12, 12).unwrap(),
+        time: NaiveDateTime::from_timestamp_opt(1689912359, 0).unwrap(),
+        c5: 2.0,
+        c6: 4.0,
+    };
+
+    let bin: Vec<u8> = to_buffer(&person);
+    let obj: Person = from_buffer(&bin).expect("should success");
+    assert_eq!(person, obj);
+}
+```
+
 ### Serialize Shared Reference and Circular Reference
 Shared reference and circular reference can be serialized automatically, no duplicate data or recursion error.
 
@@ -436,6 +511,10 @@ const input = serialize(data);
 const result = deserialize(input);
 console.log(result.bar.foo === result.foo);
 ```
+
+**JavaScript**
+Reference cannot be implemented because of rust ownership restrictions
+
 
 ### Zero-Copy Serialization
 
