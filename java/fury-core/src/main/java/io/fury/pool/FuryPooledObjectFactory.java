@@ -84,9 +84,9 @@ public class FuryPooledObjectFactory {
       ClassLoaderFuryPooled classLoaderFuryPooled =
           classLoaderFuryPooledCache.getIfPresent(classLoader);
       if (classLoaderFuryPooled == null) {
-        // ifPresent will be cleared when cache expire 30's
-        addCache(classLoader);
-        return getFury();
+       // double check cache
+        ClassLoaderFuryPooled cache = getOrAddCache(classLoader);
+        return cache.getFury();
       }
       return classLoaderFuryPooled.getFury();
     } catch (Exception e) {
@@ -114,7 +114,7 @@ public class FuryPooledObjectFactory {
   /** todo setClassLoader support LoaderBinding.StagingType */
   public void setClassLoader(ClassLoader classLoader, LoaderBinding.StagingType stagingType) {
     classLoaderLocal.set(classLoader);
-    addCache(classLoader);
+    getOrAddCache(classLoader);
   }
 
   public ClassLoader getClassLoader() {
@@ -126,7 +126,8 @@ public class FuryPooledObjectFactory {
     classLoaderLocal.remove();
   }
 
-  private synchronized void addCache(ClassLoader classLoader) {
+  /** get cache or put newly added pooledFury */
+  private synchronized ClassLoaderFuryPooled getOrAddCache(ClassLoader classLoader) {
     ClassLoaderFuryPooled classLoaderFuryPooled =
         classLoaderFuryPooledCache.getIfPresent(classLoader);
     if (classLoaderFuryPooled == null) {
@@ -134,5 +135,6 @@ public class FuryPooledObjectFactory {
           new ClassLoaderFuryPooled(classLoader, furyFactory, minPoolSize, maxPoolSize);
       classLoaderFuryPooledCache.put(classLoader, classLoaderFuryPooled);
     }
+    return classLoaderFuryPooled;
   }
 }
