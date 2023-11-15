@@ -22,6 +22,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <type_traits>
 
 #ifdef _WIN32
 #define ROW_LITTLE_ENDIAN 1
@@ -66,16 +67,8 @@ namespace fury {
 
 /// \brief Metafunction to allow checking if a type matches any of another set
 /// of types
-template <typename...>
-struct IsOneOf : std::false_type {}; /// Base case: nothing has matched
-
-template <typename T, typename U, typename... Args>
-struct IsOneOf<T, U, Args...> {
-  /// Recursive case: T == U or T matches any other types provided (not
-  /// including U).
-  static constexpr bool value =
-      std::is_same<T, U>::value || IsOneOf<T, Args...>::value;
-};
+template <typename T, typename... Args>
+struct IsOneOf : std::disjunction<std::is_same<T, Args>...> {};
 
 /// \brief Shorthand for using IsOneOf + std::enable_if
 template <typename T, typename... Args>
@@ -154,70 +147,42 @@ static inline void ByteSwap(void *dst, const void *src, int len) {
 }
 
 // Convert to little/big endian format from the machine's native endian format.
-#if ROW_LITTLE_ENDIAN
+template <typename T>
+using IsEndianConvertibleType = IsOneOf<T, int64_t, uint64_t, int32_t, uint32_t,
+                                        int16_t, uint16_t, float, double>;
 
-template <typename T,
-          typename = EnableIfIsOneOf<T, int64_t, uint64_t, int32_t, uint32_t,
-                                     int16_t, uint16_t, float, double>>
+template <typename T>
+using EnableIfIsEndianConvertibleType =
+    typename std::enable_if<IsEndianConvertibleType<T>::value, T>::type;
+
+template <typename T, typename = EnableIfIsEndianConvertibleType<T>>
 static inline T ToBigEndian(T value) {
-  return ByteSwap(value);
+  if constexpr (ROW_LITTLE_ENDIAN) {
+    return ByteSwap(value);
+  } else {
+    return value;
+  }
 }
 
-template <typename T,
-          typename = EnableIfIsOneOf<T, int64_t, uint64_t, int32_t, uint32_t,
-                                     int16_t, uint16_t, float, double>>
+template <typename T, typename = EnableIfIsEndianConvertibleType<T>>
 static inline T ToLittleEndian(T value) {
-  return value;
+  if constexpr (ROW_LITTLE_ENDIAN) {
+    return value;
+  } else {
+    return ByteSwap(value);
+  }
 }
-
-#else
-template <typename T,
-          typename = EnableIfIsOneOf<T, int64_t, uint64_t, int32_t, uint32_t,
-                                     int16_t, uint16_t, float, double>>
-static inline T ToBigEndian(T value) {
-  return value;
-}
-
-template <typename T,
-          typename = EnableIfIsOneOf<T, int64_t, uint64_t, int32_t, uint32_t,
-                                     int16_t, uint16_t, float, double>>
-static inline T ToLittleEndian(T value) {
-  return ByteSwap(value);
-}
-#endif
 
 // Convert from big/little endian format to the machine's native endian format.
-#if ROW_LITTLE_ENDIAN
-
-template <typename T,
-          typename = EnableIfIsOneOf<T, int64_t, uint64_t, int32_t, uint32_t,
-                                     int16_t, uint16_t, float, double>>
+template <typename T>
 static inline T FromBigEndian(T value) {
-  return ByteSwap(value);
+  return ToBigEndian(value);
 }
 
-template <typename T,
-          typename = EnableIfIsOneOf<T, int64_t, uint64_t, int32_t, uint32_t,
-                                     int16_t, uint16_t, float, double>>
+template <typename T>
 static inline T FromLittleEndian(T value) {
-  return value;
+  return ToLittleEndian(value);
 }
-
-#else
-template <typename T,
-          typename = EnableIfIsOneOf<T, int64_t, uint64_t, int32_t, uint32_t,
-                                     int16_t, uint16_t, float, double>>
-static inline T FromBigEndian(T value) {
-  return value;
-}
-
-template <typename T,
-          typename = EnableIfIsOneOf<T, int64_t, uint64_t, int32_t, uint32_t,
-                                     int16_t, uint16_t, float, double>>
-static inline T FromLittleEndian(T value) {
-  return ByteSwap(value);
-}
-#endif
 
 // Bitmask selecting the k-th bit in a byte
 static constexpr uint8_t kBitmask[] = {1, 2, 4, 8, 16, 32, 64, 128};
