@@ -85,7 +85,7 @@ else:
         if platform.system() == "Darwin":
             ext.extra_compile_args.append("-stdlib=libc++")
         if os.name == "posix":
-            ext.extra_compile_args.append("-std=c++11")
+            ext.extra_compile_args.append("-std=c++17")
         print("ext.extra_compile_args", ext.extra_compile_args)
 
         # Avoid weird linker errors or runtime crashes on linux
