@@ -84,7 +84,7 @@ public class FuryPooledObjectFactory {
       ClassLoaderFuryPooled classLoaderFuryPooled =
           classLoaderFuryPooledCache.getIfPresent(classLoader);
       if (classLoaderFuryPooled == null) {
-       // double check cache
+        // double check cache
         ClassLoaderFuryPooled cache = getOrAddCache(classLoader);
         return cache.getFury();
       }
