@@ -16,6 +16,7 @@
 name = "fury"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 proc-macro2 = { default-features = false, version = "1.0.66" }
