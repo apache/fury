@@ -1217,9 +1217,9 @@ public final class Fury {
     if (depth != 0) {
       String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "writeXXX";
       throw new IllegalStateException(
-        String.format(
-          "Nested call Fury.serializeXXX is not allowed when serializing, Please use %s instead",
-          method));
+          String.format(
+              "Nested call Fury.serializeXXX is not allowed when serializing, Please use %s instead",
+              method));
     }
   }
 
@@ -1227,9 +1227,9 @@ public final class Fury {
     if (depth != 0) {
       String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "readXXX";
       throw new IllegalStateException(
-        String.format(
-          "Nested call Fury.deserializeXXX is not allowed when deserializing, Please use %s instead",
-          method));
+          String.format(
+              "Nested call Fury.deserializeXXX is not allowed when deserializing, Please use %s instead",
+              method));
     }
   }
 
