@@ -17,9 +17,8 @@
 //! Serializeable type should implements the Serialize trait.
 //! This file include all the internal type implements which describe in fury protocol,
 //! But custom type which serializable is not here, custom type implement the Serialize trait via fury-derive.
-//! for example:
+//! # Examples:
 //! ```
-//! #Example:
 //!
 //! use fury_derive::Fury;
 //! #[derive(Fury)]
@@ -27,7 +26,6 @@
 //! struct Animal {
 //! category: String,
 //! }
-//!
 //!
 //! ```
 //! fury_derive would expand the code and automatic implements the Serialize trait
