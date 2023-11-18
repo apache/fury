@@ -226,6 +226,7 @@ public final class Fury {
     buffer.put(maskIndex, bitmap);
     try {
       jitContext.lock();
+      checkDepthForSerialization();
       if (language == Language.JAVA) {
         write(buffer, obj);
       } else {
@@ -680,6 +681,7 @@ public final class Fury {
   public Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
       jitContext.lock();
+      checkDepthForDeserialization();
       byte bitmap = buffer.readByte();
       if ((bitmap & isNilFlag) == isNilFlag) {
         return null;
@@ -965,6 +967,7 @@ public final class Fury {
   public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
+      checkDepthForSerialization();
       if (config.shareMetaContext()) {
         int startOffset = buffer.writerIndex();
         buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
@@ -1011,6 +1014,8 @@ public final class Fury {
   @SuppressWarnings("unchecked")
   public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
     try {
+      jitContext.lock();
+      checkDepthForDeserialization();
       if (config.shareMetaContext()) {
         classResolver.readClassDefs(buffer);
       }
@@ -1024,6 +1029,7 @@ public final class Fury {
       }
     } finally {
       resetRead();
+      jitContext.unlock();
     }
   }
 
@@ -1053,6 +1059,7 @@ public final class Fury {
   public void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
+      checkDepthForSerialization();
       write(buffer, obj);
     } catch (StackOverflowError t) {
       throw processStackOverflowError(t);
@@ -1085,6 +1092,7 @@ public final class Fury {
   public Object deserializeJavaObjectAndClass(MemoryBuffer buffer) {
     try {
       jitContext.lock();
+      checkDepthForDeserialization();
       if (config.shareMetaContext()) {
         classResolver.readClassDefs(buffer);
       }
@@ -1203,6 +1211,26 @@ public final class Fury {
     nativeObjects.clear();
     peerOutOfBandEnabled = false;
     depth = 0;
+  }
+
+  private void checkDepthForSerialization() {
+    if (depth != 0) {
+      String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "writeXXX";
+      throw new IllegalStateException(
+          String.format(
+              "Nested call Fury.serializeXXX is not allowed when serializing, Please use %s instead",
+              method));
+    }
+  }
+
+  private void checkDepthForDeserialization() {
+    if (depth != 0) {
+      String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "readXXX";
+      throw new IllegalStateException(
+          String.format(
+              "Nested call Fury.deserializeXXX is not allowed when deserializing, Please use %s instead",
+              method));
+    }
   }
 
   public JITContext getJITContext() {

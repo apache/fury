@@ -27,5 +27,5 @@ pub use serializer::Serialize;
 pub use serializer::SerializerState;
 pub use types::{
     compute_field_hash, compute_string_hash, compute_struct_hash, config_flags, FieldType,
-    FuryMeta, Language, RefFlag,
+    FuryMeta, Language, RefFlag, SIZE_OF_REF_AND_TYPE,
 };
