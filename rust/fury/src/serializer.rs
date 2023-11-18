@@ -16,7 +16,7 @@ use chrono::{NaiveDate, NaiveDateTime};
 use std::collections::{HashMap, HashSet};
 use std::mem;
 
-use crate::{config_flags, FuryMeta, Language, RefFlag};
+use crate::{config_flags, FuryMeta, Language, RefFlag, SIZE_OF_REF_AND_TYPE};
 
 use super::buffer::Writer;
 
@@ -33,7 +33,7 @@ where
         serializer.writer.var_int32(value.len() as i32);
         serializer
             .writer
-            .reserve((<Self as Serialize>::reserved_space() + 3) * value.len());
+            .reserve((<Self as Serialize>::reserved_space() + SIZE_OF_REF_AND_TYPE) * value.len());
         for item in value.iter() {
             item.serialize(serializer);
         }
@@ -119,7 +119,7 @@ impl Serialize for String {
     }
 
     fn reserved_space() -> usize {
-        4
+        mem::size_of::<i32>()
     }
 }
 
@@ -134,7 +134,7 @@ impl Serialize for bool {
     }
 
     fn reserved_space() -> usize {
-        1
+        mem::size_of::<u8>()
     }
 }
 
@@ -143,8 +143,9 @@ impl<T1: Serialize, T2: Serialize> Serialize for HashMap<T1, T2> {
         // length
         serializer.writer.var_int32(self.len() as i32);
 
-        let reserved_space = (<T1 as Serialize>::reserved_space() + 3) * self.len()
-            + (<T2 as Serialize>::reserved_space() + 3) * self.len();
+        let reserved_space = (<T1 as Serialize>::reserved_space() + SIZE_OF_REF_AND_TYPE)
+            * self.len()
+            + (<T2 as Serialize>::reserved_space() + SIZE_OF_REF_AND_TYPE) * self.len();
         serializer.writer.reserve(reserved_space);
 
         // key-value
@@ -155,7 +156,7 @@ impl<T1: Serialize, T2: Serialize> Serialize for HashMap<T1, T2> {
     }
 
     fn reserved_space() -> usize {
-        4
+        mem::size_of::<i32>()
     }
 }
 
@@ -164,7 +165,8 @@ impl<T: Serialize> Serialize for HashSet<T> {
         // length
         serializer.writer.i32(self.len() as i32);
 
-        let reserved_space = (<T as Serialize>::reserved_space() + 3) * self.len();
+        let reserved_space =
+            (<T as Serialize>::reserved_space() + SIZE_OF_REF_AND_TYPE) * self.len();
         serializer.writer.reserve(reserved_space);
 
         // key-value
@@ -174,7 +176,7 @@ impl<T: Serialize> Serialize for HashSet<T> {
     }
 
     fn reserved_space() -> usize {
-        4
+        mem::size_of::<i32>()
     }
 }
 
@@ -184,7 +186,7 @@ impl Serialize for NaiveDateTime {
     }
 
     fn reserved_space() -> usize {
-        8
+        mem::size_of::<u64>()
     }
 }
 
@@ -199,7 +201,7 @@ impl Serialize for NaiveDate {
     }
 
     fn reserved_space() -> usize {
-        8
+        mem::size_of::<u64>()
     }
 }
 
@@ -212,7 +214,8 @@ where
     }
 
     fn reserved_space() -> usize {
-        4
+        // size of the vec
+        mem::size_of::<u32>()
     }
 }
 
@@ -284,7 +287,7 @@ impl<'de> SerializerState<'de> {
     fn head<T: Serialize>(&mut self) -> &Self {
         const HEAD_SIZE: usize = 10;
         self.writer
-            .reserve(<T as Serialize>::reserved_space() + 3 + HEAD_SIZE);
+            .reserve(<T as Serialize>::reserved_space() + SIZE_OF_REF_AND_TYPE + HEAD_SIZE);
 
         let mut bitmap = 0;
         bitmap |= config_flags::IS_LITTLE_ENDIAN_FLAG;

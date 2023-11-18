@@ -107,7 +107,7 @@ fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
         let ty = &field.ty;
         // each field have one byte ref tag and two byte type id
         quote! {
-            <#ty as fury::Serialize>::reserved_space() + 3
+            <#ty as fury::Serialize>::reserved_space() + fury::SIZE_OF_REF_AND_TYPE
         }
     });
 
