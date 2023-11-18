@@ -36,7 +36,6 @@ use chrono::{NaiveDate, NaiveDateTime};
 use std::collections::{HashMap, HashSet};
 use std::mem;
 
-
 /// Convert a typed slice to a u8 slice.
 /// Usually used to convert a typed array like Vec to &[u8], which can be easily written to a buffer.
 fn to_u8_slice<T>(slice: &[T]) -> &[u8] {
