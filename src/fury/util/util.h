@@ -173,15 +173,6 @@ static inline T ToLittleEndian(T value) {
   }
 }
 
-// Convert from big/little endian format to the machine's native endian format.
-template <typename T> static inline T FromBigEndian(T value) {
-  return ToBigEndian(value);
-}
-
-template <typename T> static inline T FromLittleEndian(T value) {
-  return ToLittleEndian(value);
-}
-
 // Bitmask selecting the k-th bit in a byte
 static constexpr uint8_t kBitmask[] = {1, 2, 4, 8, 16, 32, 64, 128};
 
