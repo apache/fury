@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    mem,
+};
 
 use chrono::{NaiveDate, NaiveDateTime};
 
@@ -241,3 +244,6 @@ pub enum Language {
     JAVASCRIPT = 5,
     RUST = 6,
 }
+
+// every object start with i8 i16 reference flag and type flag
+pub const SIZE_OF_REF_AND_TYPE: usize = mem::size_of::<i8>() + mem::size_of::<i16>();
