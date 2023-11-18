@@ -12,23 +12,64 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Implement the serializer of internal types in fury protocol
+//!
+//! Serializeable type should implements the Serialize trait.
+//! This file include all the internal type implements which describe in fury protocol,
+//! But custom type which serializable is not here, custom type implement the Serialize trait via fury-derive.
+//! for example:
+//! ```
+//! #Example:
+//!
+//! use fury_derive::Fury;
+//! #[derive(Fury)]
+//! #[tag("example.foo2")]
+//! struct Animal {
+//! category: String,
+//! }
+//!
+//!
+//! ```
+//! fury_derive would expand the code and automatic implements the Serialize trait
+
+use super::buffer::Writer;
+use crate::{config_flags, FuryMeta, Language, RefFlag, SIZE_OF_REF_AND_TYPE};
 use chrono::{NaiveDate, NaiveDateTime};
 use std::collections::{HashMap, HashSet};
 use std::mem;
 
-use crate::{config_flags, FuryMeta, Language, RefFlag};
-
-use super::buffer::Writer;
-
+/// Convert a typed slice to a u8 slice.
+/// Usually used to convert a typed array like Vec to &[u8], which can be easily written to a buffer.
 fn to_u8_slice<T>(slice: &[T]) -> &[u8] {
     let byte_len = std::mem::size_of_val(slice);
     unsafe { std::slice::from_raw_parts(slice.as_ptr().cast::<u8>(), byte_len) }
 }
 
+/// Types that implement the Serialize trait can be serialized to Fury.
+///
+/// 1. Normal situation:
+/// The order of function calls is reserved_space -> serialize -> write.
+///     a. reserved_space is used to allocate the fixed memory space, which can avoid the cost of the memory check.
+///         However, dynamic types like strings should allocate the size separately before being written to the buffer.
+///     b. serialize is used to serialize the data into the buffer. The first step is to write the object head,
+///         which includes one byte reference flag and two byte type flag.
+///         The second step is to call the write function, which is used to write the Rust object.
+///     c. write is used to write the Rust object into the buffer.
+/// 2. Vec situation:
+/// If the object is in a Vec, the call order is reserved_space -> serialize -> write -> write_vec.
+/// The write_vec function is used to write the elements of the Vec. But why can't we just loop through the elements and write each element one by one?
+/// This is because Fury includes some primitive types like FuryPrimitiveBoolArray which do not include the head of the elements,
+/// but other Vecs do. So the write_vec function is necessary to handle the differences. Primitive arrays can overwrite the function.
 pub trait Serialize
 where
     Self: Sized + FuryMeta,
 {
+    /// This function is invoked when the data is in a Vec.
+    ///
+    /// The default implementation invokes the serialize function, which includes the type head. Some types like primitive arrays can overwrite it.
+    /// Step 1: write the length of the Vec into the buffer.
+    /// Step 2: reserve the fixed size of all the elements.
+    /// Step 3: loop through the Vec and invoke the serialize function of each item.
     fn write_vec(value: &Vec<Self>, serializer: &mut SerializerState) {
         serializer.writer.var_int32(value.len() as i32);
         serializer
@@ -39,10 +80,17 @@ where
         }
     }
 
+    /// The fixed memory size of the Type.
+    /// Avoid the memory check, which would hurt performance.
     fn reserved_space() -> usize;
 
+    /// Write the data into the buffer.
     fn write(&self, serializer: &mut SerializerState);
 
+    /// Entry point of the serialization.
+    ///
+    /// Step 1: write the type flag and type flag into the buffer.
+    /// Step 2: invoke the write function to write the Rust object.
     fn serialize(&self, serializer: &mut SerializerState) {
         // ref flag
         serializer.writer.i8(RefFlag::NotNullValueFlag as i8);
@@ -56,6 +104,9 @@ where
     }
 }
 
+/// Implement Serialize for all the number types.
+///
+/// Serializing number types is similar, the only difference is the fixed size.
 macro_rules! impl_num_serialize {
     ($name: ident, $ty:tt) => {
         impl Serialize for $ty {
@@ -70,6 +121,7 @@ macro_rules! impl_num_serialize {
     };
 }
 
+/// Implement Serialize for all the number types, but overwrite the primitive type Vec, which does not include the object head.
 macro_rules! impl_num_serialize_and_pritimive_vec {
     ($name: ident, $ty:tt) => {
         impl Serialize for $ty {
@@ -101,6 +153,7 @@ impl_num_serialize_and_pritimive_vec!(i64, i64);
 impl_num_serialize_and_pritimive_vec!(f32, f32);
 impl_num_serialize_and_pritimive_vec!(f64, f64);
 
+/// The implement of String Type
 impl Serialize for String {
     fn write(&self, serializer: &mut SerializerState) {
         serializer.writer.var_int32(self.len() as i32);
