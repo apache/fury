@@ -1,4 +1,6 @@
 # Fury JavaScript 
+Javascript implementation for the fury protocol.
+The CrossLanguage part of the protocol is not stable, so the output of this library may change in the future. Please be cautious when using it in a production environment.
 
 ## Install
 ```shell
@@ -34,7 +36,7 @@ console.log(result);
 Implement the protocol of fury, generate javascript code runtime, to make sure that all the code could be jit by v8 efficiently
 
 ### hps
-Nodejs high-performance suite, ensuring that your Node.js version is 18 or later.
+Nodejs high-performance suite, ensuring that your Node.js version is 20 or later.
 hps is use for detect the string type in v8. Fury support latin1 and utf8 string both, we should get the certain type of string before write it
 in buffer. It is slow to detect the string is latin1 or utf8, but hps can detect it by a hack way, which is called FASTCALL in v8. 
 so it is not stable now.
