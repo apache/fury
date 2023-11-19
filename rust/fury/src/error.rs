@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::FieldType;
+use crate::{FieldType, Language};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -42,4 +42,10 @@ pub enum Error {
 
     #[error("Bad Tag Type: {0}")]
     TagType(u8),
+
+    #[error("Only Xlang supported; receive: {language:?}")]
+    UnsupportLanguage { language: Language },
+
+    #[error("Unsupported Language Code; receive: {code:?}")]
+    UnsupportLanguageCode { code: u8 },
 }

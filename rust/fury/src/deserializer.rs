@@ -15,6 +15,7 @@
 use crate::{
     error::Error,
     types::{FuryMeta, RefFlag},
+    Language,
 };
 use chrono::{DateTime, Days, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use std::{
@@ -236,10 +237,13 @@ impl<'de, 'bf: 'de> DeserializerState<'de, 'bf> {
         }
     }
 
-    fn head(&mut self) {
+    fn head(&mut self) -> Result<(), Error> {
         let _bitmap = self.reader.u8();
-        let _language = self.reader.u8();
-        self.reader.skip(8); // native offset and size
+        let language: Language = self.reader.u8().try_into()?;
+        match language {
+            Language::XLANG => Ok(()),
+            _ => Err(Error::UnsupportLanguage { language }),
+        }
     }
 
     pub fn read_tag(&mut self) -> Result<&str, Error> {
@@ -264,6 +268,6 @@ impl<'de, 'bf: 'de> DeserializerState<'de, 'bf> {
 pub fn from_buffer<T: Deserialize>(bf: &[u8]) -> Result<T, Error> {
     let reader = Reader::new(bf);
     let mut deserializer = DeserializerState::new(reader);
-    deserializer.head();
+    deserializer.head()?;
     <T as Deserialize>::deserialize(&mut deserializer)
 }

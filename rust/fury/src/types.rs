@@ -19,6 +19,8 @@ use std::{
 
 use chrono::{NaiveDate, NaiveDateTime};
 
+use crate::Error;
+
 pub trait FuryMeta {
     fn ty() -> FieldType;
 
@@ -235,6 +237,7 @@ pub mod config_flags {
     pub const IS_OUT_OF_BAND_FLAG: u8 = 8;
 }
 
+#[derive(Debug)]
 pub enum Language {
     XLANG = 0,
     JAVA = 1,
@@ -243,6 +246,23 @@ pub enum Language {
     GO = 4,
     JAVASCRIPT = 5,
     RUST = 6,
+}
+
+impl TryFrom<u8> for Language {
+    type Error = Error;
+
+    fn try_from(num: u8) -> Result<Self, Error> {
+        match num {
+            0 => Ok(Language::XLANG),
+            1 => Ok(Language::JAVA),
+            2 => Ok(Language::PYTHON),
+            3 => Ok(Language::CPP),
+            4 => Ok(Language::GO),
+            5 => Ok(Language::JAVASCRIPT),
+            6 => Ok(Language::RUST),
+            _ => Err(Error::UnsupportLanguageCode { code: num }),
+        }
+    }
 }
 
 // every object start with i8 i16 reference flag and type flag
