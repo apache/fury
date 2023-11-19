@@ -33,7 +33,7 @@ console.log(result);
 ## Packages
 
 ### fury
-Implement the protocol of fury, generate javascript code runtime, to make sure that all the code could be jit by v8 efficiently
+Implement the protocol of fury, generate javascript code at runtime to make sure that all the code could be jit by v8 efficiently
 
 ### hps
 Nodejs high-performance suite, ensuring that your Node.js version is 20 or later.
