@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -63,5 +64,21 @@ public class Collections {
     HashSet<E> set = new HashSet<>(elements.length);
     java.util.Collections.addAll(set, elements);
     return set;
+  }
+
+  /** Return trues if two sets has intersection. */
+  public static <E> boolean hasIntersection(Set<E> set1, Set<E> set2) {
+    Set<E> small = set1;
+    Set<E> large = set2;
+    if (set1.size() > set2.size()) {
+      small = set2;
+      large = set1;
+    }
+    for (E e : small) {
+      if (large.contains(e)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

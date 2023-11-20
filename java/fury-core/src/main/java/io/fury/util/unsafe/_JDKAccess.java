@@ -17,8 +17,8 @@
 package io.fury.util.unsafe;
 
 import com.google.common.base.Preconditions;
-import com.google.common.primitives.Primitives;
 import io.fury.collection.Tuple2;
+import io.fury.type.TypeUtils;
 import io.fury.util.Utils;
 import io.fury.util.function.ToByteFunction;
 import io.fury.util.function.ToCharFunction;
@@ -183,7 +183,7 @@ public class _JDKAccess {
     for (int i = 0; i < paramTypes.length; i++) {
       Class<?> t = methodType.parameterType(i);
       if (t.isPrimitive()) {
-        t = Primitives.wrap(t);
+        t = TypeUtils.wrap(t);
       }
       paramTypes[i] = t;
     }

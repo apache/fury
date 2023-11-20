@@ -19,12 +19,12 @@ package io.fury.serializer;
 import static io.fury.util.function.Functions.makeGetterFunction;
 
 import com.google.common.base.Preconditions;
-import com.google.common.primitives.Primitives;
 import io.fury.Fury;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.type.Type;
+import io.fury.type.TypeUtils;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.Utils;
@@ -507,12 +507,12 @@ public class Serializers {
     private static final byte USE_CLASSNAME = 1;
     private static final byte PRIMITIVE_FLAG = 2;
     private final IdentityHashMap<Class<?>, Byte> primitivesMap = new IdentityHashMap<>();
-    private final Class<?>[] id2PrimitiveClasses = new Class[Primitives.allPrimitiveTypes().size()];
+    private final Class<?>[] id2PrimitiveClasses = new Class[9];
 
     public ClassSerializer(Fury fury) {
       super(fury, Class.class);
       byte count = 0;
-      for (Class<?> primitiveType : Primitives.allPrimitiveTypes()) {
+      for (Class<?> primitiveType : TypeUtils.getSortedPrimitiveClasses()) {
         primitivesMap.put(primitiveType, count);
         id2PrimitiveClasses[count] = primitiveType;
         count++;

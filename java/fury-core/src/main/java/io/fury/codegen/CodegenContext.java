@@ -24,9 +24,9 @@ import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.common.reflect.TypeToken;
 import io.fury.codegen.Expression.Reference;
+import io.fury.collection.Collections;
 import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
 import io.fury.util.ReflectionUtils;
@@ -224,7 +224,8 @@ public class CodegenContext {
     for (String name : names) {
       newValNameIds.put(name, id + 1);
     }
-    if (id == 0 && Sets.intersection(valNames, Sets.newHashSet(names)).isEmpty()) {
+
+    if (id == 0 && !Collections.hasIntersection(valNames, Collections.ofHashSet(names))) {
       valNames.addAll(Arrays.asList(names));
       return names;
     } else {

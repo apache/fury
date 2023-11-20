@@ -164,10 +164,6 @@ public class TypeUtils {
     }
   }
 
-  public static boolean isNullable(Class<?> clz) {
-    return !isPrimitive(clz);
-  }
-
   // sorted by size
   private static final List<Class<?>> sortedPrimitiveClasses =
       ImmutableList.of(
@@ -216,6 +212,10 @@ public class TypeUtils {
     backward.put(value, key);
   }
 
+  public static boolean isNullable(Class<?> clz) {
+    return !isPrimitive(clz);
+  }
+
   public static boolean isPrimitive(Class<?> clz) {
     return clz.isPrimitive();
   }
@@ -224,10 +224,22 @@ public class TypeUtils {
     return wrapToPrim.containsKey(clz);
   }
 
+  public static Class<?> wrap(Class<?> clz) {
+    return boxedType(clz);
+  }
+
+  public static Class<?> unwrap(Class<?> clz) {
+    if (clz.isPrimitive()) {
+      return clz;
+    }
+    return wrapToPrim.get(clz, clz);
+  }
+
   public static Class<?> boxedType(Class<?> clz) {
-    Preconditions.checkArgument(clz.isPrimitive());
-    int index = sortedPrimitiveClasses.indexOf(clz);
-    return sortedBoxedClasses.get(index);
+    if (!clz.isPrimitive()) {
+      return clz;
+    }
+    return primToWrap.get(clz);
   }
 
   public static List<Class<?>> getSortedPrimitiveClasses() {
