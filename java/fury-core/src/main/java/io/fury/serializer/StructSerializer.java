@@ -16,7 +16,6 @@
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.config.Language;
@@ -30,6 +29,7 @@ import io.fury.type.TypeUtils;
 import io.fury.util.FieldAccessor;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.Utils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

@@ -24,35 +24,4 @@ package io.fury.util;
 public class Utils {
 
   public static void ignore(Object... args) {}
-
-  public static void checkArgument(boolean b, String errorMessage) {
-    if (!b) {
-      throw new IllegalArgumentException(errorMessage);
-    }
-  }
-
-  /**
-   * Ensures the truth of an expression involving one or more parameters to the calling method.
-   * Workaround for guava before 20.0.
-   *
-   * <p>See {@link com.google.common.base.Preconditions#checkArgument(boolean, String, Object...)}
-   * for details.
-   */
-  public static void checkArgument(
-      boolean expression,
-      String errorMessageTemplate,
-      Object errorMessageArg0,
-      Object... errorMessageArgs) {
-    if (!expression) {
-      Object[] args;
-      if (errorMessageArgs != null) {
-        args = new Object[errorMessageArgs.length + 1];
-        args[0] = errorMessageArg0;
-        System.arraycopy(errorMessageArgs, 0, args, 1, errorMessageArgs.length);
-      } else {
-        args = new Object[] {errorMessageArg0};
-      }
-      throw new IllegalArgumentException(String.format(errorMessageTemplate, args));
-    }
-  }
 }

@@ -22,13 +22,13 @@ import static io.fury.codegen.CodeGenerator.indent;
 import static io.fury.type.TypeUtils.getArrayType;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
 import io.fury.codegen.Expression.Reference;
 import io.fury.collection.Collections;
 import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.util.ArrayList;

@@ -16,7 +16,6 @@
 
 package io.fury.serializer.collection;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.annotation.CodegenInvoke;
 import io.fury.memory.MemoryBuffer;
@@ -27,6 +26,7 @@ import io.fury.resolver.RefResolver;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.type.GenericType;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import java.lang.invoke.MethodHandle;
 import java.util.Collection;

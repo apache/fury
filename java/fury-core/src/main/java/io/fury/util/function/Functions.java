@@ -16,8 +16,8 @@
 
 package io.fury.util.function;
 
-import com.google.common.base.Preconditions;
 import io.fury.collection.Tuple2;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.unsafe._JDKAccess;
 import java.io.Serializable;

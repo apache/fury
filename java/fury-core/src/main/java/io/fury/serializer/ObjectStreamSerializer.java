@@ -16,7 +16,6 @@
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.builder.CodecUtils;
 import io.fury.builder.Generated;
@@ -29,6 +28,7 @@ import io.fury.resolver.FieldResolver;
 import io.fury.resolver.FieldResolver.ClassField;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.Utils;
 import io.fury.util.unsafe._JDKAccess;

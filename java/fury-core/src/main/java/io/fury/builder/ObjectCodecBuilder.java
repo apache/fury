@@ -29,7 +29,6 @@ import static io.fury.type.TypeUtils.getRawType;
 import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
 import static io.fury.type.TypeUtils.isPrimitive;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.reflect.TypeToken;
@@ -51,6 +50,7 @@ import io.fury.serializer.PrimitiveSerializers.LongSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.function.SerializableSupplier;
 import io.fury.util.record.RecordUtils;
 import java.util.ArrayList;

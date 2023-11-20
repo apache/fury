@@ -16,7 +16,6 @@
 
 package io.fury.codegen;
 
-import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -27,6 +26,7 @@ import io.fury.collection.MultiKeyWeakMap;
 import io.fury.util.ClassLoaderUtils;
 import io.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.lang.ref.SoftReference;

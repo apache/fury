@@ -16,8 +16,8 @@
 
 package io.fury.collection;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ForwardingMap;
+import io.fury.util.Preconditions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;

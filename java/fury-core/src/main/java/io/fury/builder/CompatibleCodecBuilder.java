@@ -30,7 +30,6 @@ import static io.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.builder.Generated.GeneratedCompatibleSerializer;
@@ -65,6 +64,7 @@ import io.fury.serializer.CompatibleSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.function.SerializableSupplier;
 import io.fury.util.record.RecordUtils;
 import java.lang.reflect.Field;

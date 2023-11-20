@@ -16,7 +16,6 @@
 
 package io.fury.serializer.collection;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.collection.LazyMap;
 import io.fury.config.Language;
@@ -27,6 +26,7 @@ import io.fury.serializer.Serializer;
 import io.fury.serializer.Serializers;
 import io.fury.type.Type;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.util.Collection;

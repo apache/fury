@@ -16,7 +16,6 @@
 
 package io.fury.builder;
 
-import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -26,6 +25,7 @@ import io.fury.annotation.Internal;
 import io.fury.codegen.CodeGenerator;
 import io.fury.config.Config;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

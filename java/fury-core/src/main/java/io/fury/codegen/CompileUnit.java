@@ -16,8 +16,8 @@
 
 package io.fury.codegen;
 
-import com.google.common.base.Preconditions;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
 import java.util.function.Supplier;
 import org.slf4j.Logger;

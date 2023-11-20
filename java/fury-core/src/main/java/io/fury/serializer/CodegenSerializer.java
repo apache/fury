@@ -16,7 +16,7 @@
 
 package io.fury.serializer;
 
-import static io.fury.util.Utils.checkArgument;
+import static io.fury.util.Preconditions.checkArgument;
 
 import io.fury.Fury;
 import io.fury.builder.CodecUtils;

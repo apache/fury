@@ -16,7 +16,6 @@
 
 package io.fury;
 
-import com.google.common.base.Preconditions;
 import io.fury.builder.JITContext;
 import io.fury.config.CompatibleMode;
 import io.fury.config.Config;
@@ -45,6 +44,7 @@ import io.fury.type.Generics;
 import io.fury.type.Type;
 import io.fury.util.ExceptionUtils;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

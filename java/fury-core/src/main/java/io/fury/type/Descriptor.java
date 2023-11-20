@@ -16,9 +16,8 @@
 
 package io.fury.type;
 
-import static io.fury.util.Utils.checkArgument;
+import static io.fury.util.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
@@ -27,6 +26,7 @@ import io.fury.annotation.Ignore;
 import io.fury.annotation.Internal;
 import io.fury.collection.Tuple2;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
 import io.fury.util.record.RecordComponent;
 import io.fury.util.record.RecordUtils;

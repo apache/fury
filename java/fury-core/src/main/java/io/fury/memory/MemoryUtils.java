@@ -16,8 +16,8 @@
 
 package io.fury.memory;
 
-import com.google.common.base.Preconditions;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

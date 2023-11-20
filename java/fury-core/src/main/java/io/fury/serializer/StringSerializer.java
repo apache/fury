@@ -19,7 +19,6 @@ package io.fury.serializer;
 import static io.fury.type.TypeUtils.PRIMITIVE_CHAR_ARRAY_TYPE;
 import static io.fury.type.TypeUtils.STRING_TYPE;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Invoke;
@@ -29,6 +28,7 @@ import io.fury.memory.MemoryUtils;
 import io.fury.type.Type;
 import io.fury.util.MathUtils;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.CallSite;

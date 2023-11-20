@@ -16,11 +16,11 @@
 
 package io.fury.config;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.TimeSerializers;
 import io.fury.util.MurmurHash3;
+import io.fury.util.Preconditions;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;

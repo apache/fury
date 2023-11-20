@@ -16,9 +16,9 @@
 
 package io.fury.util.unsafe;
 
-import com.google.common.base.Preconditions;
 import io.fury.collection.Tuple2;
 import io.fury.type.TypeUtils;
+import io.fury.util.Preconditions;
 import io.fury.util.Utils;
 import io.fury.util.function.ToByteFunction;
 import io.fury.util.function.ToCharFunction;

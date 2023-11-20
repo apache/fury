@@ -16,7 +16,6 @@
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
@@ -24,6 +23,7 @@ import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.unsafe._JDKAccess;
 import java.io.Externalizable;

@@ -16,7 +16,6 @@
 
 package io.fury.builder;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.codegen.CodeGenerator;
@@ -24,6 +23,7 @@ import io.fury.codegen.CompileUnit;
 import io.fury.resolver.FieldResolver;
 import io.fury.serializer.Serializer;
 import io.fury.type.ClassDef;
+import io.fury.util.Preconditions;
 import java.util.Collections;
 
 /**
