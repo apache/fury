@@ -16,8 +16,6 @@
 
 package io.fury.util;
 
-import com.google.common.base.Preconditions;
-
 public class DecimalUtils {
   public static final int DECIMAL_BYTE_LENGTH = 32;
   public static final int MAX_PRECISION = 38;

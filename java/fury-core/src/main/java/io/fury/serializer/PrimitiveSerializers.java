@@ -18,13 +18,13 @@ package io.fury.serializer;
 
 import static io.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Invoke;
 import io.fury.config.LongEncoding;
 import io.fury.memory.MemoryBuffer;
 import io.fury.type.Type;
+import io.fury.util.Preconditions;
 
 /**
  * Serializers for java primitive types.

@@ -42,13 +42,12 @@ import static io.fury.type.TypeUtils.getRawType;
 import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
 import static io.fury.type.TypeUtils.isPrimitive;
 import static io.fury.type.TypeUtils.maxType;
-import static io.fury.util.Utils.checkArgument;
+import static io.fury.util.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
-import com.google.common.primitives.Primitives;
 import com.google.common.reflect.TypeToken;
 import io.fury.type.TypeUtils;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import io.fury.util.function.Functions;
@@ -1547,10 +1546,10 @@ public interface Expression {
         }
       } else {
         if (trueExpr.type() != null && falseExpr.type() != null) {
-          if (Primitives.isWrapperType(getRawType(trueExpr.type()))
+          if (TypeUtils.isBoxed(getRawType(trueExpr.type()))
               && trueExpr.type().equals(falseExpr.type().wrap())) {
             type = trueExpr.type();
-          } else if (Primitives.isWrapperType(getRawType(falseExpr.type()))
+          } else if (TypeUtils.isBoxed(getRawType(falseExpr.type()))
               && falseExpr.type().equals(trueExpr.type().wrap())) {
             type = falseExpr.type();
           } else if (trueExpr.type().isSupertypeOf(falseExpr.type())) {

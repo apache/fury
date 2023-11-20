@@ -24,7 +24,6 @@ import static io.fury.resolver.FieldResolver.FieldInfoEncodingType.EMBED_TYPES_H
 import static io.fury.resolver.FieldResolver.FieldInfoEncodingType.SEPARATE_TYPES_HASH;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.collection.Tuple2;
@@ -37,6 +36,7 @@ import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
 import io.fury.util.FieldAccessor;
 import io.fury.util.MurmurHash3;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;

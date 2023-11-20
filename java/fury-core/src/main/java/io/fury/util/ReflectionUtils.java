@@ -19,7 +19,6 @@ package io.fury.util;
 import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.annotation.CodegenInvoke;
 import io.fury.annotation.Internal;
@@ -423,7 +422,8 @@ public class ReflectionUtils {
    */
   public static String getCanonicalName(Class<?> cls) {
     String canonicalName = cls.getCanonicalName();
-    Utils.checkArgument(canonicalName != null, "Class %s doesn't have canonical name", cls);
+    io.fury.util.Preconditions.checkArgument(
+        canonicalName != null, "Class %s doesn't have canonical name", cls);
     return canonicalName;
   }
 

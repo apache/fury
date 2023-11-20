@@ -16,7 +16,6 @@
 
 package io.fury.builder;
 
-import com.google.common.base.Preconditions;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.CompileUnit;
@@ -24,6 +23,7 @@ import io.fury.codegen.JaninoUtils;
 import io.fury.type.Descriptor;
 import io.fury.util.ClassLoaderUtils;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import io.fury.util.record.RecordUtils;

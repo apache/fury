@@ -18,7 +18,6 @@ package io.fury.type;
 
 import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
 
-import com.google.common.primitives.Primitives;
 import io.fury.util.record.RecordUtils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -46,8 +45,8 @@ public class DescriptorGrouper {
   private static final Comparator<Descriptor> PRIMITIVE_COMPARATOR =
       (d1, d2) -> {
         int c =
-            getSizeOfPrimitiveType(Primitives.unwrap(d2.getRawType()))
-                - getSizeOfPrimitiveType(Primitives.unwrap(d1.getRawType()));
+            getSizeOfPrimitiveType(TypeUtils.unwrap(d2.getRawType()))
+                - getSizeOfPrimitiveType(TypeUtils.unwrap(d1.getRawType()));
         if (c == 0) {
           c = DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME.compare(d1, d2);
         }
@@ -67,8 +66,8 @@ public class DescriptorGrouper {
       return PRIMITIVE_COMPARATOR;
     }
     return (d1, d2) -> {
-      Class<?> t1 = Primitives.unwrap(d1.getRawType());
-      Class<?> t2 = Primitives.unwrap(d2.getRawType());
+      Class<?> t1 = TypeUtils.unwrap(d1.getRawType());
+      Class<?> t2 = TypeUtils.unwrap(d2.getRawType());
       boolean t1Compress = isCompressedType(t1, compressInt, compressLong);
       boolean t2Compress = isCompressedType(t2, compressInt, compressLong);
       if ((t1Compress && t2Compress) || (!t1Compress && !t2Compress)) {
@@ -87,7 +86,7 @@ public class DescriptorGrouper {
   }
 
   private static boolean isCompressedType(Class<?> cls, boolean compressInt, boolean compressLong) {
-    cls = Primitives.unwrap(cls);
+    cls = TypeUtils.unwrap(cls);
     if (cls == int.class) {
       return compressInt;
     }

@@ -18,7 +18,6 @@ package io.fury.builder;
 
 import static io.fury.builder.Generated.GeneratedMetaSharedSerializer.SERIALIZER_FIELD_NAME;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.builder.Generated.GeneratedMetaSharedSerializer;
@@ -36,6 +35,7 @@ import io.fury.serializer.Serializers;
 import io.fury.type.ClassDef;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
+import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
 import io.fury.util.Utils;
 import io.fury.util.record.RecordComponent;

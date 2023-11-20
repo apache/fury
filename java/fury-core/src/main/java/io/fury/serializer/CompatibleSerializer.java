@@ -16,7 +16,6 @@
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
@@ -27,6 +26,7 @@ import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.serializer.collection.MapSerializer;
 import io.fury.util.FieldAccessor;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.record.RecordInfo;
 import io.fury.util.record.RecordUtils;

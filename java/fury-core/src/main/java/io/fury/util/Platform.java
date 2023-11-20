@@ -17,7 +17,6 @@
 
 package io.fury.util;
 
-import com.google.common.base.Preconditions;
 import io.fury.util.unsafe._JDKAccess;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

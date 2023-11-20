@@ -18,11 +18,11 @@
 
 package io.fury.memory;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static io.fury.util.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
 import io.fury.annotation.CodegenInvoke;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;

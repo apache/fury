@@ -16,10 +16,10 @@
 
 package io.fury.serializer;
 
-import com.google.common.primitives.Primitives;
 import io.fury.Fury;
 import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
+import io.fury.type.TypeUtils;
 import javax.annotation.concurrent.NotThreadSafe;
 
 /**
@@ -75,8 +75,7 @@ public abstract class Serializer<T> {
     this.type = type;
     this.isJava = fury.getLanguage() == Language.JAVA;
     if (fury.trackingRef()) {
-      needToWriteRef =
-          !Primitives.isWrapperType(Primitives.wrap(type)) || !fury.isBasicTypesRefIgnored();
+      needToWriteRef = !TypeUtils.isBoxed(TypeUtils.wrap(type)) || !fury.isBasicTypesRefIgnored();
     } else {
       needToWriteRef = false;
     }

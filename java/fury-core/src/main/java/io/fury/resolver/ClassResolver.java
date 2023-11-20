@@ -25,9 +25,7 @@ import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.primitives.Primitives;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.annotation.CodegenInvoke;
@@ -86,6 +84,7 @@ import io.fury.type.GenericType;
 import io.fury.type.TypeUtils;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import io.fury.util.function.Functions;
@@ -815,9 +814,7 @@ public class ClassResolver {
       throw new UnsupportedOperationException(
           String.format("Class %s doesn't support serialization.", cls));
     }
-    if (cls.isPrimitive()) {
-      cls = Primitives.wrap(cls);
-    }
+    cls = TypeUtils.boxedType(cls);
     ClassInfo classInfo = classInfoMap.get(cls);
     if (classInfo != null && classInfo.serializer != null) {
       // Note: need to check `classInfo.serializer != null`, because sometimes `cls` is already

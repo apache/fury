@@ -16,7 +16,7 @@
 
 package io.fury.util.function;
 
-import com.google.common.base.Preconditions;
+import io.fury.util.Preconditions;
 import java.util.function.Function;
 
 /**

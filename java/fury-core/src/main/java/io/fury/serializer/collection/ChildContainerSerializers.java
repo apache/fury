@@ -16,7 +16,6 @@
 
 package io.fury.serializer.collection;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import io.fury.Fury;
 import io.fury.config.CompatibleMode;
@@ -27,6 +26,7 @@ import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.Serializer;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import java.util.ArrayDeque;
 import java.util.ArrayList;

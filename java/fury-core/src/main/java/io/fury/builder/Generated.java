@@ -16,12 +16,12 @@
 
 package io.fury.builder;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.CompatibleSerializerBase;
 import io.fury.serializer.Serializer;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.util.HashMap;

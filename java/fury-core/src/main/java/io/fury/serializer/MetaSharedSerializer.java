@@ -16,7 +16,6 @@
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.builder.MetaSharedCodecBuilder;
 import io.fury.collection.Tuple2;
@@ -33,6 +32,7 @@ import io.fury.type.DescriptorGrouper;
 import io.fury.type.Generics;
 import io.fury.util.FieldAccessor;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.record.RecordInfo;
 import io.fury.util.record.RecordUtils;

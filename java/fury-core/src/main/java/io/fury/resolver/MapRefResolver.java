@@ -16,13 +16,13 @@
 
 package io.fury.resolver;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.collection.IdentityObjectIntMap;
 import io.fury.collection.IntArray;
 import io.fury.collection.MapStatistics;
 import io.fury.collection.ObjectArray;
 import io.fury.memory.MemoryBuffer;
+import io.fury.util.Preconditions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;

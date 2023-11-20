@@ -21,7 +21,6 @@ import static io.fury.type.TypeUtils.MAP_TYPE;
 import static io.fury.type.TypeUtils.collectionOf;
 import static io.fury.type.TypeUtils.mapOf;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.builder.MetaSharedCodecBuilder;
@@ -35,6 +34,7 @@ import io.fury.serializer.CompatibleSerializer;
 import io.fury.util.LoggerFactory;
 import io.fury.util.MurmurHash3;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;

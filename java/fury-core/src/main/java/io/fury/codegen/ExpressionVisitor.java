@@ -16,12 +16,12 @@
 
 package io.fury.codegen;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Reference;
 import io.fury.type.TypeUtils;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;

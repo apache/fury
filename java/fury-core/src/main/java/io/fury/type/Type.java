@@ -16,7 +16,7 @@
 
 package io.fury.type;
 
-import com.google.common.base.Preconditions;
+import io.fury.util.Preconditions;
 
 /**
  * Keep in sync with Type::type in arrow/type_fwd.h

@@ -16,13 +16,13 @@
 
 package io.fury.serializer.collection;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.Serializer;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.util.ArrayList;

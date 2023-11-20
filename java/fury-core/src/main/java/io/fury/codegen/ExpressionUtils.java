@@ -25,10 +25,10 @@ import static io.fury.codegen.Expression.Not;
 import static io.fury.codegen.Expression.StaticInvoke;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.codegen.Expression.Cast;
 import io.fury.codegen.Expression.Null;
+import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
 import io.fury.util.function.Functions;
 import java.io.Serializable;

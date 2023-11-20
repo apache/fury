@@ -19,7 +19,7 @@
 
 package io.fury.collection;
 
-import com.google.common.base.Preconditions;
+import io.fury.util.Preconditions;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;

@@ -19,8 +19,8 @@ package io.fury.codegen;
 import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import io.fury.codegen.Expression.Reference;
+import io.fury.util.Preconditions;
 import io.fury.util.function.SerializableSupplier;
 import java.util.ArrayList;
 import java.util.HashSet;

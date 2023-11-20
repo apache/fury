@@ -18,7 +18,6 @@ package io.fury.collection;
 
 import com.google.common.base.FinalizableReferenceQueue;
 import com.google.common.base.FinalizableWeakReference;
-import com.google.common.collect.Sets;
 import java.lang.ref.Reference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +39,7 @@ import java.util.stream.IntStream;
  */
 public class MultiKeyWeakMap<T> {
   private static final FinalizableReferenceQueue REFERENCE_QUEUE = new FinalizableReferenceQueue();
-  private static final Set<Reference<?>> REFERENCES = Sets.newConcurrentHashSet();
+  private static final Set<Reference<?>> REFERENCES = ConcurrentHashMap.newKeySet();
   private final Map<Object, T> map;
 
   public MultiKeyWeakMap() {

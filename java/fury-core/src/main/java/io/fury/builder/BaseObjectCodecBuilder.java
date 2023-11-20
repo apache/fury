@@ -44,9 +44,8 @@ import static io.fury.type.TypeUtils.getElementType;
 import static io.fury.type.TypeUtils.getRawType;
 import static io.fury.type.TypeUtils.isBoxed;
 import static io.fury.type.TypeUtils.isPrimitive;
-import static io.fury.util.Utils.checkArgument;
+import static io.fury.util.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
@@ -83,6 +82,7 @@ import io.fury.serializer.collection.AbstractCollectionSerializer;
 import io.fury.serializer.collection.AbstractMapSerializer;
 import io.fury.type.ScalaTypes;
 import io.fury.type.TypeUtils;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.lang.reflect.Modifier;

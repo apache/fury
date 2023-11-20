@@ -16,9 +16,9 @@
 
 package io.fury.resolver;
 
-import com.google.common.base.Preconditions;
 import io.fury.annotation.Internal;
 import io.fury.util.MurmurHash3;
+import io.fury.util.Preconditions;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 

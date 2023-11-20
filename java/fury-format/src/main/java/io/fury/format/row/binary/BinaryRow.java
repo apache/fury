@@ -16,7 +16,7 @@
 
 package io.fury.format.row.binary;
 
-import static io.fury.util.Utils.checkArgument;
+import static io.fury.util.Preconditions.checkArgument;
 
 import com.google.common.base.Preconditions;
 import io.fury.format.row.Row;
