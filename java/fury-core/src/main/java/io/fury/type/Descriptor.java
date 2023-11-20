@@ -20,7 +20,6 @@ import static io.fury.util.Preconditions.checkArgument;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 import io.fury.annotation.Ignore;
 import io.fury.annotation.Internal;
@@ -255,8 +254,13 @@ public class Descriptor {
             return fields;
           });
     }
-    duplicateNameFields =
-        Maps.filterValues(duplicateNameFields, fields -> Objects.requireNonNull(fields).size() > 1);
+    Map<String, List<Field>> map = new HashMap<>();
+    for (Map.Entry<String, List<Field>> e : duplicateNameFields.entrySet()) {
+      if (Objects.requireNonNull(e.getValue()).size() > 1) {
+        map.put(e.getKey(), e.getValue());
+      }
+    }
+    duplicateNameFields = map;
     return duplicateNameFields;
   }
 
