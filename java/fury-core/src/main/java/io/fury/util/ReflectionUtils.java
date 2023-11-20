@@ -235,6 +235,15 @@ public class ReflectionUtils {
     return methods.get(0).getReturnType();
   }
 
+  public static boolean hasDeclaredField(Class<?> cls, String fieldName) {
+    try {
+      cls.getDeclaredField(fieldName);
+      return true;
+    } catch (NoSuchFieldException e) {
+      return false;
+    }
+  }
+
   public static Field getDeclaredField(Class<?> cls, String fieldName) {
     try {
       return cls.getDeclaredField(fieldName);

@@ -23,8 +23,7 @@ import io.fury.serializer.Serializer;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
-import java.lang.reflect.Field;
+import io.fury.util.Utils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,27 +44,33 @@ import org.slf4j.Logger;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class UnmodifiableSerializers {
   private static final Logger LOG = LoggerFactory.getLogger(UnmodifiableSerializers.class);
-  private static Field SOURCE_COLLECTION_FIELD;
-  private static Field SOURCE_MAP_FIELD;
-  private static final long SOURCE_COLLECTION_FIELD_OFFSET;
-  private static final long SOURCE_MAP_FIELD_OFFSET;
 
-  static {
-    try {
+  private static class Offset {
+    // Graalvm unsafe offset substitution support: Make the call followed by a field store
+    // directly or by a sign extend node followed directly by a field store.
+    private static final long SOURCE_COLLECTION_FIELD_OFFSET;
+    private static final long SOURCE_MAP_FIELD_OFFSET;
+
+    static {
       // UnmodifiableList/Set/Etc.. extends UnmodifiableCollection
-      SOURCE_COLLECTION_FIELD =
-          Collections.unmodifiableCollection(new ArrayList<>()).getClass().getDeclaredField("c");
-      // UnmodifiableSortedMap/UnmodifiableNavigableMap extends UnmodifiableMap
-      SOURCE_MAP_FIELD =
-          Collections.unmodifiableMap(new HashMap<>()).getClass().getDeclaredField("m");
-    } catch (Exception e) {
-      LOG.warn(
-          "Could not access source collection field in "
-              + "java.util.Collections$UnmodifiableCollection: {}.",
-          e.toString());
+      String clsName = "java.util.Collections$UnmodifiableCollection";
+      try {
+        SOURCE_COLLECTION_FIELD_OFFSET =
+            Platform.UNSAFE.objectFieldOffset(Class.forName(clsName).getDeclaredField("c"));
+      } catch (Exception e) {
+        LOG.info("Could not access source collection field in {}", clsName);
+        throw new RuntimeException(e);
+      }
+      clsName = "java.util.Collections$UnmodifiableMap";
+      try {
+        // UnmodifiableSortedMap/UnmodifiableNavigableMap extends UnmodifiableMap
+        SOURCE_MAP_FIELD_OFFSET =
+            Platform.UNSAFE.objectFieldOffset(Class.forName(clsName).getDeclaredField("m"));
+      } catch (Exception e) {
+        LOG.info("Could not access source map field in {}", clsName);
+        throw new RuntimeException(e);
+      }
     }
-    SOURCE_COLLECTION_FIELD_OFFSET = ReflectionUtils.getFieldOffset(SOURCE_COLLECTION_FIELD);
-    SOURCE_MAP_FIELD_OFFSET = ReflectionUtils.getFieldOffset(SOURCE_MAP_FIELD);
   }
 
   public static final class UnmodifiableCollectionSerializer
@@ -129,9 +134,10 @@ public class UnmodifiableSerializers {
   private static Serializer<?> createSerializer(Fury fury, Tuple2<Class<?>, Function> factory) {
     if (Collection.class.isAssignableFrom(factory.f0)) {
       return new UnmodifiableCollectionSerializer(
-          fury, factory.f0, factory.f1, SOURCE_COLLECTION_FIELD_OFFSET);
+          fury, factory.f0, factory.f1, Offset.SOURCE_COLLECTION_FIELD_OFFSET);
     } else {
-      return new UnmodifiableMapSerializer(fury, factory.f0, factory.f1, SOURCE_MAP_FIELD_OFFSET);
+      return new UnmodifiableMapSerializer(
+          fury, factory.f0, factory.f1, Offset.SOURCE_MAP_FIELD_OFFSET);
     }
   }
 
@@ -187,10 +193,12 @@ public class UnmodifiableSerializers {
    * @see Collections#unmodifiableSortedMap(SortedMap)
    */
   public static void registerSerializers(Fury fury) {
-    if (SOURCE_COLLECTION_FIELD != null && SOURCE_MAP_FIELD != null) {
+    try {
       for (Tuple2<Class<?>, Function> factory : unmodifiableFactories()) {
         fury.registerSerializer(factory.f0, createSerializer(fury, factory));
       }
+    } catch (NoClassDefFoundError e) {
+      Utils.ignore(e);
     }
   }
 }
