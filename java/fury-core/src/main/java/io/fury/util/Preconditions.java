@@ -17,7 +17,7 @@
 package io.fury.util;
 
 /**
- * Check utils
+ * Check utils.
  *
  * @author chaokunyang
  */
