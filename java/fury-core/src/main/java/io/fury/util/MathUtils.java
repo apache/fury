@@ -30,4 +30,18 @@ public class MathUtils {
     }
     return (int) r;
   }
+
+  /**
+   * Reuse floorDiv to calculate floorMod.
+   *
+   * @see Math#floorMod(long, long)
+   * @param x the dividend
+   * @param y the divisor
+   * @param floorDiv of java.lang.Math#floorDiv(x, y)
+   * @return the floor modulus {@code x - (floorDiv(x, y) * y)}
+   * @since 1.8
+   */
+  public static long floorMod(long x, long y, long floorDiv) {
+    return x - floorDiv * y;
+  }
 }
