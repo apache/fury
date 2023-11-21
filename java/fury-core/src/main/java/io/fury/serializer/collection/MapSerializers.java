@@ -24,6 +24,7 @@ import io.fury.resolver.ClassResolver;
 import io.fury.serializer.ReplaceResolveSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.Serializers;
+import io.fury.serializer.StringSerializer;
 import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
@@ -293,6 +294,32 @@ public class MapSerializers {
       numElements = buffer.readPositiveVarInt();
       Class<?> keyType = fury.getClassResolver().readClassInfo(buffer).getCls();
       return new EnumMap(keyType);
+    }
+  }
+
+  public static class StringKeyMapSerializer<T> extends MapSerializer<Map<String, T>> {
+
+    public StringKeyMapSerializer(Fury fury, Class<Map<String, T>> cls) {
+      super(fury, cls, false);
+      setKeySerializer(new StringSerializer(fury));
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Map<String, T> value) {
+      buffer.writePositiveVarInt(value.size());
+      for (Map.Entry<String, T> e : value.entrySet()) {
+        fury.writeJavaStringRef(buffer, e.getKey());
+        fury.writeNullable(buffer, e.getValue());
+      }
+    }
+
+    @Override
+    public Map<String, T> read(MemoryBuffer buffer) {
+      Map map = newMap(buffer);
+      for (int i = 0; i < numElements; i++) {
+        map.put(fury.readJavaStringRef(buffer), fury.readNullable(buffer));
+      }
+      return (Map<String, T>) map;
     }
   }
 
