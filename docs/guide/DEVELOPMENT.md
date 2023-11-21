@@ -26,7 +26,7 @@ mvn clean compile -DskipTests
 
 ```bash
 cd python
-pip install pyarrow==6.0.1 Cython wheel numpy pytest
+pip install pyarrow==14.0.0 Cython wheel numpy pytest
 pip install -v -e .
 ```
 
@@ -45,7 +45,7 @@ bazel build //src/fury/util:fury_util
 Build fury row format：
 
 ```bash
-pip install pyarrow==6.0.1
+pip install pyarrow==14.0.0
 bazel build //src/fury/row:fury_row_format
 ```
 

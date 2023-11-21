@@ -35,7 +35,7 @@ try:
 except FileExistsError:
     pass
 
-pyarrow_version = "6.0.1"
+pyarrow_version = "14.0.0"
 # Check if we're running 64-bit Python
 if not sys.maxsize > 2**32:
     raise RuntimeError("Not supported on 32-bit")
@@ -151,12 +151,10 @@ setup(
         "all": [f"pyarrow == {pyarrow_version}"],
     },
     setup_requires=[
-        "cython >= 0.29.14",
+        "Cython",
         "wheel",
         f"pyarrow == {pyarrow_version}",
         "numpy" 'dataclasses; python_version<"3.7"',
-        'pickle5; python_version<"3.8"',
-        "cloudpickle",
     ],
     distclass=BinaryDistribution,
     ext_modules=ext_modules,

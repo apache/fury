@@ -36,6 +36,8 @@ jobs:
   java:
     name: Java CI
     runs-on: ubuntu-latest
+    env:
+      MY_VAR: "PATH"
     strategy:
       matrix:
         java-version: ["8", "11", "17"]
@@ -53,7 +55,7 @@ jobs:
       - name: Install pyfury
         run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
-        run: PATH="$HOME/miniconda/bin:$PATH" ./ci/run_ci.sh java${{ matrix.java-version }}
+        run: ./ci/run_ci.sh java${{ matrix.java-version }}
   java21:
     name: Java CI
     runs-on: ubuntu-latest
@@ -74,7 +76,7 @@ jobs:
       - name: Install pyfury
         run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
-        run: PATH="$HOME/miniconda/bin:$PATH" ./ci/run_ci.sh java${{ matrix.java-version }}
+        run: ./ci/run_ci.sh java${{ matrix.java-version }}
   scala:
     name: Scala CI
     runs-on: ubuntu-latest
@@ -143,7 +145,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: [3.6, 3.9]
+        python-version: [3.7, 3.12]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -175,7 +177,7 @@ jobs:
       - name: Install pyfury
         run: ./ci/run_ci.sh install_pyfury
       - name: Run Golang CI
-        run: PATH="$HOME/miniconda/bin:$PATH" ./ci/run_ci.sh go
+        run: ./ci/run_ci.sh go
   lint:
     name: Code Style Check
     runs-on: ubuntu-latest

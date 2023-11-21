@@ -28,7 +28,7 @@ jobs:
       url: https://pypi.org/project/pyfury
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, 3.10.12]
+        python-version: [3.7, 3.8, 3.9, 3.10.12, 3.11, 3.12]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -47,7 +47,8 @@ jobs:
           ci/deploy.sh bump_py_version $version
       - name: Build a binary wheel
         run: |
-          pip install pyarrow==6.0.1 Cython wheel numpy pytest
+          ../ci/deploy.sh install_pyarrow
+          pip install setuptools wheel Cython numpy pytest
           cd python
           pip list
           export PATH=~/bin:$PATH

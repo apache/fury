@@ -25,27 +25,30 @@ install_python() {
   wget -q https://repo.anaconda.com/miniconda/Miniconda3-py38_23.5.2-0-Linux-x86_64.sh -O Miniconda3.sh
   bash Miniconda3.sh -b -p $HOME/miniconda && rm -f miniconda.*
   which python
-  echo "Python version $(python -V)"
+  echo "Python version $(python -V), path $(which python)"
 }
 
 install_pyfury() {
-  export PATH="$HOME/miniconda/bin:$PATH"
-  echo "Python version $(python -V)"
-  pip install pyarrow==6.0.1 Cython wheel numpy pytest
+  echo "Python version $(python -V), path $(which python)"
+  "$ROOT"/ci/deploy.sh install_pyarrow
+  pip install Cython wheel numpy pytest
   pushd "$ROOT/python"
   pip list
   export PATH=~/bin:$PATH
   echo "Install pyfury"
+  # Fix strange installed deps not found
+  pip install setuptools
   pip install -v -e .
   popd
 }
 
 install_bazel() {
-  if command -v java >/dev/null; then
+  if command -v bazel >/dev/null; then
     echo "existing bazel location $(which bazel)"
     echo "existing bazel version $(bazel version)"
   fi
-  URL="https://github.com/bazelbuild/bazel/releases/download/4.2.0/bazel-4.2.0-installer-linux-x86_64.sh"
+  # GRPC support bazel 6.3.2 https://grpc.github.io/grpc/core/md_doc_bazel_support.html
+  URL="https://github.com/bazelbuild/bazel/releases/download/6.3.2/bazel-6.3.2-installer-linux-x86_64.sh"
   wget -q -O install.sh $URL
   chmod +x install.sh
   set +x
@@ -188,7 +191,7 @@ case $1 in
     ;;
     cpp)
       echo "Install pyarrow"
-      pip install pyarrow==6.0.1
+      "$ROOT"/ci/deploy.sh install_pyarrow
       export PATH=~/bin:$PATH
       echo "bazel version: $(bazel version)"
       set +e

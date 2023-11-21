@@ -30,15 +30,19 @@ ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 WHEEL_DIR="$ROOT/.whl"
 
-PYTHONS=("cp36-cp36m"
-         "cp37-cp37m"
+PYTHONS=("cp37-cp37m"
          "cp38-cp38"
-         "cp39-cp39")
+         "cp39-cp39"
+         "cp310-cp310"
+         "cp310-cp311"
+         "cp312-cp312")
 
-VERSIONS=("3.6"
-          "3.7"
+VERSIONS=("3.7"
           "3.8"
-          "3.9")
+          "3.9"
+          "3.10"
+          "3.11"
+          "3.12")
 
 source $(conda info --base)/etc/profile.d/conda.sh
 
@@ -128,11 +132,12 @@ deploy_python() {
     git clean -f -f -x -d -e .whl
     # Ensure bazel select the right version of python
     bazel clean --expunge
-    pip install --ignore-installed twine cython pyarrow==6.0.1 numpy
+    install_pyarrow
+    pip install --ignore-installed twine setuptools cython numpy
     pyarrow_dir=$(python -c "import importlib.util; import os; print(os.path.dirname(importlib.util.find_spec('pyarrow').origin))")
     # ensure pyarrow is clean
     rm -rf "$pyarrow_dir"
-    pip install --ignore-installed pyarrow==6.0.1
+    pip install --ignore-installed pyarrow==$pyarrow_version
     python setup.py clean
     python setup.py bdist_wheel
     mv dist/pyfury*.whl "$WHEEL_DIR"
@@ -142,6 +147,17 @@ deploy_python() {
   fi
   twine check "$WHEEL_DIR"/pyfury*.whl
   twine upload -r pypi "$WHEEL_DIR"/pyfury*.whl
+}
+
+install_pyarrow() {
+  pyversion=$(python -V | cut -d' ' -f2)
+  if [[ $pyversion  ==  3.7* ]]; then
+    pyarrow_version=12.0.0
+    sed -i -E "s/pyarrow_version = .*/pyarrow_version = \"12.0.0\"/" "$ROOT"/python/setup.py
+  else
+    pyarrow_version=14.0.0
+  fi
+  pip install pyarrow==$pyarrow_version
 }
 
 case "$1" in
