@@ -78,6 +78,7 @@ import io.fury.serializer.collection.MapSerializers;
 import io.fury.serializer.collection.SynchronizedSerializers;
 import io.fury.serializer.collection.UnmodifiableSerializers;
 import io.fury.serializer.scala.SingletonObjectSerializer;
+import io.fury.serializer.shim.ShimDispatcher;
 import io.fury.type.ClassDef;
 import io.fury.type.Descriptor;
 import io.fury.type.GenericType;
@@ -246,6 +247,7 @@ public class ClassResolver {
   // class id of last default registered class.
   private short innerEndClassId;
   private final ExtRegistry extRegistry;
+  private final ShimDispatcher shimDispatcher;
 
   private static class ExtRegistry {
     private short registeredClassIdCounter = 0;
@@ -273,6 +275,7 @@ public class ClassResolver {
     metaContextShareEnabled = fury.getConfig().shareMetaContext();
     extRegistry = new ExtRegistry();
     extRegistry.objectGenericType = buildGenericType(OBJECT_TYPE);
+    shimDispatcher = new ShimDispatcher(fury);
   }
 
   public void initialize() {
@@ -317,6 +320,7 @@ public class ClassResolver {
     registerCommonUsedClasses();
     addDefaultSerializers();
     registerDefaultClasses();
+    shimDispatcher.initialize();
     innerEndClassId = extRegistry.registeredClassIdCounter;
   }
 
@@ -1136,7 +1140,7 @@ public class ClassResolver {
   }
 
   private Serializer createSerializer(Class<?> cls) {
-    if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
+    if (!extRegistry.registeredClassIdMap.containsKey(cls) && !shimDispatcher.contains(cls)) {
       String msg =
           String.format(
               "%s is not registered, please check whether it's the type you want to serialize or "
@@ -1162,6 +1166,12 @@ public class ClassResolver {
         return serializer;
       }
     }
+
+    Serializer<?> shimSerializer = shimDispatcher.getSerializer(cls);
+    if (shimSerializer != null) {
+      return shimSerializer;
+    }
+
     Class<? extends Serializer> serializerClass = getSerializerClass(cls);
     return Serializers.newSerializer(fury, cls, serializerClass);
   }
