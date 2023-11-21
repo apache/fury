@@ -151,7 +151,7 @@ deploy_python() {
 
 install_pyarrow() {
   pyversion=$(python -V | cut -d' ' -f2)
-  if [[ $pyversion  ==  3.7 ]]; then
+  if [[ $pyversion  ==  3.7* ]]; then
     pyarrow_version=13.0.0
     sed -i -E "s/pyarrow_version = .*/pyarrow_version = \"13.0.0\"/" "$ROOT"/python/setup.py
   else
