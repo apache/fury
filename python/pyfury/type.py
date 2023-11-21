@@ -16,6 +16,7 @@ import array
 import dataclasses
 import enum
 import importlib
+import inspect
 
 import typing
 from typing import TypeVar
@@ -313,10 +314,18 @@ def infer_field(field_name, type_, visitor: TypeVisitor, types_path=None):
                 f"Collection types should be {list, dict} instead of {type_}"
             )
     else:
-        if hasattr(origin, "__annotations__"):
-            return visitor.visit_customized(field_name, type_, types_path=types_path)
-        else:
+        if is_function(origin) or not hasattr(origin, "__annotations__"):
             return visitor.visit_other(field_name, type_, types_path=types_path)
+        else:
+            return visitor.visit_customized(field_name, type_, types_path=types_path)
+
+
+def is_function(func):
+    return inspect.isfunction(func) or is_cython_function(func)
+
+
+def is_cython_function(func):
+    return getattr(func, "func_name", None) is not None
 
 
 def compute_string_hash(string):
