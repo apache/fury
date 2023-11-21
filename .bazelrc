@@ -13,9 +13,6 @@ build:macos --force_pic
 build:clang-cl --compiler=clang-cl
 build:msvc --compiler=msvc-cl
 
-# for abi issue
-build --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=0"
-
 # test config
 test --build_tests_only
 test --cache_test_results=no

@@ -42,7 +42,7 @@ install_pyfury() {
 }
 
 install_bazel() {
-  if command -v java >/dev/null; then
+  if command -v bazel >/dev/null; then
     echo "existing bazel location $(which bazel)"
     echo "existing bazel version $(bazel version)"
   fi
