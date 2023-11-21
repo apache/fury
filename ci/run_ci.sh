@@ -31,7 +31,8 @@ install_python() {
 install_pyfury() {
   export PATH="$HOME/miniconda/bin:$PATH"
   echo "Python version $(python -V)"
-  pip install pyarrow==14.0.0 Cython wheel numpy pytest
+  "$ROOT"/ci/deploy.sh install_pyarrow
+  pip install Cython wheel numpy pytest
   pushd "$ROOT/python"
   pip list
   export PATH=~/bin:$PATH
@@ -188,7 +189,7 @@ case $1 in
     ;;
     cpp)
       echo "Install pyarrow"
-      pip install pyarrow==14.0.0
+      "$ROOT"/ci/deploy.sh install_pyarrow
       export PATH=~/bin:$PATH
       echo "bazel version: $(bazel version)"
       set +e

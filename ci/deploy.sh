@@ -132,14 +132,8 @@ deploy_python() {
     git clean -f -f -x -d -e .whl
     # Ensure bazel select the right version of python
     bazel clean --expunge
-    pyversion=$(python -V | cut -d' ' -f2)
-    if [[ $pyversion  ==  3.11.*  || $pyversion == 3.12.* ]]; then
-      pyarrow_version=14.0.0
-      sed -i -E "s/pyarrow_version = .*/pyarrow_version = \"14.0.0\"/" python/setup.py
-    else
-      pyarrow_version=6.0.1
-    fi
-    pip install --ignore-installed twine cython pyarrow==$pyarrow_version numpy
+    install_pyarrow
+    pip install --ignore-installed twine cython numpy
     pyarrow_dir=$(python -c "import importlib.util; import os; print(os.path.dirname(importlib.util.find_spec('pyarrow').origin))")
     # ensure pyarrow is clean
     rm -rf "$pyarrow_dir"
@@ -153,6 +147,17 @@ deploy_python() {
   fi
   twine check "$WHEEL_DIR"/pyfury*.whl
   twine upload -r pypi "$WHEEL_DIR"/pyfury*.whl
+}
+
+install_pyarrow() {
+  pyversion=$(python -V | cut -d' ' -f2)
+  if [[ $pyversion  ==  3.7 ]]; then
+    pyarrow_version=13.0.0
+    sed -i -E "s/pyarrow_version = .*/pyarrow_version = \"13.0.0\"/" "$ROOT"/python/setup.py
+  else
+    pyarrow_version=14.0.0
+  fi
+  pip install pyarrow==$pyarrow_version
 }
 
 case "$1" in

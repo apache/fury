@@ -47,7 +47,7 @@ jobs:
           ci/deploy.sh bump_py_version $version
       - name: Build a binary wheel
         run: |
-          pip install pyarrow==14.0.0
+          ../ci/deploy.sh install_pyarrow
           pip install Cython wheel numpy pytest
           cd python
           pip list
