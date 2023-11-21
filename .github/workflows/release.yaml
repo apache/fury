@@ -47,7 +47,7 @@ jobs:
           ci/deploy.sh bump_py_version $version
       - name: Build a binary wheel
         run: |
-          ../ci/deploy.sh install_pyarrow
+          ci/deploy.sh install_pyarrow
           pip install setuptools wheel Cython numpy pytest
           cd python
           pip list
