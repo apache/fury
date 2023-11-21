@@ -109,7 +109,7 @@
       <dependency>
         <groupId>org.testng</groupId>
         <artifactId>testng</artifactId>
-        <version>7.8.0</version>
+        <version>7.5.1</version>
       </dependency>
       <!-- CVE-2020-15250 -->
       <dependency>
