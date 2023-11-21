@@ -117,7 +117,7 @@ public class DateTimeUtils {
 
   public static Instant microsToInstant(long us) {
     long secs = Math.floorDiv(us, MICROS_PER_SECOND);
-    long mos = Math.floorMod(us, MICROS_PER_SECOND);
+    long mos = MathUtils.floorMod(us, MICROS_PER_SECOND, secs);
     return Instant.ofEpochSecond(secs, mos * NANOS_PER_MICROS);
   }
 
