@@ -33,7 +33,7 @@ jobs:
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
       - name: Publish java packages
-        run: export PATH="$HOME/miniconda/bin:$PATH" && cd java && mvn --batch-mode -q deploy -Dgpg.skip -DskipTests -Prelease
+        run: cd java && mvn --batch-mode -q deploy -Dgpg.skip -DskipTests -Prelease
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_ID }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_KEY }}
