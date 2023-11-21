@@ -30,15 +30,19 @@ ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 WHEEL_DIR="$ROOT/.whl"
 
-PYTHONS=("cp36-cp36m"
-         "cp37-cp37m"
+PYTHONS=("cp37-cp37m"
          "cp38-cp38"
-         "cp39-cp39")
+         "cp39-cp39"
+         "cp310-cp310"
+         "cp310-cp311"
+         "cp312-cp312")
 
-VERSIONS=("3.6"
-          "3.7"
+VERSIONS=("3.7"
           "3.8"
-          "3.9")
+          "3.9"
+          "3.10"
+          "3.11"
+          "3.12")
 
 source $(conda info --base)/etc/profile.d/conda.sh
 
