@@ -35,7 +35,7 @@ try:
 except FileExistsError:
     pass
 
-pyarrow_version = "6.0.1"
+pyarrow_version = "14.0.0"
 # Check if we're running 64-bit Python
 if not sys.maxsize > 2**32:
     raise RuntimeError("Not supported on 32-bit")

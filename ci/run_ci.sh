@@ -29,7 +29,6 @@ install_python() {
 }
 
 install_pyfury() {
-  export PATH="$HOME/miniconda/bin:$PATH"
   echo "Python version $(python -V)"
   "$ROOT"/ci/deploy.sh install_pyarrow
   pip install Cython wheel numpy pytest
@@ -37,6 +36,8 @@ install_pyfury() {
   pip list
   export PATH=~/bin:$PATH
   echo "Install pyfury"
+  # Fix strange installed deps not found
+  pip install setuptools
   pip install -v -e .
   popd
 }
