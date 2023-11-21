@@ -111,19 +111,19 @@ Release version:
 <dependency>
   <groupId>org.furyio</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.3.0</version>
+  <version>0.3.1</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.furyio</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.3.0</version>
+  <version>0.3.1</version>
 </dependency> -->
 ```
 
 ### Scala
 ```sbt
-libraryDependencies += "org.furyio" % "fury-core" % "0.3.0"
+libraryDependencies += "org.furyio" % "fury-core" % "0.3.1"
 ```
 
 ### Python
