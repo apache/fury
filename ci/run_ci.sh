@@ -25,11 +25,11 @@ install_python() {
   wget -q https://repo.anaconda.com/miniconda/Miniconda3-py38_23.5.2-0-Linux-x86_64.sh -O Miniconda3.sh
   bash Miniconda3.sh -b -p $HOME/miniconda && rm -f miniconda.*
   which python
-  echo "Python version $(python -V)"
+  echo "Python version $(python -V), path $(which python)"
 }
 
 install_pyfury() {
-  echo "Python version $(python -V)"
+  echo "Python version $(python -V), path $(which python)"
   "$ROOT"/ci/deploy.sh install_pyarrow
   pip install Cython wheel numpy pytest
   pushd "$ROOT/python"

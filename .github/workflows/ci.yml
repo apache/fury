@@ -36,6 +36,8 @@ jobs:
   java:
     name: Java CI
     runs-on: ubuntu-latest
+    env:
+      MY_VAR: "PATH"
     strategy:
       matrix:
         java-version: ["8", "11", "17"]
