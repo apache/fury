@@ -98,7 +98,11 @@ public:
 
   // Copy the specified status.
   Status(const Status &s);
-  void operator=(const Status &s);
+  Status &operator=(const Status &s);
+
+  // Move the specified status.
+  Status(Status &&s);
+  Status &operator=(Status &&s);
 
   // Return a success status.
   static Status OK() { return Status(); }
@@ -172,11 +176,26 @@ static inline std::ostream &operator<<(std::ostream &os, const Status &x) {
 inline Status::Status(const Status &s)
     : state_((s.state_ == nullptr) ? nullptr : new State(*s.state_)) {}
 
-inline void Status::operator=(const Status &s) {
+inline Status &Status::operator=(const Status &s) {
   // The following condition catches both aliasing (when this == &s),
   // and the common case where both s and *this are ok.
   if (state_ != s.state_) {
     CopyFrom(s.state_);
   }
+  return *this;
+}
+
+inline Status::Status(Status &&s)
+    : state_(s.state_) { s.state_ = nullptr; }
+
+inline Status &Status::operator=(Status &&s) {
+  // The following condition catches both aliasing (when this == &s),
+  // and the common case where both s and *this are ok.
+  if (state_ != s.state_) {
+    delete state_;
+    state_ = s.state_;
+    s.state_ = nullptr;
+  }
+  return *this;
 }
 } // namespace fury
