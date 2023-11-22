@@ -159,7 +159,7 @@ public abstract class CodecBuilder {
       return false;
     }
     // Scala may produce class name like: xxx.SomePackageObject.package$SomeClass
-    HashSet<String> set = Collections.ofHashSet(ReflectionUtils.getPackage(clz).split("\\."));
+    HashSet<String> set = Collections.ofHashSet(clz.getCanonicalName().split("\\."));
     return !Collections.hasIntersection(set, CodegenContext.JAVA_RESERVED_WORDS);
   }
 
