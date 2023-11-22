@@ -185,8 +185,7 @@ inline Status &Status::operator=(const Status &s) {
   return *this;
 }
 
-inline Status::Status(Status &&s)
-    : state_(s.state_) { s.state_ = nullptr; }
+inline Status::Status(Status &&s) : state_(s.state_) { s.state_ = nullptr; }
 
 inline Status &Status::operator=(Status &&s) {
   // The following condition catches both aliasing (when this == &s),
