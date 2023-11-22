@@ -78,21 +78,6 @@
       <version>2.57</version>
     </dependency>
 
-    <!-- If netty has conflict, users need to exclude packages in their pom -->
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-vector</artifactId>
-      <!-- <classifier>shade-format-flatbuffer</classifier> -->
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-unsafe</artifactId>
-      <scope>runtime</scope>
-    </dependency>
     <dependency>
       <groupId>org.codehaus.janino</groupId>
       <artifactId>janino</artifactId>

@@ -90,7 +90,10 @@ jobs:
       - name: Install fury java
         run: cd java && mvn -T10 clean install -DskipTests && cd -
       - name: Test
-        run: cd scala && sbt +test && cd -
+        run: |
+          # Avoid sbt download jackson-databind error
+          rm -rf /home/runner/.m2/repository/com/fasterxml/jackson/
+          cd scala && sbt +test && cd -
   integration_tests:
     name: integration_tests
     runs-on: ubuntu-latest
