@@ -67,3 +67,19 @@ go test -v fury_xlang_test.go
 #### Environment Requirements
 
 - go1.3+
+
+### Building Fury Rust
+
+```bash
+cd rust
+# build
+cargo build
+# run test
+cargo test
+```
+
+#### Environment Requirements
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
