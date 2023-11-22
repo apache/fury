@@ -155,7 +155,7 @@ public abstract class CodecBuilder {
 
   /** Returns true if class is accessible from source. */
   private boolean sourceAccessible(Class<?> clz) {
-    if (!ReflectionUtils.isPublic(clz) || clz.getCanonicalName() == null ) {
+    if (!ReflectionUtils.isPublic(clz) || clz.getCanonicalName() == null) {
       return false;
     }
     // Scala may produce class name like: xxx.SomePackageObject.package$SomeClass
