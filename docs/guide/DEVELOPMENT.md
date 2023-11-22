@@ -73,9 +73,9 @@ go test -v fury_xlang_test.go
 ```bash
 cd rust/fury
 # build
-rust build
+cargo build
 # run test
-rust test
+cargo test
 ```
 
 #### Environment Requirements
