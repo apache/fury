@@ -188,6 +188,7 @@ case $1 in
       rustup component add rustfmt
       cargo clippy -- -Dwarnings
       cargo fmt --check
+      echo "Executing fury rust tests succeeds"
     ;;
     cpp)
       echo "Install pyarrow"
