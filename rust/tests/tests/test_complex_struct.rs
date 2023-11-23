@@ -54,7 +54,7 @@ fn complex_struct() {
             ("hello2".to_string(), "hello3".to_string()),
         ]),
         age: 12,
-        name: "helo".to_string(),
+        name: "hello".to_string(),
         op: Some("option".to_string()),
         op2: None,
         date: NaiveDate::from_ymd_opt(2025, 12, 12).unwrap(),
