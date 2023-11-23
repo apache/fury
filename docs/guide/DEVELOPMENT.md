@@ -71,7 +71,7 @@ go test -v fury_xlang_test.go
 ### Building Fury Rust
 
 ```bash
-cd rust/fury
+cd rust
 # build
 cargo build
 # run test
