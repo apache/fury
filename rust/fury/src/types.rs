@@ -237,7 +237,7 @@ pub mod config_flags {
     pub const IS_OUT_OF_BAND_FLAG: u8 = 8;
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Language {
     XLANG = 0,
     JAVA = 1,
