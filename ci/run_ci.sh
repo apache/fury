@@ -195,8 +195,8 @@ case $1 in
       cargo test
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
-      echo "Executing fury rust tests failed"
-      exit $testcode
+        echo "Executing fury rust tests failed"
+        exit $testcode
       fi
       cargo clean
       echo "Executing fury rust tests succeeds"
