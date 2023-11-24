@@ -190,7 +190,7 @@ case $1 in
       cargo fmt --check
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
-        echo "Executing fury c++ tests failed"
+        echo "Executing fury rust tests failed"
         exit $testcode
       fi
       echo "Executing fury rust tests succeeds"
