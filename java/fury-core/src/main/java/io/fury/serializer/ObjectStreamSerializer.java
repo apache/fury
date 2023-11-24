@@ -130,7 +130,8 @@ public class ObjectStreamSerializer extends Serializer {
         // create a classinfo to avoid null class bytes when class id is a
         // replacement id.
         classResolver.writeClass(buffer, slotsInfo.classInfo);
-        Method writeObjectMethod = slotsInfo.writeObjectMethod;
+        StreamClassInfo streamClassInfo = slotsInfo.streamClassInfo;
+        Method writeObjectMethod = streamClassInfo.writeObjectMethod;
         if (writeObjectMethod == null) {
           slotsInfo.slotsSerializer.write(buffer, value);
         } else {
@@ -144,8 +145,8 @@ public class ObjectStreamSerializer extends Serializer {
             objectOutputStream.buffer = buffer;
             objectOutputStream.curPut = null;
             objectOutputStream.fieldsWritten = false;
-            if (slotsInfo.writeObjectFunc != null) {
-              slotsInfo.writeObjectFunc.accept(value, objectOutputStream);
+            if (streamClassInfo.writeObjectFunc != null) {
+              streamClassInfo.writeObjectFunc.accept(value, objectOutputStream);
             } else {
               writeObjectMethod.invoke(value, objectOutputStream);
             }
@@ -182,19 +183,20 @@ public class ObjectStreamSerializer extends Serializer {
       for (int i = 0; i < numClasses; i++) {
         Class<?> currentClass = classResolver.readClassInternal(buffer);
         SlotsInfo slotsInfo = slotsInfos[slotIndex++];
+        StreamClassInfo streamClassInfo = slotsInfo.streamClassInfo;
         while (currentClass != slotsInfo.cls) {
           // the receiver's version extends classes that are not extended by the sender's version.
-          Method readObjectNoData = slotsInfo.readObjectNoData;
+          Method readObjectNoData = streamClassInfo.readObjectNoData;
           if (readObjectNoData != null) {
-            if (slotsInfo.readObjectNoDataFunc != null) {
-              slotsInfo.readObjectNoDataFunc.accept(obj);
+            if (streamClassInfo.readObjectNoDataFunc != null) {
+              streamClassInfo.readObjectNoDataFunc.accept(obj);
             } else {
               readObjectNoData.invoke(obj);
             }
           }
           slotsInfo = slotsInfos[slotIndex++];
         }
-        Method readObjectMethod = slotsInfo.readObjectMethod;
+        Method readObjectMethod = streamClassInfo.readObjectMethod;
         if (readObjectMethod == null) {
           slotsInfo.slotsSerializer.readAndSetFields(buffer, obj);
         } else {
@@ -214,8 +216,8 @@ public class ObjectStreamSerializer extends Serializer {
             objectInputStream.targetObject = obj;
             objectInputStream.getField = getField;
             objectInputStream.callbacks = callbacks;
-            if (slotsInfo.readObjectFunc != null) {
-              slotsInfo.readObjectFunc.accept(obj, objectInputStream);
+            if (streamClassInfo.readObjectFunc != null) {
+              streamClassInfo.readObjectFunc.accept(obj, objectInputStream);
             } else {
               readObjectMethod.invoke(obj, objectInputStream);
             }
@@ -258,27 +260,16 @@ public class ObjectStreamSerializer extends Serializer {
         e);
   }
 
-  private static class SlotsInfo {
-    private final Class<?> cls;
-    private final ClassInfo classInfo;
+  private static class StreamClassInfo {
     private final Method writeObjectMethod;
     private final Method readObjectMethod;
     private final Method readObjectNoData;
     private final BiConsumer writeObjectFunc;
     private final BiConsumer readObjectFunc;
     private final Consumer readObjectNoDataFunc;
-    // mark non-final for async-jit to update it to jit-serializer.
-    private CompatibleSerializerBase slotsSerializer;
-    private final ObjectIntMap<String> fieldIndexMap;
-    private final FieldResolver putFieldsResolver;
-    private final CompatibleSerializer compatibleStreamSerializer;
-    private final FuryObjectOutputStream objectOutputStream;
-    private final FuryObjectInputStream objectInputStream;
-    private final ObjectArray getFieldPool;
 
-    public SlotsInfo(Fury fury, Class<?> type) {
-      this.cls = type;
-      classInfo = fury.getClassResolver().newClassInfo(type, null, ClassResolver.NO_CLASS_ID);
+    private StreamClassInfo(Class<?> type) {
+      // ObjectStreamClass.lookup has cache inside, invocation cost won't be big.
       ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(type);
       // In JDK17, set private jdk method accessible will fail by default, use ObjectStreamClass
       // instead, since it set accessible.
@@ -309,6 +300,35 @@ public class ObjectStreamSerializer extends Serializer {
       this.writeObjectFunc = writeObjectFunc;
       this.readObjectFunc = readObjectFunc;
       this.readObjectNoDataFunc = readObjectNoDataFunc;
+    }
+  }
+
+  private static final ClassValue<StreamClassInfo> STREAM_CLASS_INFO_CACHE =
+      new ClassValue<StreamClassInfo>() {
+        @Override
+        protected StreamClassInfo computeValue(Class<?> type) {
+          return new StreamClassInfo(type);
+        }
+      };
+
+  private static class SlotsInfo {
+    private final Class<?> cls;
+    private final ClassInfo classInfo;
+    private final StreamClassInfo streamClassInfo;
+    // mark non-final for async-jit to update it to jit-serializer.
+    private CompatibleSerializerBase slotsSerializer;
+    private final ObjectIntMap<String> fieldIndexMap;
+    private final FieldResolver putFieldsResolver;
+    private final CompatibleSerializer compatibleStreamSerializer;
+    private final FuryObjectOutputStream objectOutputStream;
+    private final FuryObjectInputStream objectInputStream;
+    private final ObjectArray getFieldPool;
+
+    public SlotsInfo(Fury fury, Class<?> type) {
+      this.cls = type;
+      classInfo = fury.getClassResolver().newClassInfo(type, null, ClassResolver.NO_CLASS_ID);
+      ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(type);
+      streamClassInfo = STREAM_CLASS_INFO_CACHE.get(type);
       // `putFields/writeFields` will convert to fields value to be written by
       // `CompatibleSerializer`,
       // since `put` values may not exist in current class, which means container generic type are
@@ -344,7 +364,7 @@ public class ObjectStreamSerializer extends Serializer {
       for (ObjectStreamField serialField : objectStreamClass.getFields()) {
         allFields.add(new ClassField(serialField.getName(), serialField.getType(), cls));
       }
-      if (writeObjectMethod != null || readObjectMethod != null) {
+      if (streamClassInfo.writeObjectMethod != null || streamClassInfo.readObjectMethod != null) {
         putFieldsResolver = new FieldResolver(fury, cls, true, allFields, new HashSet<>());
         AtomicInteger idx = new AtomicInteger(0);
         for (FieldResolver.FieldInfo fieldInfo : putFieldsResolver.getAllFieldsList()) {
@@ -355,7 +375,7 @@ public class ObjectStreamSerializer extends Serializer {
         putFieldsResolver = null;
         compatibleStreamSerializer = null;
       }
-      if (writeObjectMethod != null) {
+      if (streamClassInfo.writeObjectMethod != null) {
         try {
           objectOutputStream = new FuryObjectOutputStream(this);
         } catch (IOException e) {
@@ -365,7 +385,7 @@ public class ObjectStreamSerializer extends Serializer {
       } else {
         objectOutputStream = null;
       }
-      if (readObjectMethod != null) {
+      if (streamClassInfo.readObjectMethod != null) {
         try {
           objectInputStream = new FuryObjectInputStream(this);
         } catch (IOException e) {
