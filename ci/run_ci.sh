@@ -188,6 +188,11 @@ case $1 in
       rustup component add rustfmt
       cargo clippy -- -Dwarnings
       cargo fmt --check
+      testcode=$?
+      if [[ $testcode -ne 0 ]]; then
+        echo "Executing fury c++ tests failed"
+        exit $testcode
+      fi
       echo "Executing fury rust tests succeeds"
     ;;
     cpp)
