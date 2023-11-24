@@ -82,6 +82,7 @@ import io.fury.serializer.shim.ShimDispatcher;
 import io.fury.type.ClassDef;
 import io.fury.type.Descriptor;
 import io.fury.type.GenericType;
+import io.fury.type.ScalaTypes;
 import io.fury.type.TypeUtils;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
@@ -860,7 +861,7 @@ public class ClassResolver {
           && ReflectionUtils.isScalaSingletonObject(cls)) {
         return SingletonObjectSerializer.class;
       }
-      if (Collection.class.isAssignableFrom(cls)) {
+      if (isCollection(cls)) {
         // Serializer of common collection such as ArrayList/LinkedList should be registered
         // already.
         Class<? extends Serializer> serializerClass =
@@ -876,7 +877,7 @@ public class ClassResolver {
         } else {
           return CollectionSerializer.class;
         }
-      } else if (Map.class.isAssignableFrom(cls)) {
+      } else if (isMap(cls)) {
         // Serializer of common map such as HashMap/LinkedHashMap should be registered already.
         Class<? extends Serializer> serializerClass =
             ChildContainerSerializers.getMapSerializerClass(cls);
@@ -925,6 +926,27 @@ public class ClassResolver {
             }
           });
     }
+  }
+
+  public boolean isCollection(Class<?> cls) {
+    if (Collection.class.isAssignableFrom(cls)) {
+      return true;
+    }
+    if (fury.getConfig().isScalaOptimizationEnabled()) {
+      // Scala map is scala iterable too.
+      if (ScalaTypes.getScalaMapType().isAssignableFrom(cls)) {
+        return false;
+      }
+      return ScalaTypes.getScalaIterableType().isAssignableFrom(cls);
+    } else {
+      return false;
+    }
+  }
+
+  public boolean isMap(Class<?> cls) {
+    return Map.class.isAssignableFrom(cls)
+        || (fury.getConfig().isScalaOptimizationEnabled()
+            && ScalaTypes.getScalaMapType().isAssignableFrom(cls));
   }
 
   public Class<? extends Serializer> getObjectSerializerClass(

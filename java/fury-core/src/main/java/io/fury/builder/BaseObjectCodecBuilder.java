@@ -80,7 +80,6 @@ import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
 import io.fury.serializer.collection.AbstractCollectionSerializer;
 import io.fury.serializer.collection.AbstractMapSerializer;
-import io.fury.type.ScalaTypes;
 import io.fury.type.TypeUtils;
 import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
@@ -402,16 +401,11 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected boolean useCollectionSerialization(TypeToken<?> typeToken) {
-    return COLLECTION_TYPE.isSupertypeOf(typeToken)
-        || (fury.getConfig().isScalaOptimizationEnabled()
-            && (!ScalaTypes.getScalaMapType().isAssignableFrom(typeToken.getRawType())
-                && ScalaTypes.getScalaIterableType().isAssignableFrom(typeToken.getRawType())));
+    return visitFury(f -> f.getClassResolver().isCollection(TypeUtils.getRawType(typeToken)));
   }
 
   protected boolean useMapSerialization(TypeToken<?> typeToken) {
-    return MAP_TYPE.isSupertypeOf(typeToken)
-        || (fury.getConfig().isScalaOptimizationEnabled()
-            && ScalaTypes.getScalaMapType().isAssignableFrom(typeToken.getRawType()));
+    return visitFury(f -> f.getClassResolver().isMap(TypeUtils.getRawType(typeToken)));
   }
 
   /**

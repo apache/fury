@@ -328,7 +328,7 @@ public class MapSerializers {
    * won't use element generics and doesn't support JIT, performance won't be the best, but the
    * correctness can be ensured.
    */
-  public static final class DefaultJavaMapSerializer<T extends Map> extends MapSerializer<T> {
+  public static final class DefaultJavaMapSerializer<T> extends AbstractMapSerializer<T> {
     private Serializer<T> dataSerializer;
 
     public DefaultJavaMapSerializer(Fury fury, Class<T> cls) {
@@ -347,6 +347,16 @@ public class MapSerializers {
     }
 
     @Override
+    public Map onMapWrite(MemoryBuffer buffer, T value) {
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public T onMapRead(Map map) {
+      throw new IllegalStateException();
+    }
+
+    @Override
     public void write(MemoryBuffer buffer, T value) {
       dataSerializer.write(buffer, value);
     }
@@ -358,7 +368,7 @@ public class MapSerializers {
   }
 
   /** Map serializer for class with JDK custom serialization methods defined. */
-  public static class JDKCompatibleMapSerializer<T extends Map> extends MapSerializer<T> {
+  public static class JDKCompatibleMapSerializer<T> extends AbstractMapSerializer<T> {
     private final Serializer serializer;
 
     public JDKCompatibleMapSerializer(Fury fury, Class<T> cls) {
@@ -370,6 +380,16 @@ public class MapSerializers {
               ? ReplaceResolveSerializer.class
               : fury.getDefaultJDKStreamSerializerType();
       serializer = Serializers.newSerializer(fury, cls, serializerType);
+    }
+
+    @Override
+    public Map onMapWrite(MemoryBuffer buffer, T value) {
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public T onMapRead(Map map) {
+      throw new IllegalStateException();
     }
 
     @SuppressWarnings("unchecked")

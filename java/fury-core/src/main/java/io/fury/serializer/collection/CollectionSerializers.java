@@ -498,8 +498,8 @@ public class CollectionSerializers {
    * serializer won't use element generics and doesn't support JIT, performance won't be the best,
    * but the correctness can be ensured.
    */
-  public static final class DefaultJavaCollectionSerializer<T extends Collection>
-      extends CollectionSerializer<T> {
+  public static final class DefaultJavaCollectionSerializer<T>
+      extends AbstractCollectionSerializer<T> {
     private Serializer<T> dataSerializer;
 
     public DefaultJavaCollectionSerializer(Fury fury, Class<T> cls) {
@@ -518,6 +518,16 @@ public class CollectionSerializers {
     }
 
     @Override
+    public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public T onCollectionRead(Collection collection) {
+      throw new IllegalStateException();
+    }
+
+    @Override
     public void write(MemoryBuffer buffer, T value) {
       dataSerializer.write(buffer, value);
     }
@@ -529,8 +539,8 @@ public class CollectionSerializers {
   }
 
   /** Collection serializer for class with JDK custom serialization methods defined. */
-  public static final class JDKCompatibleCollectionSerializer<T extends Collection>
-      extends CollectionSerializer<T> {
+  public static final class JDKCompatibleCollectionSerializer<T>
+      extends AbstractCollectionSerializer<T> {
     private final Serializer serializer;
 
     public JDKCompatibleCollectionSerializer(Fury fury, Class<T> cls) {
@@ -544,10 +554,20 @@ public class CollectionSerializers {
       serializer = Serializers.newSerializer(fury, cls, serializerType);
     }
 
+    @Override
+    public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
+      throw new IllegalStateException();
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public T read(MemoryBuffer buffer) {
       return (T) serializer.read(buffer);
+    }
+
+    @Override
+    public T onCollectionRead(Collection collection) {
+      throw new IllegalStateException();
     }
 
     @Override
