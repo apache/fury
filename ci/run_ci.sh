@@ -183,11 +183,22 @@ case $1 in
       set +e
       echo "Executing fury rust tests"
       cd "$ROOT/rust"
+      cargo doc --no-deps --document-private-items --all-features --open
+      cargo fmt --all -- --check
+      cargo fmt --all
+      cargo clippy --workspace --all-features --all-targets
+      cargo clippy --workspace --all-features --all-targets --fix
+      cargo doc
+      cargo build --all-features --all-targets
       cargo test
+      if [[ $testcode -ne 0 ]]; then
+        echo "Executing fury c++ tests failed"
+        exit $testcode
+      fi
+      echo "Executing fury rust tests succeeds"
+      cargo clean
       rustup component add clippy-preview
       rustup component add rustfmt
-      cargo clippy -- -Dwarnings
-      cargo fmt --check
       echo "Executing fury rust tests succeeds"
     ;;
     cpp)
