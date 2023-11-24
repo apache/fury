@@ -18,11 +18,13 @@ package io.fury.collection;
 
 import com.google.common.base.FinalizableReferenceQueue;
 import com.google.common.base.FinalizableWeakReference;
-import java.lang.ref.Reference;
+import io.fury.util.unsafe._JDKAccess;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -38,8 +40,15 @@ import java.util.stream.IntStream;
  * @author chaokunyang
  */
 public class MultiKeyWeakMap<T> {
-  private static final FinalizableReferenceQueue REFERENCE_QUEUE = new FinalizableReferenceQueue();
-  private static final Set<Reference<?>> REFERENCES = ConcurrentHashMap.newKeySet();
+  private static final FinalizableReferenceQueue REFERENCE_QUEUE;
+  static {
+    if (_JDKAccess.IS_GRAALVM_BUILD_TIME) {
+      REFERENCE_QUEUE = null;
+    } else {
+      REFERENCE_QUEUE = new FinalizableReferenceQueue();
+    }
+  }
+  private static final Set<KeyReference> REFERENCES = ConcurrentHashMap.newKeySet();
   private final Map<Object, T> map;
 
   public MultiKeyWeakMap() {
@@ -51,29 +60,60 @@ public class MultiKeyWeakMap<T> {
   }
 
   public T get(Object[] keys) {
-    List<KeyReference> keyRefs = createKey(keys);
+    List<? extends KeyReference> keyRefs = createKey(keys);
     T t = map.get(keyRefs);
     keyRefs.forEach(REFERENCES::remove);
     return t;
   }
 
-  private List<KeyReference> createKey(Object[] keys) {
+  private List<? extends KeyReference> createKey(Object[] keys) {
     boolean[] reclaimedFlags = new boolean[keys.length];
-    List<KeyReference> keyRefs = new ArrayList<>();
+    if (_JDKAccess.IS_GRAALVM_BUILD_TIME) {
+      List<NoCallbackRef> keyRefs = new ArrayList<>();
+      for (Object key : keys) {
+        keyRefs.add(new NoCallbackRef(key));
+      }
+      return keyRefs;
+    }
+    List<FinalizableKeyReference> keyRefs = new ArrayList<>();
     for (int i = 0; i < keys.length; i++) {
-      keyRefs.add(new KeyReference(keys[i], keyRefs, reclaimedFlags, i));
+      keyRefs.add(new FinalizableKeyReference(keys[i], keyRefs, reclaimedFlags, i));
     }
     return keyRefs;
   }
+  private interface KeyReference {
+  }
 
-  private final class KeyReference extends FinalizableWeakReference<Object> {
+  private static final class NoCallbackRef implements KeyReference {
+    private final Object o;
+
+    private NoCallbackRef(Object o) {
+      this.o = o;
+    }
+
+    @Override
+    public boolean equals(Object o1) {
+      if (this == o1) return true;
+      if (o1 == null || getClass() != o1.getClass()) return false;
+      NoCallbackRef that = (NoCallbackRef) o1;
+      return Objects.equals(o, that.o);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(o);
+    }
+  }
+
+  private final class FinalizableKeyReference extends FinalizableWeakReference<Object>
+    implements KeyReference {
     private final boolean[] reclaimedFlags;
     private final int index;
-    private final List<KeyReference> keyRefs;
+    private final List<FinalizableKeyReference> keyRefs;
     private final int hashcode;
 
-    public KeyReference(
-        Object obj, List<KeyReference> keyRefs, boolean[] reclaimedFlags, int index) {
+    public FinalizableKeyReference(
+        Object obj, List<FinalizableKeyReference> keyRefs, boolean[] reclaimedFlags, int index) {
       super(obj, REFERENCE_QUEUE);
       this.reclaimedFlags = reclaimedFlags;
       this.index = index;
@@ -100,7 +140,7 @@ public class MultiKeyWeakMap<T> {
         return false;
       }
       @SuppressWarnings("unchecked")
-      KeyReference that = (KeyReference) o;
+      FinalizableKeyReference that = (FinalizableKeyReference) o;
       Object referent1 = this.get();
       if (referent1 != null) {
         return referent1.equals(that.get());
@@ -123,7 +163,7 @@ public class MultiKeyWeakMap<T> {
           + ", index="
           + index
           + ", keyRefs="
-          + keyRefs.stream().map(Reference::get).collect(Collectors.toList())
+          + keyRefs.stream().map(FinalizableKeyReference::get).collect(Collectors.toList())
           + ", hashcode="
           + hashcode
           + '}';

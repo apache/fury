@@ -40,6 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import io.fury.util.unsafe._JDKAccess;
 import org.slf4j.Logger;
 
 /**
@@ -229,6 +231,10 @@ public class CodeGenerator {
 
   public static synchronized ListeningExecutorService getCompilationService() {
     if (compilationExecutorService == null) {
+      if (_JDKAccess.IS_GRAALVM_BUILD_TIME) {
+        // GraalVM build time can't reachable thread.
+        return compilationExecutorService = MoreExecutors.newDirectExecutorService();
+      }
       ThreadPoolExecutor executor =
           new ThreadPoolExecutor(
               maxPoolSize,
