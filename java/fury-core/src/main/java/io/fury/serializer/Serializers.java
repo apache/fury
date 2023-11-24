@@ -19,7 +19,6 @@ package io.fury.serializer;
 import static io.fury.util.function.Functions.makeGetterFunction;
 
 import io.fury.Fury;
-import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.type.Type;
@@ -171,35 +170,27 @@ public class Serializers {
     }
   }
 
-  static Tuple2<ToIntFunction, Function> builderCache;
+  private static final ToIntFunction GET_CODER;
+  private static final Function GET_VALUE;
 
-  private static synchronized Tuple2<ToIntFunction, Function> getBuilderFunc() {
-    if (builderCache == null) {
-      Function getValue =
-          (Function) makeGetterFunction(StringBuilder.class.getSuperclass(), "getValue");
-      try {
-        Method getCoderMethod = StringBuilder.class.getSuperclass().getDeclaredMethod("getCoder");
-        ToIntFunction<CharSequence> getCoder =
-            (ToIntFunction<CharSequence>) makeGetterFunction(getCoderMethod, int.class);
-        builderCache = Tuple2.of(getCoder, getValue);
-      } catch (NoSuchMethodException e) {
-        builderCache = Tuple2.of(null, getValue);
-      }
+  static {
+    GET_VALUE = (Function) makeGetterFunction(StringBuilder.class.getSuperclass(), "getValue");
+    ToIntFunction<CharSequence> getCoder;
+    try {
+      Method getCoderMethod = StringBuilder.class.getSuperclass().getDeclaredMethod("getCoder");
+      getCoder = (ToIntFunction<CharSequence>) makeGetterFunction(getCoderMethod, int.class);
+    } catch (NoSuchMethodException e) {
+      getCoder = null;
     }
-    return builderCache;
+    GET_CODER = getCoder;
   }
 
   public abstract static class AbstractStringBuilderSerializer<T extends CharSequence>
       extends Serializer<T> {
-    protected final ToIntFunction getCoder;
-    protected final Function getValue;
     protected final StringSerializer stringSerializer;
 
     public AbstractStringBuilderSerializer(Fury fury, Class<T> type) {
       super(fury, type);
-      Tuple2<ToIntFunction, Function> builderFunc = getBuilderFunc();
-      getCoder = builderFunc.f0;
-      getValue = builderFunc.f1;
       stringSerializer = new StringSerializer(fury);
     }
 
@@ -215,9 +206,9 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, T value) {
-      if (getCoder != null) {
-        int coder = getCoder.applyAsInt(value);
-        byte[] v = (byte[]) getValue.apply(value);
+      if (GET_CODER != null) {
+        int coder = GET_CODER.applyAsInt(value);
+        byte[] v = (byte[]) GET_VALUE.apply(value);
         buffer.writeByte(coder);
         if (coder == 0) {
           buffer.writePrimitiveArrayWithSizeEmbedded(v, Platform.BYTE_ARRAY_OFFSET, value.length());
@@ -229,7 +220,7 @@ public class Serializers {
               v, Platform.BYTE_ARRAY_OFFSET, value.length() << 1);
         }
       } else {
-        char[] v = (char[]) getValue.apply(value);
+        char[] v = (char[]) GET_VALUE.apply(value);
         if (StringSerializer.isLatin(v)) {
           stringSerializer.writeCharsLatin(buffer, v, value.length());
         } else {
