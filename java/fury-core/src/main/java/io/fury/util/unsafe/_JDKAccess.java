@@ -53,6 +53,7 @@ public class _JDKAccess {
   // CHECKSTYLE.ON:TypeName
   public static final int JAVA_VERSION;
   public static final boolean OPEN_J9;
+  public static final boolean IS_GRAALVM_BUILD_TIME;
   public static final Unsafe UNSAFE;
   public static final Class<?> _INNER_UNSAFE_CLASS;
   public static final Object _INNER_UNSAFE;
@@ -88,6 +89,14 @@ public class _JDKAccess {
       _INNER_UNSAFE_CLASS = null;
       _INNER_UNSAFE = null;
     }
+    boolean isGraalvmBuildTime;
+    try {
+      Class.forName("com.oracle.svm.hosted.NativeImageGeneratorRunner");
+      isGraalvmBuildTime = true;
+    } catch (ClassNotFoundException e) {
+      isGraalvmBuildTime = false;
+    }
+    IS_GRAALVM_BUILD_TIME = isGraalvmBuildTime;
   }
 
   private static final ClassValue<Lookup> lookupCache =
