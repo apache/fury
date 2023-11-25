@@ -23,7 +23,8 @@ import io.fury.serializer.Serializer;
 import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.serializer.collection.MapSerializers;
 import io.fury.util.Preconditions;
-import java.lang.reflect.Constructor;
+import io.fury.util.ReflectionUtils;
+import java.lang.invoke.MethodHandle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +33,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author fengjian
  */
+@SuppressWarnings("rawtypes")
 public class ShimDispatcher {
-
   private static final Logger LOG = LoggerFactory.getLogger(ShimDispatcher.class);
 
   private final FuryObjectMap<String, Class<? extends Serializer>> className2ShimSerializerClass =
@@ -74,13 +75,12 @@ public class ShimDispatcher {
     if (!className2ShimSerializerClass.containsKey(className)) {
       return null;
     }
-
     Class<? extends Serializer> serializerClass = className2ShimSerializerClass.get(className);
     try {
-      Constructor<? extends Serializer> constructor =
-          serializerClass.getConstructor(Fury.class, Class.class);
-      return constructor.newInstance(fury, clazz);
-    } catch (Exception e) {
+      MethodHandle ctrHandle =
+          ReflectionUtils.getCtrHandle(serializerClass, Fury.class, Class.class);
+      return (Serializer<?>) ctrHandle.invoke(fury, clazz);
+    } catch (Throwable e) {
       LOG.warn(
           "Construct shim serializer failed for class [{}] with serializer class [{}]",
           className,

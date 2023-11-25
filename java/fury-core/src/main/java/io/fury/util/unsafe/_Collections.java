@@ -17,8 +17,6 @@
 package io.fury.util.unsafe;
 
 import io.fury.util.Platform;
-import io.fury.util.Utils;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 
 /**
@@ -29,46 +27,45 @@ import java.util.ArrayList;
 // CHECKSTYLE.OFF:TypeName
 public class _Collections {
   // CHECKSTYLE.ON:TypeName
-  private static final long ARRAY_LIST_SIZE_OFFSET;
-  private static final long ARRAY_LIST_ARRAY_OFFSET;
 
-  static {
-    Field arrayListSizeField = null;
-    Field arrayListArrayField = null;
-    try {
-      arrayListSizeField = ArrayList.class.getDeclaredField("size");
-      arrayListArrayField = ArrayList.class.getDeclaredField("elementData");
-    } catch (NoSuchFieldException e) {
-      Utils.ignore(e);
-    }
-    if (arrayListSizeField != null && arrayListArrayField != null) {
-      ARRAY_LIST_SIZE_OFFSET = Platform.objectFieldOffset(arrayListSizeField);
-      ARRAY_LIST_ARRAY_OFFSET = Platform.objectFieldOffset(arrayListArrayField);
-    } else {
-      ARRAY_LIST_SIZE_OFFSET = -1;
-      ARRAY_LIST_ARRAY_OFFSET = -1;
-    }
-  }
+  // Make offset compatible with graalvm native image.
+  private static class Offset {
+    private static final long ARRAY_LIST_SIZE_OFFSET;
+    private static final long ARRAY_LIST_ARRAY_OFFSET;
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public static void setArrayListElements(ArrayList list, Object[] elements) {
-    if (ARRAY_LIST_SIZE_OFFSET != -1) {
-      Platform.putInt(list, ARRAY_LIST_SIZE_OFFSET, elements.length);
-      Platform.putObject(list, ARRAY_LIST_ARRAY_OFFSET, elements);
-    } else {
-      for (Object element : elements) {
-        list.add(element);
+    static {
+      try {
+        ARRAY_LIST_SIZE_OFFSET =
+            Platform.objectFieldOffset(ArrayList.class.getDeclaredField("size"));
+        ARRAY_LIST_ARRAY_OFFSET =
+            Platform.objectFieldOffset(ArrayList.class.getDeclaredField("elementData"));
+      } catch (NoSuchFieldException e) {
+        throw new RuntimeException(e);
       }
     }
   }
 
-  /** Try to return internal data of {@link ArrayList} in a zero-copy shared way. */
-  public static Object[] getArrayListElements(ArrayList list) {
-    if (ARRAY_LIST_SIZE_OFFSET != -1) {
-      Object object = Platform.getObject(list, ARRAY_LIST_ARRAY_OFFSET);
-      return (Object[]) object;
+  private static final boolean FAST_MODE;
+
+  static {
+    boolean fastMode;
+    try {
+      fastMode = Offset.ARRAY_LIST_ARRAY_OFFSET != -1;
+    } catch (Throwable e) {
+      fastMode = false;
+    }
+    FAST_MODE = fastMode;
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public static void setArrayListElements(ArrayList list, Object[] elements) {
+    if (FAST_MODE) {
+      Platform.putInt(list, Offset.ARRAY_LIST_SIZE_OFFSET, elements.length);
+      Platform.putObject(list, Offset.ARRAY_LIST_ARRAY_OFFSET, elements);
     } else {
-      return list.toArray();
+      for (Object element : elements) {
+        list.add(element);
+      }
     }
   }
 }

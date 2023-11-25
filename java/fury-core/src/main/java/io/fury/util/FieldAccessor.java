@@ -48,7 +48,9 @@ public abstract class FieldAccessor {
     Preconditions.checkNotNull(field);
     long fieldOffset;
     try {
-      fieldOffset = Platform.UNSAFE.objectFieldOffset(field);
+      Preconditions.checkArgument(
+          !Platform.IS_GRAALVM_IMAGE_BUILD_TIME, "Graalvm build time not support");
+      fieldOffset = ReflectionUtils.getFieldOffset(field);
     } catch (UnsupportedOperationException e) {
       fieldOffset = -1;
     }
@@ -113,7 +115,8 @@ public abstract class FieldAccessor {
   public static FieldAccessor createAccessor(Field field) {
     Object getter;
     try {
-      Platform.UNSAFE.objectFieldOffset(field);
+      // record class fields are not allowed by JDK
+      ReflectionUtils.getFieldOffset(field);
     } catch (UnsupportedOperationException e) {
       try {
         Method getterMethod = field.getDeclaringClass().getDeclaredMethod(field.getName());

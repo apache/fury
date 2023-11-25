@@ -20,7 +20,6 @@ import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.CompatibleSerializerBase;
 import io.fury.serializer.Serializer;
-import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Field;
@@ -75,20 +74,16 @@ public interface Generated {
                           fury.getClassResolver().getSerializer(beanFieldType);
                       Preconditions.checkState(beanFieldType == fieldSerializer.getType());
                       Preconditions.checkState(result == fieldSerializer.getClass());
-                      Platform.putObject(
-                          subclassSerializer,
-                          ReflectionUtils.getFieldOffset(field),
-                          fieldSerializer);
+                      ReflectionUtils.setObjectFieldValue(
+                          subclassSerializer, field, fieldSerializer);
                     }
 
                     @Override
                     public void onNotifyMissed() {
                       Serializer<?> fieldSerializer =
                           fury.getClassResolver().getSerializer(beanFieldType);
-                      Platform.putObject(
-                          subclassSerializer,
-                          ReflectionUtils.getFieldOffset(field),
-                          fieldSerializer);
+                      ReflectionUtils.setObjectFieldValue(
+                          subclassSerializer, field, fieldSerializer);
                     }
                   });
         }

@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -122,14 +124,28 @@ public class ReflectionUtils {
     return methodHandle;
   }
 
+  private static final ClassValue<ConcurrentMap<List<Class<?>>, MethodHandle>>
+      ctrHandleParamsCache =
+          new ClassValue<ConcurrentMap<List<Class<?>>, MethodHandle>>() {
+            @Override
+            protected ConcurrentMap<List<Class<?>>, MethodHandle> computeValue(Class<?> type) {
+              return new ConcurrentHashMap<>();
+            }
+          };
+
   public static MethodHandle getCtrHandle(Class<?> cls, Class<?>... types) {
     MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(cls);
-    try {
-      return lookup.findConstructor(cls, MethodType.methodType(void.class, types));
-    } catch (NoSuchMethodException | IllegalAccessException e) {
-      Platform.throwException(e);
-      throw new IllegalStateException("unreachable");
-    }
+    ConcurrentMap<List<Class<?>>, MethodHandle> map = ctrHandleParamsCache.get(cls);
+    return map.computeIfAbsent(
+        Arrays.asList(types),
+        k -> {
+          try {
+            return lookup.findConstructor(cls, MethodType.methodType(void.class, types));
+          } catch (NoSuchMethodException | IllegalAccessException e) {
+            Platform.throwException(e);
+            throw new IllegalStateException("unreachable");
+          }
+        });
   }
 
   /**
@@ -314,8 +330,28 @@ public class ReflectionUtils {
     return results;
   }
 
+  public static final ConcurrentMap<Class<?>, Object> graalvmHoldFields = new ConcurrentHashMap();
+
   public static long getFieldOffset(Field field) {
-    return field == null ? -1 : Platform.objectFieldOffset(field);
+    if (field == null) {
+      return -1;
+    }
+    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+      Class<?> declaringClass = field.getDeclaringClass();
+      String className = declaringClass.getName();
+      if (!className.startsWith("io.fury.codegen")
+          && !className.contains("shaded.janino")
+          && className.startsWith("io.fury.builder")) {
+        graalvmHoldFields.computeIfAbsent(
+            declaringClass,
+            k -> {
+              List<Field> fields = getFields(declaringClass, true);
+              fields.forEach(f -> f.setAccessible(true));
+              return fields;
+            });
+      }
+    }
+    return Platform.objectFieldOffset(field);
   }
 
   public static long getFieldOffset(Class<?> cls, String fieldName) {
@@ -329,6 +365,18 @@ public class ReflectionUtils {
     return offset;
   }
 
+  public static void setObjectFieldValue(Object obj, String fieldName, Object value) {
+    setObjectFieldValue(obj, getField(obj.getClass(), fieldName), value);
+  }
+
+  public static void setObjectFieldValue(Object obj, Field field, Object value) {
+    Platform.putObject(obj, getFieldOffset(field), value);
+  }
+
+  public static <T> T getObjectFieldValue(Object obj, Field field) {
+    return (T) Platform.getObject(obj, getFieldOffset(field));
+  }
+
   /**
    * Returns object field value with specified name or nul if not exists.
    *
@@ -340,7 +388,7 @@ public class ReflectionUtils {
     while (cls != Object.class) {
       try {
         Field field = cls.getDeclaredField(fieldName);
-        long fieldOffset = Platform.objectFieldOffset(field);
+        long fieldOffset = getFieldOffset(field);
         return Platform.getObject(obj, fieldOffset);
         // CHECKSTYLE.OFF:EmptyCatchBlock
       } catch (NoSuchFieldException ignored) {

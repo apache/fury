@@ -18,8 +18,7 @@ package io.fury.collection;
 
 import com.google.common.base.FinalizableReferenceQueue;
 import com.google.common.base.FinalizableWeakReference;
-import io.fury.util.unsafe._JDKAccess;
-
+import io.fury.util.Platform;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -41,13 +40,15 @@ import java.util.stream.IntStream;
  */
 public class MultiKeyWeakMap<T> {
   private static final FinalizableReferenceQueue REFERENCE_QUEUE;
+
   static {
-    if (_JDKAccess.IS_GRAALVM_BUILD_TIME) {
+    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
       REFERENCE_QUEUE = null;
     } else {
       REFERENCE_QUEUE = new FinalizableReferenceQueue();
     }
   }
+
   private static final Set<KeyReference> REFERENCES = ConcurrentHashMap.newKeySet();
   private final Map<Object, T> map;
 
@@ -68,7 +69,7 @@ public class MultiKeyWeakMap<T> {
 
   private List<? extends KeyReference> createKey(Object[] keys) {
     boolean[] reclaimedFlags = new boolean[keys.length];
-    if (_JDKAccess.IS_GRAALVM_BUILD_TIME) {
+    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
       List<NoCallbackRef> keyRefs = new ArrayList<>();
       for (Object key : keys) {
         keyRefs.add(new NoCallbackRef(key));
@@ -81,8 +82,8 @@ public class MultiKeyWeakMap<T> {
     }
     return keyRefs;
   }
-  private interface KeyReference {
-  }
+
+  private interface KeyReference {}
 
   private static final class NoCallbackRef implements KeyReference {
     private final Object o;
@@ -106,7 +107,7 @@ public class MultiKeyWeakMap<T> {
   }
 
   private final class FinalizableKeyReference extends FinalizableWeakReference<Object>
-    implements KeyReference {
+      implements KeyReference {
     private final boolean[] reclaimedFlags;
     private final int index;
     private final List<FinalizableKeyReference> keyRefs;

@@ -52,13 +52,9 @@ import java.util.function.Function;
  */
 @SuppressWarnings("unchecked")
 public final class StringSerializer extends Serializer<String> {
-  private static final long STRING_CODER_FIELD_OFFSET;
-  private static final long STRING_VALUE_FIELD_OFFSET;
   private static final boolean STRING_VALUE_FIELD_IS_CHARS;
   private static final boolean STRING_VALUE_FIELD_IS_BYTES;
-  private static final long STRING_OFFSET_FIELD_OFFSET;
-  // String length field for android.
-  private static final long STRING_COUNT_FIELD_OFFSET;
+
   private static final byte LATIN1 = 0;
   private static final Byte LATIN1_BOXED = LATIN1;
   private static final byte UTF16 = 1;
@@ -68,18 +64,43 @@ public final class StringSerializer extends Serializer<String> {
   // A long mask used to clear all-higher bits of char in a super-word way.
   private static final long MULTI_CHARS_NON_LATIN_MASK;
 
+  // Make offset compatible with graalvm native image.
+  private static final long STRING_VALUE_FIELD_OFFSET;
+
+  private static class Offset {
+    // Make offset compatible with graalvm native image.
+    private static final long STRING_CODER_FIELD_OFFSET;
+
+    static {
+      try {
+        STRING_CODER_FIELD_OFFSET =
+            Platform.objectFieldOffset(String.class.getDeclaredField("coder"));
+      } catch (NoSuchFieldException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
   static {
     Field valueField = ReflectionUtils.getFieldNullable(String.class, "value");
     // Java8 string
     STRING_VALUE_FIELD_IS_CHARS = valueField != null && valueField.getType() == char[].class;
     // Java11 string
     STRING_VALUE_FIELD_IS_BYTES = valueField != null && valueField.getType() == byte[].class;
-    STRING_VALUE_FIELD_OFFSET = ReflectionUtils.getFieldOffset(String.class, "value");
-    STRING_CODER_FIELD_OFFSET = ReflectionUtils.getFieldOffset(String.class, "coder");
-    STRING_OFFSET_FIELD_OFFSET = ReflectionUtils.getFieldOffset(String.class, "offset");
-    STRING_COUNT_FIELD_OFFSET = ReflectionUtils.getFieldOffset(String.class, "count");
-    Preconditions.checkArgument(STRING_OFFSET_FIELD_OFFSET == -1, "Current jdk not supported");
-    Preconditions.checkArgument(STRING_COUNT_FIELD_OFFSET == -1, "Current jdk not supported");
+    try {
+      // Make offset compatible with graalvm native image.
+      STRING_VALUE_FIELD_OFFSET =
+          Platform.objectFieldOffset(String.class.getDeclaredField("value"));
+    } catch (NoSuchFieldException e) {
+      throw new RuntimeException(e);
+    }
+    // String length field for android.
+    Preconditions.checkArgument(
+        ReflectionUtils.getFieldNullable(String.class, "count") == null,
+        "Current jdk not supported");
+    Preconditions.checkArgument(
+        ReflectionUtils.getFieldNullable(String.class, "offset") == null,
+        "Current jdk not supported");
     if (Platform.IS_LITTLE_ENDIAN) {
       // latin chars will be 0xXX,0x00;0xXX,0x00 in byte order;
       // Using 0x00,0xff(0xff00) to clear latin bits.
@@ -354,7 +375,7 @@ public final class StringSerializer extends Serializer<String> {
 
   public static void writeBytesString(MemoryBuffer buffer, String value) {
     byte[] bytes = (byte[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    byte coder = Platform.getByte(value, STRING_CODER_FIELD_OFFSET);
+    byte coder = Platform.getByte(value, Offset.STRING_CODER_FIELD_OFFSET);
     int bytesLen = bytes.length;
     int writerIndex = buffer.writerIndex();
     // The `ensure` ensure next operations are safe without bound checks,
@@ -528,27 +549,8 @@ public final class StringSerializer extends Serializer<String> {
           String.format(
               "String value isn't char[], current java %s isn't supported", Platform.JAVA_VERSION));
     }
-    try {
-      if (CHARS_STRING_ZERO_COPY_CTR == null) {
-        // 1. As documented in `Subsequent Modification of final Fields` in
-        // https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#d5e34106
-        // Maybe we can use `UNSAFE.putObject` to update String field to avoid reflection overhead.
-        // 2. `setAccessible` is an illegal-reflective-access because zero-copy String constructor
-        // isn't public, and `java.base/java.lang` isn't open to fury by default.
-        // 3. JavaLangAccess#newStringUnsafe is used by jdk internally and won't be available
-        // in jdk11 if `jdk.internal.misc` are not exported, so we don't use it.
-        // StringBuffer#toString is a synchronized method, so we don't use it to create String.
-        String str = Platform.newInstance(String.class);
-        Platform.putObject(str, STRING_VALUE_FIELD_OFFSET, data);
-        // unsafe is 800% faster than copy for length 230.
-        return str;
-      } else {
-        // 25% faster than unsafe put field, only 10% slower than `new String(str)`
-        return CHARS_STRING_ZERO_COPY_CTR.apply(data, Boolean.TRUE);
-      }
-    } catch (Throwable e) {
-      throw new RuntimeException(e);
-    }
+    // 25% faster than unsafe put field, only 10% slower than `new String(str)`
+    return CHARS_STRING_ZERO_COPY_CTR.apply(data, Boolean.TRUE);
   }
 
   // coder param first to make inline call args
@@ -669,20 +671,6 @@ public final class StringSerializer extends Serializer<String> {
     } catch (Exception e) {
       return null;
     }
-  }
-
-  private static MethodHandles.Lookup getLookup() throws Exception {
-    // This can supress illegal-access and work even --illegal-access=deny for jdk16-.
-    // For JDK16+, this will fail at `lookupClass` field not found.
-    // This will produce unknown behaviour on some version of lombok.
-    MethodHandles.Lookup lookup = ReflectionUtils.unsafeCopy(MethodHandles.lookup());
-    long lookupClassOffset =
-        ReflectionUtils.getFieldOffset(MethodHandles.Lookup.class.getDeclaredField("lookupClass"));
-    long allowedModesOffset =
-        ReflectionUtils.getFieldOffset(MethodHandles.Lookup.class.getDeclaredField("allowedModes"));
-    Platform.putObject(lookup, lookupClassOffset, String.class);
-    Platform.putObject(lookup, allowedModesOffset, -1);
-    return lookup;
   }
 
   public void writeUTF8String(MemoryBuffer buffer, String value) {

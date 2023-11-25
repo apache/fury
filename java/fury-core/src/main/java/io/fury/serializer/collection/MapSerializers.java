@@ -29,7 +29,6 @@ import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
-import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -271,14 +270,21 @@ public class MapSerializers {
   }
 
   public static class EnumMapSerializer extends MapSerializer<EnumMap> {
-    private final long keyTypeFieldOffset;
+    // Make offset compatible with graalvm native image.
+    private static final long keyTypeFieldOffset;
 
-    public EnumMapSerializer(Fury fury, Class<EnumMap> cls) {
+    static {
+      try {
+        keyTypeFieldOffset = Platform.objectFieldOffset(EnumMap.class.getDeclaredField("keyType"));
+      } catch (final Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    public EnumMapSerializer(Fury fury) {
       // getMapKeyValueType(EnumMap.class) will be `K, V` without Enum as key bound.
       // so no need to infer key generics in init.
-      super(fury, cls, true);
-      Field field = ReflectionUtils.getDeclaredField(EnumMap.class, "keyType");
-      keyTypeFieldOffset = ReflectionUtils.getFieldOffset(field);
+      super(fury, EnumMap.class, true);
     }
 
     @Override
@@ -426,7 +432,7 @@ public class MapSerializers {
     fury.registerSerializer(
         ConcurrentSkipListMap.class,
         new ConcurrentSkipListMapSerializer(fury, ConcurrentSkipListMap.class));
-    fury.registerSerializer(EnumMap.class, new EnumMapSerializer(fury, EnumMap.class));
+    fury.registerSerializer(EnumMap.class, new EnumMapSerializer(fury));
     fury.registerSerializer(LazyMap.class, new LazyMapSerializer(fury));
   }
 }

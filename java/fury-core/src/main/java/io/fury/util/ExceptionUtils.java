@@ -16,14 +16,23 @@
 
 package io.fury.util;
 
+import java.lang.reflect.Field;
+
 /**
  * Util for java exceptions.
  *
  * @author chaokunyang
  */
 public class ExceptionUtils {
-  private static final long detailMessageOffset =
-      ReflectionUtils.getFieldOffset(Throwable.class, "detailMessage");
+  private static final Field detailMessageField;
+
+  static {
+    try {
+      detailMessageField = Throwable.class.getDeclaredField("detailMessage");
+    } catch (NoSuchFieldException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   /**
    * Try to set `StackOverflowError` exception message. Returns passed exception if set succeed, or
@@ -31,8 +40,8 @@ public class ExceptionUtils {
    */
   public static StackOverflowError trySetStackOverflowErrorMessage(
       StackOverflowError e, String message) {
-    if (detailMessageOffset != 0) {
-      Platform.putObject(e, detailMessageOffset, message);
+    if (detailMessageField != null) {
+      ReflectionUtils.setObjectFieldValue(e, detailMessageField, message);
       return e;
     } else {
       return null;

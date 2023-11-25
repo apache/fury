@@ -26,6 +26,7 @@ import io.fury.collection.MultiKeyWeakMap;
 import io.fury.util.ClassLoaderUtils;
 import io.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
@@ -40,8 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import io.fury.util.unsafe._JDKAccess;
 import org.slf4j.Logger;
 
 /**
@@ -231,7 +230,7 @@ public class CodeGenerator {
 
   public static synchronized ListeningExecutorService getCompilationService() {
     if (compilationExecutorService == null) {
-      if (_JDKAccess.IS_GRAALVM_BUILD_TIME) {
+      if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
         // GraalVM build time can't reachable thread.
         return compilationExecutorService = MoreExecutors.newDirectExecutorService();
       }

@@ -18,7 +18,6 @@ package io.fury.codegen;
 
 import io.fury.collection.Tuple2;
 import io.fury.util.LoggerFactory;
-import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.io.BufferedInputStream;
@@ -127,12 +126,8 @@ public class JaninoUtils {
       throw new CodegenException(msgBuilder.toString(), e);
     }
     // See https://github.com/janino-compiler/janino/issues/173
-    Platform.putObject(
-        classLoader, ReflectionUtils.getFieldOffset(classLoader.getClass(), "classLoader"), null);
-    Platform.putObject(
-        classLoader,
-        ReflectionUtils.getFieldOffset(classLoader.getClass(), "loadedIClasses"),
-        new HashMap<>());
+    ReflectionUtils.setObjectFieldValue(classLoader, "classLoader", null);
+    ReflectionUtils.setObjectFieldValue(classLoader, "loadedIClasses", new HashMap<>());
     return classes;
   }
 

@@ -41,7 +41,9 @@ public class UnsafeFieldAccessor {
   public UnsafeFieldAccessor(Field field) {
     Preconditions.checkNotNull(field);
     this.field = field;
-    this.fieldOffset = Platform.UNSAFE.objectFieldOffset(field);
+    Preconditions.checkArgument(
+        !Platform.IS_GRAALVM_IMAGE_BUILD_TIME, "Graalvm build time not support");
+    this.fieldOffset = ReflectionUtils.getFieldOffset(field);
     Preconditions.checkArgument(fieldOffset != -1);
   }
 

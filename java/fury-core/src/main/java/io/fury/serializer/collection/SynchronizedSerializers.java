@@ -73,18 +73,21 @@ public class SynchronizedSerializers {
 
   public static final class SynchronizedCollectionSerializer
       extends CollectionSerializer<Collection> {
-
     private final Function factory;
     private final long offset;
 
     public SynchronizedCollectionSerializer(Fury fury, Class cls, Function factory, long offset) {
-      super(fury, cls, false);
+      super(fury, cls, !fury.trackingRef());
       this.factory = factory;
       this.offset = offset;
     }
 
     @Override
     public void write(MemoryBuffer buffer, Collection object) {
+      if (!fury.trackingRef()) {
+        super.write(buffer, object);
+        return;
+      }
       // the ordinal could be replaced by s.th. else (e.g. a explicitly managed "id")
       Object unwrapped = Platform.getObject(object, offset);
       synchronized (object) {
@@ -93,7 +96,21 @@ public class SynchronizedSerializers {
     }
 
     @Override
+    public ArrayList newCollection(MemoryBuffer buffer) {
+      numElements = buffer.readPositiveVarInt();
+      return new ArrayList(numElements);
+    }
+
+    @Override
+    public Collection onCollectionRead(Collection collection) {
+      return (Collection) factory.apply(collection);
+    }
+
+    @Override
     public Collection read(MemoryBuffer buffer) {
+      if (!fury.trackingRef()) {
+        return super.read(buffer);
+      }
       final Object sourceCollection = fury.readRef(buffer);
       return (Collection) factory.apply(sourceCollection);
     }
@@ -199,7 +216,7 @@ public class SynchronizedSerializers {
       for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
         fury.registerSerializer(factory.f0, createSerializer(fury, factory));
       }
-    } catch (NoClassDefFoundError e) {
+    } catch (Throwable e) {
       Utils.ignore(e);
     }
   }
