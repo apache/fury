@@ -189,7 +189,6 @@ case $1 in
       cargo fmt --all -- --check
       cargo fmt --all
       cargo clippy --workspace --all-features --all-targets
-      cargo clippy --workspace --all-features --all-targets --fix
       cargo doc
       cargo build --all-features --all-targets
       cargo test
