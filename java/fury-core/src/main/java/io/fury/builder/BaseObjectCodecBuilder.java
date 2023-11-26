@@ -512,14 +512,14 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       if (hasJITResult) {
         jitCallbackUpdateFields.put(name, ctx.type(cls) + ".class");
         ctx.addField(
-            ctx.type(Serializer.class), name, new Cast(newSerializerExpr, SERIALIZER_TYPE), false);
+            false, ctx.type(Serializer.class), name, new Cast(newSerializerExpr, SERIALIZER_TYPE));
         serializerRef = new Reference(name, SERIALIZER_TYPE, false);
       } else {
         ctx.addField(
+            true,
             ctx.type(serializerClass),
             name,
-            new Cast(newSerializerExpr, serializerTypeToken),
-            true);
+            new Cast(newSerializerExpr, serializerTypeToken));
         serializerRef = fieldRef(name, serializerTypeToken);
       }
       serializerMap.put(cls, serializerRef);
@@ -563,12 +563,12 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       classInfoExpr = inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeToken, clsExpr);
       // Use `ctx.freshName(cls)` to avoid wrong name for arr type.
       String name = ctx.newName(ctx.newName(cls) + "ClassInfo");
-      ctx.addField(ctx.type(ClassInfo.class), name, classInfoExpr, true);
+      ctx.addField(true, ctx.type(ClassInfo.class), name, classInfoExpr);
       classInfoRef = Tuple2.of(fieldRef(name, classInfoTypeToken), false);
     } else {
       classInfoExpr = inlineInvoke(classResolverRef, "nilClassInfo", classInfoTypeToken);
       String name = ctx.newName(StringUtils.uncapitalize(cls.getSimpleName()) + "ClassInfo");
-      ctx.addField(ctx.type(ClassInfo.class), name, classInfoExpr, false);
+      ctx.addField(false, ctx.type(ClassInfo.class), name, classInfoExpr);
       // Can't use fieldRef, since the field is not final.
       classInfoRef = Tuple2.of(new Reference(name, classInfoTypeToken), true);
     }
@@ -591,7 +591,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Expression classInfoHolderExpr =
         inlineInvoke(classResolverRef, "nilClassInfoHolder", classInfoHolderTypeToken);
     String name = ctx.newName(cls, "ClassInfoHolder");
-    ctx.addField(ctx.type(ClassInfoHolder.class), name, classInfoHolderExpr, true);
+    ctx.addField(true, ctx.type(ClassInfoHolder.class), name, classInfoHolderExpr);
     // The class info field read only once, no need to shallow.
     reference = new Reference(name, classInfoHolderTypeToken);
     sharedFieldMap.put(key, reference);

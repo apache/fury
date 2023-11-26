@@ -17,7 +17,10 @@
 package io.fury.codegen;
 
 import com.google.common.reflect.TypeToken;
+import io.fury.codegen.Expression.Invoke;
+import io.fury.codegen.Expression.Literal;
 import io.fury.serializer.Serializer;
+import io.fury.type.TypeUtils;
 import java.util.List;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -74,5 +77,21 @@ public class CodegenContextTest {
           ctx.newNames("serializer", "isNull"), new String[] {"serializer1", "isNull1"});
       Assert.assertEquals(ctx.newName("serializer"), "serializer2");
     }
+  }
+
+  @Test
+  public void testAddStaticField() {
+    CodegenContext ctx = new CodegenContext();
+    ctx.setClassName("Test");
+    ctx.addField(
+        true,
+        true,
+        "int",
+        "f1",
+        new Invoke(Literal.ofString("abc"), "length", TypeUtils.PRIMITIVE_INT_TYPE));
+    String code = ctx.genCode();
+    Assert.assertTrue(code.contains("private static final int f1;"));
+    Assert.assertTrue(code.contains("int value = \"abc\".length();"));
+    Assert.assertTrue(code.contains("catch (Throwable e)"));
   }
 }

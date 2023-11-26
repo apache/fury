@@ -69,7 +69,7 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
 
     // add map class field
     Expression.Literal clsExpr = new Expression.Literal(getRawType(mapToken), CLASS_TYPE);
-    ctx.addField(Class.class.getName(), "mapClass", clsExpr, true);
+    ctx.addField(true, Class.class.getName(), "mapClass", clsExpr);
   }
 
   @Override

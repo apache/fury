@@ -61,7 +61,7 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
 
     // add array class field
     Expression.Literal clsExpr = new Expression.Literal(getRawType(arrayToken), CLASS_TYPE);
-    ctx.addField(Class.class.getName(), "arrayClass", clsExpr, true);
+    ctx.addField(true, Class.class.getName(), "arrayClass", clsExpr);
   }
 
   @Override

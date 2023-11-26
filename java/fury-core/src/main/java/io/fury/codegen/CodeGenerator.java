@@ -413,7 +413,6 @@ public class CodeGenerator {
     }
   }
 
-  /** indent code by 4 spaces. */
   static String indent(String code) {
     return indent(code, 2);
   }
