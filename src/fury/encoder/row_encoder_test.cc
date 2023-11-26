@@ -15,8 +15,9 @@
  */
 
 #include "gtest/gtest.h"
+#include <type_traits>
 
-#include "fury/serializer/field_info.h"
+#include "fury/encoder/row_encoder.h"
 
 namespace fury {
 
@@ -30,37 +31,30 @@ struct A {
 
 FURY_FIELD_INFO(A, x, y, z);
 
-TEST(FieldInfo, Simple) {
-  A a;
-  constexpr auto info = FuryFieldInfo(a);
+TEST(RowEncoder, Simple) {
+  auto field_vector = encoder::RowEncodeTrait<A>::FieldVector();
 
-  static_assert(info.Size == 3);
+  static_assert(std::is_same_v<decltype(field_vector), arrow::FieldVector>);
 
-  static_assert(info.Names[0] == "x");
-  static_assert(info.Names[1] == "y");
-  static_assert(info.Names[2] == "z");
+  ASSERT_EQ(field_vector.size(), 3);
+  ASSERT_EQ(field_vector[0]->name(), "x");
+  ASSERT_EQ(field_vector[1]->name(), "y");
+  ASSERT_EQ(field_vector[2]->name(), "z");
 
-  static_assert(std::get<0>(info.Ptrs) == &A::x);
-  static_assert(std::get<1>(info.Ptrs) == &A::y);
-  static_assert(std::get<2>(info.Ptrs) == &A::z);
-}
+  ASSERT_EQ(field_vector[0]->type()->name(), "int32");
+  ASSERT_EQ(field_vector[1]->type()->name(), "float");
+  ASSERT_EQ(field_vector[2]->type()->name(), "bool");
 
-struct B {
-  A a;
-  int hidden;
-};
+  RowWriter writer(arrow::schema(field_vector));
+  writer.Reset();
 
-FURY_FIELD_INFO(B, a);
+  A a{233, 3.14, true};
+  encoder::RowEncodeTrait<A>::Write(a, writer);
 
-TEST(FieldInfo, Hidden) {
-  B b;
-  constexpr auto info = FuryFieldInfo(b);
-
-  static_assert(info.Size == 1);
-
-  static_assert(info.Names[0] == "a");
-
-  static_assert(std::get<0>(info.Ptrs) == &B::a);
+  auto row = writer.ToRow();
+  ASSERT_EQ(row->GetInt32(0), 233);
+  ASSERT_FLOAT_EQ(row->GetFloat(1), 3.14);
+  ASSERT_EQ(row->GetBoolean(2), true);
 }
 
 } // namespace test

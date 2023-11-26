@@ -16,7 +16,7 @@
 
 #include "gtest/gtest.h"
 
-#include "fury/serializer/preprocessor.h"
+#include "fury/encoder/preprocessor.h"
 
 namespace fury {
 

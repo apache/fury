@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "fury/serializer/preprocessor.h"
+#include "fury/encoder/preprocessor.h"
 #include <array>
 #include <string_view>
 #include <tuple>
@@ -24,7 +24,7 @@
 
 namespace fury {
 
-namespace serializer {
+namespace encoder {
 
 namespace details {
 
@@ -44,7 +44,7 @@ template <typename T> constexpr auto FuryFieldInfo(const T &) noexcept {
                 "FURY_FIELD_INFO for type T is expected but not defined");
 }
 
-} // namespace serializer
+} // namespace encoder
 
 } // namespace fury
 
@@ -61,6 +61,7 @@ template <typename T> constexpr auto FuryFieldInfo(const T &) noexcept {
   template <typename> struct FuryFieldInfoImpl;                                \
   template <> struct FuryFieldInfoImpl<type> {                                 \
     static inline constexpr size_t Size = FURY_PP_NARG(__VA_ARGS__);           \
+    static inline constexpr std::string_view Name = #type;                     \
     static inline constexpr std::array<std::string_view, Size> Names = {       \
         FURY_PP_FOREACH(FURY_FIELD_INFO_NAMES_FUNC, __VA_ARGS__)};             \
     static inline constexpr auto Ptrs = std::tuple{                            \

@@ -44,8 +44,8 @@
 
 // HOW TO GENERATE:
 // for n in range(1, 64):
-//   params = ', '.join(f'_{i}' for i in range(1,n+1))
-//   calls = ' '.join(f'X(_{i})' for i in range(1,n+1))
+//   params = ', '.join(f'_{i}' for i in range(1, n+1))
+//   calls = ' '.join(f'X(_{i})' for i in range(1, n+1))
 //   print(f"#define FURY_PP_FOREACH_IMPL_{n}(X, {params}) {calls}")
 
 // NOTE: we disable clang-format here since it will change everytimes
@@ -122,8 +122,8 @@
 
 // HOW TO GENERATE:
 // for n in range(1, 64):
-//   params = ', '.join(f'_{i}' for i in range(1,n+1))
-//   calls = ' '.join(f'X(C, _{i})' for i in range(1,n+1))
+//   params = ', '.join(f'_{i}' for i in range(1, n+1))
+//   calls = ' '.join(f'X(C, _{i})' for i in range(1, n+1))
 //   print(f"#define FURY_PP_FOREACH_1_IMPL_{n}(X, C, {params}) {calls}")
 
 // NOTE: we disable clang-format here since it will change everytimes
