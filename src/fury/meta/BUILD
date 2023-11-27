@@ -29,3 +29,13 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_test(
+    name = "type_traits_test",
+    srcs = ["type_traits_test.cc"],
+    copts = COPTS,
+    deps = [
+        ":fury_meta",
+        "@com_google_googletest//:gtest",
+    ],
+)
