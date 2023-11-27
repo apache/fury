@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "fury/encoder/preprocessor.h"
+#include "fury/meta/preprocessor.h"
 #include <array>
 #include <string_view>
 #include <tuple>
@@ -24,7 +24,7 @@
 
 namespace fury {
 
-namespace encoder {
+namespace meta {
 
 namespace details {
 
@@ -44,7 +44,7 @@ template <typename T> constexpr auto FuryFieldInfo(const T &) noexcept {
                 "FURY_FIELD_INFO for type T is expected but not defined");
 }
 
-} // namespace encoder
+} // namespace meta
 
 } // namespace fury
 

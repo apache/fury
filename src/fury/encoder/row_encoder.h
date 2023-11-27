@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "fury/encoder/field_info.h"
+#include "fury/meta/field_info.h"
 #include "fury/row/row.h"
 #include "src/fury/row/writer.h"
 #include <type_traits>
@@ -77,6 +77,8 @@ inline std::string StringViewToString(std::string_view s) {
 template <auto> using Void = void;
 
 } // namespace details
+
+using meta::FuryFieldInfo;
 
 // RowEncodeTrait<T> defines how to serialize `T` to the row format
 // it includes:

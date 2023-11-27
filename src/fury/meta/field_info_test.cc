@@ -16,7 +16,7 @@
 
 #include "gtest/gtest.h"
 
-#include "fury/encoder/field_info.h"
+#include "fury/meta/field_info.h"
 
 namespace fury {
 

@@ -2,25 +2,30 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load("//bazel:fury.bzl", "COPTS")
 
 cc_library(
-    name = "fury_encoder",
+    name = "fury_meta",
     srcs = glob(["*.cc"], exclude=["*test.cc"]),
     hdrs = glob(["*.h"]),
     strip_include_prefix = "/src",
-    deps = [
-      "@local_config_pyarrow//:arrow", 
-      "//src/fury/row:fury_row_format",
-      "//src/fury/meta:fury_meta"
-    ],
     copts = COPTS,
     visibility = ["//visibility:public"],
 )
 
 cc_test(
-    name = "row_encoder_test",
-    srcs = ["row_encoder_test.cc"],
+    name = "preprocessor_test",
+    srcs = ["preprocessor_test.cc"],
     copts = COPTS,
     deps = [
-        ":fury_encoder",
+        ":fury_meta",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "field_info_test",
+    srcs = ["field_info_test.cc"],
+    copts = COPTS,
+    deps = [
+        ":fury_meta",
         "@com_google_googletest//:gtest",
     ],
 )

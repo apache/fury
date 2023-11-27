@@ -16,7 +16,7 @@
 
 #include "gtest/gtest.h"
 
-#include "fury/encoder/preprocessor.h"
+#include "fury/meta/preprocessor.h"
 
 namespace fury {
 
