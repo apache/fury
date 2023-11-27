@@ -45,7 +45,7 @@ public class CodegenSerializerTest extends FuryTestBase {
 
   @Data
   public static class B {
-    public Object f1;
+    private Object f1;
     public Object f2;
     public String f3;
   }
