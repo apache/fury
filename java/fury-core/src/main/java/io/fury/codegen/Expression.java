@@ -791,14 +791,34 @@ public interface Expression {
     }
   }
 
-  class Invoke extends Inlineable {
+  abstract class BaseInvoke extends Inlineable {
+    final String functionName;
+    final TypeToken<?> type;
+    Expression[] arguments;
+    String returnNamePrefix;
+    final boolean returnNullable;
+    boolean needTryCatch;
+
+    public BaseInvoke(
+        String functionName,
+        TypeToken<?> type,
+        Expression[] arguments,
+        String returnNamePrefix,
+        boolean returnNullable,
+        boolean inline,
+        boolean needTryCatch) {
+      this.functionName = functionName;
+      this.type = type;
+      this.arguments = arguments;
+      this.returnNamePrefix = returnNamePrefix;
+      this.returnNullable = returnNullable;
+      inlineCall = inline;
+      this.needTryCatch = needTryCatch;
+    }
+  }
+
+  class Invoke extends BaseInvoke {
     public Expression targetObject;
-    public final String functionName;
-    public final TypeToken<?> type;
-    public Expression[] arguments;
-    private String returnNamePrefix;
-    private final boolean returnNullable;
-    private final boolean needTryCatch;
 
     /** Invoke don't return value, this is a procedure call for side effect. */
     public Invoke(Expression targetObject, String functionName, Expression... arguments) {
@@ -855,13 +875,8 @@ public interface Expression {
         boolean returnNullable,
         boolean needTryCatch,
         Expression... arguments) {
+      super(functionName, type, arguments, returnNamePrefix, returnNullable, false, needTryCatch);
       this.targetObject = targetObject;
-      this.functionName = functionName;
-      this.returnNamePrefix = returnNamePrefix;
-      this.type = type;
-      this.returnNullable = returnNullable;
-      this.arguments = arguments;
-      this.needTryCatch = needTryCatch;
     }
 
     public static Invoke inlineInvoke(
@@ -983,14 +998,8 @@ public interface Expression {
     }
   }
 
-  class StaticInvoke extends Inlineable {
-    private final boolean needTryCatch;
+  class StaticInvoke extends BaseInvoke {
     private final Class<?> staticObject;
-    private final String functionName;
-    private String returnNamePrefix;
-    private final TypeToken<?> type;
-    private Expression[] arguments;
-    private final boolean returnNullable;
 
     public StaticInvoke(Class<?> staticObject, String functionName, TypeToken<?> type) {
       this(staticObject, functionName, type, false);
@@ -1043,14 +1052,15 @@ public interface Expression {
         boolean returnNullable,
         boolean inline,
         Expression... arguments) {
+      super(
+          functionName,
+          type,
+          arguments,
+          returnNamePrefix,
+          returnNullable,
+          inline,
+          ReflectionUtils.hasException(staticObject, functionName));
       this.staticObject = staticObject;
-      this.functionName = functionName;
-      this.type = type;
-      this.arguments = arguments;
-      this.returnNullable = returnNullable;
-      this.returnNamePrefix = returnNamePrefix;
-      this.inlineCall = inline;
-      this.needTryCatch = ReflectionUtils.hasException(staticObject, functionName);
       if (inline && needTryCatch) {
         throw new UnsupportedOperationException(
             String.format(
