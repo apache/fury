@@ -17,6 +17,7 @@
 #pragma once
 
 #include "fury/meta/field_info.h"
+#include "fury/meta/type_traits.h"
 #include "fury/row/row.h"
 #include "src/fury/row/writer.h"
 #include <type_traits>
@@ -58,18 +59,6 @@ template <> struct ArrowSchemaBasicType<double> {
   static inline constexpr const auto value = arrow::float64;
 };
 
-template <typename> struct RemoveMemberPointer;
-
-template <typename T, typename U> struct RemoveMemberPointer<T U::*> {
-  using type = T;
-};
-
-template <typename T>
-using RemoveMemberPointerT = typename RemoveMemberPointer<T>::type;
-
-template <typename T>
-using RemoveCVRefT = std::remove_cv_t<std::remove_reference_t<T>>;
-
 inline std::string StringViewToString(std::string_view s) {
   return {s.begin(), s.end()};
 }
@@ -104,8 +93,8 @@ struct RowEncodeTrait<T, std::enable_if_t<std::is_class_v<T>>> {
   static arrow::FieldVector FieldVectorImpl(std::index_sequence<I...>) {
     return {arrow::field(
         details::StringViewToString(FieldInfo::Names[I]),
-        RowEncodeTrait<details::RemoveMemberPointerT<details::RemoveCVRefT<
-            decltype(std::get<I>(FieldInfo::Ptrs))>>>::Type())...};
+        RowEncodeTrait<meta::RemoveMemberPointerCVRefT<decltype(std::get<I>(
+            FieldInfo::Ptrs))>>::Type())...};
   }
 
   static auto FieldVector() {
@@ -122,9 +111,9 @@ struct RowEncodeTrait<T, std::enable_if_t<std::is_class_v<T>>> {
   template <typename FieldInfo, size_t... I>
   static auto WriteImpl(const T &value, RowWriter &writer,
                         std::index_sequence<I...>) {
-    (RowEncodeTrait<details::RemoveMemberPointerT<
-         details::RemoveCVRefT<decltype(std::get<I>(FieldInfo::Ptrs))>>>::
-         Write(value.*std::get<I>(FieldInfo::Ptrs), writer, I),
+    (RowEncodeTrait<meta::RemoveMemberPointerCVRefT<decltype(std::get<I>(
+         FieldInfo::Ptrs))>>::Write(value.*std::get<I>(FieldInfo::Ptrs), writer,
+                                    I),
      ...);
   }
 

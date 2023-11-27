@@ -17,22 +17,16 @@
 #pragma once
 
 #include "fury/meta/preprocessor.h"
+#include "fury/meta/type_traits.h"
 #include <array>
 #include <string_view>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 
 namespace fury {
 
 namespace meta {
-
-namespace details {
-
-// dependent name for constant `false` to workaround static_assert(false) issue
-// before C++23
-template <typename T> constexpr inline bool AlwaysFalse = false;
-
-} // namespace details
 
 // decltype(FuryFieldInfo<T>(v)) records field meta information for type T
 // it includes:
@@ -40,8 +34,23 @@ template <typename T> constexpr inline bool AlwaysFalse = false;
 // - field names: typed `std::string_view`
 // - field member points: typed `decltype(a) T::*` for any member `T::a`
 template <typename T> constexpr auto FuryFieldInfo(const T &) noexcept {
-  static_assert(details::AlwaysFalse<T>,
+  static_assert(AlwaysFalse<T>,
                 "FURY_FIELD_INFO for type T is expected but not defined");
+}
+
+namespace details {
+
+// it must be able to be executed in compile-time
+template <typename FieldInfo, size_t... I>
+constexpr bool IsValidFieldInfoImpl(std::index_sequence<I...>) {
+  return IsUnique<std::get<I>(FieldInfo::Ptrs)...>::value;
+}
+
+} // namespace details
+
+template <typename FieldInfo> constexpr bool IsValidFieldInfo() {
+  return details::IsValidFieldInfoImpl<FieldInfo>(
+      std::make_index_sequence<FieldInfo::Size>{});
 }
 
 } // namespace meta
@@ -67,6 +76,9 @@ template <typename T> constexpr auto FuryFieldInfo(const T &) noexcept {
     static inline constexpr auto Ptrs = std::tuple{                            \
         FURY_PP_FOREACH_1(FURY_FIELD_INFO_PTRS_FUNC, type, __VA_ARGS__)};      \
   };                                                                           \
+  static_assert(                                                               \
+      fury::meta::IsValidFieldInfo<FuryFieldInfoImpl<type>>(),                 \
+      "duplicated fields in FURY_FIELD_INFO arguments are detected");          \
   inline constexpr auto FuryFieldInfo(const type &) noexcept {                 \
     return FuryFieldInfoImpl<type>{};                                          \
   };
