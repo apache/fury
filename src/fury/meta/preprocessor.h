@@ -17,6 +17,9 @@
 #pragma once
 
 #define FURY_PP_CONCAT_IMPL(a, b) a##b
+
+// We use a two-step macro expansion process to ensure that arguments
+// passed to the macros are fully expanded before they are concatenated.
 #define FURY_PP_CONCAT(a, b) FURY_PP_CONCAT_IMPL(a, b)
 
 #define FURY_PP_NARG_IMPL(...) FURY_PP_NARG_CALC(__VA_ARGS__)
@@ -37,6 +40,8 @@
       8, 7, 6, 5, 4, 3, 2, 1, 0
 
 #define FURY_PP_INVOKE(X, ...) X(__VA_ARGS__)
+
+// FURY_PP_FOREACH(X, a, b, c) -> X(a) X(b) X(c)
 #define FURY_PP_FOREACH(X, ...)                                                \
   FURY_PP_INVOKE(                                                              \
       FURY_PP_CONCAT(FURY_PP_FOREACH_IMPL_, FURY_PP_NARG(__VA_ARGS__)), X,     \
@@ -113,12 +118,14 @@
 #define FURY_PP_FOREACH_IMPL_61(X, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _60, _61) X(_1) X(_2) X(_3) X(_4) X(_5) X(_6) X(_7) X(_8) X(_9) X(_10) X(_11) X(_12) X(_13) X(_14) X(_15) X(_16) X(_17) X(_18) X(_19) X(_20) X(_21) X(_22) X(_23) X(_24) X(_25) X(_26) X(_27) X(_28) X(_29) X(_30) X(_31) X(_32) X(_33) X(_34) X(_35) X(_36) X(_37) X(_38) X(_39) X(_40) X(_41) X(_42) X(_43) X(_44) X(_45) X(_46) X(_47) X(_48) X(_49) X(_50) X(_51) X(_52) X(_53) X(_54) X(_55) X(_56) X(_57) X(_58) X(_59) X(_60) X(_61)
 #define FURY_PP_FOREACH_IMPL_62(X, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _60, _61, _62) X(_1) X(_2) X(_3) X(_4) X(_5) X(_6) X(_7) X(_8) X(_9) X(_10) X(_11) X(_12) X(_13) X(_14) X(_15) X(_16) X(_17) X(_18) X(_19) X(_20) X(_21) X(_22) X(_23) X(_24) X(_25) X(_26) X(_27) X(_28) X(_29) X(_30) X(_31) X(_32) X(_33) X(_34) X(_35) X(_36) X(_37) X(_38) X(_39) X(_40) X(_41) X(_42) X(_43) X(_44) X(_45) X(_46) X(_47) X(_48) X(_49) X(_50) X(_51) X(_52) X(_53) X(_54) X(_55) X(_56) X(_57) X(_58) X(_59) X(_60) X(_61) X(_62)
 #define FURY_PP_FOREACH_IMPL_63(X, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _60, _61, _62, _63) X(_1) X(_2) X(_3) X(_4) X(_5) X(_6) X(_7) X(_8) X(_9) X(_10) X(_11) X(_12) X(_13) X(_14) X(_15) X(_16) X(_17) X(_18) X(_19) X(_20) X(_21) X(_22) X(_23) X(_24) X(_25) X(_26) X(_27) X(_28) X(_29) X(_30) X(_31) X(_32) X(_33) X(_34) X(_35) X(_36) X(_37) X(_38) X(_39) X(_40) X(_41) X(_42) X(_43) X(_44) X(_45) X(_46) X(_47) X(_48) X(_49) X(_50) X(_51) X(_52) X(_53) X(_54) X(_55) X(_56) X(_57) X(_58) X(_59) X(_60) X(_61) X(_62) X(_63)
+// clang-format on
 
+// different than FURY_PP_FOREACH, this macro can accept a two-argument function
+// macro as input, e.g. FURY_PP_FOREACH_1(X, C, a, b) -> X(C, a) X(C, b)
 #define FURY_PP_FOREACH_1(X, C, ...)                                           \
   FURY_PP_INVOKE(                                                              \
       FURY_PP_CONCAT(FURY_PP_FOREACH_1_IMPL_, FURY_PP_NARG(__VA_ARGS__)), X,   \
       C, __VA_ARGS__)
-// clang-format on
 
 // HOW TO GENERATE:
 // for n in range(1, 64):
