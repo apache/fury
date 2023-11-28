@@ -47,9 +47,10 @@ public class ThreadLocalFury implements ThreadSafeFury {
               binding.setClassLoader(Thread.currentThread().getContextClassLoader());
               return binding;
             });
-    // init and warm for current thread.
+    // 1. init and warm for current thread.
     // Fury creation took about 1~2 ms, but first creation
     // in a process load some classes which is not cheap.
+    // 2. Make fury generate code at graalvm build time.
     bindingThreadLocal.get().get();
   }
 

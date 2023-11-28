@@ -14,34 +14,37 @@
  * limitations under the License.
  */
 
-package io.fury.graalvm;
+package io.fury.graalvm.record;
 
 import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
+import io.fury.graalvm.Foo;
+import io.fury.util.Preconditions;
 
-import java.io.FilePermission;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class Hello {
+public class RecordExample {
+  private record PrivateFoo (
+    int f1,
+    String f2,
+    List<String> f3,
+    Map<String, Long> f4) {
+  }
+
   static Fury fury;
 
   static {
     fury = Fury.builder().requireClassRegistration(true).build();
-    fury.register(Foo.class);
-    // Generate serializer code.
-    fury.getClassResolver().getSerializer(Foo.class);
+    // register and generate serializer code.
+    fury.register(PrivateFoo.class, true);
   }
 
   public static void main(String[] args) {
-    System.out.println("main================");
-    Foo foo = new Foo(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
-    byte[] bytes = fury.serialize(foo);
-    System.out.println(fury.getClassResolver().getSerializer(Foo.class));
-    Object o = fury.deserialize(bytes);
+    PrivateFoo foo = new PrivateFoo(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
     System.out.println(foo);
+    byte[] bytes = fury.serialize(foo);
+    Object o = fury.deserialize(bytes);
     System.out.println(o);
-    System.out.println(foo.equals(o));
+    Preconditions.checkArgument(foo.equals(o));
   }
 }
