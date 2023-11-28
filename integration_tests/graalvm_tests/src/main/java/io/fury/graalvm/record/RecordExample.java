@@ -17,7 +17,6 @@
 package io.fury.graalvm.record;
 
 import io.fury.Fury;
-import io.fury.graalvm.Foo;
 import io.fury.util.Preconditions;
 
 import java.util.List;
