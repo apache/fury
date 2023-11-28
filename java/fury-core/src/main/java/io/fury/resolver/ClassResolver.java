@@ -131,6 +131,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -782,6 +783,7 @@ public class ClassResolver {
   }
 
   public Class<? extends Serializer> getSerializerClass(Class<?> cls) {
+
     boolean codegen =
         supportCodegenForJavaSerialization(cls) && fury.getConfig().isCodeGenEnabled();
     return getSerializerClass(cls, codegen);
@@ -791,6 +793,10 @@ public class ClassResolver {
     if (ReflectionUtils.isAbstract(cls) || cls.isInterface()) {
       throw new UnsupportedOperationException(
           String.format("Class %s doesn't support serialization.", cls));
+    }
+    Class<? extends Serializer> serializerClass = getSerializerClassFromGraalvmRegistry(cls);
+    if (serializerClass != null) {
+      return serializerClass;
     }
     cls = TypeUtils.boxedType(cls);
     ClassInfo classInfo = classInfoMap.get(cls);
@@ -843,8 +849,7 @@ public class ClassResolver {
       if (isCollection(cls)) {
         // Serializer of common collection such as ArrayList/LinkedList should be registered
         // already.
-        Class<? extends Serializer> serializerClass =
-            ChildContainerSerializers.getCollectionSerializerClass(cls);
+        serializerClass = ChildContainerSerializers.getCollectionSerializerClass(cls);
         if (serializerClass != null) {
           return serializerClass;
         }
@@ -858,8 +863,7 @@ public class ClassResolver {
         }
       } else if (isMap(cls)) {
         // Serializer of common map such as HashMap/LinkedHashMap should be registered already.
-        Class<? extends Serializer> serializerClass =
-            ChildContainerSerializers.getMapSerializerClass(cls);
+        serializerClass = ChildContainerSerializers.getMapSerializerClass(cls);
         if (serializerClass != null) {
           return serializerClass;
         }
@@ -1789,5 +1793,25 @@ public class ClassResolver {
 
   public Fury getFury() {
     return fury;
+  }
+
+  private static final ConcurrentMap<Integer, ClassResolver> GRAALVM_REGISTRY = new ConcurrentHashMap<>();
+
+  // CHECKSTYLE.OFF:MethodName
+  public static void _addGraalvmClassRegistry(int furyConfigHash, ClassResolver classResolver) {
+    // CHECKSTYLE.ON:MethodName
+    GRAALVM_REGISTRY.put(furyConfigHash, classResolver);
+  }
+
+  private Class<? extends Serializer> getSerializerClassFromGraalvmRegistry(Class<?> cls) {
+    if (Platform.IS_GRAALVM_IMAGE_RUN_TIME) {
+      ClassResolver classResolver = GRAALVM_REGISTRY.get(fury.getConfig().getConfigHash());
+      if (classResolver != null && classResolver != this) {
+        ClassInfo classInfo = classResolver.classInfoMap.get(cls);
+        Preconditions.checkArgument(classInfo != null, "Class %s is not registered", cls);
+        return Objects.requireNonNull(classInfo).serializer.getClass();
+      }
+    }
+    return null;
   }
 }

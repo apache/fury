@@ -18,6 +18,7 @@ package io.fury;
 
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.resolver.ClassResolver;
 import io.fury.util.LoaderBinding;
 import io.fury.util.LoaderBinding.StagingType;
 import java.nio.ByteBuffer;
@@ -33,7 +34,6 @@ import javax.annotation.concurrent.ThreadSafe;
  */
 @ThreadSafe
 public class ThreadLocalFury implements ThreadSafeFury {
-
   private final ThreadLocal<MemoryBuffer> bufferLocal =
       ThreadLocal.withInitial(() -> MemoryUtils.buffer(32));
 
@@ -51,7 +51,9 @@ public class ThreadLocalFury implements ThreadSafeFury {
     // Fury creation took about 1~2 ms, but first creation
     // in a process load some classes which is not cheap.
     // 2. Make fury generate code at graalvm build time.
-    bindingThreadLocal.get().get();
+    Fury fury = bindingThreadLocal.get().get();
+    ClassResolver._addGraalvmClassRegistry(
+      fury.getConfig().getConfigHash(), fury.getClassResolver());
   }
 
   public <R> R execute(Function<Fury, R> action) {

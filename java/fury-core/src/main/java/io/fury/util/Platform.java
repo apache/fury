@@ -36,6 +36,7 @@ public final class Platform {
 
   public static final int JAVA_VERSION = _JDKAccess.JAVA_VERSION;
   public static final boolean IS_GRAALVM_IMAGE_BUILD_TIME = _JDKAccess.IS_GRAALVM_IMAGE_BUILD_TIME;
+  public static final boolean IS_GRAALVM_IMAGE_RUN_TIME = _JDKAccess.IS_GRAALVM_IMAGE_RUN_TIME;
   public static final boolean IS_LITTLE_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
 
   public static final int BOOLEAN_ARRAY_OFFSET;
