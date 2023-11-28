@@ -28,12 +28,14 @@ import io.fury.format.encoder.Encoders;
 import io.fury.format.encoder.RowEncoder;
 import io.fury.format.row.binary.BinaryRow;
 import io.fury.format.type.DataTypes;
+import io.fury.format.vectorized.ArrowSerializers;
 import io.fury.format.vectorized.ArrowTable;
 import io.fury.format.vectorized.ArrowUtils;
 import io.fury.format.vectorized.ArrowWriter;
 import io.fury.io.FuryOutputStream;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferObject;
 import io.fury.util.LoggerFactory;
 import java.io.IOException;
@@ -366,6 +368,7 @@ public class CrossLanguageTest {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .build();
+    ArrowSerializers.registerSerializers(fury);
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     int size = 2000;
     VectorSchemaRoot root = createVectorSchemaRoot(size);
@@ -406,6 +409,7 @@ public class CrossLanguageTest {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .build();
+    ArrowSerializers.registerSerializers(fury);
 
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     int size = 2000;
