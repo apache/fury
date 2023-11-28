@@ -52,6 +52,9 @@ import java.util.Arrays;
  * <p>TODO(chaokunyang) Let grow/readerIndex/writerIndex handled in this class and Make immutable
  * part as separate class, and use composition in this class. In this way, all fields can be final
  * and access will be much faster.
+ *
+ * <p>The instance of this class should not be hold on graalvm build time, the heap unsafe offset
+ * are not correct in runtime since graalvm will change array base offset.
  */
 // FIXME Buffer operations is most common, and jvm inline and branch elimination
 // is not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually.
@@ -61,6 +64,7 @@ public final class MemoryBuffer {
   // The unsafe handle for transparent memory copied (heap/off-heap).
   private static final sun.misc.Unsafe UNSAFE = Platform.UNSAFE;
   // The beginning of the byte array contents, relative to the byte array object.
+  // Note: this offset will change between graalvm build time and runtime.
   private static final long BYTE_ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
   // Constant that flags the byte order. Because this is a boolean constant, the JIT compiler can
   // use this well to aggressively eliminate the non-applicable code paths.
@@ -100,6 +104,8 @@ public final class MemoryBuffer {
    */
   private MemoryBuffer(byte[] buffer, int offset, int length) {
     Preconditions.checkArgument(offset >= 0 && length >= 0);
+    assert !Platform.IS_GRAALVM_IMAGE_BUILD_TIME
+        : "MemoryBuffer is not allowed for creation in graalvm build time";
     if (offset + length > buffer.length) {
       throw new IllegalArgumentException(
           String.format("%d exceeds buffer size %d", offset + length, buffer.length));
@@ -2510,6 +2516,8 @@ public final class MemoryBuffer {
         + writerIndex
         + ", heapMemory="
         + (heapMemory == null ? null : "len(" + heapMemory.length + ")")
+        + ", heapData="
+        + Arrays.toString(heapMemory)
         + ", heapOffset="
         + heapOffset
         + ", offHeapBuffer="

@@ -162,6 +162,10 @@
               <agent>
                 <enabled>true</enabled>
               </agent>
+              <buildArgs>
+                <!-- for fast build -->
+                <!-- <buildArg>-Ob</buildArg> -->
+              </buildArgs>
             </configuration>
           </plugin>
           <plugin>
