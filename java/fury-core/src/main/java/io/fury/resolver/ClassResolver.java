@@ -443,6 +443,13 @@ public class ClassResolver {
     }
   }
 
+  public void register(Class<?> cls, boolean createSerializer) {
+    register(cls);
+    if (createSerializer) {
+      getSerializer(cls);
+    }
+  }
+
   /** register class with given type tag which will be used for cross-language serialization. */
   public void register(Class<?> cls, String typeTag) {
     if (fury.getLanguage() == Language.JAVA) {
@@ -497,6 +504,13 @@ public class ClassResolver {
       extRegistry.registeredClasses.put(cls.getName(), cls);
       extRegistry.registeredClassIdCounter++;
       extRegistry.registeredId2Classes.put(id, cls);
+    }
+  }
+
+  public void register(Class<?> cls, Short id, boolean createSerializer) {
+    register(cls, id);
+    if (createSerializer) {
+      getSerializer(cls);
     }
   }
 

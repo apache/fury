@@ -143,9 +143,32 @@ public final class Fury {
     classResolver.register(cls);
   }
 
+  /**
+   * Register class.
+   *
+   * @param cls class to register
+   * @param createSerializer whether to create serializer, if true and codegen enabled, this will
+   *     generate the serializer code too.
+   */
+  public void register(Class<?> cls, boolean createSerializer) {
+    classResolver.register(cls, createSerializer);
+  }
+
   /** register class with given id. */
   public void register(Class<?> cls, Short id) {
     classResolver.register(cls, id);
+  }
+
+  /**
+   * Register class with specified id.
+   *
+   * @param cls class to register
+   * @param id id for provided class.
+   * @param createSerializer whether to create serializer, if true and codegen enabled, this will
+   *     generate the serializer code too.
+   */
+  public void register(Class<?> cls, Short id, boolean createSerializer) {
+    classResolver.register(cls, id, createSerializer);
   }
 
   /** register class with given type tag which will be used for cross-language serialization. */
