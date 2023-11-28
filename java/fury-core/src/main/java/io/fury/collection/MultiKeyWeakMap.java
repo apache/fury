@@ -86,23 +86,27 @@ public class MultiKeyWeakMap<T> {
   private interface KeyReference {}
 
   private static final class NoCallbackRef implements KeyReference {
-    private final Object o;
+    private final Object obj;
 
-    private NoCallbackRef(Object o) {
-      this.o = o;
+    private NoCallbackRef(Object obj) {
+      this.obj = obj;
     }
 
     @Override
     public boolean equals(Object o1) {
-      if (this == o1) return true;
-      if (o1 == null || getClass() != o1.getClass()) return false;
+      if (this == o1) {
+        return true;
+      }
+      if (o1 == null || getClass() != o1.getClass()) {
+        return false;
+      }
       NoCallbackRef that = (NoCallbackRef) o1;
-      return Objects.equals(o, that.o);
+      return Objects.equals(obj, that.obj);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(o);
+      return Objects.hash(obj);
     }
   }
 
