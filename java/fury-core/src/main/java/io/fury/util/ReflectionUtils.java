@@ -330,26 +330,16 @@ public class ReflectionUtils {
     return results;
   }
 
-  public static final ConcurrentMap<Class<?>, Object> graalvmHoldFields = new ConcurrentHashMap();
-
   public static long getFieldOffset(Field field) {
+    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+      // See more details at
+      // https://www.graalvm.org/latest/reference-manual/native-image/metadata/Compatibility/#unsafe-memory-access
+      throw new IllegalStateException(
+          "Field offset will change between graalvm build time and runtime, "
+              + "should bye accessed by following graalvm auto rewrite pattern.");
+    }
     if (field == null) {
       return -1;
-    }
-    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
-      Class<?> declaringClass = field.getDeclaringClass();
-      String className = declaringClass.getName();
-      if (!className.startsWith("io.fury.codegen")
-          && !className.contains("shaded.janino")
-          && className.startsWith("io.fury.builder")) {
-        graalvmHoldFields.computeIfAbsent(
-            declaringClass,
-            k -> {
-              List<Field> fields = getFields(declaringClass, true);
-              fields.forEach(f -> f.setAccessible(true));
-              return fields;
-            });
-      }
     }
     return Platform.objectFieldOffset(field);
   }
@@ -370,11 +360,11 @@ public class ReflectionUtils {
   }
 
   public static void setObjectFieldValue(Object obj, Field field, Object value) {
-    Platform.putObject(obj, getFieldOffset(field), value);
+    Platform.putObject(obj, Platform.objectFieldOffset(field), value);
   }
 
   public static <T> T getObjectFieldValue(Object obj, Field field) {
-    return (T) Platform.getObject(obj, getFieldOffset(field));
+    return (T) Platform.getObject(obj, Platform.objectFieldOffset(field));
   }
 
   /**
@@ -388,7 +378,7 @@ public class ReflectionUtils {
     while (cls != Object.class) {
       try {
         Field field = cls.getDeclaredField(fieldName);
-        long fieldOffset = getFieldOffset(field);
+        long fieldOffset = Platform.objectFieldOffset(field);
         return Platform.getObject(obj, fieldOffset);
         // CHECKSTYLE.OFF:EmptyCatchBlock
       } catch (NoSuchFieldException ignored) {

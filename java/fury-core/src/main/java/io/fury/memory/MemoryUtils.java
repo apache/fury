@@ -18,11 +18,15 @@ package io.fury.memory;
 
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 
+/**
+ * Memory utils for fury.
+ *
+ * @author chaokunyang
+ */
 public class MemoryUtils {
 
   public static MemoryBuffer buffer(int size) {
@@ -64,17 +68,31 @@ public class MemoryUtils {
     }
   }
 
-  private static final long BAS_BUF_BUF =
-      ReflectionUtils.getFieldOffsetChecked(ByteArrayOutputStream.class, "buf");
-  private static final long BAS_BUF_COUNT =
-      ReflectionUtils.getFieldOffsetChecked(ByteArrayOutputStream.class, "count");
+  // Lazy load offset and also follow graalvm offset auto replace pattern.
+  private static class Offset {
+    private static final long BAS_BUF_BUF;
+    private static final long BAS_BUF_COUNT;
+    private static final long BIS_BUF_BUF;
+    private static final long BIS_BUF_POS;
+    private static final long BIS_BUF_COUNT;
 
-  private static final long BIS_BUF_BUF =
-      ReflectionUtils.getFieldOffsetChecked(ByteArrayInputStream.class, "buf");
-  private static final long BIS_BUF_POS =
-      ReflectionUtils.getFieldOffsetChecked(ByteArrayInputStream.class, "pos");
-  private static final long BIS_BUF_COUNT =
-      ReflectionUtils.getFieldOffsetChecked(ByteArrayInputStream.class, "count");
+    static {
+      try {
+        BAS_BUF_BUF =
+            Platform.objectFieldOffset(ByteArrayOutputStream.class.getDeclaredField("buf"));
+        BAS_BUF_COUNT =
+            Platform.objectFieldOffset(ByteArrayOutputStream.class.getDeclaredField("count"));
+        BIS_BUF_BUF =
+            Platform.objectFieldOffset(ByteArrayInputStream.class.getDeclaredField("buf"));
+        BIS_BUF_POS =
+            Platform.objectFieldOffset(ByteArrayInputStream.class.getDeclaredField("pos"));
+        BIS_BUF_COUNT =
+            Platform.objectFieldOffset(ByteArrayInputStream.class.getDeclaredField("count"));
+      } catch (NoSuchFieldException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
 
   /**
    * Wrap a {@link ByteArrayOutputStream} into a {@link MemoryBuffer}. The writerIndex of buffer
@@ -82,8 +100,8 @@ public class MemoryUtils {
    */
   public static void wrap(ByteArrayOutputStream stream, MemoryBuffer buffer) {
     Preconditions.checkNotNull(stream);
-    byte[] buf = (byte[]) Platform.getObject(stream, BAS_BUF_BUF);
-    int count = Platform.getInt(stream, BAS_BUF_COUNT);
+    byte[] buf = (byte[]) Platform.getObject(stream, Offset.BAS_BUF_BUF);
+    int count = Platform.getInt(stream, Offset.BAS_BUF_COUNT);
     buffer.pointTo(buf, 0, buf.length);
     buffer.writerIndex(count);
   }
@@ -96,8 +114,8 @@ public class MemoryUtils {
     Preconditions.checkNotNull(stream);
     byte[] bytes = buffer.getHeapMemory();
     Preconditions.checkNotNull(bytes);
-    Platform.putObject(stream, BAS_BUF_BUF, bytes);
-    Platform.putInt(stream, BAS_BUF_COUNT, buffer.writerIndex());
+    Platform.putObject(stream, Offset.BAS_BUF_BUF, bytes);
+    Platform.putInt(stream, Offset.BAS_BUF_COUNT, buffer.writerIndex());
   }
 
   /**
@@ -106,9 +124,9 @@ public class MemoryUtils {
    */
   public static void wrap(ByteArrayInputStream stream, MemoryBuffer buffer) {
     Preconditions.checkNotNull(stream);
-    byte[] buf = (byte[]) Platform.getObject(stream, BIS_BUF_BUF);
-    int count = Platform.getInt(stream, BIS_BUF_COUNT);
-    int pos = Platform.getInt(stream, BIS_BUF_POS);
+    byte[] buf = (byte[]) Platform.getObject(stream, Offset.BIS_BUF_BUF);
+    int count = Platform.getInt(stream, Offset.BIS_BUF_COUNT);
+    int pos = Platform.getInt(stream, Offset.BIS_BUF_POS);
     buffer.pointTo(buf, 0, count);
     buffer.readerIndex(pos);
   }

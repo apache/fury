@@ -48,8 +48,6 @@ public abstract class FieldAccessor {
     Preconditions.checkNotNull(field);
     long fieldOffset;
     try {
-      Preconditions.checkArgument(
-          !Platform.IS_GRAALVM_IMAGE_BUILD_TIME, "Graalvm build time not support");
       fieldOffset = ReflectionUtils.getFieldOffset(field);
     } catch (UnsupportedOperationException e) {
       fieldOffset = -1;
