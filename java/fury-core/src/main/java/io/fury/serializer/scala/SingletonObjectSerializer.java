@@ -20,6 +20,8 @@ import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.Serializer;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
+
 import java.lang.reflect.Field;
 
 /**
@@ -31,13 +33,13 @@ import java.lang.reflect.Field;
 // TODO(chaokunyang) add scala tests.
 @SuppressWarnings("rawtypes")
 public class SingletonObjectSerializer extends Serializer {
-  private final long offset;
+  private final Field field;
+  private long offset = -1;
 
   public SingletonObjectSerializer(Fury fury, Class type) {
     super(fury, type);
     try {
-      Field field = type.getDeclaredField("MODULE$");
-      offset = Platform.UNSAFE.staticFieldOffset(field);
+      field = type.getDeclaredField("MODULE$");
     } catch (NoSuchFieldException e) {
       throw new RuntimeException(type + " doesn't have `MODULE$` field", e);
     }
@@ -48,6 +50,11 @@ public class SingletonObjectSerializer extends Serializer {
 
   @Override
   public Object read(MemoryBuffer buffer) {
+    long offset = this.offset;
+    if (offset == -1) {
+      Preconditions.checkArgument(!Platform.IS_GRAALVM_IMAGE_BUILD_TIME);
+      offset = this.offset = Platform.UNSAFE.staticFieldOffset(field);
+    }
     return Platform.getObject(type, offset);
   }
 }
