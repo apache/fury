@@ -18,29 +18,36 @@ package io.fury.serializer.scala;
 
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.Serializer;
+import io.fury.serializer.collection.AbstractCollectionSerializer;
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import java.lang.reflect.Field;
+import java.util.Collection;
 
 /**
- * Serializer for <a href="https://docs.scala-lang.org/tour/singleton-objects.html">scala
- * singleton</a>.
+ * Singleton serializer for scala collection. We need this serializer for fury jit serialization,
+ * otherwise the case exception will happen is an empty collection is being serialized as a field of
+ * an object.
  *
  * @author chaokunyang
  */
 @SuppressWarnings("rawtypes")
-public class SingletonObjectSerializer extends Serializer {
+public class SingletonCollectionSerializer extends AbstractCollectionSerializer {
   private final Field field;
   private long offset = -1;
 
-  public SingletonObjectSerializer(Fury fury, Class type) {
-    super(fury, type);
+  public SingletonCollectionSerializer(Fury fury, Class cls) {
+    super(fury, cls, false);
     try {
       field = type.getDeclaredField("MODULE$");
     } catch (NoSuchFieldException e) {
       throw new RuntimeException(type + " doesn't have `MODULE$` field", e);
     }
+  }
+
+  @Override
+  public Collection onCollectionWrite(MemoryBuffer buffer, Object value) {
+    throw new IllegalStateException("unreachable");
   }
 
   @Override
@@ -54,5 +61,10 @@ public class SingletonObjectSerializer extends Serializer {
       offset = this.offset = Platform.UNSAFE.staticFieldOffset(field);
     }
     return Platform.getObject(type, offset);
+  }
+
+  @Override
+  public Object onCollectionRead(Collection collection) {
+    throw new IllegalStateException("unreachable");
   }
 }

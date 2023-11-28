@@ -42,6 +42,10 @@ class CollectionSerializerTest extends AnyWordSpec with Matchers {
         val list = List(100, 10000L)
         fury1.deserialize(fury1.serialize(list)) shouldEqual list
       }
+      "serialize/deserialize empty List" in {
+        fury1.deserialize(fury1.serialize(List.empty)) shouldEqual List.empty
+        fury1.deserialize(fury1.serialize(Nil)) shouldEqual Nil
+      }
       "serialize/deserialize Set" in {
         val set = Set(100, 10000L)
         fury1.deserialize(fury1.serialize(set)) shouldEqual set
@@ -49,6 +53,12 @@ class CollectionSerializerTest extends AnyWordSpec with Matchers {
       "serialize/deserialize CollectionStruct1" in {
         val struct = CollectionStruct1(List("a", "b"))
         fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+      }
+      "serialize/deserialize CollectionStruct1 with empty List" in {
+        val struct1 = CollectionStruct1(List.empty)
+        fury1.deserialize(fury1.serialize(struct1)) shouldEqual struct1
+        val struct2 = CollectionStruct1(Nil)
+        fury1.deserialize(fury1.serialize(struct2)) shouldEqual struct2
       }
     }
     s"fury scala map support: setOpt $setOpt, setFactory $setFactory" should {
@@ -58,6 +68,10 @@ class CollectionSerializerTest extends AnyWordSpec with Matchers {
       }
       "serialize/deserialize MapStruct1" in {
         val struct = MapStruct1(Map("k1" -> "v1", "k2" -> "v2"))
+        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+      }
+      "serialize/deserialize MapStruct1 with empty map" in {
+        val struct = MapStruct1(Map.empty)
         fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
       }
     }

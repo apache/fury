@@ -77,6 +77,8 @@ import io.fury.serializer.collection.MapSerializer;
 import io.fury.serializer.collection.MapSerializers;
 import io.fury.serializer.collection.SynchronizedSerializers;
 import io.fury.serializer.collection.UnmodifiableSerializers;
+import io.fury.serializer.scala.SingletonCollectionSerializer;
+import io.fury.serializer.scala.SingletonMapSerializer;
 import io.fury.serializer.scala.SingletonObjectSerializer;
 import io.fury.serializer.shim.ShimDispatcher;
 import io.fury.type.ClassDef;
@@ -873,7 +875,13 @@ public class ClassResolver {
       }
       if (fury.getConfig().isScalaOptimizationEnabled()
           && ReflectionUtils.isScalaSingletonObject(cls)) {
-        return SingletonObjectSerializer.class;
+        if (isCollection(cls)) {
+          return SingletonCollectionSerializer.class;
+        } else if (isMap(cls)) {
+          return SingletonMapSerializer.class;
+        } else {
+          return SingletonObjectSerializer.class;
+        }
       }
       if (isCollection(cls)) {
         // Serializer of common collection such as ArrayList/LinkedList should be registered
