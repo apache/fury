@@ -21,7 +21,6 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.Serializer;
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
-
 import java.lang.reflect.Field;
 
 /**
