@@ -90,7 +90,8 @@ public:
     reinterpret_cast<T *>(data_ + offset)[0] = value;
   }
 
-  template <typename T, typename = EnableIfIsOneOf<T, int8_t, uint8_t, bool>>
+  template <typename T,
+            typename = meta::EnableIfIsOneOf<T, int8_t, uint8_t, bool>>
   inline void UnsafePutByte(uint32_t offset, T value) {
     data_[offset] = value;
   }
@@ -107,7 +108,8 @@ public:
     return value;
   }
 
-  template <typename T, typename = EnableIfIsOneOf<T, int8_t, uint8_t, bool>>
+  template <typename T,
+            typename = meta::EnableIfIsOneOf<T, int8_t, uint8_t, bool>>
   inline T GetByteAs(uint32_t relative_offset) {
     FURY_CHECK(relative_offset < size_) << "Out of range " << relative_offset
                                         << " should be less than " << size_;

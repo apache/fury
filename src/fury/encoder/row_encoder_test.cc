@@ -57,6 +57,25 @@ TEST(RowEncoder, Simple) {
   ASSERT_EQ(row->GetBoolean(2), true);
 }
 
+struct B {
+  int num;
+  std::string str;
+};
+
+FURY_FIELD_INFO(B, num, str);
+
+TEST(RowEncoder, String) {
+  RowWriter writer(encoder::RowEncodeTrait<B>::Schema());
+  writer.Reset();
+
+  B b{233, "hello"};
+  encoder::RowEncodeTrait<B>::Write(b, writer);
+
+  auto row = writer.ToRow();
+  ASSERT_EQ(row->GetString(1), "hello");
+  ASSERT_EQ(row->GetInt32(0), 233);
+}
+
 } // namespace test
 
 } // namespace fury

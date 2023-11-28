@@ -92,7 +92,7 @@ public:
     buffer_->UnsafePut(GetOffset(i), value);
   }
 
-  void WriteString(int i, const std::string &value);
+  void WriteString(int i, std::string_view value);
 
   void WriteBytes(int i, const uint8_t *input, uint32_t length);
 

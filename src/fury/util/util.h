@@ -24,6 +24,8 @@
 #include <string>
 #include <type_traits>
 
+#include "fury/meta/type_traits.h"
+
 #ifdef _WIN32
 #define ROW_LITTLE_ENDIAN 1
 #else
@@ -64,16 +66,6 @@
 #endif
 
 namespace fury {
-
-/// \brief Metafunction to allow checking if a type matches any of another set
-/// of types
-template <typename T, typename... Args>
-struct IsOneOf : std::disjunction<std::is_same<T, Args>...> {};
-
-/// \brief Shorthand for using IsOneOf + std::enable_if
-template <typename T, typename... Args>
-using EnableIfIsOneOf =
-    typename std::enable_if<IsOneOf<T, Args...>::value, T>::type;
 
 namespace BitUtil {
 
@@ -148,8 +140,9 @@ static inline void ByteSwap(void *dst, const void *src, int len) {
 
 // Convert to little/big endian format from the machine's native endian format.
 template <typename T>
-using IsEndianConvertibleType = IsOneOf<T, int64_t, uint64_t, int32_t, uint32_t,
-                                        int16_t, uint16_t, float, double>;
+using IsEndianConvertibleType =
+    meta::IsOneOf<T, int64_t, uint64_t, int32_t, uint32_t, int16_t, uint16_t,
+                  float, double>;
 
 template <typename T>
 using EnableIfIsEndianConvertibleType =
