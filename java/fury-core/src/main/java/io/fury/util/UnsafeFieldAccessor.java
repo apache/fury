@@ -41,7 +41,7 @@ public class UnsafeFieldAccessor {
   public UnsafeFieldAccessor(Field field) {
     Preconditions.checkNotNull(field);
     this.field = field;
-    this.fieldOffset = Platform.UNSAFE.objectFieldOffset(field);
+    this.fieldOffset = ReflectionUtils.getFieldOffset(field);
     Preconditions.checkArgument(fieldOffset != -1);
   }
 

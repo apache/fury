@@ -199,7 +199,7 @@ public class SynchronizedSerializers {
       for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
         fury.registerSerializer(factory.f0, createSerializer(fury, factory));
       }
-    } catch (NoClassDefFoundError e) {
+    } catch (Throwable e) {
       Utils.ignore(e);
     }
   }

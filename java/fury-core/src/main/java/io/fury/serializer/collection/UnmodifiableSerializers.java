@@ -197,7 +197,7 @@ public class UnmodifiableSerializers {
       for (Tuple2<Class<?>, Function> factory : unmodifiableFactories()) {
         fury.registerSerializer(factory.f0, createSerializer(fury, factory));
       }
-    } catch (NoClassDefFoundError e) {
+    } catch (Throwable e) {
       Utils.ignore(e);
     }
   }

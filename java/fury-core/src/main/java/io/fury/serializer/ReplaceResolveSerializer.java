@@ -56,15 +56,45 @@ public class ReplaceResolveSerializer extends Serializer {
   private static final byte REPLACED_NEW_TYPE = 1;
   private static final byte REPLACED_SAME_TYPE = 2;
 
-  static class JDKReplaceResolveMethodInfoCache {
+  // Extract Method Info to cache for graalvm build time lambda generation and avoid
+  // generate function repeatedly too.
+  private static class ReplaceResolveInfo {
     private final Method writeReplaceMethod;
     private final Method readResolveMethod;
     private final Function writeReplaceFunc;
     private final Function readResolveFunc;
-    private Serializer objectSerializer;
 
-    private JDKReplaceResolveMethodInfoCache(
-        Method writeReplaceMethod, Method readResolveMethod, Serializer objectSerializer) {
+    private ReplaceResolveInfo(Class<?> cls) {
+      Method writeReplaceMethod, readResolveMethod;
+      // In JDK17, set private jdk method accessible will fail by default, use ObjectStreamClass
+      // instead, since it set accessible.
+      if (Serializable.class.isAssignableFrom(cls)) {
+        ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(cls);
+        writeReplaceMethod =
+            (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "writeReplaceMethod");
+        readResolveMethod =
+            (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "readResolveMethod");
+      } else {
+        // FIXME class with `writeReplace` method defined should be Serializable,
+        //  but hessian ignores this check and many existing system are using hessian,
+        //  so we just warn it to keep compatibility with most applications.
+        writeReplaceMethod = JavaSerializer.getWriteReplaceMethod(cls);
+        readResolveMethod = JavaSerializer.getReadResolveMethod(cls);
+        if (writeReplaceMethod != null) {
+          LOG.warn(
+              "{} doesn't implement {}, but defined writeReplace method {}",
+              cls,
+              Serializable.class,
+              writeReplaceMethod);
+        }
+        if (readResolveMethod != null) {
+          LOG.warn(
+              "{} doesn't implement {}, but defined readResolve method {}",
+              cls,
+              Serializable.class,
+              readResolveMethod);
+        }
+      }
       this.writeReplaceMethod = writeReplaceMethod;
       this.readResolveMethod = readResolveMethod;
       Class<?> declaringClass =
@@ -94,7 +124,6 @@ public class ReplaceResolveSerializer extends Serializer {
       }
       this.writeReplaceFunc = writeReplaceFunc;
       this.readResolveFunc = readResolveFunc;
-      this.objectSerializer = objectSerializer;
     }
 
     Object writeReplace(Object o) {
@@ -109,45 +138,33 @@ public class ReplaceResolveSerializer extends Serializer {
         }
       }
     }
+  }
+
+  private static final ClassValue<ReplaceResolveInfo> REPLACE_RESOLVE_INFO_CACHE =
+      new ClassValue<ReplaceResolveInfo>() {
+        @Override
+        protected ReplaceResolveInfo computeValue(Class<?> type) {
+          return new ReplaceResolveInfo(type);
+        }
+      };
+
+  private static class MethodInfoCache {
+    private final ReplaceResolveInfo info;
+
+    private Serializer objectSerializer;
+
+    public MethodInfoCache(ReplaceResolveInfo info) {
+      this.info = info;
+    }
 
     public void setObjectSerializer(Serializer objectSerializer) {
       this.objectSerializer = objectSerializer;
     }
   }
 
-  static JDKReplaceResolveMethodInfoCache newJDKMethodInfoCache(Class<?> cls, Fury fury) {
-    Method writeReplaceMethod, readResolveMethod;
-    // In JDK17, set private jdk method accessible will fail by default, use ObjectStreamClass
-    // instead, since it set accessible.
-    if (Serializable.class.isAssignableFrom(cls)) {
-      ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(cls);
-      writeReplaceMethod =
-          (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "writeReplaceMethod");
-      readResolveMethod =
-          (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "readResolveMethod");
-    } else {
-      // FIXME class with `writeReplace` method defined should be Serializable,
-      //  but hessian ignores this check and many existing system are using hessian,
-      //  so we just warn it to keep compatibility with most applications.
-      writeReplaceMethod = JavaSerializer.getWriteReplaceMethod(cls);
-      readResolveMethod = JavaSerializer.getReadResolveMethod(cls);
-      if (writeReplaceMethod != null) {
-        LOG.warn(
-            "{} doesn't implement {}, but defined writeReplace method {}",
-            cls,
-            Serializable.class,
-            writeReplaceMethod);
-      }
-      if (readResolveMethod != null) {
-        LOG.warn(
-            "{} doesn't implement {}, but defined readResolve method {}",
-            cls,
-            Serializable.class,
-            readResolveMethod);
-      }
-    }
-    JDKReplaceResolveMethodInfoCache methodInfoCache =
-        new JDKReplaceResolveMethodInfoCache(writeReplaceMethod, readResolveMethod, null);
+  static MethodInfoCache newJDKMethodInfoCache(Class<?> cls, Fury fury) {
+    ReplaceResolveInfo replaceResolveInfo = REPLACE_RESOLVE_INFO_CACHE.get(cls);
+    MethodInfoCache methodInfoCache = new MethodInfoCache(replaceResolveInfo);
     Class<? extends Serializer> serializerClass;
     if (Externalizable.class.isAssignableFrom(cls)) {
       serializerClass = ExternalizableSerializer.class;
@@ -181,10 +198,9 @@ public class ReplaceResolveSerializer extends Serializer {
 
   private final RefResolver refResolver;
   private final ClassResolver classResolver;
-  private final JDKReplaceResolveMethodInfoCache jdkMethodInfoWriteCache;
+  private final MethodInfoCache jdkMethodInfoWriteCache;
   private final ClassInfo writeClassInfo;
-  private final Map<Class<?>, JDKReplaceResolveMethodInfoCache> classClassInfoHolderMap =
-      new HashMap<>();
+  private final Map<Class<?>, MethodInfoCache> classClassInfoHolderMap = new HashMap<>();
 
   public ReplaceResolveSerializer(Fury fury, Class type) {
     super(fury, type);
@@ -208,11 +224,12 @@ public class ReplaceResolveSerializer extends Serializer {
 
   @Override
   public void write(MemoryBuffer buffer, Object value) {
-    JDKReplaceResolveMethodInfoCache jdkMethodInfoCache = this.jdkMethodInfoWriteCache;
-    Method writeReplaceMethod = jdkMethodInfoCache.writeReplaceMethod;
+    MethodInfoCache jdkMethodInfoCache = this.jdkMethodInfoWriteCache;
+    ReplaceResolveInfo replaceResolveInfo = jdkMethodInfoCache.info;
+    Method writeReplaceMethod = replaceResolveInfo.writeReplaceMethod;
     if (writeReplaceMethod != null) {
       Object original = value;
-      value = jdkMethodInfoCache.writeReplace(value);
+      value = replaceResolveInfo.writeReplace(value);
       // FIXME JDK serialization will update reference table, which will change deserialized object
       // graph.
       //  If fury doesn't update reference table, deserialized object graph will be same,
@@ -249,8 +266,7 @@ public class ReplaceResolveSerializer extends Serializer {
     }
   }
 
-  private void writeObject(
-      MemoryBuffer buffer, Object value, JDKReplaceResolveMethodInfoCache jdkMethodInfoCache) {
+  private void writeObject(MemoryBuffer buffer, Object value, MethodInfoCache jdkMethodInfoCache) {
     classResolver.writeClass(buffer, writeClassInfo);
     jdkMethodInfoCache.objectSerializer.write(buffer, value);
   }
@@ -291,16 +307,17 @@ public class ReplaceResolveSerializer extends Serializer {
 
   private Object readObject(MemoryBuffer buffer) {
     Class cls = classResolver.readClassInternal(buffer);
-    JDKReplaceResolveMethodInfoCache jdkMethodInfoCache = classClassInfoHolderMap.get(cls);
+    MethodInfoCache jdkMethodInfoCache = classClassInfoHolderMap.get(cls);
     if (jdkMethodInfoCache == null) {
       jdkMethodInfoCache = newJDKMethodInfoCache(cls, fury);
       classClassInfoHolderMap.put(cls, jdkMethodInfoCache);
     }
     Object o = jdkMethodInfoCache.objectSerializer.read(buffer);
-    Method readResolveMethod = jdkMethodInfoCache.readResolveMethod;
+    ReplaceResolveInfo replaceResolveInfo = jdkMethodInfoCache.info;
+    Method readResolveMethod = replaceResolveInfo.readResolveMethod;
     if (readResolveMethod != null) {
-      if (jdkMethodInfoCache.readResolveFunc != null) {
-        return jdkMethodInfoCache.readResolveFunc.apply(o);
+      if (replaceResolveInfo.readResolveFunc != null) {
+        return replaceResolveInfo.readResolveFunc.apply(o);
       }
       try {
         return readResolveMethod.invoke(o);

@@ -44,6 +44,7 @@ import io.fury.type.Generics;
 import io.fury.type.Type;
 import io.fury.util.ExceptionUtils;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
 import java.io.ByteArrayInputStream;
@@ -99,7 +100,7 @@ public final class Fury {
   private final SerializationContext serializationContext;
   private final ClassLoader classLoader;
   private final JITContext jitContext;
-  private final MemoryBuffer buffer;
+  private MemoryBuffer buffer;
   private final List<Object> nativeObjects;
   private final StringSerializer stringSerializer;
   private final Language language;
@@ -131,7 +132,6 @@ public final class Fury {
     classResolver.initialize();
     serializationContext = new SerializationContext();
     this.classLoader = classLoader;
-    buffer = MemoryUtils.buffer(32);
     nativeObjects = new ArrayList<>();
     generics = new Generics(this);
     stringSerializer = new StringSerializer(this);
@@ -204,16 +204,18 @@ public final class Fury {
 
   /** Return serialized <code>obj</code> as a byte array. */
   public byte[] serialize(Object obj) {
-    buffer.writerIndex(0);
-    serialize(buffer, obj, null);
-    return buffer.getBytes(0, buffer.writerIndex());
+    MemoryBuffer buf = getBuffer();
+    buf.writerIndex(0);
+    serialize(buf, obj, null);
+    return buf.getBytes(0, buf.writerIndex());
   }
 
   /** Return serialized <code>obj</code> as a byte array. */
   public byte[] serialize(Object obj, BufferCallback callback) {
-    buffer.writerIndex(0);
-    serialize(buffer, obj, callback);
-    return buffer.getBytes(0, buffer.writerIndex());
+    MemoryBuffer buf = getBuffer();
+    buf.writerIndex(0);
+    serialize(buf, obj, callback);
+    return buf.getBytes(0, buf.writerIndex());
   }
 
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj) {
@@ -269,13 +271,14 @@ public final class Fury {
   }
 
   public void serialize(OutputStream outputStream, Object obj, BufferCallback callback) {
-    buffer.writerIndex(0);
-    buffer.writeInt(-1);
-    serialize(buffer, obj, callback);
+    MemoryBuffer buf = getBuffer();
+    buf.writerIndex(0);
+    buf.writeInt(-1);
+    serialize(buf, obj, callback);
 
-    buffer.putInt(0, buffer.writerIndex() - 4);
+    buf.putInt(0, buf.writerIndex() - 4);
     try {
-      outputStream.write(buffer.getBytes(0, buffer.writerIndex()));
+      outputStream.write(buf.getBytes(0, buf.writerIndex()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -296,6 +299,16 @@ public final class Fury {
       }
     }
     throw e;
+  }
+
+  private MemoryBuffer getBuffer() {
+    assert !Platform.IS_GRAALVM_IMAGE_BUILD_TIME
+        : "MemoryBuffer is not allowed for creation in graalvm build time";
+    MemoryBuffer buf = buffer;
+    if (buf == null) {
+      buf = buffer = MemoryBuffer.newHeapBuffer(64);
+    }
+    return buf;
   }
 
   private void write(MemoryBuffer buffer, Object obj) {
@@ -752,8 +765,9 @@ public final class Fury {
 
   public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
-      readToBufferFromStream(inputStream, buffer);
-      return deserialize(buffer, outOfBandBuffers);
+      MemoryBuffer buf = getBuffer();
+      readToBufferFromStream(inputStream, buf);
+      return deserialize(buf, outOfBandBuffers);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -978,9 +992,10 @@ public final class Fury {
    * #deserializeJavaObject}.
    */
   public byte[] serializeJavaObject(Object obj) {
-    buffer.writerIndex(0);
-    serializeJavaObject(buffer, obj);
-    return buffer.getBytes(0, buffer.writerIndex());
+    MemoryBuffer buf = getBuffer();
+    buf.writerIndex(0);
+    serializeJavaObject(buf, obj);
+    return buf.getBytes(0, buf.writerIndex());
   }
 
   /**
@@ -1070,9 +1085,10 @@ public final class Fury {
    * #deserializeJavaObjectAndClass}.
    */
   public byte[] serializeJavaObjectAndClass(Object obj) {
-    buffer.writerIndex(0);
-    serializeJavaObjectAndClass(buffer, obj);
-    return buffer.getBytes(0, buffer.writerIndex());
+    MemoryBuffer buf = getBuffer();
+    buf.writerIndex(0);
+    serializeJavaObjectAndClass(buf, obj);
+    return buf.getBytes(0, buf.writerIndex());
   }
 
   /**
@@ -1135,26 +1151,27 @@ public final class Fury {
   }
 
   private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {
+    MemoryBuffer buf = getBuffer();
     if (outputStream.getClass() == ByteArrayOutputStream.class) {
-      byte[] oldBytes = buffer.getHeapMemory(); // Note: This should not be null.
-      MemoryUtils.wrap((ByteArrayOutputStream) outputStream, buffer);
-      int writerIndex = buffer.writerIndex();
-      buffer.writeInt(-1);
-      function.accept(buffer);
-      buffer.putInt(writerIndex, buffer.writerIndex() - writerIndex);
-      MemoryUtils.wrap(buffer, (ByteArrayOutputStream) outputStream);
-      buffer.pointTo(oldBytes, 0, oldBytes.length);
+      byte[] oldBytes = buf.getHeapMemory(); // Note: This should not be null.
+      MemoryUtils.wrap((ByteArrayOutputStream) outputStream, buf);
+      int writerIndex = buf.writerIndex();
+      buf.writeInt(-1);
+      function.accept(buf);
+      buf.putInt(writerIndex, buf.writerIndex() - writerIndex);
+      MemoryUtils.wrap(buf, (ByteArrayOutputStream) outputStream);
+      buf.pointTo(oldBytes, 0, oldBytes.length);
     } else {
-      buffer.writerIndex(0);
-      buffer.writeInt(-1);
-      function.accept(buffer);
-      buffer.putInt(0, buffer.writerIndex() - 4);
+      buf.writerIndex(0);
+      buf.writeInt(-1);
+      function.accept(buf);
+      buf.putInt(0, buf.writerIndex() - 4);
       try {
-        byte[] bytes = buffer.getHeapMemory();
+        byte[] bytes = buf.getHeapMemory();
         if (bytes != null) {
-          outputStream.write(bytes, 0, buffer.writerIndex());
+          outputStream.write(bytes, 0, buf.writerIndex());
         } else {
-          outputStream.write(buffer.getBytes(0, buffer.writerIndex()));
+          outputStream.write(buf.getBytes(0, buf.writerIndex()));
         }
         outputStream.flush();
       } catch (IOException e) {
@@ -1165,21 +1182,22 @@ public final class Fury {
 
   private Object deserializeFromStream(
       InputStream inputStream, Function<MemoryBuffer, Object> function) {
+    MemoryBuffer buf = getBuffer();
     try {
       boolean isBis = inputStream.getClass() == ByteArrayInputStream.class;
       byte[] oldBytes = null;
       if (isBis) {
-        buffer.readerIndex(0);
-        oldBytes = buffer.getHeapMemory(); // Note: This should not be null.
-        MemoryUtils.wrap((ByteArrayInputStream) inputStream, buffer);
-        buffer.increaseReaderIndex(4); // skip size.
+        buf.readerIndex(0);
+        oldBytes = buf.getHeapMemory(); // Note: This should not be null.
+        MemoryUtils.wrap((ByteArrayInputStream) inputStream, buf);
+        buf.increaseReaderIndex(4); // skip size.
       } else {
-        readToBufferFromStream(inputStream, buffer);
+        readToBufferFromStream(inputStream, buf);
       }
-      Object o = function.apply(buffer);
+      Object o = function.apply(buf);
       if (isBis) {
-        inputStream.skip(buffer.readerIndex());
-        buffer.pointTo(oldBytes, 0, oldBytes.length);
+        inputStream.skip(buf.readerIndex());
+        buf.pointTo(oldBytes, 0, oldBytes.length);
       }
       return o;
     } catch (IOException e) {

@@ -33,6 +33,8 @@ import java.util.Collections;
  */
 public class CodecUtils {
 
+  // TODO(chaokunyang) how to uninstall io.fury.codegen/builder classes for graalvm build time
+  //  maybe use a temporal URLClassLoader
   public static <T> Class<? extends Serializer<T>> loadOrGenObjectCodecClass(
       Class<T> cls, Fury fury) {
     Preconditions.checkNotNull(fury);

@@ -28,9 +28,8 @@ import io.fury.type.Type;
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
-import java.lang.reflect.Constructor;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,16 +78,20 @@ public class CollectionSerializers {
   }
 
   public static final class ArraysAsListSerializer extends CollectionSerializer<List<?>> {
-    private final long arrayFieldOffset;
+    // Make offset compatible with graalvm native image.
+    private static final long arrayFieldOffset;
 
-    public ArraysAsListSerializer(Fury fury, Class<List<?>> cls) {
-      super(fury, cls, false);
+    static {
       try {
         Field arrayField = Class.forName("java.util.Arrays$ArrayList").getDeclaredField("a");
-        arrayFieldOffset = ReflectionUtils.getFieldOffset(arrayField);
+        arrayFieldOffset = Platform.objectFieldOffset(arrayField);
       } catch (final Exception e) {
         throw new RuntimeException(e);
       }
+    }
+
+    public ArraysAsListSerializer(Fury fury, Class<List<?>> cls) {
+      super(fury, cls, false);
     }
 
     @Override
@@ -170,16 +173,13 @@ public class CollectionSerializers {
   }
 
   public static class SortedSetSerializer<T extends SortedSet> extends CollectionSerializer<T> {
-    private Constructor<?> constructor;
+    private MethodHandle constructor;
 
     public SortedSetSerializer(Fury fury, Class<T> cls) {
       super(fury, cls, true);
       if (cls != TreeSet.class) {
         try {
-          this.constructor = cls.getConstructor(Comparator.class);
-          if (!constructor.isAccessible()) {
-            constructor.setAccessible(true);
-          }
+          constructor = ReflectionUtils.getCtrHandle(cls, Comparator.class);
         } catch (Exception e) {
           throw new UnsupportedOperationException(e);
         }
@@ -203,8 +203,8 @@ public class CollectionSerializers {
         collection = (T) new TreeSet(comparator);
       } else {
         try {
-          collection = (T) constructor.newInstance(comparator);
-        } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+          collection = (T) constructor.invoke(comparator);
+        } catch (Throwable e) {
           throw new RuntimeException(e);
         }
       }

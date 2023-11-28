@@ -595,7 +595,7 @@ public class CodegenContext {
     codeBuilder.append("{\n");
     List<FieldInfo> staticFields = getFieldsInfo(true);
     if (!staticFields.isEmpty()) {
-      for (FieldInfo field : fields) {
+      for (FieldInfo field : staticFields) {
         codeBuilder.append("  ").append(addFieldDecl(field)).append("\n");
       }
       codeBuilder.append("  static {\n");

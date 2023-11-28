@@ -53,9 +53,15 @@ public class _JDKAccess {
   // CHECKSTYLE.ON:TypeName
   public static final int JAVA_VERSION;
   public static final boolean OPEN_J9;
+  public static final boolean IS_GRAALVM_IMAGE_BUILD_TIME;
+  public static final boolean IS_GRAALVM_IMAGE_RUN_TIME;
   public static final Unsafe UNSAFE;
   public static final Class<?> _INNER_UNSAFE_CLASS;
   public static final Object _INNER_UNSAFE;
+  // https://github.com/oracle/graal/blob/master/sdk/src/org.graalvm.nativeimage/src/org/graalvm/nativeimage/ImageInfo.java
+  private static final String GRAAL_IMAGE_CODE_KEY = "org.graalvm.nativeimage.imagecode";
+  private static final String GRAAL_IMAGE_BUILDTIME_VALUE = "buildtime";
+  private static final String GRAAL_IMAGE_RUNTIME_VALUE = "runtime";
 
   static {
     String property = System.getProperty("java.specification.version");
@@ -65,7 +71,6 @@ public class _JDKAccess {
     String jmvName = System.getProperty("java.vm.name", "");
     OPEN_J9 = jmvName.contains("OpenJ9");
     JAVA_VERSION = Integer.parseInt(property);
-
     Unsafe unsafe;
     try {
       Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
@@ -88,6 +93,10 @@ public class _JDKAccess {
       _INNER_UNSAFE_CLASS = null;
       _INNER_UNSAFE = null;
     }
+    IS_GRAALVM_IMAGE_BUILD_TIME =
+        (GRAAL_IMAGE_BUILDTIME_VALUE.equals(System.getProperty(GRAAL_IMAGE_CODE_KEY)));
+    IS_GRAALVM_IMAGE_RUN_TIME =
+        (GRAAL_IMAGE_RUNTIME_VALUE.equals(System.getProperty(GRAAL_IMAGE_CODE_KEY)));
   }
 
   private static final ClassValue<Lookup> lookupCache =
@@ -102,6 +111,11 @@ public class _JDKAccess {
 
   public static Lookup _trustedLookup(Class<?> objectClass) {
     // CHECKSTYLE.ON:MethodName
+    if (IS_GRAALVM_IMAGE_BUILD_TIME) {
+      // Lookup will init `java.io.FilePermission`,which is not allowed at graalvm build time
+      // as a reachable object.
+      return _Lookup._trustedLookup(objectClass);
+    }
     return lookupCache.get(objectClass);
   }
 

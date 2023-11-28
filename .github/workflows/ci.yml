@@ -77,6 +77,19 @@ jobs:
         run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
+  graalvm:
+    name: GraalVM CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+      - name: Build native image and run
+        run: ./ci/run_ci.sh graalvm_test
   scala:
     name: Scala CI
     runs-on: ubuntu-latest

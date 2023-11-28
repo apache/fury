@@ -160,8 +160,7 @@ public class ExpressionVisitor {
             if (Expression.class.isAssignableFrom(field.getType())) {
               traverseField(expr, field, func);
             } else if (Expression[].class == field.getType()) {
-              Expression[] expressions =
-                  (Expression[]) Platform.getObject(expr, ReflectionUtils.getFieldOffset(field));
+              Expression[] expressions = ReflectionUtils.getObjectFieldValue(expr, field);
               traverseArray(expr, expressions, func);
             } else if (field.getAnnotation(ClosureVisitable.class) != null) {
               traverseClosure(expr, field, func);
@@ -169,10 +168,7 @@ public class ExpressionVisitor {
               if (Iterable.class.isAssignableFrom(field.getType())) {
                 TypeToken<?> fieldType = TypeToken.of(field.getGenericType());
                 if (TypeUtils.getElementType(fieldType).equals(TypeToken.of(Expression.class))) {
-                  @SuppressWarnings("unchecked")
-                  List<Expression> expressions =
-                      (List<Expression>)
-                          Platform.getObject(expr, ReflectionUtils.getFieldOffset(field));
+                  List<Expression> expressions = ReflectionUtils.getObjectFieldValue(expr, field);
                   traverseList(expr, expressions, func);
                 }
               }
@@ -188,7 +184,7 @@ public class ExpressionVisitor {
 
   private void traverseClosure(Expression expr, Field field, Function<ExprSite, Boolean> func)
       throws IllegalAccessException, InvocationTargetException {
-    Object closure = Platform.getObject(expr, ReflectionUtils.getFieldOffset(field));
+    Object closure = ReflectionUtils.getObjectFieldValue(expr, field);
     Preconditions.checkArgument(closure instanceof Serializable);
     // TODO use method handle for serializable lambda to speed up perf.
     Method writeReplace = ReflectionUtils.findMethods(closure.getClass(), "writeReplace").get(0);
@@ -236,8 +232,7 @@ public class ExpressionVisitor {
   }
 
   private void traverseField(Expression expr, Field field, Function<ExprSite, Boolean> func) {
-    long fieldOffset = ReflectionUtils.getFieldOffset(field);
-    Expression childExpr = (Expression) Platform.getObject(expr, fieldOffset);
+    Expression childExpr = ReflectionUtils.getObjectFieldValue(expr, field);
     if (childExpr == null) {
       return;
     }
@@ -246,7 +241,7 @@ public class ExpressionVisitor {
             new ExprSite(
                 expr,
                 childExpr,
-                newChildExpr -> Platform.putObject(expr, fieldOffset, newChildExpr)));
+                newChildExpr -> ReflectionUtils.setObjectFieldValue(expr, field, newChildExpr)));
     if (continueVisit) {
       traverseChildren(childExpr, func);
     }
