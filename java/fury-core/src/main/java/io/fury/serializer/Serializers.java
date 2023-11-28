@@ -80,7 +80,7 @@ public class Serializers {
       if (serializerClass == CompatibleSerializer.class) {
         return new CompatibleSerializer(fury, type);
       }
-      Tuple2<MethodType, MethodHandle> ctrInfo = CTR_MAP.get(type);
+      Tuple2<MethodType, MethodHandle> ctrInfo = CTR_MAP.get(serializerClass);
       if (ctrInfo != null) {
         MethodType sig = ctrInfo.f0;
         MethodHandle handle = ctrInfo.f1;
@@ -115,29 +115,28 @@ public class Serializers {
 
   private static <T> Serializer<T> createSerializer(
     Fury fury, Class<?> type, Class<? extends Serializer> serializerClass) throws Throwable {
-    // reflection
     MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(serializerClass);
     try {
       MethodHandle ctr = lookup.findConstructor(serializerClass, SIG1);
-      CTR_MAP.put(type, Tuple2.of(SIG1, ctr));
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG1, ctr));
       return (Serializer<T>) ctr.invoke(fury, type);
     } catch (NoSuchMethodException e) {
       Utils.ignore(e);
     }
     try {
       MethodHandle ctr = lookup.findConstructor(serializerClass, SIG2);
-      CTR_MAP.put(type, Tuple2.of(SIG2, ctr));
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG2, ctr));
       return (Serializer<T>) ctr.invoke(fury);
     } catch (NoSuchMethodException e) {
       Utils.ignore(e);
     }
     try {
       MethodHandle ctr = lookup.findConstructor(serializerClass, SIG3);
-      CTR_MAP.put(type, Tuple2.of(SIG3, ctr));
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG3, ctr));
       return (Serializer<T>) ctr.invoke(type);
     } catch (NoSuchMethodException e) {
       MethodHandle ctr = ReflectionUtils.getCtrHandle(serializerClass);
-      CTR_MAP.put(type, Tuple2.of(SIG4, ctr));
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG4, ctr));
       return (Serializer<T>) ctr.invoke();
     }
   }
