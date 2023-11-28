@@ -22,7 +22,7 @@ import io.fury.util.Preconditions;
 import java.util.List;
 import java.util.Map;
 
-public class RecordExample {
+public class PrivateRecordExample {
   private record PrivateFoo (
     int f1,
     String f2,
@@ -35,11 +35,11 @@ public class RecordExample {
   static {
     fury = Fury.builder().requireClassRegistration(true).build();
     // register and generate serializer code.
-    fury.register(Foo.class, true);
+    fury.register(PrivateFoo.class, true);
   }
 
   public static void main(String[] args) {
-    Foo foo = new Foo(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
+    PrivateFoo foo = new PrivateFoo(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
     System.out.println(foo);
     byte[] bytes = fury.serialize(foo);
     Object o = fury.deserialize(bytes);
