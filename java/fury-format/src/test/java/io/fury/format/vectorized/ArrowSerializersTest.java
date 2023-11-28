@@ -17,7 +17,6 @@
 package io.fury.format.vectorized;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
 
 import io.fury.Fury;
 import io.fury.config.Language;
@@ -27,7 +26,6 @@ import io.fury.memory.MemoryUtils;
 import io.fury.resolver.ClassResolver;
 import io.fury.serializer.BufferObject;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

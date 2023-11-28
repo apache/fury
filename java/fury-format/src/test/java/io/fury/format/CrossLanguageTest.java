@@ -35,7 +35,6 @@ import io.fury.format.vectorized.ArrowWriter;
 import io.fury.io.FuryOutputStream;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
-import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferObject;
 import io.fury.util.LoggerFactory;
 import java.io.IOException;
