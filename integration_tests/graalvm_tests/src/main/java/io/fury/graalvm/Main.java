@@ -16,14 +16,14 @@
 
 package io.fury.graalvm;
 
-import io.fury.graalvm.record.PrivateRecordExample;
 import io.fury.graalvm.record.RecordExample;
+import io.fury.graalvm.record.RecordExample2;
 
 public class Main {
   public static void main(String[] args) throws Throwable {
     Example.main(args);
     RecordExample.main(args);
-    PrivateRecordExample.main(args);
+    RecordExample2.main(args);
     ThreadSafeExample.main(args);
   }
 }

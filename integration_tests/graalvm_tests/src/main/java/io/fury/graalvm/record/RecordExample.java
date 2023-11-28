@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 public class RecordExample {
-  private record PrivateFoo (
+  public record Record (
     int f1,
     String f2,
     List<String> f3,
@@ -35,15 +35,15 @@ public class RecordExample {
   static {
     fury = Fury.builder().requireClassRegistration(true).build();
     // register and generate serializer code.
-    fury.register(Foo.class, true);
+    fury.register(Record.class, true);
   }
 
   public static void main(String[] args) {
-    Foo foo = new Foo(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
-    System.out.println(foo);
-    byte[] bytes = fury.serialize(foo);
+    Record record = new Record(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
+    System.out.println(record);
+    byte[] bytes = fury.serialize(record);
     Object o = fury.deserialize(bytes);
     System.out.println(o);
-    Preconditions.checkArgument(foo.equals(o));
+    Preconditions.checkArgument(record.equals(o));
   }
 }

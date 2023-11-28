@@ -22,8 +22,8 @@ import io.fury.util.Preconditions;
 import java.util.List;
 import java.util.Map;
 
-public class PrivateRecordExample {
-  private record PrivateFoo (
+public class RecordExample2 {
+  private record Record (
     int f1,
     String f2,
     List<String> f3,
@@ -35,15 +35,17 @@ public class PrivateRecordExample {
   static {
     fury = Fury.builder().requireClassRegistration(true).build();
     // register and generate serializer code.
-    fury.register(PrivateFoo.class, true);
+    fury.register(Record.class, true);
+    fury.register(Foo.class, true);
   }
 
   public static void main(String[] args) {
-    PrivateFoo foo = new PrivateFoo(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
-    System.out.println(foo);
-    byte[] bytes = fury.serialize(foo);
+    Record record = new Record(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
+    byte[] bytes = fury.serialize(record);
     Object o = fury.deserialize(bytes);
-    System.out.println(o);
-    Preconditions.checkArgument(foo.equals(o));
+    Preconditions.checkArgument(record.equals(o));
+    Foo foo = new Foo(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
+    Object o2 = fury.deserialize(fury.serialize(foo));
+    Preconditions.checkArgument(foo.equals(o2));
   }
 }
