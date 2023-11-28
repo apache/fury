@@ -1795,7 +1795,8 @@ public class ClassResolver {
     return fury;
   }
 
-  private static final ConcurrentMap<Integer, ClassResolver> GRAALVM_REGISTRY = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<Integer, ClassResolver> GRAALVM_REGISTRY =
+      new ConcurrentHashMap<>();
 
   // CHECKSTYLE.OFF:MethodName
   public static void _addGraalvmClassRegistry(int furyConfigHash, ClassResolver classResolver) {

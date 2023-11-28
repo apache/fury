@@ -60,7 +60,7 @@ import java.util.regex.Pattern;
 public class Serializers {
   // avoid duplicate reflect inspection and cache for graalvm support too.
   private static final ConcurrentMap<Class, Tuple2<MethodType, MethodHandle>> CTR_MAP =
-    new ConcurrentHashMap<>();
+      new ConcurrentHashMap<>();
   private static final MethodType SIG1 = MethodType.methodType(void.class, Fury.class, Class.class);
   private static final MethodType SIG2 = MethodType.methodType(void.class, Fury.class);
   private static final MethodType SIG3 = MethodType.methodType(void.class, Class.class);
@@ -114,7 +114,7 @@ public class Serializers {
   }
 
   private static <T> Serializer<T> createSerializer(
-    Fury fury, Class<?> type, Class<? extends Serializer> serializerClass) throws Throwable {
+      Fury fury, Class<?> type, Class<? extends Serializer> serializerClass) throws Throwable {
     MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(serializerClass);
     try {
       MethodHandle ctr = lookup.findConstructor(serializerClass, SIG1);

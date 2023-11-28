@@ -21,10 +21,9 @@ import io.fury.serializer.Serializer;
 import io.fury.serializer.TimeSerializers;
 import io.fury.util.MurmurHash3;
 import io.fury.util.Preconditions;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Config for fury, all {@link Fury} related config can be found here.
@@ -83,6 +82,42 @@ public class Config implements Serializable {
     }
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
+  }
+
+  // Must write all fields to bytes, otherwise different config may have some bytes, thus same
+  // config hash.
+  // JDK serialization for config will produce different bytes between graalvm build time and
+  // runtime
+  // since graalvm will eliminate/compress unused fields. And jdk serialization is slow, which make
+  // start up
+  // a little slower.
+  private byte[] configToBytes() {
+    ByteBuffer buffer = ByteBuffer.allocate(128);
+    buffer.put((byte) language.ordinal());
+    buffer.put((byte) (trackingRef ? 1 : 0));
+    buffer.put((byte) (basicTypesRefIgnored ? 1 : 0));
+    buffer.put((byte) (stringRefIgnored ? 1 : 0));
+    buffer.put((byte) (timeRefIgnored ? 1 : 0));
+    buffer.put((byte) (codeGenEnabled ? 1 : 0));
+    buffer.put((byte) (checkClassVersion ? 1 : 0));
+    buffer.put((byte) (compatibleMode.ordinal()));
+    buffer.put((byte) (checkJdkClassSerializable ? 1 : 0));
+    buffer.put(defaultJDKStreamSerializerType.getCanonicalName().getBytes(StandardCharsets.UTF_8));
+    buffer.put((byte) (compressString ? 1 : 0));
+    buffer.put((byte) (compressInt ? 1 : 0));
+    buffer.put((byte) (compressLong ? 1 : 0));
+    buffer.put((byte) (longEncoding.ordinal()));
+    buffer.put((byte) (requireClassRegistration ? 1 : 0));
+    buffer.put((byte) (suppressClassRegistrationWarnings ? 1 : 0));
+    buffer.put((byte) (registerGuavaTypes ? 1 : 0));
+    buffer.put((byte) (shareMetaContext ? 1 : 0));
+    buffer.put((byte) (asyncCompilationEnabled ? 1 : 0));
+    buffer.put((byte) (deserializeUnexistedClass ? 1 : 0));
+    buffer.put((byte) (scalaOptimizationEnabled ? 1 : 0));
+    buffer.flip();
+    byte[] bytes = new byte[buffer.position()];
+    buffer.get(bytes);
+    return bytes;
   }
 
   public Language getLanguage() {
@@ -209,15 +244,7 @@ public class Config implements Serializable {
 
   public int getConfigHash() {
     if (configHash == 0) {
-      // TODO use a custom encoding to ensure different config hash different hash.
-      ByteArrayOutputStream bas = new ByteArrayOutputStream();
-      try (ObjectOutputStream stream = new ObjectOutputStream(bas)) {
-        stream.writeObject(this);
-        stream.flush();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-      byte[] bytes = bas.toByteArray();
+      byte[] bytes = configToBytes();
       long hashPart1 = MurmurHash3.murmurhash3_x64_128(bytes, 0, bytes.length, 47)[0];
       configHash = Math.abs((int) hashPart1);
     }

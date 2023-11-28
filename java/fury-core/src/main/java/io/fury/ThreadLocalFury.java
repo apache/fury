@@ -53,7 +53,7 @@ public class ThreadLocalFury implements ThreadSafeFury {
     // 2. Make fury generate code at graalvm build time.
     Fury fury = bindingThreadLocal.get().get();
     ClassResolver._addGraalvmClassRegistry(
-      fury.getConfig().getConfigHash(), fury.getClassResolver());
+        fury.getConfig().getConfigHash(), fury.getClassResolver());
   }
 
   public <R> R execute(Function<Fury, R> action) {

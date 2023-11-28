@@ -24,8 +24,6 @@ import io.fury.serializer.Serializers;
 import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.serializer.collection.MapSerializers;
 import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
-import java.lang.invoke.MethodHandle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
