@@ -29,8 +29,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <native.maven.plugin.version>0.9.28</native.maven.plugin.version>
     <junit.jupiter.version>5.8.1</junit.jupiter.version>
-    <imageName>hello</imageName>
-    <mainClass>io.fury.graalvm.Example</mainClass>
+    <mainClass>io.fury.graalvm.Main</mainClass>
   </properties>
 
   <repositories>
