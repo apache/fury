@@ -45,10 +45,7 @@ public class ArrowSerializersTest {
   public void testRegisterArrowSerializer() throws Exception {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
     ClassResolver classResolver = fury.getClassResolver();
-    Field field = ClassResolver.class.getDeclaredField("ArrowSerializersClass");
-    field.setAccessible(true);
-    Object arrowSerializersClass = field.get(null);
-    assertSame(arrowSerializersClass, ArrowSerializers.class);
+    ArrowSerializers.registerSerializers(fury);
     assertEquals(classResolver.getSerializerClass(ArrowTable.class), ArrowTableSerializer.class);
     assertEquals(
         classResolver.getSerializerClass(VectorSchemaRoot.class),
@@ -59,6 +56,7 @@ public class ArrowSerializersTest {
   public void testWriteVectorSchemaRoot() throws IOException {
     Collection<BufferObject> bufferObjects = new ArrayList<>();
     Fury fury = Fury.builder().requireClassRegistration(false).build();
+    ArrowSerializers.registerSerializers(fury);
     int size = 2000;
     VectorSchemaRoot root = ArrowUtilsTest.createVectorSchemaRoot(size);
     Assert.assertEquals(
@@ -84,6 +82,7 @@ public class ArrowSerializersTest {
 
     // test in band serialization.
     fury = Fury.builder().requireClassRegistration(false).build();
+    ArrowSerializers.registerSerializers(fury);
     newRoot = (VectorSchemaRoot) fury.deserialize(fury.serialize(root));
     assertRecordBatchEqual(newRoot, root);
   }
@@ -92,6 +91,7 @@ public class ArrowSerializersTest {
   public void testWriteArrowTable() throws IOException {
     Collection<BufferObject> bufferObjects = new ArrayList<>();
     Fury fury = Fury.builder().requireClassRegistration(false).build();
+    ArrowSerializers.registerSerializers(fury);
     int size = 2000;
     VectorSchemaRoot root = ArrowUtilsTest.createVectorSchemaRoot(size);
     Schema schema = root.getSchema();
@@ -114,6 +114,7 @@ public class ArrowSerializersTest {
 
     // test in band serialization.
     fury = Fury.builder().requireClassRegistration(false).build();
+    ArrowSerializers.registerSerializers(fury);
     newTable = (ArrowTable) fury.deserialize(fury.serialize(table));
     assertTableEqual(newTable, table);
   }
