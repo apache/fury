@@ -20,6 +20,7 @@ import io.fury.Fury;
 import io.fury.collection.FuryObjectMap;
 import io.fury.collection.ObjectMap;
 import io.fury.serializer.Serializer;
+import io.fury.serializer.Serializers;
 import io.fury.serializer.collection.CollectionSerializer;
 import io.fury.serializer.collection.MapSerializers;
 import io.fury.util.Preconditions;
@@ -77,9 +78,7 @@ public class ShimDispatcher {
     }
     Class<? extends Serializer> serializerClass = className2ShimSerializerClass.get(className);
     try {
-      MethodHandle ctrHandle =
-          ReflectionUtils.getCtrHandle(serializerClass, Fury.class, Class.class);
-      return (Serializer<?>) ctrHandle.invoke(fury, clazz);
+      return Serializers.newSerializer(fury, clazz, serializerClass);
     } catch (Throwable e) {
       LOG.warn(
           "Construct shim serializer failed for class [{}] with serializer class [{}]",
