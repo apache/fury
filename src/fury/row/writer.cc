@@ -48,7 +48,7 @@ bool Writer::IsNullAt(int i) const {
                          static_cast<uint32_t>(i));
 }
 
-void Writer::WriteString(int i, const std::string &value) {
+void Writer::WriteString(int i, std::string_view value) {
   WriteBytes(i, reinterpret_cast<const uint8_t *>(value.data()),
              static_cast<int32_t>(value.size()));
 }

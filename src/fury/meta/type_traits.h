@@ -59,6 +59,18 @@ struct IsUnique<V1, VN...>
     : std::bool_constant<!ContainsValue<V1, VN...> && IsUnique<VN...>::value> {
 };
 
+template <auto> using Void = void;
+
+/// \brief Metafunction to allow checking if a type matches any of another set
+/// of types
+template <typename T, typename... Args>
+struct IsOneOf : std::disjunction<std::is_same<T, Args>...> {};
+
+/// \brief Shorthand for using IsOneOf + std::enable_if
+template <typename T, typename... Args>
+using EnableIfIsOneOf =
+    typename std::enable_if<IsOneOf<T, Args...>::value, T>::type;
+
 } // namespace meta
 
 } // namespace fury

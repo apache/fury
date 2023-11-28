@@ -20,6 +20,7 @@
 #include "fury/meta/type_traits.h"
 #include "fury/row/row.h"
 #include "src/fury/row/writer.h"
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -63,7 +64,9 @@ inline std::string StringViewToString(std::string_view s) {
   return {s.begin(), s.end()};
 }
 
-template <auto> using Void = void;
+template <typename T>
+inline constexpr bool IsString =
+    meta::IsOneOf<T, std::string, std::string_view>::value;
 
 } // namespace details
 
@@ -77,8 +80,7 @@ using meta::FuryFieldInfo;
 template <typename T, typename Enable = void> struct RowEncodeTrait;
 
 template <typename T>
-struct RowEncodeTrait<T,
-                      details::Void<details::ArrowSchemaBasicType<T>::value>> {
+struct RowEncodeTrait<T, meta::Void<details::ArrowSchemaBasicType<T>::value>> {
 
   static auto Type() { return details::ArrowSchemaBasicType<T>::value(); }
 
@@ -88,7 +90,18 @@ struct RowEncodeTrait<T,
 };
 
 template <typename T>
-struct RowEncodeTrait<T, std::enable_if_t<std::is_class_v<T>>> {
+struct RowEncodeTrait<T, std::enable_if_t<details::IsString<T>>> {
+  static auto Type() { return arrow::utf8(); }
+
+  static auto Write(const T &value, RowWriter &writer, int index) {
+    return writer.WriteString(index, value);
+  }
+};
+
+template <typename T>
+struct RowEncodeTrait<
+    T, std::enable_if_t<std::is_class_v<T> && !details::IsString<T>>> {
+private:
   template <typename FieldInfo, size_t... I>
   static arrow::FieldVector FieldVectorImpl(std::index_sequence<I...>) {
     return {arrow::field(
@@ -97,6 +110,16 @@ struct RowEncodeTrait<T, std::enable_if_t<std::is_class_v<T>>> {
             FieldInfo::Ptrs))>>::Type())...};
   }
 
+  template <typename FieldInfo, size_t... I>
+  static auto WriteImpl(const T &value, RowWriter &writer,
+                        std::index_sequence<I...>) {
+    (RowEncodeTrait<meta::RemoveMemberPointerCVRefT<decltype(std::get<I>(
+         FieldInfo::Ptrs))>>::Write(value.*std::get<I>(FieldInfo::Ptrs), writer,
+                                    I),
+     ...);
+  }
+
+public:
   static auto FieldVector() {
     using FieldInfo = decltype(FuryFieldInfo(std::declval<T>()));
 
@@ -107,15 +130,6 @@ struct RowEncodeTrait<T, std::enable_if_t<std::is_class_v<T>>> {
   static auto Type() { return arrow::struct_(FieldVector()); }
 
   static auto Schema() { return arrow::schema(FieldVector()); }
-
-  template <typename FieldInfo, size_t... I>
-  static auto WriteImpl(const T &value, RowWriter &writer,
-                        std::index_sequence<I...>) {
-    (RowEncodeTrait<meta::RemoveMemberPointerCVRefT<decltype(std::get<I>(
-         FieldInfo::Ptrs))>>::Write(value.*std::get<I>(FieldInfo::Ptrs), writer,
-                                    I),
-     ...);
-  }
 
   static auto Write(const T &value, RowWriter &writer) {
     using FieldInfo = decltype(FuryFieldInfo(std::declval<T>()));
