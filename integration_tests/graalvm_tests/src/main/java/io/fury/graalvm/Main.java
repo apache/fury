@@ -24,6 +24,7 @@ public class Main {
     Example.main(args);
     RecordExample.main(args);
     RecordExample2.main(args);
-    ThreadSafeExample.main(args);
+    // TODO support ThreadSafeFury in future.
+    // ThreadSafeExample.main(args);
   }
 }
