@@ -159,6 +159,9 @@ public abstract class CodecBuilder {
 
   /** Returns true if class is accessible from source. */
   private boolean sourceAccessible(Class<?> clz) {
+    if (clz.isPrimitive()) {
+      return true;
+    }
     if (!ReflectionUtils.isPublic(clz) || clz.getCanonicalName() == null) {
       return false;
     }
