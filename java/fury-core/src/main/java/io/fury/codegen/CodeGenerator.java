@@ -25,8 +25,8 @@ import io.fury.builder.Generated;
 import io.fury.collection.MultiKeyWeakMap;
 import io.fury.util.ClassLoaderUtils;
 import io.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.LoggerFactory;
-import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
@@ -230,7 +230,7 @@ public class CodeGenerator {
 
   public static synchronized ListeningExecutorService getCompilationService() {
     if (compilationExecutorService == null) {
-      if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+      if (GraalvmSupport.isGraalBuildtime()) {
         // GraalVM build time can't reachable thread.
         return compilationExecutorService = MoreExecutors.newDirectExecutorService();
       }

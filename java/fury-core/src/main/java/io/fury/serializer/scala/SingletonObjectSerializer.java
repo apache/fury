@@ -19,6 +19,7 @@ package io.fury.serializer.scala;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.Serializer;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import java.lang.reflect.Field;
@@ -50,7 +51,7 @@ public class SingletonObjectSerializer extends Serializer {
   public Object read(MemoryBuffer buffer) {
     long offset = this.offset;
     if (offset == -1) {
-      Preconditions.checkArgument(!Platform.IS_GRAALVM_IMAGE_BUILD_TIME);
+      Preconditions.checkArgument(!GraalvmSupport.isGraalBuildtime());
       offset = this.offset = Platform.UNSAFE.staticFieldOffset(field);
     }
     return Platform.getObject(type, offset);

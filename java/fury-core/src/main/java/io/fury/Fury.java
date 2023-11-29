@@ -44,7 +44,6 @@ import io.fury.type.Generics;
 import io.fury.type.Type;
 import io.fury.util.ExceptionUtils;
 import io.fury.util.LoggerFactory;
-import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
 import java.io.ByteArrayInputStream;
@@ -302,8 +301,6 @@ public final class Fury {
   }
 
   private MemoryBuffer getBuffer() {
-    assert !Platform.IS_GRAALVM_IMAGE_BUILD_TIME
-        : "MemoryBuffer is not allowed for creation in graalvm build time";
     MemoryBuffer buf = buffer;
     if (buf == null) {
       buf = buffer = MemoryBuffer.newHeapBuffer(64);

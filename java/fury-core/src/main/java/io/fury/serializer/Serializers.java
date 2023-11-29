@@ -18,11 +18,15 @@ package io.fury.serializer;
 
 import static io.fury.util.function.Functions.makeGetterFunction;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import io.fury.Fury;
+import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.type.Type;
 import io.fury.type.TypeUtils;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
@@ -55,6 +59,21 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Serializers {
+  // avoid duplicate reflect inspection and cache for graalvm support too.
+  private static final Cache<Class, Tuple2<MethodType, MethodHandle>> CTR_MAP;
+
+  static {
+    if (GraalvmSupport.isGraalBuildtime()) {
+      CTR_MAP = CacheBuilder.newBuilder().concurrencyLevel(32).build();
+    } else {
+      CTR_MAP = CacheBuilder.newBuilder().weakKeys().softValues().build();
+    }
+  }
+
+  private static final MethodType SIG1 = MethodType.methodType(void.class, Fury.class, Class.class);
+  private static final MethodType SIG2 = MethodType.methodType(void.class, Fury.class);
+  private static final MethodType SIG3 = MethodType.methodType(void.class, Class.class);
+  private static final MethodType SIG4 = MethodType.methodType(void.class);
 
   /**
    * Serializer subclass must have a constructor which take parameters of type {@link Fury} and
@@ -70,29 +89,21 @@ public class Serializers {
       if (serializerClass == CompatibleSerializer.class) {
         return new CompatibleSerializer(fury, type);
       }
-      // reflection
-      MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(serializerClass);
-      try {
-        MethodHandle ctr =
-            lookup.findConstructor(
-                serializerClass, MethodType.methodType(void.class, Fury.class, Class.class));
-        return (Serializer<T>) ctr.invoke(fury, type);
-      } catch (NoSuchMethodException e) {
-        Utils.ignore(e);
-      }
-      try {
-        MethodHandle ctr =
-            lookup.findConstructor(serializerClass, MethodType.methodType(void.class, Fury.class));
-        return (Serializer<T>) ctr.invoke(fury);
-      } catch (NoSuchMethodException e) {
-        Utils.ignore(e);
-      }
-      try {
-        MethodHandle ctr =
-            lookup.findConstructor(serializerClass, MethodType.methodType(void.class, Class.class));
-        return (Serializer<T>) ctr.invoke(type);
-      } catch (NoSuchMethodException e) {
-        return (Serializer<T>) ReflectionUtils.getCtrHandle(serializerClass).invoke();
+      Tuple2<MethodType, MethodHandle> ctrInfo = CTR_MAP.getIfPresent(serializerClass);
+      if (ctrInfo != null) {
+        MethodType sig = ctrInfo.f0;
+        MethodHandle handle = ctrInfo.f1;
+        if (sig.equals(SIG1)) {
+          return (Serializer<T>) handle.invoke(fury, type);
+        } else if (sig.equals(SIG2)) {
+          return (Serializer<T>) handle.invoke(fury);
+        } else if (sig.equals(SIG3)) {
+          return (Serializer<T>) handle.invoke(type);
+        } else {
+          return (Serializer<T>) handle.invoke();
+        }
+      } else {
+        return createSerializer(fury, type, serializerClass);
       }
     } catch (InvocationTargetException e) {
       fury.getClassResolver().resetSerializer(type, serializer);
@@ -109,6 +120,34 @@ public class Serializers {
       Platform.throwException(t);
     }
     throw new IllegalStateException("unreachable");
+  }
+
+  private static <T> Serializer<T> createSerializer(
+      Fury fury, Class<?> type, Class<? extends Serializer> serializerClass) throws Throwable {
+    MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(serializerClass);
+    try {
+      MethodHandle ctr = lookup.findConstructor(serializerClass, SIG1);
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG1, ctr));
+      return (Serializer<T>) ctr.invoke(fury, type);
+    } catch (NoSuchMethodException e) {
+      Utils.ignore(e);
+    }
+    try {
+      MethodHandle ctr = lookup.findConstructor(serializerClass, SIG2);
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG2, ctr));
+      return (Serializer<T>) ctr.invoke(fury);
+    } catch (NoSuchMethodException e) {
+      Utils.ignore(e);
+    }
+    try {
+      MethodHandle ctr = lookup.findConstructor(serializerClass, SIG3);
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG3, ctr));
+      return (Serializer<T>) ctr.invoke(type);
+    } catch (NoSuchMethodException e) {
+      MethodHandle ctr = ReflectionUtils.getCtrHandle(serializerClass);
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG4, ctr));
+      return (Serializer<T>) ctr.invoke();
+    }
   }
 
   public static Object readPrimitiveValue(Fury fury, MemoryBuffer buffer, short classId) {

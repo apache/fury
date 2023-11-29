@@ -331,7 +331,7 @@ public class ReflectionUtils {
   }
 
   public static long getFieldOffset(Field field) {
-    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+    if (GraalvmSupport.isGraalBuildtime()) {
       // See more details at
       // https://www.graalvm.org/latest/reference-manual/native-image/metadata/Compatibility/#unsafe-memory-access
       throw new IllegalStateException(

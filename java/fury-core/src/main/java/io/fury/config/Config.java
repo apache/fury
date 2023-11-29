@@ -19,12 +19,12 @@ package io.fury.config;
 import io.fury.Fury;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.TimeSerializers;
-import io.fury.util.MurmurHash3;
 import io.fury.util.Preconditions;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Config for fury, all {@link Fury} related config can be found here.
@@ -207,19 +207,72 @@ public class Config implements Serializable {
     return scalaOptimizationEnabled;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Config config = (Config) o;
+    return trackingRef == config.trackingRef
+        && basicTypesRefIgnored == config.basicTypesRefIgnored
+        && stringRefIgnored == config.stringRefIgnored
+        && timeRefIgnored == config.timeRefIgnored
+        && codeGenEnabled == config.codeGenEnabled
+        && checkClassVersion == config.checkClassVersion
+        && checkJdkClassSerializable == config.checkJdkClassSerializable
+        && compressString == config.compressString
+        && compressInt == config.compressInt
+        && compressLong == config.compressLong
+        && requireClassRegistration == config.requireClassRegistration
+        && suppressClassRegistrationWarnings == config.suppressClassRegistrationWarnings
+        && registerGuavaTypes == config.registerGuavaTypes
+        && shareMetaContext == config.shareMetaContext
+        && asyncCompilationEnabled == config.asyncCompilationEnabled
+        && deserializeUnexistedClass == config.deserializeUnexistedClass
+        && scalaOptimizationEnabled == config.scalaOptimizationEnabled
+        && language == config.language
+        && compatibleMode == config.compatibleMode
+        && Objects.equals(defaultJDKStreamSerializerType, config.defaultJDKStreamSerializerType)
+        && longEncoding == config.longEncoding;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        language,
+        trackingRef,
+        basicTypesRefIgnored,
+        stringRefIgnored,
+        timeRefIgnored,
+        codeGenEnabled,
+        checkClassVersion,
+        compatibleMode,
+        checkJdkClassSerializable,
+        defaultJDKStreamSerializerType,
+        compressString,
+        compressInt,
+        compressLong,
+        longEncoding,
+        requireClassRegistration,
+        suppressClassRegistrationWarnings,
+        registerGuavaTypes,
+        shareMetaContext,
+        asyncCompilationEnabled,
+        deserializeUnexistedClass,
+        scalaOptimizationEnabled);
+  }
+
+  private static final AtomicInteger counter = new AtomicInteger(0);
+  // Different config instance with equality will be hold only one instance, no memory
+  // leak will happen.
+  private static final ConcurrentMap<Config, Integer> configIdMap = new ConcurrentHashMap<>();
+
   public int getConfigHash() {
     if (configHash == 0) {
-      // TODO use a custom encoding to ensure different config hash different hash.
-      ByteArrayOutputStream bas = new ByteArrayOutputStream();
-      try (ObjectOutputStream stream = new ObjectOutputStream(bas)) {
-        stream.writeObject(this);
-        stream.flush();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-      byte[] bytes = bas.toByteArray();
-      long hashPart1 = MurmurHash3.murmurhash3_x64_128(bytes, 0, bytes.length, 47)[0];
-      configHash = Math.abs((int) hashPart1);
+      configHash = configIdMap.computeIfAbsent(this, k -> counter.incrementAndGet());
     }
     return configHash;
   }

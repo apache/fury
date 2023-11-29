@@ -49,6 +49,7 @@ import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassInfoHolder;
 import io.fury.type.Descriptor;
 import io.fury.type.FinalObjectTypeStub;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
@@ -314,7 +315,7 @@ public abstract class CodecBuilder {
     Field field = descriptor.getField();
     String fieldName = descriptor.getName();
     // Use Field in case the class has duplicate field name as `fieldName`.
-    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+    if (GraalvmSupport.isGraalBuildtime()) {
       return getOrCreateField(
           true,
           long.class,
@@ -426,7 +427,7 @@ public abstract class CodecBuilder {
           TypeToken<Field> fieldTypeToken = TypeToken.of(Field.class);
           Expression classExpr = beanClassExpr(field.getDeclaringClass());
           Expression fieldExpr;
-          if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+          if (GraalvmSupport.isGraalBuildtime()) {
             fieldExpr =
                 inlineInvoke(
                     classExpr, "getDeclaredField", fieldTypeToken, Literal.ofString(fieldName));
@@ -496,7 +497,7 @@ public abstract class CodecBuilder {
     if (cls == beanClass) {
       return staticBeanClassExpr();
     }
-    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+    if (GraalvmSupport.isGraalBuildtime()) {
       String name = cls.getName().replaceAll("\\.|\\$", "_") + "__class__";
       return getOrCreateField(
           true,
@@ -514,7 +515,7 @@ public abstract class CodecBuilder {
   }
 
   protected Expression beanClassExpr() {
-    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+    if (GraalvmSupport.isGraalBuildtime()) {
       return staticBeanClassExpr();
     }
     throw new UnsupportedOperationException();
