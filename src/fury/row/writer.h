@@ -22,9 +22,9 @@
 #include <vector>
 
 #include "fury/row/row.h"
+#include "fury/util/bit_util.h"
 #include "fury/util/buffer.h"
 #include "fury/util/logging.h"
-#include "fury/util/util.h"
 
 namespace fury {
 
@@ -59,13 +59,12 @@ public:
   void ZeroOutPaddingBytes(uint32_t num_bytes);
 
   void SetNullAt(int i) {
-    BitUtil::SetBit(buffer_->data() + starting_offset_ + bytes_before_bitmap_,
-                    i);
+    util::SetBit(buffer_->data() + starting_offset_ + bytes_before_bitmap_, i);
   }
 
   void SetNotNullAt(int i) {
-    BitUtil::ClearBit(buffer_->data() + starting_offset_ + bytes_before_bitmap_,
-                      i);
+    util::ClearBit(buffer_->data() + starting_offset_ + bytes_before_bitmap_,
+                   i);
   }
 
   bool IsNullAt(int i) const;

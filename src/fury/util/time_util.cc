@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "fury/util/time_util.h"
 #include <chrono>
 #include <ctime>
 #include <iomanip>
@@ -23,6 +24,7 @@
 namespace fury {
 
 using std::chrono::system_clock;
+
 std::string FormatTimePoint(system_clock::time_point tp) {
   std::stringstream ss;
   time_t raw_time = system_clock::to_time_t(tp);

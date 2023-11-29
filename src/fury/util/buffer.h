@@ -22,8 +22,8 @@
 #include <memory>
 #include <string>
 
+#include "fury/util/bit_util.h"
 #include "fury/util/logging.h"
-#include "fury/util/util.h"
 
 namespace fury {
 
@@ -201,7 +201,7 @@ public:
       // see
       // https://github.com/facebook/folly/blob/master/folly/docs/FBVector.md
       // for discussion.
-      auto new_size = BitUtil::RoundNumberOfBytesToNearestWord(len * 2);
+      auto new_size = util::RoundNumberOfBytesToNearestWord(len * 2);
       Reserve(new_size);
     }
   }
