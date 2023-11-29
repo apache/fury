@@ -76,6 +76,27 @@ TEST(RowEncoder, String) {
   ASSERT_EQ(row->GetInt32(0), 233);
 }
 
+struct C {
+  const int a;
+  volatile float b;
+  bool c;
+};
+
+FURY_FIELD_INFO(C, a, b, c);
+
+TEST(RowEncoder, Const) {
+  RowWriter writer(encoder::RowEncodeTrait<C>::Schema());
+  writer.Reset();
+
+  C c{233, 1.1, true};
+  encoder::RowEncodeTrait<C>::Write(c, writer);
+
+  auto row = writer.ToRow();
+  ASSERT_EQ(row->GetInt32(0), 233);
+  ASSERT_FLOAT_EQ(row->GetFloat(1), 1.1);
+  ASSERT_EQ(row->GetBoolean(2), true);
+}
+
 } // namespace test
 
 } // namespace fury
