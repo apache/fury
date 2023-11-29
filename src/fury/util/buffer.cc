@@ -110,7 +110,7 @@ std::string Buffer::ToString() const {
 }
 
 std::string Buffer::Hex() const {
-  return BitUtil::hex(data(), static_cast<int32_t>(size_));
+  return util::hex(data(), static_cast<int32_t>(size_));
 }
 
 bool AllocateBuffer(uint32_t size, std::shared_ptr<Buffer> *out) {

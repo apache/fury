@@ -18,7 +18,7 @@
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
-#include "fury/util/util.h"
+#include "fury/util/time_util.h"
 #include <unordered_map>
 #include <vector>
 

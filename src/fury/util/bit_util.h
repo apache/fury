@@ -67,7 +67,7 @@
 
 namespace fury {
 
-namespace BitUtil {
+namespace util {
 
 //
 // Byte-swap 16-bit, 32-bit and 64-bit values. based on arrow/util/bit-util.h
@@ -218,8 +218,7 @@ static inline std::string hex(uint8_t *data, int32_t length) {
   }
   return result;
 }
-} // namespace BitUtil
 
-std::string FormatTimePoint(std::chrono::system_clock::time_point tp);
+} // namespace util
 
 } // namespace fury

@@ -43,9 +43,8 @@ void Writer::ZeroOutPaddingBytes(uint32_t num_bytes) {
 }
 
 bool Writer::IsNullAt(int i) const {
-  return BitUtil::GetBit(buffer_->data() + starting_offset_ +
-                             bytes_before_bitmap_,
-                         static_cast<uint32_t>(i));
+  return util::GetBit(buffer_->data() + starting_offset_ + bytes_before_bitmap_,
+                      static_cast<uint32_t>(i));
 }
 
 void Writer::WriteString(int i, std::string_view value) {
@@ -59,7 +58,7 @@ void Writer::WriteBytes(int i, const uint8_t *input, uint32_t length) {
 
 void Writer::WriteUnaligned(int i, const uint8_t *input, uint32_t offset,
                             uint32_t num_bytes) {
-  int round_size = BitUtil::RoundNumberOfBytesToNearestWord(num_bytes);
+  int round_size = util::RoundNumberOfBytesToNearestWord(num_bytes);
   buffer_->Grow(round_size);
   ZeroOutPaddingBytes(num_bytes);
   buffer_->UnsafePut(cursor(), input + offset, num_bytes);
@@ -206,7 +205,7 @@ void ArrayWriter::Reset(uint32_t num_elements) {
   uint64_t data_size = num_elements_ * (uint64_t)element_size_;
   FURY_CHECK(data_size < std::numeric_limits<int>::max());
   int fixed_part_bytes =
-      BitUtil::RoundNumberOfBytesToNearestWord(static_cast<int>(data_size));
+      util::RoundNumberOfBytesToNearestWord(static_cast<int>(data_size));
   assert((fixed_part_bytes >= data_size) && "too much elements");
   buffer_->Grow(header_in_bytes_ + fixed_part_bytes);
 

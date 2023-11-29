@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "fury/util/util.h"
+#include "fury/util/time_util.h"
 #include "gtest/gtest.h"
 
 namespace fury {
