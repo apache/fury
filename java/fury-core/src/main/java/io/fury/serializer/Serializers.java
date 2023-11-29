@@ -18,12 +18,15 @@ package io.fury.serializer;
 
 import static io.fury.util.function.Functions.makeGetterFunction;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import io.fury.Fury;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassResolver;
 import io.fury.type.Type;
 import io.fury.type.TypeUtils;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
@@ -41,8 +44,6 @@ import java.nio.charset.Charset;
 import java.util.Currency;
 import java.util.IdentityHashMap;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -59,8 +60,16 @@ import java.util.regex.Pattern;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Serializers {
   // avoid duplicate reflect inspection and cache for graalvm support too.
-  private static final ConcurrentMap<Class, Tuple2<MethodType, MethodHandle>> CTR_MAP =
-      new ConcurrentHashMap<>();
+  private static final Cache<Class, Tuple2<MethodType, MethodHandle>> CTR_MAP;
+
+  static {
+    if (GraalvmSupport.isGraalBuildtime()) {
+      CTR_MAP = CacheBuilder.newBuilder().concurrencyLevel(32).build();
+    } else {
+      CTR_MAP = CacheBuilder.newBuilder().weakKeys().softValues().build();
+    }
+  }
+
   private static final MethodType SIG1 = MethodType.methodType(void.class, Fury.class, Class.class);
   private static final MethodType SIG2 = MethodType.methodType(void.class, Fury.class);
   private static final MethodType SIG3 = MethodType.methodType(void.class, Class.class);
@@ -80,7 +89,7 @@ public class Serializers {
       if (serializerClass == CompatibleSerializer.class) {
         return new CompatibleSerializer(fury, type);
       }
-      Tuple2<MethodType, MethodHandle> ctrInfo = CTR_MAP.get(serializerClass);
+      Tuple2<MethodType, MethodHandle> ctrInfo = CTR_MAP.getIfPresent(serializerClass);
       if (ctrInfo != null) {
         MethodType sig = ctrInfo.f0;
         MethodHandle handle = ctrInfo.f1;
