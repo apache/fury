@@ -36,17 +36,13 @@ public class GraalvmSupport {
     IN_GRAALVM_NATIVE_IMAGE = imageCode != null;
   }
 
-  /**
-   * Returns true if current process is running in graalvm native image build stage.
-   */
+  /** Returns true if current process is running in graalvm native image build stage. */
   public static boolean isGraalBuildtime() {
     return IN_GRAALVM_NATIVE_IMAGE
         && GRAAL_IMAGE_BUILDTIME.equals(System.getProperty(GRAAL_IMAGE_CODE_KEY));
   }
 
-  /**
-   * Returns true if current process is running in graalvm native image runtime stage.
-   */
+  /** Returns true if current process is running in graalvm native image runtime stage. */
   public static boolean isGraalRuntime() {
     return IN_GRAALVM_NATIVE_IMAGE
         && GRAAL_IMAGE_RUNTIME.equals(System.getProperty(GRAAL_IMAGE_CODE_KEY));

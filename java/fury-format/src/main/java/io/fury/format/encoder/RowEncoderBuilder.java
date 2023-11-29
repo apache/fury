@@ -44,7 +44,6 @@ import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
 import io.fury.util.GraalvmSupport;
 import io.fury.util.LoggerFactory;
-import io.fury.util.Platform;
 import io.fury.util.StringUtils;
 import java.lang.reflect.Modifier;
 import java.util.SortedMap;
