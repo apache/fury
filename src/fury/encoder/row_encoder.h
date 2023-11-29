@@ -68,6 +68,9 @@ template <typename T>
 inline constexpr bool IsString =
     meta::IsOneOf<T, std::string, std::string_view>::value;
 
+template <typename T>
+inline constexpr bool IsClassButNotBuiltin = std::is_class_v<T> && !IsString<T>;
+
 } // namespace details
 
 using meta::FuryFieldInfo;
@@ -77,12 +80,18 @@ using meta::FuryFieldInfo;
 // - Type(...): construct arrow format type of type `T`
 // - Schema(...): construct schema of type `T` (only for class types)
 // - Write(const T&, ...): encode `T` via the provided writer
-template <typename T, typename Enable = void> struct RowEncodeTrait;
+template <typename T, typename Enable = void> struct RowEncodeTrait {
+  static_assert(meta::AlwaysFalse<T>,
+                "type T is currently not supported for encoding");
+};
 
 template <typename T>
-struct RowEncodeTrait<T, meta::Void<details::ArrowSchemaBasicType<T>::value>> {
+struct RowEncodeTrait<
+    T, meta::Void<details::ArrowSchemaBasicType<std::remove_cv_t<T>>::value>> {
 
-  static auto Type() { return details::ArrowSchemaBasicType<T>::value(); }
+  static auto Type() {
+    return details::ArrowSchemaBasicType<std::remove_cv_t<T>>::value();
+  }
 
   static auto Write(const T &value, RowWriter &writer, int index) {
     return writer.Write(index, value);
@@ -90,7 +99,8 @@ struct RowEncodeTrait<T, meta::Void<details::ArrowSchemaBasicType<T>::value>> {
 };
 
 template <typename T>
-struct RowEncodeTrait<T, std::enable_if_t<details::IsString<T>>> {
+struct RowEncodeTrait<
+    T, std::enable_if_t<details::IsString<std::remove_cv_t<T>>>> {
   static auto Type() { return arrow::utf8(); }
 
   static auto Write(const T &value, RowWriter &writer, int index) {
@@ -100,7 +110,7 @@ struct RowEncodeTrait<T, std::enable_if_t<details::IsString<T>>> {
 
 template <typename T>
 struct RowEncodeTrait<
-    T, std::enable_if_t<std::is_class_v<T> && !details::IsString<T>>> {
+    T, std::enable_if_t<details::IsClassButNotBuiltin<std::remove_cv_t<T>>>> {
 private:
   template <typename FieldInfo, size_t... I>
   static arrow::FieldVector FieldVectorImpl(std::index_sequence<I...>) {
