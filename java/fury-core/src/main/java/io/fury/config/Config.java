@@ -19,11 +19,12 @@ package io.fury.config;
 import io.fury.Fury;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.TimeSerializers;
-import io.fury.util.MurmurHash3;
 import io.fury.util.Preconditions;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Config for fury, all {@link Fury} related config can be found here.
@@ -82,42 +83,6 @@ public class Config implements Serializable {
     }
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
-  }
-
-  // Must write all fields to bytes, otherwise different config may have some bytes, thus same
-  // config hash.
-  // JDK serialization for config will produce different bytes between graalvm build time and
-  // runtime
-  // since graalvm will eliminate/compress unused fields. And jdk serialization is slow, which make
-  // start up
-  // a little slower.
-  private byte[] configToBytes() {
-    ByteBuffer buffer = ByteBuffer.allocate(128);
-    buffer.put((byte) language.ordinal());
-    buffer.put((byte) (trackingRef ? 1 : 0));
-    buffer.put((byte) (basicTypesRefIgnored ? 1 : 0));
-    buffer.put((byte) (stringRefIgnored ? 1 : 0));
-    buffer.put((byte) (timeRefIgnored ? 1 : 0));
-    buffer.put((byte) (codeGenEnabled ? 1 : 0));
-    buffer.put((byte) (checkClassVersion ? 1 : 0));
-    buffer.put((byte) (compatibleMode.ordinal()));
-    buffer.put((byte) (checkJdkClassSerializable ? 1 : 0));
-    buffer.put(defaultJDKStreamSerializerType.getCanonicalName().getBytes(StandardCharsets.UTF_8));
-    buffer.put((byte) (compressString ? 1 : 0));
-    buffer.put((byte) (compressInt ? 1 : 0));
-    buffer.put((byte) (compressLong ? 1 : 0));
-    buffer.put((byte) (longEncoding.ordinal()));
-    buffer.put((byte) (requireClassRegistration ? 1 : 0));
-    buffer.put((byte) (suppressClassRegistrationWarnings ? 1 : 0));
-    buffer.put((byte) (registerGuavaTypes ? 1 : 0));
-    buffer.put((byte) (shareMetaContext ? 1 : 0));
-    buffer.put((byte) (asyncCompilationEnabled ? 1 : 0));
-    buffer.put((byte) (deserializeUnexistedClass ? 1 : 0));
-    buffer.put((byte) (scalaOptimizationEnabled ? 1 : 0));
-    buffer.flip();
-    byte[] bytes = new byte[buffer.position()];
-    buffer.get(bytes);
-    return bytes;
   }
 
   public Language getLanguage() {
@@ -242,11 +207,68 @@ public class Config implements Serializable {
     return scalaOptimizationEnabled;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Config config = (Config) o;
+    return trackingRef == config.trackingRef
+        && basicTypesRefIgnored == config.basicTypesRefIgnored
+        && stringRefIgnored == config.stringRefIgnored
+        && timeRefIgnored == config.timeRefIgnored
+        && codeGenEnabled == config.codeGenEnabled
+        && checkClassVersion == config.checkClassVersion
+        && checkJdkClassSerializable == config.checkJdkClassSerializable
+        && compressString == config.compressString
+        && compressInt == config.compressInt
+        && compressLong == config.compressLong
+        && requireClassRegistration == config.requireClassRegistration
+        && suppressClassRegistrationWarnings == config.suppressClassRegistrationWarnings
+        && registerGuavaTypes == config.registerGuavaTypes
+        && shareMetaContext == config.shareMetaContext
+        && asyncCompilationEnabled == config.asyncCompilationEnabled
+        && deserializeUnexistedClass == config.deserializeUnexistedClass
+        && scalaOptimizationEnabled == config.scalaOptimizationEnabled
+        && language == config.language
+        && compatibleMode == config.compatibleMode
+        && Objects.equals(defaultJDKStreamSerializerType, config.defaultJDKStreamSerializerType)
+        && longEncoding == config.longEncoding;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        language,
+        trackingRef,
+        basicTypesRefIgnored,
+        stringRefIgnored,
+        timeRefIgnored,
+        codeGenEnabled,
+        checkClassVersion,
+        compatibleMode,
+        checkJdkClassSerializable,
+        defaultJDKStreamSerializerType,
+        compressString,
+        compressInt,
+        compressLong,
+        longEncoding,
+        requireClassRegistration,
+        suppressClassRegistrationWarnings,
+        registerGuavaTypes,
+        shareMetaContext,
+        asyncCompilationEnabled,
+        deserializeUnexistedClass,
+        scalaOptimizationEnabled);
+  }
+
+  private static final AtomicInteger counter = new AtomicInteger(0);
+  // Different config instance with equality will be hold only one instance, no memory
+  // leak will happen.
+  private static final ConcurrentMap<Config, Integer> configIdMap = new ConcurrentHashMap<>();
+
   public int getConfigHash() {
     if (configHash == 0) {
-      byte[] bytes = configToBytes();
-      long hashPart1 = MurmurHash3.murmurhash3_x64_128(bytes, 0, bytes.length, 47)[0];
-      configHash = Math.abs((int) hashPart1);
+      configHash = configIdMap.computeIfAbsent(this, k -> counter.incrementAndGet());
     }
     return configHash;
   }
