@@ -74,6 +74,8 @@ TEST(RowEncoder, String) {
   auto row = writer.ToRow();
   ASSERT_EQ(row->GetString(1), "hello");
   ASSERT_EQ(row->GetInt32(0), 233);
+
+  ASSERT_EQ(writer.schema()->field(1)->type()->name(), "utf8");
 }
 
 struct C {
@@ -95,6 +97,50 @@ TEST(RowEncoder, Const) {
   ASSERT_EQ(row->GetInt32(0), 233);
   ASSERT_FLOAT_EQ(row->GetFloat(1), 1.1);
   ASSERT_EQ(row->GetBoolean(2), true);
+}
+
+struct D {
+  int x;
+  A y;
+  B z;
+};
+
+FURY_FIELD_INFO(D, x, y, z);
+
+TEST(RowEncoder, NestedStruct) {
+  RowWriter writer(encoder::RowEncodeTrait<D>::Schema());
+  writer.Reset();
+
+  D d{233, {234, 3.14, true}, {235, "hi"}};
+  auto _ = encoder::RowEncodeTrait<D>::Write(d, writer);
+
+  auto row = writer.ToRow();
+  ASSERT_EQ(row->GetInt32(0), 233);
+
+  auto y_row = row->GetStruct(1);
+  ASSERT_EQ(y_row->GetInt32(0), 234);
+  ASSERT_FLOAT_EQ(y_row->GetFloat(1), 3.14);
+  ASSERT_EQ(y_row->GetBoolean(2), true);
+
+  auto z_row = row->GetStruct(2);
+  ASSERT_EQ(z_row->GetString(1), "hi");
+  ASSERT_EQ(z_row->GetInt32(0), 235);
+
+  ASSERT_EQ(writer.schema()->field(0)->type()->name(), "int32");
+  ASSERT_EQ(writer.schema()->field(1)->type()->name(), "struct");
+  ASSERT_EQ(writer.schema()->field(2)->type()->name(), "struct");
+
+  auto y_writer = dynamic_cast<RowWriter *>(writer.children()[0]);
+  ASSERT_TRUE(y_writer);
+
+  auto y_schema = y_writer->schema();
+  ASSERT_EQ(y_schema->field(0)->name(), "x");
+  ASSERT_EQ(y_schema->field(1)->name(), "y");
+  ASSERT_EQ(y_schema->field(2)->name(), "z");
+
+  ASSERT_EQ(y_schema->field(0)->type()->name(), "int32");
+  ASSERT_EQ(y_schema->field(1)->type()->name(), "float");
+  ASSERT_EQ(y_schema->field(2)->type()->name(), "bool");
 }
 
 } // namespace test
