@@ -4,15 +4,16 @@ order: 6
 -- fury_frontmatter -->
 
 # GraalVM Native Image
-GraalVM native image can compile java code into native code ahead into a binary for building faster, smaller, leaner applications.
-Fury run on GraalVM native image pretty well.
+GraalVM native image can compile java code into native code ahead to build faster, smaller, leaner applications.
 Although GraalVM native image doesn't have a JIT compiler to compile bytecode into machine code, and doesn't support 
-reflection unless configure reflection file. Fury can generate all serializer code for fury JIT framework and MethodHandler/LambdaMetafactory at graalvm build time. Then use those generate code for serialization at runtime without 
-any extra cost, the performance will be pretty goog..
+reflection unless configure reflection file.
 
-In order to use Fury on graalvm native image, you must create Fury as an static field of a class, and register all classes at
+Fury run on GraalVM native image pretty well. Fury will generate all serializer code for fury `JIT framework` and `MethodHandle/LambdaMetafactory` at graalvm build time. Then use those generated code for serialization at runtime without 
+any extra cost, the performance is pretty good.
+
+In order to use Fury on graalvm native image, you must create Fury as an **static** field of a class, and **register** all classes at
  the enclosing class initialize time. Then configure `native-image.properties` under 
-`resources/META-INF/native-image/$xxx/native-image.propertie` to tell graalvm to init the enclosing class at native image 
+`resources/META-INF/native-image/$xxx/native-image.propertie` to tell graalvm to init the class at native image 
 build time. For example, here we configure `io.fury.graalvm.Example` class be init at build time:
 ```properties
 Args = --initialize-at-build-time=io.fury.graalvm.Example
@@ -20,7 +21,7 @@ Args = --initialize-at-build-time=io.fury.graalvm.Example
 
 Another benefit using fury is that you don't have to configure [reflection json](https://www.graalvm.org/latest/reference-manual/native-image/metadata/#specifying-reflection-metadata-in-json) and 
 [serialization json](https://www.graalvm.org/latest/reference-manual/native-image/metadata/#serialization), which is
-very tedious, cumbersome and inconvenient. WHen using fury, you just need to invoke 
+very tedious, cumbersome and inconvenient. When using fury, you just need to invoke 
 `io.fury.Fury.register(Class<?>, boolean)` for every type you want to serialize.
 
 ## Not thread safe fury
