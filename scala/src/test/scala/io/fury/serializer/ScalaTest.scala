@@ -38,5 +38,32 @@ class ScalaTest extends AnyWordSpec with Matchers {
       fury.deserialize(fury.serialize(p)) shouldEqual p
     }
   }
+  "serialize/deserialize package object in app" in {
+    PkgObjectMain.main(Array())
+  }
 }
 
+
+package object PkgObject {
+  case class Id(value: Int)
+}
+
+// Test for https://github.com/alipay/fury/issues/1165
+object PkgObjectMain extends App {
+
+  val fury = Fury
+    .builder()
+    .withScalaOptimizationEnabled(true)
+    .requireClassRegistration(false)
+    .withRefTracking(true)
+    .build()
+
+  import PkgObject._
+
+  case class SomeClass(v: Id)
+  val o1 = SomeClass(Id(1))
+  val o2 = fury.deserialize(fury.serialize(o1))
+  if (o1 != o2) {
+    throw new RuntimeException(s"$o1 is not equal to $o2")
+  }
+}
