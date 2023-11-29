@@ -59,7 +59,7 @@ cdef extern from "fury/util/buffer.h" namespace "fury" nogil:
     c_bool AllocateBuffer(uint32_t size, shared_ptr[CBuffer]* out)
 
 
-cdef extern from "fury/util/util.h" namespace "fury::BitUtil" nogil:
+cdef extern from "fury/util/bit_util.h" namespace "fury::util" nogil:
     c_bool GetBit(const uint8_t *bits, uint32_t i)
 
     void SetBit(uint8_t *bits, int64_t i)
