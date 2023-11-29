@@ -86,6 +86,7 @@ import io.fury.type.Descriptor;
 import io.fury.type.GenericType;
 import io.fury.type.ScalaTypes;
 import io.fury.type.TypeUtils;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.Preconditions;
@@ -1801,17 +1802,17 @@ public class ClassResolver {
   // CHECKSTYLE.OFF:MethodName
   public static void _addGraalvmClassRegistry(int furyConfigHash, ClassResolver classResolver) {
     // CHECKSTYLE.ON:MethodName
-    GRAALVM_REGISTRY.put(furyConfigHash, classResolver);
+    if (GraalvmSupport.isGraalBuildtime()) {
+      GRAALVM_REGISTRY.put(furyConfigHash, classResolver);
+    }
   }
 
   private Class<? extends Serializer> getSerializerClassFromGraalvmRegistry(Class<?> cls) {
-    if (Platform.IS_GRAALVM_IMAGE_RUN_TIME) {
-      ClassResolver classResolver = GRAALVM_REGISTRY.get(fury.getConfig().getConfigHash());
-      if (classResolver != null && classResolver != this) {
-        ClassInfo classInfo = classResolver.classInfoMap.get(cls);
-        Preconditions.checkArgument(classInfo != null, "Class %s is not registered", cls);
-        return Objects.requireNonNull(classInfo).serializer.getClass();
-      }
+    ClassResolver classResolver = GRAALVM_REGISTRY.get(fury.getConfig().getConfigHash());
+    if (classResolver != null && classResolver != this) {
+      ClassInfo classInfo = classResolver.classInfoMap.get(cls);
+      Preconditions.checkArgument(classInfo != null, "Class %s is not registered", cls);
+      return Objects.requireNonNull(classInfo).serializer.getClass();
     }
     return null;
   }

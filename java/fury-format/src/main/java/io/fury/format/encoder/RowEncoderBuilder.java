@@ -42,6 +42,7 @@ import io.fury.format.type.DataTypes;
 import io.fury.format.type.TypeInference;
 import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import io.fury.util.StringUtils;
@@ -225,7 +226,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
 
   @Override
   protected Expression beanClassExpr() {
-    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+    if (GraalvmSupport.isGraalBuildtime()) {
       return staticBeanClassExpr();
     }
     return beanClassRef;

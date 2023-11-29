@@ -81,7 +81,7 @@ import io.fury.serializer.StringSerializer;
 import io.fury.serializer.collection.AbstractCollectionSerializer;
 import io.fury.serializer.collection.AbstractMapSerializer;
 import io.fury.type.TypeUtils;
-import io.fury.util.Platform;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
@@ -1488,7 +1488,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
 
   @Override
   protected Expression beanClassExpr() {
-    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+    if (GraalvmSupport.isGraalBuildtime()) {
       return staticBeanClassExpr();
     }
     // Serializer has a `type` field.

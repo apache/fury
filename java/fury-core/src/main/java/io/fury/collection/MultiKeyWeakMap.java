@@ -18,7 +18,7 @@ package io.fury.collection;
 
 import com.google.common.base.FinalizableReferenceQueue;
 import com.google.common.base.FinalizableWeakReference;
-import io.fury.util.Platform;
+import io.fury.util.GraalvmSupport;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,7 +42,7 @@ public class MultiKeyWeakMap<T> {
   private static final FinalizableReferenceQueue REFERENCE_QUEUE;
 
   static {
-    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+    if (GraalvmSupport.isGraalBuildtime()) {
       REFERENCE_QUEUE = null;
     } else {
       REFERENCE_QUEUE = new FinalizableReferenceQueue();
@@ -69,7 +69,7 @@ public class MultiKeyWeakMap<T> {
 
   private List<? extends KeyReference> createKey(Object[] keys) {
     boolean[] reclaimedFlags = new boolean[keys.length];
-    if (Platform.IS_GRAALVM_IMAGE_BUILD_TIME) {
+    if (GraalvmSupport.isGraalBuildtime()) {
       List<NoCallbackRef> keyRefs = new ArrayList<>();
       for (Object key : keys) {
         keyRefs.add(new NoCallbackRef(key));
