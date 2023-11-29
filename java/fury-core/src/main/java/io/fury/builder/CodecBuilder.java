@@ -159,6 +159,9 @@ public abstract class CodecBuilder {
 
   /** Returns true if class is accessible from source. */
   private boolean sourceAccessible(Class<?> clz) {
+    if (clz.isPrimitive()) {
+      return true;
+    }
     if (!ReflectionUtils.isPublic(clz) || clz.getCanonicalName() == null) {
       return false;
     }
@@ -195,7 +198,8 @@ public abstract class CodecBuilder {
   /** Returns an expression that get field value from <code>bean</code>. */
   protected Expression getFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
     TypeToken<?> fieldType = descriptor.getTypeToken();
-    if (!Modifier.isPublic(getRawType(fieldType).getModifiers())) {
+    Class<?> rawType = descriptor.getRawType();
+    if (!sourceAccessible(rawType)) {
       fieldType = OBJECT_TYPE;
     }
     String fieldName = descriptor.getName();
@@ -307,7 +311,7 @@ public abstract class CodecBuilder {
               inputObject,
               fieldOffsetExpr);
       TypeToken<?> publicSuperType = ReflectionUtils.getPublicSuperType(descriptor.getTypeToken());
-      return new Cast(getObj, publicSuperType, fieldName);
+      return tryCastIfPublic(getObj, publicSuperType, fieldName);
     }
   }
 
