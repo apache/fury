@@ -23,6 +23,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 namespace fury {
 
@@ -94,7 +95,8 @@ struct RowEncodeTrait<
   }
 
   static auto Write(const T &value, RowWriter &writer, int index) {
-    return writer.Write(index, value);
+    writer.Write(index, value);
+    return std::monostate{};
   }
 };
 
@@ -104,7 +106,8 @@ struct RowEncodeTrait<
   static auto Type() { return arrow::utf8(); }
 
   static auto Write(const T &value, RowWriter &writer, int index) {
-    return writer.WriteString(index, value);
+    writer.WriteString(index, value);
+    return std::monostate{};
   }
 };
 
@@ -123,10 +126,10 @@ private:
   template <typename FieldInfo, size_t... I>
   static auto WriteImpl(const T &value, RowWriter &writer,
                         std::index_sequence<I...>) {
-    (RowEncodeTrait<meta::RemoveMemberPointerCVRefT<decltype(std::get<I>(
-         FieldInfo::Ptrs))>>::Write(value.*std::get<I>(FieldInfo::Ptrs), writer,
-                                    I),
-     ...);
+    return std::tuple{
+        RowEncodeTrait<meta::RemoveMemberPointerCVRefT<decltype(std::get<I>(
+            FieldInfo::Ptrs))>>::Write(value.*std::get<I>(FieldInfo::Ptrs),
+                                       writer, I)...};
   }
 
 public:
@@ -146,6 +149,20 @@ public:
 
     return WriteImpl<FieldInfo>(value, writer,
                                 std::make_index_sequence<FieldInfo::Size>());
+  }
+
+  static auto Write(const T &value, RowWriter &writer, int index) {
+    auto offset = writer.cursor();
+
+    auto inner_writer = std::make_shared<RowWriter>(
+        arrow::schema(writer.schema()->field(index)->type()->fields()),
+        &writer);
+
+    inner_writer->Reset();
+    RowEncodeTrait<std::remove_cv_t<T>>::Write(value, *inner_writer.get());
+
+    writer.SetOffsetAndSize(index, offset, writer.cursor() - offset);
+    return inner_writer;
   }
 };
 
