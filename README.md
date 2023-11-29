@@ -26,10 +26,11 @@ In addition to cross-language serialization, Fury also features at:
 
 - Drop-in replace Java serialization frameworks such as JDK/Kryo/Hessian without modifying any code, but 100x faster. 
   It can greatly improve the efficiency of high-performance RPC calls, data transfer, and object persistence.
-- **100% compatible** with JDK serialization: supporting JDK `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` serialization API. 
+- **100% compatible** with JDK serialization API with much faster implementation: supporting JDK `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` API. 
 - Supports **Java 8~21**, Java 17+ `record` is supported too.
+- Support AOT compilation serialization for [GraalVM native image](docs/guide/graalvm_guide.md), and no reflection/serialization json config are needed.
 - Supports shared and circular reference object serialization for golang.
-- Supports [scala serialization](https://github.com/alipay/fury/blob/main/docs/guide/scala_guide.md)
+- Supports [scala serialization](docs/guide/scala_guide.md)
 - Supports automatic object serialization for golang.
 
 ## Protocols
