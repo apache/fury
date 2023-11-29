@@ -315,7 +315,9 @@ public class MapSerializers {
       buffer.writePositiveVarInt(value.size());
       for (Map.Entry<String, T> e : value.entrySet()) {
         fury.writeJavaStringRef(buffer, e.getKey());
-        fury.writeNullable(buffer, e.getValue());
+        // If value is a collection, the `newCollection` method will record itself to
+        // reference map, which may get wrong index if this value is written without index.
+        fury.writeRef(buffer, e.getValue());
       }
     }
 
@@ -323,7 +325,7 @@ public class MapSerializers {
     public Map<String, T> read(MemoryBuffer buffer) {
       Map map = newMap(buffer);
       for (int i = 0; i < numElements; i++) {
-        map.put(fury.readJavaStringRef(buffer), fury.readNullable(buffer));
+        map.put(fury.readJavaStringRef(buffer), fury.readRef(buffer));
       }
       return (Map<String, T>) map;
     }

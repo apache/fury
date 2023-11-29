@@ -18,6 +18,7 @@ package io.fury.serializer.collection;
 
 import static com.google.common.collect.ImmutableList.of;
 import static io.fury.TestUtils.mapOf;
+import static io.fury.collection.Collections.ofArrayList;
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableMap;
@@ -39,6 +40,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -319,5 +321,17 @@ public class MapSerializersTest extends FuryTestBase {
         new GenericMapBoundTest(
             new HashMap<>(mapOf(new HashMap<>(mapOf(1, list)), list)),
             new HashMap<>(mapOf(new HashMap<>(mapOf(1, list)), list))));
+  }
+
+  public static class StringKeyMap<T> extends HashMap<String, T> {}
+
+  @Test
+  public void testStringKeyMapSerializer() {
+    // see https://github.com/alipay/fury/issues/1170
+    Fury fury = Fury.builder().withRefTracking(true).build();
+    fury.registerSerializer(StringKeyMap.class, MapSerializers.StringKeyMapSerializer.class);
+    StringKeyMap<List<String>> list = new StringKeyMap<>();
+    list.put("k1", ofArrayList("a", "b"));
+    serDeCheck(fury, list);
   }
 }
