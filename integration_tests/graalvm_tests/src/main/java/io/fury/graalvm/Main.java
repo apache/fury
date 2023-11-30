@@ -25,5 +25,6 @@ public class Main {
     RecordExample.main(args);
     RecordExample2.main(args);
     ThreadSafeExample.main(args);
+    Benchmark.main(args);
   }
 }

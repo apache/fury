@@ -112,6 +112,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumSet;
@@ -1796,23 +1797,35 @@ public class ClassResolver {
     return fury;
   }
 
-  private static final ConcurrentMap<Integer, ClassResolver> GRAALVM_REGISTRY =
+  private static final ConcurrentMap<Integer, List<ClassResolver>> GRAALVM_REGISTRY =
       new ConcurrentHashMap<>();
 
   // CHECKSTYLE.OFF:MethodName
   public static void _addGraalvmClassRegistry(int furyConfigHash, ClassResolver classResolver) {
     // CHECKSTYLE.ON:MethodName
     if (GraalvmSupport.isGraalBuildtime()) {
-      GRAALVM_REGISTRY.put(furyConfigHash, classResolver);
+      List<ClassResolver> resolvers =
+          GRAALVM_REGISTRY.computeIfAbsent(
+              furyConfigHash, k -> Collections.synchronizedList(new ArrayList<>()));
+      resolvers.add(classResolver);
     }
   }
 
   private Class<? extends Serializer> getSerializerClassFromGraalvmRegistry(Class<?> cls) {
-    ClassResolver classResolver = GRAALVM_REGISTRY.get(fury.getConfig().getConfigHash());
-    if (classResolver != null && classResolver != this) {
-      ClassInfo classInfo = classResolver.classInfoMap.get(cls);
-      Preconditions.checkArgument(classInfo != null, "Class %s is not registered", cls);
-      return Objects.requireNonNull(classInfo).serializer.getClass();
+    List<ClassResolver> classResolvers = GRAALVM_REGISTRY.get(fury.getConfig().getConfigHash());
+    if (classResolvers == null || classResolvers.isEmpty()) {
+      return null;
+    }
+    for (ClassResolver classResolver : classResolvers) {
+      if (classResolver != this) {
+        ClassInfo classInfo = classResolver.classInfoMap.get(cls);
+        if (classInfo != null) {
+          return classInfo.serializer.getClass();
+        }
+      }
+    }
+    if (GraalvmSupport.isGraalRuntime()) {
+      throw new RuntimeException(String.format("Class %s is not registered", cls));
     }
     return null;
   }

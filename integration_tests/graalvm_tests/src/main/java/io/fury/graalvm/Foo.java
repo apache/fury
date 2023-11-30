@@ -16,11 +16,12 @@
 
 package io.fury.graalvm;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class Foo {
+public class Foo implements Serializable {
   int f1;
   String f2;
   List<String> f3;
