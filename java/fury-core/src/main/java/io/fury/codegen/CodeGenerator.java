@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.fury.builder.AccessorHelper;
 import io.fury.builder.Generated;
+import io.fury.collection.Collections;
 import io.fury.collection.MultiKeyWeakMap;
 import io.fury.util.ClassLoaderUtils;
 import io.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
@@ -33,6 +34,7 @@ import io.fury.util.StringUtils;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -475,5 +477,18 @@ public class CodeGenerator {
       sb.deleteCharAt(length - 1);
     }
     return sb;
+  }
+
+  /** Returns true if class is accessible from source. */
+  public static boolean sourceAccessible(Class<?> clz) {
+    if (clz.isPrimitive()) {
+      return true;
+    }
+    if (!ReflectionUtils.isPublic(clz) || clz.getCanonicalName() == null) {
+      return false;
+    }
+    // Scala may produce class name like: xxx.SomePackageObject.package$SomeClass
+    HashSet<String> set = Collections.ofHashSet(clz.getCanonicalName().split("\\."));
+    return !Collections.hasIntersection(set, CodegenContext.JAVA_RESERVED_WORDS);
   }
 }
