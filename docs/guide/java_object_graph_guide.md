@@ -349,7 +349,7 @@ if(JavaSerializer.serializedByJDK(bytes)){
 
 ### Upgrade fury
 Currently binary compatibility is ensured for minor versions only. For example, if you are using fury`v0.2.0`, binary compatibility will 
-be provided if you upgrade to fury `v0.2.1`. But if upgrade to fury `v0.3.1`, no  binary compatibility are ensured. 
+be provided if you upgrade to fury `v0.2.1`. But if upgrade to fury `v0.4.0`, no  binary compatibility are ensured. 
 Most of the time there is no need to upgrade fury to newer major version, the current version is fast and compact enough,
 and we provide some minor fix for recent older versions.
 
