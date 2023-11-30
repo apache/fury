@@ -8,7 +8,7 @@ mvn -DskipTests=true -Pnative package
 
 ## Benchmark
 ```bash
-mvn -Pnative -Dagent=true -DskipTests -DskipNativeBuild=true package exec:exec@java-agent
-mvn -DskipTests=true -Pnative -Dagent=true package
+BENCHMARK_REPEAT=400000 mvn -Pnative -Dagent=true -DskipTests -DskipNativeBuild=true package exec:exec@java-agent
+BENCHMARK_REPEAT=400000 mvn -DskipTests=true -Pnative -Dagent=true package
 ```
-`-Dagent=true` is optional, just for JDK serialization reflection config collection, if not needed for fury serialization
+`-Dagent=true` is needed by JDK serialization only to build reflection config, it's not needed for fury serialization.
