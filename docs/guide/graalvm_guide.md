@@ -4,12 +4,12 @@ order: 6
 -- fury_frontmatter -->
 
 # GraalVM Native Image
-GraalVM native image can compile java code into native code ahead to build faster, smaller, leaner applications.
-Although GraalVM native image doesn't have a JIT compiler to compile bytecode into machine code, and doesn't support 
+GraalVM `native image` can compile java code into native code ahead to build faster, smaller, leaner applications.
+The native image doesn't have a JIT compiler to compile bytecode into machine code, and doesn't support 
 reflection unless configure reflection file.
 
-Fury run on GraalVM native image pretty well. Fury will generate all serializer code for fury `JIT framework` and `MethodHandle/LambdaMetafactory` at graalvm build time. Then use those generated code for serialization at runtime without 
-any extra cost, the performance is pretty good.
+Fury runs on GraalVM native image pretty well. Fury generates all serializer code for `Fury JIT framework` and `MethodHandle/LambdaMetafactory` at graalvm build time. Then use those generated code for serialization at runtime without 
+any extra cost, the performance is great.
 
 In order to use Fury on graalvm native image, you must create Fury as an **static** field of a class, and **register** all classes at
  the enclosing class initialize time. Then configure `native-image.properties` under 
@@ -24,7 +24,7 @@ Another benefit using fury is that you don't have to configure [reflection json]
 very tedious, cumbersome and inconvenient. When using fury, you just need to invoke 
 `io.fury.Fury.register(Class<?>, boolean)` for every type you want to serialize.
 
-## Not thread safe fury
+## Not thread-safe Fury
 Example:
 ```java
 import io.fury.Fury;
@@ -64,7 +64,7 @@ Then add `io.fury.graalvm.Example` build time init to `native-image.properties` 
 Args = --initialize-at-build-time=io.fury.graalvm.Example
 ```
 
-## Thread safe fury
+## Thread-safe Fury
 ```java
 import io.fury.Fury;
 import io.fury.ThreadLocalFury;
@@ -115,3 +115,96 @@ For framework developers, if you want to integrate fury for serialization, you c
 the users to list all the classes they want to serialize, then you can load those classes and invoke 
 `io.fury.Fury.register(Class<?>, boolean)` to register those classes in your Fury integration class, and configure that 
 class be initialized at graalvm native image build time.
+
+## Benchmark
+Here we give two class benchmarks between Fury and Graalvm Serialization.
+
+When Fury compression is disabled:
+- Struct: Fury is `46x speed, 43% size` compared to JDK.
+- Pojo: Fury is `12x speed, 56% size` compared to JDK.
+
+When Fury compression is enabled:
+- Struct: Fury is `24x speed, 31% size` compared to JDK.
+- Pojo: Fury is `12x speed, 48% size` compared to JDK.
+
+See [[Benchmark.java](../../integration_tests/graalvm_tests/src/main/java/io/fury/graalvm/Benchmark.java)] for benchmark code.
+
+### Struct Benchmark
+#### Class Fields
+```java
+public class Struct implements Serializable {
+  public int f1;
+  public long f2;
+  public float f3;
+  public double f4;
+  public int f5;
+  public long f6;
+  public float f7;
+  public double f8;
+  public int f9;
+  public long f10;
+  public float f11;
+  public double f12;
+}
+```
+#### Benchmark Results
+No compression:
+```
+Benchmark repeat number: 400000
+Object type: class io.fury.graalvm.Struct
+Compress number: false
+Fury size: 76.0
+JDK size: 178.0
+Fury serialization took mills: 49
+JDK serialization took mills: 2254
+Compare speed: Fury is 45.70x speed of JDK
+Compare size: Fury is 0.43x size of JDK
+```
+Compress number:
+```
+Benchmark repeat number: 400000
+Object type: class io.fury.graalvm.Struct
+Compress number: true
+Fury size: 55.0
+JDK size: 178.0
+Fury serialization took mills: 130
+JDK serialization took mills: 3161
+Compare speed: Fury is 24.16x speed of JDK
+Compare size: Fury is 0.31x size of JDK
+```
+
+### Pojo Benchmark
+#### Class Fields
+```java
+public class Foo implements Serializable {
+  int f1;
+  String f2;
+  List<String> f3;
+  Map<String, Long> f4;
+}
+```
+#### Benchmark Results
+No compression:
+```
+Benchmark repeat number: 400000
+Object type: class io.fury.graalvm.Foo
+Compress number: false
+Fury size: 541.0
+JDK size: 964.0
+Fury serialization took mills: 1663
+JDK serialization took mills: 16266
+Compare speed: Fury is 12.19x speed of JDK
+Compare size: Fury is 0.56x size of JDK
+```
+Compress number:
+```
+Benchmark repeat number: 400000
+Object type: class io.fury.graalvm.Foo
+Compress number: true
+Fury size: 459.0
+JDK size: 964.0
+Fury serialization took mills: 1289
+JDK serialization took mills: 15069
+Compare speed: Fury is 12.11x speed of JDK
+Compare size: Fury is 0.48x size of JDK
+```
