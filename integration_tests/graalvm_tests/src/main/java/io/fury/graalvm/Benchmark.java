@@ -18,6 +18,7 @@ package io.fury.graalvm;
 
 import io.fury.Fury;
 import io.fury.io.ClassLoaderObjectInputStream;
+import io.fury.util.Preconditions;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,6 +31,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Benchmark suite for fury and jdk.
+ *
+ * @author chaokunyang
+ */
 public class Benchmark {
   static ObjectInputFilter filter = ObjectInputFilter.Config.createFilter("io.fury.graalvm.*");
 
@@ -64,15 +70,16 @@ public class Benchmark {
     }
   }
 
-  private static final boolean compressNumber;
+  private static final Fury fury1;
+  private static final Fury fury2;
 
-  private static final Fury fury;
   static {
-    String compress = System.getenv("COMPRESS_NUMBER");
-    compressNumber = compress != null;
-    fury = Fury.builder().withNumberCompressed(compressNumber).build();
-    fury.register(Foo.class, true);
-    fury.register(Struct.class, true);
+    fury1 = Fury.builder().withNumberCompressed(false).build();
+    fury1.register(Foo.class, true);
+    fury1.register(Struct.class, true);
+    fury2 = Fury.builder().withNumberCompressed(true).build();
+    fury2.register(Foo.class, true);
+    fury2.register(Struct.class, true);
   }
 
   public static void main(String[] args) {
@@ -84,23 +91,27 @@ public class Benchmark {
     for (int i = 0; i < 20; i++) {
       map.put("key" + i, (long) i);
     }
-    benchmark(new Foo(100, "abc", list, map));
-    benchmark(Struct.create());
+    benchmark(true, Struct.create());
+    benchmark(false, Struct.create());
+    benchmark(true, new Foo(100, "abc", list, map));
+    benchmark(false, new Foo(100, "abc", list, map));
   }
 
-  public static void benchmark(Object obj) {
+  public static void benchmark(boolean compressNumber, Object obj) {
     String furyRepeat = System.getenv("BENCHMARK_REPEAT");
     if (furyRepeat == null) {
       return;
     }
     int n = Integer.parseInt(furyRepeat);
+    Fury fury = compressNumber ? fury2 : fury1;
     System.out.println("=========================");
     System.out.println("Benchmark repeat number: " + furyRepeat);
-    System.out.println("Object type:" + obj.getClass());
-    System.out.println("Compress number:" + compressNumber);
-    System.out.println("Fury size:" + fury.serialize(obj).length);
-    System.out.println("JDK size:" + jdkSerialize(obj).length);
-    System.out.println("=========================");
+    System.out.println("Object type: " + obj.getClass());
+    System.out.println("Compress number: " + compressNumber);
+    double furySize = fury.serialize(obj).length;
+    System.out.println("Fury size: " + furySize);
+    double jdkSize = jdkSerialize(obj).length;
+    System.out.println("JDK size: " + jdkSize);
     Object o = fury.deserialize(fury.serialize(obj));
     for (int i = 0; i < n; i++) {
       o = fury.deserialize(fury.serialize(obj));
@@ -110,16 +121,18 @@ public class Benchmark {
     for (int i = 0; i < n; i++) {
       o = fury.deserialize(fury.serialize(o));
     }
-    long durationMills = (System.nanoTime() - start) / 1000_000;
-    System.out.println("Fury serialization took mills:" + durationMills);
-    System.out.println("Result:" + o.equals(obj));
+    long duration = (System.nanoTime() - start);
+    System.out.println("Fury serialization took mills: " + duration / 1000_000);
+    Preconditions.checkArgument(o.equals(obj));
 
     start = System.nanoTime();
     for (int i = 0; i < n; i++) {
       o = testJDKSerialization(o);
     }
-    durationMills = (System.nanoTime() - start) / 1000_000;
-    System.out.println("JDK serialization took mills:" + durationMills);
-    System.out.println("Result:" + o.equals(obj));
+    long duration2 = (System.nanoTime() - start);
+    System.out.println("JDK serialization took mills: " + duration2 / 1000_000);
+    Preconditions.checkArgument(o.equals(obj));
+    System.out.printf("Compare speed: Fury is %.2fx speed of JDK\n", duration2 * 1.0d / duration);
+    System.out.printf("Compare size: Fury is %.2fx size of JDK\n", furySize / jdkSize);
   }
 }

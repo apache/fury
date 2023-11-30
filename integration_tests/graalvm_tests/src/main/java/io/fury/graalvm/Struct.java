@@ -18,7 +18,6 @@ package io.fury.graalvm;
 
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.Random;
 
 public class Struct implements Serializable {
   public int f1;
@@ -35,20 +34,19 @@ public class Struct implements Serializable {
   public double f12;
 
   public static Struct create() {
-    Random random = new Random(7);
     Struct struct = new Struct();
-    struct.f1 = random.nextInt();
-    struct.f2 = random.nextLong();
-    struct.f3 = random.nextFloat();
-    struct.f4 = random.nextDouble();
-    struct.f5 = random.nextInt();
-    struct.f6 = random.nextLong();
-    struct.f7 = random.nextFloat();
-    struct.f8 = random.nextDouble();
-    struct.f9 = random.nextInt();
-    struct.f10 = random.nextLong();
-    struct.f11 = random.nextFloat();
-    struct.f12 = random.nextDouble();
+    struct.f1 = 10;
+    struct.f2 = 123456788;
+    struct.f3 = 1/5f;
+    struct.f4 = 1/7d;
+    struct.f5 = 11;
+    struct.f6 = 123456789;
+    struct.f7 = 2/5f;
+    struct.f8 = 2/7d;
+    struct.f9 = 12;
+    struct.f10 = 123456788;
+    struct.f11 = 3/5f;
+    struct.f12 = 3/7d;
     return struct;
   }
 
