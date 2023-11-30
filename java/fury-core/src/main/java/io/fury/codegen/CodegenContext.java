@@ -275,6 +275,9 @@ public class CodegenContext {
    *     return canonical name otherwise.
    */
   public String type(Class<?> clz) {
+    if (!CodeGenerator.sourceAccessible(clz)) {
+      return "Object";
+    }
     if (clz.isArray()) {
       return getArrayType(clz);
     }

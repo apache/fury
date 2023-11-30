@@ -16,6 +16,7 @@
 
 package io.fury.builder;
 
+import static io.fury.codegen.CodeGenerator.sourceAccessible;
 import static io.fury.codegen.Expression.Invoke.inlineInvoke;
 import static io.fury.type.TypeUtils.CLASS_TYPE;
 import static io.fury.type.TypeUtils.OBJECT_ARRAY_TYPE;
@@ -42,7 +43,6 @@ import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.StaticInvoke;
-import io.fury.collection.Collections;
 import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
@@ -61,7 +61,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -139,10 +138,10 @@ public abstract class CodecBuilder {
       return expression;
     }
     if (inline) {
-      if (sourceAccessible(rawType) && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
+      if (sourceAccessible(rawType)) {
         return new Cast(expression, targetType);
       } else {
-        return expression;
+        return new Cast(expression, ReflectionUtils.getPublicSuperType(TypeToken.of(rawType)));
       }
     }
     return tryCastIfPublic(expression, targetType, "castedValue");
@@ -155,19 +154,6 @@ public abstract class CodecBuilder {
       return new Cast(expression, targetType, valuePrefix);
     }
     return expression;
-  }
-
-  /** Returns true if class is accessible from source. */
-  private boolean sourceAccessible(Class<?> clz) {
-    if (clz.isPrimitive()) {
-      return true;
-    }
-    if (!ReflectionUtils.isPublic(clz) || clz.getCanonicalName() == null) {
-      return false;
-    }
-    // Scala may produce class name like: xxx.SomePackageObject.package$SomeClass
-    HashSet<String> set = Collections.ofHashSet(clz.getCanonicalName().split("\\."));
-    return !Collections.hasIntersection(set, CodegenContext.JAVA_RESERVED_WORDS);
   }
 
   // left null check in sub class encode method to reduce data dependence.
