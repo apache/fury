@@ -18,6 +18,7 @@
 #include <type_traits>
 
 #include "fury/encoder/row_encoder.h"
+#include "src/fury/row/writer.h"
 
 namespace fury {
 
@@ -49,7 +50,7 @@ TEST(RowEncoder, Simple) {
   writer.Reset();
 
   A a{233, 3.14, true};
-  encoder::RowEncodeTrait<A>::Write(a, writer);
+  encoder::RowEncodeTrait<A>::Write(encoder::EmptyWriteVisitor{}, a, writer);
 
   auto row = writer.ToRow();
   ASSERT_EQ(row->GetInt32(0), 233);
@@ -69,7 +70,7 @@ TEST(RowEncoder, String) {
   writer.Reset();
 
   B b{233, "hello"};
-  encoder::RowEncodeTrait<B>::Write(b, writer);
+  encoder::RowEncodeTrait<B>::Write(encoder::EmptyWriteVisitor{}, b, writer);
 
   auto row = writer.ToRow();
   ASSERT_EQ(row->GetString(1), "hello");
@@ -91,7 +92,7 @@ TEST(RowEncoder, Const) {
   writer.Reset();
 
   C c{233, 1.1, true};
-  encoder::RowEncodeTrait<C>::Write(c, writer);
+  encoder::RowEncodeTrait<C>::Write(encoder::EmptyWriteVisitor{}, c, writer);
 
   auto row = writer.ToRow();
   ASSERT_EQ(row->GetInt32(0), 233);
@@ -109,10 +110,12 @@ FURY_FIELD_INFO(D, x, y, z);
 
 TEST(RowEncoder, NestedStruct) {
   RowWriter writer(encoder::RowEncodeTrait<D>::Schema());
+  std::vector<std::unique_ptr<RowWriter>> children;
   writer.Reset();
 
   D d{233, {234, 3.14, true}, {235, "hi"}};
-  auto _ = encoder::RowEncodeTrait<D>::Write(d, writer);
+  encoder::RowEncodeTrait<D>::Write(
+      encoder::DefaultWriteVisitor<decltype(children)>{children}, d, writer);
 
   auto row = writer.ToRow();
   ASSERT_EQ(row->GetInt32(0), 233);
