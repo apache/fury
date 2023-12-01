@@ -50,6 +50,7 @@ body:
         - Rust
         - C#
         - Doc
+        - Benchmark
         - Other
     validations:
       required: true
