@@ -76,11 +76,24 @@ inline constexpr bool IsClassButNotBuiltin = std::is_class_v<T> && !IsString<T>;
 
 using meta::FuryFieldInfo;
 
+struct EmptyWriteVisitor {
+  template <typename, typename T> void Visit(T &&) {}
+};
+
+template <typename C> struct DefaultWriteVisitor {
+  C &cont;
+
+  template <typename> void Visit(std::unique_ptr<RowWriter> writer) {
+    cont.push_back(std::move(writer));
+  }
+};
+
 // RowEncodeTrait<T> defines how to serialize `T` to the row format
 // it includes:
-// - Type(...): construct arrow format type of type `T`
-// - Schema(...): construct schema of type `T` (only for class types)
-// - Write(const T&, ...): encode `T` via the provided writer
+// - Type(): construct arrow format type of type `T`
+// - Schema(): construct schema of type `T` (only for class types)
+// - Write(auto&& visitor, const T& value, ...):
+//     encode `T` via the provided writer
 template <typename T, typename Enable = void> struct RowEncodeTrait {
   static_assert(meta::AlwaysFalse<T>,
                 "type T is currently not supported for encoding");
@@ -94,9 +107,9 @@ struct RowEncodeTrait<
     return details::ArrowSchemaBasicType<std::remove_cv_t<T>>::value();
   }
 
-  static auto Write(const T &value, RowWriter &writer, int index) {
+  template <typename V>
+  static void Write(V &&, const T &value, RowWriter &writer, int index) {
     writer.Write(index, value);
-    return std::monostate{};
   }
 };
 
@@ -105,9 +118,9 @@ struct RowEncodeTrait<
     T, std::enable_if_t<details::IsString<std::remove_cv_t<T>>>> {
   static auto Type() { return arrow::utf8(); }
 
-  static auto Write(const T &value, RowWriter &writer, int index) {
+  template <typename V>
+  static void Write(V &&, const T &value, RowWriter &writer, int index) {
     writer.WriteString(index, value);
-    return std::monostate{};
   }
 };
 
@@ -123,13 +136,14 @@ private:
             FieldInfo::Ptrs))>>::Type())...};
   }
 
-  template <typename FieldInfo, size_t... I>
-  static auto WriteImpl(const T &value, RowWriter &writer,
+  template <typename FieldInfo, typename V, size_t... I>
+  static void WriteImpl(V &&visitor, const T &value, RowWriter &writer,
                         std::index_sequence<I...>) {
-    return std::tuple{
-        RowEncodeTrait<meta::RemoveMemberPointerCVRefT<decltype(std::get<I>(
-            FieldInfo::Ptrs))>>::Write(value.*std::get<I>(FieldInfo::Ptrs),
-                                       writer, I)...};
+    (RowEncodeTrait<meta::RemoveMemberPointerCVRefT<decltype(std::get<I>(
+         FieldInfo::Ptrs))>>::Write(std::forward<V>(visitor),
+                                    value.*std::get<I>(FieldInfo::Ptrs), writer,
+                                    I),
+     ...);
   }
 
 public:
@@ -144,25 +158,30 @@ public:
 
   static auto Schema() { return arrow::schema(FieldVector()); }
 
-  static auto Write(const T &value, RowWriter &writer) {
+  template <typename V>
+  static auto Write(V &&visitor, const T &value, RowWriter &writer) {
     using FieldInfo = decltype(FuryFieldInfo(std::declval<T>()));
 
-    return WriteImpl<FieldInfo>(value, writer,
+    return WriteImpl<FieldInfo>(std::forward<V>(visitor), value, writer,
                                 std::make_index_sequence<FieldInfo::Size>());
   }
 
-  static auto Write(const T &value, RowWriter &writer, int index) {
+  template <typename V>
+  static void Write(V &&visitor, const T &value, RowWriter &writer, int index) {
     auto offset = writer.cursor();
 
-    auto inner_writer = std::make_shared<RowWriter>(
+    auto inner_writer = std::make_unique<RowWriter>(
         arrow::schema(writer.schema()->field(index)->type()->fields()),
         &writer);
 
     inner_writer->Reset();
-    RowEncodeTrait<std::remove_cv_t<T>>::Write(value, *inner_writer.get());
+    RowEncodeTrait<T>::Write(std::forward<V>(visitor), value,
+                             *inner_writer.get());
 
     writer.SetOffsetAndSize(index, offset, writer.cursor() - offset);
-    return inner_writer;
+
+    std::forward<V>(visitor).template Visit<std::remove_cv_t<T>>(
+        std::move(inner_writer));
   }
 };
 
