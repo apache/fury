@@ -383,11 +383,6 @@ Please read the [CONTRIBUTING](CONTRIBUTING.md) guide for instructions on how to
 
 For ecosystem projects, please see https://github.com/fury-project
 
-## Getting involved
-
-| Platform                                                                                                                                                          | Purpose                                                                                                                                                                                                   |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [GitHub Issues](https://github.com/alipay/fury/issues)                                                                                                            | For reporting bugs and filing feature requests.                                                                                                                                                           |
 ## License
 
 Licensed under the [Apache License, Version 2.0](LICENSE)
