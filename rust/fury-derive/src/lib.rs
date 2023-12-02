@@ -1,5 +1,3 @@
-use fury_meta::{derive_deserilize, derive_fury_meta, derive_serialize};
-use fury_row::derive_row;
 // Copyright 2023 The Fury Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +11,8 @@ use fury_row::derive_row;
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+use fury_meta::{derive_deserilize, derive_fury_meta, derive_serialize};
+use fury_row::derive_row;
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
