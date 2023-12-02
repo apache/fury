@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 use fury_meta::{derive_deserilize, derive_fury_meta, derive_serialize};
 use fury_row::derive_row;
 use proc_macro::TokenStream;
