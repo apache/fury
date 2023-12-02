@@ -24,11 +24,13 @@
 
 namespace std {
 template <> struct hash<fury::FuryLogLevel> {
-  size_t operator()(const fury::FuryLogLevel &t) const { return size_t(t); }
+  size_t operator()(fury::FuryLogLevel t) const { return size_t(t); }
 };
 } // namespace std
 
 namespace fury {
+
+const FuryLogLevel fury_severity_threshold = FuryLog::GetLogLevel();
 
 std::string GetCallTrace() {
   std::vector<void *> local_stack;
@@ -76,9 +78,10 @@ FuryLogLevel FuryLog::GetLogLevel() {
     } else if (data == "fatal") {
       severity_threshold = FuryLogLevel::FATAL;
     } else {
-      FURY_LOG(WARNING) << "Unrecognized setting of FuryLogLevel=" << var_value;
+      FURY_LOG_INTERNAL(WARNING)
+          << "Unrecognized setting of FuryLogLevel=" << var_value;
     }
-    FURY_LOG(INFO)
+    FURY_LOG_INTERNAL(INFO)
         << "Set ray log level from environment variable RAY_BACKEND_LOG_LEVEL"
         << " to " << static_cast<int>(severity_threshold);
   }
@@ -86,8 +89,7 @@ FuryLogLevel FuryLog::GetLogLevel() {
 }
 
 FuryLog::FuryLog(const char *file_name, int line_number, FuryLogLevel severity)
-    : is_enabled_(severity >= __fury_severity_threshold__),
-      severity_(severity) {
+    : severity_(severity) {
   Stream() << "[" << FormatTimePoint(std::chrono::system_clock::now()) << "] "
            << LogLevelAsString(severity) << " " << file_name << ":"
            << line_number << ": ";
@@ -102,10 +104,8 @@ FuryLog::~FuryLog() {
   Stream() << "\n" << std::endl;
 }
 
-bool FuryLog::IsEnabled() const { return is_enabled_; }
-
 bool FuryLog::IsLevelEnabled(FuryLogLevel log_level) {
-  return log_level >= __fury_severity_threshold__;
+  return log_level >= fury_severity_threshold;
 }
 
 } // namespace fury

@@ -46,8 +46,6 @@
 
 namespace fury {
 
-#define FURY_IGNORE_EXPR(expr) ((void)(expr))
-
 // Return the given status if it is not OK.
 #define FURY_RETURN_NOT_OK(s)                                                  \
   do {                                                                         \

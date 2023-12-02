@@ -36,23 +36,19 @@ enum class FuryLogLevel {
   FATAL = 3
 };
 
-#define FURY_LOG_INTERNAL(level) ::fury::FuryLog(__FILE__, __LINE__, level)
+#define FURY_LOG_INTERNAL(level)                                               \
+  ::fury::FuryLog(__FILE__, __LINE__, ::fury::FuryLogLevel::level)
 
 #define FURY_LOG_ENABLED(level)                                                \
-  fury::FuryLog::IsLevelEnabled(fury::FuryLogLevel::level)
+  ::fury::FuryLog::IsLevelEnabled(::fury::FuryLogLevel::level)
 
 #define FURY_LOG(level)                                                        \
-  if (fury::FuryLog::IsLevelEnabled(fury::FuryLogLevel::level))                \
-  FURY_LOG_INTERNAL(fury::FuryLogLevel::level)
-
-#define FURY_IGNORE_EXPR(expr) ((void)(expr))
+  if (FURY_LOG_ENABLED(level))                                                 \
+  FURY_LOG_INTERNAL(level)
 
 #define FURY_CHECK(condition)                                                  \
-  (condition)                                                                  \
-      ? FURY_IGNORE_EXPR(0)                                                    \
-      : ::fury::Voidify() &                                                    \
-            ::fury::FuryLog(__FILE__, __LINE__, fury::FuryLogLevel::FATAL)     \
-                << " Check failed: " #condition " "
+  if (!(condition))                                                            \
+  FURY_LOG_INTERNAL(FATAL) << " Check failed: " #condition " "
 
 #define FURY_CHECK_OP(left, op, right)                                         \
   do {                                                                         \
@@ -75,16 +71,9 @@ public:
   virtual ~FuryLog();
 
   template <typename T> FuryLog &operator<<(const T &t) {
-    if (IsEnabled()) {
-      Stream() << t;
-    }
+    Stream() << t;
     return *this;
   };
-
-  /// Return whether or not current logging instance is enabled.
-  ///
-  /// \return True if logging is enabled and false otherwise.
-  virtual bool IsEnabled() const;
 
   /// Return whether or not the log level is enabled in current setting.
   ///
@@ -98,22 +87,8 @@ protected:
   virtual std::ostream &Stream() { return std::cerr; };
 
 private:
-  /// True if log messages should be logged and false if they should be ignored.
-  bool is_enabled_;
   /// log level.
   FuryLogLevel severity_;
-};
-
-const FuryLogLevel __fury_severity_threshold__ = ::fury::FuryLog::GetLogLevel();
-
-// This class make FURY_CHECK compilation pass to change the << operator to
-// void.
-class Voidify {
-public:
-  Voidify() {}
-  // This has to be an operator with a precedence lower than << but
-  // higher than ?:
-  void operator&(FuryLog &) {}
 };
 
 } // namespace fury
