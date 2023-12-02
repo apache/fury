@@ -47,15 +47,15 @@ std::string GetCallTrace() {
   return output;
 }
 
-std::string LogLevelAsString(FuryLogLevel level) {
-  static std::unordered_map<FuryLogLevel, std::string> level_to_str = {
-      {FuryLogLevel::DEBUG, "DEBUG"},     {FuryLogLevel::INFO, "INFO"},
-      {FuryLogLevel::WARNING, "WARNING"}, {FuryLogLevel::ERROR, "ERROR"},
-      {FuryLogLevel::FATAL, "FATAL"},
-  };
+std::unordered_map<FuryLogLevel, std::string> log_level_to_str = {
+    {FuryLogLevel::DEBUG, "DEBUG"},     {FuryLogLevel::INFO, "INFO"},
+    {FuryLogLevel::WARNING, "WARNING"}, {FuryLogLevel::ERROR, "ERROR"},
+    {FuryLogLevel::FATAL, "FATAL"},
+};
 
-  auto it = level_to_str.find(level);
-  if (it == level_to_str.end()) {
+std::string LogLevelAsString(FuryLogLevel level) {
+  auto it = log_level_to_str.find(level);
+  if (it == log_level_to_str.end()) {
     return "UNKNOWN";
   }
   return it->second;
