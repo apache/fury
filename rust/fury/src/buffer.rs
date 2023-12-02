@@ -40,6 +40,10 @@ impl Writer {
         self.bf.clone()
     }
 
+    pub fn len(&self) -> usize {
+        self.bf.len()
+    }
+
     fn move_next(&mut self, additional: usize) {
         unsafe { self.bf.set_len(self.bf.len() + additional) }
     }
@@ -118,6 +122,10 @@ impl Writer {
             ptr::copy_nonoverlapping(v.as_ptr(), self.ptr(), v.len());
         }
         self.move_next(v.len());
+    }
+
+    pub fn set_bytes(&mut self, offset: usize, data: &[u8]) {
+        self.bf.get_mut(offset..offset + data.len()).expect("//todo").copy_from_slice(data);
     }
 }
 

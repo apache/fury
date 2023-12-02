@@ -12,21 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod buffer;
-mod deserializer;
-mod error;
-mod serializer;
-mod types;
+use fury::row::{to_row, from_row};
+use fury_derive::FuryRow;
 
-pub use deserializer::from_buffer;
-pub use deserializer::Deserialize;
-pub use deserializer::DeserializerState;
-pub use error::Error;
-pub use serializer::to_buffer;
-pub use serializer::Serialize;
-pub use serializer::SerializerState;
-pub use types::{
-    compute_field_hash, compute_string_hash, compute_struct_hash, config_flags, FieldType,
-    FuryMeta, Language, RefFlag, SIZE_OF_REF_AND_TYPE,
-};
-pub mod row;
+#[test]
+fn row() {
+    #[derive(FuryRow)]
+    struct Foo {
+        f1: String,
+        f2: i8
+    }
+
+    #[derive(FuryRow)]
+    struct Bar {
+        f3: Foo,
+    }
+
+    let row = to_row(&Bar { f3: Foo{ f1: String::from("hello"), f2: 1} });
+
+    let obj = from_row::<Bar>(&row);
+    let f1: &str = obj.get_f3().get_f1();
+    assert_eq!(f1, "hello");
+    let f2: i8 = obj.get_f3().get_f2();
+    assert_eq!(f2, 1);
+}

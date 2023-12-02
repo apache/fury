@@ -12,21 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod buffer;
-mod deserializer;
-mod error;
-mod serializer;
-mod types;
+mod reader;
+mod writer;
+mod row;
 
-pub use deserializer::from_buffer;
-pub use deserializer::Deserialize;
-pub use deserializer::DeserializerState;
-pub use error::Error;
-pub use serializer::to_buffer;
-pub use serializer::Serialize;
-pub use serializer::SerializerState;
-pub use types::{
-    compute_field_hash, compute_string_hash, compute_struct_hash, config_flags, FieldType,
-    FuryMeta, Language, RefFlag, SIZE_OF_REF_AND_TYPE,
-};
-pub mod row;
+pub use reader::from_row;
+pub use writer::to_row;
+pub use reader::RowReader;
+pub use writer::RowWriter;
+pub use row::Row;
+pub use row::Schema;
