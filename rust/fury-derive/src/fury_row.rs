@@ -17,7 +17,6 @@ use quote::quote;
 
 use crate::fury_meta::sorted_fields;
 
-
 pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let fields = match &ast.data {
@@ -63,7 +62,7 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
 
     let getter: proc_macro2::Ident =
         syn::Ident::new(&format!("{}FuryRowGetter", name), name.span());
-    
+
     let num_fields = fields.len();
 
     let gen = quote! {
@@ -85,7 +84,7 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
                 let end = row_writer.writer.len();
                 end - start
             }
-        
+
             fn read(idx: usize, row_reader: fury::row::RowReader<'a>) -> Self::ReadResult {
                 #getter::<'a>{ row_reader }
             }

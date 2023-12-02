@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use byteorder::{LittleEndian, ByteOrder};
-
+use byteorder::{ByteOrder, LittleEndian};
 
 pub use super::row::Row;
 
@@ -24,7 +23,7 @@ pub struct RowReader<'r> {
     row: &'r [u8],
 }
 
-const  WORD_SIZE: usize = 8;
+const WORD_SIZE: usize = 8;
 
 impl<'r> RowReader<'r> {
     fn calculate_bitmap_width_in_bytes(num_fields: usize) -> usize {
@@ -34,25 +33,37 @@ impl<'r> RowReader<'r> {
     fn get_offset_absolute(&self, idx: usize) -> usize {
         self.base_offset + self.bit_map_width_in_bytes + idx * 8
     }
-    
+
     pub fn get_offset_size_absolute(&self, idx: usize) -> (u32, u32) {
-        let offset = LittleEndian::read_u32(&self.row[self.get_offset_absolute(idx)..self.get_offset_absolute(idx)+4]);
-        let size = LittleEndian::read_u32(&self.row[self.get_offset_absolute(idx)+4..self.get_offset_absolute(idx)+8]);
+        let offset = LittleEndian::read_u32(
+            &self.row[self.get_offset_absolute(idx)..self.get_offset_absolute(idx) + 4],
+        );
+        let size = LittleEndian::read_u32(
+            &self.row[self.get_offset_absolute(idx) + 4..self.get_offset_absolute(idx) + 8],
+        );
         (self.base_offset as u32 + offset, size)
     }
 
     pub fn new<'a>(row: &'a [u8]) -> RowReader<'a> {
-        RowReader{ row, bit_map_width_in_bytes: 0, base_offset: 0 }
+        RowReader {
+            row,
+            bit_map_width_in_bytes: 0,
+            base_offset: 0,
+        }
     }
 
     pub fn point_to(&self, num_fields: usize, base_offset: usize) -> RowReader<'r> {
         let bit_map_width_in_bytes = Self::calculate_bitmap_width_in_bytes(num_fields);
-        RowReader{ row: self.row, bit_map_width_in_bytes, base_offset }
+        RowReader {
+            row: self.row,
+            bit_map_width_in_bytes,
+            base_offset,
+        }
     }
 
     pub fn get_field_bytes(&self, idx: usize) -> &'r [u8] {
         let (offset, size) = self.get_offset_size_absolute(idx);
-        &self.row[(offset as usize)..(offset+size) as usize]
+        &self.row[(offset as usize)..(offset + size) as usize]
     }
 }
 

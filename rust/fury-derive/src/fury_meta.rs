@@ -147,4 +147,3 @@ pub fn derive_deserilize(ast: &syn::DeriveInput) -> TokenStream {
     };
     gen.into()
 }
-

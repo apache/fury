@@ -125,7 +125,10 @@ impl Writer {
     }
 
     pub fn set_bytes(&mut self, offset: usize, data: &[u8]) {
-        self.bf.get_mut(offset..offset + data.len()).expect("//todo").copy_from_slice(data);
+        self.bf
+            .get_mut(offset..offset + data.len())
+            .expect("//todo")
+            .copy_from_slice(data);
     }
 }
 

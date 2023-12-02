@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::{writer::RowWriter, reader::RowReader};
+use super::{reader::RowReader, writer::RowWriter};
 
 pub struct Schema {
     num_fields: usize,
@@ -24,7 +24,7 @@ impl Schema {
         self.num_fields
     }
 
-    pub fn is_container(&self) -> bool{
+    pub fn is_container(&self) -> bool {
         self.is_container
     }
 
@@ -44,7 +44,10 @@ pub trait Row<'a> {
     fn read(idx: usize, row_reader: RowReader<'a>) -> Self::ReadResult;
 
     fn schema() -> Schema {
-        Schema { num_fields: 0, is_container: false }
+        Schema {
+            num_fields: 0,
+            is_container: false,
+        }
     }
 }
 
@@ -54,7 +57,6 @@ impl<'a> Row<'a> for i8 {
     fn write(v: &Self, row_writer: &mut RowWriter) -> usize {
         row_writer.write(&[*v as u8])
     }
-
 
     fn read(idx: usize, row_reader: RowReader) -> Self::ReadResult {
         let bytes = row_reader.get_field_bytes(idx);
@@ -74,4 +76,3 @@ impl<'a> Row<'a> for String {
         unsafe { std::str::from_utf8_unchecked(bytes) }
     }
 }
-

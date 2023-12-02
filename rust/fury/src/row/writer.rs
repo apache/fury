@@ -16,7 +16,6 @@ use crate::buffer::Writer;
 
 use super::row::Row;
 
-
 pub struct RowWriter<'w> {
     bit_map_width_in_bytes: usize,
     base_offset: usize,
@@ -25,7 +24,7 @@ pub struct RowWriter<'w> {
     pub writer: &'w mut Writer,
 }
 
-const  WORD_SIZE: usize = 8;
+const WORD_SIZE: usize = 8;
 
 impl<'w> RowWriter<'w> {
     fn calculate_bitmap_width_in_bytes(&self) -> usize {
@@ -39,23 +38,28 @@ impl<'w> RowWriter<'w> {
     pub fn get_field_offset_absolute(&self, idx: usize) -> usize {
         self.base_offset + self.bit_map_width_in_bytes + idx * 8
     }
-    
+
     pub fn write_offset_size(&mut self, size: usize) {
         let offset = self.writer.len() - self.base_offset - size;
         let field_offset = self.get_field_offset_absolute(self.field_idx);
-        self.writer.set_bytes(field_offset, &(offset as u32).to_le_bytes());
-        self.writer.set_bytes(field_offset + 4, &(size as u32).to_le_bytes());
+        self.writer
+            .set_bytes(field_offset, &(offset as u32).to_le_bytes());
+        self.writer
+            .set_bytes(field_offset + 4, &(size as u32).to_le_bytes());
         self.field_idx += 1;
     }
 
-    pub fn new(writer:  &'w mut Writer) -> RowWriter<'w> {
-        RowWriter{ writer, bit_map_width_in_bytes: 0, base_offset: 0, num_fields: 0, field_idx: 0 }
+    pub fn new(writer: &'w mut Writer) -> RowWriter<'w> {
+        RowWriter {
+            writer,
+            bit_map_width_in_bytes: 0,
+            base_offset: 0,
+            num_fields: 0,
+            field_idx: 0,
+        }
     }
 
-    pub fn point_to(
-        &mut self,
-        num_fields: usize,
-    ) {
+    pub fn point_to(&mut self, num_fields: usize) {
         self.num_fields = num_fields;
         self.base_offset = self.writer.len();
         self.field_idx = 0;

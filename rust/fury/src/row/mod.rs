@@ -13,12 +13,12 @@
 // limitations under the License.
 
 mod reader;
-mod writer;
 mod row;
+mod writer;
 
 pub use reader::from_row;
-pub use writer::to_row;
 pub use reader::RowReader;
-pub use writer::RowWriter;
 pub use row::Row;
 pub use row::Schema;
+pub use writer::to_row;
+pub use writer::RowWriter;

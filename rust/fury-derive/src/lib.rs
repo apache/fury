@@ -1,4 +1,4 @@
-use fury_meta::{derive_fury_meta, derive_serialize, derive_deserilize};
+use fury_meta::{derive_deserilize, derive_fury_meta, derive_serialize};
 use fury_row::derive_row;
 // Copyright 2023 The Fury Authors
 //
@@ -41,7 +41,6 @@ pub fn proc_macro_derive_fury_meta(input: proc_macro::TokenStream) -> TokenStrea
     token_stream.extend(derive_deserilize(&input));
     token_stream
 }
-
 
 #[proc_macro_derive(FuryRow)]
 pub fn proc_macro_derive_fury_row(input: proc_macro::TokenStream) -> TokenStream {
