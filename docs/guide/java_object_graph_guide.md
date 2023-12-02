@@ -95,7 +95,7 @@ public class Example {
 
 FuryBuilder  options:
 
-| Parameter Name                    | Default Value                                       | Considerations                                                                                                                                              |
+|  Option Name                    | Default Value                                       |  Description                                                                                                                                              |
 | ---------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `language`                        | `Language.JAVA`                                     | If using Fury exclusively for Java, setting it to `Language#JAVA` can improve performance.                                                                    |
 | `trackingRef`                     | `false`                                             | Enable when there are circular references. Otherwise, it may cause a `StackOverflowError` during serialization.                                             |
