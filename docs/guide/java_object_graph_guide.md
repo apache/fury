@@ -95,6 +95,27 @@ public class Example {
 
 ## Advanced Usage
 
+### FuryBuilder  options
+
+|  Option Name                    | Default Value                                       |  Description                                                                                                                                              |
+| ---------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `timeRefIgnored`                  | `true`                                              | Whether to ignore reference tracking of all time types registered in `TimeSerializers` and subclasses of those types when ref tracking is enabled. If ignored, ref tracking of every time type can be enabled by invoking `Fury#registerSerializer(Class, Serializer)`. For example, `fury.registerSerializer(Date.class, new DateSerializer(fury, true))`. Note that enabling ref tracking should happen before serializer codegen of any types which contain time fields. Otherwise, those fields will still skip ref tracking. |
+| `compressInt`                     | `true`                                              | Enables or disables int compression for smaller size.                                                                                                      |
+| `compressLong`                    | `true`                                              | Enables or disables long compression for smaller size.                                                                                                     |
+| `compressString`                  | `true`                                              | Enables or disables string compression for smaller size.                                                                                                    |
+| `classLoader`                     | `Thread.currentThread().getContextClassLoader()`  | The classloader should not be updated; Fury caches class metadata. Use `LoaderBinding` or `ThreadSafeFury` for classloader updates.                         |
+| `compatibleMode`                  | `CompatibleMode.SCHEMA_CONSISTENT`                  | Type forward/backward compatibility config. Also Related to `checkClassVersion` config. `SCHEMA_CONSISTENT`: Class schema must be consistent between serialization peer and deserialization peer. `COMPATIBLE`: Class schema can be different between serialization peer and deserialization peer. They can add/delete fields independently.                                         |
+| `checkClassVersion`               | `false`                                             | Determines whether to check the consistency of the class schema. If enabled, Fury checks, writes, and checks consistency using the `classVersionHash`. It will be automatically disabled when `CompatibleMode#COMPATIBLE` is enabled. Disabling is not recommended unless you can ensure the class won't evolve. |
+| `checkJdkClassSerializable`       | `true`                                              | Enables or disables checking of `Serializable` interface for classes under `java.*`. If a class under `java.*` is not `Serializable`, Fury will throw an `UnsupportedOperationException`. |
+| `registerGuavaTypes`              | `true`                                              | Whether to pre-register Guava types such as `RegularImmutableMap`/`RegularImmutableList`. These types are not public API, but seem pretty stable.                                                                   |
+| `requireClassRegistration`        | `true`                                              | Disabling may allow unknown classes to be deserialized, potentially causing security risks.                                                              |
+| `suppressClassRegistrationWarnings` | `!requireClassRegistration`                        | Whether to suppress class registration warnings when class registration is disabled. The warnings can be used for security audit, but may be annoying. When `requireClassRegistration=false`, this suppression will be enabled by default. |
+| `shareMetaContext`                | `false`                                             | Enables or disables meta share mode.                                                                                                                       |
+| `deserializeUnexistedClass`      | `false`                                             | Enables or disables deserialization/skipping of data for non-existent classes.                                                                             |
+| `codeGenEnabled`                  | `true`                                              | Disabling may result in faster initial serialization but slower subsequent serializations.                                                               |
+| `asyncCompilationEnabled`         | `false`                                             | If enabled, serialization uses interpreter mode first and switches to JIT serialization after async serializer JIT for a class is finished.                 |
+| `scalaOptimizationEnabled`        | `false`                                             | Enables or disables Scala-specific serialization optimization.                                                                                              |
+
 ### Fury creation
 
 Single thread fury:

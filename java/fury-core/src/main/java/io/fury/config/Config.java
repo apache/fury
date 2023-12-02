@@ -78,7 +78,7 @@ public class Config implements Serializable {
     deserializeUnexistedClass = builder.deserializeUnexistedClass;
     if (deserializeUnexistedClass) {
       // Only in meta share mode or compatibleMode, fury knows how to deserialize
-      // exist class by type info in data.
+      // unexisted class by type info in data.
       Preconditions.checkArgument(shareMetaContext || compatibleMode == CompatibleMode.COMPATIBLE);
     }
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
