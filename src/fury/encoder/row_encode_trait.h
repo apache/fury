@@ -18,12 +18,9 @@
 
 #include "fury/meta/field_info.h"
 #include "fury/meta/type_traits.h"
-#include "fury/row/row.h"
-#include "src/fury/row/writer.h"
+#include "fury/row/writer.h"
 #include <string_view>
-#include <type_traits>
 #include <utility>
-#include <variant>
 
 namespace fury {
 
@@ -82,6 +79,8 @@ struct EmptyWriteVisitor {
 
 template <typename C> struct DefaultWriteVisitor {
   C &cont;
+
+  DefaultWriteVisitor(C &cont) : cont(cont) {}
 
   template <typename> void Visit(std::unique_ptr<RowWriter> writer) {
     cont.push_back(std::move(writer));

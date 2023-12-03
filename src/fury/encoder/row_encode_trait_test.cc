@@ -17,7 +17,7 @@
 #include "gtest/gtest.h"
 #include <type_traits>
 
-#include "fury/encoder/row_encoder.h"
+#include "fury/encoder/row_encode_trait.h"
 #include "src/fury/row/writer.h"
 
 namespace fury {
@@ -32,7 +32,7 @@ struct A {
 
 FURY_FIELD_INFO(A, x, y, z);
 
-TEST(RowEncoder, Simple) {
+TEST(RowEncodeTrait, Basic) {
   auto field_vector = encoder::RowEncodeTrait<A>::FieldVector();
 
   static_assert(std::is_same_v<decltype(field_vector), arrow::FieldVector>);
@@ -65,7 +65,7 @@ struct B {
 
 FURY_FIELD_INFO(B, num, str);
 
-TEST(RowEncoder, String) {
+TEST(RowEncodeTrait, String) {
   RowWriter writer(encoder::RowEncodeTrait<B>::Schema());
   writer.Reset();
 
@@ -87,7 +87,7 @@ struct C {
 
 FURY_FIELD_INFO(C, a, b, c);
 
-TEST(RowEncoder, Const) {
+TEST(RowEncodeTrait, Const) {
   RowWriter writer(encoder::RowEncodeTrait<C>::Schema());
   writer.Reset();
 
@@ -108,7 +108,7 @@ struct D {
 
 FURY_FIELD_INFO(D, x, y, z);
 
-TEST(RowEncoder, NestedStruct) {
+TEST(RowEncodeTrait, NestedStruct) {
   RowWriter writer(encoder::RowEncodeTrait<D>::Schema());
   std::vector<std::unique_ptr<RowWriter>> children;
   writer.Reset();

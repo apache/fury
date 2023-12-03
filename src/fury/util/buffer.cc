@@ -58,7 +58,7 @@ Buffer &Buffer::operator=(Buffer &&buffer) noexcept {
 
 Buffer::~Buffer() {
   if (own_data_) {
-    delete data_;
+    free(data_);
     data_ = nullptr;
   }
 }
