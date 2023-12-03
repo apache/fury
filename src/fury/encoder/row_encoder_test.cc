@@ -17,140 +17,50 @@
 #include "gtest/gtest.h"
 #include <type_traits>
 
-#include "fury/encoder/row_encoder.h"
+#include "fury/encoder/row_encode_trait.h"
+#include "src/fury/encoder/row_encoder.h"
 #include "src/fury/row/writer.h"
 
 namespace fury {
 
-namespace test {
+namespace test2 {
 
 struct A {
-  int x;
-  float y;
-  bool z;
+  float a;
+  std::string b;
 };
 
-FURY_FIELD_INFO(A, x, y, z);
-
-TEST(RowEncoder, Simple) {
-  auto field_vector = encoder::RowEncodeTrait<A>::FieldVector();
-
-  static_assert(std::is_same_v<decltype(field_vector), arrow::FieldVector>);
-
-  ASSERT_EQ(field_vector.size(), 3);
-  ASSERT_EQ(field_vector[0]->name(), "x");
-  ASSERT_EQ(field_vector[1]->name(), "y");
-  ASSERT_EQ(field_vector[2]->name(), "z");
-
-  ASSERT_EQ(field_vector[0]->type()->name(), "int32");
-  ASSERT_EQ(field_vector[1]->type()->name(), "float");
-  ASSERT_EQ(field_vector[2]->type()->name(), "bool");
-
-  RowWriter writer(arrow::schema(field_vector));
-  writer.Reset();
-
-  A a{233, 3.14, true};
-  encoder::RowEncodeTrait<A>::Write(encoder::EmptyWriteVisitor{}, a, writer);
-
-  auto row = writer.ToRow();
-  ASSERT_EQ(row->GetInt32(0), 233);
-  ASSERT_FLOAT_EQ(row->GetFloat(1), 3.14);
-  ASSERT_EQ(row->GetBoolean(2), true);
-}
+FURY_FIELD_INFO(A, a, b);
 
 struct B {
-  int num;
-  std::string str;
-};
-
-FURY_FIELD_INFO(B, num, str);
-
-TEST(RowEncoder, String) {
-  RowWriter writer(encoder::RowEncodeTrait<B>::Schema());
-  writer.Reset();
-
-  B b{233, "hello"};
-  encoder::RowEncodeTrait<B>::Write(encoder::EmptyWriteVisitor{}, b, writer);
-
-  auto row = writer.ToRow();
-  ASSERT_EQ(row->GetString(1), "hello");
-  ASSERT_EQ(row->GetInt32(0), 233);
-
-  ASSERT_EQ(writer.schema()->field(1)->type()->name(), "utf8");
-}
-
-struct C {
-  const int a;
-  volatile float b;
-  bool c;
-};
-
-FURY_FIELD_INFO(C, a, b, c);
-
-TEST(RowEncoder, Const) {
-  RowWriter writer(encoder::RowEncodeTrait<C>::Schema());
-  writer.Reset();
-
-  C c{233, 1.1, true};
-  encoder::RowEncodeTrait<C>::Write(encoder::EmptyWriteVisitor{}, c, writer);
-
-  auto row = writer.ToRow();
-  ASSERT_EQ(row->GetInt32(0), 233);
-  ASSERT_FLOAT_EQ(row->GetFloat(1), 1.1);
-  ASSERT_EQ(row->GetBoolean(2), true);
-}
-
-struct D {
   int x;
   A y;
-  B z;
 };
 
-FURY_FIELD_INFO(D, x, y, z);
+FURY_FIELD_INFO(B, x, y);
 
-TEST(RowEncoder, NestedStruct) {
-  RowWriter writer(encoder::RowEncodeTrait<D>::Schema());
-  std::vector<std::unique_ptr<RowWriter>> children;
-  writer.Reset();
+TEST(RowEncoder, Simple) {
+  B v{233, {1.23, "hello"}};
 
-  D d{233, {234, 3.14, true}, {235, "hi"}};
-  encoder::RowEncodeTrait<D>::Write(
-      encoder::DefaultWriteVisitor<decltype(children)>{children}, d, writer);
+  encoder::RowEncoder<B> enc;
 
-  auto row = writer.ToRow();
+  auto &schema = enc.GetSchema();
+  ASSERT_EQ(schema.field_names(), (std::vector<std::string>{"x", "y"}));
+  ASSERT_EQ(schema.field(0)->type()->name(), "int32");
+  ASSERT_EQ(schema.field(1)->type()->name(), "struct");
+  ASSERT_EQ(schema.field(1)->type()->field(0)->name(), "a");
+  ASSERT_EQ(schema.field(1)->type()->field(1)->name(), "b");
+  ASSERT_EQ(schema.field(1)->type()->field(0)->type()->name(), "float");
+  ASSERT_EQ(schema.field(1)->type()->field(1)->type()->name(), "utf8");
+
+  enc.Encode(v);
+
+  auto row = enc.GetWriter().ToRow();
   ASSERT_EQ(row->GetInt32(0), 233);
-
   auto y_row = row->GetStruct(1);
-  ASSERT_EQ(y_row->GetInt32(0), 234);
-  ASSERT_FLOAT_EQ(y_row->GetFloat(1), 3.14);
-  ASSERT_EQ(y_row->GetBoolean(2), true);
-
-  auto z_row = row->GetStruct(2);
-  ASSERT_EQ(z_row->GetString(1), "hi");
-  ASSERT_EQ(z_row->GetInt32(0), 235);
-
-  ASSERT_EQ(writer.schema()->field(0)->type()->name(), "int32");
-  ASSERT_EQ(writer.schema()->field(1)->type()->name(), "struct");
-  ASSERT_EQ(writer.schema()->field(2)->type()->name(), "struct");
-
-  auto y_writer = dynamic_cast<RowWriter *>(writer.children()[0]);
-  ASSERT_TRUE(y_writer);
-
-  auto y_schema = y_writer->schema();
-  ASSERT_EQ(y_schema->field(0)->name(), "x");
-  ASSERT_EQ(y_schema->field(1)->name(), "y");
-  ASSERT_EQ(y_schema->field(2)->name(), "z");
-
-  ASSERT_EQ(y_schema->field(0)->type()->name(), "int32");
-  ASSERT_EQ(y_schema->field(1)->type()->name(), "float");
-  ASSERT_EQ(y_schema->field(2)->type()->name(), "bool");
+  ASSERT_EQ(y_row->GetString(1), "hello");
+  ASSERT_FLOAT_EQ(y_row->GetFloat(0), 1.23);
 }
 
-} // namespace test
-
+} // namespace test2
 } // namespace fury
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}

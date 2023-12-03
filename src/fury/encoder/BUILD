@@ -17,7 +17,7 @@ cc_library(
 
 cc_test(
     name = "row_encoder_test",
-    srcs = ["row_encoder_test.cc"],
+    srcs = glob(["*_test.cc"]),
     copts = COPTS,
     deps = [
         ":fury_encoder",
