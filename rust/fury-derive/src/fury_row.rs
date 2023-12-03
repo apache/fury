@@ -26,18 +26,19 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
         }
     };
 
-    let write_exprs = fields.iter().map(|field| {
+    let write_exprs = fields.iter().enumerate().map(|(index, field)| {
         let ty = &field.ty;
         let ident = field.ident.as_ref().expect("field should provide ident");
 
         quote! {
             if <#ty as fury::row::Row<'a>>::schema().is_container() {
-                row_writer.write_offset_size(0);
+                let mut callback = row_writer.write_offset_size_callback(#index);
                 row_writer.point_to(<#ty as fury::row::Row<'a>>::schema().num_fields());
                 <#ty as fury::row::Row<'a>>::write(&v.#ident, row_writer);
+                callback(row_writer);
             } else {
                 let size = <#ty as fury::row::Row<'a>>::write(&v.#ident, row_writer);
-                row_writer.write_offset_size(size)
+                row_writer.write_offset_size(#index, size)
             }
         }
     });
@@ -50,12 +51,9 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
 
         quote! {
             pub fn #getter_name(&self) -> <#ty as fury::row::Row<'a>>::ReadResult {
-                if <#ty as fury::row::Row<'a>>::schema().is_container() {
-                    let row_reader = self.row_reader.point_to(<#ty as fury::row::Row<'a>>::schema().num_fields(), self.row_reader.get_offset_size_absolute(#index).0 as usize);
-                    <#ty as fury::row::Row<'a>>::read(#index, row_reader)
-                } else {
-                    <#ty as fury::row::Row<'a>>::read(#index, self.row_reader)
-                }
+                use fury::row::RowData;
+                let bytes = self.struct_data.get_field_bytes(#index);
+                <#ty as fury::row::Row<'a>>::cast(bytes)
             }
         }
     });
@@ -67,7 +65,7 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
 
     let gen = quote! {
         struct #getter<'a> {
-            row_reader: fury::row::RowReader<'a>
+            struct_data: fury::row::StructData<'a>
         }
 
         impl<'a> #getter<'a> {
@@ -85,8 +83,8 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
                 end - start
             }
 
-            fn read(idx: usize, row_reader: fury::row::RowReader<'a>) -> Self::ReadResult {
-                #getter::<'a>{ row_reader }
+            fn cast(bytes: &'a [u8]) -> Self::ReadResult {
+                #getter{ struct_data: fury::row::StructData::new(bytes, Self::schema()) }
             }
 
             fn schema() -> fury::row::Schema {

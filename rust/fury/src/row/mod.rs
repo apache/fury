@@ -17,7 +17,8 @@ mod row;
 mod writer;
 
 pub use reader::from_row;
-pub use reader::RowReader;
+pub use reader::RowData;
+pub use reader::StructData;
 pub use row::Row;
 pub use row::Schema;
 pub use writer::to_row;

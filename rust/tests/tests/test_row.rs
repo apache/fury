@@ -21,6 +21,8 @@ fn row() {
     struct Foo {
         f1: String,
         f2: i8,
+        f3: Vec<u8>,
+        f4: Vec<i8>,
     }
 
     #[derive(FuryRow)]
@@ -32,6 +34,8 @@ fn row() {
         f3: Foo {
             f1: String::from("hello"),
             f2: 1,
+            f3: vec![1, 2, 3],
+            f4: vec![-1, 2, -3],
         },
     });
 
@@ -40,4 +44,6 @@ fn row() {
     assert_eq!(f1, "hello");
     let f2: i8 = obj.get_f3().get_f2();
     assert_eq!(f2, 1);
+    let f3: &[u8] = obj.get_f3().get_f3();
+    assert_eq!(f3, vec![1, 2, 3]);
 }
