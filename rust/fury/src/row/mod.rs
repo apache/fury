@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod bit_util;
 mod reader;
 mod row;
 mod writer;
 
-pub use reader::from_row;
-pub use reader::RowData;
-pub use reader::StructData;
+pub use reader::{from_row, ArrayViewer, RowViewer, StructViewer};
 pub use row::Row;
-pub use row::Schema;
-pub use writer::to_row;
-pub use writer::RowWriter;
+pub use writer::{to_row, ArrayWriter, RowWriter, StructWriter};

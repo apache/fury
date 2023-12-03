@@ -12,77 +12,67 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use super::{bit_util::calculate_bitmap_width_in_bytes, row::Row};
 use byteorder::{ByteOrder, LittleEndian};
 
-pub use super::row::Row;
-use super::Schema;
+pub trait RowViewer<'r> {
+    fn row(&self) -> &'r [u8];
 
-pub trait RowData<'r> {
-    fn get_offset_size(&self, idx: usize) -> (u32, u32);
+    fn get_field_offset(&self, idx: usize) -> usize;
 
-    fn get_field_bytes(&self, idx: usize) -> &'r [u8];
-}
-
-#[derive(Clone, Copy)]
-pub struct StructData<'r> {
-    bit_map_width_in_bytes: usize,
-    row: &'r [u8],
-}
-
-const WORD_SIZE: usize = 8;
-
-impl<'r> StructData<'r> {
-    fn calculate_bitmap_width_in_bytes(num_fields: usize) -> usize {
-        return ((num_fields + 63) / 64) * WORD_SIZE;
-    }
-
-    pub fn new(row: &'r [u8], schema: Schema) -> StructData<'r> {
-        let bit_map_width_in_bytes = Self::calculate_bitmap_width_in_bytes(schema.num_fields());
-        StructData {
-            row,
-            bit_map_width_in_bytes,
-        }
-    }
-
-    fn get_field_offset(&self, idx: usize) -> usize {
-        self.bit_map_width_in_bytes + idx * 8
-    }
-}
-
-impl<'r> RowData<'r> for StructData<'r> {
     fn get_offset_size(&self, idx: usize) -> (u32, u32) {
+        let row = self.row();
         let field_offset = self.get_field_offset(idx);
-        let offset = LittleEndian::read_u32(&self.row[field_offset..field_offset + 4]);
-        let size = LittleEndian::read_u32(&self.row[field_offset + 4..field_offset + 8]);
+        let offset = LittleEndian::read_u32(&row[field_offset..field_offset + 4]);
+        let size = LittleEndian::read_u32(&row[field_offset + 4..field_offset + 8]);
         (offset, size)
     }
 
     fn get_field_bytes(&self, idx: usize) -> &'r [u8] {
+        let row = self.row();
         let (offset, size) = self.get_offset_size(idx);
-        &self.row[(offset as usize)..(offset + size) as usize]
+        &row[(offset as usize)..(offset + size) as usize]
     }
 }
 
 #[derive(Clone, Copy)]
-pub struct ArrayData<'r> {
+pub struct StructViewer<'r> {
+    bit_map_width_in_bytes: usize,
+    row: &'r [u8],
+}
+
+impl<'r> StructViewer<'r> {
+    pub fn new(row: &'r [u8], num_fields: usize) -> StructViewer<'r> {
+        let bit_map_width_in_bytes = calculate_bitmap_width_in_bytes(num_fields);
+        StructViewer {
+            row,
+            bit_map_width_in_bytes,
+        }
+    }
+}
+
+impl<'r> RowViewer<'r> for StructViewer<'r> {
+    fn get_field_offset(&self, idx: usize) -> usize {
+        self.bit_map_width_in_bytes + idx * 8
+    }
+
+    fn row(&self) -> &'r [u8] {
+        self.row
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct ArrayViewer<'r> {
     bit_map_width_in_bytes: usize,
     row: &'r [u8],
     num_elements: usize,
 }
 
-impl<'r> ArrayData<'r> {
-    fn calculate_bitmap_width_in_bytes(num_fields: usize) -> usize {
-        return 8 + ((num_fields + 63) / 64) * WORD_SIZE;
-    }
-
-    fn get_field_offset(&self, idx: usize) -> usize {
-        8 + self.bit_map_width_in_bytes + idx * 8
-    }
-
-    pub fn new(row: &'r [u8]) -> ArrayData<'r> {
+impl<'r> ArrayViewer<'r> {
+    pub fn new(row: &'r [u8]) -> ArrayViewer<'r> {
         let num_elements = LittleEndian::read_u64(&row[0..8]) as usize;
-        let bit_map_width_in_bytes = Self::calculate_bitmap_width_in_bytes(num_elements);
-        ArrayData {
+        let bit_map_width_in_bytes = calculate_bitmap_width_in_bytes(num_elements);
+        ArrayViewer {
             row,
             bit_map_width_in_bytes,
             num_elements,
@@ -94,20 +84,13 @@ impl<'r> ArrayData<'r> {
     }
 }
 
-impl<'r> RowData<'r> for ArrayData<'r> {
-    fn get_offset_size(&self, idx: usize) -> (u32, u32) {
-        let offset = LittleEndian::read_u32(
-            &self.row[self.get_field_offset(idx)..self.get_field_offset(idx) + 4],
-        );
-        let size = LittleEndian::read_u32(
-            &self.row[self.get_field_offset(idx) + 4..self.get_field_offset(idx) + 8],
-        );
-        (offset, size)
+impl<'r> RowViewer<'r> for ArrayViewer<'r> {
+    fn get_field_offset(&self, idx: usize) -> usize {
+        8 + self.bit_map_width_in_bytes + idx * 8
     }
 
-    fn get_field_bytes(&self, idx: usize) -> &'r [u8] {
-        let (offset, size) = self.get_offset_size(idx);
-        &self.row[(offset as usize)..(offset + size) as usize]
+    fn row(&self) -> &'r [u8] {
+        self.row
     }
 }
 

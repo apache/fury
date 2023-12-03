@@ -46,4 +46,9 @@ fn row() {
     assert_eq!(f2, 1);
     let f3: &[u8] = obj.get_f3().get_f3();
     assert_eq!(f3, vec![1, 2, 3]);
+    let f4_size: usize = obj.get_f3().get_f4().size();
+    assert_eq!(f4_size, 3);
+    assert_eq!(obj.get_f3().get_f4().get(0), -1);
+    assert_eq!(obj.get_f3().get_f4().get(1), 2);
+    assert_eq!(obj.get_f3().get_f4().get(2), -3);
 }

@@ -31,15 +31,9 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
         let ident = field.ident.as_ref().expect("field should provide ident");
 
         quote! {
-            if <#ty as fury::row::Row<'a>>::schema().is_container() {
-                let mut callback = row_writer.write_offset_size_callback(#index);
-                row_writer.point_to(<#ty as fury::row::Row<'a>>::schema().num_fields());
-                <#ty as fury::row::Row<'a>>::write(&v.#ident, row_writer);
-                callback(row_writer);
-            } else {
-                let size = <#ty as fury::row::Row<'a>>::write(&v.#ident, row_writer);
-                row_writer.write_offset_size(#index, size)
-            }
+            let mut callback_info = struct_writer.write_start(#index);
+            <#ty as fury::row::Row<'a>>::write(&v.#ident, struct_writer.borrow_writer());
+            struct_writer.write_end(callback_info);
         }
     });
 
@@ -51,7 +45,7 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
 
         quote! {
             pub fn #getter_name(&self) -> <#ty as fury::row::Row<'a>>::ReadResult {
-                use fury::row::RowData;
+                use fury::row::RowViewer;
                 let bytes = self.struct_data.get_field_bytes(#index);
                 <#ty as fury::row::Row<'a>>::cast(bytes)
             }
@@ -65,7 +59,7 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
 
     let gen = quote! {
         struct #getter<'a> {
-            struct_data: fury::row::StructData<'a>
+            struct_data: fury::row::StructViewer<'a>
         }
 
         impl<'a> #getter<'a> {
@@ -76,19 +70,14 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
 
             type ReadResult = #getter<'a>;
 
-            fn write(v: &Self, row_writer: &mut fury::row::RowWriter) -> usize {
-                let start = row_writer.writer.len();
+            fn write(v: &Self, writer: &mut fury::buffer::Writer) {
+                use fury::row::RowWriter;
+                let mut struct_writer = fury::row::StructWriter::new(#num_fields, writer);
                 #(#write_exprs);*;
-                let end = row_writer.writer.len();
-                end - start
             }
 
             fn cast(bytes: &'a [u8]) -> Self::ReadResult {
-                #getter{ struct_data: fury::row::StructData::new(bytes, Self::schema()) }
-            }
-
-            fn schema() -> fury::row::Schema {
-                fury::row::Schema::new(#num_fields, true)
+                #getter{ struct_data: fury::row::StructViewer::new(bytes, #num_fields) }
             }
         }
     };

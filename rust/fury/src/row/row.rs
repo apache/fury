@@ -14,52 +14,21 @@
 
 use std::marker::PhantomData;
 
-use crate::Error;
-use arrow::datatypes::ToByteSlice;
+use crate::{buffer::Writer, Error};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::{Days, NaiveDate, NaiveDateTime};
 
 use super::{
-    reader::{ArrayData, RowData, StructData},
-    writer::RowWriter,
+    reader::{ArrayViewer, RowViewer},
+    writer::{ArrayWriter, RowWriter},
 };
-
-#[derive(Clone, Copy)]
-pub struct Schema {
-    num_fields: usize,
-    is_container: bool,
-}
-
-impl Schema {
-    pub fn num_fields(&self) -> usize {
-        self.num_fields
-    }
-
-    pub fn is_container(&self) -> bool {
-        self.is_container
-    }
-
-    pub fn new(num_fields: usize, is_container: bool) -> Schema {
-        Schema {
-            num_fields,
-            is_container,
-        }
-    }
-}
 
 pub trait Row<'a> {
     type ReadResult;
 
-    fn write(v: &Self, row_writer: &mut RowWriter) -> usize;
+    fn write(v: &Self, writer: &mut Writer);
 
     fn cast(bytes: &'a [u8]) -> Self::ReadResult;
-
-    fn schema() -> Schema {
-        Schema {
-            num_fields: 0,
-            is_container: false,
-        }
-    }
 }
 
 fn read_i8_from_bytes(bytes: &[u8]) -> i8 {
@@ -67,12 +36,12 @@ fn read_i8_from_bytes(bytes: &[u8]) -> i8 {
 }
 
 macro_rules! impl_row_for_number {
-    ($tt: tt, $visitor: expr) => {
+    ($tt: tt, $writer: expr ,$visitor: expr) => {
         impl<'a> Row<'a> for $tt {
             type ReadResult = Self;
 
-            fn write(v: &Self, row_writer: &mut RowWriter) -> usize {
-                row_writer.write(&v.to_le_bytes())
+            fn write(v: &Self, writer: &mut Writer) {
+                $writer(writer, *v);
             }
 
             fn cast(bytes: &[u8]) -> Self::ReadResult {
@@ -81,18 +50,18 @@ macro_rules! impl_row_for_number {
         }
     };
 }
-impl_row_for_number!(i8, read_i8_from_bytes);
-impl_row_for_number!(i16, LittleEndian::read_i16);
-impl_row_for_number!(i32, LittleEndian::read_i32);
-impl_row_for_number!(i64, LittleEndian::read_i64);
-impl_row_for_number!(f32, LittleEndian::read_f32);
-impl_row_for_number!(f64, LittleEndian::read_f64);
+impl_row_for_number!(i8, Writer::i8, read_i8_from_bytes);
+impl_row_for_number!(i16, Writer::i16, LittleEndian::read_i16);
+impl_row_for_number!(i32, Writer::i32, LittleEndian::read_i32);
+impl_row_for_number!(i64, Writer::i64, LittleEndian::read_i64);
+impl_row_for_number!(f32, Writer::f32, LittleEndian::read_f32);
+impl_row_for_number!(f64, Writer::f64, LittleEndian::read_f64);
 
 impl<'a> Row<'a> for String {
     type ReadResult = &'a str;
 
-    fn write(v: &Self, row_writer: &mut RowWriter) -> usize {
-        row_writer.write(v.as_bytes())
+    fn write(v: &Self, writer: &mut Writer) {
+        writer.bytes(v.as_bytes());
     }
 
     fn cast(bytes: &'a [u8]) -> Self::ReadResult {
@@ -103,8 +72,8 @@ impl<'a> Row<'a> for String {
 impl<'a> Row<'a> for bool {
     type ReadResult = Self;
 
-    fn write(v: &Self, row_writer: &mut RowWriter) -> usize {
-        row_writer.write(&if *v { [1] } else { [0] })
+    fn write(v: &Self, writer: &mut Writer) {
+        writer.u8(if *v { 1 } else { 0 });
     }
 
     fn cast(bytes: &[u8]) -> Self::ReadResult {
@@ -119,9 +88,9 @@ lazy_static::lazy_static!(
 impl<'a> Row<'a> for NaiveDate {
     type ReadResult = Result<NaiveDate, Error>;
 
-    fn write(v: &Self, row_writer: &mut RowWriter) -> usize {
+    fn write(v: &Self, writer: &mut Writer) {
         let days_since_epoch = v.signed_duration_since(*EPOCH).num_days();
-        row_writer.write(&(days_since_epoch as u32).to_le_bytes())
+        writer.u32(days_since_epoch as u32);
     }
 
     fn cast(bytes: &[u8]) -> Self::ReadResult {
@@ -136,8 +105,8 @@ impl<'a> Row<'a> for NaiveDate {
 impl<'a> Row<'a> for NaiveDateTime {
     type ReadResult = Result<NaiveDateTime, Error>;
 
-    fn write(v: &Self, row_writer: &mut RowWriter) -> usize {
-        row_writer.write(&v.timestamp_millis().to_le_bytes())
+    fn write(v: &Self, writer: &mut Writer) {
+        writer.i64(v.timestamp_millis());
     }
 
     fn cast(bytes: &[u8]) -> Self::ReadResult {
@@ -153,8 +122,8 @@ impl<'a> Row<'a> for NaiveDateTime {
 impl<'a> Row<'a> for Vec<u8> {
     type ReadResult = &'a [u8];
 
-    fn write(v: &Self, row_writer: &mut RowWriter) -> usize {
-        row_writer.write(v.to_byte_slice())
+    fn write(v: &Self, writer: &mut Writer) {
+        writer.bytes(v);
     }
 
     fn cast(bytes: &'a [u8]) -> Self::ReadResult {
@@ -163,7 +132,7 @@ impl<'a> Row<'a> for Vec<u8> {
 }
 
 pub struct ArrayGetter<'a, T> {
-    array_data: ArrayData<'a>,
+    array_data: ArrayViewer<'a>,
     _marker: PhantomData<T>,
 }
 
@@ -184,35 +153,19 @@ impl<'a, T: Row<'a>> ArrayGetter<'a, T> {
 impl<'a, T: Row<'a>> Row<'a> for Vec<T> {
     type ReadResult = ArrayGetter<'a, T>;
 
-    fn write(v: &Self, row_writer: &mut RowWriter) -> usize {
-        let start = row_writer.writer.len();
-
-        let schema = <T as Row>::schema();
-        if schema.is_container() {
-            v.iter().enumerate().for_each(|(index, item)| {
-                let mut callback = row_writer.write_offset_size_callback(index);
-                row_writer.point_to(schema.num_fields());
-                <T as Row>::write(item, row_writer);
-                callback(row_writer);
-            });
-        } else {
-            v.iter().enumerate().for_each(|(index, item)| {
-                let size = <T as Row>::write(item, row_writer);
-                row_writer.write_offset_size(index, size);
-            });
-        }
-        let end = row_writer.writer.len();
-        end - start
+    fn write(v: &Self, writer: &mut Writer) {
+        let mut array_writer = ArrayWriter::new(v.len(), writer);
+        v.iter().enumerate().for_each(|(idx, item)| {
+            let callback_info = array_writer.write_start(idx);
+            <T as Row>::write(item, array_writer.borrow_writer());
+            array_writer.write_end(callback_info);
+        });
     }
 
     fn cast(row: &'a [u8]) -> Self::ReadResult {
         ArrayGetter {
-            array_data: ArrayData::new(row),
+            array_data: ArrayViewer::new(row),
             _marker: PhantomData::<T>,
         }
-    }
-
-    fn schema() -> Schema {
-        Schema::new(30, true)
     }
 }
