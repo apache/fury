@@ -27,3 +27,4 @@ lazy_static = { version = "1.4.0" }
 byteorder = { version = "1.4.3" }
 chrono = "0.4.26"
 thiserror = { default-features = false, version = "1.0.43" }
+arrow = "49.0.0"
