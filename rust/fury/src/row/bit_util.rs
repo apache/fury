@@ -12,21 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod deserializer;
-mod error;
-mod serializer;
-mod types;
+const WORD_SIZE: usize = 8;
 
-pub mod buffer;
-pub use deserializer::from_buffer;
-pub use deserializer::Deserialize;
-pub use deserializer::DeserializerState;
-pub use error::Error;
-pub use serializer::to_buffer;
-pub use serializer::Serialize;
-pub use serializer::SerializerState;
-pub use types::{
-    compute_field_hash, compute_string_hash, compute_struct_hash, config_flags, FieldType,
-    FuryMeta, Language, RefFlag, SIZE_OF_REF_AND_TYPE,
-};
-pub mod row;
+pub fn calculate_bitmap_width_in_bytes(num_fields: usize) -> usize {
+    return ((num_fields + 63) / 64) * WORD_SIZE;
+}
