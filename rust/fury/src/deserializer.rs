@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use super::buffer::Reader;
+use super::types::Language;
 use crate::{
     error::Error,
     types::{FuryMeta, RefFlag},
-    Language,
 };
 use chrono::{DateTime, Days, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use std::{
     collections::{HashMap, HashSet},
     mem,
 };
-
-use super::buffer::Reader;
 
 fn from_u8_slice<T: Clone>(slice: &[u8]) -> Vec<T> {
     let byte_len = slice.len() / mem::size_of::<T>();

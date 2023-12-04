@@ -12,21 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod buffer;
 mod deserializer;
 mod error;
+mod row;
 mod serializer;
 mod types;
 
-pub mod buffer;
 pub use deserializer::from_buffer;
-pub use deserializer::Deserialize;
-pub use deserializer::DeserializerState;
 pub use error::Error;
+pub use fury_derive::*;
+pub use row::{from_row, to_row};
 pub use serializer::to_buffer;
-pub use serializer::Serialize;
-pub use serializer::SerializerState;
-pub use types::{
-    compute_field_hash, compute_string_hash, compute_struct_hash, config_flags, FieldType,
-    FuryMeta, Language, RefFlag, SIZE_OF_REF_AND_TYPE,
-};
-pub mod row;
+
+pub mod __derive {
+    pub use crate::buffer::{Reader, Writer};
+    pub use crate::deserializer::{Deserialize, DeserializerState};
+    pub use crate::row::{Row, RowViewer, RowWriter, StructViewer, StructWriter};
+    pub use crate::serializer::{Serialize, SerializerState};
+    pub use crate::types::{compute_struct_hash, FieldType, FuryMeta, SIZE_OF_REF_AND_TYPE};
+    pub use crate::Error;
+}

@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::marker::PhantomData;
-
 use crate::{buffer::Writer, Error};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::{Days, NaiveDate, NaiveDateTime};
+use std::collections::BTreeMap;
+use std::marker::PhantomData;
 
 use super::{
-    reader::{ArrayViewer, RowViewer},
-    writer::{ArrayWriter, RowWriter},
+    reader::{ArrayViewer, MapViewer, RowViewer},
+    writer::{ArrayWriter, MapWriter, RowWriter},
 };
 
 pub trait Row<'a> {
@@ -166,6 +166,80 @@ impl<'a, T: Row<'a>> Row<'a> for Vec<T> {
         ArrayGetter {
             array_data: ArrayViewer::new(row),
             _marker: PhantomData::<T>,
+        }
+    }
+}
+
+pub struct MapGetter<'a, T1, T2>
+where
+    T1: Ord,
+    T2: Ord,
+{
+    map_data: MapViewer<'a>,
+    _key_marker: PhantomData<T1>,
+    _value_marker: PhantomData<T2>,
+}
+
+impl<'a, T1: Row<'a> + Ord, T2: Row<'a> + Ord> MapGetter<'a, T1, T2> {
+    pub fn to_btree_map(&'a self) -> Result<BTreeMap<T1::ReadResult, T2::ReadResult>, Error>
+    where
+        <T1 as Row<'a>>::ReadResult: Ord,
+    {
+        let mut map = BTreeMap::new();
+        let keys = self.keys();
+        let values = self.values();
+
+        for i in 0..self.keys().size() {
+            map.insert(keys.get(i), values.get(i));
+        }
+        Ok(map)
+    }
+
+    pub fn keys(&'a self) -> ArrayGetter<'a, T1> {
+        ArrayGetter {
+            array_data: ArrayViewer::new(self.map_data.get_key_row()),
+            _marker: PhantomData::<T1>,
+        }
+    }
+
+    pub fn values(&'a self) -> ArrayGetter<'a, T2> {
+        ArrayGetter {
+            array_data: ArrayViewer::new(self.map_data.get_value_row()),
+            _marker: PhantomData::<T2>,
+        }
+    }
+}
+
+impl<'a, T1: Row<'a> + Ord, T2: Row<'a> + Ord> Row<'a> for BTreeMap<T1, T2> {
+    type ReadResult = MapGetter<'a, T1, T2>;
+
+    fn write(v: &Self, writer: &mut Writer) {
+        let mut map_writter = MapWriter::new(writer);
+        {
+            let callback_info = map_writter.write_start(0);
+            let mut array_writer = ArrayWriter::new(v.len(), map_writter.borrow_writer());
+            v.keys().enumerate().for_each(|(idx, item)| {
+                let callback_info = array_writer.write_start(idx);
+                <T1 as Row>::write(item, array_writer.borrow_writer());
+                array_writer.write_end(callback_info);
+            });
+            map_writter.write_end(callback_info);
+        }
+        {
+            let mut array_writer = ArrayWriter::new(v.len(), map_writter.borrow_writer());
+            v.values().enumerate().for_each(|(idx, item)| {
+                let callback_info = array_writer.write_start(idx);
+                <T2 as Row>::write(item, array_writer.borrow_writer());
+                array_writer.write_end(callback_info);
+            });
+        }
+    }
+
+    fn cast(row: &'a [u8]) -> Self::ReadResult {
+        MapGetter {
+            map_data: MapViewer::new(row),
+            _key_marker: PhantomData::<T1>,
+            _value_marker: PhantomData::<T2>,
         }
     }
 }
