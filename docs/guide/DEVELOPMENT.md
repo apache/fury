@@ -52,7 +52,7 @@ bazel build //src/fury/row:fury_row_format
 #### Environment Requirements
 
 - cpp 11+
-- bazel 4.2
+- bazel 6.3.2
 
 ### Building Fury GoLang
 
