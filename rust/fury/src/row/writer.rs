@@ -16,6 +16,11 @@ use crate::buffer::Writer;
 
 use super::{bit_util::calculate_bitmap_width_in_bytes, row::Row};
 
+pub struct WriteCallbackInfo {
+    field_offset: usize,
+    data_start: usize,
+}
+
 pub trait RowWriter {
     fn get_field_offset(&self, idx: usize) -> usize;
 
@@ -114,11 +119,6 @@ impl<'a> ArrayWriter<'a> {
     }
 }
 
-pub struct WriteCallbackInfo {
-    field_offset: usize,
-    data_start: usize,
-}
-
 impl<'a> RowWriter for ArrayWriter<'a> {
     fn borrow_writer(&mut self) -> &mut Writer {
         self.writer
@@ -130,6 +130,60 @@ impl<'a> RowWriter for ArrayWriter<'a> {
 
     fn base_offset(&self) -> usize {
         self.base_offset
+    }
+}
+
+pub struct MapWriter<'a> {
+    base_offset: usize,
+    writer: &'a mut Writer,
+}
+
+impl<'a> MapWriter<'a> {
+    fn get_fixed_size(&self) -> usize {
+        // key_byte_size
+        8
+    }
+
+    pub fn new(writer: &mut Writer) -> MapWriter {
+        let base_offset = writer.len();
+        let array_writer = MapWriter {
+            writer,
+            base_offset,
+        };
+        let fixed_size = array_writer.get_fixed_size();
+        array_writer.writer.reserve(fixed_size);
+        array_writer.writer.skip(fixed_size);
+        array_writer
+    }
+}
+
+impl<'a> RowWriter for MapWriter<'a> {
+    fn get_field_offset(&self, _idx: usize) -> usize {
+        panic!("unreachable code")
+    }
+
+    fn base_offset(&self) -> usize {
+        self.base_offset
+    }
+
+    fn write_start(&mut self, _idx: usize) -> WriteCallbackInfo {
+        let base_offset = self.base_offset();
+        let writer: &mut Writer = self.borrow_writer();
+        let data_start: usize = writer.len();
+        WriteCallbackInfo {
+            field_offset: base_offset,
+            data_start,
+        }
+    }
+
+    fn write_end(&mut self, callback_info: WriteCallbackInfo) {
+        let writer: &mut Writer = self.borrow_writer();
+        let size: usize = writer.len() - callback_info.data_start;
+        writer.set_bytes(callback_info.field_offset, &(size as u32).to_le_bytes());
+    }
+
+    fn borrow_writer(&mut self) -> &mut Writer {
+        self.writer
     }
 }
 

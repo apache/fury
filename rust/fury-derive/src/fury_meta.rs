@@ -34,7 +34,7 @@ pub fn derive_fury_meta(ast: &syn::DeriveInput, tag: String) -> TokenStream {
         let ty = &field.ty;
         let name = format!("{}", field.ident.as_ref().expect("should be field name"));
         quote! {
-            (#name, <#ty as fury::FuryMeta>::ty(), <#ty as fury::FuryMeta>::tag())
+            (#name, <#ty as fury::__derive::FuryMeta>::ty(), <#ty as fury::__derive::FuryMeta>::tag())
         }
     });
     let name_hash_static: proc_macro2::Ident =
@@ -43,10 +43,10 @@ pub fn derive_fury_meta(ast: &syn::DeriveInput, tag: String) -> TokenStream {
     let gen = quote! {
 
         lazy_static::lazy_static! {
-            static ref #name_hash_static: u32 = fury::compute_struct_hash(vec![#(#props),*]);
+            static ref #name_hash_static: u32 = fury::__derive::compute_struct_hash(vec![#(#props),*]);
         }
 
-        impl fury::FuryMeta for #name {
+        impl fury::__derive::FuryMeta for #name {
             fn tag() -> &'static str {
                 #tag
             }
@@ -55,8 +55,8 @@ pub fn derive_fury_meta(ast: &syn::DeriveInput, tag: String) -> TokenStream {
                 *(#name_hash_static)
             }
 
-            fn ty() -> fury::FieldType {
-                fury::FieldType::FuryTypeTag
+            fn ty() -> fury::__derive::FieldType {
+                fury::__derive::FieldType::FuryTypeTag
             }
         }
     };
@@ -76,7 +76,7 @@ pub fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
         let ty = &field.ty;
         let ident = &field.ident;
         quote! {
-            <#ty as fury::Serialize>::serialize(&self.#ident, serializer);
+            <#ty as fury::__derive::Serialize>::serialize(&self.#ident, serializer);
         }
     });
 
@@ -84,19 +84,19 @@ pub fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
         let ty = &field.ty;
         // each field have one byte ref tag and two byte type id
         quote! {
-            <#ty as fury::Serialize>::reserved_space() + fury::SIZE_OF_REF_AND_TYPE
+            <#ty as fury::__derive::Serialize>::reserved_space() + fury::__derive::SIZE_OF_REF_AND_TYPE
         }
     });
 
     let tag_bytelen = format!("{}", name).len();
 
     let gen = quote! {
-        impl fury::Serialize for #name {
-            fn write(&self, serializer: &mut fury::SerializerState) {
+        impl fury::__derive::Serialize for #name {
+            fn write(&self, serializer: &mut fury::__derive::SerializerState) {
                 // write tag string
-                serializer.write_tag(<#name as fury::FuryMeta>::tag());
+                serializer.write_tag(<#name as fury::__derive::FuryMeta>::tag());
                 // write tag hash
-                serializer.writer.u32(<#name as fury::FuryMeta>::hash());
+                serializer.writer.u32(<#name as fury::__derive::FuryMeta>::hash());
                 // write fields
                 #(#accessor_exprs)*
             }
@@ -123,20 +123,20 @@ pub fn derive_deserilize(ast: &syn::DeriveInput) -> TokenStream {
         let ty = &field.ty;
         let ident = &field.ident;
         quote! {
-            #ident: <#ty as fury::Deserialize>::deserialize(deserializer)?
+            #ident: <#ty as fury::__derive::Deserialize>::deserialize(deserializer)?
         }
     });
 
     let gen = quote! {
-        impl<'de> fury::Deserialize for #name {
-            fn read(deserializer: &mut fury::DeserializerState) -> Result<Self, fury::Error> {
+        impl<'de> fury::__derive::Deserialize for #name {
+            fn read(deserializer: &mut fury::__derive::DeserializerState) -> Result<Self, fury::__derive::Error> {
                 // read tag string
                 deserializer.read_tag()?;
                 // read tag hash
                 let hash = deserializer.reader.u32();
-                let expected = <#name as fury::FuryMeta>::hash();
+                let expected = <#name as fury::__derive::FuryMeta>::hash();
                 if(hash != expected) {
-                    Err(fury::Error::StructHash{ expected, actial: hash })
+                    Err(fury::__derive::Error::StructHash{ expected, actial: hash })
                 } else {
                     Ok(Self {
                         #(#exprs),*

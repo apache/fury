@@ -94,6 +94,50 @@ impl<'r> RowViewer<'r> for ArrayViewer<'r> {
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct MapViewer<'r> {
+    key_row: &'r [u8],
+    value_row: &'r [u8],
+    row: &'r [u8],
+}
+
+impl<'r> MapViewer<'r> {
+    pub fn new(row: &'r [u8]) -> MapViewer<'r> {
+        let key_byte_size = LittleEndian::read_u64(&row[0..8]) as usize;
+        MapViewer {
+            row,
+            value_row: &row[key_byte_size + 8..row.len()],
+            key_row: &row[8..key_byte_size + 8],
+        }
+    }
+
+    pub fn get_key_row(&self) -> &[u8] {
+        self.key_row
+    }
+
+    pub fn get_value_row(&self) -> &[u8] {
+        self.value_row
+    }
+}
+
+impl<'r> RowViewer<'r> for MapViewer<'r> {
+    fn get_offset_size(&self, _idx: usize) -> (u32, u32) {
+        panic!("unreachable code")
+    }
+
+    fn get_field_bytes(&self, _idx: usize) -> &'r [u8] {
+        panic!("unreachable code")
+    }
+
+    fn get_field_offset(&self, _idx: usize) -> usize {
+        panic!("unreachable code")
+    }
+
+    fn row(&self) -> &'r [u8] {
+        self.row
+    }
+}
+
 pub fn from_row<'a, T: Row<'a>>(row: &'a [u8]) -> T::ReadResult {
     T::cast(row)
 }

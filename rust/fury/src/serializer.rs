@@ -31,7 +31,7 @@
 //! fury_derive would expand the code and automatic implements the Serialize trait
 
 use super::buffer::Writer;
-use crate::{config_flags, FuryMeta, Language, RefFlag, SIZE_OF_REF_AND_TYPE};
+use super::types::{config_flags, FuryMeta, Language, RefFlag, SIZE_OF_REF_AND_TYPE};
 use chrono::{NaiveDate, NaiveDateTime};
 use std::collections::{HashMap, HashSet};
 use std::mem;
