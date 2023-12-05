@@ -26,7 +26,7 @@ export default (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return readUInt8() === 0 ? false : true
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.BOOL, (v: boolean) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.BOOL, false, (v: boolean) => {
             writeUInt8(v ? 1 : 0)
         }),
         writeWithoutType: (v: boolean) => {

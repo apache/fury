@@ -84,7 +84,7 @@ export const ReferenceResolver = (
     const head = makeHead(RefFlags.RefValueFlag, type);
     if (config.refTracking) {
       return (v: T) => {
-        if (v !== null) {
+        if (v !== null && v !== undefined) {
           const existsId = existsWriteObject(v);
           if (typeof existsId === "number") {
             binaryWriter.int8(RefFlags.RefFlag);
@@ -100,7 +100,7 @@ export const ReferenceResolver = (
       };
     } else {
       return (v: T) => {
-        if (v !== null) {
+        if (v !== null && v !== undefined) {
           int24(head);
           fn(v);
         } else {
@@ -112,13 +112,18 @@ export const ReferenceResolver = (
 
   function withNotNullableWriter<T>(
     type: InternalSerializerType,
+    defaultValue: T,
     fn: SerializerWrite<T>
   ) {
     const head = makeHead(RefFlags.NotNullValueFlag, type);
     const int24 = binaryWriter.int24;
     return (v: T) => {
       int24(head);
-      fn(v);
+      if (v == null || v == undefined) {
+        fn(defaultValue);
+      } else {
+        fn(v);
+      }
     };
   }
 

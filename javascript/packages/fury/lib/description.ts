@@ -59,7 +59,7 @@ type Props<T> = T extends {
     };
 }
     ? {
-        [P in keyof T2]: (ToRecordType<T2[P]> | null);
+        [P in keyof T2]?: (ToRecordType<T2[P]> | null);
     }
     : unknown;
 
