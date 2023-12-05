@@ -21,6 +21,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.fury.annotation.Ignore;
@@ -609,5 +610,13 @@ public class FuryTest extends FuryTestBase {
     } catch (StackOverflowError e) {
       Assert.assertTrue(e.getMessage().contains("reference"));
     }
+  }
+
+  @Test
+  public void testPkgAccessLevelParentClass() {
+    Fury fury = Fury.builder().withRefTracking(true).requireClassRegistration(false).build();
+    HashBasedTable<Object, Object, Object> table = HashBasedTable.create(2, 4);
+    table.put("r", "c", 100);
+    serDeCheckSerializer(fury, table, "Codec");
   }
 }

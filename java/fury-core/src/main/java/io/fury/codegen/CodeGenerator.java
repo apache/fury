@@ -479,12 +479,23 @@ public class CodeGenerator {
     return sb;
   }
 
-  /** Returns true if class is accessible from source. */
-  public static boolean sourceAccessible(Class<?> clz) {
+  /** Returns true if class is public accessible from source. */
+  public static boolean sourcePublicAccessible(Class<?> clz) {
     if (clz.isPrimitive()) {
       return true;
     }
-    if (!ReflectionUtils.isPublic(clz) || clz.getCanonicalName() == null) {
+    if (!ReflectionUtils.isPublic(clz)) {
+      return false;
+    }
+    return sourcePkgLevelAccessible(clz);
+  }
+
+  /** Returns true if class is package level accessible from source. */
+  public static boolean sourcePkgLevelAccessible(Class<?> clz) {
+    if (clz.isPrimitive()) {
+      return true;
+    }
+    if (clz.getCanonicalName() == null) {
       return false;
     }
     // Scala may produce class name like: xxx.SomePackageObject.package$SomeClass

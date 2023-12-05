@@ -22,6 +22,7 @@ import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
 import io.fury.TestUtils;
+import io.fury.builder.pkg.AccessLevelClass;
 import io.fury.test.bean.Foo;
 import io.fury.test.bean.Struct;
 import io.fury.type.Descriptor;
@@ -45,7 +46,8 @@ public class AccessorHelperTest {
 
   @Test
   public void genCode() {
-    AccessorHelper.genCode(A.class);
+    System.out.println(AccessorHelper.genCode(A.class));
+    ;
   }
 
   @Test
@@ -63,6 +65,20 @@ public class AccessorHelperTest {
     assertTrue(AccessorHelper.defineAccessor(A.class.getDeclaredField("f1")));
     assertTrue(AccessorHelper.defineAccessor(A.class.getDeclaredMethod("getF1")));
     assertSame(AccessorHelper.getAccessorClass(A.class), accessorClass);
+  }
+
+  @Data
+  static class PkgAccessAccessorClass {
+    protected String f1;
+    String f2;
+  }
+
+  @Test
+  public void definePkgAccessAccessorClass() {
+    assertTrue(AccessorHelper.defineAccessorClass(PkgAccessAccessorClass.class));
+    assertTrue(AccessorHelper.defineAccessorClass(AccessLevelClass.class));
+    Method[] methods = AccessorHelper.getAccessorClass(AccessLevelClass.class).getDeclaredMethods();
+    assertEquals(methods.length, 4);
   }
 
   @Test
