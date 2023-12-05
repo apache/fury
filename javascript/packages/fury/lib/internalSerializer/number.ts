@@ -24,7 +24,7 @@ export const uInt8Serializer = (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return readUInt8();
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT8, (v: number) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT8, 0, (v: number) => {
             writeUInt8(v);
         }),
         config: () => {
@@ -44,7 +44,7 @@ export const floatSerializer = (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return readFloat();
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.FLOAT, (v: number) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.FLOAT, 0, (v: number) => {
             writeFloat(v);
         }),
         writeWithoutType: (v: number) => {
@@ -68,7 +68,7 @@ export const doubleSerializer = (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return readDouble();
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.DOUBLE, (v: number) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.DOUBLE, 0, (v: number) => {
             writeDouble(v);
         }),
         writeWithoutType: (v: number) => {
@@ -91,7 +91,7 @@ export const int8Serializer = (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return readInt8();
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.INT8, (v: number) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.INT8, 0, (v: number) => {
             writeInt8(v);
         }),
         config: () => {
@@ -111,7 +111,7 @@ export const uInt16Serializer = (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return readUInt16();
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT16, (v: number) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT16, 0, (v: number) => {
             writeUInt16(v);
         }),
         config: () => {
@@ -131,7 +131,7 @@ export const int16Serializer = (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return readInt16();
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.INT16, (v: number) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.INT16, 0, (v: number) => {
             writeInt16(v);
         }),
         writeWithoutType: (v: number) => {
@@ -155,7 +155,7 @@ export const uInt32Serializer = (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return readUInt32();
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT32, (v: number) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT32, 0, (v: number) => {
             writeUInt32(v);
         }),
         config: () => {
@@ -175,7 +175,7 @@ export const int32Serializer = (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return readInt32();
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.INT32, (v: number) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.INT32, 0, (v: number) => {
             writeInt32(v);
         }),
         writeWithoutType: (v: number) => {
@@ -199,7 +199,7 @@ export const uInt64Serializer = (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return readUInt64();
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT64, (v: bigint) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.UINT64, BigInt(0), (v: bigint) => {
             writeUInt64(v);
         }),
         config: () => {
@@ -219,7 +219,7 @@ export const int64Serializer = (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return readInt64();
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.INT64, (v: bigint) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.INT64, BigInt(0), (v: bigint) => {
             writeInt64(v);
         }),
         writeWithoutType: (v: bigint) => {

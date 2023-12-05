@@ -17,7 +17,8 @@
 import  {Fury} from "../type";
 import { InternalSerializerType } from "../type";
 
-const epoch =  new Date('1970/01/01 00:00').getTime();
+const epochDate =  new Date('1970/01/01 00:00');
+const epoch = epochDate.getTime();
 
 export const timestampSerializer = (fury: Fury) => {
     const { binaryReader, binaryWriter, referenceResolver} = fury;
@@ -28,7 +29,7 @@ export const timestampSerializer = (fury: Fury) => {
         ...referenceResolver.deref(() => {
             return new Date(Number(readInt64()));
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.TIMESTAMP, (v: Date) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.TIMESTAMP, epochDate, (v: Date) => {
             writeInt64(BigInt(v.getTime()));
         }),
         config: () => {
@@ -48,7 +49,7 @@ export const dateSerializer = (fury: Fury) => {
             const day = readInt32();
             return new Date(epoch + (day * (24*60*60) * 1000));
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.DATE, (v: Date) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.DATE, epochDate, (v: Date) => {
             const diff = v.getTime() - epoch;
             const day = Math.floor(diff / 1000 / (24*60*60))
             writeInt32(day);

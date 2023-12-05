@@ -35,7 +35,7 @@ export default (fury: Fury) => {
             const result = readStringUtf8(len);
             return result;
         }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.STRING, (v: string) => {
+        write: referenceResolver.withNotNullableWriter(InternalSerializerType.STRING, "", (v: string) => {
             writeStringOfVarInt32(v);
         }),
         writeWithoutType: (v: string) => {

@@ -225,6 +225,22 @@ describe('object', () => {
       expect(error.message).toBe("root type should be object");
     }
   });
+
+  test("should partial record work", () => {
+    const hps = undefined;
+    const description = Type.object('ws-channel-protocol', {
+        kind: Type.string(),
+        path: Type.string(),
+    });
+
+    const fury = new Fury({ hps });
+    const { serialize, deserialize } = fury.registerSerializer(description);
+    const bin = serialize({
+        kind: "123",
+    });
+    const obj = deserialize(bin);
+    expect({kind: "123", path: ""}).toEqual(obj)
+})
 });
 
 
