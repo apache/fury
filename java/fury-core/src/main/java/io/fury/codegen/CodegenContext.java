@@ -275,7 +275,7 @@ public class CodegenContext {
    *     return canonical name otherwise.
    */
   public String type(Class<?> clz) {
-    if (!CodeGenerator.sourceAccessible(clz)) {
+    if (!sourcePkgLevelAccessible(clz)) {
       return "Object";
     }
     if (clz.isArray()) {
@@ -674,5 +674,19 @@ public class CodegenContext {
     } else {
       return code;
     }
+  }
+
+  private final Map<Class<?>, Boolean> sourcePublicAccessibleCache = new HashMap<>();
+  private final Map<Class<?>, Boolean> sourcePkgLevelAccessibleCache = new HashMap<>();
+
+  /** Returns true if class is public accessible from source. */
+  public boolean sourcePublicAccessible(Class<?> clz) {
+    return sourcePublicAccessibleCache.computeIfAbsent(clz, CodeGenerator::sourcePublicAccessible);
+  }
+
+  /** Returns true if class is package level accessible from source. */
+  public boolean sourcePkgLevelAccessible(Class<?> clz) {
+    return sourcePkgLevelAccessibleCache.computeIfAbsent(
+        clz, CodeGenerator::sourcePkgLevelAccessible);
   }
 }

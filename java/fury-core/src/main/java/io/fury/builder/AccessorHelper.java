@@ -16,6 +16,8 @@
 
 package io.fury.builder;
 
+import static io.fury.codegen.CodeGenerator.sourcePkgLevelAccessible;
+
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.CompileUnit;
@@ -78,50 +80,53 @@ public class AccessorHelper {
     // filter out super classes
     Collection<Descriptor> descriptors = Descriptor.getAllDescriptorsMap(beanClass, false).values();
     for (Descriptor descriptor : descriptors) {
-      if (!Modifier.isPrivate(descriptor.getModifiers())) {
-        {
-          String methodName = descriptor.getName();
-          String codeBody =
+      if (Modifier.isPrivate(descriptor.getModifiers())) {
+        continue;
+      }
+      boolean accessible = sourcePkgLevelAccessible(descriptor.getRawType());
+      {
+        // getter
+        String methodName = descriptor.getName();
+        String codeBody;
+        Class<?> returnType = accessible ? descriptor.getRawType() : Object.class;
+        if (isRecord) {
+          codeBody =
+              StringUtils.format(
+                  "return ${obj}.${fieldName}();",
+                  "obj",
+                  OBJ_NAME,
+                  "fieldName",
+                  descriptor.getName());
+        } else {
+          codeBody =
               StringUtils.format(
                   "return ${obj}.${fieldName};",
                   "obj",
                   OBJ_NAME,
                   "fieldName",
                   descriptor.getName());
-          Class<?> returnType = descriptor.getRawType();
-          ctx.addStaticMethod(methodName, codeBody, returnType, beanClass, OBJ_NAME);
         }
-        {
-          String methodName = descriptor.getName();
-          String codeBody =
-              StringUtils.format(
-                  "${obj}.${fieldName} = ${fieldValue};",
-                  "obj",
-                  OBJ_NAME,
-                  "fieldName",
-                  descriptor.getName(),
-                  "fieldValue",
-                  FIELD_VALUE);
-          ctx.addStaticMethod(
-              methodName,
-              codeBody,
-              void.class,
-              beanClass,
-              OBJ_NAME,
-              descriptor.getRawType(),
-              FIELD_VALUE);
-        }
-      } else if (isRecord) {
+        ctx.addStaticMethod(methodName, codeBody, returnType, beanClass, OBJ_NAME);
+      }
+      if (accessible) {
         String methodName = descriptor.getName();
         String codeBody =
             StringUtils.format(
-                "return ${obj}.${fieldName}();",
+                "${obj}.${fieldName} = ${fieldValue};",
                 "obj",
                 OBJ_NAME,
                 "fieldName",
-                descriptor.getName());
-        Class<?> returnType = descriptor.getRawType();
-        ctx.addStaticMethod(methodName, codeBody, returnType, beanClass, OBJ_NAME);
+                descriptor.getName(),
+                "fieldValue",
+                FIELD_VALUE);
+        ctx.addStaticMethod(
+            methodName,
+            codeBody,
+            void.class,
+            beanClass,
+            OBJ_NAME,
+            descriptor.getRawType(),
+            FIELD_VALUE);
       }
       // getter/setter may lose some inner state of an object, so we set them to null to avoid
       // creating getter/setter accessor.
@@ -194,26 +199,39 @@ public class AccessorHelper {
     }
   }
 
+  /** Should be invoked only when {@link #defineAccessor} returns true. */
   public static Class<?> getAccessorClass(Field field) {
     Class<?> beanClass = field.getDeclaringClass();
     return getAccessorClass(beanClass);
   }
 
+  /** Should be invoked only when {@link #defineAccessor} returns true. */
   public static Class<?> getAccessorClass(Method method) {
     Class<?> beanClass = method.getDeclaringClass();
     return getAccessorClass(beanClass);
   }
 
   public static boolean defineAccessor(Field field) {
-    if (ReflectionUtils.isPrivate(field.getType())) {
+    Class<?> beanClass = field.getDeclaringClass();
+    return defineAccessorClass(beanClass);
+  }
+
+  public static boolean defineAccessor(Method method) {
+    Class<?> beanClass = method.getDeclaringClass();
+    return defineAccessorClass(beanClass);
+  }
+
+  public static boolean defineSetter(Field field) {
+    if (ReflectionUtils.isPrivate(field.getType()) || !sourcePkgLevelAccessible(field.getType())) {
       return false;
     }
     Class<?> beanClass = field.getDeclaringClass();
     return defineAccessorClass(beanClass);
   }
 
-  public static boolean defineAccessor(Method method) {
-    if (ReflectionUtils.isPrivate(method.getReturnType())) {
+  public static boolean defineSetter(Method method) {
+    if (ReflectionUtils.isPrivate(method.getReturnType())
+        || !sourcePkgLevelAccessible(method.getReturnType())) {
       return false;
     }
     Class<?> beanClass = method.getDeclaringClass();

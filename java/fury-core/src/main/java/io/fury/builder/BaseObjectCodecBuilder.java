@@ -17,7 +17,6 @@
 package io.fury.builder;
 
 import static io.fury.codegen.CodeGenerator.getPackage;
-import static io.fury.codegen.CodeGenerator.sourceAccessible;
 import static io.fury.codegen.Expression.Invoke.inlineInvoke;
 import static io.fury.codegen.Expression.Reference.fieldRef;
 import static io.fury.codegen.ExpressionOptimizer.invokeGenerated;
@@ -530,7 +529,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected Expression getClassExpr(Class<?> cls) {
-    if (sourceAccessible(cls)) {
+    if (sourcePublicAccessible(cls)) {
       return Literal.ofClass(cls);
     } else {
       return new StaticInvoke(

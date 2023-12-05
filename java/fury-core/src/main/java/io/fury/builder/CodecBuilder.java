@@ -16,7 +16,6 @@
 
 package io.fury.builder;
 
-import static io.fury.codegen.CodeGenerator.sourceAccessible;
 import static io.fury.codegen.Expression.Invoke.inlineInvoke;
 import static io.fury.type.TypeUtils.CLASS_TYPE;
 import static io.fury.type.TypeUtils.OBJECT_ARRAY_TYPE;
@@ -122,6 +121,10 @@ public abstract class CodecBuilder {
   /** Returns an expression that serialize java bean of type {@link CodecBuilder#beanClass}. */
   public abstract Expression buildEncodeExpression();
 
+  protected boolean sourcePublicAccessible(Class<?> cls) {
+    return ctx.sourcePublicAccessible(cls);
+  }
+
   protected Expression tryInlineCast(Expression expression, TypeToken<?> targetType) {
     return tryCastIfPublic(expression, targetType, true);
   }
@@ -138,7 +141,7 @@ public abstract class CodecBuilder {
       return expression;
     }
     if (inline) {
-      if (sourceAccessible(rawType)) {
+      if (sourcePublicAccessible(rawType)) {
         return new Cast(expression, targetType);
       } else {
         return new Cast(expression, ReflectionUtils.getPublicSuperType(TypeToken.of(rawType)));
@@ -150,7 +153,8 @@ public abstract class CodecBuilder {
   protected Expression tryCastIfPublic(
       Expression expression, TypeToken<?> targetType, String valuePrefix) {
     Class<?> rawType = getRawType(targetType);
-    if (sourceAccessible(rawType) && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
+    if (sourcePublicAccessible(rawType)
+        && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
       return new Cast(expression, targetType, valuePrefix);
     }
     return expression;
@@ -185,15 +189,15 @@ public abstract class CodecBuilder {
   protected Expression getFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
     TypeToken<?> fieldType = descriptor.getTypeToken();
     Class<?> rawType = descriptor.getRawType();
-    if (!sourceAccessible(rawType)) {
-      fieldType = OBJECT_TYPE;
-    }
     String fieldName = descriptor.getName();
     if (isRecord) {
       return getRecordFieldValue(inputBeanExpr, descriptor);
     }
     if (duplicatedFields.contains(fieldName) || !Modifier.isPublic(beanClass.getModifiers())) {
       return unsafeAccessField(inputBeanExpr, beanClass, descriptor);
+    }
+    if (!sourcePublicAccessible(rawType)) {
+      fieldType = OBJECT_TYPE;
     }
     // public field or non-private non-java field access field directly.
     if (Modifier.isPublic(descriptor.getModifiers())) {
@@ -230,6 +234,9 @@ public abstract class CodecBuilder {
 
   private Expression getRecordFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
     TypeToken<?> fieldType = descriptor.getTypeToken();
+    if (!sourcePublicAccessible(descriptor.getRawType())) {
+      fieldType = OBJECT_TYPE;
+    }
     String fieldName = descriptor.getName();
     if (Modifier.isPublic(beanClass.getModifiers())) {
       Preconditions.checkNotNull(descriptor.getReadMethod());
@@ -256,9 +263,7 @@ public abstract class CodecBuilder {
       }
       if (!fieldType.isPrimitive()) {
         Expression v = inlineInvoke(ref, methodInfo.f1, OBJECT_TYPE, fieldNullable, inputBeanExpr);
-        TypeToken<?> publicSuperType =
-            ReflectionUtils.getPublicSuperType(descriptor.getTypeToken());
-        return new Cast(v, publicSuperType, fieldName);
+        return tryCastIfPublic(v, descriptor.getTypeToken(), fieldName);
       } else {
         return new Invoke(ref, methodInfo.f1, fieldType, fieldNullable, inputBeanExpr);
       }
@@ -296,8 +301,7 @@ public abstract class CodecBuilder {
               fieldNullable,
               inputObject,
               fieldOffsetExpr);
-      TypeToken<?> publicSuperType = ReflectionUtils.getPublicSuperType(descriptor.getTypeToken());
-      return tryCastIfPublic(getObj, publicSuperType, fieldName);
+      return tryCastIfPublic(getObj, descriptor.getTypeToken(), fieldName);
     }
   }
 
@@ -337,7 +341,7 @@ public abstract class CodecBuilder {
     if (value instanceof Inlineable) {
       ((Inlineable) value).inline();
     }
-    if (duplicatedFields.contains(fieldName) || !sourceAccessible(beanClass)) {
+    if (duplicatedFields.contains(fieldName) || !sourcePublicAccessible(beanClass)) {
       return unsafeSetField(bean, d, value);
     }
     if (!Modifier.isFinal(d.getModifiers()) && Modifier.isPublic(d.getModifiers())) {
@@ -346,7 +350,7 @@ public abstract class CodecBuilder {
       return new Invoke(bean, d.getWriteMethod().getName(), value);
     } else {
       if (!Modifier.isFinal(d.getModifiers()) && !Modifier.isPrivate(d.getModifiers())) {
-        if (AccessorHelper.defineAccessor(d.getField())) {
+        if (AccessorHelper.defineSetter(d.getField())) {
           Class<?> accessorClass = AccessorHelper.getAccessorClass(d.getField());
           if (!value.type().equals(d.getTypeToken())) {
             value = new Cast(value, d.getTypeToken());
@@ -356,7 +360,7 @@ public abstract class CodecBuilder {
         }
       }
       if (d.getWriteMethod() != null && !Modifier.isPrivate(d.getWriteMethod().getModifiers())) {
-        if (AccessorHelper.defineAccessor(d.getWriteMethod())) {
+        if (AccessorHelper.defineSetter(d.getWriteMethod())) {
           Class<?> accessorClass = AccessorHelper.getAccessorClass(d.getWriteMethod());
           if (!value.type().equals(d.getTypeToken())) {
             value = new Cast(value, d.getTypeToken());
@@ -452,7 +456,7 @@ public abstract class CodecBuilder {
   /** Returns an Expression that create a new java object of type {@link CodecBuilder#beanClass}. */
   protected Expression newBean() {
     // TODO allow default access-level class.
-    if (sourceAccessible(beanClass)) {
+    if (sourcePublicAccessible(beanClass)) {
       return new Expression.NewInstance(beanType);
     } else {
       return new StaticInvoke(Platform.class, "newInstance", OBJECT_TYPE, beanClassExpr());

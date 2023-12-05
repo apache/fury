@@ -41,6 +41,7 @@ class ScalaTest extends AnyWordSpec with Matchers {
   "serialize/deserialize package object in app" in {
     // If we move code in main here, we can't reproduce https://github.com/alipay/fury/issues/1165.
     PkgObjectMain.main(Array())
+    PkgObjectMain2.main(Array())
   }
 }
 
