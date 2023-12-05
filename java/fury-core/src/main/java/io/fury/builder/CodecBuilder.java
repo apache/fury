@@ -121,16 +121,16 @@ public abstract class CodecBuilder {
   /** Returns an expression that serialize java bean of type {@link CodecBuilder#beanClass}. */
   public abstract Expression buildEncodeExpression();
 
+  protected boolean sourcePublicAccessible(Class<?> cls) {
+    return ctx.sourcePublicAccessible(cls);
+  }
+
   protected Expression tryInlineCast(Expression expression, TypeToken<?> targetType) {
     return tryCastIfPublic(expression, targetType, true);
   }
 
   protected Expression tryCastIfPublic(Expression expression, TypeToken<?> targetType) {
     return tryCastIfPublic(expression, targetType, false);
-  }
-
-  protected boolean sourcePublicAccessible(Class<?> cls) {
-    return ctx.sourcePublicAccessible(cls);
   }
 
   protected Expression tryCastIfPublic(
