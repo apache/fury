@@ -15,6 +15,9 @@
  */
 
 #include "gtest/gtest.h"
+#include <deque>
+#include <initializer_list>
+#include <list>
 
 #include "fury/meta/field_info.h"
 #include "src/fury/meta/type_traits.h"
@@ -58,6 +61,20 @@ TEST(Meta, IsUnique) {
   static_assert(IsUnique<1, false, true, 3, &A::x>::value);
   static_assert(!IsUnique<1, false, true, false, &A::x>::value);
   static_assert(!IsUnique<1, false, true, &A::x, 1>::value);
+}
+
+TEST(Meta, IsIterable) {
+  static_assert(IsIterable<std::vector<int>>);
+  static_assert(IsIterable<std::vector<std::vector<int>>>);
+  static_assert(IsIterable<std::deque<float>>);
+  static_assert(IsIterable<std::list<int>>);
+  static_assert(IsIterable<std::set<int>>);
+  static_assert(IsIterable<std::map<int, std::vector<unsigned>>>);
+  static_assert(IsIterable<struct A[10]>);
+  static_assert(IsIterable<float[2][2]>);
+  static_assert(IsIterable<std::initializer_list<A>>);
+  static_assert(IsIterable<std::string>);
+  static_assert(IsIterable<std::string_view>);
 }
 
 } // namespace test

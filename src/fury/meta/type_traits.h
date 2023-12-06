@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <iterator>
 #include <type_traits>
 
 namespace fury {
@@ -70,6 +71,31 @@ struct IsOneOf : std::disjunction<std::is_same<T, Args>...> {};
 template <typename T, typename... Args>
 using EnableIfIsOneOf =
     typename std::enable_if<IsOneOf<T, Args...>::value, T>::type;
+
+namespace details {
+using std::begin;
+using std::end;
+
+template <typename T,
+          typename U = std::void_t<
+              decltype(*begin(std::declval<T &>()),
+                       ++std::declval<decltype(begin(std::declval<T &>())) &>(),
+                       begin(std::declval<T &>()) != end(std::declval<T &>()))>>
+std::true_type IsIterableImpl(int);
+
+template <typename T> std::false_type IsIterableImpl(...);
+
+template <typename T> struct GetValueTypeImpl {
+  using type = std::remove_reference_t<decltype(*begin(std::declval<T &>()))>;
+};
+} // namespace details
+
+template <typename T>
+constexpr inline bool IsIterable =
+    decltype(details::IsIterableImpl<T>(0))::value;
+
+template <typename T>
+using GetValueType = typename details::GetValueTypeImpl<T>::type;
 
 } // namespace meta
 
