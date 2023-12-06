@@ -20,6 +20,7 @@
 #include "fury/meta/type_traits.h"
 #include "fury/row/writer.h"
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 namespace fury {
@@ -67,7 +68,19 @@ inline constexpr bool IsString =
     meta::IsOneOf<T, std::string, std::string_view>::value;
 
 template <typename T>
-inline constexpr bool IsClassButNotBuiltin = std::is_class_v<T> && !IsString<T>;
+inline constexpr bool IsArray = meta::IsIterable<T> && !IsString<T>;
+
+template <typename T>
+inline constexpr bool IsClassButNotBuiltin =
+    std::is_class_v<T> && !(IsString<T> || IsArray<T>);
+
+inline decltype(auto) GetChildType(RowWriter &writer, int index) {
+  return writer.schema()->field(index)->type();
+}
+
+inline decltype(auto) GetChildType(ArrayWriter &writer, int index) {
+  return writer.type()->field(0)->type();
+}
 
 } // namespace details
 
@@ -106,8 +119,10 @@ struct RowEncodeTrait<
     return details::ArrowSchemaBasicType<std::remove_cv_t<T>>::value();
   }
 
-  template <typename V>
-  static void Write(V &&, const T &value, RowWriter &writer, int index) {
+  template <typename V, typename W,
+            std::enable_if_t<meta::IsOneOf<W, RowWriter, ArrayWriter>::value,
+                             int> = 0>
+  static void Write(V &&, const T &value, W &writer, int index) {
     writer.Write(index, value);
   }
 };
@@ -117,8 +132,10 @@ struct RowEncodeTrait<
     T, std::enable_if_t<details::IsString<std::remove_cv_t<T>>>> {
   static auto Type() { return arrow::utf8(); }
 
-  template <typename V>
-  static void Write(V &&, const T &value, RowWriter &writer, int index) {
+  template <typename V, typename W,
+            std::enable_if_t<meta::IsOneOf<W, RowWriter, ArrayWriter>::value,
+                             int> = 0>
+  static void Write(V &&, const T &value, W &writer, int index) {
     writer.WriteString(index, value);
   }
 };
@@ -165,15 +182,55 @@ public:
                                 std::make_index_sequence<FieldInfo::Size>());
   }
 
-  template <typename V>
-  static void Write(V &&visitor, const T &value, RowWriter &writer, int index) {
+  template <typename V, typename W,
+            std::enable_if_t<meta::IsOneOf<W, RowWriter, ArrayWriter>::value,
+                             int> = 0>
+  static void Write(V &&visitor, const T &value, W &writer, int index) {
     auto offset = writer.cursor();
 
     auto inner_writer = std::make_unique<RowWriter>(
-        arrow::schema(writer.schema()->field(index)->type()->fields()),
-        &writer);
+        arrow::schema(details::GetChildType(writer, index)->fields()), &writer);
 
     inner_writer->Reset();
+    RowEncodeTrait<T>::Write(std::forward<V>(visitor), value,
+                             *inner_writer.get());
+
+    writer.SetOffsetAndSize(index, offset, writer.cursor() - offset);
+
+    std::forward<V>(visitor).template Visit<std::remove_cv_t<T>>(
+        std::move(inner_writer));
+  }
+};
+
+template <typename T>
+struct RowEncodeTrait<T,
+                      std::enable_if_t<details::IsArray<std::remove_cv_t<T>>>> {
+  static auto Type() {
+    return arrow::list(RowEncodeTrait<meta::GetValueType<T>>::Type());
+  }
+
+  template <typename V>
+  static void Write(V &&visitor, const T &value, ArrayWriter &writer) {
+    int index = 0;
+    for (const auto &v : value) {
+      RowEncodeTrait<meta::GetValueType<T>>::Write(std::forward<V>(visitor), v,
+                                                   writer, index);
+      ++index;
+    }
+  }
+
+  template <typename V, typename W,
+            std::enable_if_t<meta::IsOneOf<W, RowWriter, ArrayWriter>::value,
+                             int> = 0>
+  static void Write(V &&visitor, const T &value, W &writer, int index) {
+    auto offset = writer.cursor();
+
+    auto inner_writer = std::make_unique<ArrayWriter>(
+        std::dynamic_pointer_cast<arrow::ListType>(
+            details::GetChildType(writer, index)),
+        &writer);
+
+    inner_writer->Reset(value.size());
     RowEncodeTrait<T>::Write(std::forward<V>(visitor), value,
                              *inner_writer.get());
 

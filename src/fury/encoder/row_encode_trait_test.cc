@@ -15,10 +15,11 @@
  */
 
 #include "gtest/gtest.h"
+#include <memory>
 #include <type_traits>
 
 #include "fury/encoder/row_encode_trait.h"
-#include "src/fury/row/writer.h"
+#include "fury/row/writer.h"
 
 namespace fury {
 
@@ -144,6 +145,106 @@ TEST(RowEncodeTrait, NestedStruct) {
   ASSERT_EQ(y_schema->field(0)->type()->name(), "int32");
   ASSERT_EQ(y_schema->field(1)->type()->name(), "float");
   ASSERT_EQ(y_schema->field(2)->type()->name(), "bool");
+}
+
+TEST(RowEncodeTrait, SimpleArray) {
+  std::vector<int> a{10, 20, 30};
+
+  auto type = encoder::RowEncodeTrait<decltype(a)>::Type();
+
+  ASSERT_EQ(type->name(), "list");
+  ASSERT_EQ(type->field(0)->type()->name(), "int32");
+
+  ArrayWriter writer(std::dynamic_pointer_cast<arrow::ListType>(type));
+  writer.Reset(a.size());
+
+  encoder::RowEncodeTrait<decltype(a)>::Write(encoder::EmptyWriteVisitor{}, a,
+                                              writer);
+
+  auto array = writer.CopyToArrayData();
+  ASSERT_EQ(array->GetInt32(0), 10);
+  ASSERT_EQ(array->GetInt32(1), 20);
+  ASSERT_EQ(array->GetInt32(2), 30);
+}
+
+TEST(RowEncodeTrait, StructInArray) {
+  std::vector<A> a{{233, 1.1, false}, {234, 3.14, true}};
+
+  auto type = encoder::RowEncodeTrait<decltype(a)>::Type();
+
+  ASSERT_EQ(type->name(), "list");
+  ASSERT_EQ(type->field(0)->type()->name(), "struct");
+
+  ArrayWriter writer(std::dynamic_pointer_cast<arrow::ListType>(type));
+  writer.Reset(a.size());
+
+  encoder::RowEncodeTrait<decltype(a)>::Write(encoder::EmptyWriteVisitor{}, a,
+                                              writer);
+
+  auto array = writer.CopyToArrayData();
+
+  auto row1 = array->GetStruct(0);
+  ASSERT_EQ(row1->GetInt32(0), 233);
+  ASSERT_FLOAT_EQ(row1->GetFloat(1), 1.1);
+  ASSERT_EQ(row1->GetBoolean(2), false);
+
+  auto row2 = array->GetStruct(1);
+  ASSERT_EQ(row2->GetInt32(0), 234);
+  ASSERT_FLOAT_EQ(row2->GetFloat(1), 3.14);
+  ASSERT_EQ(row2->GetBoolean(2), true);
+}
+
+struct E {
+  int a;
+  std::vector<int> b;
+};
+
+FURY_FIELD_INFO(E, a, b);
+
+TEST(RowEncodeTrait, ArrayInStruct) {
+  E e{233, {10, 20, 30}};
+
+  auto type = encoder::RowEncodeTrait<decltype(e)>::Type();
+
+  ASSERT_EQ(type->name(), "struct");
+  ASSERT_EQ(type->field(0)->type()->name(), "int32");
+  ASSERT_EQ(type->field(1)->type()->name(), "list");
+
+  RowWriter writer(encoder::RowEncodeTrait<decltype(e)>::Schema());
+  writer.Reset();
+
+  encoder::RowEncodeTrait<decltype(e)>::Write(encoder::EmptyWriteVisitor{}, e,
+                                              writer);
+
+  auto row = writer.ToRow();
+  ASSERT_EQ(row->GetInt32(0), 233);
+
+  ASSERT_EQ(row->GetArray(1)->GetInt32(0), 10);
+  ASSERT_EQ(row->GetArray(1)->GetInt32(1), 20);
+  ASSERT_EQ(row->GetArray(1)->GetInt32(2), 30);
+}
+
+TEST(RowEncodeTrait, ArrayInArray) {
+  std::vector<std::vector<int>> a{{10}, {20, 30}, {40, 50, 60}};
+
+  auto type = encoder::RowEncodeTrait<decltype(a)>::Type();
+
+  ASSERT_EQ(type->name(), "list");
+  ASSERT_EQ(type->field(0)->type()->name(), "list");
+
+  ArrayWriter writer(std::dynamic_pointer_cast<arrow::ListType>(type));
+  writer.Reset(a.size());
+
+  encoder::RowEncodeTrait<decltype(a)>::Write(encoder::EmptyWriteVisitor{}, a,
+                                              writer);
+
+  auto array = writer.CopyToArrayData();
+  ASSERT_EQ(array->GetArray(0)->GetInt32(0), 10);
+  ASSERT_EQ(array->GetArray(1)->GetInt32(0), 20);
+  ASSERT_EQ(array->GetArray(1)->GetInt32(1), 30);
+  ASSERT_EQ(array->GetArray(2)->GetInt32(0), 40);
+  ASSERT_EQ(array->GetArray(2)->GetInt32(1), 50);
+  ASSERT_EQ(array->GetArray(2)->GetInt32(2), 60);
 }
 
 } // namespace test

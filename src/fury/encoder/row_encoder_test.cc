@@ -18,8 +18,8 @@
 #include <type_traits>
 
 #include "fury/encoder/row_encode_trait.h"
-#include "src/fury/encoder/row_encoder.h"
-#include "src/fury/row/writer.h"
+#include "fury/encoder/row_encoder.h"
+#include "fury/row/writer.h"
 
 namespace fury {
 

@@ -210,6 +210,8 @@ public:
 
   int size() { return cursor() - starting_offset_; }
 
+  std::shared_ptr<arrow::ListType> type() { return type_; }
+
 private:
   std::shared_ptr<arrow::ListType> type_;
   int element_size_;
