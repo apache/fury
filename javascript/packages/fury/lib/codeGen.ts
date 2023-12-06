@@ -129,7 +129,7 @@ export const genSerializer = (fury: Fury, description: TypeDescription) => {
     const { genDeclaration, finish } = typeHandlerDeclaration(fury);
     const tag = Cast<ObjectTypeDescription>(description).options?.tag;
     if (fury.classResolver.getSerializerByTag(tag)) {
-        return;
+        return fury.classResolver.getSerializerByTag(tag);
     }
     
     fury.classResolver.registerSerializerByTag(tag, fury.classResolver.getSerializerById(InternalSerializerType.ANY));
