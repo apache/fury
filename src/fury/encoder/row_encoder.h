@@ -17,6 +17,7 @@
 #pragma once
 
 #include "fury/encoder/row_encode_trait.h"
+#include "src/fury/row/writer.h"
 #include <memory>
 #include <type_traits>
 
@@ -24,30 +25,85 @@ namespace fury {
 
 namespace encoder {
 
+namespace details {
+
+template <typename T, typename Enabled = void> struct GetWriterTypeImpl;
+
+template <typename T>
+struct GetWriterTypeImpl<T,
+                         std::enable_if_t<details::IsClassButNotBuiltin<T>>> {
+  using type = RowWriter;
+};
+
+template <typename T>
+struct GetWriterTypeImpl<T, std::enable_if_t<details::IsArray<T>>> {
+  using type = ArrayWriter;
+};
+
+template <typename T> using GetWriterType = typename GetWriterTypeImpl<T>::type;
+
+template <typename T, std::enable_if_t<
+                          std::is_same_v<GetWriterType<T>, RowWriter>, int> = 0>
+auto GetSchemaOrType() {
+  return RowEncodeTrait<T>::Schema();
+}
+
+template <
+    typename T,
+    std::enable_if_t<std::is_same_v<GetWriterType<T>, ArrayWriter>, int> = 0>
+auto GetSchemaOrType() {
+  return std::dynamic_pointer_cast<arrow::ListType>(RowEncodeTrait<T>::Type());
+}
+
+} // namespace details
+
 template <typename T> struct RowEncoder {
-  static_assert(std::is_class_v<T>, "currently only class types are supported");
+  static_assert(details::IsClassButNotBuiltin<T> || details::IsArray<T>,
+                "only class types and iterable types are supported");
+
+  using WriterType = details::GetWriterType<T>;
 
   RowEncoder()
-      : writer_(std::make_unique<RowWriter>(RowEncodeTrait<T>::Schema())) {
-    writer_->Reset();
-  }
+      : writer_(std::make_unique<WriterType>(details::GetSchemaOrType<T>())) {}
 
+  template <typename U = WriterType,
+            std::enable_if_t<std::is_same_v<U, RowWriter>, int> = 0>
   void Encode(const T &value) {
+    writer_->Reset();
     RowEncodeTrait<T>::Write(DefaultWriteVisitor{children_}, value,
                              GetWriter());
   }
 
-  RowWriter &GetWriter() const { return *writer_.get(); }
-  const std::vector<std::unique_ptr<RowWriter>> &GetChildren() const {
+  template <typename U = WriterType,
+            std::enable_if_t<std::is_same_v<U, ArrayWriter>, int> = 0>
+  void Encode(const T &value) {
+    writer_->Reset(value.size());
+    RowEncodeTrait<T>::Write(DefaultWriteVisitor{children_}, value,
+                             GetWriter());
+  }
+
+  WriterType &GetWriter() const { return *writer_.get(); }
+  const std::vector<std::unique_ptr<Writer>> &GetChildren() const {
     return children_;
   }
-  const arrow::Schema &GetSchema() const { return *writer_->schema().get(); }
+
+  template <typename U = WriterType,
+            std::enable_if_t<std::is_same_v<U, RowWriter>, int> = 0>
+  const arrow::Schema &GetSchema() const {
+    return *writer_->schema().get();
+  }
+
+  template <typename U = WriterType,
+            std::enable_if_t<std::is_same_v<U, ArrayWriter>, int> = 0>
+  const arrow::ListType &GetType() const {
+    return *writer_->type().get();
+  }
 
   void ResetChildren() { children_.clear(); }
 
 private:
-  std::unique_ptr<RowWriter> writer_;
-  std::vector<std::unique_ptr<RowWriter>> children_;
+  std::unique_ptr<WriterType> writer_;
+  std::vector<std::unique_ptr<Writer>> children_;
 };
 
 } // namespace encoder
