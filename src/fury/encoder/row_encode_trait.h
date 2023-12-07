@@ -95,7 +95,7 @@ template <typename C> struct DefaultWriteVisitor {
 
   DefaultWriteVisitor(C &cont) : cont(cont) {}
 
-  template <typename> void Visit(std::unique_ptr<RowWriter> writer) {
+  template <typename, typename T> void Visit(std::unique_ptr<T> writer) {
     cont.push_back(std::move(writer));
   }
 };

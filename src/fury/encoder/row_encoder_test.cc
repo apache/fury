@@ -62,5 +62,68 @@ TEST(RowEncoder, Simple) {
   ASSERT_FLOAT_EQ(y_row->GetFloat(0), 1.23);
 }
 
+struct C {
+  std::vector<A> x;
+  bool y;
+};
+
+FURY_FIELD_INFO(C, x, y);
+
+TEST(RowEncoder, SimpleArray) {
+  std::vector<C> v{C{{{1, "a"}, {2, "b"}}, false},
+                   C{{{1.1, "x"}, {2.2, "y"}, {3.3, "z"}}, true}};
+
+  encoder::RowEncoder<decltype(v)> enc;
+
+  auto &type = enc.GetType();
+  ASSERT_EQ(type.name(), "list");
+  ASSERT_EQ(type.field(0)->type()->name(), "struct");
+  ASSERT_EQ(type.field(0)->type()->field(0)->name(), "x");
+  ASSERT_EQ(type.field(0)->type()->field(1)->name(), "y");
+  ASSERT_EQ(type.field(0)->type()->field(0)->type()->name(), "list");
+  ASSERT_EQ(type.field(0)->type()->field(0)->type()->field(0)->type()->name(),
+            "struct");
+  ASSERT_EQ(type.field(0)
+                ->type()
+                ->field(0)
+                ->type()
+                ->field(0)
+                ->type()
+                ->field(0)
+                ->type()
+                ->name(),
+            "float");
+  ASSERT_EQ(type.field(0)
+                ->type()
+                ->field(0)
+                ->type()
+                ->field(0)
+                ->type()
+                ->field(1)
+                ->type()
+                ->name(),
+            "utf8");
+  ASSERT_EQ(type.field(0)->type()->field(1)->type()->name(), "bool");
+
+  enc.Encode(v);
+
+  auto data = enc.GetWriter().CopyToArrayData();
+  ASSERT_EQ(data->GetStruct(0)->GetArray(0)->GetStruct(0)->GetFloat(0), 1);
+  ASSERT_EQ(data->GetStruct(0)->GetArray(0)->GetStruct(1)->GetFloat(0), 2);
+  ASSERT_FLOAT_EQ(data->GetStruct(1)->GetArray(0)->GetStruct(0)->GetFloat(0),
+                  1.1);
+  ASSERT_FLOAT_EQ(data->GetStruct(1)->GetArray(0)->GetStruct(1)->GetFloat(0),
+                  2.2);
+  ASSERT_FLOAT_EQ(data->GetStruct(1)->GetArray(0)->GetStruct(2)->GetFloat(0),
+                  3.3);
+  ASSERT_EQ(data->GetStruct(0)->GetArray(0)->GetStruct(0)->GetString(1), "a");
+  ASSERT_EQ(data->GetStruct(0)->GetArray(0)->GetStruct(1)->GetString(1), "b");
+  ASSERT_EQ(data->GetStruct(1)->GetArray(0)->GetStruct(0)->GetString(1), "x");
+  ASSERT_EQ(data->GetStruct(1)->GetArray(0)->GetStruct(1)->GetString(1), "y");
+  ASSERT_EQ(data->GetStruct(1)->GetArray(0)->GetStruct(2)->GetString(1), "z");
+  ASSERT_EQ(data->GetStruct(0)->GetBoolean(1), false);
+  ASSERT_EQ(data->GetStruct(1)->GetBoolean(1), true);
+}
+
 } // namespace test2
 } // namespace fury

@@ -118,12 +118,12 @@ public:
     }
   }
 
+  virtual ~Writer() = default;
+
 protected:
   explicit Writer(int bytes_before_bitmap);
 
   explicit Writer(Writer *parent_writer, int bytes_before_bitmap);
-
-  virtual ~Writer() = default;
 
   std::shared_ptr<Buffer> buffer_;
 
