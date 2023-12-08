@@ -319,10 +319,6 @@ def infer_field(field_name, type_, visitor: TypeVisitor, types_path=None):
         else:
             return visitor.visit_customized(field_name, type_, types_path=types_path)
 
-def print_schema(data_type, field):
-    import pyarrow as pa
-    print(data_type, field.metadata)
-    print(pa.schema(data_type, metadata=field.metadata))
 
 def is_function(func):
     return inspect.isfunction(func) or is_cython_function(func)

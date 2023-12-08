@@ -197,7 +197,9 @@ class ClassResolver:
         self.register_class(bool, class_id=PYBOOL_CLASS_ID)
         self.register_class(str, class_id=STRING_CLASS_ID)
         self.register_class(_PickleStub, class_id=PICKLE_CLASS_ID)
-        self.register_class(PickleStrongCacheStub, class_id=PICKLE_STRONG_CACHE_CLASS_ID)
+        self.register_class(
+            PickleStrongCacheStub, class_id=PICKLE_STRONG_CACHE_CLASS_ID
+        )
         self.register_class(PickleCacheStub, class_id=PICKLE_CACHE_CLASS_ID)
         self._add_default_serializers()
 
@@ -214,10 +216,12 @@ class ClassResolver:
     # `Union[type, TypeVar]` is not supported in py3.6
     def register_class(self, cls, *, class_id: int = None, type_tag: str = None):
         """Register class with given type id or tag, if tag is not None, it will be used for
-         cross-language serialization."""
+        cross-language serialization."""
         if type_tag is not None:
-            assert class_id is None, (f"Type tag {type_tag} has been set already, "
-                                      f"set class id at the same time is not allowed.")
+            assert class_id is None, (
+                f"Type tag {type_tag} has been set already, "
+                f"set class id at the same time is not allowed."
+            )
             from pyfury._struct import ComplexObjectSerializer
 
             self.register_serializer(
