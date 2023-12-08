@@ -326,13 +326,13 @@ cdef class ClassResolver:
         self._enum_str_set = set()
 
     def initialize(self):
-        self.register_class(int, PYINT_CLASS_ID)
-        self.register_class(float, PYFLOAT_CLASS_ID)
-        self.register_class(bool, PYBOOL_CLASS_ID)
-        self.register_class(str, STRING_CLASS_ID)
-        self.register_class(_PickleStub, PICKLE_CLASS_ID)
-        self.register_class(PickleStrongCacheStub, PICKLE_STRONG_CACHE_CLASS_ID)
-        self.register_class(PickleCacheStub, PICKLE_CACHE_CLASS_ID)
+        self.register_class(int, class_id=PYINT_CLASS_ID)
+        self.register_class(float, class_id=PYFLOAT_CLASS_ID)
+        self.register_class(bool, class_id=PYBOOL_CLASS_ID)
+        self.register_class(str, class_id=STRING_CLASS_ID)
+        self.register_class(_PickleStub, class_id=PICKLE_CLASS_ID)
+        self.register_class(PickleStrongCacheStub, class_id=PICKLE_STRONG_CACHE_CLASS_ID)
+        self.register_class(PickleCacheStub, class_id=PICKLE_CACHE_CLASS_ID)
         self._add_default_serializers()
 
     def register_serializer(self, cls: Union[type, TypeVar], serializer):
@@ -344,7 +344,16 @@ cdef class ClassResolver:
             self.register_class(cls)
             self._classes_info[cls].serializer = serializer
 
-    def register_class(self, cls: Union[type, TypeVar], class_id: int = None):
+    def register_class(self, cls: Union[type, TypeVar], *, class_id: int = None, type_tag: str = None):
+        """Register class with given type id or tag, if tag is not None, it will be used for
+         cross-language serialization."""
+        if type_tag is not None:
+            assert class_id is None, (f"Type tag {type_tag} has been set already, "
+                                      f"set class id at the same time is not allowed.")
+            self.register_serializer(
+                cls, ComplexObjectSerializer(self.fury, cls, type_tag)
+            )
+            return
         classinfo = self._classes_info.get(cls)
         if classinfo is None:
             if isinstance(cls, TypeVar):
@@ -396,13 +405,6 @@ cdef class ClassResolver:
         while class_id in self._used_classes_id:
             class_id = self._class_id_counter = self._class_id_counter + 1
         return class_id
-
-    def register_class_tag(self, cls: Union[type, TypeVar], type_tag: str = None):
-        """Register class with given type tag which will be used for cross-language
-        serialization."""
-        self.register_serializer(
-            cls, ComplexObjectSerializer(self.fury, cls, type_tag)
-        )
 
     def _add_serializer(
             self,
@@ -846,11 +848,9 @@ cdef class Fury:
     def register_serializer(self, cls: Union[type, TypeVar], Serializer serializer):
         self.class_resolver.register_serializer(cls, serializer)
 
-    def register_class(self, cls: Union[type, TypeVar], class_id: int = None):
-        self.class_resolver.register_class(cls, class_id=class_id)
-
-    def register_class_tag(self, cls: Union[type, TypeVar], type_tag: str = None):
-        self.class_resolver.register_class_tag(cls, type_tag)
+    def register_class(self, cls: Union[type, TypeVar], *,
+                       class_id: int = None, type_tag: str = None):
+        self.class_resolver.register_class(cls, class_id=class_id, type_tag=type_tag)
 
     def serialize(
             self, obj,

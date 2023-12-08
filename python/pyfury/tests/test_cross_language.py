@@ -441,7 +441,7 @@ class ComplexObject2:
 
 def test_serialize_simple_struct_local():
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury.register_class_tag(ComplexObject2, "test.ComplexObject2")
+    fury.register_class(ComplexObject2, type_tag="test.ComplexObject2")
     obj = ComplexObject2(f1=True, f2={-1: 2})
     new_buf = fury.serialize(obj)
     assert fury.deserialize(new_buf) == obj
@@ -450,7 +450,7 @@ def test_serialize_simple_struct_local():
 @cross_language_test
 def test_serialize_simple_struct(data_file_path):
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury.register_class_tag(ComplexObject2, "test.ComplexObject2")
+    fury.register_class(ComplexObject2, type_tag="test.ComplexObject2")
     obj = ComplexObject2(f1=True, f2={-1: 2})
     struct_round_back(data_file_path, fury, obj)
 
@@ -458,8 +458,8 @@ def test_serialize_simple_struct(data_file_path):
 @cross_language_test
 def test_serialize_complex_struct(data_file_path):
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury.register_class_tag(ComplexObject1, "test.ComplexObject1")
-    fury.register_class_tag(ComplexObject2, "test.ComplexObject2")
+    fury.register_class(ComplexObject1, type_tag="test.ComplexObject1")
+    fury.register_class(ComplexObject2, type_tag="test.ComplexObject2")
 
     obj2 = ComplexObject2(f1=True, f2={-1: 2})
     obj1 = ComplexObject1(
@@ -501,7 +501,7 @@ def test_serialize_opaque_object(data_file_path):
         data_bytes = f.read()
     debug_print(f"len {len(data_bytes)}")
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury.register_class_tag(ComplexObject1, "test.ComplexObject1")
+    fury.register_class(ComplexObject1, type_tag="test.ComplexObject1")
     new_obj = fury.deserialize(data_bytes)
     debug_print(new_obj)
     assert new_obj.f2 == "abc"
