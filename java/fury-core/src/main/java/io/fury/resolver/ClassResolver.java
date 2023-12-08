@@ -951,35 +951,37 @@ public class ClassResolver {
         // avoid potential recursive call for seq codec generation.
         return LazyInitBeanSerializer.class;
       } else {
-        extRegistry.getClassCtx.add(cls);
-        Class<? extends Serializer> sc;
-        switch (fury.getCompatibleMode()) {
-          case SCHEMA_CONSISTENT:
-            sc =
-                fury.getJITContext()
-                    .registerSerializerJITCallback(
-                        () -> ObjectSerializer.class,
-                        () -> loadCodegenSerializer(fury, cls),
-                        callback);
-            extRegistry.getClassCtx.remove(cls);
-            return sc;
-          case COMPATIBLE:
-            // If share class meta, compatible serializer won't be necessary, class
-            // definition will be sent to peer to create serializer for deserialization.
-            sc =
-                fury.getJITContext()
-                    .registerSerializerJITCallback(
-                        () -> shareMeta ? ObjectSerializer.class : CompatibleSerializer.class,
-                        () ->
-                            shareMeta
-                                ? loadCodegenSerializer(fury, cls)
-                                : loadCompatibleCodegenSerializer(fury, cls),
-                        callback);
-            extRegistry.getClassCtx.remove(cls);
-            return sc;
-          default:
-            throw new UnsupportedOperationException(
-                String.format("Unsupported mode %s", fury.getCompatibleMode()));
+        try {
+          extRegistry.getClassCtx.add(cls);
+          Class<? extends Serializer> sc;
+          switch (fury.getCompatibleMode()) {
+            case SCHEMA_CONSISTENT:
+              sc =
+                  fury.getJITContext()
+                      .registerSerializerJITCallback(
+                          () -> ObjectSerializer.class,
+                          () -> loadCodegenSerializer(fury, cls),
+                          callback);
+              return sc;
+            case COMPATIBLE:
+              // If share class meta, compatible serializer won't be necessary, class
+              // definition will be sent to peer to create serializer for deserialization.
+              sc =
+                  fury.getJITContext()
+                      .registerSerializerJITCallback(
+                          () -> shareMeta ? ObjectSerializer.class : CompatibleSerializer.class,
+                          () ->
+                              shareMeta
+                                  ? loadCodegenSerializer(fury, cls)
+                                  : loadCompatibleCodegenSerializer(fury, cls),
+                          callback);
+              return sc;
+            default:
+              throw new UnsupportedOperationException(
+                  String.format("Unsupported mode %s", fury.getCompatibleMode()));
+          }
+        } finally {
+          extRegistry.getClassCtx.remove(cls);
         }
       }
     } else {
