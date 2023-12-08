@@ -452,7 +452,7 @@ cdef create_converter(Field field, CWriter* writer):
         return create_atomic_encoder(StrWriter, writer)
     elif types.is_struct(data_type):
         row_encoder = RowEncoder.create(pa.schema(
-            data_type, metadata=field.metadata), writer)
+            list(data_type), metadata=field.metadata), writer)
         return row_encoder
     elif types.is_list(data_type):
         array_encoder = ArrayWriter.create(data_type, writer)
