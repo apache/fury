@@ -35,6 +35,14 @@ export interface ArrayTypeDescription extends TypeDescription {
     }
 }
 
+export interface TupleTypeDescription extends TypeDescription {
+    options: {
+        isTuple: true,
+        inner: TypeDescription[];
+    }
+}
+
+
 export interface SetTypeDescription extends TypeDescription {
     options: {
         key: TypeDescription;
@@ -80,6 +88,14 @@ type MapProps<T> = T extends {
     ? Map<ToRecordType<T2>, ToRecordType<T3> | null>
     : unknown;
 
+type TupleProps<T> = T extends {
+        options: {
+            inner: infer T2 extends readonly[...TypeDescription[]];
+        };
+    }
+        ? { [K in keyof T2]: ToRecordType<T2[K]> }
+        : unknown;
+
 type SetProps<T> = T extends {
     options: {
         key: infer T2 extends TypeDescription;
@@ -96,6 +112,10 @@ export type ToRecordType<T> = T extends {
         type: InternalSerializerType.STRING;
     }
     ? string
+    : T extends {
+        type: InternalSerializerType.TUPLE;
+    }
+    ? TupleProps<T>
     : T extends {
         type:
         | InternalSerializerType.UINT8
@@ -161,6 +181,15 @@ export const Type = {
             type: InternalSerializerType.ARRAY as const,
             options: {
                 inner: def,
+            },
+        };
+    },
+    tuple<T1 extends readonly [...readonly TypeDescription[]]>(t1: T1) {
+        return {
+            type: InternalSerializerType.TUPLE as const,
+            options: {
+                isTuple: true,
+                inner: t1,
             },
         };
     },

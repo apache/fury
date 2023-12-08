@@ -19,7 +19,8 @@ import { replaceBackslashAndQuote, safePropAccessor, safePropName } from './util
 import mapSerializer from './internalSerializer/map';
 import setSerializer from './internalSerializer/set';
 import { arraySerializer } from './internalSerializer/array';
-import { ArrayTypeDescription, Cast, MapTypeDescription, ObjectTypeDescription, SetTypeDescription, TypeDescription } from './description';
+import { tupleSerializer } from './internalSerializer/tuple';
+import { ArrayTypeDescription, Cast, MapTypeDescription, ObjectTypeDescription, SetTypeDescription, TupleTypeDescription, TypeDescription } from './description';
 
 function computeFieldHash(hash: number, id: number): number {
     let newHash = (hash) * 31 + (id);
@@ -87,6 +88,19 @@ function typeHandlerDeclaration(fury: Fury) {
             return genTagDeclaration(Cast<ObjectTypeDescription>(description).options.tag);
         }
         if (description.type === InternalSerializerType.ARRAY) {
+            const tupleOptions = Cast<TupleTypeDescription>(description).options;
+            if (tupleOptions && tupleOptions.isTuple) {
+                const names = [] as string[];
+                Cast<TupleTypeDescription>(description).options.inner.forEach(v => {
+                    names.push(genDeclaration(v));
+                })
+
+                const name = `tuple_${names.join('_')}`;
+                return addDeclar(name, `
+                    const ${name} = tupleSerializer(fury, ${names.join(', ')})`
+                )
+            }
+
             const inner = genDeclaration(Cast<ArrayTypeDescription>(description).options.inner);
             const name = `array_${inner}`;
             return addDeclar(name, `
@@ -158,7 +172,7 @@ export const genSerializer = (fury: Fury, description: TypeDescription) => {
 return function (fury, scope) {
     const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
     const { writeNullOrRef, pushReadObject } = referenceResolver;
-    const { RefFlags, InternalSerializerType, arraySerializer, mapSerializer, setSerializer } = scope;
+    const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
         ${declarations.join('')}
     const tagBuffer = classResolver.tagToBuffer("${validTag}");
     const bufferLen = tagBuffer.byteLength;
@@ -192,6 +206,7 @@ return function (fury, scope) {
         InternalSerializerType,
         RefFlags,
         arraySerializer,
+        tupleSerializer,
         mapSerializer,
         setSerializer,
     }));
