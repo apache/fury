@@ -18,7 +18,7 @@ import { InternalSerializerType, Serializer } from "../type";
 import { Fury } from "../type";
 
 
-export const tupleSerializer = (fury: Fury, ...items: Serializer[]) => {
+export const tupleSerializer = (fury: Fury, serializers: Serializer[]) => {
     const { binaryReader, binaryWriter, referenceResolver } = fury;
 
     const { pushReadObject } = referenceResolver;
@@ -31,7 +31,7 @@ export const tupleSerializer = (fury: Fury, ...items: Serializer[]) => {
             const result = new Array(len);
             pushReadObject(result);
             for (let i = 0; i < result.length; i++) {
-                const item = items[i];
+                const item = serializers[i];
                 result[i] = item.read();
             }
             return result;
@@ -39,9 +39,9 @@ export const tupleSerializer = (fury: Fury, ...items: Serializer[]) => {
         write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.TUPLE, (v: any[]) => {
             writeVarInt32(v.length);
             
-            for (let i = 0; i < v.length; i++) {
+            for (let i = 0; i < serializers.length; i++) {
                 const x = v[i];
-                const item = items[i];
+                const item = serializers[i];
                 reserves(item.config().reserve);
                 item.write(x);
             }

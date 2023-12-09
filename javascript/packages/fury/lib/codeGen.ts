@@ -97,7 +97,7 @@ function typeHandlerDeclaration(fury: Fury) {
 
                 const name = `tuple_${names.join('_')}`;
                 return addDeclar(name, `
-                    const ${name} = tupleSerializer(fury, ${names.join(', ')})`
+                const ${name} = tupleSerializer(fury, [${names.join(', ')}])`
                 )
             }
 
@@ -139,41 +139,37 @@ function typeHandlerDeclaration(fury: Fury) {
     }
 }
 
-export const genSerializer = (fury: Fury, description: TypeDescription) => {
+export const createFuncFromDescription = (fury: Fury, description: TypeDescription) => {
+    const options = Cast<ObjectTypeDescription>(description).options;
+    const tag = options?.tag;
     const { genDeclaration, finish } = typeHandlerDeclaration(fury);
-    const tag = Cast<ObjectTypeDescription>(description).options?.tag;
-    if (fury.classResolver.getSerializerByTag(tag)) {
-        return fury.classResolver.getSerializerByTag(tag);
-    }
-    
-    fury.classResolver.registerSerializerByTag(tag, fury.classResolver.getSerializerById(InternalSerializerType.ANY));
     const expectHash = computeStructHash(description);
     const read = `
-    // relation tag: ${Cast<ObjectTypeDescription>(description).options?.tag}
+    // relation tag: ${tag}
     const result = {
-        ${Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key]) => {
+        ${Object.entries(options.props).sort().map(([key]) => {
         return `${safePropName(key)}: null`
     }).join(',\n')}
     };
     pushReadObject(result);
-    ${Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key, value]) => {
+    ${Object.entries(options.props).sort().map(([key, value]) => {
         return `result${safePropAccessor(key)} = ${genDeclaration(value)}.read()`;
     }).join(';\n')
         }
     return result;
 `;
-    const write = Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key, value]) => {
+    const write = Object.entries(options.props).sort().map(([key, value]) => {
         return `${genDeclaration(value)}.write(v${safePropAccessor(key)})`;
     }).join(';\n');
     const { names, declarations} = finish();
     const validTag = replaceBackslashAndQuote(tag);
-    return fury.classResolver.registerSerializerByTag(tag, new Function(
+    return new Function(
         `
 return function (fury, scope) {
     const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
     const { writeNullOrRef, pushReadObject } = referenceResolver;
     const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
-        ${declarations.join('')}
+    ${declarations.join('')}
     const tagBuffer = classResolver.tagToBuffer("${validTag}");
     const bufferLen = tagBuffer.byteLength;
 
@@ -202,7 +198,19 @@ return function (fury, scope) {
     }
 }
 `
-    )()(fury, {
+    )
+}
+
+export const genSerializer = (fury: Fury, description: TypeDescription) => {
+    const tag = Cast<ObjectTypeDescription>(description).options?.tag;
+    if (fury.classResolver.getSerializerByTag(tag)) {
+        return fury.classResolver.getSerializerByTag(tag);
+    }
+    
+    fury.classResolver.registerSerializerByTag(tag, fury.classResolver.getSerializerById(InternalSerializerType.ANY));
+
+    const func = createFuncFromDescription(fury, description);
+    return fury.classResolver.registerSerializerByTag(tag, func()(fury, {
         InternalSerializerType,
         RefFlags,
         arraySerializer,

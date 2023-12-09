@@ -14,31 +14,41 @@
  * limitations under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages/fury/index';
+import Fury from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
+import { tupleObjectDescription, tupleObjectType3Description } from './fixtures/tuple';
 
 describe('tuple', () => {
   test('should tuple work', () => {
-    const description =  Type.object('aasdasd', {
-      tuple: Type.tuple( [
-        Type.object('example.foo.1',{
-          a: Type.object('example.foo.1.1',{
-            b: Type.string()
-          })
-        }),
-        Type.object('example.foo.2',{
-          a: Type.object('example.foo.2.1',{
-            c: Type.string()
-          })
-        })
-      ])
-    });
-
     const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(description);
-    const tuple = [{a: {b:'1'}}, {a: {c: '2'}}] as [{a: {b: string}}, {a: {c: string}}];
+    const { serialize, deserialize } = fury.registerSerializer(tupleObjectDescription);
+    const tuple1 = [{a: {b:'1'}}, {a: {c: '2'}}] as [{a: {b: string}}, {a: {c: string}}];
+    const tuple2 =  [{a: {b:'1'}}, {a: {b:'1'}}, {a: {c: '2'}}] as [{a: {b: string}}, {a: {b: string}}, {a: {c: string}}];
     const raw = {
-      tuple,
+      tuple1: tuple1,
+      tuple1_: tuple1,
+      tuple2: tuple2,
+      tuple2_: tuple2
+    };
+ 
+    const input = serialize(raw);
+    const result = deserialize(
+      input
+    );
+    expect(result).toEqual(raw)
+  });
+  test('tuple support other types', () => {
+    const fury = new Fury({ refTracking: true });
+    const { serialize, deserialize } = fury.registerSerializer(tupleObjectType3Description);
+    const raw = {
+      tuple: [
+        "1234",
+        false,
+        2333,
+        [
+          Buffer.alloc(10)
+        ]
+      ]
     };
  
     const input = serialize(raw);
