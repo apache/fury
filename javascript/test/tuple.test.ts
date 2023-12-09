@@ -37,7 +37,29 @@ describe('tuple', () => {
     );
     expect(result).toEqual(raw)
   });
+
+  const type3Raw = {
+    tuple: [
+      "1234",
+      false,
+      2333,
+      [
+        Buffer.alloc(10)
+      ]
+    ]
+  };
+
   test('tuple support other types', () => {
+    const fury = new Fury({ refTracking: true });
+    const { serialize, deserialize } = fury.registerSerializer(tupleObjectType3Description);
+
+    const input = serialize(type3Raw);
+    const result = deserialize(
+      input
+    );
+    expect(result).toEqual(type3Raw)
+  });
+  test('tuple will ignore items which index out of bounds', () => {
     const fury = new Fury({ refTracking: true });
     const { serialize, deserialize } = fury.registerSerializer(tupleObjectType3Description);
     const raw = {
@@ -47,7 +69,10 @@ describe('tuple', () => {
         2333,
         [
           Buffer.alloc(10)
-        ]
+        ],
+        1234,
+        12345,
+        false
       ]
     };
  
@@ -55,6 +80,6 @@ describe('tuple', () => {
     const result = deserialize(
       input
     );
-    expect(result).toEqual(raw)
+    expect(result).toEqual(type3Raw)
   });
 })

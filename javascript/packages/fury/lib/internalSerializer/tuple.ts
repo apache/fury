@@ -30,20 +30,19 @@ export const tupleSerializer = (fury: Fury, serializers: Serializer[]) => {
             const len = readVarInt32();
             const result = new Array(len);
             pushReadObject(result);
-            for (let i = 0; i < result.length; i++) {
+            for (let i = 0; i < len; i++) {
                 const item = serializers[i];
                 result[i] = item.read();
             }
             return result;
         }),
         write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.TUPLE, (v: any[]) => {
-            writeVarInt32(v.length);
+            writeVarInt32(serializers.length);
             
             for (let i = 0; i < serializers.length; i++) {
-                const x = v[i];
                 const item = serializers[i];
                 reserves(item.config().reserve);
-                item.write(x);
+                item.write(v[i]);
             }
         }),
         config: () => {
