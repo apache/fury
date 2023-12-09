@@ -139,7 +139,7 @@ function typeHandlerDeclaration(fury: Fury) {
     }
 }
 
-export const createFuncFromDescription = (fury: Fury, description: TypeDescription) => {
+export const generateInlineCode = (fury: Fury, description: TypeDescription) => {
     const options = Cast<ObjectTypeDescription>(description).options;
     const tag = options?.tag;
     const { genDeclaration, finish } = typeHandlerDeclaration(fury);
@@ -209,7 +209,7 @@ export const genSerializer = (fury: Fury, description: TypeDescription) => {
     
     fury.classResolver.registerSerializerByTag(tag, fury.classResolver.getSerializerById(InternalSerializerType.ANY));
 
-    const func = createFuncFromDescription(fury, description);
+    const func = generateInlineCode(fury, description);
     return fury.classResolver.registerSerializerByTag(tag, func()(fury, {
         InternalSerializerType,
         RefFlags,
