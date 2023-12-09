@@ -258,9 +258,9 @@ public final class FuryBuilder {
    * Whether enable async compilation. If enabled, serialization will use interpreter mode
    * serialization first and switch to jit serialization after async serializer jit for a class \ is
    * finished.
-   * <p>
-   * This option will be disabled automatically for graalvm native image since graalvm native image
-   * doesn't support JIT at the image run time.
+   *
+   * <p>This option will be disabled automatically for graalvm native image since graalvm native
+   * image doesn't support JIT at the image run time.
    *
    * @see Config#isAsyncCompilationEnabled()
    */
