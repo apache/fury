@@ -70,9 +70,13 @@ inline constexpr bool IsString =
 template <typename T>
 inline constexpr bool IsArray = meta::IsIterable<T> && !IsString<T>;
 
+template <typename> inline constexpr bool IsOptional = false;
+
+template <typename T> inline constexpr bool IsOptional<std::optional<T>> = true;
+
 template <typename T>
 inline constexpr bool IsClassButNotBuiltin =
-    std::is_class_v<T> && !(IsString<T> || IsArray<T>);
+    std::is_class_v<T> && !(IsString<T> || IsArray<T> || IsOptional<T>);
 
 inline decltype(auto) GetChildType(RowWriter &writer, int index) {
   return writer.schema()->field(index)->type();
@@ -137,6 +141,24 @@ struct RowEncodeTrait<
                              int> = 0>
   static void Write(V &&, const T &value, W &writer, int index) {
     writer.WriteString(index, value);
+  }
+};
+
+template <typename T>
+struct RowEncodeTrait<
+    T, std::enable_if_t<details::IsOptional<std::remove_cv_t<T>>>> {
+  static auto Type() { return RowEncodeTrait<typename T::value_type>::Type(); }
+
+  template <typename V, typename W,
+            std::enable_if_t<meta::IsOneOf<W, RowWriter, ArrayWriter>::value,
+                             int> = 0>
+  static void Write(V &&visitor, const T &value, W &writer, int index) {
+    if (value) {
+      RowEncodeTrait<typename T::value_type>::Write(std::forward<V>(visitor),
+                                                    *value, writer, index);
+    } else {
+      writer.SetNullAt(index);
+    }
   }
 };
 

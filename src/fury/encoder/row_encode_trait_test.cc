@@ -16,6 +16,7 @@
 
 #include "gtest/gtest.h"
 #include <memory>
+#include <optional>
 #include <type_traits>
 
 #include "fury/encoder/row_encode_trait.h"
@@ -245,6 +246,52 @@ TEST(RowEncodeTrait, ArrayInArray) {
   ASSERT_EQ(array->GetArray(2)->GetInt32(0), 40);
   ASSERT_EQ(array->GetArray(2)->GetInt32(1), 50);
   ASSERT_EQ(array->GetArray(2)->GetInt32(2), 60);
+}
+
+struct F {
+  bool a;
+  std::optional<int> b;
+  int c;
+};
+
+FURY_FIELD_INFO(F, a, b, c);
+
+TEST(RowEncodeTrait, Optional) {
+  F x{false, 233, 111}, y{true, std::nullopt, 222};
+
+  auto schema = encoder::RowEncodeTrait<F>::Type();
+  ASSERT_EQ(schema->field(0)->type()->name(), "bool");
+  ASSERT_EQ(schema->field(1)->type()->name(), "int32");
+  ASSERT_EQ(schema->field(2)->type()->name(), "int32");
+
+  {
+    RowWriter writer(encoder::RowEncodeTrait<F>::Schema());
+    writer.Reset();
+
+    encoder::RowEncodeTrait<F>::Write(encoder::EmptyWriteVisitor{}, x, writer);
+
+    auto row = writer.ToRow();
+    ASSERT_EQ(row->IsNullAt(0), false);
+    ASSERT_EQ(row->IsNullAt(1), false);
+    ASSERT_EQ(row->IsNullAt(2), false);
+
+    ASSERT_EQ(row->GetInt32(1), 233);
+    ASSERT_EQ(row->GetInt32(2), 111);
+  }
+
+  {
+    RowWriter writer(encoder::RowEncodeTrait<F>::Schema());
+    writer.Reset();
+
+    encoder::RowEncodeTrait<F>::Write(encoder::EmptyWriteVisitor{}, y, writer);
+
+    auto row = writer.ToRow();
+    ASSERT_EQ(row->IsNullAt(0), false);
+    ASSERT_EQ(row->IsNullAt(1), true);
+    ASSERT_EQ(row->IsNullAt(2), false);
+
+    ASSERT_EQ(row->GetInt32(2), 222);
+  }
 }
 
 } // namespace test
