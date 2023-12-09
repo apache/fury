@@ -73,13 +73,13 @@ function typeHandlerDeclaration(fury: Fury) {
     const genBuiltinDeclaration = (type: number) => {
         const name = `type_${type}`.replace('-', '_');
         return addDeclar(name, `
-        const ${name} = classResolver.getSerializerById(${type})`);
+    const ${name} = classResolver.getSerializerById(${type})`);
     }
 
     const genTagDeclaration = (tag: string) => {
         const name = `tag_${count++}`;
         return addDeclar(name, `
-        const ${name} = classResolver.getSerializerByTag("${replaceBackslashAndQuote(tag)}")`, tag);
+    const ${name} = classResolver.getSerializerByTag("${replaceBackslashAndQuote(tag)}")`, tag);
     }
 
     const genDeclaration = (description: TypeDescription): string => {
@@ -97,21 +97,21 @@ function typeHandlerDeclaration(fury: Fury) {
 
                 const name = `tuple_${names.join('_')}`;
                 return addDeclar(name, `
-                const ${name} = tupleSerializer(fury, [${names.join(', ')}])`
+    const ${name} = tupleSerializer(fury, [${names.join(', ')}])`
                 )
             }
 
             const inner = genDeclaration(Cast<ArrayTypeDescription>(description).options.inner);
             const name = `array_${inner}`;
             return addDeclar(name, `
-                const ${name} = arraySerializer(fury, ${inner})`
+    const ${name} = arraySerializer(fury, ${inner})`
             )
         }
         if (description.type === InternalSerializerType.FURY_SET) {
             const inner = genDeclaration(Cast<SetTypeDescription>(description).options.key);
             const name = `set_${inner}`;
             return addDeclar(name, `
-                const ${name} = setSerializer(fury, ${inner})`
+    const ${name} = setSerializer(fury, ${inner})`
             )
         }
         if (description.type === InternalSerializerType.MAP) {
@@ -120,7 +120,7 @@ function typeHandlerDeclaration(fury: Fury) {
 
             const name = `map_${key}_${value}`;
             return addDeclar(name, `
-                const ${name} = mapSerializer(fury, ${key}, ${value})`
+    const ${name} = mapSerializer(fury, ${key}, ${value})`
             )
         }
         return genBuiltinDeclaration(description.type);

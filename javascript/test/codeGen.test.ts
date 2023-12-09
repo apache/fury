@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { TypeDescription, InternalSerializerType, ObjectTypeDescription } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 import { tupleObjectDescription, tupleObjectType3Description } from './fixtures/tuple';
 import { createFuncFromDescription } from '../packages/fury/lib/codeGen';

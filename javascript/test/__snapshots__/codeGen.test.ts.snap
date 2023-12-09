@@ -9,12 +9,12 @@ return function (fury, scope) {
     const { writeNullOrRef, pushReadObject } = referenceResolver;
     const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
     
-        const tag_0 = classResolver.getSerializerByTag("example.foo.1")
-        const tag_1 = classResolver.getSerializerByTag("example.foo.2")
-                const tuple_tag_0_tag_1 = tupleSerializer(fury, [tag_0, tag_1])
-        const tag_5 = classResolver.getSerializerByTag("example.bar.1")
-        const tag_6 = classResolver.getSerializerByTag("example.bar.2")
-                const tuple_tag_0_tag_5_tag_6 = tupleSerializer(fury, [tag_0, tag_5, tag_6])
+    const tag_0 = classResolver.getSerializerByTag("example.foo.1")
+    const tag_1 = classResolver.getSerializerByTag("example.foo.2")
+    const tuple_tag_0_tag_1 = tupleSerializer(fury, [tag_0, tag_1])
+    const tag_5 = classResolver.getSerializerByTag("example.bar.1")
+    const tag_6 = classResolver.getSerializerByTag("example.bar.2")
+    const tuple_tag_0_tag_5_tag_6 = tupleSerializer(fury, [tag_0, tag_5, tag_6])
     const tagBuffer = classResolver.tagToBuffer("tuple-object-wrapper");
     const bufferLen = tagBuffer.byteLength;
 
@@ -72,12 +72,12 @@ return function (fury, scope) {
     const { writeNullOrRef, pushReadObject } = referenceResolver;
     const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
     
-        const type_13 = classResolver.getSerializerById(13)
-        const type_1 = classResolver.getSerializerById(1)
-        const type_6 = classResolver.getSerializerById(6)
-        const type_14 = classResolver.getSerializerById(14)
-                const tuple_type_14 = tupleSerializer(fury, [type_14])
-                const tuple_type_13_type_1_type_6_tuple_type_14 = tupleSerializer(fury, [type_13, type_1, type_6, tuple_type_14])
+    const type_13 = classResolver.getSerializerById(13)
+    const type_1 = classResolver.getSerializerById(1)
+    const type_6 = classResolver.getSerializerById(6)
+    const type_14 = classResolver.getSerializerById(14)
+    const tuple_type_14 = tupleSerializer(fury, [type_14])
+    const tuple_type_13_type_1_type_6_tuple_type_14 = tupleSerializer(fury, [type_13, type_1, type_6, tuple_type_14])
     const tagBuffer = classResolver.tagToBuffer("tuple-object-type3-tag");
     const bufferLen = tagBuffer.byteLength;
 
