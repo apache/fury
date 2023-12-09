@@ -15,57 +15,57 @@
 use super::{bit_util::calculate_bitmap_width_in_bytes, row::Row};
 use byteorder::{ByteOrder, LittleEndian};
 
-pub trait RowViewer<'r> {
-    fn row(&self) -> &'r [u8];
+struct FieldAccessorHelper<'a> {
+    row: &'a [u8],
+    get_field_offset: Box<dyn Fn(usize) -> usize>,
+}
 
-    fn get_field_offset(&self, idx: usize) -> usize;
-
+impl<'a> FieldAccessorHelper<'a> {
     fn get_offset_size(&self, idx: usize) -> (u32, u32) {
-        let row = self.row();
-        let field_offset = self.get_field_offset(idx);
+        let row = self.row;
+        let field_offset = (self.get_field_offset)(idx);
         let offset = LittleEndian::read_u32(&row[field_offset..field_offset + 4]);
         let size = LittleEndian::read_u32(&row[field_offset + 4..field_offset + 8]);
         (offset, size)
     }
 
-    fn get_field_bytes(&self, idx: usize) -> &'r [u8] {
-        let row = self.row();
+    pub fn new(row: &[u8], get_field_offset: Box<dyn Fn(usize) -> usize>) -> FieldAccessorHelper {
+        FieldAccessorHelper {
+            row,
+            get_field_offset,
+        }
+    }
+
+    pub fn get_field_bytes(&self, idx: usize) -> &'a [u8] {
+        let row = self.row;
         let (offset, size) = self.get_offset_size(idx);
         &row[(offset as usize)..(offset + size) as usize]
     }
 }
 
-#[derive(Clone, Copy)]
 pub struct StructViewer<'r> {
-    bit_map_width_in_bytes: usize,
-    row: &'r [u8],
+    field_accessor_helper: FieldAccessorHelper<'r>,
 }
 
 impl<'r> StructViewer<'r> {
     pub fn new(row: &'r [u8], num_fields: usize) -> StructViewer<'r> {
         let bit_map_width_in_bytes = calculate_bitmap_width_in_bytes(num_fields);
         StructViewer {
-            row,
-            bit_map_width_in_bytes,
+            field_accessor_helper: FieldAccessorHelper::new(
+                row,
+                Box::new(move |idx: usize| bit_map_width_in_bytes + idx * 8),
+            ),
         }
     }
-}
 
-impl<'r> RowViewer<'r> for StructViewer<'r> {
-    fn get_field_offset(&self, idx: usize) -> usize {
-        self.bit_map_width_in_bytes + idx * 8
-    }
-
-    fn row(&self) -> &'r [u8] {
-        self.row
+    pub fn get_field_bytes(&self, idx: usize) -> &'r [u8] {
+        self.field_accessor_helper.get_field_bytes(idx)
     }
 }
 
-#[derive(Clone, Copy)]
 pub struct ArrayViewer<'r> {
-    bit_map_width_in_bytes: usize,
-    row: &'r [u8],
     num_elements: usize,
+    field_accessor_helper: FieldAccessorHelper<'r>,
 }
 
 impl<'r> ArrayViewer<'r> {
@@ -73,39 +73,32 @@ impl<'r> ArrayViewer<'r> {
         let num_elements = LittleEndian::read_u64(&row[0..8]) as usize;
         let bit_map_width_in_bytes = calculate_bitmap_width_in_bytes(num_elements);
         ArrayViewer {
-            row,
-            bit_map_width_in_bytes,
             num_elements,
+            field_accessor_helper: FieldAccessorHelper::new(
+                row,
+                Box::new(move |idx: usize| 8 + bit_map_width_in_bytes + idx * 8),
+            ),
         }
     }
 
     pub fn num_elements(&self) -> usize {
         self.num_elements
     }
-}
 
-impl<'r> RowViewer<'r> for ArrayViewer<'r> {
-    fn get_field_offset(&self, idx: usize) -> usize {
-        8 + self.bit_map_width_in_bytes + idx * 8
-    }
-
-    fn row(&self) -> &'r [u8] {
-        self.row
+    pub fn get_field_bytes(&self, idx: usize) -> &'r [u8] {
+        self.field_accessor_helper.get_field_bytes(idx)
     }
 }
 
-#[derive(Clone, Copy)]
 pub struct MapViewer<'r> {
     key_row: &'r [u8],
     value_row: &'r [u8],
-    row: &'r [u8],
 }
 
 impl<'r> MapViewer<'r> {
     pub fn new(row: &'r [u8]) -> MapViewer<'r> {
         let key_byte_size = LittleEndian::read_u64(&row[0..8]) as usize;
         MapViewer {
-            row,
             value_row: &row[key_byte_size + 8..row.len()],
             key_row: &row[8..key_byte_size + 8],
         }
@@ -117,24 +110,6 @@ impl<'r> MapViewer<'r> {
 
     pub fn get_value_row(&self) -> &[u8] {
         self.value_row
-    }
-}
-
-impl<'r> RowViewer<'r> for MapViewer<'r> {
-    fn get_offset_size(&self, _idx: usize) -> (u32, u32) {
-        panic!("unreachable code")
-    }
-
-    fn get_field_bytes(&self, _idx: usize) -> &'r [u8] {
-        panic!("unreachable code")
-    }
-
-    fn get_field_offset(&self, _idx: usize) -> usize {
-        panic!("unreachable code")
-    }
-
-    fn row(&self) -> &'r [u8] {
-        self.row
     }
 }
 

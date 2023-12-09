@@ -17,6 +17,6 @@ mod reader;
 mod row;
 mod writer;
 
-pub use reader::{from_row, ArrayViewer, RowViewer, StructViewer};
+pub use reader::{from_row, ArrayViewer, StructViewer};
 pub use row::Row;
-pub use writer::{to_row, ArrayWriter, RowWriter, StructWriter};
+pub use writer::{to_row, ArrayWriter, StructWriter};
