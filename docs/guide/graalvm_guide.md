@@ -24,6 +24,9 @@ Another benefit using fury is that you don't have to configure [reflection json]
 very tedious, cumbersome and inconvenient. When using fury, you just need to invoke 
 `io.fury.Fury.register(Class<?>, boolean)` for every type you want to serialize.
 
+Note that Fury `asyncCompilationEnabled` option will be disabled automatically for graalvm native image since graalvm 
+native image doesn't support JIT at the image run time.
+
 ## Not thread-safe Fury
 Example:
 ```java
