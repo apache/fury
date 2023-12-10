@@ -3,7 +3,6 @@ package io.fury.serializer.collection;
 import io.fury.annotation.Internal;
 import java.util.AbstractList;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Objects;
 import java.util.RandomAccess;
 
@@ -16,7 +15,6 @@ import java.util.RandomAccess;
 @Internal
 public class ArrayAsList<E> extends AbstractList<E> implements RandomAccess, java.io.Serializable {
   private E[] array;
-  private Map<String, Long>[] arrasy;
   private int size;
 
   @SuppressWarnings("unchecked")
