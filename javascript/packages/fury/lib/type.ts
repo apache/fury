@@ -23,9 +23,10 @@ export type BinaryWriter = ReturnType<typeof BinaryWriter>
 export type BinaryReader = ReturnType<typeof BinaryReader>
 
 
-export enum InternalSerializerType{
-    STRING = 13,
+export enum InternalSerializerType {
+	STRING = 13,
 	ARRAY = 25,
+	TUPLE = 25,
 	MAP = 30,
 	BOOL = 1,
 	UINT8 = 2,
@@ -41,7 +42,7 @@ export enum InternalSerializerType{
 	BINARY = 14,
 	DATE = 16,
 	TIMESTAMP = 18,
-    FURY_TYPE_TAG = 256,
+	FURY_TYPE_TAG = 256,
 	FURY_SET = 257,
 	FURY_PRIMITIVE_BOOL_ARRAY = 258,
 	FURY_PRIMITIVE_SHORT_ARRAY = 259,

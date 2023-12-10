@@ -19,7 +19,8 @@ import { replaceBackslashAndQuote, safePropAccessor, safePropName } from './util
 import mapSerializer from './internalSerializer/map';
 import setSerializer from './internalSerializer/set';
 import { arraySerializer } from './internalSerializer/array';
-import { ArrayTypeDescription, Cast, MapTypeDescription, ObjectTypeDescription, SetTypeDescription, TypeDescription } from './description';
+import { tupleSerializer } from './internalSerializer/tuple';
+import { ArrayTypeDescription, Cast, MapTypeDescription, ObjectTypeDescription, SetTypeDescription, TupleTypeDescription, TypeDescription } from './description';
 
 function computeFieldHash(hash: number, id: number): number {
     let newHash = (hash) * 31 + (id);
@@ -72,13 +73,13 @@ function typeHandlerDeclaration(fury: Fury) {
     const genBuiltinDeclaration = (type: number) => {
         const name = `type_${type}`.replace('-', '_');
         return addDeclar(name, `
-        const ${name} = classResolver.getSerializerById(${type})`);
+    const ${name} = classResolver.getSerializerById(${type})`);
     }
 
     const genTagDeclaration = (tag: string) => {
         const name = `tag_${count++}`;
         return addDeclar(name, `
-        const ${name} = classResolver.getSerializerByTag("${replaceBackslashAndQuote(tag)}")`, tag);
+    const ${name} = classResolver.getSerializerByTag("${replaceBackslashAndQuote(tag)}")`, tag);
     }
 
     const genDeclaration = (description: TypeDescription): string => {
@@ -87,17 +88,30 @@ function typeHandlerDeclaration(fury: Fury) {
             return genTagDeclaration(Cast<ObjectTypeDescription>(description).options.tag);
         }
         if (description.type === InternalSerializerType.ARRAY) {
+            const tupleOptions = Cast<TupleTypeDescription>(description).options;
+            if (tupleOptions && tupleOptions.isTuple) {
+                const names = [] as string[];
+                Cast<TupleTypeDescription>(description).options.inner.forEach(v => {
+                    names.push(genDeclaration(v));
+                })
+
+                const name = `tuple_${names.join('_')}`;
+                return addDeclar(name, `
+    const ${name} = tupleSerializer(fury, [${names.join(', ')}])`
+                )
+            }
+
             const inner = genDeclaration(Cast<ArrayTypeDescription>(description).options.inner);
             const name = `array_${inner}`;
             return addDeclar(name, `
-                const ${name} = arraySerializer(fury, ${inner})`
+    const ${name} = arraySerializer(fury, ${inner})`
             )
         }
         if (description.type === InternalSerializerType.FURY_SET) {
             const inner = genDeclaration(Cast<SetTypeDescription>(description).options.key);
             const name = `set_${inner}`;
             return addDeclar(name, `
-                const ${name} = setSerializer(fury, ${inner})`
+    const ${name} = setSerializer(fury, ${inner})`
             )
         }
         if (description.type === InternalSerializerType.MAP) {
@@ -106,7 +120,7 @@ function typeHandlerDeclaration(fury: Fury) {
 
             const name = `map_${key}_${value}`;
             return addDeclar(name, `
-                const ${name} = mapSerializer(fury, ${key}, ${value})`
+    const ${name} = mapSerializer(fury, ${key}, ${value})`
             )
         }
         return genBuiltinDeclaration(description.type);
@@ -125,41 +139,37 @@ function typeHandlerDeclaration(fury: Fury) {
     }
 }
 
-export const genSerializer = (fury: Fury, description: TypeDescription) => {
+export const generateInlineCode = (fury: Fury, description: TypeDescription) => {
+    const options = Cast<ObjectTypeDescription>(description).options;
+    const tag = options?.tag;
     const { genDeclaration, finish } = typeHandlerDeclaration(fury);
-    const tag = Cast<ObjectTypeDescription>(description).options?.tag;
-    if (fury.classResolver.getSerializerByTag(tag)) {
-        return fury.classResolver.getSerializerByTag(tag);
-    }
-    
-    fury.classResolver.registerSerializerByTag(tag, fury.classResolver.getSerializerById(InternalSerializerType.ANY));
     const expectHash = computeStructHash(description);
     const read = `
-    // relation tag: ${Cast<ObjectTypeDescription>(description).options?.tag}
+    // relation tag: ${tag}
     const result = {
-        ${Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key]) => {
+        ${Object.entries(options.props).sort().map(([key]) => {
         return `${safePropName(key)}: null`
     }).join(',\n')}
     };
     pushReadObject(result);
-    ${Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key, value]) => {
+    ${Object.entries(options.props).sort().map(([key, value]) => {
         return `result${safePropAccessor(key)} = ${genDeclaration(value)}.read()`;
     }).join(';\n')
         }
     return result;
 `;
-    const write = Object.entries(Cast<ObjectTypeDescription>(description).options.props).sort().map(([key, value]) => {
+    const write = Object.entries(options.props).sort().map(([key, value]) => {
         return `${genDeclaration(value)}.write(v${safePropAccessor(key)})`;
     }).join(';\n');
     const { names, declarations} = finish();
     const validTag = replaceBackslashAndQuote(tag);
-    return fury.classResolver.registerSerializerByTag(tag, new Function(
+    return new Function(
         `
 return function (fury, scope) {
     const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
     const { writeNullOrRef, pushReadObject } = referenceResolver;
-    const { RefFlags, InternalSerializerType, arraySerializer, mapSerializer, setSerializer } = scope;
-        ${declarations.join('')}
+    const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
+    ${declarations.join('')}
     const tagBuffer = classResolver.tagToBuffer("${validTag}");
     const bufferLen = tagBuffer.byteLength;
 
@@ -188,10 +198,23 @@ return function (fury, scope) {
     }
 }
 `
-    )()(fury, {
+    )
+}
+
+export const genSerializer = (fury: Fury, description: TypeDescription) => {
+    const tag = Cast<ObjectTypeDescription>(description).options?.tag;
+    if (fury.classResolver.getSerializerByTag(tag)) {
+        return fury.classResolver.getSerializerByTag(tag);
+    }
+    
+    fury.classResolver.registerSerializerByTag(tag, fury.classResolver.getSerializerById(InternalSerializerType.ANY));
+
+    const func = generateInlineCode(fury, description);
+    return fury.classResolver.registerSerializerByTag(tag, func()(fury, {
         InternalSerializerType,
         RefFlags,
         arraySerializer,
+        tupleSerializer,
         mapSerializer,
         setSerializer,
     }));

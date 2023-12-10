@@ -9,5 +9,8 @@
   "workspaces": [
     "packages/hps",
     "packages/fury"
-  ]
+  ],
+  "devDependencies": {
+    "prettier": "^3.1.0"
+  }
 }
