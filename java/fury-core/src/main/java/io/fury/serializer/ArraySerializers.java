@@ -31,7 +31,6 @@ import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
-import java.util.Collection;
 import java.util.IdentityHashMap;
 
 /**
