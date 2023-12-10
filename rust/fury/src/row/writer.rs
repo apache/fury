@@ -21,15 +21,29 @@ pub struct WriteCallbackInfo {
     data_start: usize,
 }
 
-pub trait RowWriter {
-    fn get_field_offset(&self, idx: usize) -> usize;
+struct FieldWriterHelper<'a> {
+    pub writer: &'a mut Writer,
+    base_offset: usize,
+    get_field_offset: Box<dyn Fn(usize) -> usize>,
+}
 
-    fn base_offset(&self) -> usize;
+impl<'a> FieldWriterHelper<'a> {
+    fn new(
+        writer: &'a mut Writer,
+        base_offset: usize,
+        get_field_offset: Box<dyn Fn(usize) -> usize>,
+    ) -> FieldWriterHelper {
+        FieldWriterHelper {
+            writer,
+            base_offset,
+            get_field_offset,
+        }
+    }
 
     fn write_start(&mut self, idx: usize) -> WriteCallbackInfo {
-        let base_offset = self.base_offset();
-        let field_offset = self.get_field_offset(idx);
-        let writer: &mut Writer = self.borrow_writer();
+        let base_offset = self.base_offset;
+        let field_offset = (self.get_field_offset)(idx);
+        let writer: &mut Writer = self.writer;
         let offset = writer.len() - base_offset;
         writer.set_bytes(field_offset, &(offset as u32).to_le_bytes());
         let data_start: usize = writer.len();
@@ -40,96 +54,89 @@ pub trait RowWriter {
     }
 
     fn write_end(&mut self, callback_info: WriteCallbackInfo) {
-        let writer: &mut Writer = self.borrow_writer();
+        let writer: &mut Writer = self.writer;
         let size: usize = writer.len() - callback_info.data_start;
         writer.set_bytes(callback_info.field_offset + 4, &(size as u32).to_le_bytes());
     }
-
-    fn borrow_writer(&mut self) -> &mut Writer;
 }
 
 pub struct StructWriter<'a> {
-    bit_map_width_in_bytes: usize,
-    base_offset: usize,
-    num_fields: usize,
-    writer: &'a mut Writer,
+    field_writer_helper: FieldWriterHelper<'a>,
 }
 
 impl<'a> StructWriter<'a> {
-    fn get_fixed_size(&self) -> usize {
-        self.bit_map_width_in_bytes + self.num_fields * 8
+    fn get_fixed_size(bit_map_width_in_bytes: usize, num_fields: usize) -> usize {
+        bit_map_width_in_bytes + num_fields * 8
     }
-
     pub fn new(num_fields: usize, writer: &mut Writer) -> StructWriter {
         let base_offset = writer.len();
-        let mut struct_writer = StructWriter {
-            writer,
-            bit_map_width_in_bytes: 0,
-            base_offset,
-            num_fields,
+        let bit_map_width_in_bytes = calculate_bitmap_width_in_bytes(num_fields);
+
+        let struct_writer = StructWriter {
+            field_writer_helper: FieldWriterHelper::new(
+                writer,
+                base_offset,
+                Box::new(move |idx| base_offset + bit_map_width_in_bytes + idx * 8),
+            ),
         };
-        struct_writer.bit_map_width_in_bytes = calculate_bitmap_width_in_bytes(num_fields);
-        let fixed_size = struct_writer.get_fixed_size();
-        struct_writer.writer.reserve(fixed_size);
-        struct_writer.writer.skip(fixed_size);
+        let fixed_size = Self::get_fixed_size(bit_map_width_in_bytes, num_fields);
+        struct_writer.field_writer_helper.writer.reserve(fixed_size);
+        struct_writer.field_writer_helper.writer.skip(fixed_size);
         struct_writer
     }
-}
 
-impl<'a> RowWriter for StructWriter<'a> {
-    fn borrow_writer(&mut self) -> &mut Writer {
-        self.writer
+    pub fn get_writer(&mut self) -> &mut Writer {
+        self.field_writer_helper.writer
     }
 
-    fn get_field_offset(&self, idx: usize) -> usize {
-        self.base_offset + self.bit_map_width_in_bytes + idx * 8
+    pub fn write_start(&mut self, idx: usize) -> WriteCallbackInfo {
+        self.field_writer_helper.write_start(idx)
     }
 
-    fn base_offset(&self) -> usize {
-        self.base_offset
+    pub fn write_end(&mut self, callback_info: WriteCallbackInfo) {
+        self.field_writer_helper.write_end(callback_info)
     }
 }
 
 pub struct ArrayWriter<'a> {
-    bit_map_width_in_bytes: usize,
-    base_offset: usize,
-    num_fields: usize,
-    writer: &'a mut Writer,
+    field_writer_helper: FieldWriterHelper<'a>,
 }
 
 impl<'a> ArrayWriter<'a> {
-    fn get_fixed_size(&self) -> usize {
-        8 + self.bit_map_width_in_bytes + self.num_fields * 8
+    fn get_fixed_size(bit_map_width_in_bytes: usize, num_fields: usize) -> usize {
+        8 + bit_map_width_in_bytes + num_fields * 8
     }
 
     pub fn new(num_fields: usize, writer: &mut Writer) -> ArrayWriter {
         let base_offset = writer.len();
-        let mut array_writer = ArrayWriter {
-            writer,
-            bit_map_width_in_bytes: 0,
-            base_offset,
-            num_fields,
+        let bit_map_width_in_bytes = calculate_bitmap_width_in_bytes(num_fields);
+        let array_writer = ArrayWriter {
+            field_writer_helper: FieldWriterHelper::new(
+                writer,
+                base_offset,
+                Box::new(move |idx| 8 + base_offset + bit_map_width_in_bytes + idx * 8),
+            ),
         };
-        array_writer.bit_map_width_in_bytes = calculate_bitmap_width_in_bytes(num_fields);
-        let fixed_size = array_writer.get_fixed_size();
-        array_writer.writer.reserve(fixed_size);
-        array_writer.writer.u64(num_fields as u64);
-        array_writer.writer.skip(fixed_size - 8);
+        let fixed_size = Self::get_fixed_size(bit_map_width_in_bytes, num_fields);
+        array_writer.field_writer_helper.writer.reserve(fixed_size);
+        array_writer
+            .field_writer_helper
+            .writer
+            .u64(num_fields as u64);
+        array_writer.field_writer_helper.writer.skip(fixed_size - 8);
         array_writer
     }
-}
 
-impl<'a> RowWriter for ArrayWriter<'a> {
-    fn borrow_writer(&mut self) -> &mut Writer {
-        self.writer
+    pub fn get_writer(&mut self) -> &mut Writer {
+        self.field_writer_helper.writer
     }
 
-    fn get_field_offset(&self, idx: usize) -> usize {
-        8 + self.base_offset + self.bit_map_width_in_bytes + idx * 8
+    pub fn write_start(&mut self, idx: usize) -> WriteCallbackInfo {
+        self.field_writer_helper.write_start(idx)
     }
 
-    fn base_offset(&self) -> usize {
-        self.base_offset
+    pub fn write_end(&mut self, callback_info: WriteCallbackInfo) {
+        self.field_writer_helper.write_end(callback_info)
     }
 }
 
@@ -155,35 +162,19 @@ impl<'a> MapWriter<'a> {
         array_writer.writer.skip(fixed_size);
         array_writer
     }
-}
 
-impl<'a> RowWriter for MapWriter<'a> {
-    fn get_field_offset(&self, _idx: usize) -> usize {
-        panic!("unreachable code")
-    }
-
-    fn base_offset(&self) -> usize {
-        self.base_offset
-    }
-
-    fn write_start(&mut self, _idx: usize) -> WriteCallbackInfo {
-        let base_offset = self.base_offset();
-        let writer: &mut Writer = self.borrow_writer();
-        let data_start: usize = writer.len();
-        WriteCallbackInfo {
-            field_offset: base_offset,
-            data_start,
-        }
-    }
-
-    fn write_end(&mut self, callback_info: WriteCallbackInfo) {
-        let writer: &mut Writer = self.borrow_writer();
-        let size: usize = writer.len() - callback_info.data_start;
-        writer.set_bytes(callback_info.field_offset, &(size as u32).to_le_bytes());
-    }
-
-    fn borrow_writer(&mut self) -> &mut Writer {
+    pub fn get_writer(&mut self) -> &mut Writer {
         self.writer
+    }
+
+    pub fn write_start(&mut self, _idx: usize) -> usize {
+        self.writer.len()
+    }
+
+    pub fn write_end(&mut self, data_start: usize) {
+        let size: usize = self.writer.len() - data_start;
+        self.writer
+            .set_bytes(self.base_offset, &(size as u32).to_le_bytes());
     }
 }
 

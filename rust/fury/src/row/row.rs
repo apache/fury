@@ -19,8 +19,8 @@ use std::collections::BTreeMap;
 use std::marker::PhantomData;
 
 use super::{
-    reader::{ArrayViewer, MapViewer, RowViewer},
-    writer::{ArrayWriter, MapWriter, RowWriter},
+    reader::{ArrayViewer, MapViewer},
+    writer::{ArrayWriter, MapWriter},
 };
 
 pub trait Row<'a> {
@@ -157,7 +157,7 @@ impl<'a, T: Row<'a>> Row<'a> for Vec<T> {
         let mut array_writer = ArrayWriter::new(v.len(), writer);
         v.iter().enumerate().for_each(|(idx, item)| {
             let callback_info = array_writer.write_start(idx);
-            <T as Row>::write(item, array_writer.borrow_writer());
+            <T as Row>::write(item, array_writer.get_writer());
             array_writer.write_end(callback_info);
         });
     }
@@ -217,19 +217,19 @@ impl<'a, T1: Row<'a> + Ord, T2: Row<'a> + Ord> Row<'a> for BTreeMap<T1, T2> {
         let mut map_writter = MapWriter::new(writer);
         {
             let callback_info = map_writter.write_start(0);
-            let mut array_writer = ArrayWriter::new(v.len(), map_writter.borrow_writer());
+            let mut array_writer = ArrayWriter::new(v.len(), map_writter.get_writer());
             v.keys().enumerate().for_each(|(idx, item)| {
                 let callback_info = array_writer.write_start(idx);
-                <T1 as Row>::write(item, array_writer.borrow_writer());
+                <T1 as Row>::write(item, array_writer.get_writer());
                 array_writer.write_end(callback_info);
             });
             map_writter.write_end(callback_info);
         }
         {
-            let mut array_writer = ArrayWriter::new(v.len(), map_writter.borrow_writer());
+            let mut array_writer = ArrayWriter::new(v.len(), map_writter.get_writer());
             v.values().enumerate().for_each(|(idx, item)| {
                 let callback_info = array_writer.write_start(idx);
-                <T2 as Row>::write(item, array_writer.borrow_writer());
+                <T2 as Row>::write(item, array_writer.get_writer());
                 array_writer.write_end(callback_info);
             });
         }

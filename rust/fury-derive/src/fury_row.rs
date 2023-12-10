@@ -32,7 +32,7 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
 
         quote! {
             let mut callback_info = struct_writer.write_start(#index);
-            <#ty as fury::__derive::Row<'a>>::write(&v.#ident, struct_writer.borrow_writer());
+            <#ty as fury::__derive::Row<'a>>::write(&v.#ident, struct_writer.get_writer());
             struct_writer.write_end(callback_info);
         }
     });
@@ -44,7 +44,6 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
 
         quote! {
             pub fn #getter_name(&self) -> <#ty as fury::__derive::Row<'a>>::ReadResult {
-                use fury::__derive::RowViewer;
                 let bytes = self.struct_data.get_field_bytes(#index);
                 <#ty as fury::__derive::Row<'a>>::cast(bytes)
             }
@@ -70,7 +69,6 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
             type ReadResult = #getter<'a>;
 
             fn write(v: &Self, writer: &mut fury::__derive::Writer) {
-                use fury::__derive::RowWriter;
                 let mut struct_writer = fury::__derive::StructWriter::new(#num_fields, writer);
                 #(#write_exprs);*;
             }
