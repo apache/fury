@@ -17,11 +17,15 @@
 package io.fury.serializer;
 
 import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
+import io.fury.serializer.collection.ArrayAsList;
+import io.fury.memory.MemoryBuffer;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.RefResolver;
+import io.fury.serializer.collection.CollectionFlags;
+import io.fury.serializer.collection.FuryArrayAsListSerializer;
+import io.fury.type.Generics;
 import io.fury.type.Type;
 import io.fury.type.TypeUtils;
 import io.fury.util.Platform;
@@ -560,10 +564,15 @@ public class ArraySerializers {
 
   public static final class StringArraySerializer extends Serializer<String[]> {
     private final StringSerializer stringSerializer;
+    private final FuryArrayAsListSerializer collectionSerializer;
+    private final ArrayAsList<String> list;
 
     public StringArraySerializer(Fury fury) {
       super(fury, String[].class);
       stringSerializer = new StringSerializer(fury);
+      collectionSerializer = new FuryArrayAsListSerializer(fury);
+      collectionSerializer.setElementSerializer(stringSerializer);
+      list = new ArrayAsList<>(0);
     }
 
     @Override
@@ -573,15 +582,24 @@ public class ArraySerializers {
 
     @Override
     public void write(MemoryBuffer buffer, String[] value) {
-      int len = value.length;
-      buffer.writePositiveVarInt(len);
-      for (String elem : value) {
-        // TODO reference support
-        if (elem != null) {
-          buffer.writeByte(Fury.REF_VALUE_FLAG);
-          stringSerializer.writeJavaString(buffer, elem);
-        } else {
-          buffer.writeByte(Fury.NULL_FLAG);
+      list.setArray(value);
+      // TODO reference support
+      // this method won't throw exception.
+      int flags = collectionSerializer.writeNullabilityHeader(buffer, list);
+      list.setArray(null); // clear for gc
+      StringSerializer stringSerializer = this.stringSerializer;
+      if ((flags & CollectionFlags.HAS_NULL) != CollectionFlags.HAS_NULL) {
+        for (String elem : value) {
+          stringSerializer.write(buffer, elem);
+        }
+      } else {
+        for (String elem : value) {
+          if (elem == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+            stringSerializer.write(buffer, elem);
+          }
         }
       }
     }
@@ -590,12 +608,17 @@ public class ArraySerializers {
     public String[] read(MemoryBuffer buffer) {
       int numElements = buffer.readPositiveVarInt();
       String[] value = new String[numElements];
-      fury.getRefResolver().reference(value);
-      for (int i = 0; i < numElements; i++) {
-        if (buffer.readByte() == Fury.REF_VALUE_FLAG) {
-          value[i] = stringSerializer.readJavaString(buffer);
-        } else {
-          value[i] = null;
+      int flags = buffer.readByte();
+      StringSerializer serializer = this.stringSerializer;
+      if ((flags & CollectionFlags.HAS_NULL) != CollectionFlags.HAS_NULL) {
+        for (int i = 0; i < numElements; i++) {
+          value[i] = serializer.readJavaString(buffer);
+        }
+      } else {
+        for (int i = 0; i < numElements; i++) {
+          if (buffer.readByte() != Fury.NULL_FLAG) {
+            value[i] = serializer.readJavaString(buffer);
+          }
         }
       }
       return value;
