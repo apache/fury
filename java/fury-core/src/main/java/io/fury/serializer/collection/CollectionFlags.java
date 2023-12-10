@@ -29,20 +29,12 @@ package io.fury.serializer.collection;
  * @author chaokunyang
  */
 public class CollectionFlags {
-  /**
-   * Whether track elements ref.
-   */
+  /** Whether track elements ref. */
   public static int TRACKING_REF = 0b1;
-  /**
-   * Whether collection has null.
-   */
+  /** Whether collection has null. */
   public static int HAS_NULL = 0b10;
-  /**
-   * Whether collection elements type is not declare type.
-   */
+  /** Whether collection elements type is not declare type. */
   public static int NOT_DECL_ELEMENT_TYPE = 0b100;
-  /**
-   * Whether collection elements type different.
-   */
+  /** Whether collection elements type different. */
   public static int NOT_SAME_TYPE = 0b1000;
 }

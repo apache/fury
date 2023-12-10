@@ -744,8 +744,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression sameElementClass = neq(new BitAnd(flags, flag), flag, "sameElementClass");
       builder.add(sameElementClass);
       //  if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE)
-      Literal notDeclTypeFlag =
-          Literal.ofInt(CollectionFlags.NOT_DECL_ELEMENT_TYPE);
+      Literal notDeclTypeFlag = Literal.ofInt(CollectionFlags.NOT_DECL_ELEMENT_TYPE);
       Expression isDeclType =
           neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
       Expression elemSerializer; // make it in scope of `if(sameElementClass)`
@@ -819,10 +818,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       if (trackingRef) {
         bitmap =
             new ListExpression(
-                new Invoke(
-                    buffer,
-                    "writeByte",
-                    Literal.ofInt(CollectionFlags.TRACKING_REF)),
+                new Invoke(buffer, "writeByte", Literal.ofInt(CollectionFlags.TRACKING_REF)),
                 Literal.ofInt(CollectionFlags.TRACKING_REF));
       } else {
         bitmap =
@@ -1262,8 +1258,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression sameElementClass =
           neq(new BitAnd(flags, notSameTypeFlag), notSameTypeFlag, "sameElementClass");
       //  if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE)
-      Literal notDeclTypeFlag =
-          Literal.ofInt(CollectionFlags.NOT_DECL_ELEMENT_TYPE);
+      Literal notDeclTypeFlag = Literal.ofInt(CollectionFlags.NOT_DECL_ELEMENT_TYPE);
       Expression isDeclType =
           neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
       Invoke serializer =

@@ -1,7 +1,6 @@
 package io.fury.serializer.collection;
 
 import io.fury.annotation.Internal;
-
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.Map;
@@ -9,8 +8,8 @@ import java.util.Objects;
 import java.util.RandomAccess;
 
 /**
- * A List which wrap a Java array like `java.util.Arrays.ArrayList`, but allow to replace wrapped array.
- * Used for serialization only, do not use it in other scenarios.
+ * A List which wrap a Java array like `java.util.Arrays.ArrayList`, but allow to replace wrapped
+ * array. Used for serialization only, do not use it in other scenarios.
  *
  * @author chaokunyang
  */
@@ -85,9 +84,7 @@ public class ArrayAsList<E> extends AbstractList<E> implements RandomAccess, jav
     return indexOf(o) >= 0;
   }
 
-  /**
-   * Returns original array without copy.
-   */
+  /** Returns original array without copy. */
   @Override
   public Object[] toArray() {
     return array;
@@ -105,7 +102,8 @@ public class ArrayAsList<E> extends AbstractList<E> implements RandomAccess, jav
 
       @Override
       public E next() {
-        return array[index++];      }
+        return array[index++];
+      }
     };
   }
 }

@@ -17,15 +17,14 @@
 package io.fury.serializer;
 
 import io.fury.Fury;
-import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassResolver;
-import io.fury.serializer.collection.ArrayAsList;
 import io.fury.memory.MemoryBuffer;
+import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassInfoHolder;
+import io.fury.resolver.ClassResolver;
 import io.fury.resolver.RefResolver;
+import io.fury.serializer.collection.ArrayAsList;
 import io.fury.serializer.collection.CollectionFlags;
 import io.fury.serializer.collection.FuryArrayAsListSerializer;
-import io.fury.type.Generics;
 import io.fury.type.Type;
 import io.fury.type.TypeUtils;
 import io.fury.util.Platform;

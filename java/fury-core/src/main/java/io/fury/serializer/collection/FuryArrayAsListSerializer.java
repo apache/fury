@@ -4,12 +4,10 @@ import io.fury.Fury;
 import io.fury.annotation.Internal;
 import io.fury.memory.MemoryBuffer;
 import io.fury.type.Type;
-
 import java.util.Collection;
 
 /**
- * Serializer for {@link ArrayAsList}.
- * Helper for serialization of other classes.
+ * Serializer for {@link ArrayAsList}. Helper for serialization of other classes.
  *
  * @author chaokunyang
  */

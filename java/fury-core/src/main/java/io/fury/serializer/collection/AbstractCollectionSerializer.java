@@ -372,7 +372,8 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       int flags) {
     if ((flags & CollectionFlags.NOT_SAME_TYPE) != CollectionFlags.NOT_SAME_TYPE) {
       Serializer serializer;
-      if ((flags & CollectionFlags.NOT_DECL_ELEMENT_TYPE) != CollectionFlags.NOT_DECL_ELEMENT_TYPE) {
+      if ((flags & CollectionFlags.NOT_DECL_ELEMENT_TYPE)
+          != CollectionFlags.NOT_DECL_ELEMENT_TYPE) {
         Preconditions.checkNotNull(elemGenericType);
         serializer = elemGenericType.getSerializer(fury.getClassResolver());
       } else {
@@ -594,7 +595,8 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     if ((flags & CollectionFlags.NOT_SAME_TYPE) != CollectionFlags.NOT_SAME_TYPE) {
       Serializer serializer;
       ClassResolver classResolver = fury.getClassResolver();
-      if ((flags & CollectionFlags.NOT_DECL_ELEMENT_TYPE) == CollectionFlags.NOT_DECL_ELEMENT_TYPE) {
+      if ((flags & CollectionFlags.NOT_DECL_ELEMENT_TYPE)
+          == CollectionFlags.NOT_DECL_ELEMENT_TYPE) {
         serializer = classResolver.readClassInfo(buffer, elementClassInfoHolder).getSerializer();
       } else {
         Preconditions.checkNotNull(elemGenericType);
@@ -694,5 +696,4 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       }
     }
   }
-
 }
