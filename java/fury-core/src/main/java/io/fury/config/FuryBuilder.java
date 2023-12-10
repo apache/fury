@@ -26,6 +26,7 @@ import io.fury.serializer.ObjectStreamSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.TimeSerializers;
 import io.fury.serializer.collection.GuavaCollectionSerializers;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
 import java.util.Objects;
@@ -258,6 +259,9 @@ public final class FuryBuilder {
    * serialization first and switch to jit serialization after async serializer jit for a class \ is
    * finished.
    *
+   * <p>This option will be disabled automatically for graalvm native image since graalvm native
+   * image doesn't support JIT at the image run time.
+   *
    * @see Config#isAsyncCompilationEnabled()
    */
   public FuryBuilder withAsyncCompilation(boolean asyncCompilation) {
@@ -304,6 +308,10 @@ public final class FuryBuilder {
     }
     if (suppressClassRegistrationWarnings == null) {
       suppressClassRegistrationWarnings = !requireClassRegistration;
+    }
+    if (GraalvmSupport.IN_GRAALVM_NATIVE_IMAGE && asyncCompilationEnabled) {
+      LOG.info("Use sync compilation for graalvm native image since it doesn't support JIT.");
+      asyncCompilationEnabled = false;
     }
   }
 
