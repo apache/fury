@@ -31,6 +31,7 @@ import io.fury.util.Platform;
 import io.fury.util.Preconditions;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.IdentityHashMap;
 
 /**
@@ -581,6 +582,11 @@ public class ArraySerializers {
 
     @Override
     public void write(MemoryBuffer buffer, String[] value) {
+      int len = value.length;
+      buffer.writePositiveVarInt(len);
+      if (len == 0) {
+        return;
+      }
       list.setArray(value);
       // TODO reference support
       // this method won't throw exception.
@@ -607,6 +613,9 @@ public class ArraySerializers {
     public String[] read(MemoryBuffer buffer) {
       int numElements = buffer.readPositiveVarInt();
       String[] value = new String[numElements];
+      if (numElements == 0) {
+        return value;
+      }
       int flags = buffer.readByte();
       StringSerializer serializer = this.stringSerializer;
       if ((flags & CollectionFlags.HAS_NULL) != CollectionFlags.HAS_NULL) {
