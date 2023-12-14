@@ -19,6 +19,7 @@
 #include "fury/util/logging.h"
 #include <cstring>
 #include <iosfwd>
+#include <memory>
 #include <string>
 
 //
@@ -90,17 +91,26 @@ class Status {
 public:
   // Create a success status.
   Status() : state_(nullptr) {}
-  ~Status() { delete state_; }
+  ~Status() = default;
 
-  Status(StatusCode code, const std::string &msg);
+  Status(StatusCode code, std::string msg)
+      : state_(new State{code, std::move(msg)}) {}
 
   // Copy the specified status.
-  Status(const Status &s);
-  Status &operator=(const Status &s);
+  Status(const Status &s) : state_(s.state_ ? new State(*s.state_) : nullptr) {}
+  Status &operator=(const Status &s) {
+    if (s.state_) {
+      state_.reset(new State(*s.state_));
+    } else {
+      state_ = nullptr;
+    }
+
+    return *this;
+  }
 
   // Move the specified status.
-  Status(Status &&s);
-  Status &operator=(Status &&s);
+  Status(Status &&s) = default;
+  Status &operator=(Status &&s) = default;
 
   // Return a success status.
   static Status OK() { return Status(); }
@@ -133,7 +143,7 @@ public:
   static StatusCode StringToCode(const std::string &str);
 
   // Returns true iff the status indicates success.
-  bool ok() const { return (state_ == nullptr); }
+  bool ok() const { return state_ == nullptr; }
 
   bool IsOutOfMemory() const { return code() == StatusCode::OutOfMemory; }
   bool IsKeyError() const { return code() == StatusCode::KeyError; }
@@ -161,38 +171,11 @@ private:
   };
   // OK status has a `NULL` state_.  Otherwise, `state_` points to
   // a `State` structure containing the error code and message(s)
-  State *state_;
-
-  void CopyFrom(const State *s);
+  std::unique_ptr<State> state_;
 };
 
-static inline std::ostream &operator<<(std::ostream &os, const Status &x) {
-  os << x.ToString();
-  return os;
+inline std::ostream &operator<<(std::ostream &os, const Status &x) {
+  return os << x.ToString();
 }
 
-inline Status::Status(const Status &s)
-    : state_((s.state_ == nullptr) ? nullptr : new State(*s.state_)) {}
-
-inline Status &Status::operator=(const Status &s) {
-  // The following condition catches both aliasing (when this == &s),
-  // and the common case where both s and *this are ok.
-  if (state_ != s.state_) {
-    CopyFrom(s.state_);
-  }
-  return *this;
-}
-
-inline Status::Status(Status &&s) : state_(s.state_) { s.state_ = nullptr; }
-
-inline Status &Status::operator=(Status &&s) {
-  // The following condition catches both aliasing (when this == &s),
-  // and the common case where both s and *this are ok.
-  if (state_ != s.state_) {
-    delete state_;
-    state_ = s.state_;
-    s.state_ = nullptr;
-  }
-  return *this;
-}
 } // namespace fury
