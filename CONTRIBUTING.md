@@ -18,7 +18,6 @@ mvn -T10 clean test
 ```
 
 ### C++
-Run c++ tests：
 ```bash
 bazel test $(bazel query //...)
 ```
@@ -30,6 +29,12 @@ cd go/fury
 go test -v
 # run xlang tests
 go test -v fury_xlang_test.go
+```
+
+### Rust
+```bash
+cd rust
+cargo test
 ```
 
 ## Styling 😎
@@ -73,6 +78,13 @@ git ls-files -- '*.cc' '*.h' | xargs -P 5 clang-format -i
 ```bash
 cd go/fury
 gofmt -s -w .
+```
+
+### Rust
+
+```bash
+cd rust
+cargo fmt
 ```
 
 ## Debug
