@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Fury, LATIN1 } from "../type";
+import { Fury } from "../type";
 import { InternalSerializerType, RefFlags } from "../type";
 
 
@@ -22,18 +22,11 @@ import { InternalSerializerType, RefFlags } from "../type";
 export default (fury: Fury) => {
     const { binaryReader, binaryWriter, referenceResolver } = fury;
     const { stringOfVarInt32: writeStringOfVarInt32, int8 } = binaryWriter
-    const { varInt32: readVarInt32, stringUtf8: readStringUtf8, uint8: readUInt8, stringLatin1, } = binaryReader;
+    const { stringOfVarInt32: readStringOfVarInt32 } = binaryReader;
 
     return {
-        ...referenceResolver.deref(fury.config.useLatin1 ? () => {
-            const type = readUInt8();
-            const len = readVarInt32();
-            const result = type === LATIN1 ? stringLatin1(len) : readStringUtf8(len);
-            return result;
-        } : () => {
-            const len = readVarInt32();
-            const result = readStringUtf8(len);
-            return result;
+        ...referenceResolver.deref(() => {
+            return readStringOfVarInt32();
         }),
         write: referenceResolver.withNotNullableWriter(InternalSerializerType.STRING, "", (v: string) => {
             writeStringOfVarInt32(v);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Config } from "./type";
+import { Config, LATIN1 } from "./type";
 import { isNodeEnv } from "./util";
 import { PlatformBuffer, alloc, fromUint8Array } from './platformBuffer';
 
@@ -24,6 +24,9 @@ export const BinaryReader = (config: Config) => {
   let dataView!: DataView;
   let buffer!: PlatformBuffer;
   let bigString: string;
+
+  const stringLatin1 = sliceStringEnable ? stringLatin1Fast : stringLatin1Slow;
+
   function reset(ab: Uint8Array) {
     buffer = fromUint8Array(ab);
     dataView = new DataView(buffer.buffer, buffer.byteOffset);
@@ -99,6 +102,12 @@ export const BinaryReader = (config: Config) => {
     return result;
   }
 
+  function stringOfVarInt32() {
+    const useLatin1 = config.useLatin1 ? uint8() === LATIN1 : false;
+    const len = varInt32();
+    return useLatin1 ? stringLatin1(len) : stringUtf8(len);
+  }
+
   function stringLatin1Fast(len: number) {
     const result = bigString.substring(cursor, cursor + len);
     cursor += len;
@@ -114,6 +123,12 @@ export const BinaryReader = (config: Config) => {
   function binary(len: number) {
     const result = alloc(len);
     buffer.copy(result, 0, cursor, cursor + len);
+    cursor += len;
+    return result;
+  }
+
+  function bufferRef(len: number) {
+    const result = buffer.subarray(cursor, cursor + len);
     cursor += len;
     return result;
   }
@@ -146,10 +161,12 @@ export const BinaryReader = (config: Config) => {
     varInt32,
     int8,
     buffer: binary,
+    bufferRef,
     uint8,
     reset,
     stringUtf8,
-    stringLatin1: sliceStringEnable ? stringLatin1Fast : stringLatin1Slow,
+    stringLatin1,
+    stringOfVarInt32,
     double,
     float,
     uint16,
