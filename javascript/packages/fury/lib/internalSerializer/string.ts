@@ -17,32 +17,30 @@
 import { Fury } from "../type";
 import { InternalSerializerType, RefFlags } from "../type";
 
-
-
 export default (fury: Fury) => {
-    const { binaryReader, binaryWriter, referenceResolver } = fury;
-    const { stringOfVarInt32: writeStringOfVarInt32, int8 } = binaryWriter
-    const { stringOfVarInt32: readStringOfVarInt32 } = binaryReader;
+  const { binaryReader, binaryWriter, referenceResolver } = fury;
+  const { stringOfVarInt32: writeStringOfVarInt32, int8 } = binaryWriter;
+  const { stringOfVarInt32: readStringOfVarInt32 } = binaryReader;
 
-    return {
-        ...referenceResolver.deref(() => {
-            return readStringOfVarInt32();
-        }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.STRING, "", (v: string) => {
-            writeStringOfVarInt32(v);
-        }),
-        writeWithoutType: (v: string) => {
-            if (v === null) {
-                binaryWriter.int8(RefFlags.NullFlag);
-                return;
-            }
-            int8(RefFlags.NotNullValueFlag);
-            writeStringOfVarInt32(v);
-        },
-        config: () => {
-            return {
-                reserve: 8,
-            }
-        }
-    }
-}
+  return {
+    ...referenceResolver.deref(() => {
+      return readStringOfVarInt32();
+    }),
+    write: referenceResolver.withNotNullableWriter(InternalSerializerType.STRING, "", (v: string) => {
+      writeStringOfVarInt32(v);
+    }),
+    writeWithoutType: (v: string) => {
+      if (v === null) {
+        binaryWriter.int8(RefFlags.NullFlag);
+        return;
+      }
+      int8(RefFlags.NotNullValueFlag);
+      writeStringOfVarInt32(v);
+    },
+    config: () => {
+      return {
+        reserve: 8,
+      };
+    },
+  };
+};
