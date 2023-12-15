@@ -225,10 +225,7 @@ function num2Bin(num: number) {
             }
             {
                 reader.reset(ab);
-                if (config.useLatin1) {
-                    expect(reader.uint8()).toBe(1);
-                }
-                expect(reader.stringUtf8OfVarint32()).toBe(str);
+                expect(reader.stringOfVarInt32()).toBe(str);
             }
         });
 
@@ -249,10 +246,7 @@ function num2Bin(num: number) {
             }
             {
                 reader.reset(ab);
-                if (config.useLatin1) {
-                    expect(reader.uint8()).toBe(1);
-                }
-                expect(reader.stringUtf8OfVarint32()).toBe(str);
+                expect(reader.stringOfVarInt32()).toBe(str);
             }
         });
 
