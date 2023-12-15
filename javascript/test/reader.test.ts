@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { alloc } from '@furyjs/fury/lib/platformBuffer';
+import { BinaryReader } from '@furyjs/fury/lib/reader';
 import { Config } from '@furyjs/fury/lib/type';
 import { BinaryWriter } from '@furyjs/fury/lib/writer';
 import { describe, expect, test } from '@jest/globals';
@@ -55,3 +57,21 @@ const hps = process.env.enableHps ? require('@furyjs/hps') : null;
 })
 
 
+describe('reader', () => {
+
+    test('should bufferRef work', () => {
+        const bb = alloc(100);
+        bb.latin1Write("hello", 0);
+        const target = new Uint8Array(5);
+        bb.copy(target, 0, 0, 5);
+        expect([...target]).toEqual([ 104, 101, 108, 108, 111 ])
+
+        const reader = BinaryReader({});
+
+        reader.reset(bb);
+        const ref = reader.bufferRef(5);
+        ref[0] = 0;
+        bb.copy(target, 0, 0, 5);
+        expect([...target]).toEqual([ 0, 101, 108, 108, 111 ])
+    })
+})

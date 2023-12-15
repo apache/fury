@@ -213,13 +213,23 @@ function num2Bin(num: number) {
             writer.stringOfVarInt32(str);
             const ab = writer.dump();
             const reader = BinaryReader(config);
-            reader.reset(ab);
-            if (config.useLatin1) {
-                expect(reader.uint8()).toBe(1);
+
+            {
+                reader.reset(ab);
+                if (config.useLatin1) {
+                    expect(reader.uint8()).toBe(1);
+                }
+                const len = reader.varInt32();
+                expect(len).toBe(17);
+                expect(reader.stringUtf8(len)).toBe(str);
             }
-            const len = reader.varInt32();
-            expect(len).toBe(17);
-            expect(reader.stringUtf8(len)).toBe(str);
+            {
+                reader.reset(ab);
+                if (config.useLatin1) {
+                    expect(reader.uint8()).toBe(1);
+                }
+                expect(reader.stringUtf8OfVarint32()).toBe(str);
+            }
         });
 
         test('should long utf8 string work', () => {
@@ -228,13 +238,22 @@ function num2Bin(num: number) {
             writer.stringOfVarInt32(str);
             const ab = writer.dump();
             const reader = BinaryReader(config);
-            reader.reset(ab);
-            if (config.useLatin1) {
-                expect(reader.uint8()).toBe(1);
+            {
+                reader.reset(ab);
+                if (config.useLatin1) {
+                    expect(reader.uint8()).toBe(1);
+                }
+                const len = reader.varInt32();
+                expect(len).toBe(170);
+                expect(reader.stringUtf8(len)).toBe(str);
             }
-            const len = reader.varInt32();
-            expect(len).toBe(170);
-            expect(reader.stringUtf8(len)).toBe(str);
+            {
+                reader.reset(ab);
+                if (config.useLatin1) {
+                    expect(reader.uint8()).toBe(1);
+                }
+                expect(reader.stringUtf8OfVarint32()).toBe(str);
+            }
         });
 
         test('should buffer work', () => {
@@ -339,5 +358,3 @@ function num2Bin(num: number) {
         });
     });
 })
-
-

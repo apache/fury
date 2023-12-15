@@ -99,6 +99,13 @@ export const BinaryReader = (config: Config) => {
     return result;
   }
 
+  function stringUtf8OfVarint32() {
+    const len = varInt32();
+    const result = buffer.utf8Slice(cursor, cursor + len);
+    cursor += len;
+    return result;
+  }
+
   function stringLatin1Fast(len: number) {
     const result = bigString.substring(cursor, cursor + len);
     cursor += len;
@@ -114,6 +121,12 @@ export const BinaryReader = (config: Config) => {
   function binary(len: number) {
     const result = alloc(len);
     buffer.copy(result, 0, cursor, cursor + len);
+    cursor += len;
+    return result;
+  }
+
+  function bufferRef(len: number) {
+    const result = buffer.subarray(cursor, cursor + len);
     cursor += len;
     return result;
   }
@@ -146,9 +159,11 @@ export const BinaryReader = (config: Config) => {
     varInt32,
     int8,
     buffer: binary,
+    bufferRef,
     uint8,
     reset,
     stringUtf8,
+    stringUtf8OfVarint32,
     stringLatin1: sliceStringEnable ? stringLatin1Fast : stringLatin1Slow,
     double,
     float,
