@@ -34,22 +34,6 @@ namespace fury {
 #define STATUS_CODE_IO_ERROR "IOError"
 #define STATUS_CODE_UNKNOWN_ERROR "Unknown error"
 
-Status::Status(StatusCode code, const std::string &msg) {
-  assert(code != StatusCode::OK);
-  state_ = new State;
-  state_->code = code;
-  state_->msg = msg;
-}
-
-void Status::CopyFrom(const State *state) {
-  delete state_;
-  if (state == nullptr) {
-    state_ = nullptr;
-  } else {
-    state_ = new State(*state);
-  }
-}
-
 std::string Status::ToString() const {
   std::string result(CodeAsString());
   if (state_ == NULL) {
