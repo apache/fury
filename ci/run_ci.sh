@@ -253,6 +253,9 @@ case $1 in
       cd "$ROOT/java"
       mvn -T10 -B --no-transfer-progress spotless:check
       mvn -T10 -B --no-transfer-progress checkstyle:check
+      pushd "$ROOT/javascript"
+      npm run lint
+      popd
       echo "Executing format check succeeds"
     ;;
     *)
