@@ -2,14 +2,25 @@
 
 ## Spec overview
 
-The data are serialized using little endian order overall. If bytes swap is costly, the byte order will be encoded as a
-flag in data.
+Fury Java Serialization is an automatic object serialization framework that supports reference and polymorphism. Fury
+will
+convert an object from/to fury java serialization binary format. Fury has two core concepts for java serialization:
 
-The overall format are:
+- **Fury Java Binary format**
+- Framework to convert object to/from Fury Java Binary format
+
+The serialization format is a dynamic binary format. The dynamics and reference/polymorphism support make Fury flexible,
+much more easy to use, but
+also introduce more complexities compared to static serialization frameworks. So the format will be more complex.
+
+Here is the overall format:
 
 ```
 | fury header | object ref meta | object class meta | object value data |
 ```
+
+The data are serialized using little endian order overall. If bytes swap is costly, the byte order will be encoded as a
+flag in data.
 
 ## Fury header
 
@@ -53,8 +64,12 @@ If schema consistent mode is enabled globally or enabled for current class, clas
 
 - If class is registered, it will be written as a little-endian unsigned int: `class_id << 1` using fury unsigned int
   format.
-- If class is not registered, fury will write one byte `0b1` first, the little bit is different first bit of encoded
-  class id, which is `0`. Fury can use this information to determine whether read class by class id.
+- If class is not registered, fury will write one byte `0b01/0b11` first, then write class name.
+    - The higher bit will be 1 if the class is an
+      array, and written class will be the component class. This can reduce array class name cost if component class is
+      serialized before.
+    - The little bit is different first bit of
+      encoded class id, which is `0`. Fury can use this information to determine whether read class by class id.
     - If meta share mode is enabled, class will be written as a unsigned int.
     - If meta share mode is not enabled, class will be written as two enumerated string:
         - package name.
@@ -69,19 +84,47 @@ If schema evolution mode is enabled globally or enabled for current class, class
 - If meta share mode is enabled, class will be written as a unsigned int.
 
 ## Meta share
+
 > This mode will forbid streaming writing since it needs to look back for update the offset after the whole object graph
 > writing and mete collecting is finished.
-> TODO: We have plan to streamline meta writing but not started yet.
+> We have plan to streamline meta writing but haven't started yet.
 
 ### Schema consistent
 
+Class will be encoded as an enumerated string by full class name.
 
 ### Schema evolution
 
+Class meta format:
+
+```
+| meta header: hash + num classes | current class meta | parent class meta | ... |
+```
+
+#### Meta header
+
+Meta header is a 64 bits number value encoded in little endian order.
+
+- Lowest 4 digits `0b0000~0b1111` are used to record num classes. `0b1111` is preserved to indicate that Fury need to
+  read more bytes for length using Fury unsigned int encoding. If current class doesn't has parent class, or parent
+  class doesn't have fields to serialize, or we're in a context which serialize fields of current class
+  only( `ObjectStreamSerializer#SlotInfo` is an example),
+- Other 60 bits is used to store murmur hash of `flags + all layers class meta`. num classes will be 0.
+
+#### Single layer class meta
+
+```
+| enumerated class name string | unsigned int: num fields | field info: type info + field name | next field info | ... |
+```
+
+Field order are left as implementation details, which is not exposed to specification, the deserialization need to
+resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
+using a more compact encoding.
 
 ## Enumerated String
 
-Enumerated string are mainly used to encode class name and field names. The format consists of header and binary.
+Enumerated string are mainly used to encode meta string such class name and field names. The format consists of header
+and binary.
 
 Header are written using little endian order, Fury can read this flag first to determine how to deserialize the data.
 
@@ -95,6 +138,16 @@ If string hasn't been written before, the data will be written as follows:
 | unsigned int: string binary size + 1bit: not written before | 61bits: murmur hash + 3 bits encoding flags | string binary |
 ```
 
+Murmur hash can be omitted if caller pass a flag. In such cases, the format will be:
+
+```
+| unsigned int: string binary size + 1bit: not written before | 8 bits encoding flags | string binary |
+```
+
+5 bits in `8 bits encoding flags` will be left empty.
+
+Encoding flags:
+
 | Encoding Flag | Pattern                                                   | Encoding Action                                                                                                                     |
 |---------------|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | 0             | every char is in `a-z._$\|`                               | `LOWER_SPECIAL`                                                                                                                     |
@@ -104,7 +157,9 @@ If string hasn't been written before, the data will be written as follows:
 | 4             | any utf-8 char                                            | use `UTF-8` encoding                                                                                                                |
 
 #### Write by ref
+
 If string has been written before, the data will be written as follows:
+
 ```
 | unsigned int: written string id + 1bit: written before |
 ```
@@ -186,8 +241,12 @@ String binary encoding:
 
 Format:
 
-- one byte for encoding: 0 for `latin`, 1 for `utf-16`, 2 for `utf-8`.
-- positive varint for encoded string binary length.
+```
+| header: size + encoding | binary data |
+```
+
+- `size + encoding` will be concat as a long and encoded as a unsigned var long. The little 2 bits is used for encoding:
+  0 for `latin`, 1 for `utf-16`, 2 for `utf-8`.
 - encoded string binary data based on encoding: `latin/utf-16/utf-8`.
 
 Which encoding to choose:
@@ -200,7 +259,7 @@ Which encoding to choose:
 
 ### Collection
 
-> All collection serializer must extends `io.fury.serializer.collection.CollectionSerializer`.
+> All collection serializer must extends `io.fury.serializer.collection.AbstractCollectionSerializer`.
 
 Format:
 
@@ -239,17 +298,65 @@ Based on the elements header, the serialization of elements data may skip `ref f
 
 #### Primitive array
 
+Primitive array are taken as a binary buffer, serialization will just write the length of array size as an unsigned int,
+then copy the whole buffer into the stream.
+
+Such serialization won't compress the array. If users want to compress primitive array, users need to register custom
+serializers for such types.
+
 #### Object array
+
+Object array is serialized using collection format. Object component type will be taken as collection element generic
+type.
 
 ### Map
 
+> All Map serializer must extends `io.fury.serializer.collection.AbstractMapSerializer`.
+
+Format:
+
+```
+length(unsigned varint) | map header | key value items header | key value items data
+```
+
+#### Map header
+- For `HashMap/LinkedHashMap`, this will be empty.
+- For `TreeMap`, this will be `Comparator`
+- For other `Map`, this may be extra object field info.
+
+#### Map Key-Value data header
+- Whether track key ref, use first bit `0b1` of header to flag it.
+- Whether key has null, use second bit `0b10` of header to flag it. If ref tracking is enabled for this
+  key type, this flag is invalid.
+- Whether map key type is not declared type, use 3rd bit `0b100` of header to flag it.
+- Whether map key type different, use 4rd bit `0b1000` of header to flag it.
+
+#### Map Key-Value data
+
+Map are serialized with two types:
+
+- Without look back
+- With look back
+
+#### Without look back
+
+#### With look back
+
 ### Enum
 
-Enum are serialized as an
+Enum are serialized as an unsigned var int. If the order of enum values change, the deserialized enum value may not be
+the value users expect. In such cases, users must register enum serializer by make it write enum value as a enumerated
+string with unique hash disabled.
 
 ### Object
 
+#### Schema Consistent
+
+#### Schema evolution
+
 ### Class
+
+Class will be serialized using class meta format.
 
 ## Implementation guidelines
 
