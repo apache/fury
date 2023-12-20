@@ -17,26 +17,25 @@
 import { Fury } from "../type";
 import { InternalSerializerType, RefFlags } from "../type";
 
-
 export default (fury: Fury) => {
-    const { binaryReader, binaryWriter, referenceResolver } = fury;
-    const { uint8: readUInt8 } = binaryReader;
-    const { int8: writeInt8, uint8: writeUInt8 } = binaryWriter;
-    return {
-        ...referenceResolver.deref(() => {
-            return readUInt8() === 0 ? false : true
-        }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.BOOL, false, (v: boolean) => {
-            writeUInt8(v ? 1 : 0)
-        }),
-        writeWithoutType: (v: boolean) => {
-            writeInt8(RefFlags.NotNullValueFlag);
-            writeUInt8(v ? 1 : 0)
-        },
-        config: () => {
-            return {
-                reserve: 4,
-            }
-        }
-    }
-}
+  const { binaryReader, binaryWriter, referenceResolver } = fury;
+  const { uint8: readUInt8 } = binaryReader;
+  const { int8: writeInt8, uint8: writeUInt8 } = binaryWriter;
+  return {
+    ...referenceResolver.deref(() => {
+      return readUInt8() === 0 ? false : true;
+    }),
+    write: referenceResolver.withNotNullableWriter(InternalSerializerType.BOOL, false, (v: boolean) => {
+      writeUInt8(v ? 1 : 0);
+    }),
+    writeWithoutType: (v: boolean) => {
+      writeInt8(RefFlags.NotNullValueFlag);
+      writeUInt8(v ? 1 : 0);
+    },
+    config: () => {
+      return {
+        reserve: 4,
+      };
+    },
+  };
+};

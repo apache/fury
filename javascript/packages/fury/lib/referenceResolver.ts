@@ -25,12 +25,12 @@ import {
 import type ClassResolver from "./classResolver";
 
 export const makeHead = (flag: RefFlags, type: InternalSerializerType) => {
-  return (((type << 16) >>> 16) << 8) | ((flag << 24) >>> 24)
-}
+  return (((type << 16) >>> 16) << 8) | ((flag << 24) >>> 24);
+};
 
 export const ReferenceResolver = (
   config: {
-    refTracking?: boolean;
+    refTracking?: boolean
   },
   binaryWriter: BinaryWriter,
   binaryReader: BinaryReader,
@@ -67,7 +67,6 @@ export const ReferenceResolver = (
       }
     }
   }
-
 
   function skipType() {
     const typeId = binaryReader.int16();

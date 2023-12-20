@@ -15,12 +15,9 @@
  */
 
 import { Config, LATIN1, UTF8 } from "./type";
-import { PlatformBuffer, alloc, strByteLength } from './platformBuffer';
+import { PlatformBuffer, alloc, strByteLength } from "./platformBuffer";
 
 const MAX_POOL_SIZE = 1024 * 1024 * 3; // 3MB
-
-
-
 
 export const BinaryWriter = (config: Config) => {
   let cursor = 0;
@@ -40,7 +37,7 @@ export const BinaryWriter = (config: Config) => {
   function reserve(len: number) {
     reserved += len;
     if (byteLength - cursor <= reserved) {
-      const newAb = alloc(byteLength*2 + len);
+      const newAb = alloc(byteLength * 2 + len);
       arrayBuffer.copy(newAb, 0);
       arrayBuffer = newAb;
       byteLength = arrayBuffer.byteLength;
@@ -104,7 +101,6 @@ export const BinaryWriter = (config: Config) => {
   function float(v: number) {
     dataView.setFloat32(cursor, v, true);
     cursor += 4;
-
   }
 
   function double(v: number) {
@@ -145,8 +141,8 @@ export const BinaryWriter = (config: Config) => {
         dataView.setUint16(offset, (u1 << 8) | u2);
         offset += 2;
       } else if (
-        (c1 & 0xfc00) === 0xd800 &&
-        ((c2 = string.charCodeAt(i + 1)) & 0xfc00) === 0xdc00
+        (c1 & 0xfc00) === 0xd800
+        && ((c2 = string.charCodeAt(i + 1)) & 0xfc00) === 0xdc00
       ) {
         c1 = 0x10000 + ((c1 & 0x03ff) << 10) + (c2 & 0x03ff);
         ++i;
@@ -218,8 +214,8 @@ export const BinaryWriter = (config: Config) => {
   function varInt32(val: number) {
     val = val >>> 0;
     while (val > 127) {
-        arrayBuffer[cursor++] = val & 127 | 128;
-        val >>>= 7;
+      arrayBuffer[cursor++] = val & 127 | 128;
+      val >>>= 7;
     }
     arrayBuffer[cursor++] = val;
   }
