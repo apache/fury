@@ -17,38 +17,37 @@
 import { InternalSerializerType, Serializer } from "../type";
 import { Fury } from "../type";
 
-
 export const tupleSerializer = (fury: Fury, serializers: Serializer[]) => {
-    const { binaryReader, binaryWriter, referenceResolver } = fury;
+  const { binaryReader, binaryWriter, referenceResolver } = fury;
 
-    const { pushReadObject } = referenceResolver;
-    const { varInt32: writeVarInt32, reserve: reserves } = binaryWriter;
-    const { varInt32: readVarInt32 } = binaryReader;
+  const { pushReadObject } = referenceResolver;
+  const { varInt32: writeVarInt32, reserve: reserves } = binaryWriter;
+  const { varInt32: readVarInt32 } = binaryReader;
 
-    return {
-        ...referenceResolver.deref(() => {
-            const len = readVarInt32();
-            const result = new Array(len);
-            pushReadObject(result);
-            for (let i = 0; i < len; i++) {
-                const item = serializers[i];
-                result[i] = item.read();
-            }
-            return result;
-        }),
-        write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.TUPLE, (v: any[]) => {
-            writeVarInt32(serializers.length);
-            
-            for (let i = 0; i < serializers.length; i++) {
-                const item = serializers[i];
-                reserves(item.config().reserve);
-                item.write(v[i]);
-            }
-        }),
-        config: () => {
-            return {
-                reserve: 7,
-            }
-        }
-    }
-}
+  return {
+    ...referenceResolver.deref(() => {
+      const len = readVarInt32();
+      const result = new Array(len);
+      pushReadObject(result);
+      for (let i = 0; i < len; i++) {
+        const item = serializers[i];
+        result[i] = item.read();
+      }
+      return result;
+    }),
+    write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.TUPLE, (v: any[]) => {
+      writeVarInt32(serializers.length);
+
+      for (let i = 0; i < serializers.length; i++) {
+        const item = serializers[i];
+        reserves(item.config().reserve);
+        item.write(v[i]);
+      }
+    }),
+    config: () => {
+      return {
+        reserve: 7,
+      };
+    },
+  };
+};

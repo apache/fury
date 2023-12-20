@@ -89,7 +89,7 @@ fi
 if [ ! -f "$ROOT/javascript/node_modules/.bin/eslint" ]; then
   echo "eslint is not installed, start to install it."
   pushd "$ROOT/javascript"
-  npm install --registry=https://registry.npmmirror.com 
+  npm install --registry=https://registry.npmmirror.com
   popd
 fi
 

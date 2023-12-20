@@ -14,50 +14,50 @@
  * limitations under the License.
  */
 
-import  {Fury} from "../type";
+import { Fury } from "../type";
 import { InternalSerializerType } from "../type";
 
-const epochDate =  new Date('1970/01/01 00:00');
+const epochDate = new Date("1970/01/01 00:00");
 const epoch = epochDate.getTime();
 
 export const timestampSerializer = (fury: Fury) => {
-    const { binaryReader, binaryWriter, referenceResolver} = fury;
-    const { int64: writeInt64 } = binaryWriter;
-    const { int64: readInt64} = binaryReader;
+  const { binaryReader, binaryWriter, referenceResolver } = fury;
+  const { int64: writeInt64 } = binaryWriter;
+  const { int64: readInt64 } = binaryReader;
 
-    return {
-        ...referenceResolver.deref(() => {
-            return new Date(Number(readInt64()));
-        }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.TIMESTAMP, epochDate, (v: Date) => {
-            writeInt64(BigInt(v.getTime()));
-        }),
-        config: () => {
-            return {
-                reserve: 11
-            }
-        }
-    }
-}
+  return {
+    ...referenceResolver.deref(() => {
+      return new Date(Number(readInt64()));
+    }),
+    write: referenceResolver.withNotNullableWriter(InternalSerializerType.TIMESTAMP, epochDate, (v: Date) => {
+      writeInt64(BigInt(v.getTime()));
+    }),
+    config: () => {
+      return {
+        reserve: 11,
+      };
+    },
+  };
+};
 
 export const dateSerializer = (fury: Fury) => {
-    const { binaryReader, binaryWriter, referenceResolver} = fury;
-    const { int32: writeInt32 } = binaryWriter;
-    const { int32: readInt32} = binaryReader;
-    return {
-        ...referenceResolver.deref(() => {
-            const day = readInt32();
-            return new Date(epoch + (day * (24*60*60) * 1000));
-        }),
-        write: referenceResolver.withNotNullableWriter(InternalSerializerType.DATE, epochDate, (v: Date) => {
-            const diff = v.getTime() - epoch;
-            const day = Math.floor(diff / 1000 / (24*60*60))
-            writeInt32(day);
-        }),
-        config: () => {
-            return {
-                reserve: 7,
-            }
-        }
-    }
-}
+  const { binaryReader, binaryWriter, referenceResolver } = fury;
+  const { int32: writeInt32 } = binaryWriter;
+  const { int32: readInt32 } = binaryReader;
+  return {
+    ...referenceResolver.deref(() => {
+      const day = readInt32();
+      return new Date(epoch + (day * (24 * 60 * 60) * 1000));
+    }),
+    write: referenceResolver.withNotNullableWriter(InternalSerializerType.DATE, epochDate, (v: Date) => {
+      const diff = v.getTime() - epoch;
+      const day = Math.floor(diff / 1000 / (24 * 60 * 60));
+      writeInt32(day);
+    }),
+    config: () => {
+      return {
+        reserve: 7,
+      };
+    },
+  };
+};

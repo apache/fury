@@ -16,7 +16,7 @@
 
 import { Config, LATIN1 } from "./type";
 import { isNodeEnv } from "./util";
-import { PlatformBuffer, alloc, fromUint8Array } from './platformBuffer';
+import { PlatformBuffer, alloc, fromUint8Array } from "./platformBuffer";
 
 export const BinaryReader = (config: Config) => {
   const sliceStringEnable = isNodeEnv && config.useSliceString;
