@@ -26,7 +26,7 @@ import { InternalSerializerType, Serializer, Fury, BinaryReader, BinaryWriter } 
 import anySerializer from "./internalSerializer/any";
 import { PlatformBuffer, fromUint8Array } from "./platformBuffer";
 import { x64hash128 } from "./murmurHash3";
-import { BinaryWriter as BufferWriter } from "./writer";
+
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1;
 
@@ -36,7 +36,8 @@ export default class SerializerResolver {
   };
 
   private readStringPool: string[] = [];
-  private writeStringIndex: string[] = [];
+  private writeStringCount = 0;
+  private writeStringIndex: Record<string, number> = {};
 
   private initInternalSerializer(fury: Fury) {
     const _anySerializer = anySerializer(fury);
@@ -74,7 +75,7 @@ export default class SerializerResolver {
 
   reset() {
     this.readStringPool = [];
-    this.writeStringIndex = [];
+    this.writeStringIndex = {};
   }
 
   getSerializerById(id: InternalSerializerType) {
@@ -94,30 +95,30 @@ export default class SerializerResolver {
     return this.customSerializer[tag];
   }
 
-  tagToBuffer(tag: string) {
+  computedTag(tag: string) {
     const tagBuffer = fromUint8Array(new TextEncoder().encode(tag));
     let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
     if (tagHash === BigInt(0)) {
       tagHash = BigInt(1);
     }
-    const bufferLen = tagBuffer.byteLength;
-    const writer = BufferWriter({});
-    writer.uint8(USESTRINGVALUE);
-    writer.uint64(tagHash);
-    writer.int16(bufferLen);
-    writer.bufferWithoutMemCheck(tagBuffer, bufferLen);
-    return writer.dump();
+    return {
+      tagHash,
+      tagBuffer,
+    };
   }
 
-  writeTag(binaryWriter: BinaryWriter, tag: string, bf: PlatformBuffer, byteLength: number) {
-    const index = this.writeStringIndex.indexOf(tag);
-    if (index > -1) {
+  writeTag(binaryWriter: BinaryWriter, tag: string, bf: PlatformBuffer, tagHash: number, bufferLen: number) {
+    const index = this.writeStringIndex[tag];
+    if (typeof index !== "undefined") {
       binaryWriter.uint8(USESTRINGID);
       binaryWriter.int16(index);
       return;
     }
-    this.writeStringIndex.push(tag);
-    binaryWriter.bufferWithoutMemCheck(bf, byteLength);
+    this.writeStringIndex[tag] = this.writeStringCount++;
+    binaryWriter.uint8(USESTRINGVALUE);
+    binaryWriter.uint64(tagHash);
+    binaryWriter.int16(bufferLen);
+    binaryWriter.bufferWithoutMemCheck(bf, bufferLen);
   }
 
   detectTag(binaryReader: BinaryReader) {

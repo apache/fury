@@ -170,7 +170,7 @@ return function (fury, scope) {
     const { writeNullOrRef, pushReadObject } = referenceResolver;
     const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
     ${declarations.join("")}
-    const tagBuffer = classResolver.tagToBuffer("${validTag}");
+    const { tagBuffer, tagHash } = classResolver.computedTag("${validTag}");
     const bufferLen = tagBuffer.byteLength;
 
     const reserves = ${names.map(x => `${x}.config().reserve`).join(" + ")};
@@ -185,7 +185,7 @@ return function (fury, scope) {
             }
         }),
         write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_TYPE_TAG, (v) => {
-            classResolver.writeTag(binaryWriter, "${validTag}", tagBuffer, bufferLen);
+            classResolver.writeTag(binaryWriter, "${validTag}", tagBuffer, tagHash, bufferLen);
             binaryWriter.int32(${expectHash});
             binaryWriter.reserve(reserves);
             ${write}

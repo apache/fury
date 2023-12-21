@@ -15,7 +15,7 @@ return function (fury, scope) {
     const tag_5 = classResolver.getSerializerByTag("example.bar.1")
     const tag_6 = classResolver.getSerializerByTag("example.bar.2")
     const tuple_tag_0_tag_5_tag_6 = tupleSerializer(fury, [tag_0, tag_5, tag_6])
-    const tagBuffer = classResolver.tagToBuffer("tuple-object-wrapper");
+    const { tagBuffer, tagHash } = classResolver.computedTag("tuple-object-wrapper");
     const bufferLen = tagBuffer.byteLength;
 
     const reserves = tag_0.config().reserve + tag_1.config().reserve + tuple_tag_0_tag_1.config().reserve + tag_5.config().reserve + tag_6.config().reserve + tuple_tag_0_tag_5_tag_6.config().reserve;
@@ -44,7 +44,7 @@ result.tuple2_ = tuple_tag_0_tag_5_tag_6.read()
             }
         }),
         write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_TYPE_TAG, (v) => {
-            classResolver.writeTag(binaryWriter, "tuple-object-wrapper", tagBuffer, bufferLen);
+            classResolver.writeTag(binaryWriter, "tuple-object-wrapper", tagBuffer, tagHash, bufferLen);
             binaryWriter.int32(16469457);
             binaryWriter.reserve(reserves);
             tuple_tag_0_tag_1.write(v.tuple1);
@@ -78,7 +78,7 @@ return function (fury, scope) {
     const type_14 = classResolver.getSerializerById(14)
     const tuple_type_14 = tupleSerializer(fury, [type_14])
     const tuple_type_13_type_1_type_6_tuple_type_14 = tupleSerializer(fury, [type_13, type_1, type_6, tuple_type_14])
-    const tagBuffer = classResolver.tagToBuffer("tuple-object-type3-tag");
+    const { tagBuffer, tagHash } = classResolver.computedTag("tuple-object-type3-tag");
     const bufferLen = tagBuffer.byteLength;
 
     const reserves = type_13.config().reserve + type_1.config().reserve + type_6.config().reserve + type_14.config().reserve + tuple_type_14.config().reserve + tuple_type_13_type_1_type_6_tuple_type_14.config().reserve;
@@ -101,7 +101,7 @@ return function (fury, scope) {
             }
         }),
         write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_TYPE_TAG, (v) => {
-            classResolver.writeTag(binaryWriter, "tuple-object-type3-tag", tagBuffer, bufferLen);
+            classResolver.writeTag(binaryWriter, "tuple-object-type3-tag", tagBuffer, tagHash, bufferLen);
             binaryWriter.int32(552);
             binaryWriter.reserve(reserves);
             tuple_type_13_type_1_type_6_tuple_type_14.write(v.tuple)
