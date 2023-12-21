@@ -279,11 +279,11 @@ In most cases, all collection elements are same type and not null, elements head
 information to avoid the cost of writing it for every elements. Specifically, there are four kinds of information
 which will be encoded by elements header, each use one bit:
 
-- Whether track elements ref, use first bit `0b1` of header to flag it.
-- Whether collection has null, use second bit `0b10` of header to flag it. If ref tracking is enabled for this
+- If track elements ref, use first bit `0b1` of header to flag it.
+- If collection has null, use second bit `0b10` of header to flag it. If ref tracking is enabled for this
   element type, this flag is invalid.
-- Whether collection elements type is not declare type, use 3rd bit `0b100` of header to flag it.
-- Whether collection elements type different, use 4rd bit `0b1000` of header to flag it.
+- If collection elements type is not declare type, use 3rd bit `0b100` of header to flag it.
+- If collection elements type different, use 4rd bit `0b1000` of header to flag it.
 
 By default, all bits are unset, which means all elements won't track ref, all elements are same type,, not null and the
 actual element is the declare type in custom class field.
@@ -316,31 +316,50 @@ type.
 Format:
 
 ```
-length(unsigned varint) | map header | key value items header | key value items data
+| length(unsigned varint) | map header | key value pairs data |
 ```
 
 #### Map header
+
 - For `HashMap/LinkedHashMap`, this will be empty.
 - For `TreeMap`, this will be `Comparator`
 - For other `Map`, this may be extra object field info.
 
-#### Map Key-Value data header
-- Whether track key ref, use first bit `0b1` of header to flag it.
-- Whether key has null, use second bit `0b10` of header to flag it. If ref tracking is enabled for this
-  key type, this flag is invalid.
-- Whether map key type is not declared type, use 3rd bit `0b100` of header to flag it.
-- Whether map key type different, use 4rd bit `0b1000` of header to flag it.
-
 #### Map Key-Value data
 
-Map are serialized with two types:
+Map iteration is too expensive, Fury can't compute the header like for collection before since it introduce 
+[considerable overhead](https://github.com/alipay/fury/issues/925).
+Users can use `MapFieldInfo` annotation to provide header in advance. Otherwise Fury will use first key-value pair to predict header optimistically, and update the chunk header if predict failed at some pair.
 
-- Without look back
-- With look back
+Fury will serialize map chunk by chunk, every chunk 
+has 127 pairs at most.
+```
++----------------+----------------+~~~~~~~~~~~~~~~~~+
+| chunk size: N  |    KV header   |   N*2 objects   |
++----------------+----------------+~~~~~~~~~~~~~~~~~+
+```
 
-#### Without look back
+KV header:
+- If track key ref, use first bit `0b1` of header to flag it.
+- If key has null, use second bit `0b10` of header to flag it. If ref tracking is enabled for this
+  key type, this flag is invalid.
+- If map key type is not declared type, use 3rd bit `0b100` of header to flag it.
+- If map key type different, use 4rd bit `0b1000` of header to flag it.
+- If track value ref, use 5rd bit `0b10000` of header to flag it.
+- If value has null, use 6rd bit `0b100000` of header to flag it. If ref tracking is enabled for this
+  value type, this flag is invalid.
+- If map value type is not declared type, use 7rd bit `0b1000000` of header to flag it.
+- If map value type different, use 8rd bit `0b10000000` of header to flag it.
 
-#### With look back
+If streaming write is enabled, which means Fury can't update written `chunk size`. In such cases, map key-value data 
+format will be:
+```
++----------------+~~~~~~~~~~~~~~~~~+
+|    KV header   |   N*2 objects   |
++----------------+~~~~~~~~~~~~~~~~~+
+```
+`KV header` will be header marked by `MapFieldInfo` in java. For languages such as golang, this can be computed in 
+advance for non-interface type mostly. 
 
 ### Enum
 
