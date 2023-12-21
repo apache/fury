@@ -133,7 +133,6 @@ export const alloc = (isNodeEnv ? Buffer.allocUnsafe : BrowserBuffer.alloc) as u
 
 export const strByteLength = isNodeEnv ? Buffer.byteLength : BrowserBuffer.byteLength;
 
-// TODO: need compatible with nodejs
 let utf8Encoder: TextEncoder | null;
 
 export const fromString
