@@ -406,21 +406,21 @@ Boxed field value:
 | null flag | field value |
 +-----------+~~~~~~~~~~~~~+
 field value of final type with ref tracking:
-+~~~~~~~~~~~+~~~~~~~~~~~~+
++===========+~~~~~~~~~~~~+
 | ref meta  | value data |
-+~~~~~~~~~~~+~~~~~~~~~~~~+
++===========+~~~~~~~~~~~~+
 field value of final type without ref tracking:
 +-----------+~~~~~~~~~~~~~+
 | null flag | field value |
 +-----------+~~~~~~~~~~~~~+
 field value of non-final type with ref tracking:
-+~~~~~~~~~~~+~~~~~~~~~~~~+~~~~~~~~~~~~+
++===========+~~~~~~~~~~~~+~~~~~~~~~~~~+
 | ref meta  | class meta | value data |
-+~~~~~~~~~~~+~~~~~~~~~~~~+~~~~~~~~~~~~+
++===========+~~~~~~~~~~~~+~~~~~~~~~~~~+
 field value of non-final type without ref tracking:
-+~~~~~~~~~~~+~~~~~~~~~~~~+~~~~~~~~~~~~+
++-----------+~~~~~~~~~~~~+~~~~~~~~~~~~+
 | null flag | class meta | value data |
-+~~~~~~~~~~~+~~~~~~~~~~~~+~~~~~~~~~~~~+
++-----------+~~~~~~~~~~~~+~~~~~~~~~~~~+
 ```
 
 #### Schema evolution
