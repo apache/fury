@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// todo: need compatibility with nodejs
 export const utf8Encoder = new TextEncoder();
 
 const isReserved = (key: string) => {

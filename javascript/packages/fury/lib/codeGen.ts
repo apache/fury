@@ -15,7 +15,7 @@
  */
 
 import { InternalSerializerType, MaxInt32, RefFlags, Fury } from "./type";
-import { replaceBackslashAndQuote, safePropAccessor, safePropName } from "./util";
+import { replaceBackslashAndQuote, safePropAccessor, safePropName, utf8Encoder } from "./util";
 import mapSerializer from "./internalSerializer/map";
 import setSerializer from "./internalSerializer/set";
 import { arraySerializer } from "./internalSerializer/array";
@@ -31,7 +31,7 @@ function computeFieldHash(hash: number, id: number): number {
 }
 
 const computeStringHash = (str: string) => {
-  const bytes = new TextEncoder().encode(str);
+  const bytes = utf8Encoder.encode(str);
   let hash = 17;
   bytes.forEach((b) => {
     hash = hash * 31 + b;

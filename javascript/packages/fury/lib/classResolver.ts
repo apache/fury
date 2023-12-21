@@ -26,6 +26,7 @@ import { InternalSerializerType, Serializer, Fury, BinaryReader, BinaryWriter } 
 import anySerializer from "./internalSerializer/any";
 import { PlatformBuffer, fromUint8Array } from "./platformBuffer";
 import { x64hash128 } from "./murmurHash3";
+import { utf8Encoder } from "./util";
 
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1;
@@ -96,7 +97,7 @@ export default class SerializerResolver {
   }
 
   computedTag(tag: string) {
-    const tagBuffer = fromUint8Array(new TextEncoder().encode(tag));
+    const tagBuffer = fromUint8Array(utf8Encoder.encode(tag));
     let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
     if (tagHash === BigInt(0)) {
       tagHash = BigInt(1);
