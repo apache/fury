@@ -24,9 +24,8 @@ import boolSerializer from "./internalSerializer/bool";
 import { uInt16Serializer, int16Serializer, int32Serializer, uInt32Serializer, uInt64Serializer, floatSerializer, doubleSerializer, uInt8Serializer, int64Serializer, int8Serializer } from "./internalSerializer/number";
 import { InternalSerializerType, Serializer, Fury, BinaryReader, BinaryWriter } from "./type";
 import anySerializer from "./internalSerializer/any";
-import { PlatformBuffer, fromUint8Array } from "./platformBuffer";
+import { PlatformBuffer, fromString } from "./platformBuffer";
 import { x64hash128 } from "./murmurHash3";
-import { utf8Encoder } from "./util";
 
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1;
@@ -97,7 +96,7 @@ export default class SerializerResolver {
   }
 
   computedTag(tag: string) {
-    const tagBuffer = fromUint8Array(utf8Encoder.encode(tag));
+    const tagBuffer = fromString(tag);
     let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
     if (tagHash === BigInt(0)) {
       tagHash = BigInt(1);
