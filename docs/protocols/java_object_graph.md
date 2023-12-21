@@ -117,6 +117,8 @@ Meta header is a 64 bits number value encoded in little endian order.
 | enumerated class name string | unsigned int: num fields | field info: type info + field name | next field info | ... |
 ```
 
+Type info of custom type field will be written as an one-byte flag instead of inline its meta, because the field value may be null, and Fury can reduce this field type meta writing if object of this type is serialized to in current object graph.
+
 Field order are left as implementation details, which is not exposed to specification, the deserialization need to
 resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
 using a more compact encoding.
@@ -259,7 +261,7 @@ Which encoding to choose:
 
 ### Collection
 
-> All collection serializer must extends `io.fury.serializer.collection.AbstractCollectionSerializer`.
+> All collection serializer must extends `AbstractCollectionSerializer`.
 
 Format:
 
@@ -292,7 +294,7 @@ actual element is the declare type in custom class field.
 
 Based on the elements header, the serialization of elements data may skip `ref flag`/`null flag`/`element class info`.
 
-`io.fury.serializer.collection.CollectionSerializer#write/read` can be taken as an example.
+`CollectionSerializer#write/read` can be taken as an example.
 
 ### Array
 
@@ -311,7 +313,7 @@ type.
 
 ### Map
 
-> All Map serializer must extends `io.fury.serializer.collection.AbstractMapSerializer`.
+> All Map serializer must extends `AbstractMapSerializer`.
 
 Format:
 
@@ -327,12 +329,14 @@ Format:
 
 #### Map Key-Value data
 
-Map iteration is too expensive, Fury can't compute the header like for collection before since it introduce 
+Map iteration is too expensive, Fury can't compute the header like for collection before since it introduce
 [considerable overhead](https://github.com/alipay/fury/issues/925).
-Users can use `MapFieldInfo` annotation to provide header in advance. Otherwise Fury will use first key-value pair to predict header optimistically, and update the chunk header if predict failed at some pair.
+Users can use `MapFieldInfo` annotation to provide header in advance. Otherwise Fury will use first key-value pair to
+predict header optimistically, and update the chunk header if predict failed at some pair.
 
-Fury will serialize map chunk by chunk, every chunk 
+Fury will serialize map chunk by chunk, every chunk
 has 127 pairs at most.
+
 ```
 +----------------+----------------+~~~~~~~~~~~~~~~~~+
 | chunk size: N  |    KV header   |   N*2 objects   |
@@ -340,6 +344,7 @@ has 127 pairs at most.
 ```
 
 KV header:
+
 - If track key ref, use first bit `0b1` of header to flag it.
 - If key has null, use second bit `0b10` of header to flag it. If ref tracking is enabled for this
   key type, this flag is invalid.
@@ -351,15 +356,17 @@ KV header:
 - If map value type is not declared type, use 7rd bit `0b1000000` of header to flag it.
 - If map value type different, use 8rd bit `0b10000000` of header to flag it.
 
-If streaming write is enabled, which means Fury can't update written `chunk size`. In such cases, map key-value data 
+If streaming write is enabled, which means Fury can't update written `chunk size`. In such cases, map key-value data
 format will be:
+
 ```
 +----------------+~~~~~~~~~~~~~~~~~+
 |    KV header   |   N*2 objects   |
 +----------------+~~~~~~~~~~~~~~~~~+
 ```
-`KV header` will be header marked by `MapFieldInfo` in java. For languages such as golang, this can be computed in 
-advance for non-interface type mostly. 
+
+`KV header` will be header marked by `MapFieldInfo` in java. For languages such as golang, this can be computed in
+advance for non-interface type mostly.
 
 ### Enum
 
@@ -369,9 +376,57 @@ string with unique hash disabled.
 
 ### Object
 
-#### Schema Consistent
+Object means object of `pojo/struct/bean` type.
+Object will be serialized by writing its fields data in fury order.
+
+Depends on schema compatibility, object will have different format.
+
+#### Field order
+
+Field will be ordered as following, every group of fields will have it's own order:
+
+- primitive fields: larger size type first, smaller later, variable size type last.
+- boxed primitive fields: same sort as primitive fields
+- final fields: same type together, then sort by field name lexicographically.
+- collection fields: same sort as final fields
+- map fields: same sort as final fields
+- other fields: same sort as final fields
+
+#### Schema consistent
+
+Object fields will be serialized one by one using following format:
+
+```
+Primitive field value:
++~~~~~~~~~~~~+
+| value data |
++~~~~~~~~~~~~+
+Boxed field value:
++-----------+~~~~~~~~~~~~~+
+| null flag | field value |
++-----------+~~~~~~~~~~~~~+
+field value of final type with ref tracking:
++~~~~~~~~~~~+~~~~~~~~~~~~+
+| ref meta  | value data |
++~~~~~~~~~~~+~~~~~~~~~~~~+
+field value of final type without ref tracking:
++-----------+~~~~~~~~~~~~~+
+| null flag | field value |
++-----------+~~~~~~~~~~~~~+
+field value of non-final type with ref tracking:
++~~~~~~~~~~~+~~~~~~~~~~~~+~~~~~~~~~~~~+
+| ref meta  | class meta | value data |
++~~~~~~~~~~~+~~~~~~~~~~~~+~~~~~~~~~~~~+
+field value of non-final type without ref tracking:
++~~~~~~~~~~~+~~~~~~~~~~~~+~~~~~~~~~~~~+
+| null flag | class meta | value data |
++~~~~~~~~~~~+~~~~~~~~~~~~+~~~~~~~~~~~~+
+```
 
 #### Schema evolution
+Schema evolution have similar format as schema consistent mode for object except:
+- For this object type itself, `schema consistent` mode will write class by id/name, but `schema evolution` mode will write class field names, types and other meta too, see [Class meta](#class-meta).
+- Class meta of `final custom type` need to be written too, because peer may not have this class defined. 
 
 ### Class
 
