@@ -55,8 +55,10 @@ When reference tracking is disabled globally or only for some type, or for some 
 field of a class, only `NULL FLAG` and ` NOT_NULL VALUE FLAG` will be used.
 
 ## Class Meta
+Fury support register class by an optional id, the registration can be used to security check, and identify the class.
+If the class is registered, the class will have a users provided or a auto-growing id unsigned int `class_id`.
 
-Depending on whether meta share mode is enabled, Fury will write class meta differently.
+Depending on whether meta share mode or registration is enabled for current class, Fury will write class meta differently.
 
 ### Schema consistent
 
@@ -79,7 +81,7 @@ If schema consistent mode is enabled globally or enabled for current class, clas
 
 If schema evolution mode is enabled globally or enabled for current class, class meta will be written as follows:
 
-- If meta share mode is not enabled, class meta will be written as scheme consistent mode, field meta such as field type
+- If meta share mode is not enabled, class meta will be written as scheme consistent mode. Additionally, field meta such as field type
   and name will be written when the object value is being serialized using a key-value like layout.
 - If meta share mode is enabled, class will be written as a unsigned int.
 
