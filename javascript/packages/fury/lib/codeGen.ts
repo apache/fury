@@ -167,36 +167,35 @@ export const generateInlineCode = (fury: Fury, description: TypeDescription) => 
   return new Function(
         `
 return function (fury, scope) {
-    const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
-    const { writeNullOrRef, pushReadObject } = referenceResolver;
-    const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
-    ${declarations.join("")}
-    const { tagBuffer, tagHash } = classResolver.computedTag("${validTag}");
-    const bufferLen = tagBuffer.byteLength;
+  const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
+  const { writeNullOrRef, pushReadObject } = referenceResolver;
+  const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
+  ${declarations.join("")}
+  const tagWriter = classResolver.createTagWriter("${validTag}");
 
-    const reserves = ${names.map(x => `${x}.config().reserve`).join(" + ")};
-    return {
-        ...referenceResolver.deref(() => {
-            const hash = binaryReader.int32();
-            if (hash !== ${expectHash}) {
-                throw new Error("validate hash failed: ${validTag}. expect ${expectHash}, but got" + hash);
-            }
-            {
-                ${read}
-            }
-        }),
-        write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_TYPE_TAG, (v) => {
-            classResolver.writeTag(binaryWriter, "${validTag}", tagBuffer, tagHash, bufferLen);
-            binaryWriter.int32(${expectHash});
-            binaryWriter.reserve(reserves);
-            ${write}
-        }),
-        config() {
-            return {
-                reserve: bufferLen + 8,
-            }
-        }
+  const reserves = ${names.map(x => `${x}.config().reserve`).join(" + ")};
+  return {
+    ...referenceResolver.deref(() => {
+      const hash = binaryReader.int32();
+      if (hash !== ${expectHash}) {
+          throw new Error("validate hash failed: ${validTag}. expect ${expectHash}, but got" + hash);
+      }
+      {
+          ${read}
+      }
+    }),
+    write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_TYPE_TAG, (v) => {
+      tagWriter.write(binaryWriter);
+      binaryWriter.int32(${expectHash});
+      binaryWriter.reserve(reserves);
+      ${write}
+    }),
+    config() {
+      return {
+        reserve: tagWriter.bufferLen + 8,
+      }
     }
+  }
 }
 `
   );

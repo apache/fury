@@ -137,7 +137,7 @@ let utf8Encoder: TextEncoder | null;
 
 export const fromString
 = isNodeEnv
-  ? (str: string) => Buffer.from(str)
+  ? (str: string) => Buffer.from(str) as unknown as PlatformBuffer
   : (str: string) => {
       if (!utf8Encoder) {
         utf8Encoder = new TextEncoder();
