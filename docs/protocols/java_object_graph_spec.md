@@ -55,10 +55,12 @@ When reference tracking is disabled globally or only for some type, or for some 
 field of a class, only `NULL FLAG` and ` NOT_NULL VALUE FLAG` will be used.
 
 ## Class Meta
+
 Fury support register class by an optional id, the registration can be used to security check, and identify the class.
 If the class is registered, the class will have a users provided or a auto-growing id unsigned int `class_id`.
 
-Depending on whether meta share mode or registration is enabled for current class, Fury will write class meta differently.
+Depending on whether meta share mode or registration is enabled for current class, Fury will write class meta
+differently.
 
 ### Schema consistent
 
@@ -81,9 +83,11 @@ If schema consistent mode is enabled globally or enabled for current class, clas
 
 If schema evolution mode is enabled globally or enabled for current class, class meta will be written as follows:
 
-- If meta share mode is not enabled, class meta will be written as scheme consistent mode. Additionally, field meta such as field type
+- If meta share mode is not enabled, class meta will be written as scheme consistent mode. Additionally, field meta such
+  as field type
   and name will be written when the object value is being serialized using a key-value like layout.
-- If meta share mode is enabled, class will be written as a unsigned int.
+- If meta share mode is enabled, class meta will be written as a meta-share encoded binary if class hasn't been written
+  before, otherwise unsigned it will be written as an unsigned varint which references to previous written class meta.
 
 ## Meta share
 
@@ -107,11 +111,11 @@ Class meta format:
 
 Meta header is a 64 bits number value encoded in little endian order.
 
-- Lowest 4 digits `0b0000~0b1111` are used to record num classes. `0b1111` is preserved to indicate that Fury need to
+- Lowest 4 digits `0b0000~0b1110` are used to record num classes. `0b1111` is preserved to indicate that Fury need to
   read more bytes for length using Fury unsigned int encoding. If current class doesn't has parent class, or parent
   class doesn't have fields to serialize, or we're in a context which serialize fields of current class
-  only( `ObjectStreamSerializer#SlotInfo` is an example),
-- Other 60 bits is used to store murmur hash of `flags + all layers class meta`. num classes will be 0.
+  only( `ObjectStreamSerializer#SlotInfo` is an example), num classes will be 1.
+- Other 60 bits is used to store murmur hash of `flags + all layers class meta`.
 
 #### Single layer class meta
 
@@ -119,11 +123,17 @@ Meta header is a 64 bits number value encoded in little endian order.
 | enumerated class name string | unsigned int: num fields | field info: type info + field name | next field info | ... |
 ```
 
-Type info of custom type field will be written as an one-byte flag instead of inline its meta, because the field value may be null, and Fury can reduce this field type meta writing if object of this type is serialized to in current object graph.
+Type info of custom type field will be written as an one-byte flag instead of inline its meta, because the field value
+may be null, and Fury can reduce this field type meta writing if object of this type is serialized to in current object
+graph.
 
 Field order are left as implementation details, which is not exposed to specification, the deserialization need to
 resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
 using a more compact encoding.
+
+Class name will be written as an unsigned id if the class is registered.
+
+Field name will be written as an unsigned id if the field is marked with an ID by an annotation.
 
 ## Enumerated String
 
@@ -426,9 +436,12 @@ field value of non-final type without ref tracking:
 ```
 
 #### Schema evolution
+
 Schema evolution have similar format as schema consistent mode for object except:
-- For this object type itself, `schema consistent` mode will write class by id/name, but `schema evolution` mode will write class field names, types and other meta too, see [Class meta](#class-meta).
-- Class meta of `final custom type` need to be written too, because peer may not have this class defined. 
+
+- For this object type itself, `schema consistent` mode will write class by id/name, but `schema evolution` mode will
+  write class field names, types and other meta too, see [Class meta](#class-meta).
+- Class meta of `final custom type` need to be written too, because peer may not have this class defined.
 
 ### Class
 
