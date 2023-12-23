@@ -22,8 +22,6 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.util.Platform;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.arrow.vector.types.pojo.Field;
 
 /**
@@ -135,12 +133,10 @@ public class BinaryMap implements MapData {
 
   @Override
   public String toString() {
-    final Map<String, Object> elements = new HashMap<>();
-    elements.put("keys", keys);
-    elements.put("values", values);
-    elements.put("sizeInBytes", sizeInBytes);
-    final StringBuilder builder = new StringBuilder();
-    builder.append(this.getClass().getSimpleName()).append(elements.toString());
-    return builder.toString();
+    return "BinaryMap{"
+        + "keys=" + keys
+        + ", values=" + values
+        + ", sizeInBytes=" + sizeInBytes
+        + '}';
   }
 }
