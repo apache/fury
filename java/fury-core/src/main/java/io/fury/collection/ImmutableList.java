@@ -19,32 +19,27 @@ package io.fury.collection;
 import java.util.Arrays;
 import java.util.List;
 
-
 public class ImmutableList {
 
+  /** Private constructor. This is a static utility class. */
+  private ImmutableList() {}
+
   /**
-   * Private constructor.
-   * This is a static utility class.
+   * Returns an immutable list containing the given elements, in order.
+   *
+   * @throws NullPointerException if any element is null
    */
-  private ImmutableList() { }
+  @SafeVarargs
+  public static <E> List<E> of(E... elements) {
+    checkElementsNotNull(elements, elements.length);
+    return java.util.Collections.unmodifiableList(Arrays.asList(elements));
+  }
 
-    /**
-     * Returns an immutable list containing the given elements, in order.
-     *
-     * @throws NullPointerException if any element is null
-     */
-    @SafeVarargs
-    public static <E> List<E> of(E... elements) {
-      checkElementsNotNull(elements, elements.length);
-      return java.util.Collections.unmodifiableList(Arrays.asList(elements));
-    }
-
-    private static <E> void checkElementsNotNull(E[] array, int length) {
+  private static <E> void checkElementsNotNull(E[] array, int length) {
     for (int i = 0; i < length; i++) {
       if (array[i] == null) {
         throw new NullPointerException("at index " + i);
       }
     }
   }
-
 }

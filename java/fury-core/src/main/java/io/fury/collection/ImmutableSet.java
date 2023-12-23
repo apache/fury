@@ -22,46 +22,41 @@ import java.util.TreeSet;
 
 public class ImmutableSet {
 
+  /** Private constructor. This is a static utility class. */
+  private ImmutableSet() {}
+
   /**
-   * Private constructor.
-   * This is a static utility class.
+   * Returns an immutable set containing the given elements, in order.
+   *
+   * @throws NullPointerException if any element is null
    */
-  private ImmutableSet() { }
+  @SafeVarargs
+  public static <E> Set<E> of(E... elements) {
+    return construct(new HashSet<>(elements.length), elements);
+  }
 
-    /**
-     * Returns an immutable set containing the given elements, in order.
-     *
-     * @throws NullPointerException if any element is null
-     */
-    @SafeVarargs
-    public static <E> Set<E> of(E... elements) {
-      return construct(new HashSet<>(elements.length), elements);
+  /**
+   * Returns an immutable set containing the given elements, in order.
+   *
+   * @throws NullPointerException if any element is null
+   */
+  @SafeVarargs
+  public static <E> Set<E> ofSorted(E... elements) {
+    return construct(new TreeSet<>(), elements);
+  }
+
+  @SafeVarargs
+  private static <E> Set<E> construct(Set<E> set, E... elements) {
+    for (int i = 0; i < elements.length; i++) {
+      checkElementNotNull(elements[i], i);
+      set.add(elements[i]);
     }
-
-    /**
-     * Returns an immutable set containing the given elements, in order.
-     *
-     * @throws NullPointerException if any element is null
-     */
-    @SafeVarargs
-    public static <E> Set<E> ofSorted(E... elements) {
-      return construct(new TreeSet<>(), elements);
-    }
-
-    @SafeVarargs
-    private static <E> Set<E> construct(Set<E> set, E... elements) {
-      for (int i = 0; i < elements.length; i++) {
-        checkElementNotNull(elements[i], i);
-        set.add(elements[i]);
-      }
-      return java.util.Collections.unmodifiableSet(set);
-    }
-
+    return java.util.Collections.unmodifiableSet(set);
+  }
 
   private static <E> void checkElementNotNull(E element, int index) {
     if (element == null) {
       throw new NullPointerException("at index " + index);
     }
   }
-
 }

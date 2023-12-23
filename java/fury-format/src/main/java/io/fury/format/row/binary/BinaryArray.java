@@ -29,8 +29,8 @@ import io.fury.format.type.DataTypes;
 import io.fury.memory.BitUtils;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
-import io.fury.util.Preconditions;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import java.math.BigDecimal;
 import org.apache.arrow.vector.types.pojo.Field;
 
