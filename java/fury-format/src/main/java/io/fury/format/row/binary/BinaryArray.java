@@ -24,12 +24,12 @@ import static io.fury.format.type.DataTypes.PRIMITIVE_INT_ARRAY_FIELD;
 import static io.fury.format.type.DataTypes.PRIMITIVE_LONG_ARRAY_FIELD;
 import static io.fury.format.type.DataTypes.PRIMITIVE_SHORT_ARRAY_FIELD;
 
-import com.google.common.base.Preconditions;
 import io.fury.format.row.ArrayData;
 import io.fury.format.type.DataTypes;
 import io.fury.memory.BitUtils;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.util.Preconditions;
 import io.fury.util.Platform;
 import java.math.BigDecimal;
 import org.apache.arrow.vector.types.pojo.Field;

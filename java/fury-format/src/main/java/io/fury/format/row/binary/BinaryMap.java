@@ -16,13 +16,14 @@
 
 package io.fury.format.row.binary;
 
-import com.google.common.base.MoreObjects;
 import io.fury.format.row.MapData;
 import io.fury.format.type.DataTypes;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.util.Platform;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.arrow.vector.types.pojo.Field;
 
 /**
@@ -134,10 +135,12 @@ public class BinaryMap implements MapData {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("keys", keys)
-        .add("values", values)
-        .add("sizeInBytes", sizeInBytes)
-        .toString();
+    final Map<String, Object> elements = new HashMap<>();
+    elements.put("keys", keys);
+    elements.put("values", values);
+    elements.put("sizeInBytes", sizeInBytes);
+    final StringBuilder builder = new StringBuilder();
+    builder.append(this.getClass().getSimpleName()).append(elements.toString());
+    return builder.toString();
   }
 }

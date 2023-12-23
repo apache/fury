@@ -21,13 +21,11 @@ import static io.fury.collection.Collections.ofHashMap;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
+import io.fury.collection.ImmutableList;
+import io.fury.collection.ImmutableSet;
 import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
@@ -49,6 +47,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
@@ -435,7 +434,7 @@ public class CollectionSerializersTest extends FuryTestBase {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
       TestClassForDefaultCollectionSerializer strings = (TestClassForDefaultCollectionSerializer) o;
-      return Objects.equal(data, strings.data);
+      return Objects.equals(data, strings.data);
     }
 
     @Override
@@ -460,8 +459,8 @@ public class CollectionSerializersTest extends FuryTestBase {
   @SuppressWarnings("unchecked")
   @Test
   public void testJavaSerialization() {
-    ImmutableSortedSet<Integer> set = ImmutableSortedSet.of(1, 2, 3);
-    Class<? extends ImmutableSortedSet> setClass = set.getClass();
+    Set<Integer> set = ImmutableSet.ofSorted(1, 2, 3);
+    Class<? extends Set> setClass = set.getClass();
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
@@ -477,7 +476,7 @@ public class CollectionSerializersTest extends FuryTestBase {
 
     assertSame(
         fury.getClassResolver().getSerializer(setClass).getClass(),
-        GuavaCollectionSerializers.ImmutableSortedSetSerializer.class);
+        UnmodifiableSerializers.UnmodifiableCollectionSerializer.class);
     buffer.writerIndex(0);
     buffer.readerIndex(0);
     assertEquals(set, fury.deserialize(fury.serialize(buffer, set)));

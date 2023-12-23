@@ -16,7 +16,6 @@
 
 package io.fury.benchmark.state;
 
-import com.google.common.base.Preconditions;
 import io.fury.benchmark.IntsSerializationSuite;
 import io.fury.benchmark.LongStringSerializationSuite;
 import io.fury.benchmark.LongsSerializationSuite;
@@ -25,6 +24,7 @@ import io.fury.benchmark.data.Data;
 import io.fury.benchmark.data.MediaContent;
 import io.fury.benchmark.data.Sample;
 import io.fury.benchmark.data.Struct;
+import io.fury.util.Preconditions;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;

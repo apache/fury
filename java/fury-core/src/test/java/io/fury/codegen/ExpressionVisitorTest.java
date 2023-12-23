@@ -18,10 +18,10 @@ package io.fury.codegen;
 
 import static org.testng.Assert.assertEquals;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.codegen.Expression.Literal;
 import io.fury.util.ReflectionUtils;
+import io.fury.util.Preconditions;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

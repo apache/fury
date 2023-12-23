@@ -16,7 +16,6 @@
 
 package io.fury.benchmark.state;
 
-import com.google.common.base.Preconditions;
 import io.fury.benchmark.IntsSerializationSuite;
 import io.fury.benchmark.LongStringSerializationSuite;
 import io.fury.benchmark.LongsSerializationSuite;
@@ -26,6 +25,7 @@ import io.fury.benchmark.data.Image;
 import io.fury.benchmark.data.Media;
 import io.fury.benchmark.data.MediaContent;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import org.nustaq.serialization.FSTConfiguration;

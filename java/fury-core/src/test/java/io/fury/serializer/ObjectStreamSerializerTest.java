@@ -19,13 +19,13 @@ package io.fury.serializer;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
+import io.fury.util.Preconditions;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
