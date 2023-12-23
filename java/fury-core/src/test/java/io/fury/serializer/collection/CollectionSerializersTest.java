@@ -21,11 +21,10 @@ import static io.fury.collection.Collections.ofHashMap;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.collection.ImmutableList;
-import io.fury.collection.ImmutableSet;
 import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
@@ -72,7 +71,7 @@ public class CollectionSerializersTest extends FuryTestBase {
             .withRefTracking(referenceTrackingConfig)
             .requireClassRegistration(false)
             .build();
-    List<String> data = new ArrayList<>(ImmutableList.of("a", "b", "c"));
+    List<String> data = new ArrayList<>(Collections.unmodifiableList(Arrays.asList("a", "b", "c")));
     serDeCheckSerializer(fury, data, "ArrayList");
     serDeCheckSerializer(fury, Arrays.asList("a", "b", "c"), "ArraysAsList");
     serDeCheckSerializer(fury, new HashSet<>(data), "HashSet");
@@ -87,7 +86,7 @@ public class CollectionSerializersTest extends FuryTestBase {
             .withRefTracking(referenceTrackingConfig)
             .requireClassRegistration(false)
             .build();
-    List<String> data = new ArrayList<>(ImmutableList.of("a", "b", "c"));
+    List<String> data = new ArrayList<>(Collections.unmodifiableList(Arrays.asList("a", "b", "c")));
     byte[] bytes1 = fury.serialize(data);
     fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<List<String>>() {}));
     byte[] bytes2 = fury.serialize(data);
@@ -120,7 +119,8 @@ public class CollectionSerializersTest extends FuryTestBase {
     set.add("str11");
     set.add("str2");
     assertEquals(set, serDe(fury, set));
-    TreeSet<String> data = new TreeSet<>(ImmutableSet.of("a", "b", "c"));
+    TreeSet<String> data =
+        new TreeSet<>(Collections.unmodifiableCollection(Arrays.asList("a", "b", "c")));
     serDeCheckSerializer(fury, data, "SortedSet");
     byte[] bytes1 = fury.serialize(data);
     fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<List<String>>() {}));
@@ -246,9 +246,9 @@ public class CollectionSerializersTest extends FuryTestBase {
   @Test
   public void testCollectionNoJIT() {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(false).build();
-    serDeCheck(fury, new ArrayList<>(ImmutableList.of("a", "b", "c")));
-    serDeCheck(fury, new ArrayList<>(ImmutableList.of(1, 2, 3)));
-    serDeCheck(fury, new ArrayList<>(ImmutableList.of("a", 1, "b", 2)));
+    serDeCheck(fury, new ArrayList<>(Collections.unmodifiableList(Arrays.asList("a", "b", "c"))));
+    serDeCheck(fury, new ArrayList<>(Collections.unmodifiableList(Arrays.asList(1, 2, 3))));
+    serDeCheck(fury, new ArrayList<>(Collections.unmodifiableList(Arrays.asList("a", 1, "b", 2))));
   }
 
   @Data
@@ -330,7 +330,8 @@ public class CollectionSerializersTest extends FuryTestBase {
 
   public static CollectionFieldsClass createCollectionFieldsObject() {
     CollectionFieldsClass obj = new CollectionFieldsClass();
-    ArrayList<String> arrayList = new ArrayList<>(ImmutableList.of("a", "b"));
+    ArrayList<String> arrayList =
+        new ArrayList<>(Collections.unmodifiableList(Arrays.asList("a", "b")));
     obj.arrayList = arrayList;
     obj.arrayList2 = arrayList;
     obj.arrayList3 = arrayList;
@@ -340,7 +341,8 @@ public class CollectionSerializersTest extends FuryTestBase {
     obj.linkedList = linkedList;
     obj.linkedList2 = linkedList;
     obj.linkedList3 = linkedList;
-    HashSet<String> hashSet = new HashSet<>(ImmutableSet.of("a", "b"));
+    HashSet<String> hashSet =
+        new HashSet<>(Collections.unmodifiableCollection(Arrays.asList("a", "b")));
     obj.hashSet = hashSet;
     obj.hashSet2 = hashSet;
     obj.linkedHashSet = new LinkedHashSet<>(hashSet);
@@ -459,8 +461,8 @@ public class CollectionSerializersTest extends FuryTestBase {
   @SuppressWarnings("unchecked")
   @Test
   public void testJavaSerialization() {
-    Set<Integer> set = ImmutableSet.ofSorted(1, 2, 3);
-    Class<? extends Set> setClass = set.getClass();
+    ImmutableSortedSet<Integer> set = ImmutableSortedSet.of(1, 2, 3);
+    Class<? extends ImmutableSortedSet> setClass = set.getClass();
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
@@ -476,7 +478,7 @@ public class CollectionSerializersTest extends FuryTestBase {
 
     assertSame(
         fury.getClassResolver().getSerializer(setClass).getClass(),
-        UnmodifiableSerializers.UnmodifiableCollectionSerializer.class);
+        GuavaCollectionSerializers.ImmutableSortedSetSerializer.class);
     buffer.writerIndex(0);
     buffer.readerIndex(0);
     assertEquals(set, fury.deserialize(fury.serialize(buffer, set)));
@@ -503,7 +505,8 @@ public class CollectionSerializersTest extends FuryTestBase {
             .requireClassRegistration(false)
             .withJdkClassSerializableCheck(false)
             .build();
-    ArrayList<Integer> list = new ArrayList<>(ImmutableList.of(1, 2, 3, 4));
+    ArrayList<Integer> list =
+        new ArrayList<>(Collections.unmodifiableList(Arrays.asList(1, 2, 3, 4)));
     fury.registerSerializer(
         list.subList(0, 2).getClass(), new SubListSerializer(fury, list.subList(0, 2).getClass()));
     serDeCheck(fury, list.subList(0, 2));
