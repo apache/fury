@@ -93,7 +93,7 @@ If schema evolution mode is enabled globally or enabled for current class, class
 
 > This mode will forbid streaming writing since it needs to look back for update the offset after the whole object graph
 > writing and mete collecting is finished.
-> We have plan to streamline meta writing but haven't started yet.
+> We plan to streamline meta writing but haven't started yet.
 
 ### Schema consistent
 
