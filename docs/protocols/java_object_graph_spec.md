@@ -19,8 +19,8 @@ Here is the overall format:
 | fury header | object ref meta | object class meta | object value data |
 ```
 
-The data are serialized using little endian order overall. If bytes swap is costly, the byte order will be encoded as a
-flag in data.
+The data are serialized using little endian byte order overall. If bytes swap is costly for some object, 
+Fury will write the byte order for that object into the data instead of converting it to little endian.
 
 ## Fury header
 
