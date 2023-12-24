@@ -16,7 +16,7 @@
 
 package io.fury.format.vectorized;
 
-import com.google.common.base.Preconditions;
+import io.fury.util.Preconditions;
 import java.util.Iterator;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorLoader;
