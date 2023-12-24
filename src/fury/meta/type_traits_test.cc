@@ -18,6 +18,8 @@
 #include <deque>
 #include <initializer_list>
 #include <list>
+#include <queue>
+#include <type_traits>
 
 #include "fury/meta/field_info.h"
 #include "src/fury/meta/type_traits.h"
@@ -64,6 +66,11 @@ TEST(Meta, IsUnique) {
 }
 
 TEST(Meta, IsIterable) {
+  static_assert(!IsIterable<int>);
+  static_assert(!IsIterable<const bool>);
+  static_assert(!IsIterable<int &>);
+  static_assert(!IsIterable<std::false_type>);
+  static_assert(!IsIterable<std::queue<int>>);
   static_assert(IsIterable<std::vector<int>>);
   static_assert(IsIterable<std::vector<std::vector<int>>>);
   static_assert(IsIterable<std::deque<float>>);
@@ -75,6 +82,20 @@ TEST(Meta, IsIterable) {
   static_assert(IsIterable<std::initializer_list<A>>);
   static_assert(IsIterable<std::string>);
   static_assert(IsIterable<std::string_view>);
+}
+
+TEST(Meta, IsPairIterable) {
+  static_assert(!IsPairIterable<int>);
+  static_assert(!IsPairIterable<std::string>);
+  static_assert(!IsPairIterable<std::vector<int>>);
+  static_assert(!IsPairIterable<std::vector<std::vector<int>>>);
+  static_assert(!IsPairIterable<std::deque<float>>);
+  static_assert(!IsPairIterable<std::list<int>>);
+  static_assert(!IsPairIterable<std::set<int>>);
+  static_assert(IsPairIterable<std::map<int, std::vector<unsigned>>>);
+  static_assert(IsPairIterable<std::map<std::string, int>>);
+  static_assert(IsPairIterable<std::multimap<std::string, bool>>);
+  static_assert(IsPairIterable<std::unordered_map<std::string, float>>);
 }
 
 } // namespace test

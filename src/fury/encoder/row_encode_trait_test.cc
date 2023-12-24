@@ -294,6 +294,70 @@ TEST(RowEncodeTrait, Optional) {
   }
 }
 
+struct G {
+  std::map<int, std::map<int, int>> a;
+  std::map<std::string, A> b;
+};
+
+FURY_FIELD_INFO(G, a, b);
+
+TEST(RowEncodeTrait, Map) {
+  G v{{{1, {{3, 4}, {5, 6}}}, {2, {{7, 8}, {9, 10}, {11, 12}}}},
+      {{"a", A{1, 1.1, true}}, {"b", A{2, 3.3, false}}}};
+
+  auto schema = encoder::RowEncodeTrait<G>::Type();
+
+  auto a_map =
+      std::dynamic_pointer_cast<arrow::MapType>(schema->field(0)->type());
+  ASSERT_EQ(a_map->key_type()->name(), "int32");
+  ASSERT_EQ(a_map->item_type()->name(), "map");
+  ASSERT_EQ(std::dynamic_pointer_cast<arrow::MapType>(a_map->item_type())
+                ->key_type()
+                ->name(),
+            "int32");
+  ASSERT_EQ(std::dynamic_pointer_cast<arrow::MapType>(a_map->item_type())
+                ->item_type()
+                ->name(),
+            "int32");
+
+  auto b_map =
+      std::dynamic_pointer_cast<arrow::MapType>(schema->field(1)->type());
+  ASSERT_EQ(b_map->key_type()->name(), "utf8");
+  ASSERT_EQ(b_map->item_type()->name(), "struct");
+  ASSERT_EQ(b_map->item_type()->field(0)->type()->name(), "int32");
+  ASSERT_EQ(b_map->item_type()->field(1)->type()->name(), "float");
+  ASSERT_EQ(b_map->item_type()->field(2)->type()->name(), "bool");
+
+  RowWriter writer(encoder::RowEncodeTrait<G>::Schema());
+  writer.Reset();
+
+  encoder::RowEncodeTrait<G>::Write(encoder::EmptyWriteVisitor{}, v, writer);
+
+  auto map_a = writer.ToRow()->GetMap(0);
+  ASSERT_EQ(map_a->keys_array()->GetInt32(0), 1);
+  ASSERT_EQ(map_a->keys_array()->GetInt32(1), 2);
+  ASSERT_EQ(map_a->values_array()->GetMap(0)->keys_array()->GetInt32(0), 3);
+  ASSERT_EQ(map_a->values_array()->GetMap(0)->keys_array()->GetInt32(1), 5);
+  ASSERT_EQ(map_a->values_array()->GetMap(0)->values_array()->GetInt32(0), 4);
+  ASSERT_EQ(map_a->values_array()->GetMap(0)->values_array()->GetInt32(1), 6);
+  ASSERT_EQ(map_a->values_array()->GetMap(1)->keys_array()->GetInt32(0), 7);
+  ASSERT_EQ(map_a->values_array()->GetMap(1)->keys_array()->GetInt32(1), 9);
+  ASSERT_EQ(map_a->values_array()->GetMap(1)->keys_array()->GetInt32(2), 11);
+  ASSERT_EQ(map_a->values_array()->GetMap(1)->values_array()->GetInt32(0), 8);
+  ASSERT_EQ(map_a->values_array()->GetMap(1)->values_array()->GetInt32(1), 10);
+  ASSERT_EQ(map_a->values_array()->GetMap(1)->values_array()->GetInt32(2), 12);
+
+  auto map_b = writer.ToRow()->GetMap(1);
+  ASSERT_EQ(map_b->keys_array()->GetString(0), "a");
+  ASSERT_EQ(map_b->keys_array()->GetString(1), "b");
+  ASSERT_EQ(map_b->values_array()->GetStruct(0)->GetInt32(0), 1);
+  ASSERT_EQ(map_b->values_array()->GetStruct(1)->GetInt32(0), 2);
+  ASSERT_FLOAT_EQ(map_b->values_array()->GetStruct(0)->GetFloat(1), 1.1);
+  ASSERT_FLOAT_EQ(map_b->values_array()->GetStruct(1)->GetFloat(1), 3.3);
+  ASSERT_EQ(map_b->values_array()->GetStruct(0)->GetBoolean(2), true);
+  ASSERT_EQ(map_b->values_array()->GetStruct(1)->GetBoolean(2), false);
+}
+
 } // namespace test
 
 } // namespace fury
