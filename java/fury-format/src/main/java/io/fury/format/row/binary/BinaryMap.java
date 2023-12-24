@@ -134,9 +134,12 @@ public class BinaryMap implements MapData {
   @Override
   public String toString() {
     return "BinaryMap{"
-        + "keys=" + keys
-        + ", values=" + values
-        + ", sizeInBytes=" + sizeInBytes
+        + "keys="
+        + keys
+        + ", values="
+        + values
+        + ", sizeInBytes="
+        + sizeInBytes
         + '}';
   }
 }
