@@ -20,7 +20,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-import com.google.common.base.CaseFormat;
 import org.testng.annotations.Test;
 
 public class StringUtilsTest {
@@ -35,14 +34,6 @@ public class StringUtilsTest {
   public void testRandom() {
     StringUtils.random(40);
     assertEquals(StringUtils.random(4, 7), "#,q7");
-  }
-
-  @Test
-  public void testSnake() {
-    assertEquals(
-        CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, "ABCDEfgHij"), "a_b_c_d_efg_hij");
-    assertEquals(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, "to_snake"), "to_snake");
-    assertEquals(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, "ABC"), "a_b_c");
   }
 
   @Test

@@ -20,7 +20,6 @@ import static io.fury.type.TypeUtils.CLASS_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.CaseFormat;
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.builder.CodecBuilder;
@@ -44,6 +43,7 @@ import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
 import io.fury.util.GraalvmSupport;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
 import java.lang.reflect.Modifier;
 import java.util.SortedMap;

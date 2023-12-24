@@ -16,7 +16,6 @@
 
 package io.fury.format.row.binary;
 
-import com.google.common.base.MoreObjects;
 import io.fury.format.row.MapData;
 import io.fury.format.type.DataTypes;
 import io.fury.memory.MemoryBuffer;
@@ -134,10 +133,13 @@ public class BinaryMap implements MapData {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("keys", keys)
-        .add("values", values)
-        .add("sizeInBytes", sizeInBytes)
-        .toString();
+    return "BinaryMap{"
+        + "keys="
+        + keys
+        + ", values="
+        + values
+        + ", sizeInBytes="
+        + sizeInBytes
+        + '}';
   }
 }

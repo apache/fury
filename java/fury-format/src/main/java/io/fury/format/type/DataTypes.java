@@ -18,12 +18,12 @@ package io.fury.format.type;
 
 import static io.fury.util.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
 import io.fury.exception.FuryException;
 import io.fury.io.FuryOutputStream;
 import io.fury.memory.MemoryBuffer;
 import io.fury.type.Type;
 import io.fury.util.DecimalUtils;
+import io.fury.util.Preconditions;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

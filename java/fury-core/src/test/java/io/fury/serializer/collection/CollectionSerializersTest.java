@@ -21,7 +21,6 @@ import static io.fury.collection.Collections.ofHashMap;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
-import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
@@ -49,6 +48,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
@@ -435,7 +435,7 @@ public class CollectionSerializersTest extends FuryTestBase {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
       TestClassForDefaultCollectionSerializer strings = (TestClassForDefaultCollectionSerializer) o;
-      return Objects.equal(data, strings.data);
+      return Objects.equals(data, strings.data);
     }
 
     @Override
