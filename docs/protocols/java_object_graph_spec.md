@@ -296,8 +296,8 @@ which will be encoded by elements header, each use one bit:
 - If track elements ref, use first bit `0b1` of header to flag it.
 - If collection has null, use second bit `0b10` of header to flag it. If ref tracking is enabled for this
   element type, this flag is invalid.
-- If collection elements type is not declare type, use 3rd bit `0b100` of header to flag it.
-- If collection elements type different, use 4rd bit `0b1000` of header to flag it.
+- If collection element types is not declared type, use 3rd bit `0b100` of header to flag it.
+- If collection element types different, use 4rd bit `0b1000` of header to flag it.
 
 By default, all bits are unset, which means all elements won't track ref, all elements are same type,, not null and the
 actual element is the declare type in custom class field.
