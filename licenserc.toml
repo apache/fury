@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-headerPath = "Apache-2.0.txt"
+headerPath = "Apache-2.0-ASF.txt"
 
 excludes = [
     "*.txt",
