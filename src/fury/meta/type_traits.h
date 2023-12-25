@@ -100,6 +100,26 @@ constexpr inline bool IsIterable =
 template <typename T>
 using GetValueType = typename details::GetValueTypeImpl<T>::type;
 
+namespace details {
+
+template <typename> constexpr inline bool IsPair = false;
+
+template <typename T1, typename T2>
+constexpr inline bool IsPair<std::pair<T1, T2>> = true;
+
+template <typename> std::false_type IsPairIterableImpl(...);
+
+template <
+    typename T,
+    std::enable_if_t<IsIterable<T> && IsPair<typename T::value_type>, int> = 0>
+std::true_type IsPairIterableImpl(int);
+
+} // namespace details
+
+template <typename T>
+constexpr inline bool IsPairIterable =
+    decltype(details::IsPairIterableImpl<T>(0))::value;
+
 } // namespace meta
 
 } // namespace fury

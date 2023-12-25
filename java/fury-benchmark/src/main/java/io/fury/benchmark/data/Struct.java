@@ -19,8 +19,8 @@
 
 package io.fury.benchmark.data;
 
-import com.google.common.base.Preconditions;
 import io.fury.util.ClassLoaderUtils;
+import io.fury.util.Preconditions;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.lang.reflect.Field;

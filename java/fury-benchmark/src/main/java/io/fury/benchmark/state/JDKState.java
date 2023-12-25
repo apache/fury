@@ -19,7 +19,6 @@
 
 package io.fury.benchmark.state;
 
-import com.google.common.base.Preconditions;
 import io.fury.benchmark.IntsSerializationSuite;
 import io.fury.benchmark.LongStringSerializationSuite;
 import io.fury.benchmark.LongsSerializationSuite;
@@ -29,6 +28,7 @@ import io.fury.benchmark.data.MediaContent;
 import io.fury.benchmark.data.Sample;
 import io.fury.benchmark.data.Struct;
 import io.fury.io.ClassLoaderObjectInputStream;
+import io.fury.util.Preconditions;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

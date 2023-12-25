@@ -19,7 +19,6 @@
 
 package io.fury.benchmark.state;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.benchmark.IntsSerializationSuite;
 import io.fury.benchmark.LongStringSerializationSuite;
@@ -39,6 +38,7 @@ import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.resolver.MetaContext;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Preconditions;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import org.openjdk.jmh.annotations.BenchmarkMode;

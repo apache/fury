@@ -21,7 +21,6 @@ package io.fury.format.encoder;
 
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.annotation.Internal;
 import io.fury.codegen.ClosureVisitable;
@@ -32,6 +31,7 @@ import io.fury.codegen.Expression;
 import io.fury.format.row.binary.BinaryArray;
 import io.fury.format.row.binary.BinaryUtils;
 import io.fury.type.TypeUtils;
+import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
 import io.fury.util.function.SerializableBiFunction;
 import io.fury.util.function.SerializableFunction;

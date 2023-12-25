@@ -19,7 +19,7 @@
 
 package io.fury.serializer.test;
 
-import com.google.common.base.Preconditions;
+import io.fury.util.Preconditions;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;

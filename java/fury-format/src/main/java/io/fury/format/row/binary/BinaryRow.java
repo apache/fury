@@ -21,12 +21,12 @@ package io.fury.format.row.binary;
 
 import static io.fury.util.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
 import io.fury.format.row.Row;
 import io.fury.format.type.DataTypes;
 import io.fury.memory.BitUtils;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.util.Preconditions;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;

@@ -24,7 +24,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-import com.google.common.base.Strings;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
 import io.fury.collection.Tuple2;
@@ -156,7 +155,7 @@ public class StringSerializerTest extends FuryTestBase {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     StringSerializer serializer = new StringSerializer(fury);
 
-    String longStr = Strings.repeat("abc", 50);
+    String longStr = new String(new char[50]).replace("\0", "abc");
     buffer.writerIndex(0);
     buffer.readerIndex(0);
     serializer.writeJavaString(buffer, longStr);

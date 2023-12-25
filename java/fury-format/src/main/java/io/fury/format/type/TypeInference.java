@@ -23,12 +23,12 @@ import static io.fury.format.type.DataTypes.field;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.CaseFormat;
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.collection.Tuple2;
 import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
 import io.fury.util.DecimalUtils;
+import io.fury.util.Preconditions;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;

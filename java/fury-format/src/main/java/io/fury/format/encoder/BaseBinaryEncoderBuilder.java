@@ -21,7 +21,6 @@ package io.fury.format.encoder;
 
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.builder.CodecBuilder;
 import io.fury.codegen.CodeGenerator;
@@ -57,6 +56,7 @@ import io.fury.format.type.DataTypes;
 import io.fury.memory.MemoryBuffer;
 import io.fury.type.TypeUtils;
 import io.fury.util.DateTimeUtils;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.math.BigDecimal;
