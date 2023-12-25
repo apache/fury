@@ -121,7 +121,7 @@ def get_qualified_classname(obj):
 class FuryType(enum.Enum):
     """
     Fury added type for cross-language serialization.
-    See `io.fury.types.Type`
+    See `org.apache.fury.types.Type`
     """
 
     NA = 0

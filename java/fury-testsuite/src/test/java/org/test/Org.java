@@ -19,9 +19,9 @@
 
 package org.test;
 
-import io.fury.Fury;
-import io.fury.config.CompatibleMode;
-import io.fury.config.Language;
+import org.apache.fury.Fury;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.Language;
 import java.io.Serializable;
 import java.util.List;
 import org.testng.Assert;

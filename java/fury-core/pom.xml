@@ -101,11 +101,11 @@
               <relocations>
                 <relocation>
                   <pattern>org.codehaus</pattern>
-                  <shadedPattern>io.fury.shaded.org.codehaus</shadedPattern>
+                  <shadedPattern>org.apache.fury.shaded.org.codehaus</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>javassist</pattern>
-                  <shadedPattern>io.fury.shaded.javassist</shadedPattern>
+                  <shadedPattern>org.apache.fury.shaded.javassist</shadedPattern>
                 </relocation>
               </relocations>
               <filters>
