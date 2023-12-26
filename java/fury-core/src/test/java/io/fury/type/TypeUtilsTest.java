@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.type;
+package org.apache.fury.type;
 
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeToken;
-import io.fury.collection.Tuple2;
-import io.fury.test.bean.BeanA;
-import io.fury.test.bean.BeanB;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.BeanB;
 import java.lang.reflect.Type;
 import java.util.AbstractList;
 import java.util.ArrayList;

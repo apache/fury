@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;

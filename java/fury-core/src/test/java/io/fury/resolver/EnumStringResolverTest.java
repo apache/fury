@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.util.StringUtils;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.util.StringUtils;
 import org.testng.annotations.Test;
 
 public class EnumStringResolverTest {

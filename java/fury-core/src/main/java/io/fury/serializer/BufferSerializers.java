@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.type.Type;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.type.Type;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 

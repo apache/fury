@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.pool;
+package org.apache.fury.pool;
 
-import io.fury.Fury;
-import io.fury.util.LoggerFactory;
+import org.apache.fury.Fury;
+import org.apache.fury.util.LoggerFactory;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;

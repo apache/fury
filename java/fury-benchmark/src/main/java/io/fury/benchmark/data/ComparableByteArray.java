@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.benchmark.data;
+package org.apache.fury.benchmark.data;
 
 import java.io.Serializable;
 import java.util.Arrays;

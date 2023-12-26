@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.format.row;
+package org.apache.fury.format.row;
 
 import org.apache.arrow.vector.types.pojo.Schema;
 

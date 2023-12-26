@@ -17,20 +17,20 @@
  * under the License.
  */
 
-package io.fury.integration_tests.state;
+package org.apache.fury.integration_tests.state;
 
 import com.google.common.base.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
-import io.fury.benchmark.data.Image;
-import io.fury.benchmark.data.Media;
-import io.fury.benchmark.data.MediaContent;
-import io.fury.benchmark.data.Sample;
-import io.fury.benchmark.state.BenchmarkState;
-import io.fury.benchmark.state.BufferType;
-import io.fury.benchmark.state.ObjectType;
-import io.fury.integration_tests.state.Example.Bar;
-import io.fury.integration_tests.state.Example.Foo;
-import io.fury.integration_tests.state.generated.ProtoMessage;
+import org.apache.fury.benchmark.data.Image;
+import org.apache.fury.benchmark.data.Media;
+import org.apache.fury.benchmark.data.MediaContent;
+import org.apache.fury.benchmark.data.Sample;
+import org.apache.fury.benchmark.state.BenchmarkState;
+import org.apache.fury.benchmark.state.BufferType;
+import org.apache.fury.benchmark.state.ObjectType;
+import org.apache.fury.integration_tests.state.Example.Bar;
+import org.apache.fury.integration_tests.state.Example.Foo;
+import org.apache.fury.integration_tests.state.generated.ProtoMessage;
 import java.util.HashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;

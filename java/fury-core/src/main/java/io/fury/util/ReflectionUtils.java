@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
-import static io.fury.type.TypeUtils.OBJECT_TYPE;
-import static io.fury.type.TypeUtils.getRawType;
+import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
+import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.annotation.CodegenInvoke;
-import io.fury.annotation.Internal;
-import io.fury.collection.Tuple3;
-import io.fury.util.function.Functions;
-import io.fury.util.unsafe._JDKAccess;
+import org.apache.fury.annotation.CodegenInvoke;
+import org.apache.fury.annotation.Internal;
+import org.apache.fury.collection.Tuple3;
+import org.apache.fury.util.function.Functions;
+import org.apache.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -472,7 +472,7 @@ public class ReflectionUtils {
    */
   public static String getCanonicalName(Class<?> cls) {
     String canonicalName = cls.getCanonicalName();
-    io.fury.util.Preconditions.checkArgument(
+    org.apache.fury.util.Preconditions.checkArgument(
         canonicalName != null, "Class %s doesn't have canonical name", cls);
     return canonicalName;
   }

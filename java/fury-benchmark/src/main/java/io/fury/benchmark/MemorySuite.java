@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.util.Platform;
-import io.fury.util.StringUtils;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.StringUtils;
 import java.nio.ByteBuffer;
 import java.util.Random;
 import org.openjdk.jmh.Main;

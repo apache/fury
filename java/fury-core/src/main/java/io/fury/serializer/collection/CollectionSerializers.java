@@ -17,20 +17,20 @@
  * under the License.
  */
 
-package io.fury.serializer.collection;
+package org.apache.fury.serializer.collection;
 
-import io.fury.Fury;
-import io.fury.config.Language;
-import io.fury.exception.FuryException;
-import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassResolver;
-import io.fury.serializer.ReplaceResolveSerializer;
-import io.fury.serializer.Serializer;
-import io.fury.serializer.Serializers;
-import io.fury.type.Type;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.exception.FuryException;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.serializer.ReplaceResolveSerializer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.Serializers;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.util.ArrayDeque;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.serializer.collection;
+package org.apache.fury.serializer.collection;
 
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
@@ -25,11 +25,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.type.Type;
-import io.fury.util.Platform;
-import io.fury.util.unsafe._JDKAccess;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;

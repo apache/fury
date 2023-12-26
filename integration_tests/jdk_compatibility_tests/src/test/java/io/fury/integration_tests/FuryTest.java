@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.integration_tests;
+package org.apache.fury.integration_tests;
 
-import io.fury.Fury;
-import io.fury.benchmark.data.MediaContent;
-import io.fury.benchmark.data.Sample;
+import org.apache.fury.Fury;
+import org.apache.fury.benchmark.data.MediaContent;
+import org.apache.fury.benchmark.data.Sample;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

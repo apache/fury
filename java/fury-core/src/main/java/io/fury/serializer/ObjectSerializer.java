@@ -17,30 +17,30 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import static io.fury.type.TypeUtils.getRawType;
+import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.Fury;
-import io.fury.collection.Tuple2;
-import io.fury.collection.Tuple3;
-import io.fury.exception.FuryException;
-import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoHolder;
-import io.fury.resolver.ClassResolver;
-import io.fury.resolver.RefResolver;
-import io.fury.type.Descriptor;
-import io.fury.type.DescriptorGrouper;
-import io.fury.type.FinalObjectTypeStub;
-import io.fury.type.GenericType;
-import io.fury.type.Generics;
-import io.fury.util.FieldAccessor;
-import io.fury.util.Platform;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.record.RecordInfo;
-import io.fury.util.record.RecordUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.collection.Tuple3;
+import org.apache.fury.exception.FuryException;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassInfoHolder;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.DescriptorGrouper;
+import org.apache.fury.type.FinalObjectTypeStub;
+import org.apache.fury.type.GenericType;
+import org.apache.fury.type.Generics;
+import org.apache.fury.util.FieldAccessor;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.record.RecordInfo;
+import org.apache.fury.util.record.RecordUtils;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Arrays;

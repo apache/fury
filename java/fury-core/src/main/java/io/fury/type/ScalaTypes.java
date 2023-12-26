@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.type;
+package org.apache.fury.type;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.collection.Tuple2;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.util.ReflectionUtils;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 

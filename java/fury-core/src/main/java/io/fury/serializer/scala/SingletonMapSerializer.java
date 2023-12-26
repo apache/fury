@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.serializer.scala;
+package org.apache.fury.serializer.scala;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.collection.AbstractMapSerializer;
-import io.fury.util.GraalvmSupport;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.collection.AbstractMapSerializer;
+import org.apache.fury.util.GraalvmSupport;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
 import java.lang.reflect.Field;
 import java.util.Map;
 

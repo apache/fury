@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury;
+package org.apache.fury;
 
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.resolver.ClassResolver;
-import io.fury.util.LoaderBinding;
-import io.fury.util.LoaderBinding.StagingType;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.util.LoaderBinding;
+import org.apache.fury.util.LoaderBinding.StagingType;
 import java.nio.ByteBuffer;
 import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;

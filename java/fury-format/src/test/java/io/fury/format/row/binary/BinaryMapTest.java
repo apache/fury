@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.format.row.binary;
+package org.apache.fury.format.row.binary;
 
-import io.fury.format.row.binary.writer.BinaryArrayWriter;
-import io.fury.format.row.binary.writer.BinaryRowWriter;
-import io.fury.format.type.DataTypes;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
+import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
+import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
 import java.util.Collections;
 import java.util.List;
 import org.apache.arrow.vector.types.pojo.Field;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
 import java.nio.ByteOrder;
 

@@ -17,22 +17,22 @@
  * under the License.
  */
 
-package io.fury.serializer.collection;
+package org.apache.fury.serializer.collection;
 
 import static com.google.common.collect.ImmutableList.of;
-import static io.fury.TestUtils.mapOf;
-import static io.fury.collection.Collections.ofArrayList;
+import static org.apache.fury.TestUtils.mapOf;
+import static org.apache.fury.collection.Collections.ofArrayList;
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.collection.MapEntry;
-import io.fury.config.Language;
-import io.fury.serializer.collection.CollectionSerializersTest.TestEnum;
-import io.fury.test.bean.MapFields;
-import io.fury.type.GenericType;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.collection.MapEntry;
+import org.apache.fury.config.Language;
+import org.apache.fury.serializer.collection.CollectionSerializersTest.TestEnum;
+import org.apache.fury.test.bean.MapFields;
+import org.apache.fury.type.GenericType;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.ArrayList;

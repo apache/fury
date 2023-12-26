@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.codegen.Expression.Literal;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.codegen.Expression.Literal;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

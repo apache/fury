@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.builder.pkg;
+package org.apache.fury.builder.pkg;
 
 public class AccessLevelClass {
   static class PkgLevelClass {

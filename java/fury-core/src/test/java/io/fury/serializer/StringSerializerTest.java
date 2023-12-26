@@ -17,23 +17,23 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import static io.fury.serializer.StringSerializer.newBytesStringZeroCopy;
+import static org.apache.fury.serializer.StringSerializer.newBytesStringZeroCopy;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.collection.Tuple2;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.util.MathUtils;
-import io.fury.util.Platform;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.StringUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.util.MathUtils;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.StringUtils;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

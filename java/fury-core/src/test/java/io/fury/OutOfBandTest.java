@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury;
+package org.apache.fury;
 
 import static org.testng.Assert.assertEquals;
 
-import io.fury.config.FuryBuilder;
-import io.fury.config.Language;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.config.Language;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.atomic.AtomicInteger;

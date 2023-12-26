@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
-import io.fury.util.Platform;
+import org.apache.fury.util.Platform;
 import java.util.ArrayList;
 import java.util.List;
 

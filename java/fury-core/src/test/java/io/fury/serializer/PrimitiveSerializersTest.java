@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
 import static org.testng.Assert.*;
 
-import io.fury.Fury;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
 import org.testng.annotations.Test;
 
 public class PrimitiveSerializersTest {

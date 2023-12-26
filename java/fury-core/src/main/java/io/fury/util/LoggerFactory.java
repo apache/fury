@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;

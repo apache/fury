@@ -17,20 +17,20 @@
  * under the License.
  */
 
-package io.fury.serializer.collection;
+package org.apache.fury.serializer.collection;
 
-import io.fury.Fury;
-import io.fury.annotation.CodegenInvoke;
-import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoHolder;
-import io.fury.resolver.ClassResolver;
-import io.fury.resolver.RefResolver;
-import io.fury.serializer.CompatibleSerializer;
-import io.fury.serializer.Serializer;
-import io.fury.type.GenericType;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.annotation.CodegenInvoke;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassInfoHolder;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.serializer.CompatibleSerializer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.type.GenericType;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 import java.lang.invoke.MethodHandle;
 import java.util.Collection;
 

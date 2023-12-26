@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.config;
+package org.apache.fury.config;
 
 /**
  * Type forward/backward compatibility config.

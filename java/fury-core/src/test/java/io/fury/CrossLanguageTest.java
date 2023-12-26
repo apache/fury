@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package io.fury;
+package org.apache.fury;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.serializer.BufferObject;
-import io.fury.serializer.Serializer;
-import io.fury.util.LoggerFactory;
-import io.fury.util.MurmurHash3;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.serializer.BufferObject;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.MurmurHash3;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

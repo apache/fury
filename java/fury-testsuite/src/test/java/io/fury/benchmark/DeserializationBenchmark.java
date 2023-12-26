@@ -17,20 +17,20 @@
  * under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
 import static org.testng.Assert.assertEquals;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import io.fury.Fury;
-import io.fury.config.Language;
-import io.fury.format.encoder.Encoders;
-import io.fury.format.encoder.RowEncoder;
-import io.fury.format.row.binary.BinaryRow;
-import io.fury.test.bean.Foo;
-import io.fury.util.LoggerFactory;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.format.encoder.Encoders;
+import org.apache.fury.format.encoder.RowEncoder;
+import org.apache.fury.format.row.binary.BinaryRow;
+import org.apache.fury.test.bean.Foo;
+import org.apache.fury.util.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -57,7 +57,7 @@ public class DeserializationBenchmark {
     }
   }
 
-  // mvn test -Dtest=io.fury.benchmark.DeserializationBenchmark#deserializationBenchmark
+  // mvn test -Dtest=org.apache.fury.benchmark.DeserializationBenchmark#deserializationBenchmark
   // -DiterNums=10000000
   @Test(enabled = false)
   public void deserializationBenchmark() throws Exception {

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.exception;
+package org.apache.fury.exception;
 
 /**
  * If class registration is enabled, and class of object which is being serialized is not

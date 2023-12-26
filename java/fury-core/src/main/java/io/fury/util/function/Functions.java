@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.util.function;
+package org.apache.fury.util.function;
 
-import io.fury.collection.Tuple2;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.unsafe._JDKAccess;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.unsafe._JDKAccess;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;

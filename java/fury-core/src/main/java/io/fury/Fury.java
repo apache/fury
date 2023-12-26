@@ -17,38 +17,38 @@
  * under the License.
  */
 
-package io.fury;
+package org.apache.fury;
 
-import io.fury.builder.JITContext;
-import io.fury.config.CompatibleMode;
-import io.fury.config.Config;
-import io.fury.config.FuryBuilder;
-import io.fury.config.Language;
-import io.fury.config.LongEncoding;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoHolder;
-import io.fury.resolver.ClassResolver;
-import io.fury.resolver.EnumStringResolver;
-import io.fury.resolver.MapRefResolver;
-import io.fury.resolver.NoRefResolver;
-import io.fury.resolver.RefResolver;
-import io.fury.resolver.SerializationContext;
-import io.fury.serializer.ArraySerializers;
-import io.fury.serializer.BufferCallback;
-import io.fury.serializer.BufferObject;
-import io.fury.serializer.OpaqueObjects;
-import io.fury.serializer.PrimitiveSerializers.LongSerializer;
-import io.fury.serializer.Serializer;
-import io.fury.serializer.SerializerFactory;
-import io.fury.serializer.StringSerializer;
-import io.fury.type.Generics;
-import io.fury.type.Type;
-import io.fury.util.ExceptionUtils;
-import io.fury.util.LoggerFactory;
-import io.fury.util.Preconditions;
-import io.fury.util.StringUtils;
+import org.apache.fury.builder.JITContext;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.Config;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.config.Language;
+import org.apache.fury.config.LongEncoding;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassInfoHolder;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.EnumStringResolver;
+import org.apache.fury.resolver.MapRefResolver;
+import org.apache.fury.resolver.NoRefResolver;
+import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.resolver.SerializationContext;
+import org.apache.fury.serializer.ArraySerializers;
+import org.apache.fury.serializer.BufferCallback;
+import org.apache.fury.serializer.BufferObject;
+import org.apache.fury.serializer.OpaqueObjects;
+import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.SerializerFactory;
+import org.apache.fury.serializer.StringSerializer;
+import org.apache.fury.type.Generics;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.ExceptionUtils;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -117,7 +117,7 @@ public final class Fury {
 
   public Fury(FuryBuilder builder, ClassLoader classLoader) {
     // Avoid set classLoader in `FuryBuilder`, which won't be clear when
-    // `io.fury.ThreadSafeFury.clearClassLoader` is called.
+    // `org.apache.fury.ThreadSafeFury.clearClassLoader` is called.
     config = new Config(builder);
     this.language = config.getLanguage();
     this.refTracking = config.trackingRef();

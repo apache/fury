@@ -17,23 +17,23 @@
  * under the License.
  */
 
-package io.fury.serializer.collection;
+package org.apache.fury.serializer.collection;
 
-import static io.fury.serializer.collection.UnmodifiableSerializers.createSerializer;
+import static org.apache.fury.serializer.collection.UnmodifiableSerializers.createSerializer;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableMap;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.serializer.Serializer;
-import io.fury.test.bean.CollectionFields;
-import io.fury.test.bean.MapFields;
-import io.fury.util.Platform;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.test.bean.CollectionFields;
+import org.apache.fury.test.bean.MapFields;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.ReflectionUtils;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;

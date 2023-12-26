@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.type;
+package org.apache.fury.type;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.codegen.CodeGenerator;
-import io.fury.test.bean.BeanA;
+import org.apache.fury.codegen.CodeGenerator;
+import org.apache.fury.test.bean.BeanA;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.lang.reflect.Field;

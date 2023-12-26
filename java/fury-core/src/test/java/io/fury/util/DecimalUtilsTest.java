@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;

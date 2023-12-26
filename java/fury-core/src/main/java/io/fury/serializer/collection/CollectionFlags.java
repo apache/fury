@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.serializer.collection;
+package org.apache.fury.serializer.collection;
 
 /**
  * Default unset bitmap flags.

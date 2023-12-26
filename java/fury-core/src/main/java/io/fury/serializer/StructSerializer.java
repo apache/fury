@@ -17,23 +17,23 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.Fury;
-import io.fury.config.Language;
-import io.fury.exception.ClassNotCompatibleException;
-import io.fury.memory.MemoryBuffer;
-import io.fury.type.Descriptor;
-import io.fury.type.GenericType;
-import io.fury.type.Generics;
-import io.fury.type.Type;
-import io.fury.type.TypeUtils;
-import io.fury.util.FieldAccessor;
-import io.fury.util.LoggerFactory;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
-import io.fury.util.Utils;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.exception.ClassNotCompatibleException;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.GenericType;
+import org.apache.fury.type.Generics;
+import org.apache.fury.type.Type;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.FieldAccessor;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.Utils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

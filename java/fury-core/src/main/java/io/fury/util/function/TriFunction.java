@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.util.function;
+package org.apache.fury.util.function;
 
-import io.fury.util.Preconditions;
+import org.apache.fury.util.Preconditions;
 import java.util.function.Function;
 
 /**

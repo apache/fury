@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.integration_tests.state;
+package org.apache.fury.integration_tests.state;
 
 import java.util.List;
 import java.util.Map;

@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.graalvm;
+package org.apache.fury.graalvm;
 
-import io.fury.graalvm.record.RecordExample;
-import io.fury.graalvm.record.RecordExample2;
+import org.apache.fury.graalvm.record.RecordExample;
+import org.apache.fury.graalvm.record.RecordExample2;
 
 public class Main {
   public static void main(String[] args) throws Throwable {

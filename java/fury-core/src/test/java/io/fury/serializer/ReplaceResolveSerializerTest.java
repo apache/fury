@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
@@ -26,10 +26,10 @@ import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.Language;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
+import org.apache.fury.util.Preconditions;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;

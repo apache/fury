@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.graalvm;
+package org.apache.fury.graalvm;
 
-import io.fury.Fury;
-import io.fury.io.ClassLoaderObjectInputStream;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.io.ClassLoaderObjectInputStream;
+import org.apache.fury.util.Preconditions;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,7 +40,7 @@ import java.util.Map;
  * @author chaokunyang
  */
 public class Benchmark {
-  static ObjectInputFilter filter = ObjectInputFilter.Config.createFilter("io.fury.graalvm.*");
+  static ObjectInputFilter filter = ObjectInputFilter.Config.createFilter("org.apache.fury.graalvm.*");
 
   public static Object testJDKSerialization(Object o) {
     byte[] bytes = jdkSerialize(o);

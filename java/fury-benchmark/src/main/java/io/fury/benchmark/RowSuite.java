@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
-import io.fury.format.encoder.Encoder;
-import io.fury.format.encoder.Encoders;
-import io.fury.util.LoggerFactory;
+import org.apache.fury.format.encoder.Encoder;
+import org.apache.fury.format.encoder.Encoders;
+import org.apache.fury.util.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;

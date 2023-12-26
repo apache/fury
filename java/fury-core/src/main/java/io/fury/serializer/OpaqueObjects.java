@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.config.Language;
+import org.apache.fury.config.Language;
 
 /**
  * Stub objects for unsupported cross-language serializing type.

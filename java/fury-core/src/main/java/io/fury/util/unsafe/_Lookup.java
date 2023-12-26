@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.util.unsafe;
+package org.apache.fury.util.unsafe;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;

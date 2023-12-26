@@ -17,21 +17,21 @@
  * under the License.
  */
 
-package io.fury.builder;
+package org.apache.fury.builder;
 
-import static io.fury.codegen.CodeGenerator.sourcePkgLevelAccessible;
+import static org.apache.fury.codegen.CodeGenerator.sourcePkgLevelAccessible;
 
-import io.fury.codegen.CodeGenerator;
-import io.fury.codegen.CodegenContext;
-import io.fury.codegen.CompileUnit;
-import io.fury.codegen.JaninoUtils;
-import io.fury.type.Descriptor;
-import io.fury.util.ClassLoaderUtils;
-import io.fury.util.LoggerFactory;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.StringUtils;
-import io.fury.util.record.RecordUtils;
+import org.apache.fury.codegen.CodeGenerator;
+import org.apache.fury.codegen.CodegenContext;
+import org.apache.fury.codegen.CompileUnit;
+import org.apache.fury.codegen.JaninoUtils;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.util.ClassLoaderUtils;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.StringUtils;
+import org.apache.fury.util.record.RecordUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -44,7 +44,7 @@ import org.slf4j.Logger;
  * Define accessor helper methods in beanClass's classloader and same package to avoid reflective
  * call overhead. {@link sun.misc.Unsafe} is another method to avoid reflection cost.
  *
- * @see io.fury.util.UnsafeFieldAccessor
+ * @see org.apache.fury.util.UnsafeFieldAccessor
  * @author chaokunyang
  */
 public class AccessorHelper {

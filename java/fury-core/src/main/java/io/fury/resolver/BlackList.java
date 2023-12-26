@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
 import java.io.BufferedReader;
 import java.io.IOException;

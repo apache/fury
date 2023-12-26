@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.annotation;
+package org.apache.fury.annotation;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.format.vectorized;
+package org.apache.fury.format.vectorized;
 
 import static org.testng.Assert.assertEquals;
 
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;

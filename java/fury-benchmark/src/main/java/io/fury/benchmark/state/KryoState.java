@@ -17,7 +17,7 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
-package io.fury.benchmark.state;
+package org.apache.fury.benchmark.state;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -25,15 +25,15 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.io.UnsafeMemoryInput;
 import com.esotericsoftware.kryo.io.UnsafeMemoryOutput;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
-import io.fury.benchmark.IntsSerializationSuite;
-import io.fury.benchmark.LongStringSerializationSuite;
-import io.fury.benchmark.LongsSerializationSuite;
-import io.fury.benchmark.StringSerializationSuite;
-import io.fury.benchmark.data.Data;
-import io.fury.benchmark.data.Image;
-import io.fury.benchmark.data.Media;
-import io.fury.benchmark.data.MediaContent;
-import io.fury.util.Preconditions;
+import org.apache.fury.benchmark.IntsSerializationSuite;
+import org.apache.fury.benchmark.LongStringSerializationSuite;
+import org.apache.fury.benchmark.LongsSerializationSuite;
+import org.apache.fury.benchmark.StringSerializationSuite;
+import org.apache.fury.benchmark.data.Data;
+import org.apache.fury.benchmark.data.Image;
+import org.apache.fury.benchmark.data.Media;
+import org.apache.fury.benchmark.data.MediaContent;
+import org.apache.fury.util.Preconditions;
 import java.util.ArrayList;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;

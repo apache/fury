@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury;
+package org.apache.fury;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -27,22 +27,22 @@ import static org.testng.Assert.assertTrue;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.fury.annotation.Ignore;
-import io.fury.builder.Generated;
-import io.fury.config.FuryBuilder;
-import io.fury.config.Language;
-import io.fury.exception.InsecureException;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.serializer.ArraySerializersTest;
-import io.fury.serializer.ObjectSerializer;
-import io.fury.serializer.Serializer;
-import io.fury.serializer.SerializersTest;
-import io.fury.test.bean.BeanA;
-import io.fury.test.bean.Struct;
-import io.fury.type.Descriptor;
-import io.fury.util.DateTimeUtils;
-import io.fury.util.Platform;
+import org.apache.fury.annotation.Ignore;
+import org.apache.fury.builder.Generated;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.config.Language;
+import org.apache.fury.exception.InsecureException;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.serializer.ArraySerializersTest;
+import org.apache.fury.serializer.ObjectSerializer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.SerializersTest;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.Struct;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.util.DateTimeUtils;
+import org.apache.fury.util.Platform;
 import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;

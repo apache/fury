@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package io.fury;
+package org.apache.fury;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.config.CompatibleMode;
-import io.fury.config.Language;
-import io.fury.resolver.MetaContext;
-import io.fury.test.bean.BeanA;
-import io.fury.test.bean.BeanB;
-import io.fury.test.bean.Foo;
-import io.fury.type.TypeUtils;
-import io.fury.util.LoggerFactory;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.Language;
+import org.apache.fury.resolver.MetaContext;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.BeanB;
+import org.apache.fury.test.bean.Foo;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

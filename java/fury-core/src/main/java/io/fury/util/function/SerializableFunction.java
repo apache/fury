@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.util.function;
+package org.apache.fury.util.function;
 
 import java.io.Serializable;
 import java.util.function.Function;

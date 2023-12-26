@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import io.fury.config.Language;
-import io.fury.serializer.Serializer;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.function.Functions;
+import org.apache.fury.config.Language;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.function.Functions;
 
 /**
  * This class put together object type related information to reduce array/map loop up when

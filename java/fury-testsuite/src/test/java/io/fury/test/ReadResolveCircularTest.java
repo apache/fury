@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.test;
+package org.apache.fury.test;
 
-import io.fury.Fury;
+import org.apache.fury.Fury;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;

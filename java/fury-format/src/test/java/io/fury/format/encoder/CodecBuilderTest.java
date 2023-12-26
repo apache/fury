@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.format.encoder;
+package org.apache.fury.format.encoder;
 
 import static org.testng.Assert.assertTrue;
 
-import io.fury.test.bean.BeanA;
-import io.fury.test.bean.BeanB;
-import io.fury.test.bean.Foo;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.BeanB;
+import org.apache.fury.test.bean.Foo;
 import java.util.concurrent.atomic.AtomicLong;
 import org.testng.annotations.Test;
 

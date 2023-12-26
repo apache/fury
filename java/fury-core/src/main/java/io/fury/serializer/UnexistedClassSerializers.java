@@ -17,28 +17,28 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.collection.IdentityObjectIntMap;
-import io.fury.collection.LazyMap;
-import io.fury.collection.LongMap;
-import io.fury.collection.MapEntry;
-import io.fury.collection.Tuple2;
-import io.fury.collection.Tuple3;
-import io.fury.config.CompatibleMode;
-import io.fury.config.Config;
-import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoHolder;
-import io.fury.resolver.ClassResolver;
-import io.fury.resolver.MetaContext;
-import io.fury.resolver.RefResolver;
-import io.fury.type.ClassDef;
-import io.fury.type.Descriptor;
-import io.fury.type.DescriptorGrouper;
-import io.fury.type.Generics;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.collection.IdentityObjectIntMap;
+import org.apache.fury.collection.LazyMap;
+import org.apache.fury.collection.LongMap;
+import org.apache.fury.collection.MapEntry;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.collection.Tuple3;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.Config;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassInfoHolder;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.MetaContext;
+import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.type.ClassDef;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.DescriptorGrouper;
+import org.apache.fury.type.Generics;
+import org.apache.fury.util.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
-import io.fury.benchmark.state.FstState;
-import io.fury.benchmark.state.FuryState;
-import io.fury.benchmark.state.HessionState;
-import io.fury.benchmark.state.JDKState;
-import io.fury.benchmark.state.JsonbState;
-import io.fury.benchmark.state.KryoState;
-import io.fury.benchmark.state.ProtostuffState;
+import org.apache.fury.benchmark.state.FstState;
+import org.apache.fury.benchmark.state.FuryState;
+import org.apache.fury.benchmark.state.HessionState;
+import org.apache.fury.benchmark.state.JDKState;
+import org.apache.fury.benchmark.state.JsonbState;
+import org.apache.fury.benchmark.state.KryoState;
+import org.apache.fury.benchmark.state.ProtostuffState;
 import java.io.IOException;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;

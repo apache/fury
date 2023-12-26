@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
 /**
  * An exception to indicate codegen got wrong.

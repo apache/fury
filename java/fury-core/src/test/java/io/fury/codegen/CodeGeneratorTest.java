@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
-import io.fury.Fury;
-import io.fury.builder.ObjectCodecBuilder;
-import io.fury.collection.MultiKeyWeakMap;
-import io.fury.test.bean.Foo;
-import io.fury.util.ClassLoaderUtils;
-import io.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
+import org.apache.fury.Fury;
+import org.apache.fury.builder.ObjectCodecBuilder;
+import org.apache.fury.collection.MultiKeyWeakMap;
+import org.apache.fury.test.bean.Foo;
+import org.apache.fury.util.ClassLoaderUtils;
+import org.apache.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.util.HashMap;

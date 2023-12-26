@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.StringSerializer;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.StringUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.StringSerializer;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.StringUtils;
 import org.openjdk.jmh.Main;
 
 public class NewJava11StringSuite {

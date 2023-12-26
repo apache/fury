@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
+import org.apache.fury.Fury;
 
 /**
  * Serializer factory for customizing serializer creation.

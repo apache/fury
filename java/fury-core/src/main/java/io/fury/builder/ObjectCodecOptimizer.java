@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package io.fury.builder;
+package org.apache.fury.builder;
 
-import io.fury.annotation.Internal;
-import io.fury.codegen.CodegenContext;
-import io.fury.codegen.Expression;
-import io.fury.codegen.ExpressionOptimizer;
-import io.fury.collection.Tuple3;
-import io.fury.type.Descriptor;
-import io.fury.type.DescriptorGrouper;
-import io.fury.util.function.SerializableSupplier;
+import org.apache.fury.annotation.Internal;
+import org.apache.fury.codegen.CodegenContext;
+import org.apache.fury.codegen.Expression;
+import org.apache.fury.codegen.ExpressionOptimizer;
+import org.apache.fury.collection.Tuple3;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.DescriptorGrouper;
+import org.apache.fury.util.function.SerializableSupplier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

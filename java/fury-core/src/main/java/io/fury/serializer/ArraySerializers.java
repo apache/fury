@@ -17,21 +17,21 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoHolder;
-import io.fury.resolver.ClassResolver;
-import io.fury.resolver.RefResolver;
-import io.fury.serializer.collection.ArrayAsList;
-import io.fury.serializer.collection.CollectionFlags;
-import io.fury.serializer.collection.FuryArrayAsListSerializer;
-import io.fury.type.Type;
-import io.fury.type.TypeUtils;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassInfoHolder;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.serializer.collection.ArrayAsList;
+import org.apache.fury.serializer.collection.CollectionFlags;
+import org.apache.fury.serializer.collection.FuryArrayAsListSerializer;
+import org.apache.fury.type.Type;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.IdentityHashMap;

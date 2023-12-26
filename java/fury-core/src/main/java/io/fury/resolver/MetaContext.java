@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import io.fury.collection.IdentityObjectIntMap;
-import io.fury.memory.MemoryBuffer;
-import io.fury.type.ClassDef;
+import org.apache.fury.collection.IdentityObjectIntMap;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.type.ClassDef;
 import java.util.ArrayList;
 import java.util.List;
 

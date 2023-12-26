@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
-import io.fury.Fury;
-import io.fury.annotation.Internal;
+import org.apache.fury.Fury;
+import org.apache.fury.annotation.Internal;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.WeakHashMap;

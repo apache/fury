@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.graalvm.record;
+package org.apache.fury.graalvm.record;
 
-import io.fury.Fury;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.util.Preconditions;
 
 import java.util.List;
 import java.util.Map;

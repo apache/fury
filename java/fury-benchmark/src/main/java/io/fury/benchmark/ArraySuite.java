@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

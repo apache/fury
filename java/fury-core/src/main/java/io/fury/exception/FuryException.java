@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.exception;
+package org.apache.fury.exception;
 
 /**
  * Base class of all fury exceptions.

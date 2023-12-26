@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.codegen.Expression.Invoke;
-import io.fury.codegen.Expression.Literal;
-import io.fury.serializer.Serializer;
-import io.fury.type.TypeUtils;
+import org.apache.fury.codegen.Expression.Invoke;
+import org.apache.fury.codegen.Expression.Literal;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.type.TypeUtils;
 import java.util.List;
 import org.testng.Assert;
 import org.testng.annotations.Test;

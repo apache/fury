@@ -17,28 +17,28 @@
  * under the License.
  */
 
-package io.fury.benchmark.state;
+package org.apache.fury.benchmark.state;
 
-import io.fury.Fury;
-import io.fury.benchmark.IntsSerializationSuite;
-import io.fury.benchmark.LongStringSerializationSuite;
-import io.fury.benchmark.LongsSerializationSuite;
-import io.fury.benchmark.StringSerializationSuite;
-import io.fury.benchmark.UserTypeDeserializeSuite;
-import io.fury.benchmark.UserTypeSerializeSuite;
-import io.fury.benchmark.data.Data;
-import io.fury.benchmark.data.Image;
-import io.fury.benchmark.data.Media;
-import io.fury.benchmark.data.MediaContent;
-import io.fury.benchmark.data.Struct;
-import io.fury.config.CompatibleMode;
-import io.fury.config.FuryBuilder;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.resolver.MetaContext;
-import io.fury.util.LoggerFactory;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.benchmark.IntsSerializationSuite;
+import org.apache.fury.benchmark.LongStringSerializationSuite;
+import org.apache.fury.benchmark.LongsSerializationSuite;
+import org.apache.fury.benchmark.StringSerializationSuite;
+import org.apache.fury.benchmark.UserTypeDeserializeSuite;
+import org.apache.fury.benchmark.UserTypeSerializeSuite;
+import org.apache.fury.benchmark.data.Data;
+import org.apache.fury.benchmark.data.Image;
+import org.apache.fury.benchmark.data.Media;
+import org.apache.fury.benchmark.data.MediaContent;
+import org.apache.fury.benchmark.data.Struct;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.MetaContext;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Preconditions;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import org.openjdk.jmh.annotations.BenchmarkMode;

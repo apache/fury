@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.Language;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;

@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.format.vectorized;
+package org.apache.fury.format.vectorized;
 
-import io.fury.Fury;
-import io.fury.io.FuryReadableByteChannel;
-import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.Serializers;
-import io.fury.type.Type;
-import io.fury.util.Platform;
+import org.apache.fury.Fury;
+import org.apache.fury.org.apache.furyReadableByteChannel;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.Serializers;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.Platform;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.List;

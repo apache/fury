@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.format.row.binary;
+package org.apache.fury.format.row.binary;
 
-import io.fury.format.row.MapData;
-import io.fury.format.type.DataTypes;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.util.Platform;
+import org.apache.fury.format.row.MapData;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.util.Platform;
 import java.nio.ByteBuffer;
 import org.apache.arrow.vector.types.pojo.Field;
 

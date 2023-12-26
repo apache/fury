@@ -140,15 +140,15 @@
                   <relocations>
                     <relocation>
                       <pattern>org.codehaus</pattern>
-                      <shadedPattern>io.fury.shaded.org.codehaus</shadedPattern>
+                      <shadedPattern>org.apache.fury.shaded.org.codehaus</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>org.apache.arrow</pattern>
-                      <shadedPattern>io.fury.shaded.org.apache.arrow</shadedPattern>
+                      <shadedPattern>org.apache.fury.shaded.org.apache.arrow</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>io.netty</pattern>
-                      <shadedPattern>io.fury.shaded.io.netty</shadedPattern>
+                      <shadedPattern>org.apache.fury.shaded.io.netty</shadedPattern>
                     </relocation>
                   </relocations>
                   <filters>

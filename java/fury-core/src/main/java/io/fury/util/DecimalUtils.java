@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
 public class DecimalUtils {
   public static final int DECIMAL_BYTE_LENGTH = 32;

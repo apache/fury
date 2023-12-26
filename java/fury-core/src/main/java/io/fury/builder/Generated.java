@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.builder;
+package org.apache.fury.builder;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.CompatibleSerializerBase;
-import io.fury.serializer.Serializer;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.CompatibleSerializerBase;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -101,7 +101,7 @@ public interface Generated {
     }
   }
 
-  /** Base class for all serializers with meta shared by {@link io.fury.type.ClassDef}. */
+  /** Base class for all serializers with meta shared by {@link org.apache.fury.type.ClassDef}. */
   abstract class GeneratedMetaSharedSerializer extends GeneratedSerializer implements Generated {
     public static final String SERIALIZER_FIELD_NAME = "serializer";
     /** Will be set in generated constructor by {@link MetaSharedCodecBuilder}. */

@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.format.encoder;
+package org.apache.fury.format.encoder;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.format.row.binary.BinaryArray;
+import org.apache.fury.format.row.binary.BinaryArray;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;

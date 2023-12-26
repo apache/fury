@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import io.fury.collection.LongMap;
-import io.fury.collection.ObjectMap;
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.collection.LongMap;
+import org.apache.fury.collection.ObjectMap;
+import org.apache.fury.memory.MemoryBuffer;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -71,7 +71,7 @@ public final class EnumStringResolver {
   public String readEnumString(MemoryBuffer buffer) {
     EnumStringBytes byteString = readEnumStringBytes(buffer);
     String str = enumStringBytes2StringMap.get(byteString);
-    if (str == null) { // TODO use io.fury.resolver.ObjectMap
+    if (str == null) { // TODO use org.apache.fury.resolver.ObjectMap
       str = new String(byteString.bytes, StandardCharsets.UTF_8);
       enumStringBytes2StringMap.put(byteString, str);
     }

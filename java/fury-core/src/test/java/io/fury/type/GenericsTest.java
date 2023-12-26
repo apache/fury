@@ -17,13 +17,13 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
-package io.fury.type;
+package org.apache.fury.type;
 
 import com.google.common.collect.ImmutableList;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.TestUtils;
-import io.fury.config.Language;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.TestUtils;
+import org.apache.fury.config.Language;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

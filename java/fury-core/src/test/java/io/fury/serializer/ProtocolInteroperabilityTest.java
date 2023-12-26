@@ -17,24 +17,24 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
 import static com.google.common.collect.ImmutableList.of;
-import static io.fury.TestUtils.mapOf;
-import static io.fury.collection.Collections.ofArrayList;
+import static org.apache.fury.TestUtils.mapOf;
+import static org.apache.fury.collection.Collections.ofArrayList;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.CompatibleMode;
-import io.fury.config.Language;
-import io.fury.resolver.MetaContext;
-import io.fury.serializer.collection.CollectionSerializersTest;
-import io.fury.serializer.collection.MapSerializersTest;
-import io.fury.test.bean.BeanA;
-import io.fury.test.bean.BeanB;
-import io.fury.test.bean.MapFields;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.Language;
+import org.apache.fury.resolver.MetaContext;
+import org.apache.fury.serializer.collection.CollectionSerializersTest;
+import org.apache.fury.serializer.collection.MapSerializersTest;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.BeanB;
+import org.apache.fury.test.bean.MapFields;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;

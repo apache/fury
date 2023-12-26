@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -28,10 +28,10 @@ import static org.testng.Assert.assertTrue;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import io.fury.Fury;
-import io.fury.codegen.CompileUnit;
-import io.fury.codegen.JaninoUtils;
-import io.fury.test.bean.BeanA;
+import org.apache.fury.Fury;
+import org.apache.fury.codegen.CompileUnit;
+import org.apache.fury.codegen.JaninoUtils;
+import org.apache.fury.test.bean.BeanA;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;

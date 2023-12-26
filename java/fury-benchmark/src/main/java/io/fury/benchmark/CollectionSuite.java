@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
-import io.fury.Fury;
+import org.apache.fury.Fury;
 import java.util.ArrayList;
 import java.util.List;
 import org.openjdk.jmh.Main;

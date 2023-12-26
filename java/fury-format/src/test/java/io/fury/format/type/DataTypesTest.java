@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.format.type;
+package org.apache.fury.format.type;
 
 import static org.testng.Assert.assertEquals;
 
-import io.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.BeanA;
 import java.nio.ByteBuffer;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Schema;

@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.type;
+package org.apache.fury.type;
 
-import io.fury.annotation.Internal;
+import org.apache.fury.annotation.Internal;
 
 /**
  * Stub class for object type which is final.
  *
- * <p>{@link Object} class will be used if isn't final. No {@link io.fury.resolver.ClassInfo} should
+ * <p>{@link Object} class will be used if isn't final. No {@link org.apache.fury.resolver.ClassInfo} should
  * be created for this class since it has no fields, and doesn't have consistent class structure as
  * real class.
  *

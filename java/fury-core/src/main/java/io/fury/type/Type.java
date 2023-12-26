@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.type;
+package org.apache.fury.type;
 
-import io.fury.util.Preconditions;
+import org.apache.fury.util.Preconditions;
 
 /**
  * Keep in sync with Type::type in arrow/type_fwd.h

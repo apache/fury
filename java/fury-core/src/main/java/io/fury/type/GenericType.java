@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.type;
+package org.apache.fury.type;
 
-import static io.fury.type.TypeUtils.getRawType;
+import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.resolver.ClassResolver;
-import io.fury.serializer.Serializer;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.serializer.Serializer;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;

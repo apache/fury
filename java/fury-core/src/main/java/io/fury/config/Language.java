@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.config;
+package org.apache.fury.config;
 
 /**
  * Language supported by fury.

@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
-import io.fury.Fury;
-import io.fury.codegen.CompileUnit;
-import io.fury.codegen.JaninoUtils;
-import io.fury.config.Language;
+import org.apache.fury.Fury;
+import org.apache.fury.codegen.CompileUnit;
+import org.apache.fury.codegen.JaninoUtils;
+import org.apache.fury.config.Language;
 import java.io.StringReader;
 import org.codehaus.janino.SimpleCompiler;
 import org.testng.Assert;

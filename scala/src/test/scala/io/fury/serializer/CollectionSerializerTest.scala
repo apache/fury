@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.serializer
+package org.apache.fury.serializer
 
-import io.fury.Fury
-import io.fury.config.Language
-import io.fury.serializer.scala.ScalaDispatcher
+import org.apache.fury.Fury
+import org.apache.fury.config.Language
+import org.apache.fury.serializer.scala.ScalaDispatcher
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package io.fury.format.type;
+package org.apache.fury.format.type;
 
-import static io.fury.util.Preconditions.checkArgument;
+import static org.apache.fury.util.Preconditions.checkArgument;
 
-import io.fury.exception.FuryException;
-import io.fury.io.FuryOutputStream;
-import io.fury.memory.MemoryBuffer;
-import io.fury.type.Type;
-import io.fury.util.DecimalUtils;
-import io.fury.util.Preconditions;
+import org.apache.fury.exception.FuryException;
+import org.apache.fury.org.apache.furyOutputStream;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.DecimalUtils;
+import org.apache.fury.util.Preconditions;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

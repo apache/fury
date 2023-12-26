@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.exception;
+package org.apache.fury.exception;
 
-import io.fury.config.CompatibleMode;
+import org.apache.fury.config.CompatibleMode;
 
 /**
  * Exception for class compatibility. If {@link CompatibleMode#COMPATIBLE} is not enabled, and the

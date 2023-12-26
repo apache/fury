@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package io.fury.format.vectorized;
+package org.apache.fury.format.vectorized;
 
-import io.fury.format.row.ArrayData;
-import io.fury.format.row.Getters;
-import io.fury.format.row.MapData;
-import io.fury.format.row.Row;
-import io.fury.format.type.DefaultTypeVisitor;
+import org.apache.fury.format.row.ArrayData;
+import org.apache.fury.format.row.Getters;
+import org.apache.fury.format.row.MapData;
+import org.apache.fury.format.row.Row;
+import org.apache.fury.format.type.DefaultTypeVisitor;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.stream.IntStream;

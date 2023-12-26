@@ -17,23 +17,23 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
-import static io.fury.codegen.Expression.Arithmetic;
-import static io.fury.codegen.Expression.Comparator;
-import static io.fury.codegen.Expression.IsNull;
-import static io.fury.codegen.Expression.Literal;
-import static io.fury.codegen.Expression.NewArray;
-import static io.fury.codegen.Expression.Not;
-import static io.fury.codegen.Expression.StaticInvoke;
-import static io.fury.type.TypeUtils.getRawType;
+import static org.apache.fury.codegen.Expression.Arithmetic;
+import static org.apache.fury.codegen.Expression.Comparator;
+import static org.apache.fury.codegen.Expression.IsNull;
+import static org.apache.fury.codegen.Expression.Literal;
+import static org.apache.fury.codegen.Expression.NewArray;
+import static org.apache.fury.codegen.Expression.Not;
+import static org.apache.fury.codegen.Expression.StaticInvoke;
+import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.codegen.Expression.Cast;
-import io.fury.codegen.Expression.Null;
-import io.fury.util.Preconditions;
-import io.fury.util.StringUtils;
-import io.fury.util.function.Functions;
+import org.apache.fury.codegen.Expression.Cast;
+import org.apache.fury.codegen.Expression.Null;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
+import org.apache.fury.util.function.Functions;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;

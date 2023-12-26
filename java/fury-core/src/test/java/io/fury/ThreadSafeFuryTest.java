@@ -17,19 +17,19 @@
  * under the License.
  */
 
-package io.fury;
+package org.apache.fury;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.MetaContext;
-import io.fury.serializer.Serializer;
-import io.fury.test.bean.BeanA;
-import io.fury.test.bean.Struct;
-import io.fury.util.LoaderBinding.StagingType;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.MetaContext;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.Struct;
+import org.apache.fury.util.LoaderBinding.StagingType;
 import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;

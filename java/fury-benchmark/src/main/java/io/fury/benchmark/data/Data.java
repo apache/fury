@@ -17,9 +17,9 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
-package io.fury.benchmark.data;
+package org.apache.fury.benchmark.data;
 
-import io.fury.util.StringUtils;
+import org.apache.fury.util.StringUtils;
 
 public class Data {
   // array

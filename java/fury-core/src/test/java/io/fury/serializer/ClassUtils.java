@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.test.bean.BeanA;
-import io.fury.test.bean.CollectionFields;
-import io.fury.test.bean.MapFields;
-import io.fury.test.bean.Struct;
-import io.fury.util.ClassLoaderUtils;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.CollectionFields;
+import org.apache.fury.test.bean.MapFields;
+import org.apache.fury.test.bean.Struct;
+import org.apache.fury.util.ClassLoaderUtils;
+import org.apache.fury.util.ReflectionUtils;
 import java.io.ByteArrayOutputStream;
 import java.net.URL;
 import java.nio.file.Files;

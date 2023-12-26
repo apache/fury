@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;

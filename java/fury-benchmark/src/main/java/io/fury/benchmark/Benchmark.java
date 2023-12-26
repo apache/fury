@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
 import org.openjdk.jmh.Main;
 

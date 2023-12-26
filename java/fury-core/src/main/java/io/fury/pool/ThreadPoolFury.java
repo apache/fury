@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.pool;
+package org.apache.fury.pool;
 
-import io.fury.Fury;
-import io.fury.ThreadSafeFury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.util.LoaderBinding;
+import org.apache.fury.Fury;
+import org.apache.fury.ThreadSafeFury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.util.LoaderBinding;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;

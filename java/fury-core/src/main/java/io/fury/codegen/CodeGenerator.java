@@ -17,23 +17,23 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import io.fury.builder.AccessorHelper;
-import io.fury.builder.Generated;
-import io.fury.collection.Collections;
-import io.fury.collection.MultiKeyWeakMap;
-import io.fury.util.ClassLoaderUtils;
-import io.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
-import io.fury.util.GraalvmSupport;
-import io.fury.util.LoggerFactory;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.StringUtils;
+import org.apache.fury.builder.AccessorHelper;
+import org.apache.fury.builder.Generated;
+import org.apache.fury.collection.Collections;
+import org.apache.fury.collection.MultiKeyWeakMap;
+import org.apache.fury.util.ClassLoaderUtils;
+import org.apache.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
+import org.apache.fury.util.GraalvmSupport;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.StringUtils;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;

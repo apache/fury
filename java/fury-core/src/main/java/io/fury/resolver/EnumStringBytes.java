@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import io.fury.annotation.Internal;
-import io.fury.util.MurmurHash3;
-import io.fury.util.Preconditions;
+import org.apache.fury.annotation.Internal;
+import org.apache.fury.util.MurmurHash3;
+import org.apache.fury.util.Preconditions;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 

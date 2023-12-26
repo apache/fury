@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -27,25 +27,25 @@ import static org.testng.Assert.assertTrue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Primitives;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.builder.Generated;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.resolver.longlongpkg.C1;
-import io.fury.resolver.longlongpkg.C2;
-import io.fury.resolver.longlongpkg.C3;
-import io.fury.serializer.CompatibleSerializer;
-import io.fury.serializer.ObjectSerializer;
-import io.fury.serializer.Serializer;
-import io.fury.serializer.Serializers;
-import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.collection.CollectionSerializers;
-import io.fury.serializer.collection.MapSerializers;
-import io.fury.test.bean.BeanB;
-import io.fury.type.TypeUtils;
-import io.fury.util.LoggerFactory;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.builder.Generated;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.longlongpkg.C1;
+import org.apache.fury.resolver.longlongpkg.C2;
+import org.apache.fury.resolver.longlongpkg.C3;
+import org.apache.fury.serializer.CompatibleSerializer;
+import org.apache.fury.serializer.ObjectSerializer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.Serializers;
+import org.apache.fury.serializer.collection.CollectionSerializer;
+import org.apache.fury.serializer.collection.CollectionSerializers;
+import org.apache.fury.serializer.collection.MapSerializers;
+import org.apache.fury.test.bean.BeanB;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,10 +94,10 @@ public class ClassResolverTest extends FuryTestBase {
   public void testRegisterClass() {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     ClassResolver classResolver = fury.getClassResolver();
-    classResolver.register(io.fury.test.bean.Foo.class);
+    classResolver.register(org.apache.fury.test.bean.Foo.class);
     Assert.assertThrows(
         IllegalArgumentException.class,
-        () -> classResolver.register(io.fury.test.bean.Foo.createCompatibleClass1()));
+        () -> classResolver.register(org.apache.fury.test.bean.Foo.createCompatibleClass1()));
     classResolver.register(Interface1.class, 200);
     Assert.assertThrows(
         IllegalArgumentException.class, () -> classResolver.register(Interface2.class, 200));
@@ -163,11 +163,11 @@ public class ClassResolverTest extends FuryTestBase {
         MapSerializers.ConcurrentHashMapSerializer.class);
     assertEquals(
         classResolver.getSerializerClass(
-            Class.forName("io.fury.serializer.collection.CollectionContainer")),
+            Class.forName("org.apache.fury.serializer.collection.CollectionContainer")),
         CollectionSerializers.DefaultJavaCollectionSerializer.class);
     assertEquals(
         classResolver.getSerializerClass(
-            Class.forName("io.fury.serializer.collection.MapContainer")),
+            Class.forName("org.apache.fury.serializer.collection.MapContainer")),
         MapSerializers.DefaultJavaMapSerializer.class);
   }
 
@@ -230,8 +230,8 @@ public class ClassResolverTest extends FuryTestBase {
       classResolver.reset();
       buffer.writerIndex(0);
       buffer.readerIndex(0);
-      List<io.fury.test.bean.Foo> fooList =
-          Arrays.asList(io.fury.test.bean.Foo.create(), io.fury.test.bean.Foo.create());
+      List<org.apache.fury.test.bean.Foo> fooList =
+          Arrays.asList(org.apache.fury.test.bean.Foo.create(), org.apache.fury.test.bean.Foo.create());
       Assert.assertEquals(fury.deserialize(fury.serialize(fooList)), fooList);
       Assert.assertEquals(fury.deserialize(fury.serialize(fooList)), fooList);
     }

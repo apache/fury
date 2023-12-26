@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import static io.fury.util.Preconditions.checkArgument;
+import static org.apache.fury.util.Preconditions.checkArgument;
 
-import io.fury.Fury;
-import io.fury.builder.CodecUtils;
-import io.fury.builder.Generated;
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.Fury;
+import org.apache.fury.builder.CodecUtils;
+import org.apache.fury.builder.Generated;
+import org.apache.fury.memory.MemoryBuffer;
 import java.lang.reflect.Modifier;
 
 /**
@@ -65,7 +65,7 @@ public final class CodegenSerializer {
   /**
    * A bean serializer which initializes lazily on first call read/write method.
    *
-   * <p>This class is used by {@link io.fury.builder.BaseObjectCodecBuilder} to avoid potential
+   * <p>This class is used by {@link org.apache.fury.builder.BaseObjectCodecBuilder} to avoid potential
    * recursive bean serializer creation when there is a circular reference in class children fields.
    */
   public static final class LazyInitBeanSerializer<T> extends Serializer<T> {

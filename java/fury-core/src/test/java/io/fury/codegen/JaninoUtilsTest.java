@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
-import io.fury.test.bean.Struct;
-import io.fury.util.ClassLoaderUtils;
-import io.fury.util.Platform;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.test.bean.Struct;
+import org.apache.fury.util.ClassLoaderUtils;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.ReflectionUtils;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;

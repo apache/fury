@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
-import io.fury.codegen.Code.ExprCode;
+import org.apache.fury.codegen.Code.ExprCode;
 
 /**
  * State for {@link Expression} when being compiling.

@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.util.record;
+package org.apache.fury.util.record;
 
-import io.fury.collection.Tuple2;
-import io.fury.util.unsafe._JDKAccess;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;

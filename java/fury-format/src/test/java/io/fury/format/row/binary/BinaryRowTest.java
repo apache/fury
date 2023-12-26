@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.format.row.binary;
+package org.apache.fury.format.row.binary;
 
-import io.fury.format.row.binary.writer.BinaryArrayWriter;
-import io.fury.format.row.binary.writer.BinaryRowWriter;
-import io.fury.format.type.DataTypes;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.util.LoggerFactory;
-import io.fury.util.Platform;
+import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
+import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Platform;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;

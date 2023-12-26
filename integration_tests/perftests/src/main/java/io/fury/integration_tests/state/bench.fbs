@@ -1,4 +1,4 @@
-namespace io.fury.integration_tests.state.generated;
+namespace org.apache.fury.integration_tests.state.generated;
 
 table FBSFoo {
   string:string;

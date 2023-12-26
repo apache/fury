@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
-import io.fury.type.TypeUtils;
-import io.fury.util.function.Functions;
-import io.fury.util.function.ToByteFunction;
-import io.fury.util.function.ToCharFunction;
-import io.fury.util.function.ToFloatFunction;
-import io.fury.util.function.ToShortFunction;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.function.Functions;
+import org.apache.fury.util.function.ToByteFunction;
+import org.apache.fury.util.function.ToCharFunction;
+import org.apache.fury.util.function.ToFloatFunction;
+import org.apache.fury.util.function.ToShortFunction;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.function.Function;

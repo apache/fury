@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.format.vectorized;
+package org.apache.fury.format.vectorized;
 
-import io.fury.io.FuryInputStream;
-import io.fury.io.FuryOutputStream;
-import io.fury.memory.MemoryBuffer;
-import io.fury.util.DecimalUtils;
+import org.apache.fury.org.apache.furyInputStream;
+import org.apache.fury.org.apache.furyOutputStream;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.DecimalUtils;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import org.apache.arrow.memory.ArrowBuf;

@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.FuryTestBase;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
 import java.net.MalformedURLException;
 import java.net.URL;
 import org.testng.Assert;

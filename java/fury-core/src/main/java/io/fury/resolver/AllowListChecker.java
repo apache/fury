@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import io.fury.Fury;
-import io.fury.exception.InsecureException;
-import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.Serializer;
-import io.fury.util.LoggerFactory;
+import org.apache.fury.Fury;
+import org.apache.fury.exception.InsecureException;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.LoggerFactory;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;

@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.collection;
+package org.apache.fury.collection;
 
 import com.google.common.collect.ForwardingMap;
-import io.fury.util.Preconditions;
+import org.apache.fury.util.Preconditions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;

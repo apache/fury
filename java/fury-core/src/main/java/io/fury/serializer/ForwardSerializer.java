@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.util.LoaderBinding;
-import io.fury.util.LoaderBinding.StagingType;
-import io.fury.util.Platform;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.util.LoaderBinding;
+import org.apache.fury.util.LoaderBinding.StagingType;
+import org.apache.fury.util.Platform;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.IdentityHashMap;

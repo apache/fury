@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
 
 /**
  * This class is used to track objects that have already been read or written.

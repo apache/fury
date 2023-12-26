@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.FuryBuilder;
-import io.fury.config.Language;
-import io.fury.test.bean.ArraysData;
-import io.fury.type.Descriptor;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.config.Language;
+import org.apache.fury.test.bean.ArraysData;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;

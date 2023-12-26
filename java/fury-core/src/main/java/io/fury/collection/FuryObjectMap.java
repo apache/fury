@@ -17,9 +17,9 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
-package io.fury.collection;
+package org.apache.fury.collection;
 
-import io.fury.util.Preconditions;
+import org.apache.fury.util.Preconditions;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;

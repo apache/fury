@@ -17,32 +17,32 @@
  * under the License.
  */
 
-package io.fury.builder;
+package org.apache.fury.builder;
 
-import static io.fury.builder.Generated.GeneratedMetaSharedSerializer.SERIALIZER_FIELD_NAME;
+import static org.apache.fury.builder.Generated.GeneratedMetaSharedSerializer.SERIALIZER_FIELD_NAME;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.Fury;
-import io.fury.builder.Generated.GeneratedMetaSharedSerializer;
-import io.fury.codegen.CodeGenerator;
-import io.fury.codegen.Expression;
-import io.fury.codegen.Expression.Literal;
-import io.fury.config.CompatibleMode;
-import io.fury.config.FuryBuilder;
-import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.CodegenSerializer;
-import io.fury.serializer.MetaSharedSerializer;
-import io.fury.serializer.ObjectSerializer;
-import io.fury.serializer.Serializer;
-import io.fury.serializer.Serializers;
-import io.fury.type.ClassDef;
-import io.fury.type.Descriptor;
-import io.fury.type.DescriptorGrouper;
-import io.fury.util.Preconditions;
-import io.fury.util.StringUtils;
-import io.fury.util.Utils;
-import io.fury.util.record.RecordComponent;
-import io.fury.util.record.RecordUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.builder.Generated.GeneratedMetaSharedSerializer;
+import org.apache.fury.codegen.CodeGenerator;
+import org.apache.fury.codegen.Expression;
+import org.apache.fury.codegen.Expression.Literal;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.CodegenSerializer;
+import org.apache.fury.serializer.MetaSharedSerializer;
+import org.apache.fury.serializer.ObjectSerializer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.Serializers;
+import org.apache.fury.type.ClassDef;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.DescriptorGrouper;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
+import org.apache.fury.util.Utils;
+import org.apache.fury.util.record.RecordComponent;
+import org.apache.fury.util.record.RecordUtils;
 import java.util.Collection;
 import java.util.SortedMap;
 

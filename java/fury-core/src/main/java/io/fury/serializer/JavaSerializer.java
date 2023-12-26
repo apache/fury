@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.io.ClassLoaderObjectInputStream;
-import io.fury.io.FuryObjectInput;
-import io.fury.io.FuryObjectOutput;
-import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassResolver;
-import io.fury.util.LoggerFactory;
-import io.fury.util.Platform;
+import org.apache.fury.Fury;
+import org.apache.fury.io.ClassLoaderObjectInputStream;
+import org.apache.fury.org.apache.furyObjectInput;
+import org.apache.fury.org.apache.furyObjectOutput;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Platform;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInputStream;

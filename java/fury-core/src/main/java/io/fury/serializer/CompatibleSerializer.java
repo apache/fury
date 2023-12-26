@@ -17,22 +17,22 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassResolver;
-import io.fury.resolver.FieldResolver;
-import io.fury.resolver.RefResolver;
-import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.collection.MapSerializer;
-import io.fury.util.FieldAccessor;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.record.RecordInfo;
-import io.fury.util.record.RecordUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.FieldResolver;
+import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.serializer.collection.CollectionSerializer;
+import org.apache.fury.serializer.collection.MapSerializer;
+import org.apache.fury.util.FieldAccessor;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.record.RecordInfo;
+import org.apache.fury.util.record.RecordUtils;
 import java.lang.invoke.MethodHandle;
 import java.util.Arrays;
 import java.util.Collection;

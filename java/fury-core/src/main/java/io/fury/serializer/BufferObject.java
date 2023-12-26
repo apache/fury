@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryBuffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 

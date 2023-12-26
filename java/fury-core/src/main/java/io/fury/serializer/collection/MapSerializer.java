@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.serializer.collection;
+package org.apache.fury.serializer.collection;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
 import java.util.Map;
 
 /**

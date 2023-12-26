@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package io.fury.collection;
+package org.apache.fury.collection;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.Language;
-import io.fury.serializer.collection.MapSerializers;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
+import org.apache.fury.serializer.collection.MapSerializers;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;

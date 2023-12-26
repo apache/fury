@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.collection;
+package org.apache.fury.collection;
 
 import java.io.Serializable;
 import java.util.Objects;

@@ -16,13 +16,13 @@
  * limitations under the License.
  */
 
-package io.fury.memory;
+package org.apache.fury.memory;
 
-import static io.fury.util.Preconditions.checkArgument;
+import static org.apache.fury.util.Preconditions.checkArgument;
 
-import io.fury.annotation.CodegenInvoke;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
+import org.apache.fury.annotation.CodegenInvoke;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;

@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package io.fury.format.vectorized;
+package org.apache.fury.format.vectorized;
 
-import io.fury.Fury;
-import io.fury.io.FuryReadableByteChannel;
-import io.fury.io.FuryWritableByteChannel;
-import io.fury.io.MockWritableByteChannel;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.serializer.BufferObject;
-import io.fury.serializer.Serializers.CrossLanguageCompatibleSerializer;
-import io.fury.type.Type;
-import io.fury.util.Platform;
+import org.apache.fury.Fury;
+import org.apache.fury.org.apache.furyReadableByteChannel;
+import org.apache.fury.org.apache.furyWritableByteChannel;
+import org.apache.fury.io.MockWritableByteChannel;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.serializer.BufferObject;
+import org.apache.fury.serializer.Serializers.CrossLanguageCompatibleSerializer;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.Platform;
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;

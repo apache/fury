@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.format.vectorized;
+package org.apache.fury.format.vectorized;
 
-import io.fury.util.Preconditions;
+import org.apache.fury.util.Preconditions;
 import java.util.Iterator;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorLoader;

@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.format.row.binary;
+package org.apache.fury.format.row.binary;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.memory.MemoryBuffer;
-import io.fury.type.TypeUtils;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.type.TypeUtils;
 
 /**
  * Util class for building generated binary encoder.

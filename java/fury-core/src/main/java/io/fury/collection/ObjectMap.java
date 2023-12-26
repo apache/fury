@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.collection;
+package org.apache.fury.collection;
 
 /** An unordered map which has better `get` performance than {@link java.util.HashMap}. */
 public final class ObjectMap<K, V> extends FuryObjectMap<K, V> {

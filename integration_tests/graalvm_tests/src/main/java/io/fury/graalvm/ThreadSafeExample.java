@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.graalvm;
+package org.apache.fury.graalvm;
 
-import io.fury.Fury;
-import io.fury.ThreadLocalFury;
-import io.fury.ThreadSafeFury;
-import io.fury.collection.Collections;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.ThreadLocalFury;
+import org.apache.fury.ThreadSafeFury;
+import org.apache.fury.collection.Collections;
+import org.apache.fury.util.Preconditions;
 
 import java.util.List;
 import java.util.Map;

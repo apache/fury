@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.Language;
-import io.fury.exception.InsecureException;
-import io.fury.util.Platform;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
+import org.apache.fury.exception.InsecureException;
+import org.apache.fury.util.Platform;
 import java.rmi.server.UnicastRemoteObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;

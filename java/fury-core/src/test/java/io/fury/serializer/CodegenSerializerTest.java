@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
@@ -25,13 +25,13 @@ import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.CompatibleMode;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.test.bean.Cyclic;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.test.bean.Cyclic;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;

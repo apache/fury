@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import io.fury.serializer.Serializer;
+import org.apache.fury.serializer.Serializer;
 
 /**
  * A helper class for holding and update {@link ClassInfo} to reduce map look-up.

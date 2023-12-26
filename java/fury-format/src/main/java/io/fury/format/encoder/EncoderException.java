@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.format.encoder;
+package org.apache.fury.format.encoder;
 
-import io.fury.exception.FuryException;
+import org.apache.fury.exception.FuryException;
 
 /**
  * This class represents encoder-related exception.

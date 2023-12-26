@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.io;
+package org.apache.fury.io;
 
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryBuffer;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 

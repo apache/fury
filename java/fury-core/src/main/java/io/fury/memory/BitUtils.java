@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.memory;
+package org.apache.fury.memory;
 
 /**
  * Util class for bits related operations. We assume that the bitmap data is word-aligned (that is,

@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.collection;
+package org.apache.fury.collection;
 
-import io.fury.util.LoggerFactory;
+import org.apache.fury.util.LoggerFactory;
 import java.lang.ref.Reference;
 import java.lang.reflect.Field;
 import java.util.Set;

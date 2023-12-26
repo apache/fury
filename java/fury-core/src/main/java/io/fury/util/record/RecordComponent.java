@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.util.record;
+package org.apache.fury.util.record;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;

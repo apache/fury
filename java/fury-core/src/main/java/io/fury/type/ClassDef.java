@@ -17,28 +17,28 @@
  * under the License.
  */
 
-package io.fury.type;
+package org.apache.fury.type;
 
-import static io.fury.type.TypeUtils.COLLECTION_TYPE;
-import static io.fury.type.TypeUtils.MAP_TYPE;
-import static io.fury.type.TypeUtils.collectionOf;
-import static io.fury.type.TypeUtils.mapOf;
+import static org.apache.fury.type.TypeUtils.COLLECTION_TYPE;
+import static org.apache.fury.type.TypeUtils.MAP_TYPE;
+import static org.apache.fury.type.TypeUtils.collectionOf;
+import static org.apache.fury.type.TypeUtils.mapOf;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.Fury;
-import io.fury.builder.MetaSharedCodecBuilder;
-import io.fury.collection.IdentityObjectIntMap;
-import io.fury.config.CompatibleMode;
-import io.fury.config.FuryBuilder;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.resolver.ClassResolver;
-import io.fury.serializer.CompatibleSerializer;
-import io.fury.util.LoggerFactory;
-import io.fury.util.MurmurHash3;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.builder.MetaSharedCodecBuilder;
+import org.apache.fury.collection.IdentityObjectIntMap;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.serializer.CompatibleSerializer;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.MurmurHash3;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.lang.reflect.Field;

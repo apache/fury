@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.format.row.binary;
+package org.apache.fury.format.row.binary;
 
-import static io.fury.util.DecimalUtils.DECIMAL_BYTE_LENGTH;
+import static org.apache.fury.util.DecimalUtils.DECIMAL_BYTE_LENGTH;
 
-import io.fury.format.row.Getters;
-import io.fury.format.row.Setters;
-import io.fury.format.type.DataTypes;
-import io.fury.format.vectorized.ArrowUtils;
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.format.row.Getters;
+import org.apache.fury.format.row.Setters;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.format.vectorized.ArrowUtils;
+import org.apache.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import org.apache.arrow.memory.ArrowBuf;

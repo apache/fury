@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package io.fury.builder;
+package org.apache.fury.builder;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.Fury;
-import io.fury.codegen.CodeGenerator;
-import io.fury.codegen.CompileUnit;
-import io.fury.resolver.FieldResolver;
-import io.fury.serializer.Serializer;
-import io.fury.type.ClassDef;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.codegen.CodeGenerator;
+import org.apache.fury.codegen.CompileUnit;
+import org.apache.fury.resolver.FieldResolver;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.type.ClassDef;
+import org.apache.fury.util.Preconditions;
 import java.util.Collections;
 
 /**
@@ -36,7 +36,7 @@ import java.util.Collections;
  */
 public class CodecUtils {
 
-  // TODO(chaokunyang) how to uninstall io.fury.codegen/builder classes for graalvm build time
+  // TODO(chaokunyang) how to uninstall org.apache.fury.codegen/builder classes for graalvm build time
   //  maybe use a temporal URLClassLoader
   public static <T> Class<? extends Serializer<T>> loadOrGenObjectCodecClass(
       Class<T> cls, Fury fury) {

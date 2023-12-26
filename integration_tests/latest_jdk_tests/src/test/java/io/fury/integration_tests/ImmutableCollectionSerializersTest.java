@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.integration_tests;
+package org.apache.fury.integration_tests;
 
-import static io.fury.integration_tests.TestUtils.serDeCheck;
+import static org.apache.fury.integration_tests.TestUtils.serDeCheck;
 
-import io.fury.Fury;
-import io.fury.test.bean.CollectionFields;
-import io.fury.test.bean.MapFields;
+import org.apache.fury.Fury;
+import org.apache.fury.test.bean.CollectionFields;
+import org.apache.fury.test.bean.MapFields;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

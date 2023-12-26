@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
-import io.fury.test.bean.BeanA;
-import io.fury.type.Descriptor;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.type.Descriptor;
 import java.util.List;
 import org.testng.annotations.Test;
 

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.integration_tests;
+package org.apache.fury.integration_tests;
 
 public class Records {
   private record PrivateRecord(int f1) {}

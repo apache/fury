@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.benchmark.data;
+package org.apache.fury.benchmark.data;
 
-import io.fury.util.ClassLoaderUtils;
-import io.fury.util.Preconditions;
+import org.apache.fury.util.ClassLoaderUtils;
+import org.apache.fury.util.Preconditions;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.lang.reflect.Field;
@@ -145,13 +145,13 @@ public class Struct implements Serializable {
                     + "package demo.fury.pkg1;\n"
                     + "public final class %s implements java.io.Serializable {\n"
                     + "  public String toString() {\n"
-                    + "   return io.fury.benchmark.data.Struct.toString(this);\n"
+                    + "   return org.apache.fury.benchmark.data.Struct.toString(this);\n"
                     + "  }\n"
                     + "  public boolean equals(Object o) {\n"
-                    + "   return io.fury.benchmark.data.Struct.equalsWith(this, o);\n"
+                    + "   return org.apache.fury.benchmark.data.Struct.equalsWith(this, o);\n"
                     + "  }\n"
                     + "  public int hashCode() {\n"
-                    + "   return io.fury.benchmark.data.Struct.calcHashCode(this);\n"
+                    + "   return org.apache.fury.benchmark.data.Struct.calcHashCode(this);\n"
                     + "  }\n",
                 classname));
 

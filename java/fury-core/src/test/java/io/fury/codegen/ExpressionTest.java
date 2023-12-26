@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
-import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
+import static org.apache.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static org.testng.Assert.assertNull;
 
-import io.fury.codegen.Expression.ListExpression;
-import io.fury.codegen.Expression.Literal;
-import io.fury.codegen.Expression.Reference;
-import io.fury.codegen.Expression.Return;
+import org.apache.fury.codegen.Expression.ListExpression;
+import org.apache.fury.codegen.Expression.Literal;
+import org.apache.fury.codegen.Expression.Reference;
+import org.apache.fury.codegen.Expression.Return;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

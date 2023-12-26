@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.type;
+package org.apache.fury.type;
 
 import static org.testng.Assert.*;
 

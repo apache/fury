@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;

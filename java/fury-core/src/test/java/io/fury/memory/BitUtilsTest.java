@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.memory;
+package org.apache.fury.memory;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 
-import io.fury.util.StringUtils;
+import org.apache.fury.util.StringUtils;
 import org.testng.annotations.Test;
 
 public class BitUtilsTest {

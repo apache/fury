@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.codegen.Expression.ListExpression;
-import io.fury.codegen.Expression.Reference;
-import io.fury.type.TypeUtils;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.codegen.Expression.ListExpression;
+import org.apache.fury.codegen.Expression.Reference;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Field;

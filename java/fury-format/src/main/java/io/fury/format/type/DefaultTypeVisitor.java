@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.format.type;
+package org.apache.fury.format.type;
 
 import org.apache.arrow.vector.types.pojo.ArrowType;
 

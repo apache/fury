@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;

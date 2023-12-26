@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.serializer.test;
+package org.apache.fury.serializer.test;
 
-import io.fury.util.Preconditions;
+import org.apache.fury.util.Preconditions;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -27,7 +27,7 @@ import java.io.ObjectOutput;
 import lombok.Data;
 
 /**
- * Package-private class for testing {@link io.fury.serializer.ExternalizableSerializer} when the
+ * Package-private class for testing {@link org.apache.fury.serializer.ExternalizableSerializer} when the
  * serialized class is inaccessible to the serializer.
  */
 @Data

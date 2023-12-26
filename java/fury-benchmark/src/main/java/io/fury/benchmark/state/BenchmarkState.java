@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.benchmark.state;
+package org.apache.fury.benchmark.state;
 
-import io.fury.util.StringUtils;
+import org.apache.fury.util.StringUtils;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;

@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.serializer.collection;
+package org.apache.fury.serializer.collection;
 
-import static io.fury.collection.Collections.ofArrayList;
-import static io.fury.collection.Collections.ofHashMap;
+import static org.apache.fury.collection.Collections.ofArrayList;
+import static org.apache.fury.collection.Collections.ofHashMap;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
@@ -28,13 +28,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.reflect.TypeToken;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.serializer.collection.CollectionSerializers.JDKCompatibleCollectionSerializer;
-import io.fury.type.GenericType;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.serializer.collection.CollectionSerializers.JDKCompatibleCollectionSerializer;
+import org.apache.fury.type.GenericType;
 import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.ArrayDeque;

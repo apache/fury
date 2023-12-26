@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import static io.fury.resolver.FieldResolver.FieldInfo;
-import static io.fury.resolver.FieldResolver.computeStringHash;
-import static io.fury.resolver.FieldResolver.decodeLongAsString;
-import static io.fury.resolver.FieldResolver.encodeFieldNameAsLong;
-import static io.fury.resolver.FieldResolver.encodingBytesLength;
-import static io.fury.resolver.FieldResolver.of;
+import static org.apache.fury.resolver.FieldResolver.FieldInfo;
+import static org.apache.fury.resolver.FieldResolver.computeStringHash;
+import static org.apache.fury.resolver.FieldResolver.decodeLongAsString;
+import static org.apache.fury.resolver.FieldResolver.encodeFieldNameAsLong;
+import static org.apache.fury.resolver.FieldResolver.encodingBytesLength;
+import static org.apache.fury.resolver.FieldResolver.of;
 
-import io.fury.Fury;
-import io.fury.config.Language;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

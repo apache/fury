@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.config;
+package org.apache.fury.config;
 
-import io.fury.Fury;
-import io.fury.serializer.Serializer;
-import io.fury.serializer.TimeSerializers;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.TimeSerializers;
+import org.apache.fury.util.Preconditions;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package io.fury.io;
+package org.apache.fury.io;
 
 import java.io.IOException;
 import java.io.InputStream;

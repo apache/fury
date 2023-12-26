@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.collection;
+package org.apache.fury.collection;
 
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;

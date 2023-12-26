@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryBuffer;
 import java.util.Map;
 import org.testng.annotations.Test;
 

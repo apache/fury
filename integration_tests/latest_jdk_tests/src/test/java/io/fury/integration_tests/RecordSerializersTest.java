@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package io.fury.integration_tests;
+package org.apache.fury.integration_tests;
 
-import static io.fury.collection.Collections.ofArrayList;
-import static io.fury.collection.Collections.ofHashMap;
+import static org.apache.fury.collection.Collections.ofArrayList;
+import static org.apache.fury.collection.Collections.ofHashMap;
 
-import io.fury.Fury;
-import io.fury.config.CompatibleMode;
-import io.fury.resolver.MetaContext;
-import io.fury.test.bean.Struct;
-import io.fury.util.record.RecordComponent;
-import io.fury.util.record.RecordUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.resolver.MetaContext;
+import org.apache.fury.test.bean.Struct;
+import org.apache.fury.util.record.RecordComponent;
+import org.apache.fury.util.record.RecordUtils;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;

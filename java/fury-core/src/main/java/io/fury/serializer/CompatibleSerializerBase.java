@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
 
 /**
  * Base class for compatible serializer. Both JIT mode serializer and interpreter-mode serializer

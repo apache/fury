@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
-import static io.fury.benchmark.state.JsonbState.getJsonbReaderConfig;
-import static io.fury.benchmark.state.JsonbState.getJsonbWriterConfig;
+import static org.apache.fury.benchmark.state.JsonbState.getJsonbReaderConfig;
+import static org.apache.fury.benchmark.state.JsonbState.getJsonbWriterConfig;
 
 import com.alibaba.fastjson2.JSONB;
 import com.alibaba.fastjson2.JSONReader;
@@ -30,17 +30,17 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.io.UnsafeMemoryInput;
 import com.esotericsoftware.kryo.io.UnsafeMemoryOutput;
-import io.fury.Fury;
-import io.fury.benchmark.data.ComparableByteArray;
-import io.fury.benchmark.data.SerializableByteBuffer;
-import io.fury.benchmark.state.BufferType;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.serializer.BufferObject;
-import io.fury.test.bean.ArraysData;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.benchmark.data.ComparableByteArray;
+import org.apache.fury.benchmark.data.SerializableByteBuffer;
+import org.apache.fury.benchmark.state.BufferType;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.serializer.BufferObject;
+import org.apache.fury.test.bean.ArraysData;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -265,12 +265,12 @@ public class ZeroCopySuite {
   }
 
   public static byte[] fstSerialize(Blackhole blackhole, FstState state, Object value) {
-    return io.fury.benchmark.state.FstState.FstBenchmarkState.serialize(
+    return org.apache.fury.benchmark.state.FstState.FstBenchmarkState.serialize(
         state.fst, state.bufferType, value, state.out, state.directBuffer, blackhole);
   }
 
   public static Object fstDeserialize(Blackhole blackhole, FstState state) {
-    return io.fury.benchmark.state.FstState.FstBenchmarkState.deserialize(
+    return org.apache.fury.benchmark.state.FstState.FstBenchmarkState.deserialize(
         state.fst, state.bufferType, state.buffer, state.out, state.directBuffer, blackhole);
   }
 

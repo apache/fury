@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
 /**
  * A class to hold generated class fields into for code generation.

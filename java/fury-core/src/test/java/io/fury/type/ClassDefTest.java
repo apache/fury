@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.type;
+package org.apache.fury.type;
 
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.memory.MemoryBuffer;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;

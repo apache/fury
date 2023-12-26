@@ -17,30 +17,30 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import static io.fury.resolver.ClassResolver.NO_CLASS_ID;
-import static io.fury.resolver.ClassResolver.PRIMITIVE_LONG_CLASS_ID;
-import static io.fury.resolver.FieldResolver.FieldInfoEncodingType.EMBED_TYPES_4;
-import static io.fury.resolver.FieldResolver.FieldInfoEncodingType.EMBED_TYPES_9;
-import static io.fury.resolver.FieldResolver.FieldInfoEncodingType.EMBED_TYPES_HASH;
-import static io.fury.resolver.FieldResolver.FieldInfoEncodingType.SEPARATE_TYPES_HASH;
-import static io.fury.type.TypeUtils.getRawType;
+import static org.apache.fury.resolver.ClassResolver.NO_CLASS_ID;
+import static org.apache.fury.resolver.ClassResolver.PRIMITIVE_LONG_CLASS_ID;
+import static org.apache.fury.resolver.FieldResolver.FieldInfoEncodingType.EMBED_TYPES_4;
+import static org.apache.fury.resolver.FieldResolver.FieldInfoEncodingType.EMBED_TYPES_9;
+import static org.apache.fury.resolver.FieldResolver.FieldInfoEncodingType.EMBED_TYPES_HASH;
+import static org.apache.fury.resolver.FieldResolver.FieldInfoEncodingType.SEPARATE_TYPES_HASH;
+import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.Fury;
-import io.fury.collection.Tuple2;
-import io.fury.exception.ClassNotCompatibleException;
-import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.PrimitiveSerializers;
-import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.collection.MapSerializer;
-import io.fury.type.Descriptor;
-import io.fury.type.TypeUtils;
-import io.fury.util.FieldAccessor;
-import io.fury.util.MurmurHash3;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.exception.ClassNotCompatibleException;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.PrimitiveSerializers;
+import org.apache.fury.serializer.collection.CollectionSerializer;
+import org.apache.fury.serializer.collection.MapSerializer;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.FieldAccessor;
+import org.apache.fury.util.MurmurHash3;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
@@ -102,7 +102,7 @@ import java.util.stream.Collectors;
  * info is less than current field, then it will be a field not exists in current class and can be
  * skipped.
  *
- * @see io.fury.serializer.CompatibleSerializerBase
+ * @see org.apache.fury.serializer.CompatibleSerializerBase
  * @author chaokunyang
  */
 @SuppressWarnings({"rawtypes", "UnstableApiUsage"})

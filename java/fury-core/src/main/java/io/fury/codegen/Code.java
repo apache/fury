@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
-import static io.fury.codegen.Code.LiteralValue.FalseLiteral;
-import static io.fury.codegen.Code.LiteralValue.TrueLiteral;
+import static org.apache.fury.codegen.Code.LiteralValue.FalseLiteral;
+import static org.apache.fury.codegen.Code.LiteralValue.TrueLiteral;
 
 import java.util.Objects;
 

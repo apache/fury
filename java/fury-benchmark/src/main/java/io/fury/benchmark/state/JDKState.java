@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package io.fury.benchmark.state;
+package org.apache.fury.benchmark.state;
 
-import io.fury.benchmark.IntsSerializationSuite;
-import io.fury.benchmark.LongStringSerializationSuite;
-import io.fury.benchmark.LongsSerializationSuite;
-import io.fury.benchmark.StringSerializationSuite;
-import io.fury.benchmark.data.Data;
-import io.fury.benchmark.data.MediaContent;
-import io.fury.benchmark.data.Sample;
-import io.fury.benchmark.data.Struct;
-import io.fury.io.ClassLoaderObjectInputStream;
-import io.fury.util.Preconditions;
+import org.apache.fury.benchmark.IntsSerializationSuite;
+import org.apache.fury.benchmark.LongStringSerializationSuite;
+import org.apache.fury.benchmark.LongsSerializationSuite;
+import org.apache.fury.benchmark.StringSerializationSuite;
+import org.apache.fury.benchmark.data.Data;
+import org.apache.fury.benchmark.data.MediaContent;
+import org.apache.fury.benchmark.data.Sample;
+import org.apache.fury.benchmark.data.Struct;
+import org.apache.fury.io.ClassLoaderObjectInputStream;
+import org.apache.fury.util.Preconditions;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

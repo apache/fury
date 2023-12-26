@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.pool;
+package org.apache.fury.pool;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import io.fury.Fury;
-import io.fury.util.LoaderBinding;
-import io.fury.util.LoggerFactory;
+import org.apache.fury.Fury;
+import org.apache.fury.util.LoaderBinding;
+import org.apache.fury.util.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.slf4j.Logger;

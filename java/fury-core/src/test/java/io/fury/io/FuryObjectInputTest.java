@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.io;
+package org.apache.fury.io;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
 import java.io.IOException;
 import org.testng.annotations.Test;
 

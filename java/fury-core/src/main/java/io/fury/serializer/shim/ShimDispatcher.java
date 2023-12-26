@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package io.fury.serializer.shim;
+package org.apache.fury.serializer.shim;
 
-import io.fury.Fury;
-import io.fury.collection.FuryObjectMap;
-import io.fury.collection.ObjectMap;
-import io.fury.serializer.Serializer;
-import io.fury.serializer.Serializers;
-import io.fury.serializer.collection.CollectionSerializer;
-import io.fury.serializer.collection.MapSerializers;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.collection.FuryObjectMap;
+import org.apache.fury.collection.ObjectMap;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.Serializers;
+import org.apache.fury.serializer.collection.CollectionSerializer;
+import org.apache.fury.serializer.collection.MapSerializers;
+import org.apache.fury.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

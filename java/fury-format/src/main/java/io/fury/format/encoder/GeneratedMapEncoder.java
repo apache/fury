@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.format.encoder;
+package org.apache.fury.format.encoder;
 
-import io.fury.builder.Generated;
-import io.fury.format.row.binary.BinaryArray;
-import io.fury.format.row.binary.BinaryMap;
+import org.apache.fury.builder.Generated;
+import org.apache.fury.format.row.binary.BinaryArray;
+import org.apache.fury.format.row.binary.BinaryMap;
 
 /**
  * A map container row format codec for java bean.

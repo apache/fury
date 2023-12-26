@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package io.fury.format.row.binary;
+package org.apache.fury.format.row.binary;
 
-import static io.fury.util.Preconditions.checkArgument;
+import static org.apache.fury.util.Preconditions.checkArgument;
 
-import io.fury.format.row.Row;
-import io.fury.format.type.DataTypes;
-import io.fury.memory.BitUtils;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.util.Preconditions;
+import org.apache.fury.format.row.Row;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.memory.BitUtils;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.util.Preconditions;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;

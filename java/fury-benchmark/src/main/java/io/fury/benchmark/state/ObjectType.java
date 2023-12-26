@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.benchmark.state;
+package org.apache.fury.benchmark.state;
 
-import io.fury.benchmark.data.MediaContent;
-import io.fury.benchmark.data.Sample;
-import io.fury.benchmark.data.Struct;
+import org.apache.fury.benchmark.data.MediaContent;
+import org.apache.fury.benchmark.data.Sample;
+import org.apache.fury.benchmark.data.Struct;
 
 public enum ObjectType {
   SAMPLE,

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.graalvm;
+package org.apache.fury.graalvm;
 
 import java.io.Serializable;
 import java.util.Objects;

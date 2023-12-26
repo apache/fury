@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.graalvm.record;
+package org.apache.fury.graalvm.record;
 
 import java.util.List;
 import java.util.Map;

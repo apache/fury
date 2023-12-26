@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.integration_tests;
+package org.apache.fury.integration_tests;
 
-import io.fury.Fury;
+import org.apache.fury.Fury;
 import org.testng.Assert;
 
 @SuppressWarnings("unchecked")

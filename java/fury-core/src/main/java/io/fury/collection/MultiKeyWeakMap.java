@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.collection;
+package org.apache.fury.collection;
 
 import com.google.common.base.FinalizableReferenceQueue;
 import com.google.common.base.FinalizableWeakReference;
-import io.fury.util.GraalvmSupport;
+import org.apache.fury.util.GraalvmSupport;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

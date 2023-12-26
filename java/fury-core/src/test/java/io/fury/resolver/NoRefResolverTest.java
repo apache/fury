@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
 import static org.testng.Assert.*;
 
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryBuffer;
 import org.testng.annotations.Test;
 
 public class NoRefResolverTest {

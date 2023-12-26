@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.format.row.binary.writer;
+package org.apache.fury.format.row.binary.writer;
 
-import static io.fury.memory.BitUtils.calculateBitmapWidthInBytes;
+import static org.apache.fury.memory.BitUtils.calculateBitmapWidthInBytes;
 
-import io.fury.format.row.binary.BinaryRow;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
+import org.apache.fury.format.row.binary.BinaryRow;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
 import java.math.BigDecimal;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Schema;

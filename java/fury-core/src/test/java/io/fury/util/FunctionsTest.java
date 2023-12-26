@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
-import io.fury.util.function.Functions;
-import io.fury.util.function.SerializableFunction;
-import io.fury.util.function.SerializableTriFunction;
-import io.fury.util.function.TriFunction;
+import org.apache.fury.util.function.Functions;
+import org.apache.fury.util.function.SerializableFunction;
+import org.apache.fury.util.function.SerializableTriFunction;
+import org.apache.fury.util.function.TriFunction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.function.Consumer;

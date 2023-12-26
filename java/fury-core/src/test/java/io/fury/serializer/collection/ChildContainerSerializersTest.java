@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.serializer.collection;
+package org.apache.fury.serializer.collection;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.CompatibleMode;
-import io.fury.config.Language;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.Language;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;

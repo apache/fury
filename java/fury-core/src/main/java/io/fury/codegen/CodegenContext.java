@@ -17,23 +17,23 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
-import static io.fury.codegen.Code.ExprCode;
-import static io.fury.codegen.CodeGenerator.alignIndent;
-import static io.fury.codegen.CodeGenerator.indent;
-import static io.fury.type.TypeUtils.getArrayType;
-import static io.fury.type.TypeUtils.getRawType;
+import static org.apache.fury.codegen.Code.ExprCode;
+import static org.apache.fury.codegen.CodeGenerator.alignIndent;
+import static org.apache.fury.codegen.CodeGenerator.indent;
+import static org.apache.fury.type.TypeUtils.getArrayType;
+import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
-import io.fury.codegen.Expression.BaseInvoke;
-import io.fury.codegen.Expression.Reference;
-import io.fury.collection.Collections;
-import io.fury.collection.Tuple2;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.StringUtils;
+import org.apache.fury.codegen.Expression.BaseInvoke;
+import org.apache.fury.codegen.Expression.Reference;
+import org.apache.fury.collection.Collections;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;

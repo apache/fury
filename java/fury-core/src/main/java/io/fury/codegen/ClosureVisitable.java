@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

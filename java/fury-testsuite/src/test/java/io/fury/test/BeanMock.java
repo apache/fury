@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.test;
+package org.apache.fury.test;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;

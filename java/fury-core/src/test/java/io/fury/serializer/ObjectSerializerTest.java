@@ -17,16 +17,16 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 
-import io.fury.Fury;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.test.bean.Cyclic;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.test.bean.Cyclic;
+import org.apache.fury.util.Preconditions;
 import lombok.Data;
 import org.testng.annotations.Test;
 

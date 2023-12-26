@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
-import io.fury.collection.IdentityMap;
-import io.fury.collection.IdentityObjectIntMap;
-import io.fury.collection.ObjectMap;
+import org.apache.fury.collection.IdentityMap;
+import org.apache.fury.collection.IdentityObjectIntMap;
+import org.apache.fury.collection.ObjectMap;
 import io.timeandspace.smoothie.SwissTable;
 import java.io.IOException;
 import java.util.HashMap;

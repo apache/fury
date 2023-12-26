@@ -17,29 +17,29 @@
  * under the License.
  */
 
-package io.fury.format;
+package org.apache.fury.format;
 
-import static io.fury.format.vectorized.ArrowSerializersTest.assertRecordBatchEqual;
-import static io.fury.format.vectorized.ArrowSerializersTest.assertTableEqual;
-import static io.fury.format.vectorized.ArrowUtilsTest.createVectorSchemaRoot;
+import static org.apache.fury.format.vectorized.ArrowSerializersTest.assertRecordBatchEqual;
+import static org.apache.fury.format.vectorized.ArrowSerializersTest.assertTableEqual;
+import static org.apache.fury.format.vectorized.ArrowUtilsTest.createVectorSchemaRoot;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.fury.Fury;
-import io.fury.config.Language;
-import io.fury.format.encoder.Encoders;
-import io.fury.format.encoder.RowEncoder;
-import io.fury.format.row.binary.BinaryRow;
-import io.fury.format.type.DataTypes;
-import io.fury.format.vectorized.ArrowSerializers;
-import io.fury.format.vectorized.ArrowTable;
-import io.fury.format.vectorized.ArrowUtils;
-import io.fury.format.vectorized.ArrowWriter;
-import io.fury.io.FuryOutputStream;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.serializer.BufferObject;
-import io.fury.util.LoggerFactory;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.format.encoder.Encoders;
+import org.apache.fury.format.encoder.RowEncoder;
+import org.apache.fury.format.row.binary.BinaryRow;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.format.vectorized.ArrowSerializers;
+import org.apache.fury.format.vectorized.ArrowTable;
+import org.apache.fury.format.vectorized.ArrowUtils;
+import org.apache.fury.format.vectorized.ArrowWriter;
+import org.apache.fury.org.apache.furyOutputStream;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.serializer.BufferObject;
+import org.apache.fury.util.LoggerFactory;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.file.Files;

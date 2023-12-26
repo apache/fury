@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.format.row;
+package org.apache.fury.format.row;
 
 /** Interface for array in row format. */
 public interface ArrayData extends Getters, Setters {

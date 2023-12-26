@@ -17,23 +17,23 @@
  * under the License.
  */
 
-package io.fury.format.row.binary;
+package org.apache.fury.format.row.binary;
 
-import static io.fury.format.type.DataTypes.PRIMITIVE_BOOLEAN_ARRAY_FIELD;
-import static io.fury.format.type.DataTypes.PRIMITIVE_BYTE_ARRAY_FIELD;
-import static io.fury.format.type.DataTypes.PRIMITIVE_DOUBLE_ARRAY_FIELD;
-import static io.fury.format.type.DataTypes.PRIMITIVE_FLOAT_ARRAY_FIELD;
-import static io.fury.format.type.DataTypes.PRIMITIVE_INT_ARRAY_FIELD;
-import static io.fury.format.type.DataTypes.PRIMITIVE_LONG_ARRAY_FIELD;
-import static io.fury.format.type.DataTypes.PRIMITIVE_SHORT_ARRAY_FIELD;
+import static org.apache.fury.format.type.DataTypes.PRIMITIVE_BOOLEAN_ARRAY_FIELD;
+import static org.apache.fury.format.type.DataTypes.PRIMITIVE_BYTE_ARRAY_FIELD;
+import static org.apache.fury.format.type.DataTypes.PRIMITIVE_DOUBLE_ARRAY_FIELD;
+import static org.apache.fury.format.type.DataTypes.PRIMITIVE_FLOAT_ARRAY_FIELD;
+import static org.apache.fury.format.type.DataTypes.PRIMITIVE_INT_ARRAY_FIELD;
+import static org.apache.fury.format.type.DataTypes.PRIMITIVE_LONG_ARRAY_FIELD;
+import static org.apache.fury.format.type.DataTypes.PRIMITIVE_SHORT_ARRAY_FIELD;
 
-import io.fury.format.row.ArrayData;
-import io.fury.format.type.DataTypes;
-import io.fury.memory.BitUtils;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
+import org.apache.fury.format.row.ArrayData;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.memory.BitUtils;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
 import java.math.BigDecimal;
 import org.apache.arrow.vector.types.pojo.Field;
 

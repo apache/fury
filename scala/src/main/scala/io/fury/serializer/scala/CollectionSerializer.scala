@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.serializer.scala
+package org.apache.fury.serializer.scala
 
-import io.fury.Fury
-import io.fury.memory.MemoryBuffer
-import io.fury.serializer.collection.AbstractCollectionSerializer
+import org.apache.fury.Fury
+import org.apache.fury.memory.MemoryBuffer
+import org.apache.fury.serializer.collection.AbstractCollectionSerializer
 
 import java.util
 import scala.collection.{Factory, Iterable, mutable}

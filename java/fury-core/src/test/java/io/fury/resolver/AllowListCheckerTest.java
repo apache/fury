@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
 import static org.testng.Assert.*;
 
-import io.fury.Fury;
-import io.fury.ThreadLocalFury;
-import io.fury.ThreadSafeFury;
-import io.fury.exception.InsecureException;
+import org.apache.fury.Fury;
+import org.apache.fury.ThreadLocalFury;
+import org.apache.fury.ThreadSafeFury;
+import org.apache.fury.exception.InsecureException;
 import org.testng.annotations.Test;
 
 public class AllowListCheckerTest {
@@ -63,9 +63,9 @@ public class AllowListCheckerTest {
       fury.getClassResolver().setClassChecker(checker);
       checker.addListener(fury.getClassResolver());
       assertThrows(InsecureException.class, () -> fury.serialize(new AllowListCheckerTest()));
-      checker.allowClass("io.fury.*");
+      checker.allowClass("org.apache.fury.*");
       byte[] bytes = fury.serialize(new AllowListCheckerTest());
-      checker.disallowClass("io.fury.*");
+      checker.disallowClass("org.apache.fury.*");
       assertThrows(InsecureException.class, () -> fury.serialize(new AllowListCheckerTest()));
       assertThrows(InsecureException.class, () -> fury.deserialize(bytes));
     }
@@ -75,7 +75,7 @@ public class AllowListCheckerTest {
       fury.getClassResolver().setClassChecker(checker);
       checker.addListener(fury.getClassResolver());
       byte[] bytes = fury.serialize(new AllowListCheckerTest());
-      checker.disallowClass("io.fury.*");
+      checker.disallowClass("org.apache.fury.*");
       assertThrows(InsecureException.class, () -> fury.serialize(new AllowListCheckerTest()));
       assertThrows(InsecureException.class, () -> fury.deserialize(bytes));
     }
@@ -96,9 +96,9 @@ public class AllowListCheckerTest {
               checker.addListener(f.getClassResolver());
               return f;
             });
-    checker.allowClass("io.fury.*");
+    checker.allowClass("org.apache.fury.*");
     byte[] bytes = fury.serialize(new AllowListCheckerTest());
-    checker.disallowClass("io.fury.*");
+    checker.disallowClass("org.apache.fury.*");
     assertThrows(InsecureException.class, () -> fury.serialize(new AllowListCheckerTest()));
     assertThrows(InsecureException.class, () -> fury.deserialize(bytes));
   }

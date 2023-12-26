@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.format.encoder;
+package org.apache.fury.format.encoder;
 
 /**
  * The encoding interface for encode/decode object to/from binary. The implementation class must

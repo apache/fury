@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.format.encoder;
+package org.apache.fury.format.encoder;
 
 import com.google.common.collect.ImmutableMap;
-import io.fury.format.row.binary.BinaryRow;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.test.bean.BeanA;
-import io.fury.test.bean.BeanB;
+import org.apache.fury.format.row.binary.BinaryRow;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.BeanB;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;

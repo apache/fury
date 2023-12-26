@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package io.fury.util.unsafe;
+package org.apache.fury.util.unsafe;
 
-import io.fury.collection.Tuple2;
-import io.fury.type.TypeUtils;
-import io.fury.util.GraalvmSupport;
-import io.fury.util.Preconditions;
-import io.fury.util.Utils;
-import io.fury.util.function.ToByteFunction;
-import io.fury.util.function.ToCharFunction;
-import io.fury.util.function.ToFloatFunction;
-import io.fury.util.function.ToShortFunction;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.GraalvmSupport;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.Utils;
+import org.apache.fury.util.function.ToByteFunction;
+import org.apache.fury.util.function.ToCharFunction;
+import org.apache.fury.util.function.ToFloatFunction;
+import org.apache.fury.util.function.ToShortFunction;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;

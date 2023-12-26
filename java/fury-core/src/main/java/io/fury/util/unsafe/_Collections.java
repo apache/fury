@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.util.unsafe;
+package org.apache.fury.util.unsafe;
 
-import io.fury.util.Platform;
+import org.apache.fury.util.Platform;
 import java.util.ArrayList;
 
 /**

@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.type.TypeUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.type.TypeUtils;
 import javax.annotation.concurrent.NotThreadSafe;
 
 /**

@@ -17,19 +17,19 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.CompatibleMode;
-import io.fury.config.FuryBuilder;
-import io.fury.config.Language;
-import io.fury.resolver.MetaContext;
-import io.fury.test.bean.Struct;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.config.Language;
+import org.apache.fury.resolver.MetaContext;
+import org.apache.fury.test.bean.Struct;
 import java.util.List;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;

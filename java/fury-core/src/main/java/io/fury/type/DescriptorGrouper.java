@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.type;
+package org.apache.fury.type;
 
-import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
+import static org.apache.fury.type.TypeUtils.getSizeOfPrimitiveType;
 
-import io.fury.util.record.RecordUtils;
+import org.apache.fury.util.record.RecordUtils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;

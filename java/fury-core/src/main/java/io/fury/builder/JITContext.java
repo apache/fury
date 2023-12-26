@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package io.fury.builder;
+package org.apache.fury.builder;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
-import io.fury.Fury;
-import io.fury.annotation.Internal;
-import io.fury.codegen.CodeGenerator;
-import io.fury.config.Config;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.annotation.Internal;
+import org.apache.fury.codegen.CodeGenerator;
+import org.apache.fury.config.Config;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

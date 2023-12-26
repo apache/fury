@@ -17,20 +17,20 @@
  * under the License.
  */
 
-package io.fury.serializer.collection;
+package org.apache.fury.serializer.collection;
 
 import com.google.common.collect.ImmutableSet;
-import io.fury.Fury;
-import io.fury.config.CompatibleMode;
-import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassResolver;
-import io.fury.resolver.FieldResolver;
-import io.fury.serializer.CompatibleSerializer;
-import io.fury.serializer.JavaSerializer;
-import io.fury.serializer.ObjectSerializer;
-import io.fury.serializer.Serializer;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.FieldResolver;
+import org.apache.fury.serializer.CompatibleSerializer;
+import org.apache.fury.serializer.JavaSerializer;
+import org.apache.fury.serializer.ObjectSerializer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;

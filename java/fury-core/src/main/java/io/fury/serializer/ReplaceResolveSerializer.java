@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassResolver;
-import io.fury.resolver.RefResolver;
-import io.fury.util.LoggerFactory;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.unsafe._JDKAccess;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.unsafe._JDKAccess;
 import java.io.Externalizable;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;

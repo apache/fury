@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.serializer.collection;
+package org.apache.fury.serializer.collection;
 
-import io.fury.Fury;
-import io.fury.collection.Tuple2;
-import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.Serializer;
-import io.fury.util.LoggerFactory;
-import io.fury.util.Platform;
-import io.fury.util.Utils;
+import org.apache.fury.Fury;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;

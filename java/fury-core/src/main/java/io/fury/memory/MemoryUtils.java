@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.memory;
+package org.apache.fury.memory;
 
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;

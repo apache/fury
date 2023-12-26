@@ -17,21 +17,21 @@
  * under the License.
  */
 
-package io.fury.type;
+package org.apache.fury.type;
 
-import static io.fury.util.Preconditions.checkArgument;
+import static org.apache.fury.util.Preconditions.checkArgument;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.reflect.TypeToken;
-import io.fury.annotation.Ignore;
-import io.fury.annotation.Internal;
-import io.fury.collection.Tuple2;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
-import io.fury.util.StringUtils;
-import io.fury.util.record.RecordComponent;
-import io.fury.util.record.RecordUtils;
+import org.apache.fury.annotation.Ignore;
+import org.apache.fury.annotation.Internal;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
+import org.apache.fury.util.record.RecordComponent;
+import org.apache.fury.util.record.RecordUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

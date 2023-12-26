@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import io.fury.config.FuryBuilder;
+import org.apache.fury.config.FuryBuilder;
 import java.util.IdentityHashMap;
 
 /**

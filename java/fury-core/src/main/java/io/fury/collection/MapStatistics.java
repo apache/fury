@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.collection;
+package org.apache.fury.collection;
 
-import io.fury.annotation.Internal;
+import org.apache.fury.annotation.Internal;
 
 /**
  * Profiling statistics for hash collision.

@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.format.row;
+package org.apache.fury.format.row;
 
-import io.fury.format.type.DefaultTypeVisitor;
+import org.apache.fury.format.type.DefaultTypeVisitor;
 import java.util.function.Function;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 

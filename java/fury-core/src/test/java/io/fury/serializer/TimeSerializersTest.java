@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.config.Language;
-import io.fury.util.DateTimeUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
+import org.apache.fury.util.DateTimeUtils;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;

@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.integration_tests;
+package org.apache.fury.integration_tests;
 
-import io.fury.Fury;
-import io.fury.config.CompatibleMode;
-import io.fury.config.FuryBuilder;
-import io.fury.config.Language;
-import io.fury.test.bean.BeanA;
-import io.fury.util.Platform;
+import org.apache.fury.Fury;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.config.Language;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.util.Platform;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;

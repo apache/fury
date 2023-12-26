@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.format.row;
+package org.apache.fury.format.row;
 
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
 import org.apache.arrow.vector.types.pojo.Field;
 

@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.benchmark;
+package org.apache.fury.benchmark;
 
-import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.StringSerializer;
-import io.fury.util.Platform;
-import io.fury.util.StringUtils;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.StringSerializer;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.StringUtils;
 import java.nio.ByteBuffer;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;

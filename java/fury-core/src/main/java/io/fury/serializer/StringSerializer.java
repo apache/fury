@@ -17,23 +17,23 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import static io.fury.type.TypeUtils.PRIMITIVE_CHAR_ARRAY_TYPE;
-import static io.fury.type.TypeUtils.STRING_TYPE;
+import static org.apache.fury.type.TypeUtils.PRIMITIVE_CHAR_ARRAY_TYPE;
+import static org.apache.fury.type.TypeUtils.STRING_TYPE;
 
-import io.fury.Fury;
-import io.fury.codegen.Expression;
-import io.fury.codegen.Expression.Invoke;
-import io.fury.codegen.Expression.StaticInvoke;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.type.Type;
-import io.fury.util.MathUtils;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.unsafe._JDKAccess;
+import org.apache.fury.Fury;
+import org.apache.fury.codegen.Expression;
+import org.apache.fury.codegen.Expression.Invoke;
+import org.apache.fury.codegen.Expression.StaticInvoke;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.MathUtils;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;

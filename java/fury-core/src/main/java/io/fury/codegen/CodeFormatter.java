@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
 /**
  * Code formatter to format generated code for better readbility.

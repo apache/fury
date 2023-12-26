@@ -17,26 +17,26 @@
  * under the License.
  */
 
-package io.fury.builder;
+package org.apache.fury.builder;
 
-import static io.fury.collection.Collections.ofArrayList;
-import static io.fury.collection.Collections.ofHashMap;
+import static org.apache.fury.collection.Collections.ofArrayList;
+import static org.apache.fury.collection.Collections.ofHashMap;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import io.fury.Fury;
-import io.fury.FuryTestBase;
-import io.fury.codegen.CodeGenerator;
-import io.fury.codegen.CompileUnit;
-import io.fury.codegen.JaninoUtils;
-import io.fury.config.Language;
-import io.fury.serializer.collection.CollectionSerializersTest;
-import io.fury.test.bean.AccessBeans;
-import io.fury.test.bean.BeanA;
-import io.fury.test.bean.BeanB;
-import io.fury.test.bean.Foo;
-import io.fury.test.bean.Struct;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.codegen.CodeGenerator;
+import org.apache.fury.codegen.CompileUnit;
+import org.apache.fury.codegen.JaninoUtils;
+import org.apache.fury.config.Language;
+import org.apache.fury.serializer.collection.CollectionSerializersTest;
+import org.apache.fury.test.bean.AccessBeans;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.BeanB;
+import org.apache.fury.test.bean.Foo;
+import org.apache.fury.test.bean.Struct;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;

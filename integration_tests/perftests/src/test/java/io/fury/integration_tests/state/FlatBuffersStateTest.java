@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.integration_tests.state;
+package org.apache.fury.integration_tests.state;
 
-import io.fury.benchmark.data.MediaContent;
-import io.fury.benchmark.data.Sample;
+import org.apache.fury.benchmark.data.MediaContent;
+import org.apache.fury.benchmark.data.Sample;
 import java.nio.ByteBuffer;
 import org.testng.Assert;
 import org.testng.annotations.Test;

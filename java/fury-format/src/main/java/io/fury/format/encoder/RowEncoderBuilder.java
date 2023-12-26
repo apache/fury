@@ -17,37 +17,37 @@
  * under the License.
  */
 
-package io.fury.format.encoder;
+package org.apache.fury.format.encoder;
 
-import static io.fury.type.TypeUtils.CLASS_TYPE;
-import static io.fury.type.TypeUtils.getRawType;
+import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
+import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.reflect.TypeToken;
-import io.fury.Fury;
-import io.fury.builder.CodecBuilder;
-import io.fury.codegen.CodeGenerator;
-import io.fury.codegen.CodegenContext;
-import io.fury.codegen.Expression;
-import io.fury.codegen.Expression.Literal;
-import io.fury.codegen.Expression.Reference;
-import io.fury.codegen.ExpressionUtils;
-import io.fury.format.row.ArrayData;
-import io.fury.format.row.MapData;
-import io.fury.format.row.Row;
-import io.fury.format.row.binary.BinaryArray;
-import io.fury.format.row.binary.BinaryMap;
-import io.fury.format.row.binary.BinaryRow;
-import io.fury.format.row.binary.BinaryUtils;
-import io.fury.format.row.binary.writer.BinaryRowWriter;
-import io.fury.format.type.DataTypes;
-import io.fury.format.type.TypeInference;
-import io.fury.type.Descriptor;
-import io.fury.type.TypeUtils;
-import io.fury.util.GraalvmSupport;
-import io.fury.util.LoggerFactory;
-import io.fury.util.Preconditions;
-import io.fury.util.StringUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.builder.CodecBuilder;
+import org.apache.fury.codegen.CodeGenerator;
+import org.apache.fury.codegen.CodegenContext;
+import org.apache.fury.codegen.Expression;
+import org.apache.fury.codegen.Expression.Literal;
+import org.apache.fury.codegen.Expression.Reference;
+import org.apache.fury.codegen.ExpressionUtils;
+import org.apache.fury.format.row.ArrayData;
+import org.apache.fury.format.row.MapData;
+import org.apache.fury.format.row.Row;
+import org.apache.fury.format.row.binary.BinaryArray;
+import org.apache.fury.format.row.binary.BinaryMap;
+import org.apache.fury.format.row.binary.BinaryRow;
+import org.apache.fury.format.row.binary.BinaryUtils;
+import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.format.type.TypeInference;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.GraalvmSupport;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
 import java.lang.reflect.Modifier;
 import java.util.SortedMap;
 import org.apache.arrow.vector.types.pojo.Field;

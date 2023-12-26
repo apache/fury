@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.test;
+package org.apache.fury.test;
 
-import io.fury.Fury;
-import io.fury.config.Language;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;

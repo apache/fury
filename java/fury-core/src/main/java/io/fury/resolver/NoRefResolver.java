@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
 
 /**
  * A no-op resolver which ignore reference, only handle null/non-null.

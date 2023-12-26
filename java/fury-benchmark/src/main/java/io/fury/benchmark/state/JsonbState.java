@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.benchmark.state;
+package org.apache.fury.benchmark.state;
 
 import com.alibaba.fastjson2.JSONB;
 import com.alibaba.fastjson2.JSONFactory;
@@ -25,14 +25,14 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONReader;
 import com.alibaba.fastjson2.JSONWriter;
 import com.alibaba.fastjson2.reader.ObjectReaderProvider;
-import io.fury.Fury;
-import io.fury.benchmark.data.CustomJDKSerialization;
-import io.fury.benchmark.data.MediaContent;
-import io.fury.benchmark.data.Sample;
-import io.fury.benchmark.data.Struct;
-import io.fury.util.LoggerFactory;
-import io.fury.util.Platform;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.benchmark.data.CustomJDKSerialization;
+import org.apache.fury.benchmark.data.MediaContent;
+import org.apache.fury.benchmark.data.Sample;
+import org.apache.fury.benchmark.data.Struct;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

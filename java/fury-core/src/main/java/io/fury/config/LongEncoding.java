@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.config;
+package org.apache.fury.config;
 
 /**
  * Encoding option for long. Default encoding is fury SLI(Small long as int) encoding: {@link #SLI}.

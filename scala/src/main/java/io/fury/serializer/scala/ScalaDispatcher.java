@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package io.fury.serializer.scala;
+package org.apache.fury.serializer.scala;
 
 import com.google.common.base.Preconditions;
-import io.fury.Fury;
-import io.fury.serializer.JavaSerializer;
-import io.fury.serializer.Serializer;
-import io.fury.serializer.SerializerFactory;
+import org.apache.fury.Fury;
+import org.apache.fury.serializer.JavaSerializer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.SerializerFactory;
 import scala.collection.generic.DefaultSerializable;
 
 import java.lang.reflect.Method;

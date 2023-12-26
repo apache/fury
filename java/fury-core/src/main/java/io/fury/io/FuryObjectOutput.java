@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.io;
+package org.apache.fury.io;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.serializer.StringSerializer;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.StringSerializer;
+import org.apache.fury.util.Preconditions;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutput;

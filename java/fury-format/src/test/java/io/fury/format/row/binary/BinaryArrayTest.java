@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package io.fury.format.row.binary;
+package org.apache.fury.format.row.binary;
 
-import io.fury.format.row.binary.writer.BinaryArrayWriter;
-import io.fury.format.type.DataTypes;
-import io.fury.util.LoggerFactory;
+import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.util.LoggerFactory;
 import java.util.Random;
 import org.slf4j.Logger;
 import org.testng.Assert;

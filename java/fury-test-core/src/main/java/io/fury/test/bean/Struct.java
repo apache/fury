@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.test.bean;
+package org.apache.fury.test.bean;
 
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
@@ -236,10 +236,10 @@ public final class Struct implements Serializable {
                           + "import java.util.*;\n"
                           + "public final class %s implements java.io.Serializable {\n"
                           + "  public String toString() {\n"
-                          + "   return io.fury.test.bean.Struct.toString(this);\n"
+                          + "   return org.apache.fury.test.bean.Struct.toString(this);\n"
                           + "  }\n"
                           + "  public boolean equals(Object o) {\n"
-                          + "   return io.fury.test.bean.Struct.equalsWith(this, o);\n"
+                          + "   return org.apache.fury.test.bean.Struct.equalsWith(this, o);\n"
                           + "  }\n",
                       classname));
 
@@ -288,10 +288,10 @@ public final class Struct implements Serializable {
                           + "import java.util.*;\n"
                           + "public final class %s implements java.io.Serializable {\n"
                           + "  public String toString() {\n"
-                          + "   return io.fury.test.bean.Struct.toString(this);\n"
+                          + "   return org.apache.fury.test.bean.Struct.toString(this);\n"
                           + "  }\n"
                           + "  public boolean equals(Object o) {\n"
-                          + "   return io.fury.test.bean.Struct.equalsWith(this, o);\n"
+                          + "   return org.apache.fury.test.bean.Struct.equalsWith(this, o);\n"
                           + "  }\n",
                       classname));
 

@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury;
+package org.apache.fury;
 
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
-import io.fury.util.FieldAccessor;
-import io.fury.util.ReflectionUtils;
+import org.apache.fury.util.FieldAccessor;
+import org.apache.fury.util.ReflectionUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;

@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import io.fury.Fury;
-import io.fury.memory.MemoryBuffer;
-import io.fury.type.Type;
-import io.fury.util.DateTimeUtils;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.DateTimeUtils;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Duration;

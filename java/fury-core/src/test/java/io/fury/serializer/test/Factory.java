@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.serializer.test;
+package org.apache.fury.serializer.test;
 
 import java.io.Externalizable;
 

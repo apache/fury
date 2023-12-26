@@ -17,27 +17,27 @@
  * under the License.
  */
 
-package io.fury.format.encoder;
+package org.apache.fury.format.encoder;
 
-import static io.fury.type.TypeUtils.getRawType;
+import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.annotation.Internal;
-import io.fury.codegen.ClosureVisitable;
-import io.fury.codegen.Code;
-import io.fury.codegen.CodeGenerator;
-import io.fury.codegen.CodegenContext;
-import io.fury.codegen.Expression;
-import io.fury.format.row.binary.BinaryArray;
-import io.fury.format.row.binary.BinaryUtils;
-import io.fury.type.TypeUtils;
-import io.fury.util.Preconditions;
-import io.fury.util.StringUtils;
-import io.fury.util.function.SerializableBiFunction;
-import io.fury.util.function.SerializableFunction;
+import org.apache.fury.annotation.Internal;
+import org.apache.fury.codegen.ClosureVisitable;
+import org.apache.fury.codegen.Code;
+import org.apache.fury.codegen.CodeGenerator;
+import org.apache.fury.codegen.CodegenContext;
+import org.apache.fury.codegen.Expression;
+import org.apache.fury.format.row.binary.BinaryArray;
+import org.apache.fury.format.row.binary.BinaryUtils;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
+import org.apache.fury.util.function.SerializableBiFunction;
+import org.apache.fury.util.function.SerializableFunction;
 
 /**
- * Expression for iterate {@link io.fury.format.row.ArrayData} with specified not null element
+ * Expression for iterate {@link org.apache.fury.format.row.ArrayData} with specified not null element
  * action expression and null element action expression.
  *
  * @author chaokunyang

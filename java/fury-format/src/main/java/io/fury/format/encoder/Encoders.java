@@ -17,27 +17,27 @@
  * under the License.
  */
 
-package io.fury.format.encoder;
+package org.apache.fury.format.encoder;
 
-import static io.fury.type.TypeUtils.getRawType;
+import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
-import io.fury.Fury;
-import io.fury.codegen.CodeGenerator;
-import io.fury.codegen.CompileUnit;
-import io.fury.collection.Tuple2;
-import io.fury.exception.ClassNotCompatibleException;
-import io.fury.format.row.binary.BinaryArray;
-import io.fury.format.row.binary.BinaryMap;
-import io.fury.format.row.binary.BinaryRow;
-import io.fury.format.row.binary.writer.BinaryArrayWriter;
-import io.fury.format.row.binary.writer.BinaryRowWriter;
-import io.fury.format.type.DataTypes;
-import io.fury.format.type.TypeInference;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.type.TypeUtils;
-import io.fury.util.LoggerFactory;
+import org.apache.fury.Fury;
+import org.apache.fury.codegen.CodeGenerator;
+import org.apache.fury.codegen.CompileUnit;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.exception.ClassNotCompatibleException;
+import org.apache.fury.format.row.binary.BinaryArray;
+import org.apache.fury.format.row.binary.BinaryMap;
+import org.apache.fury.format.row.binary.BinaryRow;
+import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
+import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.format.type.TypeInference;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.LoggerFactory;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;

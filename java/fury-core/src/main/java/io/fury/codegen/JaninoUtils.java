@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
-import io.fury.collection.Tuple2;
-import io.fury.util.LoggerFactory;
-import io.fury.util.ReflectionUtils;
-import io.fury.util.StringUtils;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.StringUtils;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

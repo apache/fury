@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package io.fury.serializer;
+package org.apache.fury.serializer;
 
-import static io.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
+import static org.apache.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
 
-import io.fury.Fury;
-import io.fury.codegen.Expression;
-import io.fury.codegen.Expression.Invoke;
-import io.fury.config.LongEncoding;
-import io.fury.memory.MemoryBuffer;
-import io.fury.type.Type;
-import io.fury.util.Preconditions;
+import org.apache.fury.Fury;
+import org.apache.fury.codegen.Expression;
+import org.apache.fury.codegen.Expression.Invoke;
+import org.apache.fury.config.LongEncoding;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.Preconditions;
 
 /**
  * Serializers for java primitive types.

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.util;
+package org.apache.fury.util;
 
 import com.google.common.hash.Hashing;
 import java.util.Random;

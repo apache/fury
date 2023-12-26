@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package io.fury.builder;
+package org.apache.fury.builder;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-import io.fury.TestUtils;
-import io.fury.builder.pkg.AccessLevelClass;
-import io.fury.test.bean.Foo;
-import io.fury.test.bean.Struct;
-import io.fury.type.Descriptor;
+import org.apache.fury.TestUtils;
+import org.apache.fury.builder.pkg.AccessLevelClass;
+import org.apache.fury.test.bean.Foo;
+import org.apache.fury.test.bean.Struct;
+import org.apache.fury.type.Descriptor;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutorService;

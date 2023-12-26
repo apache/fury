@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
 import java.util.Map;
 import java.util.concurrent.locks.Lock;

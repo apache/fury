@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package io.fury;
+package org.apache.fury;
 
-import io.fury.memory.MemoryBuffer;
-import io.fury.util.LoaderBinding;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.LoaderBinding;
 import java.nio.ByteBuffer;
 import java.util.function.Function;
 

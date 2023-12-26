@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package io.fury.format.vectorized;
+package org.apache.fury.format.vectorized;
 
 import static org.testng.Assert.assertEquals;
 
-import io.fury.Fury;
-import io.fury.config.Language;
-import io.fury.io.FuryWritableByteChannel;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.resolver.ClassResolver;
-import io.fury.serializer.BufferObject;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.org.apache.furyWritableByteChannel;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.serializer.BufferObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;

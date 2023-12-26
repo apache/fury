@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package io.fury.collection;
+package org.apache.fury.collection;
 
-import static io.fury.util.unsafe._Collections.setArrayListElements;
+import static org.apache.fury.util.unsafe._Collections.setArrayListElements;
 
 import java.util.ArrayList;
 import java.util.Collection;

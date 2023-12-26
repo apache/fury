@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.io;
+package org.apache.fury.io;
 
 import java.io.OutputStream;
 import java.nio.ByteBuffer;

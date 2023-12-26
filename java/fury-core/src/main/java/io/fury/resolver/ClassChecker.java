@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.fury.resolver;
+package org.apache.fury.resolver;
 
 /**
  * Check whether class or objects of class should be serialized. If class checker will be invoked by

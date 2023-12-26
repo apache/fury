@@ -17,18 +17,18 @@
  * under the License.
  */
 
-package io.fury.format.type;
+package org.apache.fury.format.type;
 
-import static io.fury.format.type.DataTypes.field;
-import static io.fury.type.TypeUtils.getRawType;
+import static org.apache.fury.format.type.DataTypes.field;
+import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.reflect.TypeToken;
-import io.fury.collection.Tuple2;
-import io.fury.type.Descriptor;
-import io.fury.type.TypeUtils;
-import io.fury.util.DecimalUtils;
-import io.fury.util.Preconditions;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.DecimalUtils;
+import org.apache.fury.util.Preconditions;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;

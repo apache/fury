@@ -17,6 +17,6 @@
  * under the License.
  */
 
-package io.fury.resolver.longlongpkg;
+package org.apache.fury.resolver.longlongpkg;
 
 public class C3 {}

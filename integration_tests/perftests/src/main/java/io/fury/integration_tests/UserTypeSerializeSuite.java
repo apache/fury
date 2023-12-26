@@ -17,17 +17,17 @@
  * under the License.
  */
 
-package io.fury.integration_tests;
+package org.apache.fury.integration_tests;
 
-import io.fury.benchmark.data.MediaContent;
-import io.fury.benchmark.data.Sample;
-import io.fury.benchmark.state.BufferType;
-import io.fury.benchmark.state.ObjectType;
-import io.fury.integration_tests.state.FlatBuffersState;
-import io.fury.integration_tests.state.FlatBuffersState.FlatBuffersUserTypeState;
-import io.fury.integration_tests.state.ProtoBuffersState;
-import io.fury.integration_tests.state.ProtoBuffersState.ProtoBuffersUserTypeState;
-import io.fury.util.Platform;
+import org.apache.fury.benchmark.data.MediaContent;
+import org.apache.fury.benchmark.data.Sample;
+import org.apache.fury.benchmark.state.BufferType;
+import org.apache.fury.benchmark.state.ObjectType;
+import org.apache.fury.integration_tests.state.FlatBuffersState;
+import org.apache.fury.integration_tests.state.FlatBuffersState.FlatBuffersUserTypeState;
+import org.apache.fury.integration_tests.state.ProtoBuffersState;
+import org.apache.fury.integration_tests.state.ProtoBuffersState.ProtoBuffersUserTypeState;
+import org.apache.fury.util.Platform;
 import java.io.IOException;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -36,7 +36,7 @@ import org.openjdk.jmh.annotations.Mode;
 
 @BenchmarkMode(Mode.Throughput)
 @CompilerControl(value = CompilerControl.Mode.INLINE)
-public class UserTypeSerializeSuite extends io.fury.benchmark.UserTypeSerializeSuite {
+public class UserTypeSerializeSuite extends org.apache.fury.benchmark.UserTypeSerializeSuite {
   @Benchmark
   public byte[] protobuffers_serialize(ProtoBuffersUserTypeState state) {
     if (state.objectType == ObjectType.SAMPLE) {

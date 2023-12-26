@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package io.fury.codegen;
+package org.apache.fury.codegen;
 
-import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
-import static io.fury.type.TypeUtils.getRawType;
+import static org.apache.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
+import static org.apache.fury.type.TypeUtils.getRawType;
 
-import io.fury.codegen.Expression.Reference;
-import io.fury.util.Preconditions;
-import io.fury.util.function.SerializableSupplier;
+import org.apache.fury.codegen.Expression.Reference;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.function.SerializableSupplier;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -35,7 +35,7 @@ import java.util.Set;
 
 /**
  * Optimizer to generate expression logic in a new method and return an {@link
- * io.fury.codegen.Expression} to invoke the new generated method.
+ * org.apache.fury.codegen.Expression} to invoke the new generated method.
  *
  * @author chaokunyang
  */

@@ -17,15 +17,15 @@
  * under the License.
  */
 
-package io.fury.builder;
+package org.apache.fury.builder;
 
 import static org.testng.Assert.assertEquals;
 
-import io.fury.Fury;
-import io.fury.config.Language;
-import io.fury.memory.MemoryBuffer;
-import io.fury.memory.MemoryUtils;
-import io.fury.test.bean.BeanA;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.test.bean.BeanA;
 import org.testng.annotations.Test;
 
 public class CodecUtilsTest {
