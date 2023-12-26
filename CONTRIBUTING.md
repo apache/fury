@@ -1,45 +1,53 @@
 # How to contribute to Fury
-## Finding good first issues 🔎
-See [Good First Issue](https://github.com/apache/incubator-fury/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) for open good first issues.
+
+## 🔎 Finding good first issues
+
+See [Good First Issues](https://github.com/apache/incubator-fury/contribute).
 
 ## How to create an issue
-See https://github.com/apache/incubator-fury/issues for open issues.
 
-## Testing 🧪
+Create an issue with [this form](https://github.com/apache/incubator-fury/issues/new/choose).
+
+## 🧪 Testing
+
 ### Python
+
 ```bash
 cd python
 pytest -v -s .
 ```
+
 ### Java
+
 ```bash
 cd java
 mvn -T10 clean test
 ```
 
 ### C++
+
 ```bash
 bazel test $(bazel query //...)
 ```
 
 ### GoLang
+
 ```bash
 cd go/fury
-# run tests
 go test -v
-# run xlang tests
 go test -v fury_xlang_test.go
 ```
 
 ### Rust
+
 ```bash
 cd rust
 cargo test
 ```
 
-## Styling 😎
+## 😎 Code Style
 
-Run all checks: `bash ci/format.sh --all`
+Run all checks: `bash ci/format.sh --all`.
 
 ### License headers
 
@@ -57,6 +65,7 @@ mvn spotless:apply
 mvn spotless:check
 mvn checkstyle:check
 ```
+
 ### Python
 
 ```bash
@@ -88,47 +97,57 @@ cargo fmt
 ```
 
 ## Debug
-### Java Debug
-#### JIT DEBUG
+
+### Java
+
 Fury supports dump jit generated code into local file for better debug by configuring environment variables:
+
 - `FURY_CODE_DIR`：The directory for fury to dump generated code. Set to empty by default to skip dump code.
 - `ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID`: Append an unique id for dynamically generated files by default to avoid serializer collision for different classes with same name. Set this to `false` to keep serializer name same for multiple execution or `AOT` codegen. 
 
 By using those environment variables, we can generate code to source directory and debug the generated code in next run.
 
-### Python Debug
+### Python
+
 ```bash
 cd python
 python setup.py develop
 ```
-* cython: use `cython --cplus -a  pyfury/_serialization.pyx` to produce an annotated
-  html file of the source code. Then we can analyze interaction between
-  Python objects and Python’s C-API.
 
-* Debug
-  https://cython.readthedocs.io/en/latest/src/userguide/debugging.html
+* Use `cython --cplus -a  pyfury/_serialization.pyx` to produce an annotated HTML file of the source code. Then you can analyze interaction between Python objects and Python's C API.
+* Read more: https://cython.readthedocs.io/en/latest/src/userguide/debugging.html
+
 ```bash
 FURY_DEBUG=true python setup.py build_ext --inplace
 # For linux
 cygdb build
 ```
 
-### C++ debug
-See [cpp_debug](https://github.com/apache/incubator-fury/blob/main/docs/cpp_debug.md) doc.
+### C++
+
+See the [Debugging C++](docs/cpp_debug.md) doc.
 
 ### Debug Crash
-Enable core dump on Macos Monterey 12.1
+
+Enable core dump on Macos Monterey 12.1:
+
 ```bash
- /usr/libexec/PlistBuddy -c "Add :com.apple.security.get-task-allow bool true" tmp.entitlements     
+/usr/libexec/PlistBuddy -c "Add :com.apple.security.get-task-allow bool true" tmp.entitlements     
 codesign -s - -f --entitlements tmp.entitlements /Users/chaokunyang/anaconda3/envs/py3.8/bin/python
 ulimit -c unlimited
+```
 
+... then, run the code:
+
+```bash
 python fury_serializer.py
 ls -al /cores
 ```
 
 ## Profiling
+
 ### C++
+
 ```bash
 # Dtrace
 sudo dtrace -x ustackframes=100 -n 'profile-99 /pid == 73485 && arg1/ { @[ustack()] = count(); } tick-60s { exit(0); }' -o out.stack
@@ -136,16 +155,10 @@ sudo stackcollapse.pl out.stack > out.folded
 sudo flamegraph.pl out.folded > out.svg
 ```
 
-## CI
-### Login into ci machine
-```yaml
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-```
-
 ## Website
-Fury website are static pages hosted by github pages under https://github.com/fury-project/fury-sites.
 
-All updates about docs under [guide](./docs/guide) and [benchmarks](./docs/benchmarks) will be synced to [fury-sites](https://github.com/fury-project/fury-sites) automatically.
+Fury's website consists of static pages hosted at https://github.com/apache/incubator-fury-site.
 
-If you want write a blog, or update other contents about fury website, please submit PR to [fury-sites](https://github.com/fury-project/fury-sites).
+All updates about docs under [guide](docs/guide) and [benchmarks](docs/benchmarks) will be synced to the site repo automatically.
+
+If you want write a blog, or update other contents about the website, please submit PR to the site repo.
