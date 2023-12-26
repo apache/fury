@@ -34,6 +34,7 @@ import org.apache.fury.type.ClassDef;
 public class MetaContext {
   /** Classes which has sent definitions to peer. */
   public final IdentityObjectIntMap<Class<?>> classMap = new IdentityObjectIntMap<>(8, 0.4f);
+
   /** Class definitions read from peer. */
   public final List<ClassDef> readClassDefs = new ArrayList<>();
 

@@ -42,7 +42,7 @@ public class NewStringSuite {
   }
 
   private static final long STRING_VALUE_FIELD_OFFSET =
-      ReflectionUtils.getFieldOffset(String.class, "value");;
+      ReflectionUtils.getFieldOffset(String.class, "value");
   private static String stubStr = new String(new char[] {Character.MAX_VALUE, Character.MIN_VALUE});
 
   // @Benchmark

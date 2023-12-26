@@ -47,6 +47,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   // TODO remove elemSerializer, support generics in CompatibleSerializer.
   private Serializer<?> elemSerializer;
   protected final ClassInfoHolder elementClassInfoHolder;
+
   // For subclass whose element type are instantiated already, such as
   // `Subclass extends ArrayList<String>`. If declared `Collection` doesn't specify
   // instantiated element type, then the serialization will need to write this element

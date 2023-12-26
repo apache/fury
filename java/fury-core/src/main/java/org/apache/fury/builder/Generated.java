@@ -104,6 +104,7 @@ public interface Generated {
   /** Base class for all serializers with meta shared by {@link org.apache.fury.type.ClassDef}. */
   abstract class GeneratedMetaSharedSerializer extends GeneratedSerializer implements Generated {
     public static final String SERIALIZER_FIELD_NAME = "serializer";
+
     /** Will be set in generated constructor by {@link MetaSharedCodecBuilder}. */
     public Serializer serializer;
 

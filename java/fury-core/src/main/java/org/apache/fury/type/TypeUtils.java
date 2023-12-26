@@ -119,6 +119,7 @@ public class TypeUtils {
   public static final TypeToken<?> OBJECT_ARRAY_TYPE = TypeToken.of(Object[].class);
 
   public static final TypeToken<?> CLASS_TYPE = TypeToken.of(Class.class);
+
   /**
    * bean fields should all be in SUPPORTED_TYPES, enum, array/ITERABLE_TYPE/MAP_TYPE type, bean
    * type.
