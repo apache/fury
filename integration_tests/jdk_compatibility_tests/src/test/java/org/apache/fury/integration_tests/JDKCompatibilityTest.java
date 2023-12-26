@@ -19,18 +19,18 @@
 
 package org.apache.fury.integration_tests;
 
-import org.apache.fury.Fury;
-import org.apache.fury.config.CompatibleMode;
-import org.apache.fury.config.FuryBuilder;
-import org.apache.fury.config.Language;
-import org.apache.fury.test.bean.BeanA;
-import org.apache.fury.util.Platform;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import org.apache.fury.Fury;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.config.Language;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.util.Platform;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
