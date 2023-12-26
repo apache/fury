@@ -21,6 +21,12 @@ package org.apache.fury.builder;
 
 import static org.apache.fury.codegen.CodeGenerator.sourcePkgLevelAccessible;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Collection;
+import java.util.Map;
+import java.util.WeakHashMap;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CodegenContext;
 import org.apache.fury.codegen.CompileUnit;
@@ -32,12 +38,6 @@ import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.record.RecordUtils;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Collection;
-import java.util.Map;
-import java.util.WeakHashMap;
 import org.slf4j.Logger;
 
 /**

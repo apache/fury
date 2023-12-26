@@ -24,14 +24,6 @@ import static org.apache.fury.util.Preconditions.checkArgument;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.reflect.TypeToken;
-import org.apache.fury.annotation.Ignore;
-import org.apache.fury.annotation.Internal;
-import org.apache.fury.collection.Tuple2;
-import org.apache.fury.util.Platform;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.StringUtils;
-import org.apache.fury.util.record.RecordComponent;
-import org.apache.fury.util.record.RecordUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -51,6 +43,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.fury.annotation.Ignore;
+import org.apache.fury.annotation.Internal;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
+import org.apache.fury.util.record.RecordComponent;
+import org.apache.fury.util.record.RecordUtils;
 
 /**
  * Build descriptors for a class.

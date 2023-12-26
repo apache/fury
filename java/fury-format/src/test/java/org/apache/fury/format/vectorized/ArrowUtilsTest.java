@@ -21,8 +21,6 @@ package org.apache.fury.format.vectorized;
 
 import static org.testng.Assert.assertEquals;
 
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +31,8 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
 import org.testng.annotations.Test;
 
 public class ArrowUtilsTest {

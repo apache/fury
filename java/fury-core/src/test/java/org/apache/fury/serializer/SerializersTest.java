@@ -23,10 +23,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-import org.apache.fury.Fury;
-import org.apache.fury.FuryTestBase;
-import org.apache.fury.config.FuryBuilder;
-import org.apache.fury.config.Language;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -41,6 +37,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.config.Language;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

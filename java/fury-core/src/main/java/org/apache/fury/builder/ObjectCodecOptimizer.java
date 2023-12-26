@@ -19,6 +19,10 @@
 
 package org.apache.fury.builder;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.codegen.CodegenContext;
 import org.apache.fury.codegen.Expression;
@@ -27,10 +31,6 @@ import org.apache.fury.collection.Tuple3;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.function.SerializableSupplier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
 
 /**
  * We took stats for some fields with reference enabled, and split methods based on those metrics.

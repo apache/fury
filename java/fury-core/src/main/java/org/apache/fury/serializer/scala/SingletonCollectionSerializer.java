@@ -19,14 +19,14 @@
 
 package org.apache.fury.serializer.scala;
 
+import java.lang.reflect.Field;
+import java.util.Collection;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.serializer.collection.AbstractCollectionSerializer;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
-import java.lang.reflect.Field;
-import java.util.Collection;
 
 /**
  * Singleton serializer for scala collection. We need this serializer for fury jit serialization,

@@ -37,8 +37,8 @@ import org.apache.fury.util.function.SerializableBiFunction;
 import org.apache.fury.util.function.SerializableFunction;
 
 /**
- * Expression for iterate {@link org.apache.fury.format.row.ArrayData} with specified not null element
- * action expression and null element action expression.
+ * Expression for iterate {@link org.apache.fury.format.row.ArrayData} with specified not null
+ * element action expression and null element action expression.
  *
  * @author chaokunyang
  */

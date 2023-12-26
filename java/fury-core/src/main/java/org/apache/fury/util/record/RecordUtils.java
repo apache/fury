@@ -19,8 +19,6 @@
 
 package org.apache.fury.util.record;
 
-import org.apache.fury.collection.Tuple2;
-import org.apache.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -33,6 +31,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.util.unsafe._JDKAccess;
 
 /**
  * Utils for java.lang.Record.

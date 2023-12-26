@@ -19,10 +19,10 @@
 
 package org.apache.fury.serializer;
 
+import java.util.Locale;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
-import java.util.Locale;
 import org.testng.annotations.Test;
 
 public class LocaleSerializerTest extends FuryTestBase {

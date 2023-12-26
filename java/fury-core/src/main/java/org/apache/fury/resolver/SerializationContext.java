@@ -19,8 +19,8 @@
 
 package org.apache.fury.resolver;
 
-import org.apache.fury.config.FuryBuilder;
 import java.util.IdentityHashMap;
+import org.apache.fury.config.FuryBuilder;
 
 /**
  * A context is used to add some context-related information, so that the serializers can set up

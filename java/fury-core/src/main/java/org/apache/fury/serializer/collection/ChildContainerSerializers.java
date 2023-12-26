@@ -20,17 +20,6 @@
 package org.apache.fury.serializer.collection;
 
 import com.google.common.collect.ImmutableSet;
-import org.apache.fury.Fury;
-import org.apache.fury.config.CompatibleMode;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.resolver.FieldResolver;
-import org.apache.fury.serializer.CompatibleSerializer;
-import org.apache.fury.serializer.JavaSerializer;
-import org.apache.fury.serializer.ObjectSerializer;
-import org.apache.fury.serializer.Serializer;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,6 +33,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.fury.Fury;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.FieldResolver;
+import org.apache.fury.serializer.CompatibleSerializer;
+import org.apache.fury.serializer.JavaSerializer;
+import org.apache.fury.serializer.ObjectSerializer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Serializers for subclasses of common JDK container types. Subclasses of {@link ArrayList}/{@link

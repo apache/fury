@@ -22,10 +22,6 @@ package org.apache.fury.type;
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
-import org.apache.fury.Fury;
-import org.apache.fury.FuryTestBase;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,6 +29,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.ReflectionUtils;
 import org.testng.annotations.Test;
 
 public class ClassDefTest extends FuryTestBase {

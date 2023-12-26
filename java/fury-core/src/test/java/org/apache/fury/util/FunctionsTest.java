@@ -19,14 +19,14 @@
 
 package org.apache.fury.util;
 
-import org.apache.fury.util.function.Functions;
-import org.apache.fury.util.function.SerializableFunction;
-import org.apache.fury.util.function.SerializableTriFunction;
-import org.apache.fury.util.function.TriFunction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import org.apache.fury.util.function.Functions;
+import org.apache.fury.util.function.SerializableFunction;
+import org.apache.fury.util.function.SerializableTriFunction;
+import org.apache.fury.util.function.TriFunction;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

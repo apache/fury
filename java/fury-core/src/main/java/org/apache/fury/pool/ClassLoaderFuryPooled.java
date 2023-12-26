@@ -19,8 +19,6 @@
 
 package org.apache.fury.pool;
 
-import org.apache.fury.Fury;
-import org.apache.fury.util.LoggerFactory;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +26,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
+import org.apache.fury.Fury;
+import org.apache.fury.util.LoggerFactory;
 import org.slf4j.Logger;
 
 /** A thread-safe object pool of {@link Fury}. */

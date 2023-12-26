@@ -23,18 +23,6 @@ import static org.apache.fury.util.function.Functions.makeGetterFunction;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import org.apache.fury.Fury;
-import org.apache.fury.collection.Tuple2;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.type.Type;
-import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.Platform;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
-import org.apache.fury.util.Utils;
-import org.apache.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -54,6 +42,18 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
+import org.apache.fury.Fury;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.type.Type;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.GraalvmSupport;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.Utils;
+import org.apache.fury.util.unsafe._JDKAccess;
 
 /**
  * Serialization utils and common serializers.

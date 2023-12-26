@@ -19,12 +19,6 @@
 
 package org.apache.fury.util;
 
-import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.function.Functions;
-import org.apache.fury.util.function.ToByteFunction;
-import org.apache.fury.util.function.ToCharFunction;
-import org.apache.fury.util.function.ToFloatFunction;
-import org.apache.fury.util.function.ToShortFunction;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.function.Function;
@@ -32,6 +26,12 @@ import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.function.Functions;
+import org.apache.fury.util.function.ToByteFunction;
+import org.apache.fury.util.function.ToCharFunction;
+import org.apache.fury.util.function.ToFloatFunction;
+import org.apache.fury.util.function.ToShortFunction;
 
 /**
  * Field accessor for primitive types and object types.

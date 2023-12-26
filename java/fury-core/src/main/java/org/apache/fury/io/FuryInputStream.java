@@ -19,10 +19,10 @@
 
 package org.apache.fury.io;
 
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.Preconditions;
 import java.io.IOException;
 import java.io.InputStream;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.Preconditions;
 
 /**
  * InputStream based on {@link MemoryBuffer}.

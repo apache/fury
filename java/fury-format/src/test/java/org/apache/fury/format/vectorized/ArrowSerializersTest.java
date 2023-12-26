@@ -21,13 +21,6 @@ package org.apache.fury.format.vectorized;
 
 import static org.testng.Assert.assertEquals;
 
-import org.apache.fury.Fury;
-import org.apache.fury.config.Language;
-import org.apache.fury.io.FuryWritableByteChannel;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.serializer.BufferObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,6 +31,13 @@ import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.io.FuryWritableByteChannel;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.serializer.BufferObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

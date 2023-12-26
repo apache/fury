@@ -19,10 +19,10 @@
 
 package org.apache.fury.collection;
 
-import org.apache.fury.util.LoggerFactory;
 import java.lang.ref.Reference;
 import java.lang.reflect.Field;
 import java.util.Set;
+import org.apache.fury.util.LoggerFactory;
 import org.slf4j.Logger;
 import org.testng.annotations.Test;
 

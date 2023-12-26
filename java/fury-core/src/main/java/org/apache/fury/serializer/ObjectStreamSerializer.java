@@ -19,22 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.Fury;
-import org.apache.fury.builder.CodecUtils;
-import org.apache.fury.builder.Generated;
-import org.apache.fury.collection.ObjectArray;
-import org.apache.fury.collection.ObjectIntMap;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.resolver.ClassInfo;
-import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.resolver.FieldResolver;
-import org.apache.fury.resolver.FieldResolver.ClassField;
-import org.apache.fury.util.LoggerFactory;
-import org.apache.fury.util.Platform;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
-import org.apache.fury.util.Utils;
-import org.apache.fury.util.unsafe._JDKAccess;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -61,6 +45,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import org.apache.fury.Fury;
+import org.apache.fury.builder.CodecUtils;
+import org.apache.fury.builder.Generated;
+import org.apache.fury.collection.ObjectArray;
+import org.apache.fury.collection.ObjectIntMap;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.FieldResolver;
+import org.apache.fury.resolver.FieldResolver.ClassField;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.Utils;
+import org.apache.fury.util.unsafe._JDKAccess;
 import org.slf4j.Logger;
 
 /**

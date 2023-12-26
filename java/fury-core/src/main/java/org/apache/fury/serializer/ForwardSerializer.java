@@ -19,6 +19,12 @@
 
 package org.apache.fury.serializer;
 
+import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+import java.util.function.Consumer;
+import javax.annotation.concurrent.ThreadSafe;
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
@@ -26,12 +32,6 @@ import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.util.LoaderBinding;
 import org.apache.fury.util.LoaderBinding.StagingType;
 import org.apache.fury.util.Platform;
-import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Set;
-import java.util.function.Consumer;
-import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * A thread-safe serializer used to forward serialization to different serializer implementation.

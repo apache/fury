@@ -19,9 +19,9 @@
 
 package org.apache.fury.io;
 
-import org.apache.fury.memory.MemoryBuffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
+import org.apache.fury.memory.MemoryBuffer;
 
 /**
  * {@link WritableByteChannel} based on fury {@link MemoryBuffer}.

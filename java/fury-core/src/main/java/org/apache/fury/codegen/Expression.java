@@ -48,6 +48,14 @@ import static org.apache.fury.type.TypeUtils.maxType;
 import static org.apache.fury.util.Preconditions.checkArgument;
 
 import com.google.common.reflect.TypeToken;
+import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
@@ -58,14 +66,6 @@ import org.apache.fury.util.function.SerializableBiFunction;
 import org.apache.fury.util.function.SerializableFunction;
 import org.apache.fury.util.function.SerializableSupplier;
 import org.apache.fury.util.function.SerializableTriFunction;
-import java.lang.reflect.Array;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * An expression represents a piece of code evaluation logic which can be generated to valid java

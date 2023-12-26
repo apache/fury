@@ -19,15 +19,15 @@
 
 package org.apache.fury.config;
 
-import org.apache.fury.Fury;
-import org.apache.fury.serializer.Serializer;
-import org.apache.fury.serializer.TimeSerializers;
-import org.apache.fury.util.Preconditions;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.fury.Fury;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.TimeSerializers;
+import org.apache.fury.util.Preconditions;
 
 /**
  * Config for fury, all {@link Fury} related config can be found here.

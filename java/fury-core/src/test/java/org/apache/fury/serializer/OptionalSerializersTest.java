@@ -19,13 +19,13 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.Fury;
-import org.apache.fury.FuryTestBase;
-import org.apache.fury.config.Language;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
 import org.testng.annotations.Test;
 
 public class OptionalSerializersTest extends FuryTestBase {

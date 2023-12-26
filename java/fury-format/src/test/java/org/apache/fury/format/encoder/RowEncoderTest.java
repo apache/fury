@@ -20,17 +20,17 @@
 package org.apache.fury.format.encoder;
 
 import com.google.common.collect.ImmutableMap;
-import org.apache.fury.format.row.binary.BinaryRow;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.test.bean.BeanA;
-import org.apache.fury.test.bean.BeanB;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Data;
+import org.apache.fury.format.row.binary.BinaryRow;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.BeanB;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

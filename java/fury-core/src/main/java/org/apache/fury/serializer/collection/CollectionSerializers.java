@@ -19,18 +19,6 @@
 
 package org.apache.fury.serializer.collection;
 
-import org.apache.fury.Fury;
-import org.apache.fury.config.Language;
-import org.apache.fury.exception.FuryException;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.serializer.ReplaceResolveSerializer;
-import org.apache.fury.serializer.Serializer;
-import org.apache.fury.serializer.Serializers;
-import org.apache.fury.type.Type;
-import org.apache.fury.util.Platform;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.util.ArrayDeque;
@@ -51,6 +39,18 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentSkipListSet;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
+import org.apache.fury.exception.FuryException;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.serializer.ReplaceResolveSerializer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.Serializers;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Serializers for classes implements {@link Collection}. All collection serializers should extend

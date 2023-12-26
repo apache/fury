@@ -20,11 +20,11 @@
 package org.apache.fury.codegen;
 
 import com.google.common.reflect.TypeToken;
+import java.util.List;
 import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.TypeUtils;
-import java.util.List;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

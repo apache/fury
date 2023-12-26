@@ -17,11 +17,6 @@
 
 package org.apache.fury.format.vectorized;
 
-import org.apache.fury.format.row.ArrayData;
-import org.apache.fury.format.row.Getters;
-import org.apache.fury.format.row.MapData;
-import org.apache.fury.format.row.Row;
-import org.apache.fury.format.type.DefaultTypeVisitor;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -47,6 +42,11 @@ import org.apache.arrow.vector.complex.impl.UnionMapWriter;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.types.DateUnit;
 import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.fury.format.row.ArrayData;
+import org.apache.fury.format.row.Getters;
+import org.apache.fury.format.row.MapData;
+import org.apache.fury.format.row.Row;
+import org.apache.fury.format.type.DefaultTypeVisitor;
 
 // Drived from
 // https://github.com/apache/spark/blob/921fb289f003317d89120faa6937e4abd359195c/sql/catalyst/src/main/scala/org/apache/spark/sql/execution/arrow/ArrowWriter.scala.

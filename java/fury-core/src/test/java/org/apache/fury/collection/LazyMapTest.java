@@ -23,14 +23,14 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
-import org.apache.fury.Fury;
-import org.apache.fury.FuryTestBase;
-import org.apache.fury.config.Language;
-import org.apache.fury.serializer.collection.MapSerializers;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
+import org.apache.fury.serializer.collection.MapSerializers;
 import org.testng.annotations.Test;
 
 public class LazyMapTest extends FuryTestBase {

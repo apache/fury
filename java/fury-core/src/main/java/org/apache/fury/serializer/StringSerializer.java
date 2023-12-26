@@ -22,6 +22,15 @@ package org.apache.fury.serializer;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_CHAR_ARRAY_TYPE;
 import static org.apache.fury.type.TypeUtils.STRING_TYPE;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.Expression;
 import org.apache.fury.codegen.Expression.Invoke;
@@ -34,15 +43,6 @@ import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.unsafe._JDKAccess;
-import java.lang.invoke.CallSite;
-import java.lang.invoke.LambdaMetafactory;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * String serializer based on {@link sun.misc.Unsafe} and {@link MethodHandle} for speed.

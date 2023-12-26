@@ -19,6 +19,11 @@
 
 package org.apache.fury.resolver;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.IdentityObjectIntMap;
 import org.apache.fury.collection.IntArray;
@@ -26,11 +31,6 @@ import org.apache.fury.collection.MapStatistics;
 import org.apache.fury.collection.ObjectArray;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Preconditions;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Resolving reference by tracking reference by an IdentityMap.

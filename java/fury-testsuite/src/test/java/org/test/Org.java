@@ -19,11 +19,11 @@
 
 package org.test;
 
+import java.io.Serializable;
+import java.util.List;
 import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
-import java.io.Serializable;
-import java.util.List;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

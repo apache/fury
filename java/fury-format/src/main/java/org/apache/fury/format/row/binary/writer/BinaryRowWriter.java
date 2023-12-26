@@ -21,12 +21,12 @@ package org.apache.fury.format.row.binary.writer;
 
 import static org.apache.fury.memory.BitUtils.calculateBitmapWidthInBytes;
 
-import org.apache.fury.format.row.binary.BinaryRow;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
 import java.math.BigDecimal;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.fury.format.row.binary.BinaryRow;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
 
 /**
  * Writer to write data into buffer using row format, see {@link BinaryRow}.

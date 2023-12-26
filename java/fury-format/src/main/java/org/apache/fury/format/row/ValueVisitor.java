@@ -19,9 +19,9 @@
 
 package org.apache.fury.format.row;
 
-import org.apache.fury.format.type.DefaultTypeVisitor;
 import java.util.function.Function;
 import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.fury.format.type.DefaultTypeVisitor;
 
 /**
  * An arrow visitor to visit values in {@link Row} and {@link ArrayData}.

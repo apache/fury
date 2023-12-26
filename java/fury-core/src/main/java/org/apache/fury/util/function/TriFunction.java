@@ -19,8 +19,8 @@
 
 package org.apache.fury.util.function;
 
-import org.apache.fury.util.Preconditions;
 import java.util.function.Function;
+import org.apache.fury.util.Preconditions;
 
 /**
  * Triple function.

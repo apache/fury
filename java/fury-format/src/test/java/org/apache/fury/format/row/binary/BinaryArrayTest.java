@@ -19,10 +19,10 @@
 
 package org.apache.fury.format.row.binary;
 
+import java.util.Random;
 import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.util.LoggerFactory;
-import java.util.Random;
 import org.slf4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.Test;

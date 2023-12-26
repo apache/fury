@@ -19,10 +19,6 @@
 
 package org.apache.fury.util.function;
 
-import org.apache.fury.collection.Tuple2;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
-import org.apache.fury.util.unsafe._JDKAccess;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -31,6 +27,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.unsafe._JDKAccess;
 
 /**
  * Utility for lambda functions.

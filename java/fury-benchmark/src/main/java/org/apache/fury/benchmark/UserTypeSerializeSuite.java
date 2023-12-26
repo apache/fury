@@ -19,6 +19,8 @@
 
 package org.apache.fury.benchmark;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import org.apache.fury.benchmark.state.FstState;
 import org.apache.fury.benchmark.state.FuryState;
 import org.apache.fury.benchmark.state.HessionState;
@@ -26,8 +28,6 @@ import org.apache.fury.benchmark.state.JDKState;
 import org.apache.fury.benchmark.state.JsonbState;
 import org.apache.fury.benchmark.state.KryoState;
 import org.apache.fury.benchmark.state.ProtostuffState;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;

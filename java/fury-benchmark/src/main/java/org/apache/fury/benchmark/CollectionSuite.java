@@ -19,9 +19,9 @@
 
 package org.apache.fury.benchmark;
 
-import org.apache.fury.Fury;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.fury.Fury;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.slf4j.Logger;

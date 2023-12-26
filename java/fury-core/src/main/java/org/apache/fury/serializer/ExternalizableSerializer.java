@@ -19,15 +19,15 @@
 
 package org.apache.fury.serializer;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.lang.invoke.MethodHandle;
 import org.apache.fury.Fury;
 import org.apache.fury.io.FuryObjectInput;
 import org.apache.fury.io.FuryObjectOutput;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.ReflectionUtils;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.lang.invoke.MethodHandle;
 
 /**
  * Serializer for class implements {@link Externalizable}.

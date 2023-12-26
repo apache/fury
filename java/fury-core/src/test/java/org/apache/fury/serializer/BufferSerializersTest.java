@@ -19,9 +19,9 @@
 
 package org.apache.fury.serializer;
 
+import java.nio.ByteBuffer;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
-import java.nio.ByteBuffer;
 import org.testng.annotations.Test;
 
 public class BufferSerializersTest extends FuryTestBase {

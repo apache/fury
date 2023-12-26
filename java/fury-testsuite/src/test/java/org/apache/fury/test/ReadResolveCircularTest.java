@@ -19,12 +19,12 @@
 
 package org.apache.fury.test;
 
-import org.apache.fury.Fury;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.fury.Fury;
 import org.testng.annotations.Test;
 
 public class ReadResolveCircularTest {

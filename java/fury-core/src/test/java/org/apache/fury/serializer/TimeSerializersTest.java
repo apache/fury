@@ -19,10 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.Fury;
-import org.apache.fury.FuryTestBase;
-import org.apache.fury.config.Language;
-import org.apache.fury.util.DateTimeUtils;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,6 +39,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import lombok.Data;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
+import org.apache.fury.util.DateTimeUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

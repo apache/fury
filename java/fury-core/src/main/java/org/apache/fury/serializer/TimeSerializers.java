@@ -19,10 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.Fury;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.type.Type;
-import org.apache.fury.util.DateTimeUtils;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -43,6 +39,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.DateTimeUtils;
 
 /**
  * Serializers for all time related types.

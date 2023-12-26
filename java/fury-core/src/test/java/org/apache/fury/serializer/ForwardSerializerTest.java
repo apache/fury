@@ -28,13 +28,13 @@ import static org.testng.Assert.assertTrue;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CompileUnit;
 import org.apache.fury.codegen.JaninoUtils;
 import org.apache.fury.test.bean.BeanA;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import org.testng.annotations.Test;
 
 public class ForwardSerializerTest {

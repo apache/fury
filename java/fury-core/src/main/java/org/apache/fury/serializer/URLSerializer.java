@@ -19,11 +19,11 @@
 
 package org.apache.fury.serializer;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Platform;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 /**
  * Serializer for {@link URL}.

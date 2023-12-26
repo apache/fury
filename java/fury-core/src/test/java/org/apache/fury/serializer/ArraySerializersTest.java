@@ -22,6 +22,11 @@ package org.apache.fury.serializer;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.FuryBuilder;
@@ -29,11 +34,6 @@ import org.apache.fury.config.Language;
 import org.apache.fury.test.bean.ArraysData;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.util.ReflectionUtils;
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.testng.annotations.Test;
 
 public class ArraySerializersTest extends FuryTestBase {

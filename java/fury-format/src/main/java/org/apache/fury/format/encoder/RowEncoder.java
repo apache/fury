@@ -19,8 +19,8 @@
 
 package org.apache.fury.format.encoder;
 
-import org.apache.fury.format.row.binary.BinaryRow;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.fury.format.row.binary.BinaryRow;
 
 /**
  * Encoder to encode/decode object to/from row.

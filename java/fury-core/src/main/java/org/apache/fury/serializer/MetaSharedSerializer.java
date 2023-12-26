@@ -19,6 +19,16 @@
 
 package org.apache.fury.serializer;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.MetaSharedCodecBuilder;
 import org.apache.fury.collection.Tuple2;
@@ -39,16 +49,6 @@ import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.record.RecordInfo;
 import org.apache.fury.util.record.RecordUtils;
-import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.stream.Collectors;
 
 /**
  * A meta-shared compatible deserializer builder based on {@link ClassDef}. This serializer will

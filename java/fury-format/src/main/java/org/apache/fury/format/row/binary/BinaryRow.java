@@ -21,18 +21,18 @@ package org.apache.fury.format.row.binary;
 
 import static org.apache.fury.util.Preconditions.checkArgument;
 
-import org.apache.fury.format.row.Row;
-import org.apache.fury.format.type.DataTypes;
-import org.apache.fury.memory.BitUtils;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.util.Preconditions;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.fury.format.row.Row;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.memory.BitUtils;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.util.Preconditions;
 
 /**
  * A binary implementation of {@link Row} backed by binary buffer instead of java objects.

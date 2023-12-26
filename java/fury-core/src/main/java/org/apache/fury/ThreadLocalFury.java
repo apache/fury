@@ -19,14 +19,14 @@
 
 package org.apache.fury;
 
+import java.nio.ByteBuffer;
+import java.util.function.Function;
+import javax.annotation.concurrent.ThreadSafe;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.LoaderBinding;
 import org.apache.fury.util.LoaderBinding.StagingType;
-import java.nio.ByteBuffer;
-import java.util.function.Function;
-import javax.annotation.concurrent.ThreadSafe;
 
 /**
  * A thread safe serialization entrance for {@link Fury} by binding a {@link Fury} for every thread.

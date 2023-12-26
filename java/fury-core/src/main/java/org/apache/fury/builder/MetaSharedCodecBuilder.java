@@ -22,6 +22,8 @@ package org.apache.fury.builder;
 import static org.apache.fury.builder.Generated.GeneratedMetaSharedSerializer.SERIALIZER_FIELD_NAME;
 
 import com.google.common.reflect.TypeToken;
+import java.util.Collection;
+import java.util.SortedMap;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.Generated.GeneratedMetaSharedSerializer;
 import org.apache.fury.codegen.CodeGenerator;
@@ -43,8 +45,6 @@ import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.Utils;
 import org.apache.fury.util.record.RecordComponent;
 import org.apache.fury.util.record.RecordUtils;
-import java.util.Collection;
-import java.util.SortedMap;
 
 /**
  * A meta-shared compatible deserializer builder based on {@link ClassDef}. This builder will

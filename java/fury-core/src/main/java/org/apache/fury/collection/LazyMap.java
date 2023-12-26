@@ -20,12 +20,12 @@
 package org.apache.fury.collection;
 
 import com.google.common.collect.ForwardingMap;
-import org.apache.fury.util.Preconditions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.apache.fury.util.Preconditions;
 
 /**
  * A map which populate lazily until the first map query happens to reduce map#put cost.

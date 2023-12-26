@@ -21,7 +21,6 @@ package org.apache.fury.collection;
 
 import com.google.common.base.FinalizableReferenceQueue;
 import com.google.common.base.FinalizableWeakReference;
-import org.apache.fury.util.GraalvmSupport;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.fury.util.GraalvmSupport;
 
 /**
  * Hash table based implementation with weak keys. An entry in a MultiKeyWeakMap will automatically

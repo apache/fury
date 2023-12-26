@@ -19,11 +19,11 @@
 
 package org.apache.fury.serializer.collection;
 
+import java.util.Collection;
 import org.apache.fury.Fury;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.Type;
-import java.util.Collection;
 
 /**
  * Serializer for {@link ArrayAsList}. Helper for serialization of other classes.

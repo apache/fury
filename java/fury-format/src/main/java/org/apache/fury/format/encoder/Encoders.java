@@ -22,6 +22,13 @@ package org.apache.fury.format.encoder;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import org.apache.arrow.util.Preconditions;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CompileUnit;
@@ -38,13 +45,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.LoggerFactory;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import org.apache.arrow.util.Preconditions;
-import org.apache.arrow.vector.types.pojo.Field;
-import org.apache.arrow.vector.types.pojo.Schema;
 import org.slf4j.Logger;
 
 /**

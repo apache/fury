@@ -19,6 +19,8 @@
 
 package org.apache.fury.benchmark.state;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import org.apache.fury.Fury;
 import org.apache.fury.benchmark.IntsSerializationSuite;
 import org.apache.fury.benchmark.LongStringSerializationSuite;
@@ -39,8 +41,6 @@ import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Preconditions;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;

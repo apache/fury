@@ -24,13 +24,13 @@ import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
-import org.apache.fury.Fury;
-import org.apache.fury.FuryTestBase;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("unchecked")

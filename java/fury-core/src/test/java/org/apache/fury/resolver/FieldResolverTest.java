@@ -26,12 +26,12 @@ import static org.apache.fury.resolver.FieldResolver.encodeFieldNameAsLong;
 import static org.apache.fury.resolver.FieldResolver.encodingBytesLength;
 import static org.apache.fury.resolver.FieldResolver.of;
 
-import org.apache.fury.Fury;
-import org.apache.fury.config.Language;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

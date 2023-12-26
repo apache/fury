@@ -22,6 +22,15 @@ package org.apache.fury.format.encoder;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.builder.CodecBuilder;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CodegenContext;
@@ -59,15 +68,6 @@ import org.apache.fury.util.DateTimeUtils;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import org.apache.arrow.vector.types.pojo.Field;
-import org.apache.arrow.vector.types.pojo.Schema;
 
 /**
  * Base encoder builder for {@link Row}, {@link ArrayData} and {@link MapData}.

@@ -19,9 +19,6 @@
 
 package org.apache.fury.benchmark;
 
-import org.apache.fury.format.encoder.Encoder;
-import org.apache.fury.format.encoder.Encoders;
-import org.apache.fury.util.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -37,6 +34,9 @@ import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
+import org.apache.fury.format.encoder.Encoder;
+import org.apache.fury.format.encoder.Encoders;
+import org.apache.fury.util.LoggerFactory;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.slf4j.Logger;

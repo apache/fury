@@ -51,6 +51,17 @@ import static org.apache.fury.util.Preconditions.checkArgument;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
+import java.lang.reflect.Modifier;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringJoiner;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CodegenContext;
@@ -89,17 +100,6 @@ import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
-import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringJoiner;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Generate sequential read/write code for java serialization to speed up performance. It also

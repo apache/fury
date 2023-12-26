@@ -19,10 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.Fury;
-import org.apache.fury.FuryTestBase;
-import org.apache.fury.config.Language;
-import org.apache.fury.memory.MemoryBuffer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -30,6 +26,10 @@ import java.io.ObjectStreamConstants;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import lombok.Data;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

@@ -23,11 +23,6 @@ import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
-import org.apache.fury.annotation.CodegenInvoke;
-import org.apache.fury.annotation.Internal;
-import org.apache.fury.collection.Tuple3;
-import org.apache.fury.util.function.Functions;
-import org.apache.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -50,6 +45,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.fury.annotation.CodegenInvoke;
+import org.apache.fury.annotation.Internal;
+import org.apache.fury.collection.Tuple3;
+import org.apache.fury.util.function.Functions;
+import org.apache.fury.util.unsafe._JDKAccess;
 
 /**
  * Reflection util.

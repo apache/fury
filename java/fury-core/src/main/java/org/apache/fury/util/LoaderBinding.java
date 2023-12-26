@@ -19,13 +19,13 @@
 
 package org.apache.fury.util;
 
-import org.apache.fury.Fury;
-import org.apache.fury.annotation.Internal;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import org.apache.fury.Fury;
+import org.apache.fury.annotation.Internal;
 
 /**
  * An util to bind {@link Fury} with {@link ClassLoader}. If {@link ClassLoader} are changed, the

@@ -21,13 +21,13 @@ package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 
+import lombok.Data;
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.test.bean.Cyclic;
 import org.apache.fury.util.Preconditions;
-import lombok.Data;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("unchecked")

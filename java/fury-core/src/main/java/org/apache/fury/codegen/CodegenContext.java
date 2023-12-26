@@ -27,13 +27,6 @@ import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
-import org.apache.fury.codegen.Expression.BaseInvoke;
-import org.apache.fury.codegen.Expression.Reference;
-import org.apache.fury.collection.Collections;
-import org.apache.fury.collection.Tuple2;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
-import org.apache.fury.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,6 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.fury.codegen.Expression.BaseInvoke;
+import org.apache.fury.codegen.Expression.Reference;
+import org.apache.fury.collection.Collections;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.StringUtils;
 
 /**
  * CodegenContext can be an any scope in a class, such as class, method, local and so on.

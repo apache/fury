@@ -19,10 +19,10 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.Fury;
-import org.apache.fury.FuryTestBase;
 import java.net.MalformedURLException;
 import java.net.URL;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

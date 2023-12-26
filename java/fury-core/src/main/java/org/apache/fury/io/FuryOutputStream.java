@@ -19,9 +19,9 @@
 
 package org.apache.fury.io;
 
-import org.apache.fury.memory.MemoryBuffer;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import org.apache.fury.memory.MemoryBuffer;
 
 /**
  * OutputStream based on {@link MemoryBuffer}.

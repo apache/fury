@@ -24,11 +24,6 @@ import static org.testng.Assert.assertSame;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.apache.fury.Fury;
-import org.apache.fury.FuryTestBase;
-import org.apache.fury.config.Language;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.Preconditions;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -47,6 +42,11 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.EqualsAndHashCode;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.Preconditions;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

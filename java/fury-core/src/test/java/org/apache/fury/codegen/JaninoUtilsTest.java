@@ -19,16 +19,16 @@
 
 package org.apache.fury.codegen;
 
-import org.apache.fury.test.bean.Struct;
-import org.apache.fury.util.ClassLoaderUtils;
-import org.apache.fury.util.Platform;
-import org.apache.fury.util.ReflectionUtils;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import org.apache.fury.test.bean.Struct;
+import org.apache.fury.util.ClassLoaderUtils;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.ReflectionUtils;
 import org.codehaus.commons.compiler.CompileException;
 import org.codehaus.commons.compiler.util.reflect.ByteArrayClassLoader;
 import org.codehaus.commons.compiler.util.resource.MapResourceCreator;

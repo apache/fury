@@ -19,12 +19,12 @@
 
 package org.apache.fury.resolver;
 
+import java.rmi.server.UnicastRemoteObject;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.InsecureException;
 import org.apache.fury.util.Platform;
-import java.rmi.server.UnicastRemoteObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

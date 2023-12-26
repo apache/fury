@@ -21,13 +21,13 @@ package org.apache.fury;
 
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
-import org.apache.fury.util.FieldAccessor;
-import org.apache.fury.util.ReflectionUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.function.Supplier;
+import org.apache.fury.util.FieldAccessor;
+import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Test utils.

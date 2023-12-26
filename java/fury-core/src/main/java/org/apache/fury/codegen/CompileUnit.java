@@ -19,10 +19,10 @@
 
 package org.apache.fury.codegen;
 
+import java.util.function.Supplier;
 import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 
 /**

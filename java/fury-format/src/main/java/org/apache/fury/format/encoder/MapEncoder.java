@@ -19,9 +19,9 @@
 
 package org.apache.fury.format.encoder;
 
+import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.fury.format.row.binary.BinaryArray;
 import org.apache.fury.format.row.binary.BinaryMap;
-import org.apache.arrow.vector.types.pojo.Field;
 
 /**
  * Encoder to encode/decode object in the map container by toMap/fromMap row.

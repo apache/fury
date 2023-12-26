@@ -19,13 +19,13 @@
 
 package org.apache.fury.format.row.binary;
 
+import java.nio.ByteBuffer;
+import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.fury.format.row.MapData;
 import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.util.Platform;
-import java.nio.ByteBuffer;
-import org.apache.arrow.vector.types.pojo.Field;
 
 /**
  * An BinaryMap implementation of Map which is backed by two BinaryArray./FuryObjectOutput
