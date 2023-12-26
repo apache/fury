@@ -200,7 +200,7 @@ Which encoding to choose:
 
 ### Collection
 
-> All collection serializer must extends `io.fury.serializer.collection.CollectionSerializer`.
+> All collection serializer must extends `org.apache.fury.serializer.collection.CollectionSerializer`.
 
 Format:
 
@@ -233,7 +233,7 @@ actual element is the declare type in custom class field.
 
 Based on the elements header, the serialization of elements data may skip `ref flag`/`null flag`/`element class info`.
 
-`io.fury.serializer.collection.CollectionSerializer#write/read` can be taken as an example.
+`org.apache.fury.serializer.collection.CollectionSerializer#write/read` can be taken as an example.
 
 ### Array
 

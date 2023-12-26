@@ -5,6 +5,7 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/apache/incubator-fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/incubator-fury/actions/workflows/ci.yml)
 [![Slack Channel](https://img.shields.io/badge/slack_channel-join-3f0e40?logo=slack&style=for-the-badge)](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
 [![Twitter](https://img.shields.io/badge/@fury__community-follow-blue?logo=twitter&style=for-the-badge)](https://twitter.com/fury_community)
+[![Maven Version](https://img.shields.io/maven-central/v/org.furyio/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.furyio"%20AND%20a:"fury-core")
 
 
 **Apache Fury (incubating)** is a blazing-fast multi-language serialization framework powered by **JIT** (just-in-time compilation) and **zero-copy**, providing up to 170x performance and ultimate ease of use.
@@ -96,13 +97,13 @@ Nightly snapshot:
   </repository>
 </repositories>
 <dependency>
-  <groupId>org.furyio</groupId>
+  <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
   <version>0.5.0-SNAPSHOT</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
-  <groupId>org.furyio</groupId>
+  <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
   <version>0.5.0-SNAPSHOT</version>
 </dependency> -->
@@ -110,13 +111,13 @@ Nightly snapshot:
 Release version:
 ```xml
 <dependency>
-  <groupId>org.furyio</groupId>
+  <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
   <version>0.4.1</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
-  <groupId>org.furyio</groupId>
+  <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
   <version>0.4.1</version>
 </dependency> -->
@@ -124,7 +125,7 @@ Release version:
 
 ### Scala
 ```sbt
-libraryDependencies += "org.furyio" % "fury-core" % "0.4.1"
+libraryDependencies += "org.apache.fury" % "fury-core" % "0.4.1"
 ```
 
 ### Python
@@ -149,8 +150,8 @@ Here we give a quick start about how to use fury, see [user guide](https://githu
 If you don't have cross-language requirements, using this mode will 
 have better performance.
 ```java
-import io.fury.*;
-import io.fury.config.*;
+import org.apache.fury.*;
+import org.apache.fury.config.*;
 import java.util.*;
 
 public class Example {
@@ -196,8 +197,8 @@ public class Example {
 ### Cross-language object graph serialization
 **Java**
 ```java
-import io.fury.*;
-import io.fury.config.*;
+import org.apache.fury.*;
+import org.apache.fury.config.*;
 import java.util.*;
 
 public class ReferenceExample {
@@ -215,7 +216,7 @@ public class ReferenceExample {
     return obj;
   }
 
-  // mvn exec:java -Dexec.mainClass="io.fury.examples.ReferenceExample"
+  // mvn exec:java -Dexec.mainClass="org.apache.fury.examples.ReferenceExample"
   public static void main(String[] args) {
     Fury fury = Fury.builder().withLanguage(Language.XLANG)
       .withRefTracking(true).build();
@@ -370,7 +371,7 @@ For example, the deserialization may invoke `init` constructor or `equals`/`hash
 Fury provides a class registration option that is enabled by default for such protocols, allowing only deserialization of trusted registered types or built-in types.
  **Do not disable class registration unless you can ensure your environment is secure**.
 
-If this option is disabled, you are responsible for serialization security. You can configure `io.fury.resolver.ClassChecker` by
+If this option is disabled, you are responsible for serialization security. You can configure `org.apache.fury.resolver.ClassChecker` by
 `ClassResolver#setClassChecker` to control which classes are allowed for serialization.
 
 ## How to Build

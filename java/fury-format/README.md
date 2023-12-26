@@ -1,5 +1,7 @@
 # Fury Row Format
+
 Fury row format is heavily inspired by spark tungsten row format, but with changes:
+
 - Use arrow schema to describe meta.
 - The implementation support java/C++/python/etc..
 - String support latin/utf16/utf8 encoding.
