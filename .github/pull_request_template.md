@@ -1,7 +1,7 @@
 <!--
 Thank you for your contribution!
 
-Please review https://github.com/alipay/fury/blob/main/CONTRIBUTING.rst before opening a pull request.
+Please review https://github.com/apache/incubator-fury/blob/main/CONTRIBUTING.rst before opening a pull request.
 -->
 
 ## What do these changes do?
@@ -16,4 +16,4 @@ Closes #xxxx
 ## Check code requirements
 
 - [ ] tests added / passed (if needed)
-- [ ] Ensure all linting tests pass, see [here](https://github.com/alipay/fury/blob/main/CONTRIBUTING.rst) for how to run them
+- [ ] Ensure all linting tests pass, see [here](https://github.com/apache/incubator-fury/blob/main/CONTRIBUTING.rst) for how to run them

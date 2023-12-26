@@ -296,7 +296,7 @@ elif [ "${1-}" == '--all' ]; then
 else
     # Add the origin remote if it doesn't exist
     if ! git remote -v | grep -q origin; then
-        git remote add 'origin' 'https://github.com/alipay/fury.git'
+        git remote add 'origin' 'https://github.com/apache/incubator-fury.git'
     fi
 
     # use unshallow fetch for `git merge-base origin/main HEAD` to work.

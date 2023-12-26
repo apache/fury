@@ -330,7 +330,7 @@ public class MapSerializersTest extends FuryTestBase {
 
   @Test
   public void testStringKeyMapSerializer() {
-    // see https://github.com/alipay/fury/issues/1170
+    // see https://github.com/apache/incubator-fury/issues/1170
     Fury fury = Fury.builder().withRefTracking(true).build();
     fury.registerSerializer(StringKeyMap.class, MapSerializers.StringKeyMapSerializer.class);
     StringKeyMap<List<String>> list = new StringKeyMap<>();

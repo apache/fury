@@ -1,9 +1,9 @@
 # How to contribute to Fury
 ## Finding good first issues 🔎
-See [Good First Issue](https://github.com/alipay/fury/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) for open good first issues.
+See [Good First Issue](https://github.com/apache/incubator-fury/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) for open good first issues.
 
 ## How to create an issue
-See https://github.com/alipay/fury/issues for open issues.
+See https://github.com/apache/incubator-fury/issues for open issues.
 
 ## Testing 🧪
 ### Python
@@ -114,7 +114,7 @@ cygdb build
 ```
 
 ### C++ debug
-See [cpp_debug](https://github.com/alipay/fury/blob/main/docs/cpp_debug.md) doc.
+See [cpp_debug](https://github.com/apache/incubator-fury/blob/main/docs/cpp_debug.md) doc.
 
 ### Debug Crash
 Enable core dump on Macos Monterey 12.1

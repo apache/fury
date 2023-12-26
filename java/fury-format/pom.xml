@@ -33,9 +33,9 @@
   <packaging>jar</packaging>
 
   <scm>
-    <url>https://github.com/alipay/fury</url>
-    <connection>git@github.com:alipay/fury.git</connection>
-    <developerConnection>scm:git:ssh://github.com:alipay/fury.git</developerConnection>
+    <url>https://github.com/apache/incubator-fury</url>
+    <connection>git@github.com:apache/incubator-fury.git</connection>
+    <developerConnection>scm:git:ssh://github.com:apache/incubator-fury.git</developerConnection>
   </scm>
   <developers>
     <developer>

@@ -27,7 +27,7 @@
     "node-gyp": "^9.4.0",
     "tslib": "^2.4.0"
   },
-  "repository": "git@github.com:alipay/fury.git",
+  "repository": "git@github.com:apache/incubator-fury.git",
   "workspaces": [
     "packages/hps"
   ]
