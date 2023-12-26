@@ -1,26 +1,25 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.benchmark.state;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
-import io.fury.Language;
 import io.fury.benchmark.IntsSerializationSuite;
 import io.fury.benchmark.LongStringSerializationSuite;
 import io.fury.benchmark.LongsSerializationSuite;
@@ -32,11 +31,14 @@ import io.fury.benchmark.data.Image;
 import io.fury.benchmark.data.Media;
 import io.fury.benchmark.data.MediaContent;
 import io.fury.benchmark.data.Struct;
+import io.fury.config.CompatibleMode;
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.resolver.MetaContext;
-import io.fury.serializer.CompatibleMode;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Preconditions;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -71,9 +73,8 @@ public class FuryState {
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)
-              .ignoreStringReference(true) // for compare with fastjson
-              .withReferenceTracking(references)
-              .disableSecureMode()
+              .withRefTracking(references)
+              .requireClassRegistration(false)
               .build();
       setupBuffer();
     }
@@ -95,8 +96,8 @@ public class FuryState {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     Object o1 = fury.deserialize(fury.serialize(o));
     Preconditions.checkArgument(o.equals(o1));
@@ -120,13 +121,12 @@ public class FuryState {
       setupBuffer();
       object = ObjectType.createObject(objectType, references);
       Thread.currentThread().setContextClassLoader(object.getClass().getClassLoader());
-      Fury.FuryBuilder furyBuilder =
+      FuryBuilder furyBuilder =
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)
-              .ignoreStringReference(true) // for compare with fastjson
-              .withReferenceTracking(references)
-              .disableSecureMode();
+              .withRefTracking(references)
+              .requireClassRegistration(false);
       if (compatible()) {
         furyBuilder.withCompatibleMode(CompatibleMode.COMPATIBLE);
       }
@@ -152,7 +152,7 @@ public class FuryState {
           break;
       }
 
-      fury.writeReferencableToJava(buffer, object);
+      fury.writeRef(buffer, object);
       serializedLength = buffer.writerIndex();
       LOG.info(
           "======> Fury | {} | {} | {} | {} |",
@@ -161,7 +161,7 @@ public class FuryState {
           bufferType,
           serializedLength);
       buffer.writerIndex(0);
-      Preconditions.checkArgument(object.equals(fury.readReferencableFromJava(buffer)));
+      Preconditions.checkArgument(object.equals(fury.readRef(buffer)));
       buffer.readerIndex(0);
     }
 
@@ -190,10 +190,9 @@ public class FuryState {
           Fury.builder()
               .withLanguage(Language.JAVA)
               .withClassVersionCheck(false)
-              .ignoreStringReference(true) // for compare with fastjson
-              .withReferenceTracking(references)
-              .disableSecureMode()
-              .withMetaContextShareEnabled(true)
+              .withRefTracking(references)
+              .requireClassRegistration(false)
+              .withMetaContextShare(true)
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
               .build();
       // share meta first time.

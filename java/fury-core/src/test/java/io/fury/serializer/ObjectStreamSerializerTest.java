@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
@@ -21,13 +22,13 @@ package io.fury.serializer;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
+import io.fury.util.Preconditions;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -180,9 +181,9 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
       ObjectStreamSerializer serializer = new ObjectStreamSerializer(fury, ConcurrentHashMap.class);
       MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
       ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>(mapData);
-      fury.getReferenceResolver().writeReferenceOrNull(buffer, map);
+      fury.getRefResolver().writeRefOrNull(buffer, map);
       serializer.write(buffer, map);
-      fury.getReferenceResolver().tryPreserveReferenceId(buffer);
+      fury.getRefResolver().tryPreserveRefId(buffer);
       Object newMap = serializer.read(buffer);
       assertEquals(buffer.writerIndex(), buffer.readerIndex());
       assertEquals(newMap, map);
@@ -223,7 +224,7 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withCodegen(enableCodegen)
             .build();
     {
@@ -235,9 +236,9 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
                   "k1", 1,
                   "k2", 2));
       map.put("k3", map);
-      fury.getReferenceResolver().writeReferenceOrNull(buffer, map);
+      fury.getRefResolver().writeRefOrNull(buffer, map);
       serializer.write(buffer, map);
-      fury.getReferenceResolver().tryPreserveReferenceId(buffer);
+      fury.getRefResolver().tryPreserveRefId(buffer);
       @SuppressWarnings("unchecked")
       ConcurrentHashMap<String, Object> newMap =
           (ConcurrentHashMap<String, Object>) serializer.read(buffer);
@@ -286,9 +287,9 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
     // ObjectStreamSerializer serializer = new ObjectStreamSerializer(fury, HTMLDocument.class);
     // MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
     // HTMLDocument document = new HTMLDocument();
-    // fury.getReferenceResolver().writeReferenceOrNull(buffer, document);
+    // fury.getRefResolver().writeRefOrNull(buffer, document);
     // serializer.write(buffer, document);
-    // fury.getReferenceResolver().tryPreserveReferenceId(buffer);
+    // fury.getRefResolver().tryPreserveRefId(buffer);
     // HTMLDocument newDocument = (HTMLDocument) serializer.read(buffer);
     fury.registerSerializer(
         ValidationTestClass2.class, new ObjectStreamSerializer(fury, ValidationTestClass2.class));

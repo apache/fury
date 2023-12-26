@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 #pragma once
 
 #include <iostream>
@@ -5,9 +24,9 @@
 #include "arrow/api.h"
 #include "arrow/status.h"
 #include "fury/row/type.h"
+#include "fury/util/bit_util.h"
 #include "fury/util/buffer.h"
 #include "fury/util/status.h"
-#include "fury/util/util.h"
 
 namespace fury {
 
@@ -149,8 +168,8 @@ public:
   int num_fields() const { return num_fields_; }
 
   bool IsNullAt(int i) const override {
-    return BitUtil::GetBit(buffer_->data() + base_offset_,
-                           static_cast<uint32_t>(i));
+    return util::GetBit(buffer_->data() + base_offset_,
+                        static_cast<uint32_t>(i));
   }
 
   int GetOffset(int i) const override {
@@ -173,11 +192,11 @@ public:
   }
 
   void SetNullAt(int i) override {
-    BitUtil::SetBit(buffer()->data() + base_offset_, i);
+    util::SetBit(buffer()->data() + base_offset_, i);
   }
 
   void SetNotNullAt(int i) override {
-    BitUtil::ClearBit(buffer()->data() + base_offset_, i);
+    util::ClearBit(buffer()->data() + base_offset_, i);
   }
 
   std::string ToString() const override;
@@ -221,8 +240,8 @@ public:
   int num_elements() const { return num_elements_; }
 
   bool IsNullAt(int i) const override {
-    return BitUtil::GetBit(buffer_->data() + base_offset_ + 8,
-                           static_cast<uint32_t>(i));
+    return util::GetBit(buffer_->data() + base_offset_ + 8,
+                        static_cast<uint32_t>(i));
   }
 
   int GetOffset(int i) const override {
@@ -245,13 +264,13 @@ public:
   }
 
   void SetNullAt(int i) override {
-    BitUtil::SetBit(buffer_->data() + base_offset_ + 8, i);
+    util::SetBit(buffer_->data() + base_offset_ + 8, i);
     // we assume the corresponding column was already 0
     // or will be set to 0 later by the caller side
   }
 
   void SetNotNullAt(int i) override {
-    BitUtil::ClearBit(buffer_->data() + base_offset_ + 8, i);
+    util::ClearBit(buffer_->data() + base_offset_ + 8, i);
   }
 
   std::string ToString() const override;

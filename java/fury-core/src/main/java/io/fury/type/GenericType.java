@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.type;
@@ -60,6 +61,7 @@ public class GenericType {
   final boolean isFinal;
   // Used to cache serializer for final class to avoid hash lookup for serializer.
   Serializer<?> serializer;
+  private Boolean trackingRef;
 
   public GenericType(TypeToken<?> typeToken, boolean isFinal, GenericType... typeParameters) {
     this.typeToken = typeToken;
@@ -78,6 +80,14 @@ public class GenericType {
     } else {
       typeParameter1 = null;
     }
+  }
+
+  public static GenericType build(TypeToken<?> type) {
+    return build(type.getType());
+  }
+
+  public static GenericType build(Type type) {
+    return build(type, defaultFinalPredicate);
   }
 
   /**
@@ -101,10 +111,6 @@ public class GenericType {
     return build(context, type, defaultFinalPredicate);
   }
 
-  public static GenericType build(TypeToken<?> context, Type type, Predicate<Type> finalPredicate) {
-    return build(context.resolveType(type).getType(), finalPredicate);
-  }
-
   public static GenericType build(Class<?> context, Type type) {
     return build(context, type, defaultFinalPredicate);
   }
@@ -113,12 +119,8 @@ public class GenericType {
     return build(TypeToken.of(context), type, finalPredicate);
   }
 
-  public static GenericType build(TypeToken<?> type) {
-    return build(type.getType());
-  }
-
-  public static GenericType build(Type type) {
-    return build(type, defaultFinalPredicate);
+  public static GenericType build(TypeToken<?> context, Type type, Predicate<Type> finalPredicate) {
+    return build(context.resolveType(type).getType(), finalPredicate);
   }
 
   @SuppressWarnings("rawtypes")
@@ -199,6 +201,14 @@ public class GenericType {
     } else {
       return null;
     }
+  }
+
+  public boolean trackingRef(ClassResolver classResolver) {
+    Boolean trackingRef = this.trackingRef;
+    if (trackingRef == null) {
+      trackingRef = this.trackingRef = classResolver.needToWriteRef(cls);
+    }
+    return trackingRef;
   }
 
   public boolean hasGenericParameters() {

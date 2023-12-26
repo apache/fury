@@ -1,24 +1,29 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.benchmark;
 
+import io.fury.memory.MemoryBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;
@@ -46,22 +51,89 @@ public class ArraySuite {
     }
   }
 
-  @Benchmark
+  // @Benchmark
   public Object clearObjectArray(ArrayState state) {
     Arrays.fill(state.objects, null);
     return state.objects;
   }
 
-  @Benchmark
+  // @Benchmark
   public Object clearObjectArrayByCopy(ArrayState state) {
     System.arraycopy(state.nilArray, 0, state.objects, 0, state.objects.length);
     return state.objects;
   }
 
-  @Benchmark
+  // @Benchmark
   public Object clearIntArray(ArrayState state) {
     Arrays.fill(state.ints, 0);
     return state.ints;
+  }
+
+  private static Integer[] array = new Integer[100];
+  private static List<Integer> list = new ArrayList<>(100);
+
+  private static MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
+
+  static {
+    Random random = new Random(7);
+    for (int i = 0; i < 100; i++) {
+      int x = random.nextInt();
+      array[i] = x;
+      list.add(i, x);
+    }
+  }
+
+  // Benchmark                  Mode  Cnt         Score          Error  Units
+  // ArraySuite.iterateArray   thrpt    3  18107614.727 ± 25969433.513  ops/s
+  // ArraySuite.iterateList    thrpt    3   9448162.588 ± 13139664.082  ops/s
+  // ArraySuite.iterateList2   thrpt    3  14678631.109 ± 14579521.954  ops/s
+  // ArraySuite.serializeList  thrpt    3   1659718.571 ±  1323226.629  ops/s
+  @Benchmark
+  public Object iterateArray() {
+    int count = 0;
+    for (Integer o : array) {
+      if (o != null) {
+        count += o;
+      }
+    }
+    return count;
+  }
+
+  @Benchmark
+  public Object iterateList() {
+    int count = 0;
+    for (Integer o : list) {
+      if (o != null) {
+        count += o;
+      }
+    }
+    return count;
+  }
+
+  @Benchmark
+  public Object iterateList2() {
+    int count = 0;
+    int size = list.size();
+    for (int i = 0; i < size; i++) {
+      Integer o = list.get(i);
+      if (o != null) {
+        count += o;
+      }
+    }
+    return count;
+  }
+
+  @Benchmark
+  public Object serializeList() {
+    buffer.writerIndex(0);
+    int size = list.size();
+    for (int i = 0; i < size; i++) {
+      Integer o = list.get(i);
+      if (o != null) {
+        buffer.writeVarInt(o);
+      }
+    }
+    return buffer;
   }
 
   // Mac Monterey 12.1: 2.6 GHz 6-Core Intel Core i7

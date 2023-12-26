@@ -1,5 +1,6 @@
-"""Setup pyarrow as external dependency.
- See https://github.com/tensorflow/tensorflow/blob/5a244072f2b33d2347e803146c244c179c1ddb75/third_party/py/python_configure.bzl """
+"""Setup pyarrow as external dependency."""
+
+# This file is derived from https://github.com/tensorflow/tensorflow/blob/5a244072f2b33d2347e803146c244c179c1ddb75/third_party/py/python_configure.bzl.
 
 def _tpl(repository_ctx, tpl, substitutions = {}, out = None):
     if not out:
@@ -185,7 +186,7 @@ def _get_pyarrow_include(repository_ctx, python_bin="python"):
 def _get_pyarrow_shared_library(repository_ctx, library_name, python_bin="python"):
     """Gets the pyarrow shared library path."""
     code = """import pyarrow, os, glob;print(glob.glob(os.path.join(""" +\
-        """os.path.dirname(pyarrow.__file__), 'lib{}.*.*'))[0])""".format(library_name)
+        """os.path.dirname(pyarrow.__file__), 'lib{}.*'))[0])""".format(library_name)
     result = _execute(
         repository_ctx, [
             python_bin, "-c", code

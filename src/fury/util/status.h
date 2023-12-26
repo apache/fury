@@ -1,8 +1,28 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 #pragma once
 
 #include "fury/util/logging.h"
 #include <cstring>
 #include <iosfwd>
+#include <memory>
 #include <string>
 
 //
@@ -29,8 +49,6 @@
 #endif
 
 namespace fury {
-
-#define FURY_IGNORE_EXPR(expr) ((void)(expr))
 
 // Return the given status if it is not OK.
 #define FURY_RETURN_NOT_OK(s)                                                  \
@@ -76,13 +94,26 @@ class Status {
 public:
   // Create a success status.
   Status() : state_(nullptr) {}
-  ~Status() { delete state_; }
+  ~Status() = default;
 
-  Status(StatusCode code, const std::string &msg);
+  Status(StatusCode code, std::string msg)
+      : state_(new State{code, std::move(msg)}) {}
 
   // Copy the specified status.
-  Status(const Status &s);
-  void operator=(const Status &s);
+  Status(const Status &s) : state_(s.state_ ? new State(*s.state_) : nullptr) {}
+  Status &operator=(const Status &s) {
+    if (s.state_) {
+      state_.reset(new State(*s.state_));
+    } else {
+      state_ = nullptr;
+    }
+
+    return *this;
+  }
+
+  // Move the specified status.
+  Status(Status &&s) = default;
+  Status &operator=(Status &&s) = default;
 
   // Return a success status.
   static Status OK() { return Status(); }
@@ -115,7 +146,7 @@ public:
   static StatusCode StringToCode(const std::string &str);
 
   // Returns true iff the status indicates success.
-  bool ok() const { return (state_ == nullptr); }
+  bool ok() const { return state_ == nullptr; }
 
   bool IsOutOfMemory() const { return code() == StatusCode::OutOfMemory; }
   bool IsKeyError() const { return code() == StatusCode::KeyError; }
@@ -143,24 +174,11 @@ private:
   };
   // OK status has a `NULL` state_.  Otherwise, `state_` points to
   // a `State` structure containing the error code and message(s)
-  State *state_;
-
-  void CopyFrom(const State *s);
+  std::unique_ptr<State> state_;
 };
 
-static inline std::ostream &operator<<(std::ostream &os, const Status &x) {
-  os << x.ToString();
-  return os;
+inline std::ostream &operator<<(std::ostream &os, const Status &x) {
+  return os << x.ToString();
 }
 
-inline Status::Status(const Status &s)
-    : state_((s.state_ == nullptr) ? nullptr : new State(*s.state_)) {}
-
-inline void Status::operator=(const Status &s) {
-  // The following condition catches both aliasing (when this == &s),
-  // and the common case where both s and *this are ok.
-  if (state_ != s.state_) {
-    CopyFrom(s.state_);
-  }
-}
 } // namespace fury

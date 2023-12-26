@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
@@ -21,7 +22,6 @@ package io.fury.serializer;
 import static io.fury.type.TypeUtils.PRIMITIVE_CHAR_ARRAY_TYPE;
 import static io.fury.type.TypeUtils.STRING_TYPE;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Invoke;
@@ -31,13 +31,14 @@ import io.fury.memory.MemoryUtils;
 import io.fury.type.Type;
 import io.fury.util.MathUtils;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
+import io.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.function.BiFunction;
@@ -54,18 +55,34 @@ import java.util.function.Function;
  */
 @SuppressWarnings("unchecked")
 public final class StringSerializer extends Serializer<String> {
-  private static final long STRING_CODER_FIELD_OFFSET;
-  private static final long STRING_VALUE_FIELD_OFFSET;
   private static final boolean STRING_VALUE_FIELD_IS_CHARS;
   private static final boolean STRING_VALUE_FIELD_IS_BYTES;
-  private static final long STRING_OFFSET_FIELD_OFFSET;
-  // String length field for android.
-  private static final long STRING_COUNT_FIELD_OFFSET;
+
   private static final byte LATIN1 = 0;
+  private static final Byte LATIN1_BOXED = LATIN1;
   private static final byte UTF16 = 1;
+  private static final Byte UTF16_BOXED = UTF16;
+  private static final byte UTF8 = 2;
   private static final int DEFAULT_BUFFER_SIZE = 1024;
   // A long mask used to clear all-higher bits of char in a super-word way.
-  private static final long MULTI_CHARS_NON_ASCII_MASK;
+  private static final long MULTI_CHARS_NON_LATIN_MASK;
+
+  // Make offset compatible with graalvm native image.
+  private static final long STRING_VALUE_FIELD_OFFSET;
+
+  private static class Offset {
+    // Make offset compatible with graalvm native image.
+    private static final long STRING_CODER_FIELD_OFFSET;
+
+    static {
+      try {
+        STRING_CODER_FIELD_OFFSET =
+            Platform.objectFieldOffset(String.class.getDeclaredField("coder"));
+      } catch (NoSuchFieldException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
 
   static {
     Field valueField = ReflectionUtils.getFieldNullable(String.class, "value");
@@ -73,20 +90,28 @@ public final class StringSerializer extends Serializer<String> {
     STRING_VALUE_FIELD_IS_CHARS = valueField != null && valueField.getType() == char[].class;
     // Java11 string
     STRING_VALUE_FIELD_IS_BYTES = valueField != null && valueField.getType() == byte[].class;
-    STRING_VALUE_FIELD_OFFSET = ReflectionUtils.getFieldOffset(String.class, "value");
-    STRING_CODER_FIELD_OFFSET = ReflectionUtils.getFieldOffset(String.class, "coder");
-    STRING_OFFSET_FIELD_OFFSET = ReflectionUtils.getFieldOffset(String.class, "offset");
-    STRING_COUNT_FIELD_OFFSET = ReflectionUtils.getFieldOffset(String.class, "count");
-    Preconditions.checkArgument(STRING_OFFSET_FIELD_OFFSET == -1, "Current jdk not supported");
-    Preconditions.checkArgument(STRING_COUNT_FIELD_OFFSET == -1, "Current jdk not supported");
+    try {
+      // Make offset compatible with graalvm native image.
+      STRING_VALUE_FIELD_OFFSET =
+          Platform.objectFieldOffset(String.class.getDeclaredField("value"));
+    } catch (NoSuchFieldException e) {
+      throw new RuntimeException(e);
+    }
+    // String length field for android.
+    Preconditions.checkArgument(
+        ReflectionUtils.getFieldNullable(String.class, "count") == null,
+        "Current jdk not supported");
+    Preconditions.checkArgument(
+        ReflectionUtils.getFieldNullable(String.class, "offset") == null,
+        "Current jdk not supported");
     if (Platform.IS_LITTLE_ENDIAN) {
-      // ascii chars will be 0xXX,0x00;0xXX,0x00 in byte order;
-      // Using 0x00,0xff(0xff00) to clear ascii bits.
-      MULTI_CHARS_NON_ASCII_MASK = 0xff00ff00ff00ff00L;
+      // latin chars will be 0xXX,0x00;0xXX,0x00 in byte order;
+      // Using 0x00,0xff(0xff00) to clear latin bits.
+      MULTI_CHARS_NON_LATIN_MASK = 0xff00ff00ff00ff00L;
     } else {
-      // ascii chars will be 0x00,0xXX;0x00,0xXX in byte order;
-      // Using 0x00,0xff(0x00ff) to clear ascii bits.
-      MULTI_CHARS_NON_ASCII_MASK = 0x00ff00ff00ff00ffL;
+      // latin chars will be 0x00,0xXX;0x00,0xXX in byte order;
+      // Using 0x00,0xff(0x00ff) to clear latin bits.
+      MULTI_CHARS_NON_LATIN_MASK = 0x00ff00ff00ff00ffL;
     }
   }
 
@@ -95,12 +120,12 @@ public final class StringSerializer extends Serializer<String> {
   private int smoothByteArrayLength = DEFAULT_BUFFER_SIZE;
 
   public StringSerializer(Fury fury) {
-    super(fury, String.class, fury.trackingReference() && !fury.isStringReferenceIgnored());
+    super(fury, String.class, fury.trackingRef() && !fury.isStringRefIgnored());
     compressString = fury.compressString();
   }
 
   @Override
-  public short getCrossLanguageTypeId() {
+  public short getXtypeId() {
     return Type.STRING.getId();
   }
 
@@ -110,7 +135,7 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   @Override
-  public void crossLanguageWrite(MemoryBuffer buffer, String value) {
+  public void xwrite(MemoryBuffer buffer, String value) {
     writeUTF8String(buffer, value);
   }
 
@@ -120,7 +145,7 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   @Override
-  public String crossLanguageRead(MemoryBuffer buffer) {
+  public String xread(MemoryBuffer buffer) {
     return readUTF8String(buffer);
   }
 
@@ -135,15 +160,15 @@ public final class StringSerializer extends Serializer<String> {
   public Expression writeStringExpr(Expression strSerializer, Expression buffer, Expression str) {
     if (isJava) {
       if (STRING_VALUE_FIELD_IS_BYTES) {
-        return new StaticInvoke(StringSerializer.class, "writeJDK11String", buffer, str);
+        return new StaticInvoke(StringSerializer.class, "writeBytesString", buffer, str);
       } else {
         if (!STRING_VALUE_FIELD_IS_CHARS) {
           throw new UnsupportedOperationException();
         }
         if (compressString) {
-          return new Invoke(strSerializer, "writeJava8StringCompressed", buffer, str);
+          return new Invoke(strSerializer, "writeCharsStringCompressed", buffer, str);
         } else {
-          return new Invoke(strSerializer, "writeJava8StringUncompressed", buffer, str);
+          return new Invoke(strSerializer, "writeCharsStringUncompressed", buffer, str);
         }
       }
     } else {
@@ -152,17 +177,17 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   // Invoked by jit
-  public void writeJava8StringCompressed(MemoryBuffer buffer, String value) {
+  public void writeCharsStringCompressed(MemoryBuffer buffer, String value) {
     final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    if (isAscii(chars)) {
-      writeJDK8Ascii(buffer, chars);
+    if (isLatin(chars)) {
+      writeCharsLatin(buffer, chars, chars.length);
     } else {
-      writeJDK8UTF16(buffer, chars);
+      writeCharsUTF16(buffer, chars, chars.length);
     }
   }
 
   // Invoked by jit
-  public void writeJava8StringUncompressed(MemoryBuffer buffer, String value) {
+  public void writeCharsStringUncompressed(MemoryBuffer buffer, String value) {
     int numBytes = MathUtils.doubleExact(value.length());
     final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
     buffer.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
@@ -179,27 +204,22 @@ public final class StringSerializer extends Serializer<String> {
   public Expression readStringExpr(Expression strSerializer, Expression buffer) {
     if (isJava) {
       if (STRING_VALUE_FIELD_IS_BYTES) {
-        if (Platform.JAVA_VERSION >= 17) {
-          // TODO(chaokunyang) optimize for jdk17 str.
-          return new Invoke(strSerializer, "readJavaString", STRING_TYPE, buffer);
-        } else {
-          // Expression coder = inlineInvoke(buffer, "readByte", BYTE_TYPE);
-          // Expression value = inlineInvoke(buffer, "readBytesWithSizeEmbedded", BINARY_TYPE);
-          // return new StaticInvoke(
-          //     StringSerializer.class, "newJava11StringByZeroCopy", STRING_TYPE, coder, value);
-          return new Invoke(strSerializer, "readJava11String", STRING_TYPE, buffer);
-        }
+        // Expression coder = inlineInvoke(buffer, "readByte", BYTE_TYPE);
+        // Expression value = inlineInvoke(buffer, "readBytesWithSizeEmbedded", BINARY_TYPE);
+        // return new StaticInvoke(
+        //     StringSerializer.class, "newBytesStringZeroCopy", STRING_TYPE, coder, value);
+        return new Invoke(strSerializer, "readBytesString", STRING_TYPE, buffer);
       } else {
         if (!STRING_VALUE_FIELD_IS_CHARS) {
           throw new UnsupportedOperationException();
         }
         if (compressString) {
-          return new Invoke(strSerializer, "readJava8CompressedString", STRING_TYPE, buffer);
+          return new Invoke(strSerializer, "readCompressedCharsString", STRING_TYPE, buffer);
         } else {
           Expression chars =
               new Invoke(buffer, "readCharsWithSizeEmbedded", PRIMITIVE_CHAR_ARRAY_TYPE);
           return new StaticInvoke(
-              StringSerializer.class, "newJava8StringByZeroCopy", STRING_TYPE, chars);
+              StringSerializer.class, "newCharsStringZeroCopy", STRING_TYPE, chars);
         }
       }
     } else {
@@ -208,7 +228,7 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   // Invoked by jit.
-  public String readJava11String(MemoryBuffer buffer) {
+  public String readBytesString(MemoryBuffer buffer) {
     byte[] heapMemory = buffer.getHeapMemory();
     if (heapMemory != null) {
       final int targetIndex = buffer.unsafeHeapReaderIndex();
@@ -236,25 +256,33 @@ public final class StringSerializer extends Serializer<String> {
           }
         }
       }
+      if (coder == UTF8) {
+        String str = new String(heapMemory, arrIndex, numBytes, StandardCharsets.UTF_8);
+        buffer.increaseReaderIndexUnsafe(arrIndex - targetIndex + numBytes);
+        return str;
+      }
       final byte[] bytes = new byte[numBytes];
       System.arraycopy(heapMemory, arrIndex, bytes, 0, numBytes);
       buffer.increaseReaderIndexUnsafe(arrIndex - targetIndex + numBytes);
-      return newJava11StringByZeroCopy(coder, bytes);
+      return newBytesStringZeroCopy(coder, bytes);
     } else {
       byte coder = buffer.readByte();
       final int numBytes = buffer.readPositiveVarInt();
       byte[] bytes = buffer.readBytes(numBytes);
-      return newJava11StringByZeroCopy(coder, bytes);
+      if (coder == UTF8) {
+        return new String(bytes, 0, numBytes, StandardCharsets.UTF_8);
+      }
+      return newBytesStringZeroCopy(coder, bytes);
     }
   }
 
   // Invoked by jit
-  public String readJava8CompressedString(MemoryBuffer buffer) {
+  public String readCompressedCharsString(MemoryBuffer buffer) {
     byte coder = buffer.readByte();
     if (coder == LATIN1) {
-      return newJava8StringByZeroCopy(readAsciiChars(buffer));
+      return newCharsStringZeroCopy(readLatinChars(buffer));
     } else {
-      return newJava8StringByZeroCopy(readUTF16Chars(buffer, coder));
+      return newCharsStringZeroCopy(readUTF16Chars(buffer, coder));
     }
   }
 
@@ -277,17 +305,17 @@ public final class StringSerializer extends Serializer<String> {
   // Invoked by fury JIT
   public void writeJavaString(MemoryBuffer buffer, String value) {
     if (STRING_VALUE_FIELD_IS_BYTES) {
-      writeJDK11String(buffer, value);
+      writeBytesString(buffer, value);
     } else {
       if (!STRING_VALUE_FIELD_IS_CHARS) {
         throw new UnsupportedOperationException();
       }
       final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
       if (compressString) {
-        if (isAscii(chars)) {
-          writeJDK8Ascii(buffer, chars);
+        if (isLatin(chars)) {
+          writeCharsLatin(buffer, chars, chars.length);
         } else {
-          writeJDK8UTF16(buffer, chars);
+          writeCharsUTF16(buffer, chars, chars.length);
         }
       } else {
         int numBytes = MathUtils.doubleExact(value.length());
@@ -296,48 +324,36 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  public static boolean isAscii(char[] chars) {
+  public static boolean isLatin(char[] chars) {
     int numChars = chars.length;
     int vectorizedLen = numChars >> 2;
     int vectorizedChars = vectorizedLen << 2;
     int endOffset = Platform.CHAR_ARRAY_OFFSET + (vectorizedChars << 1);
-    boolean isAscii = true;
+    boolean isLatin = true;
     for (int offset = Platform.CHAR_ARRAY_OFFSET; offset < endOffset; offset += 8) {
       // check 4 chars in a vectorized way, 4 times faster than scalar check loop.
-      // See benchmark in CompressStringSuite.asciiSuperWordCheck.
+      // See benchmark in CompressStringSuite.latinSuperWordCheck.
       long multiChars = Platform.getLong(chars, offset);
-      if ((multiChars & MULTI_CHARS_NON_ASCII_MASK) != 0) {
-        isAscii = false;
+      if ((multiChars & MULTI_CHARS_NON_LATIN_MASK) != 0) {
+        isLatin = false;
         break;
       }
     }
-    if (isAscii) {
+    if (isLatin) {
       for (int i = vectorizedChars; i < numChars; i++) {
         if (chars[i] > 0xFF) {
-          isAscii = false;
+          isLatin = false;
           break;
         }
       }
     }
-    return isAscii;
+    return isLatin;
   }
 
   // Invoked by fury JIT
   public String readJavaString(MemoryBuffer buffer) {
     if (STRING_VALUE_FIELD_IS_BYTES) {
-      if (Platform.JAVA_VERSION >= 17) {
-        // Seems neither Unsafe.put nor MethodHandle are available in JDK17+,
-        // `Unsafe.put` doesn't work on IDE, but works on command.
-        // But `Unsafe.put` is 50% slower than `readStringChars`, so just inflate ant copy here.
-        byte coder = buffer.readByte();
-        if (coder == LATIN1) {
-          return new String(readAsciiChars(buffer));
-        } else {
-          return new String(readUTF16Chars(buffer, coder));
-        }
-      } else {
-        return readJava11String(buffer);
-      }
+      return readBytesString(buffer);
     } else {
       if (!STRING_VALUE_FIELD_IS_CHARS) {
         throw new UnsupportedOperationException();
@@ -345,19 +361,24 @@ public final class StringSerializer extends Serializer<String> {
       if (compressString) {
         byte coder = buffer.readByte();
         if (coder == LATIN1) {
-          return newJava8StringByZeroCopy(readAsciiChars(buffer));
+          return newCharsStringZeroCopy(readLatinChars(buffer));
+        } else if (coder == UTF16) {
+          return newCharsStringZeroCopy(readUTF16Chars(buffer, coder));
         } else {
-          return newJava8StringByZeroCopy(readUTF16Chars(buffer, coder));
+          if (coder != UTF8) {
+            throw new UnsupportedOperationException("Unsupported encoding: " + coder);
+          }
+          return readUTF8String(buffer);
         }
       } else {
-        return newJava8StringByZeroCopy(buffer.readCharsWithSizeEmbedded());
+        return newCharsStringZeroCopy(buffer.readCharsWithSizeEmbedded());
       }
     }
   }
 
-  public static void writeJDK11String(MemoryBuffer buffer, String value) {
+  public static void writeBytesString(MemoryBuffer buffer, String value) {
     byte[] bytes = (byte[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    byte coder = Platform.getByte(value, STRING_CODER_FIELD_OFFSET);
+    byte coder = Platform.getByte(value, Offset.STRING_CODER_FIELD_OFFSET);
     int bytesLen = bytes.length;
     int writerIndex = buffer.writerIndex();
     // The `ensure` ensure next operations are safe without bound checks,
@@ -385,8 +406,7 @@ public final class StringSerializer extends Serializer<String> {
     buffer.unsafeWriterIndex(writerIndex);
   }
 
-  public void writeJDK8Ascii(MemoryBuffer buffer, char[] chars) {
-    final int strLen = chars.length;
+  public void writeCharsLatin(MemoryBuffer buffer, char[] chars, final int strLen) {
     int writerIndex = buffer.writerIndex();
     // The `ensure` ensure next operations are safe without bound checks,
     // and inner heap buffer doesn't change.
@@ -416,8 +436,7 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  public void writeJDK8UTF16(MemoryBuffer buffer, char[] chars) {
-    int strLen = chars.length;
+  public void writeCharsUTF16(MemoryBuffer buffer, char[] chars, int strLen) {
     int numBytes = MathUtils.doubleExact(strLen);
     if (Platform.IS_LITTLE_ENDIAN) {
       buffer.writeByte(UTF16);
@@ -459,7 +478,7 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  private char[] readAsciiChars(MemoryBuffer buffer) {
+  private char[] readLatinChars(MemoryBuffer buffer) {
     final int numBytes = buffer.readPositiveVarInt();
     char[] chars = new char[numBytes];
     byte[] targetArray = buffer.getHeapMemory();
@@ -518,88 +537,61 @@ public final class StringSerializer extends Serializer<String> {
     return chars;
   }
 
-  public static String newJava8StringByZeroCopy(char[] data) {
-    if (Platform.JAVA_VERSION != 8) {
+  private static final MethodHandles.Lookup STRING_LOOK_UP =
+      _JDKAccess._trustedLookup(String.class);
+  private static final BiFunction<char[], Boolean, String> CHARS_STRING_ZERO_COPY_CTR =
+      getCharsStringZeroCopyCtr();
+  private static final BiFunction<byte[], Byte, String> BYTES_STRING_ZERO_COPY_CTR =
+      getBytesStringZeroCopyCtr();
+  private static final Function<byte[], String> LATIN_BYTES_STRING_ZERO_COPY_CTR =
+      getLatinBytesStringZeroCopyCtr();
+
+  public static String newCharsStringZeroCopy(char[] data) {
+    if (!STRING_VALUE_FIELD_IS_CHARS) {
       throw new IllegalStateException(
-          String.format("Current java version is %s", Platform.JAVA_VERSION));
+          String.format(
+              "String value isn't char[], current java %s isn't supported", Platform.JAVA_VERSION));
     }
-    try {
-      if (JAVA8_STRING_ZERO_COPY_CTR == null) {
-        // 1. As documented in `Subsequent Modification of final Fields` in
-        // https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#d5e34106
-        // Maybe we can use `UNSAFE.putObject` to update String field to avoid reflection overhead.
-        // 2. `setAccessible` is an illegal-reflective-access because zero-copy String constructor
-        // isn't public, and `java.base/java.lang` isn't open to fury by default.
-        // 3. JavaLangAccess#newStringUnsafe is used by jdk internally and won't be available
-        // in jdk11 if `jdk.internal.misc` are not exported, so we don't use it.
-        // StringBuffer#toString is a synchronized method, so we don't use it to create String.
-        String str = Platform.newInstance(String.class);
-        Platform.putObject(str, STRING_VALUE_FIELD_OFFSET, data);
-        // unsafe is 800% faster than copy for length 230.
-        return str;
-      } else {
-        // 25% faster than unsafe put field, only 10% slower than `new String(str)`
-        return JAVA8_STRING_ZERO_COPY_CTR.apply(data, Boolean.TRUE);
-      }
-    } catch (Throwable e) {
-      throw new RuntimeException(e);
-    }
+    // 25% faster than unsafe put field, only 10% slower than `new String(str)`
+    return CHARS_STRING_ZERO_COPY_CTR.apply(data, Boolean.TRUE);
   }
 
   // coder param first to make inline call args
   // `(buffer.readByte(), buffer.readBytesWithSizeEmbedded())` work.
-  public static String newJava11StringByZeroCopy(byte coder, byte[] data) {
-    if (Platform.JAVA_VERSION < 9) {
+  public static String newBytesStringZeroCopy(byte coder, byte[] data) {
+    if (!STRING_VALUE_FIELD_IS_BYTES) {
       throw new IllegalStateException(
-          String.format("Current java version is %s", Platform.JAVA_VERSION));
+          String.format(
+              "String value isn't byte[], current java %s isn't supported", Platform.JAVA_VERSION));
     }
-    try {
-      if (coder == LATIN1) {
-        if (JAVA11_ASCII_STRING_ZERO_COPY_CTR == null) {
-          String str = Platform.newInstance(String.class);
-          // if --illegal-access=deny, this wont' take effect, the reset will be empty.
-          Platform.putObject(str, STRING_VALUE_FIELD_OFFSET, data);
-          Platform.putObject(str, STRING_CODER_FIELD_OFFSET, coder);
-          return str;
-        } else {
-          // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
-          // string length 230.
-          // 50% faster than unsafe put field in java11 for string length 10.
-          return JAVA11_ASCII_STRING_ZERO_COPY_CTR.apply(data);
-        }
+    if (coder == LATIN1) {
+      // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
+      // string length 230.
+      // 50% faster than unsafe put field in java11 for string length 10.
+      if (LATIN_BYTES_STRING_ZERO_COPY_CTR != null) {
+        return LATIN_BYTES_STRING_ZERO_COPY_CTR.apply(data);
       } else {
-        if (JAVA11_STRING_ZERO_COPY_CTR == null) {
-          String str = Platform.newInstance(String.class);
-          // if --illegal-access=deny, this won't take effect, the reset will be empty.
-          Platform.putObject(str, STRING_VALUE_FIELD_OFFSET, data);
-          Platform.putObject(str, STRING_CODER_FIELD_OFFSET, coder);
-          return str;
-        } else {
-          // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
-          // string length 230.
-          // 50% faster than unsafe put field in java11 for string length 10.
-          // `invokeExact` must pass exact params with exact types:
-          // `(Object) data, coder` will throw WrongMethodTypeException
-          return (String) JAVA11_STRING_ZERO_COPY_CTR.invokeExact(data, coder);
-        }
+        // JDK17 removed newStringLatin1
+        return BYTES_STRING_ZERO_COPY_CTR.apply(data, LATIN1_BOXED);
       }
-    } catch (Throwable e) {
-      throw new RuntimeException(e);
+    } else if (coder == UTF16) {
+      // avoid byte box cost.
+      return BYTES_STRING_ZERO_COPY_CTR.apply(data, UTF16_BOXED);
+    } else {
+      // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
+      // string length 230.
+      // 50% faster than unsafe put field in java11 for string length 10.
+      // `invokeExact` must pass exact params with exact types:
+      // `(Object) data, coder` will throw WrongMethodTypeException
+      return BYTES_STRING_ZERO_COPY_CTR.apply(data, coder);
     }
   }
 
-  private static final BiFunction<char[], Boolean, String> JAVA8_STRING_ZERO_COPY_CTR =
-      getJava8StringZeroCopyCtr();
-  private static final MethodHandle JAVA11_STRING_ZERO_COPY_CTR = getJava11StringZeroCopyCtr();
-  private static final Function<byte[], String> JAVA11_ASCII_STRING_ZERO_COPY_CTR =
-      getJava11AsciiStringZeroCopyCtr();
-
-  private static BiFunction<char[], Boolean, String> getJava8StringZeroCopyCtr() {
-    MethodHandles.Lookup lookup = getLookupByReflection();
-    if (lookup == null) {
+  private static BiFunction<char[], Boolean, String> getCharsStringZeroCopyCtr() {
+    if (!STRING_VALUE_FIELD_IS_CHARS) {
       return null;
     }
-    MethodHandle handle = getJavaStringZeroCopyCtrHandle(lookup);
+    MethodHandle handle = getJavaStringZeroCopyCtrHandle();
     if (handle == null) {
       return null;
     }
@@ -607,7 +599,7 @@ public final class StringSerializer extends Serializer<String> {
       // Faster than handle.invokeExact(data, boolean)
       CallSite callSite =
           LambdaMetafactory.metafactory(
-              lookup,
+              STRING_LOOK_UP,
               "apply",
               MethodType.methodType(BiFunction.class),
               handle.type().generic(),
@@ -619,83 +611,66 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  private static MethodHandle getJava11StringZeroCopyCtr() {
-    MethodHandles.Lookup lookup = getLookupByReflection();
-    if (lookup == null) {
+  private static BiFunction<byte[], Byte, String> getBytesStringZeroCopyCtr() {
+    if (!STRING_VALUE_FIELD_IS_BYTES) {
       return null;
     }
-    return getJavaStringZeroCopyCtrHandle(lookup);
-  }
-
-  private static Function<byte[], String> getJava11AsciiStringZeroCopyCtr() {
-    MethodHandles.Lookup lookup = getLookupByReflection();
-    if (lookup == null) {
+    MethodHandle handle = getJavaStringZeroCopyCtrHandle();
+    if (handle == null) {
       return null;
     }
-    // Can't create callSite like java8, will get error:
-    //   java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 1:
-    //   byte is not a subtype of class java.lang.Object
+    // Faster than handle.invokeExact(data, byte)
     try {
-      Class clazz = Class.forName("java.lang.StringCoding");
-      MethodHandles.Lookup caller = lookup.in(clazz);
-      MethodHandle handle =
-          caller.findStatic(
-              clazz, "newStringLatin1", MethodType.methodType(String.class, byte[].class));
-      // Faster than handle.invokeExact(data, byte)
+      MethodType instantiatedMethodType =
+          MethodType.methodType(handle.type().returnType(), new Class[] {byte[].class, Byte.class});
       CallSite callSite =
           LambdaMetafactory.metafactory(
-              caller,
+              STRING_LOOK_UP,
               "apply",
-              MethodType.methodType(Function.class),
+              MethodType.methodType(BiFunction.class),
               handle.type().generic(),
               handle,
-              handle.type());
-      return (Function<byte[], String>) callSite.getTarget().invokeExact();
+              instantiatedMethodType);
+      return (BiFunction) callSite.getTarget().invokeExact();
     } catch (Throwable e) {
       return null;
     }
   }
 
-  private static MethodHandle getJavaStringZeroCopyCtrHandle(MethodHandles.Lookup lookup) {
-    Preconditions.checkArgument(Platform.JAVA_VERSION >= 8);
-    if (Platform.JAVA_VERSION > 16) {
+  private static Function<byte[], String> getLatinBytesStringZeroCopyCtr() {
+    if (!STRING_VALUE_FIELD_IS_BYTES) {
+      return null;
+    }
+    if (STRING_LOOK_UP == null) {
       return null;
     }
     try {
-      if (Platform.JAVA_VERSION == 8) {
-        return lookup.findConstructor(
+      Class<?> clazz = Class.forName("java.lang.StringCoding");
+      MethodHandles.Lookup caller = STRING_LOOK_UP.in(clazz);
+      // JDK17 removed this method.
+      MethodHandle handle =
+          caller.findStatic(
+              clazz, "newStringLatin1", MethodType.methodType(String.class, byte[].class));
+      // Faster than handle.invokeExact(data, byte)
+      return _JDKAccess.makeFunction(caller, handle, Function.class);
+    } catch (Throwable e) {
+      return null;
+    }
+  }
+
+  private static MethodHandle getJavaStringZeroCopyCtrHandle() {
+    Preconditions.checkArgument(Platform.JAVA_VERSION >= 8);
+    if (STRING_LOOK_UP == null) {
+      return null;
+    }
+    try {
+      if (STRING_VALUE_FIELD_IS_CHARS) {
+        return STRING_LOOK_UP.findConstructor(
             String.class, MethodType.methodType(void.class, char[].class, boolean.class));
       } else {
-        return lookup.findConstructor(
+        return STRING_LOOK_UP.findConstructor(
             String.class, MethodType.methodType(void.class, byte[].class, byte.class));
       }
-    } catch (Exception e) {
-      return null;
-    }
-  }
-
-  private static MethodHandles.Lookup getLookup() throws Exception {
-    // This can supress illegal-access and work even --illegal-access=deny for jdk16-.
-    // For JDK16+, this will fail at `lookupClass` field not found.
-    // This will produce unknown behaviour on some version of lombok.
-    MethodHandles.Lookup lookup = ReflectionUtils.unsafeCopy(MethodHandles.lookup());
-    long lookupClassOffset =
-        ReflectionUtils.getFieldOffset(MethodHandles.Lookup.class.getDeclaredField("lookupClass"));
-    long allowedModesOffset =
-        ReflectionUtils.getFieldOffset(MethodHandles.Lookup.class.getDeclaredField("allowedModes"));
-    Platform.putObject(lookup, lookupClassOffset, String.class);
-    Platform.putObject(lookup, allowedModesOffset, -1);
-    return lookup;
-  }
-
-  private static MethodHandles.Lookup getLookupByReflection() {
-    try {
-      Constructor<MethodHandles.Lookup> constructor =
-          MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
-      constructor.setAccessible(true);
-      return constructor.newInstance(
-          String.class, -1 // Lookup.TRUSTED
-          );
     } catch (Exception e) {
       return null;
     }
@@ -708,8 +683,17 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   public String readUTF8String(MemoryBuffer buffer) {
-    int len = buffer.readPositiveVarInt();
-    byte[] bytes = buffer.readBytes(len);
-    return new String(bytes, StandardCharsets.UTF_8);
+    int numBytes = buffer.readPositiveVarInt();
+    final byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      String str =
+          new String(targetArray, buffer.unsafeHeapReaderIndex(), numBytes, StandardCharsets.UTF_8);
+      buffer.increaseReaderIndex(numBytes);
+      return str;
+    } else {
+      final byte[] tmpArray = getByteArray(numBytes);
+      buffer.readBytes(tmpArray, 0, numBytes);
+      return new String(tmpArray, 0, numBytes, StandardCharsets.UTF_8);
+    }
   }
 }

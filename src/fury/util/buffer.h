@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 #pragma once
 
 #include <cstdint>
@@ -6,8 +25,8 @@
 #include <memory>
 #include <string>
 
+#include "fury/util/bit_util.h"
 #include "fury/util/logging.h"
-#include "fury/util/util.h"
 
 namespace fury {
 
@@ -74,7 +93,8 @@ public:
     reinterpret_cast<T *>(data_ + offset)[0] = value;
   }
 
-  template <typename T, typename = EnableIfIsOneOf<T, int8_t, uint8_t, bool>>
+  template <typename T,
+            typename = meta::EnableIfIsOneOf<T, int8_t, uint8_t, bool>>
   inline void UnsafePutByte(uint32_t offset, T value) {
     data_[offset] = value;
   }
@@ -91,7 +111,8 @@ public:
     return value;
   }
 
-  template <typename T, typename = EnableIfIsOneOf<T, int8_t, uint8_t, bool>>
+  template <typename T,
+            typename = meta::EnableIfIsOneOf<T, int8_t, uint8_t, bool>>
   inline T GetByteAs(uint32_t relative_offset) {
     FURY_CHECK(relative_offset < size_) << "Out of range " << relative_offset
                                         << " should be less than " << size_;
@@ -183,7 +204,7 @@ public:
       // see
       // https://github.com/facebook/folly/blob/master/folly/docs/FBVector.md
       // for discussion.
-      auto new_size = BitUtil::RoundNumberOfBytesToNearestWord(len * 2);
+      auto new_size = util::RoundNumberOfBytesToNearestWord(len * 2);
       Reserve(new_size);
     }
   }

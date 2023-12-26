@@ -1,25 +1,27 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury;
 
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.resolver.ClassResolver;
 import io.fury.util.LoaderBinding;
 import io.fury.util.LoaderBinding.StagingType;
 import java.nio.ByteBuffer;
@@ -35,7 +37,6 @@ import javax.annotation.concurrent.ThreadSafe;
  */
 @ThreadSafe
 public class ThreadLocalFury implements ThreadSafeFury {
-
   private final ThreadLocal<MemoryBuffer> bufferLocal =
       ThreadLocal.withInitial(() -> MemoryUtils.buffer(32));
 
@@ -49,10 +50,13 @@ public class ThreadLocalFury implements ThreadSafeFury {
               binding.setClassLoader(Thread.currentThread().getContextClassLoader());
               return binding;
             });
-    // init and warm for current thread.
+    // 1. init and warm for current thread.
     // Fury creation took about 1~2 ms, but first creation
     // in a process load some classes which is not cheap.
-    bindingThreadLocal.get().get();
+    // 2. Make fury generate code at graalvm build time.
+    Fury fury = bindingThreadLocal.get().get();
+    ClassResolver._addGraalvmClassRegistry(
+        fury.getConfig().getConfigHash(), fury.getClassResolver());
   }
 
   public <R> R execute(Function<Fury, R> action) {
@@ -65,6 +69,11 @@ public class ThreadLocalFury implements ThreadSafeFury {
     buffer.writerIndex(0);
     bindingThreadLocal.get().get().serialize(buffer, obj);
     return buffer.getBytes(0, buffer.writerIndex());
+  }
+
+  @Override
+  public MemoryBuffer serialize(Object obj, long address, int size) {
+    return bindingThreadLocal.get().get().serialize(obj, address, size);
   }
 
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj) {
@@ -87,6 +96,26 @@ public class ThreadLocalFury implements ThreadSafeFury {
     return bindingThreadLocal.get().get().deserialize(MemoryUtils.wrap(byteBuffer));
   }
 
+  @Override
+  public byte[] serializeJavaObject(Object obj) {
+    return bindingThreadLocal.get().get().serializeJavaObject(obj);
+  }
+
+  @Override
+  public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
+    bindingThreadLocal.get().get().serializeJavaObject(buffer, obj);
+  }
+
+  @Override
+  public <T> T deserializeJavaObject(byte[] data, Class<T> cls) {
+    return bindingThreadLocal.get().get().deserializeJavaObject(data, cls);
+  }
+
+  @Override
+  public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
+    return bindingThreadLocal.get().get().deserializeJavaObject(buffer, cls);
+  }
+
   public void setClassLoader(ClassLoader classLoader) {
     setClassLoader(classLoader, StagingType.SOFT_STAGING);
   }
@@ -101,9 +130,5 @@ public class ThreadLocalFury implements ThreadSafeFury {
 
   public void clearClassLoader(ClassLoader loader) {
     bindingThreadLocal.get().clearClassLoader(loader);
-  }
-
-  public Fury getCurrentFury() {
-    return bindingThreadLocal.get().get();
   }
 }

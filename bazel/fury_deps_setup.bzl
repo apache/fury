@@ -113,27 +113,38 @@ def auto_http_archive(
     )
 
 def setup_deps():
-    auto_http_archive(
+    # Fix @platforms error, see https://groups.google.com/g/bazel-discuss/c/iQyt08ZaNek
+    http_archive(
         name = "bazel_skylib",
-        strip_prefix = None,
-        url = "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.2/bazel-skylib-1.0.2.tar.gz",
-        sha256 = "97e70364e9249702246c0e9444bccdc4b847bed1eb03c5a3ece4f83dfe6abc44",
+        sha256 = "74d544d96f4a5bb630d465ca8bbcfe231e3594e5aae57e1edbf17a6eb3ca2506",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
+            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
+        ],
+    )
+    http_archive(
+        name = "rules_python",
+        sha256 = "9fcf91dbcc31fde6d1edb15f117246d912c33c36f44cf681976bd886538deba6",
+        strip_prefix = "rules_python-0.8.0",
+        url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.8.0.tar.gz",
     )
     auto_http_archive(
         name = "com_github_grpc_grpc",
         # NOTE: If you update this, also update @boringssl's hash.
-        url = "https://github.com/grpc/grpc/archive/4790ab6d97e634a1ede983be393f3bb3c132b2f7.tar.gz",
-        sha256 = "df83bd8a08975870b8b254c34afbecc94c51a55198e6e3a5aab61d62f40b7274",
+        url = "https://github.com/grpc/grpc/archive/refs/tags/v1.46.6.tar.gz",
+        sha256 = "6514b3e6eab9e9c7017304512d4420387a47b1a9c5caa986643692977ed44e8a",
         patches = [
             "//bazel:grpc-cython-copts.patch",
             "//bazel:grpc-python.patch",
         ],
     )
+    # leary cython failed with: `found 'CKeyValueMetadata'`
+    # see https://github.com/apache/arrow/issues/28629
     auto_http_archive(
         name = "cython",
         build_file = "@com_github_grpc_grpc//third_party:cython.BUILD",
-        url = "https://github.com/cython/cython/archive/26cb654dcf4ed1b1858daf16b39fd13406b1ac64.tar.gz",
-        sha256 = "d21e155ac9a455831f81608bb06620e4a1d75012a630faf11f4c25ad10cfc9bb",
+        url = "https://github.com/cython/cython/releases/download/3.0.0/Cython-3.0.0.tar.gz",
+        sha256 = "350b18f9673e63101dbbfcf774ee2f57c20ac4636d255741d76ca79016b1bd82",
     )
     auto_http_archive(
         name = "com_google_googletest",
@@ -142,6 +153,9 @@ def setup_deps():
     )
     auto_http_archive(
         name = "com_google_absl",
-        url = "https://github.com/abseil/abseil-cpp/archive/refs/tags/20211102.0.tar.gz",
-        sha256 = "dcf71b9cba8dc0ca9940c4b316a0c796be8fab42b070bb6b7cab62b48f0e66c4",
+        sha256 = "5366d7e7fa7ba0d915014d387b66d0d002c03236448e1ba9ef98122c13b35c36",
+        strip_prefix = "abseil-cpp-20230125.3",
+        urls = [
+            "https://github.com/abseil/abseil-cpp/archive/20230125.3.tar.gz",
+        ],
     )

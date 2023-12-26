@@ -1,37 +1,40 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
-import io.fury.memory.MemoryBuffer;
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Currency;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,40 +46,13 @@ import org.testng.annotations.Test;
 
 public class SerializersTest extends FuryTestBase {
 
-  @Test
-  public void testUint8Serializer() {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG).disableSecureMode().build();
-    Serializers.Uint8Serializer serializer = new Serializers.Uint8Serializer(fury);
-    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(8);
-    serializer.crossLanguageWrite(buffer, 0);
-    assertEquals(serializer.crossLanguageRead(buffer), Integer.valueOf(0));
-    serializer.crossLanguageWrite(buffer, 255);
-    assertEquals(serializer.crossLanguageRead(buffer), Integer.valueOf(255));
-    assertThrows(IllegalArgumentException.class, () -> serializer.crossLanguageWrite(buffer, -1));
-    assertThrows(IllegalArgumentException.class, () -> serializer.crossLanguageWrite(buffer, 256));
-  }
-
-  @Test
-  public void testUint16Serializer() {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG).disableSecureMode().build();
-    Serializers.Uint16Serializer serializer = new Serializers.Uint16Serializer(fury);
-    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(16);
-    serializer.crossLanguageWrite(buffer, 0);
-    assertEquals(serializer.crossLanguageRead(buffer), Integer.valueOf(0));
-    serializer.crossLanguageWrite(buffer, 65535);
-    assertEquals(serializer.crossLanguageRead(buffer), Integer.valueOf(65535));
-    assertThrows(IllegalArgumentException.class, () -> serializer.crossLanguageWrite(buffer, -1));
-    assertThrows(
-        IllegalArgumentException.class, () -> serializer.crossLanguageWrite(buffer, 65536));
-  }
-
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testStringBuilder(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode();
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals("str", serDe(fury1, fury2, "str"));
@@ -104,11 +80,11 @@ public class SerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testEnumSerialization(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode();
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals(EnumFoo.A, serDe(fury1, fury2, EnumFoo.A));
@@ -119,11 +95,11 @@ public class SerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testBigInt(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode();
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals(BigInteger.valueOf(100), serDe(fury1, fury2, BigInteger.valueOf(100)));
@@ -183,8 +159,32 @@ public class SerializersTest extends FuryTestBase {
 
   private static class TestClassSerialization {}
 
+  private static class TestReplaceClassSerialization {
+    private Object writeReplace() {
+      return 1;
+    }
+  }
+
   @Test
-  public void testClass() {
-    serDeCheckSerializer(getJavaFury(), TestClassSerialization.class, "ClassSerializer");
+  public void testSerializeClass() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    // serialize both TestReplaceClassSerialization object and class.
+    // Scala `object` native serialization will return ModuleSerializationProxy will write original
+    // class.
+    List<Object> list =
+        serDe(
+            fury,
+            Arrays.asList(
+                new TestReplaceClassSerialization(), TestReplaceClassSerialization.class));
+    assertEquals(list.get(1), TestReplaceClassSerialization.class);
+    serDeCheckSerializer(fury, TestClassSerialization.class, "ClassSerializer");
+    serDeCheckSerializer(fury, TestReplaceClassSerialization.class, "ClassSerializer");
+    serDe(fury, new TestReplaceClassSerialization());
+  }
+
+  @Test
+  public void testEmptyObject() {
+    Fury fury = Fury.builder().requireClassRegistration(true).build();
+    assertSame(serDe(fury, new Object()).getClass(), Object.class);
   }
 }

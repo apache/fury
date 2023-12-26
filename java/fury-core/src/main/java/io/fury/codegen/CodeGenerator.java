@@ -1,39 +1,43 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.codegen;
 
-import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.fury.builder.AccessorHelper;
 import io.fury.builder.Generated;
+import io.fury.collection.Collections;
 import io.fury.collection.MultiKeyWeakMap;
 import io.fury.util.ClassLoaderUtils;
 import io.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -68,10 +72,10 @@ public class CodeGenerator {
 
   // FIXME The classloaders will only be reclaimed when the generated class are not be referenced.
   // FIXME CodeGenerator may reference to classloader, thus cause circular reference, neither can
-  // be gc.
-  private static final WeakHashMap<ClassLoader, WeakReference<CodeGenerator>> sharedCodeGenerator =
+  //  be gc.
+  private static final WeakHashMap<ClassLoader, SoftReference<CodeGenerator>> sharedCodeGenerator =
       new WeakHashMap<>();
-  private static final MultiKeyWeakMap<WeakReference<CodeGenerator>> sharedCodeGenerator2 =
+  private static final MultiKeyWeakMap<SoftReference<CodeGenerator>> sharedCodeGenerator2 =
       new MultiKeyWeakMap<>();
 
   // use this package when bean class name starts with java.
@@ -149,7 +153,9 @@ public class CodeGenerator {
       for (Map.Entry<String, byte[]> e : classes.entrySet()) {
         String key = e.getKey();
         byte[] value = e.getValue();
-        LOG.info("Code stats for class {} is {}", key, JaninoUtils.getClassStats(value));
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Code stats for class {} is {}", key, JaninoUtils.getClassStats(value));
+        }
       }
     }
     return defineClasses(classes);
@@ -229,6 +235,10 @@ public class CodeGenerator {
 
   public static synchronized ListeningExecutorService getCompilationService() {
     if (compilationExecutorService == null) {
+      if (GraalvmSupport.isGraalBuildtime()) {
+        // GraalVM build time can't reachable thread.
+        return compilationExecutorService = MoreExecutors.newDirectExecutorService();
+      }
       ThreadPoolExecutor executor =
           new ThreadPoolExecutor(
               maxPoolSize,
@@ -293,11 +303,11 @@ public class CodeGenerator {
   }
 
   public static synchronized CodeGenerator getSharedCodeGenerator(ClassLoader... classLoaders) {
-    WeakReference<CodeGenerator> codeGeneratorWeakRef = sharedCodeGenerator2.get(classLoaders);
+    SoftReference<CodeGenerator> codeGeneratorWeakRef = sharedCodeGenerator2.get(classLoaders);
     CodeGenerator codeGenerator = codeGeneratorWeakRef != null ? codeGeneratorWeakRef.get() : null;
     if (codeGenerator == null) {
       codeGenerator = new CodeGenerator(new ClassLoaderUtils.ComposedClassLoader(classLoaders));
-      sharedCodeGenerator2.put(classLoaders, new WeakReference<>(codeGenerator));
+      sharedCodeGenerator2.put(classLoaders, new SoftReference<>(codeGenerator));
     }
     return codeGenerator;
   }
@@ -306,11 +316,11 @@ public class CodeGenerator {
     if (classLoader == null) {
       classLoader = CodeGenerator.class.getClassLoader();
     }
-    WeakReference<CodeGenerator> codeGeneratorWeakRef = sharedCodeGenerator.get(classLoader);
+    SoftReference<CodeGenerator> codeGeneratorWeakRef = sharedCodeGenerator.get(classLoader);
     CodeGenerator codeGenerator = codeGeneratorWeakRef != null ? codeGeneratorWeakRef.get() : null;
     if (codeGenerator == null) {
       codeGenerator = new CodeGenerator(classLoader);
-      sharedCodeGenerator.put(classLoader, new WeakReference<>(codeGenerator));
+      sharedCodeGenerator.put(classLoader, new SoftReference<>(codeGenerator));
     }
     return codeGenerator;
   }
@@ -413,7 +423,6 @@ public class CodeGenerator {
     }
   }
 
-  /** indent code by 4 spaces. */
   static String indent(String code) {
     return indent(code, 2);
   }
@@ -471,5 +480,29 @@ public class CodeGenerator {
       sb.deleteCharAt(length - 1);
     }
     return sb;
+  }
+
+  /** Returns true if class is public accessible from source. */
+  public static boolean sourcePublicAccessible(Class<?> clz) {
+    if (clz.isPrimitive()) {
+      return true;
+    }
+    if (!ReflectionUtils.isPublic(clz)) {
+      return false;
+    }
+    return sourcePkgLevelAccessible(clz);
+  }
+
+  /** Returns true if class is package level accessible from source. */
+  public static boolean sourcePkgLevelAccessible(Class<?> clz) {
+    if (clz.isPrimitive()) {
+      return true;
+    }
+    if (clz.getCanonicalName() == null) {
+      return false;
+    }
+    // Scala may produce class name like: xxx.SomePackageObject.package$SomeClass
+    HashSet<String> set = Collections.ofHashSet(clz.getCanonicalName().split("\\."));
+    return !Collections.hasIntersection(set, CodegenContext.JAVA_RESERVED_WORDS);
   }
 }

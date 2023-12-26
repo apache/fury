@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.builder;
@@ -24,9 +25,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.CompatibleMode;
+import io.fury.config.Language;
 import io.fury.resolver.MetaContext;
-import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.Serializer;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
@@ -50,16 +51,16 @@ public class JITContextTest extends FuryTestBase {
         .toArray(Object[][]::new);
   }
 
-  @Test(dataProvider = "config1")
+  @Test(dataProvider = "config1", timeOut = 60_000)
   public void testAsyncCompilation(boolean referenceTracking, CompatibleMode compatibleMode)
       throws InterruptedException {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
-            .disableSecureMode()
-            .withAsyncCompilationEnabled(true)
+            .requireClassRegistration(false)
+            .withAsyncCompilation(true)
             .build();
     BeanB beanB = BeanB.createBeanB(2);
     BeanA beanA = BeanA.createBeanA(2);
@@ -90,16 +91,16 @@ public class JITContextTest extends FuryTestBase {
     }
   }
 
-  @Test(dataProvider = "config1")
+  @Test(dataProvider = "config1", timeOut = 60_000)
   public void testAsyncCompilationMetaShared(
       boolean referenceTracking, CompatibleMode compatibleMode) throws InterruptedException {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
-            .disableSecureMode()
-            .withAsyncCompilationEnabled(true)
+            .requireClassRegistration(false)
+            .withAsyncCompilation(true)
             .build();
     BeanB beanB = BeanB.createBeanB(2);
     BeanA beanA = BeanA.createBeanA(2);

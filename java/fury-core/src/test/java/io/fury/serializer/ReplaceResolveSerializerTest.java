@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
@@ -27,8 +28,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.Language;
+import io.fury.util.Preconditions;
+import java.io.Externalizable;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +76,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .build();
     CustomReplaceClass1 o1 = new CustomReplaceClass1("abc");
     fury.registerSerializer(CustomReplaceClass1.class, ReplaceResolveSerializer.class);
@@ -130,7 +137,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .build();
     fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
     for (Object o :
@@ -169,7 +176,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass3.class, ReplaceResolveSerializer.class);
     {
@@ -220,7 +227,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass3.class, ReplaceResolveSerializer.class);
     fury.registerSerializer(CustomReplaceClass4.class, ReplaceResolveSerializer.class);
@@ -274,7 +281,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .build();
     fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
     fury.registerSerializer(Subclass1.class, ReplaceResolveSerializer.class);
@@ -318,7 +325,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .build();
     fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
     fury.registerSerializer(Subclass2.class, ReplaceResolveSerializer.class);
@@ -356,7 +363,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass5.class, ReplaceResolveSerializer.class);
     fury.registerSerializer(Subclass3.class, ReplaceResolveSerializer.class);
@@ -376,7 +383,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     fury.registerSerializer(CustomReplaceClass6.class, ReplaceResolveSerializer.class);
     assertThrows(Exception.class, () -> jdkSerialize(new CustomReplaceClass6()));
@@ -396,13 +403,13 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     roundCheck(fury1, fury2, ImmutableList.of(1, 2));
     roundCheck(fury1, fury2, ImmutableList.of("a", "b"));
@@ -423,16 +430,148 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .build();
     roundCheck(fury1, fury2, ImmutableMap.of("k", 2));
     roundCheck(fury1, fury2, ImmutableMap.of(1, 2));
     roundCheck(fury1, fury2, new SimpleMapTest(ImmutableMap.of("k", 2), ImmutableMap.of(1, 2)));
+  }
+
+  public static class InheritanceTestClass {
+    private byte f1;
+
+    public InheritanceTestClass(byte f1) {
+      this.f1 = f1;
+    }
+
+    public Object writeReplace() {
+      return new InheritanceTestClassProxy(f1);
+    }
+  }
+
+  public static class InheritanceTestClassProxyBase implements Serializable {
+    // Mark as transient to make object serializer unable to work, then only
+    // `writeObject/readObject` can be used for serialization.
+    transient byte[] data;
+
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+      stream.write(data.length);
+      stream.write(data);
+    }
+
+    private void readObject(ObjectInputStream stream) throws IOException {
+      int size = stream.read();
+      data = new byte[size];
+      int read = stream.read(data);
+      Preconditions.checkArgument(read == size);
+    }
+  }
+
+  public static class InheritanceTestClassProxy extends InheritanceTestClassProxyBase {
+    public InheritanceTestClassProxy(byte f1) {
+      data = new byte[] {f1};
+    }
+
+    public Object readResolve() {
+      return new InheritanceTestClass(data[0]);
+    }
+  }
+
+  @Test
+  public void testInheritance() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    byte[] bytes = fury.serialize(new InheritanceTestClass((byte) 10));
+    InheritanceTestClass o = (InheritanceTestClass) fury.deserialize(bytes);
+    assertEquals(o.f1, 10);
+  }
+
+  static class WriteReplaceExternalizable implements Externalizable {
+    private transient int f1;
+
+    public WriteReplaceExternalizable(int f1) {
+      this.f1 = f1;
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+      throw new RuntimeException();
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+      throw new RuntimeException();
+    }
+
+    private Object writeReplace() {
+      return new ReplaceExternalizableProxy(f1);
+    }
+  }
+
+  static class ReplaceExternalizableProxy implements Serializable {
+    private int f1;
+
+    public ReplaceExternalizableProxy(int f1) {
+      this.f1 = f1;
+    }
+
+    private Object readResolve() {
+      return new WriteReplaceExternalizable(f1);
+    }
+  }
+
+  @Test
+  public void testWriteReplaceExternalizable() {
+    WriteReplaceExternalizable o =
+        serDeCheckSerializer(
+            getJavaFury(),
+            new WriteReplaceExternalizable(10),
+            ReplaceResolveSerializer.class.getName());
+    assertEquals(o.f1, 10);
+  }
+
+  static class ReplaceSelfExternalizable implements Externalizable {
+    private transient int f1;
+    private transient boolean newInstance;
+
+    public ReplaceSelfExternalizable(int f1, boolean newInstance) {
+      this.f1 = f1;
+      this.newInstance = newInstance;
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+      out.writeInt(f1);
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+      f1 = in.readInt();
+    }
+
+    private Object writeReplace() {
+      return newInstance ? new ReplaceSelfExternalizable(f1, false) : this;
+    }
+  }
+
+  @Test
+  public void testWriteReplaceSelfExternalizable() {
+    ReplaceSelfExternalizable o =
+        serDeCheckSerializer(
+            getJavaFury(),
+            new ReplaceSelfExternalizable(10, false),
+            ReplaceResolveSerializer.class.getName());
+    assertEquals(o.f1, 10);
+    ReplaceSelfExternalizable o1 =
+        serDeCheckSerializer(
+            getJavaFury(),
+            new ReplaceSelfExternalizable(10, true),
+            ReplaceResolveSerializer.class.getName());
+    assertEquals(o1.f1, 10);
   }
 }

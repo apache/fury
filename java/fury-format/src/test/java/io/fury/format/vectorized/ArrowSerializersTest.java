@@ -1,35 +1,34 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.format.vectorized;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
 
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.io.FuryWritableByteChannel;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.resolver.ClassResolver;
 import io.fury.serializer.BufferObject;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -47,10 +46,7 @@ public class ArrowSerializersTest {
   public void testRegisterArrowSerializer() throws Exception {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
     ClassResolver classResolver = fury.getClassResolver();
-    Field field = ClassResolver.class.getDeclaredField("ArrowSerializersClass");
-    field.setAccessible(true);
-    Object arrowSerializersClass = field.get(null);
-    assertSame(arrowSerializersClass, ArrowSerializers.class);
+    ArrowSerializers.registerSerializers(fury);
     assertEquals(classResolver.getSerializerClass(ArrowTable.class), ArrowTableSerializer.class);
     assertEquals(
         classResolver.getSerializerClass(VectorSchemaRoot.class),
@@ -60,7 +56,8 @@ public class ArrowSerializersTest {
   @Test
   public void testWriteVectorSchemaRoot() throws IOException {
     Collection<BufferObject> bufferObjects = new ArrayList<>();
-    Fury fury = Fury.builder().disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    ArrowSerializers.registerSerializers(fury);
     int size = 2000;
     VectorSchemaRoot root = ArrowUtilsTest.createVectorSchemaRoot(size);
     Assert.assertEquals(
@@ -85,7 +82,8 @@ public class ArrowSerializersTest {
     assertRecordBatchEqual(newRoot, root);
 
     // test in band serialization.
-    fury = Fury.builder().disableSecureMode().build();
+    fury = Fury.builder().requireClassRegistration(false).build();
+    ArrowSerializers.registerSerializers(fury);
     newRoot = (VectorSchemaRoot) fury.deserialize(fury.serialize(root));
     assertRecordBatchEqual(newRoot, root);
   }
@@ -93,7 +91,8 @@ public class ArrowSerializersTest {
   @Test
   public void testWriteArrowTable() throws IOException {
     Collection<BufferObject> bufferObjects = new ArrayList<>();
-    Fury fury = Fury.builder().disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    ArrowSerializers.registerSerializers(fury);
     int size = 2000;
     VectorSchemaRoot root = ArrowUtilsTest.createVectorSchemaRoot(size);
     Schema schema = root.getSchema();
@@ -115,7 +114,8 @@ public class ArrowSerializersTest {
     assertTableEqual(newTable, table);
 
     // test in band serialization.
-    fury = Fury.builder().disableSecureMode().build();
+    fury = Fury.builder().requireClassRegistration(false).build();
+    ArrowSerializers.registerSerializers(fury);
     newTable = (ArrowTable) fury.deserialize(fury.serialize(table));
     assertTableEqual(newTable, table);
   }

@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import pyarrow as pa
 from pyfury.serializer import CrossLanguageCompatibleSerializer, BufferObject
 from pyfury.buffer import Buffer
@@ -6,10 +23,10 @@ from pyfury.type import FuryType
 
 class ArrowRecordBatchSerializer(CrossLanguageCompatibleSerializer):
     def write(self, buffer, value: pa.RecordBatch):
-        self.fury_.write_buffer_object(buffer, ArrowRecordBatchBufferObject(value))
+        self.fury.write_buffer_object(buffer, ArrowRecordBatchBufferObject(value))
 
     def read(self, buffer: Buffer) -> pa.Table:
-        fury_buf = self.fury_.read_buffer_object(buffer)
+        fury_buf = self.fury.read_buffer_object(buffer)
         # If the input source supports zero-copy reads (e.g. like a memory
         # map, or pa.BufferReader), then the returned batches are also
         # zero-copy and do not allocate any new memory on read.
@@ -18,7 +35,7 @@ class ArrowRecordBatchSerializer(CrossLanguageCompatibleSerializer):
         [batch] = [batch for batch in reader]
         return batch
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.FURY_ARROW_RECORD_BATCH.value
 
 
@@ -52,10 +69,10 @@ class ArrowRecordBatchBufferObject(BufferObject):
 
 class ArrowTableSerializer(CrossLanguageCompatibleSerializer):
     def write(self, buffer, value: pa.Table):
-        self.fury_.write_buffer_object(buffer, ArrowTableBufferObject(value))
+        self.fury.write_buffer_object(buffer, ArrowTableBufferObject(value))
 
     def read(self, buffer: Buffer) -> pa.Table:
-        fury_buf = self.fury_.read_buffer_object(buffer)
+        fury_buf = self.fury.read_buffer_object(buffer)
         # If the input source supports zero-copy reads (e.g. like a memory
         # map, or pa.BufferReader), then the returned batches are also
         # zero-copy and do not allocate any new memory on read.
@@ -64,7 +81,7 @@ class ArrowTableSerializer(CrossLanguageCompatibleSerializer):
         batches = [batch for batch in reader]
         return pa.Table.from_batches(batches)
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.FURY_ARROW_TABLE.value
 
 

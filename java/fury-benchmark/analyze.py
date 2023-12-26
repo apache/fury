@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """
     process fury/kryo/fst/hession performance data
 """
@@ -7,9 +24,9 @@ import os
 import pandas as pd
 from pathlib import Path
 import re
-
-# dir_path = os.path.dirname(os.path.realpath(__file__))
 import sys
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
 def to_markdown(df: pd.DataFrame, filepath: str):
@@ -106,10 +123,15 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
     else:
         group_cols = ["Benchmark", "bufferType"]
     compatible = data[data["Benchmark"].str.contains("compatible")]
+    plot_color_map = dict(color_map)
     if len(compatible) > 0:
         jdk = data[data["Lib"].str.contains("Jdk")].copy()
         jdk["Benchmark"] = jdk["Benchmark"] + "_compatible"
         data = data.append(jdk)
+        fury_metashared_color = plot_color_map["Furymetashared"]
+        fury_color = plot_color_map["Fury"]
+        plot_color_map["Fury"] = fury_metashared_color
+        plot_color_map["Furymetashared"] = fury_color
     ylable = column
     if column == "Tps":
         ylable = f"Tps/{scaler}"
@@ -139,14 +161,16 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
         )
         print(final_df)
         libs = final_df.columns.to_frame()["Lib"]
-        color = [color_map[lib] for lib in libs]
-        sub_plot = final_df.plot.bar(title=title, color=color, ax=ax, figsize=(7, 7), width=0.7)
+        color = [plot_color_map[lib] for lib in libs]
+        sub_plot = final_df.plot.bar(
+            title=title, color=color, ax=ax, figsize=(7, 7), width=0.7
+        )
         for container in ax.containers:
             ax.bar_label(container)
         ax.set_xlabel("enable_references")
         ax.set_ylabel(ylable)
         libs = libs.str.replace("metashared", "meta\nshared")
-        ax.legend(libs, loc="upper right", prop={'size': 13})
+        ax.legend(libs, loc="upper right", prop={"size": 13})
         save_dir = get_plot_dir(file_dir)
         sub_plot.get_figure().savefig(save_dir + "/" + save_filename)
 
@@ -194,7 +218,7 @@ def plot_zero_copy(df: pd.DataFrame, file_dir, filename, column="Tps"):
             ax.bar_label(container)
         ax.set_xlabel("array_size")
         ax.set_ylabel(ylable)
-        ax.legend(libs, bbox_to_anchor=(0.23, 0.99), prop={'size': 13})
+        ax.legend(libs, bbox_to_anchor=(0.23, 0.99), prop={"size": 13})
         save_dir = get_plot_dir(file_dir)
         sub_plot.get_figure().savefig(save_dir + "/" + save_filename)
 
@@ -237,13 +261,11 @@ if __name__ == "__main__":
     if args:
         file_name = args[0]
     else:
-        file_name = "jmh-jdk-11-zerocopy.csv"
-    file_dir = "/Users/chaokunyang/Desktop/chaokun/fury_open_source/docs/benchmarks/data"
+        file_name = "jmh-jdk-11-deserialization.csv"
+    file_dir = f"{dir_path}/../../docs/benchmarks/data"
     zero_copy_bench, bench = process_data(os.path.join(file_dir, file_name))
     if zero_copy_bench.shape[0] > 0:
-        to_markdown(
-            zero_copy_bench, str(Path(file_name).with_suffix(".zero_copy.md"))
-        )
+        to_markdown(zero_copy_bench, str(Path(file_name).with_suffix(".zero_copy.md")))
         plot_zero_copy(zero_copy_bench, file_dir, "zero_copy_bench", column="Tps")
     if bench.shape[0] > 0:
         to_markdown(bench, str(Path(file_name).with_suffix(".bench.md")))

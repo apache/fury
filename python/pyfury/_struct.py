@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import datetime
 import logging
 import typing
@@ -76,8 +93,8 @@ class ComplexTypeVisitor(TypeVisitor):
         return serializer
 
 
-def _get_hash(fury_, field_names: list, type_hints: dict):
-    visitor = StructHashVisitor(fury_)
+def _get_hash(fury, field_names: list, type_hints: dict):
+    visitor = StructHashVisitor(fury)
     for index, key in enumerate(field_names):
         infer_field(key, type_hints[key], visitor, types_path=[])
     hash_ = visitor.get_hash()
@@ -86,19 +103,19 @@ def _get_hash(fury_, field_names: list, type_hints: dict):
 
 
 class ComplexObjectSerializer(Serializer):
-    def __init__(self, fury_, clz: type, type_tag: str):
-        super().__init__(fury_, clz)
+    def __init__(self, fury, clz: type, type_tag: str):
+        super().__init__(fury, clz)
         self._type_tag = type_tag
         self._type_hints = typing.get_type_hints(clz)
         self._field_names = sorted(self._type_hints.keys())
         self._serializers = [None] * len(self._field_names)
-        visitor = ComplexTypeVisitor(fury_)
+        visitor = ComplexTypeVisitor(fury)
         for index, key in enumerate(self._field_names):
             serializer = infer_field(key, self._type_hints[key], visitor, types_path=[])
             self._serializers[index] = serializer
         from pyfury._fury import Language
 
-        if self.fury_.language == Language.PYTHON:
+        if self.fury.language == Language.PYTHON:
             logger.warning(
                 "Type of class %s shouldn't be serialized using cross-language "
                 "serializer",
@@ -106,32 +123,30 @@ class ComplexObjectSerializer(Serializer):
             )
         self._hash = 0
 
-    def get_cross_language_type_id(self):
+    def get_xtype_id(self):
         return FuryType.FURY_TYPE_TAG.value
 
-    def get_cross_language_type_tag(self):
+    def get_xtype_tag(self):
         return self._type_tag
 
     def write(self, buffer, value):
-        return self.cross_language_write(buffer, value)
+        return self.xwrite(buffer, value)
 
     def read(self, buffer):
-        return self.cross_language_read(buffer)
+        return self.xread(buffer)
 
-    def cross_language_write(self, buffer: Buffer, value):
+    def xwrite(self, buffer: Buffer, value):
         if self._hash == 0:
-            self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
+            self._hash = _get_hash(self.fury, self._field_names, self._type_hints)
         buffer.write_int32(self._hash)
         for index, field_name in enumerate(self._field_names):
             field_value = getattr(value, field_name)
             serializer = self._serializers[index]
-            self.fury_.cross_language_serialize_referencable(
-                buffer, field_value, serializer=serializer
-            )
+            self.fury.xserialize_ref(buffer, field_value, serializer=serializer)
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         if self._hash == 0:
-            self._hash = _get_hash(self.fury_, self._field_names, self._type_hints)
+            self._hash = _get_hash(self.fury, self._field_names, self._type_hints)
         hash_ = buffer.read_int32()
         if hash_ != self._hash:
             raise ClassNotCompatibleError(
@@ -139,12 +154,10 @@ class ComplexObjectSerializer(Serializer):
                 f"for class {self.type_}",
             )
         obj = self.type_.__new__(self.type_)
-        self.fury_.reference_resolver.reference(obj)
+        self.fury.ref_resolver.reference(obj)
         for index, field_name in enumerate(self._field_names):
             serializer = self._serializers[index]
-            field_value = self.fury_.cross_language_deserialize_referencable(
-                buffer, serializer=serializer
-            )
+            field_value = self.fury.xdeserialize_ref(buffer, serializer=serializer)
             setattr(
                 obj,
                 field_name,
@@ -163,18 +176,18 @@ class StructHashVisitor(TypeVisitor):
 
     def visit_list(self, field_name, elem_type, types_path=None):
         # TODO add list element type to hash.
-        id_ = abs(ListSerializer(self.fury, list).get_cross_language_type_id())
+        id_ = abs(ListSerializer(self.fury, list).get_xtype_id())
         self._hash = self._compute_field_hash(self._hash, id_)
 
     def visit_dict(self, field_name, key_type, value_type, types_path=None):
         # TODO add map key/value type to hash.
-        id_ = abs(MapSerializer(self.fury, dict).get_cross_language_type_id())
+        id_ = abs(MapSerializer(self.fury, dict).get_xtype_id())
         self._hash = self._compute_field_hash(self._hash, id_)
 
     def visit_customized(self, field_name, type_, types_path=None):
         serializer = self.fury.class_resolver.get_serializer(type_)
-        if serializer.get_cross_language_type_id() != NOT_SUPPORT_CROSS_LANGUAGE:
-            tag = serializer.get_cross_language_type_tag()
+        if serializer.get_xtype_id() != NOT_SUPPORT_CROSS_LANGUAGE:
+            tag = serializer.get_xtype_tag()
         else:
             tag = qualified_class_name(type_)
         tag_hash = compute_string_hash(tag)
@@ -186,7 +199,7 @@ class StructHashVisitor(TypeVisitor):
             return None
         serializer = self.fury.class_resolver.get_serializer(type_)
         assert not isinstance(serializer, (PickleSerializer,))
-        id_ = serializer.get_cross_language_type_id()
+        id_ = serializer.get_xtype_id()
         assert id_ is not None, serializer
         id_ = abs(id_)
         self._hash = self._compute_field_hash(self._hash, id_)

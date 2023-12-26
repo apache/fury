@@ -1,31 +1,32 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.test.bean.Cyclic;
+import io.fury.util.Preconditions;
 import lombok.Data;
 import org.testng.annotations.Test;
 
@@ -43,8 +44,8 @@ public class ObjectSerializerTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
-            .disableSecureMode()
+            .withRefTracking(false)
+            .requireClassRegistration(false)
             .build();
     ObjectSerializer serializer = new ObjectSerializer(fury, Foo.class);
     MemoryBuffer buffer = MemoryUtils.buffer(32);
@@ -72,8 +73,8 @@ public class ObjectSerializerTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
-            .disableSecureMode()
+            .withRefTracking(false)
+            .requireClassRegistration(false)
             .build();
     ObjectSerializer serializer = new ObjectSerializer(fury, foo.getClass());
     MemoryBuffer buffer = MemoryUtils.buffer(32);
@@ -88,17 +89,17 @@ public class ObjectSerializerTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
 
     ObjectSerializer<Cyclic> serializer = new ObjectSerializer<>(fury, Cyclic.class);
-    fury.getReferenceResolver().writeReferenceOrNull(buffer, cyclic);
+    fury.getRefResolver().writeRefOrNull(buffer, cyclic);
     serializer.write(buffer, cyclic);
-    byte tag = fury.getReferenceResolver().readReferenceOrNull(buffer);
+    byte tag = fury.getRefResolver().readRefOrNull(buffer);
     Preconditions.checkArgument(tag == Fury.REF_VALUE_FLAG);
-    fury.getReferenceResolver().preserveReferenceId();
+    fury.getRefResolver().preserveRefId();
     Cyclic cyclic1 = serializer.read(buffer);
     fury.reset();
     assertEquals(cyclic1, cyclic);
@@ -120,8 +121,8 @@ public class ObjectSerializerTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
-            .disableSecureMode()
+            .withRefTracking(false)
+            .requireClassRegistration(false)
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     ObjectSerializer<A> serializer = new ObjectSerializer<>(fury, A.class);

@@ -1,10 +1,11 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,23 +18,24 @@
 
 package io.fury.memory;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static io.fury.util.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
+import io.fury.annotation.CodegenInvoke;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
+import java.util.Arrays;
 
 /**
- * A class for operations on memory managed by fury. The buffer may be backed by heap memory (byte
+ * A class for operations on memory managed by Fury. The buffer may be backed by heap memory (byte
  * array) or by off-heap memory. Note that the buffer can auto grow on write operations and change
  * into a heap buffer when growing.
  *
- * <p>This class is based on org.apache.flink.core.memory.MemorySegment and
- * org.apache.arrow.memory.ArrowBuf, we add this class mainly for:
+ * <p>This is a byte buffer similar class with more features:
  *
  * <ul>
  *   <li>read/write data into a chunk of direct memory.
@@ -51,14 +53,18 @@ import java.nio.ReadOnlyBufferException;
  * part as separate class, and use composition in this class. In this way, all fields can be final
  * and access will be much faster.
  *
- * @author chaokunyang
+ * <p>Warning: The instance of this class should not be hold on graalvm build time, the heap unsafe
+ * offset are not correct in runtime since graalvm will change array base offset.
  */
 // FIXME Buffer operations is most common, and jvm inline and branch elimination
-//  is not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually.
+// is not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually.
+// Note: This class is based on org.apache.flink.core.memory.MemorySegment and
+// org.apache.arrow.memory.ArrowBuf.
 public final class MemoryBuffer {
   // The unsafe handle for transparent memory copied (heap/off-heap).
   private static final sun.misc.Unsafe UNSAFE = Platform.UNSAFE;
   // The beginning of the byte array contents, relative to the byte array object.
+  // Note: this offset will change between graalvm build time and runtime.
   private static final long BYTE_ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
   // Constant that flags the byte order. Because this is a boolean constant, the JIT compiler can
   // use this well to aggressively eliminate the non-applicable code paths.
@@ -550,6 +556,22 @@ public final class MemoryBuffer {
     final long pos = address + index;
     checkPosition(index, pos, 2);
     return UNSAFE.getShort(heapMemory, pos);
+  }
+
+  /** Get short in big endian order from provided buffer. */
+  public static short getShortB(byte[] b, int off) {
+    return (short) ((b[off + 1] & 0xFF) + (b[off] << 8));
+  }
+
+  /** Get short in big endian order from specified offset. */
+  public short getShortB(int index) {
+    final long pos = address + index;
+    checkPosition(index, pos, 2);
+    if (LITTLE_ENDIAN) {
+      return Short.reverseBytes(UNSAFE.getShort(heapMemory, pos));
+    } else {
+      return UNSAFE.getShort(heapMemory, pos);
+    }
   }
 
   public short getShort(int index) {
@@ -1176,23 +1198,27 @@ public final class MemoryBuffer {
    * #writePositiveVarInt} to save one bit.
    */
   public int writeVarInt(int v) {
-    ensure(writerIndex + 5);
+    ensure(writerIndex + 8);
     return unsafeWriteVarInt(v);
   }
 
   /**
-   * Writes a 1-9 byte int.
+   * Writes a 1-5 byte int.
    *
    * @return The number of bytes written.
    */
   public int writePositiveVarInt(int v) {
-    // ensure at least 9 bytes are writable at once, so jvm-jit
-    // generated code is smaller. Otherwise, `MapReferenceResolver.writeReferenceOrNull`
+    // ensure at least 8 bytes are writable at once, so jvm-jit
+    // generated code is smaller. Otherwise, `MapRefResolver.writeRefOrNull`
     // may be `callee is too large`/`already compiled into a big method`
-    ensure(writerIndex + 5);
+    ensure(writerIndex + 8);
     return unsafeWritePositiveVarInt(v);
   }
 
+  /**
+   * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
+   * to avoid using two memory operations.
+   */
   public int unsafeWriteVarInt(int v) {
     // Ensure negatives close to zero is encode in little bytes.
     v = (v << 1) ^ (v >> 31);
@@ -1205,6 +1231,10 @@ public final class MemoryBuffer {
     return (r >>> 1) ^ -(r & 1);
   }
 
+  /**
+   * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
+   * to avoid using two memory operations.
+   */
   public int unsafeWritePositiveVarInt(int v) {
     // The encoding algorithm are based on kryo UnsafeMemoryOutput.writeVarInt
     // varint are written using little endian byte order.
@@ -1608,6 +1638,7 @@ public final class MemoryBuffer {
     return unsafeWritePositiveVarLong(value);
   }
 
+  @CodegenInvoke
   public int unsafeWriteVarLong(long value) {
     value = (value << 1) ^ (value >> 63);
     return unsafeWritePositiveVarLong(value);
@@ -1791,6 +1822,94 @@ public final class MemoryBuffer {
       }
     }
     return result;
+  }
+
+  /**
+   * Write long using fury SLI(Small long as int) encoding. If long is in [0xc0000000, 0x3fffffff],
+   * encode as 4 bytes int: | little-endian: ((int) value) << 1 |; Otherwise write as 9 bytes: | 0b1
+   * | little-endian 8bytes long |
+   */
+  public int writeSliLong(long value) {
+    ensure(writerIndex + 9);
+    return unsafeWriteSliLong(value);
+  }
+
+  private static final long HALF_MAX_INT_VALUE = Integer.MAX_VALUE / 2;
+  private static final long HALF_MIN_INT_VALUE = Integer.MIN_VALUE / 2;
+  private static final byte BIG_LONG_FLAG = 0b1; // bit 0 set, means big long.
+
+  /** Write long using fury SLI(Small Long as Int) encoding. */
+  public int unsafeWriteSliLong(long value) {
+    final int writerIndex = this.writerIndex;
+    final long pos = address + writerIndex;
+    final byte[] heapMemory = this.heapMemory;
+    if (value >= HALF_MIN_INT_VALUE && value <= HALF_MAX_INT_VALUE) {
+      // write:
+      // 00xxx -> 0xxx
+      // 11xxx -> 1xxx
+      // read:
+      // 0xxx -> 00xxx
+      // 1xxx -> 11xxx
+      int v = ((int) value) << 1; // bit 0 unset, means int.
+      if (LITTLE_ENDIAN) {
+        UNSAFE.putInt(heapMemory, pos, v);
+      } else {
+        UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(v));
+      }
+      this.writerIndex = writerIndex + 4;
+      return 4;
+    } else {
+      UNSAFE.putByte(heapMemory, pos, BIG_LONG_FLAG);
+      if (LITTLE_ENDIAN) {
+        UNSAFE.putLong(heapMemory, pos + 1, value);
+      } else {
+        UNSAFE.putLong(heapMemory, pos + 1, Long.reverseBytes(value));
+      }
+      this.writerIndex = writerIndex + 9;
+      return 9;
+    }
+  }
+
+  /** Read fury SLI(Small Long as Int) encoded long. */
+  public long readSliLong() {
+    final int readIdx = readerIndex;
+    final long pos = address + readIdx;
+    final int size = this.size;
+    final byte[] heapMemory = this.heapMemory;
+    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readIdx > size - 4) {
+      throwIndexOutOfBoundsException(readIdx, size, 4);
+    }
+    if (LITTLE_ENDIAN) {
+      int i = UNSAFE.getInt(heapMemory, pos);
+      if ((i & 0b1) != 0b1) {
+        readerIndex = readIdx + 4;
+        return i >> 1;
+      } else {
+        if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readIdx > size - 9) {
+          throwIndexOutOfBoundsException(readIdx, size, 9);
+        }
+        readerIndex = readIdx + 9;
+        return UNSAFE.getLong(heapMemory, pos + 1);
+      }
+    } else {
+      int i = Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos));
+      if ((i & 0b1) != 0b1) {
+        readerIndex = readIdx + 4;
+        return i >> 1;
+      } else {
+        if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readIdx > size - 9) {
+          throwIndexOutOfBoundsException(readIdx, size, 9);
+        }
+        readerIndex = readIdx + 9;
+        return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos + 1));
+      }
+    }
+  }
+
+  private void throwIndexOutOfBoundsException(int readIdx, int size, int need) {
+    throw new IndexOutOfBoundsException(
+        String.format(
+            "readerIndex(%d) + length(%d) exceeds size(%d): %s", readIdx, need, size, this));
   }
 
   public void writeBytes(byte[] bytes) {
@@ -1997,9 +2116,14 @@ public final class MemoryBuffer {
           String.format(
               "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, length, size, this));
     }
+    byte[] heapMemory = this.heapMemory;
     final byte[] bytes = new byte[length];
-    Platform.UNSAFE.copyMemory(
-        this.heapMemory, address + readerIdx, bytes, Platform.BYTE_ARRAY_OFFSET, length);
+    if (heapMemory != null) {
+      // System.arraycopy faster for some jdk than Unsafe.
+      System.arraycopy(heapMemory, heapOffset + readerIdx, bytes, 0, length);
+    } else {
+      Platform.copyMemory(null, address + readerIdx, bytes, Platform.BYTE_ARRAY_OFFSET, length);
+    }
     readerIndex = readerIdx + length;
     return bytes;
   }
@@ -2047,8 +2171,13 @@ public final class MemoryBuffer {
               readerIdx, numBytes, size, this));
     }
     final byte[] arr = new byte[numBytes];
-    Platform.UNSAFE.copyMemory(
-        this.heapMemory, address + readerIdx, arr, Platform.BYTE_ARRAY_OFFSET, numBytes);
+    byte[] heapMemory = this.heapMemory;
+    if (heapMemory != null) {
+      System.arraycopy(heapMemory, heapOffset + readerIdx, arr, 0, numBytes);
+    } else {
+      Platform.UNSAFE.copyMemory(
+          null, address + readerIdx, arr, Platform.BYTE_ARRAY_OFFSET, numBytes);
+    }
     readerIndex = readerIdx + numBytes;
     return arr;
   }
@@ -2241,6 +2370,10 @@ public final class MemoryBuffer {
   }
 
   public byte[] getBytes(int index, int length) {
+    if (index == 0 && heapMemory != null && heapOffset == 0) {
+      // Arrays.copyOf is an intrinsics, which is faster
+      return Arrays.copyOf(heapMemory, length);
+    }
     if (index + length > size) {
       throw new IllegalArgumentException();
     }
@@ -2381,6 +2514,8 @@ public final class MemoryBuffer {
         + writerIndex
         + ", heapMemory="
         + (heapMemory == null ? null : "len(" + heapMemory.length + ")")
+        + ", heapData="
+        + Arrays.toString(heapMemory)
         + ", heapOffset="
         + heapOffset
         + ", offHeapBuffer="

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,9 @@ import io.fury.util.Platform;
 import java.util.ArrayList;
 import java.util.List;
 
-// based on fst Identity2IdMap, but with some jit inline optimization.
+// Drived from
+// https://github.com/RuedigerMoeller/fast-serialization/blob/e8da5591daa09452791dcd992ea4f83b20937be7/src/main/java/org/nustaq/serialization/util/FSTIdentity2IdMap.java.
+// Modified to include JIT inline optimization.
 public class Identity2IdMap {
   private static final int RESERVE = 4;
   private static final int MAX_DEPTH = 4;

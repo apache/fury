@@ -1,25 +1,28 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.builder;
 
+import static io.fury.codegen.Code.LiteralValue.FalseLiteral;
 import static io.fury.codegen.Expression.Invoke.inlineInvoke;
 import static io.fury.codegen.ExpressionUtils.add;
+import static io.fury.type.TypeUtils.OBJECT_ARRAY_TYPE;
 import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_ARRAY_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
@@ -29,29 +32,38 @@ import static io.fury.type.TypeUtils.getRawType;
 import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
 import static io.fury.type.TypeUtils.isPrimitive;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
+import io.fury.codegen.Code;
+import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Inlineable;
 import io.fury.codegen.Expression.Invoke;
 import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Literal;
+import io.fury.codegen.Expression.NewInstance;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.ReplaceStub;
 import io.fury.codegen.Expression.StaticInvoke;
 import io.fury.codegen.ExpressionVisitor;
 import io.fury.serializer.ObjectSerializer;
+import io.fury.serializer.PrimitiveSerializers.LongSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
-import io.fury.util.Functions;
+import io.fury.util.Platform;
+import io.fury.util.Preconditions;
+import io.fury.util.function.SerializableSupplier;
+import io.fury.util.record.RecordUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * Generate sequential read/write code for java serialization to speed up performance. It also
@@ -68,27 +80,40 @@ import java.util.Objects;
  * @see ObjectCodecOptimizer for code stats and split heuristics.
  * @author chaokunyang
  */
-@SuppressWarnings("UnstableApiUsage")
 public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   public static final String BUFFER_NAME = "buffer";
   private final Literal classVersionHash;
   protected ObjectCodecOptimizer objectCodecOptimizer;
+  protected Map<String, Integer> recordReversedMapping;
 
   public ObjectCodecBuilder(Class<?> beanClass, Fury fury) {
     super(TypeToken.of(beanClass), fury, Generated.GeneratedObjectSerializer.class);
     Collection<Descriptor> descriptors =
-        fury.getClassResolver().getAllDescriptorsMap(beanClass, true).values();
+        classResolver.getAllDescriptorsMap(beanClass, true).values();
     classVersionHash =
         new Literal(ObjectSerializer.computeVersionHash(descriptors), PRIMITIVE_INT_TYPE);
     DescriptorGrouper grouper =
-        DescriptorGrouper.createDescriptorGrouper(descriptors, false, fury.compressNumber());
+        DescriptorGrouper.createDescriptorGrouper(
+            descriptors, false, fury.compressInt(), fury.compressLong());
     objectCodecOptimizer =
-        new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesReferenceIgnored(), ctx);
+        new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
+    if (isRecord) {
+      if (!recordCtrAccessible) {
+        buildRecordComponentDefaultValues();
+      }
+      recordReversedMapping = RecordUtils.buildFieldToComponentMapping(beanClass);
+    }
   }
 
   protected ObjectCodecBuilder(TypeToken<?> beanType, Fury fury, Class<?> superSerializerClass) {
     super(beanType, fury, superSerializerClass);
     this.classVersionHash = null;
+    if (isRecord) {
+      if (!recordCtrAccessible) {
+        buildRecordComponentDefaultValues();
+      }
+      recordReversedMapping = RecordUtils.buildFieldToComponentMapping(beanClass);
+    }
   }
 
   @Override
@@ -155,13 +180,15 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
 
   private Expression serializeGroup(
       List<Descriptor> group, Expression bean, Expression buffer, boolean inline) {
-    Functions.SerializableSupplier<Expression> expressionSupplier =
+    SerializableSupplier<Expression> expressionSupplier =
         () -> {
           ListExpression groupExpressions = new ListExpression();
           for (Descriptor d : group) {
             // `bean` will be replaced by `Reference` to cut-off expr dependency.
             Expression fieldValue = getFieldValue(bean, d);
+            walkPath.add(d.getDeclaringClass() + d.getName());
             Expression fieldExpr = serializeFor(fieldValue, buffer, d.getTypeToken());
+            walkPath.removeLast();
             groupExpressions.add(fieldExpr);
           }
           return groupExpressions;
@@ -182,7 +209,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     if (totalSize == 0) {
       return new ArrayList<>();
     }
-    if (fury.compressNumber()) {
+    if (fury.compressInt() || fury.compressLong()) {
       return serializePrimitivesCompressed(bean, buffer, primitiveGroups, totalSize);
     } else {
       return serializePrimitivesUnCompressed(bean, buffer, primitiveGroups, totalSize);
@@ -264,13 +291,25 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   private List<Expression> serializePrimitivesCompressed(
       Expression bean, Expression buffer, List<List<Descriptor>> primitiveGroups, int totalSize) {
     List<Expression> expressions = new ArrayList<>();
-    int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
-    int growSize = (int) (totalSize + primitiveGroups.stream().mapToLong(Collection::size).sum());
+    // int/long may need extra one-byte for writing.
+    int extraSize = 0;
+    for (List<Descriptor> group : primitiveGroups) {
+      for (Descriptor d : group) {
+        if (d.getRawType() == int.class) {
+          // varint may be written as 5bytes, use 8bytes for written as long to reduce cost.
+          extraSize += 4;
+        } else if (d.getRawType() == long.class) {
+          extraSize += 1; // long use 1~9 bytes.
+        }
+      }
+    }
+    int growSize = totalSize + extraSize;
     // After this grow, following writes can be unsafe without checks.
     expressions.add(new Invoke(buffer, "grow", Literal.ofInt(growSize)));
     // Must grow first, otherwise may get invalid address.
     Expression base = new Invoke(buffer, "getHeapMemory", "base", PRIMITIVE_BYTE_ARRAY_TYPE);
     expressions.add(base);
+    int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
     for (List<Descriptor> group : primitiveGroups) {
       ListExpression groupExpressions = new ListExpression();
       Expression writerAddr =
@@ -305,20 +344,31 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
           groupExpressions.add(unsafePutDouble(base, getWriterPos(writerAddr, acc), fieldValue));
           acc += 8;
         } else if (clz == int.class) {
-          if (!compressStarted) {
-            // int/long are sorted in the last.
-            addIncWriterIndexExpr(groupExpressions, buffer, acc);
-            compressStarted = true;
+          if (!fury.compressInt()) {
+            groupExpressions.add(unsafePutInt(base, getWriterPos(writerAddr, acc), fieldValue));
+            acc += 4;
+          } else {
+            if (!compressStarted) {
+              // int/long are sorted in the last.
+              addIncWriterIndexExpr(groupExpressions, buffer, acc);
+              compressStarted = true;
+            }
+            groupExpressions.add(new Invoke(buffer, "unsafeWriteVarInt", fieldValue));
+            acc += 0;
           }
-          groupExpressions.add(new Invoke(buffer, "unsafeWriteVarInt", fieldValue));
-          acc += 0;
         } else if (clz == long.class) {
-          if (!compressStarted) {
-            // int/long are sorted in the last.
-            addIncWriterIndexExpr(groupExpressions, buffer, acc);
-            compressStarted = true;
+          if (!fury.compressLong()) {
+            groupExpressions.add(unsafePutLong(base, getWriterPos(writerAddr, acc), fieldValue));
+            acc += 8;
+          } else {
+            if (!compressStarted) {
+              // int/long are sorted in the last.
+              addIncWriterIndexExpr(groupExpressions, buffer, acc);
+              compressStarted = true;
+            }
+            groupExpressions.add(
+                LongSerializer.writeLong(buffer, fieldValue, fury.longEncoding(), false));
           }
-          groupExpressions.add(new Invoke(buffer, "unsafeWriteVarLong", fieldValue));
         } else {
           throw new IllegalStateException("impossible");
         }
@@ -364,10 +414,20 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     if (fury.checkClassVersion()) {
       expressions.add(checkClassVersion(buffer));
     }
-    Expression bean = newBean();
-    Expression referenceObject = new Invoke(refResolverRef, "reference", PRIMITIVE_VOID_TYPE, bean);
-    expressions.add(bean);
-    expressions.add(referenceObject);
+    Expression bean;
+    if (!isRecord) {
+      bean = newBean();
+      Expression referenceObject =
+          new Invoke(refResolverRef, "reference", PRIMITIVE_VOID_TYPE, bean);
+      expressions.add(bean);
+      expressions.add(referenceObject);
+    } else {
+      if (recordCtrAccessible) {
+        bean = new FieldsCollector();
+      } else {
+        bean = buildComponentsArray();
+      }
+    }
     expressions.addAll(deserializePrimitives(bean, buffer, objectCodecOptimizer.primitiveGroups));
     int numGroups = getNumGroups(objectCodecOptimizer);
     for (List<Descriptor> group :
@@ -387,18 +447,80 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     for (Descriptor d : objectCodecOptimizer.descriptorGrouper.getMapDescriptors()) {
       expressions.add(deserializeGroup(Collections.singletonList(d), bean, buffer, false));
     }
+    if (isRecord) {
+      if (recordCtrAccessible) {
+        assert bean instanceof FieldsCollector;
+        FieldsCollector collector = (FieldsCollector) bean;
+        bean = createRecord(collector.recordValuesMap);
+      } else {
+        bean =
+            new StaticInvoke(
+                RecordUtils.class,
+                "invokeRecordCtrHandle",
+                OBJECT_TYPE,
+                getRecordCtrHandle(),
+                bean);
+      }
+    }
     expressions.add(new Expression.Return(bean));
     return expressions;
   }
 
+  protected Expression buildComponentsArray() {
+    return new StaticInvoke(
+        Platform.class, "copyObjectArray", OBJECT_ARRAY_TYPE, recordComponentDefaultValues);
+  }
+
+  protected Expression createRecord(SortedMap<Integer, Expression> recordComponents) {
+    Expression[] params = recordComponents.values().toArray(new Expression[0]);
+    return new NewInstance(beanType, params);
+  }
+
+  private class FieldsCollector implements Expression {
+    private final TreeMap<Integer, Expression> recordValuesMap = new TreeMap<>();
+
+    @Override
+    public TypeToken<?> type() {
+      return beanType;
+    }
+
+    @Override
+    public Code.ExprCode doGenCode(CodegenContext ctx) {
+      return new Code.ExprCode(FalseLiteral, Code.variable(getRawType(beanType), "null"));
+    }
+  }
+
+  @Override
+  protected Expression setFieldValue(Expression bean, Descriptor d, Expression value) {
+    if (isRecord) {
+      if (recordCtrAccessible) {
+        if (value instanceof Inlineable) {
+          ((Inlineable) value).inline(false);
+        }
+        int index = recordReversedMapping.get(d.getName());
+        FieldsCollector collector = (FieldsCollector) bean;
+        collector.recordValuesMap.put(index, value);
+        return value;
+      } else {
+        int index = recordReversedMapping.get(d.getName());
+        return new Expression.AssignArrayElem(bean, value, Literal.ofInt(index));
+      }
+    }
+    return super.setFieldValue(bean, d, value);
+  }
+
   protected Expression deserializeGroup(
       List<Descriptor> group, Expression bean, Expression buffer, boolean inline) {
-    Functions.SerializableSupplier<Expression> exprSupplier =
+    if (isRecord) {
+      return deserializeGroupForRecord(group, bean, buffer);
+    }
+    SerializableSupplier<Expression> exprSupplier =
         () -> {
           ListExpression groupExpressions = new ListExpression();
           // use Reference to cut-off expr dependency.
           for (Descriptor d : group) {
             ExpressionVisitor.ExprHolder exprHolder = ExpressionVisitor.ExprHolder.of("bean", bean);
+            walkPath.add(d.getDeclaringClass() + d.getName());
             Expression action =
                 deserializeFor(
                     buffer,
@@ -408,6 +530,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
                     expr ->
                         setFieldValue(
                             exprHolder.get("bean"), d, tryInlineCast(expr, d.getTypeToken())));
+            walkPath.removeLast();
             groupExpressions.add(action);
           }
           return groupExpressions;
@@ -417,6 +540,18 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     } else {
       return objectCodecOptimizer.invokeGenerated(exprSupplier, "readFields");
     }
+  }
+
+  protected Expression deserializeGroupForRecord(
+      List<Descriptor> group, Expression bean, Expression buffer) {
+    ListExpression groupExpressions = new ListExpression();
+    // use Reference to cut-off expr dependency.
+    for (Descriptor d : group) {
+      Expression v = deserializeFor(buffer, d.getTypeToken(), expr -> expr);
+      Expression action = setFieldValue(bean, d, tryInlineCast(v, d.getTypeToken()));
+      groupExpressions.add(action);
+    }
+    return groupExpressions;
   }
 
   private Expression checkClassVersion(Expression buffer) {
@@ -440,7 +575,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     if (totalSize == 0) {
       return new ArrayList<>();
     }
-    if (fury.compressNumber()) {
+    if (fury.compressInt() || fury.compressLong()) {
       return deserializeCompressedPrimitives(bean, buffer, primitiveGroups);
     } else {
       return deserializeUnCompressedPrimitives(bean, buffer, primitiveGroups, totalSize);
@@ -498,7 +633,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         // `bean` will be replaced by `Reference` to cut-off expr dependency.
         groupExpressions.add(setFieldValue(bean, descriptor, fieldValue));
       }
-      if (numPrimitiveFields < 4) {
+      if (numPrimitiveFields < 4 || isRecord) {
         expressions.add(groupExpressions);
       } else {
         expressions.add(
@@ -553,17 +688,27 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
           fieldValue = unsafeGetDouble(heapBuffer, getReaderAddress(readerAddr, acc));
           acc += 8;
         } else if (clz == int.class) {
-          if (!compressStarted) {
-            compressStarted = true;
-            addIncReaderIndexExpr(groupExpressions, buffer, acc);
+          if (!fury.compressInt()) {
+            fieldValue = unsafeGetInt(heapBuffer, getReaderAddress(readerAddr, acc));
+            acc += 4;
+          } else {
+            if (!compressStarted) {
+              compressStarted = true;
+              addIncReaderIndexExpr(groupExpressions, buffer, acc);
+            }
+            fieldValue = new Invoke(buffer, "readVarInt", PRIMITIVE_INT_TYPE);
           }
-          fieldValue = new Invoke(buffer, "readVarInt", PRIMITIVE_INT_TYPE);
         } else if (clz == long.class) {
-          if (!compressStarted) {
-            compressStarted = true;
-            addIncReaderIndexExpr(groupExpressions, buffer, acc);
+          if (!fury.compressLong()) {
+            fieldValue = unsafeGetLong(heapBuffer, getReaderAddress(readerAddr, acc));
+            acc += 8;
+          } else {
+            if (!compressStarted) {
+              compressStarted = true;
+              addIncReaderIndexExpr(groupExpressions, buffer, acc);
+            }
+            fieldValue = LongSerializer.readLong(buffer, fury.longEncoding());
           }
-          fieldValue = new Invoke(buffer, "readVarLong", PRIMITIVE_LONG_TYPE);
         } else {
           throw new IllegalStateException("impossible");
         }
@@ -577,7 +722,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       if (!compressStarted) {
         addIncReaderIndexExpr(groupExpressions, buffer, acc);
       }
-      if (numPrimitiveFields < 4) {
+      if (numPrimitiveFields < 4 || isRecord) {
         expressions.add(groupExpressions);
       } else {
         expressions.add(

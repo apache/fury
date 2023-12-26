@@ -1,32 +1,45 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
-import com.google.common.primitives.Primitives;
+import static io.fury.util.function.Functions.makeGetterFunction;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import io.fury.Fury;
+import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
+import io.fury.resolver.ClassResolver;
 import io.fury.type.Type;
+import io.fury.type.TypeUtils;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
+import io.fury.util.ReflectionUtils;
 import io.fury.util.Utils;
-import java.lang.reflect.Constructor;
+import io.fury.util.unsafe._JDKAccess;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -38,6 +51,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 
 /**
@@ -47,6 +62,21 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Serializers {
+  // avoid duplicate reflect inspection and cache for graalvm support too.
+  private static final Cache<Class, Tuple2<MethodType, MethodHandle>> CTR_MAP;
+
+  static {
+    if (GraalvmSupport.isGraalBuildtime()) {
+      CTR_MAP = CacheBuilder.newBuilder().concurrencyLevel(32).build();
+    } else {
+      CTR_MAP = CacheBuilder.newBuilder().weakKeys().softValues().build();
+    }
+  }
+
+  private static final MethodType SIG1 = MethodType.methodType(void.class, Fury.class, Class.class);
+  private static final MethodType SIG2 = MethodType.methodType(void.class, Fury.class);
+  private static final MethodType SIG3 = MethodType.methodType(void.class, Class.class);
+  private static final MethodType SIG4 = MethodType.methodType(void.class);
 
   /**
    * Serializer subclass must have a constructor which take parameters of type {@link Fury} and
@@ -62,31 +92,27 @@ public class Serializers {
       if (serializerClass == CompatibleSerializer.class) {
         return new CompatibleSerializer(fury, type);
       }
-      try {
-        try {
-          Constructor<? extends Serializer> ctr =
-              serializerClass.getConstructor(Fury.class, Class.class);
-          ctr.setAccessible(true);
-          return ctr.newInstance(fury, type);
-        } catch (NoSuchMethodException e) {
-          Utils.ignore(e);
+      Tuple2<MethodType, MethodHandle> ctrInfo = CTR_MAP.getIfPresent(serializerClass);
+      if (ctrInfo != null) {
+        MethodType sig = ctrInfo.f0;
+        MethodHandle handle = ctrInfo.f1;
+        if (sig.equals(SIG1)) {
+          return (Serializer<T>) handle.invoke(fury, type);
+        } else if (sig.equals(SIG2)) {
+          return (Serializer<T>) handle.invoke(fury);
+        } else if (sig.equals(SIG3)) {
+          return (Serializer<T>) handle.invoke(type);
+        } else {
+          return (Serializer<T>) handle.invoke();
         }
-        try {
-          Constructor<? extends Serializer> ctr = serializerClass.getConstructor(Fury.class);
-          ctr.setAccessible(true);
-          return ctr.newInstance(fury);
-        } catch (NoSuchMethodException e) {
-          Utils.ignore(e);
-        }
-        try {
-          Constructor<? extends Serializer> ctr = serializerClass.getConstructor(Class.class);
-          ctr.setAccessible(true);
-          return ctr.newInstance(type);
-        } catch (NoSuchMethodException e) {
-          Utils.ignore(e);
-        }
-        return serializerClass.newInstance();
-      } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+      } else {
+        return createSerializer(fury, type, serializerClass);
+      }
+    } catch (InvocationTargetException e) {
+      fury.getClassResolver().resetSerializer(type, serializer);
+      if (e.getCause() != null) {
+        Platform.throwException(e.getCause());
+      } else {
         Platform.throwException(e);
       }
     } catch (Throwable t) {
@@ -99,6 +125,63 @@ public class Serializers {
     throw new IllegalStateException("unreachable");
   }
 
+  private static <T> Serializer<T> createSerializer(
+      Fury fury, Class<?> type, Class<? extends Serializer> serializerClass) throws Throwable {
+    MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(serializerClass);
+    try {
+      MethodHandle ctr = lookup.findConstructor(serializerClass, SIG1);
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG1, ctr));
+      return (Serializer<T>) ctr.invoke(fury, type);
+    } catch (NoSuchMethodException e) {
+      Utils.ignore(e);
+    }
+    try {
+      MethodHandle ctr = lookup.findConstructor(serializerClass, SIG2);
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG2, ctr));
+      return (Serializer<T>) ctr.invoke(fury);
+    } catch (NoSuchMethodException e) {
+      Utils.ignore(e);
+    }
+    try {
+      MethodHandle ctr = lookup.findConstructor(serializerClass, SIG3);
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG3, ctr));
+      return (Serializer<T>) ctr.invoke(type);
+    } catch (NoSuchMethodException e) {
+      MethodHandle ctr = ReflectionUtils.getCtrHandle(serializerClass);
+      CTR_MAP.put(serializerClass, Tuple2.of(SIG4, ctr));
+      return (Serializer<T>) ctr.invoke();
+    }
+  }
+
+  public static Object readPrimitiveValue(Fury fury, MemoryBuffer buffer, short classId) {
+    switch (classId) {
+      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+        return buffer.readBoolean();
+      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+        return buffer.readByte();
+      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+        return buffer.readChar();
+      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+        return buffer.readShort();
+      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+        if (fury.compressInt()) {
+          return buffer.readVarInt();
+        } else {
+          return buffer.readInt();
+        }
+      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+        return buffer.readFloat();
+      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+        return fury.readLong(buffer);
+      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+        return buffer.readDouble();
+      default:
+        {
+          throw new IllegalStateException("unreachable");
+        }
+    }
+  }
+
   public abstract static class CrossLanguageCompatibleSerializer<T> extends Serializer<T> {
     private final short typeId;
 
@@ -108,313 +191,110 @@ public class Serializers {
     }
 
     public CrossLanguageCompatibleSerializer(
-        Fury fury, Class<T> cls, short typeId, boolean needToWriteReference) {
-      super(fury, cls, needToWriteReference);
+        Fury fury, Class<T> cls, short typeId, boolean needToWriteRef) {
+      super(fury, cls, needToWriteRef);
       this.typeId = typeId;
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return typeId;
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+    public void xwrite(MemoryBuffer buffer, T value) {
       write(buffer, value);
     }
 
     @Override
-    public T crossLanguageRead(MemoryBuffer buffer) {
+    public T xread(MemoryBuffer buffer) {
       return read(buffer);
     }
   }
 
-  public static final class BooleanSerializer extends CrossLanguageCompatibleSerializer<Boolean> {
-    public BooleanSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.BOOL.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
-    }
+  private static final ToIntFunction GET_CODER;
+  private static final Function GET_VALUE;
 
-    @Override
-    public void write(MemoryBuffer buffer, Boolean value) {
-      buffer.writeBoolean(value);
+  static {
+    GET_VALUE = (Function) makeGetterFunction(StringBuilder.class.getSuperclass(), "getValue");
+    ToIntFunction<CharSequence> getCoder;
+    try {
+      Method getCoderMethod = StringBuilder.class.getSuperclass().getDeclaredMethod("getCoder");
+      getCoder = (ToIntFunction<CharSequence>) makeGetterFunction(getCoderMethod, int.class);
+    } catch (NoSuchMethodException e) {
+      getCoder = null;
     }
-
-    @Override
-    public Boolean read(MemoryBuffer buffer) {
-      return buffer.readBoolean();
-    }
+    GET_CODER = getCoder;
   }
 
-  public static final class ByteSerializer extends CrossLanguageCompatibleSerializer<Byte> {
-    public ByteSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT8.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
-    }
+  public abstract static class AbstractStringBuilderSerializer<T extends CharSequence>
+      extends Serializer<T> {
+    protected final StringSerializer stringSerializer;
 
-    @Override
-    public void write(MemoryBuffer buffer, Byte value) {
-      buffer.writeByte(value);
-    }
-
-    @Override
-    public Byte read(MemoryBuffer buffer) {
-      return buffer.readByte();
-    }
-  }
-
-  public static final class Uint8Serializer extends Serializer<Integer> {
-    public Uint8Serializer(Fury fury) {
-      super(fury, Integer.class);
-    }
-
-    @Override
-    public short getCrossLanguageTypeId() {
-      return Type.UINT8.getId();
-    }
-
-    @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Integer value) {
-      Preconditions.checkArgument(value >= 0 && value <= 255);
-      buffer.writeByte(value.byteValue());
-    }
-
-    @Override
-    public Integer crossLanguageRead(MemoryBuffer buffer) {
-      int b = buffer.readByte();
-      return b >>> 24;
-    }
-  }
-
-  public static final class Uint16Serializer extends Serializer<Integer> {
-    public Uint16Serializer(Fury fury) {
-      super(fury, Integer.class);
-    }
-
-    @Override
-    public short getCrossLanguageTypeId() {
-      return Type.UINT16.getId();
-    }
-
-    @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Integer value) {
-      Preconditions.checkArgument(value >= 0 && value <= 65535);
-      buffer.writeByte(value.byteValue());
-    }
-
-    @Override
-    public Integer crossLanguageRead(MemoryBuffer buffer) {
-      int b = buffer.readByte();
-      return b >>> 16;
-    }
-  }
-
-  public static final class CharSerializer extends Serializer<Character> {
-    public CharSerializer(Fury fury, Class<?> cls) {
-      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, Character value) {
-      buffer.writeChar(value);
-    }
-
-    @Override
-    public Character read(MemoryBuffer buffer) {
-      return buffer.readChar();
-    }
-  }
-
-  public static final class ShortSerializer extends CrossLanguageCompatibleSerializer<Short> {
-    public ShortSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT16.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, Short value) {
-      buffer.writeShort(value);
-    }
-
-    @Override
-    public Short read(MemoryBuffer buffer) {
-      return buffer.readShort();
-    }
-  }
-
-  public static final class IntSerializer extends CrossLanguageCompatibleSerializer<Integer> {
-    private final boolean compressNumber;
-
-    public IntSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT32.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
-      compressNumber = fury.compressNumber();
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, Integer value) {
-      if (compressNumber) {
-        buffer.writeVarInt(value);
-      } else {
-        buffer.writeInt(value);
-      }
-    }
-
-    @Override
-    public Integer read(MemoryBuffer buffer) {
-      if (compressNumber) {
-        return buffer.readVarInt();
-      } else {
-        return buffer.readInt();
-      }
-    }
-
-    @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Integer value) {
-      // TODO support varint in cross-language serialization
-      buffer.writeInt(value);
-    }
-
-    @Override
-    public Integer crossLanguageRead(MemoryBuffer buffer) {
-      return buffer.readInt();
-    }
-  }
-
-  public static final class LongSerializer extends CrossLanguageCompatibleSerializer<Long> {
-    private final boolean compressNumber;
-
-    public LongSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT64.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
-      compressNumber = fury.compressNumber();
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, Long value) {
-      if (compressNumber) {
-        buffer.writeVarLong(value);
-      } else {
-        buffer.writeLong(value);
-      }
-    }
-
-    @Override
-    public Long read(MemoryBuffer buffer) {
-      if (compressNumber) {
-        return buffer.readVarLong();
-      } else {
-        return buffer.readLong();
-      }
-    }
-
-    @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, Long value) {
-      // TODO support var long in cross-language serialization
-      buffer.writeLong(value);
-    }
-
-    @Override
-    public Long crossLanguageRead(MemoryBuffer buffer) {
-      return buffer.readLong();
-    }
-  }
-
-  public static final class FloatSerializer extends CrossLanguageCompatibleSerializer<Float> {
-    public FloatSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.FLOAT.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, Float value) {
-      buffer.writeFloat(value);
-    }
-
-    @Override
-    public Float read(MemoryBuffer buffer) {
-      return buffer.readFloat();
-    }
-  }
-
-  public static final class DoubleSerializer extends CrossLanguageCompatibleSerializer<Double> {
-    public DoubleSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.DOUBLE.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesReferenceIgnored()));
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, Double value) {
-      buffer.writeDouble(value);
-    }
-
-    @Override
-    public Double read(MemoryBuffer buffer) {
-      return buffer.readDouble();
-    }
-  }
-
-  public static final class StringBuilderSerializer extends Serializer<StringBuilder> {
-    private final StringSerializer stringSerializer;
-
-    public StringBuilderSerializer(Fury fury) {
-      super(fury, StringBuilder.class);
+    public AbstractStringBuilderSerializer(Fury fury, Class<T> type) {
+      super(fury, type);
       stringSerializer = new StringSerializer(fury);
     }
 
     @Override
-    public void write(MemoryBuffer buffer, StringBuilder value) {
-      stringSerializer.writeJavaString(buffer, value.toString());
+    public void xwrite(MemoryBuffer buffer, T value) {
+      stringSerializer.writeUTF8String(buffer, value.toString());
+    }
+
+    @Override
+    public short getXtypeId() {
+      return (short) -Type.STRING.getId();
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, T value) {
+      if (GET_CODER != null) {
+        int coder = GET_CODER.applyAsInt(value);
+        byte[] v = (byte[]) GET_VALUE.apply(value);
+        buffer.writeByte(coder);
+        if (coder == 0) {
+          buffer.writePrimitiveArrayWithSizeEmbedded(v, Platform.BYTE_ARRAY_OFFSET, value.length());
+        } else {
+          if (coder != 1) {
+            throw new UnsupportedOperationException("Unsupported coder " + coder);
+          }
+          buffer.writePrimitiveArrayWithSizeEmbedded(
+              v, Platform.BYTE_ARRAY_OFFSET, value.length() << 1);
+        }
+      } else {
+        char[] v = (char[]) GET_VALUE.apply(value);
+        if (StringSerializer.isLatin(v)) {
+          stringSerializer.writeCharsLatin(buffer, v, value.length());
+        } else {
+          stringSerializer.writeCharsUTF16(buffer, v, value.length());
+        }
+      }
+    }
+  }
+
+  public static final class StringBuilderSerializer
+      extends AbstractStringBuilderSerializer<StringBuilder> {
+
+    public StringBuilderSerializer(Fury fury) {
+      super(fury, StringBuilder.class);
     }
 
     @Override
     public StringBuilder read(MemoryBuffer buffer) {
       return new StringBuilder(stringSerializer.readJavaString(buffer));
     }
+
+    @Override
+    public StringBuilder xread(MemoryBuffer buffer) {
+      return new StringBuilder(stringSerializer.readUTF8String(buffer));
+    }
   }
 
-  public static final class StringBufferSerializer extends Serializer<StringBuffer> {
-    private final StringSerializer stringSerializer;
+  public static final class StringBufferSerializer
+      extends AbstractStringBuilderSerializer<StringBuffer> {
 
     public StringBufferSerializer(Fury fury) {
       super(fury, StringBuffer.class);
-      stringSerializer = new StringSerializer(fury);
-    }
-
-    @Override
-    public short getCrossLanguageTypeId() {
-      return (short) -Type.STRING.getId();
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, StringBuffer value) {
-      stringSerializer.writeJavaString(buffer, value.toString());
-    }
-
-    @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, StringBuffer value) {
-      stringSerializer.writeUTF8String(buffer, value.toString());
     }
 
     @Override
@@ -423,7 +303,7 @@ public class Serializers {
     }
 
     @Override
-    public StringBuffer crossLanguageRead(MemoryBuffer buffer) {
+    public StringBuffer xread(MemoryBuffer buffer) {
       return new StringBuffer(stringSerializer.readUTF8String(buffer));
     }
   }
@@ -560,12 +440,12 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, AtomicReference value) {
-      fury.writeReferencableToJava(buffer, value.get());
+      fury.writeRef(buffer, value.get());
     }
 
     @Override
     public AtomicReference read(MemoryBuffer buffer) {
-      return new AtomicReference(fury.readReferencableFromJava(buffer));
+      return new AtomicReference(fury.readRef(buffer));
     }
   }
 
@@ -660,12 +540,12 @@ public class Serializers {
     private static final byte USE_CLASSNAME = 1;
     private static final byte PRIMITIVE_FLAG = 2;
     private final IdentityHashMap<Class<?>, Byte> primitivesMap = new IdentityHashMap<>();
-    private final Class<?>[] id2PrimitiveClasses = new Class[Primitives.allPrimitiveTypes().size()];
+    private final Class<?>[] id2PrimitiveClasses = new Class[9];
 
     public ClassSerializer(Fury fury) {
       super(fury, Class.class);
       byte count = 0;
-      for (Class<?> primitiveType : Primitives.allPrimitiveTypes()) {
+      for (Class<?> primitiveType : TypeUtils.getSortedPrimitiveClasses()) {
         primitivesMap.put(primitiveType, count);
         id2PrimitiveClasses[count] = primitiveType;
         count++;
@@ -683,24 +563,29 @@ public class Serializers {
     }
   }
 
+  /**
+   * Serializer for empty object of type {@link Object}. Fury disabled serialization for jdk
+   * internal types which doesn't implement {@link java.io.Serializable} for security, but empty
+   * object is safe and used sometimes, so fury should support its serialization without disable
+   * serializable or class registration checks.
+   */
+  // Use a separate serializer to avoid codegen for emtpy object.
+  public static final class EmptyObjectSerializer extends Serializer<Object> {
+
+    public EmptyObjectSerializer(Fury fury) {
+      super(fury, Object.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Object value) {}
+
+    @Override
+    public Object read(MemoryBuffer buffer) {
+      return new Object();
+    }
+  }
+
   public static void registerDefaultSerializers(Fury fury) {
-    // primitive types will be boxed.
-    fury.registerSerializer(boolean.class, new BooleanSerializer(fury, boolean.class));
-    fury.registerSerializer(byte.class, new ByteSerializer(fury, byte.class));
-    fury.registerSerializer(short.class, new ShortSerializer(fury, short.class));
-    fury.registerSerializer(char.class, new CharSerializer(fury, char.class));
-    fury.registerSerializer(int.class, new IntSerializer(fury, int.class));
-    fury.registerSerializer(long.class, new LongSerializer(fury, long.class));
-    fury.registerSerializer(float.class, new FloatSerializer(fury, float.class));
-    fury.registerSerializer(double.class, new DoubleSerializer(fury, double.class));
-    fury.registerSerializer(Boolean.class, new BooleanSerializer(fury, Boolean.class));
-    fury.registerSerializer(Byte.class, new ByteSerializer(fury, Byte.class));
-    fury.registerSerializer(Short.class, new ShortSerializer(fury, Short.class));
-    fury.registerSerializer(Character.class, new CharSerializer(fury, Character.class));
-    fury.registerSerializer(Integer.class, new IntSerializer(fury, Integer.class));
-    fury.registerSerializer(Long.class, new LongSerializer(fury, Long.class));
-    fury.registerSerializer(Float.class, new FloatSerializer(fury, Float.class));
-    fury.registerSerializer(Double.class, new DoubleSerializer(fury, Double.class));
     fury.registerSerializer(Class.class, new ClassSerializer(fury));
     fury.registerSerializer(StringBuilder.class, new StringBuilderSerializer(fury));
     fury.registerSerializer(StringBuffer.class, new StringBufferSerializer(fury));
@@ -714,5 +599,6 @@ public class Serializers {
     fury.registerSerializer(URI.class, new URISerializer(fury));
     fury.registerSerializer(Pattern.class, new RegexSerializer(fury));
     fury.registerSerializer(UUID.class, new UUIDSerializer(fury));
+    fury.registerSerializer(Object.class, new EmptyObjectSerializer(fury));
   }
 }

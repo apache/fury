@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.codegen;
@@ -44,16 +45,19 @@ import static io.fury.type.TypeUtils.getRawType;
 import static io.fury.type.TypeUtils.getSizeOfPrimitiveType;
 import static io.fury.type.TypeUtils.isPrimitive;
 import static io.fury.type.TypeUtils.maxType;
-import static io.fury.util.Utils.checkArgument;
+import static io.fury.util.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
-import com.google.common.primitives.Primitives;
 import com.google.common.reflect.TypeToken;
 import io.fury.type.TypeUtils;
-import io.fury.util.Functions;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
+import io.fury.util.function.Functions;
+import io.fury.util.function.SerializableBiFunction;
+import io.fury.util.function.SerializableFunction;
+import io.fury.util.function.SerializableSupplier;
+import io.fury.util.function.SerializableTriFunction;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -124,7 +128,11 @@ public interface Expression {
     protected boolean inlineCall = false;
 
     public Inlineable inline() {
-      inlineCall = true;
+      return inline(true);
+    }
+
+    public Inlineable inline(boolean inlineCall) {
+      this.inlineCall = inlineCall;
       return this;
     }
   }
@@ -166,6 +174,10 @@ public interface Expression {
 
     @Override
     public ExprCode doGenCode(CodegenContext ctx) {
+      if (last == null) {
+        return new ExprCode(null, null, null);
+      }
+
       StringBuilder codeBuilder = new StringBuilder();
       boolean hasCode = false;
       for (Expression expr : expressions) {
@@ -257,6 +269,10 @@ public interface Expression {
       return new Literal(v, CLASS_TYPE);
     }
 
+    public static Literal ofString(String v) {
+      return new Literal(v, STRING_TYPE);
+    }
+
     @Override
     public TypeToken<?> type() {
       return type;
@@ -273,7 +289,7 @@ public interface Expression {
         return new ExprCode(null, TrueLiteral, defaultLiteral);
       } else {
         if (javaType == String.class) {
-          return new ExprCode(FalseLiteral, new LiteralValue(value));
+          return new ExprCode(FalseLiteral, new LiteralValue("\"" + value + "\""));
         } else if (javaType == Boolean.class || javaType == Integer.class) {
           return new ExprCode(null, FalseLiteral, new LiteralValue(javaType, value.toString()));
         } else if (javaType == Float.class) {
@@ -320,7 +336,7 @@ public interface Expression {
           if (valueClass.isArray()) {
             v = String.format("%s.class", TypeUtils.getArrayType((Class<?>) value));
           } else {
-            v = String.format("%s.class", ((Class<?>) (value)).getCanonicalName());
+            v = String.format("%s.class", ReflectionUtils.getCanonicalName((Class<?>) (value)));
           }
           return new ExprCode(FalseLiteral, new LiteralValue(javaType, v));
         } else {
@@ -537,7 +553,6 @@ public interface Expression {
       if (StringUtils.isNotBlank(targetExprCode.code())) {
         codeBuilder.append(targetExprCode.code()).append("\n");
       }
-
       Class<?> rawType = getRawType(type);
       // although isNull is not always used, we place it outside and get freshNames simultaneously
       // to have same suffix, thus get more readability.
@@ -583,7 +598,7 @@ public interface Expression {
             StringUtils.format(
                 "${type} ${value} = ${target}.${fieldName};",
                 "type",
-                getRawType(type).getCanonicalName(),
+                ctx.type(type),
                 "value",
                 value,
                 "target",
@@ -591,8 +606,7 @@ public interface Expression {
                 "fieldName",
                 fieldName);
         codeBuilder.append(code);
-        return new ExprCode(
-            codeBuilder.toString(), FalseLiteral, Code.variable(getRawType(type), value));
+        return new ExprCode(codeBuilder.toString(), FalseLiteral, Code.variable(rawType, value));
       }
     }
 
@@ -712,7 +726,11 @@ public interface Expression {
       this.castedValueNamePrefix = castedValueNamePrefix;
       inlineCall = inline;
       this.ignoreUpcast = ignoreUpcast;
-      checkArgument(ReflectionUtils.isPublic(type), "Type %s is not public", type);
+      checkArgument(!ReflectionUtils.isPrivate(type), "Type %s is private", type);
+      checkArgument(
+          TypeUtils.getRawType(type).getCanonicalName() != null,
+          "Local/Anonymous type %s isn't supported.",
+          type);
     }
 
     @Override
@@ -776,14 +794,34 @@ public interface Expression {
     }
   }
 
-  class Invoke extends Inlineable {
+  abstract class BaseInvoke extends Inlineable {
+    final String functionName;
+    final TypeToken<?> type;
+    Expression[] arguments;
+    String returnNamePrefix;
+    final boolean returnNullable;
+    boolean needTryCatch;
+
+    public BaseInvoke(
+        String functionName,
+        TypeToken<?> type,
+        Expression[] arguments,
+        String returnNamePrefix,
+        boolean returnNullable,
+        boolean inline,
+        boolean needTryCatch) {
+      this.functionName = functionName;
+      this.type = type;
+      this.arguments = arguments;
+      this.returnNamePrefix = returnNamePrefix;
+      this.returnNullable = returnNullable;
+      inlineCall = inline;
+      this.needTryCatch = needTryCatch;
+    }
+  }
+
+  class Invoke extends BaseInvoke {
     public Expression targetObject;
-    public final String functionName;
-    public final TypeToken<?> type;
-    public Expression[] arguments;
-    private String returnNamePrefix;
-    private final boolean returnNullable;
-    private final boolean needTryCatch;
 
     /** Invoke don't return value, this is a procedure call for side effect. */
     public Invoke(Expression targetObject, String functionName, Expression... arguments) {
@@ -840,13 +878,8 @@ public interface Expression {
         boolean returnNullable,
         boolean needTryCatch,
         Expression... arguments) {
+      super(functionName, type, arguments, returnNamePrefix, returnNullable, false, needTryCatch);
       this.targetObject = targetObject;
-      this.functionName = functionName;
-      this.returnNamePrefix = returnNamePrefix;
-      this.type = type;
-      this.returnNullable = returnNullable;
-      this.arguments = arguments;
-      this.needTryCatch = needTryCatch;
     }
 
     public static Invoke inlineInvoke(
@@ -968,14 +1001,8 @@ public interface Expression {
     }
   }
 
-  class StaticInvoke extends Inlineable {
-    private final boolean needTryCatch;
+  class StaticInvoke extends BaseInvoke {
     private final Class<?> staticObject;
-    private final String functionName;
-    private String returnNamePrefix;
-    private final TypeToken<?> type;
-    private Expression[] arguments;
-    private final boolean returnNullable;
 
     public StaticInvoke(Class<?> staticObject, String functionName, TypeToken<?> type) {
       this(staticObject, functionName, type, false);
@@ -1028,14 +1055,15 @@ public interface Expression {
         boolean returnNullable,
         boolean inline,
         Expression... arguments) {
+      super(
+          functionName,
+          type,
+          arguments,
+          returnNamePrefix,
+          returnNullable,
+          inline,
+          ReflectionUtils.hasException(staticObject, functionName));
       this.staticObject = staticObject;
-      this.functionName = functionName;
-      this.type = type;
-      this.arguments = arguments;
-      this.returnNullable = returnNullable;
-      this.returnNamePrefix = returnNamePrefix;
-      this.inlineCall = inline;
-      this.needTryCatch = ReflectionUtils.hasException(staticObject, functionName);
       if (inline && needTryCatch) {
         throw new UnsupportedOperationException(
             String.format(
@@ -1142,6 +1170,7 @@ public interface Expression {
 
   class NewInstance implements Expression {
     private TypeToken<?> type;
+    private final Class<?> rawType;
     private String unknownClassName;
     private List<Expression> arguments;
     private Expression outerPointer;
@@ -1168,6 +1197,7 @@ public interface Expression {
 
     private NewInstance(TypeToken<?> type, List<Expression> arguments, Expression outerPointer) {
       this.type = type;
+      rawType = getRawType(type);
       this.outerPointer = outerPointer;
       this.arguments = arguments;
       this.needOuterPointer =
@@ -1182,7 +1212,7 @@ public interface Expression {
     private void check() {
       Preconditions.checkArgument(
           !type.isArray(), "Please use " + NewArray.class + " to create array.");
-      if (unknownClassName == null && arguments.size() > 0) {
+      if (unknownClassName == null && !arguments.isEmpty()) {
         // If unknownClassName is not null, we don't have actual type object,
         // we assume we can create instance of unknownClassName.
         // If arguments size is 0, we can always create instance of class, even by
@@ -1198,6 +1228,8 @@ public interface Expression {
           throw new IllegalArgumentException(msg);
         }
       }
+      checkArgument(
+          rawType.getCanonicalName() != null, "Local/Anonymous type %s isn't supported.", type);
     }
 
     @Override
@@ -1527,10 +1559,10 @@ public interface Expression {
         }
       } else {
         if (trueExpr.type() != null && falseExpr.type() != null) {
-          if (Primitives.isWrapperType(getRawType(trueExpr.type()))
+          if (TypeUtils.isBoxed(getRawType(trueExpr.type()))
               && trueExpr.type().equals(falseExpr.type().wrap())) {
             type = trueExpr.type();
-          } else if (Primitives.isWrapperType(getRawType(falseExpr.type()))
+          } else if (TypeUtils.isBoxed(getRawType(falseExpr.type()))
               && falseExpr.type().equals(trueExpr.type().wrap())) {
             type = falseExpr.type();
           } else if (trueExpr.type().isSupertypeOf(falseExpr.type())) {
@@ -1557,7 +1589,7 @@ public interface Expression {
 
     @Override
     public ExprCode doGenCode(CodegenContext ctx) {
-      ExprCode condEval = predicate.doGenCode(ctx);
+      ExprCode condEval = predicate.genCode(ctx);
       ExprCode trueEval = trueExpr.doGenCode(ctx);
       StringBuilder codeBuilder = new StringBuilder();
       if (StringUtils.isNotBlank(condEval.code())) {
@@ -1787,25 +1819,34 @@ public interface Expression {
     }
 
     public BinaryOperator(boolean inline, String operator, Expression left, Expression right) {
+      this(inline, operator, left, right, null);
+    }
+
+    protected BinaryOperator(
+        boolean inline, String operator, Expression left, Expression right, TypeToken<?> t) {
       this.inline = inline;
       this.operator = operator;
       this.left = left;
       this.right = right;
-      if (isPrimitive(getRawType(left.type()))) {
-        Preconditions.checkArgument(isPrimitive(getRawType(right.type())));
-        type =
-            getSizeOfPrimitiveType(left.type()) > getSizeOfPrimitiveType(right.type())
-                ? left.type()
-                : right.type();
-      } else {
-        if (left.type().isSupertypeOf(right.type())) {
-          type = left.type();
-        } else if (left.type().isSubtypeOf(right.type())) {
-          type = right.type();
+      if (t == null) {
+        if (isPrimitive(getRawType(left.type()))) {
+          Preconditions.checkArgument(isPrimitive(getRawType(right.type())));
+          type =
+              getSizeOfPrimitiveType(left.type()) > getSizeOfPrimitiveType(right.type())
+                  ? left.type()
+                  : right.type();
         } else {
-          throw new IllegalArgumentException(
-              String.format("Arguments type %s vs %s inconsistent", left.type(), right.type()));
+          if (left.type().isSupertypeOf(right.type())) {
+            type = left.type();
+          } else if (left.type().isSubtypeOf(right.type())) {
+            type = right.type();
+          } else {
+            throw new IllegalArgumentException(
+                String.format("Arguments type %s vs %s inconsistent", left.type(), right.type()));
+          }
         }
+      } else {
+        type = t;
       }
     }
 
@@ -1863,12 +1904,7 @@ public interface Expression {
 
   class Comparator extends BinaryOperator {
     public Comparator(String operator, Expression left, Expression right, boolean inline) {
-      super(inline, operator, left, right);
-    }
-
-    @Override
-    public TypeToken<?> type() {
-      return PRIMITIVE_BOOLEAN_TYPE;
+      super(inline, operator, left, right, PRIMITIVE_BOOLEAN_TYPE);
     }
   }
 
@@ -1980,7 +2016,7 @@ public interface Expression {
       this(predicate, action, new Expression[0]);
     }
 
-    public While(BinaryOperator predicate, Functions.SerializableSupplier<Expression> action) {
+    public While(BinaryOperator predicate, SerializableSupplier<Expression> action) {
       this(
           predicate,
           action.get(),
@@ -2037,7 +2073,7 @@ public interface Expression {
     private Expression inputObject;
 
     @ClosureVisitable
-    private final Functions.SerializableBiFunction<Expression, Expression, Expression> action;
+    private final SerializableBiFunction<Expression, Expression, Expression> action;
 
     private final TypeToken<?> elementType;
 
@@ -2046,8 +2082,7 @@ public interface Expression {
      * array
      */
     public ForEach(
-        Expression inputObject,
-        Functions.SerializableBiFunction<Expression, Expression, Expression> action) {
+        Expression inputObject, SerializableBiFunction<Expression, Expression, Expression> action) {
       this.inputObject = inputObject;
       this.action = action;
       TypeToken elementType;
@@ -2062,7 +2097,7 @@ public interface Expression {
     public ForEach(
         Expression inputObject,
         TypeToken<?> beanType,
-        Functions.SerializableBiFunction<Expression, Expression, Expression> action) {
+        SerializableBiFunction<Expression, Expression, Expression> action) {
       this.inputObject = inputObject;
       this.action = action;
       this.elementType = beanType;
@@ -2083,7 +2118,7 @@ public interface Expression {
       String i = ctx.newName("i");
       String elemValue = ctx.newName("elemValue");
       Expression elementExpr =
-          action.apply(new Literal(i), new Reference(elemValue, elementType, false));
+          action.apply(new Reference(i), new Reference(elemValue, elementType, false));
       ExprCode elementExprCode = elementExpr.genCode(ctx);
 
       if (inputObject.type().isArray()) {
@@ -2163,13 +2198,12 @@ public interface Expression {
     private Expression right;
 
     @ClosureVisitable
-    private final Functions.SerializableTriFunction<Expression, Expression, Expression, Expression>
-        action;
+    private final SerializableTriFunction<Expression, Expression, Expression, Expression> action;
 
     public ZipForEach(
         Expression left,
         Expression right,
-        Functions.SerializableTriFunction<Expression, Expression, Expression, Expression> action) {
+        SerializableTriFunction<Expression, Expression, Expression, Expression> action) {
       this.left = left;
       this.right = right;
       this.action = action;
@@ -2219,7 +2253,7 @@ public interface Expression {
       rightElemType = ReflectionUtils.getPublicSuperType(rightElemType);
       Expression elemExpr =
           action.apply(
-              new Literal(i),
+              new Reference(i),
               new Reference(leftElemValue, leftElemType, true),
               // elemValue nullability check use isNullAt inside action, so elemValueRef'nullable is
               // false.
@@ -2304,13 +2338,13 @@ public interface Expression {
     public Expression end;
     public Expression step;
 
-    @ClosureVisitable public final Functions.SerializableFunction<Expression, Expression> action;
+    @ClosureVisitable public final SerializableFunction<Expression, Expression> action;
 
     public ForLoop(
         Expression start,
         Expression end,
         Expression step,
-        Functions.SerializableFunction<Expression, Expression> action) {
+        SerializableFunction<Expression, Expression> action) {
       this.start = start;
       this.end = end;
       this.step = step;

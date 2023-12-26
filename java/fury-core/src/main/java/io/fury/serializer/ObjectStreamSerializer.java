@@ -1,24 +1,24 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.builder.CodecUtils;
 import io.fury.builder.Generated;
@@ -31,7 +31,10 @@ import io.fury.resolver.FieldResolver;
 import io.fury.resolver.FieldResolver.ClassField;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
+import io.fury.util.Utils;
+import io.fury.util.unsafe._JDKAccess;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -44,6 +47,7 @@ import java.io.ObjectStreamClass;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -55,6 +59,8 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 
 /**
@@ -89,8 +95,8 @@ public class ObjectStreamSerializer extends Serializer {
         "{} customized jdk serialization, which is inefficient. "
             + "Please replace it with a {} or implements {}",
         type,
-        Serializer.class.getCanonicalName(),
-        Externalizable.class.getCanonicalName());
+        Serializer.class.getName(),
+        Externalizable.class.getName());
     // stream serializer may be data serializer of ReplaceResolver serializer.
     fury.getClassResolver().setSerializerIfAbsent(type, this);
     Constructor constructor;
@@ -127,7 +133,8 @@ public class ObjectStreamSerializer extends Serializer {
         // create a classinfo to avoid null class bytes when class id is a
         // replacement id.
         classResolver.writeClass(buffer, slotsInfo.classInfo);
-        Method writeObjectMethod = slotsInfo.writeObjectMethod;
+        StreamClassInfo streamClassInfo = slotsInfo.streamClassInfo;
+        Method writeObjectMethod = streamClassInfo.writeObjectMethod;
         if (writeObjectMethod == null) {
           slotsInfo.slotsSerializer.write(buffer, value);
         } else {
@@ -141,7 +148,11 @@ public class ObjectStreamSerializer extends Serializer {
             objectOutputStream.buffer = buffer;
             objectOutputStream.curPut = null;
             objectOutputStream.fieldsWritten = false;
-            writeObjectMethod.invoke(value, objectOutputStream);
+            if (streamClassInfo.writeObjectFunc != null) {
+              streamClassInfo.writeObjectFunc.accept(value, objectOutputStream);
+            } else {
+              writeObjectMethod.invoke(value, objectOutputStream);
+            }
           } finally {
             objectOutputStream.targetObject = oldObject;
             objectOutputStream.buffer = oldBuffer;
@@ -167,7 +178,7 @@ public class ObjectStreamSerializer extends Serializer {
     } else {
       obj = Platform.newInstance(type);
     }
-    fury.getReferenceResolver().reference(obj);
+    fury.getRefResolver().reference(obj);
     int numClasses = buffer.readShort();
     int slotIndex = 0;
     try {
@@ -175,15 +186,20 @@ public class ObjectStreamSerializer extends Serializer {
       for (int i = 0; i < numClasses; i++) {
         Class<?> currentClass = classResolver.readClassInternal(buffer);
         SlotsInfo slotsInfo = slotsInfos[slotIndex++];
+        StreamClassInfo streamClassInfo = slotsInfo.streamClassInfo;
         while (currentClass != slotsInfo.cls) {
           // the receiver's version extends classes that are not extended by the sender's version.
-          Method readObjectNoData = slotsInfo.readObjectNoData;
+          Method readObjectNoData = streamClassInfo.readObjectNoData;
           if (readObjectNoData != null) {
-            readObjectNoData.invoke(obj);
+            if (streamClassInfo.readObjectNoDataFunc != null) {
+              streamClassInfo.readObjectNoDataFunc.accept(obj);
+            } else {
+              readObjectNoData.invoke(obj);
+            }
           }
           slotsInfo = slotsInfos[slotIndex++];
         }
-        Method readObjectMethod = slotsInfo.readObjectMethod;
+        Method readObjectMethod = streamClassInfo.readObjectMethod;
         if (readObjectMethod == null) {
           slotsInfo.slotsSerializer.readAndSetFields(buffer, obj);
         } else {
@@ -203,7 +219,11 @@ public class ObjectStreamSerializer extends Serializer {
             objectInputStream.targetObject = obj;
             objectInputStream.getField = getField;
             objectInputStream.callbacks = callbacks;
-            readObjectMethod.invoke(obj, objectInputStream);
+            if (streamClassInfo.readObjectFunc != null) {
+              streamClassInfo.readObjectFunc.accept(obj, objectInputStream);
+            } else {
+              readObjectMethod.invoke(obj, objectInputStream);
+            }
           } finally {
             objectInputStream.fieldsRead = fieldsRead;
             objectInputStream.buffer = oldBuffer;
@@ -243,12 +263,61 @@ public class ObjectStreamSerializer extends Serializer {
         e);
   }
 
-  private static class SlotsInfo {
-    private final Class<?> cls;
-    private final ClassInfo classInfo;
+  private static class StreamClassInfo {
     private final Method writeObjectMethod;
     private final Method readObjectMethod;
     private final Method readObjectNoData;
+    private final BiConsumer writeObjectFunc;
+    private final BiConsumer readObjectFunc;
+    private final Consumer readObjectNoDataFunc;
+
+    private StreamClassInfo(Class<?> type) {
+      // ObjectStreamClass.lookup has cache inside, invocation cost won't be big.
+      ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(type);
+      // In JDK17, set private jdk method accessible will fail by default, use ObjectStreamClass
+      // instead, since it set accessible.
+      writeObjectMethod =
+          (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "writeObjectMethod");
+      readObjectMethod =
+          (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "readObjectMethod");
+      readObjectNoData =
+          (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "readObjectNoData");
+      MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(type);
+      BiConsumer writeObjectFunc = null, readObjectFunc = null;
+      Consumer readObjectNoDataFunc = null;
+      try {
+        if (writeObjectMethod != null) {
+          writeObjectFunc =
+              _JDKAccess.makeJDKBiConsumer(lookup, lookup.unreflect(writeObjectMethod));
+        }
+        if (readObjectMethod != null) {
+          readObjectFunc = _JDKAccess.makeJDKBiConsumer(lookup, lookup.unreflect(readObjectMethod));
+        }
+        if (readObjectNoData != null) {
+          readObjectNoDataFunc =
+              _JDKAccess.makeJDKConsumer(lookup, lookup.unreflect(readObjectNoData));
+        }
+      } catch (Exception e) {
+        Utils.ignore(e);
+      }
+      this.writeObjectFunc = writeObjectFunc;
+      this.readObjectFunc = readObjectFunc;
+      this.readObjectNoDataFunc = readObjectNoDataFunc;
+    }
+  }
+
+  private static final ClassValue<StreamClassInfo> STREAM_CLASS_INFO_CACHE =
+      new ClassValue<StreamClassInfo>() {
+        @Override
+        protected StreamClassInfo computeValue(Class<?> type) {
+          return new StreamClassInfo(type);
+        }
+      };
+
+  private static class SlotsInfo {
+    private final Class<?> cls;
+    private final ClassInfo classInfo;
+    private final StreamClassInfo streamClassInfo;
     // mark non-final for async-jit to update it to jit-serializer.
     private CompatibleSerializerBase slotsSerializer;
     private final ObjectIntMap<String> fieldIndexMap;
@@ -262,14 +331,7 @@ public class ObjectStreamSerializer extends Serializer {
       this.cls = type;
       classInfo = fury.getClassResolver().newClassInfo(type, null, ClassResolver.NO_CLASS_ID);
       ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(type);
-      // In JDK17, set private jdk method accessible will fail by default, use ObjectStreamClass
-      // instead, since it set accessible.
-      writeObjectMethod =
-          (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "writeObjectMethod");
-      readObjectMethod =
-          (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "readObjectMethod");
-      readObjectNoData =
-          (Method) ReflectionUtils.getObjectFieldValue(objectStreamClass, "readObjectNoData");
+      streamClassInfo = STREAM_CLASS_INFO_CACHE.get(type);
       // `putFields/writeFields` will convert to fields value to be written by
       // `CompatibleSerializer`,
       // since `put` values may not exist in current class, which means container generic type are
@@ -305,7 +367,7 @@ public class ObjectStreamSerializer extends Serializer {
       for (ObjectStreamField serialField : objectStreamClass.getFields()) {
         allFields.add(new ClassField(serialField.getName(), serialField.getType(), cls));
       }
-      if (writeObjectMethod != null || readObjectMethod != null) {
+      if (streamClassInfo.writeObjectMethod != null || streamClassInfo.readObjectMethod != null) {
         putFieldsResolver = new FieldResolver(fury, cls, true, allFields, new HashSet<>());
         AtomicInteger idx = new AtomicInteger(0);
         for (FieldResolver.FieldInfo fieldInfo : putFieldsResolver.getAllFieldsList()) {
@@ -316,7 +378,7 @@ public class ObjectStreamSerializer extends Serializer {
         putFieldsResolver = null;
         compatibleStreamSerializer = null;
       }
-      if (writeObjectMethod != null) {
+      if (streamClassInfo.writeObjectMethod != null) {
         try {
           objectOutputStream = new FuryObjectOutputStream(this);
         } catch (IOException e) {
@@ -326,7 +388,7 @@ public class ObjectStreamSerializer extends Serializer {
       } else {
         objectOutputStream = null;
       }
-      if (readObjectMethod != null) {
+      if (streamClassInfo.readObjectMethod != null) {
         try {
           objectInputStream = new FuryObjectInputStream(this);
         } catch (IOException e) {
@@ -366,11 +428,11 @@ public class ObjectStreamSerializer extends Serializer {
     }
 
     protected final void writeObjectOverride(Object obj) throws IOException {
-      fury.writeReferencableToJava(buffer, obj);
+      fury.writeRef(buffer, obj);
     }
 
     public void writeUnshared(Object obj) throws IOException {
-      fury.writeNonReferenceToJava(buffer, obj);
+      fury.writeNonRef(buffer, obj);
     }
 
     /**
@@ -630,11 +692,11 @@ public class ObjectStreamSerializer extends Serializer {
     }
 
     protected Object readObjectOverride() {
-      return fury.readReferencableFromJava(buffer);
+      return fury.readRef(buffer);
     }
 
     public Object readUnshared() {
-      return fury.readNonReferenceFromJava(buffer);
+      return fury.readNonRef(buffer);
     }
 
     private static final Object NO_VALUE_STUB = new Object();

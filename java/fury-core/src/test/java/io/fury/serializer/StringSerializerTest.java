@@ -1,33 +1,33 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
-import static io.fury.serializer.StringSerializer.newJava11StringByZeroCopy;
+import static io.fury.serializer.StringSerializer.newBytesStringZeroCopy;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-import com.google.common.base.Strings;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
 import io.fury.collection.Tuple2;
+import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.util.MathUtils;
@@ -36,6 +36,7 @@ import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -84,7 +85,7 @@ public class StringSerializerTest extends FuryTestBase {
       if (STRING_VALUE_FIELD_IS_BYTES) {
         return readJDK11String(buffer);
       } else if (STRING_VALUE_FIELD_IS_CHARS) {
-        return StringSerializer.newJava8StringByZeroCopy(buffer.readCharsWithSizeEmbedded());
+        return StringSerializer.newCharsStringZeroCopy(buffer.readCharsWithSizeEmbedded());
       }
       return null;
     } catch (Exception e) {
@@ -95,7 +96,7 @@ public class StringSerializerTest extends FuryTestBase {
   static String readJDK11String(MemoryBuffer buffer) {
     byte coder = buffer.readByte();
     byte[] value = buffer.readBytesWithSizeEmbedded();
-    return newJava11StringByZeroCopy(coder, value);
+    return newBytesStringZeroCopy(coder, value);
   }
 
   private static boolean writeJavaStringZeroCopy(MemoryBuffer buffer, String value) {
@@ -109,7 +110,7 @@ public class StringSerializerTest extends FuryTestBase {
       valueIsCharsField.setAccessible(true);
       boolean STRING_VALUE_FIELD_IS_CHARS = (Boolean) valueIsCharsField.get(null);
       if (STRING_VALUE_FIELD_IS_BYTES) {
-        StringSerializer.writeJDK11String(buffer, value);
+        StringSerializer.writeBytesString(buffer, value);
       } else if (STRING_VALUE_FIELD_IS_CHARS) {
         writeJDK8String(buffer, value);
       } else {
@@ -130,7 +131,7 @@ public class StringSerializerTest extends FuryTestBase {
 
   @Test
   public void testJavaStringSimple() {
-    Fury fury = Fury.builder().withStringCompressed(true).disableSecureMode().build();
+    Fury fury = Fury.builder().withStringCompressed(true).requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     StringSerializer serializer = new StringSerializer(fury);
     {
@@ -149,11 +150,12 @@ public class StringSerializerTest extends FuryTestBase {
 
   @Test(dataProvider = "stringCompress")
   public void testJavaString(boolean stringCompress) {
-    Fury fury = Fury.builder().withStringCompressed(stringCompress).disableSecureMode().build();
+    Fury fury =
+        Fury.builder().withStringCompressed(stringCompress).requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     StringSerializer serializer = new StringSerializer(fury);
 
-    String longStr = Strings.repeat("abc", 50);
+    String longStr = new String(new char[50]).replace("\0", "abc");
     buffer.writerIndex(0);
     buffer.readerIndex(0);
     serializer.writeJavaString(buffer, longStr);
@@ -169,7 +171,8 @@ public class StringSerializerTest extends FuryTestBase {
 
   @Test(dataProvider = "stringCompress")
   public void testJavaStringOffHeap(boolean stringCompress) {
-    Fury fury = Fury.builder().withStringCompressed(stringCompress).disableSecureMode().build();
+    Fury fury =
+        Fury.builder().withStringCompressed(stringCompress).requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryUtils.wrap(ByteBuffer.allocateDirect(1024));
     Object o1 = "你好, Fury" + StringUtils.random(64);
     Object o2 =
@@ -208,7 +211,8 @@ public class StringSerializerTest extends FuryTestBase {
 
     public DataProducer(BlockingQueue<Tuple2<String, byte[]>> dataQueue) {
       this.dataQueue = dataQueue;
-      this.fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      this.fury =
+          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     }
 
     public void run() {
@@ -239,7 +243,8 @@ public class StringSerializerTest extends FuryTestBase {
     public DataConsumer(
         BlockingQueue<Tuple2<String, byte[]>> dataQueue,
         ConcurrentLinkedQueue<Tuple2<String, String>> results) {
-      this.fury = Fury.builder().withLanguage(Language.JAVA).disableSecureMode().build();
+      this.fury =
+          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
       this.dataQueue = dataQueue;
       this.results = results;
     }
@@ -263,7 +268,7 @@ public class StringSerializerTest extends FuryTestBase {
     if (Platform.JAVA_VERSION != 8) {
       throw new SkipException("Java 8 only");
     }
-    Fury fury = Fury.builder().withStringCompressed(true).disableSecureMode().build();
+    Fury fury = Fury.builder().withStringCompressed(true).requireClassRegistration(false).build();
     StringSerializer stringSerializer =
         (StringSerializer) fury.getClassResolver().getSerializer(String.class);
 
@@ -285,19 +290,19 @@ public class StringSerializerTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "endian")
-  public void testVectorizedAsciiCheckAlgorithm(boolean endian) {
-    // assertTrue(isAscii("Fury".toCharArray(), endian));
-    // assertTrue(isAscii(StringUtils.random(8 * 10).toCharArray(), endian));
+  public void testVectorizedLatinCheckAlgorithm(boolean endian) {
+    // assertTrue(isLatin("Fury".toCharArray(), endian));
+    // assertTrue(isLatin(StringUtils.random(8 * 10).toCharArray(), endian));
     // test unaligned
-    assertTrue(isAscii((StringUtils.random(8 * 10) + "1").toCharArray(), endian));
-    assertTrue(isAscii((StringUtils.random(8 * 10) + "12").toCharArray(), endian));
-    assertTrue(isAscii((StringUtils.random(8 * 10) + "123").toCharArray(), endian));
-    assertFalse(isAscii("你好, Fury".toCharArray(), endian));
-    assertFalse(isAscii((StringUtils.random(8 * 10) + "你好").toCharArray(), endian));
-    assertFalse(isAscii((StringUtils.random(8 * 10) + "1你好").toCharArray(), endian));
+    assertTrue(isLatin((StringUtils.random(8 * 10) + "1").toCharArray(), endian));
+    assertTrue(isLatin((StringUtils.random(8 * 10) + "12").toCharArray(), endian));
+    assertTrue(isLatin((StringUtils.random(8 * 10) + "123").toCharArray(), endian));
+    assertFalse(isLatin("你好, Fury".toCharArray(), endian));
+    assertFalse(isLatin((StringUtils.random(8 * 10) + "你好").toCharArray(), endian));
+    assertFalse(isLatin((StringUtils.random(8 * 10) + "1你好").toCharArray(), endian));
   }
 
-  private boolean isAscii(char[] chars, boolean isLittle) {
+  private boolean isLatin(char[] chars, boolean isLittle) {
     boolean reverseBytes =
         (Platform.IS_LITTLE_ENDIAN && !isLittle) || (!Platform.IS_LITTLE_ENDIAN && !isLittle);
     if (reverseBytes) {
@@ -307,61 +312,80 @@ public class StringSerializerTest extends FuryTestBase {
     }
     long mask;
     if (isLittle) {
-      // ascii chars will be 0xXX,0x00;0xXX,0x00 in byte order;
-      // Using 0x00,0xff(0xff00) to clear ascii bits.
+      // latin chars will be 0xXX,0x00;0xXX,0x00 in byte order;
+      // Using 0x00,0xff(0xff00) to clear latin bits.
       mask = 0xff00ff00ff00ff00L;
     } else {
-      // ascii chars will be 0x00,0xXX;0x00,0xXX in byte order;
-      // Using 0x00,0xff(0x00ff) to clear ascii bits.
+      // latin chars will be 0x00,0xXX;0x00,0xXX in byte order;
+      // Using 0x00,0xff(0x00ff) to clear latin bits.
       mask = 0x00ff00ff00ff00ffL;
     }
     int numChars = chars.length;
     int vectorizedLen = numChars >> 2;
     int vectorizedChars = vectorizedLen << 2;
     int endOffset = Platform.CHAR_ARRAY_OFFSET + (vectorizedChars << 1);
-    boolean isAscii = true;
+    boolean isLatin = true;
     for (int offset = Platform.CHAR_ARRAY_OFFSET; offset < endOffset; offset += 8) {
       // check 4 chars in a vectorized way, 4 times faster than scalar check loop.
       long multiChars = Platform.getLong(chars, offset);
       if ((multiChars & mask) != 0) {
-        isAscii = false;
+        isLatin = false;
         break;
       }
     }
-    if (isAscii) {
+    if (isLatin) {
       for (int i = vectorizedChars; i < numChars; i++) {
         char c = chars[i];
         if (reverseBytes) {
           c = Character.reverseBytes(c);
         }
         if (c > 0xFF) {
-          isAscii = false;
+          isLatin = false;
           break;
         }
       }
     }
-    return isAscii;
+    return isLatin;
   }
 
   @Test
-  public void testAsciiCheck() {
-    assertTrue(StringSerializer.isAscii("Fury".toCharArray()));
-    assertTrue(StringSerializer.isAscii(StringUtils.random(8 * 10).toCharArray()));
+  public void testLatinCheck() {
+    assertTrue(StringSerializer.isLatin("Fury".toCharArray()));
+    assertTrue(StringSerializer.isLatin(StringUtils.random(8 * 10).toCharArray()));
     // test unaligned
-    assertTrue(StringSerializer.isAscii((StringUtils.random(8 * 10) + "1").toCharArray()));
-    assertTrue(StringSerializer.isAscii((StringUtils.random(8 * 10) + "12").toCharArray()));
-    assertTrue(StringSerializer.isAscii((StringUtils.random(8 * 10) + "123").toCharArray()));
-    assertFalse(StringSerializer.isAscii("你好, Fury".toCharArray()));
-    assertFalse(StringSerializer.isAscii((StringUtils.random(8 * 10) + "你好").toCharArray()));
-    assertFalse(StringSerializer.isAscii((StringUtils.random(8 * 10) + "1你好").toCharArray()));
-    assertFalse(StringSerializer.isAscii((StringUtils.random(11) + "你").toCharArray()));
-    assertFalse(StringSerializer.isAscii((StringUtils.random(10) + "你好").toCharArray()));
-    assertFalse(StringSerializer.isAscii((StringUtils.random(9) + "性能好").toCharArray()));
-    assertFalse(StringSerializer.isAscii("\u1234".toCharArray()));
-    assertFalse(StringSerializer.isAscii("a\u1234".toCharArray()));
-    assertFalse(StringSerializer.isAscii("ab\u1234".toCharArray()));
-    assertFalse(StringSerializer.isAscii("abc\u1234".toCharArray()));
-    assertFalse(StringSerializer.isAscii("abcd\u1234".toCharArray()));
-    assertFalse(StringSerializer.isAscii("Javaone Keynote\u1234".toCharArray()));
+    assertTrue(StringSerializer.isLatin((StringUtils.random(8 * 10) + "1").toCharArray()));
+    assertTrue(StringSerializer.isLatin((StringUtils.random(8 * 10) + "12").toCharArray()));
+    assertTrue(StringSerializer.isLatin((StringUtils.random(8 * 10) + "123").toCharArray()));
+    assertFalse(StringSerializer.isLatin("你好, Fury".toCharArray()));
+    assertFalse(StringSerializer.isLatin((StringUtils.random(8 * 10) + "你好").toCharArray()));
+    assertFalse(StringSerializer.isLatin((StringUtils.random(8 * 10) + "1你好").toCharArray()));
+    assertFalse(StringSerializer.isLatin((StringUtils.random(11) + "你").toCharArray()));
+    assertFalse(StringSerializer.isLatin((StringUtils.random(10) + "你好").toCharArray()));
+    assertFalse(StringSerializer.isLatin((StringUtils.random(9) + "性能好").toCharArray()));
+    assertFalse(StringSerializer.isLatin("\u1234".toCharArray()));
+    assertFalse(StringSerializer.isLatin("a\u1234".toCharArray()));
+    assertFalse(StringSerializer.isLatin("ab\u1234".toCharArray()));
+    assertFalse(StringSerializer.isLatin("abc\u1234".toCharArray()));
+    assertFalse(StringSerializer.isLatin("abcd\u1234".toCharArray()));
+    assertFalse(StringSerializer.isLatin("Javaone Keynote\u1234".toCharArray()));
+  }
+
+  @Test
+  public void testReadUtf8String() {
+    Fury fury = getJavaFury();
+    for (MemoryBuffer buffer :
+        new MemoryBuffer[] {
+          MemoryUtils.buffer(32), MemoryUtils.wrap(ByteBuffer.allocateDirect(2048))
+        }) {
+      StringSerializer serializer = new StringSerializer(fury);
+      serializer.write(buffer, "abc你好");
+      assertEquals(serializer.read(buffer), "abc你好");
+      byte UTF8 = 2;
+      buffer.writeByte(UTF8);
+      buffer.writePositiveVarInt("abc你好".getBytes(StandardCharsets.UTF_8).length);
+      buffer.writeBytes("abc你好".getBytes(StandardCharsets.UTF_8));
+      assertEquals(serializer.read(buffer), "abc你好");
+      assertEquals(buffer.readerIndex(), buffer.writerIndex());
+    }
   }
 }

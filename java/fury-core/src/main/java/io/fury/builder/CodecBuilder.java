@@ -1,23 +1,27 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.builder;
 
+import static io.fury.codegen.Expression.Invoke.inlineInvoke;
+import static io.fury.type.TypeUtils.CLASS_TYPE;
+import static io.fury.type.TypeUtils.OBJECT_ARRAY_TYPE;
 import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
@@ -30,28 +34,39 @@ import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Cast;
 import io.fury.codegen.Expression.Inlineable;
+import io.fury.codegen.Expression.Invoke;
+import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.StaticInvoke;
-import io.fury.codegen.ExpressionUtils;
+import io.fury.collection.Tuple2;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.type.Descriptor;
+import io.fury.type.FinalObjectTypeStub;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
+import io.fury.util.function.Functions;
+import io.fury.util.record.RecordComponent;
+import io.fury.util.record.RecordUtils;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import sun.misc.Unsafe;
 
 /**
@@ -69,32 +84,38 @@ import sun.misc.Unsafe;
 @SuppressWarnings("UnstableApiUsage")
 public abstract class CodecBuilder {
   protected static final String ROOT_OBJECT_NAME = "obj";
+  // avoid user class has field with name fury.
   protected static final String FURY_NAME = "fury";
-
   static TypeToken<Object[]> objectArrayTypeToken = TypeToken.of(Object[].class);
   static TypeToken<MemoryBuffer> bufferTypeToken = TypeToken.of(MemoryBuffer.class);
   static TypeToken<ClassInfo> classInfoTypeToken = TypeToken.of(ClassInfo.class);
-  static TypeToken<ClassInfoCache> classInfoCacheTypeToken = TypeToken.of(ClassInfoCache.class);
+  static TypeToken<ClassInfoHolder> classInfoHolderTypeToken = TypeToken.of(ClassInfoHolder.class);
 
   protected final CodegenContext ctx;
   protected final TypeToken<?> beanType;
   protected final Class<?> beanClass;
+  protected final boolean isRecord;
   private final Set<String> duplicatedFields;
   protected Reference furyRef = new Reference(FURY_NAME, TypeToken.of(Fury.class));
-  private final Map<String, Reference> fieldMap = new HashMap<>();
-  private final Map<String, Reference> fieldAccessorMap = new HashMap<>();
+  public static final Reference recordComponentDefaultValues =
+      new Reference("recordComponentDefaultValues", OBJECT_ARRAY_TYPE);
+  protected final Map<String, Reference> fieldMap = new HashMap<>();
+  protected boolean recordCtrAccessible;
 
   public CodecBuilder(CodegenContext ctx, TypeToken<?> beanType) {
     this.ctx = ctx;
     this.beanType = beanType;
     this.beanClass = getRawType(beanType);
-    duplicatedFields =
-        Descriptor.getSortedDuplicatedFields(Descriptor.getAllDescriptorsMap(beanClass)).keySet();
+    isRecord = RecordUtils.isRecord(beanClass);
+    if (isRecord) {
+      recordCtrAccessible = recordCtrAccessible(beanClass);
+    }
+    duplicatedFields = Descriptor.getSortedDuplicatedFields(beanClass).keySet();
     // don't ctx.addImport beanClass, because it maybe causes name collide.
+    ctx.reserveName(FURY_NAME);
     ctx.reserveName(ROOT_OBJECT_NAME);
     // Don't import other packages to avoid class conflicts.
     // For example user class named as `Date`/`List`/`MemoryBuffer`
-
   }
 
   /** Generate codec class code. */
@@ -103,26 +124,90 @@ public abstract class CodecBuilder {
   /** Returns an expression that serialize java bean of type {@link CodecBuilder#beanClass}. */
   public abstract Expression buildEncodeExpression();
 
+  protected boolean sourcePublicAccessible(Class<?> cls) {
+    return ctx.sourcePublicAccessible(cls);
+  }
+
+  protected Expression tryInlineCast(Expression expression, TypeToken<?> targetType) {
+    return tryCastIfPublic(expression, targetType, true);
+  }
+
+  protected Expression tryCastIfPublic(Expression expression, TypeToken<?> targetType) {
+    return tryCastIfPublic(expression, targetType, false);
+  }
+
+  protected Expression tryCastIfPublic(
+      Expression expression, TypeToken<?> targetType, boolean inline) {
+    Class<?> rawType = getRawType(targetType);
+    if (rawType == FinalObjectTypeStub.class) {
+      // final field doesn't exist in this class, skip cast.
+      return expression;
+    }
+    if (inline) {
+      if (sourcePublicAccessible(rawType)) {
+        return new Cast(expression, targetType);
+      } else {
+        return new Cast(expression, ReflectionUtils.getPublicSuperType(TypeToken.of(rawType)));
+      }
+    }
+    return tryCastIfPublic(expression, targetType, "castedValue");
+  }
+
+  protected Expression tryCastIfPublic(
+      Expression expression, TypeToken<?> targetType, String valuePrefix) {
+    Class<?> rawType = getRawType(targetType);
+    if (sourcePublicAccessible(rawType)
+        && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
+      return new Cast(expression, targetType, valuePrefix);
+    }
+    return expression;
+  }
+
   // left null check in sub class encode method to reduce data dependence.
   private final boolean fieldNullable = false;
+
+  protected Reference getRecordCtrHandle() {
+    String fieldName = "_record_ctr_";
+    Reference fieldRef = fieldMap.get(fieldName);
+    if (fieldRef == null) {
+      StaticInvoke getRecordCtrHandle =
+          new StaticInvoke(
+              RecordUtils.class,
+              "getRecordCtrHandle",
+              TypeToken.of(MethodHandle.class),
+              beanClassExpr());
+      ctx.addField(ctx.type(MethodHandle.class), fieldName, getRecordCtrHandle);
+      fieldRef = new Reference(fieldName, TypeToken.of(MethodHandle.class));
+      fieldMap.put(fieldName, fieldRef);
+    }
+    return fieldRef;
+  }
+
+  protected Expression buildDefaultComponentsArray() {
+    return new StaticInvoke(
+        Platform.class, "copyObjectArray", OBJECT_ARRAY_TYPE, recordComponentDefaultValues);
+  }
 
   /** Returns an expression that get field value from <code>bean</code>. */
   protected Expression getFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
     TypeToken<?> fieldType = descriptor.getTypeToken();
-    // No public field type is cast to public parent classes in subclasses of this class.
-    Preconditions.checkArgument(
-        Modifier.isPublic(getRawType(fieldType).getModifiers()),
-        "Field type should be public for codegen-based access");
+    Class<?> rawType = descriptor.getRawType();
     String fieldName = descriptor.getName();
-    if (duplicatedFields.contains(fieldName)) {
+    if (isRecord) {
+      return getRecordFieldValue(inputBeanExpr, descriptor);
+    }
+    if (duplicatedFields.contains(fieldName) || !Modifier.isPublic(beanClass.getModifiers())) {
       return unsafeAccessField(inputBeanExpr, beanClass, descriptor);
+    }
+    if (!sourcePublicAccessible(rawType)) {
+      fieldType = OBJECT_TYPE;
     }
     // public field or non-private non-java field access field directly.
     if (Modifier.isPublic(descriptor.getModifiers())) {
       return new Expression.FieldValue(inputBeanExpr, fieldName, fieldType, fieldNullable, false);
     } else if (descriptor.getReadMethod() != null
         && Modifier.isPublic(descriptor.getReadMethod().getModifiers())) {
-      return new Expression.Invoke(
+      return new Invoke(
           inputBeanExpr, descriptor.getReadMethod().getName(), fieldName, fieldType, fieldNullable);
     } else {
       if (!Modifier.isPrivate(descriptor.getModifiers())) {
@@ -150,24 +235,58 @@ public abstract class CodecBuilder {
     }
   }
 
+  private Expression getRecordFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
+    TypeToken<?> fieldType = descriptor.getTypeToken();
+    if (!sourcePublicAccessible(descriptor.getRawType())) {
+      fieldType = OBJECT_TYPE;
+    }
+    String fieldName = descriptor.getName();
+    if (Modifier.isPublic(beanClass.getModifiers())) {
+      Preconditions.checkNotNull(descriptor.getReadMethod());
+      return new Invoke(
+          inputBeanExpr, descriptor.getReadMethod().getName(), fieldName, fieldType, fieldNullable);
+    } else {
+      String key = "_" + fieldName + "_getter_";
+      Reference ref = fieldMap.get(key);
+      Tuple2<Class<?>, String> methodInfo = Functions.getterMethodInfo(descriptor.getRawType());
+      if (ref == null) {
+        Class<?> funcInterface = methodInfo.f0;
+        TypeToken<?> getterType = TypeToken.of(funcInterface);
+        Expression getter =
+            new StaticInvoke(
+                Functions.class,
+                "makeGetterFunction",
+                OBJECT_TYPE,
+                beanClassExpr(),
+                Literal.ofString(fieldName));
+        getter = new Cast(getter, getterType);
+        ctx.addField(funcInterface, key, getter);
+        ref = new Reference(key, getterType);
+        fieldMap.put(key, ref);
+      }
+      if (!fieldType.isPrimitive()) {
+        Expression v = inlineInvoke(ref, methodInfo.f1, OBJECT_TYPE, fieldNullable, inputBeanExpr);
+        return tryCastIfPublic(v, descriptor.getTypeToken(), fieldName);
+      } else {
+        return new Invoke(ref, methodInfo.f1, fieldType, fieldNullable, inputBeanExpr);
+      }
+    }
+  }
+
   /** Returns an expression that get field value> from <code>bean</code> using reflection. */
   private Expression reflectAccessField(
       Expression inputObject, Class<?> cls, Descriptor descriptor) {
-    Reference fieldRef = getOrCreateField(cls, descriptor.getName());
+    Reference fieldRef = getReflectField(cls, descriptor.getField());
     // boolean fieldNullable = !descriptor.getTypeToken().isPrimitive();
-    Expression.Invoke getObj =
-        new Expression.Invoke(fieldRef, "get", OBJECT_TYPE, fieldNullable, inputObject);
-    return new Expression.Cast(getObj, descriptor.getTypeToken(), descriptor.getName());
+    Invoke getObj = new Invoke(fieldRef, "get", OBJECT_TYPE, fieldNullable, inputObject);
+    return new Cast(getObj, descriptor.getTypeToken(), descriptor.getName());
   }
 
   /** Returns an expression that get field value> from <code>bean</code> using {@link Unsafe}. */
   private Expression unsafeAccessField(
       Expression inputObject, Class<?> cls, Descriptor descriptor) {
     String fieldName = descriptor.getName();
-    // Use Field in case the class has duplicate field name as `fieldName`.
-    long fieldOffset = ReflectionUtils.getFieldOffset(descriptor.getField());
-    Preconditions.checkArgument(fieldOffset != -1);
-    Literal fieldOffsetExpr = Literal.ofLong(fieldOffset);
+    Expression fieldOffsetExpr = getFieldOffset(cls, descriptor);
     if (descriptor.getTypeToken().isPrimitive()) {
       // ex: Platform.UNSAFE.getFloat(obj, fieldOffset)
       Preconditions.checkArgument(!fieldNullable);
@@ -185,7 +304,31 @@ public abstract class CodecBuilder {
               fieldNullable,
               inputObject,
               fieldOffsetExpr);
-      return new Expression.Cast(getObj, descriptor.getTypeToken(), fieldName);
+      return tryCastIfPublic(getObj, descriptor.getTypeToken(), fieldName);
+    }
+  }
+
+  private Expression getFieldOffset(Class<?> cls, Descriptor descriptor) {
+    Field field = descriptor.getField();
+    String fieldName = descriptor.getName();
+    // Use Field in case the class has duplicate field name as `fieldName`.
+    if (GraalvmSupport.isGraalBuildtime()) {
+      return getOrCreateField(
+          true,
+          long.class,
+          fieldName + "_offset_",
+          () -> {
+            Expression classExpr = beanClassExpr(field.getDeclaringClass());
+            new Invoke(classExpr, "getDeclaredField", TypeToken.of(Field.class));
+            Expression reflectFieldRef = getReflectField(cls, field, false);
+            return new StaticInvoke(
+                    Platform.class, "objectFieldOffset", PRIMITIVE_LONG_TYPE, reflectFieldRef)
+                .inline();
+          });
+    } else {
+      long fieldOffset = ReflectionUtils.getFieldOffset(field);
+      Preconditions.checkArgument(fieldOffset != -1);
+      return Literal.ofLong(fieldOffset);
     }
   }
 
@@ -201,24 +344,30 @@ public abstract class CodecBuilder {
     if (value instanceof Inlineable) {
       ((Inlineable) value).inline();
     }
-    if (duplicatedFields.contains(fieldName)) {
+    if (duplicatedFields.contains(fieldName) || !sourcePublicAccessible(beanClass)) {
       return unsafeSetField(bean, d, value);
     }
     if (!Modifier.isFinal(d.getModifiers()) && Modifier.isPublic(d.getModifiers())) {
       return new Expression.SetField(bean, fieldName, value);
     } else if (d.getWriteMethod() != null && Modifier.isPublic(d.getWriteMethod().getModifiers())) {
-      return new Expression.Invoke(bean, d.getWriteMethod().getName(), value);
+      return new Invoke(bean, d.getWriteMethod().getName(), value);
     } else {
       if (!Modifier.isFinal(d.getModifiers()) && !Modifier.isPrivate(d.getModifiers())) {
-        if (AccessorHelper.defineAccessor(d.getField())) {
+        if (AccessorHelper.defineSetter(d.getField())) {
           Class<?> accessorClass = AccessorHelper.getAccessorClass(d.getField());
+          if (!value.type().equals(d.getTypeToken())) {
+            value = new Cast(value, d.getTypeToken());
+          }
           return new StaticInvoke(
               accessorClass, d.getName(), PRIMITIVE_VOID_TYPE, false, bean, value);
         }
       }
       if (d.getWriteMethod() != null && !Modifier.isPrivate(d.getWriteMethod().getModifiers())) {
-        if (AccessorHelper.defineAccessor(d.getWriteMethod())) {
+        if (AccessorHelper.defineSetter(d.getWriteMethod())) {
           Class<?> accessorClass = AccessorHelper.getAccessorClass(d.getWriteMethod());
+          if (!value.type().equals(d.getTypeToken())) {
+            value = new Cast(value, d.getTypeToken());
+          }
           return new StaticInvoke(
               accessorClass, d.getWriteMethod().getName(), PRIMITIVE_VOID_TYPE, false, bean, value);
         }
@@ -230,12 +379,12 @@ public abstract class CodecBuilder {
   /**
    * Returns an expression that set field <code>value</code> to <code>bean</code> using reflection.
    */
-  private Expression reflectSetField(Expression bean, String fieldName, Expression value) {
+  private Expression reflectSetField(Expression bean, Field field, Expression value) {
     // Class maybe have getter, but don't have setter, so we can't rely on reflectAccessField to
     // populate fieldMap
-    Reference fieldRef = getOrCreateField(getRawType(bean.type()), fieldName);
+    Reference fieldRef = getReflectField(getRawType(bean.type()), field);
     Preconditions.checkNotNull(fieldRef);
-    return new Expression.Invoke(fieldRef, "set", bean, value);
+    return new Invoke(fieldRef, "set", bean, value);
   }
 
   /**
@@ -245,9 +394,7 @@ public abstract class CodecBuilder {
   private Expression unsafeSetField(Expression bean, Descriptor descriptor, Expression value) {
     TypeToken<?> fieldType = descriptor.getTypeToken();
     // Use Field in case the class has duplicate field name as `fieldName`.
-    long fieldOffset = ReflectionUtils.getFieldOffset(descriptor.getField());
-    Preconditions.checkArgument(fieldOffset != -1);
-    Literal fieldOffsetExpr = Literal.ofLong(fieldOffset);
+    Expression fieldOffsetExpr = getFieldOffset(beanClass, descriptor);
     if (descriptor.getTypeToken().isPrimitive()) {
       Preconditions.checkArgument(value.type().equals(fieldType));
       String funcName = "put" + StringUtils.capitalize(getRawType(fieldType).toString());
@@ -257,27 +404,53 @@ public abstract class CodecBuilder {
     }
   }
 
-  private Reference getOrCreateField(Class<?> cls, String fieldName) {
+  private Reference getReflectField(Class<?> cls, Field field) {
+    return getReflectField(cls, field, true);
+  }
+
+  private Reference getReflectField(Class<?> cls, Field field, boolean setAccessible) {
+    String fieldName = field.getName();
+    String fieldRefName;
+    if (duplicatedFields.contains(fieldName)) {
+      fieldRefName = cls.getName().replaceAll("\\.|\\$", "_") + "_" + fieldName + "_Field";
+    } else {
+      fieldRefName = fieldName + "_Field";
+    }
+    return getOrCreateField(
+        true,
+        Field.class,
+        fieldRefName,
+        () -> {
+          TypeToken<Field> fieldTypeToken = TypeToken.of(Field.class);
+          Expression classExpr = beanClassExpr(field.getDeclaringClass());
+          Expression fieldExpr;
+          if (GraalvmSupport.isGraalBuildtime()) {
+            fieldExpr =
+                inlineInvoke(
+                    classExpr, "getDeclaredField", fieldTypeToken, Literal.ofString(fieldName));
+          } else {
+            fieldExpr =
+                new StaticInvoke(
+                    ReflectionUtils.class,
+                    "getField",
+                    fieldTypeToken,
+                    classExpr,
+                    Literal.ofString(fieldName));
+          }
+          if (!setAccessible) {
+            return fieldExpr;
+          }
+          Invoke setAccess = new Invoke(fieldExpr, "setAccessible", Literal.True);
+          return new ListExpression(setAccess, fieldExpr);
+        });
+  }
+
+  private Reference getOrCreateField(
+      boolean isStatic, Class<?> type, String fieldName, Supplier<Expression> value) {
     Reference fieldRef = fieldMap.get(fieldName);
     if (fieldRef == null) {
-      TypeToken<Field> fieldTypeToken = TypeToken.of(Field.class);
-      String fieldRefName = ctx.newName(fieldName + "Field");
-      Preconditions.checkArgument(Modifier.isPublic(cls.getModifiers()));
-      Literal clzLiteral = new Literal(ctx.type(cls) + ".class");
-      StaticInvoke fieldExpr =
-          new StaticInvoke(
-              ReflectionUtils.class,
-              "getField",
-              fieldTypeToken,
-              false,
-              clzLiteral,
-              ExpressionUtils.literalStr(fieldName));
-      Expression.Invoke setAccessible =
-          new Expression.Invoke(fieldExpr, "setAccessible", new Literal("true"));
-      Expression.ListExpression createField =
-          new Expression.ListExpression(setAccessible, fieldExpr);
-      ctx.addField(ctx.type(Field.class), fieldRefName, createField);
-      fieldRef = new Reference(fieldRefName, fieldTypeToken);
+      ctx.addField(isStatic, true, ctx.type(type), fieldName, value.get());
+      fieldRef = new Reference(fieldName, TypeToken.of(type));
       fieldMap.put(fieldName, fieldRef);
     }
     return fieldRef;
@@ -286,15 +459,77 @@ public abstract class CodecBuilder {
   /** Returns an Expression that create a new java object of type {@link CodecBuilder#beanClass}. */
   protected Expression newBean() {
     // TODO allow default access-level class.
-    if (Modifier.isPublic(beanClass.getModifiers())) {
+    if (sourcePublicAccessible(beanClass)) {
       return new Expression.NewInstance(beanType);
     } else {
       return new StaticInvoke(Platform.class, "newInstance", OBJECT_TYPE, beanClassExpr());
     }
   }
 
-  protected Expression beanClassExpr() {
+  protected void buildRecordComponentDefaultValues() {
+    ctx.reserveName(recordComponentDefaultValues.name());
+    StaticInvoke expr =
+        new StaticInvoke(
+            RecordUtils.class,
+            "buildRecordComponentDefaultValues",
+            OBJECT_ARRAY_TYPE,
+            beanClassExpr());
+    ctx.addField(Object[].class, recordComponentDefaultValues.name(), expr);
+  }
+
+  static boolean recordCtrAccessible(Class<?> cls) {
+    // support unexported packages in module
+    if (!Modifier.isPublic(cls.getModifiers())) {
+      return false;
+    }
+    for (RecordComponent component : Objects.requireNonNull(RecordUtils.getRecordComponents(cls))) {
+      if (!Modifier.isPublic(component.getType().getModifiers())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  protected Expression beanClassExpr(Class<?> cls) {
+    if (cls == beanClass) {
+      return staticBeanClassExpr();
+    }
+    if (GraalvmSupport.isGraalBuildtime()) {
+      String name = cls.getName().replaceAll("\\.|\\$", "_") + "__class__";
+      return getOrCreateField(
+          true,
+          Class.class,
+          name,
+          () ->
+              new StaticInvoke(
+                      ReflectionUtils.class,
+                      "loadClass",
+                      CLASS_TYPE,
+                      Literal.ofString(cls.getName()))
+                  .inline());
+    }
     throw new UnsupportedOperationException();
+  }
+
+  protected Expression beanClassExpr() {
+    if (GraalvmSupport.isGraalBuildtime()) {
+      return staticBeanClassExpr();
+    }
+    throw new UnsupportedOperationException();
+  }
+
+  protected Expression staticBeanClassExpr() {
+    return getOrCreateField(
+        true,
+        Class.class,
+        "__class__",
+        () ->
+            new StaticInvoke(
+                    ReflectionUtils.class,
+                    "loadClass",
+                    CLASS_TYPE,
+                    Literal.ofString(beanClass.getName()))
+                .inline());
   }
 
   /**

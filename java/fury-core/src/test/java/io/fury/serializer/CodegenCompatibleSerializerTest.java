@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
@@ -24,7 +25,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.CompatibleMode;
+import io.fury.config.Language;
+import io.fury.serializer.collection.UnmodifiableSerializersTest;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
 import io.fury.test.bean.CollectionFields;
@@ -56,10 +59,10 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     serDeCheck(fury, Foo.create());
     serDeCheck(fury, BeanB.createBeanB(2));
@@ -72,10 +75,10 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     Object foo = Foo.create();
     for (Class<?> fooClass :
@@ -87,10 +90,10 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
       Fury newFury =
           Fury.builder()
               .withLanguage(Language.JAVA)
-              .withReferenceTracking(referenceTracking)
+              .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen)
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
-              .withClassRegistrationRequired(false)
+              .requireClassRegistration(false)
               .withClassLoader(fooClass.getClassLoader())
               .build();
 
@@ -128,10 +131,10 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     String pkg = BeanA.class.getPackage().getName();
     String code =
@@ -146,14 +149,18 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
             + "  private Iterable<BeanB> beanBIterable;\n"
             + "  private List<BeanB> beanBList;\n"
             + "}";
-    Class<?> cls1 = loadClass(BeanA.class, code);
+    Class<?> cls1 =
+        loadClass(
+            BeanA.class,
+            code,
+            CodegenCompatibleSerializerTest.class + "testWriteCompatibleCollectionBasic_1");
     Fury fury1 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .withClassLoader(cls1.getClassLoader())
             .build();
     code =
@@ -167,16 +174,20 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
             + "  private List<Double> doubleList;\n"
             + "  private Iterable<BeanB> beanBIterable;\n"
             + "}";
-    Class<?> cls2 = loadClass(BeanA.class, code);
+    Class<?> cls2 =
+        loadClass(
+            BeanA.class,
+            code,
+            CodegenCompatibleSerializerTest.class + "testWriteCompatibleCollectionBasic_2");
     Object newBeanA = cls2.newInstance();
     ReflectionUtils.unsafeCopy(beanA, newBeanA);
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .withClassLoader(cls2.getClassLoader())
             .build();
     byte[] newBeanABytes = fury2.serialize(newBeanA);
@@ -199,10 +210,10 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     BeanA beanA = BeanA.createBeanA(2);
     serDe(fury, beanA);
@@ -212,10 +223,10 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Fury newFury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .withClassLoader(cls.getClassLoader())
             .build();
     byte[] newBeanABytes = newFury.serialize(newBeanA);
@@ -239,10 +250,10 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     CollectionFields collectionFields = UnmodifiableSerializersTest.createCollectionFields();
     {
@@ -259,10 +270,10 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .withClassLoader(cls2.getClassLoader())
             .build();
     byte[] bytes1 = fury2.serialize(newObj);
@@ -298,10 +309,10 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     MapFields mapFields = UnmodifiableSerializersTest.createMapFields();
     {
@@ -316,10 +327,10 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     byte[] bytes1 = fury2.serialize(newObj);
     Object deserialized = fury.deserialize(bytes1);

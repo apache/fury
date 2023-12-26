@@ -3,11 +3,11 @@
     {
       "target_name": "hps",
       "sources": [
-        "src/fastcall.cc"
+        "src/fastcall.cc",
+        "src/v8-fast-api-calls.h"
       ],
       "include_dirs"  : [
-            "<!(node -e \"require('nan')\")",
-            "/opt/homebrew/Cellar/v8/11.4.183.25/libexec/include"
+            "<!(node -e \"require('nan')\")"
       ],
       "cflags": ["-g"]
     }

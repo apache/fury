@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 #include "fury/row/writer.h"
 #include <iostream>
 #include <memory>
@@ -27,17 +46,11 @@ void Writer::ZeroOutPaddingBytes(uint32_t num_bytes) {
 }
 
 bool Writer::IsNullAt(int i) const {
-  return BitUtil::GetBit(buffer_->data() + starting_offset_ +
-                             bytes_before_bitmap_,
-                         static_cast<uint32_t>(i));
+  return util::GetBit(buffer_->data() + starting_offset_ + bytes_before_bitmap_,
+                      static_cast<uint32_t>(i));
 }
 
-void Writer::WriteString(int i, std::string &value) {
-  WriteBytes(i, reinterpret_cast<const uint8_t *>(value.data()),
-             static_cast<int32_t>(value.size()));
-}
-
-void Writer::WriteString(int i, std::string &&value) {
+void Writer::WriteString(int i, std::string_view value) {
   WriteBytes(i, reinterpret_cast<const uint8_t *>(value.data()),
              static_cast<int32_t>(value.size()));
 }
@@ -48,7 +61,7 @@ void Writer::WriteBytes(int i, const uint8_t *input, uint32_t length) {
 
 void Writer::WriteUnaligned(int i, const uint8_t *input, uint32_t offset,
                             uint32_t num_bytes) {
-  int round_size = BitUtil::RoundNumberOfBytesToNearestWord(num_bytes);
+  int round_size = util::RoundNumberOfBytesToNearestWord(num_bytes);
   buffer_->Grow(round_size);
   ZeroOutPaddingBytes(num_bytes);
   buffer_->UnsafePut(cursor(), input + offset, num_bytes);
@@ -195,7 +208,7 @@ void ArrayWriter::Reset(uint32_t num_elements) {
   uint64_t data_size = num_elements_ * (uint64_t)element_size_;
   FURY_CHECK(data_size < std::numeric_limits<int>::max());
   int fixed_part_bytes =
-      BitUtil::RoundNumberOfBytesToNearestWord(static_cast<int>(data_size));
+      util::RoundNumberOfBytesToNearestWord(static_cast<int>(data_size));
   assert((fixed_part_bytes >= data_size) && "too much elements");
   buffer_->Grow(header_in_bytes_ + fixed_part_bytes);
 

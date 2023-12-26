@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
@@ -24,9 +25,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
 import io.fury.builder.MetaSharedCodecBuilder;
+import io.fury.config.CompatibleMode;
+import io.fury.config.Language;
 import io.fury.resolver.MetaContext;
+import io.fury.serializer.collection.UnmodifiableSerializersTest;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
 import io.fury.test.bean.CollectionFields;
@@ -98,11 +101,11 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withNumberCompressed(compressNumber)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     serDeCheck(fury, Foo.create());
     serDeCheck(fury, BeanB.createBeanB(2));
@@ -119,12 +122,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     Object foo = Foo.create();
     for (Class<?> fooClass :
@@ -137,12 +140,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
       Fury newFury =
           Fury.builder()
               .withLanguage(Language.JAVA)
-              .withReferenceTracking(referenceTracking)
+              .withRefTracking(referenceTracking)
               .withNumberCompressed(compressNumber)
               .withCodegen(enableCodegen2)
-              .withMetaContextShareEnabled(true)
+              .withMetaContextShare(true)
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
-              .withClassRegistrationRequired(false)
+              .requireClassRegistration(false)
               .withClassLoader(fooClass.getClassLoader())
               .build();
       MetaContext context1 = new MetaContext();
@@ -195,12 +198,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     String pkg = BeanA.class.getPackage().getName();
     String code =
@@ -215,16 +218,20 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
             + "  private Iterable<BeanB> beanBIterable;\n"
             + "  private List<BeanB> beanBList;\n"
             + "}";
-    Class<?> cls1 = loadClass(BeanA.class, code);
+    Class<?> cls1 =
+        loadClass(
+            BeanA.class,
+            code,
+            MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_1");
     Fury fury1 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen2)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .withClassLoader(cls1.getClassLoader())
             .build();
     MetaContext context1 = new MetaContext();
@@ -239,18 +246,22 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
             + "  private List<Double> doubleList;\n"
             + "  private Iterable<BeanB> beanBIterable;\n"
             + "}";
-    Class<?> cls2 = loadClass(BeanA.class, code);
+    Class<?> cls2 =
+        loadClass(
+            BeanA.class,
+            code,
+            MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_2");
     Object o2 = cls2.newInstance();
     ReflectionUtils.unsafeCopy(beanA, o2);
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen3)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .withClassLoader(cls2.getClassLoader())
             .build();
     MetaContext context2 = new MetaContext();
@@ -289,12 +300,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     MetaContext context = new MetaContext();
     BeanA beanA = BeanA.createBeanA(2);
@@ -305,12 +316,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Fury newFury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen2)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .withClassLoader(cls.getClassLoader())
             .build();
     MetaContext context1 = new MetaContext();
@@ -347,12 +358,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     CollectionFields collectionFields = UnmodifiableSerializersTest.createCollectionFields();
     {
@@ -369,12 +380,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen2)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .withClassLoader(cls2.getClassLoader())
             .build();
     MetaContext context2 = new MetaContext();
@@ -424,12 +435,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     MetaContext context = new MetaContext();
     MapFields mapFields = UnmodifiableSerializersTest.createMapFields();
@@ -445,12 +456,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen2)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
     MetaContext context2 = new MetaContext();
     fury2.getSerializationContext().setMetaContext(context2);
@@ -517,12 +528,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen1)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .withClassLoader(cls1.getClassLoader())
             .build();
     MetaContext context = new MetaContext();
@@ -557,12 +568,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Fury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withNumberCompressed(compressNumber)
             .withCodegen(enableCodegen2)
-            .withMetaContextShareEnabled(true)
+            .withMetaContextShare(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .withClassLoader(cls2.getClassLoader())
             .build();
     MetaContext context2 = new MetaContext();

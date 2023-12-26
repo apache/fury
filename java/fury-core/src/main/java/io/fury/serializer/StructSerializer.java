@@ -1,27 +1,27 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.exception.ClassNotCompatibleException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.type.Descriptor;
@@ -32,6 +32,7 @@ import io.fury.type.TypeUtils;
 import io.fury.util.FieldAccessor;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.Utils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -96,16 +97,16 @@ public class StructSerializer<T> extends Serializer<T> {
 
   @Override
   public void write(MemoryBuffer buffer, T value) {
-    crossLanguageWrite(buffer, value);
+    xwrite(buffer, value);
   }
 
   @Override
   public T read(MemoryBuffer buffer) {
-    return crossLanguageRead(buffer);
+    return xread(buffer);
   }
 
   @Override
-  public short getCrossLanguageTypeId() {
+  public short getXtypeId() {
     return Fury.FURY_TYPE_TAG_ID;
   }
 
@@ -115,7 +116,7 @@ public class StructSerializer<T> extends Serializer<T> {
   }
 
   @Override
-  public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+  public void xwrite(MemoryBuffer buffer, T value) {
     // TODO(chaokunyang) support fields back and forward compatible.
     //  Maybe need to serialize fields name too.
     int typeHash = this.typeHash;
@@ -135,9 +136,9 @@ public class StructSerializer<T> extends Serializer<T> {
         generics.pushGenericType(fieldGeneric);
       }
       if (serializer != null) {
-        fury.crossLanguageWriteReferencable(buffer, fieldAccessor.get(value), serializer);
+        fury.xwriteRef(buffer, fieldAccessor.get(value), serializer);
       } else {
-        fury.crossLanguageWriteReferencable(buffer, fieldAccessor.get(value));
+        fury.xwriteRef(buffer, fieldAccessor.get(value));
       }
       if (hasGenerics) {
         generics.popGenericType();
@@ -162,7 +163,7 @@ public class StructSerializer<T> extends Serializer<T> {
   }
 
   @Override
-  public T crossLanguageRead(MemoryBuffer buffer) {
+  public T xread(MemoryBuffer buffer) {
     int typeHash = this.typeHash;
     if (typeHash == 0) {
       typeHash = computeStructHash();
@@ -176,7 +177,7 @@ public class StructSerializer<T> extends Serializer<T> {
               newHash, typeHash, fury.getClassResolver().getCurrentReadClass()));
     }
     T obj = newBean();
-    fury.getReferenceResolver().reference(obj);
+    fury.getRefResolver().reference(obj);
     Generics generics = fury.getGenerics();
     GenericType[] fieldGenerics = getGenericTypes(generics);
     for (int i = 0; i < fieldAccessors.length; i++) {
@@ -187,8 +188,7 @@ public class StructSerializer<T> extends Serializer<T> {
       if (hasGenerics) {
         generics.pushGenericType(fieldGeneric);
       }
-      Object fieldValue =
-          fury.crossLanguageReadReferencableByNullableSerializer(buffer, serializer);
+      Object fieldValue = fury.xreadRefByNullableSerializer(buffer, serializer);
       fieldAccessor.set(obj, fieldValue);
       if (hasGenerics) {
         generics.pushGenericType(fieldGeneric);
@@ -228,7 +228,11 @@ public class StructSerializer<T> extends Serializer<T> {
     } else {
       try {
         Serializer<?> serializer = fury.getClassResolver().getSerializer(fieldGeneric.getCls());
-        id = Math.abs(serializer.getCrossLanguageTypeId());
+        short xtypeId = serializer.getXtypeId();
+        if (xtypeId == Fury.NOT_SUPPORT_CROSS_LANGUAGE) {
+          return hash;
+        }
+        id = Math.abs(xtypeId);
         if (id == Type.FURY_TYPE_TAG.getId()) {
           id = TypeUtils.computeStringHash(serializer.getCrossLanguageTypeTag());
         }

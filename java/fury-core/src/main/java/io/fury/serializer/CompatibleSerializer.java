@@ -1,83 +1,95 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.FieldResolver;
-import io.fury.resolver.ReferenceResolver;
+import io.fury.resolver.RefResolver;
+import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.collection.MapSerializer;
+import io.fury.util.FieldAccessor;
 import io.fury.util.Platform;
-import io.fury.util.UnsafeFieldAccessor;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import io.fury.util.Preconditions;
+import io.fury.util.ReflectionUtils;
+import io.fury.util.record.RecordInfo;
+import io.fury.util.record.RecordUtils;
+import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * This Serializer provides both forward and backward compatibility: fields can be added or removed
  * without invalidating previously serialized bytes.
  *
- * @see FieldResolver
  * @author chaokunyang
+ * @see FieldResolver
  */
 // TODO(chaokunyang) support generics optimization for {@code SomeClass<T>}
 // TODO(chaokunyang) support generics optimization for nested collection/map fields.
 @SuppressWarnings({"unchecked", "rawtypes"})
 public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private static final int INDEX_FOR_SKIP_FILL_VALUES = -1;
-  private final ReferenceResolver referenceResolver;
+  private final RefResolver refResolver;
   private final ClassResolver classResolver;
   private final FieldResolver fieldResolver;
-  private final Constructor<T> constructor;
-  private final boolean compressNumber;
+  private final boolean isRecord;
+  private final MethodHandle constructor;
+  private final RecordInfo recordInfo;
 
   public CompatibleSerializer(Fury fury, Class<T> cls) {
     super(fury, cls);
-    this.referenceResolver = fury.getReferenceResolver();
+    this.refResolver = fury.getRefResolver();
     this.classResolver = fury.getClassResolver();
     // Use `setSerializerIfAbsent` to avoid overwriting existing serializer for class when used
     // as data serializer.
     classResolver.setSerializerIfAbsent(cls, this);
-    Constructor<T> constructor;
-    try {
-      constructor = cls.getConstructor();
-      if (!constructor.isAccessible()) {
-        constructor.setAccessible(true);
-      }
-    } catch (Exception e) {
-      constructor = null;
-    }
-    this.constructor = constructor;
     fieldResolver = classResolver.getFieldResolver(cls);
-    compressNumber = fury.compressNumber();
+    isRecord = RecordUtils.isRecord(type);
+    if (isRecord) {
+      constructor = RecordUtils.getRecordConstructor(type).f1;
+      List<String> fieldNames =
+          fieldResolver.getAllFieldsList().stream()
+              .map(FieldResolver.FieldInfo::getName)
+              .collect(Collectors.toList());
+      recordInfo = new RecordInfo(cls, fieldNames);
+    } else {
+      this.constructor = ReflectionUtils.getCtrHandle(type, false);
+      recordInfo = null;
+    }
   }
 
   public CompatibleSerializer(Fury fury, Class<T> cls, FieldResolver fieldResolver) {
     super(fury, cls);
-    this.referenceResolver = fury.getReferenceResolver();
+    this.refResolver = fury.getRefResolver();
     this.classResolver = fury.getClassResolver();
+    isRecord = RecordUtils.isRecord(type);
+    Preconditions.checkArgument(!isRecord, cls);
+    recordInfo = null;
     this.constructor = null;
     this.fieldResolver = fieldResolver;
-    compressNumber = fury.compressNumber();
   }
 
   @Override
@@ -120,12 +132,12 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getSeparateTypesHashFields()) {
       buffer.writeLong(fieldInfo.getEncodedFieldInfo());
       Object value = vals[index++];
-      if (!fury.getReferenceResolver().writeReferenceOrNull(buffer, value)) {
+      if (!fury.getRefResolver().writeRefOrNull(buffer, value)) {
         byte fieldType = fieldInfo.getFieldType();
         buffer.writeByte(fieldType);
         Preconditions.checkArgument(fieldType == FieldResolver.FieldTypes.OBJECT);
         ClassInfo classInfo = fieldInfo.getClassInfo(value.getClass());
-        fury.writeNonReferenceToJava(buffer, value, classInfo);
+        fury.writeNonRef(buffer, value, classInfo);
       }
     }
     buffer.writeLong(fieldResolver.getEndTag());
@@ -133,18 +145,19 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
 
   private void readAndWriteFieldValue(
       MemoryBuffer buffer, FieldResolver.FieldInfo fieldInfo, Object targetObject) {
-    UnsafeFieldAccessor fieldAccessor = fieldInfo.getUnsafeFieldAccessor();
+    FieldAccessor fieldAccessor = fieldInfo.getFieldAccessor();
     short classId = fieldInfo.getEmbeddedClassId();
     if (ObjectSerializer.writePrimitiveFieldValueFailed(
         fury, buffer, targetObject, fieldAccessor, classId)) {
-      Object fieldValue = fieldAccessor.getObject(targetObject);
+      Object fieldValue;
+      fieldValue = fieldAccessor.getObject(targetObject);
       if (ObjectSerializer.writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId)) {
         if (classId == ClassResolver.NO_CLASS_ID) { // SEPARATE_TYPES_HASH
           writeSeparateFieldValue(fieldInfo, buffer, fieldValue);
         } else {
           ClassInfo classInfo = fieldInfo.getClassInfo(classId);
           Serializer<Object> serializer = classInfo.getSerializer();
-          fury.writeReferencableToJava(buffer, fieldValue, serializer);
+          fury.writeRef(buffer, fieldValue, serializer);
         }
       }
     }
@@ -168,7 +181,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         buffer.writeShort((Short) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
-        if (compressNumber) {
+        if (fury.compressInt()) {
           buffer.writeVarInt((Integer) fieldValue);
         } else {
           buffer.writeInt((Integer) fieldValue);
@@ -178,11 +191,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         buffer.writeFloat((Float) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        if (compressNumber) {
-          buffer.writeVarLong((Long) fieldValue);
-        } else {
-          buffer.writeLong((Long) fieldValue);
-        }
+        fury.writeLong(buffer, (Long) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
         buffer.writeDouble((Double) fieldValue);
@@ -197,19 +206,19 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         {
           ClassInfo classInfo = fieldInfo.getClassInfo(classId);
           Serializer<Object> serializer = classInfo.getSerializer();
-          fury.writeReferencableToJava(buffer, fieldValue, serializer);
+          fury.writeRef(buffer, fieldValue, serializer);
         }
     }
   }
 
   private void writeSeparateFieldValue(
       FieldResolver.FieldInfo fieldInfo, MemoryBuffer buffer, Object fieldValue) {
-    if (!referenceResolver.writeReferenceOrNull(buffer, fieldValue)) {
+    if (!refResolver.writeRefOrNull(buffer, fieldValue)) {
       byte fieldType = fieldInfo.getFieldType();
       buffer.writeByte(fieldType);
       if (fieldType == FieldResolver.FieldTypes.OBJECT) {
         ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
-        fury.writeNonReferenceToJava(buffer, fieldValue, classInfo);
+        fury.writeNonRef(buffer, fieldValue, classInfo);
       } else {
         if (fieldType == FieldResolver.FieldTypes.COLLECTION_ELEMENT_FINAL) {
           writeCollectionField(
@@ -233,8 +242,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     // following write is consistent with `BaseSeqCodecBuilder.serializeForCollection`
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
     classResolver.writeClass(buffer, classInfo);
-    CollectionSerializers.CollectionSerializer collectionSerializer =
-        (CollectionSerializers.CollectionSerializer) classInfo.getSerializer();
+    CollectionSerializer collectionSerializer = (CollectionSerializer) classInfo.getSerializer();
     collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
     collectionSerializer.write(buffer, fieldValue);
   }
@@ -248,8 +256,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     // following write is consistent with `BaseSeqCodecBuilder.serializeForMap`
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
     classResolver.writeClass(buffer, classInfo);
-    MapSerializers.MapSerializer mapSerializer =
-        (MapSerializers.MapSerializer) classInfo.getSerializer();
+    MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
     mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
     mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
     mapSerializer.write(buffer, fieldValue);
@@ -262,8 +269,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     // following write is consistent with `BaseSeqCodecBuilder.serializeForMap`
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
     classResolver.writeClass(buffer, classInfo);
-    MapSerializers.MapSerializer mapSerializer =
-        (MapSerializers.MapSerializer) classInfo.getSerializer();
+    MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
     mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
     mapSerializer.write(buffer, fieldValue);
   }
@@ -275,8 +281,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     // following write is consistent with `BaseSeqCodecBuilder.serializeForMap`
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
     classResolver.writeClass(buffer, classInfo);
-    MapSerializers.MapSerializer mapSerializer =
-        (MapSerializers.MapSerializer) classInfo.getSerializer();
+    MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
     mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
     mapSerializer.write(buffer, fieldValue);
   }
@@ -284,8 +289,21 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   @SuppressWarnings("unchecked")
   @Override
   public T read(MemoryBuffer buffer) {
+    if (isRecord) {
+      Object[] fieldValues = new Object[fieldResolver.getNumFields()];
+      readFields(buffer, fieldValues);
+      RecordUtils.remapping(recordInfo, fieldValues);
+      assert constructor != null;
+      try {
+        T t = (T) constructor.invokeWithArguments(recordInfo.getRecordComponents());
+        Arrays.fill(recordInfo.getRecordComponents(), null);
+        return t;
+      } catch (Throwable e) {
+        Platform.throwException(e);
+      }
+    }
     T obj = (T) newBean();
-    referenceResolver.reference(obj);
+    refResolver.reference(obj);
     return readAndSetFields(buffer, obj);
   }
 
@@ -529,7 +547,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
 
   private void readAndSetFieldValue(
       FieldResolver.FieldInfo fieldInfo, MemoryBuffer buffer, Object targetObject) {
-    UnsafeFieldAccessor fieldAccessor = fieldInfo.getUnsafeFieldAccessor();
+    FieldAccessor fieldAccessor = fieldInfo.getFieldAccessor();
     short classId = fieldInfo.getEmbeddedClassId();
     if (ObjectSerializer.readPrimitiveFieldValueFailed(
             fury, buffer, targetObject, fieldAccessor, classId)
@@ -542,7 +560,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       } else {
         ClassInfo classInfo = fieldInfo.getClassInfo(classId);
         Serializer<Object> serializer = classInfo.getSerializer();
-        fieldAccessor.putObject(targetObject, fury.readReferencableFromJava(buffer, serializer));
+        fieldAccessor.putObject(targetObject, fury.readRef(buffer, serializer));
       }
     }
   }
@@ -560,7 +578,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
         return buffer.readShort();
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
-        if (compressNumber) {
+        if (fury.compressInt()) {
           return buffer.readVarInt();
         } else {
           return buffer.readInt();
@@ -568,11 +586,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
         return buffer.readFloat();
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        if (compressNumber) {
-          return buffer.readVarLong();
-        } else {
-          return buffer.readLong();
-        }
+        return fury.readLong(buffer);
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
         return buffer.readDouble();
       case ClassResolver.STRING_CLASS_ID:
@@ -583,7 +597,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         {
           ClassInfo classInfo = fieldInfo.getClassInfo(classId);
           Serializer<Object> serializer = classInfo.getSerializer();
-          return fury.readReferencableFromJava(buffer, serializer);
+          return fury.readRef(buffer, serializer);
         }
     }
   }
@@ -591,8 +605,8 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private Object newBean() {
     if (constructor != null) {
       try {
-        return constructor.newInstance();
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        return constructor.invoke();
+      } catch (Throwable e) {
         Platform.throwException(e);
       }
     }

@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.benchmark.state;
@@ -24,7 +25,6 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONReader;
 import com.alibaba.fastjson2.JSONWriter;
 import com.alibaba.fastjson2.reader.ObjectReaderProvider;
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.benchmark.data.CustomJDKSerialization;
 import io.fury.benchmark.data.MediaContent;
@@ -32,6 +32,7 @@ import io.fury.benchmark.data.Sample;
 import io.fury.benchmark.data.Struct;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -169,7 +170,7 @@ public class JsonbState {
 
   public static void testLambda() {
     Function<String, String> f = (Function<String, String> & Serializable) String::toLowerCase;
-    Fury fury = Fury.builder().disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     fury.deserialize(fury.serialize(f));
     byte[] data = JSONB.toBytes(f, getJsonbWriterConfig(true));
     JSONB.parseObject(data, Object.class, getJsonbReaderConfig(true));
@@ -190,7 +191,7 @@ public class JsonbState {
                 Thread.currentThread().getContextClassLoader(),
                 new Class[] {Function.class},
                 new TestInvocationHandler());
-    Fury fury = Fury.builder().disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     fury.deserialize(fury.serialize(function));
     byte[] data1 = JSONB.toBytes(function, getJsonbWriterConfig(true));
     System.out.println(JSONB.parseObject(data1, Object.class, getJsonbReaderConfig(true)));
@@ -221,7 +222,7 @@ public class JsonbState {
     C c = new C();
     c.f1 = new A();
     c.f2 = new B();
-    Fury fury = Fury.builder().disableSecureMode().build();
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
     System.out.println(fury.serialize(c).length);
     System.out.println(fury.serialize(c).length);
     byte[] bytes = JSONB.toBytes(c, getJsonbWriterConfig(true));

@@ -1,32 +1,38 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.builder;
+
+import static io.fury.collection.Collections.ofArrayList;
+import static io.fury.collection.Collections.ofHashMap;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CompileUnit;
 import io.fury.codegen.JaninoUtils;
+import io.fury.config.Language;
+import io.fury.serializer.collection.CollectionSerializersTest;
+import io.fury.test.bean.AccessBeans;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
 import io.fury.test.bean.Foo;
@@ -39,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.Data;
-import org.codehaus.janino.ByteArrayClassLoader;
+import org.codehaus.commons.compiler.util.reflect.ByteArrayClassLoader;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -51,15 +57,16 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withNumberCompressed(compressNumber)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     new ObjectCodecBuilder(Foo.class, fury).genCode();
     // System.out.println(code);
     new ObjectCodecBuilder(BeanA.class, fury).genCode();
     new ObjectCodecBuilder(BeanB.class, fury).genCode();
-    new ObjectCodecBuilder(Struct.createStructClass("", 1), fury).genCode();
+    new ObjectCodecBuilder(Struct.createStructClass("ObjectCodecBuilderTestStruct", 1), fury)
+        .genCode();
   }
 
   @Test
@@ -75,9 +82,9 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withClassLoader(clz.getClassLoader())
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Object obj = clz.newInstance();
     Field f1 = clz.getDeclaredField("f1");
@@ -110,11 +117,11 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
+            .withRefTracking(referenceTracking)
             .withClassLoader(structClass.getClassLoader())
-            .ignoreBasicTypesReference(basicTypesRefIgnored)
+            .ignoreBasicTypesRef(basicTypesRefIgnored)
             .withNumberCompressed(compressNumber)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build();
     Object struct = Struct.createPOJO(structClass);
     Assert.assertEquals(fury.deserialize(fury.serialize(struct)), struct);
@@ -129,7 +136,7 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     byte[] bytecode =
         JaninoUtils.toBytecode(clz.getClassLoader(), compileUnit).values().iterator().next();
     JaninoUtils.CodeStats classStats = JaninoUtils.getClassStats(bytecode);
-    System.out.println(classStats);
+    // System.out.println(classStats);
     classStats.methodsSize.entrySet().stream()
         .filter(e -> !e.getKey().equals("<init>"))
         .forEach(
@@ -139,6 +146,16 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
                     String.format(
                         "Method %s for class %s has size %d > 325",
                         e.getKey(), compileUnit.getQualifiedClassName(), e.getValue())));
+  }
+
+  @Test
+  public void testContainer() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+    CollectionSerializersTest.Container container = new CollectionSerializersTest.Container();
+    container.list1 = ofArrayList(new CollectionSerializersTest.NotFinal(1));
+    container.map1 = ofHashMap("k", new CollectionSerializersTest.NotFinal(2));
+    serDeCheck(fury, container);
+    checkMethodSize(CollectionSerializersTest.Container.class, fury);
   }
 
   @Data
@@ -161,5 +178,12 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     nestedContainer.map1 = map1;
     serDeCheck(fury, nestedContainer);
     checkMethodSize(NestedContainer.class, fury);
+  }
+
+  @Test
+  public void testAccessLevel() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    AccessBeans.PublicClass object = AccessBeans.createPublicClassObject();
+    serDeCheckSerializer(fury, object, "Codec");
   }
 }

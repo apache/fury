@@ -1,29 +1,36 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.util;
 
+import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
+import io.fury.annotation.CodegenInvoke;
+import io.fury.annotation.Internal;
 import io.fury.collection.Tuple3;
-import java.io.ObjectStreamClass;
+import io.fury.util.function.Functions;
+import io.fury.util.unsafe._JDKAccess;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -37,7 +44,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,9 +56,13 @@ import java.util.stream.Stream;
  *
  * @author chaokunyang
  */
-@SuppressWarnings("UnstableApiUsage")
+@Internal
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class ReflectionUtils {
   public static boolean isAbstract(Class<?> clazz) {
+    if (clazz.isArray()) {
+      return false;
+    }
     return Modifier.isAbstract(clazz.getModifiers());
   }
 
@@ -61,14 +75,14 @@ public class ReflectionUtils {
     return constructor != null && Modifier.isPublic(constructor.getModifiers());
   }
 
-  public static Constructor<?> getNoArgConstructor(Class<?> clazz) {
+  static <T> Constructor<T> getNoArgConstructor(Class<T> clazz) {
     if (clazz.isInterface()) {
       return null;
     }
     if (Modifier.isAbstract(clazz.getModifiers())) {
       return null;
     }
-    Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+    Constructor[] constructors = clazz.getDeclaredConstructors();
     if (constructors.length == 0) {
       return null;
     } else {
@@ -79,44 +93,62 @@ public class ReflectionUtils {
     }
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public static <T> Constructor<T> getExecutableNoArgConstructor(Class<T> cls) {
-    Constructor constructor = null;
-    try {
-      constructor = getNoArgConstructor(cls);
-      if (constructor != null && !constructor.isAccessible()) {
-        // Some class may fail this for JDK9+
-        constructor.setAccessible(true);
-      }
-    } catch (Exception e) {
-      ObjectStreamClass streamClass = ObjectStreamClass.lookup(cls);
-      if (streamClass != null) { // streamClass will be null if cls is not `Serializable`.
-        constructor = (Constructor) ReflectionUtils.getObjectFieldValue(streamClass, "cons");
-      }
+  private static final ClassValue<MethodHandle> ctrHandleCache =
+      new ClassValue<MethodHandle>() {
+        @Override
+        protected MethodHandle computeValue(Class<?> type) {
+          return createNoArgCtrHandle(type);
+        }
+      };
+
+  private static MethodHandle createNoArgCtrHandle(Class<?> cls) {
+    Constructor<?> ctr = getNoArgConstructor(cls);
+    if (ctr == null) {
+      return null;
     }
-    return constructor;
+    MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(ctr.getDeclaringClass());
+    try {
+      return lookup.findConstructor(ctr.getDeclaringClass(), MethodType.methodType(void.class));
+    } catch (NoSuchMethodException | IllegalAccessException e) {
+      Platform.throwException(e);
+      throw new IllegalStateException("unreachable");
+    }
   }
 
   /**
-   * Returns an accessible no-argument constructor for provided class.
-   *
-   * @throws IllegalArgumentException if not exists or not accessible.
+   * Returns no-arg constructor handle for provided class. Returns null if class doesn't have a
+   * no-arg constructor if `checked` not enabled, throws exception if `check` enabled.
    */
-  public static Constructor<?> newAccessibleNoArgConstructor(Class<?> clz) {
-    try {
-      Constructor<?> constructor = getNoArgConstructor(clz);
-      if (constructor == null) {
-        throw new IllegalArgumentException(
-            String.format("Please an accessible no argument constructor for class %s", clz));
-      }
-      if (!constructor.isAccessible()) {
-        constructor.setAccessible(true);
-      }
-      return constructor;
-    } catch (Exception e) {
-      throw new IllegalArgumentException(
-          String.format("Please an accessible no argument constructor for class %s", clz), e);
+  public static MethodHandle getCtrHandle(Class<?> cls, boolean checked) {
+    MethodHandle methodHandle = ctrHandleCache.get(cls);
+    if (checked && methodHandle == null) {
+      throw new RuntimeException(String.format("Class %s doesn't have a no-arg constructor", cls));
     }
+    return methodHandle;
+  }
+
+  private static final ClassValue<ConcurrentMap<List<Class<?>>, MethodHandle>>
+      ctrHandleParamsCache =
+          new ClassValue<ConcurrentMap<List<Class<?>>, MethodHandle>>() {
+            @Override
+            protected ConcurrentMap<List<Class<?>>, MethodHandle> computeValue(Class<?> type) {
+              return new ConcurrentHashMap<>();
+            }
+          };
+
+  public static MethodHandle getCtrHandle(Class<?> cls, Class<?>... types) {
+    MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(cls);
+    ConcurrentMap<List<Class<?>>, MethodHandle> map = ctrHandleParamsCache.get(cls);
+    return map.computeIfAbsent(
+        Arrays.asList(types),
+        k -> {
+          try {
+            return lookup.findConstructor(cls, MethodType.methodType(void.class, types));
+          } catch (NoSuchMethodException | IllegalAccessException e) {
+            Platform.throwException(e);
+            throw new IllegalStateException("unreachable");
+          }
+        });
   }
 
   /**
@@ -222,6 +254,15 @@ public class ReflectionUtils {
     return methods.get(0).getReturnType();
   }
 
+  public static boolean hasDeclaredField(Class<?> cls, String fieldName) {
+    try {
+      cls.getDeclaredField(fieldName);
+      return true;
+    } catch (NoSuchFieldException e) {
+      return false;
+    }
+  }
+
   public static Field getDeclaredField(Class<?> cls, String fieldName) {
     try {
       return cls.getDeclaredField(fieldName);
@@ -293,7 +334,17 @@ public class ReflectionUtils {
   }
 
   public static long getFieldOffset(Field field) {
-    return field == null ? -1 : Platform.objectFieldOffset(field);
+    if (GraalvmSupport.isGraalBuildtime()) {
+      // See more details at
+      // https://www.graalvm.org/latest/reference-manual/native-image/metadata/Compatibility/#unsafe-memory-access
+      throw new IllegalStateException(
+          "Field offset will change between graalvm build time and runtime, "
+              + "should bye accessed by following graalvm auto rewrite pattern.");
+    }
+    if (field == null) {
+      return -1;
+    }
+    return Platform.objectFieldOffset(field);
   }
 
   public static long getFieldOffset(Class<?> cls, String fieldName) {
@@ -305,6 +356,18 @@ public class ReflectionUtils {
     long offset = getFieldOffset(cls, fieldName);
     Preconditions.checkArgument(offset != -1);
     return offset;
+  }
+
+  public static void setObjectFieldValue(Object obj, String fieldName, Object value) {
+    setObjectFieldValue(obj, getField(obj.getClass(), fieldName), value);
+  }
+
+  public static void setObjectFieldValue(Object obj, Field field, Object value) {
+    Platform.putObject(obj, Platform.objectFieldOffset(field), value);
+  }
+
+  public static <T> T getObjectFieldValue(Object obj, Field field) {
+    return (T) Platform.getObject(obj, Platform.objectFieldOffset(field));
   }
 
   /**
@@ -347,17 +410,35 @@ public class ReflectionUtils {
     return Modifier.isPublic(type.getModifiers());
   }
 
+  public static boolean isPrivate(TypeToken<?> targetType) {
+    return Modifier.isPrivate(getRawType(targetType).getModifiers());
+  }
+
+  public static boolean isPrivate(Class<?> cls) {
+    return Modifier.isPrivate(cls.getModifiers());
+  }
+
   public static boolean isFinal(Class<?> targetType) {
     return Modifier.isFinal(targetType.getModifiers());
   }
 
   public static TypeToken getPublicSuperType(TypeToken typeToken) {
     if (!isPublic(typeToken)) {
-      Class<?> cls = getRawType(typeToken);
-      while (!isPublic(cls)) {
+      Class<?> rawType = Objects.requireNonNull(getRawType(typeToken));
+      Class<?> cls = rawType;
+      while (cls != null && !isPublic(cls)) {
         cls = cls.getSuperclass();
       }
-      return TypeToken.of(cls);
+      if (cls == null) {
+        for (Class<?> typeInterface : rawType.getInterfaces()) {
+          if (isPublic(typeInterface)) {
+            return TypeToken.of(typeInterface);
+          }
+        }
+        return OBJECT_TYPE;
+      } else {
+        return TypeToken.of(cls);
+      }
     } else {
       return typeToken;
     }
@@ -379,6 +460,54 @@ public class ReflectionUtils {
       pkg = cls.getPackage().getName();
     }
     return pkg;
+  }
+
+  /**
+   * Returns the canonical name of the underlying class as defined by <cite>The Java Language
+   * Specification</cite>. Throw {@link IllegalArgumentException} if the underlying class does not
+   * have a canonical name(i.e., if it is a local or anonymous class or an array whose component
+   * type does not have a canonical name).
+   *
+   * @throws IllegalArgumentException if the canonical name of the underlying class doesn't exist.
+   */
+  public static String getCanonicalName(Class<?> cls) {
+    String canonicalName = cls.getCanonicalName();
+    io.fury.util.Preconditions.checkArgument(
+        canonicalName != null, "Class %s doesn't have canonical name", cls);
+    return canonicalName;
+  }
+
+  @CodegenInvoke
+  public static Class<?> loadClass(Class<?> neighbor, String className) {
+    try {
+      if (className.equals(neighbor.getName())) {
+        return neighbor;
+      }
+      ClassLoader classLoader = neighbor.getClassLoader();
+      if (classLoader == null) {
+        // jdk class are loaded by bootstrap class loader, which will return null.
+        classLoader = Thread.currentThread().getContextClassLoader();
+      }
+      return classLoader.loadClass(className);
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static Class<?> loadClass(String className) {
+    try {
+      return Class.forName(className);
+    } catch (ClassNotFoundException e) {
+      try {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (loader != null) {
+          return loader.loadClass(className);
+        }
+      } catch (ClassNotFoundException ex) {
+        throw new RuntimeException(ex);
+      }
+      throw new RuntimeException(e);
+    }
   }
 
   public static <T> T unsafeCopy(T obj) {
@@ -545,5 +674,15 @@ public class ReflectionUtils {
   public static boolean isDynamicGeneratedCLass(Class<?> cls) {
     // TODO(chaokunyang) add cglib check
     return Functions.isLambda(cls) || isJdkProxy(cls);
+  }
+
+  /** Returns true if a class is a scala `object` singleton. */
+  public static boolean isScalaSingletonObject(Class<?> cls) {
+    try {
+      cls.getDeclaredField("MODULE$");
+      return true;
+    } catch (NoSuchFieldException e) {
+      return false;
+    }
   }
 }

@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.pool;
@@ -86,9 +87,9 @@ public class FuryPooledObjectFactory {
       ClassLoaderFuryPooled classLoaderFuryPooled =
           classLoaderFuryPooledCache.getIfPresent(classLoader);
       if (classLoaderFuryPooled == null) {
-        // ifPresent will be cleared when cache expire 30's
-        addCache(classLoader);
-        return getFury();
+        // double check cache
+        ClassLoaderFuryPooled cache = getOrAddCache(classLoader);
+        return cache.getFury();
       }
       return classLoaderFuryPooled.getFury();
     } catch (Exception e) {
@@ -116,7 +117,7 @@ public class FuryPooledObjectFactory {
   /** todo setClassLoader support LoaderBinding.StagingType */
   public void setClassLoader(ClassLoader classLoader, LoaderBinding.StagingType stagingType) {
     classLoaderLocal.set(classLoader);
-    addCache(classLoader);
+    getOrAddCache(classLoader);
   }
 
   public ClassLoader getClassLoader() {
@@ -128,7 +129,8 @@ public class FuryPooledObjectFactory {
     classLoaderLocal.remove();
   }
 
-  private synchronized void addCache(ClassLoader classLoader) {
+  /** Get cache or put new added pooledFury. */
+  private synchronized ClassLoaderFuryPooled getOrAddCache(ClassLoader classLoader) {
     ClassLoaderFuryPooled classLoaderFuryPooled =
         classLoaderFuryPooledCache.getIfPresent(classLoader);
     if (classLoaderFuryPooled == null) {
@@ -136,5 +138,6 @@ public class FuryPooledObjectFactory {
           new ClassLoaderFuryPooled(classLoader, furyFactory, minPoolSize, maxPoolSize);
       classLoaderFuryPooledCache.put(classLoader, classLoaderFuryPooled);
     }
+    return classLoaderFuryPooled;
   }
 }

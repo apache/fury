@@ -1,29 +1,31 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.type;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeParameter;
 import com.google.common.reflect.TypeToken;
 import io.fury.collection.IdentityMap;
 import io.fury.collection.Tuple2;
+import io.fury.util.Preconditions;
+import io.fury.util.ReflectionUtils;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
@@ -56,7 +58,7 @@ import java.util.stream.Collectors;
  *
  * @author chaokunyang
  */
-@SuppressWarnings("UnstableApiUsage")
+@SuppressWarnings({"UnstableApiUsage", "unchecked"})
 public class TypeUtils {
   public static final String JAVA_BOOLEAN = "boolean";
   public static final String JAVA_BYTE = "byte";
@@ -114,6 +116,7 @@ public class TypeUtils {
   public static final TypeToken<?> PRIMITIVE_LONG_ARRAY_TYPE = TypeToken.of(long[].class);
   public static final TypeToken<?> PRIMITIVE_FLOAT_ARRAY_TYPE = TypeToken.of(float[].class);
   public static final TypeToken<?> PRIMITIVE_DOUBLE_ARRAY_TYPE = TypeToken.of(double[].class);
+  public static final TypeToken<?> OBJECT_ARRAY_TYPE = TypeToken.of(Object[].class);
 
   public static final TypeToken<?> CLASS_TYPE = TypeToken.of(Class.class);
   /**
@@ -164,10 +167,6 @@ public class TypeUtils {
     }
   }
 
-  public static boolean isNullable(Class<?> clz) {
-    return !isPrimitive(clz);
-  }
-
   // sorted by size
   private static final List<Class<?>> sortedPrimitiveClasses =
       ImmutableList.of(
@@ -216,6 +215,10 @@ public class TypeUtils {
     backward.put(value, key);
   }
 
+  public static boolean isNullable(Class<?> clz) {
+    return !isPrimitive(clz);
+  }
+
   public static boolean isPrimitive(Class<?> clz) {
     return clz.isPrimitive();
   }
@@ -224,10 +227,22 @@ public class TypeUtils {
     return wrapToPrim.containsKey(clz);
   }
 
+  public static Class<?> wrap(Class<?> clz) {
+    return boxedType(clz);
+  }
+
+  public static Class<?> unwrap(Class<?> clz) {
+    if (clz.isPrimitive()) {
+      return clz;
+    }
+    return wrapToPrim.get(clz, clz);
+  }
+
   public static Class<?> boxedType(Class<?> clz) {
-    Preconditions.checkArgument(clz.isPrimitive());
-    int index = sortedPrimitiveClasses.indexOf(clz);
-    return sortedBoxedClasses.get(index);
+    if (!clz.isPrimitive()) {
+      return clz;
+    }
+    return primToWrap.get(clz);
   }
 
   public static List<Class<?>> getSortedPrimitiveClasses() {
@@ -375,7 +390,7 @@ public class TypeUtils {
   /** Returns s string that represents array type declaration of type. */
   public static String getArrayType(Class<?> type) {
     Tuple2<Class<?>, Integer> info = getArrayComponentInfo(type);
-    StringBuilder typeBuilder = new StringBuilder(info.f0.getCanonicalName());
+    StringBuilder typeBuilder = new StringBuilder(ReflectionUtils.getCanonicalName(info.f0));
     for (int i = 0; i < info.f1; i++) {
       typeBuilder.append("[]");
     }
@@ -384,7 +399,7 @@ public class TypeUtils {
 
   /** Create an array type declaration from elemType and dimensions. */
   public static String getArrayType(Class<?> elemType, int[] dimensions) {
-    StringBuilder typeBuilder = new StringBuilder(elemType.getCanonicalName());
+    StringBuilder typeBuilder = new StringBuilder(ReflectionUtils.getCanonicalName(elemType));
     for (int i = 0; i < dimensions.length; i++) {
       typeBuilder.append('[').append(dimensions[i]).append(']');
     }
@@ -419,7 +434,9 @@ public class TypeUtils {
         }
       }
     }
-    @SuppressWarnings("unchecked")
+    if (typeToken.getType().getTypeName().startsWith("scala.collection")) {
+      return ScalaTypes.getElementType(typeToken);
+    }
     TypeToken<?> supertype =
         ((TypeToken<? extends Iterable<?>>) typeToken).getSupertype(Iterable.class);
     return supertype.resolveType(ITERATOR_RETURN_TYPE).resolveType(NEXT_RETURN_TYPE);
@@ -447,6 +464,9 @@ public class TypeUtils {
               TypeToken.of(actualTypeArguments[0]), TypeToken.of(actualTypeArguments[1]));
         }
       }
+    }
+    if (typeToken.getType().getTypeName().startsWith("scala.collection")) {
+      return ScalaTypes.getMapKeyValueType(typeToken);
     }
     @SuppressWarnings("unchecked")
     TypeToken<?> supertype = ((TypeToken<? extends Map<?, ?>>) typeToken).getSupertype(Map.class);

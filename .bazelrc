@@ -13,14 +13,11 @@ build:macos --force_pic
 build:clang-cl --compiler=clang-cl
 build:msvc --compiler=msvc-cl
 
-# for abi issue
-build --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=0"
-
 # test config
 test --build_tests_only
 test --cache_test_results=no
 test --test_output=all
 
-build:linux --cxxopt="-std=c++11"
-build:macos --cxxopt="-std=c++11"
-build:clang-cl --cxxopt="-std=c++11"
+build:linux --cxxopt="-std=c++17"
+build:macos --cxxopt="-std=c++17"
+build:clang-cl --cxxopt="-std=c++17"

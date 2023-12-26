@@ -1,25 +1,26 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.test.bean;
 
-import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.net.URL;
@@ -33,6 +34,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.tools.JavaCompiler;
@@ -47,6 +50,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public final class Struct implements Serializable {
 
+  /** Return object string repr. */
   public static String toString(Object o) {
     StringBuilder builder = new StringBuilder(o.getClass().getSimpleName() + "(");
     try {
@@ -71,6 +75,7 @@ public final class Struct implements Serializable {
     return builder.toString();
   }
 
+  /** Return whether tow objects equals. */
   public static boolean equalsWith(Object o1, Object o2) {
     if (o1 == o2) {
       return true;
@@ -119,6 +124,7 @@ public final class Struct implements Serializable {
     return true;
   }
 
+  /** Create Object. */
   public static Object create(String classname, int repeat) {
     try {
       return createPOJO(Struct.createStructClass(classname, repeat));
@@ -127,6 +133,7 @@ public final class Struct implements Serializable {
     }
   }
 
+  /** Create Object. */
   public static Object createPOJO(Class<?> clz) {
     Random random = new Random(17);
     try {
@@ -181,90 +188,149 @@ public final class Struct implements Serializable {
     }
   }
 
+  private static final ConcurrentHashMap<Object, Object> cacheLock = new ConcurrentHashMap<>();
+  private static final ConcurrentHashMap<Object, SoftReference<Class<?>>> classCache =
+      new ConcurrentHashMap<>();
+
+  public static Class<?> loadClass(Object key, Supplier<Class<?>> func) {
+    return loadClass(key, true, func);
+  }
+
+  public static Class<?> loadClass(Object key, boolean cache, Supplier<Class<?>> func) {
+    if (!cache) {
+      return func.get();
+    }
+    Object lock = cacheLock.computeIfAbsent(key, k -> new Object());
+    synchronized (lock) {
+      SoftReference<Class<?>> ref = classCache.get(key);
+      if (ref != null) {
+        Class<?> cls = ref.get();
+        if (cls != null) {
+          return cls;
+        }
+      }
+      Class<?> cls = func.get();
+      classCache.put(key, new SoftReference<>(cls));
+      return cls;
+    }
+  }
+
+  /** Create class. */
   public static Class<?> createNumberStructClass(String classname, int repeat) {
-    if (StringUtils.isBlank(classname)) {
-      classname = String.format("Struct%d", System.currentTimeMillis());
-    }
-    StringBuilder classCode =
-        new StringBuilder(
-            String.format(
-                ""
-                    + "import java.util.*;\n"
-                    + "public final class %s implements java.io.Serializable {\n"
-                    + "  public String toString() {\n"
-                    + "   return io.fury.test.bean.Struct.toString(this);\n"
-                    + "  }\n"
-                    + "  public boolean equals(Object o) {\n"
-                    + "   return io.fury.test.bean.Struct.equalsWith(this, o);\n"
-                    + "  }\n",
-                classname));
-
-    String fields =
-        ""
-            + "  public boolean f%s;\n"
-            + "  public byte f%s;\n"
-            + "  public short f%s;\n"
-            + "  public int f%s;\n"
-            + "  public int f%s;\n"
-            + "  public long f%s;\n"
-            + "  public long f%s;\n"
-            + "  public float f%s;\n"
-            + "  public double f%s;\n"
-            + "  public Integer f%s;\n";
-    int numFields = 10;
-    for (int i = 0; i < repeat; i++) {
-      classCode.append(
-          String.format(
-              fields, IntStream.range(i * numFields, i * numFields + numFields).boxed().toArray()));
-    }
-    classCode.append("}");
-    return createStructClass(classname, classCode.toString());
+    return createNumberStructClass(classname, repeat, true);
   }
 
+  public static Class<?> createNumberStructClass(String classname, int repeat, boolean cache) {
+    if (StringUtils.isBlank(classname)) {
+      throw new IllegalArgumentException("Class name is empty");
+    }
+    String key = "createNumberStructClass" + classname + repeat;
+    return loadClass(
+        key,
+        cache,
+        () -> {
+          StringBuilder classCode =
+              new StringBuilder(
+                  String.format(
+                      ""
+                          + "import java.util.*;\n"
+                          + "public final class %s implements java.io.Serializable {\n"
+                          + "  public String toString() {\n"
+                          + "   return io.fury.test.bean.Struct.toString(this);\n"
+                          + "  }\n"
+                          + "  public boolean equals(Object o) {\n"
+                          + "   return io.fury.test.bean.Struct.equalsWith(this, o);\n"
+                          + "  }\n",
+                      classname));
+
+          String fields =
+              ""
+                  + "  public boolean f%s;\n"
+                  + "  public byte f%s;\n"
+                  + "  public short f%s;\n"
+                  + "  public int f%s;\n"
+                  + "  public int f%s;\n"
+                  + "  public long f%s;\n"
+                  + "  public long f%s;\n"
+                  + "  public float f%s;\n"
+                  + "  public double f%s;\n"
+                  + "  public Integer f%s;\n";
+          int numFields = 10;
+          for (int i = 0; i < repeat; i++) {
+            classCode.append(
+                String.format(
+                    fields,
+                    IntStream.range(i * numFields, i * numFields + numFields).boxed().toArray()));
+          }
+          classCode.append("}");
+          return compile(classname, classCode.toString());
+        });
+  }
+
+  /** Create Class. */
   public static Class<?> createStructClass(String classname, int repeat) {
-    if (StringUtils.isBlank(classname)) {
-      classname = String.format("Struct%d", System.currentTimeMillis());
-    }
-    StringBuilder classCode =
-        new StringBuilder(
-            String.format(
-                ""
-                    + "import java.util.*;\n"
-                    + "public final class %s implements java.io.Serializable {\n"
-                    + "  public String toString() {\n"
-                    + "   return io.fury.test.bean.Struct.toString(this);\n"
-                    + "  }\n"
-                    + "  public boolean equals(Object o) {\n"
-                    + "   return io.fury.test.bean.Struct.equalsWith(this, o);\n"
-                    + "  }\n",
-                classname));
-
-    String fields =
-        ""
-            + "  public byte f%s;\n"
-            + "  public int f%s;\n"
-            + "  public long f%s;\n"
-            + "  public Integer f%s;\n"
-            + "  public String f%s;\n"
-            + "  public int[] f%s;\n"
-            + "  public Double[] f%s;\n"
-            + "  public List<Integer> list_int%s;\n"
-            + "  public List<String> list_str%s;\n"
-            + "  public Map<String, String> map_ss%s;\n"
-            + "  public Map<Long, Double> map_ld%s;\n"
-            + "  public Object obj%s;\n";
-    int numFields = 13;
-    for (int i = 0; i < repeat; i++) {
-      classCode.append(
-          String.format(
-              fields, IntStream.range(i * numFields, i * numFields + numFields).boxed().toArray()));
-    }
-    classCode.append("}");
-    return createStructClass(classname, classCode.toString());
+    return createStructClass(classname, repeat, true);
   }
 
-  public static Class<?> createStructClass(String classname, String classCode) {
+  public static Class<?> createStructClass(String classname, int repeat, boolean cache) {
+    if (StringUtils.isBlank(classname)) {
+      throw new IllegalArgumentException("Class name is empty");
+    }
+    String key = "createStructClass" + classname + repeat;
+    return loadClass(
+        key,
+        cache,
+        () -> {
+          StringBuilder classCode =
+              new StringBuilder(
+                  String.format(
+                      ""
+                          + "import java.util.*;\n"
+                          + "public final class %s implements java.io.Serializable {\n"
+                          + "  public String toString() {\n"
+                          + "   return io.fury.test.bean.Struct.toString(this);\n"
+                          + "  }\n"
+                          + "  public boolean equals(Object o) {\n"
+                          + "   return io.fury.test.bean.Struct.equalsWith(this, o);\n"
+                          + "  }\n",
+                      classname));
 
+          String fields =
+              ""
+                  + "  public byte f%s;\n"
+                  + "  public int f%s;\n"
+                  + "  public long f%s;\n"
+                  + "  public Integer f%s;\n"
+                  + "  public String f%s;\n"
+                  + "  public int[] f%s;\n"
+                  + "  public Double[] f%s;\n"
+                  + "  public List<Integer> list_int%s;\n"
+                  + "  public List<String> list_str%s;\n"
+                  + "  public Map<String, String> map_ss%s;\n"
+                  + "  public Map<Long, Double> map_ld%s;\n"
+                  + "  public Object obj%s;\n";
+          int numFields = 13;
+          for (int i = 0; i < repeat; i++) {
+            classCode.append(
+                String.format(
+                    fields,
+                    IntStream.range(i * numFields, i * numFields + numFields).boxed().toArray()));
+          }
+          classCode.append("}");
+          return compile(classname, classCode.toString());
+        });
+  }
+
+  /** Create class. */
+  public static Class<?> createStructClass(String classname, String classCode, Object cache) {
+    if (cache == null) {
+      return compile(classname, classCode);
+    }
+    return loadClass(cache, () -> compile(classname, classCode));
+  }
+
+  /** Create class. */
+  private static Class<?> compile(String classname, String classCode) {
     Path path = Paths.get(classname + ".java");
     try {
       Files.deleteIfExists(path);
@@ -274,8 +340,8 @@ public final class Struct implements Serializable {
       int result =
           compiler.run(
               null,
-              new ByteArrayOutputStream(), // ignore output
-              new ByteArrayOutputStream(), // ignore output
+              System.out, // ignore output
+              System.err, // ignore output
               "-classpath",
               System.getProperty("java.class.path"),
               path.toString());

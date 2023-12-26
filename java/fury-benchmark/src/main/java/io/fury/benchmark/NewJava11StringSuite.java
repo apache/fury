@@ -1,28 +1,29 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.benchmark;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.StringSerializer;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import org.openjdk.jmh.Main;
@@ -47,7 +48,8 @@ public class NewJava11StringSuite {
       ReflectionUtils.getFieldOffset(String.class, "coder");
 
   private static String stubStr = new String(new char[] {Character.MAX_VALUE, Character.MIN_VALUE});
-  private static Fury fury = Fury.builder().withStringCompressed(true).disableSecureMode().build();
+  private static Fury fury =
+      Fury.builder().withStringCompressed(true).requireClassRegistration(false).build();
   private static StringSerializer stringSerializer = new StringSerializer(fury);
   private static MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(512);
 
@@ -70,7 +72,7 @@ public class NewJava11StringSuite {
 
   // @Benchmark
   public Object createJDK8StringByMethodHandle() {
-    return StringSerializer.newJava11StringByZeroCopy(coder, strBytes);
+    return StringSerializer.newBytesStringZeroCopy(coder, strBytes);
   }
 
   // @Benchmark

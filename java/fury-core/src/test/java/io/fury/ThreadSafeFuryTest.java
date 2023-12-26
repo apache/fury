@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury;
@@ -22,12 +23,13 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
+import io.fury.config.Language;
+import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.MetaContext;
 import io.fury.serializer.Serializer;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.Struct;
 import io.fury.util.LoaderBinding.StagingType;
-import java.util.ArrayList;
 import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,9 +50,9 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     ThreadSafeFury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
-            .disableSecureMode()
-            .withAsyncCompilationEnabled(true)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .withAsyncCompilation(true)
             .buildThreadSafeFuryPool(5, 10);
     for (int i = 0; i < 2000; i++) {
       new Thread(
@@ -76,9 +78,9 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     ThreadSafeFury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
-            .disableSecureMode()
-            .withAsyncCompilationEnabled(true)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .withAsyncCompilation(true)
             .buildThreadSafeFury();
     ExecutorService executorService = Executors.newFixedThreadPool(12);
     for (int i = 0; i < 2000; i++) {
@@ -103,12 +105,15 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   @Test
   public void testSerializeWithMetaShare() throws InterruptedException {
     ThreadSafeFury fury1 =
-        Fury.builder().withLanguage(Language.JAVA).disableSecureMode().buildThreadSafeFury();
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .buildThreadSafeFury();
     ThreadSafeFury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withMetaContextShareEnabled(true)
-            .disableSecureMode()
+            .withMetaContextShare(true)
+            .requireClassRegistration(false)
             .buildThreadSafeFury();
     BeanA beanA = BeanA.createBeanA(2);
     ExecutorService executorService = Executors.newFixedThreadPool(12);
@@ -178,7 +183,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
 
   @Test(dataProvider = "stagingConfig")
   public void testClassDuplicateName(StagingType staging) {
-    ThreadSafeFury fury = Fury.builder().withClassRegistrationRequired(false).buildThreadSafeFury();
+    ThreadSafeFury fury = Fury.builder().requireClassRegistration(false).buildThreadSafeFury();
     String className = "DuplicateStruct";
 
     Class<?> structClass1 = Struct.createStructClass(className, 1);
@@ -186,7 +191,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     byte[] bytes1 = fury.serialize(struct1);
     Assert.assertEquals(fury.deserialize(bytes1), struct1);
     Class<? extends Serializer> serializerClass1 =
-        fury.getCurrentFury().getClassResolver().getSerializerClass(structClass1);
+        fury.execute(f -> f.getClassResolver().getSerializerClass(structClass1));
     Assert.assertTrue(serializerClass1.getName().contains("Codec"));
 
     Class<?> structClass2 = Struct.createStructClass(className, 2);
@@ -206,7 +211,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     fury.setClassLoader(structClass2.getClassLoader());
     Assert.assertEquals(fury.deserialize(bytes2), struct2);
     Class<? extends Serializer> serializerClass2 =
-        fury.getCurrentFury().getClassResolver().getSerializerClass(structClass2);
+        fury.execute(f -> f.getClassResolver().getSerializerClass(structClass2));
     Assert.assertTrue(serializerClass2.getName().contains("Codec"));
     Assert.assertNotSame(serializerClass2, serializerClass1);
 
@@ -223,29 +228,23 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   public void testClassGC() throws Exception {
     // Can't inline `generateClassForGC` in current method, generated classes won't be gc.
     WeakHashMap<Class<?>, Boolean> map = generateClassForGC();
-    while (map.size() > 0) {
-      // Force an OoM
-      try {
-        final ArrayList<Object[]> allocations = new ArrayList<>();
-        int size;
-        while ((size =
-                Math.min(Math.abs((int) Runtime.getRuntime().freeMemory()), Integer.MAX_VALUE))
-            > 0) allocations.add(new Object[size]);
-      } catch (OutOfMemoryError e) {
-        System.out.println("Trigger OOM to clear LoaderBinding.furySoftMap soft references.");
-      }
-      System.gc();
-      Thread.sleep(1000);
-      System.out.printf("Wait classes %s gc.\n", map.keySet());
-    }
+    TestUtils.triggerOOMForSoftGC(
+        () -> {
+          if (!map.isEmpty()) {
+            System.out.printf("Wait classes %s gc.\n", map.keySet());
+            return true;
+          } else {
+            return false;
+          }
+        });
   }
 
   private WeakHashMap<Class<?>, Boolean> generateClassForGC() {
-    ThreadSafeFury fury = Fury.builder().withClassRegistrationRequired(false).buildThreadSafeFury();
+    ThreadSafeFury fury = Fury.builder().requireClassRegistration(false).buildThreadSafeFury();
     String className = "DuplicateStruct";
     WeakHashMap<Class<?>, Boolean> map = new WeakHashMap<>();
     {
-      Class<?> structClass1 = Struct.createStructClass(className, 1);
+      Class<?> structClass1 = Struct.createStructClass(className, 1, false);
       Object struct1 = Struct.createPOJO(structClass1);
       byte[] bytes = fury.serialize(struct1);
       Assert.assertEquals(fury.deserialize(bytes), struct1);
@@ -255,7 +254,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
           structClass1.hashCode(), structClass1.getClassLoader().hashCode());
     }
     {
-      Class<?> structClass2 = Struct.createStructClass(className, 2);
+      Class<?> structClass2 = Struct.createStructClass(className, 2, false);
       map.put(structClass2, true);
       System.out.printf(
           "structClass2 %s %s\n ",
@@ -267,5 +266,20 @@ public class ThreadSafeFuryTest extends FuryTestBase {
       fury.clearClassLoader(structClass2.getClassLoader());
     }
     return map;
+  }
+
+  @Test
+  public void testSerializeJavaObject() {
+    for (ThreadSafeFury fury :
+        new ThreadSafeFury[] {
+          Fury.builder().requireClassRegistration(false).buildThreadSafeFury(),
+          Fury.builder().requireClassRegistration(false).buildThreadSafeFuryPool(2, 2)
+        }) {
+      byte[] bytes = fury.serializeJavaObject("abc");
+      Assert.assertEquals(fury.deserializeJavaObject(bytes, String.class), "abc");
+      MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(8);
+      fury.serializeJavaObject(buffer, "abc");
+      Assert.assertEquals(fury.deserializeJavaObject(buffer, String.class), "abc");
+    }
   }
 }

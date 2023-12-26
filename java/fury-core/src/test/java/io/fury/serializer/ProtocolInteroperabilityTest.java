@@ -1,32 +1,37 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
 import static com.google.common.collect.ImmutableList.of;
 import static io.fury.TestUtils.mapOf;
+import static io.fury.collection.Collections.ofArrayList;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.CompatibleMode;
+import io.fury.config.Language;
 import io.fury.resolver.MetaContext;
+import io.fury.serializer.collection.CollectionSerializersTest;
+import io.fury.serializer.collection.MapSerializersTest;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
 import io.fury.test.bean.MapFields;
@@ -64,19 +69,19 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                 new Object[] {
                   Fury.builder()
                       .withLanguage(Language.JAVA)
-                      .withReferenceTracking((Boolean) c[0])
+                      .withRefTracking((Boolean) c[0])
                       .withNumberCompressed((Boolean) c[1])
                       .withCodegen(false)
                       .withCompatibleMode((CompatibleMode) c[2])
-                      .disableSecureMode()
+                      .requireClassRegistration(false)
                       .build(),
                   Fury.builder()
                       .withLanguage(Language.JAVA)
-                      .withReferenceTracking((Boolean) c[0])
+                      .withRefTracking((Boolean) c[0])
                       .withNumberCompressed((Boolean) c[1])
                       .withCodegen(true)
                       .withCompatibleMode((CompatibleMode) c[2])
-                      .disableSecureMode()
+                      .requireClassRegistration(false)
                       .build()
                 })
         .toArray(Object[][]::new);
@@ -92,12 +97,12 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
 
   @Test(dataProvider = "fury")
   public void testGenericCollectionBound(Fury fury, Fury furyJIT) {
-    ArrayList<Integer> list = new ArrayList<>(of(1, 2));
+    ArrayList<Integer> list = ofArrayList(1, 2);
     roundCheck(
         fury,
         furyJIT,
         new GenericBoundTest(
-            new ArrayList<>(of(new ArrayList<>(of(list)))),
+            ofArrayList(ofArrayList(list)),
             of(list),
             new ArrayList<>(of(new ArrayList<>(of(list))))));
   }
@@ -230,17 +235,17 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                 new Object[] {
                   Fury.builder()
                       .withLanguage(Language.JAVA)
-                      .withMetaContextShareEnabled(true)
+                      .withMetaContextShare(true)
                       .withCompatibleMode((CompatibleMode) c[0])
                       .withCodegen(false)
-                      .disableSecureMode()
+                      .requireClassRegistration(false)
                       .build(),
                   Fury.builder()
                       .withLanguage(Language.JAVA)
-                      .withMetaContextShareEnabled(true)
+                      .withMetaContextShare(true)
                       .withCompatibleMode((CompatibleMode) c[0])
                       .withCodegen(true)
-                      .disableSecureMode()
+                      .requireClassRegistration(false)
                       .build()
                 })
         .toArray(Object[][]::new);
@@ -282,8 +287,7 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
     metaShareRoundCheck(
         fury,
         furyJIT,
-        new OuterPojo1(
-            new ArrayList<>(of(1, 2)), new ArrayList<>(of(new InnerPojo(10), new InnerPojo(10)))));
+        new OuterPojo1(ofArrayList(1, 2), ofArrayList(new InnerPojo(10), new InnerPojo(10))));
     metaShareRoundCheck(
         fury,
         furyJIT,

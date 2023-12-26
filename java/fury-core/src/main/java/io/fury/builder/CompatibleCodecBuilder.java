@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.builder;
@@ -23,6 +24,7 @@ import static io.fury.codegen.Expression.Reference.fieldRef;
 import static io.fury.codegen.ExpressionUtils.cast;
 import static io.fury.codegen.ExpressionUtils.eq;
 import static io.fury.codegen.ExpressionUtils.lessThan;
+import static io.fury.type.TypeUtils.OBJECT_ARRAY_TYPE;
 import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
@@ -31,13 +33,13 @@ import static io.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.builder.Generated.GeneratedCompatibleSerializer;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Assign;
+import io.fury.codegen.Expression.AssignArrayElem;
 import io.fury.codegen.Expression.BitAnd;
 import io.fury.codegen.Expression.BitOr;
 import io.fury.codegen.Expression.BitShift;
@@ -49,6 +51,7 @@ import io.fury.codegen.Expression.ListExpression;
 import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.Expression.Return;
+import io.fury.codegen.Expression.StaticInvoke;
 import io.fury.codegen.Expression.While;
 import io.fury.codegen.ExpressionOptimizer;
 import io.fury.codegen.ExpressionUtils;
@@ -63,7 +66,12 @@ import io.fury.resolver.FieldResolver.MapFieldInfo;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
-import io.fury.util.Functions;
+import io.fury.util.Platform;
+import io.fury.util.Preconditions;
+import io.fury.util.function.SerializableSupplier;
+import io.fury.util.record.RecordUtils;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,16 +79,17 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A jit-version of {@link CompatibleSerializer}.
  *
  * @author chaokunyang
  */
-@SuppressWarnings("UnstableApiUsage")
 public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   public static final String FIELD_RESOLVER_NAME = "fieldResolver";
   private final FieldResolver fieldResolver;
+  private Map<String, Integer> recordReversedMapping;
   private final Reference fieldResolverRef;
   private final Literal endTagLiteral;
   private final Map<String, Expression> methodCache;
@@ -94,6 +103,14 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
     // `CompatibleSerializerBase.readAndSetFields`.
     super(beanType, fury, superSerializerClass);
     this.fieldResolver = fieldResolver;
+    if (isRecord) {
+      List<String> fieldNames =
+          fieldResolver.getAllFieldsList().stream()
+              .map(FieldResolver.FieldInfo::getName)
+              .collect(Collectors.toList());
+      recordReversedMapping = RecordUtils.buildFieldToComponentMapping(beanClass);
+    }
+    ctx.reserveName(FIELD_RESOLVER_NAME);
     endTagLiteral = new Literal(fieldResolver.getEndTag(), PRIMITIVE_LONG_TYPE);
     TypeToken<FieldResolver> fieldResolverTypeToken = TypeToken.of(FieldResolver.class);
     fieldResolverRef = fieldRef(FIELD_RESOLVER_NAME, fieldResolverTypeToken);
@@ -102,8 +119,11 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             classResolverRef,
             "getFieldResolver",
             fieldResolverTypeToken,
-            Literal.ofClass(getRawType(beanType)));
+            getClassExpr(getRawType(beanType)));
     ctx.addField(ctx.type(fieldResolverTypeToken), FIELD_RESOLVER_NAME, fieldResolverExpr);
+    if (isRecord) {
+      buildRecordComponentDefaultValues();
+    }
     methodCache = new HashMap<>();
   }
 
@@ -125,6 +145,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   private Descriptor createDescriptor(FieldInfo fieldInfo) {
     TypeToken<?> typeToken;
+    Field field = fieldInfo.getField();
     if (fieldInfo instanceof MapFieldInfo) {
       MapFieldInfo mapFieldInfo = (MapFieldInfo) fieldInfo;
       // Remove nested generics such as `Map<Integer, Map<Integer, Collection<Integer>>>` to keep
@@ -135,14 +156,23 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
           TypeUtils.mapOf(
               mapFieldInfo.getType(), mapFieldInfo.getKeyType(), mapFieldInfo.getValueType());
     } else {
-      typeToken = TypeToken.of(fieldInfo.getField().getGenericType());
+      typeToken = TypeToken.of(field.getGenericType());
     }
-    return new Descriptor(fieldInfo.getField(), typeToken, null, null);
+    Method readerMethod = null;
+    if (isRecord) {
+      try {
+        readerMethod = field.getDeclaringClass().getDeclaredMethod(field.getName());
+      } catch (NoSuchMethodException e) {
+        // impossible
+        Platform.throwException(e);
+      }
+    }
+    return new Descriptor(field, typeToken, readerMethod, null);
   }
 
   private Expression invokeGenerated(
       CodegenContext ctx,
-      Functions.SerializableSupplier<Expression> expressionsGenerator,
+      SerializableSupplier<Expression> expressionsGenerator,
       String methodPrefix,
       long fieldId) {
     return methodCache.computeIfAbsent(
@@ -240,6 +270,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                   new Literal(
                                       fieldInfo.getEncodedFieldInfo(), PRIMITIVE_LONG_TYPE)));
                           Descriptor descriptor = createDescriptor(fieldInfo);
+                          walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
                           byte fieldType = fieldInfo.getFieldType();
                           Expression writeFieldAction =
                               invokeGenerated(
@@ -298,12 +329,12 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                               fieldValue, buffer, descriptor.getTypeToken()));
                                     }
                                     return new If(
-                                        ExpressionUtils.not(
-                                            writeReferenceOrNull(buffer, fieldValue)),
+                                        ExpressionUtils.not(writeRefOrNull(buffer, fieldValue)),
                                         writeFieldValue);
                                   },
                                   "writeField",
                                   fieldInfo.getEncodedFieldInfo());
+                          walkPath.removeLast();
                           groupExpressions.add(writeFieldAction);
                         }
                         return groupExpressions;
@@ -320,12 +351,17 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   private Expression writeEmbedTypeFieldValue(
       Expression bean, Expression buffer, FieldInfo fieldInfo) {
     Descriptor descriptor = createDescriptor(fieldInfo);
+    walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
     Expression fieldValue = getFieldValue(bean, descriptor);
+    walkPath.removeLast();
     return serializeFor(fieldValue, buffer, descriptor.getTypeToken());
   }
 
   @Override
   public Expression buildDecodeExpression() {
+    if (isRecord) {
+      return buildRecordDecodeExpression();
+    }
     Reference buffer = new Reference(BUFFER_NAME, bufferTypeToken, false);
     ListExpression expressionBuilder = new ListExpression();
     Expression bean = newBean();
@@ -353,6 +389,51 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
     }
     expressionBuilder.add(new Return(bean));
     return expressionBuilder;
+  }
+
+  public Expression buildRecordDecodeExpression() {
+    Reference buffer = new Reference(BUFFER_NAME, bufferTypeToken, false);
+    StaticInvoke components =
+        new StaticInvoke(
+            Platform.class, "copyObjectArray", OBJECT_ARRAY_TYPE, recordComponentDefaultValues);
+    ListExpression readAndSetFieldsExpr = new ListExpression();
+    Expression partFieldInfo = new Invoke(buffer, "readInt", "partFieldInfo", PRIMITIVE_LONG_TYPE);
+    readAndSetFieldsExpr.add(partFieldInfo);
+    readEmbedTypes4Fields(buffer, readAndSetFieldsExpr, components, partFieldInfo);
+    BitOr newPartFieldInfo =
+        new BitOr(
+            new BitShift("<<", new Invoke(buffer, "readInt", PRIMITIVE_LONG_TYPE), 32),
+            new BitAnd(partFieldInfo, new Literal(0x00000000ffffffffL, PRIMITIVE_LONG_TYPE)));
+    readAndSetFieldsExpr.add(new Assign(partFieldInfo, newPartFieldInfo));
+    readEmbedTypes9Fields(buffer, readAndSetFieldsExpr, components, partFieldInfo);
+    readEmbedTypesHashFields(buffer, readAndSetFieldsExpr, components, partFieldInfo);
+    readSeparateTypesHashFields(buffer, readAndSetFieldsExpr, components, partFieldInfo);
+    readAndSetFieldsExpr.add(new Return(components));
+    Expression readActions =
+        ExpressionOptimizer.invokeGenerated(
+            ctx,
+            new LinkedHashSet<>(Arrays.asList(buffer, components)),
+            readAndSetFieldsExpr.add(components),
+            "private",
+            "readFields",
+            false);
+    StaticInvoke record =
+        new StaticInvoke(
+            RecordUtils.class,
+            "invokeRecordCtrHandle",
+            OBJECT_TYPE,
+            getRecordCtrHandle(),
+            components);
+    return new ListExpression(buffer, components, readActions, new Return(record));
+  }
+
+  @Override
+  protected Expression setFieldValue(Expression bean, Descriptor d, Expression value) {
+    if (isRecord) {
+      int index = recordReversedMapping.get(d.getName());
+      return new AssignArrayElem(bean, value, Literal.ofInt(index));
+    }
+    return super.setFieldValue(bean, d, value);
   }
 
   private ListExpression readAndSetFields(Reference buffer, Expression bean) {
@@ -391,6 +472,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                           for (FieldInfo fieldInfo : group) {
                             long encodedFieldInfo = fieldInfo.getEncodedFieldInfo();
                             Descriptor descriptor = createDescriptor(fieldInfo);
+                            walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
                             Expression readField =
                                 readEmbedTypes4(bean, buffer, descriptor, partFieldInfo);
                             Expression tryReadField =
@@ -411,6 +493,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                     tryReadField,
                                     false,
                                     PRIMITIVE_VOID_TYPE));
+                            walkPath.removeLast();
                           }
                           groupExpressions.add(new Return(partFieldInfo));
                           return groupExpressions;
@@ -614,6 +697,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
       FieldInfo fieldInfo) {
     long encodedFieldInfo = fieldInfo.getEncodedFieldInfo();
     Descriptor descriptor = createDescriptor(fieldInfo);
+    walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
     Expression readField = readEmbedTypes8Field(bean, buffer, descriptor, partFieldInfo);
     Expression tryReadField =
         new ListExpression(
@@ -621,6 +705,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             new If(
                 eq(partFieldInfo, new Literal(encodedFieldInfo, PRIMITIVE_LONG_TYPE)),
                 readEmbedTypes8Field(bean, buffer, descriptor, partFieldInfo)));
+    walkPath.removeLast();
     return new If(
         eq(partFieldInfo, new Literal(encodedFieldInfo, PRIMITIVE_LONG_TYPE)),
         readField,
@@ -668,6 +753,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                           for (FieldInfo fieldInfo : group) {
                             long encodedFieldInfo = fieldInfo.getEncodedFieldInfo();
                             Descriptor descriptor = createDescriptor(fieldInfo);
+                            walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
                             Expression readField =
                                 readObjectField(fieldInfo, bean, buffer, descriptor, partFieldInfo);
                             Expression tryReadField =
@@ -686,6 +772,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                             new Literal(encodedFieldInfo, PRIMITIVE_LONG_TYPE)),
                                         readObjectField(
                                             fieldInfo, bean, buffer, descriptor, partFieldInfo)));
+                            walkPath.removeLast();
                             groupExpressions.add(
                                 new If(
                                     eq(
@@ -718,7 +805,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             ctx,
             () -> {
               TypeToken<?> typeToken = descriptor.getTypeToken();
-              Expression refId = tryPreserveReferenceId(buffer);
+              Expression refId = tryPreserveRefId(buffer);
               // indicates that the object is first read.
               Expression needDeserialize =
                   ExpressionUtils.egt(
@@ -734,7 +821,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                           inlineInvoke(buffer, "readByte", PRIMITIVE_BYTE_TYPE),
                           expectType));
               if (type == FieldTypes.OBJECT) {
-                deserializedValue.add(readForNotNullNonFinal(buffer, typeToken));
+                deserializedValue.add(readForNotNullNonFinal(buffer, typeToken, null));
               } else {
                 if (type == FieldTypes.COLLECTION_ELEMENT_FINAL) {
                   deserializedValue.add(
@@ -758,7 +845,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                   // deserializeForNotNull won't read field type if it's final
                   deserializedValue.add(skipFinalClassInfo(clz, buffer));
                 }
-                deserializedValue.add(deserializeForNotNull(buffer, typeToken, false));
+                deserializedValue.add(deserializeForNotNull(buffer, typeToken, null));
               }
               Expression setReadObject =
                   new Invoke(refResolverRef, "setReadObject", refId, deserializedValue);

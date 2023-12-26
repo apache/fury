@@ -1,24 +1,25 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.resolver;
 
-import io.fury.Fury;
+import io.fury.config.FuryBuilder;
 import java.util.IdentityHashMap;
 
 /**
@@ -51,7 +52,7 @@ public final class SerializationContext {
    * Set meta context, which can be used to share data across multiple serialization call. Note that
    * {@code metaContext} will be cleared after the serialization is finished. Please set the context
    * before every serialization if metaShare is enabled by {@link
-   * Fury.FuryBuilder#withMetaContextShareEnabled(boolean)}
+   * FuryBuilder#withMetaContextShare(boolean)}
    */
   public void setMetaContext(MetaContext metaContext) {
     this.metaContext = metaContext;

@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import glob
 import io
 import os
@@ -21,7 +38,7 @@ try:
 except FileExistsError:
     pass
 
-
+pyarrow_version = "12.0.0"
 # Check if we're running 64-bit Python
 if not sys.maxsize > 2**32:
     raise RuntimeError("Not supported on 32-bit")
@@ -71,7 +88,7 @@ else:
         if platform.system() == "Darwin":
             ext.extra_compile_args.append("-stdlib=libc++")
         if os.name == "posix":
-            ext.extra_compile_args.append("-std=c++11")
+            ext.extra_compile_args.append("-std=c++17")
         print("ext.extra_compile_args", ext.extra_compile_args)
 
         # Avoid weird linker errors or runtime crashes on linux
@@ -91,6 +108,16 @@ def parse_version():
         return match.group(1)
 
 
+_pkg_files = [
+    "**/*.pxd",
+    "**/*.pyx",
+    "**/*.pxd",
+    "*.so",
+    "*.dylib",
+    "*.dll",
+]
+
+
 setup(
     name="pyfury",
     version=parse_version(),
@@ -99,39 +126,38 @@ setup(
     maintainer="https://github.com/chaokunyang",
     maintainer_email="shawn.ck.yang@gmail.com",
     package_data={
-        "pyfury": [
-            "*.pxd",
-            "*.pyx",
-            "includes/*.pxd",
-            "*.so",
-            "*.dylib",
-            "*.dll",
-            "lib/**/*.so",
-        ]
+        "pyfury": _pkg_files,
+        "pyfury.format": _pkg_files,
+        "pyfury.lib.mmh3": _pkg_files,
     },
+    include_package_data=True,
     packages=find_packages(),
     description="Fury is a blazing fast multi-language serialization "
     + "framework powered by jit, vectorization and zero-copy",
     long_description=io.open(
         os.path.join(setup_dir, os.path.pardir, "README.md"), "r", encoding="utf-8"
     ).read(),
+    long_description_content_type="text/markdown",
     keywords="fury serialization multi-language arrow row-format jit "
     + "vectorization zero-copy",
+    classfiers=[
+        "Development Status :: 4 - Beta",
+    ],
     zip_safe=False,
     install_requires=[
         'dataclasses; python_version<"3.7"',
         'pickle5; python_version<"3.8"',
+        "cloudpickle",
     ],
     extras_require={
-        "format": ["pyarrow == 4.0.0"],
-        "all": ["pyarrow == 4.0.0"],
+        "format": [f"pyarrow == {pyarrow_version}"],
+        "all": [f"pyarrow == {pyarrow_version}"],
     },
     setup_requires=[
-        "cython >= 0.29.14",
+        "Cython",
         "wheel",
-        "pyarrow == 4.0.0",
+        f"pyarrow == {pyarrow_version}",
         "numpy" 'dataclasses; python_version<"3.7"',
-        'pickle5; python_version<"3.8"',
     ],
     distclass=BinaryDistribution,
     ext_modules=ext_modules,

@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
@@ -23,11 +24,10 @@ import io.fury.io.FuryObjectInput;
 import io.fury.io.FuryObjectOutput;
 import io.fury.memory.MemoryBuffer;
 import io.fury.util.Platform;
-import io.fury.util.Utils;
+import io.fury.util.ReflectionUtils;
 import java.io.Externalizable;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.invoke.MethodHandle;
 
 /**
  * Serializer for class implements {@link Externalizable}.
@@ -35,17 +35,13 @@ import java.lang.reflect.InvocationTargetException;
  * @author chaokunyang
  */
 public class ExternalizableSerializer<T extends Externalizable> extends Serializer<T> {
-  private Constructor<T> constructor;
+  private final MethodHandle constructor;
   private final FuryObjectInput objectInput;
   private final FuryObjectOutput objectOutput;
 
   public ExternalizableSerializer(Fury fury, Class<T> cls) {
     super(fury, cls);
-    try {
-      constructor = cls.getConstructor();
-    } catch (NoSuchMethodException e) {
-      Utils.ignore(e);
-    }
+    constructor = ReflectionUtils.getCtrHandle(cls, false);
 
     objectInput = new FuryObjectInput(fury, null);
     objectOutput = new FuryObjectOutput(fury, null);
@@ -62,17 +58,18 @@ public class ExternalizableSerializer<T extends Externalizable> extends Serializ
   }
 
   @Override
-  public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+  public void xwrite(MemoryBuffer buffer, T value) {
     throw new UnsupportedOperationException("Externalizable can only be used in java");
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public T read(MemoryBuffer buffer) {
     T t;
     if (constructor != null) {
       try {
-        t = constructor.newInstance();
-      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        t = (T) constructor.invoke();
+      } catch (Throwable e) {
         throw new RuntimeException(e);
       }
     } else {

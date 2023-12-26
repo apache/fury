@@ -1,50 +1,54 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury;
 
-import com.google.common.base.Preconditions;
 import io.fury.builder.JITContext;
+import io.fury.config.CompatibleMode;
+import io.fury.config.Config;
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
+import io.fury.config.LongEncoding;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
-import io.fury.pool.ThreadPoolFury;
 import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.EnumStringResolver;
-import io.fury.resolver.MapReferenceResolver;
-import io.fury.resolver.NoReferenceResolver;
-import io.fury.resolver.ReferenceResolver;
+import io.fury.resolver.MapRefResolver;
+import io.fury.resolver.NoRefResolver;
+import io.fury.resolver.RefResolver;
 import io.fury.resolver.SerializationContext;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferCallback;
 import io.fury.serializer.BufferObject;
-import io.fury.serializer.CompatibleMode;
-import io.fury.serializer.JavaSerializer;
-import io.fury.serializer.ObjectStreamSerializer;
 import io.fury.serializer.OpaqueObjects;
+import io.fury.serializer.PrimitiveSerializers.LongSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.StringSerializer;
-import io.fury.serializer.TimeSerializers;
 import io.fury.type.Generics;
 import io.fury.type.Type;
+import io.fury.util.ExceptionUtils;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Preconditions;
+import io.fury.util.StringUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -54,7 +58,6 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -92,18 +95,19 @@ public final class Fury {
   private static final boolean isLittleEndian = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
 
   private final Config config;
-  private final boolean referenceTracking;
-  private final ReferenceResolver referenceResolver;
+  private final boolean refTracking;
+  private final RefResolver refResolver;
   private final ClassResolver classResolver;
   private final EnumStringResolver enumStringResolver;
   private final SerializationContext serializationContext;
   private final ClassLoader classLoader;
   private final JITContext jitContext;
-  private final MemoryBuffer buffer;
+  private MemoryBuffer buffer;
   private final List<Object> nativeObjects;
   private final StringSerializer stringSerializer;
   private final Language language;
-  private final boolean compressNumber;
+  private final boolean compressInt;
+  private final LongEncoding longEncoding;
   private final Generics generics;
   private Language peerLanguage;
   private BufferCallback bufferCallback;
@@ -111,28 +115,28 @@ public final class Fury {
   private boolean peerOutOfBandEnabled;
   private int depth;
 
-  private Fury(FuryBuilder builder, ClassLoader classLoader) {
+  public Fury(FuryBuilder builder, ClassLoader classLoader) {
     // Avoid set classLoader in `FuryBuilder`, which won't be clear when
     // `io.fury.ThreadSafeFury.clearClassLoader` is called.
     config = new Config(builder);
-    this.language = builder.language;
-    this.referenceTracking = builder.referenceTracking;
-    compressNumber = builder.compressNumber;
-    if (referenceTracking) {
-      this.referenceResolver = new MapReferenceResolver();
+    this.language = config.getLanguage();
+    this.refTracking = config.trackingRef();
+    compressInt = config.compressInt();
+    longEncoding = config.longEncoding();
+    if (refTracking) {
+      this.refResolver = new MapRefResolver();
     } else {
-      this.referenceResolver = new NoReferenceResolver();
+      this.refResolver = new NoRefResolver();
     }
+    jitContext = new JITContext(this);
     enumStringResolver = new EnumStringResolver();
     classResolver = new ClassResolver(this);
     classResolver.initialize();
     serializationContext = new SerializationContext();
     this.classLoader = classLoader;
-    buffer = MemoryUtils.buffer(32);
     nativeObjects = new ArrayList<>();
     generics = new Generics(this);
     stringSerializer = new StringSerializer(this);
-    jitContext = new JITContext(this);
     LOG.info("Created new fury {}", this);
   }
 
@@ -141,9 +145,32 @@ public final class Fury {
     classResolver.register(cls);
   }
 
+  /**
+   * Register class.
+   *
+   * @param cls class to register
+   * @param createSerializer whether to create serializer, if true and codegen enabled, this will
+   *     generate the serializer code too.
+   */
+  public void register(Class<?> cls, boolean createSerializer) {
+    classResolver.register(cls, createSerializer);
+  }
+
   /** register class with given id. */
   public void register(Class<?> cls, Short id) {
     classResolver.register(cls, id);
+  }
+
+  /**
+   * Register class with specified id.
+   *
+   * @param cls class to register
+   * @param id id for provided class.
+   * @param createSerializer whether to create serializer, if true and codegen enabled, this will
+   *     generate the serializer code too.
+   */
+  public void register(Class<?> cls, Short id, boolean createSerializer) {
+    classResolver.register(cls, id, createSerializer);
   }
 
   /** register class with given type tag which will be used for cross-language serialization. */
@@ -179,16 +206,18 @@ public final class Fury {
 
   /** Return serialized <code>obj</code> as a byte array. */
   public byte[] serialize(Object obj) {
-    buffer.writerIndex(0);
-    serialize(buffer, obj, null);
-    return buffer.getBytes(0, buffer.writerIndex());
+    MemoryBuffer buf = getBuffer();
+    buf.writerIndex(0);
+    serialize(buf, obj, null);
+    return buf.getBytes(0, buf.writerIndex());
   }
 
   /** Return serialized <code>obj</code> as a byte array. */
   public byte[] serialize(Object obj, BufferCallback callback) {
-    buffer.writerIndex(0);
-    serialize(buffer, obj, callback);
-    return buffer.getBytes(0, buffer.writerIndex());
+    MemoryBuffer buf = getBuffer();
+    buf.writerIndex(0);
+    serialize(buf, obj, callback);
+    return buf.getBytes(0, buf.writerIndex());
   }
 
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj) {
@@ -197,47 +226,42 @@ public final class Fury {
 
   /** Serialize <code>obj</code> to a <code>buffer</code>. */
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj, BufferCallback callback) {
+    this.bufferCallback = callback;
+    int maskIndex = buffer.writerIndex();
+    // 1byte used for bit mask
+    buffer.ensure(maskIndex + 1);
+    buffer.writerIndex(maskIndex + 1);
+    byte bitmap = 0;
+    if (obj == null) {
+      bitmap |= isNilFlag;
+      buffer.put(maskIndex, bitmap);
+      return buffer;
+    }
+    // set endian.
+    if (isLittleEndian) {
+      bitmap |= isLittleEndianFlag;
+    }
+    if (language != Language.JAVA) {
+      // set reader as x_lang.
+      bitmap |= isCrossLanguageFlag;
+      // set writer language.
+      buffer.writeByte((byte) Language.JAVA.ordinal());
+    }
+    if (bufferCallback != null) {
+      bitmap |= isOutOfBandFlag;
+    }
+    buffer.put(maskIndex, bitmap);
     try {
       jitContext.lock();
-      this.bufferCallback = callback;
-      int maskIndex = buffer.writerIndex();
-      // 1byte used for bit mask
-      buffer.ensure(maskIndex + 1);
-      buffer.writerIndex(maskIndex + 1);
-      byte bitmap = 0;
-      if (obj == null) {
-        bitmap |= isNilFlag;
-        buffer.put(maskIndex, bitmap);
-        return buffer;
-      }
-      // set endian.
-      if (isLittleEndian) {
-        bitmap |= isLittleEndianFlag;
-      }
-      if (language != Language.JAVA) {
-        // set reader as x_lang.
-        bitmap |= isCrossLanguageFlag;
-        // set writer language.
-        buffer.writeByte((byte) Language.JAVA.ordinal());
-      }
-      if (bufferCallback != null) {
-        bitmap |= isOutOfBandFlag;
-      }
-      buffer.put(maskIndex, bitmap);
+      checkDepthForSerialization();
       if (language == Language.JAVA) {
-        if (config.isMetaContextShareEnabled()) {
-          int startOffset = buffer.writerIndex();
-          buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
-          writeReferencableToJava(buffer, obj);
-          buffer.putInt(startOffset, buffer.writerIndex());
-          classResolver.writeClassDefs(buffer);
-        } else {
-          writeReferencableToJava(buffer, obj);
-        }
+        write(buffer, obj);
       } else {
-        crossLanguageSerializeInternal(buffer, obj);
+        xserializeInternal(buffer, obj);
       }
       return buffer;
+    } catch (StackOverflowError t) {
+      throw processStackOverflowError(t);
     } finally {
       resetWrite();
       jitContext.unlock();
@@ -249,56 +273,93 @@ public final class Fury {
   }
 
   public void serialize(OutputStream outputStream, Object obj, BufferCallback callback) {
-    buffer.writerIndex(0);
-    buffer.writeInt(-1);
-    serialize(buffer, obj, callback);
+    MemoryBuffer buf = getBuffer();
+    buf.writerIndex(0);
+    buf.writeInt(-1);
+    serialize(buf, obj, callback);
 
-    buffer.putInt(0, buffer.writerIndex() - 4);
+    buf.putInt(0, buf.writerIndex() - 4);
     try {
-      outputStream.write(buffer.getBytes(0, buffer.writerIndex()));
+      outputStream.write(buf.getBytes(0, buf.writerIndex()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private void crossLanguageSerializeInternal(MemoryBuffer buffer, Object obj) {
+  private StackOverflowError processStackOverflowError(StackOverflowError e) {
+    if (!refTracking) {
+      String msg =
+          "Object may contain circular references, please enable ref tracking "
+              + "by `FuryBuilder#withRefTracking(true)`";
+      String rawMessage = e.getMessage();
+      if (StringUtils.isNotBlank(rawMessage)) {
+        msg += ": " + rawMessage;
+      }
+      StackOverflowError t1 = ExceptionUtils.trySetStackOverflowErrorMessage(e, msg);
+      if (t1 != null) {
+        return t1;
+      }
+    }
+    throw e;
+  }
+
+  private MemoryBuffer getBuffer() {
+    MemoryBuffer buf = buffer;
+    if (buf == null) {
+      buf = buffer = MemoryBuffer.newHeapBuffer(64);
+    }
+    return buf;
+  }
+
+  private void write(MemoryBuffer buffer, Object obj) {
+    if (config.shareMetaContext()) {
+      int startOffset = buffer.writerIndex();
+      buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
+      writeRef(buffer, obj);
+      buffer.putInt(startOffset, buffer.writerIndex());
+      classResolver.writeClassDefs(buffer);
+    } else {
+      writeRef(buffer, obj);
+    }
+  }
+
+  private void xserializeInternal(MemoryBuffer buffer, Object obj) {
     int startOffset = buffer.writerIndex();
     buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
     buffer.writeInt(-1); // preserve 4-byte for nativeObjects size
-    crossLanguageWriteReferencable(buffer, obj);
+    xwriteRef(buffer, obj);
     buffer.putInt(startOffset, buffer.writerIndex());
     buffer.putInt(startOffset + 4, nativeObjects.size());
-    referenceResolver.resetWrite();
+    refResolver.resetWrite();
     // fury write opaque object classname which cause later write of classname only write an id.
     classResolver.resetWrite();
     enumStringResolver.resetWrite();
     for (Object nativeObject : nativeObjects) {
-      writeReferencableToJava(buffer, nativeObject);
+      writeRef(buffer, nativeObject);
     }
   }
 
   /** Serialize a nullable referencable object to <code>buffer</code>. */
-  public void writeReferencableToJava(MemoryBuffer buffer, Object obj) {
-    if (!referenceResolver.writeReferenceOrNull(buffer, obj)) {
+  public void writeRef(MemoryBuffer buffer, Object obj) {
+    if (!refResolver.writeRefOrNull(buffer, obj)) {
       ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
       classResolver.writeClass(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
   }
 
-  public void writeReferencableToJava(
-      MemoryBuffer buffer, Object obj, ClassInfoCache classInfoCache) {
-    if (!referenceResolver.writeReferenceOrNull(buffer, obj)) {
-      ClassInfo classInfo = classResolver.getClassInfo(obj.getClass(), classInfoCache);
+  public void writeRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
+    if (!refResolver.writeRefOrNull(buffer, obj)) {
+      ClassInfo classInfo = classResolver.getClassInfo(obj.getClass(), classInfoHolder);
       classResolver.writeClass(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
   }
 
-  public void writeReferencableToJava(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
+  public void writeRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
     Serializer<Object> serializer = classInfo.getSerializer();
-    if (serializer.needToWriteReference()) {
-      if (!referenceResolver.writeReferenceOrNull(buffer, obj)) {
+    if (serializer.needToWriteRef()) {
+      if (!refResolver.writeRefOrNull(buffer, obj)) {
         classResolver.writeClass(buffer, classInfo);
         depth++;
         serializer.write(buffer, obj);
@@ -317,9 +378,9 @@ public final class Fury {
     }
   }
 
-  public <T> void writeReferencableToJava(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
-    if (serializer.needToWriteReference()) {
-      if (!referenceResolver.writeReferenceOrNull(buffer, obj)) {
+  public <T> void writeRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
+    if (serializer.needToWriteRef()) {
+      if (!refResolver.writeRefOrNull(buffer, obj)) {
         depth++;
         serializer.write(buffer, obj);
         depth--;
@@ -336,22 +397,32 @@ public final class Fury {
     }
   }
 
-  public void writeNullableToJava(MemoryBuffer buffer, Object obj, ClassInfoCache classInfoCache) {
+  /** Write object class and data without tracking ref. */
+  public void writeNullable(MemoryBuffer buffer, Object obj) {
     if (obj == null) {
       buffer.writeByte(Fury.NULL_FLAG);
     } else {
       buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-      writeNonReferenceToJava(
-          buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoCache));
+      writeNonRef(buffer, obj);
     }
   }
 
-  public void writeNullableToJava(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
+  /** Write object class and data without tracking ref. */
+  public void writeNullable(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
     if (obj == null) {
       buffer.writeByte(Fury.NULL_FLAG);
     } else {
       buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-      writeNonReferenceToJava(buffer, obj, classInfo);
+      writeNonRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
+    }
+  }
+
+  public void writeNullable(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
+    if (obj == null) {
+      buffer.writeByte(Fury.NULL_FLAG);
+    } else {
+      buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+      writeNonRef(buffer, obj, classInfo);
     }
   }
 
@@ -361,13 +432,13 @@ public final class Fury {
    * <p>If reference is enabled, this method should be called only the object is first seen in the
    * object graph.
    */
-  public void writeNonReferenceToJava(MemoryBuffer buffer, Object obj) {
+  public void writeNonRef(MemoryBuffer buffer, Object obj) {
     ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
     classResolver.writeClass(buffer, classInfo);
     writeData(buffer, classInfo, obj);
   }
 
-  public void writeNonReferenceToJava(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
+  public void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
     classResolver.writeClass(buffer, classInfo);
     Serializer serializer = classInfo.getSerializer();
     depth++;
@@ -375,66 +446,64 @@ public final class Fury {
     depth--;
   }
 
-  public <T> void writeNonReferenceToJava(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
+  public <T> void writeNonRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
     depth++;
     serializer.write(buffer, obj);
     depth--;
   }
 
-  public void crossLanguageWriteReferencable(MemoryBuffer buffer, Object obj) {
-    if (!referenceResolver.writeReferenceOrNull(buffer, obj)) {
-      crossLanguageWriteNonReferencable(buffer, obj, null);
+  public void xwriteRef(MemoryBuffer buffer, Object obj) {
+    if (!refResolver.writeRefOrNull(buffer, obj)) {
+      xwriteNonRef(buffer, obj, null);
     }
   }
 
-  public <T> void crossLanguageWriteReferencable(
-      MemoryBuffer buffer, T obj, Serializer<T> serializer) {
-    if (serializer.needToWriteReference()) {
-      if (!referenceResolver.writeReferenceOrNull(buffer, obj)) {
-        crossLanguageWriteNonReferencable(buffer, obj, serializer);
+  public <T> void xwriteRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
+    if (serializer.needToWriteRef()) {
+      if (!refResolver.writeRefOrNull(buffer, obj)) {
+        xwriteNonRef(buffer, obj, serializer);
       }
     } else {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
         buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-        crossLanguageWriteNonReferencable(buffer, obj, serializer);
+        xwriteNonRef(buffer, obj, serializer);
       }
     }
   }
 
-  public <T> void crossLanguageWriteReferencableByNullableSerializer(
+  public <T> void xwriteRefByNullableSerializer(
       MemoryBuffer buffer, T obj, Serializer<T> serializer) {
     if (serializer == null) {
-      crossLanguageWriteReferencable(buffer, obj);
+      xwriteRef(buffer, obj);
     } else {
-      crossLanguageWriteReferencable(buffer, obj, serializer);
+      xwriteRef(buffer, obj, serializer);
     }
   }
 
-  public <T> void crossLanguageWriteNonReferencable(
-      MemoryBuffer buffer, T obj, Serializer<T> serializer) {
+  public <T> void xwriteNonRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
     depth++;
     @SuppressWarnings("unchecked")
     Class<T> cls = (Class<T>) obj.getClass();
     if (serializer == null) {
       serializer = classResolver.getSerializer(cls);
     }
-    short typeId = serializer.getCrossLanguageTypeId();
+    short typeId = serializer.getXtypeId();
     buffer.writeShort(typeId);
     if (typeId != NOT_SUPPORT_CROSS_LANGUAGE) {
       if (typeId == FURY_TYPE_TAG_ID) {
-        classResolver.crossLanguageWriteTypeTag(buffer, cls);
+        classResolver.xwriteTypeTag(buffer, cls);
       }
       if (typeId < NOT_SUPPORT_CROSS_LANGUAGE) {
-        classResolver.crossLanguageWriteClass(buffer, cls);
+        classResolver.xwriteClass(buffer, cls);
       }
-      serializer.crossLanguageWrite(buffer, obj);
+      serializer.xwrite(buffer, obj);
     } else {
       // Write classname so it can be used for debugging which object doesn't support
       // cross-language.
       // TODO add a config to disable this to reduce space cost.
-      classResolver.crossLanguageWriteClass(buffer, cls);
+      classResolver.xwriteClass(buffer, cls);
       // serializer may increase reference id multi times internally, thus peer cross-language later
       // fields/objects deserialization will use wrong reference id since we skip opaque objects
       // deserialization.
@@ -461,7 +530,7 @@ public final class Fury {
         buffer.writeShort((Short) obj);
         break;
       case ClassResolver.INTEGER_CLASS_ID:
-        if (compressNumber) {
+        if (compressInt) {
           buffer.writeVarInt((Integer) obj);
         } else {
           buffer.writeInt((Integer) obj);
@@ -471,11 +540,7 @@ public final class Fury {
         buffer.writeFloat((Float) obj);
         break;
       case ClassResolver.LONG_CLASS_ID:
-        if (compressNumber) {
-          buffer.writeVarLong((Long) obj);
-        } else {
-          buffer.writeLong((Long) obj);
-        }
+        LongSerializer.writeLong(buffer, (Long) obj, longEncoding);
         break;
       case ClassResolver.DOUBLE_CLASS_ID:
         buffer.writeDouble((Double) obj);
@@ -562,8 +627,8 @@ public final class Fury {
   }
 
   public void writeJavaStringRef(MemoryBuffer buffer, String str) {
-    if (stringSerializer.needToWriteReference()) {
-      if (!referenceResolver.writeReferenceOrNull(buffer, str)) {
+    if (stringSerializer.needToWriteRef()) {
+      if (!refResolver.writeRefOrNull(buffer, str)) {
         stringSerializer.writeJavaString(buffer, str);
       }
     } else {
@@ -577,16 +642,16 @@ public final class Fury {
   }
 
   public String readJavaStringRef(MemoryBuffer buffer) {
-    ReferenceResolver referenceResolver = this.referenceResolver;
-    if (stringSerializer.needToWriteReference()) {
+    RefResolver refResolver = this.refResolver;
+    if (stringSerializer.needToWriteRef()) {
       String obj;
-      int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+      int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
         obj = stringSerializer.read(buffer);
-        referenceResolver.setReadObject(nextReadRefId, obj);
+        refResolver.setReadObject(nextReadRefId, obj);
         return obj;
       } else {
-        return (String) referenceResolver.getReadObject();
+        return (String) refResolver.getReadObject();
       }
     } else {
       byte headFlag = buffer.readByte();
@@ -604,6 +669,14 @@ public final class Fury {
 
   public String readJavaString(MemoryBuffer buffer) {
     return stringSerializer.readJavaString(buffer);
+  }
+
+  public void writeLong(MemoryBuffer buffer, long value) {
+    LongSerializer.writeLong(buffer, value, longEncoding);
+  }
+
+  public long readLong(MemoryBuffer buffer) {
+    return LongSerializer.readLong(buffer, longEncoding);
   }
 
   /** Deserialize <code>obj</code> from a byte array. */
@@ -644,6 +717,7 @@ public final class Fury {
   public Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
       jitContext.lock();
+      checkDepthForDeserialization();
       byte bitmap = buffer.readByte();
       if ((bitmap & isNilFlag) == isNilFlag) {
         return null;
@@ -671,12 +745,12 @@ public final class Fury {
       }
       Object obj;
       if (isTargetXLang) {
-        obj = crossLanguageDeserializeInternal(buffer);
+        obj = xdeserializeInternal(buffer);
       } else {
-        if (config.isMetaContextShareEnabled()) {
+        if (config.shareMetaContext()) {
           classResolver.readClassDefs(buffer);
         }
-        obj = readReferencableFromJava(buffer);
+        obj = readRef(buffer);
       }
       return obj;
     } finally {
@@ -690,20 +764,16 @@ public final class Fury {
   }
 
   public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
-    buffer.readerIndex(0);
     try {
-      int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
-      Preconditions.checkArgument(read == 4);
-      int size = buffer.readInt();
-      read = inputStream.read(buffer.getHeapMemory(), 4, size);
-      Preconditions.checkArgument(read == size);
-      return deserialize(buffer, outOfBandBuffers);
+      MemoryBuffer buf = getBuffer();
+      readToBufferFromStream(inputStream, buf);
+      return deserialize(buf, outOfBandBuffers);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private Object crossLanguageDeserializeInternal(MemoryBuffer buffer) {
+  private Object xdeserializeInternal(MemoryBuffer buffer) {
     Object obj;
     int nativeObjectsStartOffset = buffer.readInt();
     int nativeObjectsSize = buffer.readInt();
@@ -712,57 +782,57 @@ public final class Fury {
       int readerIndex = buffer.readerIndex();
       buffer.readerIndex(nativeObjectsStartOffset);
       for (int i = 0; i < nativeObjectsSize; i++) {
-        nativeObjects.add(readReferencableFromJava(buffer));
+        nativeObjects.add(readRef(buffer));
       }
       endReaderIndex = buffer.readerIndex();
       buffer.readerIndex(readerIndex);
-      referenceResolver.resetRead();
+      refResolver.resetRead();
       classResolver.resetRead();
       enumStringResolver.resetRead();
     }
-    obj = crossLanguageReadReferencable(buffer);
+    obj = xreadRef(buffer);
     buffer.readerIndex(endReaderIndex);
     return obj;
   }
 
   /** Deserialize nullable referencable object from <code>buffer</code>. */
-  public Object readReferencableFromJava(MemoryBuffer buffer) {
-    ReferenceResolver referenceResolver = this.referenceResolver;
-    int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+  public Object readRef(MemoryBuffer buffer) {
+    RefResolver refResolver = this.refResolver;
+    int nextReadRefId = refResolver.tryPreserveRefId(buffer);
     if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
       // ref value or not-null value
-      Object o = readData(buffer, classResolver.readAndUpdateClassInfoCache(buffer));
-      referenceResolver.setReadObject(nextReadRefId, o);
+      Object o = readDataInternal(buffer, classResolver.readClassInfo(buffer));
+      refResolver.setReadObject(nextReadRefId, o);
       return o;
     } else {
-      return referenceResolver.getReadObject();
+      return refResolver.getReadObject();
     }
   }
 
-  public Object readReferencableFromJava(MemoryBuffer buffer, ClassInfoCache classInfoCache) {
-    ReferenceResolver referenceResolver = this.referenceResolver;
-    int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+  public Object readRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
+    RefResolver refResolver = this.refResolver;
+    int nextReadRefId = refResolver.tryPreserveRefId(buffer);
     if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
       // ref value or not-null value
-      Object o = readData(buffer, classResolver.readClassInfo(buffer, classInfoCache));
-      referenceResolver.setReadObject(nextReadRefId, o);
+      Object o = readDataInternal(buffer, classResolver.readClassInfo(buffer, classInfoHolder));
+      refResolver.setReadObject(nextReadRefId, o);
       return o;
     } else {
-      return referenceResolver.getReadObject();
+      return refResolver.getReadObject();
     }
   }
 
   @SuppressWarnings("unchecked")
-  public <T> T readReferencableFromJava(MemoryBuffer buffer, Serializer<T> serializer) {
-    if (serializer.needToWriteReference()) {
+  public <T> T readRef(MemoryBuffer buffer, Serializer<T> serializer) {
+    if (serializer.needToWriteRef()) {
       T obj;
-      int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+      int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
         obj = serializer.read(buffer);
-        referenceResolver.setReadObject(nextReadRefId, obj);
+        refResolver.setReadObject(nextReadRefId, obj);
         return obj;
       } else {
-        return (T) referenceResolver.getReadObject();
+        return (T) refResolver.getReadObject();
       }
     } else {
       byte headFlag = buffer.readByte();
@@ -775,16 +845,26 @@ public final class Fury {
   }
 
   /** Deserialize not-null and non-reference object from <code>buffer</code>. */
-  public Object readNonReferenceFromJava(MemoryBuffer buffer) {
-    return readData(buffer, classResolver.readAndUpdateClassInfoCache(buffer));
+  public Object readNonRef(MemoryBuffer buffer) {
+    return readDataInternal(buffer, classResolver.readClassInfo(buffer));
   }
 
-  public Object readNonReferenceFromJava(MemoryBuffer buffer, ClassInfoCache classInfoCache) {
-    return readData(buffer, classResolver.readClassInfo(buffer, classInfoCache));
+  public Object readNonRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
+    return readDataInternal(buffer, classResolver.readClassInfo(buffer, classInfoHolder));
+  }
+
+  /** Read object class and data without tracking ref. */
+  public Object readNullable(MemoryBuffer buffer) {
+    byte headFlag = buffer.readByte();
+    if (headFlag == Fury.NULL_FLAG) {
+      return null;
+    } else {
+      return readNonRef(buffer);
+    }
   }
 
   /** Class should be read already. */
-  public Object readDataFromJava(MemoryBuffer buffer, ClassInfo classInfo) {
+  public Object readData(MemoryBuffer buffer, ClassInfo classInfo) {
     depth++;
     Serializer<?> serializer = classInfo.getSerializer();
     Object read = serializer.read(buffer);
@@ -792,7 +872,7 @@ public final class Fury {
     return read;
   }
 
-  private Object readData(MemoryBuffer buffer, ClassInfo classInfo) {
+  private Object readDataInternal(MemoryBuffer buffer, ClassInfo classInfo) {
     switch (classInfo.getClassId()) {
       case ClassResolver.BOOLEAN_CLASS_ID:
         return buffer.readBoolean();
@@ -803,7 +883,7 @@ public final class Fury {
       case ClassResolver.SHORT_CLASS_ID:
         return buffer.readShort();
       case ClassResolver.INTEGER_CLASS_ID:
-        if (compressNumber) {
+        if (compressInt) {
           return buffer.readVarInt();
         } else {
           return buffer.readInt();
@@ -811,11 +891,7 @@ public final class Fury {
       case ClassResolver.FLOAT_CLASS_ID:
         return buffer.readFloat();
       case ClassResolver.LONG_CLASS_ID:
-        if (compressNumber) {
-          return buffer.readVarLong();
-        } else {
-          return buffer.readLong();
-        }
+        return LongSerializer.readLong(buffer, longEncoding);
       case ClassResolver.DOUBLE_CLASS_ID:
         return buffer.readDouble();
       case ClassResolver.STRING_CLASS_ID:
@@ -829,49 +905,48 @@ public final class Fury {
     }
   }
 
-  public Object crossLanguageReadReferencable(MemoryBuffer buffer) {
-    ReferenceResolver referenceResolver = this.referenceResolver;
-    int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+  public Object xreadRef(MemoryBuffer buffer) {
+    RefResolver refResolver = this.refResolver;
+    int nextReadRefId = refResolver.tryPreserveRefId(buffer);
     if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
-      Object o = crossLanguageReadNonReferencable(buffer, null);
-      referenceResolver.setReadObject(nextReadRefId, o);
+      Object o = xreadNonRef(buffer, null);
+      refResolver.setReadObject(nextReadRefId, o);
       return o;
     } else {
-      return referenceResolver.getReadObject();
+      return refResolver.getReadObject();
     }
   }
 
-  public Object crossLanguageReadReferencable(MemoryBuffer buffer, Serializer<?> serializer) {
-    if (serializer.needToWriteReference()) {
-      ReferenceResolver referenceResolver = this.referenceResolver;
-      int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+  public Object xreadRef(MemoryBuffer buffer, Serializer<?> serializer) {
+    if (serializer.needToWriteRef()) {
+      RefResolver refResolver = this.refResolver;
+      int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
-        Object o = crossLanguageReadNonReferencable(buffer, serializer);
-        referenceResolver.setReadObject(nextReadRefId, o);
+        Object o = xreadNonRef(buffer, serializer);
+        refResolver.setReadObject(nextReadRefId, o);
         return o;
       } else {
-        return referenceResolver.getReadObject();
+        return refResolver.getReadObject();
       }
     } else {
       byte headFlag = buffer.readByte();
       if (headFlag == Fury.NULL_FLAG) {
         return null;
       } else {
-        return crossLanguageReadNonReferencable(buffer, serializer);
+        return xreadNonRef(buffer, serializer);
       }
     }
   }
 
-  public Object crossLanguageReadReferencableByNullableSerializer(
-      MemoryBuffer buffer, Serializer<?> serializer) {
+  public Object xreadRefByNullableSerializer(MemoryBuffer buffer, Serializer<?> serializer) {
     if (serializer == null) {
-      return crossLanguageReadReferencable(buffer);
+      return xreadRef(buffer);
     } else {
-      return crossLanguageReadReferencable(buffer, serializer);
+      return xreadRef(buffer, serializer);
     }
   }
 
-  public Object crossLanguageReadNonReferencable(MemoryBuffer buffer, Serializer<?> serializer) {
+  public Object xreadNonRef(MemoryBuffer buffer, Serializer<?> serializer) {
     depth++;
     short typeId = buffer.readShort();
     ClassResolver classResolver = this.classResolver;
@@ -882,10 +957,10 @@ public final class Fury {
       }
       if (typeId < NOT_SUPPORT_CROSS_LANGUAGE) {
         if (peerLanguage != Language.JAVA) {
-          classResolver.crossLanguageReadClassName(buffer);
+          classResolver.xreadClassName(buffer);
           cls = classResolver.getClassByTypeId((short) -typeId);
         } else {
-          cls = classResolver.crossLanguageReadClass(buffer);
+          cls = classResolver.xreadClass(buffer);
         }
       } else {
         if (typeId != FURY_TYPE_TAG_ID) {
@@ -898,11 +973,11 @@ public final class Fury {
       }
       // TODO check serializer consistent with `classResolver.getSerializer(cls)` when serializer
       // not null;
-      Object o = serializer.crossLanguageRead(buffer);
+      Object o = serializer.xread(buffer);
       depth--;
       return o;
     } else {
-      String className = classResolver.crossLanguageReadClassName(buffer);
+      String className = classResolver.xreadClassName(buffer);
       int ordinal = buffer.readPositiveVarInt();
       if (peerLanguage != Language.JAVA) {
         return OpaqueObjects.of(peerLanguage, className, ordinal);
@@ -917,9 +992,10 @@ public final class Fury {
    * #deserializeJavaObject}.
    */
   public byte[] serializeJavaObject(Object obj) {
-    buffer.writerIndex(0);
-    serializeJavaObject(buffer, obj);
-    return buffer.getBytes(0, buffer.writerIndex());
+    MemoryBuffer buf = getBuffer();
+    buf.writerIndex(0);
+    serializeJavaObject(buf, obj);
+    return buf.getBytes(0, buf.writerIndex());
   }
 
   /**
@@ -929,21 +1005,24 @@ public final class Fury {
   public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
-      if (config.isMetaContextShareEnabled()) {
+      checkDepthForSerialization();
+      if (config.shareMetaContext()) {
         int startOffset = buffer.writerIndex();
         buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
-        if (!referenceResolver.writeReferenceOrNull(buffer, obj)) {
+        if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
           writeData(buffer, classInfo, obj);
         }
         buffer.putInt(startOffset, buffer.writerIndex());
         classResolver.writeClassDefs(buffer);
       } else {
-        if (!referenceResolver.writeReferenceOrNull(buffer, obj)) {
+        if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
           writeData(buffer, classInfo, obj);
         }
       }
+    } catch (StackOverflowError t) {
+      throw processStackOverflowError(t);
     } finally {
       resetWrite();
       jitContext.unlock();
@@ -973,19 +1052,22 @@ public final class Fury {
   @SuppressWarnings("unchecked")
   public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
     try {
-      if (config.isMetaContextShareEnabled()) {
+      jitContext.lock();
+      checkDepthForDeserialization();
+      if (config.shareMetaContext()) {
         classResolver.readClassDefs(buffer);
       }
       T obj;
-      int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+      int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
-        obj = (T) readData(buffer, classResolver.getClassInfo(cls));
+        obj = (T) readDataInternal(buffer, classResolver.getClassInfo(cls));
         return obj;
       } else {
         return null;
       }
     } finally {
       resetRead();
+      jitContext.unlock();
     }
   }
 
@@ -1003,9 +1085,10 @@ public final class Fury {
    * #deserializeJavaObjectAndClass}.
    */
   public byte[] serializeJavaObjectAndClass(Object obj) {
-    buffer.writerIndex(0);
-    serializeJavaObjectAndClass(buffer, obj);
-    return buffer.getBytes(0, buffer.writerIndex());
+    MemoryBuffer buf = getBuffer();
+    buf.writerIndex(0);
+    serializeJavaObjectAndClass(buf, obj);
+    return buf.getBytes(0, buf.writerIndex());
   }
 
   /**
@@ -1015,15 +1098,10 @@ public final class Fury {
   public void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
-      if (config.isMetaContextShareEnabled()) {
-        int startOffset = buffer.writerIndex();
-        buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
-        writeReferencableToJava(buffer, obj);
-        buffer.putInt(startOffset, buffer.writerIndex());
-        classResolver.writeClassDefs(buffer);
-      } else {
-        writeReferencableToJava(buffer, obj);
-      }
+      checkDepthForSerialization();
+      write(buffer, obj);
+    } catch (StackOverflowError t) {
+      throw processStackOverflowError(t);
     } finally {
       resetWrite();
       jitContext.unlock();
@@ -1053,10 +1131,11 @@ public final class Fury {
   public Object deserializeJavaObjectAndClass(MemoryBuffer buffer) {
     try {
       jitContext.lock();
-      if (config.isMetaContextShareEnabled()) {
+      checkDepthForDeserialization();
+      if (config.shareMetaContext()) {
         classResolver.readClassDefs(buffer);
       }
-      return readReferencableFromJava(buffer);
+      return readRef(buffer);
     } finally {
       resetRead();
       jitContext.unlock();
@@ -1072,26 +1151,27 @@ public final class Fury {
   }
 
   private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {
+    MemoryBuffer buf = getBuffer();
     if (outputStream.getClass() == ByteArrayOutputStream.class) {
-      byte[] oldBytes = buffer.getHeapMemory(); // Note: This should not be null.
-      MemoryUtils.wrap((ByteArrayOutputStream) outputStream, buffer);
-      int writerIndex = buffer.writerIndex();
-      buffer.writeInt(-1);
-      function.accept(buffer);
-      buffer.putInt(writerIndex, buffer.writerIndex() - writerIndex);
-      MemoryUtils.wrap(buffer, (ByteArrayOutputStream) outputStream);
-      buffer.pointTo(oldBytes, 0, oldBytes.length);
+      byte[] oldBytes = buf.getHeapMemory(); // Note: This should not be null.
+      MemoryUtils.wrap((ByteArrayOutputStream) outputStream, buf);
+      int writerIndex = buf.writerIndex();
+      buf.writeInt(-1);
+      function.accept(buf);
+      buf.putInt(writerIndex, buf.writerIndex() - writerIndex);
+      MemoryUtils.wrap(buf, (ByteArrayOutputStream) outputStream);
+      buf.pointTo(oldBytes, 0, oldBytes.length);
     } else {
-      buffer.writerIndex(0);
-      buffer.writeInt(-1);
-      function.accept(buffer);
-      buffer.putInt(0, buffer.writerIndex() - 4);
+      buf.writerIndex(0);
+      buf.writeInt(-1);
+      function.accept(buf);
+      buf.putInt(0, buf.writerIndex() - 4);
       try {
-        byte[] bytes = buffer.getHeapMemory();
+        byte[] bytes = buf.getHeapMemory();
         if (bytes != null) {
-          outputStream.write(bytes, 0, buffer.writerIndex());
+          outputStream.write(bytes, 0, buf.writerIndex());
         } else {
-          outputStream.write(buffer.getBytes(0, buffer.writerIndex()));
+          outputStream.write(buf.getBytes(0, buf.writerIndex()));
         }
         outputStream.flush();
       } catch (IOException e) {
@@ -1102,25 +1182,22 @@ public final class Fury {
 
   private Object deserializeFromStream(
       InputStream inputStream, Function<MemoryBuffer, Object> function) {
-    buffer.readerIndex(0);
+    MemoryBuffer buf = getBuffer();
     try {
       boolean isBis = inputStream.getClass() == ByteArrayInputStream.class;
       byte[] oldBytes = null;
       if (isBis) {
-        oldBytes = buffer.getHeapMemory(); // Note: This should not be null.
-        MemoryUtils.wrap((ByteArrayInputStream) inputStream, buffer);
-        buffer.increaseReaderIndex(4); // skip size.
+        buf.readerIndex(0);
+        oldBytes = buf.getHeapMemory(); // Note: This should not be null.
+        MemoryUtils.wrap((ByteArrayInputStream) inputStream, buf);
+        buf.increaseReaderIndex(4); // skip size.
       } else {
-        int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
-        Preconditions.checkArgument(read == 4);
-        int size = buffer.readInt();
-        read = inputStream.read(buffer.getHeapMemory(), 4, size);
-        Preconditions.checkArgument(read == size);
+        readToBufferFromStream(inputStream, buf);
       }
-      Object o = function.apply(buffer);
+      Object o = function.apply(buf);
       if (isBis) {
-        inputStream.skip(buffer.readerIndex());
-        buffer.pointTo(oldBytes, 0, oldBytes.length);
+        inputStream.skip(buf.readerIndex());
+        buf.pointTo(oldBytes, 0, oldBytes.length);
       }
       return o;
     } catch (IOException e) {
@@ -1128,8 +1205,26 @@ public final class Fury {
     }
   }
 
+  private static void readToBufferFromStream(InputStream inputStream, MemoryBuffer buffer)
+      throws IOException {
+    buffer.readerIndex(0);
+    int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
+    Preconditions.checkArgument(read == 4);
+    int size = buffer.readInt();
+    buffer.ensure(4 + size);
+    read = 0;
+    while (read < size) {
+      int count;
+      if ((count = inputStream.read(buffer.getHeapMemory(), read + 4, size - read)) == -1) {
+        break;
+      }
+      read += count;
+    }
+    Preconditions.checkArgument(read == size);
+  }
+
   public void reset() {
-    referenceResolver.reset();
+    refResolver.reset();
     classResolver.reset();
     enumStringResolver.reset();
     serializationContext.reset();
@@ -1140,7 +1235,7 @@ public final class Fury {
   }
 
   public void resetWrite() {
-    referenceResolver.resetWrite();
+    refResolver.resetWrite();
     classResolver.resetWrite();
     enumStringResolver.resetWrite();
     serializationContext.reset();
@@ -1150,13 +1245,33 @@ public final class Fury {
   }
 
   public void resetRead() {
-    referenceResolver.resetRead();
+    refResolver.resetRead();
     classResolver.resetRead();
     enumStringResolver.resetRead();
     serializationContext.reset();
     nativeObjects.clear();
     peerOutOfBandEnabled = false;
     depth = 0;
+  }
+
+  private void checkDepthForSerialization() {
+    if (depth != 0) {
+      String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "writeXXX";
+      throw new IllegalStateException(
+          String.format(
+              "Nested call Fury.serializeXXX is not allowed when serializing, Please use %s instead",
+              method));
+    }
+  }
+
+  private void checkDepthForDeserialization() {
+    if (depth != 0) {
+      String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "readXXX";
+      throw new IllegalStateException(
+          String.format(
+              "Nested call Fury.deserializeXXX is not allowed when deserializing, Please use %s instead",
+              method));
+    }
   }
 
   public JITContext getJITContext() {
@@ -1171,8 +1286,8 @@ public final class Fury {
     return peerOutOfBandEnabled;
   }
 
-  public ReferenceResolver getReferenceResolver() {
-    return referenceResolver;
+  public RefResolver getRefResolver() {
+    return refResolver;
   }
 
   public ClassResolver getClassResolver() {
@@ -1199,6 +1314,10 @@ public final class Fury {
     this.depth = depth;
   }
 
+  public void incDepth(int diff) {
+    this.depth += diff;
+  }
+
   // Invoked by jit
   public StringSerializer getStringSerializer() {
     return stringSerializer;
@@ -1212,16 +1331,16 @@ public final class Fury {
     return language;
   }
 
-  public boolean trackingReference() {
-    return referenceTracking;
+  public boolean trackingRef() {
+    return refTracking;
   }
 
-  public boolean isStringReferenceIgnored() {
-    return config.isStringReferenceIgnored();
+  public boolean isStringRefIgnored() {
+    return config.isStringRefIgnored();
   }
 
-  public boolean isBasicTypesReferenceIgnored() {
-    return config.isBasicTypesReferenceIgnored();
+  public boolean isBasicTypesRefIgnored() {
+    return config.isBasicTypesRefIgnored();
   }
 
   public boolean checkClassVersion() {
@@ -1244,281 +1363,19 @@ public final class Fury {
     return config.compressString();
   }
 
-  public boolean compressNumber() {
-    return compressNumber;
+  public boolean compressInt() {
+    return compressInt;
   }
 
-  public boolean isClassRegistrationRequired() {
-    return config.isClassRegistrationRequired();
+  public LongEncoding longEncoding() {
+    return longEncoding;
+  }
+
+  public boolean compressLong() {
+    return config.compressLong();
   }
 
   public static FuryBuilder builder() {
     return new FuryBuilder();
-  }
-
-  public static final class FuryBuilder {
-    private static final boolean ENABLE_SECURITY_MODE_FORCIBLY;
-
-    static {
-      String flagValue =
-          System.getProperty(
-              "fury.enable_fury_security_mode_forcibly",
-              System.getenv("ENABLE_SECURITY_MODE_FORCIBLY"));
-      if (flagValue == null) {
-        flagValue = "false";
-      }
-      ENABLE_SECURITY_MODE_FORCIBLY = "true".equals(flagValue) || "1".equals(flagValue);
-    }
-
-    boolean checkClassVersion = true;
-    Language language = Language.JAVA;
-    boolean referenceTracking = true;
-    boolean basicTypesReferenceIgnored = true;
-    boolean stringReferenceIgnored = true;
-    boolean timeReferenceIgnored = true;
-    ClassLoader classLoader;
-    boolean compressNumber = false;
-    boolean compressString = true;
-    CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
-    boolean jdkClassSerializableCheck = true;
-    Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
-    boolean secureModeEnabled = true;
-    boolean requireClassRegistration = true;
-    boolean metaContextShareEnabled = false;
-    boolean codeGenEnabled = true;
-    public boolean deserializeUnExistClassEnabled = false;
-    public boolean asyncCompilationEnabled = false;
-
-    private FuryBuilder() {}
-
-    public FuryBuilder withLanguage(Language language) {
-      this.language = language;
-      return this;
-    }
-
-    public FuryBuilder withReferenceTracking(boolean referenceTracking) {
-      this.referenceTracking = referenceTracking;
-      return this;
-    }
-
-    public FuryBuilder ignoreBasicTypesReference(boolean ignoreBasicTypesReference) {
-      this.basicTypesReferenceIgnored = ignoreBasicTypesReference;
-      return this;
-    }
-
-    public FuryBuilder ignoreStringReference(boolean ignoreStringReference) {
-      this.stringReferenceIgnored = ignoreStringReference;
-      return this;
-    }
-
-    /**
-     * Whether ignore reference tracking of all time types registered in {@link TimeSerializers}
-     * when ref tracking is enabled.
-     *
-     * @see Config#isTimeReferenceIgnored
-     */
-    public FuryBuilder ignoreTimeReference(boolean ignoreTimeReference) {
-      this.timeReferenceIgnored = ignoreTimeReference;
-      return this;
-    }
-
-    /** Use variable length encoding for int/long. */
-    public FuryBuilder withNumberCompressed(boolean compressNumber) {
-      this.compressNumber = compressNumber;
-      return this;
-    }
-
-    public FuryBuilder withStringCompressed(boolean compressString) {
-      this.compressString = compressString;
-      return this;
-    }
-
-    public FuryBuilder withClassLoader(ClassLoader classLoader) {
-      this.classLoader = classLoader;
-      return this;
-    }
-
-    public FuryBuilder withCompatibleMode(CompatibleMode compatibleMode) {
-      this.compatibleMode = compatibleMode;
-      return this;
-    }
-
-    public FuryBuilder withClassVersionCheck(boolean checkClassVersion) {
-      this.checkClassVersion = checkClassVersion;
-      return this;
-    }
-
-    public FuryBuilder withJdkClassSerializableCheck(boolean jdkClassSerializableCheck) {
-      this.jdkClassSerializableCheck = jdkClassSerializableCheck;
-      return this;
-    }
-
-    /**
-     * Set default serializer type for class which implements jdk serialization method such as
-     * `writeObject/readObject`.
-     *
-     * @param serializerClass Default serializer type for class which implement jdk serialization.
-     */
-    public FuryBuilder withDefaultJDKCompatibleSerializerType(
-        Class<? extends Serializer> serializerClass) {
-      this.defaultJDKStreamSerializerType = serializerClass;
-      return this;
-    }
-
-    public FuryBuilder requireClassRegistration(boolean requireClassRegistration) {
-      this.requireClassRegistration = requireClassRegistration;
-      return this;
-    }
-
-    public FuryBuilder withClassRegistrationRequired(boolean requireClassRegistration) {
-      this.requireClassRegistration = requireClassRegistration;
-      return this;
-    }
-
-    public FuryBuilder disableSecureMode() {
-      return withSecureMode(false);
-    }
-
-    public FuryBuilder withSecureMode(boolean enableSecureMode) {
-      this.secureModeEnabled = enableSecureMode;
-      withClassRegistrationRequired(enableSecureMode);
-      return this;
-    }
-
-    /** Whether to enable meta share mode. */
-    public FuryBuilder withMetaContextShareEnabled(boolean shareMetaContext) {
-      this.metaContextShareEnabled = shareMetaContext;
-      return this;
-    }
-
-    /**
-     * Whether deserialize/skip data of un-existed class.
-     *
-     * @see Config#isDeserializeUnExistClassEnabled()
-     */
-    public FuryBuilder withDeserializeUnExistClassEnabled(boolean deserializeUnExistClassEnabled) {
-      this.deserializeUnExistClassEnabled = deserializeUnExistClassEnabled;
-      return this;
-    }
-
-    public FuryBuilder withCodegen(boolean codeGenEnabled) {
-      this.codeGenEnabled = codeGenEnabled;
-      return this;
-    }
-
-    /**
-     * Whether enable async compilation. If enabled, serialization will use interpreter mode
-     * serialization first and switch to jit serialization after async serializer jit for a class \
-     * is finished.
-     *
-     * @see Config#isAsyncCompilationEnabled()
-     */
-    public FuryBuilder withAsyncCompilationEnabled(boolean asyncCompilationEnabled) {
-      this.asyncCompilationEnabled = asyncCompilationEnabled;
-      return this;
-    }
-
-    private void finish() {
-      if (classLoader == null) {
-        classLoader = Thread.currentThread().getContextClassLoader();
-      }
-      if (language != Language.JAVA) {
-        stringReferenceIgnored = false;
-      }
-      if (ENABLE_SECURITY_MODE_FORCIBLY) {
-        if (!secureModeEnabled || !requireClassRegistration) {
-          LOG.warn("Security mode is enabled forcibly, ignore security mode disable config.");
-          secureModeEnabled = true;
-          requireClassRegistration = true;
-        }
-      }
-      if (defaultJDKStreamSerializerType == JavaSerializer.class) {
-        if (secureModeEnabled) {
-          LOG.warn(
-              "Security mode is enabled, disable jdk serialization for types "
-                  + "which customized java serialization by methods such as writeObject/readObject.");
-          defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
-        } else {
-          LOG.warn(
-              "JDK serialization is used for types which customized java serialization by "
-                  + "implementing methods such as writeObject/readObject. This is not secure, try to "
-                  + "use {} instead, or implement a custom {}.",
-              ObjectStreamSerializer.class,
-              Serializer.class);
-        }
-      }
-      if (compatibleMode == CompatibleMode.COMPATIBLE) {
-        checkClassVersion = false;
-      }
-    }
-
-    public Fury build() {
-      finish();
-      ClassLoader loader = this.classLoader;
-      // clear classLoader to avoid `LoaderBinding#furyFactory` lambda capture classLoader by
-      // capturing `FuryBuilder`, which make `classLoader` not able to be gc.
-      this.classLoader = null;
-      return new Fury(this, loader);
-    }
-
-    /** Build thread safe fury. */
-    public ThreadSafeFury buildThreadSafeFury() {
-      return buildThreadLocalFury();
-    }
-
-    /** Build thread safe fury backed by {@link ThreadLocalFury}. */
-    public ThreadLocalFury buildThreadLocalFury() {
-      finish();
-      ClassLoader loader = this.classLoader;
-      // clear classLoader to avoid `LoaderBinding#furyFactory` lambda capture classLoader by
-      // capturing `FuryBuilder`,  which make `classLoader` not able to be gc.
-      this.classLoader = null;
-      ThreadLocalFury threadSafeFury =
-          new ThreadLocalFury(classLoader -> new Fury(FuryBuilder.this, classLoader));
-      threadSafeFury.setClassLoader(loader);
-      return threadSafeFury;
-    }
-
-    /**
-     * Build pooled ThreadSafeFury.
-     *
-     * @param minPoolSize min pool size
-     * @param maxPoolSize max pool size
-     * @return ThreadSafeFuryPool
-     */
-    public ThreadSafeFury buildThreadSafeFuryPool(int minPoolSize, int maxPoolSize) {
-      return buildThreadSafeFuryPool(minPoolSize, maxPoolSize, 30L, TimeUnit.SECONDS);
-    }
-
-    /**
-     * Build pooled ThreadSafeFury.
-     *
-     * @param minPoolSize min pool size
-     * @param maxPoolSize max pool size
-     * @param expireTime cache expire time, default 5's
-     * @param timeUnit TimeUnit, default SECONDS
-     * @return ThreadSafeFuryPool
-     */
-    public ThreadSafeFury buildThreadSafeFuryPool(
-        int minPoolSize, int maxPoolSize, long expireTime, TimeUnit timeUnit) {
-      if (minPoolSize < 0 || maxPoolSize < 0 || minPoolSize > maxPoolSize) {
-        throw new IllegalArgumentException(
-            String.format(
-                "thread safe fury pool's init pool size error, please check it, min:[%s], max:[%s]",
-                minPoolSize, maxPoolSize));
-      }
-      finish();
-      ClassLoader loader = this.classLoader;
-      this.classLoader = null;
-      ThreadSafeFury threadSafeFury =
-          new ThreadPoolFury(
-              classLoader -> new Fury(FuryBuilder.this, classLoader),
-              minPoolSize,
-              maxPoolSize,
-              expireTime,
-              timeUnit);
-      threadSafeFury.setClassLoader(loader);
-      return threadSafeFury;
-    }
   }
 }

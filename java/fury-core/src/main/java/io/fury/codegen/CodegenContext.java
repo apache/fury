@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.codegen;
@@ -24,13 +25,14 @@ import static io.fury.codegen.CodeGenerator.indent;
 import static io.fury.type.TypeUtils.getArrayType;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.common.reflect.TypeToken;
+import io.fury.codegen.Expression.BaseInvoke;
 import io.fury.codegen.Expression.Reference;
+import io.fury.collection.Collections;
 import io.fury.collection.Tuple2;
-import io.fury.collection.Tuple3;
+import io.fury.util.Preconditions;
+import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -134,17 +136,20 @@ public class CodegenContext {
   String className;
   String[] superClasses;
   String[] interfaces;
-  List<Tuple3<Boolean, String, String>> fields = new ArrayList<>();
+  List<FieldInfo> fields = new ArrayList<>();
+  private CodegenContext instanceInitCtx;
+
   /**
    * all initCodes would be placed into a method called initialize(), which will be called by
    * constructor.
    */
-  List<String> initCodes = new ArrayList<>();
+  List<String> instanceInitCodes = new ArrayList<>();
+
+  private CodegenContext staticInitCtx;
+  List<String> staticInitCodes = new ArrayList<>();
 
   List<String> constructors = new ArrayList<>();
   LinkedHashMap<String, String> methods = new LinkedHashMap<>();
-
-  private CodegenContext instanceInitCtx;
 
   public CodegenContext() {}
 
@@ -210,19 +215,7 @@ public class CodegenContext {
     if (clz1.isArray()) {
       return newNames("arr", name2);
     } else {
-      String type = type(clz1);
-      int index = type.lastIndexOf(".");
-      String name;
-      if (index >= 0) {
-        name = StringUtils.uncapitalize(type.substring(index + 1));
-      } else {
-        name = StringUtils.uncapitalize(type);
-      }
-      if (JAVA_RESERVED_WORDS.contains(name)) {
-        return newNames("value", name2);
-      } else {
-        return newNames(name, name2);
-      }
+      return newNames(namePrefix(clz1), name2);
     }
   }
 
@@ -237,7 +230,8 @@ public class CodegenContext {
     for (String name : names) {
       newValNameIds.put(name, id + 1);
     }
-    if (id == 0 && Sets.intersection(valNames, Sets.newHashSet(names)).isEmpty()) {
+
+    if (id == 0 && !Collections.hasIntersection(valNames, Collections.ofHashSet(names))) {
       valNames.addAll(Arrays.asList(names));
       return names;
     } else {
@@ -259,7 +253,8 @@ public class CodegenContext {
     if (clz.isArray()) {
       return "arr";
     } else {
-      String type = type(clz);
+      String canonicalName = clz.getCanonicalName();
+      String type = canonicalName != null ? type(clz) : "Object";
       int index = type.lastIndexOf(".");
       String name;
       if (index >= 0) {
@@ -267,7 +262,6 @@ public class CodegenContext {
       } else {
         name = StringUtils.uncapitalize(type);
       }
-
       if (JAVA_RESERVED_WORDS.contains(name)) {
         return "value";
       } else {
@@ -284,10 +278,13 @@ public class CodegenContext {
    *     return canonical name otherwise.
    */
   public String type(Class<?> clz) {
+    if (!sourcePkgLevelAccessible(clz)) {
+      return "Object";
+    }
     if (clz.isArray()) {
       return getArrayType(clz);
     }
-    String type = clz.getCanonicalName();
+    String type = ReflectionUtils.getCanonicalName(clz);
     if (type.startsWith("java.lang")) {
       if (!type.substring("java.lang.".length()).contains(".")) {
         return clz.getSimpleName();
@@ -337,7 +334,7 @@ public class CodegenContext {
    */
   public void addImports(Class<?>... classes) {
     for (Class<?> clz : classes) {
-      imports.add(clz.getCanonicalName());
+      imports.add(ReflectionUtils.getCanonicalName(clz));
     }
   }
 
@@ -359,7 +356,7 @@ public class CodegenContext {
    * @param cls class to be imported
    */
   public void addImport(Class<?> cls) {
-    this.imports.add(cls.getCanonicalName());
+    this.imports.add(ReflectionUtils.getCanonicalName(cls));
   }
 
   /**
@@ -407,7 +404,7 @@ public class CodegenContext {
         parameters.stream().map(t -> t.f0 + " " + t.f1).collect(Collectors.joining(", "));
 
     StringBuilder codeBuilder = new StringBuilder(alignIndent(codeBody)).append("\n");
-    for (String init : initCodes) {
+    for (String init : instanceInitCodes) {
       codeBuilder.append(indent(init, 4)).append('\n');
     }
     String constructor =
@@ -423,7 +420,7 @@ public class CodegenContext {
   }
 
   public void addInitCode(String code) {
-    initCodes.add(code);
+    instanceInitCodes.add(code);
   }
 
   public void addStaticMethod(
@@ -488,52 +485,18 @@ public class CodegenContext {
     return params;
   }
 
-  /**
-   * Add a field to class.
-   *
-   * @param type type
-   * @param fieldName field name
-   * @param initExpr field init expression
-   */
-  public void addField(Class<?> type, String fieldName, Expression initExpr) {
-    addField(type(type), fieldName, initExpr);
+  /** Returns true if class has field with name {@code fieldName}. */
+  public boolean hasField(String fieldName) {
+    for (FieldInfo field : fields) {
+      if (fieldName.equals(field.fieldName)) {
+        return true;
+      }
+    }
+    return false;
   }
 
-  public void addField(String type, String fieldName, Expression initExpr) {
-    addField(type, fieldName, initExpr, true);
-  }
-
-  /**
-   * Add a field to class.
-   *
-   * @param type type
-   * @param fieldName field name
-   * @param initExpr field init expression
-   */
-  public void addField(String type, String fieldName, Expression initExpr, boolean isFinalField) {
-    if (instanceInitCtx == null) {
-      instanceInitCtx = new CodegenContext(valNames, imports);
-    }
-    fields.add(Tuple3.of(isFinalField, type, fieldName));
-    ExprCode exprCode = initExpr.genCode(instanceInitCtx);
-    if (StringUtils.isNotBlank(exprCode.code())) {
-      initCodes.add(exprCode.code());
-    }
-    initCodes.add(String.format("%s = %s;", fieldName, exprCode.value()));
-  }
-
-  /**
-   * Add a field to class.
-   *
-   * @param type type
-   * @param fieldName field name
-   * @param initCode field init code
-   */
-  public void addField(String type, String fieldName, String initCode) {
-    fields.add(Tuple3.of(false, type, fieldName));
-    if (StringUtils.isNotBlank(initCode)) {
-      initCodes.add(initCode);
-    }
+  private List<FieldInfo> getFieldsInfo(boolean isStatic) {
+    return fields.stream().filter(f -> f.isStatic == isStatic).collect(Collectors.toList());
   }
 
   /**
@@ -547,7 +510,72 @@ public class CodegenContext {
   }
 
   public void addField(String type, String fieldName) {
-    fields.add(Tuple3.of(true, type, fieldName));
+    addField(false, type, fieldName, null);
+  }
+
+  /**
+   * Add a field to class.
+   *
+   * @param type type
+   * @param fieldName field name
+   * @param initExpr field init expression
+   */
+  public void addField(Class<?> type, String fieldName, Expression initExpr) {
+    addField(type(type), fieldName, initExpr);
+  }
+
+  public void addField(String type, String fieldName, Expression initExpr) {
+    addField(true, type, fieldName, initExpr);
+  }
+
+  /**
+   * Add a field to class.
+   *
+   * @param type type
+   * @param fieldName field name
+   * @param initExpr field init expression
+   */
+  public void addField(boolean isFinalField, String type, String fieldName, Expression initExpr) {
+    addField(false, isFinalField, type, fieldName, initExpr);
+  }
+
+  /**
+   * Add a field to class.
+   *
+   * @param isStatic whether is static field
+   * @param type type
+   * @param fieldName field name
+   * @param initExpr field init expression
+   */
+  public void addField(
+      boolean isStatic, boolean isFinalField, String type, String fieldName, Expression initExpr) {
+    fields.add(new FieldInfo(isStatic, isFinalField, type, fieldName));
+    if (initExpr != null) {
+      CodegenContext ctx;
+      List<String> initCodes;
+      if (isStatic) {
+        if (staticInitCtx == null) {
+          staticInitCtx = new CodegenContext(valNames, imports);
+        }
+        ctx = staticInitCtx;
+        initCodes = staticInitCodes;
+        if (initExpr instanceof BaseInvoke) {
+          // Add an outer catch in static init block.
+          ((BaseInvoke) initExpr).needTryCatch = false;
+        }
+      } else {
+        if (instanceInitCtx == null) {
+          instanceInitCtx = new CodegenContext(valNames, imports);
+        }
+        ctx = instanceInitCtx;
+        initCodes = instanceInitCodes;
+      }
+      ExprCode exprCode = initExpr.genCode(ctx);
+      if (StringUtils.isNotBlank(exprCode.code())) {
+        initCodes.add(exprCode.code());
+      }
+      initCodes.add(String.format("%s = %s;", fieldName, exprCode.value()));
+    }
   }
 
   /** Generate code for class. */
@@ -571,18 +599,27 @@ public class CodegenContext {
       codeBuilder.append(String.format("implements %s ", String.join(", ", interfaces)));
     }
     codeBuilder.append("{\n");
-
-    // fields
-    if (!fields.isEmpty()) {
+    List<FieldInfo> staticFields = getFieldsInfo(true);
+    if (!staticFields.isEmpty()) {
+      for (FieldInfo field : staticFields) {
+        codeBuilder.append("  ").append(addFieldDecl(field)).append("\n");
+      }
+      codeBuilder.append("  static {\n");
+      codeBuilder.append("    try {\n");
+      for (String staticInitCode : staticInitCodes) {
+        codeBuilder.append(indent(staticInitCode, 6)).append("\n");
+      }
+      codeBuilder.append("    } catch (Throwable e) {\n");
+      codeBuilder.append("      e.printStackTrace();\n");
+      codeBuilder.append("      throw new RuntimeException(e);\n");
+      codeBuilder.append("    }\n");
+      codeBuilder.append("  }\n");
+    }
+    List<FieldInfo> instanceFields = getFieldsInfo(false);
+    if (!instanceFields.isEmpty()) {
       codeBuilder.append('\n');
-      for (Tuple3<Boolean, String, String> field : fields) {
-        String declare;
-        if (field.f0) {
-          declare = String.format("private final %s %s;\n", field.f1, field.f2);
-        } else {
-          declare = String.format("private %s %s;\n", field.f1, field.f2);
-        }
-        codeBuilder.append(indent(declare));
+      for (FieldInfo field : instanceFields) {
+        codeBuilder.append(indent(addFieldDecl(field).toString()));
       }
     }
 
@@ -598,6 +635,18 @@ public class CodegenContext {
 
     codeBuilder.append('}');
     return codeBuilder.toString();
+  }
+
+  private StringBuilder addFieldDecl(FieldInfo field) {
+    StringBuilder declare = new StringBuilder("private ");
+    if (field.isStatic) {
+      declare.append("static ");
+    }
+    if (field.isFinal) {
+      declare.append("final ");
+    }
+    declare.append(field.type).append(" ").append(field.fieldName).append(";\n");
+    return declare;
   }
 
   public void clearExprState() {
@@ -628,5 +677,19 @@ public class CodegenContext {
     } else {
       return code;
     }
+  }
+
+  private final Map<Class<?>, Boolean> sourcePublicAccessibleCache = new HashMap<>();
+  private final Map<Class<?>, Boolean> sourcePkgLevelAccessibleCache = new HashMap<>();
+
+  /** Returns true if class is public accessible from source. */
+  public boolean sourcePublicAccessible(Class<?> clz) {
+    return sourcePublicAccessibleCache.computeIfAbsent(clz, CodeGenerator::sourcePublicAccessible);
+  }
+
+  /** Returns true if class is package level accessible from source. */
+  public boolean sourcePkgLevelAccessible(Class<?> clz) {
+    return sourcePkgLevelAccessibleCache.computeIfAbsent(
+        clz, CodeGenerator::sourcePkgLevelAccessible);
   }
 }

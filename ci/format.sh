@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# This script is derived from https://github.com/ray-project/ray/blob/5ce25a57a0949673d17f3a8784f05b2d65290524/ci/lint/format.sh.
+
 # Black + Clang formatter (if installed). This script formats all changed files from the last mergebase.
 # You are encouraged to run this locally before pushing changes for review.
 
@@ -86,7 +89,7 @@ fi
 if [ ! -f "$ROOT/javascript/node_modules/.bin/eslint" ]; then
   echo "eslint is not installed, start to install it."
   pushd "$ROOT/javascript"
-  npm install --registry=https://registry.npmmirror.com 
+  npm install --registry=https://registry.npmmirror.com
   popd
 fi
 
@@ -190,9 +193,8 @@ format_all() {
       if command -v mvn >/dev/null ; then
         echo "Maven installed"
         cd "$ROOT/java"
-        mvn -T10 license:format
-        mvn -T10 spotless:apply
-        mvn -T10 checkstyle:check
+        mvn -T10 --no-transfer-progress spotless:apply
+        mvn -T10 --no-transfer-progress checkstyle:check
       else
         echo "Maven not installed, skip java check"
       fi
@@ -200,8 +202,8 @@ format_all() {
 
     echo "$(date)" "format javascript...."
     if command -v node >/dev/null; then
-      pushd "$ROOT/javascript"
-      git ls-files -- '*.ts' "${GIT_LS_EXCLUDES[@]}" | xargs -P 5 node ./node_modules/.bin/eslint
+      pushd "$ROOT"
+      git ls-files -- '*.ts' "${GIT_LS_EXCLUDES[@]}" | xargs -P 5 node ./javascript/node_modules/.bin/eslint
       popd
     fi
 
@@ -252,9 +254,8 @@ format_changed() {
           if command -v mvn >/dev/null ; then
             echo "Maven installed"
             cd "$ROOT/java"
-            mvn -T10 license:format
-            mvn -T10 spotless:apply
-            mvn -T10 checkstyle:check
+            mvn -T10 --no-transfer-progress spotless:apply
+            mvn -T10 --no-transfer-progress checkstyle:check
           else
             echo "Maven not installed, skip java check"
           fi
@@ -269,10 +270,10 @@ format_changed() {
     fi
 
     if which node >/dev/null; then
-        pushd "$ROOT/javascript"
+        pushd "$ROOT"
         if ! git diff --diff-filter=ACRM --quiet --exit-code "$MERGEBASE" -- '*.ts' &>/dev/null; then
             git diff --name-only --diff-filter=ACRM "$MERGEBASE" -- '*.ts' | xargs -P 5 \
-                  node ./node_modules/.bin/eslint
+                  node ./javascript/node_modules/.bin/eslint
         fi
         popd
     fi
@@ -295,7 +296,7 @@ elif [ "${1-}" == '--all' ]; then
 else
     # Add the origin remote if it doesn't exist
     if ! git remote -v | grep -q origin; then
-        git remote add 'origin' 'https://github.com/alipay/fury.git'
+        git remote add 'origin' 'https://github.com/apache/incubator-fury.git'
     fi
 
     # use unshallow fetch for `git merge-base origin/main HEAD` to work.

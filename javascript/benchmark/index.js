@@ -1,11 +1,32 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 const Fury = require("@furyjs/fury");
 const utils = require("../test/util");
 const hps = require('@furyjs/hps');
-const fury = new Fury.default({ hps });
+const fury = new Fury.default({ hps, refTracking: false, useLatin1: true, useSliceString: true });
 const Benchmark = require("benchmark");
 const protobuf = require("protobufjs");
 const path = require('path');
+const Type = Fury.Type;
 const assert = require('assert');
+const { spawn } = require("child_process");
 
 const sample = {
   id: 123456,
@@ -117,54 +138,76 @@ function loadProto() {
 
 async function start() {
   const { encode: protobufEncode, decode: protobufDecode } = await loadProto();
-  var suite = new Benchmark.Suite();
   const protobufBf = protobufEncode(sample);
 
   {
     console.log('sample json size: ', `${(sampleJson.length / 1000).toFixed()}k`);
     assert(JSON.stringify(protobufDecode(protobufBf)) === sampleJson);
-    assert(JSON.stringify(deserialize(furyAb)) === sampleJson);
+    assert.deepEqual(deserialize(furyAb), sample);
   }
+  let result = {
+    fury: {
+      serialize: 0,
+      deserialize: 0,
+    },
+    protobuf: {
+      serialize: 0,
+      deserialize: 0,
+    },
+    json: {
+      serialize: 0,
+      deserialize: 0,
+    }
+  }
+
   {
-    let result;;
+    var suite = new Benchmark.Suite();
     suite
       .add("fury", function () {
         serialize(sample);
       })
-      .add("JSON.stringify", function () {
+      .add("json", function () {
         JSON.stringify(sample);
       })
       .add("protobuf", function () {
         protobufEncode(sample);
       })
       .on("complete", function (e) {
-        result = e.currentTarget.map(({ name, hz }) => [name, Math.ceil(hz)]);
+        e.currentTarget.forEach(({ name, hz }) => {
+          result[name].serialize = Math.ceil(hz / 10000);
+        });
       })
       .run({ async: false });
-    console.log('serialize');
-    console.table(result);
   }
 
-  var suite = new Benchmark.Suite();
 
   {
-    let result;
+    var suite = new Benchmark.Suite();
     suite
       .add("fury", function () {
         deserialize(furyAb);
       })
-      .add("JSON.parse", function () {
+      .add("json", function () {
         JSON.parse(sampleJson);
       })
       .add("protobuf", function () {
         protobufDecode(protobufBf);
       })
       .on("complete", function (e) {
-        result = e.currentTarget.map(({ name, hz }) => [name, Math.ceil(hz)]);
+        e.currentTarget.forEach(({ name, hz }) => {
+          result[name].deserialize = Math.ceil(hz / 10000);
+        });
       })
       .run({ async: false });
-    console.log('deserialize');
-    console.table(result);
   }
+  console.table(result);
+
+  spawn(
+    `python3`,
+    ['draw.py', result.json.serialize, result.json.deserialize, result.protobuf.serialize, result.protobuf.deserialize, result.fury.serialize, result.fury.deserialize],
+    {
+      cwd: __dirname,
+    }
+  )
 }
 start();

@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.format.encoder;
@@ -22,13 +23,13 @@ import static io.fury.type.TypeUtils.CLASS_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.CaseFormat;
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.builder.CodecBuilder;
 import io.fury.codegen.CodeGenerator;
 import io.fury.codegen.CodegenContext;
 import io.fury.codegen.Expression;
+import io.fury.codegen.Expression.Literal;
 import io.fury.codegen.Expression.Reference;
 import io.fury.codegen.ExpressionUtils;
 import io.fury.format.row.ArrayData;
@@ -43,7 +44,9 @@ import io.fury.format.type.DataTypes;
 import io.fury.format.type.TypeInference;
 import io.fury.type.Descriptor;
 import io.fury.type.TypeUtils;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.LoggerFactory;
+import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
 import java.lang.reflect.Modifier;
 import java.util.SortedMap;
@@ -83,12 +86,12 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     ctx.reserveName(BEAN_CLASS_NAME);
     Expression clsExpr;
     if (Modifier.isPublic(beanClass.getModifiers())) {
-      clsExpr = new Expression.Literal(ctx.type(beanClass) + ".class");
+      clsExpr = Literal.ofClass(beanClass);
     } else {
       // non-public class is not accessible in other class.
       clsExpr =
           new Expression.StaticInvoke(
-              Class.class, "forName", CLASS_TYPE, false, Expression.Literal.ofClass(beanClass));
+              Class.class, "forName", CLASS_TYPE, false, Literal.ofClass(beanClass));
     }
     ctx.addField(Class.class, "beanClass", clsExpr);
     ctx.addImports(Field.class, Schema.class);
@@ -167,7 +170,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       Preconditions.checkNotNull(d);
       TypeToken<?> fieldType = d.getTypeToken();
       Expression fieldValue = getFieldValue(bean, d);
-      Expression.Literal ordinal = new Expression.Literal(String.valueOf(i));
+      Literal ordinal = Literal.ofInt(i);
       Expression.StaticInvoke field =
           new Expression.StaticInvoke(
               DataTypes.class, "fieldOfSchema", ARROW_FIELD_TYPE, false, schemaExpr, ordinal);
@@ -193,7 +196,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     expressions.add(bean);
     // schema field's name must correspond to descriptor's name.
     for (int i = 0; i < numFields; i++) {
-      Expression.Literal ordinal = new Expression.Literal(String.valueOf(i));
+      Literal ordinal = Literal.ofInt(i);
       Descriptor d = getDescriptorByFieldName(schema.getFields().get(i).getName());
       TypeToken<?> fieldType = d.getTypeToken();
       Expression.Invoke isNullAt =
@@ -225,6 +228,9 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
 
   @Override
   protected Expression beanClassExpr() {
+    if (GraalvmSupport.isGraalBuildtime()) {
+      return staticBeanClassExpr();
+    }
     return beanClassRef;
   }
 }

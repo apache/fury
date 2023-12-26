@@ -1,34 +1,37 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.type;
 
-import static io.fury.util.Utils.checkArgument;
+import static io.fury.util.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Maps;
 import com.google.common.reflect.TypeToken;
 import io.fury.annotation.Ignore;
 import io.fury.annotation.Internal;
 import io.fury.collection.Tuple2;
+import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
+import io.fury.util.record.RecordComponent;
+import io.fury.util.record.RecordUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -87,16 +90,6 @@ public class Descriptor {
     this.typeToken = typeToken;
   }
 
-  public Descriptor(Field field) {
-    this.field = field;
-    this.name = field.getName();
-    this.modifier = field.getModifiers();
-    this.declaringClass = field.getDeclaringClass().getName();
-    this.readMethod = null;
-    this.writeMethod = null;
-    this.typeToken = null;
-  }
-
   public Descriptor(TypeToken<?> typeToken, String name, int modifier, String declaringClass) {
     this.field = null;
     this.name = name;
@@ -107,7 +100,17 @@ public class Descriptor {
     this.writeMethod = null;
   }
 
-  public Descriptor(
+  private Descriptor(Field field, Method readMethod) {
+    this.field = field;
+    this.name = field.getName();
+    this.modifier = field.getModifiers();
+    this.declaringClass = field.getDeclaringClass().getName();
+    this.readMethod = readMethod;
+    this.writeMethod = null;
+    this.typeToken = null;
+  }
+
+  private Descriptor(
       TypeToken<?> typeToken,
       String name,
       int modifier,
@@ -213,6 +216,33 @@ public class Descriptor {
     return map;
   }
 
+  private static final ClassValue<Map<String, List<Field>>> sortedDuplicatedFields =
+      new ClassValue<Map<String, List<Field>>>() {
+        @Override
+        protected Map<String, List<Field>> computeValue(Class<?> type) {
+          SortedMap<Field, Descriptor> allFields = Descriptor.getAllDescriptorsMap(type);
+          Map<String, List<Field>> duplicated = Descriptor.getDuplicateNameFields(allFields);
+          Map<String, List<Field>> map = new HashMap<>();
+          for (Map.Entry<String, List<Field>> e : duplicated.entrySet()) {
+            e.getValue()
+                .sort(
+                    (f1, f2) -> {
+                      if (f1.getDeclaringClass() == f2.getDeclaringClass()) {
+                        return 0;
+                      } else {
+                        return f1.getDeclaringClass().isAssignableFrom(f2.getDeclaringClass())
+                            ? -1
+                            : 1;
+                      }
+                    });
+            if (map.put(e.getKey(), e.getValue()) != null) {
+              throw new IllegalStateException("Duplicate key");
+            }
+          }
+          return map;
+        }
+      };
+
   public static Map<String, List<Field>> getDuplicateNameFields(
       SortedMap<Field, Descriptor> allDescriptorsMap) {
     Map<String, List<Field>> duplicateNameFields = new HashMap<>();
@@ -227,30 +257,22 @@ public class Descriptor {
             return fields;
           });
     }
-    duplicateNameFields =
-        Maps.filterValues(duplicateNameFields, fields -> Objects.requireNonNull(fields).size() > 1);
+    Map<String, List<Field>> map = new HashMap<>();
+    for (Map.Entry<String, List<Field>> e : duplicateNameFields.entrySet()) {
+      if (Objects.requireNonNull(e.getValue()).size() > 1) {
+        map.put(e.getKey(), e.getValue());
+      }
+    }
+    duplicateNameFields = map;
     return duplicateNameFields;
   }
 
-  public static Map<String, List<Field>> getSortedDuplicatedFields(
-      SortedMap<Field, Descriptor> allFields) {
-    Map<String, List<Field>> duplicated = Descriptor.getDuplicateNameFields(allFields);
-    Map<String, List<Field>> map = new HashMap<>();
-    for (Map.Entry<String, List<Field>> e : duplicated.entrySet()) {
-      e.getValue()
-          .sort(
-              (f1, f2) -> {
-                if (f1.getDeclaringClass() == f2.getDeclaringClass()) {
-                  return 0;
-                } else {
-                  return f1.getDeclaringClass().isAssignableFrom(f2.getDeclaringClass()) ? -1 : 1;
-                }
-              });
-      if (map.put(e.getKey(), e.getValue()) != null) {
-        throw new IllegalStateException("Duplicate key");
-      }
-    }
-    return map;
+  public static Map<String, List<Field>> getSortedDuplicatedFields(Class<?> cls) {
+    return sortedDuplicatedFields.get(cls);
+  }
+
+  public static boolean hasDuplicateNameFields(Class<?> clz) {
+    return !getSortedDuplicatedFields(clz).isEmpty();
   }
 
   /**
@@ -303,6 +325,21 @@ public class Descriptor {
     Class<?> clazz = clz;
     // TODO(chaokunyang) use fury compiler thread pool
     ExecutorService compilationService = ForkJoinPool.commonPool();
+    if (RecordUtils.isRecord(clz)) {
+      RecordComponent[] components = RecordUtils.getRecordComponents(clazz);
+      assert components != null;
+      try {
+        for (RecordComponent component : components) {
+          Field field = clz.getDeclaredField(component.getName());
+          descriptorMap.put(field, new Descriptor(field, component.getAccessor()));
+        }
+      } catch (NoSuchFieldException e) {
+        // impossible
+        Platform.throwException(e);
+      }
+      currentDescriptorMap = new TreeMap<>(descriptorMap);
+      return Tuple2.of(descriptorMap, currentDescriptorMap);
+    }
     do {
       Field[] fields = clazz.getDeclaredFields();
       for (Field field : fields) {
@@ -312,7 +349,7 @@ public class Descriptor {
         if (!Modifier.isTransient(modifiers)
             && !Modifier.isStatic(modifiers)
             && !field.isAnnotationPresent(Ignore.class)) {
-          descriptorMap.put(field, new Descriptor(field));
+          descriptorMap.put(field, new Descriptor(field, null));
         }
       }
       if (clazz == clz) {

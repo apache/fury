@@ -1,45 +1,66 @@
-import  {Fury} from "../type";
-import { InternalSerializerType, RefFlags } from "../type";
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
-const epoch =  new Date('1970/01/01 00:00').getTime();
+import { Fury } from "../type";
+import { InternalSerializerType } from "../type";
+
+const epochDate = new Date("1970/01/01 00:00");
+const epoch = epochDate.getTime();
 
 export const timestampSerializer = (fury: Fury) => {
-    const { binaryView, binaryWriter} = fury;
-    const { writeInt8, writeInt64, writeInt16 } = binaryWriter;
-    const { readInt64} = binaryView;
-    return {
-        read: () => {
-            return new Date(Number(readInt64()));
-        },
-        write: (v: Date) => {
-            writeInt8(RefFlags.NotNullValueFlag);
-            writeInt16(InternalSerializerType.TIMESTAMP);
-            writeInt64(BigInt(v.getTime()));
-        },
-        reserveWhenWrite: () => {
-            return 11; 
-        }
-    }
-}
+  const { binaryReader, binaryWriter, referenceResolver } = fury;
+  const { int64: writeInt64 } = binaryWriter;
+  const { int64: readInt64 } = binaryReader;
+
+  return {
+    ...referenceResolver.deref(() => {
+      return new Date(Number(readInt64()));
+    }),
+    write: referenceResolver.withNotNullableWriter(InternalSerializerType.TIMESTAMP, epochDate, (v: Date) => {
+      writeInt64(BigInt(v.getTime()));
+    }),
+    config: () => {
+      return {
+        reserve: 11,
+      };
+    },
+  };
+};
 
 export const dateSerializer = (fury: Fury) => {
-    const { binaryView, binaryWriter} = fury;
-    const { writeInt8, writeInt32, writeInt16 } = binaryWriter;
-    const { readInt32} = binaryView;
-    return {
-        read: () => {
-            const day = readInt32();
-            return new Date(epoch + (day * (24*60*60) * 1000));
-        },
-        write: (v: Date) => {
-            const diff = v.getTime() - epoch;
-            const day = Math.floor(diff / 1000 / (24*60*60))
-            writeInt8(RefFlags.NotNullValueFlag);
-            writeInt16(InternalSerializerType.DATE);
-            writeInt32(day);
-        },
-        reserveWhenWrite: () => {
-            return 7; 
-        }
-    }
-}
+  const { binaryReader, binaryWriter, referenceResolver } = fury;
+  const { int32: writeInt32 } = binaryWriter;
+  const { int32: readInt32 } = binaryReader;
+  return {
+    ...referenceResolver.deref(() => {
+      const day = readInt32();
+      return new Date(epoch + (day * (24 * 60 * 60) * 1000));
+    }),
+    write: referenceResolver.withNotNullableWriter(InternalSerializerType.DATE, epochDate, (v: Date) => {
+      const diff = v.getTime() - epoch;
+      const day = Math.floor(diff / 1000 / (24 * 60 * 60));
+      writeInt32(day);
+    }),
+    config: () => {
+      return {
+        reserve: 7,
+      };
+    },
+  };
+};

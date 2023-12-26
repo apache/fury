@@ -1,30 +1,37 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
 import io.fury.Fury;
 import io.fury.memory.MemoryBuffer;
-import io.fury.resolver.ReferenceResolver;
+import io.fury.resolver.ClassInfo;
+import io.fury.resolver.ClassInfoHolder;
+import io.fury.resolver.ClassResolver;
+import io.fury.resolver.RefResolver;
+import io.fury.serializer.collection.ArrayAsList;
+import io.fury.serializer.collection.CollectionFlags;
+import io.fury.serializer.collection.FuryArrayAsListSerializer;
 import io.fury.type.Type;
 import io.fury.type.TypeUtils;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.IdentityHashMap;
@@ -37,10 +44,11 @@ import java.util.IdentityHashMap;
 public class ArraySerializers {
 
   /** May be multi-dimension array, or multi-dimension primitive array. */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public static final class ObjectArraySerializer<T> extends Serializer<T[]> {
     private final Class<T> innerType;
     private final Serializer componentTypeSerializer;
+    private final ClassInfoHolder classInfoHolder;
     private final int dimension;
     private final int[] stubDims;
 
@@ -67,10 +75,11 @@ public class ArraySerializers {
         this.componentTypeSerializer = null;
       }
       this.stubDims = new int[dimension];
+      classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.LIST.getId();
     }
 
@@ -78,64 +87,87 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
       buffer.writeInt(len);
-      final Serializer componentTypeSerializer = this.componentTypeSerializer;
-      if (componentTypeSerializer != null) {
-        ReferenceResolver referenceResolver = fury.getReferenceResolver();
+      RefResolver refResolver = fury.getRefResolver();
+      Serializer componentSerializer = this.componentTypeSerializer;
+      if (componentSerializer != null) {
         for (T t : arr) {
-          if (!referenceResolver.writeReferenceOrNull(buffer, t)) {
-            componentTypeSerializer.write(buffer, t);
+          if (!refResolver.writeRefOrNull(buffer, t)) {
+            componentSerializer.write(buffer, t);
           }
         }
       } else {
+        Fury fury = this.fury;
+        ClassResolver classResolver = fury.getClassResolver();
+        ClassInfo classInfo = null;
+        Class<?> elemClass = null;
         for (T t : arr) {
-          fury.writeReferencableToJava(buffer, t);
+          if (!refResolver.writeRefOrNull(buffer, t)) {
+            Class<?> clz = t.getClass();
+            if (clz != elemClass) {
+              elemClass = clz;
+              classInfo = classResolver.getClassInfo(clz);
+            }
+            fury.writeNonRef(buffer, t, classInfo);
+          }
         }
       }
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, T[] arr) {
+    public void xwrite(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
-      buffer.writeInt(len);
+      buffer.writePositiveVarInt(len);
       // TODO(chaokunyang) use generics by creating component serializers to multi-dimension array.
       for (T t : arr) {
-        fury.crossLanguageWriteReferencable(buffer, t);
+        fury.xwriteRef(buffer, t);
       }
     }
 
     @Override
     public T[] read(MemoryBuffer buffer) {
+      // Some jdk8 will crash if use varint, why?
       int numElements = buffer.readInt();
       Object[] value = newArray(numElements);
-      ReferenceResolver referenceResolver = fury.getReferenceResolver();
-      referenceResolver.reference(value);
+      RefResolver refResolver = fury.getRefResolver();
+      refResolver.reference(value);
       final Serializer componentTypeSerializer = this.componentTypeSerializer;
       if (componentTypeSerializer != null) {
         for (int i = 0; i < numElements; i++) {
           Object elem;
-          int nextReadRefId = referenceResolver.tryPreserveReferenceId(buffer);
+          int nextReadRefId = refResolver.tryPreserveRefId(buffer);
           if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
             elem = componentTypeSerializer.read(buffer);
-            referenceResolver.setReadObject(nextReadRefId, elem);
+            refResolver.setReadObject(nextReadRefId, elem);
           } else {
-            elem = referenceResolver.getReadObject();
+            elem = refResolver.getReadObject();
           }
           value[i] = elem;
         }
       } else {
+        Fury fury = this.fury;
+        ClassInfoHolder classInfoHolder = this.classInfoHolder;
         for (int i = 0; i < numElements; i++) {
-          value[i] = fury.readReferencableFromJava(buffer);
+          int nextReadRefId = refResolver.tryPreserveRefId(buffer);
+          Object o;
+          if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
+            // ref value or not-null value
+            o = fury.readNonRef(buffer, classInfoHolder);
+            refResolver.setReadObject(nextReadRefId, o);
+          } else {
+            o = refResolver.getReadObject();
+          }
+          value[i] = o;
         }
       }
       return (T[]) value;
     }
 
     @Override
-    public T[] crossLanguageRead(MemoryBuffer buffer) {
-      int numElements = buffer.readInt();
+    public T[] xread(MemoryBuffer buffer) {
+      int numElements = buffer.readPositiveVarInt();
       Object[] value = newArray(numElements);
       for (int i = 0; i < numElements; i++) {
-        value[i] = fury.crossLanguageReadReferencable(buffer);
+        value[i] = fury.xreadRef(buffer);
       }
       return (T[]) value;
     }
@@ -203,12 +235,12 @@ public class ArraySerializers {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+    public void xwrite(MemoryBuffer buffer, T value) {
       write(buffer, value);
     }
 
     @Override
-    public T crossLanguageRead(MemoryBuffer buffer) {
+    public T xread(MemoryBuffer buffer) {
       return read(buffer);
     }
   }
@@ -327,17 +359,17 @@ public class ArraySerializers {
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, char[] value) {
+    public void xwrite(MemoryBuffer buffer, char[] value) {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public char[] crossLanguageRead(MemoryBuffer buffer) {
+    public char[] xread(MemoryBuffer buffer) {
       throw new UnsupportedOperationException();
     }
   }
@@ -534,51 +566,78 @@ public class ArraySerializers {
 
   public static final class StringArraySerializer extends Serializer<String[]> {
     private final StringSerializer stringSerializer;
+    private final FuryArrayAsListSerializer collectionSerializer;
+    private final ArrayAsList<String> list;
 
     public StringArraySerializer(Fury fury) {
       super(fury, String[].class);
       stringSerializer = new StringSerializer(fury);
+      collectionSerializer = new FuryArrayAsListSerializer(fury);
+      collectionSerializer.setElementSerializer(stringSerializer);
+      list = new ArrayAsList<>(0);
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return (short) -Type.FURY_STRING_ARRAY.getId();
     }
 
     @Override
     public void write(MemoryBuffer buffer, String[] value) {
       int len = value.length;
-      buffer.writeInt(len);
-      for (String elem : value) {
-        // TODO reference support
-        if (elem != null) {
-          buffer.writeByte(Fury.REF_VALUE_FLAG);
-          stringSerializer.writeJavaString(buffer, elem);
-        } else {
-          buffer.writeByte(Fury.NULL_FLAG);
+      buffer.writePositiveVarInt(len);
+      if (len == 0) {
+        return;
+      }
+      list.setArray(value);
+      // TODO reference support
+      // this method won't throw exception.
+      int flags = collectionSerializer.writeNullabilityHeader(buffer, list);
+      list.setArray(null); // clear for gc
+      StringSerializer stringSerializer = this.stringSerializer;
+      if ((flags & CollectionFlags.HAS_NULL) != CollectionFlags.HAS_NULL) {
+        for (String elem : value) {
+          stringSerializer.write(buffer, elem);
+        }
+      } else {
+        for (String elem : value) {
+          if (elem == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+            stringSerializer.write(buffer, elem);
+          }
         }
       }
     }
 
     @Override
     public String[] read(MemoryBuffer buffer) {
-      int numElements = buffer.readInt();
+      int numElements = buffer.readPositiveVarInt();
       String[] value = new String[numElements];
-      fury.getReferenceResolver().reference(value);
-      for (int i = 0; i < numElements; i++) {
-        if (buffer.readByte() == Fury.REF_VALUE_FLAG) {
-          value[i] = stringSerializer.readJavaString(buffer);
-        } else {
-          value[i] = null;
+      if (numElements == 0) {
+        return value;
+      }
+      int flags = buffer.readByte();
+      StringSerializer serializer = this.stringSerializer;
+      if ((flags & CollectionFlags.HAS_NULL) != CollectionFlags.HAS_NULL) {
+        for (int i = 0; i < numElements; i++) {
+          value[i] = serializer.readJavaString(buffer);
+        }
+      } else {
+        for (int i = 0; i < numElements; i++) {
+          if (buffer.readByte() != Fury.NULL_FLAG) {
+            value[i] = serializer.readJavaString(buffer);
+          }
         }
       }
       return value;
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, String[] value) {
+    public void xwrite(MemoryBuffer buffer, String[] value) {
       int len = value.length;
-      buffer.writeInt(len);
+      buffer.writePositiveVarInt(len);
       for (String elem : value) {
         if (elem != null) {
           buffer.writeByte(Fury.REF_VALUE_FLAG);
@@ -590,8 +649,8 @@ public class ArraySerializers {
     }
 
     @Override
-    public String[] crossLanguageRead(MemoryBuffer buffer) {
-      int numElements = buffer.readInt();
+    public String[] xread(MemoryBuffer buffer) {
+      int numElements = buffer.readPositiveVarInt();
       String[] value = new String[numElements];
       for (int i = 0; i < numElements; i++) {
         if (buffer.readByte() == Fury.REF_VALUE_FLAG) {
@@ -622,7 +681,7 @@ public class ArraySerializers {
   static void writePrimitiveArray(
       MemoryBuffer buffer, Object arr, int offset, int numElements, int elemSize) {
     int size = Math.multiplyExact(numElements, elemSize);
-    buffer.writeInt(size);
+    buffer.writePositiveVarInt(size);
     int writerIndex = buffer.writerIndex();
     int end = writerIndex + size;
     buffer.ensure(end);

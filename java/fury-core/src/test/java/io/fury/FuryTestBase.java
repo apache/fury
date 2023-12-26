@@ -1,28 +1,30 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury;
 
+import io.fury.config.CompatibleMode;
+import io.fury.config.Language;
 import io.fury.io.ClassLoaderObjectInputStream;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.MetaContext;
 import io.fury.serializer.BufferObject;
-import io.fury.serializer.CompatibleMode;
 import io.fury.util.Platform;
 import io.fury.util.ReflectionUtils;
 import java.io.ByteArrayInputStream;
@@ -55,32 +57,32 @@ public abstract class FuryTestBase {
     return javaFuryLocal.get();
   }
 
-  @DataProvider(name = "referenceTrackingConfig")
+  @DataProvider
   public static Object[][] referenceTrackingConfig() {
     return new Object[][] {{false}, {true}};
   }
 
-  @DataProvider(name = "endian")
+  @DataProvider
   public static Object[][] endian() {
     return new Object[][] {{false}, {true}};
   }
 
-  @DataProvider(name = "enableCodegen")
+  @DataProvider
   public static Object[][] enableCodegen() {
     return new Object[][] {{false}, {true}};
   }
 
-  @DataProvider(name = "compressNumber")
+  @DataProvider
   public static Object[][] compressNumber() {
     return new Object[][] {{false}, {true}};
   }
 
-  @DataProvider(name = "refTrackingAndCompressNumber")
+  @DataProvider
   public static Object[][] refTrackingAndCompressNumber() {
     return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
   }
 
-  @DataProvider(name = "crossLanguageReferenceTrackingConfig")
+  @DataProvider
   public static Object[][] crossLanguageReferenceTrackingConfig() {
     return new Object[][] {
       {false, Language.JAVA},
@@ -96,33 +98,33 @@ public abstract class FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withCodegen(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCodegen(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withCodegen(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCodegen(true)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
     };
@@ -134,37 +136,37 @@ public abstract class FuryTestBase {
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
+            .withRefTracking(true)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
       {
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(false)
+            .withRefTracking(false)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .build()
       },
     };
@@ -174,12 +176,12 @@ public abstract class FuryTestBase {
     Assert.assertEquals(serDeCheckSerializer(fury, obj, classRegex), obj);
   }
 
-  public static Object serDeCheckSerializer(Fury fury, Object obj, String classRegex) {
+  public static <T> T serDeCheckSerializer(Fury fury, Object obj, String classRegex) {
     byte[] bytes = fury.serialize(obj);
     String serializerName = fury.getClassResolver().getSerializerClass(obj.getClass()).getName();
     Matcher matcher = Pattern.compile(classRegex).matcher(serializerName);
     Assert.assertTrue(matcher.find());
-    return fury.deserialize(bytes);
+    return (T) fury.deserialize(bytes);
   }
 
   public static Object serDe(Fury fury1, Fury fury2, Object obj) {
@@ -200,8 +202,13 @@ public abstract class FuryTestBase {
   }
 
   public static <T> T serDe(Fury fury, T obj) {
-    byte[] bytes = fury.serialize(obj);
-    return (T) (fury.deserialize(bytes));
+    try {
+      byte[] bytes = fury.serialize(obj);
+      return (T) (fury.deserialize(bytes));
+    } catch (Throwable t) {
+      // Catch for add breakpoint for debugging.
+      throw t;
+    }
   }
 
   public static Object serDe(Fury fury1, Fury fury2, MemoryBuffer buffer, Object obj) {

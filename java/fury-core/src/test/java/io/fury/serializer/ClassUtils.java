@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
@@ -64,7 +65,7 @@ public class ClassUtils {
             + "  private int[][] int2DArray;\n"
             + "  private int[][] int2DArray_added;\n"
             + "}";
-    return loadClass(BeanA.class, code);
+    return loadClass(BeanA.class, code, ClassUtils.class + "createCompatibleClass1");
   }
 
   public static Class<?> createCompatibleClass2() {
@@ -91,7 +92,7 @@ public class ClassUtils {
             + "  public Map<String, String> map2;\n"
             + "  public SortedMap<Integer, Integer> sortedMap3;"
             + "}";
-    return loadClass(CollectionFields.class, code);
+    return loadClass(CollectionFields.class, code, ClassUtils.class + "createCompatibleClass2");
   }
 
   public static Class<?> createCompatibleClass3() {
@@ -122,10 +123,14 @@ public class ClassUtils {
             + "  public Map singletonMap;\n"
             + "  public Map<String, Integer> singletonMap2;\n"
             + "}";
-    return loadClass(MapFields.class, code);
+    return loadClass(MapFields.class, code, ClassUtils.class + "createCompatibleClass3");
   }
 
-  static Class<?> loadClass(Class<?> cls, String code) {
+  static Class<?> loadClass(Class<?> cls, String code, Object cacheKey) {
+    return Struct.loadClass(cacheKey, () -> compileClass(cls, code));
+  }
+
+  private static Class<?> compileClass(Class<?> cls, String code) {
     String pkg = ReflectionUtils.getPackage(cls);
     Path path = Paths.get(pkg.replace(".", "/") + "/" + cls.getSimpleName() + ".java");
     try {

@@ -1,25 +1,24 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
-import com.google.common.base.Preconditions;
-import io.fury.Config;
 import io.fury.Fury;
 import io.fury.collection.IdentityObjectIntMap;
 import io.fury.collection.LazyMap;
@@ -27,16 +26,19 @@ import io.fury.collection.LongMap;
 import io.fury.collection.MapEntry;
 import io.fury.collection.Tuple2;
 import io.fury.collection.Tuple3;
+import io.fury.config.CompatibleMode;
+import io.fury.config.Config;
 import io.fury.memory.MemoryBuffer;
 import io.fury.resolver.ClassInfo;
-import io.fury.resolver.ClassInfoCache;
+import io.fury.resolver.ClassInfoHolder;
 import io.fury.resolver.ClassResolver;
 import io.fury.resolver.MetaContext;
-import io.fury.resolver.ReferenceResolver;
+import io.fury.resolver.RefResolver;
 import io.fury.type.ClassDef;
 import io.fury.type.Descriptor;
 import io.fury.type.DescriptorGrouper;
 import io.fury.type.Generics;
+import io.fury.util.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -47,7 +49,7 @@ public final class UnexistedClassSerializers {
    * A class for hold deserialization data when the class doesn't exist in this process. When {@link
    * CompatibleMode#COMPATIBLE} is enabled
    *
-   * @see Config#isMetaContextShareEnabled()
+   * @see Config#shareMetaContext()
    */
   public interface UnexistedClass {}
 
@@ -85,28 +87,28 @@ public final class UnexistedClassSerializers {
 
   public static final class UnexistedClassSerializer extends Serializer {
     private final ClassDef classDef;
-    private final ClassInfoCache classInfoCache;
+    private final ClassInfoHolder classInfoHolder;
     private final LongMap<ClassFieldsInfo> fieldsInfoMap;
 
     public UnexistedClassSerializer(Fury fury, ClassDef classDef) {
       super(fury, UnexistedMetaSharedClass.class);
       this.classDef = classDef;
-      classInfoCache = fury.getClassResolver().nilClassInfoCache();
+      classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       fieldsInfoMap = new LongMap<>();
-      Preconditions.checkArgument(fury.getConfig().isMetaContextShareEnabled());
+      Preconditions.checkArgument(fury.getConfig().shareMetaContext());
     }
 
     /**
-     * Multiple un existed class will correspond to this `UnExistedMetaSharedClass`. When querying
-     * classinfo by `class`, it may dispatch to same `UnExistedClassSerializer`, so we can't use
-     * `classDef` in this serializer, but use `classDef` in `UnExistedMetaSharedClass` instead.
+     * Multiple un existed class will correspond to this `UnexistedMetaSharedClass`. When querying
+     * classinfo by `class`, it may dispatch to same `UnexistedClassSerializer`, so we can't use
+     * `classDef` in this serializer, but use `classDef` in `UnexistedMetaSharedClass` instead.
      */
     private void writeClassDef(MemoryBuffer buffer, UnexistedMetaSharedClass value) {
       // Register NotFoundClass ahead to skip write meta shared info,
       // then revert written class id to write class info here,
       // since it's the only place to hold class def for not found class.
-      buffer.increaseWriterIndex(-3);
-      buffer.writeByte(ClassResolver.USE_CLASS_VALUE);
+      buffer.increaseWriterIndex(-2);
+      buffer.writeByte(ClassResolver.USE_CLASS_VALUE_FLAG);
       MetaContext metaContext = fury.getSerializationContext().getMetaContext();
       IdentityObjectIntMap classMap = metaContext.classMap;
       int newId = classMap.size;
@@ -127,7 +129,7 @@ public final class UnexistedClassSerializers {
       ClassDef classDef = value.classDef;
       ClassFieldsInfo fieldsInfo = getClassFieldsInfo(classDef);
       Fury fury = this.fury;
-      ReferenceResolver referenceResolver = fury.getReferenceResolver();
+      RefResolver refResolver = fury.getRefResolver();
       ClassResolver classResolver = fury.getClassResolver();
       if (fury.checkClassVersion()) {
         buffer.writeInt(fieldsInfo.classVersionHash);
@@ -146,37 +148,38 @@ public final class UnexistedClassSerializers {
             // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
             // consistent with jit serializer.
             Serializer<Object> serializer = classInfo.getSerializer();
-            fury.writeReferencableToJava(buffer, fieldValue, serializer);
+            fury.writeRef(buffer, fieldValue, serializer);
           } else {
-            fury.writeReferencableToJava(buffer, fieldValue, classInfo);
+            fury.writeRef(buffer, fieldValue, classInfo);
           }
         }
       }
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.otherFields) {
         Object fieldValue = value.get(fieldInfo.qualifiedFieldName);
         if (fieldInfo.trackingRef) {
-          fury.writeReferencableToJava(buffer, fieldValue, fieldInfo.classInfoCache);
+          fury.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
         } else {
-          fury.writeNullableToJava(buffer, fieldValue, fieldInfo.classInfoCache);
+          fury.writeNullable(buffer, fieldValue, fieldInfo.classInfoHolder);
         }
       }
       Generics generics = fury.getGenerics();
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.containerFields) {
         Object fieldValue = value.get(fieldInfo.qualifiedFieldName);
         ObjectSerializer.writeContainerFieldValue(
-            fury, referenceResolver, classResolver, generics, fieldInfo, buffer, fieldValue);
+            fury, refResolver, classResolver, generics, fieldInfo, buffer, fieldValue);
       }
     }
 
     private ClassFieldsInfo getClassFieldsInfo(ClassDef classDef) {
       ClassFieldsInfo fieldsInfo = fieldsInfoMap.get(classDef.getId());
       if (fieldsInfo == null) {
-        // Use `UnExistedSkipClass` since it doesn't have any field.
+        // Use `UnexistedSkipClass` since it doesn't have any field.
         Collection<Descriptor> descriptors =
             MetaSharedSerializer.consolidateFields(
                 fury.getClassResolver(), UnexistedSkipClass.class, classDef);
         DescriptorGrouper descriptorGrouper =
-            DescriptorGrouper.createDescriptorGrouper(descriptors, true, fury.compressNumber());
+            DescriptorGrouper.createDescriptorGrouper(
+                descriptors, true, fury.compressInt(), fury.compressLong());
         Tuple3<
                 Tuple2<ObjectSerializer.FinalTypeField[], boolean[]>,
                 ObjectSerializer.GenericTypeField[],
@@ -197,9 +200,9 @@ public final class UnexistedClassSerializers {
     public Object read(MemoryBuffer buffer) {
       UnexistedMetaSharedClass obj = new UnexistedMetaSharedClass(classDef);
       Fury fury = this.fury;
-      ReferenceResolver referenceResolver = fury.getReferenceResolver();
+      RefResolver refResolver = fury.getRefResolver();
       ClassResolver classResolver = fury.getClassResolver();
-      referenceResolver.reference(obj);
+      refResolver.reference(obj);
       List<MapEntry> entries = new ArrayList<>();
       // read order: primitive,boxed,final,other,collection,map
       ClassFieldsInfo fieldsInfo = getClassFieldsInfo(classDef);
@@ -210,14 +213,14 @@ public final class UnexistedClassSerializers {
         Object fieldValue;
         if (fieldInfo.classInfo == null) {
           // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
-          fieldValue = fury.readReferencableFromJava(buffer, classInfoCache);
+          fieldValue = fury.readRef(buffer, classInfoHolder);
         } else {
           if (classResolver.isPrimitive(fieldInfo.classId)) {
             fieldValue = fieldInfo.classInfo.getSerializer().read(buffer);
           } else {
             fieldValue =
                 ObjectSerializer.readFinalObjectFieldValue(
-                    fury, referenceResolver, classResolver, fieldInfo, isFinal[i], buffer);
+                    fury, refResolver, classResolver, fieldInfo, isFinal[i], buffer);
           }
         }
         entries.add(new MapEntry(fieldInfo.qualifiedFieldName, fieldValue));

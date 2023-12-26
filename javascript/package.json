@@ -1,13 +1,17 @@
 {
   "scripts": {
-    "test": "npm run build && enableHps=true jest",
+    "test": "npm run build && jest",
     "build": "npm run build -w packages/fury -w packages/hps",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix"
   },
-  "repository": "git@github.com:alipay/fury.git",
+  "repository": "git@github.com:apache/incubator-fury.git",
   "workspaces": [
     "packages/hps",
     "packages/fury"
-  ]
+  ],
+  "devDependencies": {
+    "@stylistic/eslint-plugin": "^1.5.1",
+    "eslint": "^8.55.0"
+  }
 }

@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
@@ -22,7 +23,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.fury.Fury;
 import io.fury.FuryTestBase;
-import io.fury.Language;
+import io.fury.config.CompatibleMode;
+import io.fury.config.Language;
+import io.fury.serializer.collection.UnmodifiableSerializersTest;
 import io.fury.test.bean.BeanA;
 import io.fury.test.bean.BeanB;
 import io.fury.test.bean.CollectionFields;
@@ -47,8 +50,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
-            .withClassRegistrationRequired(false)
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false)
             .build();
     fury.registerSerializer(Foo.class, new CompatibleSerializer<>(fury, Foo.class));
     fury.registerSerializer(BeanA.class, new CompatibleSerializer<>(fury, BeanA.class));
@@ -63,8 +66,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
-            .withClassRegistrationRequired(false)
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
             .build();
     fury.registerSerializer(Foo.class, new CompatibleSerializer<>(fury, Foo.class));
     Object foo = Foo.create();
@@ -77,8 +80,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
       Fury newFury =
           Fury.builder()
               .withLanguage(Language.JAVA)
-              .withReferenceTracking(referenceTrackingConfig)
-              .withClassRegistrationRequired(false)
+              .withRefTracking(referenceTrackingConfig)
+              .requireClassRegistration(false)
               .withClassLoader(fooClass.getClassLoader())
               .build();
       newFury.registerSerializer(fooClass, new CompatibleSerializer<>(newFury, fooClass));
@@ -106,8 +109,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
         Fury fury2 =
             Fury.builder()
                 .withLanguage(Language.JAVA)
-                .withReferenceTracking(referenceTrackingConfig)
-                .withClassRegistrationRequired(false)
+                .withRefTracking(referenceTrackingConfig)
+                .requireClassRegistration(false)
                 .withClassLoader(fooClass.getClassLoader())
                 .build();
         fury2.registerSerializer(Foo.class, new CompatibleSerializer<>(newFury, Foo.class));
@@ -127,8 +130,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
-            .withClassRegistrationRequired(false)
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
             .build();
     fury.registerSerializer(
         CollectionOuter.class, new CompatibleSerializer<>(fury, CollectionOuter.class));
@@ -150,8 +153,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
-            .withClassRegistrationRequired(false)
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
             .build();
     fury.registerSerializer(MapOuter.class, new CompatibleSerializer<>(fury, MapOuter.class));
     fury.registerSerializer(BeanB.class, new ObjectSerializer<>(fury, BeanB.class));
@@ -167,8 +170,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
-            .withClassRegistrationRequired(false)
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
             .build();
     fury.registerSerializer(BeanA.class, new CompatibleSerializer<>(fury, BeanA.class));
     fury.registerSerializer(BeanB.class, new ObjectSerializer<>(fury, BeanB.class));
@@ -179,8 +182,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
     Fury newFury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
-            .withClassRegistrationRequired(false)
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
             .withClassLoader(cls.getClassLoader())
             .build();
     newFury.registerSerializer(cls, new CompatibleSerializer<>(newFury, cls));
@@ -228,7 +231,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
             + "  private int[][] int2DArray;\n"
             + "  private int[][] int2DArray_added;\n"
             + "}";
-    return ClassUtils.loadClass(BeanA.class, code);
+    return ClassUtils.loadClass(
+        BeanA.class, code, CompatibleSerializerTest.class + "createCompatibleClass1");
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -236,8 +240,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
-            .withClassRegistrationRequired(false)
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
             .build();
     fury.registerSerializer(
         CollectionFields.class, new CompatibleSerializer<>(fury, CollectionFields.class));
@@ -256,8 +260,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
     Fury newFury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
-            .withClassRegistrationRequired(false)
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
             .build();
     newFury.registerSerializer(cls, new CompatibleSerializer<>(newFury, cls));
     byte[] bytes1 = newFury.serialize(newObj);
@@ -306,7 +310,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
             + "  public Map<String, String> map2;\n"
             + "  public SortedMap<Integer, Integer> sortedMap3;"
             + "}";
-    return ClassUtils.loadClass(CollectionFields.class, code);
+    return ClassUtils.loadClass(
+        CollectionFields.class, code, CompatibleSerializerTest.class + "createCompatibleClass2");
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -314,8 +319,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
-            .withClassRegistrationRequired(false)
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
             .build();
     fury.registerSerializer(MapFields.class, new CompatibleSerializer<>(fury, MapFields.class));
     MapFields mapFields = UnmodifiableSerializersTest.createMapFields();
@@ -331,8 +336,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
     Fury newFury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTrackingConfig)
-            .withClassRegistrationRequired(false)
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
             .build();
     newFury.registerSerializer(cls, new CompatibleSerializer<>(newFury, cls));
     byte[] bytes1 = newFury.serialize(newObj);
@@ -382,7 +387,8 @@ public class CompatibleSerializerTest extends FuryTestBase {
             + "  public Map singletonMap;\n"
             + "  public Map<String, Integer> singletonMap2;\n"
             + "}";
-    return ClassUtils.loadClass(MapFields.class, code);
+    return ClassUtils.loadClass(
+        MapFields.class, code, CompatibleSerializerTest.class + "createCompatibleClass3");
   }
 
   @Test(dataProvider = "compressNumber")
@@ -392,9 +398,9 @@ public class CompatibleSerializerTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withNumberCompressed(compressNumber)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassRegistrationRequired(false)
+            .requireClassRegistration(false)
             .build();
-    Class<?> structClass = Struct.createNumberStructClass("CompatibleCompressIntStruct", 50);
+    Class<?> structClass = Struct.createNumberStructClass("CompatibleCompressIntStruct", 2);
     serDeCheck(fury, Struct.createPOJO(structClass));
   }
 }

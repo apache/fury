@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.builder;
@@ -24,6 +25,7 @@ import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
 import io.fury.TestUtils;
+import io.fury.builder.pkg.AccessLevelClass;
 import io.fury.test.bean.Foo;
 import io.fury.test.bean.Struct;
 import io.fury.type.Descriptor;
@@ -47,7 +49,8 @@ public class AccessorHelperTest {
 
   @Test
   public void genCode() {
-    AccessorHelper.genCode(A.class);
+    System.out.println(AccessorHelper.genCode(A.class));
+    ;
   }
 
   @Test
@@ -65,6 +68,20 @@ public class AccessorHelperTest {
     assertTrue(AccessorHelper.defineAccessor(A.class.getDeclaredField("f1")));
     assertTrue(AccessorHelper.defineAccessor(A.class.getDeclaredMethod("getF1")));
     assertSame(AccessorHelper.getAccessorClass(A.class), accessorClass);
+  }
+
+  @Data
+  static class PkgAccessAccessorClass {
+    protected String f1;
+    String f2;
+  }
+
+  @Test
+  public void definePkgAccessAccessorClass() {
+    assertTrue(AccessorHelper.defineAccessorClass(PkgAccessAccessorClass.class));
+    assertTrue(AccessorHelper.defineAccessorClass(AccessLevelClass.class));
+    Method[] methods = AccessorHelper.getAccessorClass(AccessLevelClass.class).getDeclaredMethods();
+    assertEquals(methods.length, 4);
   }
 
   @Test

@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.pool;
@@ -58,6 +59,17 @@ public class ThreadPoolFury implements ThreadSafeFury {
     try {
       fury = furyPooledObjectFactory.getFury();
       return fury.serialize(obj);
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
+  @Override
+  public MemoryBuffer serialize(Object obj, long address, int size) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      return fury.serialize(obj, address, size);
     } finally {
       furyPooledObjectFactory.returnFury(fury);
     }
@@ -113,6 +125,50 @@ public class ThreadPoolFury implements ThreadSafeFury {
     }
   }
 
+  @Override
+  public byte[] serializeJavaObject(Object obj) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      return fury.serializeJavaObject(obj);
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
+  @Override
+  public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      fury.serializeJavaObject(buffer, obj);
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
+  @Override
+  public <T> T deserializeJavaObject(byte[] data, Class<T> cls) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      return fury.deserializeJavaObject(data, cls);
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
+  @Override
+  public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
+    Fury fury = null;
+    try {
+      fury = furyPooledObjectFactory.getFury();
+      return fury.deserializeJavaObject(buffer, cls);
+    } finally {
+      furyPooledObjectFactory.returnFury(fury);
+    }
+  }
+
   public void setClassLoader(ClassLoader classLoader) {
     setClassLoader(classLoader, LoaderBinding.StagingType.SOFT_STAGING);
   }
@@ -127,15 +183,5 @@ public class ThreadPoolFury implements ThreadSafeFury {
 
   public void clearClassLoader(ClassLoader loader) {
     furyPooledObjectFactory.clearClassLoader(loader);
-  }
-
-  public Fury getCurrentFury() {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury;
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
   }
 }

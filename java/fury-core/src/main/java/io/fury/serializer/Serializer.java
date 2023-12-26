@@ -1,33 +1,34 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
-import com.google.common.primitives.Primitives;
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
+import io.fury.type.TypeUtils;
 import javax.annotation.concurrent.NotThreadSafe;
 
 /**
  * Serialize/deserializer objects into binary. Note that this class is designed as an abstract class
- * instead of interface to reduce virtual method call cost of {@link #needToWriteReference}/{@link
- * #getCrossLanguageTypeId}.
+ * instead of interface to reduce virtual method call cost of {@link #needToWriteRef}/{@link
+ * #getXtypeId}.
  *
  * @param <T> type of objects being serializing/deserializing
  * @author chaokunyang
@@ -37,7 +38,7 @@ public abstract class Serializer<T> {
   protected final Fury fury;
   protected final Class<T> type;
   protected final boolean isJava;
-  protected final boolean needToWriteReference;
+  protected final boolean needToWriteRef;
 
   public void write(MemoryBuffer buffer, T value) {
     throw new UnsupportedOperationException();
@@ -55,7 +56,7 @@ public abstract class Serializer<T> {
    * cross-language serialization and native serialization data is not the same with cross-language
    * serialization.
    */
-  public short getCrossLanguageTypeId() {
+  public short getXtypeId() {
     return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
   }
 
@@ -64,11 +65,11 @@ public abstract class Serializer<T> {
     throw new UnsupportedOperationException();
   }
 
-  public void crossLanguageWrite(MemoryBuffer buffer, T value) {
+  public void xwrite(MemoryBuffer buffer, T value) {
     throw new UnsupportedOperationException();
   }
 
-  public T crossLanguageRead(MemoryBuffer buffer) {
+  public T xread(MemoryBuffer buffer) {
     throw new UnsupportedOperationException();
   }
 
@@ -76,23 +77,22 @@ public abstract class Serializer<T> {
     this.fury = fury;
     this.type = type;
     this.isJava = fury.getLanguage() == Language.JAVA;
-    if (fury.trackingReference()) {
-      needToWriteReference =
-          !Primitives.isWrapperType(Primitives.wrap(type)) || !fury.isBasicTypesReferenceIgnored();
+    if (fury.trackingRef()) {
+      needToWriteRef = !TypeUtils.isBoxed(TypeUtils.wrap(type)) || !fury.isBasicTypesRefIgnored();
     } else {
-      needToWriteReference = false;
+      needToWriteRef = false;
     }
   }
 
-  public Serializer(Fury fury, Class<T> type, boolean needToWriteReference) {
+  public Serializer(Fury fury, Class<T> type, boolean needToWriteRef) {
     this.fury = fury;
     this.type = type;
     this.isJava = fury.getLanguage() == Language.JAVA;
-    this.needToWriteReference = needToWriteReference;
+    this.needToWriteRef = needToWriteRef;
   }
 
-  public final boolean needToWriteReference() {
-    return needToWriteReference;
+  public final boolean needToWriteRef() {
+    return needToWriteRef;
   }
 
   public Class<T> getType() {

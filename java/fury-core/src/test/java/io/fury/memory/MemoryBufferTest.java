@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.memory;
@@ -277,42 +278,46 @@ public class MemoryBufferTest {
 
   @Test
   public void testWriteVarInt() {
-    for (int i = 0; i < 32; i++) {
-      MemoryBuffer buf = MemoryUtils.buffer(8);
-      for (int j = 0; j < i; j++) {
-        buf.writeByte((byte) 1); // make address unaligned.
-        buf.readByte();
-      }
-      checkVarInt(buf, 1, 1);
-      checkVarInt(buf, 1 << 5, 1);
-      checkVarInt(buf, 1 << 6, 2);
-      checkVarInt(buf, 1 << 7, 2);
-      checkVarInt(buf, 1 << 12, 2);
-      checkVarInt(buf, 1 << 13, 3);
-      checkVarInt(buf, 1 << 14, 3);
-      checkVarInt(buf, 1 << 19, 3);
-      checkVarInt(buf, 1 << 20, 4);
-      checkVarInt(buf, 1 << 26, 4);
-      checkVarInt(buf, 1 << 27, 5);
-      checkVarInt(buf, 1 << 28, 5);
-      checkVarInt(buf, Integer.MAX_VALUE, 5);
+    for (int i = 0; i < 5; i++) {
+      checkVarInt(buf(i), 1, 1);
+      checkVarInt(buf(i), 1 << 5, 1);
+      checkVarInt(buf(i), 1 << 6, 2);
+      checkVarInt(buf(i), 1 << 7, 2);
+      checkVarInt(buf(i), 1 << 12, 2);
+      checkVarInt(buf(i), 1 << 13, 3);
+      checkVarInt(buf(i), 1 << 14, 3);
+      checkVarInt(buf(i), 1 << 19, 3);
+      checkVarInt(buf(i), 1 << 20, 4);
+      checkVarInt(buf(i), 1 << 26, 4);
+      checkVarInt(buf(i), 1 << 27, 5);
+      checkVarInt(buf(i), 1 << 28, 5);
+      checkVarInt(buf(i), Integer.MAX_VALUE, 5);
 
-      checkVarInt(buf, -1, 1);
-      checkVarInt(buf, -1 << 6, 1);
-      checkVarInt(buf, -1 << 7, 2);
-      checkVarInt(buf, -1 << 13, 2);
-      checkVarInt(buf, -1 << 14, 3);
-      checkVarInt(buf, -1 << 20, 3);
-      checkVarInt(buf, -1 << 21, 4);
-      checkVarInt(buf, -1 << 27, 4);
-      checkVarInt(buf, -1 << 28, 5);
-      checkVarInt(buf, Byte.MIN_VALUE, 2);
-      checkVarInt(buf, Byte.MAX_VALUE, 2);
-      checkVarInt(buf, Short.MAX_VALUE, 3);
-      checkVarInt(buf, Short.MIN_VALUE, 3);
-      checkVarInt(buf, Integer.MAX_VALUE, 5);
-      checkVarInt(buf, Integer.MIN_VALUE, 5);
+      checkVarInt(buf(i), -1, 1);
+      checkVarInt(buf(i), -1 << 6, 1);
+      checkVarInt(buf(i), -1 << 7, 2);
+      checkVarInt(buf(i), -1 << 13, 2);
+      checkVarInt(buf(i), -1 << 14, 3);
+      checkVarInt(buf(i), -1 << 20, 3);
+      checkVarInt(buf(i), -1 << 21, 4);
+      checkVarInt(buf(i), -1 << 27, 4);
+      checkVarInt(buf(i), -1 << 28, 5);
+      checkVarInt(buf(i), Byte.MIN_VALUE, 2);
+      checkVarInt(buf(i), Byte.MAX_VALUE, 2);
+      checkVarInt(buf(i), Short.MAX_VALUE, 3);
+      checkVarInt(buf(i), Short.MIN_VALUE, 3);
+      checkVarInt(buf(i), Integer.MAX_VALUE, 5);
+      checkVarInt(buf(i), Integer.MIN_VALUE, 5);
     }
+  }
+
+  private MemoryBuffer buf(int numUnaligned) {
+    MemoryBuffer buf = MemoryUtils.buffer(1);
+    for (int j = 0; j < numUnaligned; j++) {
+      buf.writeByte((byte) 1); // make address unaligned.
+      buf.readByte();
+    }
+    return buf;
   }
 
   private void checkVarInt(MemoryBuffer buf, int value, int bytesWritten) {
@@ -331,60 +336,58 @@ public class MemoryBufferTest {
   public void testWriteVarLong() {
     MemoryBuffer buf = MemoryUtils.buffer(8);
     checkVarLong(buf, -1, 1);
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < 9; i++) {
       for (int j = 0; j < i; j++) {
-        buf.writeByte(1);
-        buf.readByte();
-        checkVarLong(buf, -1, 1);
-        checkVarLong(buf, 1, 1);
-        checkVarLong(buf, 1L << 6, 2);
-        checkVarLong(buf, 1L << 7, 2);
-        checkVarLong(buf, -(2 << 5), 1);
-        checkVarLong(buf, -(2 << 6), 2);
-        checkVarLong(buf, 1L << 13, 3);
-        checkVarLong(buf, 1L << 14, 3);
-        checkVarLong(buf, -(2 << 12), 2);
-        checkVarLong(buf, -(2 << 13), 3);
-        checkVarLong(buf, 1L << 19, 3);
-        checkVarLong(buf, 1L << 20, 4);
-        checkVarLong(buf, 1L << 21, 4);
-        checkVarLong(buf, -(2 << 19), 3);
-        checkVarLong(buf, -(2 << 20), 4);
-        checkVarLong(buf, 1L << 26, 4);
-        checkVarLong(buf, 1L << 27, 5);
-        checkVarLong(buf, 1L << 28, 5);
-        checkVarLong(buf, -(2 << 26), 4);
-        checkVarLong(buf, -(2 << 27), 5);
-        checkVarLong(buf, 1L << 30, 5);
-        checkVarLong(buf, -(2L << 29), 5);
-        checkVarLong(buf, 1L << 30, 5);
-        checkVarLong(buf, -(2L << 30), 5);
-        checkVarLong(buf, 1L << 32, 5);
-        checkVarLong(buf, -(2L << 31), 5);
-        checkVarLong(buf, 1L << 34, 6);
-        checkVarLong(buf, -(2L << 33), 5);
-        checkVarLong(buf, 1L << 35, 6);
-        checkVarLong(buf, -(2L << 34), 6);
-        checkVarLong(buf, 1L << 41, 7);
-        checkVarLong(buf, -(2L << 40), 6);
-        checkVarLong(buf, 1L << 42, 7);
-        checkVarLong(buf, -(2L << 41), 7);
-        checkVarLong(buf, 1L << 48, 8);
-        checkVarLong(buf, -(2L << 47), 7);
-        checkVarLong(buf, -(2L << 48), 8);
-        checkVarLong(buf, 1L << 49, 8);
-        checkVarLong(buf, -(2L << 48), 8);
-        checkVarLong(buf, -(2L << 54), 8);
-        checkVarLong(buf, 1L << 54, 8);
-        checkVarLong(buf, 1L << 55, 9);
-        checkVarLong(buf, 1L << 56, 9);
-        checkVarLong(buf, -(2L << 55), 9);
-        checkVarLong(buf, 1L << 62, 9);
-        checkVarLong(buf, -(2L << 62), 9);
-        checkVarLong(buf, 1L << 63 - 1, 9);
-        checkVarLong(buf, -(2L << 62), 9);
-        checkVarLong(buf, Long.MAX_VALUE, 9);
-        checkVarLong(buf, Long.MIN_VALUE, 9);
+        checkVarLong(buf(i), -1, 1);
+        checkVarLong(buf(i), 1, 1);
+        checkVarLong(buf(i), 1L << 6, 2);
+        checkVarLong(buf(i), 1L << 7, 2);
+        checkVarLong(buf(i), -(2 << 5), 1);
+        checkVarLong(buf(i), -(2 << 6), 2);
+        checkVarLong(buf(i), 1L << 13, 3);
+        checkVarLong(buf(i), 1L << 14, 3);
+        checkVarLong(buf(i), -(2 << 12), 2);
+        checkVarLong(buf(i), -(2 << 13), 3);
+        checkVarLong(buf(i), 1L << 19, 3);
+        checkVarLong(buf(i), 1L << 20, 4);
+        checkVarLong(buf(i), 1L << 21, 4);
+        checkVarLong(buf(i), -(2 << 19), 3);
+        checkVarLong(buf(i), -(2 << 20), 4);
+        checkVarLong(buf(i), 1L << 26, 4);
+        checkVarLong(buf(i), 1L << 27, 5);
+        checkVarLong(buf(i), 1L << 28, 5);
+        checkVarLong(buf(i), -(2 << 26), 4);
+        checkVarLong(buf(i), -(2 << 27), 5);
+        checkVarLong(buf(i), 1L << 30, 5);
+        checkVarLong(buf(i), -(2L << 29), 5);
+        checkVarLong(buf(i), 1L << 30, 5);
+        checkVarLong(buf(i), -(2L << 30), 5);
+        checkVarLong(buf(i), 1L << 32, 5);
+        checkVarLong(buf(i), -(2L << 31), 5);
+        checkVarLong(buf(i), 1L << 34, 6);
+        checkVarLong(buf(i), -(2L << 33), 5);
+        checkVarLong(buf(i), 1L << 35, 6);
+        checkVarLong(buf(i), -(2L << 34), 6);
+        checkVarLong(buf(i), 1L << 41, 7);
+        checkVarLong(buf(i), -(2L << 40), 6);
+        checkVarLong(buf(i), 1L << 42, 7);
+        checkVarLong(buf(i), -(2L << 41), 7);
+        checkVarLong(buf(i), 1L << 48, 8);
+        checkVarLong(buf(i), -(2L << 47), 7);
+        checkVarLong(buf(i), -(2L << 48), 8);
+        checkVarLong(buf(i), 1L << 49, 8);
+        checkVarLong(buf(i), -(2L << 48), 8);
+        checkVarLong(buf(i), -(2L << 54), 8);
+        checkVarLong(buf(i), 1L << 54, 8);
+        checkVarLong(buf(i), 1L << 55, 9);
+        checkVarLong(buf(i), 1L << 56, 9);
+        checkVarLong(buf(i), -(2L << 55), 9);
+        checkVarLong(buf(i), 1L << 62, 9);
+        checkVarLong(buf(i), -(2L << 62), 9);
+        checkVarLong(buf(i), 1L << 63 - 1, 9);
+        checkVarLong(buf(i), -(2L << 62), 9);
+        checkVarLong(buf(i), Long.MAX_VALUE, 9);
+        checkVarLong(buf(i), Long.MIN_VALUE, 9);
       }
     }
   }
@@ -405,56 +408,54 @@ public class MemoryBufferTest {
   public void testWritePositiveVarLong() {
     MemoryBuffer buf = MemoryUtils.buffer(8);
     checkPositiveVarint64(buf, -1, 9);
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < 9; i++) {
       for (int j = 0; j < i; j++) {
-        buf.writeByte(1);
-        buf.readByte();
-        checkPositiveVarint64(buf, -1, 9);
-        checkPositiveVarint64(buf, 1, 1);
-        checkPositiveVarint64(buf, 1L << 6, 1);
-        checkPositiveVarint64(buf, 1L << 7, 2);
-        checkPositiveVarint64(buf, -(2 << 5), 9);
-        checkPositiveVarint64(buf, -(2 << 6), 9);
-        checkPositiveVarint64(buf, 1L << 13, 2);
-        checkPositiveVarint64(buf, 1L << 14, 3);
-        checkPositiveVarint64(buf, -(2 << 12), 9);
-        checkPositiveVarint64(buf, -(2 << 13), 9);
-        checkPositiveVarint64(buf, 1L << 20, 3);
-        checkPositiveVarint64(buf, 1L << 21, 4);
-        checkPositiveVarint64(buf, -(2 << 19), 9);
-        checkPositiveVarint64(buf, -(2 << 20), 9);
-        checkPositiveVarint64(buf, 1L << 27, 4);
-        checkPositiveVarint64(buf, 1L << 28, 5);
-        checkPositiveVarint64(buf, -(2 << 26), 9);
-        checkPositiveVarint64(buf, -(2 << 27), 9);
-        checkPositiveVarint64(buf, 1L << 30, 5);
-        checkPositiveVarint64(buf, -(2L << 29), 9);
-        checkPositiveVarint64(buf, 1L << 30, 5);
-        checkPositiveVarint64(buf, -(2L << 30), 9);
-        checkPositiveVarint64(buf, 1L << 32, 5);
-        checkPositiveVarint64(buf, -(2L << 31), 9);
-        checkPositiveVarint64(buf, 1L << 34, 5);
-        checkPositiveVarint64(buf, -(2L << 33), 9);
-        checkPositiveVarint64(buf, 1L << 35, 6);
-        checkPositiveVarint64(buf, -(2L << 34), 9);
-        checkPositiveVarint64(buf, 1L << 41, 6);
-        checkPositiveVarint64(buf, -(2L << 40), 9);
-        checkPositiveVarint64(buf, 1L << 42, 7);
-        checkPositiveVarint64(buf, -(2L << 41), 9);
-        checkPositiveVarint64(buf, 1L << 48, 7);
-        checkPositiveVarint64(buf, -(2L << 47), 9);
-        checkPositiveVarint64(buf, 1L << 49, 8);
-        checkPositiveVarint64(buf, -(2L << 48), 9);
-        checkPositiveVarint64(buf, 1L << 55, 8);
-        checkPositiveVarint64(buf, -(2L << 54), 9);
-        checkPositiveVarint64(buf, 1L << 56, 9);
-        checkPositiveVarint64(buf, -(2L << 55), 9);
-        checkPositiveVarint64(buf, 1L << 62, 9);
-        checkPositiveVarint64(buf, -(2L << 62), 9);
-        checkPositiveVarint64(buf, 1L << 63 - 1, 9);
-        checkPositiveVarint64(buf, -(2L << 62), 9);
-        checkPositiveVarint64(buf, Long.MAX_VALUE, 9);
-        checkPositiveVarint64(buf, Long.MIN_VALUE, 9);
+        checkPositiveVarint64(buf(i), -1, 9);
+        checkPositiveVarint64(buf(i), 1, 1);
+        checkPositiveVarint64(buf(i), 1L << 6, 1);
+        checkPositiveVarint64(buf(i), 1L << 7, 2);
+        checkPositiveVarint64(buf(i), -(2 << 5), 9);
+        checkPositiveVarint64(buf(i), -(2 << 6), 9);
+        checkPositiveVarint64(buf(i), 1L << 13, 2);
+        checkPositiveVarint64(buf(i), 1L << 14, 3);
+        checkPositiveVarint64(buf(i), -(2 << 12), 9);
+        checkPositiveVarint64(buf(i), -(2 << 13), 9);
+        checkPositiveVarint64(buf(i), 1L << 20, 3);
+        checkPositiveVarint64(buf(i), 1L << 21, 4);
+        checkPositiveVarint64(buf(i), -(2 << 19), 9);
+        checkPositiveVarint64(buf(i), -(2 << 20), 9);
+        checkPositiveVarint64(buf(i), 1L << 27, 4);
+        checkPositiveVarint64(buf(i), 1L << 28, 5);
+        checkPositiveVarint64(buf(i), -(2 << 26), 9);
+        checkPositiveVarint64(buf(i), -(2 << 27), 9);
+        checkPositiveVarint64(buf(i), 1L << 30, 5);
+        checkPositiveVarint64(buf(i), -(2L << 29), 9);
+        checkPositiveVarint64(buf(i), 1L << 30, 5);
+        checkPositiveVarint64(buf(i), -(2L << 30), 9);
+        checkPositiveVarint64(buf(i), 1L << 32, 5);
+        checkPositiveVarint64(buf(i), -(2L << 31), 9);
+        checkPositiveVarint64(buf(i), 1L << 34, 5);
+        checkPositiveVarint64(buf(i), -(2L << 33), 9);
+        checkPositiveVarint64(buf(i), 1L << 35, 6);
+        checkPositiveVarint64(buf(i), -(2L << 34), 9);
+        checkPositiveVarint64(buf(i), 1L << 41, 6);
+        checkPositiveVarint64(buf(i), -(2L << 40), 9);
+        checkPositiveVarint64(buf(i), 1L << 42, 7);
+        checkPositiveVarint64(buf(i), -(2L << 41), 9);
+        checkPositiveVarint64(buf(i), 1L << 48, 7);
+        checkPositiveVarint64(buf(i), -(2L << 47), 9);
+        checkPositiveVarint64(buf(i), 1L << 49, 8);
+        checkPositiveVarint64(buf(i), -(2L << 48), 9);
+        checkPositiveVarint64(buf(i), 1L << 55, 8);
+        checkPositiveVarint64(buf(i), -(2L << 54), 9);
+        checkPositiveVarint64(buf(i), 1L << 56, 9);
+        checkPositiveVarint64(buf(i), -(2L << 55), 9);
+        checkPositiveVarint64(buf(i), 1L << 62, 9);
+        checkPositiveVarint64(buf(i), -(2L << 62), 9);
+        checkPositiveVarint64(buf(i), 1L << 63 - 1, 9);
+        checkPositiveVarint64(buf(i), -(2L << 62), 9);
+        checkPositiveVarint64(buf(i), Long.MAX_VALUE, 9);
+        checkPositiveVarint64(buf(i), Long.MIN_VALUE, 9);
       }
     }
   }
@@ -527,5 +528,54 @@ public class MemoryBufferTest {
     assertEquals(buffer.writerIndex() % 4, 0);
     buffer.readByte();
     assertEquals(buffer.readPositiveAlignedVarInt(), Integer.MAX_VALUE);
+  }
+
+  @Test
+  public void testGetShortB() {
+    byte[] data = new byte[4];
+    data[0] = (byte) 0xac;
+    data[1] = (byte) 0xed;
+    assertEquals(MemoryBuffer.getShortB(data, 0), (short) 0xaced);
+    assertEquals(MemoryBuffer.fromByteArray(data).getShortB(0), (short) 0xaced);
+  }
+
+  @Test
+  public void testWriteSliLong() {
+    MemoryBuffer buf = MemoryUtils.buffer(8);
+    checkSliLong(buf, -1, 4);
+    for (int i = 0; i < 10; i++) {
+      for (int j = 0; j < i; j++) {
+        checkSliLong(buf(i), -1, 4);
+        checkSliLong(buf(i), 1, 4);
+        checkSliLong(buf(i), 1L << 6, 4);
+        checkSliLong(buf(i), 1L << 7, 4);
+        checkSliLong(buf(i), -(2 << 5), 4);
+        checkSliLong(buf(i), -(2 << 6), 4);
+        checkSliLong(buf(i), 1L << 28, 4);
+        checkSliLong(buf(i), Integer.MAX_VALUE / 2, 4);
+        checkSliLong(buf(i), Integer.MIN_VALUE / 2, 4);
+        checkSliLong(buf(i), -1L << 30, 4);
+        checkSliLong(buf(i), 1L << 30, 9);
+        checkSliLong(buf(i), Integer.MAX_VALUE, 9);
+        checkSliLong(buf(i), Integer.MIN_VALUE, 9);
+        checkSliLong(buf(i), -1L << 31, 9);
+        checkSliLong(buf(i), 1L << 31, 9);
+        checkSliLong(buf(i), -1L << 32, 9);
+        checkSliLong(buf(i), 1L << 32, 9);
+        checkSliLong(buf(i), Long.MAX_VALUE, 9);
+        checkSliLong(buf(i), Long.MIN_VALUE, 9);
+      }
+    }
+  }
+
+  private void checkSliLong(MemoryBuffer buf, long value, int bytesWritten) {
+    int readerIndex = buf.readerIndex();
+    assertEquals(buf.writerIndex(), readerIndex);
+    int actualBytesWritten = buf.writeSliLong(value);
+    assertEquals(actualBytesWritten, bytesWritten);
+    long varLong = buf.readSliLong();
+    assertEquals(buf.writerIndex(), buf.readerIndex());
+    assertEquals(value, varLong);
+    assertEquals(buf.slice(readerIndex, buf.readerIndex() - readerIndex).readSliLong(), value);
   }
 }

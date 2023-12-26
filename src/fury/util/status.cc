@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 #include "fury/util/status.h"
 #include <assert.h>
 #include <string>
@@ -17,22 +36,6 @@ namespace fury {
 #define STATUS_CODE_INVALID "Invalid"
 #define STATUS_CODE_IO_ERROR "IOError"
 #define STATUS_CODE_UNKNOWN_ERROR "Unknown error"
-
-Status::Status(StatusCode code, const std::string &msg) {
-  assert(code != StatusCode::OK);
-  state_ = new State;
-  state_->code = code;
-  state_->msg = msg;
-}
-
-void Status::CopyFrom(const State *state) {
-  delete state_;
-  if (state == nullptr) {
-    state_ = nullptr;
-  } else {
-    state_ = new State(*state);
-  }
-}
 
 std::string Status::ToString() const {
   std::string result(CodeAsString());

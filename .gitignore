@@ -26,6 +26,8 @@ java/**/dependency-reduced-pom.xml
 .idea/
 java/dependency-reduced-pom.xml
 java/foo
+scala/.bsp
+scala/.idea
 bazel-*/
 bazel-fury/
 bazel-fury/**

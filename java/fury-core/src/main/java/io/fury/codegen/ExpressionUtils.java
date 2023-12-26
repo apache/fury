@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.codegen;
@@ -27,12 +28,12 @@ import static io.fury.codegen.Expression.Not;
 import static io.fury.codegen.Expression.StaticInvoke;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
 import com.google.common.reflect.TypeToken;
 import io.fury.codegen.Expression.Cast;
 import io.fury.codegen.Expression.Null;
-import io.fury.util.Functions;
+import io.fury.util.Preconditions;
 import io.fury.util.StringUtils;
+import io.fury.util.function.Functions;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,13 +77,12 @@ public class ExpressionUtils {
     return new Literal(null, type);
   }
 
-  public static Literal literalStr(String value) {
-    value = String.format("\"%s\"", value);
-    return new Literal(value);
+  public static Comparator eq(Expression left, Expression right) {
+    return eq(left, right, true);
   }
 
-  public static Comparator eq(Expression left, Expression right) {
-    return new Comparator("==", left, right, true);
+  public static Comparator eq(Expression left, Expression right, boolean inline) {
+    return new Comparator("==", left, right, inline);
   }
 
   public static Comparator eq(Expression left, Expression right, String valuePrefix) {
@@ -92,7 +92,17 @@ public class ExpressionUtils {
   }
 
   public static Comparator neq(Expression left, Expression right) {
-    return new Comparator("!=", left, right, true);
+    return neq(left, right, true);
+  }
+
+  public static Comparator neq(Expression left, Expression right, String valuePrefix) {
+    Comparator comparator = new Comparator("!=", left, right, false);
+    comparator.valuePrefix = valuePrefix;
+    return comparator;
+  }
+
+  public static Comparator neq(Expression left, Expression right, boolean inline) {
+    return new Comparator("!=", left, right, inline);
   }
 
   public static Comparator egt(Expression left, Expression right) {
@@ -102,6 +112,11 @@ public class ExpressionUtils {
   public static Comparator egt(Expression left, Expression right, String valuePrefix) {
     Comparator comparator = new Comparator(">=", left, right, false);
     comparator.valuePrefix = valuePrefix;
+    return comparator;
+  }
+
+  public static Comparator gt(Expression left, Expression right) {
+    Comparator comparator = new Comparator(">", left, right, true);
     return comparator;
   }
 
@@ -131,6 +146,13 @@ public class ExpressionUtils {
 
   public static Cast cast(Expression value, TypeToken<?> typeToken) {
     return new Cast(value, typeToken);
+  }
+
+  public static Expression uninline(Expression expression) {
+    if (expression instanceof Expression.Inlineable) {
+      ((Expression.Inlineable) (expression)).inline(false);
+    }
+    return expression;
   }
 
   public static StaticInvoke invokeStaticInline(

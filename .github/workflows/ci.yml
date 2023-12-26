@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 name: Fury CI
 
 on:
@@ -10,12 +27,20 @@ on:
     tags:
       - v*
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.vscode/**'
+      - '.gitignore'
     types: ['opened', 'reopened', 'synchronize']
 
 jobs:
   java:
     name: Java CI
     runs-on: ubuntu-latest
+    env:
+      MY_VAR: "PATH"
     strategy:
       matrix:
         java-version: ["8", "11", "17"]
@@ -25,9 +50,78 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java-version }}
-          distribution: 'temurin'
+          distribution: 'temurin' # temurin hasn't release for jdk21
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Install python
+        run: ./ci/run_ci.sh install_python
+      - name: Install pyfury
+        run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
+  java21:
+    name: Java CI
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: ["21"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'oracle'
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Install python
+        run: ./ci/run_ci.sh install_python
+      - name: Install pyfury
+        run: ./ci/run_ci.sh install_pyfury
+      - name: Run CI with Maven
+        run: ./ci/run_ci.sh java${{ matrix.java-version }}
+  graalvm:
+    name: GraalVM CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+      - name: Build native image and run
+        run: ./ci/run_ci.sh graalvm_test
+  scala:
+    name: Scala CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK8
+        uses: actions/setup-java@v3
+        with:
+          java-version: 8
+          distribution: 'temurin'
+      - name: Install fury java
+        run: cd java && mvn -T10 clean install -DskipTests && cd -
+      - name: Test
+        run: |
+          # Avoid sbt download jackson-databind error
+          rm -rf /home/runner/.m2/repository/com/fasterxml/jackson/
+          cd scala && sbt +test && cd -
+  integration_tests:
+    name: integration_tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK8
+        uses: actions/setup-java@v3
+        with:
+          java-version: 8
+          distribution: 'temurin'
+      - name: Run CI
+        run: ./ci/run_ci.sh integration_tests
   javascript:
     name: Javascript CI
     runs-on: ubuntu-latest
@@ -42,11 +136,19 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Run CI with NodeJS
         run: ./ci/run_ci.sh javascript
+  rust:
+    name: Rust CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: ./ci/run_ci.sh rust
   cpp:
     name: C++ CI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:
@@ -62,9 +164,9 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: [3.6, 3.9]
+        python-version: [3.7, 3.12]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -73,11 +175,35 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Run Python CI
         run: ./ci/run_ci.sh python
-  Lint:
+  go:
+    name: Golang CI
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [ '1.13', '1.18' ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Display Go version
+        run: go version
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Install python
+        run: ./ci/run_ci.sh install_python
+      - name: Install pyfury
+        run: ./ci/run_ci.sh install_pyfury
+      - name: Run Golang CI
+        run: ./ci/run_ci.sh go
+  lint:
     name: Code Style Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - name: Check License Header
+        uses: korandoru/hawkeye@v3
       - name: Set up Python 3.8
         uses: actions/setup-python@v2
         with:

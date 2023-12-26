@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury;
@@ -23,10 +24,13 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.fury.annotation.Ignore;
 import io.fury.builder.Generated;
+import io.fury.config.FuryBuilder;
+import io.fury.config.Language;
 import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
@@ -39,10 +43,7 @@ import io.fury.test.bean.Struct;
 import io.fury.type.Descriptor;
 import io.fury.util.DateTimeUtils;
 import io.fury.util.Platform;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -62,6 +63,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.WeakHashMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -72,8 +74,8 @@ import org.testng.annotations.Test;
 
 public class FuryTest extends FuryTestBase {
   @DataProvider(name = "languageConfig")
-  public static Object[] languageConfig() {
-    return new Object[] {Language.JAVA, Language.PYTHON};
+  public static Object[][] languageConfig() {
+    return new Object[][] {{Language.JAVA}, {Language.PYTHON}};
   }
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
@@ -81,14 +83,14 @@ public class FuryTest extends FuryTestBase {
     Fury fury1 =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode()
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false)
             .build();
     Fury fury2 =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode()
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false)
             .build();
     assertEquals(true, serDe(fury1, fury2, true));
     assertEquals(Byte.MAX_VALUE, serDe(fury1, fury2, Byte.MAX_VALUE));
@@ -101,11 +103,11 @@ public class FuryTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void basicTest(boolean referenceTracking, Language language) {
-    Fury.FuryBuilder builder =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode();
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals("str", serDe(fury1, fury2, "str"));
@@ -162,16 +164,16 @@ public class FuryTest extends FuryTestBase {
 
   @Test(dataProvider = "languageConfig")
   public void testSerializationToBuffer(Language language) {
-    Fury fury1 = Fury.builder().withLanguage(language).disableSecureMode().build();
-    Fury fury2 = Fury.builder().withLanguage(language).disableSecureMode().build();
+    Fury fury1 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
+    Fury fury2 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryUtils.buffer(64);
     assertSerializationToBuffer(fury1, fury2, buffer);
   }
 
   @Test(dataProvider = "languageConfig")
   public void testSerializationSlicedBuffer(Language language) {
-    Fury fury1 = Fury.builder().withLanguage(language).disableSecureMode().build();
-    Fury fury2 = Fury.builder().withLanguage(language).disableSecureMode().build();
+    Fury fury1 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
+    Fury fury2 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
     MemoryBuffer buffer0 = MemoryUtils.buffer(64);
     buffer0.writeLong(-1);
     buffer0.writeLong(-1);
@@ -207,8 +209,8 @@ public class FuryTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode()
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false)
             .build();
     BeanA beanA = BeanA.createBeanA(2);
     byte[] bytes = fury.serialize(beanA);
@@ -216,13 +218,19 @@ public class FuryTest extends FuryTestBase {
     assertEquals(beanA, o);
   }
 
+  @Test
+  public void testSerializeException() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).withRefTracking(true).build();
+    fury.serialize(new Exception());
+  }
+
   @Test(dataProvider = "referenceTrackingConfig")
   public void registerTest(boolean referenceTracking) {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode()
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false)
             .build();
     fury.register(BeanA.class);
     BeanA beanA = BeanA.createBeanA(2);
@@ -249,8 +257,8 @@ public class FuryTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode()
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false)
             .build();
     long ptr = 0;
     try {
@@ -275,20 +283,69 @@ public class FuryTest extends FuryTestBase {
     }
   }
 
-  @Test(dataProvider = "referenceTrackingConfig")
-  public void testSerializePrivateBean(boolean referenceTracking) {
+  @Test
+  public void testSerializePrivateBean() {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode()
+            .withCodegen(false)
+            .requireClassRegistration(false)
+            .build();
+    Outer outer = new Outer();
+    outer.inner = new Outer.Inner();
+    fury.deserialize(fury.serialize(outer));
+    assertTrue(fury.getClassResolver().getSerializer(Outer.class) instanceof ObjectSerializer);
+    assertTrue(
+        fury.getClassResolver().getSerializer(Outer.Inner.class) instanceof ObjectSerializer);
+  }
+
+  @Test
+  public void testSerializePrivateBeanJIT() {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCodegen(true)
+            .requireClassRegistration(false)
             .build();
     Outer outer = new Outer();
     outer.inner = new Outer.Inner();
     fury.deserialize(fury.serialize(outer));
     assertTrue(fury.getClassResolver().getSerializer(Outer.class) instanceof Generated);
-    assertTrue(
-        fury.getClassResolver().getSerializer(Outer.Inner.class) instanceof ObjectSerializer);
+    assertTrue(fury.getClassResolver().getSerializer(Outer.Inner.class) instanceof Generated);
+  }
+
+  @Data
+  public static class PackageLevelBean {
+    public long f1;
+    private long f2;
+  }
+
+  @Test
+  public void testSerializePackageLevelBean() {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCodegen(false)
+            .requireClassRegistration(false)
+            .build();
+    PackageLevelBean o = new PackageLevelBean();
+    o.f1 = 10;
+    o.f2 = 1;
+    serDeCheckSerializer(fury, o, "Object");
+  }
+
+  @Test
+  public void testSerializePackageLevelBeanJIT() {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
+    PackageLevelBean o = new PackageLevelBean();
+    o.f1 = 10;
+    o.f2 = 1;
+    serDeCheckSerializer(fury, o, "PackageLevelBean");
   }
 
   static class B {
@@ -316,8 +373,8 @@ public class FuryTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(language)
-            .withReferenceTracking(referenceTracking)
-            .disableSecureMode()
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false)
             .build();
     Assert.assertEquals(serDe(fury, ImmutableList.of(1)), ImmutableList.of(1));
     Assert.assertEquals(serDe(fury, ImmutableList.of(1, 2)), ImmutableList.of(1, 2));
@@ -332,7 +389,7 @@ public class FuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withJdkClassSerializableCheck(false)
-            .disableSecureMode()
+            .requireClassRegistration(false)
             .withCodegen(enableCodegen)
             .build();
     StringTokenizer tokenizer = new StringTokenizer("abc,1,23", ",");
@@ -344,8 +401,8 @@ public class FuryTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     serDe(fury, ByteBuffer.allocate(32));
     serDe(fury, ByteBuffer.allocateDirect(32));
@@ -354,11 +411,11 @@ public class FuryTest extends FuryTestBase {
   }
 
   @Test
-  public void testSecureMode() {
-    Fury fury = Fury.builder().withSecureMode(true).build();
+  public void testClassRegistration() {
+    Fury fury = Fury.builder().requireClassRegistration(true).build();
     class A {}
     assertThrows(InsecureException.class, () -> fury.serialize(new A()));
-    Fury fury1 = Fury.builder().withSecureMode(false).build();
+    Fury fury1 = Fury.builder().requireClassRegistration(false).build();
     serDe(fury1, new A());
   }
 
@@ -388,14 +445,14 @@ public class FuryTest extends FuryTestBase {
     TestUtils.triggerOOMForSoftGC(
         () -> {
           System.out.printf("Wait map keys %s gc.\n", map.keySet());
-          return map.size() > 0;
+          return !map.isEmpty();
         });
     Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
   }
 
   private void furyGC(WeakHashMap<Object, Boolean> map) {
-    Fury fury = Fury.builder().withClassRegistrationRequired(false).build();
-    Class<?> structClass1 = Struct.createStructClass("TestClassGC", 1);
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    Class<?> structClass1 = Struct.createStructClass("TestClassGC", 1, false);
     System.out.println(structClass1.hashCode());
     Object struct1 = Struct.createPOJO(structClass1);
     serDe(fury, struct1);
@@ -411,13 +468,9 @@ public class FuryTest extends FuryTestBase {
 
   @Test
   public void testSerializeJavaObject() {
-    Fury fury =
-        Fury.builder().withClassRegistrationRequired(false).withLanguage(Language.JAVA).build();
+    Fury fury = Fury.builder().requireClassRegistration(false).withLanguage(Language.JAVA).build();
     BeanA beanA = BeanA.createBeanA(2);
     assertEquals(fury.deserializeJavaObject(fury.serializeJavaObject(beanA), BeanA.class), beanA);
-    assertThrows(
-        Exception.class,
-        () -> fury.deserializeJavaObject(fury.serializeJavaObjectAndClass(beanA), BeanA.class));
     assertEquals(
         fury.deserializeJavaObjectAndClass(fury.serializeJavaObjectAndClass(beanA)), beanA);
     assertEquals(
@@ -436,6 +489,44 @@ public class FuryTest extends FuryTestBase {
     bas.flush();
     ByteArrayInputStream bis = new ByteArrayInputStream(bas.toByteArray());
     Object newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+    newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+
+    fury = Fury.builder().requireClassRegistration(false).build();
+    // test reader buffer grow
+    bis = new ByteArrayInputStream(bas.toByteArray());
+    newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+    newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+  }
+
+  @Test
+  public void testBufferedStream() throws IOException {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    ByteArrayOutputStream bas = new ByteArrayOutputStream();
+    BeanA beanA = BeanA.createBeanA(2);
+    fury.serialize(bas, beanA);
+    fury.serialize(bas, beanA);
+    bas.flush();
+    InputStream bis =
+        new BufferedInputStream(new ByteArrayInputStream(bas.toByteArray())) {
+          @Override
+          public synchronized int read(byte[] b, int off, int len) throws IOException {
+            return in.read(b, off, Math.min(len, 100));
+          }
+        };
+    bis.mark(10);
+    Object newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+    newObj = fury.deserialize(bis);
+    assertEquals(newObj, beanA);
+
+    fury = Fury.builder().requireClassRegistration(false).build();
+    // test reader buffer grow
+    bis = new ByteArrayInputStream(bas.toByteArray());
+    newObj = fury.deserialize(bis);
     assertEquals(newObj, beanA);
     newObj = fury.deserialize(bis);
     assertEquals(newObj, beanA);
@@ -466,6 +557,69 @@ public class FuryTest extends FuryTestBase {
       assertEquals(newObj, beanA);
       newObj = fury.deserializeJavaObjectAndClass(bis);
       assertEquals(newObj, beanA);
+
+      fury = Fury.builder().requireClassRegistration(false).build();
+      // test reader buffer grow
+      bis = new ByteArrayInputStream(bas.toByteArray());
+      newObj = fury.deserializeJavaObjectAndClass(bis);
+      assertEquals(newObj, beanA);
+      newObj = fury.deserializeJavaObjectAndClass(bis);
+      assertEquals(newObj, beanA);
     }
+  }
+
+  @Data
+  static class DomainObject {
+    UUID id;
+  }
+
+  static class UUIDSerializer extends Serializer<UUID> {
+    public UUIDSerializer(Fury fury) {
+      super(fury, UUID.class);
+    }
+
+    @Override
+    public UUID read(MemoryBuffer buffer) {
+      return new UUID(buffer.readLong(), buffer.readLong());
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, UUID value) {
+      buffer.writeLong(value.getMostSignificantBits());
+      buffer.writeLong(value.getLeastSignificantBits());
+    }
+  }
+
+  @Test
+  public void testRegisterPrivateSerializer() {
+    Fury fury = Fury.builder().withRefTracking(true).requireClassRegistration(false).build();
+    fury.registerSerializer(UUID.class, new UUIDSerializer(fury));
+    DomainObject obj = new DomainObject();
+    obj.id = UUID.randomUUID();
+    serDeCheckSerializer(fury, obj, "Codec");
+  }
+
+  @Test
+  public void testCircularReferenceStackOverflowMessage() {
+    class A {
+      A f;
+    }
+    A a = new A();
+    a.f = a;
+    Fury fury = Fury.builder().withRefTracking(false).requireClassRegistration(false).build();
+    try {
+      fury.serialize(a);
+      throw new IllegalStateException("StackOverflowError not raised.");
+    } catch (StackOverflowError e) {
+      Assert.assertTrue(e.getMessage().contains("reference"));
+    }
+  }
+
+  @Test
+  public void testPkgAccessLevelParentClass() {
+    Fury fury = Fury.builder().withRefTracking(true).requireClassRegistration(false).build();
+    HashBasedTable<Object, Object, Object> table = HashBasedTable.create(2, 4);
+    table.put("r", "c", 100);
+    serDeCheckSerializer(fury, table, "Codec");
   }
 }

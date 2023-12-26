@@ -1,30 +1,32 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.format.row.binary;
 
-import static io.fury.util.Utils.checkArgument;
+import static io.fury.util.Preconditions.checkArgument;
 
-import com.google.common.base.Preconditions;
 import io.fury.format.row.Row;
 import io.fury.format.type.DataTypes;
 import io.fury.memory.BitUtils;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
+import io.fury.util.Preconditions;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +52,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
  * <ul>
  *   BinaryRow is inspired by Apache Spark tungsten UnsafeRow, the differences are
  *   <li>Use arrow schema to describe meta.
- *   <li>String support ascii/utf16/utf8 encoding.
+ *   <li>String support latin/utf16/utf8 encoding.
  *   <li>Decimal use arrow decimal format.
  *   <li>Variable-size field can be inline in fixed-size region if small enough.
  *   <li>Allow skip padding by generate Row using aot to put offsets in generated code.

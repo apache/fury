@@ -1,0 +1,66 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+name: Publish Fury 📦
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release-python:
+    name: Publish Python 📦 to PyPI
+    runs-on: ubuntu-20.04
+    environment:
+      name: pypi
+      url: https://pypi.org/project/pyfury
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9, 3.10.12, 3.11, 3.12]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Update version in setup.py
+        run: |
+          echo "GITHUB_REF: $GITHUB_REF" 
+          tag=$(echo $GITHUB_REF | cut -d / -f 3)
+          echo "tag: $tag"
+          version=${tag:1}
+          echo "version $version"
+          ci/deploy.sh bump_py_version $version
+      - name: Build a binary wheel
+        run: |
+          ci/deploy.sh install_pyarrow
+          pip install setuptools wheel Cython numpy pytest
+          cd python
+          pip list
+          export PATH=~/bin:$PATH
+          echo "Build pyfury"
+          python setup.py bdist_wheel --dist-dir=../dist
+          ../ci/deploy.sh rename_linux_wheels $PWD/../dist
+      - name: Publish wheel 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist

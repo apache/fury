@@ -1,27 +1,26 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.serializer;
 
-import static io.fury.type.TypeUtils.getRawType;
-import static io.fury.util.Utils.checkArgument;
+import static io.fury.util.Preconditions.checkArgument;
 
-import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
 import io.fury.builder.CodecUtils;
 import io.fury.builder.Generated;
@@ -37,19 +36,10 @@ import java.lang.reflect.Modifier;
 public final class CodegenSerializer {
 
   public static boolean supportCodegenForJavaSerialization(Class<?> cls) {
-    return isJavaPojo(TypeToken.of(cls));
-  }
-
-  private static boolean isJavaPojo(TypeToken<?> type) {
-    Class<?> rawType = getRawType(type);
-    // since we need to access class in generated code in our package, the class must be public.
-    // TODO support default access-level class jit.
-    if (Modifier.isPublic(rawType.getModifiers())) {
-      // bean class can be static nested class, but can't be a non-static inner class
-      return rawType.getEnclosingClass() == null || Modifier.isStatic(rawType.getModifiers());
-    } else {
-      return false;
-    }
+    // bean class can be static nested class, but can't be a non-static inner class
+    // If a class is a static class, the enclosing class must not be null.
+    // If enclosing class is null, it must not be a static class.
+    return cls.getEnclosingClass() == null || Modifier.isStatic(cls.getModifiers());
   }
 
   @SuppressWarnings("unchecked")
@@ -107,14 +97,22 @@ public final class CodegenSerializer {
           if (interpreterSerializer != null) {
             return interpreterSerializer;
           }
-          Class<? extends Serializer> sc = fury.getClassResolver().getSerializerClass(type);
-          checkArgument(
-              Generated.GeneratedSerializer.class.isAssignableFrom(sc),
-              "Expect jit serializer but got %s",
-              sc);
-          serializer = Serializers.newSerializer(fury, type, sc);
-          fury.getClassResolver().setSerializer(type, serializer);
-          return serializer;
+          if (fury.getConfig().isAsyncCompilationEnabled()) {
+            // jit not finished, avoid recursive call current serializer.
+            Class<? extends Serializer> sc =
+                fury.getClassResolver().getSerializerClass(type, false);
+            return interpreterSerializer = Serializers.newSerializer(fury, type, sc);
+          } else {
+            Class<? extends Serializer> sc = fury.getClassResolver().getSerializerClass(type);
+            checkArgument(
+                Generated.GeneratedSerializer.class.isAssignableFrom(sc),
+                "Expect jit serializer but got %s for class %s",
+                sc,
+                type);
+            serializer = Serializers.newSerializer(fury, type, sc);
+            fury.getClassResolver().setSerializer(type, serializer);
+            return serializer;
+          }
         } else {
           serializer = jitSerializer;
         }

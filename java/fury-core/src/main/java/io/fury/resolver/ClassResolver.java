@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.resolver;
@@ -23,17 +24,14 @@ import static io.fury.codegen.ExpressionUtils.eq;
 import static io.fury.serializer.CodegenSerializer.loadCodegenSerializer;
 import static io.fury.serializer.CodegenSerializer.loadCompatibleCodegenSerializer;
 import static io.fury.serializer.CodegenSerializer.supportCodegenForJavaSerialization;
-import static io.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
+import static io.fury.type.TypeUtils.OBJECT_TYPE;
 import static io.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static io.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.primitives.Primitives;
 import com.google.common.reflect.TypeToken;
 import io.fury.Fury;
-import io.fury.Language;
+import io.fury.annotation.CodegenInvoke;
 import io.fury.annotation.Internal;
 import io.fury.builder.CodecUtils;
 import io.fury.builder.Generated;
@@ -41,79 +39,104 @@ import io.fury.builder.JITContext;
 import io.fury.codegen.Expression;
 import io.fury.codegen.Expression.Invoke;
 import io.fury.codegen.Expression.Literal;
-import io.fury.codegen.ExpressionUtils;
 import io.fury.collection.IdentityMap;
 import io.fury.collection.IdentityObjectIntMap;
 import io.fury.collection.LongMap;
 import io.fury.collection.ObjectMap;
 import io.fury.collection.Tuple2;
+import io.fury.config.CompatibleMode;
+import io.fury.config.Language;
 import io.fury.exception.InsecureException;
 import io.fury.memory.MemoryBuffer;
 import io.fury.serializer.ArraySerializers;
 import io.fury.serializer.BufferSerializers;
-import io.fury.serializer.ChildContainerSerializers;
 import io.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
-import io.fury.serializer.CollectionSerializers;
-import io.fury.serializer.CompatibleMode;
 import io.fury.serializer.CompatibleSerializer;
 import io.fury.serializer.ExternalizableSerializer;
 import io.fury.serializer.JavaSerializer;
 import io.fury.serializer.JdkProxySerializer;
 import io.fury.serializer.LambdaSerializer;
 import io.fury.serializer.LocaleSerializer;
-import io.fury.serializer.MapSerializers;
 import io.fury.serializer.MetaSharedSerializer;
 import io.fury.serializer.ObjectSerializer;
 import io.fury.serializer.OptionalSerializers;
+import io.fury.serializer.PrimitiveSerializers;
 import io.fury.serializer.ReplaceResolveSerializer;
 import io.fury.serializer.Serializer;
 import io.fury.serializer.SerializerFactory;
 import io.fury.serializer.Serializers;
 import io.fury.serializer.StringSerializer;
 import io.fury.serializer.StructSerializer;
-import io.fury.serializer.SynchronizedSerializers;
 import io.fury.serializer.TimeSerializers;
 import io.fury.serializer.UnexistedClassSerializers.UnexistedClassSerializer;
 import io.fury.serializer.UnexistedClassSerializers.UnexistedMetaSharedClass;
 import io.fury.serializer.UnexistedClassSerializers.UnexistedSkipClass;
-import io.fury.serializer.UnmodifiableSerializers;
+import io.fury.serializer.collection.ChildContainerSerializers;
+import io.fury.serializer.collection.CollectionSerializer;
+import io.fury.serializer.collection.CollectionSerializers;
+import io.fury.serializer.collection.GuavaCollectionSerializers;
+import io.fury.serializer.collection.ImmutableCollectionSerializers;
+import io.fury.serializer.collection.MapSerializer;
+import io.fury.serializer.collection.MapSerializers;
+import io.fury.serializer.collection.SynchronizedSerializers;
+import io.fury.serializer.collection.UnmodifiableSerializers;
+import io.fury.serializer.scala.SingletonCollectionSerializer;
+import io.fury.serializer.scala.SingletonMapSerializer;
+import io.fury.serializer.scala.SingletonObjectSerializer;
+import io.fury.serializer.shim.ShimDispatcher;
 import io.fury.type.ClassDef;
 import io.fury.type.Descriptor;
 import io.fury.type.GenericType;
+import io.fury.type.ScalaTypes;
 import io.fury.type.TypeUtils;
-import io.fury.util.Functions;
+import io.fury.util.GraalvmSupport;
 import io.fury.util.LoggerFactory;
 import io.fury.util.Platform;
+import io.fury.util.Preconditions;
 import io.fury.util.ReflectionUtils;
 import io.fury.util.StringUtils;
+import io.fury.util.function.Functions;
 import java.io.Externalizable;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -132,34 +155,9 @@ import org.slf4j.Logger;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class ClassResolver {
   private static final Logger LOG = LoggerFactory.getLogger(ClassResolver.class);
-  private static final Class<Serializer> ArrowSerializersClass;
 
-  static {
-    List<String> splits = Arrays.asList(ClassResolver.class.getName().split("\\."));
-    String furyPackage = String.join(".", splits.subList(0, splits.size() - 2));
-    // compatible with maven shade.
-    String className = furyPackage + ".format.vectorized.ArrowSerializers";
-    Class<Serializer> cls = null;
-    try {
-      cls =
-          (Class<Serializer>) Class.forName(className, true, ClassResolver.class.getClassLoader());
-      LOG.debug("Loaded arrow serializer classes.");
-    } catch (ClassNotFoundException e) {
-      LOG.debug(
-          "`fury-format` dependency not included, skip adding serializer for class {}. "
-              + "If you want to use fury-format, please include fury-format dependency.",
-          className);
-    } catch (ExceptionInInitializerError | NoClassDefFoundError e) {
-      LOG.info(
-          "Add serializer for class {} failed. Apache arrow relies on the internals of `java.nio`. "
-              + "If you are using jdk17+, please open module `java.base` to unnamed module",
-          className);
-    }
-    ArrowSerializersClass = cls;
-  }
-
-  public static final byte USE_CLASS_VALUE = 0;
-  public static final byte USE_STRING_ID = 1;
+  // bit 0 unset indicates class is written as an id.
+  public static final byte USE_CLASS_VALUE_FLAG = 0b1;
   // preserve 0 as flag for class id not set in ClassInfo`
   public static final short NO_CLASS_ID = (short) 0;
   public static final short LAMBDA_STUB_ID = 1;
@@ -199,6 +197,7 @@ public class ClassResolver {
   public static final short HASHMAP_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 4);
   public static final short HASHSET_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 5);
   public static final short CLASS_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 6);
+  public static final short EMPTY_OBJECT_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 7);
   private static final int initialCapacity = 128;
   // use a lower load factor to minimize hash collision
   private static final float loadFactor = 0.25f;
@@ -230,6 +229,7 @@ public class ClassResolver {
   // class id of last default registered class.
   private short innerEndClassId;
   private final ExtRegistry extRegistry;
+  private final ShimDispatcher shimDispatcher;
 
   private static class ExtRegistry {
     private short registeredClassIdCounter = 0;
@@ -246,14 +246,18 @@ public class ClassResolver {
     // TODO(chaokunyang) Better to  use soft reference, see ObjectStreamClass.
     private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Field, Descriptor>>
         descriptorsCache = new ConcurrentHashMap<>();
+    private ClassChecker classChecker = (classResolver, className) -> true;
+    private GenericType objectGenericType;
   }
 
   public ClassResolver(Fury fury) {
     this.fury = fury;
     enumStringResolver = fury.getEnumStringResolver();
     classInfoCache = NIL_CLASS_INFO;
-    metaContextShareEnabled = fury.getConfig().isMetaContextShareEnabled();
+    metaContextShareEnabled = fury.getConfig().shareMetaContext();
     extRegistry = new ExtRegistry();
+    extRegistry.objectGenericType = buildGenericType(OBJECT_TYPE);
+    shimDispatcher = new ShimDispatcher(fury);
   }
 
   public void initialize() {
@@ -293,16 +297,21 @@ public class ClassResolver {
     registerWithCheck(HashMap.class, HASHMAP_CLASS_ID);
     registerWithCheck(HashSet.class, HASHSET_CLASS_ID);
     registerWithCheck(Class.class, CLASS_CLASS_ID);
+    registerWithCheck(Object.class, EMPTY_OBJECT_ID);
+    // Register common class ahead to get smaller class id for serialization.
+    registerCommonUsedClasses();
     addDefaultSerializers();
     registerDefaultClasses();
+    shimDispatcher.initialize();
     innerEndClassId = extRegistry.registeredClassIdCounter;
   }
 
   private void addDefaultSerializers() {
     // primitive types will be boxed.
     addDefaultSerializer(String.class, new StringSerializer(fury));
-    Serializers.registerDefaultSerializers(fury);
+    PrimitiveSerializers.registerDefaultSerializers(fury);
     ArraySerializers.registerDefaultSerializers(fury);
+    Serializers.registerDefaultSerializers(fury);
     TimeSerializers.registerDefaultSerializers(fury);
     OptionalSerializers.registerDefaultSerializers(fury);
     CollectionSerializers.registerDefaultSerializers(fury);
@@ -319,20 +328,21 @@ public class ClassResolver {
         new ReplaceResolveSerializer(fury, ReplaceResolveSerializer.ReplaceStub.class));
     SynchronizedSerializers.registerSerializers(fury);
     UnmodifiableSerializers.registerSerializers(fury);
+    ImmutableCollectionSerializers.registerSerializers(fury);
+    if (fury.getConfig().registerGuavaTypes()) {
+      GuavaCollectionSerializers.registerDefaultSerializers(fury);
+    }
     if (metaContextShareEnabled) {
       addDefaultSerializer(
           UnexistedMetaSharedClass.class, new UnexistedClassSerializer(fury, null));
-    }
-    if (ArrowSerializersClass != null) {
-      try {
-        Method method = ArrowSerializersClass.getDeclaredMethod("registerSerializers", Fury.class);
-        method.setAccessible(true);
-        method.invoke(null, fury);
-      } catch (NoSuchMethodException e) {
-        throw new IllegalStateException("unreachable", e);
-      } catch (InvocationTargetException | IllegalAccessException e) {
-        throw new RuntimeException(e);
-      }
+      // Those class id must be known in advance, here is two bytes, so
+      // `UnexistedClassSerializer.writeClassDef`
+      // can overwrite written classinfo and replace with real classinfo.
+      short classId =
+          Objects.requireNonNull(classInfoMap.get(UnexistedMetaSharedClass.class)).classId;
+      Preconditions.checkArgument(classId > 63 && classId < 8192, classId);
+    } else {
+      register(UnexistedSkipClass.class);
     }
   }
 
@@ -343,6 +353,18 @@ public class ClassResolver {
   private void addDefaultSerializer(Class type, Serializer serializer) {
     registerSerializer(type, serializer);
     register(type);
+  }
+
+  /** Register common class ahead to get smaller class id for serialization. */
+  private void registerCommonUsedClasses() {
+    register(Class.class);
+    register(ArrayList.class, LinkedList.class, HashSet.class, TreeSet.class);
+    register(HashMap.class, LinkedHashMap.class, TreeMap.class);
+    register(ByteBuffer.allocate(1).getClass());
+    register(Integer[].class, Long[].class);
+    register(Date.class, Timestamp.class, LocalDateTime.class, Instant.class);
+    register(BigInteger.class, BigDecimal.class);
+    register(Optional.class, OptionalInt.class);
   }
 
   private void registerDefaultClasses() {
@@ -362,7 +384,12 @@ public class ClassResolver {
     register(AtomicReference.class);
     register(EnumSet.allOf(Language.class).getClass());
     register(EnumSet.of(Language.JAVA).getClass());
-    register(UnexistedMetaSharedClass.class, UnexistedSkipClass.class);
+    register(Throwable.class, StackTraceElement.class, Exception.class, RuntimeException.class);
+    register(NullPointerException.class);
+    register(IOException.class);
+    register(IllegalArgumentException.class);
+    register(IllegalStateException.class);
+    register(IndexOutOfBoundsException.class, ArrayIndexOutOfBoundsException.class);
   }
 
   /** register class. */
@@ -381,13 +408,31 @@ public class ClassResolver {
     }
   }
 
+  public void register(Class<?> cls, boolean createSerializer) {
+    register(cls);
+    if (createSerializer) {
+      getSerializer(cls);
+    }
+  }
+
   /** register class with given type tag which will be used for cross-language serialization. */
   public void register(Class<?> cls, String typeTag) {
+    if (fury.getLanguage() == Language.JAVA) {
+      throw new IllegalArgumentException(
+          "Java serialization should register class by "
+              + "Fury#register(Class) or Fury.register(Class<?>, Short)");
+    }
+    register(cls);
     Preconditions.checkArgument(!typeTagToClassXLangMap.containsKey(typeTag));
     addSerializer(cls, new StructSerializer<>(fury, cls, typeTag));
   }
 
+  /**
+   * Register class with specified id. Currently class id must be `classId >= 0 && classId < 32767`.
+   * In the future this limitation may be relaxed.
+   */
   public void register(Class<?> cls, int classId) {
+    // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
     Preconditions.checkArgument(classId >= 0 && classId < Short.MAX_VALUE);
     short id = (short) classId;
     if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
@@ -427,12 +472,19 @@ public class ClassResolver {
     }
   }
 
+  public void register(Class<?> cls, Short id, boolean createSerializer) {
+    register(cls, id);
+    if (createSerializer) {
+      getSerializer(cls);
+    }
+  }
+
   /** register class with given id. */
   public void registerWithCheck(Class<?> cls, short id) {
     if (extRegistry.registeredClassIdMap.containsKey(cls)) {
       throw new IllegalArgumentException(
           String.format(
-              "" + "Class %s already registered with id %s.",
+              "Class %s already registered with id %s.",
               cls, extRegistry.registeredClassIdMap.get(cls)));
     }
     register(cls, id);
@@ -466,7 +518,7 @@ public class ClassResolver {
    */
   public boolean isFinal(Class<?> clz) {
     if (Modifier.isFinal(clz.getModifiers())) {
-      if (fury.getConfig().isMetaContextShareEnabled()) {
+      if (fury.getConfig().shareMetaContext()) {
         boolean isInnerClass = isInnerClass(clz);
         if (!isInnerClass) {
           return false;
@@ -532,6 +584,13 @@ public class ClassResolver {
     if (Externalizable.class.isAssignableFrom(clz)) {
       return false;
     } else {
+      // `AnnotationInvocationHandler#readObject` may invoke `toString` of object, which may be
+      // risky.
+      // For example, JsonObject#toString may invoke `getter`.
+      // Use fury serialization to avoid this.
+      if ("sun.reflect.annotation.AnnotationInvocationHandler".equals(clz.getName())) {
+        return false;
+      }
       return JavaSerializer.getReadObjectMethod(clz) != null
           || JavaSerializer.getWriteObjectMethod(clz) != null;
     }
@@ -580,6 +639,40 @@ public class ClassResolver {
     addSerializer(cls, serializer);
   }
 
+  /** Set serializer for class whose name is {@code className}. */
+  public void setSerializer(String className, Class<? extends Serializer> serializer) {
+    for (Map.Entry<Class<?>, ClassInfo> entry : classInfoMap.iterable()) {
+      if (extRegistry.registeredClasses.containsKey(className)) {
+        LOG.warn("Skip clear serializer for registered class {}", className);
+        return;
+      }
+      Class<?> cls = entry.getKey();
+      if (cls.getName().equals(className)) {
+        LOG.info("Clear serializer for class {}.", className);
+        entry.getValue().serializer = Serializers.newSerializer(fury, cls, serializer);
+        classInfoCache = NIL_CLASS_INFO;
+        return;
+      }
+    }
+  }
+
+  /** Set serializer for classes starts with {@code classNamePrefix}. */
+  public void setSerializers(String classNamePrefix, Class<? extends Serializer> serializer) {
+    for (Map.Entry<Class<?>, ClassInfo> entry : classInfoMap.iterable()) {
+      Class<?> cls = entry.getKey();
+      String className = cls.getName();
+      if (extRegistry.registeredClasses.containsKey(className)) {
+        LOG.debug("Skip clear serializer for registered class {}", className);
+        continue;
+      }
+      if (className.startsWith(classNamePrefix)) {
+        LOG.info("Clear serializer for class {}.", className);
+        entry.getValue().serializer = Serializers.newSerializer(fury, cls, serializer);
+        classInfoCache = NIL_CLASS_INFO;
+      }
+    }
+  }
+
   /**
    * Reset serializer if <code>serializer</code> is not null, otherwise clear serializer for <code>
    * cls</code>.
@@ -621,7 +714,7 @@ public class ClassResolver {
   private void addSerializer(Class<?> type, Serializer<?> serializer) {
     Preconditions.checkNotNull(serializer);
     String typeTag = null;
-    short typeId = serializer.getCrossLanguageTypeId();
+    short typeId = serializer.getXtypeId();
     if (typeId != Fury.NOT_SUPPORT_CROSS_LANGUAGE) {
       if (typeId > Fury.NOT_SUPPORT_CROSS_LANGUAGE) {
         typeIdToClassXLangMap.put(typeId, type);
@@ -671,16 +764,46 @@ public class ClassResolver {
     return (Serializer<T>) getOrUpdateClassInfo(cls).serializer;
   }
 
+  /**
+   * Return serializer without generics for specified class. The cast of Serializer to subclass
+   * serializer with generic is easy to raise compiler error for javac, so just use raw type.
+   */
+  @Internal
+  @CodegenInvoke
+  public Serializer<?> getRawSerializer(Class<?> cls) {
+    Preconditions.checkNotNull(cls);
+    return getOrUpdateClassInfo(cls).serializer;
+  }
+
+  public boolean isSerializable(Class<?> cls) {
+    if (ReflectionUtils.isAbstract(cls) || cls.isInterface()) {
+      return false;
+    }
+    try {
+      getSerializerClass(cls, false);
+      return true;
+    } catch (Throwable t) {
+      return false;
+    }
+  }
+
   public Class<? extends Serializer> getSerializerClass(Class<?> cls) {
+
     boolean codegen =
         supportCodegenForJavaSerialization(cls) && fury.getConfig().isCodeGenEnabled();
     return getSerializerClass(cls, codegen);
   }
 
   public Class<? extends Serializer> getSerializerClass(Class<?> cls, boolean codegen) {
-    if (cls.isPrimitive()) {
-      cls = Primitives.wrap(cls);
+    if (ReflectionUtils.isAbstract(cls) || cls.isInterface()) {
+      throw new UnsupportedOperationException(
+          String.format("Class %s doesn't support serialization.", cls));
     }
+    Class<? extends Serializer> serializerClass = getSerializerClassFromGraalvmRegistry(cls);
+    if (serializerClass != null) {
+      return serializerClass;
+    }
+    cls = TypeUtils.boxedType(cls);
     ClassInfo classInfo = classInfoMap.get(cls);
     if (classInfo != null && classInfo.serializer != null) {
       // Note: need to check `classInfo.serializer != null`, because sometimes `cls` is already
@@ -709,12 +832,6 @@ public class ClassResolver {
         return TimeSerializers.ZoneIdSerializer.class;
       } else if (TimeZone.class.isAssignableFrom(cls)) {
         return TimeSerializers.TimeZoneSerializer.class;
-      } else if (Externalizable.class.isAssignableFrom(cls)) {
-        return ExternalizableSerializer.class;
-      } else if (ImmutableList.class.isAssignableFrom(cls)) {
-        return CollectionSerializers.ImmutableListSerializer.class;
-      } else if (ImmutableMap.class.isAssignableFrom(cls)) {
-        return MapSerializers.ImmutableMapSerializer.class;
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {
         return BufferSerializers.ByteBufferSerializer.class;
       }
@@ -724,11 +841,20 @@ public class ClassResolver {
               String.format("Class %s doesn't support serialization.", cls));
         }
       }
-      if (Collection.class.isAssignableFrom(cls)) {
+      if (fury.getConfig().isScalaOptimizationEnabled()
+          && ReflectionUtils.isScalaSingletonObject(cls)) {
+        if (isCollection(cls)) {
+          return SingletonCollectionSerializer.class;
+        } else if (isMap(cls)) {
+          return SingletonMapSerializer.class;
+        } else {
+          return SingletonObjectSerializer.class;
+        }
+      }
+      if (isCollection(cls)) {
         // Serializer of common collection such as ArrayList/LinkedList should be registered
         // already.
-        Class<? extends Serializer> serializerClass =
-            ChildContainerSerializers.getCollectionSerializerClass(cls);
+        serializerClass = ChildContainerSerializers.getCollectionSerializerClass(cls);
         if (serializerClass != null) {
           return serializerClass;
         }
@@ -738,12 +864,11 @@ public class ClassResolver {
         if (fury.getLanguage() == Language.JAVA) {
           return CollectionSerializers.DefaultJavaCollectionSerializer.class;
         } else {
-          return CollectionSerializers.CollectionSerializer.class;
+          return CollectionSerializer.class;
         }
-      } else if (Map.class.isAssignableFrom(cls)) {
+      } else if (isMap(cls)) {
         // Serializer of common map such as HashMap/LinkedHashMap should be registered already.
-        Class<? extends Serializer> serializerClass =
-            ChildContainerSerializers.getMapSerializerClass(cls);
+        serializerClass = ChildContainerSerializers.getMapSerializerClass(cls);
         if (serializerClass != null) {
           return serializerClass;
         }
@@ -753,11 +878,17 @@ public class ClassResolver {
         if (fury.getLanguage() == Language.JAVA) {
           return MapSerializers.DefaultJavaMapSerializer.class;
         } else {
-          return MapSerializers.MapSerializer.class;
+          return MapSerializer.class;
         }
+      }
+      if (fury.getLanguage() != Language.JAVA) {
+        LOG.warn("Class {} isn't supported for cross-language serialization.", cls);
       }
       if (useReplaceResolveSerializer(cls)) {
         return ReplaceResolveSerializer.class;
+      }
+      if (Externalizable.class.isAssignableFrom(cls)) {
+        return ExternalizableSerializer.class;
       }
       if (requireJavaSerialization(cls)) {
         return getJavaSerializer(cls);
@@ -785,6 +916,27 @@ public class ClassResolver {
     }
   }
 
+  public boolean isCollection(Class<?> cls) {
+    if (Collection.class.isAssignableFrom(cls)) {
+      return true;
+    }
+    if (fury.getConfig().isScalaOptimizationEnabled()) {
+      // Scala map is scala iterable too.
+      if (ScalaTypes.getScalaMapType().isAssignableFrom(cls)) {
+        return false;
+      }
+      return ScalaTypes.getScalaIterableType().isAssignableFrom(cls);
+    } else {
+      return false;
+    }
+  }
+
+  public boolean isMap(Class<?> cls) {
+    return Map.class.isAssignableFrom(cls)
+        || (fury.getConfig().isScalaOptimizationEnabled()
+            && ScalaTypes.getScalaMapType().isAssignableFrom(cls));
+  }
+
   public Class<? extends Serializer> getObjectSerializerClass(
       Class<?> cls, JITContext.SerializerJITCallback<Class<? extends Serializer>> callback) {
     boolean codegen =
@@ -797,43 +949,42 @@ public class ClassResolver {
       boolean shareMeta,
       boolean codegen,
       JITContext.SerializerJITCallback<Class<? extends Serializer>> callback) {
-    if (fury.getLanguage() != Language.JAVA) {
-      LOG.warn("Class {} isn't supported for cross-language serialization.", cls);
-    }
     if (codegen) {
       if (extRegistry.getClassCtx.contains(cls)) {
         // avoid potential recursive call for seq codec generation.
         return LazyInitBeanSerializer.class;
       } else {
-        extRegistry.getClassCtx.add(cls);
-        Class<? extends Serializer> sc;
-        switch (fury.getCompatibleMode()) {
-          case SCHEMA_CONSISTENT:
-            sc =
-                fury.getJITContext()
-                    .registerSerializerJITCallback(
-                        () -> ObjectSerializer.class,
-                        () -> loadCodegenSerializer(fury, cls),
-                        callback);
-            extRegistry.getClassCtx.remove(cls);
-            return sc;
-          case COMPATIBLE:
-            // If share class meta, compatible serializer won't be necessary, class
-            // definition will be sent to peer to create serializer for deserialization.
-            sc =
-                fury.getJITContext()
-                    .registerSerializerJITCallback(
-                        () -> shareMeta ? ObjectSerializer.class : CompatibleSerializer.class,
-                        () ->
-                            shareMeta
-                                ? loadCodegenSerializer(fury, cls)
-                                : loadCompatibleCodegenSerializer(fury, cls),
-                        callback);
-            extRegistry.getClassCtx.remove(cls);
-            return sc;
-          default:
-            throw new UnsupportedOperationException(
-                String.format("Unsupported mode %s", fury.getCompatibleMode()));
+        try {
+          extRegistry.getClassCtx.add(cls);
+          Class<? extends Serializer> sc;
+          switch (fury.getCompatibleMode()) {
+            case SCHEMA_CONSISTENT:
+              sc =
+                  fury.getJITContext()
+                      .registerSerializerJITCallback(
+                          () -> ObjectSerializer.class,
+                          () -> loadCodegenSerializer(fury, cls),
+                          callback);
+              return sc;
+            case COMPATIBLE:
+              // If share class meta, compatible serializer won't be necessary, class
+              // definition will be sent to peer to create serializer for deserialization.
+              sc =
+                  fury.getJITContext()
+                      .registerSerializerJITCallback(
+                          () -> shareMeta ? ObjectSerializer.class : CompatibleSerializer.class,
+                          () ->
+                              shareMeta
+                                  ? loadCodegenSerializer(fury, cls)
+                                  : loadCompatibleCodegenSerializer(fury, cls),
+                          callback);
+              return sc;
+            default:
+              throw new UnsupportedOperationException(
+                  String.format("Unsupported mode %s", fury.getCompatibleMode()));
+          }
+        } finally {
+          extRegistry.getClassCtx.remove(cls);
         }
       }
     } else {
@@ -863,6 +1014,14 @@ public class ClassResolver {
     }
   }
 
+  public ClassChecker getClassChecker() {
+    return extRegistry.classChecker;
+  }
+
+  public void setClassChecker(ClassChecker classChecker) {
+    extRegistry.classChecker = classChecker;
+  }
+
   public FieldResolver getFieldResolver(Class<?> cls) {
     // can't use computeIfAbsent, since there may be recursive multiple
     // `getFieldResolver` thus multiple updates, which cause concurrent
@@ -886,14 +1045,14 @@ public class ClassResolver {
    * Whether to track reference for this type. If false, reference tracing of subclasses may be
    * ignored too.
    */
-  public boolean needToWriteReference(Class<?> cls) {
-    if (fury.trackingReference()) {
+  public boolean needToWriteRef(Class<?> cls) {
+    if (fury.trackingRef()) {
       ClassInfo classInfo = getClassInfo(cls, false);
       if (classInfo == null || classInfo.serializer == null) {
         // TODO group related logic together for extendability and consistency.
         return !cls.isEnum();
       } else {
-        return classInfo.serializer.needToWriteReference();
+        return classInfo.serializer.needToWriteRef();
       }
     }
     return false;
@@ -918,15 +1077,16 @@ public class ClassResolver {
     return classInfo;
   }
 
-  public ClassInfo getClassInfo(Class<?> cls, ClassInfoCache classInfoCache) {
-    ClassInfo classInfo = classInfoCache.classInfo;
+  /** Get classinfo by cache, update cache if miss. */
+  public ClassInfo getClassInfo(Class<?> cls, ClassInfoHolder classInfoHolder) {
+    ClassInfo classInfo = classInfoHolder.classInfo;
     if (classInfo.getCls() != cls) {
       classInfo = classInfoMap.get(cls);
       if (classInfo == null || classInfo.serializer == null) {
         addSerializer(cls, createSerializer(cls));
         classInfo = Objects.requireNonNull(classInfoMap.get(cls));
       }
-      classInfoCache.classInfo = classInfo;
+      classInfoHolder.classInfo = classInfo;
     }
     assert classInfo.serializer != null;
     return classInfo;
@@ -992,21 +1152,22 @@ public class ClassResolver {
   }
 
   private Serializer createSerializer(Class<?> cls) {
-    if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
+    if (!extRegistry.registeredClassIdMap.containsKey(cls) && !shimDispatcher.contains(cls)) {
       String msg =
           String.format(
-              "%s is not registered, if it's not the type you want to serialize, "
-                  + "it may be a **vulnerability**. If it's not a vulnerability, "
-                  + "registering class by `Fury#register` will have better performance, "
-                  + "otherwise class name will be serialized too.",
+              "%s is not registered, please check whether it's the type you want to serialize or "
+                  + "a **vulnerability**. If safe, you should invoke `Fury#register` to register class, "
+                  + " which will have better performance by skipping classname serialization. "
+                  + "If your env is 100%% secure, you can also avoid this exception by disabling class "
+                  + "registration check using `FuryBuilder#requireClassRegistration(false)`",
               cls);
       boolean forbidden = BlackList.getDefaultBlackList().contains(cls.getName());
-      if (forbidden
-          || (fury.isClassRegistrationRequired()
-              && !isSecure(extRegistry.registeredClassIdMap, cls))) {
+      if (forbidden || !isSecure(extRegistry.registeredClassIdMap, cls)) {
         throw new InsecureException(msg);
       } else {
-        if (!Functions.isLambda(cls) && !ReflectionUtils.isJdkProxy(cls)) {
+        if (!fury.getConfig().suppressClassRegistrationWarnings()
+            && !Functions.isLambda(cls)
+            && !ReflectionUtils.isJdkProxy(cls)) {
           LOG.warn(msg);
         }
       }
@@ -1017,11 +1178,17 @@ public class ClassResolver {
         return serializer;
       }
     }
+
+    Serializer<?> shimSerializer = shimDispatcher.getSerializer(cls);
+    if (shimSerializer != null) {
+      return shimSerializer;
+    }
+
     Class<? extends Serializer> serializerClass = getSerializerClass(cls);
     return Serializers.newSerializer(fury, cls, serializerClass);
   }
 
-  private static boolean isSecure(IdentityMap<Class<?>, Short> registeredClasses, Class<?> cls) {
+  private boolean isSecure(IdentityMap<Class<?>, Short> registeredClasses, Class<?> cls) {
     if (BlackList.getDefaultBlackList().contains(cls.getName())) {
       return false;
     }
@@ -1031,13 +1198,17 @@ public class ClassResolver {
     if (cls.isArray()) {
       return isSecure(registeredClasses, TypeUtils.getArrayComponent(cls));
     }
+    if (fury.getConfig().requireClassRegistration()) {
+      return Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls);
+    } else {
+      return extRegistry.classChecker.checkClass(this, cls.getName());
+    }
     // Don't take java Exception as secure in case future JDK introduce insecure JDK exception.
     // if (Exception.class.isAssignableFrom(cls)
     //     && cls.getName().startsWith("java.")
     //     && !cls.getName().startsWith("java.sql")) {
     //   return true;
     // }
-    return Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls);
   }
 
   /**
@@ -1048,15 +1219,10 @@ public class ClassResolver {
    */
   public void writeClassAndUpdateCache(MemoryBuffer buffer, Class<?> cls) {
     // fast path for common type
-    if (cls == Long.class) {
-      buffer.writeByte(USE_STRING_ID);
-      buffer.writeShort(LONG_CLASS_ID);
-    } else if (cls == Integer.class) {
-      buffer.writeByte(USE_STRING_ID);
-      buffer.writeShort(INTEGER_CLASS_ID);
-    } else if (cls == Double.class) {
-      buffer.writeByte(USE_STRING_ID);
-      buffer.writeShort(DOUBLE_CLASS_ID);
+    if (cls == Integer.class) {
+      buffer.writePositiveVarInt(INTEGER_CLASS_ID << 1);
+    } else if (cls == Long.class) {
+      buffer.writePositiveVarInt(LONG_CLASS_ID << 1);
     } else {
       writeClass(buffer, getOrUpdateClassInfo(cls));
     }
@@ -1065,8 +1231,9 @@ public class ClassResolver {
   // The jit-compiled native code fot this method will be too big for inline, so we generated
   // `getClassInfo`
   // in fury-jit, see `BaseSeqCodecBuilder#writeAndGetClassInfo`
-  // public ClassInfo writeClass(MemoryBuffer buffer, Class<?> cls, ClassInfoCache classInfoCache) {
-  //   ClassInfo classInfo = getClassInfo(cls, classInfoCache);
+  // public ClassInfo writeClass(MemoryBuffer buffer, Class<?> cls, ClassInfoHolder classInfoHolder)
+  // {
+  //   ClassInfo classInfo = getClassInfo(cls, classInfoHolder);
   //   writeClass(buffer, classInfo);
   //   return classInfo;
   // }
@@ -1075,7 +1242,7 @@ public class ClassResolver {
   public void writeClass(MemoryBuffer buffer, ClassInfo classInfo) {
     if (classInfo.classId == NO_CLASS_ID) { // no class id provided.
       // use classname
-      buffer.writeByte(USE_CLASS_VALUE);
+      buffer.writeByte(USE_CLASS_VALUE_FLAG);
       if (metaContextShareEnabled) {
         // FIXME(chaokunyang) Register class but not register serializer can't be used with
         //  meta share mode, because no class def are sent to peer.
@@ -1089,10 +1256,7 @@ public class ClassResolver {
       }
     } else {
       // use classId
-      int writerIndex = buffer.writerIndex();
-      buffer.increaseWriterIndex(3);
-      buffer.unsafePut(writerIndex, USE_STRING_ID);
-      buffer.unsafePutShort(writerIndex + 1, classInfo.classId);
+      buffer.writePositiveVarInt(classInfo.classId << 1);
     }
   }
 
@@ -1206,8 +1370,8 @@ public class ClassResolver {
         new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
     if (cls == UnexistedMetaSharedClass.class) {
       classInfo.serializer = new UnexistedClassSerializer(fury, classDef);
-      // ensure `UnExistedMetaSharedClass` registered to write fixed-length class def,
-      // so we can rewrite it in `UnExistedClassSerializer`.
+      // ensure `UnexistedMetaSharedClass` registered to write fixed-length class def,
+      // so we can rewrite it in `UnexistedClassSerializer`.
       Preconditions.checkNotNull(classId);
       return classInfo;
     }
@@ -1277,7 +1441,7 @@ public class ClassResolver {
     Expression classId = new Invoke(classInfo, "getClassId", PRIMITIVE_SHORT_TYPE);
     Expression.ListExpression writeUnregistered =
         new Expression.ListExpression(
-            new Invoke(buffer, "writeByte", Literal.ofByte(USE_CLASS_VALUE)));
+            new Invoke(buffer, "writeByte", Literal.ofByte(USE_CLASS_VALUE_FLAG)));
     if (metaContextShareEnabled) {
       writeUnregistered.add(
           new Invoke(classResolverRef, "writeClassWithMetaShare", buffer, classInfo));
@@ -1308,13 +1472,7 @@ public class ClassResolver {
 
   // Note: Thread safe fot jit thread to call.
   public Expression writeClassExpr(Expression buffer, Expression classId) {
-    Expression writerIndex = new Invoke(buffer, "writerIndex", PRIMITIVE_INT_TYPE);
-    return new Expression.ListExpression(
-        writerIndex,
-        new Invoke(buffer, "increaseWriterIndex", Literal.ofInt(3)),
-        new Invoke(buffer, "unsafePut", writerIndex, Literal.ofByte(USE_STRING_ID)),
-        new Invoke(
-            buffer, "unsafePutShort", ExpressionUtils.add(writerIndex, Literal.ofInt(1)), classId));
+    return new Invoke(buffer, "writePositiveVarInt", new Expression.BitShift("<<", classId, 1));
   }
 
   // Invoked by Fury JIT.
@@ -1324,7 +1482,7 @@ public class ClassResolver {
 
   // Note: Thread safe fot jit thread to call.
   public Expression skipRegisteredClassExpr(Expression buffer) {
-    return new Invoke(buffer, "increaseReaderIndex", Literal.ofInt(3));
+    return new Invoke(buffer, "readPositiveVarInt");
   }
 
   /**
@@ -1353,11 +1511,12 @@ public class ClassResolver {
 
   /**
    * Read serialized java classname. Note that the object of the class can be non-serializable. For
-   * serializable object, {@link #readClassAndUpdateCache(MemoryBuffer)} or {@link
-   * #readClassInfo(MemoryBuffer, ClassInfoCache)} should be invoked.
+   * serializable object, {@link #readClassInfo(MemoryBuffer)} or {@link
+   * #readClassInfo(MemoryBuffer, ClassInfoHolder)} should be invoked.
    */
   public Class<?> readClassInternal(MemoryBuffer buffer) {
-    if (buffer.readByte() == USE_CLASS_VALUE) {
+    byte flag = buffer.readByte();
+    if (flag == USE_CLASS_VALUE_FLAG) {
       if (metaContextShareEnabled) {
         return readClassWithMetaShare(buffer);
       }
@@ -1367,8 +1526,7 @@ public class ClassResolver {
       currentReadClass = cls;
       return cls;
     } else {
-      // use classId
-      short classId = buffer.readShort();
+      short classId = readClassId(buffer, flag);
       ClassInfo classInfo = registeredId2ClassInfo[classId];
       final Class<?> cls = classInfo.cls;
       currentReadClass = cls;
@@ -1376,8 +1534,13 @@ public class ClassResolver {
     }
   }
 
-  public ClassInfo readAndUpdateClassInfoCache(MemoryBuffer buffer) {
-    if (buffer.readByte() == USE_CLASS_VALUE) {
+  /**
+   * Read class info from java data <code>buffer</code>. {@link #readClassInfo(MemoryBuffer,
+   * ClassInfo)} is faster since it use a non-global class info cache.
+   */
+  public ClassInfo readClassInfo(MemoryBuffer buffer) {
+    byte flag = buffer.readByte();
+    if (flag == USE_CLASS_VALUE_FLAG) {
       ClassInfo classInfo;
       if (metaContextShareEnabled) {
         classInfo =
@@ -1389,68 +1552,62 @@ public class ClassResolver {
       currentReadClass = classInfo.cls;
       return classInfo;
     } else {
-      // use classId
-      short classId = buffer.readShort();
+      short classId = readClassId(buffer, flag);
       ClassInfo classInfo = getOrUpdateClassInfo(classId);
       currentReadClass = classInfo.cls;
       return classInfo;
     }
   }
 
-  /** Read class info from java data <code>buffer</code> as a Class. */
-  public Class<?> readClassAndUpdateCache(MemoryBuffer buffer) {
-    if (buffer.readByte() == USE_CLASS_VALUE) {
-      ClassInfo classInfo;
-      if (metaContextShareEnabled) {
-        classInfo =
-            readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
-      } else {
-        classInfo = readClassInfoFromBytes(buffer, classInfoCache);
-      }
-      classInfoCache = classInfo;
-      currentReadClass = classInfo.cls;
-      return classInfo.cls;
-    } else {
-      // use classId
-      short classId = buffer.readShort();
-      ClassInfo classInfo = getOrUpdateClassInfo(classId);
-      final Class<?> cls = classInfo.cls;
-      currentReadClass = cls;
-      return cls;
-    }
-  }
-
-  // Called by fury Java serialization JIT.
+  /**
+   * Read class info from java data <code>buffer</code>. `classInfoCache` is used as a cache to
+   * reduce map lookup to load class from binary.
+   */
+  @CodegenInvoke
   public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache) {
-    if (buffer.readByte() == USE_CLASS_VALUE) {
+    byte flag = buffer.readByte();
+    if (flag == USE_CLASS_VALUE_FLAG) {
       if (metaContextShareEnabled) {
         return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
       }
       return readClassInfoFromBytes(buffer, classInfoCache);
     } else {
-      // use classId
-      short classId = buffer.readShort();
+      short classId = readClassId(buffer, flag);
       return getClassInfo(classId);
     }
   }
 
-  // Called by fury Java serialization JIT.
-  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoCache classInfoCache) {
-    if (buffer.readByte() == USE_CLASS_VALUE) {
+  /** Read class info, update classInfoHolder if cache not hit. */
+  @CodegenInvoke
+  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
+    byte flag = buffer.readByte();
+    if (flag == USE_CLASS_VALUE_FLAG) {
       if (metaContextShareEnabled) {
         return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
       }
-      return readClassInfoFromBytes(buffer, classInfoCache);
+      return readClassInfoFromBytes(buffer, classInfoHolder);
     } else {
-      // use classId
-      short classId = buffer.readShort();
+      short classId = readClassId(buffer, flag);
       return getClassInfo(classId);
     }
   }
 
-  private ClassInfo readClassInfoFromBytes(MemoryBuffer buffer, ClassInfoCache classInfoCache) {
-    ClassInfo classInfo = readClassInfoFromBytes(buffer, classInfoCache.classInfo);
-    classInfoCache.classInfo = classInfo;
+  private static short readClassId(MemoryBuffer buffer, byte flag) {
+    short classId;
+    // use classId
+    if ((flag & 0x80) != 0) { // class id is written using multiple bytes.
+      buffer.increaseReaderIndexUnsafe(-1);
+      classId = (short) buffer.readPositiveVarInt();
+    } else {
+      classId = (short) (flag & 0x7F);
+    }
+    classId >>= 1;
+    return classId;
+  }
+
+  private ClassInfo readClassInfoFromBytes(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
+    ClassInfo classInfo = readClassInfoFromBytes(buffer, classInfoHolder.classInfo);
+    classInfoHolder.classInfo = classInfo;
     return classInfo;
   }
 
@@ -1498,15 +1655,15 @@ public class ClassResolver {
     return cls;
   }
 
-  public void crossLanguageWriteClass(MemoryBuffer buffer, Class<?> cls) {
+  public void xwriteClass(MemoryBuffer buffer, Class<?> cls) {
     enumStringResolver.writeEnumStringBytes(buffer, getOrUpdateClassInfo(cls).fullClassNameBytes);
   }
 
-  public void crossLanguageWriteTypeTag(MemoryBuffer buffer, Class<?> cls) {
+  public void xwriteTypeTag(MemoryBuffer buffer, Class<?> cls) {
     enumStringResolver.writeEnumStringBytes(buffer, getOrUpdateClassInfo(cls).typeTagBytes);
   }
 
-  public Class<?> crossLanguageReadClass(MemoryBuffer buffer) {
+  public Class<?> xreadClass(MemoryBuffer buffer) {
     EnumStringBytes byteString = enumStringResolver.readEnumStringBytes(buffer);
     Class<?> cls = classNameBytes2Class.get(byteString);
     if (cls == null) {
@@ -1519,7 +1676,7 @@ public class ClassResolver {
     return cls;
   }
 
-  public String crossLanguageReadClassName(MemoryBuffer buffer) {
+  public String xreadClassName(MemoryBuffer buffer) {
     return enumStringResolver.readEnumString(buffer);
   }
 
@@ -1528,6 +1685,7 @@ public class ClassResolver {
   }
 
   private Class<?> loadClass(String className) {
+    extRegistry.classChecker.checkClass(this, className);
     try {
       return Class.forName(className, false, fury.getClassLoader());
     } catch (ClassNotFoundException e) {
@@ -1538,7 +1696,7 @@ public class ClassResolver {
             String.format(
                 "Class %s not found from classloaders [%s, %s]",
                 className, fury.getClassLoader(), Thread.currentThread().getContextClassLoader());
-        if (fury.getConfig().isDeserializeUnExistClassEnabled()) {
+        if (fury.getConfig().deserializeUnexistedClass()) {
           // ex.printStackTrace();
           LOG.error(msg, e);
           // FIXME create a subclass dynamically may be better?
@@ -1615,6 +1773,10 @@ public class ClassResolver {
         });
   }
 
+  public GenericType getObjectGenericType() {
+    return extRegistry.objectGenericType;
+  }
+
   public ClassInfo newClassInfo(Class<?> cls, Serializer<?> serializer, short classId) {
     return new ClassInfo(this, cls, null, serializer, classId);
   }
@@ -1624,8 +1786,8 @@ public class ClassResolver {
     return new ClassInfo(this, null, null, null, NO_CLASS_ID);
   }
 
-  public ClassInfoCache nilClassInfoCache() {
-    return new ClassInfoCache(nilClassInfo());
+  public ClassInfoHolder nilClassInfoHolder() {
+    return new ClassInfoHolder(nilClassInfo());
   }
 
   public boolean isPrimitive(short classId) {
@@ -1638,5 +1800,38 @@ public class ClassResolver {
 
   public Fury getFury() {
     return fury;
+  }
+
+  private static final ConcurrentMap<Integer, List<ClassResolver>> GRAALVM_REGISTRY =
+      new ConcurrentHashMap<>();
+
+  // CHECKSTYLE.OFF:MethodName
+  public static void _addGraalvmClassRegistry(int furyConfigHash, ClassResolver classResolver) {
+    // CHECKSTYLE.ON:MethodName
+    if (GraalvmSupport.isGraalBuildtime()) {
+      List<ClassResolver> resolvers =
+          GRAALVM_REGISTRY.computeIfAbsent(
+              furyConfigHash, k -> Collections.synchronizedList(new ArrayList<>()));
+      resolvers.add(classResolver);
+    }
+  }
+
+  private Class<? extends Serializer> getSerializerClassFromGraalvmRegistry(Class<?> cls) {
+    List<ClassResolver> classResolvers = GRAALVM_REGISTRY.get(fury.getConfig().getConfigHash());
+    if (classResolvers == null || classResolvers.isEmpty()) {
+      return null;
+    }
+    for (ClassResolver classResolver : classResolvers) {
+      if (classResolver != this) {
+        ClassInfo classInfo = classResolver.classInfoMap.get(cls);
+        if (classInfo != null) {
+          return classInfo.serializer.getClass();
+        }
+      }
+    }
+    if (GraalvmSupport.isGraalRuntime()) {
+      throw new RuntimeException(String.format("Class %s is not registered", cls));
+    }
+    return null;
   }
 }

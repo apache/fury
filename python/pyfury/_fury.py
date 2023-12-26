@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import array
 import dataclasses
 import datetime
@@ -5,15 +22,16 @@ import enum
 import logging
 import os
 import sys
+import warnings
 from dataclasses import dataclass
-from typing import Dict, Tuple, TypeVar, Optional, Union, Iterable
+from typing import Dict, Tuple, TypeVar, Union, Iterable
 
 from pyfury.lib import mmh3
 
 from pyfury.buffer import Buffer
 from pyfury.resolver import (
-    MapReferenceResolver,
-    NoReferenceResolver,
+    MapRefResolver,
+    NoRefResolver,
     NULL_FLAG,
     NOT_NULL_VALUE_FLAG,
 )
@@ -60,10 +78,12 @@ try:
 except ImportError:
     np = None
 
+from cloudpickle import Pickler
+
 if sys.version_info[:2] < (3, 8):  # pragma: no cover
-    import pickle5 as pickle  # nosec  # pylint: disable=import_pickle
+    from pickle5 import Unpickler
 else:
-    import pickle  # nosec  # pylint: disable=import_pickle
+    from pickle import Unpickler
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +146,7 @@ class ClassInfo:
 
 class ClassResolver:
     __slots__ = (
-        "fury_",
+        "fury",
         "_type_id_to_class",
         "_type_id_to_serializer",
         "_type_id_and_cls_to_serializer",
@@ -151,8 +171,8 @@ class ClassResolver:
     _type_id_and_cls_to_serializer: Dict[Tuple[int, type], Serializer]
     _classes_info: Dict[type, "ClassInfo"]
 
-    def __init__(self, fury_):
-        self.fury_ = fury_
+    def __init__(self, fury):
+        self.fury = fury
         self._type_id_to_class = dict()
         self._type_id_to_serializer = dict()
         self._type_id_and_cls_to_serializer = dict()
@@ -175,19 +195,21 @@ class ClassResolver:
         self._dynamic_written_enum_string = []
 
     def initialize(self):
-        self.register_class(int, PYINT_CLASS_ID)
-        self.register_class(float, PYFLOAT_CLASS_ID)
-        self.register_class(bool, PYBOOL_CLASS_ID)
-        self.register_class(str, STRING_CLASS_ID)
-        self.register_class(_PickleStub, PICKLE_CLASS_ID)
-        self.register_class(PickleStrongCacheStub, PICKLE_STRONG_CACHE_CLASS_ID)
-        self.register_class(PickleCacheStub, PICKLE_CACHE_CLASS_ID)
+        self.register_class(int, class_id=PYINT_CLASS_ID)
+        self.register_class(float, class_id=PYFLOAT_CLASS_ID)
+        self.register_class(bool, class_id=PYBOOL_CLASS_ID)
+        self.register_class(str, class_id=STRING_CLASS_ID)
+        self.register_class(_PickleStub, class_id=PICKLE_CLASS_ID)
+        self.register_class(
+            PickleStrongCacheStub, class_id=PICKLE_STRONG_CACHE_CLASS_ID
+        )
+        self.register_class(PickleCacheStub, class_id=PICKLE_CACHE_CLASS_ID)
         self._add_default_serializers()
 
     # `Union[type, TypeVar]` is not supported in py3.6
     def register_serializer(self, cls, serializer):
         assert isinstance(cls, (type, TypeVar)), cls
-        type_id = serializer.get_cross_language_type_id()
+        type_id = serializer.get_xtype_id()
         if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
             self._add_x_lang_serializer(cls, serializer=serializer)
         else:
@@ -195,7 +217,20 @@ class ClassResolver:
             self._classes_info[cls].serializer = serializer
 
     # `Union[type, TypeVar]` is not supported in py3.6
-    def register_class(self, cls, class_id: int = None):
+    def register_class(self, cls, *, class_id: int = None, type_tag: str = None):
+        """Register class with given type id or tag, if tag is not None, it will be used for
+        cross-language serialization."""
+        if type_tag is not None:
+            assert class_id is None, (
+                f"Type tag {type_tag} has been set already, "
+                f"set class id at the same time is not allowed."
+            )
+            from pyfury._struct import ComplexObjectSerializer
+
+            self.register_serializer(
+                cls, ComplexObjectSerializer(self.fury, cls, type_tag)
+            )
+            return
         classinfo = self._classes_info.get(cls)
         if classinfo is None:
             if isinstance(cls, TypeVar):
@@ -244,24 +279,15 @@ class ClassResolver:
             class_id = self._class_id_counter = self._class_id_counter + 1
         return class_id
 
-    def register_class_tag(self, cls: type, type_tag: str = None):
-        """Register class with given type tag which will be used for cross-language
-        serialization."""
-        from pyfury._struct import ComplexObjectSerializer
-
-        self.register_serializer(
-            cls, ComplexObjectSerializer(self.fury_, cls, type_tag)
-        )
-
     def _add_serializer(self, cls: type, serializer=None, serializer_cls=None):
         if serializer_cls:
-            serializer = serializer_cls(self.fury_, cls)
+            serializer = serializer_cls(self.fury, cls)
         self.register_serializer(cls, serializer)
 
     def _add_x_lang_serializer(self, cls: type, serializer=None, serializer_cls=None):
         if serializer_cls:
-            serializer = serializer_cls(self.fury_, cls)
-        type_id = serializer.get_cross_language_type_id()
+            serializer = serializer_cls(self.fury, cls)
+        type_id = serializer.get_xtype_id()
         from pyfury._serializer import NOT_SUPPORT_CROSS_LANGUAGE
 
         assert type_id != NOT_SUPPORT_CROSS_LANGUAGE
@@ -270,7 +296,7 @@ class ClassResolver:
         classinfo = self._classes_info[cls]
         classinfo.serializer = serializer
         if type_id == FuryType.FURY_TYPE_TAG.value:
-            type_tag = serializer.get_cross_language_type_tag()
+            type_tag = serializer.get_xtype_tag()
             assert type(type_tag) is str
             assert type_tag not in self._type_tag_to_class_x_lang_map
             classinfo.type_tag_bytes = EnumStringBytes(type_tag.encode("utf-8"))
@@ -313,10 +339,10 @@ class ClassResolver:
         from pyfury import PickleCacheSerializer, PickleStrongCacheSerializer
 
         self._add_serializer(
-            PickleStrongCacheStub, serializer=PickleStrongCacheSerializer(self.fury_)
+            PickleStrongCacheStub, serializer=PickleStrongCacheSerializer(self.fury)
         )
         self._add_serializer(
-            PickleCacheStub, serializer=PickleCacheSerializer(self.fury_)
+            PickleCacheStub, serializer=PickleCacheSerializer(self.fury)
         )
         try:
             import pyarrow as pa
@@ -334,17 +360,17 @@ class ClassResolver:
         for typecode in PyArraySerializer.typecode_dict.keys():
             self._add_serializer(
                 array.array,
-                serializer=PyArraySerializer(self.fury_, array.array, typecode),
+                serializer=PyArraySerializer(self.fury, array.array, typecode),
             )
             self._add_serializer(
-                PyArraySerializer.typecode_to_pyarray_type[typecode],
-                serializer=PyArraySerializer(self.fury_, array.array, typecode),
+                PyArraySerializer.typecodearray_type[typecode],
+                serializer=PyArraySerializer(self.fury, array.array, typecode),
             )
         if np:
             for dtype in Numpy1DArraySerializer.dtypes_dict.keys():
                 self._add_serializer(
                     np.ndarray,
-                    serializer=Numpy1DArraySerializer(self.fury_, array.array, dtype),
+                    serializer=Numpy1DArraySerializer(self.fury, array.array, dtype),
                 )
 
     def get_serializer(self, cls: type = None, type_id: int = None, obj=None):
@@ -423,7 +449,7 @@ class ClassResolver:
             ):
                 if classinfo_ is None or classinfo_.class_id == NO_CLASS_ID:
                     logger.info("Class %s not registered", cls)
-                serializer = type(class_info.serializer)(self.fury_, cls)
+                serializer = type(class_info.serializer)(self.fury, cls)
                 break
         else:
             if dataclasses.is_dataclass(cls):
@@ -432,9 +458,9 @@ class ClassResolver:
                 logger.info("Class %s not registered", cls)
                 from pyfury import DataClassSerializer
 
-                serializer = DataClassSerializer(self.fury_, cls)
+                serializer = DataClassSerializer(self.fury, cls)
             else:
-                serializer = PickleSerializer(self.fury_, cls)
+                serializer = PickleSerializer(self.fury, cls)
         return serializer
 
     def write_classinfo(self, buffer: Buffer, classinfo: ClassInfo):
@@ -504,19 +530,19 @@ class ClassResolver:
         self._dynamic_id_to_enum_str_list.append(enum_str)
         return enum_str
 
-    def cross_language_write_class(self, buffer, cls):
+    def xwrite_class(self, buffer, cls):
         class_name_bytes = self._classes_info[cls].class_name_bytes
         self.write_enum_string_bytes(buffer, class_name_bytes)
 
-    def cross_language_write_type_tag(self, buffer, cls):
+    def xwrite_type_tag(self, buffer, cls):
         type_tag_bytes = self._classes_info[cls].type_tag_bytes
         self.write_enum_string_bytes(buffer, type_tag_bytes)
 
     def read_class_by_type_tag(self, buffer):
-        tag = self.cross_language_read_classname(buffer)
+        tag = self.xread_classname(buffer)
         return self._type_tag_to_class_x_lang_map[tag]
 
-    def cross_language_read_class(self, buffer):
+    def xread_class(self, buffer):
         class_name_bytes = self.read_enum_string_bytes(buffer)
         cls = self._enum_str_to_class.get(class_name_bytes)
         if cls is None:
@@ -525,7 +551,7 @@ class ClassResolver:
             self._enum_str_to_class[class_name_bytes] = cls
         return cls
 
-    def cross_language_read_classname(self, buffer) -> str:
+    def xread_classname(self, buffer) -> str:
         str_bytes = self.read_enum_string_bytes(buffer)
         str_ = self._enum_str_to_str.get(str_bytes)
         if str_ is None:
@@ -570,11 +596,11 @@ class OpaqueObject:
 class Fury:
     __slots__ = (
         "language",
-        "reference_tracking",
-        "reference_resolver",
+        "ref_tracking",
+        "ref_resolver",
         "class_resolver",
         "serialization_context",
-        "secure_mode",
+        "require_class_registration",
         "buffer",
         "pickler",
         "unpickler",
@@ -586,27 +612,44 @@ class Fury:
         "_native_objects",
     )
     serialization_context: "SerializationContext"
-    unpickler: Optional[pickle.Unpickler]
 
     def __init__(
         self,
         language=Language.XLANG,
-        reference_tracking: bool = True,
-        secure_mode: bool = True,
+        ref_tracking: bool = False,
+        require_class_registration: bool = True,
     ):
+        """
+        :param require_class_registration:
+         Whether to require registering classes for serialization, enabled by default.
+          If disabled, unknown insecure classes can be deserialized, which can be
+          insecure and cause remote code execution attack if the classes
+          `__new__`/`__init__`/`__eq__`/`__hash__` method contain malicious code.
+          Do not disable class registration if you can't ensure your environment are
+          *indeed secure*. We are not responsible for security risks if
+          you disable this option.
+        """
         self.language = language
-        self.secure_mode = _ENABLE_SECURITY_MODE_FORCIBLY or secure_mode
-        self.reference_tracking = reference_tracking
-        if self.reference_tracking:
-            self.reference_resolver = MapReferenceResolver()
+        self.require_class_registration = (
+            _ENABLE_CLASS_REGISTRATION_FORCIBLY or require_class_registration
+        )
+        self.ref_tracking = ref_tracking
+        if self.ref_tracking:
+            self.ref_resolver = MapRefResolver()
         else:
-            self.reference_resolver = NoReferenceResolver()
+            self.ref_resolver = NoRefResolver()
         self.class_resolver = ClassResolver(self)
         self.class_resolver.initialize()
         self.serialization_context = SerializationContext()
         self.buffer = Buffer.allocate(32)
-        if not secure_mode:
-            self.pickler = pickle.Pickler(self.buffer)
+        if not require_class_registration:
+            warnings.warn(
+                "Class registration is disabled, unknown classes can be deserialized "
+                "which may be insecure.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            self.pickler = Pickler(self.buffer)
         else:
             self.pickler = _PicklerStub(self.buffer)
         self.unpickler = None
@@ -621,11 +664,8 @@ class Fury:
         self.class_resolver.register_serializer(cls, serializer)
 
     # `Union[type, TypeVar]` is not supported in py3.6
-    def register_class(self, cls, class_id: int = None):
-        self.class_resolver.register_class(cls, class_id=class_id)
-
-    def register_class_tag(self, cls: type, type_tag: str = None):
-        self.class_resolver.register_class_tag(cls, type_tag)
+    def register_class(self, cls, *, class_id: int = None, type_tag: str = None):
+        self.class_resolver.register_class(cls, class_id=class_id, type_tag=type_tag)
 
     def serialize(
         self,
@@ -654,7 +694,7 @@ class Fury:
         self._buffer_callback = buffer_callback
         self._unsupported_callback = unsupported_callback
         if buffer is not None:
-            self.pickler = pickle.Pickler(buffer)
+            self.pickler = Pickler(buffer)
         else:
             self.buffer.writer_index = 0
             buffer = self.buffer
@@ -685,27 +725,27 @@ class Fury:
         else:
             clear_bit(buffer, mask_index, 3)
         if self.language == Language.PYTHON:
-            self.serialize_referencable_to_py(buffer, obj)
+            self.serialize_ref(buffer, obj)
         else:
             start_offset = buffer.writer_index
             buffer.write_int32(-1)  # preserve 4-byte for nativeObjects start offsets.
             buffer.write_int32(-1)  # preserve 4-byte for nativeObjects size
-            self.cross_language_serialize_referencable(buffer, obj)
+            self.xserialize_ref(buffer, obj)
             buffer.put_int32(start_offset, buffer.writer_index)
             buffer.put_int32(start_offset + 4, len(self._native_objects))
-            self.reference_resolver.reset_write()
+            self.ref_resolver.reset_write()
             # fury write opaque object classname which cause later write of classname
             # only write an id.
             self.class_resolver.reset_write()
             for native_object in self._native_objects:
-                self.serialize_referencable_to_py(buffer, native_object)
+                self.serialize_ref(buffer, native_object)
         self.reset_write()
         if buffer is not self.buffer:
             return buffer
         else:
             return buffer.to_bytes(0, buffer.writer_index)
 
-    def serialize_referencable_to_py(self, buffer, obj, classinfo=None):
+    def serialize_ref(self, buffer, obj, classinfo=None):
         cls = type(obj)
         if cls is str:
             buffer.write_int24(NOT_NULL_STRING_FLAG)
@@ -719,14 +759,14 @@ class Fury:
             buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
             buffer.write_bool(obj)
             return
-        if self.reference_resolver.write_reference_or_null(buffer, obj):
+        if self.ref_resolver.write_ref_or_null(buffer, obj):
             return
         if classinfo is None:
             classinfo = self.class_resolver.get_or_create_classinfo(cls)
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
-    def serialize_non_referencable_to_py(self, buffer, obj):
+    def serialize_nonref(self, buffer, obj):
         cls = type(obj)
         if cls is str:
             buffer.write_int16(STRING_CLASS_ID)
@@ -745,37 +785,33 @@ class Fury:
             self.class_resolver.write_classinfo(buffer, classinfo)
             classinfo.serializer.write(buffer, obj)
 
-    def cross_language_serialize_referencable(self, buffer, obj, serializer=None):
-        if serializer is None or serializer.need_to_write_reference:
-            if not self.reference_resolver.write_reference_or_null(buffer, obj):
-                self.cross_language_serialize_non_referencable(
-                    buffer, obj, serializer=serializer
-                )
+    def xserialize_ref(self, buffer, obj, serializer=None):
+        if serializer is None or serializer.need_to_write_ref:
+            if not self.ref_resolver.write_ref_or_null(buffer, obj):
+                self.xserialize_nonref(buffer, obj, serializer=serializer)
         else:
             if obj is None:
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                self.cross_language_serialize_non_referencable(
-                    buffer, obj, serializer=serializer
-                )
+                self.xserialize_nonref(buffer, obj, serializer=serializer)
 
-    def cross_language_serialize_non_referencable(self, buffer, obj, serializer=None):
+    def xserialize_nonref(self, buffer, obj, serializer=None):
         cls = type(obj)
         serializer = serializer or self.class_resolver.get_serializer(obj=obj)
-        type_id = serializer.get_cross_language_type_id()
+        type_id = serializer.get_xtype_id()
         buffer.write_int16(type_id)
         if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
             if type_id == FuryType.FURY_TYPE_TAG.value:
-                self.class_resolver.cross_language_write_type_tag(buffer, cls)
+                self.class_resolver.xwrite_type_tag(buffer, cls)
             if type_id < NOT_SUPPORT_CROSS_LANGUAGE:
-                self.class_resolver.cross_language_write_class(buffer, cls)
-            serializer.cross_language_write(buffer, obj)
+                self.class_resolver.xwrite_class(buffer, cls)
+            serializer.xwrite(buffer, obj)
         else:
             # Write classname so it can be used for debugging which object doesn't
             # support cross-language.
             # TODO add a config to disable this to reduce space cost.
-            self.class_resolver.cross_language_write_class(buffer, cls)
+            self.class_resolver.xwrite_class(buffer, cls)
             # serializer may increase reference id multi times internally, thus peer
             # cross-language later fields/objects deserialization will use wrong
             # reference id since we skip opaque objects deserialization.
@@ -802,10 +838,10 @@ class Fury:
     ):
         if type(buffer) == bytes:
             buffer = Buffer(buffer)
-        if self.secure_mode:
+        if self.require_class_registration:
             self.unpickler = _UnpicklerStub(buffer)
         else:
-            self.unpickler = pickle.Unpickler(buffer)
+            self.unpickler = Unpickler(buffer)
         if unsupported_objects is not None:
             self._unsupported_objects = iter(unsupported_objects)
         reader_index = buffer.reader_index
@@ -841,54 +877,50 @@ class Fury:
                 native_objects_buffer = buffer.slice(native_objects_start_offset)
                 for i in range(native_objects_size):
                     self._native_objects.append(
-                        self.deserialize_referencable_from_py(native_objects_buffer)
+                        self.deserialize_ref(native_objects_buffer)
                     )
-                self.reference_resolver.reset_read()
+                self.ref_resolver.reset_read()
                 self.class_resolver.reset_read()
-            obj = self.cross_language_deserialize_referencable(buffer)
+            obj = self.xdeserialize_ref(buffer)
         else:
-            obj = self.deserialize_referencable_from_py(buffer)
+            obj = self.deserialize_ref(buffer)
         return obj
 
-    def deserialize_referencable_from_py(self, buffer):
-        reference_resolver = self.reference_resolver
-        ref_id = reference_resolver.try_preserve_reference_id(buffer)
+    def deserialize_ref(self, buffer):
+        ref_resolver = self.ref_resolver
+        ref_id = ref_resolver.try_preserve_ref_id(buffer)
         # indicates that the object is first read.
         if ref_id >= NOT_NULL_VALUE_FLAG:
             classinfo = self.class_resolver.read_classinfo(buffer)
             o = classinfo.serializer.read(buffer)
-            reference_resolver.set_read_object(ref_id, o)
+            ref_resolver.set_read_object(ref_id, o)
             return o
         else:
-            return reference_resolver.get_read_object()
+            return ref_resolver.get_read_object()
 
-    def deserialize_non_reference_from_py(self, buffer):
+    def deserialize_nonref(self, buffer):
         """Deserialize not-null and non-reference object from buffer."""
         classinfo = self.class_resolver.read_classinfo(buffer)
         return classinfo.serializer.read(buffer)
 
-    def cross_language_deserialize_referencable(self, buffer, serializer=None):
-        if serializer is None or serializer.need_to_write_reference:
-            reference_resolver = self.reference_resolver
-            red_id = reference_resolver.try_preserve_reference_id(buffer)
+    def xdeserialize_ref(self, buffer, serializer=None):
+        if serializer is None or serializer.need_to_write_ref:
+            ref_resolver = self.ref_resolver
+            red_id = ref_resolver.try_preserve_ref_id(buffer)
 
             # indicates that the object is first read.
             if red_id >= NOT_NULL_VALUE_FLAG:
-                o = self.cross_language_deserialize_non_referencable(
-                    buffer, serializer=serializer
-                )
-                reference_resolver.set_read_object(red_id, o)
+                o = self.xdeserialize_nonref(buffer, serializer=serializer)
+                ref_resolver.set_read_object(red_id, o)
                 return o
             else:
-                return reference_resolver.get_read_object()
+                return ref_resolver.get_read_object()
         head_flag = buffer.read_int8()
         if head_flag == NULL_FLAG:
             return None
-        return self.cross_language_deserialize_non_referencable(
-            buffer, serializer=serializer
-        )
+        return self.xdeserialize_nonref(buffer, serializer=serializer)
 
-    def cross_language_deserialize_non_referencable(self, buffer, serializer=None):
+    def xdeserialize_nonref(self, buffer, serializer=None):
         type_id = buffer.read_int16()
         cls = None
         if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
@@ -902,7 +934,7 @@ class Fury:
                         type_id=-type_id
                     )
                 else:
-                    cls = self.class_resolver.cross_language_read_class(buffer)
+                    cls = self.class_resolver.xread_class(buffer)
                     serializer = serializer or self.class_resolver.get_serializer(
                         cls=cls, type_id=type_id
                     )
@@ -913,9 +945,9 @@ class Fury:
                     cls=cls, type_id=type_id
                 )
             assert cls is not None
-            return serializer.cross_language_read(buffer)
+            return serializer.xread(buffer)
         else:
-            class_name = self.class_resolver.cross_language_read_classname(buffer)
+            class_name = self.class_resolver.xread_classname(buffer)
             ordinal = buffer.read_varint32()
             if self._peer_language != Language.PYTHON:
                 return OpaqueObject(self._peer_language, class_name, ordinal)
@@ -962,19 +994,19 @@ class Fury:
             assert self._unsupported_objects is not None
             return next(self._unsupported_objects)
 
-    def write_referencable_pyobject(self, buffer, value, classinfo=None):
-        if self.reference_resolver.write_reference_or_null(buffer, value):
+    def write_ref_pyobject(self, buffer, value, classinfo=None):
+        if self.ref_resolver.write_ref_or_null(buffer, value):
             return
         if classinfo is None:
             classinfo = self.class_resolver.get_or_create_classinfo(type(value))
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, value)
 
-    def read_referencable_pyobject(self, buffer):
-        return self.deserialize_referencable_from_py(buffer)
+    def read_ref_pyobject(self, buffer):
+        return self.deserialize_ref(buffer)
 
     def reset_write(self):
-        self.reference_resolver.reset_write()
+        self.ref_resolver.reset_write()
         self.class_resolver.reset_write()
         self.serialization_context.reset()
         self._native_objects.clear()
@@ -983,7 +1015,7 @@ class Fury:
         self._unsupported_callback = None
 
     def reset_read(self):
-        self.reference_resolver.reset_read()
+        self.ref_resolver.reset_read()
         self.class_resolver.reset_read()
         self.serialization_context.reset()
         self._native_objects.clear()
@@ -996,7 +1028,9 @@ class Fury:
         self.reset_read()
 
 
-_ENABLE_SECURITY_MODE_FORCIBLY = os.getenv("ENABLE_SECURITY_MODE_FORCIBLY", "0") in {
+_ENABLE_CLASS_REGISTRATION_FORCIBLY = os.getenv(
+    "ENABLE_CLASS_REGISTRATION_FORCIBLY", "0"
+) in {
     "1",
     "true",
 }
@@ -1009,7 +1043,7 @@ class _PicklerStub:
     def dump(self, o):
         raise ValueError(
             f"Class {type(o)} is not registered, "
-            f"pickle is not allowed when secure mode enabled, Please register"
+            f"pickle is not allowed when class registration enabled, Please register"
             f"the class or pass unsupported_callback"
         )
 
@@ -1023,6 +1057,6 @@ class _UnpicklerStub:
 
     def load(self):
         raise ValueError(
-            f"pickle is not allowed when secure mode enabled, Please register"
-            f"the class or pass unsupported_callback"
+            "pickle is not allowed when class registration enabled, Please register"
+            "the class or pass unsupported_callback"
         )

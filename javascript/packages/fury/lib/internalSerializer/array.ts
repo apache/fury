@@ -1,160 +1,75 @@
-import { GenericReader, GenericWriter, InternalSerializerType, RefFlags, Serializer } from "../type";
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import { InternalSerializerType, Serializer } from "../type";
 import { Fury } from "../type";
-import stringSerializer from "../internalSerializer/string";
-import boolSerializer from "../internalSerializer/bool";
-import { int8Serializer, int32Serializer, int64Serializer, floatSerializer, doubleSerializer } from "../internalSerializer/number";
 
+export const buildArray = (fury: Fury, item: Serializer, type: InternalSerializerType) => {
+  const { binaryReader, binaryWriter, referenceResolver } = fury;
 
-const buildTypedArray = <T>(fury: Fury, reader: GenericReader, writer: GenericWriter) => {
-    const serializer = arraySerializer(fury);
-    return {
-        read: (shouldSetRef: boolean) => {
-            return serializer.read(shouldSetRef, [reader])
-        },
-        write: (v: T[]) => {
-            return serializer.write(v, [writer])
-        },
-        reserveWhenWrite: serializer.reserveWhenWrite,
-    } as Serializer<T[]>
-}
+  const { pushReadObject } = referenceResolver;
+  const { varInt32: writeVarInt32, reserve: reserves } = binaryWriter;
+  const { varInt32: readVarInt32 } = binaryReader;
+  const { write, read } = item;
+  const innerHeadSize = (item.config().reserve);
+  return {
+    ...referenceResolver.deref(() => {
+      const len = readVarInt32();
+      const result = new Array(len);
+      pushReadObject(result);
+      for (let i = 0; i < result.length; i++) {
+        result[i] = read();
+      }
+      return result;
+    }),
+    write: referenceResolver.withNullableOrRefWriter(type, (v: any[]) => {
+      writeVarInt32(v.length);
 
-export const stringArraySerializer = (fury: Fury) => {
-    const { readBySerializerWithOutTypeId, classResolver } = fury;
-    const { read } = classResolver.getSerializerById(InternalSerializerType.STRING);
-    const { writeWithOutType } = stringSerializer(fury);
-    return buildTypedArray<string>(
-        fury,
-        () => readBySerializerWithOutTypeId(read),
-        writeWithOutType,
-    )
+      reserves(innerHeadSize * v.length);
+
+      for (const x of v) {
+        write(x);
+      }
+    }),
+    config: () => {
+      return {
+        reserve: 7,
+      };
+    },
+  };
 };
 
-export const boolArraySerializer = (fury: Fury) => {
-    const { read } = boolSerializer(fury);
-    const { binaryWriter } = fury;
-    const { writeUInt8 } = binaryWriter;
-
-    return buildTypedArray<boolean>(
-        fury,
-        read,
-        (v: boolean) => {
-            writeUInt8(v ? 1 : 0)
-        },
-    )
+const buildTypedArray = (fury: Fury, serializeType: InternalSerializerType, typeArrayType: InternalSerializerType) => {
+  const serializer = fury.classResolver.getSerializerById(serializeType);
+  return buildArray(fury, {
+    read: serializer.readWithoutType!,
+    write: serializer.writeWithoutType!,
+    config: serializer.config,
+  }, typeArrayType);
 };
 
+export const stringArraySerializer = (fury: Fury) => buildTypedArray(fury, InternalSerializerType.STRING, InternalSerializerType.FURY_STRING_ARRAY);
+export const boolArraySerializer = (fury: Fury) => buildTypedArray(fury, InternalSerializerType.BOOL, InternalSerializerType.FURY_PRIMITIVE_BOOL_ARRAY);
+export const longArraySerializer = (fury: Fury) => buildTypedArray(fury, InternalSerializerType.INT64, InternalSerializerType.FURY_PRIMITIVE_LONG_ARRAY);
+export const intArraySerializer = (fury: Fury) => buildTypedArray(fury, InternalSerializerType.INT32, InternalSerializerType.FURY_PRIMITIVE_INT_ARRAY);
+export const floatArraySerializer = (fury: Fury) => buildTypedArray(fury, InternalSerializerType.FLOAT, InternalSerializerType.FURY_PRIMITIVE_FLOAT_ARRAY);
+export const doubleArraySerializer = (fury: Fury) => buildTypedArray(fury, InternalSerializerType.DOUBLE, InternalSerializerType.FURY_PRIMITIVE_DOUBLE_ARRAY);
+export const shortArraySerializer = (fury: Fury) => buildTypedArray(fury, InternalSerializerType.INT16, InternalSerializerType.FURY_PRIMITIVE_SHORT_ARRAY);
 
-export const shortArraySerializer = (fury: Fury) => {
-    const { read } = int8Serializer(fury);
-    const { binaryWriter } = fury;
-    const { writeInt8 } = binaryWriter;
-    return buildTypedArray<number>(
-        fury,
-        read,
-        writeInt8,
-    )
-};
-
-export const intArraySerializer = (fury: Fury) => {
-    const { read } = int32Serializer(fury);
-    const { binaryWriter } = fury;
-    const { writeInt32 } = binaryWriter;
-
-    return buildTypedArray<number>(
-        fury,
-        read,
-        writeInt32,
-    )
-};
-export const longArraySerializer = (fury: Fury) => {
-    const { read } = int64Serializer(fury);
-    const { binaryWriter } = fury;
-    const { writeInt64 } = binaryWriter;
-
-    return buildTypedArray<number>(
-        fury,
-        read,
-        writeInt64,
-    )
-};
-export const floatArraySerializer = (fury: Fury) => {
-    const { read } = floatSerializer(fury);
-    const { binaryWriter } = fury;
-    const { writeFloat } = binaryWriter;
-
-    return buildTypedArray<number>(
-        fury,
-        read,
-        writeFloat,
-    )
-};
-export const doubleArraySerializer = (fury: Fury) => {
-    const { read } = doubleSerializer(fury);
-    const { binaryWriter } = fury;
-    const { writeDouble } = binaryWriter;
-
-
-    return buildTypedArray<number>(
-        fury,
-        read,
-        writeDouble,
-    )
-};
-
-
-export const arraySerializer = (fury: Fury) => {
-    const { binaryView, binaryWriter, read, referenceResolver, writeNullOrRef, write } = fury;
-    const { pushReadObject, pushWriteObject } = referenceResolver;
-    const { writeInt8, writeInt16, writeInt32 } = binaryWriter;
-    const { readInt32 } = binaryView;
-    return {
-        read: (shouldSetRef: boolean, genericReaders?: GenericReader[]) => {
-            const len = readInt32();
-            const result = new Array(len);
-            if (shouldSetRef) {
-                pushReadObject(result);
-            }
-            // if the array hash concrete type, we can use the genericReader, otherwise use the normal read
-            let itemReader: GenericReader | null = null;
-            if (genericReaders) {
-                itemReader = genericReaders[0];
-            }
-            if (itemReader) {
-                for (let index = 0; index < len; index++) {
-                    result[index] = itemReader();
-                }
-            } else {
-                for (let index = 0; index < len; index++) {
-                    result[index] = read();
-                }
-            }
-            return result;
-        },
-        write: (v: any[], genericWriters?: GenericWriter[]) => {
-            if (writeNullOrRef(v)) {
-                return;
-            }
-            writeInt8(RefFlags.RefValueFlag);
-            writeInt16(InternalSerializerType.ARRAY);
-            pushWriteObject(v);
-            writeInt32(v.length);
-            // if the array hash concrete type, we can use the genericWriter, otherwise use the normal writer
-            let itemWriter: Serializer['write'] | null = null;
-            if (genericWriters) {
-                itemWriter = genericWriters[0];
-            }
-            if (itemWriter) {
-                v.forEach(x => {
-                    itemWriter!(x);
-                })
-            } else {
-                v.forEach(x => {
-                    write(x);
-                })
-            }
-        },
-        reserveWhenWrite: () => {
-            return 7; 
-        }
-    }
-}
+export const arraySerializer = (fury: Fury, item: Serializer) => buildArray(fury, item, InternalSerializerType.ARRAY);

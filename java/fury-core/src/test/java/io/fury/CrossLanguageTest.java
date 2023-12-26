@@ -1,19 +1,20 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury;
@@ -21,6 +22,7 @@ package io.fury;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
+import io.fury.config.Language;
 import io.fury.memory.MemoryBuffer;
 import io.fury.memory.MemoryUtils;
 import io.fury.serializer.BufferObject;
@@ -224,8 +226,8 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     fury.serialize(buffer, true);
@@ -316,8 +318,8 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     Assert.assertEquals(
         new String[] {"str", "str"}, (Object[]) serDe(fury, new String[] {"str", "str"}));
@@ -398,8 +400,8 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     List<Object> list = new ArrayList<>();
     Map<Object, Object> map = new HashMap<>();
@@ -463,8 +465,8 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     fury.register(ComplexObject2.class, "test.ComplexObject2");
     ComplexObject2 obj2 = new ComplexObject2();
@@ -477,8 +479,8 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     fury.register(ComplexObject1.class, "test.ComplexObject1");
     fury.register(ComplexObject2.class, "test.ComplexObject2");
@@ -522,8 +524,8 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     fury.register(ComplexObject2.class, "test.ComplexObject2");
     ComplexObject2 obj = new ComplexObject2();
@@ -537,8 +539,8 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     fury.register(ComplexObject1.class, "test.ComplexObject1");
     // don't register ComplexObject2/Foo to make them serialize as opaque blobs.
@@ -578,16 +580,16 @@ public class CrossLanguageTest {
 
     @Override
     public void write(MemoryBuffer buffer, ComplexObject1 value) {
-      crossLanguageWrite(buffer, value);
+      xwrite(buffer, value);
     }
 
     @Override
     public ComplexObject1 read(MemoryBuffer buffer) {
-      return crossLanguageRead(buffer);
+      return xread(buffer);
     }
 
     @Override
-    public short getCrossLanguageTypeId() {
+    public short getXtypeId() {
       return Fury.FURY_TYPE_TAG_ID;
     }
 
@@ -597,20 +599,20 @@ public class CrossLanguageTest {
     }
 
     @Override
-    public void crossLanguageWrite(MemoryBuffer buffer, ComplexObject1 value) {
-      fury.crossLanguageWriteReferencable(buffer, value.f1);
-      fury.crossLanguageWriteReferencable(buffer, value.f2);
-      fury.crossLanguageWriteReferencable(buffer, value.f3);
+    public void xwrite(MemoryBuffer buffer, ComplexObject1 value) {
+      fury.xwriteRef(buffer, value.f1);
+      fury.xwriteRef(buffer, value.f2);
+      fury.xwriteRef(buffer, value.f3);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public ComplexObject1 crossLanguageRead(MemoryBuffer buffer) {
+    public ComplexObject1 xread(MemoryBuffer buffer) {
       ComplexObject1 obj = new ComplexObject1();
-      fury.getReferenceResolver().reference(obj);
-      obj.f1 = fury.crossLanguageReadReferencable(buffer);
-      obj.f2 = (String) fury.crossLanguageReadReferencable(buffer);
-      obj.f3 = (List<Object>) fury.crossLanguageReadReferencable(buffer);
+      fury.getRefResolver().reference(obj);
+      obj.f1 = fury.xreadRef(buffer);
+      obj.f2 = (String) fury.xreadRef(buffer);
+      obj.f3 = (List<Object>) fury.xreadRef(buffer);
       return obj;
     }
   }
@@ -620,8 +622,8 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     fury.registerSerializer(ComplexObject1.class, ComplexObject1Serializer.class);
     ComplexObject1 obj = new ComplexObject1();
@@ -648,8 +650,8 @@ public class CrossLanguageTest {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.XLANG)
-            .withReferenceTracking(true)
-            .disableSecureMode()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
             .build();
     AtomicInteger counter = new AtomicInteger(0);
     List<byte[]> data =
@@ -710,5 +712,28 @@ public class CrossLanguageTest {
     for (int i = 0; i < data.size(); i++) {
       Assert.assertEquals(data.get(i), newObj.get(i));
     }
+  }
+
+  @Data
+  static class ArrayStruct {
+    ArrayField[] f1;
+  }
+
+  @Data
+  static class ArrayField {
+    public String a;
+  }
+
+  @Test
+  public void testStructArrayField() {
+    Fury fury = Fury.builder().withLanguage(Language.XLANG).requireClassRegistration(true).build();
+    fury.register(ArrayStruct.class, "example.bar");
+    fury.register(ArrayField.class, "example.foo");
+
+    ArrayField a = new ArrayField();
+    a.a = "123";
+    ArrayStruct struct = new ArrayStruct();
+    struct.f1 = new ArrayField[] {a};
+    Assert.assertEquals(serDe(fury, struct), struct);
   }
 }

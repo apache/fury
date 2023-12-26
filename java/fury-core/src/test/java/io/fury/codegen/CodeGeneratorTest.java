@@ -1,29 +1,142 @@
 /*
- * Copyright 2023 The Fury authors
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package io.fury.codegen;
 
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+
+import io.fury.Fury;
+import io.fury.builder.ObjectCodecBuilder;
+import io.fury.collection.MultiKeyWeakMap;
 import io.fury.test.bean.Foo;
 import io.fury.util.ClassLoaderUtils;
+import io.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
+import java.lang.ref.SoftReference;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class CodeGeneratorTest {
+  private static WeakHashMap<ClassLoader, SoftReference<CodeGenerator>> sharedCodeGenerator;
+  private static MultiKeyWeakMap<SoftReference<CodeGenerator>> sharedCodeGenerator2;
+
+  static {
+    try {
+      Field field1 = CodeGenerator.class.getDeclaredField("sharedCodeGenerator");
+      field1.setAccessible(true);
+      sharedCodeGenerator = (WeakHashMap) field1.get(null);
+      Field field2 = CodeGenerator.class.getDeclaredField("sharedCodeGenerator2");
+      field2.setAccessible(true);
+      sharedCodeGenerator2 = (MultiKeyWeakMap) field2.get(null);
+    } catch (IllegalAccessException | NoSuchFieldException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void testGetSharedCodeGenerator() {
+    CodeGenerator.getSharedCodeGenerator(getClass().getClassLoader());
+    System.gc();
+    assertNotNull(sharedCodeGenerator.get(getClass().getClassLoader()).get());
+    CodeGenerator.getSharedCodeGenerator(getClass().getClassLoader(), Fury.class.getClassLoader());
+    System.gc();
+    assertNotNull(
+        sharedCodeGenerator2
+            .get(new Object[] {getClass().getClassLoader(), Fury.class.getClassLoader()})
+            .get());
+  }
+
+  @Test
+  public void tryDuplicateCompileConcurrent() throws InterruptedException {
+    ExecutorService executorService = Executors.newFixedThreadPool(10);
+    ByteArrayClassLoader classLoader = new ByteArrayClassLoader(new HashMap<>());
+    AtomicBoolean hasException = new AtomicBoolean(false);
+    AtomicReference<ClassLoader> prevLoader = new AtomicReference<>();
+    for (int i = 0; i < 1000; i++) {
+      executorService.execute(
+          () -> {
+            try {
+              ClassLoader newLoader = tryDuplicateCompile(classLoader);
+              if (prevLoader.get() != null) {
+                Assert.assertSame(newLoader, prevLoader.get());
+                prevLoader.set(newLoader);
+              }
+            } catch (Exception e) {
+              hasException.set(true);
+            }
+          });
+    }
+    executorService.shutdown();
+    assertTrue(executorService.awaitTermination(30, TimeUnit.SECONDS));
+    assertFalse(hasException.get());
+  }
+
+  @Test
+  public void tryDuplicateCompile() {
+    tryDuplicateCompile(new ByteArrayClassLoader(new HashMap<>()));
+  }
+
+  public ClassLoader tryDuplicateCompile(ClassLoader loader) {
+    CodeGenerator codeGenerator = CodeGenerator.getSharedCodeGenerator(loader);
+    ObjectCodecBuilder codecBuilder =
+        new ObjectCodecBuilder(Foo.class, Fury.builder().requireClassRegistration(false).build());
+    CompileUnit compileUnit =
+        new CompileUnit(
+            Foo.class.getPackage().getName(),
+            codecBuilder.codecClassName(Foo.class),
+            codecBuilder::genCode);
+    ClassLoader loader1 = codeGenerator.compile(compileUnit);
+    ClassLoader loader2 = codeGenerator.compile(compileUnit);
+    Assert.assertSame(loader1, loader2);
+    return loader1;
+  }
+
+  @Test
+  public void tryDefineClassesInClassLoader() {
+    ByteArrayClassLoader loader = new ByteArrayClassLoader(new HashMap<>());
+    ObjectCodecBuilder codecBuilder =
+        new ObjectCodecBuilder(Foo.class, Fury.builder().requireClassRegistration(false).build());
+    CompileUnit compileUnit =
+        new CompileUnit(
+            Foo.class.getPackage().getName(),
+            codecBuilder.codecClassName(Foo.class),
+            codecBuilder::genCode);
+    Map<String, byte[]> byteCodeMap = JaninoUtils.toBytecode(loader, compileUnit);
+    byte[] byteCodes = byteCodeMap.get(CodeGenerator.classFilepath(compileUnit));
+    Assert.assertNotNull(
+        ClassLoaderUtils.tryDefineClassesInClassLoader(
+            CodeGenerator.fullClassName(compileUnit), null, loader, byteCodes));
+    Assert.assertNull(
+        ClassLoaderUtils.tryDefineClassesInClassLoader(
+            CodeGenerator.fullClassName(compileUnit), null, loader, byteCodes));
+  }
 
   @Test
   public void classFilepath() {

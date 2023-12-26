@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 #include <string>
 
 #include "fury/util/buffer.h"
@@ -14,10 +33,6 @@ Buffer::Buffer() {
 }
 
 Buffer::Buffer(Buffer &&buffer) noexcept {
-  if (own_data_) {
-    delete data_;
-    data_ = nullptr;
-  }
   data_ = buffer.data_;
   size_ = buffer.size_;
   own_data_ = buffer.own_data_;
@@ -46,7 +61,7 @@ Buffer &Buffer::operator=(Buffer &&buffer) noexcept {
 
 Buffer::~Buffer() {
   if (own_data_) {
-    delete data_;
+    free(data_);
     data_ = nullptr;
   }
 }
@@ -98,7 +113,7 @@ std::string Buffer::ToString() const {
 }
 
 std::string Buffer::Hex() const {
-  return BitUtil::hex(data(), static_cast<int32_t>(size_));
+  return util::hex(data(), static_cast<int32_t>(size_));
 }
 
 bool AllocateBuffer(uint32_t size, std::shared_ptr<Buffer> *out) {

@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import itertools
 import os
 import pickle
@@ -101,8 +118,8 @@ class PickleStrongCacheSerializer(Serializer):
 
     __slots__ = "_cached", "_clear_threshold", "_counter"
 
-    def __init__(self, fury_, clear_threshold: int = 1000):
-        super().__init__(fury_, PickleStrongCacheStub)
+    def __init__(self, fury, clear_threshold: int = 1000):
+        super().__init__(fury, PickleStrongCacheStub)
         self._cached = {}
         self._clear_threshold = clear_threshold
 
@@ -118,10 +135,10 @@ class PickleStrongCacheSerializer(Serializer):
     def read(self, buffer):
         return pickle.loads(buffer.read_bytes_and_size())
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError
 
     @staticmethod
@@ -141,8 +158,8 @@ class PickleStrongCacheSerializer(Serializer):
 class PickleCacheSerializer(Serializer):
     __slots__ = "_cached", "_reverse_cached"
 
-    def __init__(self, fury_):
-        super().__init__(fury_, PickleCacheStub)
+    def __init__(self, fury):
+        super().__init__(fury, PickleCacheStub)
         self._cached = WeakIdentityKeyDictionary()
         self._reverse_cached = WeakValueDictionary()
 
@@ -167,10 +184,10 @@ class PickleCacheSerializer(Serializer):
             buffer.skip(size)
         return value
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError
 
     @staticmethod
@@ -188,13 +205,13 @@ class PickleCacheSerializer(Serializer):
 class PandasRangeIndexSerializer(Serializer):
     __slots__ = "_cached"
 
-    def __init__(self, fury_):
+    def __init__(self, fury):
         import pandas as pd
 
-        super().__init__(fury_, pd.RangeIndex)
+        super().__init__(fury, pd.RangeIndex)
 
     def write(self, buffer, value):
-        fury = self.fury_
+        fury = self.fury
         start = value.start
         stop = value.stop
         step = value.step
@@ -206,7 +223,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_referencable_to_py(buffer, start)
+                fury.serialize_nonref(buffer, start)
         if type(stop) is int:
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(stop)
@@ -215,7 +232,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_referencable_to_py(buffer, stop)
+                fury.serialize_nonref(buffer, stop)
         if type(step) is int:
             buffer.write_int24(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(step)
@@ -224,31 +241,31 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NULL_FLAG)
             else:
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
-                fury.serialize_non_referencable_to_py(buffer, step)
-        fury.serialize_referencable_to_py(buffer, value.dtype)
-        fury.serialize_referencable_to_py(buffer, value.name)
+                fury.serialize_nonref(buffer, step)
+        fury.serialize_ref(buffer, value.dtype)
+        fury.serialize_ref(buffer, value.name)
 
     def read(self, buffer):
         if buffer.read_int8() == NULL_FLAG:
             start = None
         else:
-            start = self.fury_.deserialize_non_reference_from_py(buffer)
+            start = self.fury.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             stop = None
         else:
-            stop = self.fury_.deserialize_non_reference_from_py(buffer)
+            stop = self.fury.deserialize_nonref(buffer)
         if buffer.read_int8() == NULL_FLAG:
             step = None
         else:
-            step = self.fury_.deserialize_non_reference_from_py(buffer)
-        dtype = self.fury_.deserialize_referencable_from_py(buffer)
-        name = self.fury_.deserialize_referencable_from_py(buffer)
+            step = self.fury.deserialize_nonref(buffer)
+        dtype = self.fury.deserialize_ref(buffer)
+        name = self.fury.deserialize_ref(buffer)
         return self.type_(start, stop, step, dtype=dtype, name=name)
 
-    def cross_language_write(self, buffer, value):
+    def xwrite(self, buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError
 
 
@@ -262,8 +279,8 @@ _ENABLE_FURY_PYTHON_JIT = os.environ.get("ENABLE_FURY_PYTHON_JIT", "True").lower
 
 
 class DataClassSerializer(Serializer):
-    def __init__(self, fury_, clz: type):
-        super().__init__(fury_, clz)
+    def __init__(self, fury, clz: type):
+        super().__init__(fury, clz)
         # This will get superclass type hints too.
         self._type_hints = typing.get_type_hints(clz)
         self._field_names = sorted(self._type_hints.keys())
@@ -279,8 +296,8 @@ class DataClassSerializer(Serializer):
     def _gen_write_method(self):
         context = {}
         counter = itertools.count(0)
-        buffer, fury_, value = "buffer", "fury_", "value"
-        context[fury_] = self.fury_
+        buffer, fury, value = "buffer", "fury", "value"
+        context[fury] = self.fury
         stmts = [
             f'"""write method for {self.type_}"""',
             f"{buffer}.write_int32({self._hash})",
@@ -298,9 +315,7 @@ class DataClassSerializer(Serializer):
             elif field_type == str:
                 stmts.extend(gen_write_nullable_basic_stmts(buffer, field_value, str))
             else:
-                stmts.append(
-                    f"{fury_}.write_referencable_pyobject({buffer}, {field_value})"
-                )
+                stmts.append(f"{fury}.write_ref_pyobject({buffer}, {field_value})")
         self._write_method_code, func = compile_function(
             f"write_{self.type_.__module__}_{self.type_.__qualname__}".replace(
                 ".", "_"
@@ -313,15 +328,15 @@ class DataClassSerializer(Serializer):
 
     def _gen_read_method(self):
         context = dict(_jit_context)
-        buffer, fury_, obj_class, obj = "buffer", "fury_", "obj_class", "obj"
-        reference_resolver = "reference_resolver"
-        context[fury_] = self.fury_
+        buffer, fury, obj_class, obj = "buffer", "fury", "obj_class", "obj"
+        ref_resolver = "ref_resolver"
+        context[fury] = self.fury
         context[obj_class] = self.type_
-        context[reference_resolver] = self.fury_.reference_resolver
+        context[ref_resolver] = self.fury.ref_resolver
         stmts = [
             f'"""read method for {self.type_}"""',
             f"{obj} = {obj_class}.__new__({obj_class})",
-            f"{reference_resolver}.reference({obj})",
+            f"{ref_resolver}.reference({obj})",
             f"read_hash = {buffer}.read_int32()",
             f"if read_hash != {self._hash}:",
             f"""   raise ClassNotCompatibleError(
@@ -342,9 +357,7 @@ class DataClassSerializer(Serializer):
             elif field_type == str:
                 stmts.extend(gen_read_nullable_basic_stmts(buffer, str, set_action))
             else:
-                stmts.append(
-                    f"{obj}.{field_name} = {fury_}.read_referencable_pyobject({buffer})"
-                )
+                stmts.append(f"{obj}.{field_name} = {fury}.read_ref_pyobject({buffer})")
         stmts.append(f"return {obj}")
         self._read_method_code, func = compile_function(
             f"read_{self.type_.__module__}_{self.type_.__qualname__}".replace(".", "_"),
@@ -358,7 +371,7 @@ class DataClassSerializer(Serializer):
         buffer.write_int32(self._hash)
         for field_name in self._field_names:
             field_value = getattr(value, field_name)
-            self.fury_.serialize_referencable_to_py(buffer, field_value)
+            self.fury.serialize_ref(buffer, field_value)
 
     def read(self, buffer):
         hash_ = buffer.read_int32()
@@ -368,9 +381,9 @@ class DataClassSerializer(Serializer):
                 f"for class {self.type_}",
             )
         obj = self.type_.__new__(self.type_)
-        self.fury_.reference_resolver.reference(obj)
+        self.fury.ref_resolver.reference(obj)
         for field_name in self._field_names:
-            field_value = self.fury_.deserialize_referencable_from_py(buffer)
+            field_value = self.fury.deserialize_ref(buffer)
             setattr(
                 obj,
                 field_name,
@@ -378,8 +391,8 @@ class DataClassSerializer(Serializer):
             )
         return obj
 
-    def cross_language_write(self, buffer: Buffer, value):
+    def xwrite(self, buffer: Buffer, value):
         raise NotImplementedError
 
-    def cross_language_read(self, buffer):
+    def xread(self, buffer):
         raise NotImplementedError

@@ -1,14 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2023 FURY. Licensed to the Apache Software Foundation (ASF) under one or more contributor
-  license agreements. See the NOTICE file distributed with this work for additional
-  information regarding copyright ownership. The ASF licenses this file to
-  You under the Apache License, Version 2.0 (the "License"); you may not use
-  this file except in compliance with the License. You may obtain a copy of
-  the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required
-  by applicable law or agreed to in writing, software distributed under the
-  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
-  OF ANY KIND, either express or implied. See the License for the specific
-  language governing permissions and limitations under the License. -->
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+
+-->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -17,7 +27,42 @@
   <groupId>org.furyio</groupId>
   <artifactId>fury-parent</artifactId>
   <packaging>pom</packaging>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.5.0-SNAPSHOT</version>
+  <name>Fury Project Parent POM</name>
+  <description>A blazing fast multi-language serialization framework powered by jit and zero-copy.</description>
+  <url>https://github.com/apache/incubator-fury</url>
+  <licenses>
+    <license>
+      <name>The Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  <scm>
+    <url>https://github.com/apache/incubator-fury</url>
+    <connection>git@github.com:apache/incubator-fury.git</connection>
+    <developerConnection>scm:git:ssh://github.com:apache/incubator-fury.git</developerConnection>
+  </scm>
+  <developers>
+    <developer>
+      <organizationUrl>https://furyio.org</organizationUrl>
+    </developer>
+    <developer>
+      <name>chaokunyang</name>
+      <email>shawn.ck.yang@gmail.com</email>
+      <url>https://github.com/chaokunyang</url>
+    </developer>
+  </developers>
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <modules>
     <module>fury-format</module>
     <module>fury-core</module>
@@ -29,13 +74,11 @@
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <guava.version>32.0.0-jre</guava.version>
-    <janino.version>3.0.11</janino.version>
-    <arrow.version>5.0.0</arrow.version>
-    <jackson-bom.version>2.13.2.20220328</jackson-bom.version>
+    <guava.version>32.1.2-jre</guava.version>
+    <janino.version>3.1.10</janino.version>
     <commons_codec.version>1.13</commons_codec.version>
-    <license.maven.plugin>4.2</license.maven.plugin>
     <fury.java.rootdir>${basedir}</fury.java.rootdir>
+    <maven-spotless-plugin.version>2.5.0</maven-spotless-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -60,37 +103,12 @@
         <artifactId>javassist</artifactId>
         <version>3.28.0-GA</version>
       </dependency>
-      <dependency>
-        <groupId>org.apache.arrow</groupId>
-        <artifactId>arrow-vector</artifactId>
-        <version>${arrow.version}</version>
-        <!-- <classifier>shade-format-flatbuffer</classifier> -->
-      </dependency>
-      <!-- CVE-2020-36518, Cxced0c06c-935c -->
-      <dependency>
-        <groupId>com.fasterxml.jackson</groupId>
-        <artifactId>jackson-bom</artifactId>
-        <version>${jackson-bom.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
       <!-- Cxeb68d52e-5509 -->
       <dependency>
         <groupId>commons-codec</groupId>
         <artifactId>commons-codec</artifactId>
         <version>${commons_codec.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.apache.arrow</groupId>
-        <artifactId>arrow-memory-core</artifactId>
-        <version>${arrow.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.arrow</groupId>
-        <artifactId>arrow-memory-unsafe</artifactId>
-        <version>${arrow.version}</version>
-      </dependency>
-
       <dependency>
         <groupId>org.testng</groupId>
         <artifactId>testng</artifactId>
@@ -111,7 +129,7 @@
       <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
-        <version>1.18.24</version>
+        <version>1.18.30</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -163,6 +181,26 @@
           <artifactId>maven-deploy-plugin</artifactId>
           <version>2.7</version>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>1.6</version>
+          <executions>
+            <execution>
+              <id>sign-artifacts</id>
+              <goals>
+                <goal>sign</goal>
+              </goals>
+              <configuration>
+                <!-- Prevent `gpg` from using pinentry programs -->
+                <gpgArguments>
+                  <arg>--pinentry-mode</arg>
+                  <arg>loopback</arg>
+                </gpgArguments>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -211,7 +249,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>2.5.0</version>
+        <version>${maven-spotless-plugin.version}</version>
         <configuration>
           <java>
             <googleJavaFormat>
@@ -221,77 +259,37 @@
           </java>
         </configuration>
       </plugin>
-
-      <plugin>
-        <groupId>com.mycila</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <version>${license.maven.plugin}</version>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <!-- <goal>remove</goal> -->
-              <!-- <goal>format</goal> -->
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <properties>
-            <project.inceptionYear>2023</project.inceptionYear>
-          </properties>
-          <quiet>true</quiet>
-          <header>${fury.java.rootdir}/HEADER</header>
-          <includes>
-            <include>**/src/main/java/**</include>
-            <include>**/src/test/java/**</include>
-          </includes>
-          <excludes>
-            <exclude>**/util/Platform.java</exclude>
-            <exclude>**/util/StringUtils.java</exclude>
-            <exclude>**/util/MurmurHash3.java</exclude>
-            <exclude>**/util/ClassLoaderUtils.java</exclude>
-            <exclude>**/util/DateTimeUtils.java</exclude>
-            <exclude>**/memory/MemoryBuffer.java</exclude>
-            <exclude>**/memory/BitUtils.java</exclude>
-            <exclude>**/codegen/Code.java</exclude>
-            <exclude>**/collection/FuryObjectMap.java</exclude>
-            <exclude>**/collection/ObjectIntMap.java</exclude>
-            <exclude>**/collection/IdentityObjectIntMap.java</exclude>
-            <exclude>**/collection/IdentityMap.java</exclude>
-            <exclude>**/collection/LongMap.java</exclude>
-            <exclude>**/type/Generics.java</exclude>
-            <exclude>**/io/ClassLoaderObjectInputStream.java</exclude>
-            <exclude>**/serializer/SynchronizedSerializers.java</exclude>
-            <exclude>**/serializer/UnmodifiableCollectionSerializer.java</exclude>
-            <exclude>**/fury/format/row/**</exclude>
-            <exclude>**/fury/format/vectorized/ArrowWriter.java</exclude>
-            <exclude>**/fury/benchmark/data/Data.java</exclude>
-            <exclude>**/fury/benchmark/data/Image.java</exclude>
-            <exclude>**/fury/benchmark/data/Media.java</exclude>
-            <exclude>**/fury/benchmark/data/MediaContent.java</exclude>
-            <exclude>**/fury/benchmark/data/Sample.java</exclude>
-            <exclude>**/fury/benchmark/state/KryoState.java</exclude>
-            <exclude>**/fury/benchmark/state/BufferType.java</exclude>
-            <exclude>**/fury/benchmark/state/ObjectType.java</exclude>
-            <exclude>**/fury/benchmark/Identity2IdMap.java</exclude>
-          </excludes>
-          <strictCheck>true</strictCheck>
-          <headerDefinitions>
-            <headerDefinition>${fury.java.rootdir}/license-format.xml</headerDefinition>
-          </headerDefinitions>
-          <mapping>
-            <java>SLASHSTART_WITH_BLANKLINE_STYLE</java>
-          </mapping>
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>com.mycila</groupId>
-            <artifactId>license-maven-plugin-git</artifactId>
-            <!-- make sure same version as license-maven-plugin -->
-            <version>${license.maven.plugin}</version>
-          </dependency>
-        </dependencies>
-      </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <activation>
+        <property>
+          <name>release</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <properties>
+        <output.directory>${basedir}</output.directory>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
