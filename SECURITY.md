@@ -1,10 +1,10 @@
 # Security Policy
+
+This is a project of the [Apache Software Foundation](https://apache.org) and follows the ASF [vulnerability handling process](https://apache.org/security/#vulnerability-handling).
+
 ## Reporting a Vulnerability
-If you believe you have found any security (technical) vulnerability in Fury, you are welcomed to submit a vulnerability report to us at https://security.alipay.com . In case of reporting any security vulnerability, please be noted that you need to include following information (Qualified Reporting):
-- The code and fury version
-- A detailed description with necessary screenshots
-- Steps to reproduce the vulnerability and your advice to fix it
-- Other useful information
+
+To report a new vulnerability you have discovered please follow the [ASF vulnerability reporting process](https://apache.org/security/#reporting-a-vulnerability).
 
 ## Disclaimer
 Dynamic serialization such as fury java/python native serialization supports deserialize unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
