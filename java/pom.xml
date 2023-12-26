@@ -71,7 +71,7 @@
     <janino.version>3.1.10</janino.version>
     <commons_codec.version>1.13</commons_codec.version>
     <fury.java.rootdir>${basedir}</fury.java.rootdir>
-    <maven-spotless-plugin.version>2.5.0</maven-spotless-plugin.version>
+    <maven-spotless-plugin.version>2.41.1</maven-spotless-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -246,7 +246,8 @@
         <configuration>
           <java>
             <googleJavaFormat>
-              <version>1.7</version>
+              <!-- 1.19.1 support JDK21 -->
+              <version>1.19.1</version>
               <style>GOOGLE</style>
             </googleJavaFormat>
           </java>
