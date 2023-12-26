@@ -1,4 +1,4 @@
-# [Fury](https://github.com/alipay/fury) for Rust
+# [Fury](https://github.com/apache/incubator-fury) for Rust
 
 Fury is a blazing fast multi-language serialization framework powered by just-in-time compilation and zero-copy.
 

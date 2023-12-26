@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-module github.com/alipay/fury/go/fury
+module github.com/apache/incubator-fury/go/fury
 
 go 1.13
 

@@ -6,7 +6,7 @@ order: 6
 
 ## Get the source code
 
-Github repo: https://github.com/alipay/fury
+Github repo: https://github.com/apache/incubator-fury
 
 ## Building Fury 🏋🏿‍♀️
 

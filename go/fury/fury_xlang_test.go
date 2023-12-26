@@ -19,7 +19,7 @@ package fury_test
 
 import (
 	"fmt"
-	"github.com/alipay/fury/go/fury"
+	"github.com/apache/incubator-fury/go/fury"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"

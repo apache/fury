@@ -42,7 +42,7 @@ class ScalaTest extends AnyWordSpec with Matchers {
     }
   }
   "serialize/deserialize package object in app" in {
-    // If we move code in main here, we can't reproduce https://github.com/alipay/fury/issues/1165.
+    // If we move code in main here, we can't reproduce https://github.com/apache/incubator-fury/issues/1165.
     PkgObjectMain.main(Array())
     PkgObjectMain2.main(Array())
   }
@@ -54,7 +54,7 @@ package object PkgObject {
   case class IdAnyVal(value: Int) extends AnyVal
 }
 
-// Test for https://github.com/alipay/fury/issues/1165
+// Test for https://github.com/apache/incubator-fury/issues/1165
 object PkgObjectMain extends App {
 
   val fury = Fury
@@ -74,7 +74,7 @@ object PkgObjectMain extends App {
   }
 }
 
-// Test for https://github.com/alipay/fury/issues/1175
+// Test for https://github.com/apache/incubator-fury/issues/1175
 object PkgObjectMain2 extends App {
   val fury = Fury
     .builder()

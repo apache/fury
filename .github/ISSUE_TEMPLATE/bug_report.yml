@@ -26,10 +26,10 @@ body:
     attributes:
       label: Search before asking
       description: >
-        Please make sure to search in the [issues](https://github.com/alipay/fury/issues) first to see whether the same issue was reported already.
+        Please make sure to search in the [issues](https://github.com/apache/incubator-fury/issues) first to see whether the same issue was reported already.
       options:
         - label: >
-            I had searched in the [issues](https://github.com/apache/alipay/issues) and found no similar issues.
+            I had searched in the [issues](https://github.com/apache/incubator-fury/issues) and found no similar issues.
           required: true
   - type: textarea
     attributes:

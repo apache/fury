@@ -2,7 +2,7 @@
   <img width="65%" alt="" src="docs/images/logo/fury_github_banner.png"><br>
 </div>
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/alipay/fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/alipay/fury)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/apache/incubator-fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/incubator-fury)
 [![Twitter](https://img.shields.io/twitter/follow/fury_community?logo=twitter&style=for-the-badge)](https://twitter.com/fury_community)
 
 
@@ -60,7 +60,7 @@ Title containing "compatible" represent schema compatible mode: support type for
 
 Title without "compatible" represent schema consistent mode: class schema must be the same between serialization and deserialization.
 
-`Struct` is a class with [100 primitive fields](https://github.com/alipay/fury/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
+`Struct` is a class with [100 primitive fields](https://github.com/apache/incubator-fury/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
 
 <p align="center">
 <img width="24%" alt="" src="docs/benchmarks/compatible/bench_serialize_compatible_STRUCT_to_directBuffer_tps.png">
@@ -76,7 +76,7 @@ Title without "compatible" represent schema consistent mode: class schema must b
 <img width="24%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_SAMPLE_from_array_tps.png">
 </p>
 
-See [benchmarks](https://github.com/alipay/fury/tree/main/docs/benchmarks) for more benchmarks about type forward/backward compatibility, off-heap support, zero-copy serialization.
+See [benchmarks](https://github.com/apache/incubator-fury/tree/main/docs/benchmarks) for more benchmarks about type forward/backward compatibility, off-heap support, zero-copy serialization.
 
 ## Installation
 ### Java
@@ -138,11 +138,11 @@ npm install @furyjs/fury
 
 ### Golang
 ```bash
-go get github.com/alipay/fury/go/fury
+go get github.com/apache/incubator-fury/go/fury
 ```
 
 ## Quickstart
-Here we give a quick start about how to use fury, see [user guide](https://github.com/alipay/fury/blob/main/docs/README.md) for more details about [java](https://github.com/alipay/fury/blob/main/docs/guide/java_object_graph_guide.md), [cross language](https://github.com/alipay/fury/blob/main/docs/guide/xlang_object_graph_guide.md), and [row format](https://github.com/alipay/fury/blob/main/docs/guide/row_format_guide.md).
+Here we give a quick start about how to use fury, see [user guide](https://github.com/apache/incubator-fury/blob/main/docs/README.md) for more details about [java](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md), [cross language](https://github.com/apache/incubator-fury/blob/main/docs/guide/xlang_object_graph_guide.md), and [row format](https://github.com/apache/incubator-fury/blob/main/docs/guide/row_format_guide.md).
 
 ### Fury java object graph serialization
 If you don't have cross-language requirements, using this mode will 
@@ -252,7 +252,7 @@ print(fury.deserialize(data))
 ```go
 package main
 
-import furygo "github.com/alipay/fury/go/fury"
+import furygo "github.com/apache/incubator-fury/go/fury"
 import "fmt"
 
 func main() {
@@ -352,12 +352,12 @@ print(foo_row.f2[100000], foo_row.f4[100000].f1, foo_row.f4[200000].f2[5])
 ### Schema Compatibility
 Fury java object graph serialization support class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
 
-We plan to add support cross-language serialization after [meta compression](https://github.com/alipay/fury/issues/203) is finished.
+We plan to add support cross-language serialization after [meta compression](https://github.com/apache/incubator-fury/issues/203) is finished.
 
 ### Binary Compatibility
 We are still improving our protocols, binary compatibility is not ensured between fury major releases for now.
 it's ensured between minor versions only. Please
-`versioning` your data by fury major version if you will upgrade fury in the future, see [how to upgrade fury](https://github.com/alipay/fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
+`versioning` your data by fury major version if you will upgrade fury in the future, see [how to upgrade fury](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
 
 Binary compatibility will be ensured when fury 1.0 is released.
 
