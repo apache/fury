@@ -31,7 +31,7 @@ public class Example {
     Fury fury = Fury.builder().withLanguage(Language.JAVA)
       // Allow to deserialize objects unknown types, more flexible 
       // but may be insecure if the classes contains malicious code.
-      .requireClassRegistration(false)
+      .requireClassRegistration(true)
       .build();
     // Registering types can reduce class name serialization overhead, but not mandatory.
     // If class registration enabled, all custom types must be registered.
@@ -82,7 +82,7 @@ public class Example {
   private static final ThreadSafeFury fury = Fury.builder()
     // Allow to deserialize objects unknown types, more flexible 
     // but may be insecure if the classes contains malicious code.
-    .requireClassRegistration(false)
+    .requireClassRegistration(true)
     .buildThreadSafeFury();
 
   public static void main(String[] args) {
@@ -253,7 +253,7 @@ fury.getClassResolver().setClassChecker((classResolver, className) -> className.
 ```java
 AllowListChecker checker = new AllowListChecker(AllowListChecker.CheckLevel.STRICT);
 ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
-  Fury f = Fury.builder().requireClassRegistration(false).withClassLoader(classLoader).build();
+  Fury f = Fury.builder().requireClassRegistration(true).withClassLoader(classLoader).build();
   f.getClassResolver().setClassChecker(checker);
   checker.addListener(f.getClassResolver());
   return f;
