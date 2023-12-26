@@ -95,13 +95,13 @@ Nightly snapshot:
   </repository>
 </repositories>
 <dependency>
-  <groupId>org.furyio</groupId>
+  <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
   <version>0.5.0-SNAPSHOT</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
-  <groupId>org.furyio</groupId>
+  <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
   <version>0.5.0-SNAPSHOT</version>
 </dependency> -->
@@ -109,13 +109,13 @@ Nightly snapshot:
 Release version:
 ```xml
 <dependency>
-  <groupId>org.furyio</groupId>
+  <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
   <version>0.4.1</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
-  <groupId>org.furyio</groupId>
+  <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
   <version>0.4.1</version>
 </dependency> -->
@@ -123,7 +123,7 @@ Release version:
 
 ### Scala
 ```sbt
-libraryDependencies += "org.furyio" % "fury-core" % "0.4.1"
+libraryDependencies += "org.apache.fury" % "fury-core" % "0.4.1"
 ```
 
 ### Python
