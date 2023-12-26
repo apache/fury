@@ -50,7 +50,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 
-//  flatc  -o src/main/java -j  src/main/java/io/fury/integration_tests/state/bench.fbs
+//  flatc  -o src/main/java -j  src/main/java/org/apache/fury/integration_tests/state/bench.fbs
 public class FlatBuffersState {
 
   public static byte[] serializeBar(Bar bar) {
