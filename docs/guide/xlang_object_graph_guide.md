@@ -12,8 +12,8 @@ Common types can be serialized automatically: primitive numeric types, string, b
 **Java**
 
 ```java
-import io.fury.*;
-import io.fury.config.*;
+import org.apache.fury.*;
+import org.apache.fury.config.*;
 
 import java.util.*;
 
@@ -131,8 +131,8 @@ Serializing user-defined types needs registering the custom type using the regis
 **Java**
 
 ```java
-import io.fury.*;
-import io.fury.config.*;
+import org.apache.fury.*;
+import org.apache.fury.config.*;
 import java.util.*;
 
 public class Example2 {
@@ -176,7 +176,7 @@ public class Example2 {
     return obj;
   }
 
-  // mvn exec:java -Dexec.mainClass="io.fury.examples.Example2"
+  // mvn exec:java -Dexec.mainClass="org.apache.fury.examples.Example2"
   public static void main(String[] args) {
     Fury fury = Fury.builder().withLanguage(Language.XLANG).build();
     fury.register(SomeClass1.class, "example.SomeClass1");
@@ -400,8 +400,8 @@ Shared reference and circular reference can be serialized automatically, no dupl
 **Java**
 
 ```java
-import io.fury.*;
-import io.fury.config.*;
+import org.apache.fury.*;
+import org.apache.fury.config.*;
 import java.util.*;
 
 public class ReferenceExample {
@@ -419,7 +419,7 @@ public class ReferenceExample {
     return obj;
   }
 
-  // mvn exec:java -Dexec.mainClass="io.fury.examples.ReferenceExample"
+  // mvn exec:java -Dexec.mainClass="org.apache.fury.examples.ReferenceExample"
   public static void main(String[] args) {
     Fury fury = Fury.builder().withLanguage(Language.XLANG)
       .withRefTracking(true).build();
@@ -521,10 +521,10 @@ Reference cannot be implemented because of rust ownership restrictions
 **Java**
 
 ```java
-import io.fury.*;
-import io.fury.config.*;
-import io.fury.serializers.BufferObject;
-import io.fury.memory.MemoryBuffer;
+import org.apache.fury.*;
+import org.apache.fury.config.*;
+import org.apache.fury.serializers.BufferObject;
+import org.apache.fury.memory.MemoryBuffer;
 
 import java.util.*;
 import java.util.stream.Collectors;

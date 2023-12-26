@@ -15,7 +15,7 @@ Scala 2 and 3 are both supported.
 
 ## Install
 ```sbt
-libraryDependencies += "org.furyio" % "fury-core" % "0.4.1"
+libraryDependencies += "org.apache.fury" % "fury-core" % "0.4.1"
 ```
 
 ## Fury creation
@@ -112,7 +112,7 @@ Scala `pojo/bean/case/object` are supported by fury jit well, the performance is
 
 Scala collections and generics doesn't follow java collection framework, and is not fully integrated with Fury JIT in current release version. The performance won't be as good as fury collections serialization for java.
 
-The execution for scala collections will invoke Java serialization API `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` with fury `ObjectStream` implementation. Although `io.fury.serializer.ObjectStreamSerializer` is much faster than JDK `ObjectOutputStream/ObjectInputStream`, but it still doesn't know how use scala collection generics.
+The execution for scala collections will invoke Java serialization API `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` with fury `ObjectStream` implementation. Although `org.apache.fury.serializer.ObjectStreamSerializer` is much faster than JDK `ObjectOutputStream/ObjectInputStream`, but it still doesn't know how use scala collection generics.
 
 In future we plan to provide more optimization for scala types, see https://github.com/apache/incubator-fury/issues/682, stay tuned!
 

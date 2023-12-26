@@ -23,7 +23,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.furyio</groupId>
+  <groupId>org.apache.fury</groupId>
   <artifactId>graalvm_tests</artifactId>
   <version>0.5.0-SNAPSHOT</version>
   <properties>
@@ -32,7 +32,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <native.maven.plugin.version>0.9.28</native.maven.plugin.version>
     <junit.jupiter.version>5.8.1</junit.jupiter.version>
-    <mainClass>io.fury.graalvm.Main</mainClass>
+    <mainClass>org.apache.fury.graalvm.Main</mainClass>
     <imageName>main</imageName>
   </properties>
 
@@ -51,7 +51,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.furyio</groupId>
+      <groupId>org.apache.fury</groupId>
       <artifactId>fury-core</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -198,5 +198,4 @@
       </build>
     </profile>
   </profiles>
-
 </project>
