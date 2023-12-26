@@ -37,6 +37,7 @@ export default class SerializerResolver {
 
   private readStringPool: string[] = [];
   private writeStringCount = 0;
+  private writeStringIndex: number[] = [];
 
   private initInternalSerializer(fury: Fury) {
     const _anySerializer = anySerializer(fury);
@@ -74,7 +75,7 @@ export default class SerializerResolver {
 
   reset() {
     this.readStringPool = [];
-    this.writeStringCount = 0;
+    this.writeStringIndex.fill(-1);
   }
 
   getSerializerById(id: InternalSerializerType) {
@@ -95,11 +96,13 @@ export default class SerializerResolver {
   }
 
   createTagWriter(tag: string) {
-    let tagIndex = -1;
+    this.writeStringIndex.push(-1);
+    const idx = this.writeStringIndex.length - 1;
     const tagBuffer = fromString(tag);
     const bufferLen = tagBuffer.byteLength;
     return {
       write: (binaryWriter: BinaryWriter) => {
+        const tagIndex = this.writeStringIndex[idx];
         if (tagIndex > -1) {
           binaryWriter.uint8(USESTRINGID);
           binaryWriter.int16(tagIndex);
@@ -110,7 +113,8 @@ export default class SerializerResolver {
         if (tagHash === BigInt(0)) {
           tagHash = BigInt(1);
         }
-        tagIndex = this.writeStringCount++;
+
+        this.writeStringIndex[idx] = this.writeStringCount++;
         binaryWriter.uint8(USESTRINGVALUE);
         binaryWriter.uint64(tagHash);
         binaryWriter.int16(bufferLen);
