@@ -32,7 +32,7 @@ Depending on the object types you serialize, you may need to register some scala
 fury.register(Class.forName("scala.collection.generic.DefaultSerializationProxy"))
 fury.register(Class.forName("scala.Enumeration.Val"))
 ```
-If you want to avoid such registration, you can disable class registration `FuryBuilder#requireClassRegistration(false)`.
+If you want to avoid such registration, you can disable class registration by `FuryBuilder#requireClassRegistration(false)`.
 Note that this option allow to deserialize objects unknown types, more flexible but may be insecure if the classes contains malicious code.
 
 And circular references are common in scala, `Reference tracking` should be enabled by `FuryBuilder#withRefTracking(true)`. If you don't enable reference tracking, [StackOverflowError](https://github.com/alipay/fury/issues/1032) may happen for some scala versions when serializing scala Enumeration.
