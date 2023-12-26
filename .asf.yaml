@@ -61,11 +61,6 @@ github:
     releases-0.2.1: {}
     releases-0.2.0: {}
     releases-0.1.2: {}
-
-  # TODO: remove them after their apache ids are set up 
-  collaborators:
-    - chaokunyang
-    - wangweipeng2
   
 notifications:
   commits:      commits@fury.apache.org
