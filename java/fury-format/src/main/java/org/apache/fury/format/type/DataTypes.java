@@ -22,7 +22,7 @@ package org.apache.fury.format.type;
 import static org.apache.fury.util.Preconditions.checkArgument;
 
 import org.apache.fury.exception.FuryException;
-import org.apache.fury.org.apache.furyOutputStream;
+import org.apache.fury.io.FuryOutputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.DecimalUtils;

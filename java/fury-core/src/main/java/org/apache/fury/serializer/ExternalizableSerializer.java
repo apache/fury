@@ -20,8 +20,8 @@
 package org.apache.fury.serializer;
 
 import org.apache.fury.Fury;
-import org.apache.fury.org.apache.furyObjectInput;
-import org.apache.fury.org.apache.furyObjectOutput;
+import org.apache.fury.io.FuryObjectInput;
+import org.apache.fury.io.FuryObjectOutput;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.ReflectionUtils;

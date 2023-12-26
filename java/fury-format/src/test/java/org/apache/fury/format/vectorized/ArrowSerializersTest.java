@@ -23,7 +23,7 @@ import static org.testng.Assert.assertEquals;
 
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
-import org.apache.fury.org.apache.furyWritableByteChannel;
+import org.apache.fury.io.FuryWritableByteChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;

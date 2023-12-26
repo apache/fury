@@ -35,7 +35,7 @@ import org.apache.fury.format.vectorized.ArrowSerializers;
 import org.apache.fury.format.vectorized.ArrowTable;
 import org.apache.fury.format.vectorized.ArrowUtils;
 import org.apache.fury.format.vectorized.ArrowWriter;
-import org.apache.fury.org.apache.furyOutputStream;
+import org.apache.fury.io.FuryOutputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferObject;

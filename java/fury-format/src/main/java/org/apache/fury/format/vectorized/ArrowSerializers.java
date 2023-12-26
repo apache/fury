@@ -20,8 +20,8 @@
 package org.apache.fury.format.vectorized;
 
 import org.apache.fury.Fury;
-import org.apache.fury.org.apache.furyReadableByteChannel;
-import org.apache.fury.org.apache.furyWritableByteChannel;
+import org.apache.fury.io.FuryReadableByteChannel;
+import org.apache.fury.io.FuryWritableByteChannel;
 import org.apache.fury.io.MockWritableByteChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;

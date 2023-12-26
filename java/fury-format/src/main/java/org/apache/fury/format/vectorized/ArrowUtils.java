@@ -19,8 +19,8 @@
 
 package org.apache.fury.format.vectorized;
 
-import org.apache.fury.org.apache.furyInputStream;
-import org.apache.fury.org.apache.furyOutputStream;
+import org.apache.fury.io.FuryInputStream;
+import org.apache.fury.io.FuryOutputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.DecimalUtils;
 import java.io.IOException;
