@@ -15,9 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-fury-project/fury-sites@main:
+apache/incubator-fury-site@main:
   - source: docs/guide/
     dest: docs/guide/
-
   - source: docs/benchmarks/
     dest: public/benchmarks/
