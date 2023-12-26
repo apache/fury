@@ -4,6 +4,8 @@
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/apache/incubator-fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/incubator-fury)
 [![Twitter](https://img.shields.io/twitter/follow/fury_community?logo=twitter&style=for-the-badge)](https://twitter.com/fury_community)
+[![Maven Version](https://img.shields.io/maven-central/v/org.furyio/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.furyio"%20AND%20a:"fury-core")
+
 
 
 Apache Fury (incubating) is a blazing-fast multi-language serialization framework powered by **JIT** (just-in-time compilation) and **zero-copy**, providing up to 170x performance and ultimate ease of use.
