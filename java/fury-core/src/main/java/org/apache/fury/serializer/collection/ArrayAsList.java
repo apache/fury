@@ -19,11 +19,11 @@
 
 package org.apache.fury.serializer.collection;
 
-import org.apache.fury.annotation.Internal;
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.RandomAccess;
+import org.apache.fury.annotation.Internal;
 
 /**
  * A List which wrap a Java array like `java.util.Arrays.ArrayList`, but allow to replace wrapped

@@ -19,12 +19,12 @@
 
 package org.apache.fury.serializer;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 
 /**
  * Serializer for jdk {@link Proxy}.

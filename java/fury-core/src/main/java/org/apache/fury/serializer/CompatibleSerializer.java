@@ -19,6 +19,12 @@
 
 package org.apache.fury.serializer;
 
+import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.ClassInfo;
@@ -33,12 +39,6 @@ import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.record.RecordInfo;
 import org.apache.fury.util.record.RecordUtils;
-import java.lang.invoke.MethodHandle;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * This Serializer provides both forward and backward compatibility: fields can be added or removed

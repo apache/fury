@@ -19,11 +19,11 @@
 
 package org.apache.fury.collection;
 
-import org.apache.fury.util.Preconditions;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
+import org.apache.fury.util.Preconditions;
 
 // Derived from
 // https://github.com/EsotericSoftware/kryo/blob/135df69526615bb3f6b34846e58ba3fec3b631c3/src/com/esotericsoftware/kryo/util/ObjectMap.java.

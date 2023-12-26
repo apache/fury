@@ -29,16 +29,16 @@ import static org.apache.fury.codegen.Expression.StaticInvoke;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
-import org.apache.fury.codegen.Expression.Cast;
-import org.apache.fury.codegen.Expression.Null;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.StringUtils;
-import org.apache.fury.util.function.Functions;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.apache.fury.codegen.Expression.Cast;
+import org.apache.fury.codegen.Expression.Null;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
+import org.apache.fury.util.function.Functions;
 
 /**
  * Expression utils to create expression and code in a more convenient way.

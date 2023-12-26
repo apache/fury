@@ -19,6 +19,18 @@
 
 package org.apache.fury;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.builder.JITContext;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Config;
@@ -49,18 +61,6 @@ import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import javax.annotation.concurrent.NotThreadSafe;
 import org.slf4j.Logger;
 
 /**

@@ -19,15 +19,15 @@
 
 package org.apache.fury.pool;
 
+import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import javax.annotation.concurrent.ThreadSafe;
 import org.apache.fury.Fury;
 import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.util.LoaderBinding;
-import java.nio.ByteBuffer;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import javax.annotation.concurrent.ThreadSafe;
 
 @ThreadSafe
 public class ThreadPoolFury implements ThreadSafeFury {

@@ -19,6 +19,14 @@
 
 package org.apache.fury.serializer;
 
+import java.io.Externalizable;
+import java.io.ObjectStreamClass;
+import java.io.Serializable;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.ClassInfo;
@@ -29,14 +37,6 @@ import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.unsafe._JDKAccess;
-import java.io.Externalizable;
-import java.io.ObjectStreamClass;
-import java.io.Serializable;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
 import org.slf4j.Logger;
 
 /**

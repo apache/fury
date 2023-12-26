@@ -19,11 +19,11 @@
 
 package org.apache.fury.resolver;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.fury.collection.IdentityObjectIntMap;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.ClassDef;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Context for sharing class meta across multiple serialization. Class name, field name and field

@@ -19,12 +19,6 @@
 
 package org.apache.fury.format.vectorized;
 
-import org.apache.fury.Fury;
-import org.apache.fury.io.FuryReadableByteChannel;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.serializer.Serializers;
-import org.apache.fury.type.Type;
-import org.apache.fury.util.Platform;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +27,12 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
+import org.apache.fury.Fury;
+import org.apache.fury.io.FuryReadableByteChannel;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.Serializers;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.Platform;
 
 /**
  * Serializers for {@link ArrowTable}.

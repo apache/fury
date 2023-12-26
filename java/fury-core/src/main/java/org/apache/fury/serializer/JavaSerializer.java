@@ -19,14 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.Fury;
-import org.apache.fury.io.ClassLoaderObjectInputStream;
-import org.apache.fury.io.FuryObjectInput;
-import org.apache.fury.io.FuryObjectOutput;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.util.LoggerFactory;
-import org.apache.fury.util.Platform;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -36,6 +28,14 @@ import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
+import org.apache.fury.Fury;
+import org.apache.fury.io.ClassLoaderObjectInputStream;
+import org.apache.fury.io.FuryObjectInput;
+import org.apache.fury.io.FuryObjectOutput;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Platform;
 import org.slf4j.Logger;
 
 /**

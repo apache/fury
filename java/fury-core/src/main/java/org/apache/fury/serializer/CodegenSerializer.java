@@ -21,11 +21,11 @@ package org.apache.fury.serializer;
 
 import static org.apache.fury.util.Preconditions.checkArgument;
 
+import java.lang.reflect.Modifier;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.CodecUtils;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.memory.MemoryBuffer;
-import java.lang.reflect.Modifier;
 
 /**
  * Util for JIT Serialization.
@@ -65,8 +65,9 @@ public final class CodegenSerializer {
   /**
    * A bean serializer which initializes lazily on first call read/write method.
    *
-   * <p>This class is used by {@link org.apache.fury.builder.BaseObjectCodecBuilder} to avoid potential
-   * recursive bean serializer creation when there is a circular reference in class children fields.
+   * <p>This class is used by {@link org.apache.fury.builder.BaseObjectCodecBuilder} to avoid
+   * potential recursive bean serializer creation when there is a circular reference in class
+   * children fields.
    */
   public static final class LazyInitBeanSerializer<T> extends Serializer<T> {
     private Serializer<T> serializer;

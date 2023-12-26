@@ -19,15 +19,15 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.Fury;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.util.Objects;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Serializer for java serializable lambda. Use fury to serialize java lambda instead of JDK

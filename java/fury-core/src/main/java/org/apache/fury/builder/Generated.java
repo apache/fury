@@ -19,16 +19,16 @@
 
 package org.apache.fury.builder;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.serializer.CompatibleSerializerBase;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * Since janino doesn't support generics, we use {@link Object} to represent object type rather

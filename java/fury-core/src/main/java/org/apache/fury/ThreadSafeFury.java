@@ -19,10 +19,10 @@
 
 package org.apache.fury;
 
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.LoaderBinding;
 import java.nio.ByteBuffer;
 import java.util.function.Function;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.LoaderBinding;
 
 /**
  * Thread safe serializer interface. {@link Fury} is not thread-safe, the implementation of this

@@ -25,6 +25,18 @@ import static org.apache.fury.type.TypeUtils.collectionOf;
 import static org.apache.fury.type.TypeUtils.mapOf;
 
 import com.google.common.reflect.TypeToken;
+import java.io.ObjectStreamClass;
+import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.MetaSharedCodecBuilder;
 import org.apache.fury.collection.IdentityObjectIntMap;
@@ -39,18 +51,6 @@ import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
-import java.io.ObjectStreamClass;
-import java.io.Serializable;
-import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 import org.slf4j.Logger;
 
 /**

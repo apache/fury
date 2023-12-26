@@ -23,8 +23,8 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-import org.apache.fury.memory.MemoryBuffer;
 import java.util.Map;
+import org.apache.fury.memory.MemoryBuffer;
 import org.testng.annotations.Test;
 
 public class MapRefResolverTest {

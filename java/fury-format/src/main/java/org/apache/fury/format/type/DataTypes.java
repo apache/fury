@@ -21,12 +21,6 @@ package org.apache.fury.format.type;
 
 import static org.apache.fury.util.Preconditions.checkArgument;
 
-import org.apache.fury.exception.FuryException;
-import org.apache.fury.io.FuryOutputStream;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.type.Type;
-import org.apache.fury.util.DecimalUtils;
-import org.apache.fury.util.Preconditions;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -46,6 +40,12 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.fury.exception.FuryException;
+import org.apache.fury.io.FuryOutputStream;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.DecimalUtils;
+import org.apache.fury.util.Preconditions;
 
 /**
  * Arrow data type utils.

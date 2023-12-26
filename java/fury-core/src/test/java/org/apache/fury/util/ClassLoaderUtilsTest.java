@@ -19,11 +19,11 @@
 
 package org.apache.fury.util;
 
+import java.io.StringReader;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CompileUnit;
 import org.apache.fury.codegen.JaninoUtils;
 import org.apache.fury.config.Language;
-import java.io.StringReader;
 import org.codehaus.janino.SimpleCompiler;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;

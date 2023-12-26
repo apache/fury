@@ -23,12 +23,6 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
-import org.apache.fury.Fury;
-import org.apache.fury.builder.ObjectCodecBuilder;
-import org.apache.fury.collection.MultiKeyWeakMap;
-import org.apache.fury.test.bean.Foo;
-import org.apache.fury.util.ClassLoaderUtils;
-import org.apache.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -39,6 +33,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.fury.Fury;
+import org.apache.fury.builder.ObjectCodecBuilder;
+import org.apache.fury.collection.MultiKeyWeakMap;
+import org.apache.fury.test.bean.Foo;
+import org.apache.fury.util.ClassLoaderUtils;
+import org.apache.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

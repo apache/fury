@@ -21,10 +21,10 @@ package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 
+import java.io.Externalizable;
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
 import org.apache.fury.serializer.test.Factory;
-import java.io.Externalizable;
 import org.testng.annotations.Test;
 
 public class ExternalizableSerializerTest {

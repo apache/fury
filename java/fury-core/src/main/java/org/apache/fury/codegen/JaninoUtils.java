@@ -19,10 +19,6 @@
 
 package org.apache.fury.codegen;
 
-import org.apache.fury.collection.Tuple2;
-import org.apache.fury.util.LoggerFactory;
-import org.apache.fury.util.ReflectionUtils;
-import org.apache.fury.util.StringUtils;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -38,6 +34,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.StringUtils;
 import org.codehaus.commons.compiler.util.reflect.ByteArrayClassLoader;
 import org.codehaus.commons.compiler.util.resource.MapResourceCreator;
 import org.codehaus.commons.compiler.util.resource.MapResourceFinder;

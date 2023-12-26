@@ -20,13 +20,13 @@
 package org.apache.fury.type;
 
 import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.TestUtils;
 import org.apache.fury.config.Language;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

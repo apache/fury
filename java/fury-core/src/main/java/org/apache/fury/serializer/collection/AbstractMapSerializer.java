@@ -22,6 +22,8 @@ package org.apache.fury.serializer.collection;
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 
 import com.google.common.reflect.TypeToken;
+import java.lang.invoke.MethodHandle;
+import java.util.Map;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.Tuple2;
@@ -34,8 +36,6 @@ import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.ReflectionUtils;
-import java.lang.invoke.MethodHandle;
-import java.util.Map;
 
 /**
  * Serializer for all map-like objects.

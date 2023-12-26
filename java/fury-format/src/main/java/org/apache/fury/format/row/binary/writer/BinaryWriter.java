@@ -19,13 +19,6 @@
 
 package org.apache.fury.format.row.binary.writer;
 
-import org.apache.fury.format.row.binary.BinaryArray;
-import org.apache.fury.format.row.binary.BinaryMap;
-import org.apache.fury.format.row.binary.BinaryRow;
-import org.apache.fury.format.vectorized.ArrowUtils;
-import org.apache.fury.memory.BitUtils;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.DecimalUtils;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -33,6 +26,13 @@ import java.util.List;
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.util.DecimalUtility;
+import org.apache.fury.format.row.binary.BinaryArray;
+import org.apache.fury.format.row.binary.BinaryMap;
+import org.apache.fury.format.row.binary.BinaryRow;
+import org.apache.fury.format.vectorized.ArrowUtils;
+import org.apache.fury.memory.BitUtils;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.DecimalUtils;
 
 /** Base class for writing row-format structures. */
 public abstract class BinaryWriter {

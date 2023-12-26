@@ -19,10 +19,10 @@
 
 package org.apache.fury.resolver;
 
+import java.nio.charset.StandardCharsets;
 import org.apache.fury.collection.LongMap;
 import org.apache.fury.collection.ObjectMap;
 import org.apache.fury.memory.MemoryBuffer;
-import java.nio.charset.StandardCharsets;
 
 /**
  * A resolver for limited string value writing. Currently, we only support classname dynamic

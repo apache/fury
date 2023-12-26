@@ -24,6 +24,10 @@ import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.reflect.TypeToken;
+import java.lang.reflect.Modifier;
+import java.util.SortedMap;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.CodecBuilder;
 import org.apache.fury.codegen.CodeGenerator;
@@ -48,10 +52,6 @@ import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
-import java.lang.reflect.Modifier;
-import java.util.SortedMap;
-import org.apache.arrow.vector.types.pojo.Field;
-import org.apache.arrow.vector.types.pojo.Schema;
 import org.slf4j.Logger;
 
 /**

@@ -19,6 +19,9 @@
 
 package org.apache.fury.serializer;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.IdentityObjectIntMap;
 import org.apache.fury.collection.LazyMap;
@@ -39,9 +42,6 @@ import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.Generics;
 import org.apache.fury.util.Preconditions;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public final class UnexistedClassSerializers {

@@ -22,6 +22,13 @@ package org.apache.fury.serializer;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
+import java.lang.invoke.MethodHandle;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.collection.Tuple3;
@@ -41,13 +48,6 @@ import org.apache.fury.util.Platform;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.record.RecordInfo;
 import org.apache.fury.util.record.RecordUtils;
-import java.lang.invoke.MethodHandle;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * A schema-consistent serializer used only for java serialization.

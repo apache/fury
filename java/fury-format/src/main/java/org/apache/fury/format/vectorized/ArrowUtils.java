@@ -19,10 +19,6 @@
 
 package org.apache.fury.format.vectorized;
 
-import org.apache.fury.io.FuryInputStream;
-import org.apache.fury.io.FuryOutputStream;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.DecimalUtils;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import org.apache.arrow.memory.ArrowBuf;
@@ -33,6 +29,10 @@ import org.apache.arrow.vector.ipc.WriteChannel;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.fury.io.FuryInputStream;
+import org.apache.fury.io.FuryOutputStream;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.DecimalUtils;
 
 /**
  * Arrow utils.

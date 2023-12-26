@@ -19,6 +19,8 @@
 
 package org.apache.fury.serializer.collection;
 
+import java.lang.invoke.MethodHandle;
+import java.util.Collection;
 import org.apache.fury.Fury;
 import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.memory.MemoryBuffer;
@@ -31,8 +33,6 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
-import java.lang.invoke.MethodHandle;
-import java.util.Collection;
 
 /**
  * Serializer for all collection like object. All collection serializer should extend this class.

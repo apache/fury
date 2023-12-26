@@ -19,8 +19,8 @@
 
 package org.apache.fury.util.unsafe;
 
-import org.apache.fury.util.Platform;
 import java.util.ArrayList;
+import org.apache.fury.util.Platform;
 
 /**
  * Unsafe collection utils.

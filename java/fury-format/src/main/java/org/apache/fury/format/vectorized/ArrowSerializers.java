@@ -19,16 +19,6 @@
 
 package org.apache.fury.format.vectorized;
 
-import org.apache.fury.Fury;
-import org.apache.fury.io.FuryReadableByteChannel;
-import org.apache.fury.io.FuryWritableByteChannel;
-import org.apache.fury.io.MockWritableByteChannel;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.serializer.BufferObject;
-import org.apache.fury.serializer.Serializers.CrossLanguageCompatibleSerializer;
-import org.apache.fury.type.Type;
-import org.apache.fury.util.Platform;
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -40,6 +30,16 @@ import org.apache.arrow.vector.ipc.WriteChannel;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.ipc.message.IpcOption;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
+import org.apache.fury.Fury;
+import org.apache.fury.io.FuryReadableByteChannel;
+import org.apache.fury.io.FuryWritableByteChannel;
+import org.apache.fury.io.MockWritableByteChannel;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.serializer.BufferObject;
+import org.apache.fury.serializer.Serializers.CrossLanguageCompatibleSerializer;
+import org.apache.fury.type.Type;
+import org.apache.fury.util.Platform;
 
 /**
  * Serializers for apache arrow.

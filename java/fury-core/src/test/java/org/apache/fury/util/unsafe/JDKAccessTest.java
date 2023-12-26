@@ -19,13 +19,13 @@
 
 package org.apache.fury.util.unsafe;
 
-import org.apache.fury.util.Platform;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import org.apache.fury.util.Platform;
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.Test;

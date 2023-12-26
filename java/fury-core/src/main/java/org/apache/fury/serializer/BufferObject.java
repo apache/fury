@@ -19,9 +19,9 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.memory.MemoryBuffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import org.apache.fury.memory.MemoryBuffer;
 
 /**
  * Fury serialized representation of an object. Note: This class is used for zero-copy out-of-band

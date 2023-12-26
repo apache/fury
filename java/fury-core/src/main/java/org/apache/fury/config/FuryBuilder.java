@@ -19,6 +19,8 @@
 
 package org.apache.fury.config;
 
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import org.apache.fury.Fury;
 import org.apache.fury.ThreadLocalFury;
 import org.apache.fury.ThreadSafeFury;
@@ -32,8 +34,6 @@ import org.apache.fury.serializer.collection.GuavaCollectionSerializers;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
 /**
@@ -161,8 +161,8 @@ public final class FuryBuilder {
    * the class meta data, if classloader can be updated, there may be class meta collision if
    * different classloaders have classes with same name.
    *
-   * <p>If you want to change classloader, please use {@link org.apache.fury.util.LoaderBinding} or {@link
-   * ThreadSafeFury} to setup mapping between classloaders and fury instances.
+   * <p>If you want to change classloader, please use {@link org.apache.fury.util.LoaderBinding} or
+   * {@link ThreadSafeFury} to setup mapping between classloaders and fury instances.
    */
   public FuryBuilder withClassLoader(ClassLoader classLoader) {
     this.classLoader = classLoader;
@@ -212,8 +212,8 @@ public final class FuryBuilder {
    * attack if the classes `constructor`/`equals`/`hashCode` method contain malicious code. Do not
    * disable class registration if you can't ensure your environment are *indeed secure*. We are not
    * responsible for security risks if you disable this option. If you disable this option, you can
-   * configure {@link org.apache.fury.resolver.ClassChecker} by {@link ClassResolver#setClassChecker} to
-   * control which classes are allowed being serialized.
+   * configure {@link org.apache.fury.resolver.ClassChecker} by {@link
+   * ClassResolver#setClassChecker} to control which classes are allowed being serialized.
    */
   public FuryBuilder requireClassRegistration(boolean requireClassRegistration) {
     this.requireClassRegistration = requireClassRegistration;

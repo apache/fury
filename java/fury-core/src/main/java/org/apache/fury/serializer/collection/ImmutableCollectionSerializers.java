@@ -19,10 +19,6 @@
 
 package org.apache.fury.serializer.collection;
 
-import org.apache.fury.Fury;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.Platform;
-import org.apache.fury.util.unsafe._JDKAccess;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
@@ -33,6 +29,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.unsafe._JDKAccess;
 
 /**
  * Serializers for jdk9+ java.util.ImmutableCollections.

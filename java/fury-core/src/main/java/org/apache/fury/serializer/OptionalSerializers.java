@@ -19,12 +19,12 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.Fury;
-import org.apache.fury.memory.MemoryBuffer;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
 
 /**
  * Serializers for {@link Optional}, {@link OptionalInt}, {@link OptionalLong} and {@link

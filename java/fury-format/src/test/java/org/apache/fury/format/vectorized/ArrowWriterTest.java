@@ -19,6 +19,8 @@
 
 package org.apache.fury.format.vectorized;
 
+import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.format.encoder.Encoders;
 import org.apache.fury.format.encoder.RowEncoder;
 import org.apache.fury.format.row.binary.BinaryRow;
@@ -26,8 +28,6 @@ import org.apache.fury.format.type.TypeInference;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.test.bean.BeanA;
-import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
-import org.apache.arrow.vector.types.pojo.Schema;
 import org.testng.annotations.Test;
 
 public class ArrowWriterTest {

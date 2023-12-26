@@ -19,14 +19,14 @@
 
 package org.apache.fury.io;
 
-import org.apache.fury.Fury;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.serializer.StringSerializer;
-import org.apache.fury.util.Preconditions;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.OutputStream;
+import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.StringSerializer;
+import org.apache.fury.util.Preconditions;
 
 /**
  * ObjectOutput based on {@link Fury} and {@link MemoryBuffer}.

@@ -27,6 +27,8 @@ import static org.apache.fury.format.type.DataTypes.PRIMITIVE_INT_ARRAY_FIELD;
 import static org.apache.fury.format.type.DataTypes.PRIMITIVE_LONG_ARRAY_FIELD;
 import static org.apache.fury.format.type.DataTypes.PRIMITIVE_SHORT_ARRAY_FIELD;
 
+import java.math.BigDecimal;
+import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.fury.format.row.ArrayData;
 import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.memory.BitUtils;
@@ -34,8 +36,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
-import java.math.BigDecimal;
-import org.apache.arrow.vector.types.pojo.Field;
 
 /**
  * Each array has four parts(8-byte aligned): [numElements][validity bits][values or

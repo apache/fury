@@ -21,17 +21,17 @@ package org.apache.fury.format.row.binary;
 
 import static org.apache.fury.util.DecimalUtils.DECIMAL_BYTE_LENGTH;
 
-import org.apache.fury.format.row.Getters;
-import org.apache.fury.format.row.Setters;
-import org.apache.fury.format.type.DataTypes;
-import org.apache.fury.format.vectorized.ArrowUtils;
-import org.apache.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.DecimalUtility;
+import org.apache.fury.format.row.Getters;
+import org.apache.fury.format.row.Setters;
+import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.format.vectorized.ArrowUtils;
+import org.apache.fury.memory.MemoryBuffer;
 
 /** Internal to binary row format to reuse code, don't use it in anywhere else. */
 abstract class UnsafeTrait implements Getters, Setters {

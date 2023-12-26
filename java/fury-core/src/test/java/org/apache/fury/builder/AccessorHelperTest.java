@@ -24,11 +24,6 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-import org.apache.fury.TestUtils;
-import org.apache.fury.builder.pkg.AccessLevelClass;
-import org.apache.fury.test.bean.Foo;
-import org.apache.fury.test.bean.Struct;
-import org.apache.fury.type.Descriptor;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +31,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Data;
+import org.apache.fury.TestUtils;
+import org.apache.fury.builder.pkg.AccessLevelClass;
+import org.apache.fury.test.bean.Foo;
+import org.apache.fury.test.bean.Struct;
+import org.apache.fury.type.Descriptor;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

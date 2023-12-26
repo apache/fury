@@ -19,9 +19,9 @@
 
 package org.apache.fury.serializer.collection;
 
+import java.util.Map;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
-import java.util.Map;
 
 /**
  * Base serializer for all java maps.

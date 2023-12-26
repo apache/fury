@@ -21,11 +21,11 @@ package org.apache.fury;
 
 import static org.testng.Assert.assertEquals;
 
-import org.apache.fury.config.FuryBuilder;
-import org.apache.fury.config.Language;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.config.Language;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 

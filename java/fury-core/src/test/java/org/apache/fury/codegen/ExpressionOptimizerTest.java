@@ -22,11 +22,11 @@ package org.apache.fury.codegen;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import org.apache.fury.codegen.Expression.Add;
 import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.codegen.Expression.Return;
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import org.testng.annotations.Test;
 
 public class ExpressionOptimizerTest {

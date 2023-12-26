@@ -23,9 +23,6 @@ import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeToken;
-import org.apache.fury.collection.Tuple2;
-import org.apache.fury.test.bean.BeanA;
-import org.apache.fury.test.bean.BeanB;
 import java.lang.reflect.Type;
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -38,6 +35,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.BeanB;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

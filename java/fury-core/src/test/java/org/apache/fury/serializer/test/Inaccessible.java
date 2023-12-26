@@ -19,16 +19,16 @@
 
 package org.apache.fury.serializer.test;
 
-import org.apache.fury.util.Preconditions;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import lombok.Data;
+import org.apache.fury.util.Preconditions;
 
 /**
- * Package-private class for testing {@link org.apache.fury.serializer.ExternalizableSerializer} when the
- * serialized class is inaccessible to the serializer.
+ * Package-private class for testing {@link org.apache.fury.serializer.ExternalizableSerializer}
+ * when the serialized class is inaccessible to the serializer.
  */
 @Data
 class Inaccessible implements Externalizable {

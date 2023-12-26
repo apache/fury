@@ -28,19 +28,6 @@ import static org.apache.fury.resolver.FieldResolver.FieldInfoEncodingType.SEPAR
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
-import org.apache.fury.Fury;
-import org.apache.fury.collection.Tuple2;
-import org.apache.fury.exception.ClassNotCompatibleException;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.serializer.PrimitiveSerializers;
-import org.apache.fury.serializer.collection.CollectionSerializer;
-import org.apache.fury.serializer.collection.MapSerializer;
-import org.apache.fury.type.Descriptor;
-import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.FieldAccessor;
-import org.apache.fury.util.MurmurHash3;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
@@ -57,6 +44,19 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import org.apache.fury.Fury;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.exception.ClassNotCompatibleException;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.PrimitiveSerializers;
+import org.apache.fury.serializer.collection.CollectionSerializer;
+import org.apache.fury.serializer.collection.MapSerializer;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.FieldAccessor;
+import org.apache.fury.util.MurmurHash3;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 
 /**
  * A class field resolver for class compatibility.

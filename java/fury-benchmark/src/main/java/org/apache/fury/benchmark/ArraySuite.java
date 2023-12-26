@@ -19,11 +19,11 @@
 
 package org.apache.fury.benchmark;
 
-import org.apache.fury.memory.MemoryBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import org.apache.fury.memory.MemoryBuffer;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;

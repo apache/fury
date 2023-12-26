@@ -24,11 +24,6 @@ import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.reflect.TypeToken;
-import org.apache.fury.collection.Tuple2;
-import org.apache.fury.type.Descriptor;
-import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.DecimalUtils;
-import org.apache.fury.util.Preconditions;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -43,6 +38,11 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.DecimalUtils;
+import org.apache.fury.util.Preconditions;
 
 /**
  * Arrow related type inference.

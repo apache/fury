@@ -19,13 +19,13 @@
 
 package org.apache.fury.io;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInput;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.util.Preconditions;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInput;
 
 /**
  * ObjectInput based on {@link Fury} and {@link MemoryBuffer}.

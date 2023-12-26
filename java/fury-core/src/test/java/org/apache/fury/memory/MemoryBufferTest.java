@@ -22,9 +22,9 @@ package org.apache.fury.memory;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-import org.apache.fury.util.Platform;
 import java.nio.ByteBuffer;
 import java.util.Random;
+import org.apache.fury.util.Platform;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

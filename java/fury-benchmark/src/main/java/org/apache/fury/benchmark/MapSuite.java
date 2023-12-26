@@ -19,14 +19,14 @@
 
 package org.apache.fury.benchmark;
 
-import org.apache.fury.collection.IdentityMap;
-import org.apache.fury.collection.IdentityObjectIntMap;
-import org.apache.fury.collection.ObjectMap;
 import io.timeandspace.smoothie.SwissTable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.stream.IntStream;
+import org.apache.fury.collection.IdentityMap;
+import org.apache.fury.collection.IdentityObjectIntMap;
+import org.apache.fury.collection.ObjectMap;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Param;

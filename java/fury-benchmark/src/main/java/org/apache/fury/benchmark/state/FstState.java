@@ -19,6 +19,8 @@
 
 package org.apache.fury.benchmark.state;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import org.apache.fury.benchmark.IntsSerializationSuite;
 import org.apache.fury.benchmark.LongStringSerializationSuite;
 import org.apache.fury.benchmark.LongsSerializationSuite;
@@ -29,8 +31,6 @@ import org.apache.fury.benchmark.data.Media;
 import org.apache.fury.benchmark.data.MediaContent;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import org.nustaq.serialization.FSTConfiguration;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;

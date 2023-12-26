@@ -19,12 +19,12 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.Fury;
-import org.apache.fury.collection.Tuple3;
-import org.apache.fury.memory.MemoryBuffer;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import org.apache.fury.Fury;
+import org.apache.fury.collection.Tuple3;
+import org.apache.fury.memory.MemoryBuffer;
 
 /**
  * Local serializer for {@link Locale}.

@@ -19,14 +19,14 @@
 
 package org.apache.fury.benchmark.data;
 
-import org.apache.fury.util.ClassLoaderUtils;
-import org.apache.fury.util.Preconditions;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.Objects;
 import java.util.Random;
+import org.apache.fury.util.ClassLoaderUtils;
+import org.apache.fury.util.Preconditions;
 import org.codehaus.janino.SimpleCompiler;
 
 public class Struct implements Serializable {

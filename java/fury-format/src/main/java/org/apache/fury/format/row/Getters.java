@@ -19,9 +19,9 @@
 
 package org.apache.fury.format.row;
 
-import org.apache.fury.memory.MemoryBuffer;
 import java.math.BigDecimal;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.fury.memory.MemoryBuffer;
 
 /**
  * Getter methods for row format. {@link #isNullAt(int)} must be checked before attempting to

@@ -19,6 +19,11 @@
 
 package org.apache.fury.benchmark.state;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import org.apache.fury.benchmark.IntsSerializationSuite;
 import org.apache.fury.benchmark.LongStringSerializationSuite;
 import org.apache.fury.benchmark.LongsSerializationSuite;
@@ -29,11 +34,6 @@ import org.apache.fury.benchmark.data.Sample;
 import org.apache.fury.benchmark.data.Struct;
 import org.apache.fury.io.ClassLoaderObjectInputStream;
 import org.apache.fury.util.Preconditions;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;

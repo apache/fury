@@ -20,15 +20,15 @@ package org.apache.fury.memory;
 
 import static org.apache.fury.util.Preconditions.checkArgument;
 
-import org.apache.fury.annotation.CodegenInvoke;
-import org.apache.fury.util.Platform;
-import org.apache.fury.util.Preconditions;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
 import java.util.Arrays;
+import org.apache.fury.annotation.CodegenInvoke;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
 
 /**
  * A class for operations on memory managed by Fury. The buffer may be backed by heap memory (byte

@@ -22,9 +22,6 @@ package org.apache.fury.codegen;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import org.apache.fury.codegen.Expression.Reference;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.function.SerializableSupplier;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -32,6 +29,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.fury.codegen.Expression.Reference;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.function.SerializableSupplier;
 
 /**
  * Optimizer to generate expression logic in a new method and return an {@link

@@ -26,13 +26,6 @@ import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
-import org.apache.fury.Fury;
-import org.apache.fury.FuryTestBase;
-import org.apache.fury.collection.MapEntry;
-import org.apache.fury.config.Language;
-import org.apache.fury.serializer.collection.CollectionSerializersTest.TestEnum;
-import org.apache.fury.test.bean.MapFields;
-import org.apache.fury.type.GenericType;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -51,6 +44,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.collection.MapEntry;
+import org.apache.fury.config.Language;
+import org.apache.fury.serializer.collection.CollectionSerializersTest.TestEnum;
+import org.apache.fury.test.bean.MapFields;
+import org.apache.fury.type.GenericType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

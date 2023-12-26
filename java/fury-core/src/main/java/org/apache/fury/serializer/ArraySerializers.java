@@ -19,6 +19,9 @@
 
 package org.apache.fury.serializer;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
+import java.util.IdentityHashMap;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.ClassInfo;
@@ -32,9 +35,6 @@ import org.apache.fury.type.Type;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
-import java.lang.reflect.Array;
-import java.lang.reflect.Modifier;
-import java.util.IdentityHashMap;
 
 /**
  * Serializers for array types.

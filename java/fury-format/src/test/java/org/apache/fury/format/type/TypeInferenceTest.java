@@ -22,12 +22,12 @@ package org.apache.fury.format.type;
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.base.CaseFormat;
-import org.apache.fury.test.bean.BeanA;
-import org.apache.fury.type.Descriptor;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.type.Descriptor;
 import org.testng.annotations.Test;
 
 public class TypeInferenceTest {

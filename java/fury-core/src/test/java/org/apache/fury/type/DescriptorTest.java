@@ -20,8 +20,6 @@
 package org.apache.fury.type;
 
 import com.google.common.reflect.TypeToken;
-import org.apache.fury.codegen.CodeGenerator;
-import org.apache.fury.test.bean.BeanA;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.lang.reflect.Field;
@@ -29,6 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.stream.Collectors;
+import org.apache.fury.codegen.CodeGenerator;
+import org.apache.fury.test.bean.BeanA;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

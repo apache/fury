@@ -21,14 +21,14 @@ package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
 
-import org.apache.fury.Fury;
-import org.apache.fury.FuryTestBase;
-import org.apache.fury.config.Language;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.function.Function;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.Language;
 import org.testng.annotations.Test;
 
 @SuppressWarnings({"unchecked", "rawtypes"})

@@ -19,8 +19,8 @@
 
 package org.apache.fury.format.encoder;
 
-import org.apache.fury.format.row.binary.BinaryArray;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.fury.format.row.binary.BinaryArray;
 
 /**
  * Encoder to encode/decode object in the list container by toArray/fromArray row.

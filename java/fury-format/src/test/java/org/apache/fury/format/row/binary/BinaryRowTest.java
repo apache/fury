@@ -19,6 +19,11 @@
 
 package org.apache.fury.format.row.binary;
 
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
 import org.apache.fury.format.type.DataTypes;
@@ -26,11 +31,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
-import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
-import org.apache.arrow.vector.types.pojo.Field;
-import org.apache.arrow.vector.types.pojo.Schema;
 import org.slf4j.Logger;
 import org.testng.annotations.Test;
 

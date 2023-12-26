@@ -19,11 +19,11 @@
 
 package org.apache.fury.serializer;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.Type;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 /**
  * Serializers for buffer related classes.

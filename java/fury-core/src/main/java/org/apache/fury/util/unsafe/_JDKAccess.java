@@ -19,15 +19,6 @@
 
 package org.apache.fury.util.unsafe;
 
-import org.apache.fury.collection.Tuple2;
-import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.Utils;
-import org.apache.fury.util.function.ToByteFunction;
-import org.apache.fury.util.function.ToCharFunction;
-import org.apache.fury.util.function.ToFloatFunction;
-import org.apache.fury.util.function.ToShortFunction;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
@@ -45,6 +36,15 @@ import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.GraalvmSupport;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.Utils;
+import org.apache.fury.util.function.ToByteFunction;
+import org.apache.fury.util.function.ToCharFunction;
+import org.apache.fury.util.function.ToFloatFunction;
+import org.apache.fury.util.function.ToShortFunction;
 import sun.misc.Unsafe;
 
 /**

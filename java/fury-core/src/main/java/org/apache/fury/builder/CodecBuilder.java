@@ -35,6 +35,14 @@ import static org.apache.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
+import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Supplier;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CodegenContext;
 import org.apache.fury.codegen.Expression;
@@ -59,14 +67,6 @@ import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 import org.apache.fury.util.record.RecordComponent;
 import org.apache.fury.util.record.RecordUtils;
-import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Supplier;
 import sun.misc.Unsafe;
 
 /**

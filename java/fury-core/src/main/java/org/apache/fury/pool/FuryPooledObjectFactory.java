@@ -21,11 +21,11 @@ package org.apache.fury.pool;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.util.LoaderBinding;
 import org.apache.fury.util.LoggerFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import org.slf4j.Logger;
 
 /**

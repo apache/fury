@@ -19,11 +19,6 @@
 
 package org.apache.fury.resolver;
 
-import org.apache.fury.Fury;
-import org.apache.fury.exception.InsecureException;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.serializer.Serializer;
-import org.apache.fury.util.LoggerFactory;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -31,6 +26,11 @@ import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.annotation.concurrent.ThreadSafe;
+import org.apache.fury.Fury;
+import org.apache.fury.exception.InsecureException;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.LoggerFactory;
 import org.slf4j.Logger;
 
 /**

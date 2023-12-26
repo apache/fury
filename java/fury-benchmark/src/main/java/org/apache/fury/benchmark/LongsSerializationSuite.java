@@ -19,13 +19,13 @@
 
 package org.apache.fury.benchmark;
 
+import java.io.ByteArrayOutputStream;
 import org.apache.fury.benchmark.state.FstState;
 import org.apache.fury.benchmark.state.FuryState;
 import org.apache.fury.benchmark.state.HessionState;
 import org.apache.fury.benchmark.state.JDKState;
 import org.apache.fury.benchmark.state.KryoState;
 import org.apache.fury.benchmark.state.ProtostuffState;
-import java.io.ByteArrayOutputStream;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;

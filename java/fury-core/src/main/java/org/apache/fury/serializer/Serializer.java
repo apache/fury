@@ -19,11 +19,11 @@
 
 package org.apache.fury.serializer;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.TypeUtils;
-import javax.annotation.concurrent.NotThreadSafe;
 
 /**
  * Serialize/deserializer objects into binary. Note that this class is designed as an abstract class

@@ -19,14 +19,14 @@
 
 package org.apache.fury.test;
 
-import org.apache.fury.Fury;
-import org.apache.fury.config.Language;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

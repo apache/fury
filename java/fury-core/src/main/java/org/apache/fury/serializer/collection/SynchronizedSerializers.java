@@ -19,13 +19,6 @@
 
 package org.apache.fury.serializer.collection;
 
-import org.apache.fury.Fury;
-import org.apache.fury.collection.Tuple2;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.serializer.Serializer;
-import org.apache.fury.util.LoggerFactory;
-import org.apache.fury.util.Platform;
-import org.apache.fury.util.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,6 +34,13 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
+import org.apache.fury.Fury;
+import org.apache.fury.collection.Tuple2;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Utils;
 import org.slf4j.Logger;
 
 /** Serializer for synchronized Collections and Maps created via Collections. */

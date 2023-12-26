@@ -21,7 +21,6 @@ package org.apache.fury.type;
 
 import static org.apache.fury.type.TypeUtils.getSizeOfPrimitiveType;
 
-import org.apache.fury.util.record.RecordUtils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.function.Function;
+import org.apache.fury.util.record.RecordUtils;
 
 /**
  * A utility class to group class fields into groups.

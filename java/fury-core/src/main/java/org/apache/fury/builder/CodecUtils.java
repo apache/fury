@@ -20,6 +20,7 @@
 package org.apache.fury.builder;
 
 import com.google.common.reflect.TypeToken;
+import java.util.Collections;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CompileUnit;
@@ -27,7 +28,6 @@ import org.apache.fury.resolver.FieldResolver;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.ClassDef;
 import org.apache.fury.util.Preconditions;
-import java.util.Collections;
 
 /**
  * Codec util to create and load jit serializer class.
@@ -36,7 +36,8 @@ import java.util.Collections;
  */
 public class CodecUtils {
 
-  // TODO(chaokunyang) how to uninstall org.apache.fury.codegen/builder classes for graalvm build time
+  // TODO(chaokunyang) how to uninstall org.apache.fury.codegen/builder classes for graalvm build
+  // time
   //  maybe use a temporal URLClassLoader
   public static <T> Class<? extends Serializer<T>> loadOrGenObjectCodecClass(
       Class<T> cls, Fury fury) {

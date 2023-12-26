@@ -17,12 +17,12 @@
 
 package org.apache.fury.util;
 
-import org.apache.fury.util.unsafe._JDKAccess;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import org.apache.fury.util.unsafe._JDKAccess;
 import sun.misc.Unsafe;
 
 // Derived from
