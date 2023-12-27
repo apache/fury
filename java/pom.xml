@@ -31,12 +31,14 @@
   <name>Fury Project Parent POM</name>
   <description>A blazing fast multi-language serialization framework powered by jit and zero-copy.</description>
   <url>https://github.com/apache/incubator-fury</url>
+
   <licenses>
     <license>
       <name>The Apache License, Version 2.0</name>
       <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
+
   <scm>
     <url>https://github.com/apache/incubator-fury</url>
     <connection>git@github.com:apache/incubator-fury.git</connection>
@@ -46,22 +48,7 @@
     <developer>
       <organizationUrl>https://fury.apache.org</organizationUrl>
     </developer>
-    <developer>
-      <name>chaokunyang</name>
-      <email>shawn.ck.yang@gmail.com</email>
-      <url>https://github.com/chaokunyang</url>
-    </developer>
   </developers>
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
 
   <modules>
     <module>fury-format</module>

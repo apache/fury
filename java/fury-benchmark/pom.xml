@@ -49,19 +49,6 @@
     <fury.java.rootdir>${basedir}/..</fury.java.rootdir>
   </properties>
 
-  <repositories>
-    <repository>
-      <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-
   <dependencies>
     <dependency>
       <groupId>org.openjdk.jmh</groupId>
@@ -265,5 +252,4 @@
       </plugin>
     </plugins>
   </build>
-
 </project>
