@@ -186,11 +186,10 @@ format_java() {
       mvn -T10 --no-transfer-progress spotless:apply
       mvn -T10 --no-transfer-progress checkstyle:check
       cd "$ROOT/integration_tests"
-      for d in * ; do
-        echo "================= $d"
+      dirs=("graalvm_tests" "jdk_compatibility_tests" "latest_jdk_tests" "perftests")
+      for d in "${dirs[@]}" ; do
         if [[ -d $d ]]; then
           pushd "$d"
-
             mvn -T10 --no-transfer-progress spotless:apply
           popd
         fi

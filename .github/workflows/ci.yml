@@ -202,6 +202,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: 21
+          distribution: 'oracle'
       - name: Check License Header
         uses: korandoru/hawkeye@v3
       - name: Set up Python 3.8
