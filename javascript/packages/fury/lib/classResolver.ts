@@ -102,7 +102,7 @@ export default class SerializerResolver {
     const tagBuffer = fromString(tag);
     const bufferLen = tagBuffer.byteLength;
 
-    const writer = BinaryWriter({})
+    const writer = BinaryWriter({});
 
     let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
     if (tagHash === BigInt(0)) {
@@ -114,14 +114,14 @@ export default class SerializerResolver {
     writer.int16(bufferLen);
     writer.bufferWithoutMemCheck(tagBuffer, bufferLen);
 
-    const fullBuffer = writer.dump()
+    const fullBuffer = writer.dump();
 
     return {
       write: (binaryWriter: TBinaryWriter) => {
         const tagIndex = this.writeStringIndex[idx];
         if (tagIndex > -1) {
           // equivalent of: `uint8(USESTRINGID); int16(tagIndex)`
-          binaryWriter.int24((tagIndex << 8) | USESTRINGID)
+          binaryWriter.int24((tagIndex << 8) | USESTRINGID);
           return;
         }
 
