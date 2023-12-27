@@ -59,10 +59,21 @@
   <modules>
     <module>fury-format</module>
     <module>fury-core</module>
-    <module>fury-test-core</module>
-    <module>fury-testsuite</module>
-    <module>fury-benchmark</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>develop</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>fury-test-core</module>
+        <module>fury-testsuite</module>
+        <module>fury-benchmark</module>
+      </modules>
+    </profile>
+  </profiles>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
@@ -254,35 +265,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>release</id>
-      <activation>
-        <property>
-          <name>release</name>
-          <value>true</value>
-        </property>
-      </activation>
-      <properties>
-        <output.directory>${basedir}</output.directory>
-      </properties>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>
