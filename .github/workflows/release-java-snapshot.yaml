@@ -39,7 +39,7 @@ jobs:
           server-username: NEXUS_USERNAME
           server-password: NEXUS_PASSWORD
       - name: Publish Fury Java Snapshot
-        run: cd java && mvn --batch-mode -q deploy -Dgpg.skip -DskipTests -Papache-release,!develop
+        run: cd java && mvn --batch-mode -q deploy -Dgpg.skip -DskipTests -Papache-release
         env:
           NEXUS_USERNAME: ${{ secrets.NEXUS_USER }}
           NEXUS_PASSWORD: ${{ secrets.NEXUS_PW }}
