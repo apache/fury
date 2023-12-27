@@ -100,6 +100,12 @@ export default class SerializerResolver {
     const idx = this.writeStringIndex.length - 1;
     const tagBuffer = fromString(tag);
     const bufferLen = tagBuffer.byteLength;
+
+    let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
+    if (tagHash === BigInt(0)) {
+      tagHash = BigInt(1);
+    }
+
     return {
       write: (binaryWriter: BinaryWriter) => {
         const tagIndex = this.writeStringIndex[idx];
@@ -107,11 +113,6 @@ export default class SerializerResolver {
           binaryWriter.uint8(USESTRINGID);
           binaryWriter.int16(tagIndex);
           return;
-        }
-
-        let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
-        if (tagHash === BigInt(0)) {
-          tagHash = BigInt(1);
         }
 
         this.writeStringIndex[idx] = this.writeStringCount++;
