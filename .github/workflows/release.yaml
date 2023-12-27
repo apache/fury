@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Publish Fury 📦
+name: Publish Fury
 
 on:
   push:
@@ -24,7 +24,7 @@ on:
 
 jobs:
   release-python:
-    name: Publish Python 📦 to PyPI
+    name: Publish Fury Python to PyPI
     runs-on: ubuntu-20.04
     environment:
       name: pypi
@@ -58,7 +58,7 @@ jobs:
           echo "Build pyfury"
           python setup.py bdist_wheel --dist-dir=../dist
           ../ci/deploy.sh rename_linux_wheels $PWD/../dist
-      - name: Publish wheel 📦 to PyPI
+      - name: Publish wheel to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
