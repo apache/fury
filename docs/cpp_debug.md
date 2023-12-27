@@ -1,4 +1,5 @@
-# C++ Debugging
+# Debugging C++
+
 Debug C++ is tricky and binary protocol bug is hard to locate without debugging support, but setup 
 debugging support for bazel project is not easy.
 
@@ -11,12 +12,12 @@ java/python debugging.
 <img src="images/vscode_debug_fury.jpg" alt="Fury Debugging Example" width="50%" height="50%" />
 
 ## Notes
+
 - For Macos: Install `CodeLLDB` vscode plugin
 - For Linux: 
   - install gdb for fedora/centos by `sudo yum install -y gdb`
   - install gdb for fedora/centos by `sudo apt-get install gdb`
 - If debugging doesn't work, please select correct debug/run options: 
-<img src="images/vscode_select_debug_run.png" alt="select correct debug/run options" width="50%" height="50%" />
+  <img src="images/vscode_select_debug_run.png" alt="select correct debug/run options" width="50%" height="50%" />
 - Debug will jump to source files in bazel generated directory, we need to return raw files in source tree 
 for debugging again: <img src="images/jmp_generate_file.png" alt="jump to generated files" width="50%" height="50%" />
-

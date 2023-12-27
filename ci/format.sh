@@ -179,6 +179,24 @@ format_all_scripts() {
     fi
 }
 
+format_java() {
+    if command -v mvn >/dev/null ; then
+      echo "Maven installed"
+      cd "$ROOT/java"
+      mvn -T10 --no-transfer-progress spotless:apply
+      mvn -T10 --no-transfer-progress checkstyle:check
+      cd "$ROOT/integration_tests"
+      dirs=("graalvm_tests" "jdk_compatibility_tests" "latest_jdk_tests" "perftests")
+      for d in "${dirs[@]}" ; do
+        pushd "$d"
+          mvn -T10 --no-transfer-progress spotless:apply
+        popd
+      done
+    else
+      echo "Maven not installed, skip java check"
+    fi
+}
+
 # Format all files, and print the diff to stdout for travis.
 format_all() {
     format_all_scripts "${@}"
@@ -190,14 +208,7 @@ format_all() {
 
     echo "$(date)" "format java...."
     if command -v java >/dev/null; then
-      if command -v mvn >/dev/null ; then
-        echo "Maven installed"
-        cd "$ROOT/java"
-        mvn -T10 --no-transfer-progress spotless:apply
-        mvn -T10 --no-transfer-progress checkstyle:check
-      else
-        echo "Maven not installed, skip java check"
-      fi
+      format_java
     fi
 
     echo "$(date)" "format javascript...."
@@ -251,14 +262,7 @@ format_changed() {
 
     if command -v java >/dev/null; then
        if ! git diff --diff-filter=ACRM --quiet --exit-code "$MERGEBASE" -- '*.java' &>/dev/null; then
-          if command -v mvn >/dev/null ; then
-            echo "Maven installed"
-            cd "$ROOT/java"
-            mvn -T10 --no-transfer-progress spotless:apply
-            mvn -T10 --no-transfer-progress checkstyle:check
-          else
-            echo "Maven not installed, skip java check"
-          fi
+         format_java
        fi
     fi
 
@@ -293,10 +297,12 @@ elif [ "${1-}" == '--all-scripts' ]; then
 elif [ "${1-}" == '--all' ]; then
     format_all "${@}"
     if [ -n "${FORMAT_SH_PRINT_DIFF-}" ]; then git --no-pager diff; fi
+elif [ "${1-}" == '--java' ]; then
+    format_java
 else
     # Add the origin remote if it doesn't exist
     if ! git remote -v | grep -q origin; then
-        git remote add 'origin' 'https://github.com/alipay/fury.git'
+        git remote add 'origin' 'https://github.com/apache/incubator-fury.git'
     fi
 
     # use unshallow fetch for `git merge-base origin/main HEAD` to work.

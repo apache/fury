@@ -1,17 +1,20 @@
 /*
- * Copyright 2023 The Fury Authors
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 import { InternalSerializerType, MaxInt32, RefFlags, Fury } from "./type";
@@ -21,6 +24,7 @@ import setSerializer from "./internalSerializer/set";
 import { arraySerializer } from "./internalSerializer/array";
 import { tupleSerializer } from "./internalSerializer/tuple";
 import { ArrayTypeDescription, Cast, MapTypeDescription, ObjectTypeDescription, SetTypeDescription, TupleTypeDescription, TypeDescription } from "./description";
+import { fromString } from "./platformBuffer";
 
 function computeFieldHash(hash: number, id: number): number {
   let newHash = (hash) * 31 + (id);
@@ -31,7 +35,7 @@ function computeFieldHash(hash: number, id: number): number {
 }
 
 const computeStringHash = (str: string) => {
-  const bytes = new TextEncoder().encode(str);
+  const bytes = fromString(str);
   let hash = 17;
   bytes.forEach((b) => {
     hash = hash * 31 + b;
@@ -166,36 +170,35 @@ export const generateInlineCode = (fury: Fury, description: TypeDescription) => 
   return new Function(
         `
 return function (fury, scope) {
-    const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
-    const { writeNullOrRef, pushReadObject } = referenceResolver;
-    const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
-    ${declarations.join("")}
-    const tagBuffer = classResolver.tagToBuffer("${validTag}");
-    const bufferLen = tagBuffer.byteLength;
+  const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
+  const { writeNullOrRef, pushReadObject } = referenceResolver;
+  const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
+  ${declarations.join("")}
+  const tagWriter = classResolver.createTagWriter("${validTag}");
 
-    const reserves = ${names.map(x => `${x}.config().reserve`).join(" + ")};
-    return {
-        ...referenceResolver.deref(() => {
-            const hash = binaryReader.int32();
-            if (hash !== ${expectHash}) {
-                throw new Error("validate hash failed: ${validTag}. expect ${expectHash}, but got" + hash);
-            }
-            {
-                ${read}
-            }
-        }),
-        write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_TYPE_TAG, (v) => {
-            classResolver.writeTag(binaryWriter, "${validTag}", tagBuffer, bufferLen);
-            binaryWriter.int32(${expectHash});
-            binaryWriter.reserve(reserves);
-            ${write}
-        }),
-        config() {
-            return {
-                reserve: bufferLen + 8,
-            }
-        }
+  const reserves = ${names.map(x => `${x}.config().reserve`).join(" + ")};
+  return {
+    ...referenceResolver.deref(() => {
+      const hash = binaryReader.int32();
+      if (hash !== ${expectHash}) {
+          throw new Error("validate hash failed: ${validTag}. expect ${expectHash}, but got" + hash);
+      }
+      {
+          ${read}
+      }
+    }),
+    write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_TYPE_TAG, (v) => {
+      tagWriter.write(binaryWriter);
+      binaryWriter.int32(${expectHash});
+      binaryWriter.reserve(reserves);
+      ${write}
+    }),
+    config() {
+      return {
+        reserve: tagWriter.bufferLen + 8,
+      }
     }
+  }
 }
 `
   );

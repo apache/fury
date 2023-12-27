@@ -1,47 +1,50 @@
-# Copyright 2023 The Fury Authors
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+#   http://www.apache.org/licenses/LICENSE-2.0
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 
-headerPath = "Apache-2.0.txt"
+headerPath = "Apache-2.0-ASF.txt"
 
 excludes = [
     "*.txt",
 
     # Generated
-    "integration_tests/perftests/src/main/java/io/fury/integration_tests/state/generated/**",
+    "integration_tests/perftests/src/main/java/org/apache/fury/integration_tests/state/generated/**",
     
     # Derived
     "ci/format.sh",
-    "java/fury-benchmark/src/main/java/io/fury/benchmark/Identity2IdMap.java",
-    "java/fury-benchmark/src/main/java/io/fury/benchmark/data/Data.java",
-    "java/fury-benchmark/src/main/java/io/fury/benchmark/data/Image.java",
-    "java/fury-benchmark/src/main/java/io/fury/benchmark/data/Media.java",
-    "java/fury-benchmark/src/main/java/io/fury/benchmark/data/MediaContent.java",
-    "java/fury-benchmark/src/main/java/io/fury/benchmark/data/Sample.java",
-    "java/fury-benchmark/src/main/java/io/fury/benchmark/state/BufferType.java",
-    "java/fury-benchmark/src/main/java/io/fury/benchmark/state/KryoState.java",
-    "java/fury-core/src/main/java/io/fury/codegen/Code.java",
-    "java/fury-core/src/main/java/io/fury/collection/FuryObjectMap.java",
-    "java/fury-core/src/main/java/io/fury/collection/IdentityMap.java",
-    "java/fury-core/src/main/java/io/fury/collection/IdentityObjectIntMap.java",
-    "java/fury-core/src/main/java/io/fury/collection/LongMap.java",
-    "java/fury-core/src/main/java/io/fury/collection/ObjectIntMap.java",
-    "java/fury-core/src/main/java/io/fury/io/ClassLoaderObjectInputStream.java",
-    "java/fury-core/src/main/java/io/fury/memory/MemoryBuffer.java",
-    "java/fury-core/src/main/java/io/fury/type/Generics.java",
-    "java/fury-core/src/main/java/io/fury/util/Platform.java",
-    "java/fury-core/src/test/java/io/fury/type/GenericsTest.java",
-    "java/fury-format/src/main/java/io/fury/format/vectorized/ArrowWriter.java",
+    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/Identity2IdMap.java",
+    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Data.java",
+    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Image.java",
+    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Media.java",
+    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/MediaContent.java",
+    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Sample.java",
+    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/BufferType.java",
+    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/KryoState.java",
+    "java/fury-core/src/main/java/org/apache/fury/codegen/Code.java",
+    "java/fury-core/src/main/java/org/apache/fury/collection/FuryObjectMap.java",
+    "java/fury-core/src/main/java/org/apache/fury/collection/IdentityMap.java",
+    "java/fury-core/src/main/java/org/apache/fury/collection/IdentityObjectIntMap.java",
+    "java/fury-core/src/main/java/org/apache/fury/collection/LongMap.java",
+    "java/fury-core/src/main/java/org/apache/fury/collection/ObjectIntMap.java",
+    "java/fury-core/src/main/java/org/apache/fury/io/ClassLoaderObjectInputStream.java",
+    "java/fury-core/src/main/java/org/apache/fury/memory/MemoryBuffer.java",
+    "java/fury-core/src/main/java/org/apache/fury/type/Generics.java",
+    "java/fury-core/src/main/java/org/apache/fury/util/Platform.java",
+    "java/fury-core/src/test/java/org/apache/fury/type/GenericsTest.java",
+    "java/fury-format/src/main/java/org/apache/fury/format/vectorized/ArrowWriter.java",
     "javascript/packages/hps/src/v8-fast-api-calls.h",
     "javascript/packages/fury/lib/murmurHash3.ts",
     "src/fury/thirdparty/MurmurHash3.*",
@@ -51,7 +54,3 @@ excludes = [
 [mapping.DOUBLESLASH_STYLE]
 extensions = ['go']
 filenames = ['go.mod']
-
-[properties]
-inceptionYear = 2023
-copyrightOwner = "The Fury Authors"

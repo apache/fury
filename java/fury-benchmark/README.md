@@ -1,4 +1,5 @@
 # Fury Java Benchmark
+
 Fury Java Benchmark contains benchmarks for:
 - Fury
 - JDK
@@ -13,7 +14,7 @@ Fury Java Benchmark contains benchmarks for:
 
 # How to run
 
-```
+```bash
 # Install fury
 cd ../java && mvn install -DskipTests && cd -
 
@@ -32,7 +33,7 @@ cd .. && mvn -T10 install -DskipTests -Dcheckstyle.skip -Dlicense.skip -Dmaven.j
 mvn exec:java -Dexec.args="-f 3 -wi 5 -i 15 -t 1 -w 2s -r 2s -rf csv"
 ```
 
-See org.openjdk.jmh.runner.options.CommandLineOptions for more information about jmh options:
+See `org.openjdk.jmh.runner.options.CommandLineOptions` for more information about jmh options:
 
 ```
 -f fork
@@ -47,7 +48,9 @@ See org.openjdk.jmh.runner.options.CommandLineOptions for more information about
 Save benchmark data to specified dir, then run `tool.py` to plot graphs.
 
 # Plotting
+
 Fury uses pandas to process the jmh data, and uses matplotlib for plotting.
+
 ```bash
 pip install pandas matplotlib
 python analyze.py
@@ -57,7 +60,7 @@ python analyze.py
 
 Using `async-profiler` to generate flame graph.
 
-```
+```bash
 export pic=s1.html
 nohup java -jar target/benchmarks.jar 'io.*Fury.*deserialize*' -f 1 -wi 1 -i 1 -t 1 -w 1s -r 35s -rf csv &
 profiler.sh  -d 30 -f $pic `jps | grep ForkedMain | awk '{print $1}'`
@@ -65,21 +68,15 @@ profiler.sh  -d 30 -f $pic `jps | grep ForkedMain | awk '{print $1}'`
 
 # JIT optimization
 
-1. Use `-XX:+PrintCompilation -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining` to inspect jit:
-   java -XX:+PrintCompilation -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining -jar target/benchmarks.jar io.*Fury.*
-   UserTypeBenchmark.serialize -f 0 -wi 1 -i 1 -t 1 -w 1s -r 35s -rf csv > compile.log
+1. Use `-XX:+PrintCompilation -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining` to inspect JIT:
+   `java -XX:+PrintCompilation -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining -jar target/benchmarks.jar org.apache.fury.*Fury.* UserTypeBenchmark.serialize -f 0 -wi 1 -i 1 -t 1 -w 1s -r 35s -rf csv > compile.log`
 2. Determine what the flags are set to on current platform:
-
-* Use `java ${other_options} -XX:+PrintFlagsFinal -version`, should include all other options on the command line
-  because some options affect others, particularly when setting GC-related flags.
-* `jcmd $pid VM.flags -all`
-  -XX:FreqInlineSize= flag specifies the maximum number of bytecode instructions to inline for a method.
-  The default value depends on the platform – for 64-bit Linux, it's 325.
-
+   * Use `java ${other_options} -XX:+PrintFlagsFinal -version`, should include all other options on the command line because some options affect others, particularly when setting GC-related flags.
+   * `jcmd $pid VM.flags -all` -XX:FreqInlineSize= flag specifies the maximum number of bytecode instructions to inline for a method. The default value depends on the platform – for 64-bit Linux, it's 325.
 3. `hot method too big` need to be optimized.
 4. See:
-   4.1 https://wiki.openjdk.java.net/display/HotSpot/Server+Compiler+Inlining+Messages
-   4.2 https://techblug.wordpress.com/2013/08/19/java-jit-compiler-inlining/
+   * https://wiki.openjdk.java.net/display/HotSpot/Server+Compiler+Inlining+Messages
+   * https://techblug.wordpress.com/2013/08/19/java-jit-compiler-inlining/
 5. escape analysis
 6. -server -XX:+TieredCompilation: In Java 8, when the server compiler is enabled, tiered compilation
    is also enabled by default. 64-bit java8 use server compiler by default(use java -version to check).

@@ -1,17 +1,20 @@
 /*
- * Copyright 2023 The Fury Authors
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 import { isNodeEnv } from "./util";
@@ -132,3 +135,15 @@ export const fromUint8Array = isNodeEnv
 export const alloc = (isNodeEnv ? Buffer.allocUnsafe : BrowserBuffer.alloc) as unknown as (size: number) => PlatformBuffer;
 
 export const strByteLength = isNodeEnv ? Buffer.byteLength : BrowserBuffer.byteLength;
+
+let utf8Encoder: TextEncoder | null;
+
+export const fromString
+= isNodeEnv
+  ? (str: string) => Buffer.from(str) as unknown as PlatformBuffer
+  : (str: string) => {
+      if (!utf8Encoder) {
+        utf8Encoder = new TextEncoder();
+      }
+      return new BrowserBuffer(utf8Encoder.encode(str));
+    };

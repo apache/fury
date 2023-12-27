@@ -1,17 +1,20 @@
 /*
- * Copyright 2023 The Fury Authors
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 #pragma once
@@ -19,6 +22,7 @@
 #include "fury/meta/field_info.h"
 #include "fury/meta/type_traits.h"
 #include "fury/row/writer.h"
+#include <memory>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -67,8 +71,11 @@ template <typename T>
 inline constexpr bool IsString =
     meta::IsOneOf<T, std::string, std::string_view>::value;
 
+template <typename T> inline constexpr bool IsMap = meta::IsPairIterable<T>;
+
 template <typename T>
-inline constexpr bool IsArray = meta::IsIterable<T> && !IsString<T>;
+inline constexpr bool IsArray =
+    meta::IsIterable<T> && !IsString<T> && !IsMap<T>;
 
 template <typename> inline constexpr bool IsOptional = false;
 
@@ -76,7 +83,8 @@ template <typename T> inline constexpr bool IsOptional<std::optional<T>> = true;
 
 template <typename T>
 inline constexpr bool IsClassButNotBuiltin =
-    std::is_class_v<T> && !(IsString<T> || IsArray<T> || IsOptional<T>);
+    std::is_class_v<T> &&
+    !(IsString<T> || IsArray<T> || IsOptional<T> || IsMap<T>);
 
 inline decltype(auto) GetChildType(RowWriter &writer, int index) {
   return writer.schema()->field(index)->type();
@@ -260,6 +268,74 @@ struct RowEncodeTrait<T,
 
     std::forward<V>(visitor).template Visit<std::remove_cv_t<T>>(
         std::move(inner_writer));
+  }
+};
+
+template <typename T>
+struct RowEncodeTrait<T,
+                      std::enable_if_t<details::IsMap<std::remove_cv_t<T>>>> {
+  static auto Type() {
+    return arrow::map(
+        RowEncodeTrait<typename T::value_type::first_type>::Type(),
+        RowEncodeTrait<typename T::value_type::second_type>::Type());
+  }
+
+  template <typename V>
+  static void WriteKey(V &&visitor, const T &value, ArrayWriter &writer) {
+    int index = 0;
+    for (const auto &v : value) {
+      RowEncodeTrait<typename T::value_type::first_type>::Write(
+          std::forward<V>(visitor), v.first, writer, index);
+      ++index;
+    }
+  }
+
+  template <typename V>
+  static void WriteValue(V &&visitor, const T &value, ArrayWriter &writer) {
+    int index = 0;
+    for (const auto &v : value) {
+      RowEncodeTrait<typename T::value_type::second_type>::Write(
+          std::forward<V>(visitor), v.second, writer, index);
+      ++index;
+    }
+  }
+
+  template <typename V, typename W,
+            std::enable_if_t<meta::IsOneOf<W, RowWriter, ArrayWriter>::value,
+                             int> = 0>
+  static void Write(V &&visitor, const T &value, W &writer, int index) {
+    auto offset = writer.cursor();
+    writer.WriteDirectly(-1);
+
+    auto map_type = std::dynamic_pointer_cast<arrow::MapType>(
+        details::GetChildType(writer, index));
+
+    auto key_writer =
+        std::make_unique<ArrayWriter>(std::static_pointer_cast<arrow::ListType>(
+                                          arrow::list(map_type->key_type())),
+                                      &writer);
+
+    key_writer->Reset(value.size());
+    RowEncodeTrait<T>::WriteKey(std::forward<V>(visitor), value,
+                                *key_writer.get());
+
+    writer.WriteDirectly(offset, key_writer->size());
+
+    auto value_writer =
+        std::make_unique<ArrayWriter>(std::static_pointer_cast<arrow::ListType>(
+                                          arrow::list(map_type->item_type())),
+                                      &writer);
+
+    value_writer->Reset(value.size());
+    RowEncodeTrait<T>::WriteValue(std::forward<V>(visitor), value,
+                                  *value_writer.get());
+
+    writer.SetOffsetAndSize(index, offset, writer.cursor() - offset);
+
+    std::forward<V>(visitor).template Visit<std::remove_cv_t<T>>(
+        std::move(key_writer));
+    std::forward<V>(visitor).template Visit<std::remove_cv_t<T>>(
+        std::move(value_writer));
   }
 };
 

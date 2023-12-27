@@ -1,6 +1,7 @@
 <!-- fury_frontmatter --
 title: Scala Serialization Guide
-order: 4
+sidebar_position: 4
+id: scala_guide
 -- fury_frontmatter -->
 
 # Scala serialization
@@ -15,7 +16,7 @@ Scala 2 and 3 are both supported.
 
 ## Install
 ```sbt
-libraryDependencies += "org.furyio" % "fury-core" % "0.4.0"
+libraryDependencies += "org.apache.fury" % "fury-core" % "0.4.1"
 ```
 
 ## Fury creation
@@ -23,16 +24,19 @@ When using fury for scala serialization, you should create fury at least with fo
 ```scala
 val fury = Fury.builder()
   .withScalaOptimizationEnabled(true)
-  .requireClassRegistration(false)
+  .requireClassRegistration(true)
   .withRefTracking(true)
   .build()
 ```
-Otherwise if you serialize some scala types such as `collection/Enumeration`, you will need to register some scala internal types:
+Depending on the object types you serialize, you may need to register some scala internal types:
 ```scala
 fury.register(Class.forName("scala.collection.generic.DefaultSerializationProxy"))
 fury.register(Class.forName("scala.Enumeration.Val"))
 ```
-And circular references are common in scala, `Reference tracking` should be enabled by `FuryBuilder#withRefTracking(true)`. If you don't enable reference tracking, [StackOverflowError](https://github.com/alipay/fury/issues/1032) may happen for some scala versions when serializing scala Enumeration.
+If you want to avoid such registration, you can disable class registration by `FuryBuilder#requireClassRegistration(false)`.
+Note that this option allow to deserialize objects unknown types, more flexible but may be insecure if the classes contains malicious code.
+
+And circular references are common in scala, `Reference tracking` should be enabled by `FuryBuilder#withRefTracking(true)`. If you don't enable reference tracking, [StackOverflowError](https://github.com/apache/incubator-fury/issues/1032) may happen for some scala versions when serializing scala Enumeration.
 
 Note that fury instance should be shared between multiple serialization, the creation of fury instance is not cheap.
 
@@ -109,8 +113,8 @@ Scala `pojo/bean/case/object` are supported by fury jit well, the performance is
 
 Scala collections and generics doesn't follow java collection framework, and is not fully integrated with Fury JIT in current release version. The performance won't be as good as fury collections serialization for java.
 
-The execution for scala collections will invoke Java serialization API `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` with fury `ObjectStream` implementation. Although `io.fury.serializer.ObjectStreamSerializer` is much faster than JDK `ObjectOutputStream/ObjectInputStream`, but it still doesn't know how use scala collection generics.
+The execution for scala collections will invoke Java serialization API `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` with fury `ObjectStream` implementation. Although `org.apache.fury.serializer.ObjectStreamSerializer` is much faster than JDK `ObjectOutputStream/ObjectInputStream`, but it still doesn't know how use scala collection generics.
 
-In future we plan to provide more optimization for scala types, see https://github.com/alipay/fury/issues/682, stay tuned!
+In future we plan to provide more optimization for scala types, see https://github.com/apache/incubator-fury/issues/682, stay tuned!
 
-Scala collections serialization is finished in https://github.com/alipay/fury/pull/1073, if you want better performance, please use fury snapshot version.
+Scala collections serialization is finished in https://github.com/apache/incubator-fury/pull/1073, if you want better performance, please use fury snapshot version.
