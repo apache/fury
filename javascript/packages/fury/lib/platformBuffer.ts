@@ -135,3 +135,15 @@ export const fromUint8Array = isNodeEnv
 export const alloc = (isNodeEnv ? Buffer.allocUnsafe : BrowserBuffer.alloc) as unknown as (size: number) => PlatformBuffer;
 
 export const strByteLength = isNodeEnv ? Buffer.byteLength : BrowserBuffer.byteLength;
+
+let utf8Encoder: TextEncoder | null;
+
+export const fromString
+= isNodeEnv
+  ? (str: string) => Buffer.from(str) as unknown as PlatformBuffer
+  : (str: string) => {
+      if (!utf8Encoder) {
+        utf8Encoder = new TextEncoder();
+      }
+      return new BrowserBuffer(utf8Encoder.encode(str));
+    };
