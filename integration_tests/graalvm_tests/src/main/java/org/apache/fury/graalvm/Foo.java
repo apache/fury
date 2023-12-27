@@ -42,8 +42,10 @@ public class Foo implements Serializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Foo foo = (Foo) o;
-    return f1 == foo.f1 && Objects.equals(f2, foo.f2) && Objects.equals(f3, foo.f3)
-      && Objects.equals(f4, foo.f4);
+    return f1 == foo.f1
+        && Objects.equals(f2, foo.f2)
+        && Objects.equals(f3, foo.f3)
+        && Objects.equals(f4, foo.f4);
   }
 
   @Override
@@ -53,11 +55,6 @@ public class Foo implements Serializable {
 
   @Override
   public String toString() {
-    return "Foo{" +
-      "f1=" + f1 +
-      ", f2='" + f2 + '\'' +
-      ", f3=" + f3 +
-      ", f4=" + f4 +
-      '}';
+    return "Foo{" + "f1=" + f1 + ", f2='" + f2 + '\'' + ", f3=" + f3 + ", f4=" + f4 + '}';
   }
 }

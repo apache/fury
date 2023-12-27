@@ -40,16 +40,16 @@ public class Struct implements Serializable {
     Struct struct = new Struct();
     struct.f1 = 10;
     struct.f2 = 123456788;
-    struct.f3 = 1/5f;
-    struct.f4 = 1/7d;
+    struct.f3 = 1 / 5f;
+    struct.f4 = 1 / 7d;
     struct.f5 = 11;
     struct.f6 = 123456789;
-    struct.f7 = 2/5f;
-    struct.f8 = 2/7d;
+    struct.f7 = 2 / 5f;
+    struct.f8 = 2 / 7d;
     struct.f9 = 12;
     struct.f10 = 123456788;
-    struct.f11 = 3/5f;
-    struct.f12 = 3/7d;
+    struct.f11 = 3 / 5f;
+    struct.f12 = 3 / 7d;
     return struct;
   }
 
@@ -62,11 +62,18 @@ public class Struct implements Serializable {
       return false;
     }
     Struct struct = (Struct) o;
-    return f1 == struct.f1 && f2 == struct.f2 && Float.compare(f3, struct.f3) == 0
-      && Double.compare(f4, struct.f4) == 0 && f5 == struct.f5 && f6 == struct.f6
-      && Float.compare(f7, struct.f7) == 0 && Double.compare(f8, struct.f8) == 0
-      && f9 == struct.f9 && f10 == struct.f10 && Float.compare(f11, struct.f11) == 0
-      && Double.compare(f12, struct.f12) == 0;
+    return f1 == struct.f1
+        && f2 == struct.f2
+        && Float.compare(f3, struct.f3) == 0
+        && Double.compare(f4, struct.f4) == 0
+        && f5 == struct.f5
+        && f6 == struct.f6
+        && Float.compare(f7, struct.f7) == 0
+        && Double.compare(f8, struct.f8) == 0
+        && f9 == struct.f9
+        && f10 == struct.f10
+        && Float.compare(f11, struct.f11) == 0
+        && Double.compare(f12, struct.f12) == 0;
   }
 
   @Override

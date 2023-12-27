@@ -19,13 +19,13 @@
 
 package org.apache.fury.integration_tests;
 
+import java.io.IOException;
 import org.apache.fury.benchmark.state.ObjectType;
 import org.apache.fury.integration_tests.state.FlatBuffersState;
 import org.apache.fury.integration_tests.state.FlatBuffersState.FlatBuffersUserTypeState;
 import org.apache.fury.integration_tests.state.ProtoBuffersState;
 import org.apache.fury.integration_tests.state.ProtoBuffersState.ProtoBuffersUserTypeState;
 import org.apache.fury.util.Platform;
-import java.io.IOException;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;

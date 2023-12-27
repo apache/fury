@@ -72,6 +72,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
   private final boolean isRecord;
   private final RecordInfo recordInfo;
   private final FinalTypeField[] finalFields;
+
   /**
    * Whether write class def for non-inner final types.
    *

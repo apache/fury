@@ -19,19 +19,13 @@
 
 package org.apache.fury.graalvm.record;
 
+import java.util.List;
+import java.util.Map;
 import org.apache.fury.Fury;
 import org.apache.fury.util.Preconditions;
 
-import java.util.List;
-import java.util.Map;
-
 public class RecordExample2 {
-  private record Record (
-    int f1,
-    String f2,
-    List<String> f3,
-    Map<String, Long> f4) {
-  }
+  private record Record(int f1, String f2, List<String> f3, Map<String, Long> f4) {}
 
   static Fury fury;
 

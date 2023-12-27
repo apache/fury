@@ -54,6 +54,7 @@ public class Identity2IdMap {
   // applied
   private List<Integer>
       linearScanVals; // in case of too deep nesting, this one is filled and linear search is
+
   // applied
 
   public Identity2IdMap(int initialSize) {

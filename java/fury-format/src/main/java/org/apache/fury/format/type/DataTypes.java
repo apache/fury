@@ -460,6 +460,7 @@ public class DataTypes {
   public static Field structField(String name, boolean nullable, List<Field> fields) {
     return field(name, nullable, ArrowType.Struct.INSTANCE, fields);
   }
+
   /* ========================= struct field utils end ========================= */
 
   public static Field fieldOfSchema(Schema schema, int index) {

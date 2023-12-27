@@ -21,12 +21,12 @@ package org.apache.fury.integration_tests;
 
 import static org.apache.fury.integration_tests.TestUtils.serDeCheck;
 
-import org.apache.fury.Fury;
-import org.apache.fury.test.bean.CollectionFields;
-import org.apache.fury.test.bean.MapFields;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.fury.Fury;
+import org.apache.fury.test.bean.CollectionFields;
+import org.apache.fury.test.bean.MapFields;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 

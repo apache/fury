@@ -19,10 +19,6 @@
 
 package org.apache.fury.graalvm;
 
-import org.apache.fury.Fury;
-import org.apache.fury.io.ClassLoaderObjectInputStream;
-import org.apache.fury.util.Preconditions;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,6 +29,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.fury.Fury;
+import org.apache.fury.io.ClassLoaderObjectInputStream;
+import org.apache.fury.util.Preconditions;
 
 /**
  * Benchmark suite for fury and jdk.
@@ -40,7 +39,8 @@ import java.util.Map;
  * @author chaokunyang
  */
 public class Benchmark {
-  static ObjectInputFilter filter = ObjectInputFilter.Config.createFilter("org.apache.fury.graalvm.*");
+  static ObjectInputFilter filter =
+      ObjectInputFilter.Config.createFilter("org.apache.fury.graalvm.*");
 
   public static Object testJDKSerialization(Object o) {
     byte[] bytes = jdkSerialize(o);
@@ -65,8 +65,8 @@ public class Benchmark {
 
   public static Object jdkDeserialize(byte[] data) {
     try (ByteArrayInputStream bis = new ByteArrayInputStream(data);
-         ObjectInputStream objectInputStream =
-           new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), bis)) {
+        ObjectInputStream objectInputStream =
+            new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), bis)) {
       return objectInputStream.readObject();
     } catch (Exception e) {
       throw new RuntimeException(e);

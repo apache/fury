@@ -22,10 +22,4 @@ package org.apache.fury.graalvm.record;
 import java.util.List;
 import java.util.Map;
 
-public record Foo (
-  int f1,
-  String f2,
-  List<String> f3,
-  Map<String, Long> f4) {
-}
-
+public record Foo(int f1, String f2, List<String> f3, Map<String, Long> f4) {}

@@ -19,9 +19,9 @@
 
 package org.apache.fury.integration_tests.state;
 
+import java.nio.ByteBuffer;
 import org.apache.fury.benchmark.data.MediaContent;
 import org.apache.fury.benchmark.data.Sample;
-import java.nio.ByteBuffer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

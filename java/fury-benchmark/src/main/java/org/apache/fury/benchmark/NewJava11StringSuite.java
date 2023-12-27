@@ -43,7 +43,7 @@ public class NewJava11StringSuite {
   }
 
   private static final long STRING_VALUE_FIELD_OFFSET =
-      ReflectionUtils.getFieldOffset(String.class, "value");;
+      ReflectionUtils.getFieldOffset(String.class, "value");
   private static final long STRING_CODER_FIELD_OFFSET =
       ReflectionUtils.getFieldOffset(String.class, "coder");
 

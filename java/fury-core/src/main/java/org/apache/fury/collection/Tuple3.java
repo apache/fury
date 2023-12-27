@@ -27,8 +27,10 @@ public class Tuple3<T0, T1, T2> implements Serializable {
 
   /** Field 0 of the tuple. */
   public T0 f0;
+
   /** Field 1 of the tuple. */
   public T1 f1;
+
   /** Field 1 of the tuple. */
   public T2 f2;
 

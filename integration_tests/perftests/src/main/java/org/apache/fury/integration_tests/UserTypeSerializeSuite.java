@@ -19,6 +19,7 @@
 
 package org.apache.fury.integration_tests;
 
+import java.io.IOException;
 import org.apache.fury.benchmark.data.MediaContent;
 import org.apache.fury.benchmark.data.Sample;
 import org.apache.fury.benchmark.state.BufferType;
@@ -28,7 +29,6 @@ import org.apache.fury.integration_tests.state.FlatBuffersState.FlatBuffersUserT
 import org.apache.fury.integration_tests.state.ProtoBuffersState;
 import org.apache.fury.integration_tests.state.ProtoBuffersState.ProtoBuffersUserTypeState;
 import org.apache.fury.util.Platform;
-import java.io.IOException;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;

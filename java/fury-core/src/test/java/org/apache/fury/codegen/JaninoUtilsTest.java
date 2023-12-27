@@ -144,7 +144,9 @@ public class JaninoUtilsTest {
 
   @Test
   public void testJaninoClass()
-      throws CompileException, ClassNotFoundException, IllegalAccessException,
+      throws CompileException,
+          ClassNotFoundException,
+          IllegalAccessException,
           InstantiationException {
     SimpleCompiler compiler = new SimpleCompiler();
     String code =

@@ -70,6 +70,7 @@ import org.apache.fury.util.record.RecordUtils;
 @SuppressWarnings({"unchecked"})
 public class MetaSharedSerializer<T> extends Serializer<T> {
   private final ObjectSerializer.FinalTypeField[] finalFields;
+
   /**
    * Whether write class def for non-inner final types.
    *

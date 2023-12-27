@@ -19,28 +19,29 @@
 
 package org.apache.fury.graalvm;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.apache.fury.Fury;
 import org.apache.fury.ThreadLocalFury;
 import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.collection.Collections;
 import org.apache.fury.util.Preconditions;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 public class ThreadSafeExample {
   static ThreadSafeFury fury;
 
   static {
-    fury = new ThreadLocalFury(classLoader -> {
-      Fury f = Fury.builder().requireClassRegistration(true).build();
-      // register and generate serializer code.
-      f.register(Foo.class, true);
-      return f;
-    });
+    fury =
+        new ThreadLocalFury(
+            classLoader -> {
+              Fury f = Fury.builder().requireClassRegistration(true).build();
+              // register and generate serializer code.
+              f.register(Foo.class, true);
+              return f;
+            });
     System.out.println("Init fury at build time");
   }
 
@@ -51,13 +52,14 @@ public class ThreadSafeExample {
     ExecutorService service = Executors.newFixedThreadPool(10);
     System.out.println("Start to submit tasks");
     for (int i = 0; i < 1000; i++) {
-      service.submit(() -> {
-        try {
-          threadSafeExample.test();
-        } catch (Throwable t) {
-          threadSafeExample.throwable = t;
-        }
-      });
+      service.submit(
+          () -> {
+            try {
+              threadSafeExample.test();
+            } catch (Throwable t) {
+              threadSafeExample.throwable = t;
+            }
+          });
     }
     Thread.sleep(3000);
     service.shutdown();
@@ -71,9 +73,10 @@ public class ThreadSafeExample {
 
   private volatile Throwable throwable;
 
-  private  void test() {
+  private void test() {
     Preconditions.checkArgument("abc".equals(fury.deserialize(fury.serialize("abc"))));
-    Preconditions.checkArgument(List.of(1,2,3).equals(fury.deserialize(fury.serialize(List.of(1,2,3)))));
+    Preconditions.checkArgument(
+        List.of(1, 2, 3).equals(fury.deserialize(fury.serialize(List.of(1, 2, 3)))));
     List<String> list = Collections.ofArrayList("a", "b", "c");
     Preconditions.checkArgument(list.equals(fury.deserialize(fury.serialize(list))));
     Map<String, Integer> map = Collections.ofHashMap("k1", 1, "k2", 2);

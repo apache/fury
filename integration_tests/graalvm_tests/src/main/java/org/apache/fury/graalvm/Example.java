@@ -19,11 +19,10 @@
 
 package org.apache.fury.graalvm;
 
-import org.apache.fury.Fury;
-import org.apache.fury.util.Preconditions;
-
 import java.util.List;
 import java.util.Map;
+import org.apache.fury.Fury;
+import org.apache.fury.util.Preconditions;
 
 public class Example {
   static Fury fury;
@@ -36,7 +35,8 @@ public class Example {
 
   public static void main(String[] args) {
     Preconditions.checkArgument("abc".equals(fury.deserialize(fury.serialize("abc"))));
-    Preconditions.checkArgument(List.of(1,2,3).equals(fury.deserialize(fury.serialize(List.of(1,2,3)))));
+    Preconditions.checkArgument(
+        List.of(1, 2, 3).equals(fury.deserialize(fury.serialize(List.of(1, 2, 3)))));
     Map<String, Integer> map = Map.of("k1", 1, "k2", 2);
     Preconditions.checkArgument(map.equals(fury.deserialize(fury.serialize(map))));
     Foo foo = new Foo(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));

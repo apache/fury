@@ -29,6 +29,7 @@ import org.testng.annotations.Test;
 
 public class Org implements Serializable {
   private static final long serialVersionUID = 1L;
+
   // constructor
   public Org() {}
 

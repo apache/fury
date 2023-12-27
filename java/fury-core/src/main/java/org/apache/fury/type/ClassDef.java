@@ -302,6 +302,7 @@ public class ClassDef implements Serializable {
   public static class FieldInfo implements Serializable {
     /** where are current field defined. */
     private final String definedClass;
+
     /** Name of a field. */
     private final String fieldName;
 
