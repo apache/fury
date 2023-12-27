@@ -83,11 +83,12 @@ See [benchmarks](https://github.com/apache/incubator-fury/tree/main/docs/benchma
 ## Installation
 ### Java
 Nightly snapshot:
+
 ```xml
 <repositories>
   <repository>
-    <id>sonatype</id>
-    <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+    <id>apache</id>
+    <url>https://repository.apache.org/snapshots/</url>
     <releases>
       <enabled>false</enabled>
     </releases>
@@ -108,24 +109,27 @@ Nightly snapshot:
   <version>0.5.0-SNAPSHOT</version>
 </dependency> -->
 ```
+
 Release version:
 ```xml
 <dependency>
-  <groupId>org.apache.fury</groupId>
+  <groupId>org.furyio</groupId>
   <artifactId>fury-core</artifactId>
   <version>0.4.1</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
-  <groupId>org.apache.fury</groupId>
+  <groupId>org.furyio</groupId>
   <artifactId>fury-format</artifactId>
   <version>0.4.1</version>
 </dependency> -->
 ```
 
+Maven groupId will be changed to `org.apache.fury` when next version is released.
+
 ### Scala
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-core" % "0.4.1"
+libraryDependencies += "org.furyio" % "fury-core" % "0.4.1"
 ```
 
 ### Python
