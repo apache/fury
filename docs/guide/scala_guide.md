@@ -1,6 +1,7 @@
 <!-- fury_frontmatter --
 title: Scala Serialization Guide
-order: 4
+sidebar_position: 4
+id: scala_guide
 -- fury_frontmatter -->
 
 # Scala serialization

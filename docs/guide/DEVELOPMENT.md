@@ -1,6 +1,7 @@
 <!-- fury_frontmatter --
 title: Development
-order: 6
+sidebar_position: 6
+id: development
 -- fury_frontmatter -->
 # How to build to Fury
 

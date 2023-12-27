@@ -1,6 +1,7 @@
 <!-- fury_frontmatter --
 title: Row Format Guide
-order: 1
+sidebar_position: 1
+id: row_format_guide
 -- fury_frontmatter -->
 
 ## Row format protocol

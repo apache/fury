@@ -1,6 +1,7 @@
 <!-- fury_frontmatter --
 title: GraalVM Guide
-order: 6
+sidebar_position: 6
+id: graalvm_guide
 -- fury_frontmatter -->
 
 # GraalVM Native Image
@@ -130,7 +131,7 @@ When Fury compression is enabled:
 - Struct: Fury is `24x speed, 31% size` compared to JDK.
 - Pojo: Fury is `12x speed, 48% size` compared to JDK.
 
-See [[Benchmark.java](../../integration_tests/graalvm_tests/src/main/java/org/apache/fury/graalvm/Benchmark.java)] for benchmark code.
+See [[Benchmark.java](https://github.com/apache/incubator-fury/blob/main/integration_tests/graalvm_tests/src/main/java/org/apache/fury/graalvm/Benchmark.java)] for benchmark code.
 
 ### Struct Benchmark
 #### Class Fields
