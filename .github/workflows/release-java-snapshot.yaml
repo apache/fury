@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: 📦Publish Fury Java Snapshot
+name: Publish Fury Java Snapshot
 
 on:
   push:
