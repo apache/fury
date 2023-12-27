@@ -1,6 +1,7 @@
 <!-- fury_frontmatter --
 title: Java Object Graph Guide
-order: 0
+sidebar_position: 0
+id: java_object_graph_guide
 -- fury_frontmatter -->
 
 # Java object graph serialization
