@@ -188,11 +188,9 @@ format_java() {
       cd "$ROOT/integration_tests"
       dirs=("graalvm_tests" "jdk_compatibility_tests" "latest_jdk_tests" "perftests")
       for d in "${dirs[@]}" ; do
-        if [[ -d $d ]]; then
-          pushd "$d"
-            mvn -T10 --no-transfer-progress spotless:apply
-          popd
-        fi
+        pushd "$d"
+          mvn -T10 --no-transfer-progress spotless:apply
+        popd
       done
     else
       echo "Maven not installed, skip java check"
