@@ -25,11 +25,12 @@ import mapSerializer from "./internalSerializer/map";
 import setSerializer from "./internalSerializer/set";
 import boolSerializer from "./internalSerializer/bool";
 import { uInt16Serializer, int16Serializer, int32Serializer, uInt32Serializer, uInt64Serializer, floatSerializer, doubleSerializer, uInt8Serializer, int64Serializer, int8Serializer } from "./internalSerializer/number";
-import { InternalSerializerType, Serializer, Fury, BinaryReader, BinaryWriter } from "./type";
+import { InternalSerializerType, Serializer, Fury, BinaryReader, BinaryWriter as TBinaryWriter } from "./type";
 import anySerializer from "./internalSerializer/any";
-import { PlatformBuffer, fromUint8Array } from "./platformBuffer";
+import { fromString } from "./platformBuffer";
 import { x64hash128 } from "./murmurHash3";
-import { BinaryWriter as BufferWriter } from "./writer";
+import { BinaryWriter } from "./writer";
+
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1;
 
@@ -39,7 +40,8 @@ export default class SerializerResolver {
   };
 
   private readStringPool: string[] = [];
-  private writeStringIndex: string[] = [];
+  private writeStringCount = 0;
+  private writeStringIndex: number[] = [];
 
   private initInternalSerializer(fury: Fury) {
     const _anySerializer = anySerializer(fury);
@@ -77,7 +79,7 @@ export default class SerializerResolver {
 
   reset() {
     this.readStringPool = [];
-    this.writeStringIndex = [];
+    this.writeStringIndex.fill(-1);
   }
 
   getSerializerById(id: InternalSerializerType) {
@@ -97,30 +99,40 @@ export default class SerializerResolver {
     return this.customSerializer[tag];
   }
 
-  tagToBuffer(tag: string) {
-    const tagBuffer = fromUint8Array(new TextEncoder().encode(tag));
+  createTagWriter(tag: string) {
+    this.writeStringIndex.push(-1);
+    const idx = this.writeStringIndex.length - 1;
+    const tagBuffer = fromString(tag);
+    const bufferLen = tagBuffer.byteLength;
+
+    const writer = BinaryWriter({});
+
     let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
     if (tagHash === BigInt(0)) {
       tagHash = BigInt(1);
     }
-    const bufferLen = tagBuffer.byteLength;
-    const writer = BufferWriter({});
+
     writer.uint8(USESTRINGVALUE);
     writer.uint64(tagHash);
     writer.int16(bufferLen);
     writer.bufferWithoutMemCheck(tagBuffer, bufferLen);
-    return writer.dump();
-  }
 
-  writeTag(binaryWriter: BinaryWriter, tag: string, bf: PlatformBuffer, byteLength: number) {
-    const index = this.writeStringIndex.indexOf(tag);
-    if (index > -1) {
-      binaryWriter.uint8(USESTRINGID);
-      binaryWriter.int16(index);
-      return;
-    }
-    this.writeStringIndex.push(tag);
-    binaryWriter.bufferWithoutMemCheck(bf, byteLength);
+    const fullBuffer = writer.dump();
+
+    return {
+      write: (binaryWriter: TBinaryWriter) => {
+        const tagIndex = this.writeStringIndex[idx];
+        if (tagIndex > -1) {
+          // equivalent of: `uint8(USESTRINGID); int16(tagIndex)`
+          binaryWriter.int24((tagIndex << 8) | USESTRINGID);
+          return;
+        }
+
+        this.writeStringIndex[idx] = this.writeStringCount++;
+        binaryWriter.buffer(fullBuffer);
+      },
+      bufferLen,
+    };
   }
 
   detectTag(binaryReader: BinaryReader) {
