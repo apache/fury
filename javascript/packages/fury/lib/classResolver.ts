@@ -22,10 +22,11 @@ import mapSerializer from "./internalSerializer/map";
 import setSerializer from "./internalSerializer/set";
 import boolSerializer from "./internalSerializer/bool";
 import { uInt16Serializer, int16Serializer, int32Serializer, uInt32Serializer, uInt64Serializer, floatSerializer, doubleSerializer, uInt8Serializer, int64Serializer, int8Serializer } from "./internalSerializer/number";
-import { InternalSerializerType, Serializer, Fury, BinaryReader, BinaryWriter } from "./type";
+import { InternalSerializerType, Serializer, Fury, BinaryReader, BinaryWriter as TBinaryWriter } from "./type";
 import anySerializer from "./internalSerializer/any";
 import { fromString } from "./platformBuffer";
 import { x64hash128 } from "./murmurHash3";
+import { BinaryWriter } from "./writer";
 
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1;
@@ -101,25 +102,31 @@ export default class SerializerResolver {
     const tagBuffer = fromString(tag);
     const bufferLen = tagBuffer.byteLength;
 
+    const writer = BinaryWriter({})
+
     let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
     if (tagHash === BigInt(0)) {
       tagHash = BigInt(1);
     }
 
+    writer.uint8(USESTRINGVALUE);
+    writer.uint64(tagHash);
+    writer.int16(bufferLen);
+    writer.bufferWithoutMemCheck(tagBuffer, bufferLen);
+
+    const fullBuffer = writer.dump()
+
     return {
-      write: (binaryWriter: BinaryWriter) => {
+      write: (binaryWriter: TBinaryWriter) => {
         const tagIndex = this.writeStringIndex[idx];
         if (tagIndex > -1) {
-          binaryWriter.uint8(USESTRINGID);
-          binaryWriter.int16(tagIndex);
+          // equivalent of: `uint8(USESTRINGID); int16(tagIndex)`
+          binaryWriter.int24((tagIndex << 8) | USESTRINGID)
           return;
         }
 
         this.writeStringIndex[idx] = this.writeStringCount++;
-        binaryWriter.uint8(USESTRINGVALUE);
-        binaryWriter.uint64(tagHash);
-        binaryWriter.int16(bufferLen);
-        binaryWriter.bufferWithoutMemCheck(tagBuffer, bufferLen);
+        binaryWriter.buffer(fullBuffer);
       },
       bufferLen,
     };
