@@ -101,8 +101,6 @@ graalvm_test() {
 integration_tests() {
   cd "$ROOT"/java
   mvn -T10 -B --no-transfer-progress clean install -DskipTests
-  echo "Start perf tests"
-  cd "$ROOT"/integration_tests/perftests
   echo "Start latest jdk tests"
   cd "$ROOT"/integration_tests/latest_jdk_tests
   echo "latest_jdk_tests: JDK 21"

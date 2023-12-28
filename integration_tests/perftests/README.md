@@ -12,7 +12,9 @@ Flatbuffers generated is short, just add generated files to repo directly.
 # Run tests
 ```bash
 cd java && mvn -T10 install -DskipTests -Dcheckstyle.skip -Dlicense.skip -Dmaven.javadoc.skip && cd ../integration_tests/perftests
-mvn -T10 compile
+# use `-Pjmh` to download jmh dependencies, we mark it as optional
+# since jmh is licenced under GPL V2 andn not comply with the license policy of ASF.
+mvn -T10 compile -Pjmh
 #mvn exec:java -Dexec.mainClass="org.apache.fury.integration_tests.UserTypeSerializeSuite" -Dexec.args="-f 1 -wi 0 -i 1 -t 1 -w 1s -r 1s -rf csv"
-mvn exec:java -Dexec.mainClass="org.apache.fury.integration_tests.UserTypeSerializeSuite"
+mvn exec:java -Dexec.mainClass="org.apache.fury.integration_tests.UserTypeSerializeSuite" -Pjmh
 ```
