@@ -123,7 +123,7 @@ jobs:
       - name: Install fury-benchmarks jar
         run: |
           cd java && mvn -T10 -B --no-transfer-progress clean install -DskipTests && cd -
-          cd benchmarks/fury-benchmarks && mvn -T10 -B --no-transfer-progress clean install -DskipTests && cd -
+          cd benchmarks/java-benchmarks && mvn -T10 -B --no-transfer-progress clean install -DskipTests -Pjmh && cd -
       - name: Run CI
         run: ./ci/run_ci.sh integration_tests
   javascript:
