@@ -13,6 +13,9 @@ Fury Java Benchmark contains benchmarks for:
 > Kryo benchmark suite is based on [Kryo benchmark](https://github.com/EsotericSoftware/kryo/tree/master/benchmarks).
 
 # How to run
+This benchmark use [jmh](https://github.com/openjdk/jmh) as benchmark tool. [jmh](https://github.com/openjdk/jmh) is 
+licensed under GPL V2 with CLASSPATH exception, the usage can't be included in apache source/binary release unless
+as an optional feature. So Fury make it as an optional dependency and you must enable `jmh` profile to activate it.
 
 ```bash
 # Install fury
