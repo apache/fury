@@ -15,10 +15,11 @@ cython_debug
 testresult
 java/target
 benchmark/target
-fury-benchmark/target
-**/target/**/io/ray/**
+benchmarks/java-benchmarks/target
+**/target/**/**
 java/**/.code/
 java/**/dependency-reduced-pom.xml
+**/pom.xml.versionsBackup
 **/.code/
 **/*.iml
 **/*.html
