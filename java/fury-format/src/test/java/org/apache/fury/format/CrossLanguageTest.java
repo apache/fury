@@ -100,8 +100,8 @@ public class CrossLanguageTest {
     RowEncoder<A> encoder = Encoders.bean(A.class);
     System.out.println("Schema: " + encoder.schema());
     Assert.assertEquals(a, encoder.decode(encoder.encode(a)));
-    Files.deleteIfExists(Paths.get("foo"));
-    Path dataFile = Files.createFile(Paths.get("foo"));
+    Path dataFile = Files.createTempFile("foo", "tmp" );
+    dataFile.toFile().deleteOnExit();
     {
       Files.write(dataFile, encoder.encode(a));
       ImmutableList<String> command =
