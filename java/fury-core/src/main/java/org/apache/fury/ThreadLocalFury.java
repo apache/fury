@@ -44,14 +44,16 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
 
   private final ThreadLocal<LoaderBinding> bindingThreadLocal;
   private Consumer<Fury> factoryCallback = f -> {};
-  private final WeakHashMap<Fury, Object> allFury = new WeakHashMap<>();
+  private final WeakHashMap<Thread, LoaderBinding> allFury = new WeakHashMap<>();
 
   public ThreadLocalFury(Function<ClassLoader, Fury> furyFactory) {
     bindingThreadLocal =
         ThreadLocal.withInitial(
             () -> {
               LoaderBinding binding = new LoaderBinding(furyFactory);
+              binding.setBindingCallback(factoryCallback);
               binding.setClassLoader(Thread.currentThread().getContextClassLoader());
+              allFury.put(Thread.currentThread(), binding);
               return binding;
             });
     // 1. init and warm for current thread.
@@ -61,14 +63,18 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
     Fury fury = bindingThreadLocal.get().get();
     ClassResolver._addGraalvmClassRegistry(
         fury.getConfig().getConfigHash(), fury.getClassResolver());
-    factoryCallback.accept(fury);
-    allFury.put(fury, null);
   }
 
   @Override
   protected void processCallback(Consumer<Fury> callback) {
-    allFury.keySet().forEach(callback);
     factoryCallback = factoryCallback.andThen(callback);
+    allFury
+        .values()
+        .forEach(
+            binding -> {
+              binding.visitAllFury(callback);
+              binding.setBindingCallback(factoryCallback);
+            });
   }
 
   public <R> R execute(Function<Fury, R> action) {
