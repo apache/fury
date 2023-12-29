@@ -20,6 +20,8 @@
 package org.apache.fury;
 
 import java.nio.ByteBuffer;
+import java.util.WeakHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
 import org.apache.fury.memory.MemoryBuffer;
@@ -27,6 +29,7 @@ import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.LoaderBinding;
 import org.apache.fury.util.LoaderBinding.StagingType;
+import org.apache.fury.util.Preconditions;
 
 /**
  * A thread safe serialization entrance for {@link Fury} by binding a {@link Fury} for every thread.
@@ -41,6 +44,8 @@ public class ThreadLocalFury implements ThreadSafeFury {
       ThreadLocal.withInitial(() -> MemoryUtils.buffer(32));
 
   private final ThreadLocal<LoaderBinding> bindingThreadLocal;
+  private Consumer<Fury> factoryCallback = f -> {};
+  private final WeakHashMap<Fury, Object> allFury = new WeakHashMap<>();
 
   public ThreadLocalFury(Function<ClassLoader, Fury> furyFactory) {
     bindingThreadLocal =
@@ -57,6 +62,22 @@ public class ThreadLocalFury implements ThreadSafeFury {
     Fury fury = bindingThreadLocal.get().get();
     ClassResolver._addGraalvmClassRegistry(
         fury.getConfig().getConfigHash(), fury.getClassResolver());
+    factoryCallback.accept(fury);
+    allFury.put(fury, null);
+  }
+
+  public void register(Class<?> clz) {
+    processCallback(fury -> fury.register(clz));
+  }
+
+  public void register(Class<?> clz, int id) {
+    Preconditions.checkArgument(id < Short.MAX_VALUE);
+    processCallback(fury -> fury.register(clz, (short) id));
+  }
+
+  private void processCallback(Consumer<Fury> callback) {
+    allFury.keySet().forEach(callback);
+    factoryCallback = factoryCallback.andThen(callback);
   }
 
   public <R> R execute(Function<Fury, R> action) {
