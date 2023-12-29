@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,7 +99,7 @@ public class CrossLanguageTest {
     RowEncoder<A> encoder = Encoders.bean(A.class);
     System.out.println("Schema: " + encoder.schema());
     Assert.assertEquals(a, encoder.decode(encoder.encode(a)));
-    Path dataFile = Files.createTempFile("foo", "tmp" );
+    Path dataFile = Files.createTempFile("foo", "tmp");
     dataFile.toFile().deleteOnExit();
     {
       Files.write(dataFile, encoder.encode(a));
