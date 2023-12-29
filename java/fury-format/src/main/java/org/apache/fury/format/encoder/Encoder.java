@@ -25,7 +25,6 @@ package org.apache.fury.format.encoder;
  * codec.
  *
  * @param <T> type of value
- * @author chaokunyang
  */
 public interface Encoder<T> {
 

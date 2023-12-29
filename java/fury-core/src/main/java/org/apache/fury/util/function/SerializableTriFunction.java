@@ -21,10 +21,6 @@ package org.apache.fury.util.function;
 
 import java.io.Serializable;
 
-/**
- * Serializable {@link TriFunction}.
- *
- * @author chaokunyang
- */
+/** Serializable {@link TriFunction}. */
 public interface SerializableTriFunction<A, B, C, R>
     extends TriFunction<A, B, C, R>, Serializable {}

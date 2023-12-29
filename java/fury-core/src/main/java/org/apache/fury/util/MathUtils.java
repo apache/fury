@@ -19,11 +19,7 @@
 
 package org.apache.fury.util;
 
-/**
- * Math utils.
- *
- * @author chaokunyang
- */
+/** Math utils. */
 public class MathUtils {
 
   public static int doubleExact(int x) {

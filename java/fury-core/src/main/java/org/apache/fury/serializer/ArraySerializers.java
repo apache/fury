@@ -36,11 +36,7 @@ import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 
-/**
- * Serializers for array types.
- *
- * @author chaokunyang
- */
+/** Serializers for array types. */
 public class ArraySerializers {
 
   /** May be multi-dimension array, or multi-dimension primitive array. */

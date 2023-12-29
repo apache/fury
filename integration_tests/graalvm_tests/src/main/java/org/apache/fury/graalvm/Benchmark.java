@@ -33,11 +33,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.io.ClassLoaderObjectInputStream;
 import org.apache.fury.util.Preconditions;
 
-/**
- * Benchmark suite for fury and jdk.
- *
- * @author chaokunyang
- */
+/** Benchmark suite for fury and jdk. */
 public class Benchmark {
   static ObjectInputFilter filter =
       ObjectInputFilter.Config.createFilter("org.apache.fury.graalvm.*");

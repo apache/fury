@@ -31,8 +31,6 @@ import org.slf4j.Logger;
 /**
  * fury pool factory The pool is used to initialize instances of fury related objects for soft.
  * connections
- *
- * @author yanhuai
  */
 public class FuryPooledObjectFactory {
 

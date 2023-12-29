@@ -32,11 +32,7 @@ import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.unsafe._JDKAccess;
 
-/**
- * Utility for lambda functions.
- *
- * @author chaokunyang
- */
+/** Utility for lambda functions. */
 public class Functions {
   /** Returns true if the specified class is a lambda. */
   public static boolean isLambda(Class<?> clz) {

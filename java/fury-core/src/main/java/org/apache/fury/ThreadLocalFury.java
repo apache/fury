@@ -32,8 +32,6 @@ import org.apache.fury.util.LoaderBinding.StagingType;
  * A thread safe serialization entrance for {@link Fury} by binding a {@link Fury} for every thread.
  * Note that the thread shouldn't be created and destroyed frequently, otherwise the {@link Fury}
  * will be created and destroyed frequently, which is slow.
- *
- * @author chaokunyang
  */
 @ThreadSafe
 public class ThreadLocalFury implements ThreadSafeFury {

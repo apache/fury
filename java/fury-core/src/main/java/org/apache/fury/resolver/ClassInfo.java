@@ -28,8 +28,6 @@ import org.apache.fury.util.function.Functions;
 /**
  * This class put together object type related information to reduce array/map loop up when
  * serialization.
- *
- * @author chaokunyang
  */
 public class ClassInfo {
   final Class<?> cls;

@@ -28,8 +28,6 @@ package org.apache.fury.serializer.collection;
  *   <li>NOT_DECL_ELEMENT_TYPE: false
  *   <li>NOT_SAME_TYPE: false
  * </ul>
- *
- * @author chaokunyang
  */
 public class CollectionFlags {
   /** Whether track elements ref. */

@@ -33,11 +33,7 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.LoggerFactory;
 import org.slf4j.Logger;
 
-/**
- * White/black list based class checker.
- *
- * @author chaokunyang
- */
+/** White/black list based class checker. */
 @ThreadSafe
 public class AllowListChecker implements ClassChecker {
   private static final Logger LOG = LoggerFactory.getLogger(AllowListChecker.class);

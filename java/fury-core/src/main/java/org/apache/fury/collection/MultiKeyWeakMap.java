@@ -39,7 +39,6 @@ import org.apache.fury.util.GraalvmSupport;
  *
  * @param <T> the type of values maintained by this map
  * @see java.util.WeakHashMap
- * @author chaokunyang
  */
 public class MultiKeyWeakMap<T> {
   private static final FinalizableReferenceQueue REFERENCE_QUEUE;

@@ -23,11 +23,7 @@ import com.google.common.reflect.TypeToken;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.TypeUtils;
 
-/**
- * Util class for building generated binary encoder.
- *
- * @author chaokunyang
- */
+/** Util class for building generated binary encoder. */
 @SuppressWarnings("UnstableApiUsage")
 public class BinaryUtils {
   public static String getElemAccessMethodName(TypeToken type) {

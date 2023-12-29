@@ -48,8 +48,6 @@ import org.slf4j.Logger;
  * A serializer used for cross-language serialization for custom objects.
  *
  * <p>TODO(chaokunyang) support generics optimization for {@code SomeClass<T>}.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes", "UnstableApiUsage"})
 public class StructSerializer<T> extends Serializer<T> {

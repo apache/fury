@@ -78,8 +78,6 @@ import org.apache.fury.util.function.SerializableTriFunction;
  * <p>Note that all dependent expression field are marked as non-final, so when split expression
  * tree into subtrees, we can replace dependent expression fields in subtree root nodes with {@link
  * Reference}.
- *
- * @author chaokunyang
  */
 @SuppressWarnings("UnstableApiUsage")
 public interface Expression {

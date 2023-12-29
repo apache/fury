@@ -22,11 +22,7 @@ package org.apache.fury.format.encoder;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.format.row.binary.BinaryRow;
 
-/**
- * A row format codec for java bean.
- *
- * @author chaokunyang
- */
+/** A row format codec for java bean. */
 public interface GeneratedRowEncoder extends Generated {
 
   BinaryRow toRow(Object obj);

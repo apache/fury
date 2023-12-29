@@ -78,8 +78,6 @@ import sun.misc.Unsafe;
  *   <li>For instance inner class, ignore outer class field.
  *   <li>For instance inner class, deserialized outer class field is null
  * </ul>
- *
- * @author chaokunyang
  */
 @SuppressWarnings("UnstableApiUsage")
 public abstract class CodecBuilder {

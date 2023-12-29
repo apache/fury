@@ -25,8 +25,6 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * An annotation to mark a method will be invoked by generated method. This annotation is used for
  * documentation only.
- *
- * @author chaokunyang
  */
 @Retention(RetentionPolicy.SOURCE)
 public @interface CodegenInvoke {}

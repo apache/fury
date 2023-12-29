@@ -29,8 +29,6 @@ import java.nio.ByteBuffer;
  *
  * <p>Note that {@link OutputStream} doesn't support {@link ByteBuffer}, which may incur extra copy.
  * See also {@link MockWritableByteChannel}.
- *
- * @author chaokunyang
  */
 public class MockOutputStream extends OutputStream {
   private int totalBytes;

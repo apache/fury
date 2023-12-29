@@ -27,11 +27,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Test suite for collection.
- *
- * @author chaokunyang
- */
+/** Test suite for collection. */
 public class CollectionSuite {
   private static final Logger LOG = LoggerFactory.getLogger(CollectionSuite.class);
 

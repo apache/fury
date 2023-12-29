@@ -28,7 +28,6 @@ import org.apache.fury.memory.MemoryBuffer;
  * serialization and shouldn't be used for any other cases.
  *
  * @see ByteBufferBufferObject // * @see Serializers.PrimitiveArrayBufferObject
- * @author chaokunyang
  */
 public interface BufferObject {
 

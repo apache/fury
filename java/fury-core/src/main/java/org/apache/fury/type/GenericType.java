@@ -34,11 +34,7 @@ import java.util.function.Predicate;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.Serializer;
 
-/**
- * GenericType for building java generics as a tree and binding with fury serializers.
- *
- * @author chaokunyang
- */
+/** GenericType for building java generics as a tree and binding with fury serializers. */
 // TODO(chaokunyang) refine generics which can be inspired by spring ResolvableType.
 @SuppressWarnings("UnstableApiUsage")
 public class GenericType {

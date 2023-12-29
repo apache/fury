@@ -69,11 +69,7 @@ import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 
-/**
- * Base encoder builder for {@link Row}, {@link ArrayData} and {@link MapData}.
- *
- * @author chaokunyang
- */
+/** Base encoder builder for {@link Row}, {@link ArrayData} and {@link MapData}. */
 @SuppressWarnings("UnstableApiUsage")
 public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
   protected static final String REFERENCES_NAME = "references";

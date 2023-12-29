@@ -53,11 +53,7 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 
-/**
- * Type utils for common type inference and extraction.
- *
- * @author chaokunyang
- */
+/** Type utils for common type inference and extraction. */
 @SuppressWarnings({"UnstableApiUsage", "unchecked"})
 public class TypeUtils {
   public static final String JAVA_BOOLEAN = "boolean";

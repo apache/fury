@@ -34,11 +34,7 @@ import org.apache.fury.serializer.Serializers;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.Platform;
 
-/**
- * Serializers for {@link ArrowTable}.
- *
- * @author chaokunyang
- */
+/** Serializers for {@link ArrowTable}. */
 public class ArrowTableSerializer
     extends Serializers.CrossLanguageCompatibleSerializer<ArrowTable> {
   private static final BufferAllocator defaultAllocator =

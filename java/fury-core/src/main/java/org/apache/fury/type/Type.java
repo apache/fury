@@ -21,11 +21,7 @@ package org.apache.fury.type;
 
 import org.apache.fury.util.Preconditions;
 
-/**
- * Keep in sync with Type::type in arrow/type_fwd.h
- *
- * @author chaokunyang
- */
+/** Keep in sync with Type::type in arrow/type_fwd.h */
 public enum Type {
   /// A NULL type having no physical storage
   NA, // NA = 0

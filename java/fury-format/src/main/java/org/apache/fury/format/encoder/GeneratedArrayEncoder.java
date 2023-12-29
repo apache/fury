@@ -22,11 +22,7 @@ package org.apache.fury.format.encoder;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.format.row.binary.BinaryArray;
 
-/**
- * A list container row format codec for java bean.
- *
- * @author ganrunsheng
- */
+/** A list container row format codec for java bean. */
 public interface GeneratedArrayEncoder extends Generated {
 
   BinaryArray toArray(Object obj);

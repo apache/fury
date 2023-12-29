@@ -21,11 +21,7 @@ package org.apache.fury.serializer;
 
 import org.apache.fury.config.Language;
 
-/**
- * Stub objects for unsupported cross-language serializing type.
- *
- * @author chaokunyang
- */
+/** Stub objects for unsupported cross-language serializing type. */
 public class OpaqueObjects {
 
   public static OpaqueObject of(Language language, String className, int ordinal) {

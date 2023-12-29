@@ -34,11 +34,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.unsafe._JDKAccess;
 
-/**
- * Serializers for jdk9+ java.util.ImmutableCollections.
- *
- * @author chaokunyang
- */
+/** Serializers for jdk9+ java.util.ImmutableCollections. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ImmutableCollectionSerializers {
   private static Class<?> List12;

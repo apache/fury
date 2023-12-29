@@ -26,8 +26,6 @@ import java.nio.channels.WritableByteChannel;
  * A helper class to track the size of allocations. Writes to this stream do not copy or retain any
  * data, they just bump a size counter that can be later used to know exactly which data size needs
  * to be allocated for actual writing.
- *
- * @author chaokunyang
  */
 public class MockWritableByteChannel implements WritableByteChannel {
   private boolean open = true;

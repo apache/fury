@@ -56,7 +56,6 @@ import org.apache.fury.util.record.RecordUtils;
  * Build descriptors for a class.
  *
  * @see Ignore
- * @author chaokunyang
  */
 @SuppressWarnings("UnstableApiUsage")
 public class Descriptor {

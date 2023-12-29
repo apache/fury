@@ -26,11 +26,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.collection.Tuple3;
 import org.apache.fury.memory.MemoryBuffer;
 
-/**
- * Local serializer for {@link Locale}.
- *
- * @author chaokunyang
- */
+/** Local serializer for {@link Locale}. */
 public final class LocaleSerializer extends Serializer<Locale> {
   // Using `new HashMap<>` to ensure thread safety by java constructor semantics.
   private static final Map<Tuple3<String, String, String>, Locale> LOCALE_CACHE =

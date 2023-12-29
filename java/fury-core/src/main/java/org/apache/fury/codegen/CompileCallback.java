@@ -22,8 +22,6 @@ package org.apache.fury.codegen;
 /**
  * Compile callback to be invoked just before compilation happen. This can be used to set up
  * thread-safety or inspection.
- *
- * @author chaokunyang
  */
 public interface CompileCallback {
   /**

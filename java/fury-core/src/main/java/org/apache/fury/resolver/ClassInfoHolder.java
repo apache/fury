@@ -21,11 +21,7 @@ package org.apache.fury.resolver;
 
 import org.apache.fury.serializer.Serializer;
 
-/**
- * A helper class for holding and update {@link ClassInfo} to reduce map look-up.
- *
- * @author chaokunyang
- */
+/** A helper class for holding and update {@link ClassInfo} to reduce map look-up. */
 @SuppressWarnings("rawtypes")
 public class ClassInfoHolder {
   public ClassInfo classInfo;

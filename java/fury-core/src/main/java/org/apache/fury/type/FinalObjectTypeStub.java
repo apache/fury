@@ -27,8 +27,6 @@ import org.apache.fury.annotation.Internal;
  * <p>{@link Object} class will be used if isn't final. No {@link
  * org.apache.fury.resolver.ClassInfo} should be created for this class since it has no fields, and
  * doesn't have consistent class structure as real class.
- *
- * @author chaokunyang
  */
 @Internal
 public final class FinalObjectTypeStub {}

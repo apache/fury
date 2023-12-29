@@ -27,8 +27,6 @@ import org.apache.fury.util.LoaderBinding;
 /**
  * Thread safe serializer interface. {@link Fury} is not thread-safe, the implementation of this
  * interface will be thread-safe. And support switch classloader dynamically.
- *
- * @author chaokunyang
  */
 public interface ThreadSafeFury {
 

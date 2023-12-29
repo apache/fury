@@ -22,11 +22,7 @@ package org.apache.fury.resolver;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 
-/**
- * This class is used to track objects that have already been read or written.
- *
- * @author chaokunyang
- */
+/** This class is used to track objects that have already been read or written. */
 public interface RefResolver {
   /**
    * Write reference and tag for the obj if the obj has been written previously, write null/not-null

@@ -22,11 +22,7 @@ package org.apache.fury.format.encoder;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.fury.format.row.binary.BinaryArray;
 
-/**
- * Encoder to encode/decode object in the list container by toArray/fromArray row.
- *
- * @author ganrunsheng
- */
+/** Encoder to encode/decode object in the list container by toArray/fromArray row. */
 public interface ArrayEncoder<T> extends Encoder<T> {
   Field field();
 

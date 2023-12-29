@@ -60,7 +60,6 @@ import org.apache.fury.util.function.SerializableSupplier;
  * update too.
  *
  * @see #buildGroups() for detailed heuristic rules.
- * @author chaokunyang
  */
 @Internal
 public class ObjectCodecOptimizer extends ExpressionOptimizer {

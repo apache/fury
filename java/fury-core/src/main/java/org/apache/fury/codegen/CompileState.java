@@ -26,8 +26,6 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Compile state to store compile info such as whether finished, and if finished, store compile
  * result too.
- *
- * @author chaokunyang
  */
 public class CompileState {
   public final Lock lock;

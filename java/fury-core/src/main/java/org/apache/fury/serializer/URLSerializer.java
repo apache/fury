@@ -25,11 +25,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Platform;
 
-/**
- * Serializer for {@link URL}.
- *
- * @author chaokunyang
- */
+/** Serializer for {@link URL}. */
 // TODO(chaokunyang) ensure security to avoid dnslog detection.
 public final class URLSerializer extends Serializer<URL> {
 

@@ -71,8 +71,6 @@ import org.slf4j.Logger;
  *
  * <p>serialize/deserialize is user API for root object serialization, write/read api is for inner
  * serialization.
- *
- * @author chaokunyang
  */
 @NotThreadSafe
 public final class Fury {

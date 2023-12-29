@@ -25,11 +25,7 @@ import java.nio.ByteBuffer;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 
-/**
- * Memory utils for fury.
- *
- * @author chaokunyang
- */
+/** Memory utils for fury. */
 public class MemoryUtils {
 
   public static MemoryBuffer buffer(int size) {

@@ -52,8 +52,6 @@ import org.slf4j.Logger;
  * Code generator will take a list of {@link CompileUnit} and compile it into a list of classes.
  *
  * <p>The compilation will be executed in a thread-pool parallel for speed.
- *
- * @author chaokunyang
  */
 public class CodeGenerator {
   private static final Logger LOG = LoggerFactory.getLogger(CodeGenerator.class);

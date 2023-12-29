@@ -30,8 +30,6 @@ import org.apache.fury.util.Preconditions;
 /**
  * Serializer for <a href="https://docs.scala-lang.org/tour/singleton-objects.html">scala
  * singleton</a>.
- *
- * @author chaokunyang
  */
 @SuppressWarnings("rawtypes")
 public class SingletonObjectSerializer extends Serializer {

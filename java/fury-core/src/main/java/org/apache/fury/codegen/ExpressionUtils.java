@@ -40,11 +40,7 @@ import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 
-/**
- * Expression utils to create expression and code in a more convenient way.
- *
- * @author chaokunyang
- */
+/** Expression utils to create expression and code in a more convenient way. */
 @SuppressWarnings("UnstableApiUsage")
 public class ExpressionUtils {
 
