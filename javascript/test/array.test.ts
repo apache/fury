@@ -122,7 +122,7 @@ describe('array', () => {
       }
     };
     
-    const fury = new Fury({ refTracking: true, useLatin1: true }); 
+    const fury = new Fury({ refTracking: true }); 
     const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({
       a7: ["hello", "world", null]

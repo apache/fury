@@ -34,12 +34,39 @@ import { BinaryWriter } from "./writer";
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1;
 
+class Lazystring {
+  private string: string | null = null;
+  private start: number | null = null;
+  private len: number | null = null;
+
+  static fromPair(start: number, len: number) {
+    const result = new Lazystring();
+    result.start = start;
+    result.len = len;
+    return result;
+  }
+
+  static fromString(str: string) {
+    const result = new Lazystring();
+    result.string = str;
+    return result;
+  }
+
+  toString(binaryReader: BinaryReader) {
+    if (this.string == null) {
+      const str = binaryReader.stringUtf8At(this.start!, this.len!);
+      return str;
+    }
+    return this.string;
+  }
+}
+
 export default class SerializerResolver {
   private internalSerializer: Serializer[] = new Array(300);
   private customSerializer: { [key: string]: Serializer } = {
   };
 
-  private readStringPool: string[] = [];
+  private readStringPool: Lazystring[] = [];
   private writeStringCount = 0;
   private writeStringIndex: number[] = [];
 
@@ -139,10 +166,9 @@ export default class SerializerResolver {
     const flag = binaryReader.uint8();
     if (flag === USESTRINGVALUE) {
       binaryReader.skip(8); // The tag hash is not needed at the moment.
-      const str = binaryReader.stringUtf8(binaryReader.int16());
-      return str;
+      return binaryReader.stringUtf8(binaryReader.int16());
     } else {
-      return this.readStringPool[binaryReader.int16()];
+        return this.readStringPool[binaryReader.int16()].toString(binaryReader);
     }
   }
 
@@ -150,11 +176,19 @@ export default class SerializerResolver {
     const flag = binaryReader.uint8();
     if (flag === USESTRINGVALUE) {
       binaryReader.skip(8); // The tag hash is not needed at the moment.
-      const str = binaryReader.stringUtf8(binaryReader.int16());
-      this.readStringPool.push(str);
-      return str;
+      const start = binaryReader.getCursor();
+      const len = binaryReader.int16();
+      binaryReader.skip(len);
+      this.readStringPool.push(Lazystring.fromPair(start, len));
+      const idx = this.readStringPool.length;
+      return () => {
+        return this.readStringPool[idx - 1].toString(binaryReader);
+      }
     } else {
-      return this.readStringPool[binaryReader.int16()];
+      const idx = binaryReader.int16();
+      return () => {
+        return this.readStringPool[idx].toString(binaryReader);
+      }
     }
   }
 }

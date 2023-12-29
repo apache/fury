@@ -20,7 +20,7 @@
 const Fury = require("@furyjs/fury");
 const utils = require("../test/util");
 const hps = require('@furyjs/hps');
-const fury = new Fury.default({ hps, refTracking: false, useLatin1: true, useSliceString: true });
+const fury = new Fury.default({ hps, refTracking: false, useSliceString: true });
 const Benchmark = require("benchmark");
 const protobuf = require("protobufjs");
 const path = require('path');

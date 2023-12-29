@@ -57,10 +57,17 @@ export default class {
       serialize: (data: ToRecordType<T>) => {
         return this.fury.serialize(data, serializer);
       },
+      serializeVolatile: (data: ToRecordType<T>) => {
+        return this.fury.serializeVolatile(data, serializer);
+      },
       deserialize: (bytes: Uint8Array) => {
         return this.fury.deserialize(bytes, serializer) as ToRecordType<T>;
       },
     };
+  }
+
+  serializeVolatile(v: any, serialize?: Serializer) {
+    return this.fury.serializeVolatile(v, serialize);
   }
 
   serialize(v: any, serialize?: Serializer) {

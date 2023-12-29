@@ -23,11 +23,9 @@ const hps = require('@furyjs/hps');
 [
   {
     hps,
-    useLatin1: true
   },
   {
     hps: null,
-    useLatin1: false
   }
 ].forEach(config => {
   describe('string', () => {
