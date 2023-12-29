@@ -27,6 +27,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.LoaderBinding;
 import org.apache.fury.util.LoaderBinding.StagingType;
 import org.apache.fury.util.Preconditions;
@@ -73,6 +74,10 @@ public class ThreadLocalFury implements ThreadSafeFury {
   public void register(Class<?> clz, int id) {
     Preconditions.checkArgument(id < Short.MAX_VALUE);
     processCallback(fury -> fury.register(clz, (short) id));
+  }
+
+  public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
+    processCallback(fury -> fury.registerSerializer(type, serializerClass));
   }
 
   private void processCallback(Consumer<Fury> callback) {
