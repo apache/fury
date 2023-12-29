@@ -41,11 +41,7 @@ import org.apache.fury.serializer.Serializers.CrossLanguageCompatibleSerializer;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.Platform;
 
-/**
- * Serializers for apache arrow.
- *
- * @author chaokunyang
- */
+/** Serializers for apache arrow. */
 public class ArrowSerializers {
 
   /** Use {@link ArrowTableSerializer} is more recommended. */

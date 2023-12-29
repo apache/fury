@@ -50,8 +50,6 @@ import org.apache.fury.util.unsafe._JDKAccess;
  * <p>Note that string operations is very common in serialization, and jvm inline and branch
  * elimination is not reliable even in c2 compiler, so we try to inline and avoid checks as we can
  * manually.
- *
- * @author chaokunyang
  */
 @SuppressWarnings("unchecked")
 public final class StringSerializer extends Serializer<String> {

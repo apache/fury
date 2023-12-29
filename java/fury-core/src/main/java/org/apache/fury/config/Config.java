@@ -29,11 +29,7 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.TimeSerializers;
 import org.apache.fury.util.Preconditions;
 
-/**
- * Config for fury, all {@link Fury} related config can be found here.
- *
- * @author chaokunyang
- */
+/** Config for fury, all {@link Fury} related config can be found here. */
 @SuppressWarnings({"rawtypes"})
 public class Config implements Serializable {
   private final Language language;

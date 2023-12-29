@@ -37,12 +37,7 @@ import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.StringUtils;
 import org.slf4j.Logger;
 
-/**
- * Expression builder for building jit array encoder class.
- *
- * @author ganrunsheng
- */
-@SuppressWarnings("UnstableApiUsage")
+/** Expression builder for building jit array encoder class. */
 public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
   private static final Logger LOG = LoggerFactory.getLogger(ArrayEncoderBuilder.class);
   private static final String FIELD_NAME = "field";

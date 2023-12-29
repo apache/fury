@@ -43,8 +43,6 @@ import scala.collection.{Factory, mutable}
  * <li>Fury java map framework read all map elements by fury protocol,
  * invoke [[java.util.Map#put]] to add it into builder.</li>
  * <li>`onMapRead`: create scala map from builder.</li>
- *
- * @author chaokunyang
  */
 abstract class AbstractScalaMapSerializer[K, V, T](fury: Fury, cls: Class[T])
   extends AbstractMapSerializer[T](fury, cls) {
@@ -72,7 +70,7 @@ abstract class AbstractScalaMapSerializer[K, V, T](fury: Fury, cls: Class[T])
 /**
  * A [[util.Map]] adapter to wrap scala map as a java [[util.Map]].
  *
- * @author chaokunyang
+ *
  */
 private class MapAdapter[K, V](var map: scala.collection.Map[K, V])
   extends util.AbstractMap[K, V] {
@@ -95,7 +93,7 @@ private class MapAdapter[K, V](var map: scala.collection.Map[K, V])
 /**
  * A [[util.Map]] adapter to build scala [[scala.collection.Map]] from elements.
  *
- * @author chaokunyang
+ *
  */
 private class MapBuilder[K, V, T](val builder: mutable.Builder[(K, V), T])
   extends util.AbstractMap[K, V] {
@@ -110,7 +108,7 @@ private class MapBuilder[K, V, T](val builder: mutable.Builder[(K, V), T])
 /**
  * Serializer for scala map.
  *
- * @author chaokunyang
+ *
  */
 class ScalaMapSerializer[K, V, T <: scala.collection.Map[K, V]](fury: Fury, cls: Class[T])
   extends AbstractScalaMapSerializer[K, V, T](fury, cls) {
@@ -126,7 +124,7 @@ class ScalaMapSerializer[K, V, T <: scala.collection.Map[K, V]](fury: Fury, cls:
 /**
  * Serializer for scala sorted map.
  *
- * @author chaokunyang
+ *
  */
 class ScalaSortedMapSerializer[K, V, T <: scala.collection.SortedMap[K, V]](fury: Fury, cls: Class[T])
   extends AbstractScalaMapSerializer[K, V, T](fury, cls) {

@@ -21,11 +21,7 @@ package org.apache.fury.serializer;
 
 import java.nio.ByteOrder;
 
-/**
- * UTF16 utils.
- *
- * @author chaokunyang
- */
+/** UTF16 utils. */
 class StringUTF16 {
   static final int HI_BYTE_SHIFT;
   static final int LO_BYTE_SHIFT;

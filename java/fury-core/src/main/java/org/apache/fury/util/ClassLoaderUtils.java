@@ -117,8 +117,6 @@ public class ClassLoaderUtils {
   /**
    * A class loader that gives preference to its contained classloaders over the parent class loader
    * when loading classes and resources.
-   *
-   * @author chaokunyang
    */
   public static class ComposedClassLoader extends URLClassLoader {
 
@@ -172,8 +170,6 @@ public class ClassLoaderUtils {
   /**
    * A parallel loadable {@link ClassLoader} which make defineClass public for using in JDK17+.
    * {@link MethodHandle} can also be used for access `defineClass`.
-   *
-   * @author chaokunyang
    */
   public static class ByteArrayClassLoader extends ClassLoader {
 

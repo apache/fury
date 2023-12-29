@@ -29,11 +29,7 @@ import java.util.function.Supplier;
 import org.apache.fury.util.FieldAccessor;
 import org.apache.fury.util.ReflectionUtils;
 
-/**
- * Test utils.
- *
- * @author chaokunyang
- */
+/** Test utils. */
 public class TestUtils {
   @SuppressWarnings("unchecked")
   public static <T> T getFieldValue(Object obj, String fieldName) {

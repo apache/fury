@@ -39,8 +39,6 @@ import org.apache.fury.util.record.RecordUtils;
  * <li>collection fields
  * <li>map fields
  * <li>other fields
- *
- * @author chaokunyang
  */
 public class DescriptorGrouper {
   // sort primitive descriptors from largest to smallest, if size is the same,

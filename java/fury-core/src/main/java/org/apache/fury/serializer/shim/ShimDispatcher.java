@@ -30,11 +30,7 @@ import org.apache.fury.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * A shim serializer dispatcher to resolve compatibility problems for common used classes.
- *
- * @author fengjian
- */
+/** A shim serializer dispatcher to resolve compatibility problems for common used classes. */
 @SuppressWarnings("rawtypes")
 public class ShimDispatcher {
   private static final Logger LOG = LoggerFactory.getLogger(ShimDispatcher.class);

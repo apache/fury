@@ -74,8 +74,6 @@ import org.slf4j.Logger;
  * </ul>
  *
  * <p>`ObjectInputStream#setObjectInputFilter` will be ignored by this serializer.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ObjectStreamSerializer extends Serializer {

@@ -36,11 +36,7 @@ import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
 import org.slf4j.Logger;
 
-/**
- * Builder class to config and create {@link Fury}.
- *
- * @author chaokunyang
- */
+/** Builder class to config and create {@link Fury}. */
 // Method naming style for this builder:
 // - withXXX: withCodegen
 // - verbXXX: requireClassRegistration

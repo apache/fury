@@ -27,11 +27,7 @@ import org.apache.fury.builder.CodecUtils;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.memory.MemoryBuffer;
 
-/**
- * Util for JIT Serialization.
- *
- * @author chaokunyang
- */
+/** Util for JIT Serialization. */
 @SuppressWarnings("UnstableApiUsage")
 public final class CodegenSerializer {
 

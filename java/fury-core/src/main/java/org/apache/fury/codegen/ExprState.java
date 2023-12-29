@@ -21,11 +21,7 @@ package org.apache.fury.codegen;
 
 import org.apache.fury.codegen.Code.ExprCode;
 
-/**
- * State for {@link Expression} when being compiling.
- *
- * @author chaokunyang
- */
+/** State for {@link Expression} when being compiling. */
 public class ExprState {
   private final ExprCode exprCode;
   private int accessCount;

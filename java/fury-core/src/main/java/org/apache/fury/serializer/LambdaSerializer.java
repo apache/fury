@@ -33,8 +33,6 @@ import org.apache.fury.util.ReflectionUtils;
  * Serializer for java serializable lambda. Use fury to serialize java lambda instead of JDK
  * serialization to avoid serialization captured values in closure using JDK, which mis slow and not
  * secure(will work around type white-list).
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class LambdaSerializer extends Serializer {

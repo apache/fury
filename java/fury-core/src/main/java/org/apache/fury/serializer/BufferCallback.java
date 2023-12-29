@@ -22,8 +22,6 @@ package org.apache.fury.serializer;
 /**
  * If the callback returns false, the given buffer is out-of-band; otherwise the buffer is
  * serialized in-band, i.e. inside the serialized stream.
- *
- * @author chaokunyang
  */
 @FunctionalInterface
 public interface BufferCallback {

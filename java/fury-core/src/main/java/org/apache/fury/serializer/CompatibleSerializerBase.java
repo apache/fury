@@ -25,8 +25,6 @@ import org.apache.fury.memory.MemoryBuffer;
 /**
  * Base class for compatible serializer. Both JIT mode serializer and interpreter-mode serializer
  * will extend this class.
- *
- * @author chaokunyang
  */
 public abstract class CompatibleSerializerBase<T> extends Serializer<T> {
   public CompatibleSerializerBase(Fury fury, Class<T> type) {

@@ -33,8 +33,6 @@ import org.apache.fury.util.ReflectionUtils;
 /**
  * Since janino doesn't support generics, we use {@link Object} to represent object type rather
  * generic type.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public interface Generated {

@@ -27,11 +27,7 @@ import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.util.Preconditions;
 
-/**
- * A custom pyarrow-style arrow table by attach {@link Schema} to {@link ArrowRecordBatch}.
- *
- * @author chaokunyang
- */
+/** A custom pyarrow-style arrow table by attach {@link Schema} to {@link ArrowRecordBatch}. */
 public class ArrowTable {
   private static final BufferAllocator tableBufferAllocator =
       ArrowUtils.allocator.newChildAllocator("table_buffer_allocator", 64, Long.MAX_VALUE);

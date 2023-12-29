@@ -51,8 +51,6 @@ import org.apache.fury.util.StringUtils;
  * <p>All constructor of generated class will call {@code initialize()} to initialize object. We
  * don't use instance initialize, so user can add init code which depends on used-passed
  * constructor's args.
- *
- * @author chaokunyang
  */
 public class CodegenContext {
   public static Set<String> JAVA_RESERVED_WORDS;

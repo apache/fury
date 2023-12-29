@@ -19,11 +19,7 @@
 
 package org.apache.fury.memory;
 
-/**
- * Util for check whether bounds checking should be turned on or off.
- *
- * @author chaokunyang
- */
+/** Util for check whether bounds checking should be turned on or off. */
 public class BoundsChecking {
   public static final boolean BOUNDS_CHECKING_ENABLED;
 

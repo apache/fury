@@ -51,11 +51,7 @@ import org.apache.fury.collection.Tuple3;
 import org.apache.fury.util.function.Functions;
 import org.apache.fury.util.unsafe._JDKAccess;
 
-/**
- * Reflection util.
- *
- * @author chaokunyang
- */
+/** Reflection util. */
 @Internal
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ReflectionUtils {

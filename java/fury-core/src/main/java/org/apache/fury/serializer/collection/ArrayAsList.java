@@ -28,8 +28,6 @@ import org.apache.fury.annotation.Internal;
 /**
  * A List which wrap a Java array like `java.util.Arrays.ArrayList`, but allow to replace wrapped
  * array. Used for serialization only, do not use it in other scenarios.
- *
- * @author chaokunyang
  */
 @Internal
 public class ArrayAsList<E> extends AbstractList<E> implements RandomAccess, java.io.Serializable {

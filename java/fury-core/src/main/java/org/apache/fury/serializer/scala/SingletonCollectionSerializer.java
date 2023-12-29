@@ -32,8 +32,6 @@ import org.apache.fury.util.Preconditions;
  * Singleton serializer for scala collection. We need this serializer for fury jit serialization,
  * otherwise the case exception will happen is an empty collection is being serialized as a field of
  * an object.
- *
- * @author chaokunyang
  */
 @SuppressWarnings("rawtypes")
 public class SingletonCollectionSerializer extends AbstractCollectionSerializer {

@@ -69,7 +69,6 @@ import org.slf4j.Logger;
  * @see CompatibleSerializer
  * @see FuryBuilder#withMetaContextShare
  * @see ReflectionUtils#getFieldOffset
- * @author chaokunyang
  */
 @SuppressWarnings("UnstableApiUsage")
 public class ClassDef implements Serializable {

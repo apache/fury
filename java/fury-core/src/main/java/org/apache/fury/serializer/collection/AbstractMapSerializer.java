@@ -37,11 +37,7 @@ import org.apache.fury.type.Generics;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.ReflectionUtils;
 
-/**
- * Serializer for all map-like objects.
- *
- * @author chaokunyang
- */
+/** Serializer for all map-like objects. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   protected MethodHandle constructor;

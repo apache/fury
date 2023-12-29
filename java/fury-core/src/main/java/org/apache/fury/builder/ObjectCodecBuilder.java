@@ -78,7 +78,6 @@ import org.apache.fury.util.record.RecordUtils;
  * types.
  *
  * @see ObjectCodecOptimizer for code stats and split heuristics.
- * @author chaokunyang
  */
 public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   public static final String BUFFER_NAME = "buffer";

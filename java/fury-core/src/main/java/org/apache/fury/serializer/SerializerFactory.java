@@ -21,11 +21,7 @@ package org.apache.fury.serializer;
 
 import org.apache.fury.Fury;
 
-/**
- * Serializer factory for customizing serializer creation.
- *
- * @author chaokunyang
- */
+/** Serializer factory for customizing serializer creation. */
 public interface SerializerFactory {
 
   Serializer createSerializer(Fury fury, Class<?> cls);

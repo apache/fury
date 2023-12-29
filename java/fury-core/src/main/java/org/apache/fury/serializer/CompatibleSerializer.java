@@ -44,7 +44,6 @@ import org.apache.fury.util.record.RecordUtils;
  * This Serializer provides both forward and backward compatibility: fields can be added or removed
  * without invalidating previously serialized bytes.
  *
- * @author chaokunyang
  * @see FieldResolver
  */
 // TODO(chaokunyang) support generics optimization for {@code SomeClass<T>}

@@ -21,11 +21,7 @@ package org.apache.fury.format.encoder;
 
 import org.apache.fury.exception.FuryException;
 
-/**
- * This class represents encoder-related exception.
- *
- * @author chaokunyang
- */
+/** This class represents encoder-related exception. */
 public class EncoderException extends FuryException {
 
   public EncoderException(String message) {

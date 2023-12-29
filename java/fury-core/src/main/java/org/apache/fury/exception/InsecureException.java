@@ -22,8 +22,6 @@ package org.apache.fury.exception;
 /**
  * If class registration is enabled, and class of object which is being serialized is not
  * registered(i.e. not in white-list), then this exception will be thrown.
- *
- * @author chaokunyang
  */
 public class InsecureException extends FuryException {
   public InsecureException(String message) {

@@ -27,11 +27,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.util.Preconditions;
 
-/**
- * ObjectInput based on {@link Fury} and {@link MemoryBuffer}.
- *
- * @author chaokunyang
- */
+/** ObjectInput based on {@link Fury} and {@link MemoryBuffer}. */
 public class FuryObjectInput extends InputStream implements ObjectInput {
   private final Fury fury;
   private MemoryBuffer buffer;

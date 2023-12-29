@@ -25,11 +25,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.Type;
 
-/**
- * Serializers for buffer related classes.
- *
- * @author chaokunyang
- */
+/** Serializers for buffer related classes. */
 public class BufferSerializers {
   /**
    * Note that this serializer only serialize data, but not the byte buffer meta. Since ByteBuffer

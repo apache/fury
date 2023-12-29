@@ -24,11 +24,7 @@ import java.util.Random;
 import lombok.Data;
 import org.codehaus.janino.SimpleCompiler;
 
-/**
- * Test struct for primitive fields.
- *
- * @author chaokunyang
- */
+/** Test struct for primitive fields. */
 @Data
 public class Foo implements Serializable {
   int f1;

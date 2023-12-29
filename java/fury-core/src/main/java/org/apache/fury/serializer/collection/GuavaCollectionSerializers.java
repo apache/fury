@@ -41,11 +41,7 @@ import org.apache.fury.type.Type;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.unsafe._JDKAccess;
 
-/**
- * Serializers for common guava types.
- *
- * @author chaokunyang
- */
+/** Serializers for common guava types. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class GuavaCollectionSerializers {
   abstract static class GuavaCollectionSerializer<T extends Collection>

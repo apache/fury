@@ -36,8 +36,6 @@ import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Serializer for all collection like object. All collection serializer should extend this class.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {

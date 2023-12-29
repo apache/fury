@@ -19,11 +19,7 @@
 
 package org.apache.fury.util;
 
-/**
- * Check utils.
- *
- * @author chaokunyang
- */
+/** Check utils. */
 public class Preconditions {
   public static <T> T checkNotNull(T o) {
     if (o == null) {

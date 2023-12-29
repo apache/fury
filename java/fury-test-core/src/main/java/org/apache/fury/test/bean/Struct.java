@@ -45,8 +45,6 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Util class to create a struct with specified type fields dynamically. Compared to class compiled
  * by janino, the created class by this util can have generic type fields.
- *
- * @author chaokunyang
  */
 public final class Struct implements Serializable {
 

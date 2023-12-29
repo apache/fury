@@ -103,7 +103,6 @@ import org.apache.fury.util.ReflectionUtils;
  * skipped.
  *
  * @see org.apache.fury.serializer.CompatibleSerializerBase
- * @author chaokunyang
  */
 @SuppressWarnings({"rawtypes", "UnstableApiUsage"})
 public class FieldResolver {

@@ -31,8 +31,6 @@ import org.apache.fury.annotation.Internal;
  * An util to bind {@link Fury} with {@link ClassLoader}. If {@link ClassLoader} are changed, the
  * previous bind {@link Fury} will be canceled by default, one can set different {@link StagingType}
  * to preserve previous {@link Fury} in a strong/soft referenced way.
- *
- * @author chaokunyang
  */
 @Internal
 public final class LoaderBinding {

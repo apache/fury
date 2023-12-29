@@ -44,11 +44,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.DateTimeUtils;
 
-/**
- * Serializers for all time related types.
- *
- * @author chaokunyang
- */
+/** Serializers for all time related types. */
 public class TimeSerializers {
   public abstract static class TimeSerializer<T> extends Serializer<T> {
 
