@@ -27,10 +27,8 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.LoaderBinding;
 import org.apache.fury.util.LoaderBinding.StagingType;
-import org.apache.fury.util.Preconditions;
 
 /**
  * A thread safe serialization entrance for {@link Fury} by binding a {@link Fury} for every thread.
@@ -40,7 +38,7 @@ import org.apache.fury.util.Preconditions;
  * @author chaokunyang
  */
 @ThreadSafe
-public class ThreadLocalFury implements ThreadSafeFury {
+public class ThreadLocalFury extends AbstractThreadSafeFury {
   private final ThreadLocal<MemoryBuffer> bufferLocal =
       ThreadLocal.withInitial(() -> MemoryUtils.buffer(32));
 
@@ -67,20 +65,8 @@ public class ThreadLocalFury implements ThreadSafeFury {
     allFury.put(fury, null);
   }
 
-  public void register(Class<?> clz) {
-    processCallback(fury -> fury.register(clz));
-  }
-
-  public void register(Class<?> clz, int id) {
-    Preconditions.checkArgument(id < Short.MAX_VALUE);
-    processCallback(fury -> fury.register(clz, (short) id));
-  }
-
-  public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
-    processCallback(fury -> fury.registerSerializer(type, serializerClass));
-  }
-
-  private void processCallback(Consumer<Fury> callback) {
+  @Override
+  protected void processCallback(Consumer<Fury> callback) {
     allFury.keySet().forEach(callback);
     factoryCallback = factoryCallback.andThen(callback);
   }

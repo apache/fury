@@ -24,16 +24,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
+import org.apache.fury.AbstractThreadSafeFury;
 import org.apache.fury.Fury;
-import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.LoaderBinding;
-import org.apache.fury.util.Preconditions;
 
 @ThreadSafe
-public class ThreadPoolFury implements ThreadSafeFury {
+public class ThreadPoolFury extends AbstractThreadSafeFury {
 
   private final FuryPooledObjectFactory furyPooledObjectFactory;
   private Consumer<Fury> factoryCallback = f -> {};
@@ -48,20 +46,8 @@ public class ThreadPoolFury implements ThreadSafeFury {
         new FuryPooledObjectFactory(furyFactory, minPoolSize, maxPoolSize, expireTime, timeUnit);
   }
 
-  public void register(Class<?> clz) {
-    processCallback(fury -> fury.register(clz));
-  }
-
-  public void register(Class<?> clz, int id) {
-    Preconditions.checkArgument(id < Short.MAX_VALUE);
-    processCallback(fury -> fury.register(clz, (short) id));
-  }
-
-  public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
-    processCallback(fury -> fury.registerSerializer(type, serializerClass));
-  }
-
-  private void processCallback(Consumer<Fury> callback) {
+  @Override
+  protected void processCallback(Consumer<Fury> callback) {
     factoryCallback = factoryCallback.andThen(callback);
     for (ClassLoaderFuryPooled furyPooled :
         furyPooledObjectFactory.classLoaderFuryPooledCache.asMap().values()) {
