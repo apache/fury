@@ -45,7 +45,7 @@ public class FuryPooledObjectFactory {
    * @see Cache
    * @see com.google.common.cache.CacheBuilder
    */
-  private final Cache<ClassLoader, ClassLoaderFuryPooled> classLoaderFuryPooledCache;
+  final Cache<ClassLoader, ClassLoaderFuryPooled> classLoaderFuryPooledCache;
 
   /** ThreadLocal: ClassLoader. */
   private final ThreadLocal<ClassLoader> classLoaderLocal =

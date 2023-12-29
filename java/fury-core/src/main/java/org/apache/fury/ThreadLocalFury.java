@@ -20,6 +20,8 @@
 package org.apache.fury;
 
 import java.nio.ByteBuffer;
+import java.util.WeakHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
 import org.apache.fury.memory.MemoryBuffer;
@@ -34,18 +36,24 @@ import org.apache.fury.util.LoaderBinding.StagingType;
  * will be created and destroyed frequently, which is slow.
  */
 @ThreadSafe
-public class ThreadLocalFury implements ThreadSafeFury {
+public class ThreadLocalFury extends AbstractThreadSafeFury {
   private final ThreadLocal<MemoryBuffer> bufferLocal =
       ThreadLocal.withInitial(() -> MemoryUtils.buffer(32));
 
   private final ThreadLocal<LoaderBinding> bindingThreadLocal;
+  private Consumer<Fury> factoryCallback;
+  private final WeakHashMap<LoaderBinding, Object> allFury;
 
   public ThreadLocalFury(Function<ClassLoader, Fury> furyFactory) {
+    factoryCallback = f -> {};
+    allFury = new WeakHashMap<>();
     bindingThreadLocal =
         ThreadLocal.withInitial(
             () -> {
               LoaderBinding binding = new LoaderBinding(furyFactory);
+              binding.setBindingCallback(factoryCallback);
               binding.setClassLoader(Thread.currentThread().getContextClassLoader());
+              allFury.put(binding, null);
               return binding;
             });
     // 1. init and warm for current thread.
@@ -55,6 +63,15 @@ public class ThreadLocalFury implements ThreadSafeFury {
     Fury fury = bindingThreadLocal.get().get();
     ClassResolver._addGraalvmClassRegistry(
         fury.getConfig().getConfigHash(), fury.getClassResolver());
+  }
+
+  @Override
+  protected void processCallback(Consumer<Fury> callback) {
+    factoryCallback = factoryCallback.andThen(callback);
+    for (LoaderBinding binding : allFury.keySet()) {
+      binding.visitAllFury(callback);
+      binding.setBindingCallback(factoryCallback);
+    }
   }
 
   public <R> R execute(Function<Fury, R> action) {

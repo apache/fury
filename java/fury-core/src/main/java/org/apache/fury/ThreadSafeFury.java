@@ -22,6 +22,8 @@ package org.apache.fury;
 import java.nio.ByteBuffer;
 import java.util.function.Function;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.Serializers;
 import org.apache.fury.util.LoaderBinding;
 
 /**
@@ -29,6 +31,40 @@ import org.apache.fury.util.LoaderBinding;
  * interface will be thread-safe. And support switch classloader dynamically.
  */
 public interface ThreadSafeFury {
+
+  /** register class. */
+  void register(Class<?> cls);
+
+  /**
+   * Register class.
+   *
+   * @param cls class to register
+   * @param createSerializer whether to create serializer, if true and codegen enabled, this will
+   *     generate the serializer code too.
+   */
+  void register(Class<?> cls, boolean createSerializer);
+
+  /** register class with given id. */
+  void register(Class<?> cls, Short id);
+
+  /**
+   * Register class with specified id.
+   *
+   * @param cls class to register
+   * @param id id for provided class.
+   * @param createSerializer whether to create serializer, if true and codegen enabled, this will
+   *     generate the serializer code too.
+   */
+  void register(Class<?> cls, Short id, boolean createSerializer);
+
+  /**
+   * Register a Serializer.
+   *
+   * @param type class needed to be serialized/deserialized
+   * @param serializerClass serializer class can be created with {@link Serializers#newSerializer}
+   * @param <T> type of class
+   */
+  <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass);
 
   /**
    * Provide a context to execution operations on {@link Fury} directly and return the executed

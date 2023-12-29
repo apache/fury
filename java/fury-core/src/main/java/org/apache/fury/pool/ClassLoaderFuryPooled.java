@@ -20,11 +20,13 @@
 package org.apache.fury.pool;
 
 import java.util.Queue;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.util.LoggerFactory;
@@ -36,6 +38,7 @@ public class ClassLoaderFuryPooled {
   private static final Logger LOG = LoggerFactory.getLogger(ClassLoaderFuryPooled.class);
 
   private final Function<ClassLoader, Fury> furyFactory;
+  private Consumer<Fury> factoryCallback = f -> {};
 
   private final ClassLoader classLoader;
 
@@ -44,6 +47,8 @@ public class ClassLoaderFuryPooled {
    * addObjAndWarp()
    */
   private final Queue<Fury> idleCacheQueue;
+
+  final WeakHashMap<Fury, Object> allFury = new WeakHashMap<>();
 
   /** active cache size's number change by : 1. getLoaderBind() 2. returnObject(LoaderBinding). */
   private final AtomicInteger activeCacheNumber = new AtomicInteger(0);
@@ -112,6 +117,12 @@ public class ClassLoaderFuryPooled {
 
   private void addFury() {
     Fury fury = furyFactory.apply(classLoader);
+    factoryCallback.accept(fury);
     idleCacheQueue.add(fury);
+    allFury.put(fury, null);
+  }
+
+  void setFactoryCallback(Consumer<Fury> factoryCallback) {
+    this.factoryCallback = factoryCallback;
   }
 }
