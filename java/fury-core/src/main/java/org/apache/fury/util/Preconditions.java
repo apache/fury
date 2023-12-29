@@ -17,7 +17,8 @@ package org.apache.fury.util;
 /**
  * Check utils.
  *
- * derived from https://github.com/google/guava/blob/master/guava/src/com/google/common/base/Preconditions.java
+ * <p>derived from
+ * https://github.com/google/guava/blob/master/guava/src/com/google/common/base/Preconditions.java
  */
 public class Preconditions {
   public static <T> T checkNotNull(T o) {
