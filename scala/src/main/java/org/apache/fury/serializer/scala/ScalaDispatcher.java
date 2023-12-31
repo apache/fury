@@ -30,8 +30,6 @@ import java.lang.reflect.Method;
 
 /**
  * Serializer dispatcher for scala types.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class ScalaDispatcher implements SerializerFactory {

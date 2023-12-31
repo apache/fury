@@ -42,8 +42,6 @@ import scala.collection.{Factory, Iterable, mutable}
  * <li>Fury java collection framework read all collection elements by fury protocol,
  * invoke [[java.util.Collection#add]] to add it into builder.</li>
  * <li>`onCollectionRead`: create scala collection from builder.</li>
- *
- * @author chaokunyang
  */
 abstract class AbstractScalaCollectionSerializer[A, T <: Iterable[A]](fury: Fury, cls: Class[T])
   extends AbstractCollectionSerializer[T](fury, cls) {
@@ -71,7 +69,7 @@ abstract class AbstractScalaCollectionSerializer[A, T <: Iterable[A]](fury: Fury
 /**
  * A Iterable adapter to wrap scala iterable into a [[java.lang.Iterable]].
  *
- * @author chaokunyang
+ *
  */
 private trait JavaIterable[A] extends java.lang.Iterable[A] {
   override def iterator(): util.Iterator[A] = new util.Iterator[A] {
@@ -88,7 +86,7 @@ private trait JavaIterable[A] extends java.lang.Iterable[A] {
 /**
  * A Collection adapter which wrap scala iterable into a [[java.util.Collection]].
  *
- * @author chaokunyang
+ *
  */
 private class CollectionAdapter[A, T](coll: scala.collection.Iterable[A])
   extends util.AbstractCollection[A] with JavaIterable[A] {
@@ -109,7 +107,7 @@ private class CollectionAdapter[A, T](coll: scala.collection.Iterable[A])
 /**
  * A List adapter which wrap scala Seq into a [[java.util.List]].
  *
- * @author chaokunyang
+ *
  */
 private class ListAdapter[A](coll: scala.collection.Seq[A])
   extends util.AbstractList[A] with JavaIterable[A] {
@@ -125,7 +123,7 @@ private class ListAdapter[A](coll: scala.collection.Seq[A])
 /**
  * A Collection adapter which build scala collection from elements.
  *
- * @author chaokunyang
+ *
  */
 private class JavaCollectionBuilder[A, T](val builder: mutable.Builder[A, T])
   extends util.AbstractCollection[A] {
@@ -142,7 +140,7 @@ private class JavaCollectionBuilder[A, T](val builder: mutable.Builder[A, T])
 /**
  * Serializer for scala iterables.
  *
- * @author chaokunyang
+ *
  */
 class ScalaCollectionSerializer[A, T <: Iterable[A]] (fury: Fury, cls: Class[T])
   extends AbstractScalaCollectionSerializer[A, T](fury, cls) {
@@ -158,7 +156,7 @@ class ScalaCollectionSerializer[A, T <: Iterable[A]] (fury: Fury, cls: Class[T])
 /**
  * Serializer for scala sorted set.
  *
- * @author chaokunyang
+ *
  */
 class ScalaSortedSetSerializer[A, T <: scala.collection.SortedSet[A]](fury: Fury, cls: Class[T])
   extends AbstractScalaCollectionSerializer[A, T](fury, cls) {
@@ -174,7 +172,7 @@ class ScalaSortedSetSerializer[A, T <: scala.collection.SortedSet[A]](fury: Fury
 /**
  * Serializer for scala [[Seq]].
  *
- * @author chaokunyang
+ *
  */
 class ScalaSeqSerializer[A, T <: scala.collection.Seq[A]](fury: Fury, cls: Class[T])
   extends AbstractScalaCollectionSerializer[A, T](fury, cls)  {

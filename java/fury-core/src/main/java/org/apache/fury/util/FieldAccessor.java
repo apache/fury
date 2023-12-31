@@ -38,8 +38,6 @@ import org.apache.fury.util.function.ToShortFunction;
  *
  * <p>Note for primitive types, there will be box/unbox overhead. Use {@link UnsafeFieldAccessor} if
  * possible to avoid this overhead.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class FieldAccessor {

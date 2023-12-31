@@ -24,11 +24,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Ignore fields just like transient.
- *
- * @author chaokunyang
- */
+/** Ignore fields just like transient. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Ignore {}

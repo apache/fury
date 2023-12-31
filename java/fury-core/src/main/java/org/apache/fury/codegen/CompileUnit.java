@@ -25,11 +25,7 @@ import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 import org.slf4j.Logger;
 
-/**
- * A CompileUnit corresponds to java file, which have a package, main class and code.
- *
- * @author chaokunyang
- */
+/** A CompileUnit corresponds to java file, which have a package, main class and code. */
 public class CompileUnit {
   private static final Logger LOG = LoggerFactory.getLogger(CompileUnit.class);
 

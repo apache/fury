@@ -24,11 +24,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * An annotation used to mark closure may contain child expressions.
- *
- * @author chaokunyang
- */
+/** An annotation used to mark closure may contain child expressions. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface ClosureVisitable {}

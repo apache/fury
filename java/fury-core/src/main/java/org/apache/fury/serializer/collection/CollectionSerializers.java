@@ -55,8 +55,6 @@ import org.apache.fury.util.ReflectionUtils;
 /**
  * Serializers for classes implements {@link Collection}. All collection serializers should extend
  * {@link CollectionSerializer}.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class CollectionSerializers {

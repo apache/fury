@@ -35,8 +35,6 @@ import org.apache.fury.util.Platform;
 
 /**
  * A thread-safe serializer used to forward serialization to different serializer implementation.
- *
- * @author chaokunyang
  */
 @ThreadSafe
 @SuppressWarnings("unchecked")

@@ -65,7 +65,6 @@ import org.apache.fury.util.record.RecordUtils;
  * @see FuryBuilder#withMetaContextShare
  * @see MetaSharedCodecBuilder
  * @see ObjectSerializer
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked"})
 public class MetaSharedSerializer<T> extends Serializer<T> {

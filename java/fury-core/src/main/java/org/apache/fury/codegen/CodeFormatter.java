@@ -19,11 +19,7 @@
 
 package org.apache.fury.codegen;
 
-/**
- * Code formatter to format generated code for better readbility.
- *
- * @author chaokunyang
- */
+/** Code formatter to format generated code for better readbility. */
 public class CodeFormatter {
 
   /** Format code to add line number for debug. */

@@ -81,11 +81,7 @@ import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.function.SerializableSupplier;
 import org.apache.fury.util.record.RecordUtils;
 
-/**
- * A jit-version of {@link CompatibleSerializer}.
- *
- * @author chaokunyang
- */
+/** A jit-version of {@link CompatibleSerializer}. */
 public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   public static final String FIELD_RESOLVER_NAME = "fieldResolver";
   private final FieldResolver fieldResolver;

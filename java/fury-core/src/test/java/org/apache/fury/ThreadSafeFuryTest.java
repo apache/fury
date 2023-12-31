@@ -35,6 +35,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.BeanB;
 import org.apache.fury.test.bean.Struct;
 import org.apache.fury.util.LoaderBinding.StagingType;
 import org.testng.Assert;
@@ -70,6 +71,42 @@ public class ThreadSafeFuryTest extends FuryTestBase {
           .start();
     }
     assertFalse(hasException);
+  }
+
+  @Test
+  public void testRegistration() throws Exception {
+    BeanB bean = BeanB.createBeanB(2);
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    AtomicReference<Throwable> ex = new AtomicReference<>();
+    {
+      ThreadSafeFury fury =
+          Fury.builder().requireClassRegistration(true).buildThreadSafeFuryPool(2, 4);
+      fury.register(BeanB.class);
+      Assert.assertEquals(fury.deserialize(fury.serialize(bean)), bean);
+      executor.execute(
+          () -> {
+            try {
+              Assert.assertEquals(fury.deserialize(fury.serialize(bean)), bean);
+            } catch (Throwable t) {
+              ex.set(t);
+            }
+          });
+      Assert.assertNull(ex.get());
+    }
+    {
+      ThreadSafeFury fury = Fury.builder().requireClassRegistration(true).buildThreadLocalFury();
+      fury.register(BeanB.class);
+      Assert.assertEquals(fury.deserialize(fury.serialize(bean)), bean);
+      executor.execute(
+          () -> {
+            try {
+              Assert.assertEquals(fury.deserialize(fury.serialize(bean)), bean);
+            } catch (Throwable t) {
+              ex.set(t);
+            }
+          });
+      Assert.assertNull(ex.get());
+    }
   }
 
   @Test

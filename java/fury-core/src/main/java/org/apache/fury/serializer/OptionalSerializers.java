@@ -29,8 +29,6 @@ import org.apache.fury.memory.MemoryBuffer;
 /**
  * Serializers for {@link Optional}, {@link OptionalInt}, {@link OptionalLong} and {@link
  * OptionalDouble}.
- *
- * @author chaokunyang
  */
 public final class OptionalSerializers {
   public static final class OptionalSerializer extends Serializer<Optional> {

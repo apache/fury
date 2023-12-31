@@ -27,11 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * A class to record which classes are not allowed for serialization.
- *
- * @author chaokunyang
- */
+/** A class to record which classes are not allowed for serialization. */
 class BlackList {
   private static final String BLACKLIST_TXT_PATH = "fury/blacklist.txt";
   private static final Set<String> DEFAULT_BLACKLIST_SET;

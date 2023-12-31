@@ -19,11 +19,7 @@
 
 package org.apache.fury.codegen;
 
-/**
- * An exception to indicate codegen got wrong.
- *
- * @author chaokunyang
- */
+/** An exception to indicate codegen got wrong. */
 public class CodegenException extends RuntimeException {
 
   public CodegenException() {}

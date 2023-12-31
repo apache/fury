@@ -45,7 +45,6 @@ import org.slf4j.Logger;
  * call overhead. {@link sun.misc.Unsafe} is another method to avoid reflection cost.
  *
  * @see org.apache.fury.util.UnsafeFieldAccessor
- * @author chaokunyang
  */
 public class AccessorHelper {
   private static final Logger LOG = LoggerFactory.getLogger(AccessorHelper.class);

@@ -22,11 +22,7 @@ package org.apache.fury.util.function;
 import java.util.function.Function;
 import org.apache.fury.util.Preconditions;
 
-/**
- * Triple function.
- *
- * @author chaokunyang
- */
+/** Triple function. */
 @FunctionalInterface
 public interface TriFunction<A, B, C, R> {
 

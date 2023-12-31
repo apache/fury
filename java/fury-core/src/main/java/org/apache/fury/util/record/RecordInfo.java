@@ -21,11 +21,7 @@ package org.apache.fury.util.record;
 
 import java.util.List;
 
-/**
- * Record build information.
- *
- * @author chaokunyang
- */
+/** Record build information. */
 public class RecordInfo {
   private final int[] recordComponentsIndex;
   private final Object[] recordComponentsDefaultValues;

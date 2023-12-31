@@ -19,11 +19,7 @@
 
 package org.apache.fury.util;
 
-/**
- * Misc common utils.
- *
- * @author chaokunyang
- */
+/** Misc common utils. */
 public class Utils {
 
   public static void ignore(Object... args) {}

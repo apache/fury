@@ -37,11 +37,7 @@ import org.apache.fury.config.Config;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 
-/**
- * A context for managing jit serialization code generation in async multithreaded environment.
- *
- * @author chaokunyang
- */
+/** A context for managing jit serialization code generation in async multithreaded environment. */
 public class JITContext {
   private final Fury fury;
   private final boolean asyncCompilationEnabled;

@@ -22,11 +22,7 @@ package org.apache.fury.util;
 import java.lang.reflect.Field;
 import sun.misc.Unsafe;
 
-/**
- * An object field accessor based on {@link Unsafe}.
- *
- * @author chaokunyang
- */
+/** An object field accessor based on {@link Unsafe}. */
 public class UnsafeFieldAccessor {
   private final Field field;
   private final long fieldOffset;

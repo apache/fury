@@ -31,7 +31,6 @@ import org.apache.fury.type.TypeUtils;
  * #getXtypeId}.
  *
  * @param <T> type of objects being serializing/deserializing
- * @author chaokunyang
  */
 @NotThreadSafe
 public abstract class Serializer<T> {

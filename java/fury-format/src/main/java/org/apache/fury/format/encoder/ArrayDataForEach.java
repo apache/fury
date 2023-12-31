@@ -39,8 +39,6 @@ import org.apache.fury.util.function.SerializableFunction;
 /**
  * Expression for iterate {@link org.apache.fury.format.row.ArrayData} with specified not null
  * element action expression and null element action expression.
- *
- * @author chaokunyang
  */
 @Internal
 public class ArrayDataForEach implements Expression {

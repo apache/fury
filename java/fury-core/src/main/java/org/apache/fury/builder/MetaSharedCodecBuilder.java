@@ -61,7 +61,6 @@ import org.apache.fury.util.record.RecordUtils;
  * @see FuryBuilder#withMetaContextShare
  * @see GeneratedMetaSharedSerializer
  * @see MetaSharedSerializer
- * @author chaokunyang
  */
 public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
   private final ClassDef classDef;

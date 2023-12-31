@@ -61,8 +61,6 @@ import org.apache.fury.util.record.RecordUtils;
  *   <li>anonymous class
  *   <li>class that can't be handled by other serializers or codegen-based serializers
  * </ul>
- *
- * @author chaokunyang
  */
 // TODO(chaokunyang) support generics optimization for {@code SomeClass<T>}
 @SuppressWarnings({"unchecked"})

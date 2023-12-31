@@ -19,11 +19,7 @@
 
 package org.apache.fury.exception;
 
-/**
- * Base class of all fury exceptions.
- *
- * @author chaokunyang
- */
+/** Base class of all fury exceptions. */
 public class FuryException extends RuntimeException {
 
   public FuryException(String message) {

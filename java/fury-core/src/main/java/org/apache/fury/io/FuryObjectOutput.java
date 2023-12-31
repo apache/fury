@@ -28,11 +28,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.util.Preconditions;
 
-/**
- * ObjectOutput based on {@link Fury} and {@link MemoryBuffer}.
- *
- * @author chaokunyang
- */
+/** ObjectOutput based on {@link Fury} and {@link MemoryBuffer}. */
 public class FuryObjectOutput extends OutputStream implements ObjectOutput {
   private final Fury fury;
   private final DataOutputStream utf8out = new DataOutputStream(this);

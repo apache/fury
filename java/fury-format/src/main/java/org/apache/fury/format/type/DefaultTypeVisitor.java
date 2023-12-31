@@ -21,11 +21,7 @@ package org.apache.fury.format.type;
 
 import org.apache.arrow.vector.types.pojo.ArrowType;
 
-/**
- * A default arrow type visitor to make overriding easier.
- *
- * @author chaokunyang
- */
+/** A default arrow type visitor to make overriding easier. */
 public class DefaultTypeVisitor<T> implements ArrowType.ArrowTypeVisitor<T> {
 
   @Override

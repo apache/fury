@@ -29,11 +29,7 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.ClassDef;
 import org.apache.fury.util.Preconditions;
 
-/**
- * Codec util to create and load jit serializer class.
- *
- * @author chaokunyang
- */
+/** Codec util to create and load jit serializer class. */
 public class CodecUtils {
 
   // TODO(chaokunyang) how to uninstall org.apache.fury.codegen/builder classes for graalvm build

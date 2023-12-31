@@ -21,11 +21,7 @@ package org.apache.fury.collection;
 
 import org.apache.fury.annotation.Internal;
 
-/**
- * Profiling statistics for hash collision.
- *
- * @author chaokunyang
- */
+/** Profiling statistics for hash collision. */
 @Internal
 public class MapStatistics {
   public int maxProbeProfiled;

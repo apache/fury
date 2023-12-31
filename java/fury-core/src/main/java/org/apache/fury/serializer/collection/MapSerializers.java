@@ -47,8 +47,6 @@ import org.apache.fury.util.ReflectionUtils;
 /**
  * Serializers for classes implements {@link Collection}. All map serializers must extends {@link
  * MapSerializer}.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class MapSerializers {

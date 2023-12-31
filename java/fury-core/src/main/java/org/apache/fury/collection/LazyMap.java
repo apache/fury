@@ -27,11 +27,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.fury.util.Preconditions;
 
-/**
- * A map which populate lazily until the first map query happens to reduce map#put cost.
- *
- * @author chaokunyang
- */
+/** A map which populate lazily until the first map query happens to reduce map#put cost. */
 public class LazyMap<K, V> extends ForwardingMap<K, V> {
   private List<Entry<K, V>> entries;
 

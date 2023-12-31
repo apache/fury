@@ -19,11 +19,7 @@
 
 package org.apache.fury.codegen;
 
-/**
- * A class to hold generated class fields into for code generation.
- *
- * @author chaokunyang
- */
+/** A class to hold generated class fields into for code generation. */
 class FieldInfo {
   final boolean isStatic;
   final boolean isFinal;

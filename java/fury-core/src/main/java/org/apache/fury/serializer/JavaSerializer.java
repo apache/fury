@@ -45,8 +45,6 @@ import org.slf4j.Logger;
  *
  * <p>When a serializer not found and {@link ClassResolver#requireJavaSerialization(Class)} return
  * true, this serializer will be used.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class JavaSerializer extends Serializer {

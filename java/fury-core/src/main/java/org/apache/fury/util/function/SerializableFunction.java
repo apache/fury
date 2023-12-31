@@ -22,9 +22,5 @@ package org.apache.fury.util.function;
 import java.io.Serializable;
 import java.util.function.Function;
 
-/**
- * Serializable {@link Function}.
- *
- * @author chaokunyang
- */
+/** Serializable {@link Function}. */
 public interface SerializableFunction<T, R> extends Function<T, R>, Serializable {}

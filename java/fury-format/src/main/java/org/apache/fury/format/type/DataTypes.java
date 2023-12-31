@@ -47,11 +47,7 @@ import org.apache.fury.type.Type;
 import org.apache.fury.util.DecimalUtils;
 import org.apache.fury.util.Preconditions;
 
-/**
- * Arrow data type utils.
- *
- * @author chaokunyang
- */
+/** Arrow data type utils. */
 public class DataTypes {
   public static Field PRIMITIVE_BOOLEAN_ARRAY_FIELD = primitiveArrayField(ArrowType.Bool.INSTANCE);
   public static Field PRIMITIVE_BYTE_ARRAY_FIELD = primitiveArrayField(intType(8));

@@ -47,11 +47,7 @@ import org.codehaus.janino.Compiler;
 import org.codehaus.janino.util.ClassFile;
 import org.slf4j.Logger;
 
-/**
- * A util to compile code to bytecode and create classloader to load generated class.
- *
- * @author chaokunyang
- */
+/** A util to compile code to bytecode and create classloader to load generated class. */
 public class JaninoUtils {
   private static final Logger LOG = LoggerFactory.getLogger(JaninoUtils.class);
 

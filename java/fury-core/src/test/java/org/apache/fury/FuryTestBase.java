@@ -42,11 +42,7 @@ import org.apache.fury.util.ReflectionUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 
-/**
- * Fury unit test base class.
- *
- * @author chaokunyang
- */
+/** Fury unit test base class. */
 @SuppressWarnings("unchecked")
 public abstract class FuryTestBase {
   private static final ThreadLocal<Fury> javaFuryLocal =

@@ -21,11 +21,7 @@ package org.apache.fury.util;
 
 import java.lang.reflect.Field;
 
-/**
- * Util for java exceptions.
- *
- * @author chaokunyang
- */
+/** Util for java exceptions. */
 public class ExceptionUtils {
   private static final Field detailMessageField;
 
