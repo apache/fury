@@ -168,7 +168,7 @@ export default class SerializerResolver {
       binaryReader.skip(8); // The tag hash is not needed at the moment.
       return binaryReader.stringUtf8(binaryReader.int16());
     } else {
-        return this.readStringPool[binaryReader.int16()].toString(binaryReader);
+      return this.readStringPool[binaryReader.int16()].toString(binaryReader);
     }
   }
 
@@ -183,12 +183,12 @@ export default class SerializerResolver {
       const idx = this.readStringPool.length;
       return () => {
         return this.readStringPool[idx - 1].toString(binaryReader);
-      }
+      };
     } else {
       const idx = binaryReader.int16();
       return () => {
         return this.readStringPool[idx].toString(binaryReader);
-      }
+      };
     }
   }
 }

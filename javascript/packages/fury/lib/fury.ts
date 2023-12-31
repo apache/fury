@@ -111,6 +111,6 @@ export default (config: Config) => {
   function serializeVolatile<T = any>(data: T, serializer?: Serializer) {
     return serializeInternal(data, serializer).dumpAndOwn();
   }
-  
+
   return fury;
 };

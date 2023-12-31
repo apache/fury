@@ -21,7 +21,7 @@ import { InternalSerializerType, RefFlags, Fury } from "../type";
 
 export const uInt8Serializer = (fury: Fury) => {
   const { binaryWriter, binaryReader, referenceResolver } = fury;
-  const { int8: writeInt8, uint8: writeUInt8 } = binaryWriter;
+  const { uint8: writeUInt8 } = binaryWriter;
   const { uint8: readUInt8 } = binaryReader;
   return {
     ...referenceResolver.deref(() => {
@@ -107,7 +107,7 @@ export const int8Serializer = (fury: Fury) => {
 
 export const uInt16Serializer = (fury: Fury) => {
   const { binaryWriter, binaryReader, referenceResolver } = fury;
-  const { int8: writeInt8, uint16: writeUInt16 } = binaryWriter;
+  const { uint16: writeUInt16 } = binaryWriter;
   const { uint16: readUInt16 } = binaryReader;
 
   return {
@@ -151,7 +151,7 @@ export const int16Serializer = (fury: Fury) => {
 
 export const uInt32Serializer = (fury: Fury) => {
   const { binaryWriter, binaryReader, referenceResolver } = fury;
-  const { int8: writeInt8, uint32: writeUInt32 } = binaryWriter;
+  const { uint32: writeUInt32 } = binaryWriter;
   const { uint32: readUInt32 } = binaryReader;
 
   return {
@@ -195,7 +195,7 @@ export const int32Serializer = (fury: Fury) => {
 
 export const uInt64Serializer = (fury: Fury) => {
   const { binaryWriter, binaryReader, referenceResolver } = fury;
-  const { int8: writeInt8, uint64: writeUInt64 } = binaryWriter;
+  const { uint64: writeUInt64 } = binaryWriter;
   const { uint64: readUInt64 } = binaryReader;
 
   return {

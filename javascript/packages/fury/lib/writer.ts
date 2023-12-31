@@ -241,12 +241,12 @@ export const BinaryWriter = (config: Config) => {
     locked = true;
     return {
       get() {
-        return arrayBuffer.subarray(0, cursor);;
+        return arrayBuffer.subarray(0, cursor);
       },
       dispose() {
         locked = false;
-      }
-    }
+      },
+    };
   }
 
   function getCursor() {
