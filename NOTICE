@@ -28,6 +28,10 @@ The text of each license is the standard Apache 2.0 license.
       java/fury-core/src/main/java/org/apache/fury/util/Platform.java
       java/fury-format/src/main/java/org/apache/fury/format/vectorized/ArrowWriter.java
 
+* flink (https://github.com/apache/flink)
+    Files:
+      java/fury-core/src/main/java/org/apache/fury/memory/MemoryBuffer.java
+
 * commons-io (https://github.com/apache/commons-io)
     Files:
       java/fury-core/src/main/java/org/apache/fury/io/ClassLoaderObjectInputStream.java
@@ -50,19 +54,9 @@ The text of each license is also included in licenses/LICENSE-[project].txt.
 
 * kryo (https://github.com/EsotericSoftware/kryo)
     Files:
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Data.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Image.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Media.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/MediaContent.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Sample.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/BufferType.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/KryoState.java
-      java/fury-core/src/main/java/org/apache/fury/collection/FuryObjectMap.java
-      java/fury-core/src/main/java/org/apache/fury/collection/IdentityMap.java
-      java/fury-core/src/main/java/org/apache/fury/collection/IdentityObjectIntMap.java
-      java/fury-core/src/main/java/org/apache/fury/collection/LongMap.java
-      java/fury-core/src/main/java/org/apache/fury/collection/ObjectIntMap.java
-      java/fury-core/src/main/java/org/apache/fury/memory/MemoryBuffer.java
+      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/*
+      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/*
+      java/fury-core/src/main/java/org/apache/fury/collection/*
       java/fury-core/src/main/java/org/apache/fury/type/Generics.java
       java/fury-core/src/test/java/org/apache/fury/type/GenericsTest.java
 
