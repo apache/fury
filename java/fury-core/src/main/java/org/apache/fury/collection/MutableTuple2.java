@@ -30,7 +30,8 @@ public class MutableTuple2<T0, T1> implements Serializable {
   public T1 f1;
 
   /**
-   * Creates a new tuple and assigns the given values to the tuple's fields.
+   * Creates a new tuple and assigns the given values to the tuple's fields, with field value
+   * nonFinal. Recommend use {@link Tuple2} if value do not need to change.
    *
    * @param value0 The value for field 0
    * @param value1 The value for field 1

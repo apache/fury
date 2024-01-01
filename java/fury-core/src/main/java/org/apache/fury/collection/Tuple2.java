@@ -39,7 +39,7 @@ public class Tuple2<T0, T1> implements Serializable {
 
   /**
    * Creates a new tuple and assigns the given values to the tuple's fields, with field value final.
-   * In case field value if nonFinal, use {@link MutableTuple2}
+   * In case field value is nonFinal, use {@link MutableTuple2}
    *
    * @param value0 The value for field 0
    * @param value1 The value for field 1
