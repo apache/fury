@@ -41,6 +41,7 @@ public class Tuple3<T0, T1, T2> implements Serializable {
 
   /**
    * Creates a new tuple and assigns the given values to the tuple's fields, with field value final.
+   * In case field value if nonFinal, use {@link MutableTuple3}
    *
    * @param value0 The value for field 0
    * @param value1 The value for field 1
@@ -50,70 +51,6 @@ public class Tuple3<T0, T1, T2> implements Serializable {
     this.f0 = value0;
     this.f1 = value1;
     this.f2 = value2;
-  }
-
-  /**
-   * Creates a new tuple and assigns the given values to the tuple's fields, with field value
-   * nonFinal.
-   *
-   * @param value0 The value for field 0
-   * @param value1 The value for field 1
-   * @param value2 The value for field 2
-   */
-  public static <T0, T1, T2> NonFinal ofNonFinal(T0 value0, T1 value1, T2 value2) {
-    return new NonFinal<>(value0, value1, value2);
-  }
-
-  public static class NonFinal<T0, T1, T2> implements Serializable {
-    /** Field 0 of the tuple. */
-    public T0 f0;
-
-    /** Field 1 of the tuple. */
-    public T1 f1;
-
-    /** Field 2 of the tuple. */
-    public T2 f2;
-
-    /**
-     * Creates a new tuple and assigns the given values to the tuple's fields.
-     *
-     * @param value0 The value for field 0
-     * @param value1 The value for field 1
-     * @param value2 The value for field 2
-     */
-    public NonFinal(T0 value0, T1 value1, T2 value2) {
-      this.f0 = value0;
-      this.f1 = value1;
-      this.f2 = value2;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      NonFinal<?, ?, ?> tuple3 = (NonFinal<?, ?, ?>) o;
-      return Objects.equals(f0, tuple3.f0)
-          && Objects.equals(f1, tuple3.f1)
-          && Objects.equals(f2, tuple3.f2);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(f0, f1, f2);
-    }
-
-    public static <T0, T1, T2> Tuple3<T0, T1, T2> of(T0 value0, T1 value1, T2 value2) {
-      return new Tuple3<>(value0, value1, value2);
-    }
-
-    @Override
-    public String toString() {
-      return "Tuple3(" + f0 + ", " + f1 + ", " + f2 + ')';
-    }
   }
 
   @Override

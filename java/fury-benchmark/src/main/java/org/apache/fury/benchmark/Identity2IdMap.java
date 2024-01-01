@@ -26,16 +26,16 @@ import org.apache.fury.util.Platform;
 public class Identity2IdMap {
   private static final int RESERVE = 4;
   private static final int MAX_DEPTH = 4;
-  static final int[] PRIM = {
+  static int[] prim = {
     3, 5, 7, 11, 13, 17, 19, 23, 29, 37, 67, 97, 139, 211, 331, 641, 1097, 1531, 2207, 3121, 5059,
     7607, 10891, 15901, 19993, 30223, 50077, 74231, 99991, 150001, 300017, 1000033, 1500041, 200033,
     3000077, 5000077, 10000019
   };
 
   static int adjustSize(int size) {
-    for (int i = 0; i < PRIM.length - 1; i++) {
-      if (size < PRIM[i]) {
-        return PRIM[i] + RESERVE;
+    for (int i = 0; i < prim.length - 1; i++) {
+      if (size < prim[i]) {
+        return prim[i] + RESERVE;
       }
     }
     return size + RESERVE;
@@ -72,12 +72,10 @@ public class Identity2IdMap {
   }
 
   public int size() {
-    List scanList = linearScanList;
-    if (scanList != null) {
-      return scanList.size();
+    if (linearScanList != null) {
+      return linearScanList.size();
     }
-    Identity2IdMap n = next;
-    return mNumberOfElements + (n != null ? n.size() : 0);
+    return mNumberOfElements + (next != null ? next.size() : 0);
   }
 
   public final int putOrGet(Object key, int value) {
@@ -87,9 +85,8 @@ public class Identity2IdMap {
 
   // (383 bytes) hot method too big to inline, need to break it down.
   final int putOrGetHash(Object key, int value, int hash, Identity2IdMap parent, int depth) {
-    List scanList = linearScanList;
-    if (scanList != null) {
-      return linearScan(scanList, key, value);
+    if (linearScanList != null) {
+      return linearScan(key, value);
     }
     if (mNumberOfElements * GROFAC > mKeys.length) {
       Integer r = putOrGetHashParent(key, value, parent);
@@ -99,7 +96,8 @@ public class Identity2IdMap {
     }
 
     Object[] mKeys = this.mKeys;
-    int idx = calcIndexFromHash(hash);
+    //        int idx = calcIndexFromHash(hash, mKeys);
+    int idx = calcIndexFromHash(hash, mKeys);
 
     Object mKeyAtIdx = mKeys[idx];
     if (mKeyAtIdx == null) // new
@@ -154,33 +152,30 @@ public class Identity2IdMap {
     return null;
   }
 
-  private int linearScan(List scanList, Object key, int value) {
-    List<Integer> scanVals = linearScanVals;
-    for (int i = 0, size = scanList.size(); i < size; i++) {
-      Object o = scanList.get(i);
+  private int linearScan(Object key, int value) {
+    for (int i = 0; i < linearScanList.size(); i++) {
+      Object o = linearScanList.get(i);
       if (o == key) {
-        return scanVals.get(i);
+        return linearScanVals.get(i);
       }
     }
-    scanList.add(key);
-    scanVals.add(value);
+    linearScanList.add(key);
+    linearScanVals.add(value);
     return Integer.MIN_VALUE;
   }
 
   final int putOrGetNext(final int hash, final Object key, final int value, int depth) {
-    Identity2IdMap n = this.next;
-    if (n == null) { // new
+    if (next == null) { // new
       int newSiz = mKeys.length / 10;
-      n = new Identity2IdMap(newSiz);
+      next = new Identity2IdMap(newSiz);
       if (depth > MAX_DEPTH) {
-        n.linearScanVals = new ArrayList<>(3);
-        n.linearScanList = new ArrayList<>(3);
+        next.linearScanVals = new ArrayList<>(3);
+        next.linearScanList = new ArrayList<>(3);
       }
-      n.putHash(key, value, hash, this, depth);
-      this.next = n;
+      next.putHash(key, value, hash, this, depth);
       return Integer.MIN_VALUE;
     }
-    return n.putOrGetHash(key, value, hash, this, depth + 1);
+    return next.putOrGetHash(key, value, hash, this, depth + 1);
   }
 
   public final void put(Object key, int value) {
@@ -189,9 +184,8 @@ public class Identity2IdMap {
   }
 
   final void putHash(Object key, int value, int hash, Identity2IdMap parent, int depth) {
-    List scanList = linearScanList;
-    if (scanList != null) {
-      linearScanPutHash(scanList, key, value);
+    if (linearScanList != null) {
+      linearScanPutHash(key, value);
       return;
     }
     if (mNumberOfElements * GROFAC > mKeys.length) {
@@ -200,45 +194,43 @@ public class Identity2IdMap {
       }
     }
 
-    int idx = calcIndexFromHash(hash);
     Object[] mKeys = this.mKeys;
-    int[] values = this.mValues;
-    int eleCnt = this.mNumberOfElements;
+    int idx = calcIndexFromHash(hash, mKeys);
+
     if (mKeys[idx] == null) // new
     {
-      eleCnt++;
-      values[idx] = value;
+      mNumberOfElements++;
+      mValues[idx] = value;
       mKeys[idx] = key;
     } else if (mKeys[idx] == key) // overwrite
     {
       //            bloom|=hash;
-      values[idx] = value;
+      mValues[idx] = value;
     } else {
       if (mKeys[idx + 1] == null) // new
       {
-        eleCnt++;
-        values[idx + 1] = value;
+        mNumberOfElements++;
+        mValues[idx + 1] = value;
         mKeys[idx + 1] = key;
       } else if (mKeys[idx + 1] == key) // overwrite
       {
         //                bloom|=hash;
-        values[idx + 1] = value;
+        mValues[idx + 1] = value;
       } else {
         if (mKeys[idx + 2] == null) // new
         {
-          eleCnt++;
-          values[idx + 2] = value;
+          mNumberOfElements++;
+          mValues[idx + 2] = value;
           mKeys[idx + 2] = key;
         } else if (mKeys[idx + 2] == key) // overwrite
         {
           //                    bloom|=hash;
-          values[idx + 2] = value;
+          mValues[idx + 2] = value;
         } else {
           putNext(hash, key, value, depth + 1);
         }
       }
     }
-    this.mNumberOfElements = eleCnt;
   }
 
   private boolean parentPutHash(Object key, int value, Identity2IdMap parent) {
@@ -256,31 +248,28 @@ public class Identity2IdMap {
     return false;
   }
 
-  private void linearScanPutHash(List scanList, Object key, int value) {
-    List<Integer> scanVals = linearScanVals;
-    for (int i = 0, size = scanList.size(); i < size; i++) {
-      Object o = scanList.get(i);
+  private void linearScanPutHash(Object key, int value) {
+    for (int i = 0; i < linearScanList.size(); i++) {
+      Object o = linearScanList.get(i);
       if (o == key) {
-        scanVals.set(i, value);
+        linearScanVals.set(i, value);
         return;
       }
     }
-    scanList.add(key);
-    scanVals.add(value);
+    linearScanList.add(key);
+    linearScanVals.add(value);
   }
 
   final void putNext(final int hash, final Object key, final int value, int depth) {
-    Identity2IdMap n = next;
-    if (n == null) {
+    if (next == null) {
       int newSiz = mKeys.length / 10;
-      n = new Identity2IdMap(newSiz);
+      next = new Identity2IdMap(newSiz);
       if (depth > MAX_DEPTH) {
-        n.linearScanVals = new ArrayList<>(3);
-        n.linearScanList = new ArrayList<>(3);
+        next.linearScanVals = new ArrayList<>(3);
+        next.linearScanList = new ArrayList<>(3);
       }
-      this.next = n;
     }
-    n.putHash(key, value, hash, this, depth + 1);
+    next.putHash(key, value, hash, this, depth + 1);
   }
 
   public final int get(final Object key) {
@@ -289,20 +278,19 @@ public class Identity2IdMap {
   }
 
   final int getHash(final Object key, final int hash) {
-    List scanList = linearScanList;
-    if (scanList != null) {
-      for (int i = 0, size = scanList.size(); i < size; i++) {
-        Object o = scanList.get(i);
+    if (linearScanList != null) {
+      for (int i = 0; i < linearScanList.size(); i++) {
+        Object o = linearScanList.get(i);
         if (o == key) {
           return linearScanVals.get(i);
         }
       }
       return Integer.MIN_VALUE;
     }
-    Object[] keys = mKeys;
-    final int idx = calcIndexFromHash(hash);
 
-    Object mapsKey = keys[idx];
+    final int idx = calcIndexFromHash(hash, mKeys);
+
+    Object mapsKey = mKeys[idx];
     if (mapsKey == null) // not found
     {
       return Integer.MIN_VALUE;
@@ -310,7 +298,7 @@ public class Identity2IdMap {
     {
       return mValues[idx];
     } else {
-      mapsKey = keys[idx + 1];
+      mapsKey = mKeys[idx + 1];
       if (mapsKey == null) // not found
       {
         return Integer.MIN_VALUE;
@@ -318,7 +306,7 @@ public class Identity2IdMap {
       {
         return mValues[idx + 1];
       } else {
-        mapsKey = keys[idx + 2];
+        mapsKey = mKeys[idx + 2];
         if (mapsKey == null) // not found
         {
           return Integer.MIN_VALUE;
@@ -326,11 +314,10 @@ public class Identity2IdMap {
         {
           return mValues[idx + 2];
         } else {
-          Identity2IdMap n = next;
-          if (n == null) {
+          if (next == null) {
             return Integer.MIN_VALUE;
           }
-          return n.getHash(key, hash);
+          return next.getHash(key, hash);
         }
       }
     }
@@ -352,41 +339,36 @@ public class Identity2IdMap {
         put(oldTabKey[n], oldTabVal[n]);
       }
     }
-    Identity2IdMap n = next;
-    if (n != null) {
-      Identity2IdMap oldNext = n;
-      this.next = null;
+    if (next != null) {
+      Identity2IdMap oldNext = next;
+      next = null;
       oldNext.rePut(this);
     }
   }
 
   private void rePut(Identity2IdMap kfstObject2IntMap) {
-    List scanList = linearScanList;
-    if (scanList != null) {
-      int size = scanList.size();
-      List<Integer> scanVals = linearScanVals;
+    if (linearScanList != null) {
+      int size = linearScanList.size();
       for (int i = 0; i < size; i++) {
-        Object key = scanList.get(i);
-        int value = scanVals.get(i);
+        Object key = linearScanList.get(i);
+        int value = linearScanVals.get(i);
         kfstObject2IntMap.put(key, value);
       }
       return;
     }
-    Object[] keys = mKeys;
-    int[] values = mValues;
-    for (int i = 0; i < keys.length; i++) {
-      Object mKey = keys[i];
+
+    for (int i = 0; i < mKeys.length; i++) {
+      Object mKey = mKeys[i];
       if (mKey != null) {
-        kfstObject2IntMap.put(mKey, values[i]);
+        kfstObject2IntMap.put(mKey, mValues[i]);
       }
     }
-    Identity2IdMap n = next;
-    if (n != null) {
-      n.rePut(kfstObject2IntMap);
+    if (next != null) {
+      next.rePut(kfstObject2IntMap);
     }
   }
 
-  final int calcIndexFromHash(int hash) {
+  final int calcIndexFromHash(int hash, Object[] mKeys) {
     int res = hash & mask;
     while (res >= klen) {
       res = res >>> 1;
@@ -396,6 +378,7 @@ public class Identity2IdMap {
 
   private static int calcHash(Object x) {
     int h = System.identityHashCode(x);
+    //        return h>>2;
     return ((h << 1) - (h << 8)) & 0x7fffffff;
   }
 
@@ -403,19 +386,15 @@ public class Identity2IdMap {
     if (size() == 0) {
       return;
     }
-    List scanList = linearScanList;
-    if (scanList != null) {
-      scanList.clear();
+    if (linearScanList != null) {
+      linearScanList.clear();
       linearScanVals.clear();
     }
-    Object[] keys = mKeys;
-    clear(keys, keys.length);
-    int[] values = mValues;
-    clear(values, values.length);
+    clear(mKeys, mKeys.length);
+    clear(mValues, mValues.length);
     mNumberOfElements = 0;
-    Identity2IdMap n = next;
-    if (n != null) {
-      n.clear();
+    if (next != null) {
+      next.clear();
     }
   }
 
