@@ -180,6 +180,7 @@ public class FuryObjectMap<K, V> {
   /** Skips checks for existing keys, doesn't increment size. */
   private void putResize(K key, V value) {
     K[] keyTable = this.keyTable;
+    V[] valueTable = this.valueTable;
     int mask = this.mask;
     for (int i = place(key); ; i = (i + 1) & mask) {
       if (keyTable[i] == null) {
@@ -312,6 +313,7 @@ public class FuryObjectMap<K, V> {
 
     @Override
     public boolean hasNext() {
+      K[] keyTable = FuryObjectMap.this.keyTable;
       for (int i = nextIndex; i < keyTable.length; i++) {
         if (keyTable[i] != null) {
           nextIndex = i;

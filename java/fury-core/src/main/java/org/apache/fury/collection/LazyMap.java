@@ -47,23 +47,27 @@ public class LazyMap<K, V> extends ForwardingMap<K, V> {
 
   @Override
   public Map<K, V> delegate() {
-    if (map == null) {
-      map = new HashMap<>(entries.size());
-      for (Entry<K, V> entry : entries) {
-        map.put(entry.getKey(), entry.getValue());
+    Map<K, V> m = this.map;
+    if (m == null) {
+      List<Entry<K, V>> e = this.entries;
+      m = new HashMap<>(e.size());
+      for (Entry<K, V> entry : e) {
+        m.put(entry.getKey(), entry.getValue());
       }
+      this.map = m;
     }
-    return map;
+    return m;
   }
 
   @Override
   public V put(K key, V value) {
-    if (map == null) {
+    Map<K, V> m = map;
+    if (m == null) {
       // avoid map put cost when deserialization this map.
       entries.add(new MapEntry<>(key, value));
       return null;
     } else {
-      return map.put(key, value);
+      return m.put(key, value);
     }
   }
 

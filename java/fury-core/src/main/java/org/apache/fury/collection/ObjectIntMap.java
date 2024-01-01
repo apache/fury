@@ -92,6 +92,7 @@ public class ObjectIntMap<K> {
 
   private void putResize(K key, int value) {
     K[] keyTable = this.keyTable;
+    int[] valueTable = this.valueTable;
     int mask = this.mask;
     for (int i = place(key); ; i = (i + 1) & mask) {
       if (keyTable[i] == null) {
