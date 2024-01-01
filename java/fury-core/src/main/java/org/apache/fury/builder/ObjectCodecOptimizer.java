@@ -106,23 +106,25 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
     if (boxedRefTracking) {
       boxedReadWeight = 4;
     }
-    List<Tuple3<List<Descriptor>, Integer, List<List<Descriptor>>>> groups =
+    List<Tuple3.NonFinal<List<Descriptor>, Integer, List<List<Descriptor>>>> groups =
         Arrays.asList(
-            Tuple3.of(
+            Tuple3.ofNonFinal(
                 new ArrayList<>(descriptorGrouper.getBoxedDescriptors()),
                 boxedWriteWeight,
                 boxedWriteGroups),
-            Tuple3.of(
+            Tuple3.ofNonFinal(
                 new ArrayList<>(descriptorGrouper.getBoxedDescriptors()),
                 boxedReadWeight,
                 boxedReadGroups),
-            Tuple3.of(
+            Tuple3.ofNonFinal(
                 new ArrayList<>(descriptorGrouper.getFinalDescriptors()), 9, finalWriteGroups),
-            Tuple3.of(new ArrayList<>(descriptorGrouper.getFinalDescriptors()), 5, finalReadGroups),
-            Tuple3.of(new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 5, otherReadGroups),
-            Tuple3.of(
+            Tuple3.ofNonFinal(
+                new ArrayList<>(descriptorGrouper.getFinalDescriptors()), 5, finalReadGroups),
+            Tuple3.ofNonFinal(
+                new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 5, otherReadGroups),
+            Tuple3.ofNonFinal(
                 new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 9, otherWriteGroups));
-    for (Tuple3<List<Descriptor>, Integer, List<List<Descriptor>>> decs : groups) {
+    for (Tuple3.NonFinal<List<Descriptor>, Integer, List<List<Descriptor>>> decs : groups) {
       while (decs.f0.size() > 0) {
         int endIndex = Math.min(decs.f1, decs.f0.size());
         decs.f2.add(decs.f0.subList(0, endIndex));
