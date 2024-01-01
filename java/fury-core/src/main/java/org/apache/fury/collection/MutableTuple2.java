@@ -49,8 +49,8 @@ public class MutableTuple2<T0, T1> implements Serializable {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    MutableTuple2<?, ?> tuple3 = (MutableTuple2<?, ?>) o;
-    return Objects.equals(f0, tuple3.f0) && Objects.equals(f1, tuple3.f1);
+    MutableTuple2<?, ?> tuple2 = (MutableTuple2<?, ?>) o;
+    return Objects.equals(f0, tuple2.f0) && Objects.equals(f1, tuple2.f1);
   }
 
   @Override
