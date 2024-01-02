@@ -25,7 +25,7 @@ https://fury.apache.org
 
 In addition to cross-language serialization, Fury also features at:
 
-- Drop-in replace Java serialization frameworks such as JDK/Kryo/Hessian, but 100x faster, which can greatly improve 
+- Drop-in replace Java serialization frameworks such as JDK/Kryo/Hessian, but 100x faster at most, which can greatly improve 
  the efficiency of high-performance RPC calls, data transfer, and object persistence.
 - **100% compatible** with JDK serialization API with much faster implementation: supporting JDK `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` API. 
 - Supports **Java 8~21**, Java 17+ `record` is supported too.
