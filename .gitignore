@@ -15,7 +15,6 @@ cython_debug
 testresult
 java/target
 benchmark/target
-benchmarks/java-benchmarks/target
 **/target/**/**
 java/**/.code/
 java/**/dependency-reduced-pom.xml
