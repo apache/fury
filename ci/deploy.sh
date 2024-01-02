@@ -84,7 +84,7 @@ bump_java_version() {
   cd "$ROOT/java"
   echo "Set fury java version to $version"
   mvn versions:set -DnewVersion="$version"
-  cd "$ROOT/benchmarks/java-benchmarks"
+  cd "$ROOT/java/fury-benchmark"
   mvn versions:set -DnewVersion="$version"
   echo "Set fury integration_tests version to $version"
   cd "$ROOT/integration_tests/jdk_compatibility_tests"
