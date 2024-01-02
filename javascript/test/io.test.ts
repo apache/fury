@@ -30,11 +30,7 @@ function num2Bin(num: number) {
 
 [
     {
-        useLatin1: true,
         useSliceString: true,
-    },
-    {
-        useLatin1: false,
     }
 ].forEach((config: Config) => {
     describe('writer', () => {
@@ -186,9 +182,7 @@ function num2Bin(num: number) {
             const ab = writer.dump();
             const reader = BinaryReader(config);
             reader.reset(ab);
-            if (config.useLatin1) {
-                expect(reader.uint8()).toBe(0);
-            }
+            expect(reader.uint8()).toBe(0);
             const len = reader.varInt32();
             expect(len).toBe(11);
             const str = reader.stringLatin1(11);
@@ -202,9 +196,7 @@ function num2Bin(num: number) {
             const ab = writer.dump();
             const reader = BinaryReader(config);
             reader.reset(ab);
-            if (config.useLatin1) {
-                expect(reader.uint8()).toBe(0);
-            }
+            expect(reader.uint8()).toBe(0);
             const len = reader.varInt32();
             expect(len).toBe(110);
             expect(reader.stringLatin1(len)).toBe(str);
@@ -219,9 +211,7 @@ function num2Bin(num: number) {
 
             {
                 reader.reset(ab);
-                if (config.useLatin1) {
-                    expect(reader.uint8()).toBe(1);
-                }
+                expect(reader.uint8()).toBe(1);
                 const len = reader.varInt32();
                 expect(len).toBe(17);
                 expect(reader.stringUtf8(len)).toBe(str);
@@ -240,9 +230,7 @@ function num2Bin(num: number) {
             const reader = BinaryReader(config);
             {
                 reader.reset(ab);
-                if (config.useLatin1) {
-                    expect(reader.uint8()).toBe(1);
-                }
+                expect(reader.uint8()).toBe(1);
                 const len = reader.varInt32();
                 expect(len).toBe(170);
                 expect(reader.stringUtf8(len)).toBe(str);

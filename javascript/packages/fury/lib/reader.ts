@@ -99,6 +99,10 @@ export const BinaryReader = (config: Config) => {
     return result;
   }
 
+  function stringUtf8At(start: number, len: number) {
+    return buffer.utf8Slice(start, start + len);
+  }
+
   function stringUtf8(len: number) {
     const result = buffer.utf8Slice(cursor, cursor + len);
     cursor += len;
@@ -106,9 +110,9 @@ export const BinaryReader = (config: Config) => {
   }
 
   function stringOfVarInt32() {
-    const useLatin1 = config.useLatin1 ? uint8() === LATIN1 : false;
+    const isLatin1 = uint8() === LATIN1;
     const len = varInt32();
-    return useLatin1 ? stringLatin1(len) : stringUtf8(len);
+    return isLatin1 ? stringLatin1(len) : stringUtf8(len);
   }
 
   function stringLatin1Fast(len: number) {
@@ -167,6 +171,7 @@ export const BinaryReader = (config: Config) => {
     bufferRef,
     uint8,
     reset,
+    stringUtf8At,
     stringUtf8,
     stringLatin1,
     stringOfVarInt32,

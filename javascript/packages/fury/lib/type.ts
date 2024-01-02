@@ -109,7 +109,6 @@ export interface Hps {
 export interface Config {
   hps?: Hps
   refTracking?: boolean
-  useLatin1?: boolean
   useSliceString?: boolean
 }
 

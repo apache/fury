@@ -22,6 +22,7 @@ import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
 import { ConfigFlags, Serializer, Config, InternalSerializerType, Language } from "./type";
+import { OwnershipError } from "./error";
 
 export default (config: Config) => {
   const binaryReader = BinaryReader(config);
@@ -38,6 +39,7 @@ export default (config: Config) => {
     classResolver,
     binaryReader,
     binaryWriter,
+    serializeVolatile,
   };
   classResolver.init(fury);
 
@@ -71,10 +73,17 @@ export default (config: Config) => {
     }
   }
 
-  function serialize<T = any>(data: T, serializer?: Serializer) {
+  function serializeInternal<T = any>(data: T, serializer?: Serializer) {
+    try {
+      binaryWriter.reset();
+    } catch (e) {
+      if (e instanceof OwnershipError) {
+        throw new Error("Permission denied. To release the serialization ownership, you must call the dispose function returned by serializeVolatile.");
+      }
+      throw e;
+    }
     referenceResolver.reset();
     classResolver.reset();
-    binaryWriter.reset();
     let bitmap = 0;
     if (data === null) {
       bitmap |= ConfigFlags.isNullFlag;
@@ -92,7 +101,16 @@ export default (config: Config) => {
       classResolver.getSerializerById(InternalSerializerType.ANY).write(data);
     }
     binaryWriter.setUint32Position(cursor, binaryWriter.getCursor()); // nativeObjects start offsets;
-    return binaryWriter.dump();
+    return binaryWriter;
   }
+
+  function serialize<T = any>(data: T, serializer?: Serializer) {
+    return serializeInternal(data, serializer).dump();
+  }
+
+  function serializeVolatile<T = any>(data: T, serializer?: Serializer) {
+    return serializeInternal(data, serializer).dumpAndOwn();
+  }
+
   return fury;
 };

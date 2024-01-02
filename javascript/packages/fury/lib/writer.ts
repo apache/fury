@@ -19,6 +19,7 @@
 
 import { Config, LATIN1, UTF8 } from "./type";
 import { PlatformBuffer, alloc, strByteLength } from "./platformBuffer";
+import { OwnershipError } from "./error";
 
 const MAX_POOL_SIZE = 1024 * 1024 * 3; // 3MB
 
@@ -28,6 +29,7 @@ export const BinaryWriter = (config: Config) => {
   let arrayBuffer: PlatformBuffer;
   let dataView: DataView;
   let reserved = 0;
+  let locked = false;
 
   function initPoll() {
     byteLength = 1024 * 100;
@@ -49,6 +51,9 @@ export const BinaryWriter = (config: Config) => {
   }
 
   function reset() {
+    if (locked) {
+      throw new OwnershipError("Ownership of writer was held by dumpAndOwn, but not released");
+    }
     cursor = 0;
     reserved = 0;
   }
@@ -170,9 +175,7 @@ export const BinaryWriter = (config: Config) => {
     return function (v: string) {
       const isLatin1 = detectIsLatin1(v);
       const len = isLatin1 ? v.length : strByteLength(v);
-      if (config.useLatin1) {
-        dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
-      }
+      dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
       varInt32(len);
       reserve(len);
       if (isLatin1) {
@@ -191,9 +194,7 @@ export const BinaryWriter = (config: Config) => {
   function stringOfVarInt32Slow(v: string) {
     const len = strByteLength(v);
     const isLatin1 = len === v.length;
-    if (config.useLatin1) {
-      dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
-    }
+    dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
     varInt32(len);
     reserve(len);
     if (isLatin1) {
@@ -234,6 +235,18 @@ export const BinaryWriter = (config: Config) => {
     arrayBuffer.copy(result, 0, 0, cursor);
     tryFreePool();
     return result;
+  }
+
+  function dumpAndOwn() {
+    locked = true;
+    return {
+      get() {
+        return arrayBuffer.subarray(0, cursor);
+      },
+      dispose() {
+        locked = false;
+      },
+    };
   }
 
   function getCursor() {
@@ -278,5 +291,6 @@ export const BinaryWriter = (config: Config) => {
     int32,
     getCursor,
     setUint32Position,
+    dumpAndOwn,
   };
 };
