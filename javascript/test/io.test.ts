@@ -136,7 +136,7 @@ function num2Bin(num: number) {
             })
         });
 
-        test('should varint32 work', () => {
+        test('should varUInt32 work', () => {
             [
                 1,
                 2,
@@ -146,7 +146,7 @@ function num2Bin(num: number) {
                 {
                     const writer = BinaryWriter(config);
                     const value = (2 ** (x * 7)) - 1;
-                    writer.varInt32(value);
+                    writer.varUInt32(value);
                     const ab = writer.dump();
                     expect(ab.byteLength).toBe(x);
                     for (let index = 0; index < ab.byteLength - 1; index++) {
@@ -155,13 +155,13 @@ function num2Bin(num: number) {
                     expect(num2Bin(ab[ab.byteLength - 1])).toBe('1111111');
                     const reader = BinaryReader(config);
                     reader.reset(ab);
-                    const vari32 = reader.varInt32();
+                    const vari32 = reader.varUInt32();
                     expect(vari32).toBe(value);
                 }
                 {
                     const writer = BinaryWriter(config);
                     const value = (2 ** (x * 7));
-                    writer.varInt32(value);
+                    writer.varUInt32(value);
                     const ab = writer.dump();
                     expect(ab.byteLength).toBe(x + 1);
                     for (let index = 0; index < ab.byteLength - 1; index++) {
@@ -170,20 +170,33 @@ function num2Bin(num: number) {
                     expect(num2Bin(ab[ab.byteLength - 1])).toBe('1');
                     const reader = BinaryReader(config);
                     reader.reset(ab);
-                    const vari32 = reader.varInt32();
+                    const vari32 = reader.varUInt32();
                     expect(vari32).toBe(value);
                 }
             });
         });
 
+        test('should varInt32 work', () => {
+            const writer = BinaryWriter(config);
+            const value = -1;
+            writer.varInt32(value);
+            const ab = writer.dump();
+            expect(ab.byteLength).toBe(1);
+            expect(num2Bin(ab[0])).toBe('1');
+            const reader = BinaryReader(config);
+            reader.reset(ab);
+            const vari32 = reader.varInt32();
+            expect(vari32).toBe(value);
+        });
+
         test('should short latin1 string work', () => {
             const writer = BinaryWriter(config);
-            writer.stringOfVarInt32("hello world");
+            writer.stringOfVarUInt32("hello world");
             const ab = writer.dump();
             const reader = BinaryReader(config);
             reader.reset(ab);
             expect(reader.uint8()).toBe(0);
-            const len = reader.varInt32();
+            const len = reader.varUInt32();
             expect(len).toBe(11);
             const str = reader.stringLatin1(11);
             expect(str).toBe("hello world");
@@ -192,12 +205,12 @@ function num2Bin(num: number) {
         test('should long latin1 string work', () => {
             const writer = BinaryWriter(config);
             const str = new Array(10).fill('hello world').join('');
-            writer.stringOfVarInt32(str);
+            writer.stringOfVarUInt32(str);
             const ab = writer.dump();
             const reader = BinaryReader(config);
             reader.reset(ab);
             expect(reader.uint8()).toBe(0);
-            const len = reader.varInt32();
+            const len = reader.varUInt32();
             expect(len).toBe(110);
             expect(reader.stringLatin1(len)).toBe(str);
         });
@@ -205,39 +218,39 @@ function num2Bin(num: number) {
         test('should short utf8 string work', () => {
             const writer = BinaryWriter(config);
             const str = new Array(1).fill('hello 你好 😁').join('');
-            writer.stringOfVarInt32(str);
+            writer.stringOfVarUInt32(str);
             const ab = writer.dump();
             const reader = BinaryReader(config);
 
             {
                 reader.reset(ab);
                 expect(reader.uint8()).toBe(1);
-                const len = reader.varInt32();
+                const len = reader.varUInt32();
                 expect(len).toBe(17);
                 expect(reader.stringUtf8(len)).toBe(str);
             }
             {
                 reader.reset(ab);
-                expect(reader.stringOfVarInt32()).toBe(str);
+                expect(reader.stringOfVarUInt32()).toBe(str);
             }
         });
 
         test('should long utf8 string work', () => {
             const writer = BinaryWriter(config);
             const str = new Array(10).fill('hello 你好 😁').join('');
-            writer.stringOfVarInt32(str);
+            writer.stringOfVarUInt32(str);
             const ab = writer.dump();
             const reader = BinaryReader(config);
             {
                 reader.reset(ab);
                 expect(reader.uint8()).toBe(1);
-                const len = reader.varInt32();
+                const len = reader.varUInt32();
                 expect(len).toBe(170);
                 expect(reader.stringUtf8(len)).toBe(str);
             }
             {
                 reader.reset(ab);
-                expect(reader.stringOfVarInt32()).toBe(str);
+                expect(reader.stringOfVarUInt32()).toBe(str);
             }
         });
 

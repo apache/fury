@@ -24,12 +24,12 @@ export const tupleSerializer = (fury: Fury, serializers: Serializer[]) => {
   const { binaryReader, binaryWriter, referenceResolver } = fury;
 
   const { pushReadObject } = referenceResolver;
-  const { varInt32: writeVarInt32, reserve: reserves } = binaryWriter;
-  const { varInt32: readVarInt32 } = binaryReader;
+  const { varUInt32: writeVarUInt32, reserve: reserves } = binaryWriter;
+  const { varUInt32: readVarUInt32 } = binaryReader;
 
   return {
     ...referenceResolver.deref(() => {
-      const len = readVarInt32();
+      const len = readVarUInt32();
       const result = new Array(len);
       pushReadObject(result);
       for (let i = 0; i < len; i++) {
@@ -39,7 +39,7 @@ export const tupleSerializer = (fury: Fury, serializers: Serializer[]) => {
       return result;
     }),
     write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.TUPLE, (v: any[]) => {
-      writeVarInt32(serializers.length);
+      writeVarUInt32(serializers.length);
 
       for (let i = 0; i < serializers.length; i++) {
         const item = serializers[i];

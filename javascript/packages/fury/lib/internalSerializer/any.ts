@@ -47,7 +47,7 @@ export default (fury: Fury) => {
         case RefFlags.RefValueFlag:
           return detectSerializer(cursor).read();
         case RefFlags.RefFlag:
-          return referenceResolver.getReadObjectByRefId(binaryReader.varInt32());
+          return referenceResolver.getReadObjectByRefId(binaryReader.varUInt32());
         case RefFlags.NullFlag:
           return null;
         case RefFlags.NotNullValueFlag:

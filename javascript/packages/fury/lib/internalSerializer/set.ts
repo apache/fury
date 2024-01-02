@@ -22,13 +22,13 @@ import { InternalSerializerType } from "../type";
 
 export default (fury: Fury, nestedSerializer: Serializer) => {
   const { binaryReader, binaryWriter, referenceResolver } = fury;
-  const { varInt32: writeVarInt32, reserve: reserves } = binaryWriter;
-  const { varInt32: readVarInt32 } = binaryReader;
+  const { varUInt32: writeVarUInt32, reserve: reserves } = binaryWriter;
+  const { varUInt32: readVarUInt32 } = binaryReader;
   const { pushReadObject } = referenceResolver;
   const innerHeadSize = nestedSerializer.config().reserve;
   return {
     ...referenceResolver.deref(() => {
-      const len = readVarInt32();
+      const len = readVarUInt32();
       const result = new Set();
       pushReadObject(result);
       for (let index = 0; index < len; index++) {
@@ -38,7 +38,7 @@ export default (fury: Fury, nestedSerializer: Serializer) => {
     }),
     write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.FURY_SET, (v: Set<any>) => {
       const len = v.size;
-      writeVarInt32(len);
+      writeVarUInt32(len);
       reserves(innerHeadSize * v.size);
       for (const value of v.values()) {
         nestedSerializer.write(value);

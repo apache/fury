@@ -22,15 +22,15 @@ import { InternalSerializerType, RefFlags } from "../type";
 
 export default (fury: Fury) => {
   const { binaryReader, binaryWriter, referenceResolver } = fury;
-  const { stringOfVarInt32: writeStringOfVarInt32, int8 } = binaryWriter;
-  const { stringOfVarInt32: readStringOfVarInt32 } = binaryReader;
+  const { stringOfVarUInt32: writeStringOfVarUInt32, int8 } = binaryWriter;
+  const { stringOfVarUInt32: readStringOfVarUInt32 } = binaryReader;
 
   return {
     ...referenceResolver.deref(() => {
-      return readStringOfVarInt32();
+      return readStringOfVarUInt32();
     }),
     write: referenceResolver.withNotNullableWriter(InternalSerializerType.STRING, "", (v: string) => {
-      writeStringOfVarInt32(v);
+      writeStringOfVarUInt32(v);
     }),
     writeWithoutType: (v: string) => {
       if (v === null) {
@@ -38,7 +38,7 @@ export default (fury: Fury) => {
         return;
       }
       int8(RefFlags.NotNullValueFlag);
-      writeStringOfVarInt32(v);
+      writeStringOfVarUInt32(v);
     },
     config: () => {
       return {

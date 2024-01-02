@@ -170,13 +170,13 @@ export const BinaryWriter = (config: Config) => {
     }
   }
 
-  function stringOfVarInt32Fast() {
+  function stringOfVarUInt32Fast() {
     const { isLatin1: detectIsLatin1, stringCopy } = config!.hps!;
     return function (v: string) {
       const isLatin1 = detectIsLatin1(v);
       const len = isLatin1 ? v.length : strByteLength(v);
       dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
-      varInt32(len);
+      varUInt32(len);
       reserve(len);
       if (isLatin1) {
         stringCopy(v, arrayBuffer, cursor);
@@ -191,11 +191,11 @@ export const BinaryWriter = (config: Config) => {
     };
   }
 
-  function stringOfVarInt32Slow(v: string) {
+  function stringOfVarUInt32Slow(v: string) {
     const len = strByteLength(v);
     const isLatin1 = len === v.length;
     dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
-    varInt32(len);
+    varUInt32(len);
     reserve(len);
     if (isLatin1) {
       if (len < 40) {
@@ -215,7 +215,15 @@ export const BinaryWriter = (config: Config) => {
     cursor += len;
   }
 
+  function zigZag(v: number) {
+    return (v << 1) ^ (v >> 31);
+  }
+
   function varInt32(val: number) {
+    return varUInt32(zigZag(val));
+  }
+
+  function varUInt32(val: number) {
     val = val >>> 0;
     while (val > 127) {
       arrayBuffer[cursor++] = val & 127 | 128;
@@ -278,9 +286,10 @@ export const BinaryWriter = (config: Config) => {
     uint8,
     int16,
     varInt32,
-    stringOfVarInt32: config?.hps
-      ? stringOfVarInt32Fast()
-      : stringOfVarInt32Slow,
+    varUInt32,
+    stringOfVarUInt32: config?.hps
+      ? stringOfVarUInt32Fast()
+      : stringOfVarUInt32Slow,
     bufferWithoutMemCheck,
     uint64,
     buffer,

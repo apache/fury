@@ -109,9 +109,9 @@ export const BinaryReader = (config: Config) => {
     return result;
   }
 
-  function stringOfVarInt32() {
+  function stringOfVarUInt32() {
     const isLatin1 = uint8() === LATIN1;
-    const len = varInt32();
+    const len = varUInt32();
     return isLatin1 ? stringLatin1(len) : stringUtf8(len);
   }
 
@@ -140,7 +140,11 @@ export const BinaryReader = (config: Config) => {
     return result;
   }
 
-  function varInt32() {
+  function zigZag(v: number) {
+    return (v >> 1) ^ -(v & 1);
+  }
+
+  function varUInt32() {
     let byte_ = int8();
     let result = byte_ & 0x7f;
     if ((byte_ & 0x80) != 0) {
@@ -162,10 +166,15 @@ export const BinaryReader = (config: Config) => {
     return result;
   }
 
+  function varInt32() {
+    return zigZag(varUInt32());
+  }
+
   return {
     getCursor: () => cursor,
     setCursor: (v: number) => (cursor = v),
     varInt32,
+    varUInt32,
     int8,
     buffer: binary,
     bufferRef,
@@ -174,7 +183,7 @@ export const BinaryReader = (config: Config) => {
     stringUtf8At,
     stringUtf8,
     stringLatin1,
-    stringOfVarInt32,
+    stringOfVarUInt32,
     double,
     float,
     uint16,
