@@ -24,13 +24,13 @@ export const buildArray = (fury: Fury, item: Serializer, type: InternalSerialize
   const { binaryReader, binaryWriter, referenceResolver } = fury;
 
   const { pushReadObject } = referenceResolver;
-  const { varInt32: writeVarInt32, reserve: reserves } = binaryWriter;
-  const { varInt32: readVarInt32 } = binaryReader;
+  const { varUInt32: writeVarUInt32, reserve: reserves } = binaryWriter;
+  const { varUInt32: readVarUInt32 } = binaryReader;
   const { write, read } = item;
   const innerHeadSize = (item.config().reserve);
   return {
     ...referenceResolver.deref(() => {
-      const len = readVarInt32();
+      const len = readVarUInt32();
       const result = new Array(len);
       pushReadObject(result);
       for (let i = 0; i < result.length; i++) {
@@ -39,7 +39,7 @@ export const buildArray = (fury: Fury, item: Serializer, type: InternalSerialize
       return result;
     }),
     write: referenceResolver.withNullableOrRefWriter(type, (v: any[]) => {
-      writeVarInt32(v.length);
+      writeVarUInt32(v.length);
 
       reserves(innerHeadSize * v.length);
 

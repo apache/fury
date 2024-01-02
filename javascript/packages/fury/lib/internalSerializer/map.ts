@@ -21,14 +21,14 @@ import { InternalSerializerType, Fury, Serializer } from "../type";
 
 export default (fury: Fury, keySerializer: Serializer, valueSerializer: Serializer) => {
   const { binaryReader, binaryWriter, referenceResolver } = fury;
-  const { varInt32: readVarInt32 } = binaryReader;
+  const { varUInt32: readVarUInt32 } = binaryReader;
 
-  const { varInt32: writeVarInt32, reserve: reserves } = binaryWriter;
+  const { varUInt32: writeVarUInt32, reserve: reserves } = binaryWriter;
   const { pushReadObject } = referenceResolver;
   const innerHeadSize = keySerializer.config().reserve + valueSerializer.config().reserve;
   return {
     ...referenceResolver.deref(() => {
-      const len = readVarInt32();
+      const len = readVarUInt32();
       const result = new Map();
       pushReadObject(result);
       for (let index = 0; index < len; index++) {
@@ -40,7 +40,7 @@ export default (fury: Fury, keySerializer: Serializer, valueSerializer: Serializ
     }),
     write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.MAP, (v: Map<any, any>) => {
       const len = v.size;
-      writeVarInt32(len);
+      writeVarUInt32(len);
       reserves(innerHeadSize * v.size);
       for (const [key, value] of v.entries()) {
         keySerializer.write(key);

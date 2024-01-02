@@ -90,7 +90,7 @@ export const ReferenceResolver = (
           const existsId = existsWriteObject(v);
           if (typeof existsId === "number") {
             binaryWriter.int8(RefFlags.RefFlag);
-            binaryWriter.varInt32(existsId);
+            binaryWriter.varUInt32(existsId);
           } else {
             int24(head);
             pushWriteObject(v);
@@ -137,7 +137,7 @@ export const ReferenceResolver = (
             skipType();
             return fn();
           case RefFlags.RefFlag:
-            return getReadObjectByRefId(binaryReader.varInt32());
+            return getReadObjectByRefId(binaryReader.varUInt32());
           case RefFlags.NullFlag:
             return null;
           case RefFlags.NotNullValueFlag:
@@ -150,7 +150,7 @@ export const ReferenceResolver = (
           case RefFlags.RefValueFlag:
             return fn();
           case RefFlags.RefFlag:
-            return getReadObjectByRefId(binaryReader.varInt32());
+            return getReadObjectByRefId(binaryReader.varUInt32());
           case RefFlags.NullFlag:
             return null;
           case RefFlags.NotNullValueFlag:
