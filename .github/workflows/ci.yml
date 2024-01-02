@@ -120,6 +120,10 @@ jobs:
         with:
           java-version: 8
           distribution: 'temurin'
+      - name: Install fury-benchmark jar
+        run: |
+          cd java && mvn -T10 -B --no-transfer-progress clean install -DskipTests && cd -
+          cd java/fury-benchmark && mvn -T10 -B --no-transfer-progress clean install -DskipTests -Pjmh && cd -
       - name: Run CI
         run: ./ci/run_ci.sh integration_tests
   javascript:
