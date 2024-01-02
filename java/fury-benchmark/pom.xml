@@ -30,7 +30,7 @@
     <relativePath>../../java</relativePath>
   </parent>
 
-  <artifactId>fury-benchmarks</artifactId>
+  <artifactId>fury-benchmark</artifactId>
   <packaging>jar</packaging>
 
   <prerequisites>
