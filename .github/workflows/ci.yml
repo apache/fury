@@ -43,14 +43,14 @@ jobs:
       MY_VAR: "PATH"
     strategy:
       matrix:
-        java-version: ["8", "11", "17"]
+        java-version: ["8", "11", "17", "21"]
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java-version }}
-          distribution: 'temurin' # temurin hasn't release for jdk21
+          distribution: 'temurin'
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
@@ -59,27 +59,7 @@ jobs:
         run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
-  java21:
-    name: Java CI
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: ["21"]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
-        with:
-          java-version: ${{ matrix.java-version }}
-          distribution: 'oracle'
-      - name: Install bazel
-        run: ./ci/run_ci.sh install_bazel
-      - name: Install python
-        run: ./ci/run_ci.sh install_python
-      - name: Install pyfury
-        run: ./ci/run_ci.sh install_pyfury
-      - name: Run CI with Maven
-        run: ./ci/run_ci.sh java${{ matrix.java-version }}
+
   graalvm:
     name: GraalVM CI
     runs-on: ubuntu-latest
@@ -93,6 +73,7 @@ jobs:
           native-image-job-reports: 'true'
       - name: Build native image and run
         run: ./ci/run_ci.sh graalvm_test
+
   scala:
     name: Scala CI
     runs-on: ubuntu-latest
@@ -110,6 +91,7 @@ jobs:
           # Avoid sbt download jackson-databind error
           rm -rf /home/runner/.m2/repository/com/fasterxml/jackson/
           cd scala && sbt +test && cd -
+
   integration_tests:
     name: integration_tests
     runs-on: ubuntu-latest
@@ -126,6 +108,7 @@ jobs:
           cd java/fury-benchmark && mvn -T10 -B --no-transfer-progress clean install -DskipTests -Pjmh && cd -
       - name: Run CI
         run: ./ci/run_ci.sh integration_tests
+
   javascript:
     name: Javascript CI
     runs-on: ubuntu-latest
@@ -140,6 +123,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Run CI with NodeJS
         run: ./ci/run_ci.sh javascript
+
   rust:
     name: Rust CI
     runs-on: ubuntu-latest
@@ -148,9 +132,13 @@ jobs:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@nightly
       - run: ./ci/run_ci.sh rust
+
   cpp:
     name: C++ CI
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python 3.8
@@ -161,6 +149,7 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Run C++ CI with Bazel
         run: ./ci/run_ci.sh cpp
+
   python:
     name: Python CI
     # Fix python 3.6 install issue, see
@@ -179,6 +168,7 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Run Python CI
         run: ./ci/run_ci.sh python
+
   go:
     name: Golang CI
     runs-on: ubuntu-latest
@@ -201,6 +191,7 @@ jobs:
         run: ./ci/run_ci.sh install_pyfury
       - name: Run Golang CI
         run: ./ci/run_ci.sh go
+
   lint:
     name: Code Style Check
     runs-on: ubuntu-latest
