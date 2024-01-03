@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType } from '../packages/fury/index';
+import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('fury', () => {
@@ -54,5 +54,12 @@ describe('fury', () => {
         } catch (error) {
             expect(error.message).toBe('outofband mode is not supported now');
         }
+    });
+
+    test('should reg work', () => {
+        const fury = new Fury();
+        const { serialize, deserialize } = fury.registerSerializer(Type.array(Type.string()));
+        const bin = serialize(["hello", "world"]);
+        expect(deserialize(bin)).toEqual(["hello", "world"]);
     });
 });

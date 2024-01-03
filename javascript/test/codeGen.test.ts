@@ -19,16 +19,16 @@
 
 import { describe, expect, test } from '@jest/globals';
 import { tupleObjectDescription, tupleObjectType3Description } from './fixtures/tuple';
-import { generateInlineCode } from '../packages/fury/lib/codeGen';
+import { generate } from '../packages/fury/lib/gen/index';
 import FuryInternal from '../packages/fury/lib/fury';
 
 describe('codeGen', () => {
   test('can generate tuple declaration code', () => {
     const fury = FuryInternal({ refTracking: true });
-    const fn = generateInlineCode(fury, tupleObjectDescription);
+    const fn = generate(fury, tupleObjectDescription);
     expect(fn.toString()).toMatchSnapshot();
 
-    const fn2 = generateInlineCode(fury, tupleObjectType3Description);
+    const fn2 = generate(fury, tupleObjectType3Description);
     expect(fn2.toString()).toMatchSnapshot();
   })
 })

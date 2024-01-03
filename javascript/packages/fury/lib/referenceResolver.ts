@@ -21,14 +21,11 @@ import {
   RefFlags,
   BinaryReader,
   BinaryWriter,
-  SerializerRead,
   InternalSerializerType,
-  SerializerWrite,
 } from "./type";
-import type ClassResolver from "./classResolver";
 
 export const makeHead = (flag: RefFlags, type: InternalSerializerType) => {
-  return (((type << 16) >>> 16) << 8) | ((flag << 24) >>> 24);
+  return (((Math.floor(type) << 16) >>> 16) << 8) | ((flag << 24) >>> 24);
 };
 
 export const ReferenceResolver = (
@@ -37,7 +34,6 @@ export const ReferenceResolver = (
   },
   binaryWriter: BinaryWriter,
   binaryReader: BinaryReader,
-  classResolver: ClassResolver
 ) => {
   let readObjects: any[] = [];
   let writeObjects: any[] = [];
@@ -71,95 +67,6 @@ export const ReferenceResolver = (
     }
   }
 
-  function skipType() {
-    const typeId = binaryReader.int16();
-    if (typeId === InternalSerializerType.FURY_TYPE_TAG) {
-      classResolver.readTag(binaryReader);
-    }
-  }
-
-  function withNullableOrRefWriter<T>(
-    type: InternalSerializerType,
-    fn: SerializerWrite<T>
-  ) {
-    const int24 = binaryWriter.int24;
-    const head = makeHead(RefFlags.RefValueFlag, type);
-    if (config.refTracking) {
-      return (v: T) => {
-        if (v !== null && v !== undefined) {
-          const existsId = existsWriteObject(v);
-          if (typeof existsId === "number") {
-            binaryWriter.int8(RefFlags.RefFlag);
-            binaryWriter.varUInt32(existsId);
-          } else {
-            int24(head);
-            pushWriteObject(v);
-            fn(v);
-          }
-        } else {
-          binaryWriter.int8(RefFlags.NullFlag);
-        }
-      };
-    } else {
-      return (v: T) => {
-        if (v !== null && v !== undefined) {
-          int24(head);
-          fn(v);
-        } else {
-          binaryWriter.int8(RefFlags.NullFlag);
-        }
-      };
-    }
-  }
-
-  function withNotNullableWriter<T>(
-    type: InternalSerializerType,
-    defaultValue: T,
-    fn: SerializerWrite<T>
-  ) {
-    const head = makeHead(RefFlags.NotNullValueFlag, type);
-    const int24 = binaryWriter.int24;
-    return (v: T) => {
-      int24(head);
-      if (v == null || v == undefined) {
-        fn(defaultValue);
-      } else {
-        fn(v);
-      }
-    };
-  }
-
-  function deref<T>(fn: SerializerRead<T>) {
-    return {
-      read: () => {
-        switch (readRefFlag()) {
-          case RefFlags.RefValueFlag:
-            skipType();
-            return fn();
-          case RefFlags.RefFlag:
-            return getReadObjectByRefId(binaryReader.varUInt32());
-          case RefFlags.NullFlag:
-            return null;
-          case RefFlags.NotNullValueFlag:
-            skipType();
-            return fn();
-        }
-      },
-      readWithoutType: () => {
-        switch (readRefFlag()) {
-          case RefFlags.RefValueFlag:
-            return fn();
-          case RefFlags.RefFlag:
-            return getReadObjectByRefId(binaryReader.varUInt32());
-          case RefFlags.NullFlag:
-            return null;
-          case RefFlags.NotNullValueFlag:
-            return fn();
-        }
-      },
-    };
-  }
-
   return {
     existsWriteObject,
     pushWriteObject,
@@ -167,8 +74,5 @@ export const ReferenceResolver = (
     readRefFlag,
     getReadObjectByRefId,
     reset,
-    withNotNullableWriter,
-    withNullableOrRefWriter,
-    deref,
   };
 };

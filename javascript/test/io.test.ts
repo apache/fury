@@ -41,7 +41,6 @@ function num2Bin(num: number) {
                 8,
                 16,
                 32,
-                64
             ].forEach((x, y) => {
                 {
                     writer[`uint${x}`](10);
@@ -93,7 +92,6 @@ function num2Bin(num: number) {
                 8,
                 16,
                 32,
-                64
             ].forEach((x, y) => {
                 {
                     writer[`int${x}`](10);
@@ -353,6 +351,60 @@ function num2Bin(num: number) {
             reader.reset(ab)
             expect(reader.int8()).toBe(10);
             expect(reader.int16()).toBe(20);
+        });
+
+        test('should varUInt64 work', () => {
+            const writer = BinaryWriter(config);
+            writer.varUInt64(2n ** 2n);
+            const ab = writer.dump();
+            const reader = BinaryReader({});
+            reader.reset(ab)
+            expect(reader.varUInt64()).toBe(2n ** 2n);
+        });
+
+        test('should varUInt64 work', () => {
+            const writer = BinaryWriter(config);
+            writer.varUInt64(2n ** 63n);
+            const ab = writer.dump();
+            const reader = BinaryReader({});
+            reader.reset(ab)
+            expect(reader.varUInt64()).toBe(2n ** 63n);
+        });
+
+        test('should varInt64 work', () => {
+            const writer = BinaryWriter(config);
+            writer.varInt64(2n ** 2n);
+            const ab = writer.dump();
+            const reader = BinaryReader({});
+            reader.reset(ab)
+            expect(reader.varInt64()).toBe(2n ** 2n);
+        });
+
+        test('should varInt64 work', () => {
+            const writer = BinaryWriter(config);
+            writer.varInt64(2n ** 62n);
+            const ab = writer.dump();
+            const reader = BinaryReader({});
+            reader.reset(ab)
+            expect(reader.varInt64()).toBe(2n ** 62n);
+        });
+
+        test('should silong work', () => {
+            const writer = BinaryWriter(config);
+            writer.sliLong(2n ** 2n);
+            const ab = writer.dump();
+            const reader = BinaryReader({});
+            reader.reset(ab)
+            expect(reader.sliLong()).toBe(2n ** 2n);
+        });
+
+        test('should silong work', () => {
+            const writer = BinaryWriter(config);
+            writer.sliLong(2n ** 62n);
+            const ab = writer.dump();
+            const reader = BinaryReader({});
+            reader.reset(ab)
+            expect(reader.sliLong()).toBe(2n ** 62n);
         });
     });
 })
