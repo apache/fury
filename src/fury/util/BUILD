@@ -1,13 +1,11 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
-load("//bazel:fury.bzl", "COPTS")
 
 cc_library(
     name = "fury_util",
     srcs = glob(["*.cc"], exclude=["*test.cc"]),
     hdrs = glob(["*.h"]),
     strip_include_prefix = "/src",
-    copts = COPTS,
     alwayslink=True,
     linkstatic=True,
     deps = [
@@ -23,7 +21,6 @@ cc_library(
 cc_test(
     name = "time_util_test",
     srcs = ["time_util_test.cc"],
-    copts = COPTS,
     deps = [
         ":fury_util",
         "@com_google_googletest//:gtest",
@@ -33,7 +30,6 @@ cc_test(
 cc_test(
     name = "logging_test",
     srcs = ["logging_test.cc"],
-    copts = COPTS,
     deps = [
         ":fury_util",
         "@com_google_googletest//:gtest",
@@ -43,7 +39,6 @@ cc_test(
 cc_test(
     name = "status_test",
     srcs = ["status_test.cc"],
-    copts = COPTS,
     deps = [
         ":fury_util",
         "@com_google_googletest//:gtest",
@@ -53,7 +48,6 @@ cc_test(
 cc_test(
     name = "buffer_test",
     srcs = ["buffer_test.cc"],
-    copts = COPTS,
     deps = [
         ":fury_util",
         "@com_google_googletest//:gtest",
