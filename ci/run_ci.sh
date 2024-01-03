@@ -51,7 +51,13 @@ install_bazel() {
     echo "existing bazel version $(bazel version)"
   fi
   # GRPC support bazel 6.3.2 https://grpc.github.io/grpc/core/md_doc_bazel_support.html
-  URL="https://github.com/bazelbuild/bazel/releases/download/6.3.2/bazel-6.3.2-installer-linux-x86_64.sh"
+  UNAME_OUT="$(uname -s)"
+  case "${UNAME_OUT}" in
+    Linux*)     machine=linux;;
+    Darwin*)    machine=darwin;;
+    *)          echo "unknown machine: $UNAME_OUT"
+  esac
+  URL="https://github.com/bazelbuild/bazel/releases/download/6.3.2/bazel-6.3.2-installer-$machine-x86_64.sh"
   wget -q -O install.sh $URL
   chmod +x install.sh
   set +x
