@@ -23,6 +23,7 @@
 #include <list>
 #include <queue>
 #include <type_traits>
+#include <unordered_map>
 
 #include "fury/meta/field_info.h"
 #include "src/fury/meta/type_traits.h"
