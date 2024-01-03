@@ -82,10 +82,9 @@ export default class SerializerResolver {
   private writeStringCount = 0;
   private writeStringIndex: number[] = [];
 
-
   private regSerializer(fury: Fury, description: TypeDescription) {
     return fury.classResolver.registerSerializerById(description.type, generateSerializer(fury, description));
-  };
+  }
 
   private initInternalSerializer(fury: Fury) {
     this.internalSerializer[InternalSerializerType.ANY] = anySerializer(fury);

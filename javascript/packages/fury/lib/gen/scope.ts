@@ -38,7 +38,7 @@ export class Scope {
   }
 
   assertNameNotDuplicate(name: string) {
-    for(const item of this.declares.values()) {
+    for (const item of this.declares.values()) {
       if (item === name) {
         throw new Error(`const ${name} declare duplicate`);
       }

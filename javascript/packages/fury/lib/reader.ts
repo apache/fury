@@ -137,7 +137,7 @@ export const BinaryReader = (config: Config) => {
     cursor += len;
     switch (len) {
       case 0:
-        return '';
+        return "";
       case 1:
         return read1(buffer, rawCursor);
       case 2:
