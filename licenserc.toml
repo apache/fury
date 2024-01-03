@@ -18,11 +18,13 @@
 headerPath = "Apache-2.0-ASF.txt"
 
 excludes = [
+    # Skipped
     "*.txt",
+    "go.sum",
 
     # Generated
     "integration_tests/perftests/src/main/java/org/apache/fury/integration_tests/state/generated/**",
-    
+
     # Derived
     "ci/format.sh",
     "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/Identity2IdMap.java",
@@ -50,7 +52,6 @@ excludes = [
     "javascript/packages/hps/src/v8-fast-api-calls.h",
     "javascript/packages/fury/lib/murmurHash3.ts",
     "src/fury/thirdparty/MurmurHash3.*",
-    "go/fury/go.sum",
 ]
 
 [mapping.DOUBLESLASH_STYLE]

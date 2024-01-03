@@ -1,4 +1,4 @@
-# Fury Java 
+# Apache Fury™ Java
 
 ## Code format
 
