@@ -162,7 +162,7 @@ def _symlink_genrule_for_dir(
     )
     return genrule
 
-def _get_pyarrow_include(repository_ctx, python_bin="python"):
+def _get_pyarrow_include(repository_ctx, python_bin="python3"):
     """Gets the pyarrow include path."""
     result = _execute(
         repository_ctx, [
@@ -174,7 +174,7 @@ def _get_pyarrow_include(repository_ctx, python_bin="python"):
             + python_bin + ".) " + "Is distutils installed?"))
     return result.stdout.splitlines()[0]
 
-def _get_pyarrow_shared_library(repository_ctx, library_name, python_bin="python"):
+def _get_pyarrow_shared_library(repository_ctx, library_name, python_bin="python3"):
     """Gets the pyarrow shared library path."""
     code = """import pyarrow, os, glob;print(glob.glob(os.path.join(""" +\
         """os.path.dirname(pyarrow.__file__), 'lib{}.*'))[0])""".format(library_name)
@@ -189,7 +189,7 @@ def _get_pyarrow_shared_library(repository_ctx, library_name, python_bin="python
     return result.stdout.splitlines()[0]
 
 #python numpy include
-def _get_python_numpy_include(repository_ctx, python_bin="python"):
+def _get_python_numpy_include(repository_ctx, python_bin="python3"):
     """Gets the python numpy include path."""
     result = _execute(
         repository_ctx, [
