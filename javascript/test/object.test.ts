@@ -41,7 +41,7 @@ describe('object', () => {
         tag: "example.foo"
       }
     };
-    
+
     const fury = new Fury({ refTracking: true });
     const { serialize, deserialize } = fury.registerSerializer(description);
     const input = serialize({ a: { b: "hel" } });
@@ -72,7 +72,7 @@ describe('object', () => {
         tag: "example.foo"
       }
     };
-    
+
     const fury = new Fury({ refTracking: true });
     const { serialize, deserialize } = fury.registerSerializer(description);
     const input = serialize({ a: null });
@@ -92,7 +92,7 @@ describe('object', () => {
         f: Type.binary(),
       }))
     })
-    
+
     const fury = new Fury({ refTracking: true });
     const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({ a: [{ b: "hel", c: true, d: 123, e: 123, f: new Uint8Array([1,2,3]) }] }, serializer);
@@ -129,7 +129,7 @@ describe('object', () => {
         tag: "example.foo"
       }
     };
-    
+
     const fury = new Fury({ refTracking: true });
     const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({ a: { b: "hel" }, a2: { b: "hel2" } }, serializer);
@@ -165,7 +165,7 @@ describe('object', () => {
         tag: "example.foo"
       }
     };
-    
+
     const fury = new Fury({ refTracking: true });
     const serialize = fury.registerSerializer(description).serializer;
     const param: any = {};
@@ -188,7 +188,7 @@ describe('object', () => {
         }))
       }),
     })
-    
+
     const fury = new Fury({ refTracking: true });
     const { serialize, deserialize } = fury.registerSerializer(description);
     const input = serialize({ "+a": { "delete": "hel", c: [{ d: "hello" }] } });
@@ -208,7 +208,7 @@ describe('object', () => {
         }))
       }),
     })
-    
+
     const fury = new Fury({ refTracking: true });
     const { serialize, deserialize } = fury.registerSerializer(description);
     const input = serialize({ a: { b: "hel", c: [{ d: "hello" }] } });
@@ -216,17 +216,6 @@ describe('object', () => {
       input
     );
     expect(result).toEqual({ a: { b: "hel", c: [{ d: "hello" }] } })
-  });
-
-  test('should register work', () => {
-    const description = Type.string();
-    const fury = new Fury({ refTracking: true });
-    try {
-      fury.registerSerializer(description);
-      throw new Error('unreachable code')
-    } catch (error) {
-      expect(error.message).toBe("root type should be object");
-    }
   });
 
   test("should partial record work", () => {
@@ -245,5 +234,3 @@ describe('object', () => {
     expect({kind: "123", path: ""}).toEqual(obj)
 })
 });
-
-

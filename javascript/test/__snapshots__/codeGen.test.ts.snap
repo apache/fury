@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`codeGen can generate tuple declaration code 1`] = `
+exports[`codeGen can generate tuple object declaration code 1`] = `
 "function anonymous(
 ) {
 
@@ -62,7 +62,7 @@ tuple_tag_0_tag_5_tag_6.write(v.tuple2_)
 }"
 `;
 
-exports[`codeGen can generate tuple declaration code 2`] = `
+exports[`codeGen can generate tuple object declaration code 2`] = `
 "function anonymous(
 ) {
 
@@ -110,6 +110,38 @@ return function (fury, scope) {
       }
     }
   }
+}
+
+}"
+`;
+
+exports[`codeGen can generate tuple object declaration code 3`] = `
+"function anonymous(
+) {
+
+return function (fury, scope) {
+  const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
+  const { writeNullOrRef, pushReadObject } = referenceResolver;
+  const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
+
+    const tag_0 = classResolver.getSerializerByTag("tuple-object-wrapper")
+  return tag_0;
+}
+
+}"
+`;
+
+exports[`codeGen can generate tuple object declaration code 4`] = `
+"function anonymous(
+) {
+
+return function (fury, scope) {
+  const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
+  const { writeNullOrRef, pushReadObject } = referenceResolver;
+  const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
+
+    const tag_0 = classResolver.getSerializerByTag("tuple-object-type3-tag")
+  return tag_0;
 }
 
 }"

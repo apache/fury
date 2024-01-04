@@ -88,7 +88,7 @@ function typeHandlerDeclaration(fury: Fury) {
 
   const genDeclaration = (description: TypeDescription): string => {
     if (description.type === InternalSerializerType.FURY_TYPE_TAG) {
-      genSerializer(fury, description);
+      genTagSerializer(fury, Cast<ObjectTypeDescription>(description));
       return genTagDeclaration(Cast<ObjectTypeDescription>(description).options.tag);
     }
     if (description.type === InternalSerializerType.ARRAY) {
@@ -143,7 +143,7 @@ function typeHandlerDeclaration(fury: Fury) {
   };
 }
 
-export const generateInlineCode = (fury: Fury, description: TypeDescription) => {
+export const generateTagInlineCode = (fury: Fury, description: TypeDescription) => {
   const options = Cast<ObjectTypeDescription>(description).options;
   const tag = options?.tag;
   const { genDeclaration, finish } = typeHandlerDeclaration(fury);
@@ -204,15 +204,16 @@ return function (fury, scope) {
   );
 };
 
-export const genSerializer = (fury: Fury, description: TypeDescription) => {
-  const tag = Cast<ObjectTypeDescription>(description).options?.tag;
+export const genTagSerializer = (fury: Fury, description: ObjectTypeDescription) => {
+  const tag = description.options.tag;
+
   if (fury.classResolver.getSerializerByTag(tag)) {
     return fury.classResolver.getSerializerByTag(tag);
   }
 
   fury.classResolver.registerSerializerByTag(tag, fury.classResolver.getSerializerById(InternalSerializerType.ANY));
 
-  const func = generateInlineCode(fury, description);
+  const func = generateTagInlineCode(fury, description);
   return fury.classResolver.registerSerializerByTag(tag, func()(fury, {
     InternalSerializerType,
     RefFlags,
@@ -221,4 +222,34 @@ export const genSerializer = (fury: Fury, description: TypeDescription) => {
     mapSerializer,
     setSerializer,
   }));
+};
+
+export const generateInlineCode = (fury: Fury, description: TypeDescription) => {
+  const { genDeclaration, finish } = typeHandlerDeclaration(fury);
+
+  const name = genDeclaration(description);
+  const { declarations } = finish();
+  return new Function(
+        `
+return function (fury, scope) {
+  const { referenceResolver, binaryWriter, classResolver, binaryReader } = fury;
+  const { writeNullOrRef, pushReadObject } = referenceResolver;
+  const { RefFlags, InternalSerializerType, arraySerializer, tupleSerializer, mapSerializer, setSerializer } = scope;
+${declarations.join("")}
+  return ${name};
+}
+`
+  );
+};
+
+export const genSerializer = (fury: Fury, description: TypeDescription) => {
+  const func = generateInlineCode(fury, description);
+  return func()(fury, {
+    InternalSerializerType,
+    RefFlags,
+    arraySerializer,
+    tupleSerializer,
+    mapSerializer,
+    setSerializer,
+  });
 };
