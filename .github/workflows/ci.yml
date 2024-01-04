@@ -145,12 +145,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
       - name: Run C++ CI with Bazel
-        run: |
-          pip install wget
-          pip install psutil
-          pip install pyarrow==14.0.0
-          python ./ci/run_ci.py -i cpp
+        run: ./ci/run_ci.sh cpp
+
   python:
     name: Python CI
     # Fix python 3.6 install issue, see
