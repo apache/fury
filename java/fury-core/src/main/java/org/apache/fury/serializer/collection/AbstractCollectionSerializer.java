@@ -40,7 +40,7 @@ import org.apache.fury.util.ReflectionUtils;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   private MethodHandle constructor;
-  protected int numElements;
+  private int numElements;
   private final boolean supportCodegenHook;
   // TODO remove elemSerializer, support generics in CompatibleSerializer.
   private Serializer<?> elemSerializer;
@@ -507,9 +507,19 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     }
   }
 
-  /** Get numElements of deserializing collection. Should be called after {@link #newCollection}. */
-  public int getNumElements() {
-    return numElements;
+  /**
+   * Get and reset numElements of deserializing collection. Should be called after {@link
+   * #newCollection}. Nested read may overwrite this element, reset is necessary to avoid use wrong
+   * value by mistake.
+   */
+  public int getAndClearNumElements() {
+    int size = numElements;
+    numElements = -1; // nested read may overwrite this element.
+    return size;
+  }
+
+  protected void setNumElements(int numElements) {
+    this.numElements = numElements;
   }
 
   public abstract T onCollectionRead(Collection collection);

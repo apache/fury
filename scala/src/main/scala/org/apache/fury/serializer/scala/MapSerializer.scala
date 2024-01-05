@@ -50,12 +50,14 @@ abstract class AbstractScalaMapSerializer[K, V, T](fury: Fury, cls: Class[T])
 
   override def read(buffer: MemoryBuffer): T = {
     val map = newMap(buffer)
-    if (this.numElements != 0) readElements(buffer, numElements, map)
+    val numElements = getAndClearNumElements()
+    if (numElements != 0) readElements(buffer, numElements, map)
     onMapRead(map)
   }
 
   override def newMap(buffer: MemoryBuffer): util.Map[_, _] = {
-    numElements = buffer.readPositiveVarInt()
+    val numElements = buffer.readPositiveVarInt()
+    setNumElements(numElements)
     val factory = fury.readRef(buffer).asInstanceOf[Factory[(K, V), T]]
     val builder = factory.newBuilder
     builder.sizeHint(numElements)

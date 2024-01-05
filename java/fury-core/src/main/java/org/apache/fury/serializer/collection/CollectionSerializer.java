@@ -48,6 +48,7 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
   @Override
   public T read(MemoryBuffer buffer) {
     Collection collection = newCollection(buffer);
+    int numElements = getAndClearNumElements();
     if (numElements != 0) {
       readElements(fury, buffer, collection, numElements);
     }
