@@ -27,10 +27,6 @@ jobs:
     runs-on: ubuntu-latest    
     steps:    
       - uses: actions/checkout@v4
-      - name: Replace Front Matter
-        run: |
-          sed -i 's/<!-- fury_frontmatter --/---/g' `grep fury_frontmatter -rl`
-          sed -i 's/-- fury_frontmatter -->/---/g' `grep fury_frontmatter -rl`
       - name: Sync files
         uses: BetaHuhn/repo-file-sync-action@v1
         with:

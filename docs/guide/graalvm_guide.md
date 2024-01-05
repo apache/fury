@@ -1,8 +1,8 @@
-<!-- fury_frontmatter --
+---
 title: GraalVM Guide
 sidebar_position: 6
 id: graalvm_guide
--- fury_frontmatter -->
+---
 
 # GraalVM Native Image
 GraalVM `native image` can compile java code into native code ahead to build faster, smaller, leaner applications.

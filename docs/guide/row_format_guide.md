@@ -1,8 +1,8 @@
-<!-- fury_frontmatter --
+---
 title: Row Format Guide
 sidebar_position: 1
 id: row_format_guide
--- fury_frontmatter -->
+---
 
 ## Row format protocol
 ### Java
