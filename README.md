@@ -46,7 +46,7 @@ multiple binary protocols for those requirements:
 - **Row format protocol**: A cache-friendly binary random access format, supports skipping serialization and partial serialization,
   and can convert to column-format automatically.
 
-New protocols can be easily added based on fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol
+New protocols can be easily added based on Fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol
 can be reused by another protocol.
 
 ## Benchmarks
@@ -148,7 +148,7 @@ go get github.com/apache/incubator-fury/go/fury
 ```
 
 ## Quickstart
-Here we give a quick start about how to use fury, see [user guide](https://github.com/apache/incubator-fury/blob/main/docs/README.md) for more details about [java](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md), [cross language](https://github.com/apache/incubator-fury/blob/main/docs/guide/xlang_object_graph_guide.md), and [row format](https://github.com/apache/incubator-fury/blob/main/docs/guide/row_format_guide.md).
+Here we give a quick start about how to use Fury, see [user guide](https://github.com/apache/incubator-fury/blob/main/docs/README.md) for more details about [java](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md), [cross language](https://github.com/apache/incubator-fury/blob/main/docs/guide/xlang_object_graph_guide.md), and [row format](https://github.com/apache/incubator-fury/blob/main/docs/guide/row_format_guide.md).
 
 ### Fury java object graph serialization
 If you don't have cross-language requirements, using this mode will 
@@ -355,20 +355,21 @@ print(foo_row.f2[100000], foo_row.f4[100000].f1, foo_row.f4[200000].f2[5])
 ```
 
 ## Compatibility
-### Schema Compatibility
-Fury java object graph serialization support class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
 
-We plan to add support cross-language serialization after [meta compression](https://github.com/apache/incubator-fury/issues/203) is finished.
+### Schema Compatibility
+Fury java object graph serialization supports class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
+
+We plan to add the schema compatibility support of cross-language serialization after [meta compression](https://github.com/apache/incubator-fury/issues/203) is finished.
 
 ### Binary Compatibility
-We are still improving our protocols, binary compatibility is not ensured between fury major releases for now.
-it's ensured between minor versions only. Please
-`versioning` your data by fury major version if you will upgrade fury in the future, see [how to upgrade fury](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
+We are still improving our protocols, thus binary compatibility is not guaranteed between Fury major releases for now.
+However, it is guaranteed between minor versions. Please
+`versioning` your data by Fury major version if you will upgrade Fury in the future, see [how to upgrade fury](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
 
-Binary compatibility will be ensured when fury 1.0 is released.
+Binary compatibility will be guaranteed when Fury 1.0 is released.
 
 ## Security
-Static serialization is secure. But dynamic serialization such as fury java/python native serialization supports deserializing unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
+Static serialization is relatively secure. But dynamic serialization such as Fury java/python native serialization supports deserializing unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
 
 For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risk.
 
@@ -378,6 +379,8 @@ Fury provides a class registration option that is enabled by default for such pr
 If this option is disabled, you are responsible for serialization security. You can configure `org.apache.fury.resolver.ClassChecker` by
 `ClassResolver#setClassChecker` to control which classes are allowed for serialization.
 
+To report security vulnerabilities found in Fury, please follow the [ASF vulnerability reporting process](https://apache.org/security/#reporting-a-vulnerability).
+
 ## How to Build
 
 Please read the [BUILD](docs/guide/DEVELOPMENT.md) guide for instructions on how to build.
@@ -385,8 +388,6 @@ Please read the [BUILD](docs/guide/DEVELOPMENT.md) guide for instructions on how
 ## How to Contribute
 
 Please read the [CONTRIBUTING](CONTRIBUTING.md) guide for instructions on how to contribute.
-
-For ecosystem projects, please see https://github.com/fury-project
 
 ## License
 
