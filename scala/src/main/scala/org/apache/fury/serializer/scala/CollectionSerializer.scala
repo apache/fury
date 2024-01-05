@@ -49,12 +49,14 @@ abstract class AbstractScalaCollectionSerializer[A, T <: Iterable[A]](fury: Fury
 
   override def read(buffer: MemoryBuffer): T = {
     val collection = newCollection(buffer)
+    val numElements = getAndClearNumElements()
     if (numElements != 0) readElements(fury, buffer, collection, numElements)
     onCollectionRead(collection)
   }
 
   override def newCollection(buffer: MemoryBuffer): util.Collection[_] = {
-    numElements = buffer.readPositiveVarInt()
+    val numElements = buffer.readPositiveVarInt()
+    setNumElements(numElements)
     val factory = fury.readRef(buffer).asInstanceOf[Factory[A, T]]
     val builder = factory.newBuilder
     builder.sizeHint(numElements)
