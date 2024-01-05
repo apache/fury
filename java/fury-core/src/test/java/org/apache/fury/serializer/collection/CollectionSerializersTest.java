@@ -84,6 +84,22 @@ public class CollectionSerializersTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
+  public void testBasicListNested(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
+            .build();
+    List<String> data0 = new ArrayList<>(ImmutableList.of("a", "b", "c"));
+    List<List<String>> data = new ArrayList<>(ImmutableList.of(data0, data0));
+    serDeCheckSerializer(fury, data, "ArrayList");
+    serDeCheckSerializer(fury, Arrays.asList("a", "b", "c"), "ArraysAsList");
+    serDeCheckSerializer(fury, new HashSet<>(data), "HashSet");
+    serDeCheckSerializer(fury, new LinkedHashSet<>(data), "LinkedHashSet");
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
   public void testCollectionGenerics(boolean referenceTrackingConfig) {
     Fury fury =
         Fury.builder()
@@ -494,8 +510,9 @@ public class CollectionSerializersTest extends FuryTestBase {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
-      return new ArrayList(numElements);
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
+      return new ArrayList<>(numElements);
     }
   }
 

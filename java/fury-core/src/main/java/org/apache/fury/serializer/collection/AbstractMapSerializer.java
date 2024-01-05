@@ -61,7 +61,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   // field. So we will write those extra kv classes to keep protocol consistency between
   // interpreter and jit mode although it seems unnecessary.
   // With kv header in future, we can write this kv classes only once, the cost won't be too much.
-  protected int numElements;
+  private int numElements;
 
   public AbstractMapSerializer(Fury fury, Class<T> cls) {
     this(fury, cls, !ReflectionUtils.isDynamicGeneratedCLass(cls));
@@ -718,9 +718,18 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
-  /** Get numElements of deserializing collection. Should be called after {@link #newMap}. */
-  public int getNumElements() {
-    return numElements;
+  /**
+   * Get and reset numElements of deserializing collection. Should be called after {@link #newMap}.
+   * Nested read may overwrite this element, reset is necessary to avoid use wrong value by mistake.
+   */
+  public int getAndClearNumElements() {
+    int size = numElements;
+    numElements = -1; // nested read may overwrite this element.
+    return size;
+  }
+
+  public void setNumElements(int numElements) {
+    this.numElements = numElements;
   }
 
   public abstract T onMapRead(Map map);

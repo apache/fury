@@ -1214,7 +1214,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     }
     Invoke supportHook = inlineInvoke(serializer, "supportCodegenHook", PRIMITIVE_BOOLEAN_TYPE);
     Expression collection = new Invoke(serializer, "newCollection", COLLECTION_TYPE, buffer);
-    Expression size = new Invoke(serializer, "getNumElements", "size", PRIMITIVE_INT_TYPE);
+    Expression size = new Invoke(serializer, "getAndClearNumElements", "size", PRIMITIVE_INT_TYPE);
     // if add branch by `ArrayList`, generated code will be > 325 bytes.
     // and List#add is more likely be inlined if there is only one subclass.
     Expression hookRead = readCollectionCodegen(buffer, collection, size, elementType);
@@ -1442,7 +1442,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     }
     Invoke supportHook = inlineInvoke(serializer, "supportCodegenHook", PRIMITIVE_BOOLEAN_TYPE);
     Expression newMap = new Invoke(serializer, "newMap", MAP_TYPE, buffer);
-    Expression size = new Invoke(serializer, "getNumElements", "size", PRIMITIVE_INT_TYPE);
+    Expression size = new Invoke(serializer, "getAndClearNumElements", "size", PRIMITIVE_INT_TYPE);
     Expression start = new Literal(0, PRIMITIVE_INT_TYPE);
     Expression step = new Literal(1, PRIMITIVE_INT_TYPE);
     ExprHolder exprHolder = ExprHolder.of("map", newMap, "buffer", buffer);

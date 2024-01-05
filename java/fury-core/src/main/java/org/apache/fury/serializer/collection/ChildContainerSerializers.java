@@ -159,6 +159,7 @@ public class ChildContainerSerializers {
     @Override
     public T newCollection(MemoryBuffer buffer) {
       T collection = (T) super.newCollection(buffer);
+      int numElements = getAndClearNumElements();
       collection.ensureCapacity(numElements);
       return collection;
     }
