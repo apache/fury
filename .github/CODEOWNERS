@@ -5,7 +5,7 @@ go @chaokunyang
 integration_tests @chaokunyang
 python @chaokunyang
 src @chaokunyang
-rust @wangweipeng2 @chaokunyang
-javascript @wangweipeng2
-docs @chaokunyang @wangweipeng2
+rust @theweipeng @chaokunyang
+javascript @theweipeng
+docs @chaokunyang @theweipeng
 bazel @chaokunyang
