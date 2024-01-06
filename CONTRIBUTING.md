@@ -137,7 +137,7 @@ codesign -s - -f --entitlements tmp.entitlements /Users/chaokunyang/anaconda3/en
 ulimit -c unlimited
 ```
 
-then, run the code:
+then run the code:
 
 ```bash
 python fury_serializer.py
