@@ -4,15 +4,11 @@ sidebar_position: 6
 id: development
 ---
 
-# How to build to Fury
+# How to build Fury
 
-## Get the source code
+Please checkout the source tree from https://github.com/apache/incubator-fury.
 
-Github repo: https://github.com/apache/incubator-fury
-
-## Building Fury 🏋🏿‍♀️
-
-### Building Fury Java
+### Build Fury Java
 
 ```bash
 cd java
@@ -24,7 +20,7 @@ mvn clean compile -DskipTests
 - java 1.8+
 - maven 3.6.3+
 
-### Building Fury Python
+### Build Fury Python
 
 ```bash
 cd python
@@ -34,15 +30,9 @@ pip install -v -e .
 
 #### Environment Requirements
 
-- python3.6+
+- python 3.6+
 
-### Building Fury C++
-
-Build fury_util.so:
-
-```bash
-bazel build //src/fury/util:fury_util
-```
+### Build Fury C++
 
 Build fury row format：
 
@@ -51,12 +41,19 @@ pip install pyarrow==14.0.0
 bazel build //src/fury/row:fury_row_format
 ```
 
+Build fury row format encoder:
+
+```bash
+pip install pyarrow==14.0.0
+bazel build //src/fury/encoder:fury_encoder
+```
+
 #### Environment Requirements
 
-- cpp 11+
+- compilers with C++17 support
 - bazel 6.3.2
 
-### Building Fury GoLang
+### Build Fury GoLang
 
 ```bash
 cd go/fury
@@ -68,9 +65,9 @@ go test -v fury_xlang_test.go
 
 #### Environment Requirements
 
-- go1.3+
+- go 1.13+
 
-### Building Fury Rust
+### Build Fury Rust
 
 ```bash
 cd rust

@@ -27,9 +27,9 @@ In addition to cross-language serialization, Fury also features at:
 
 - Drop-in replace Java serialization frameworks such as JDK/Kryo/Hessian, but 100x faster at most, which can greatly improve 
  the efficiency of high-performance RPC calls, data transfer, and object persistence.
-- **100% compatible** with JDK serialization API with much faster implementation: supporting JDK `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` API. 
+- **100% compatible** with JDK serialization API with much faster implementation: supporting JDK `writeObject`/`readObject`/`writeReplace`/`readResolve`/`readObjectNoData`/`Externalizable` API. 
 - Supports **Java 8~21**, Java 17+ `record` is supported too.
-- Support [AOT compilation serialization](docs/guide/graalvm_guide.md) for **GraalVM native image**, and no reflection/serialization json config are needed.
+- Supports [AOT compilation serialization](docs/guide/graalvm_guide.md) for **GraalVM native image**, and no reflection/serialization json config are needed.
 - Supports shared and circular reference object serialization for golang.
 - Supports [scala serialization](docs/guide/scala_guide.md)
 - Supports automatic object serialization for golang.
@@ -55,14 +55,12 @@ Different serialization frameworks are suitable for different scenarios, and ben
 If you need to benchmark for your specific scenario, make sure all serialization frameworks are appropriately configured for that scenario.
 
 Dynamic serialization frameworks support polymorphism and references, but they often come with a higher cost compared to static serialization frameworks, unless they utilize JIT techniques like Fury does.
-Because Fury generates code at runtime, it is recommended to **warm up** the system before collecting benchmark statistics.
+To ensure accurate benchmark statistics, it is advisable to **warm up** the system before collecting data due to Fury's runtime code generation.
 
 ### Java Serialization
-Title containing "compatible" represent schema compatible mode: support type forward/backward compatibility.
+In these charts below, titles containing "compatible" represent schema compatible mode: type forward/backward compatibility is enabled; while titles without "compatible" represent schema consistent mode: class schema must be the same between serialization and deserialization.
 
-Title without "compatible" represent schema consistent mode: class schema must be the same between serialization and deserialization.
-
-`Struct` is a class with [100 primitive fields](https://github.com/apache/incubator-fury/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
+Where `Struct` is a class with [100 primitive fields](https://github.com/apache/incubator-fury/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), and `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
 
 <p align="center">
 <img width="24%" alt="" src="docs/benchmarks/compatible/bench_serialize_compatible_STRUCT_to_directBuffer_tps.png">
@@ -152,7 +150,7 @@ Here we give a quick start about how to use Fury, see [user guide](https://githu
 
 ### Fury java object graph serialization
 If you don't have cross-language requirements, using this mode will 
-have better performance.
+result in better performance.
 ```java
 import org.apache.fury.*;
 import org.apache.fury.config.*;
