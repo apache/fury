@@ -1,11 +1,10 @@
-* @chaokunyang
 java @chaokunyang
 scala @chaokunyang
 go @chaokunyang
 integration_tests @chaokunyang
 python @chaokunyang
-src @chaokunyang
+src @chaokunyang @PragmaTwice
 rust @theweipeng @chaokunyang
 javascript @theweipeng
-docs @chaokunyang @theweipeng
+docs @chaokunyang @theweipeng @PragmaTwice
 bazel @chaokunyang
