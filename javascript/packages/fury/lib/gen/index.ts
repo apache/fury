@@ -44,40 +44,44 @@ export const generate = (fury: Fury, description: TypeDescription) => {
   const generator = new InnerGeneratorClass(description, new Builder(scope, fury), scope);
 
   const funcString = generator.toSerializer();
+  const afterCodeGenerated = fury.config?.hooks?.afterCodeGenerated;
+  if (typeof afterCodeGenerated === "function") {
+    return new Function(afterCodeGenerated(funcString));
+  }
   return new Function(funcString);
 };
 
-function regDependences(fury: Fury, description: TypeDescription) {
+function regDependencies(fury: Fury, description: TypeDescription) {
   if (description.type === InternalSerializerType.FURY_TYPE_TAG) {
     const options = (<ObjectTypeDescription>description).options;
     if (options.props) {
       fury.classResolver.registerSerializerByTag(options.tag);
       Object.values(options.props).forEach((x) => {
-        regDependences(fury, x);
+        regDependencies(fury, x);
       });
       const func = generate(fury, description);
       fury.classResolver.registerSerializerByTag(options.tag, func()(fury, {}));
     }
   }
   if (description.type === InternalSerializerType.ARRAY) {
-    regDependences(fury, (<ArrayTypeDescription>description).options.inner);
+    regDependencies(fury, (<ArrayTypeDescription>description).options.inner);
   }
   if (description.type === InternalSerializerType.FURY_SET) {
-    regDependences(fury, (<SetTypeDescription>description).options.key);
+    regDependencies(fury, (<SetTypeDescription>description).options.key);
   }
   if (description.type === InternalSerializerType.MAP) {
-    regDependences(fury, (<MapTypeDescription>description).options.key);
-    regDependences(fury, (<MapTypeDescription>description).options.value);
+    regDependencies(fury, (<MapTypeDescription>description).options.key);
+    regDependencies(fury, (<MapTypeDescription>description).options.value);
   }
   if (description.type === InternalSerializerType.TUPLE) {
     (<TupleTypeDescription>description).options.inner.forEach((x) => {
-      regDependences(fury, x);
+      regDependencies(fury, x);
     });
   }
 }
 
 export const generateSerializer = (fury: Fury, description: TypeDescription) => {
-  regDependences(fury, description);
+  regDependencies(fury, description);
   if (description.type === InternalSerializerType.FURY_TYPE_TAG) {
     return fury.classResolver.getSerializerByTag((<ObjectTypeDescription>description).options.tag);
   }

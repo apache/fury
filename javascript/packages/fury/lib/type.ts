@@ -102,6 +102,9 @@ export interface Config {
   hps?: Hps
   refTracking?: boolean
   useSliceString?: boolean
+  hooks?: {
+    afterCodeGenerated?: (code: string) => string
+  }
 }
 
 export enum Language {

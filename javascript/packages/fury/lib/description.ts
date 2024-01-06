@@ -39,7 +39,6 @@ export interface ArrayTypeDescription extends TypeDescription {
 
 export interface TupleTypeDescription extends TypeDescription {
   options: {
-    isTuple: true
     inner: TypeDescription[]
   }
 }
@@ -188,7 +187,6 @@ export const Type = {
     return {
       type: InternalSerializerType.TUPLE as const,
       options: {
-        isTuple: true,
         inner: t1,
       },
     };

@@ -28,20 +28,20 @@ import { Type, TypeDescription } from "./description";
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1;
 
-class Lazystring {
+class LazyString {
   private string: string | null = null;
   private start: number | null = null;
   private len: number | null = null;
 
   static fromPair(start: number, len: number) {
-    const result = new Lazystring();
+    const result = new LazyString();
     result.start = start;
     result.len = len;
     return result;
   }
 
   static fromString(str: string) {
-    const result = new Lazystring();
+    const result = new LazyString();
     result.string = str;
     return result;
   }
@@ -78,7 +78,7 @@ export default class SerializerResolver {
   private customSerializer: { [key: string]: Serializer } = {
   };
 
-  private readStringPool: Lazystring[] = [];
+  private readStringPool: LazyString[] = [];
   private writeStringCount = 0;
   private writeStringIndex: number[] = [];
 
@@ -194,7 +194,7 @@ export default class SerializerResolver {
       const len = binaryReader.int16();
       const start = binaryReader.getCursor();
       binaryReader.skip(len);
-      this.readStringPool.push(Lazystring.fromPair(start, len));
+      this.readStringPool.push(LazyString.fromPair(start, len));
       const idx = this.readStringPool.length;
       return () => {
         return this.readStringPool[idx - 1].toString(binaryReader);
