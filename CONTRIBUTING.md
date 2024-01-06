@@ -13,6 +13,11 @@ Create an issue with [this form](https://github.com/apache/incubator-fury/issues
 Generally we follows the [Conventional Commits](https://www.conventionalcommits.org/) for pull request titles, 
 since we will squash and merge the PR and use the PR title as the first line of commit message.
 
+For example, here are good PR titles:
+- feat(java): support xxx feature
+- fix(c++): blablabla
+- chore(python): remove useless yyy file
+
 For more details, please check [pr-lint.yml](./.github/workflows/pr-lint.yml).
 
 ## 🧪 Testing
