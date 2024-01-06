@@ -19,10 +19,10 @@
 
 import { InternalSerializerType, MaxInt32 } from "../type";
 import { Scope } from "./scope";
-import { Builder } from "./builder";
+import { CodecBuilder } from "./builder";
 import { ObjectTypeDescription, TypeDescription } from "../description";
 import { fromString } from "../platformBuffer";
-import { Register } from "./router";
+import { CodegenRegistry } from "./router";
 import { BaseSerializerGenerator } from "./serializer";
 
 function computeFieldHash(hash: number, id: number): number {
@@ -62,7 +62,7 @@ const computeStructHash = (description: TypeDescription) => {
 class ObjectSerializerGenerator extends BaseSerializerGenerator {
   description: ObjectTypeDescription;
 
-  constructor(description: TypeDescription, builder: Builder, scope: Scope) {
+  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
     super(description, builder, scope);
     this.description = <ObjectTypeDescription>description;
   }
@@ -76,12 +76,12 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
             ${tagWriter}.write(${this.builder.writer.ownName()});
             ${this.builder.writer.int32(expectHash)};
             ${Object.entries(options.props).sort().map(([key, inner]) => {
-            const InnerGeneratorClass = Register.get(inner.type);
+            const InnerGeneratorClass = CodegenRegistry.get(inner.type);
             if (!InnerGeneratorClass) {
                 throw new Error(`${inner.type} generator not exists`);
             }
             const innerGenerator = new InnerGeneratorClass(inner, this.builder, this.scope);
-            return innerGenerator.toWriteEmbed(`${accessor}${Builder.safePropAccessor(key)}`);
+            return innerGenerator.toWriteEmbed(`${accessor}${CodecBuilder.safePropAccessor(key)}`);
         }).join(";\n")
             }
         `;
@@ -97,17 +97,17 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
         }
         const ${result} = {
             ${Object.entries(options.props).sort().map(([key]) => {
-            return `${Builder.safePropName(key)}: null`;
+            return `${CodecBuilder.safePropName(key)}: null`;
         }).join(",\n")}
         };
         ${this.pushReadRefStmt(result)}
         ${Object.entries(options.props).sort().map(([key, inner]) => {
-            const InnerGeneratorClass = Register.get(inner.type);
+            const InnerGeneratorClass = CodegenRegistry.get(inner.type);
             if (!InnerGeneratorClass) {
                 throw new Error(`${inner.type} generator not exists`);
             }
             const innerGenerator = new InnerGeneratorClass(inner, this.builder, this.scope);
-            return innerGenerator.toReadEmbed(expr => `${result}${Builder.safePropAccessor(key)} = ${expr}`);
+            return innerGenerator.toReadEmbed(expr => `${result}${CodecBuilder.safePropAccessor(key)} = ${expr}`);
         }).join(";\n")
             }
         ${accessor(result)}
@@ -115,7 +115,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   }
 
   safeTag() {
-    return Builder.replaceBackslashAndQuote(this.description.options.tag);
+    return CodecBuilder.replaceBackslashAndQuote(this.description.options.tag);
   }
 
   toReadEmbed(accessor: (expr: string) => string): string {
@@ -135,4 +135,4 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   }
 }
 
-Register.reg(InternalSerializerType.FURY_TYPE_TAG, ObjectSerializerGenerator);
+CodegenRegistry.register(InternalSerializerType.FURY_TYPE_TAG, ObjectSerializerGenerator);

@@ -20,15 +20,15 @@
 import { TypeDescription } from "../description";
 import { SerializerGenerator } from "./serializer";
 import { InternalSerializerType } from "../type";
-import { Builder } from "./builder";
+import { CodecBuilder } from "./builder";
 import { Scope } from "./scope";
 
-type SerializerGeneratorConstructor = new (description: TypeDescription, builder: Builder, scope: Scope) => SerializerGenerator;
+type SerializerGeneratorConstructor = new (description: TypeDescription, builder: CodecBuilder, scope: Scope) => SerializerGenerator;
 
-export class Register {
+export class CodegenRegistry {
   static map = new Map<string, SerializerGeneratorConstructor>();
 
-  static reg(type: InternalSerializerType, generator: SerializerGeneratorConstructor) {
+  static register(type: InternalSerializerType, generator: SerializerGeneratorConstructor) {
     this.map.set(InternalSerializerType[type], generator);
   }
 

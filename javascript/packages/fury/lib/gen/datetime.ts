@@ -18,16 +18,16 @@
  */
 
 import { TypeDescription } from "../description";
-import { Builder } from "./builder";
+import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
-import { Register } from "./router";
+import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
 class TimestampSerializerGenerator extends BaseSerializerGenerator {
   description: TypeDescription;
 
-  constructor(description: TypeDescription, builder: Builder, scope: Scope) {
+  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
     super(description, builder, scope);
     this.description = description;
   }
@@ -47,7 +47,7 @@ class TimestampSerializerGenerator extends BaseSerializerGenerator {
 class DateSerializerGenerator extends BaseSerializerGenerator {
   description: TypeDescription;
 
-  constructor(description: TypeDescription, builder: Builder, scope: Scope) {
+  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
     super(description, builder, scope);
     this.description = description;
   }
@@ -72,5 +72,5 @@ class DateSerializerGenerator extends BaseSerializerGenerator {
   }
 }
 
-Register.reg(InternalSerializerType.DATE, DateSerializerGenerator);
-Register.reg(InternalSerializerType.TIMESTAMP, TimestampSerializerGenerator);
+CodegenRegistry.register(InternalSerializerType.DATE, DateSerializerGenerator);
+CodegenRegistry.register(InternalSerializerType.TIMESTAMP, TimestampSerializerGenerator);

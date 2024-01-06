@@ -82,37 +82,37 @@ export default class SerializerResolver {
   private writeStringCount = 0;
   private writeStringIndex: number[] = [];
 
-  private regSerializer(fury: Fury, description: TypeDescription) {
+  private registerSerializer(fury: Fury, description: TypeDescription) {
     return fury.classResolver.registerSerializerById(description.type, generateSerializer(fury, description));
   }
 
   private initInternalSerializer(fury: Fury) {
     this.internalSerializer[InternalSerializerType.ANY] = anySerializer(fury);
-    this.regSerializer(fury, Type.string());
-    this.regSerializer(fury, Type.array(Type.any()));
-    this.regSerializer(fury, Type.map(Type.any(), Type.any()));
-    this.regSerializer(fury, Type.bool());
-    this.regSerializer(fury, Type.uint8());
-    this.regSerializer(fury, Type.int8());
-    this.regSerializer(fury, Type.uint16());
-    this.regSerializer(fury, Type.int16());
-    this.regSerializer(fury, Type.uint32());
-    this.regSerializer(fury, Type.int32());
-    this.regSerializer(fury, Type.uint64());
-    this.regSerializer(fury, Type.int64());
-    this.regSerializer(fury, Type.float());
-    this.regSerializer(fury, Type.double());
-    this.regSerializer(fury, Type.timestamp());
-    this.regSerializer(fury, Type.date());
-    this.regSerializer(fury, Type.set(Type.any()));
-    this.regSerializer(fury, Type.binary());
-    this.regSerializer(fury, Type.stringTypedArray());
-    this.regSerializer(fury, Type.boolTypedArray());
-    this.regSerializer(fury, Type.shortTypedArray());
-    this.regSerializer(fury, Type.intTypedArray());
-    this.regSerializer(fury, Type.longTypedArray());
-    this.regSerializer(fury, Type.floatTypedArray());
-    this.regSerializer(fury, Type.doubleTypedArray());
+    this.registerSerializer(fury, Type.string());
+    this.registerSerializer(fury, Type.array(Type.any()));
+    this.registerSerializer(fury, Type.map(Type.any(), Type.any()));
+    this.registerSerializer(fury, Type.bool());
+    this.registerSerializer(fury, Type.uint8());
+    this.registerSerializer(fury, Type.int8());
+    this.registerSerializer(fury, Type.uint16());
+    this.registerSerializer(fury, Type.int16());
+    this.registerSerializer(fury, Type.uint32());
+    this.registerSerializer(fury, Type.int32());
+    this.registerSerializer(fury, Type.uint64());
+    this.registerSerializer(fury, Type.int64());
+    this.registerSerializer(fury, Type.float());
+    this.registerSerializer(fury, Type.double());
+    this.registerSerializer(fury, Type.timestamp());
+    this.registerSerializer(fury, Type.date());
+    this.registerSerializer(fury, Type.set(Type.any()));
+    this.registerSerializer(fury, Type.binary());
+    this.registerSerializer(fury, Type.stringTypedArray());
+    this.registerSerializer(fury, Type.boolTypedArray());
+    this.registerSerializer(fury, Type.shortTypedArray());
+    this.registerSerializer(fury, Type.intTypedArray());
+    this.registerSerializer(fury, Type.longTypedArray());
+    this.registerSerializer(fury, Type.floatTypedArray());
+    this.registerSerializer(fury, Type.doubleTypedArray());
   }
 
   init(fury: Fury) {

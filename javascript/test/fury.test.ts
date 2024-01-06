@@ -57,7 +57,7 @@ describe('fury', () => {
         }
     });
 
-    test('should reg work', () => {
+    test('should register work', () => {
         const fury = new Fury();
         const { serialize, deserialize } = fury.registerSerializer(Type.array(Type.string()));
         const bin = serialize(["hello", "world"]);

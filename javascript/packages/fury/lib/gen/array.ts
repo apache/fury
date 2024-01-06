@@ -18,16 +18,16 @@
  */
 
 import { ArrayTypeDescription, TypeDescription } from "../description";
-import { Builder } from "./builder";
+import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
-import { Register } from "./router";
+import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
 class ArraySerializerGenerator extends BaseSerializerGenerator {
   description: ArrayTypeDescription;
 
-  constructor(description: TypeDescription, builder: Builder, scope: Scope) {
+  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
     super(description, builder, scope);
     this.description = <ArrayTypeDescription>description;
   }
@@ -39,7 +39,7 @@ class ArraySerializerGenerator extends BaseSerializerGenerator {
 
   private innerGenerator() {
     const inner = this.description.options.inner;
-    const InnerGeneratorClass = Register.get(inner.type);
+    const InnerGeneratorClass = CodegenRegistry.get(inner.type);
     if (!InnerGeneratorClass) {
       throw new Error(`${inner.type} generator not exists`);
     }
@@ -77,4 +77,4 @@ class ArraySerializerGenerator extends BaseSerializerGenerator {
   }
 }
 
-Register.reg(InternalSerializerType.ARRAY, ArraySerializerGenerator);
+CodegenRegistry.register(InternalSerializerType.ARRAY, ArraySerializerGenerator);

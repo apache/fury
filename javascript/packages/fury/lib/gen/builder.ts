@@ -286,7 +286,7 @@ class ClassResolverBuilder {
   }
 }
 
-export class Builder {
+export class CodecBuilder {
   reader: BinaryReaderBuilder;
   writer: BinaryWriterBuilder;
   referenceResolver: ReferenceResolverBuilder;
@@ -324,15 +324,15 @@ export class Builder {
   }
 
   static safePropAccessor(prop: string) {
-    if (!Builder.isDotPropAccessor(prop) || Builder.isReserved(prop)) {
-      return `["${Builder.replaceBackslashAndQuote(prop)}"]`;
+    if (!CodecBuilder.isDotPropAccessor(prop) || CodecBuilder.isReserved(prop)) {
+      return `["${CodecBuilder.replaceBackslashAndQuote(prop)}"]`;
     }
     return `.${prop}`;
   }
 
   static safePropName(prop: string) {
-    if (!Builder.isDotPropAccessor(prop) || Builder.isReserved(prop)) {
-      return `["${Builder.replaceBackslashAndQuote(prop)}"]`;
+    if (!CodecBuilder.isDotPropAccessor(prop) || CodecBuilder.isReserved(prop)) {
+      return `["${CodecBuilder.replaceBackslashAndQuote(prop)}"]`;
     }
     return prop;
   }

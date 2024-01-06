@@ -18,9 +18,9 @@
  */
 
 import { Type, TypeDescription } from "../description";
-import { Builder } from "./builder";
+import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
-import { Register } from "./router";
+import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
@@ -28,7 +28,7 @@ function build(inner: TypeDescription) {
   return class TypedArraySerializerGenerator extends BaseSerializerGenerator {
     description: TypeDescription;
 
-    constructor(description: TypeDescription, builder: Builder, scope: Scope) {
+    constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
       super(description, builder, scope);
       this.description = <TypeDescription>description;
     }
@@ -38,7 +38,7 @@ function build(inner: TypeDescription) {
     }
 
     private innerGenerator() {
-      const InnerGeneratorClass = Register.get(inner.type);
+      const InnerGeneratorClass = CodegenRegistry.get(inner.type);
       if (!InnerGeneratorClass) {
         throw new Error(`${inner.type} generator not exists`);
       }
@@ -76,10 +76,10 @@ function build(inner: TypeDescription) {
     }
   };
 }
-Register.reg(InternalSerializerType.FURY_STRING_ARRAY, build(Type.string()));
-Register.reg(InternalSerializerType.FURY_PRIMITIVE_BOOL_ARRAY, build(Type.bool()));
-Register.reg(InternalSerializerType.FURY_PRIMITIVE_LONG_ARRAY, build(Type.int64()));
-Register.reg(InternalSerializerType.FURY_PRIMITIVE_INT_ARRAY, build(Type.int32()));
-Register.reg(InternalSerializerType.FURY_PRIMITIVE_FLOAT_ARRAY, build(Type.float()));
-Register.reg(InternalSerializerType.FURY_PRIMITIVE_DOUBLE_ARRAY, build(Type.double()));
-Register.reg(InternalSerializerType.FURY_PRIMITIVE_SHORT_ARRAY, build(Type.int16()));
+CodegenRegistry.register(InternalSerializerType.FURY_STRING_ARRAY, build(Type.string()));
+CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_BOOL_ARRAY, build(Type.bool()));
+CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_LONG_ARRAY, build(Type.int64()));
+CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_INT_ARRAY, build(Type.int32()));
+CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_FLOAT_ARRAY, build(Type.float()));
+CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_DOUBLE_ARRAY, build(Type.double()));
+CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_SHORT_ARRAY, build(Type.int16()));

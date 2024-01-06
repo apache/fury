@@ -19,8 +19,8 @@
 
 import { InternalSerializerType, Fury } from "../type";
 import { ArrayTypeDescription, MapTypeDescription, ObjectTypeDescription, SetTypeDescription, TupleTypeDescription, TypeDescription } from "../description";
-import { Register } from "./router";
-import { Builder } from "./builder";
+import { CodegenRegistry } from "./router";
+import { CodecBuilder } from "./builder";
 import { Scope } from "./scope";
 import "./array";
 import "./object";
@@ -36,12 +36,12 @@ import "./tuple";
 import "./typedArray";
 
 export const generate = (fury: Fury, description: TypeDescription) => {
-  const InnerGeneratorClass = Register.get(description.type);
+  const InnerGeneratorClass = CodegenRegistry.get(description.type);
   if (!InnerGeneratorClass) {
     throw new Error(`${description.type} generator not exists`);
   }
   const scope = new Scope();
-  const generator = new InnerGeneratorClass(description, new Builder(scope, fury), scope);
+  const generator = new InnerGeneratorClass(description, new CodecBuilder(scope, fury), scope);
 
   const funcString = generator.toSerializer();
   const afterCodeGenerated = fury.config?.hooks?.afterCodeGenerated;

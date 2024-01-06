@@ -18,7 +18,7 @@
  */
 
 import { InternalSerializerType } from "../type";
-import { Builder } from "./builder";
+import { CodecBuilder } from "./builder";
 import { makeHead } from "../referenceResolver";
 import { RefFlags } from "../type";
 import { Scope } from "./scope";
@@ -35,7 +35,7 @@ export interface SerializerGenerator {
 export abstract class BaseSerializerGenerator implements SerializerGenerator {
   constructor(
     protected description: TypeDescription,
-    protected builder: Builder,
+    protected builder: CodecBuilder,
     protected scope: Scope,
   ) {
 

@@ -18,16 +18,16 @@
  */
 
 import { TypeDescription } from "../description";
-import { Builder } from "./builder";
+import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
-import { Register } from "./router";
+import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
 class StringSerializerGenerator extends BaseSerializerGenerator {
   description: TypeDescription;
 
-  constructor(description: TypeDescription, builder: Builder, scope: Scope) {
+  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
     super(description, builder, scope);
     this.description = description;
   }
@@ -41,4 +41,4 @@ class StringSerializerGenerator extends BaseSerializerGenerator {
   }
 }
 
-Register.reg(InternalSerializerType.STRING, StringSerializerGenerator);
+CodegenRegistry.register(InternalSerializerType.STRING, StringSerializerGenerator);

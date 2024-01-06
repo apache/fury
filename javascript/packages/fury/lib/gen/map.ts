@@ -18,16 +18,16 @@
  */
 
 import { MapTypeDescription, TypeDescription } from "../description";
-import { Builder } from "./builder";
+import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
-import { Register } from "./router";
+import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
 class MapSerializerGenerator extends BaseSerializerGenerator {
   description: MapTypeDescription;
 
-  constructor(description: TypeDescription, builder: Builder, scope: Scope) {
+  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
     super(description, builder, scope);
     this.description = <MapTypeDescription>description;
   }
@@ -42,8 +42,8 @@ class MapSerializerGenerator extends BaseSerializerGenerator {
     const key = this.description.options.key;
     const value = this.description.options.value;
 
-    const KeyGeneratorClass = Register.get(key.type);
-    const ValueGeneratorClass = Register.get(value.type);
+    const KeyGeneratorClass = CodegenRegistry.get(key.type);
+    const ValueGeneratorClass = CodegenRegistry.get(value.type);
     if (!KeyGeneratorClass) {
       throw new Error(`${key.type} generator not exists`);
     }
@@ -94,4 +94,4 @@ class MapSerializerGenerator extends BaseSerializerGenerator {
   }
 }
 
-Register.reg(InternalSerializerType.MAP, MapSerializerGenerator);
+CodegenRegistry.register(InternalSerializerType.MAP, MapSerializerGenerator);

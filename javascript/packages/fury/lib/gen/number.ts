@@ -18,17 +18,17 @@
  */
 
 import { TypeDescription } from "../description";
-import { Builder } from "./builder";
+import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
-import { Register } from "./router";
+import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
-function buildNumberSerializer(writeFun: (builder: Builder, accessor: string) => string, read: (builder: Builder) => string) {
+function buildNumberSerializer(writeFun: (builder: CodecBuilder, accessor: string) => string, read: (builder: CodecBuilder) => string) {
   return class NumberSerializerGenerator extends BaseSerializerGenerator {
     description: TypeDescription;
 
-    constructor(description: TypeDescription, builder: Builder, scope: Scope) {
+    constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
       super(description, builder, scope);
       this.description = description;
     }
@@ -43,61 +43,61 @@ function buildNumberSerializer(writeFun: (builder: Builder, accessor: string) =>
   };
 }
 
-Register.reg(InternalSerializerType.UINT8,
+CodegenRegistry.register(InternalSerializerType.UINT8,
   buildNumberSerializer(
     (builder, accessor) => builder.writer.uint8(accessor),
     builder => builder.reader.uint8()
   )
 );
-Register.reg(InternalSerializerType.INT8,
+CodegenRegistry.register(InternalSerializerType.INT8,
   buildNumberSerializer(
     (builder, accessor) => builder.writer.int8(accessor),
     builder => builder.reader.int8()
   )
 );
-Register.reg(InternalSerializerType.UINT16,
+CodegenRegistry.register(InternalSerializerType.UINT16,
   buildNumberSerializer(
     (builder, accessor) => builder.writer.uint16(accessor),
     builder => builder.reader.uint16()
   )
 );
-Register.reg(InternalSerializerType.INT16,
+CodegenRegistry.register(InternalSerializerType.INT16,
   buildNumberSerializer(
     (builder, accessor) => builder.writer.int16(accessor),
     builder => builder.reader.int16()
   )
 );
-Register.reg(InternalSerializerType.UINT32,
+CodegenRegistry.register(InternalSerializerType.UINT32,
   buildNumberSerializer(
     (builder, accessor) => builder.writer.uint32(accessor),
     builder => builder.reader.uint32()
   )
 );
-Register.reg(InternalSerializerType.INT32,
+CodegenRegistry.register(InternalSerializerType.INT32,
   buildNumberSerializer(
     (builder, accessor) => builder.writer.int32(accessor),
     builder => builder.reader.int32()
   )
 );
-Register.reg(InternalSerializerType.UINT64,
+CodegenRegistry.register(InternalSerializerType.UINT64,
   buildNumberSerializer(
     (builder, accessor) => builder.writer.varUInt64(accessor),
     builder => builder.reader.varUInt64()
   )
 );
-Register.reg(InternalSerializerType.INT64,
+CodegenRegistry.register(InternalSerializerType.INT64,
   buildNumberSerializer(
     (builder, accessor) => builder.writer.sliLong(accessor),
     builder => builder.reader.sliLong()
   )
 );
-Register.reg(InternalSerializerType.FLOAT,
+CodegenRegistry.register(InternalSerializerType.FLOAT,
   buildNumberSerializer(
     (builder, accessor) => builder.writer.float(accessor),
     builder => builder.reader.float()
   )
 );
-Register.reg(InternalSerializerType.DOUBLE,
+CodegenRegistry.register(InternalSerializerType.DOUBLE,
   buildNumberSerializer(
     (builder, accessor) => builder.writer.double(accessor),
     builder => builder.reader.double()

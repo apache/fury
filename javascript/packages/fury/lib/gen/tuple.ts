@@ -18,16 +18,16 @@
  */
 
 import { TupleTypeDescription, TypeDescription } from "../description";
-import { Builder } from "./builder";
+import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
-import { Register } from "./router";
+import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
 class TupleSerializerGenerator extends BaseSerializerGenerator {
   description: TupleTypeDescription;
 
-  constructor(description: TypeDescription, builder: Builder, scope: Scope) {
+  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
     super(description, builder, scope);
     this.description = <TupleTypeDescription>description;
   }
@@ -40,7 +40,7 @@ class TupleSerializerGenerator extends BaseSerializerGenerator {
   private innerGenerator() {
     const inner = this.description.options.inner;
     return inner.map((x) => {
-      const InnerGeneratorClass = Register.get(x.type);
+      const InnerGeneratorClass = CodegenRegistry.get(x.type);
       if (!InnerGeneratorClass) {
         throw new Error(`${x.type} generator not exists`);
       }
@@ -87,4 +87,4 @@ class TupleSerializerGenerator extends BaseSerializerGenerator {
   }
 }
 
-Register.reg(InternalSerializerType.TUPLE, TupleSerializerGenerator);
+CodegenRegistry.register(InternalSerializerType.TUPLE, TupleSerializerGenerator);
