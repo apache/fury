@@ -13,27 +13,8 @@ const tag_ser_3 = fury.classResolver.getSerializerByTag("example.foo.1");
 const tag_ser_4 = fury.classResolver.getSerializerByTag("example.foo.2");
 const tag_ser_12 = fury.classResolver.getSerializerByTag("example.bar.1");
 const tag_ser_13 = fury.classResolver.getSerializerByTag("example.bar.2");
-const tagWriter_20 = cr.createTagWriter("tuple-object-wrapper");
+const tagWriter_19 = cr.createTagWriter("tuple-object-wrapper");
             
-      const read = () => {
-        
-      switch (br.int8()) {
-          case -1:
-          case 0:
-              if (br.int16() === 256) {
-                  cr.readTag(br);
-              }
-              return readInner()
-              break;
-          case -2:
-              return rr.getReadObjectByRefId(br.varUInt32())
-              break;
-          case -3:
-              return null
-              break;
-      }
-      
-      };
       const readInner = () => {
         
         if (br.int32() !== 16469457) {
@@ -187,34 +168,34 @@ tuple2_: null
         return result_0
          
       };
-      const write = (v) => {
+      const read = () => {
         
-                const existsId_19 = rr.existsWriteObject(v);
-                if (typeof existsId_19 === "number") {
-                    bw.int8(-2)
-                    bw.varUInt32(existsId_19)
-                } else {
-                    rr.pushWriteObject(v)
-                    
-            if (v !== null && v !== undefined) {
-                bw.int24(65536);
-                writeInner(v);
-            } else {
-                bw.int8(-3);
-            }
-            
-                }
-                
+      switch (br.int8()) {
+          case -1:
+          case 0:
+              if (br.int16() === 256) {
+                  cr.readTag(br);
+              }
+              return readInner()
+              break;
+          case -2:
+              return rr.getReadObjectByRefId(br.varUInt32())
+              break;
+          case -3:
+              return null
+              break;
+      }
+      
       };
       const writeInner = (v) => {
         
-            tagWriter_20.write(bw);
+            tagWriter_19.write(bw);
             bw.int32(16469457);
             
-                const existsId_23 = rr.existsWriteObject(v.tuple1);
-                if (typeof existsId_23 === "number") {
+                const existsId_22 = rr.existsWriteObject(v.tuple1);
+                if (typeof existsId_22 === "number") {
                     bw.int8(-2)
-                    bw.varUInt32(existsId_23)
+                    bw.varUInt32(existsId_22)
                 } else {
                     rr.pushWriteObject(v.tuple1)
                     
@@ -233,10 +214,10 @@ tag_ser_4.write(v.tuple1[1])
                 }
                 ;
 
-                const existsId_26 = rr.existsWriteObject(v.tuple1_);
-                if (typeof existsId_26 === "number") {
+                const existsId_25 = rr.existsWriteObject(v.tuple1_);
+                if (typeof existsId_25 === "number") {
                     bw.int8(-2)
-                    bw.varUInt32(existsId_26)
+                    bw.varUInt32(existsId_25)
                 } else {
                     rr.pushWriteObject(v.tuple1_)
                     
@@ -255,10 +236,10 @@ tag_ser_4.write(v.tuple1_[1])
                 }
                 ;
 
-                const existsId_30 = rr.existsWriteObject(v.tuple2);
-                if (typeof existsId_30 === "number") {
+                const existsId_29 = rr.existsWriteObject(v.tuple2);
+                if (typeof existsId_29 === "number") {
                     bw.int8(-2)
-                    bw.varUInt32(existsId_30)
+                    bw.varUInt32(existsId_29)
                 } else {
                     rr.pushWriteObject(v.tuple2)
                     
@@ -278,10 +259,10 @@ tag_ser_13.write(v.tuple2[2])
                 }
                 ;
 
-                const existsId_34 = rr.existsWriteObject(v.tuple2_);
-                if (typeof existsId_34 === "number") {
+                const existsId_33 = rr.existsWriteObject(v.tuple2_);
+                if (typeof existsId_33 === "number") {
                     bw.int8(-2)
-                    bw.varUInt32(existsId_34)
+                    bw.varUInt32(existsId_33)
                 } else {
                     rr.pushWriteObject(v.tuple2_)
                     
@@ -301,6 +282,25 @@ tag_ser_13.write(v.tuple2_[2])
                 }
                 
         
+      };
+      const write = (v) => {
+        
+                const existsId_34 = rr.existsWriteObject(v);
+                if (typeof existsId_34 === "number") {
+                    bw.int8(-2)
+                    bw.varUInt32(existsId_34)
+                } else {
+                    rr.pushWriteObject(v)
+                    
+            if (v !== null && v !== undefined) {
+                bw.int24(65536);
+                writeInner(v);
+            } else {
+                bw.int8(-3);
+            }
+            
+                }
+                
       };
     
             return {
@@ -324,27 +324,8 @@ exports[`codeGen can generate tuple declaration code 2`] = `
 const bw = fury.binaryWriter;
 const cr = fury.classResolver;
 const rr = fury.referenceResolver;
-const tagWriter_7 = cr.createTagWriter("tuple-object-type3-tag");
+const tagWriter_6 = cr.createTagWriter("tuple-object-type3-tag");
             
-      const read = () => {
-        
-      switch (br.int8()) {
-          case -1:
-          case 0:
-              if (br.int16() === 256) {
-                  cr.readTag(br);
-              }
-              return readInner()
-              break;
-          case -2:
-              return rr.getReadObjectByRefId(br.varUInt32())
-              break;
-          case -3:
-              return null
-              break;
-      }
-      
-      };
       const readInner = () => {
         
         if (br.int32() !== 552) {
@@ -494,34 +475,34 @@ const tagWriter_7 = cr.createTagWriter("tuple-object-type3-tag");
         return result_0
          
       };
-      const write = (v) => {
+      const read = () => {
         
-                const existsId_6 = rr.existsWriteObject(v);
-                if (typeof existsId_6 === "number") {
-                    bw.int8(-2)
-                    bw.varUInt32(existsId_6)
-                } else {
-                    rr.pushWriteObject(v)
-                    
-            if (v !== null && v !== undefined) {
-                bw.int24(65536);
-                writeInner(v);
-            } else {
-                bw.int8(-3);
-            }
-            
-                }
-                
+      switch (br.int8()) {
+          case -1:
+          case 0:
+              if (br.int16() === 256) {
+                  cr.readTag(br);
+              }
+              return readInner()
+              break;
+          case -2:
+              return rr.getReadObjectByRefId(br.varUInt32())
+              break;
+          case -3:
+              return null
+              break;
+      }
+      
       };
       const writeInner = (v) => {
         
-            tagWriter_7.write(bw);
+            tagWriter_6.write(bw);
             bw.int32(552);
             
-                const existsId_10 = rr.existsWriteObject(v.tuple);
-                if (typeof existsId_10 === "number") {
+                const existsId_9 = rr.existsWriteObject(v.tuple);
+                if (typeof existsId_9 === "number") {
                     bw.int8(-2)
-                    bw.varUInt32(existsId_10)
+                    bw.varUInt32(existsId_9)
                 } else {
                     rr.pushWriteObject(v.tuple)
                     
@@ -552,10 +533,10 @@ const tagWriter_7 = cr.createTagWriter("tuple-object-type3-tag");
                 bw.uint32(0);
             }
 
-                const existsId_9 = rr.existsWriteObject(v.tuple[3]);
-                if (typeof existsId_9 === "number") {
+                const existsId_8 = rr.existsWriteObject(v.tuple[3]);
+                if (typeof existsId_8 === "number") {
                     bw.int8(-2)
-                    bw.varUInt32(existsId_9)
+                    bw.varUInt32(existsId_8)
                 } else {
                     rr.pushWriteObject(v.tuple[3])
                     
@@ -565,10 +546,10 @@ const tagWriter_7 = cr.createTagWriter("tuple-object-type3-tag");
             bw.varUInt32(1)
             bw.reserve(8);
             
-                const existsId_8 = rr.existsWriteObject(v.tuple[3][0]);
-                if (typeof existsId_8 === "number") {
+                const existsId_7 = rr.existsWriteObject(v.tuple[3][0]);
+                if (typeof existsId_7 === "number") {
                     bw.int8(-2)
-                    bw.varUInt32(existsId_8)
+                    bw.varUInt32(existsId_7)
                 } else {
                     rr.pushWriteObject(v.tuple[3][0])
                     
@@ -600,6 +581,25 @@ const tagWriter_7 = cr.createTagWriter("tuple-object-type3-tag");
                 }
                 
         
+      };
+      const write = (v) => {
+        
+                const existsId_10 = rr.existsWriteObject(v);
+                if (typeof existsId_10 === "number") {
+                    bw.int8(-2)
+                    bw.varUInt32(existsId_10)
+                } else {
+                    rr.pushWriteObject(v)
+                    
+            if (v !== null && v !== undefined) {
+                bw.int24(65536);
+                writeInner(v);
+            } else {
+                bw.int8(-3);
+            }
+            
+                }
+                
       };
     
             return {

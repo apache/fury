@@ -134,17 +134,17 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     this.scope.assertNameNotDuplicate("writeInner");
 
     const declare = `
-      const read = () => {
-        ${this.wrapReadHead(x => `return ${x}`, accessor => accessor(`readInner()`))}
-      };
       const readInner = () => {
         ${this.readStmt(x => `return ${x}`)}
       };
-      const write = (v) => {
-        ${this.wrapWriteHead("v", accessor => `writeInner(${accessor})`)}
+      const read = () => {
+        ${this.wrapReadHead(x => `return ${x}`, accessor => accessor(`readInner()`))}
       };
       const writeInner = (v) => {
         ${this.writeStmt("v")}
+      };
+      const write = (v) => {
+        ${this.wrapWriteHead("v", accessor => `writeInner(${accessor})`)}
       };
     `;
     return `
