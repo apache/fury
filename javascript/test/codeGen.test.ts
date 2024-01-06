@@ -19,16 +19,23 @@
 
 import { describe, expect, test } from '@jest/globals';
 import { tupleObjectDescription, tupleObjectType3Description } from './fixtures/tuple';
-import { generateInlineCode } from '../packages/fury/lib/codeGen';
+import { generate } from '../packages/fury/lib/gen/index';
 import FuryInternal from '../packages/fury/lib/fury';
+import * as beautify from 'js-beautify';
 
 describe('codeGen', () => {
   test('can generate tuple declaration code', () => {
-    const fury = FuryInternal({ refTracking: true });
-    const fn = generateInlineCode(fury, tupleObjectDescription);
+    const fury = FuryInternal({
+      refTracking: true, hooks: {
+        afterCodeGenerated: (code: string) => {
+          return beautify.js(code, { indent_size: 2, space_in_empty_paren: true, indent_empty_lines: true });
+        }
+      }
+    });
+    const fn = generate(fury, tupleObjectDescription);
     expect(fn.toString()).toMatchSnapshot();
 
-    const fn2 = generateInlineCode(fury, tupleObjectType3Description);
+    const fn2 = generate(fury, tupleObjectType3Description);
     expect(fn2.toString()).toMatchSnapshot();
   })
 })

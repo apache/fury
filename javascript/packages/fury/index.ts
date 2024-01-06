@@ -18,10 +18,9 @@
  */
 
 import {
-  genSerializer,
-} from "./lib/codeGen";
+  generateSerializer,
+} from "./lib/gen";
 import {
-  Cast,
   ObjectTypeDescription,
   TypeDescription,
   ArrayTypeDescription,
@@ -45,13 +44,7 @@ export default class {
   private fury: Fury = FuryInternal(this.config || {});
 
   registerSerializer<T extends TypeDescription>(description: T) {
-    if (
-      description.type !== InternalSerializerType.FURY_TYPE_TAG
-      || !Cast<ObjectTypeDescription>(description)?.options.tag
-    ) {
-      throw new Error("root type should be object");
-    }
-    const serializer = genSerializer(this.fury, description);
+    const serializer = generateSerializer(this.fury, description);
     return {
       serializer,
       serialize: (data: ToRecordType<T>) => {

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { Config, LATIN1, UTF8 } from "./type";
+import { Config, HalfMaxInt32, HalfMinInt32, LATIN1, UTF8 } from "./type";
 import { PlatformBuffer, alloc, strByteLength } from "./platformBuffer";
 import { OwnershipError } from "./error";
 
@@ -97,13 +97,27 @@ export const BinaryWriter = (config: Config) => {
     cursor += 4;
   }
 
-  function int64(v: bigint | number) {
-    if (typeof v === "number") {
-      dataView.setBigInt64(cursor, BigInt(v), true);
-    } else {
-      dataView.setBigInt64(cursor, v, true);
-    }
+  function int64(v: bigint) {
+    dataView.setBigInt64(cursor, v, true);
     cursor += 8;
+  }
+
+  function sliLong(v: bigint | number) {
+    if (v <= HalfMaxInt32 && v >= HalfMinInt32) {
+      // write:
+      // 00xxx -> 0xxx
+      // 11xxx -> 1xxx
+      // read:
+      // 0xxx -> 00xxx
+      // 1xxx -> 11xxx
+      dataView.setUint32(cursor, Number(v) << 1, true);
+      cursor += 4;
+    } else {
+      const BIG_LONG_FLAG = 0b1; // bit 0 set, means big long.
+      dataView.setUint8(cursor, BIG_LONG_FLAG);
+      cursor += 1;
+      varInt64(BigInt(v));
+    }
   }
 
   function float(v: number) {
@@ -122,12 +136,8 @@ export const BinaryWriter = (config: Config) => {
     cursor += v.byteLength;
   }
 
-  function uint64(v: bigint | number) {
-    if (typeof v === "number") {
-      dataView.setBigUint64(cursor, BigInt(v), true);
-    } else {
-      dataView.setBigUint64(cursor, v, true);
-    }
+  function uint64(v: bigint) {
+    dataView.setBigUint64(cursor, v, true);
     cursor += 8;
   }
 
@@ -215,21 +225,38 @@ export const BinaryWriter = (config: Config) => {
     cursor += len;
   }
 
-  function zigZag(v: number) {
-    return (v << 1) ^ (v >> 31);
-  }
-
-  function varInt32(val: number) {
-    return varUInt32(zigZag(val));
+  function varInt32(v: number) {
+    return varUInt32((v << 1) ^ (v >> 31));
   }
 
   function varUInt32(val: number) {
-    val = val >>> 0;
+    val = (val >>> 0) & 0xFFFFFFFF; // keep only the lower 32 bits
     while (val > 127) {
       arrayBuffer[cursor++] = val & 127 | 128;
       val >>>= 7;
     }
     arrayBuffer[cursor++] = val;
+  }
+
+  function varInt64(v: bigint) {
+    if (typeof v !== "bigint") {
+      v = BigInt(v);
+    }
+    return varUInt64((v << 1n) ^ (v >> 63n));
+  }
+
+  function varUInt64(val: bigint | number) {
+    if (typeof val !== "bigint") {
+      val = BigInt(val);
+    }
+    val = val & 0xFFFFFFFFFFFFFFFFn; // keep only the lower 64 bits
+
+    while (val > 127) {
+      arrayBuffer[cursor++] = Number(val & 127n | 128n);
+      val >>= 7n;
+    }
+    arrayBuffer[cursor++] = Number(val);
+    return;
   }
 
   function tryFreePool() {
@@ -287,6 +314,8 @@ export const BinaryWriter = (config: Config) => {
     int16,
     varInt32,
     varUInt32,
+    varUInt64,
+    varInt64,
     stringOfVarUInt32: config?.hps
       ? stringOfVarUInt32Fast()
       : stringOfVarUInt32Slow,
@@ -296,6 +325,7 @@ export const BinaryWriter = (config: Config) => {
     double,
     float,
     int64,
+    sliLong,
     uint32,
     int32,
     getCursor,

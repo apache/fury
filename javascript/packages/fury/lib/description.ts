@@ -39,7 +39,6 @@ export interface ArrayTypeDescription extends TypeDescription {
 
 export interface TupleTypeDescription extends TypeDescription {
   options: {
-    isTuple: true
     inner: TypeDescription[]
   }
 }
@@ -55,10 +54,6 @@ export interface MapTypeDescription extends TypeDescription {
     key: TypeDescription
     value: TypeDescription
   }
-}
-
-export function Cast<T1 extends TypeDescription>(p: TypeDescription) {
-  return p as unknown as T1;
 }
 
 type Props<T> = T extends {
@@ -91,7 +86,7 @@ type MapProps<T> = T extends {
 
 type TupleProps<T> = T extends {
   options: {
-    inner: infer T2 extends readonly[...TypeDescription[]]
+    inner: infer T2 extends readonly [...TypeDescription[]]
   }
 }
   ? { [K in keyof T2]: ToRecordType<T2[K]> }
@@ -122,48 +117,52 @@ export type ToRecordType<T> = T extends {
           | InternalSerializerType.UINT8
           | InternalSerializerType.UINT16
           | InternalSerializerType.UINT32
-          | InternalSerializerType.UINT64
           | InternalSerializerType.INT8
           | InternalSerializerType.INT16
           | InternalSerializerType.INT32
-          | InternalSerializerType.INT64
           | InternalSerializerType.FLOAT
           | InternalSerializerType.DOUBLE
       }
         ? number
+
         : T extends {
-          type: InternalSerializerType.MAP
+          type: InternalSerializerType.UINT64
+            | InternalSerializerType.INT64
         }
-          ? MapProps<T>
+          ? bigint
           : T extends {
-            type: InternalSerializerType.FURY_SET
+            type: InternalSerializerType.MAP
           }
-            ? SetProps<T>
+            ? MapProps<T>
             : T extends {
-              type: InternalSerializerType.ARRAY
+              type: InternalSerializerType.FURY_SET
             }
-              ? InnerProps<T>
+              ? SetProps<T>
               : T extends {
-                type: InternalSerializerType.BOOL
+                type: InternalSerializerType.ARRAY
               }
-                ? boolean
+                ? InnerProps<T>
                 : T extends {
-                  type: InternalSerializerType.DATE
+                  type: InternalSerializerType.BOOL
                 }
-                  ? Date
+                  ? boolean
                   : T extends {
-                    type: InternalSerializerType.TIMESTAMP
+                    type: InternalSerializerType.DATE
                   }
-                    ? number
+                    ? Date
                     : T extends {
-                      type: InternalSerializerType.BINARY
+                      type: InternalSerializerType.TIMESTAMP
                     }
-                      ? Uint8Array
+                      ? number
                       : T extends {
-                        type: InternalSerializerType.ANY
+                        type: InternalSerializerType.BINARY
                       }
-                        ? any
-                        : unknown;
+                        ? Uint8Array
+                        : T extends {
+                          type: InternalSerializerType.ANY
+                        }
+                          ? any
+                          : unknown;
 
 export const Type = {
   any() {
@@ -188,7 +187,6 @@ export const Type = {
     return {
       type: InternalSerializerType.TUPLE as const,
       options: {
-        isTuple: true,
         inner: t1,
       },
     };
@@ -290,6 +288,41 @@ export const Type = {
   timestamp() {
     return {
       type: InternalSerializerType.TIMESTAMP as const,
+    };
+  },
+  stringTypedArray() {
+    return {
+      type: InternalSerializerType.FURY_STRING_ARRAY as const,
+    };
+  },
+  boolTypedArray() {
+    return {
+      type: InternalSerializerType.FURY_PRIMITIVE_BOOL_ARRAY as const,
+    };
+  },
+  shortTypedArray() {
+    return {
+      type: InternalSerializerType.FURY_PRIMITIVE_SHORT_ARRAY as const,
+    };
+  },
+  intTypedArray() {
+    return {
+      type: InternalSerializerType.FURY_PRIMITIVE_INT_ARRAY as const,
+    };
+  },
+  longTypedArray() {
+    return {
+      type: InternalSerializerType.FURY_PRIMITIVE_LONG_ARRAY as const,
+    };
+  },
+  floatTypedArray() {
+    return {
+      type: InternalSerializerType.FURY_PRIMITIVE_FLOAT_ARRAY as const,
+    };
+  },
+  doubleTypedArray() {
+    return {
+      type: InternalSerializerType.FURY_PRIMITIVE_DOUBLE_ARRAY as const,
     };
   },
 };

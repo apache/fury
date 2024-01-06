@@ -17,28 +17,22 @@
  * under the License.
  */
 
-import { Fury } from "../type";
-import { InternalSerializerType, RefFlags } from "../type";
+import { TypeDescription } from "../description";
+import { SerializerGenerator } from "./serializer";
+import { InternalSerializerType } from "../type";
+import { CodecBuilder } from "./builder";
+import { Scope } from "./scope";
 
-export default (fury: Fury) => {
-  const { binaryReader, binaryWriter, referenceResolver } = fury;
-  const { uint8: readUInt8 } = binaryReader;
-  const { int8: writeInt8, uint8: writeUInt8 } = binaryWriter;
-  return {
-    ...referenceResolver.deref(() => {
-      return readUInt8() === 0 ? false : true;
-    }),
-    write: referenceResolver.withNotNullableWriter(InternalSerializerType.BOOL, false, (v: boolean) => {
-      writeUInt8(v ? 1 : 0);
-    }),
-    writeWithoutType: (v: boolean) => {
-      writeInt8(RefFlags.NotNullValueFlag);
-      writeUInt8(v ? 1 : 0);
-    },
-    config: () => {
-      return {
-        reserve: 4,
-      };
-    },
-  };
-};
+type SerializerGeneratorConstructor = new (description: TypeDescription, builder: CodecBuilder, scope: Scope) => SerializerGenerator;
+
+export class CodegenRegistry {
+  static map = new Map<string, SerializerGeneratorConstructor>();
+
+  static register(type: InternalSerializerType, generator: SerializerGeneratorConstructor) {
+    this.map.set(InternalSerializerType[type], generator);
+  }
+
+  static get(type: InternalSerializerType) {
+    return this.map.get(InternalSerializerType[type]);
+  }
+}

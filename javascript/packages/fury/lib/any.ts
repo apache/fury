@@ -17,53 +17,59 @@
  * under the License.
  */
 
-import { Fury, MaxInt32, MinInt32, Serializer } from "../type";
-import { InternalSerializerType, RefFlags } from "../type";
+import { Type } from "./description";
+import { getMeta } from "./meta";
+import { Fury, MaxInt32, MinInt32, Serializer } from "./type";
+import { InternalSerializerType, RefFlags } from "./type";
 
 export default (fury: Fury) => {
   const { binaryReader, binaryWriter, referenceResolver, classResolver } = fury;
 
-  function detectSerializer(cursor: number) {
+  function detectSerializer() {
     const typeId = binaryReader.int16();
     let serializer: Serializer;
     if (typeId === InternalSerializerType.FURY_TYPE_TAG) {
-      serializer = classResolver.getSerializerByTag(classResolver.detectTag(binaryReader));
+      const tag = classResolver.readTag(binaryReader)();
+      serializer = classResolver.getSerializerByTag(tag);
     } else {
       serializer = classResolver.getSerializerById(typeId);
     }
     if (!serializer) {
       throw new Error(`cant find implements of typeId: ${typeId}`);
     }
-    binaryReader.setCursor(cursor);
-
     return serializer;
   }
 
   return {
+    readInner: () => {
+      throw new Error("any can not call readInner");
+    },
+    writeInner: () => {
+      throw new Error("any can not call writeInner");
+    },
     read: () => {
-      const cursor = binaryReader.getCursor();
       const flag = referenceResolver.readRefFlag();
       switch (flag) {
         case RefFlags.RefValueFlag:
-          return detectSerializer(cursor).read();
+          return detectSerializer().readInner();
         case RefFlags.RefFlag:
           return referenceResolver.getReadObjectByRefId(binaryReader.varUInt32());
         case RefFlags.NullFlag:
           return null;
         case RefFlags.NotNullValueFlag:
-          return detectSerializer(cursor).read();
+          return detectSerializer().readInner();
       }
     },
     write: (v: any) => {
-      const { write: writeInt64, config: int64Config } = classResolver.getSerializerById(InternalSerializerType.INT64);
-      const { write: writeDouble, config: doubleConfig } = classResolver.getSerializerById(InternalSerializerType.DOUBLE);
-      const { write: writeInt32, config: int32Config } = classResolver.getSerializerById(InternalSerializerType.INT32);
-      const { write: writeBool, config: boolConfig } = classResolver.getSerializerById(InternalSerializerType.BOOL);
-      const { write: stringWrite, config: stringConfig } = classResolver.getSerializerById(InternalSerializerType.STRING);
-      const { write: arrayWrite, config: arrayConfig } = classResolver.getSerializerById(InternalSerializerType.ARRAY);
-      const { write: mapWrite, config: mapConfig } = classResolver.getSerializerById(InternalSerializerType.MAP);
-      const { write: setWrite, config: setConfig } = classResolver.getSerializerById(InternalSerializerType.FURY_SET);
-      const { write: timestampWrite, config: timestampConfig } = classResolver.getSerializerById(InternalSerializerType.TIMESTAMP);
+      const { write: writeInt64, meta: int64Meta } = classResolver.getSerializerById(InternalSerializerType.INT64);
+      const { write: writeDouble, meta: doubleMeta } = classResolver.getSerializerById(InternalSerializerType.DOUBLE);
+      const { write: writeInt32, meta: int32Meta } = classResolver.getSerializerById(InternalSerializerType.INT32);
+      const { write: writeBool, meta: boolMeta } = classResolver.getSerializerById(InternalSerializerType.BOOL);
+      const { write: stringWrite, meta: stringMeta } = classResolver.getSerializerById(InternalSerializerType.STRING);
+      const { write: arrayWrite, meta: arrayMeta } = classResolver.getSerializerById(InternalSerializerType.ARRAY);
+      const { write: mapWrite, meta: mapMeta } = classResolver.getSerializerById(InternalSerializerType.MAP);
+      const { write: setWrite, meta: setMeta } = classResolver.getSerializerById(InternalSerializerType.FURY_SET);
+      const { write: timestampWrite, meta: timestampMeta } = classResolver.getSerializerById(InternalSerializerType.TIMESTAMP);
 
       // NullFlag
       if (v === null || v === undefined) {
@@ -81,68 +87,64 @@ export default (fury: Fury) => {
         }
         if (Number.isInteger(v)) {
           if (v > MaxInt32 || v < MinInt32) {
-            binaryWriter.reserve(int64Config().reserve);
+            binaryWriter.reserve(int64Meta.fixedSize);
             writeInt64(BigInt(v));
             return;
           } else {
-            binaryWriter.reserve(int32Config().reserve);
+            binaryWriter.reserve(int32Meta.fixedSize);
             writeInt32(v);
             return;
           }
         } else {
-          binaryWriter.reserve(doubleConfig().reserve);
+          binaryWriter.reserve(doubleMeta.fixedSize);
           writeDouble(v);
           return;
         }
       }
 
       if (typeof v === "bigint") {
-        binaryWriter.reserve(int64Config().reserve);
+        binaryWriter.reserve(int64Meta.fixedSize);
         writeInt64(v);
         return;
       }
 
       if (typeof v === "boolean") {
-        binaryWriter.reserve(boolConfig().reserve);
+        binaryWriter.reserve(boolMeta.fixedSize);
         writeBool(v);
         return;
       }
 
       if (v instanceof Date) {
-        binaryWriter.reserve(timestampConfig().reserve);
+        binaryWriter.reserve(timestampMeta.fixedSize);
         timestampWrite(v);
         return;
       }
 
       if (typeof v === "string") {
-        binaryWriter.reserve(stringConfig().reserve);
+        binaryWriter.reserve(stringMeta.fixedSize);
         stringWrite(v);
         return;
       }
 
       if (v instanceof Map) {
         binaryWriter.reserve(5);
-        binaryWriter.reserve(mapConfig().reserve);
+        binaryWriter.reserve(mapMeta.fixedSize);
         mapWrite(v);
         return;
       }
       if (v instanceof Set) {
-        binaryWriter.reserve(setConfig().reserve);
+        binaryWriter.reserve(setMeta.fixedSize);
         setWrite(v);
         return;
       }
       if (Array.isArray(v)) {
-        binaryWriter.reserve(arrayConfig().reserve);
+        binaryWriter.reserve(arrayMeta.fixedSize);
         arrayWrite(v);
         return;
       }
 
       throw new Error(`serializer not support ${typeof v} yet`);
     },
-    config: () => {
-      return {
-        reserve: 11,
-      };
-    },
+    meta: getMeta(Type.any(), fury),
   };
 };

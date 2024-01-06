@@ -20,6 +20,7 @@
 import type { BinaryWriter } from "./writer";
 import type { BinaryReader } from "./reader";
 import type FuryFunc from "./fury";
+import { Meta } from "./meta";
 
 export type Fury = ReturnType<typeof FuryFunc>;
 export type BinaryWriter = ReturnType<typeof BinaryWriter>;
@@ -28,7 +29,7 @@ export type BinaryReader = ReturnType<typeof BinaryReader>;
 export enum InternalSerializerType {
   STRING = 13,
   ARRAY = 25,
-  TUPLE = 25,
+  TUPLE = 25.1,
   MAP = 30,
   BOOL = 1,
   UINT8 = 2,
@@ -63,25 +64,13 @@ export enum ConfigFlags {
   isOutOfBandFlag = 8,
 }
 
-export type SerializerRead<T = any> = (
-) => T;
-
-export type SerializerWrite<T = any> = (
-  v: T,
-) => void;
-
-export type SerializerConfig = (
-) => {
-  reserve: number
-};
-
 // read, write
 export type Serializer<T = any, T2 = any> = {
-  read: SerializerRead<T2>
-  write: SerializerWrite<T>
-  readWithoutType?: SerializerRead<T2>
-  writeWithoutType?: SerializerWrite<T>
-  config: SerializerConfig
+  read: () => T2
+  write: (v: T2) => T
+  readInner: () => T2
+  writeInner: (v: T2) => T
+  meta: Meta<T2>
 };
 
 export enum RefFlags {
@@ -98,6 +87,9 @@ export enum RefFlags {
 export const MaxInt32 = 2147483647;
 export const MinInt32 = -2147483648;
 
+export const HalfMaxInt32 = MaxInt32 / 2;
+export const HalfMinInt32 = MinInt32 / 2;
+
 export const LATIN1 = 0;
 export const UTF8 = 1;
 
@@ -110,6 +102,9 @@ export interface Config {
   hps?: Hps
   refTracking?: boolean
   useSliceString?: boolean
+  hooks?: {
+    afterCodeGenerated?: (code: string) => string
+  }
 }
 
 export enum Language {

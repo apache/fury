@@ -17,33 +17,28 @@
  * under the License.
  */
 
-import { Fury } from "../type";
+import { TypeDescription } from "../description";
+import { CodecBuilder } from "./builder";
+import { BaseSerializerGenerator } from "./serializer";
+import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
+import { Scope } from "./scope";
 
-export default (fury: Fury) => {
-  const { binaryReader, binaryWriter, referenceResolver } = fury;
+class BoolSerializerGenerator extends BaseSerializerGenerator {
+  description: TypeDescription;
 
-  const { uint8: writeUInt8, int32: writeInt32, buffer: writeBuffer } = binaryWriter;
-  const { uint8: readUInt8, int32: readInt32, buffer: readBuffer } = binaryReader;
-  const { pushReadObject } = referenceResolver;
+  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
+    super(description, builder, scope);
+    this.description = description;
+  }
 
-  return {
-    ...referenceResolver.deref(() => {
-      readUInt8(); // isInBand
-      const len = readInt32();
-      const result = readBuffer(len);
-      pushReadObject(result);
-      return result;
-    }),
-    write: referenceResolver.withNullableOrRefWriter(InternalSerializerType.BINARY, (v: Uint8Array) => {
-      writeUInt8(1); // is inBand
-      writeInt32(v.byteLength);
-      writeBuffer(v);
-    }),
-    config: () => {
-      return {
-        reserve: 8,
-      };
-    },
-  };
-};
+  writeStmt(accessor: string): string {
+    return this.builder.writer.uint8(`${accessor} ? 1 : 0`);
+  }
+
+  readStmt(accessor: (expr: string) => string): string {
+    return accessor(`${this.builder.reader.uint8()} === 1`);
+  }
+}
+
+CodegenRegistry.register(InternalSerializerType.BOOL, BoolSerializerGenerator);

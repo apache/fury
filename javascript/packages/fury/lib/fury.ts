@@ -29,7 +29,7 @@ export default (config: Config) => {
   const binaryWriter = BinaryWriter(config);
 
   const classResolver = new ClassResolver();
-  const referenceResolver = ReferenceResolver(config, binaryWriter, binaryReader, classResolver);
+  const referenceResolver = ReferenceResolver(config, binaryWriter, binaryReader);
 
   const fury = {
     config,
@@ -95,11 +95,14 @@ export default (config: Config) => {
     const cursor = binaryWriter.getCursor();
     binaryWriter.skip(4); // preserve 4-byte for nativeObjects start offsets.
     binaryWriter.uint32(0); // nativeObjects length.
-    if (serializer) {
-      serializer.write(data);
-    } else {
-      classResolver.getSerializerById(InternalSerializerType.ANY).write(data);
+    if (!serializer) {
+      serializer = classResolver.getSerializerById(InternalSerializerType.ANY);
     }
+    // reserve fixed size
+    binaryWriter.reserve(serializer.meta.fixedSize);
+    // start write
+    serializer.write(data);
+
     binaryWriter.setUint32Position(cursor, binaryWriter.getCursor()); // nativeObjects start offsets;
     return binaryWriter;
   }
