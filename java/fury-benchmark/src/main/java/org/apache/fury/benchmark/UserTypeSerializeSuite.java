@@ -21,7 +21,6 @@ package org.apache.fury.benchmark;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
 import org.apache.fury.benchmark.data.MediaContent;
 import org.apache.fury.benchmark.data.Sample;
 import org.apache.fury.benchmark.state.FlatBuffersState;

@@ -44,7 +44,8 @@ public class FlatBuffersStateTest {
 
   @Test
   public void testFlatBuffersUserTypeState() {
-    FlatBuffersState.FlatBuffersUserTypeState state = new FlatBuffersState.FlatBuffersUserTypeState();
+    FlatBuffersState.FlatBuffersUserTypeState state =
+        new FlatBuffersState.FlatBuffersUserTypeState();
     state.objectType = ObjectType.SAMPLE;
     state.bufferType = BufferType.array;
     state.setup();

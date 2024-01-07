@@ -20,7 +20,6 @@
 package org.apache.fury.benchmark;
 
 import java.io.IOException;
-
 import org.apache.fury.benchmark.state.FlatBuffersState;
 import org.apache.fury.benchmark.state.FstState;
 import org.apache.fury.benchmark.state.FuryState;
