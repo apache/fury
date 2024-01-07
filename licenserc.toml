@@ -23,7 +23,7 @@ excludes = [
     "go.sum",
 
     # Generated
-    "java/fury-benchmark/src/main/java/org/apache/fury/state/generated/**",
+    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/generated/**",
 
     # Derived
     "ci/format.sh",
