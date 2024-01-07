@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.fury.integration_tests.state;
+package org.apache.fury.benchmark.state;
 
 import com.google.common.base.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -28,11 +28,8 @@ import org.apache.fury.benchmark.data.Image;
 import org.apache.fury.benchmark.data.Media;
 import org.apache.fury.benchmark.data.MediaContent;
 import org.apache.fury.benchmark.data.Sample;
-import org.apache.fury.benchmark.state.BenchmarkState;
-import org.apache.fury.benchmark.state.BufferType;
-import org.apache.fury.benchmark.state.ObjectType;
-import org.apache.fury.integration_tests.state.Example.Bar;
-import org.apache.fury.integration_tests.state.Example.Foo;
+import org.apache.fury.benchmark.state.Example.Bar;
+import org.apache.fury.benchmark.state.Example.Foo;
 import org.apache.fury.integration_tests.state.generated.ProtoMessage;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openjdk.jmh.annotations.CompilerControl;

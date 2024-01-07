@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.fury.integration_tests.state;
+package org.apache.fury.benchmark.state;
 
 import java.nio.ByteBuffer;
 import org.apache.fury.benchmark.data.MediaContent;
@@ -40,5 +40,14 @@ public class FlatBuffersStateTest {
     byte[] data = FlatBuffersState.serializeMediaContent(object).sizedByteArray();
     MediaContent mediaContent = FlatBuffersState.deserializeMediaContent(ByteBuffer.wrap(data));
     Assert.assertEquals(mediaContent, object);
+  }
+
+  @Test
+  public void testFlatBuffersUserTypeState() {
+    FlatBuffersState.FlatBuffersUserTypeState state =
+        new FlatBuffersState.FlatBuffersUserTypeState();
+    state.objectType = ObjectType.SAMPLE;
+    state.bufferType = BufferType.array;
+    state.setup();
   }
 }

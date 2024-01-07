@@ -17,27 +17,27 @@
  * under the License.
  */
 
-package org.apache.fury.integration_tests.state;
+package org.apache.fury.benchmark.state;
 
-import org.apache.fury.benchmark.data.MediaContent;
-import org.apache.fury.benchmark.data.Sample;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import java.util.List;
+import java.util.Map;
 
-public class ProtoBuffersStateTest {
-  @Test
-  public void testMediaContent() {
-    Sample object = new Sample().populate(false);
-    byte[] data = ProtoBuffersState.serializeSample(object);
-    Sample sample = ProtoBuffersState.deserializeSample(data);
-    Assert.assertEquals(sample, object);
+public class Example {
+  public static class Foo {
+    String f1;
+    Map<String, Integer> f2;
   }
 
-  @Test
-  public void testSample() {
-    MediaContent object = new MediaContent().populate(false);
-    byte[] data = ProtoBuffersState.serializeMediaContent(object);
-    MediaContent mediaContent = ProtoBuffersState.deserializeMediaContent(data);
-    Assert.assertEquals(mediaContent, object);
+  public static class Bar {
+    Foo f1;
+    String f2;
+    List<Foo> f3;
+    Map<Integer, Foo> f4;
+    Integer f5;
+    Long f6;
+    Float f7;
+    Double f8;
+    short[] f9;
+    List<Long> f10;
   }
 }

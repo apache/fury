@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.fury.integration_tests.state;
+package org.apache.fury.benchmark.state;
 
 import com.google.common.base.Preconditions;
 import com.google.flatbuffers.FlatBufferBuilder;
@@ -31,17 +31,14 @@ import org.apache.fury.benchmark.data.Image;
 import org.apache.fury.benchmark.data.Media;
 import org.apache.fury.benchmark.data.MediaContent;
 import org.apache.fury.benchmark.data.Sample;
-import org.apache.fury.benchmark.state.BenchmarkState;
-import org.apache.fury.benchmark.state.BufferType;
-import org.apache.fury.benchmark.state.ObjectType;
-import org.apache.fury.integration_tests.state.Example.Bar;
-import org.apache.fury.integration_tests.state.Example.Foo;
-import org.apache.fury.integration_tests.state.generated.FBSBar;
-import org.apache.fury.integration_tests.state.generated.FBSFoo;
-import org.apache.fury.integration_tests.state.generated.FBSImage;
-import org.apache.fury.integration_tests.state.generated.FBSMedia;
-import org.apache.fury.integration_tests.state.generated.FBSMediaContent;
-import org.apache.fury.integration_tests.state.generated.FBSSample;
+import org.apache.fury.benchmark.state.Example.Bar;
+import org.apache.fury.benchmark.state.Example.Foo;
+import org.apache.fury.benchmark.state.generated.FBSBar;
+import org.apache.fury.benchmark.state.generated.FBSFoo;
+import org.apache.fury.benchmark.state.generated.FBSImage;
+import org.apache.fury.benchmark.state.generated.FBSMedia;
+import org.apache.fury.benchmark.state.generated.FBSMediaContent;
+import org.apache.fury.benchmark.state.generated.FBSSample;
 import org.apache.fury.util.Platform;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openjdk.jmh.annotations.Level;

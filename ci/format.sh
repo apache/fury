@@ -13,7 +13,7 @@ BLACK_VERSION_REQUIRED="22.1.0"
 SHELLCHECK_VERSION_REQUIRED="0.7.1"
 
 install_nodejs() {
-  #intall nodejs 
+  #intall nodejs
   filename="node-v16.17.1-linux-x64"
   pkg="$filename.tar.gz"
   NODE_URL="https://nodejs.org/dist/v16.17.1/$pkg"
@@ -188,7 +188,7 @@ format_java() {
       cd "$ROOT/java/fury-benchmark"
       mvn -T10 --no-transfer-progress spotless:apply
       cd "$ROOT/integration_tests"
-      dirs=("graalvm_tests" "jdk_compatibility_tests" "latest_jdk_tests" "perftests")
+      dirs=("graalvm_tests" "jdk_compatibility_tests" "latest_jdk_tests")
       for d in "${dirs[@]}" ; do
         pushd "$d"
           mvn -T10 --no-transfer-progress spotless:apply

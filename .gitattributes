@@ -1,2 +1,1 @@
 java/fury-benchmark export-ignore
-integration_tests/perftests export-ignore
