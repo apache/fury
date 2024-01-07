@@ -20,13 +20,18 @@
 package org.apache.fury.benchmark;
 
 import java.io.IOException;
+
+import org.apache.fury.benchmark.state.FlatBuffersState;
 import org.apache.fury.benchmark.state.FstState;
 import org.apache.fury.benchmark.state.FuryState;
 import org.apache.fury.benchmark.state.HessionState;
 import org.apache.fury.benchmark.state.JDKState;
 import org.apache.fury.benchmark.state.JsonbState;
 import org.apache.fury.benchmark.state.KryoState;
+import org.apache.fury.benchmark.state.ObjectType;
+import org.apache.fury.benchmark.state.ProtoBuffersState;
 import org.apache.fury.benchmark.state.ProtostuffState;
+import org.apache.fury.util.Platform;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -108,6 +113,25 @@ public class UserTypeDeserializeSuite {
   // @Benchmark
   public Object jsonb_deserialize(JsonbState.JsonbUserTypeState state, Blackhole bh) {
     return JsonbState.deserialize(bh, state);
+  }
+
+  @Benchmark
+  public Object protobuffers_deserialize(ProtoBuffersState.ProtoBuffersUserTypeState state) {
+    if (state.objectType == ObjectType.SAMPLE) {
+      return ProtoBuffersState.deserializeSample(state.data);
+    } else {
+      return ProtoBuffersState.deserializeMediaContent(state.data);
+    }
+  }
+
+  @Benchmark
+  public Object flatbuffers_deserialize(FlatBuffersState.FlatBuffersUserTypeState state) {
+    Platform.clearBuffer(state.deserializedData);
+    if (state.objectType == ObjectType.SAMPLE) {
+      return FlatBuffersState.deserializeSample(state.deserializedData);
+    } else {
+      return FlatBuffersState.deserializeMediaContent(state.deserializedData);
+    }
   }
 
   public static void main(String[] args) throws IOException {

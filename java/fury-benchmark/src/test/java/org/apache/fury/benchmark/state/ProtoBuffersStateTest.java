@@ -17,28 +17,36 @@
  * under the License.
  */
 
-package org.apache.fury.integration_tests.state;
+package org.apache.fury.benchmark.state;
 
-import java.nio.ByteBuffer;
 import org.apache.fury.benchmark.data.MediaContent;
 import org.apache.fury.benchmark.data.Sample;
+import org.apache.fury.benchmark.state.ProtoBuffersState.ProtoBuffersUserTypeState;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class FlatBuffersStateTest {
+public class ProtoBuffersStateTest {
   @Test
   public void testMediaContent() {
     Sample object = new Sample().populate(false);
-    byte[] data = FlatBuffersState.serializeSample(object);
-    Sample sample = FlatBuffersState.deserializeSample(ByteBuffer.wrap(data));
+    byte[] data = ProtoBuffersState.serializeSample(object);
+    Sample sample = ProtoBuffersState.deserializeSample(data);
     Assert.assertEquals(sample, object);
   }
 
   @Test
   public void testSample() {
     MediaContent object = new MediaContent().populate(false);
-    byte[] data = FlatBuffersState.serializeMediaContent(object).sizedByteArray();
-    MediaContent mediaContent = FlatBuffersState.deserializeMediaContent(ByteBuffer.wrap(data));
+    byte[] data = ProtoBuffersState.serializeMediaContent(object);
+    MediaContent mediaContent = ProtoBuffersState.deserializeMediaContent(data);
     Assert.assertEquals(mediaContent, object);
+  }
+
+  @Test
+  public void testProtoBuffersUserTypeState() {
+    ProtoBuffersUserTypeState state = new ProtoBuffersUserTypeState();
+    state.objectType = ObjectType.SAMPLE;
+    state.bufferType = BufferType.array;
+    state.setup();
   }
 }
