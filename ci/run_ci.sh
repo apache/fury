@@ -111,7 +111,7 @@ integration_tests() {
   mvn -T10 -B --no-transfer-progress clean install -DskipTests
   echo "benchmark tests"
   cd "$ROOT"/java/benchmark
-  mvn -T10 -B --no-transfer-progress clean test -Pjmh
+  mvn -T10 -B --no-transfer-progress clean test install -Pjmh
   echo "Start latest jdk tests"
   cd "$ROOT"/integration_tests/latest_jdk_tests
   echo "latest_jdk_tests: JDK 21"
