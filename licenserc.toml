@@ -23,18 +23,18 @@ excludes = [
     "go.sum",
 
     # Generated
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/generated/**",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/state/generated/**",
 
     # Derived
     "ci/format.sh",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/Identity2IdMap.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Data.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Image.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Media.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/MediaContent.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Sample.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/BufferType.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/KryoState.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/Identity2IdMap.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/data/Data.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/data/Image.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/data/Media.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/data/MediaContent.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/data/Sample.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/state/BufferType.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/state/KryoState.java",
     "java/fury-core/src/main/java/org/apache/fury/codegen/Code.java",
     "java/fury-core/src/main/java/org/apache/fury/collection/FuryObjectMap.java",
     "java/fury-core/src/main/java/org/apache/fury/collection/IdentityMap.java",
