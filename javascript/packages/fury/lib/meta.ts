@@ -137,6 +137,11 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta<any> => 
         fixedSize: 11,
         noneable: true,
       };
+    case InternalSerializerType.ENUM:
+      return {
+        fixedSize: 7,
+        noneable: true,
+      };
     default:
       throw new Error(`Meta of ${description.type} not exists`);
   }

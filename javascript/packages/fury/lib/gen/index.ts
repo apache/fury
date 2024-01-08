@@ -34,6 +34,7 @@ import "./set";
 import "./any";
 import "./tuple";
 import "./typedArray";
+import "./enum";
 
 export const generate = (fury: Fury, description: TypeDescription) => {
   const InnerGeneratorClass = CodegenRegistry.get(description.type);
