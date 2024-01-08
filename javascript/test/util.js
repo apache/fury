@@ -74,6 +74,12 @@ const mockData2Description = (data, tag) => {
         }
     }
     if (typeof data === 'number') {
+        if (data > Number.MAX_SAFE_INTEGER || data < Number.MIN_SAFE_INTEGER) {
+            return {
+                type: InternalSerializerType.INT64,
+                label: "int64"
+            }
+        }
         return {
             type: InternalSerializerType.INT32,
             label: "int32"
