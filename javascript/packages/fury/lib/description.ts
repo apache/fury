@@ -31,6 +31,12 @@ export interface ObjectTypeDescription extends TypeDescription {
   }
 }
 
+export interface EnumTypeDescription extends TypeDescription {
+  options: {
+    inner: { [key: string]: any }
+  }
+}
+
 export interface ArrayTypeDescription extends TypeDescription {
   options: {
     inner: TypeDescription
@@ -90,6 +96,16 @@ type TupleProps<T> = T extends {
   }
 }
   ? { [K in keyof T2]: ToRecordType<T2[K]> }
+  : unknown;
+
+type Value<T> = T extends { [s: string]: infer T2 } ? T2 : unknown;
+
+type EnumProps<T> = T extends {
+  options: {
+    inner: infer T2
+  }
+}
+  ? Value<T2>
   : unknown;
 
 type SetProps<T> = T extends {
@@ -162,12 +178,23 @@ export type ToRecordType<T> = T extends {
                           type: InternalSerializerType.ANY
                         }
                           ? any
-                          : unknown;
+                          : T extends {
+                            type: InternalSerializerType.ENUM
+                          }
+                            ? EnumProps<T> : unknown;
 
 export const Type = {
   any() {
     return {
       type: InternalSerializerType.ANY as const,
+    };
+  },
+  enum<T1 extends { [key: string]: any }>(t1: T1) {
+    return {
+      type: InternalSerializerType.ENUM as const,
+      options: {
+        inner: t1,
+      },
     };
   },
   string() {
