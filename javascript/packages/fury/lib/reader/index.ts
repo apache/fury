@@ -205,39 +205,39 @@ export const BinaryReader = (config: Config) => {
     return (v >> 1) ^ -(v & 1); // zigZag decode
   }
 
+  function bigUInt8() {
+    return BigInt(uint8() >>> 0);
+  }
+
   function varUInt64() {
     // Creating BigInts is too performance-intensive; we'll use uint32 instead.
     if (buffer.byteLength - cursor < 8) {
-        function bigUInt8() {
-          return BigInt(uint8() >>> 0);
-        }
-        let byte = bigUInt8();
-        let result = byte & 0x7fn;
+      let byte = bigUInt8();
+      let result = byte & 0x7fn;
+      if ((byte & 0x80n) != 0n) {
+        byte = bigUInt8();
+        result |= (byte & 0x7fn) << 7n;
         if ((byte & 0x80n) != 0n) {
           byte = bigUInt8();
-          result |= (byte & 0x7fn) << 7n;
+          result |= (byte & 0x7fn) << 14n;
           if ((byte & 0x80n) != 0n) {
             byte = bigUInt8();
-            result |= (byte & 0x7fn) << 14n;
+            result |= (byte & 0x7fn) << 21n;
             if ((byte & 0x80n) != 0n) {
               byte = bigUInt8();
-              result |= (byte & 0x7fn) << 21n;
+              result |= (byte & 0x7fn) << 28n;
               if ((byte & 0x80n) != 0n) {
                 byte = bigUInt8();
-                result |= (byte & 0x7fn) << 28n;
+                result |= (byte & 0x7fn) << 35n;
                 if ((byte & 0x80n) != 0n) {
                   byte = bigUInt8();
-                  result |= (byte & 0x7fn) << 35n;
+                  result |= (byte & 0x7fn) << 42n;
                   if ((byte & 0x80n) != 0n) {
                     byte = bigUInt8();
-                    result |= (byte & 0x7fn) << 42n;
+                    result |= (byte & 0x7fn) << 49n;
                     if ((byte & 0x80n) != 0n) {
                       byte = bigUInt8();
-                      result |= (byte & 0x7fn) << 49n;
-                      if ((byte & 0x80n) != 0n) {
-                        byte = bigUInt8();
-                        result |= (byte) << 56n;
-                      }
+                      result |= (byte) << 56n;
                     }
                   }
                 }
@@ -245,7 +245,8 @@ export const BinaryReader = (config: Config) => {
             }
           }
         }
-        return result;
+      }
+      return result;
     }
     const l32 = dataView.getUint32(cursor++, true);
     let byte = l32 & 0xff;
@@ -253,31 +254,31 @@ export const BinaryReader = (config: Config) => {
     let rh28 = 0;
     if ((byte & 0x80) != 0) {
       byte = l32 & 0xff00 >> 8;
-      cursor++
+      cursor++;
       rl28 |= (byte & 0x7f) << 7;
       if ((byte & 0x80) != 0) {
         byte = l32 & 0xff0000 >> 16;
-        cursor++
+        cursor++;
         rl28 |= (byte & 0x7f) << 14;
         if ((byte & 0x80) != 0) {
           byte = l32 & 0xff000000 >> 24;
-          cursor++
+          cursor++;
           rl28 |= (byte & 0x7f) << 21;
           if ((byte & 0x80) != 0) {
             const h32 = dataView.getUint32(cursor++, true);
-            byte = h32 & 0xff
+            byte = h32 & 0xff;
             rh28 |= (byte & 0x7f);
             if ((byte & 0x80) != 0) {
               byte = h32 & 0xff00 >> 8;
-              cursor++
+              cursor++;
               rh28 |= (byte & 0x7f) << 7;
               if ((byte & 0x80) != 0) {
                 byte = h32 & 0xff0000 >> 16;
-                cursor++
+                cursor++;
                 rh28 |= (byte & 0x7f) << 14;
                 if ((byte & 0x80) != 0) {
                   byte = h32 & 0xff000000 >> 24;
-                  cursor++
+                  cursor++;
                   rh28 |= (byte & 0x7f) << 21;
                   if ((byte & 0x80) != 0) {
                     return (BigInt(uint8()) << 56n) | BigInt(rh28) << 28n | BigInt(rl28);

@@ -235,8 +235,8 @@ export const BinaryWriter = (config: Config) => {
     if (value >> 7 == 0) {
       arrayBuffer[cursor++] = value;
       return;
-    } 
-    let rawCursor = cursor;
+    }
+    const rawCursor = cursor;
     let u32 = 0;
     if (value >> 14 == 0) {
       u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7) << 16);
