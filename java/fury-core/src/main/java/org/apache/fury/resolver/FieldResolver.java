@@ -744,7 +744,7 @@ public class FieldResolver {
         TypeToken<?> elementTypeToken =
             TypeUtils.getElementType(TypeToken.of(field.getGenericType()));
         byte fieldType =
-            Modifier.isFinal(getRawType(elementTypeToken).getModifiers())
+            ReflectionUtils.isFinal(getRawType(elementTypeToken))
                 ? FieldTypes.COLLECTION_ELEMENT_FINAL
                 : FieldTypes.OBJECT;
         return new CollectionFieldInfo(
@@ -755,12 +755,12 @@ public class FieldResolver {
         TypeToken<?> keyTypeToken = kvType.f0;
         TypeToken<?> valueTypeToken = kvType.f1;
         byte fieldType;
-        if (Modifier.isFinal(getRawType(keyTypeToken).getModifiers())
-            && Modifier.isFinal(getRawType(valueTypeToken).getModifiers())) {
+        if (ReflectionUtils.isFinal(getRawType(keyTypeToken))
+            && ReflectionUtils.isFinal(getRawType(valueTypeToken))) {
           fieldType = FieldTypes.MAP_KV_FINAL;
-        } else if (Modifier.isFinal(getRawType(keyTypeToken).getModifiers())) {
+        } else if (ReflectionUtils.isFinal(getRawType(keyTypeToken))) {
           fieldType = FieldTypes.MAP_KEY_FINAL;
-        } else if (Modifier.isFinal(getRawType(valueTypeToken).getModifiers())) {
+        } else if (ReflectionUtils.isFinal(getRawType(valueTypeToken))) {
           fieldType = FieldTypes.MAP_VALUE_FINAL;
         } else {
           fieldType = FieldTypes.OBJECT;
@@ -930,10 +930,10 @@ public class FieldResolver {
       this.keyTypeToken = keyTypeToken;
       this.valueTypeToken = valueTypeToken;
       keyType = getRawType(keyTypeToken);
-      isKeyTypeFinal = Modifier.isFinal(keyType.getModifiers());
+      isKeyTypeFinal = ReflectionUtils.isFinal(keyType);
       keyClassInfoHolder = classResolver.nilClassInfoHolder();
       valueType = getRawType(valueTypeToken);
-      isValueTypeFinal = Modifier.isFinal(valueType.getModifiers());
+      isValueTypeFinal = ReflectionUtils.isFinal(valueType);
       valueClassInfoHolder = classResolver.nilClassInfoHolder();
     }
 

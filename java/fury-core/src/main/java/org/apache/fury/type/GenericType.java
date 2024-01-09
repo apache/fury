@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.ReflectionUtils;
 
 /** GenericType for building java generics as a tree and binding with fury serializers. */
 // TODO(chaokunyang) refine generics which can be inspired by spring ResolvableType.
@@ -41,9 +42,9 @@ public class GenericType {
   static final Predicate<Type> defaultFinalPredicate =
       type -> {
         if (type.getClass() == Class.class) {
-          return Modifier.isFinal(((Class<?>) type).getModifiers());
+          return ReflectionUtils.isFinal(((Class<?>) type));
         } else {
-          return Modifier.isFinal((getRawType(type)).getModifiers());
+          return ReflectionUtils.isFinal((getRawType(type)));
         }
       };
 

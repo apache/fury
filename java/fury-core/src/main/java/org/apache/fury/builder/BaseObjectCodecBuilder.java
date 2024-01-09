@@ -572,7 +572,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       classInfoRef = Tuple2.of(fieldRef(name, classInfoTypeToken), false);
     } else {
       classInfoExpr = inlineInvoke(classResolverRef, "nilClassInfo", classInfoTypeToken);
-      String name = ctx.newName(StringUtils.uncapitalize(cls.getSimpleName()) + "ClassInfo");
+      String name = ctx.newName(cls, "ClassInfo");
       ctx.addField(false, ctx.type(ClassInfo.class), name, classInfoExpr);
       // Can't use fieldRef, since the field is not final.
       classInfoRef = Tuple2.of(new Reference(name, classInfoTypeToken), true);
@@ -584,7 +584,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   protected Reference addClassInfoHolderField(Class<?> cls) {
     // Final type need to write classinfo when meta share enabled.
     String key;
-    if (Modifier.isFinal(cls.getModifiers())) {
+    if (ReflectionUtils.isFinal(cls)) {
       key = "classInfoHolder:" + cls;
     } else {
       key = "classInfoHolder:" + cls + walkPath;
@@ -608,7 +608,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected Expression readClassInfo(Class<?> cls, Expression buffer, boolean inlineReadClassInfo) {
-    if (Modifier.isFinal(cls.getModifiers())) {
+    if (ReflectionUtils.isFinal(cls)) {
       Reference classInfoRef = addClassInfoField(cls).f0;
       if (inlineReadClassInfo) {
         return inlineInvoke(

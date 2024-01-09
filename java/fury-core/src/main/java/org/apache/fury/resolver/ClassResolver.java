@@ -515,6 +515,9 @@ public class ClassResolver {
    * non-final to write class def, so that it can be deserialized by the peer still..
    */
   public boolean isFinal(Class<?> clz) {
+    if (clz.isArray()) {
+      return isFinal(clz.getComponentType());
+    }
     if (Modifier.isFinal(clz.getModifiers())) {
       if (fury.getConfig().shareMetaContext()) {
         boolean isInnerClass = isInnerClass(clz);

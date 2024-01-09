@@ -29,6 +29,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.function.Function;
+
+import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.record.RecordUtils;
 
 /**
@@ -163,7 +165,7 @@ public class DescriptorGrouper {
         collectionDescriptors.add(descriptorUpdator.apply(descriptor));
       } else if (TypeUtils.isMap(descriptor.getRawType())) {
         mapDescriptors.add(descriptorUpdator.apply(descriptor));
-      } else if (Modifier.isFinal(descriptor.getRawType().getModifiers())) {
+      } else if (ReflectionUtils.isFinal(descriptor.getRawType())) {
         finalDescriptors.add(descriptorUpdator.apply(descriptor));
       } else {
         otherDescriptors.add(descriptorUpdator.apply(descriptor));

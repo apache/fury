@@ -415,6 +415,9 @@ public class ReflectionUtils {
   }
 
   public static boolean isFinal(Class<?> targetType) {
+    if (targetType.isArray()) {
+      return isFinal(targetType.getComponentType());
+    }
     return Modifier.isFinal(targetType.getModifiers());
   }
 

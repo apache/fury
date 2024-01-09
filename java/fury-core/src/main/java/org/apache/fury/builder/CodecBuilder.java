@@ -345,12 +345,12 @@ public abstract class CodecBuilder {
     if (duplicatedFields.contains(fieldName) || !sourcePublicAccessible(beanClass)) {
       return unsafeSetField(bean, d, value);
     }
-    if (!Modifier.isFinal(d.getModifiers()) && Modifier.isPublic(d.getModifiers())) {
+    if (!ReflectionUtils.isFinal(d.getRawType()) && Modifier.isPublic(d.getModifiers())) {
       return new Expression.SetField(bean, fieldName, value);
     } else if (d.getWriteMethod() != null && Modifier.isPublic(d.getWriteMethod().getModifiers())) {
       return new Invoke(bean, d.getWriteMethod().getName(), value);
     } else {
-      if (!Modifier.isFinal(d.getModifiers()) && !Modifier.isPrivate(d.getModifiers())) {
+      if (!ReflectionUtils.isFinal(d.getRawType()) && !Modifier.isPrivate(d.getModifiers())) {
         if (AccessorHelper.defineSetter(d.getField())) {
           Class<?> accessorClass = AccessorHelper.getAccessorClass(d.getField());
           if (!value.type().equals(d.getTypeToken())) {

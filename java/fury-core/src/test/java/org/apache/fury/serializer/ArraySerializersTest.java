@@ -22,11 +22,15 @@ package org.apache.fury.serializer;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.FuryBuilder;
@@ -34,6 +38,7 @@ import org.apache.fury.config.Language;
 import org.apache.fury.test.bean.ArraysData;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.util.ReflectionUtils;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class ArraySerializersTest extends FuryTestBase {
@@ -152,5 +157,67 @@ public class ArraySerializersTest extends FuryTestBase {
       assertEquals(arraysData, serDeOutOfBand(counter, fury1, fury1, arraysData));
       assertEquals(arraysData, serDeOutOfBand(counter, fury1, fury2, arraysData));
     }
+  }
+
+
+  @EqualsAndHashCode
+  static class A {
+    final int f1;
+
+    A(int f1) {
+      this.f1 = f1;
+    }
+  }
+
+  @EqualsAndHashCode(callSuper = true)
+  static class B extends A {
+    final String f2;
+
+    B(int f1, String f2) {
+      super(f1);
+      this.f2 = f2;
+    }
+  }
+
+  @Data
+  static class Struct {
+    A[] arr;
+
+    public Struct(A[] arr) {
+      this.arr = arr;
+    }
+  }
+
+  static class GenericArrayWrapper<T> {
+    private final T[] array;
+
+    @SuppressWarnings("unchecked")
+    public GenericArrayWrapper(Class<T> clazz, int capacity) {
+      this.array = (T[]) Array.newInstance(clazz, capacity);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test(dataProvider = "enableCodegen")
+  public void testArrayPolyMorphic(boolean enableCodegen) {
+    Fury fury = Fury.builder().requireClassRegistration(false).withCodegen(enableCodegen).build();
+    Object[] arr = new String[] {"a", "b"};
+    serDeCheck(fury, arr);
+
+    A[] arr1 = new B[] {new B(1, "a"), new B(2, "b")};
+    serDeCheck(fury, arr1);
+
+    Struct struct1 = new Struct(arr1);
+    serDeCheck(fury, struct1);
+    A[] arr2 = new A[] {new A(1), new B(2, "b")};
+    Struct struct2 = new Struct(arr2);
+    serDeCheck(fury, struct2);
+
+    final GenericArrayWrapper<String> wrapper = new GenericArrayWrapper<>(String.class, 2);
+    wrapper.array[0] = "Hello";
+    final byte[] bytes = fury.serialize(wrapper);
+    final GenericArrayWrapper<String> deserialized = (GenericArrayWrapper<String>) fury.deserialize(bytes);
+    deserialized.array[1] = "World";
+    Assert.assertEquals(deserialized.array, new String[] {"Hello", "World"});
   }
 }
