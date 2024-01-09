@@ -22,14 +22,12 @@ package org.apache.fury.type;
 import static org.apache.fury.type.TypeUtils.getSizeOfPrimitiveType;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.function.Function;
-
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.record.RecordUtils;
 
@@ -165,7 +163,7 @@ public class DescriptorGrouper {
         collectionDescriptors.add(descriptorUpdator.apply(descriptor));
       } else if (TypeUtils.isMap(descriptor.getRawType())) {
         mapDescriptors.add(descriptorUpdator.apply(descriptor));
-      } else if (ReflectionUtils.isFinal(descriptor.getRawType())) {
+      } else if (ReflectionUtils.isMonomorphic(descriptor.getRawType())) {
         finalDescriptors.add(descriptorUpdator.apply(descriptor));
       } else {
         otherDescriptors.add(descriptorUpdator.apply(descriptor));

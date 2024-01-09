@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.fury.Fury;
@@ -159,7 +158,6 @@ public class ArraySerializersTest extends FuryTestBase {
     }
   }
 
-
   @EqualsAndHashCode
   static class A {
     final int f1;
@@ -216,7 +214,8 @@ public class ArraySerializersTest extends FuryTestBase {
     final GenericArrayWrapper<String> wrapper = new GenericArrayWrapper<>(String.class, 2);
     wrapper.array[0] = "Hello";
     final byte[] bytes = fury.serialize(wrapper);
-    final GenericArrayWrapper<String> deserialized = (GenericArrayWrapper<String>) fury.deserialize(bytes);
+    final GenericArrayWrapper<String> deserialized =
+        (GenericArrayWrapper<String>) fury.deserialize(bytes);
     deserialized.array[1] = "World";
     Assert.assertEquals(deserialized.array, new String[] {"Hello", "World"});
   }

@@ -34,7 +34,6 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -514,11 +513,11 @@ public class ClassResolver {
    * a class is registered but not an inner class with inner serializer, it will still be taken as
    * non-final to write class def, so that it can be deserialized by the peer still..
    */
-  public boolean isFinal(Class<?> clz) {
+  public boolean isMonomorphic(Class<?> clz) {
     if (clz.isArray()) {
-      return isFinal(clz.getComponentType());
+      return isMonomorphic(clz.getComponentType());
     }
-    if (Modifier.isFinal(clz.getModifiers())) {
+    if (ReflectionUtils.isMonomorphic(clz)) {
       if (fury.getConfig().shareMetaContext()) {
         boolean isInnerClass = isInnerClass(clz);
         if (!isInnerClass) {
@@ -1755,9 +1754,9 @@ public class ClassResolver {
         typeToken.getType(),
         t -> {
           if (t.getClass() == Class.class) {
-            return isFinal((Class<?>) t);
+            return isMonomorphic((Class<?>) t);
           } else {
-            return isFinal(getRawType(t));
+            return isMonomorphic(getRawType(t));
           }
         });
   }
@@ -1767,9 +1766,9 @@ public class ClassResolver {
         type,
         t -> {
           if (t.getClass() == Class.class) {
-            return isFinal((Class<?>) t);
+            return isMonomorphic((Class<?>) t);
           } else {
-            return isFinal(getRawType(t));
+            return isMonomorphic(getRawType(t));
           }
         });
   }

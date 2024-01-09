@@ -29,7 +29,6 @@ import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -261,7 +260,9 @@ public class FieldResolver {
       Short classId = classResolver.getRegisteredClassId(fieldType);
       // try to encode 6 bit for a char if field name is ascii.
       // then 7 byte can encode 9 char, remains 2 bits can be used as flag bits or just left.
-      if (ReflectionUtils.isFinal(fieldType) && classId != null && classId < MAX_EMBED_CLASS_ID) {
+      if (ReflectionUtils.isMonomorphic(fieldType)
+          && classId != null
+          && classId < MAX_EMBED_CLASS_ID) {
         if (fieldNameLen <= 3 && classId <= 63) { // at most 4 chars
           // little-endian reversed bits: 24 bits field name + 6 bits class id + bit `1 0`.
           int encodedFieldInfo = (int) encodeFieldNameAsLong(fieldName);
@@ -744,7 +745,7 @@ public class FieldResolver {
         TypeToken<?> elementTypeToken =
             TypeUtils.getElementType(TypeToken.of(field.getGenericType()));
         byte fieldType =
-            ReflectionUtils.isFinal(getRawType(elementTypeToken))
+            ReflectionUtils.isMonomorphic(getRawType(elementTypeToken))
                 ? FieldTypes.COLLECTION_ELEMENT_FINAL
                 : FieldTypes.OBJECT;
         return new CollectionFieldInfo(
@@ -755,12 +756,12 @@ public class FieldResolver {
         TypeToken<?> keyTypeToken = kvType.f0;
         TypeToken<?> valueTypeToken = kvType.f1;
         byte fieldType;
-        if (ReflectionUtils.isFinal(getRawType(keyTypeToken))
-            && ReflectionUtils.isFinal(getRawType(valueTypeToken))) {
+        if (ReflectionUtils.isMonomorphic(getRawType(keyTypeToken))
+            && ReflectionUtils.isMonomorphic(getRawType(valueTypeToken))) {
           fieldType = FieldTypes.MAP_KV_FINAL;
-        } else if (ReflectionUtils.isFinal(getRawType(keyTypeToken))) {
+        } else if (ReflectionUtils.isMonomorphic(getRawType(keyTypeToken))) {
           fieldType = FieldTypes.MAP_KEY_FINAL;
-        } else if (ReflectionUtils.isFinal(getRawType(valueTypeToken))) {
+        } else if (ReflectionUtils.isMonomorphic(getRawType(valueTypeToken))) {
           fieldType = FieldTypes.MAP_VALUE_FINAL;
         } else {
           fieldType = FieldTypes.OBJECT;
@@ -930,10 +931,10 @@ public class FieldResolver {
       this.keyTypeToken = keyTypeToken;
       this.valueTypeToken = valueTypeToken;
       keyType = getRawType(keyTypeToken);
-      isKeyTypeFinal = ReflectionUtils.isFinal(keyType);
+      isKeyTypeFinal = ReflectionUtils.isMonomorphic(keyType);
       keyClassInfoHolder = classResolver.nilClassInfoHolder();
       valueType = getRawType(valueTypeToken);
-      isValueTypeFinal = ReflectionUtils.isFinal(valueType);
+      isValueTypeFinal = ReflectionUtils.isMonomorphic(valueType);
       valueClassInfoHolder = classResolver.nilClassInfoHolder();
     }
 

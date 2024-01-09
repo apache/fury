@@ -51,7 +51,6 @@ import static org.apache.fury.util.Preconditions.checkArgument;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.TypeToken;
-import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -418,7 +417,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    * the method can still return false. For example, we return false in meta share mode to write
    * class defs for the non-inner final types.
    */
-  protected abstract boolean isFinal(Class<?> clz);
+  protected abstract boolean isMonomorphic(Class<?> clz);
 
   protected Expression serializeForNotNullObject(
       Expression inputObject, Expression buffer, TypeToken<?> typeToken, Expression serializer) {
@@ -426,7 +425,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     if (serializer != null) {
       return new Invoke(serializer, "write", buffer, inputObject);
     }
-    if (isFinal(clz)) {
+    if (isMonomorphic(clz)) {
       serializer = getOrCreateSerializer(clz);
       return new Invoke(serializer, "write", buffer, inputObject);
     } else {
@@ -473,7 +472,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    */
   protected Expression getOrCreateSerializer(Class<?> cls) {
     // Not need to check cls final, take collection writeSameTypeElements as an example.
-    // Preconditions.checkArgument(isFinal(cls), cls);
+    // Preconditions.checkArgument(isMonomorphic(cls), cls);
     Reference serializerRef = serializerMap.get(cls);
     if (serializerRef == null) {
       // potential recursive call for seq codec generation is handled in `getSerializerClass`.
@@ -552,7 +551,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    */
   protected Tuple2<Reference, Boolean> addClassInfoField(Class<?> cls) {
     Expression classInfoExpr;
-    boolean needUpdate = !ReflectionUtils.isFinal(cls);
+    boolean needUpdate = !ReflectionUtils.isMonomorphic(cls);
     String key;
     if (!needUpdate) {
       key = "classInfo:" + cls;
@@ -584,7 +583,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   protected Reference addClassInfoHolderField(Class<?> cls) {
     // Final type need to write classinfo when meta share enabled.
     String key;
-    if (ReflectionUtils.isFinal(cls)) {
+    if (ReflectionUtils.isMonomorphic(cls)) {
       key = "classInfoHolder:" + cls;
     } else {
       key = "classInfoHolder:" + cls + walkPath;
@@ -608,7 +607,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected Expression readClassInfo(Class<?> cls, Expression buffer, boolean inlineReadClassInfo) {
-    if (ReflectionUtils.isFinal(cls)) {
+    if (ReflectionUtils.isMonomorphic(cls)) {
       Reference classInfoRef = addClassInfoField(cls).f0;
       if (inlineReadClassInfo) {
         return inlineInvoke(
@@ -665,7 +664,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     // get serializer, write class info if necessary.
     if (serializer == null) {
       Class<?> clz = getRawType(typeToken);
-      if (isFinal(clz)) {
+      if (isMonomorphic(clz)) {
         serializer = getOrCreateSerializer(clz);
       } else {
         ListExpression writeClassAction = new ListExpression();
@@ -730,7 +729,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         writeElementsHeader(elemClass, trackingRef, serializer, buffer, collection);
     Expression flags = writeElementsHeader.f0;
     builder.add(flags);
-    boolean finalType = isFinal(elemClass);
+    boolean finalType = isMonomorphic(elemClass);
     if (finalType) {
       if (trackingRef) {
         builder.add(
@@ -816,7 +815,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression collectionSerializer,
       Expression buffer,
       Expression value) {
-    if (isFinal(elementType)) {
+    if (isMonomorphic(elementType)) {
       Expression bitmap;
       if (trackingRef) {
         bitmap =
@@ -922,7 +921,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     boolean generateNewMethod =
         useCollectionSerialization(elementType) || useMapSerialization(elementType);
     Class<?> rawType = getRawType(elementType);
-    boolean finalType = isFinal(rawType);
+    boolean finalType = isMonomorphic(rawType);
     elem = tryCastIfPublic(elem, elementType);
     Expression write;
     if (finalType) {
@@ -968,7 +967,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       boolean generateNewMethod) {
     if (serializer == null) {
       Class<?> clz = getRawType(typeToken);
-      if (isFinal(clz)) {
+      if (isMonomorphic(clz)) {
         serializer = getOrCreateSerializer(clz);
       } else {
         ListExpression writeClassAction = new ListExpression();
@@ -1163,7 +1162,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (useMapSerialization(typeToken)) {
         obj = deserializeForMap(buffer, typeToken, serializer, cutPoint);
       } else {
-        if (isFinal(cls)) {
+        if (isMonomorphic(cls)) {
           Preconditions.checkState(serializer == null);
           serializer = getOrCreateSerializer(cls);
           Class<?> returnType =
@@ -1195,7 +1194,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     TypeToken<?> elementType = getElementType(typeToken);
     if (serializer == null) {
       Class<?> cls = getRawType(typeToken);
-      if (isFinal(cls)) {
+      if (isMonomorphic(cls)) {
         serializer = getOrCreateSerializer(cls);
       } else {
         Expression classInfo = readClassInfo(cls, buffer);
@@ -1244,7 +1243,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     builder.add(flags);
     Class<?> elemClass = TypeUtils.getRawType(elementType);
     walkPath.add(elementType.toString());
-    boolean finalType = isFinal(elemClass);
+    boolean finalType = isMonomorphic(elemClass);
     boolean trackingRef = visitFury(fury -> fury.getClassResolver().needToWriteRef(elemClass));
     if (finalType) {
       if (trackingRef) {
@@ -1376,7 +1375,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         useCollectionSerialization(elementType) || useMapSerialization(elementType);
     CutPoint cutPoint = new CutPoint(genNewMethod, buffer);
     Class<?> rawType = getRawType(elementType);
-    boolean finalType = isFinal(rawType);
+    boolean finalType = isMonomorphic(rawType);
     Expression read;
     if (finalType) {
       if (trackingRef) {
@@ -1426,7 +1425,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     TypeToken<?> valueType = keyValueType.f1;
     if (serializer == null) {
       Class<?> cls = getRawType(typeToken);
-      if (isFinal(cls)) {
+      if (isMonomorphic(cls)) {
         serializer = getOrCreateSerializer(cls);
       } else {
         Expression classInfo = readClassInfo(cls, buffer);

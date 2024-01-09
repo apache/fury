@@ -23,7 +23,6 @@ import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
 import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -42,9 +41,9 @@ public class GenericType {
   static final Predicate<Type> defaultFinalPredicate =
       type -> {
         if (type.getClass() == Class.class) {
-          return ReflectionUtils.isFinal(((Class<?>) type));
+          return ReflectionUtils.isMonomorphic(((Class<?>) type));
         } else {
-          return ReflectionUtils.isFinal((getRawType(type)));
+          return ReflectionUtils.isMonomorphic((getRawType(type)));
         }
       };
 
@@ -55,18 +54,18 @@ public class GenericType {
   final GenericType typeParameter0;
   final GenericType typeParameter1;
   final boolean hasGenericParameters;
-  final boolean isFinal;
+  final boolean isMonomorphic;
   // Used to cache serializer for final class to avoid hash lookup for serializer.
   Serializer<?> serializer;
   private Boolean trackingRef;
 
-  public GenericType(TypeToken<?> typeToken, boolean isFinal, GenericType... typeParameters) {
+  public GenericType(TypeToken<?> typeToken, boolean isMonomorphic, GenericType... typeParameters) {
     this.typeToken = typeToken;
     this.cls = getRawType(typeToken);
     this.typeParameters = typeParameters;
     typeParametersCount = typeParameters.length;
     hasGenericParameters = typeParameters.length > 0;
-    this.isFinal = isFinal;
+    this.isMonomorphic = isMonomorphic;
     if (typeParameters.length > 0) {
       typeParameter0 = typeParameters[0];
     } else {
@@ -188,12 +187,12 @@ public class GenericType {
     return serializer;
   }
 
-  public boolean isFinal() {
-    return isFinal;
+  public boolean isMonomorphic() {
+    return isMonomorphic;
   }
 
   public Serializer<?> getSerializerOrNull(ClassResolver classResolver) {
-    if (isFinal) {
+    if (isMonomorphic) {
       return getSerializer(classResolver);
     } else {
       return null;
