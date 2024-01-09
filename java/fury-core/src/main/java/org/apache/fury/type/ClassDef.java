@@ -479,7 +479,12 @@ public class ClassDef implements Serializable {
 
     @Override
     public String toString() {
-      return "RegisteredFieldType{" + "isMonomorphic=" + isMonomorphic() + ", classId=" + classId + '}';
+      return "RegisteredFieldType{"
+          + "isMonomorphic="
+          + isMonomorphic()
+          + ", classId="
+          + classId
+          + '}';
     }
   }
 
@@ -530,7 +535,12 @@ public class ClassDef implements Serializable {
 
     @Override
     public String toString() {
-      return "CollectionFieldType{" + "elementType=" + elementType + ", isFinal=" + isMonomorphic() + '}';
+      return "CollectionFieldType{"
+          + "elementType="
+          + elementType
+          + ", isFinal="
+          + isMonomorphic()
+          + '}';
     }
   }
 
