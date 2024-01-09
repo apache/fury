@@ -155,9 +155,9 @@ export const BinaryReader = (config: Config) => {
     // Reduce memory reads as much as possible. Reading a uint32 at once is far faster than reading four uint8s separately.
     if (buffer.byteLength - cursor >= 5) {
       const b1 = uint8();
-      const u32 = dataView.getUint32(cursor, true);
       let result = b1 & 0x7f;
       if ((b1 & 0x80) != 0) {
+        const u32 = dataView.getUint32(cursor, true);
         cursor++;
         const b2 = u32;
         result |= (b2 & 0x7f) << 7;
