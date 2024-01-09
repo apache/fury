@@ -158,7 +158,7 @@ export const BinaryReader = (config: Config) => {
       let result = u32 & 0x7f;
       if ((u32 & 0x80) != 0) {
         cursor++;
-        const b2 = u32 >> 8
+        const b2 = u32 >> 8;
         result |= (b2 & 0x7f) << 7;
         if ((b2 & 0x80) != 0) {
           cursor++;
