@@ -17,10 +17,10 @@
  * under the License.
  */
 
-import { Config, LATIN1 } from "./type";
-import { isNodeEnv } from "./util";
-import { PlatformBuffer, alloc, fromUint8Array } from "./platformBuffer";
-import { read1, read10, read11, read12, read13, read14, read15, read2, read3, read4, read5, read6, read7, read8, read9 } from "./string";
+import { Config, LATIN1 } from "../type";
+import { isNodeEnv } from "../util";
+import { PlatformBuffer, alloc, fromUint8Array } from "../platformBuffer";
+import { readLatin1String } from "./string";
 
 export const BinaryReader = (config: Config) => {
   const sliceStringEnable = isNodeEnv && config.useSliceString;
@@ -135,42 +135,7 @@ export const BinaryReader = (config: Config) => {
   function stringLatin1Slow(len: number) {
     const rawCursor = cursor;
     cursor += len;
-    switch (len) {
-      case 0:
-        return "";
-      case 1:
-        return read1(buffer, rawCursor);
-      case 2:
-        return read2(buffer, rawCursor);
-      case 3:
-        return read3(buffer, rawCursor);
-      case 4:
-        return read4(buffer, rawCursor);
-      case 5:
-        return read5(buffer, rawCursor);
-      case 6:
-        return read6(buffer, rawCursor);
-      case 7:
-        return read7(buffer, rawCursor);
-      case 8:
-        return read8(buffer, rawCursor);
-      case 9:
-        return read9(buffer, rawCursor);
-      case 10:
-        return read10(buffer, rawCursor);
-      case 11:
-        return read11(buffer, rawCursor);
-      case 12:
-        return read12(buffer, rawCursor);
-      case 13:
-        return read13(buffer, rawCursor);
-      case 14:
-        return read14(buffer, rawCursor);
-      case 15:
-        return read15(buffer, rawCursor);
-      default:
-        return buffer.latin1Slice(rawCursor, cursor);
-    }
+    return readLatin1String(buffer, len, rawCursor);
   }
 
   function binary(len: number) {
@@ -186,71 +151,45 @@ export const BinaryReader = (config: Config) => {
     return result;
   }
 
-  function zigZag(v: number) {
-    return (v >> 1) ^ -(v & 1);
-  }
-
-  function zigZagBigInt(v: bigint) {
-    return (v >> 1n) ^ -(v & 1n);
-  }
-
   function varUInt32() {
-    let byte_ = uint8();
-    let result = byte_ & 0x7f;
-    if ((byte_ & 0x80) != 0) {
-      byte_ = uint8();
-      result |= (byte_ & 0x7f) << 7;
-      if ((byte_ & 0x80) != 0) {
-        byte_ = uint8();
-        result |= (byte_ & 0x7f) << 14;
-        if ((byte_ & 0x80) != 0) {
-          byte_ = uint8();
-          result |= (byte_ & 0x7f) << 21;
-          if ((byte_ & 0x80) != 0) {
-            byte_ = uint8();
-            result |= (byte_) << 28;
+    // Reduce memory reads as much as possible. Reading a uint32 at once is far faster than reading four uint8s separately.
+    if (buffer.byteLength - cursor >= 5) {
+      const u32 = dataView.getUint32(cursor++, true);
+      let result = u32 & 0x7f;
+      if ((u32 & 0x80) != 0) {
+        cursor++;
+        const b2 = u32 >> 8;
+        result |= (b2 & 0x7f) << 7;
+        if ((b2 & 0x80) != 0) {
+          cursor++;
+          const b3 = u32 >> 16;
+          result |= (b3 & 0x7f) << 14;
+          if ((b3 & 0x80) != 0) {
+            cursor++;
+            const b4 = u32 >> 24;
+            result |= (b4 & 0x7f) << 21;
+            if ((b4 & 0x80) != 0) {
+              result |= (uint8()) << 28;
+            }
           }
         }
       }
+      return result;
     }
-    return result;
-  }
-
-  function bigUInt8() {
-    return BigInt(uint8() >>> 0);
-  }
-
-  function varUInt64() {
-    let byte_ = bigUInt8();
-    let result = byte_ & 0x7fn;
-    if ((byte_ & 0x80n) != 0n) {
-      byte_ = bigUInt8();
-      result |= (byte_ & 0x7fn) << 7n;
-      if ((byte_ & 0x80n) != 0n) {
-        byte_ = bigUInt8();
-        result |= (byte_ & 0x7fn) << 14n;
-        if ((byte_ & 0x80n) != 0n) {
-          byte_ = bigUInt8();
-          result |= (byte_ & 0x7fn) << 21n;
-          if ((byte_ & 0x80n) != 0n) {
-            byte_ = bigUInt8();
-            result |= (byte_ & 0x7fn) << 28n;
-            if ((byte_ & 0x80n) != 0n) {
-              byte_ = bigUInt8();
-              result |= (byte_ & 0x7fn) << 35n;
-              if ((byte_ & 0x80n) != 0n) {
-                byte_ = bigUInt8();
-                result |= (byte_ & 0x7fn) << 42n;
-                if ((byte_ & 0x80n) != 0n) {
-                  byte_ = bigUInt8();
-                  result |= (byte_ & 0x7fn) << 49n;
-                  if ((byte_ & 0x80n) != 0n) {
-                    byte_ = bigUInt8();
-                    result |= (byte_) << 56n;
-                  }
-                }
-              }
-            }
+    let byte = uint8();
+    let result = byte & 0x7f;
+    if ((byte & 0x80) != 0) {
+      byte = uint8();
+      result |= (byte & 0x7f) << 7;
+      if ((byte & 0x80) != 0) {
+        byte = uint8();
+        result |= (byte & 0x7f) << 14;
+        if ((byte & 0x80) != 0) {
+          byte = uint8();
+          result |= (byte & 0x7f) << 21;
+          if ((byte & 0x80) != 0) {
+            byte = uint8();
+            result |= (byte) << 28;
           }
         }
       }
@@ -259,11 +198,102 @@ export const BinaryReader = (config: Config) => {
   }
 
   function varInt32() {
-    return zigZag(varUInt32());
+    const v = varUInt32();
+    return (v >> 1) ^ -(v & 1); // zigZag decode
+  }
+
+  function bigUInt8() {
+    return BigInt(uint8() >>> 0);
+  }
+
+  function varUInt64() {
+    // Creating BigInts is too performance-intensive; we'll use uint32 instead.
+    if (buffer.byteLength - cursor < 8) {
+      let byte = bigUInt8();
+      let result = byte & 0x7fn;
+      if ((byte & 0x80n) != 0n) {
+        byte = bigUInt8();
+        result |= (byte & 0x7fn) << 7n;
+        if ((byte & 0x80n) != 0n) {
+          byte = bigUInt8();
+          result |= (byte & 0x7fn) << 14n;
+          if ((byte & 0x80n) != 0n) {
+            byte = bigUInt8();
+            result |= (byte & 0x7fn) << 21n;
+            if ((byte & 0x80n) != 0n) {
+              byte = bigUInt8();
+              result |= (byte & 0x7fn) << 28n;
+              if ((byte & 0x80n) != 0n) {
+                byte = bigUInt8();
+                result |= (byte & 0x7fn) << 35n;
+                if ((byte & 0x80n) != 0n) {
+                  byte = bigUInt8();
+                  result |= (byte & 0x7fn) << 42n;
+                  if ((byte & 0x80n) != 0n) {
+                    byte = bigUInt8();
+                    result |= (byte & 0x7fn) << 49n;
+                    if ((byte & 0x80n) != 0n) {
+                      byte = bigUInt8();
+                      result |= (byte) << 56n;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return result;
+    }
+    const l32 = dataView.getUint32(cursor++, true);
+    let byte = l32 & 0xff;
+    let rl28 = byte & 0x7f;
+    let rh28 = 0;
+    if ((byte & 0x80) != 0) {
+      byte = l32 & 0xff00 >> 8;
+      cursor++;
+      rl28 |= (byte & 0x7f) << 7;
+      if ((byte & 0x80) != 0) {
+        byte = l32 & 0xff0000 >> 16;
+        cursor++;
+        rl28 |= (byte & 0x7f) << 14;
+        if ((byte & 0x80) != 0) {
+          byte = l32 & 0xff000000 >> 24;
+          cursor++;
+          rl28 |= (byte & 0x7f) << 21;
+          if ((byte & 0x80) != 0) {
+            const h32 = dataView.getUint32(cursor++, true);
+            byte = h32 & 0xff;
+            rh28 |= (byte & 0x7f);
+            if ((byte & 0x80) != 0) {
+              byte = h32 & 0xff00 >> 8;
+              cursor++;
+              rh28 |= (byte & 0x7f) << 7;
+              if ((byte & 0x80) != 0) {
+                byte = h32 & 0xff0000 >> 16;
+                cursor++;
+                rh28 |= (byte & 0x7f) << 14;
+                if ((byte & 0x80) != 0) {
+                  byte = h32 & 0xff000000 >> 24;
+                  cursor++;
+                  rh28 |= (byte & 0x7f) << 21;
+                  if ((byte & 0x80) != 0) {
+                    return (BigInt(uint8()) << 56n) | BigInt(rh28) << 28n | BigInt(rl28);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return BigInt(rh28) << 28n | BigInt(rl28);
   }
 
   function varInt64() {
-    return zigZagBigInt(varUInt64());
+    const v = varUInt64();
+    return (v >> 1n) ^ -(v & 1n); // zigZag decode
   }
 
   return {
