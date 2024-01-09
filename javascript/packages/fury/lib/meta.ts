@@ -17,9 +17,10 @@
  * under the License.
  */
 
+import Fury from "./fury";
 import ClassResolver from "./classResolver";
 import { ObjectTypeDescription, TypeDescription } from "./description";
-import { Fury, InternalSerializerType } from "./type";
+import { InternalSerializerType } from "./type";
 
 export type Meta<T> = {
   fixedSize: number

@@ -17,9 +17,10 @@
  * under the License.
  */
 
+import Fury from "./fury";
 import { Type } from "./description";
 import { getMeta } from "./meta";
-import { Fury, MaxInt32, MinInt32, Serializer } from "./type";
+import { MaxInt32, MinInt32, Serializer } from "./type";
 import { InternalSerializerType, RefFlags } from "./type";
 
 export default (fury: Fury) => {
@@ -53,7 +54,7 @@ export default (fury: Fury) => {
         case RefFlags.RefValueFlag:
           return detectSerializer().readInner();
         case RefFlags.RefFlag:
-          return referenceResolver.getReadObjectByRefId(binaryReader.varUInt32());
+          return referenceResolver.getReadObject(binaryReader.varUInt32());
         case RefFlags.NullFlag:
           return null;
         case RefFlags.NotNullValueFlag:

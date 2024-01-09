@@ -49,7 +49,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     if (!this.builder.config().refTracking) {
       return "";
     }
-    return this.builder.referenceResolver.pushReadObject(accessor);
+    return this.builder.referenceResolver.reference(accessor);
   }
 
   protected wrapWriteHead(accessor: string, stmt: (accessor: string) => string) {
@@ -58,28 +58,32 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     if (noneable) {
       const head = makeHead(RefFlags.RefValueFlag, this.description.type);
 
-      const normaStmt = `
-            if (${accessor} !== null && ${accessor} !== undefined) {
-                ${this.builder.writer.int24(head)};
-                ${stmt(accessor)};
-            } else {
-                ${this.builder.writer.int8(RefFlags.NullFlag)};
-            }
-            `;
       if (this.builder.config().refTracking) {
         const existsId = this.scope.uniqueName("existsId");
         return `
-                const ${existsId} = ${this.builder.referenceResolver.existsWriteObject(accessor)};
-                if (typeof ${existsId} === "number") {
-                    ${this.builder.writer.int8(RefFlags.RefFlag)}
-                    ${this.builder.writer.varUInt32(existsId)}
+                if (${accessor} !== null && ${accessor} !== undefined) {
+                    const ${existsId} = ${this.builder.referenceResolver.existsWriteObject(accessor)};
+                    if (typeof ${existsId} === "number") {
+                        ${this.builder.writer.int8(RefFlags.RefFlag)}
+                        ${this.builder.writer.varUInt32(existsId)}
+                    } else {
+                        ${this.builder.referenceResolver.writeRef(accessor)}
+                        ${this.builder.writer.int24(head)};
+                        ${stmt(accessor)};
+                    }
                 } else {
-                    ${this.builder.referenceResolver.pushWriteObject(accessor)}
-                    ${normaStmt}
+                    ${this.builder.writer.int8(RefFlags.NullFlag)};
                 }
                 `;
       } else {
-        return normaStmt;
+        return `
+          if (${accessor} !== null && ${accessor} !== undefined) {
+              ${this.builder.writer.int24(head)};
+              ${stmt(accessor)};
+          } else {
+              ${this.builder.writer.int8(RefFlags.NullFlag)};
+          }
+        `;
       }
     } else {
       const head = makeHead(RefFlags.NotNullValueFlag, this.description.type);
@@ -104,7 +108,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
               ${stmt(accessor)}
               break;
           case ${RefFlags.RefFlag}:
-              ${accessor(this.builder.referenceResolver.getReadObjectByRefId(this.builder.reader.varUInt32()))}
+              ${accessor(this.builder.referenceResolver.getReadObject(this.builder.reader.varUInt32()))}
               break;
           case ${RefFlags.NullFlag}:
               ${accessor("null")}

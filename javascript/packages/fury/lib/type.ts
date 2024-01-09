@@ -22,7 +22,6 @@ import type { BinaryReader } from "./reader";
 import type FuryFunc from "./fury";
 import { Meta } from "./meta";
 
-export type Fury = ReturnType<typeof FuryFunc>;
 export type BinaryWriter = ReturnType<typeof BinaryWriter>;
 export type BinaryReader = ReturnType<typeof BinaryReader>;
 

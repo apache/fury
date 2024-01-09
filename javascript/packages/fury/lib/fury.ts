@@ -21,33 +21,53 @@ import ClassResolver from "./classResolver";
 import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
-import { ConfigFlags, Serializer, Config, InternalSerializerType, Language } from "./type";
+import { ConfigFlags, Serializer, Config, InternalSerializerType, Language, BinaryReader as BinaryReaderType, BinaryWriter as BinaryWriterType } from "./type";
 import { OwnershipError } from "./error";
+import { ToRecordType, TypeDescription } from "./description";
+import { generateSerializer } from "./gen";
 
-export default (config: Config) => {
-  const binaryReader = BinaryReader(config);
-  const binaryWriter = BinaryWriter(config);
 
-  const classResolver = new ClassResolver();
-  const referenceResolver = ReferenceResolver(config, binaryWriter, binaryReader);
+export default class {
+  binaryReader: BinaryReaderType;
+  binaryWriter: BinaryWriterType;
+  classResolver = new ClassResolver();
+  referenceResolver: ReturnType<typeof ReferenceResolver>;
+  private anySerializer: Serializer;
 
-  const fury = {
-    config,
-    deserialize,
-    serialize,
-    referenceResolver,
-    classResolver,
-    binaryReader,
-    binaryWriter,
-    serializeVolatile,
-  };
-  classResolver.init(fury);
+  constructor(public config: Config = {
+    refTracking: false,
+    useSliceString: false,
+    hooks: {
+    }
+  }) {
+    this.binaryReader = BinaryReader(config);
+    this.binaryWriter = BinaryWriter(config);
+    this.referenceResolver = ReferenceResolver(config, this.binaryWriter, this.binaryReader);
+    this.classResolver.init(this);
+    this.anySerializer = this.classResolver.getSerializerById(InternalSerializerType.ANY);
+  }
 
-  function deserialize<T = any>(bytes: Uint8Array, serializer?: Serializer): T | null {
-    referenceResolver.reset();
-    classResolver.reset();
-    binaryReader.reset(bytes);
-    const bitmap = binaryReader.uint8();
+  registerSerializer<T extends TypeDescription>(description: T) {
+    const serializer = generateSerializer(this, description);
+    return {
+      serializer,
+      serialize: (data: ToRecordType<T>) => {
+        return this.serialize(data, serializer);
+      },
+      serializeVolatile: (data: ToRecordType<T>) => {
+        return this.serializeVolatile(data, serializer);
+      },
+      deserialize: (bytes: Uint8Array) => {
+        return this.deserialize(bytes, serializer) as ToRecordType<T>;
+      },
+    };
+  }
+
+  deserialize<T = any>(bytes: Uint8Array, serializer: Serializer = this.anySerializer): T | null {
+    this.referenceResolver.reset();
+    this.classResolver.reset();
+    this.binaryReader.reset(bytes);
+    const bitmap = this.binaryReader.uint8();
     if ((bitmap & ConfigFlags.isNullFlag) === ConfigFlags.isNullFlag) {
       return null;
     }
@@ -59,61 +79,51 @@ export default (config: Config) => {
     if (!isCrossLanguage) {
       throw new Error("support crosslanguage mode only");
     }
-    binaryReader.uint8(); // skip language
+    this.binaryReader.uint8(); // skip language
     const isOutOfBandEnabled = (bitmap & ConfigFlags.isOutOfBandFlag) === ConfigFlags.isOutOfBandFlag;
     if (isOutOfBandEnabled) {
       throw new Error("outofband mode is not supported now");
     }
-    binaryReader.int32(); // native object offset. should skip.  javascript support cross mode only
-    binaryReader.int32(); // native object size. should skip.
-    if (serializer) {
-      return serializer.read();
-    } else {
-      return classResolver.getSerializerById(InternalSerializerType.ANY).read();
-    }
+    this.binaryReader.int32(); // native object offset. should skip.  javascript support cross mode only
+    this.binaryReader.int32(); // native object size. should skip.
+    return serializer.read();
   }
 
-  function serializeInternal<T = any>(data: T, serializer?: Serializer) {
+  private serializeInternal<T = any>(data: T, serializer: Serializer) {
     try {
-      binaryWriter.reset();
+      this.binaryWriter.reset();
     } catch (e) {
       if (e instanceof OwnershipError) {
         throw new Error("Permission denied. To release the serialization ownership, you must call the dispose function returned by serializeVolatile.");
       }
       throw e;
     }
-    referenceResolver.reset();
-    classResolver.reset();
+    this.referenceResolver.reset();
+    this.classResolver.reset();
     let bitmap = 0;
     if (data === null) {
       bitmap |= ConfigFlags.isNullFlag;
     }
     bitmap |= ConfigFlags.isLittleEndianFlag;
     bitmap |= ConfigFlags.isCrossLanguageFlag;
-    binaryWriter.uint8(bitmap);
-    binaryWriter.uint8(Language.XLANG);
-    const cursor = binaryWriter.getCursor();
-    binaryWriter.skip(4); // preserve 4-byte for nativeObjects start offsets.
-    binaryWriter.uint32(0); // nativeObjects length.
-    if (!serializer) {
-      serializer = classResolver.getSerializerById(InternalSerializerType.ANY);
-    }
+    this.binaryWriter.uint8(bitmap);
+    this.binaryWriter.uint8(Language.XLANG);
+    const cursor = this.binaryWriter.getCursor();
+    this.binaryWriter.skip(4); // preserve 4-byte for nativeObjects start offsets.
+    this.binaryWriter.uint32(0); // nativeObjects length.
     // reserve fixed size
-    binaryWriter.reserve(serializer.meta.fixedSize);
+    this.binaryWriter.reserve(serializer.meta.fixedSize);
     // start write
     serializer.write(data);
-
-    binaryWriter.setUint32Position(cursor, binaryWriter.getCursor()); // nativeObjects start offsets;
-    return binaryWriter;
+    this.binaryWriter.setUint32Position(cursor, this.binaryWriter.getCursor()); // nativeObjects start offsets;
+    return this.binaryWriter;
   }
 
-  function serialize<T = any>(data: T, serializer?: Serializer) {
-    return serializeInternal(data, serializer).dump();
+  serialize<T = any>(data: T, serializer: Serializer = this.anySerializer) {
+    return this.serializeInternal(data, serializer).dump();
   }
 
-  function serializeVolatile<T = any>(data: T, serializer?: Serializer) {
-    return serializeInternal(data, serializer).dumpAndOwn();
+  serializeVolatile<T = any>(data: T, serializer: Serializer = this.anySerializer) {
+    return this.serializeInternal(data, serializer).dumpAndOwn();
   }
-
-  return fury;
 };

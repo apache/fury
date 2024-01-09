@@ -17,13 +17,14 @@
  * under the License.
  */
 
-import { InternalSerializerType, Serializer, Fury, BinaryReader, BinaryWriter as TBinaryWriter } from "./type";
+import { InternalSerializerType, Serializer, BinaryReader, BinaryWriter as TBinaryWriter } from "./type";
 import anySerializer from "./any";
 import { fromString } from "./platformBuffer";
 import { x64hash128 } from "./murmurHash3";
 import { BinaryWriter } from "./writer";
 import { generateSerializer } from "./gen";
 import { Type, TypeDescription } from "./description";
+import Fury from "./fury";
 
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1;

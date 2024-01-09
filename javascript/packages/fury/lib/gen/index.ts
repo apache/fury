@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { InternalSerializerType, Fury } from "../type";
+import { InternalSerializerType } from "../type";
 import { ArrayTypeDescription, MapTypeDescription, ObjectTypeDescription, SetTypeDescription, TupleTypeDescription, TypeDescription } from "../description";
 import { CodegenRegistry } from "./router";
 import { CodecBuilder } from "./builder";
@@ -34,6 +34,7 @@ import "./set";
 import "./any";
 import "./tuple";
 import "./typedArray";
+import Fury from "../fury";
 
 export const generate = (fury: Fury, description: TypeDescription) => {
   const InnerGeneratorClass = CodegenRegistry.get(description.type);

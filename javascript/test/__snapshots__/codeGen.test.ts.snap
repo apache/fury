@@ -25,7 +25,7 @@ return function(fury, external) {
       tuple2: null,
       tuple2_: null
     };
-    rr.pushReadObject(result_0)
+    rr.reference(result_0)
     
     switch (br.int8()) {
       case -1:
@@ -36,7 +36,7 @@ return function(fury, external) {
         
         const len_2 = br.varUInt32();
         const result_1 = new Array(len_2);
-        rr.pushReadObject(result_1)
+        rr.reference(result_1)
         
         if (len_2 > 0) {
           result_1[0] = tag_ser_3.read()
@@ -51,7 +51,7 @@ return function(fury, external) {
         
         break;
       case -2:
-        result_0.tuple1 = rr.getReadObjectByRefId(br.varUInt32())
+        result_0.tuple1 = rr.getReadObject(br.varUInt32())
         break;
       case -3:
         result_0.tuple1 = null
@@ -67,7 +67,7 @@ return function(fury, external) {
         
         const len_6 = br.varUInt32();
         const result_5 = new Array(len_6);
-        rr.pushReadObject(result_5)
+        rr.reference(result_5)
         
         if (len_6 > 0) {
           result_5[0] = tag_ser_3.read()
@@ -82,7 +82,7 @@ return function(fury, external) {
         
         break;
       case -2:
-        result_0.tuple1_ = rr.getReadObjectByRefId(br.varUInt32())
+        result_0.tuple1_ = rr.getReadObject(br.varUInt32())
         break;
       case -3:
         result_0.tuple1_ = null
@@ -98,7 +98,7 @@ return function(fury, external) {
         
         const len_10 = br.varUInt32();
         const result_9 = new Array(len_10);
-        rr.pushReadObject(result_9)
+        rr.reference(result_9)
         
         if (len_10 > 0) {
           result_9[0] = tag_ser_3.read()
@@ -118,7 +118,7 @@ return function(fury, external) {
         
         break;
       case -2:
-        result_0.tuple2 = rr.getReadObjectByRefId(br.varUInt32())
+        result_0.tuple2 = rr.getReadObject(br.varUInt32())
         break;
       case -3:
         result_0.tuple2 = null
@@ -134,7 +134,7 @@ return function(fury, external) {
         
         const len_15 = br.varUInt32();
         const result_14 = new Array(len_15);
-        rr.pushReadObject(result_14)
+        rr.reference(result_14)
         
         if (len_15 > 0) {
           result_14[0] = tag_ser_3.read()
@@ -154,7 +154,7 @@ return function(fury, external) {
         
         break;
       case -2:
-        result_0.tuple2_ = rr.getReadObjectByRefId(br.varUInt32())
+        result_0.tuple2_ = rr.getReadObject(br.varUInt32())
         break;
       case -3:
         result_0.tuple2_ = null
@@ -175,7 +175,7 @@ return function(fury, external) {
         return readInner()
         break;
       case -2:
-        return rr.getReadObjectByRefId(br.varUInt32())
+        return rr.getReadObject(br.varUInt32())
         break;
       case -3:
         return null
@@ -188,54 +188,49 @@ return function(fury, external) {
     tagWriter_19.write(bw);
     bw.int32(16469457);
     
-    const existsId_22 = rr.existsWriteObject(v.tuple1);
-    if (typeof existsId_22 === "number") {
-      bw.int8(-2)
-      bw.varUInt32(existsId_22)
-    } else {
-      rr.pushWriteObject(v.tuple1)
-      
-      if (v.tuple1 !== null && v.tuple1 !== undefined) {
+    if (v.tuple1 !== null && v.tuple1 !== undefined) {
+      const existsId_20 = rr.existsWriteObject(v.tuple1);
+      if (typeof existsId_20 === "number") {
+        bw.int8(-2)
+        bw.varUInt32(existsId_20)
+      } else {
+        rr.writeRef(v.tuple1)
         bw.int24(6400);
         
         bw.varUInt32(2)
         bw.reserve(148);
         tag_ser_3.write(v.tuple1[0])
         tag_ser_4.write(v.tuple1[1]);
-      } else {
-        bw.int8(-3);
       }
-      
+    } else {
+      bw.int8(-3);
     };
     
-    const existsId_25 = rr.existsWriteObject(v.tuple1_);
-    if (typeof existsId_25 === "number") {
-      bw.int8(-2)
-      bw.varUInt32(existsId_25)
-    } else {
-      rr.pushWriteObject(v.tuple1_)
-      
-      if (v.tuple1_ !== null && v.tuple1_ !== undefined) {
+    if (v.tuple1_ !== null && v.tuple1_ !== undefined) {
+      const existsId_23 = rr.existsWriteObject(v.tuple1_);
+      if (typeof existsId_23 === "number") {
+        bw.int8(-2)
+        bw.varUInt32(existsId_23)
+      } else {
+        rr.writeRef(v.tuple1_)
         bw.int24(6400);
         
         bw.varUInt32(2)
         bw.reserve(148);
         tag_ser_3.write(v.tuple1_[0])
         tag_ser_4.write(v.tuple1_[1]);
-      } else {
-        bw.int8(-3);
       }
-      
+    } else {
+      bw.int8(-3);
     };
     
-    const existsId_29 = rr.existsWriteObject(v.tuple2);
-    if (typeof existsId_29 === "number") {
-      bw.int8(-2)
-      bw.varUInt32(existsId_29)
-    } else {
-      rr.pushWriteObject(v.tuple2)
-      
-      if (v.tuple2 !== null && v.tuple2 !== undefined) {
+    if (v.tuple2 !== null && v.tuple2 !== undefined) {
+      const existsId_26 = rr.existsWriteObject(v.tuple2);
+      if (typeof existsId_26 === "number") {
+        bw.int8(-2)
+        bw.varUInt32(existsId_26)
+      } else {
+        rr.writeRef(v.tuple2)
         bw.int24(6400);
         
         bw.varUInt32(3)
@@ -243,20 +238,18 @@ return function(fury, external) {
         tag_ser_3.write(v.tuple2[0])
         tag_ser_12.write(v.tuple2[1])
         tag_ser_13.write(v.tuple2[2]);
-      } else {
-        bw.int8(-3);
       }
-      
+    } else {
+      bw.int8(-3);
     };
     
-    const existsId_33 = rr.existsWriteObject(v.tuple2_);
-    if (typeof existsId_33 === "number") {
-      bw.int8(-2)
-      bw.varUInt32(existsId_33)
-    } else {
-      rr.pushWriteObject(v.tuple2_)
-      
-      if (v.tuple2_ !== null && v.tuple2_ !== undefined) {
+    if (v.tuple2_ !== null && v.tuple2_ !== undefined) {
+      const existsId_30 = rr.existsWriteObject(v.tuple2_);
+      if (typeof existsId_30 === "number") {
+        bw.int8(-2)
+        bw.varUInt32(existsId_30)
+      } else {
+        rr.writeRef(v.tuple2_)
         bw.int24(6400);
         
         bw.varUInt32(3)
@@ -264,30 +257,27 @@ return function(fury, external) {
         tag_ser_3.write(v.tuple2_[0])
         tag_ser_12.write(v.tuple2_[1])
         tag_ser_13.write(v.tuple2_[2]);
-      } else {
-        bw.int8(-3);
       }
-      
+    } else {
+      bw.int8(-3);
     }
     
     
   };
   const write = (v) => {
     
-    const existsId_34 = rr.existsWriteObject(v);
-    if (typeof existsId_34 === "number") {
-      bw.int8(-2)
-      bw.varUInt32(existsId_34)
-    } else {
-      rr.pushWriteObject(v)
-      
-      if (v !== null && v !== undefined) {
+    if (v !== null && v !== undefined) {
+      const existsId_34 = rr.existsWriteObject(v);
+      if (typeof existsId_34 === "number") {
+        bw.int8(-2)
+        bw.varUInt32(existsId_34)
+      } else {
+        rr.writeRef(v)
         bw.int24(65536);
         writeInner(v);
-      } else {
-        bw.int8(-3);
       }
-      
+    } else {
+      bw.int8(-3);
     }
     
   };
@@ -324,7 +314,7 @@ return function(fury, external) {
     const result_0 = {
       tuple: null
     };
-    rr.pushReadObject(result_0)
+    rr.reference(result_0)
     
     switch (br.int8()) {
       case -1:
@@ -335,7 +325,7 @@ return function(fury, external) {
         
         const len_2 = br.varUInt32();
         const result_1 = new Array(len_2);
-        rr.pushReadObject(result_1)
+        rr.reference(result_1)
         
         if (len_2 > 0) {
           
@@ -348,7 +338,7 @@ return function(fury, external) {
               result_1[0] = br.stringOfVarUInt32()
               break;
             case -2:
-              result_1[0] = rr.getReadObjectByRefId(br.varUInt32())
+              result_1[0] = rr.getReadObject(br.varUInt32())
               break;
             case -3:
               result_1[0] = null
@@ -369,7 +359,7 @@ return function(fury, external) {
               result_1[1] = br.uint8() === 1
               break;
             case -2:
-              result_1[1] = rr.getReadObjectByRefId(br.varUInt32())
+              result_1[1] = rr.getReadObject(br.varUInt32())
               break;
             case -3:
               result_1[1] = null
@@ -390,7 +380,7 @@ return function(fury, external) {
               result_1[2] = br.uint32()
               break;
             case -2:
-              result_1[2] = rr.getReadObjectByRefId(br.varUInt32())
+              result_1[2] = rr.getReadObject(br.varUInt32())
               break;
             case -3:
               result_1[2] = null
@@ -411,7 +401,7 @@ return function(fury, external) {
               
               const len_4 = br.varUInt32();
               const result_3 = new Array(len_4);
-              rr.pushReadObject(result_3)
+              rr.reference(result_3)
               
               if (len_4 > 0) {
                 
@@ -424,12 +414,12 @@ return function(fury, external) {
                     
                     br.uint8()
                     result_5 = br.buffer(br.int32());
-                    rr.pushReadObject(result_5);
+                    rr.reference(result_5);
                     result_3[0] = result_5
                     
                     break;
                   case -2:
-                    result_3[0] = rr.getReadObjectByRefId(br.varUInt32())
+                    result_3[0] = rr.getReadObject(br.varUInt32())
                     break;
                   case -3:
                     result_3[0] = null
@@ -442,7 +432,7 @@ return function(fury, external) {
               
               break;
             case -2:
-              result_1[3] = rr.getReadObjectByRefId(br.varUInt32())
+              result_1[3] = rr.getReadObject(br.varUInt32())
               break;
             case -3:
               result_1[3] = null
@@ -455,7 +445,7 @@ return function(fury, external) {
         
         break;
       case -2:
-        result_0.tuple = rr.getReadObjectByRefId(br.varUInt32())
+        result_0.tuple = rr.getReadObject(br.varUInt32())
         break;
       case -3:
         result_0.tuple = null
@@ -476,7 +466,7 @@ return function(fury, external) {
         return readInner()
         break;
       case -2:
-        return rr.getReadObjectByRefId(br.varUInt32())
+        return rr.getReadObject(br.varUInt32())
         break;
       case -3:
         return null
@@ -489,14 +479,13 @@ return function(fury, external) {
     tagWriter_6.write(bw);
     bw.int32(552);
     
-    const existsId_9 = rr.existsWriteObject(v.tuple);
-    if (typeof existsId_9 === "number") {
-      bw.int8(-2)
-      bw.varUInt32(existsId_9)
-    } else {
-      rr.pushWriteObject(v.tuple)
-      
-      if (v.tuple !== null && v.tuple !== undefined) {
+    if (v.tuple !== null && v.tuple !== undefined) {
+      const existsId_7 = rr.existsWriteObject(v.tuple);
+      if (typeof existsId_7 === "number") {
+        bw.int8(-2)
+        bw.varUInt32(existsId_7)
+      } else {
+        rr.writeRef(v.tuple)
         bw.int24(6400);
         
         bw.varUInt32(4)
@@ -523,70 +512,63 @@ return function(fury, external) {
           bw.uint32(0);
         }
         
-        const existsId_8 = rr.existsWriteObject(v.tuple[3]);
-        if (typeof existsId_8 === "number") {
-          bw.int8(-2)
-          bw.varUInt32(existsId_8)
-        } else {
-          rr.pushWriteObject(v.tuple[3])
-          
-          if (v.tuple[3] !== null && v.tuple[3] !== undefined) {
+        if (v.tuple[3] !== null && v.tuple[3] !== undefined) {
+          const existsId_8 = rr.existsWriteObject(v.tuple[3]);
+          if (typeof existsId_8 === "number") {
+            bw.int8(-2)
+            bw.varUInt32(existsId_8)
+          } else {
+            rr.writeRef(v.tuple[3])
             bw.int24(6400);
             
             bw.varUInt32(1)
             bw.reserve(8);
             
-            const existsId_7 = rr.existsWriteObject(v.tuple[3][0]);
-            if (typeof existsId_7 === "number") {
-              bw.int8(-2)
-              bw.varUInt32(existsId_7)
-            } else {
-              rr.pushWriteObject(v.tuple[3][0])
-              
-              if (v.tuple[3][0] !== null && v.tuple[3][0] !== undefined) {
+            if (v.tuple[3][0] !== null && v.tuple[3][0] !== undefined) {
+              const existsId_9 = rr.existsWriteObject(v.tuple[3][0]);
+              if (typeof existsId_9 === "number") {
+                bw.int8(-2)
+                bw.varUInt32(existsId_9)
+              } else {
+                rr.writeRef(v.tuple[3][0])
                 bw.int24(3584);
                 
                 bw.uint8(1)
                 bw.uint32(v.tuple[3][0].byteLength)
                 bw.buffer(v.tuple[3][0]);
-              } else {
-                bw.int8(-3);
               }
-              
+            } else {
+              bw.int8(-3);
             }
             
             ;
-          } else {
-            bw.int8(-3);
           }
-          
+        } else {
+          bw.int8(-3);
         }
         
         ;
-      } else {
-        bw.int8(-3);
       }
-      
+    } else {
+      bw.int8(-3);
     }
     
     
   };
   const write = (v) => {
     
-    const existsId_10 = rr.existsWriteObject(v);
-    if (typeof existsId_10 === "number") {
-      bw.int8(-2)
-      bw.varUInt32(existsId_10)
-    } else {
-      rr.pushWriteObject(v)
-      
-      if (v !== null && v !== undefined) {
+    if (v !== null && v !== undefined) {
+      const existsId_10 = rr.existsWriteObject(v);
+      if (typeof existsId_10 === "number") {
+        bw.int8(-2)
+        bw.varUInt32(existsId_10)
+      } else {
+        rr.writeRef(v)
         bw.int24(65536);
         writeInner(v);
-      } else {
-        bw.int8(-3);
       }
-      
+    } else {
+      bw.int8(-3);
     }
     
   };

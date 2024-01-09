@@ -20,12 +20,12 @@
 import { describe, expect, test } from '@jest/globals';
 import { tupleObjectDescription, tupleObjectType3Description } from './fixtures/tuple';
 import { generate } from '../packages/fury/lib/gen/index';
-import FuryInternal from '../packages/fury/lib/fury';
+import Fury from '../packages/fury/lib/fury';
 import * as beautify from 'js-beautify';
 
 describe('codeGen', () => {
   test('can generate tuple declaration code', () => {
-    const fury = FuryInternal({
+    const fury = new Fury({
       refTracking: true, hooks: {
         afterCodeGenerated: (code: string) => {
           return beautify.js(code, { indent_size: 2, space_in_empty_paren: true, indent_empty_lines: true });

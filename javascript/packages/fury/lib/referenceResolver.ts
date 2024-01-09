@@ -43,7 +43,7 @@ export const ReferenceResolver = (
     writeObjects = [];
   }
 
-  function getReadObjectByRefId(refId: number) {
+  function getReadObject(refId: number) {
     return readObjects[refId];
   }
 
@@ -51,11 +51,11 @@ export const ReferenceResolver = (
     return binaryReader.int8() as RefFlags;
   }
 
-  function pushReadObject(object: any) {
+  function reference(object: any) {
     readObjects.push(object);
   }
 
-  function pushWriteObject(object: any) {
+  function writeRef(object: any) {
     writeObjects.push(object);
   }
 
@@ -69,10 +69,10 @@ export const ReferenceResolver = (
 
   return {
     existsWriteObject,
-    pushWriteObject,
-    pushReadObject,
+    writeRef,
+    reference,
     readRefFlag,
-    getReadObjectByRefId,
+    getReadObject,
     reset,
   };
 };

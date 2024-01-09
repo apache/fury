@@ -18,17 +18,13 @@
  */
 
 import {
-  generateSerializer,
-} from "./lib/gen";
-import {
   ObjectTypeDescription,
   TypeDescription,
   ArrayTypeDescription,
   Type,
-  ToRecordType,
 } from "./lib/description";
-import { Serializer, Fury, InternalSerializerType, Config } from "./lib/type";
-import FuryInternal from "./lib/fury";
+import { Serializer, InternalSerializerType, Config } from "./lib/type";
+import Fury from "./lib/fury";
 
 export {
   Serializer,
@@ -39,35 +35,5 @@ export {
   Type,
 };
 
-export default class {
-  constructor(private config?: Config) { }
-  private fury: Fury = FuryInternal(this.config || {});
+export default Fury;
 
-  registerSerializer<T extends TypeDescription>(description: T) {
-    const serializer = generateSerializer(this.fury, description);
-    return {
-      serializer,
-      serialize: (data: ToRecordType<T>) => {
-        return this.fury.serialize(data, serializer);
-      },
-      serializeVolatile: (data: ToRecordType<T>) => {
-        return this.fury.serializeVolatile(data, serializer);
-      },
-      deserialize: (bytes: Uint8Array) => {
-        return this.fury.deserialize(bytes, serializer) as ToRecordType<T>;
-      },
-    };
-  }
-
-  serializeVolatile(v: any, serialize?: Serializer) {
-    return this.fury.serializeVolatile(v, serialize);
-  }
-
-  serialize(v: any, serialize?: Serializer) {
-    return this.fury.serialize(v, serialize);
-  }
-
-  deserialize(bytes: Uint8Array) {
-    return this.fury.deserialize(bytes);
-  }
-}
