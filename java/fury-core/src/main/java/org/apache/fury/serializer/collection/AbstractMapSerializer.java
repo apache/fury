@@ -188,8 +188,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       // generics.pushGenericType(keyGenericType);
       // fury.setDepth(depth);
       // generics.pushGenericType(valueGenericType);
-      boolean keyGenericTypeFinal = keyGenericType.isFinal();
-      boolean valueGenericTypeFinal = valueGenericType.isFinal();
+      boolean keyGenericTypeFinal = keyGenericType.isMonomorphic();
+      boolean valueGenericTypeFinal = valueGenericType.isMonomorphic();
       if (keyGenericTypeFinal && valueGenericTypeFinal) {
         javaKVTypesFinalWrite(fury, buffer, map, keyGenericType, valueGenericType, generics);
       } else if (keyGenericTypeFinal) {
@@ -453,8 +453,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         keyGenericType = kvGenericType.f0;
         valueGenericType = kvGenericType.f1;
       }
-      boolean keyGenericTypeFinal = keyGenericType.isFinal();
-      boolean valueGenericTypeFinal = valueGenericType.isFinal();
+      boolean keyGenericTypeFinal = keyGenericType.isMonomorphic();
+      boolean valueGenericTypeFinal = valueGenericType.isMonomorphic();
       if (keyGenericTypeFinal && valueGenericTypeFinal) {
         javaKVTypesFinalRead(fury, buffer, map, keyGenericType, valueGenericType, generics, size);
       } else if (keyGenericTypeFinal) {
