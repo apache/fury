@@ -515,17 +515,11 @@ public class ClassResolver {
    */
   public boolean isMonomorphic(Class<?> clz) {
     if (fury.getConfig().shareMetaContext()) {
-      if (!ReflectionUtils.isMonomorphic(clz)) {
-        return false;
-      }
-      boolean isInnerClass = isInnerClass(clz);
-      if (!isInnerClass) {
-        return false;
-      } else {
-        // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
-        // TypeToken<V>)
-        return !Map.class.isAssignableFrom(clz) && !Collection.class.isAssignableFrom(clz);
-      }
+      // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
+      // TypeToken<V>)
+      return ReflectionUtils.isMonomorphic(clz)
+          && isInnerClass(clz)
+          && (!Map.class.isAssignableFrom(clz) && !Collection.class.isAssignableFrom(clz));
     }
     return ReflectionUtils.isMonomorphic(clz);
   }
