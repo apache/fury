@@ -186,6 +186,71 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     }
   }
 
+  @Test
+  public void testWriteCompatibleCollectionSimple() throws Exception {
+    BeanA beanA = BeanA.createBeanA(2);
+    String pkg = BeanA.class.getPackage().getName();
+    String code =
+      ""
+        + "package "
+        + pkg
+        + ";\n"
+        + "import java.util.*;\n"
+        + "import java.math.*;\n"
+        + "public class BeanA {\n"
+        + "  private List<Double> doubleList;\n"
+        + "  private Iterable<BeanB> beanBIterable;\n"
+        + "  private List<BeanB> beanBList;\n"
+        + "}";
+    Class<?> cls1 =
+      loadClass(
+        BeanA.class,
+        code,
+        MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_1");
+    Fury fury1 =
+      Fury.builder()
+        .withCodegen(false)
+        .withMetaContextShare(true)
+        .withCompatibleMode(CompatibleMode.COMPATIBLE)
+        .requireClassRegistration(false)
+        .withClassLoader(cls1.getClassLoader())
+        .build();
+    code =
+      ""
+        + "package "
+        + pkg
+        + ";\n"
+        + "import java.util.*;\n"
+        + "import java.math.*;\n"
+        + "public class BeanA {\n"
+        + "  private List<Double> doubleList;\n"
+        + "  private Iterable<BeanB> beanBIterable;\n"
+        + "}";
+    Class<?> cls2 =
+      loadClass(
+        BeanA.class,
+        code,
+        MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_2");
+    Object o2 = cls2.newInstance();
+    ReflectionUtils.unsafeCopy(beanA, o2);
+    Fury fury2 =
+      Fury.builder()
+        .withCodegen(false)
+        .withMetaContextShare(true)
+        .withCompatibleMode(CompatibleMode.COMPATIBLE)
+        .requireClassRegistration(false)
+        .withClassLoader(cls2.getClassLoader())
+        .build();
+
+    MetaContext context1 = new MetaContext();
+    MetaContext context2 = new MetaContext();
+    fury1.getSerializationContext().setMetaContext(context1);
+    byte[] objBytes = fury1.serialize(beanA);
+    fury2.getSerializationContext().setMetaContext(context2);
+    Object obj2 = fury2.deserialize(objBytes);
+    Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(obj2, o2));
+  }
+
   @Test(dataProvider = "config3")
   public void testWriteCompatibleCollectionBasic(
       boolean referenceTracking,
@@ -195,16 +260,6 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
       boolean enableCodegen3)
       throws Exception {
     BeanA beanA = BeanA.createBeanA(2);
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen1)
-            .withMetaContextShare(true)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
-            .build();
     String pkg = BeanA.class.getPackage().getName();
     String code =
         ""
@@ -234,7 +289,6 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
             .requireClassRegistration(false)
             .withClassLoader(cls1.getClassLoader())
             .build();
-    MetaContext context1 = new MetaContext();
     code =
         ""
             + "package "
@@ -264,6 +318,8 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
             .requireClassRegistration(false)
             .withClassLoader(cls2.getClassLoader())
             .build();
+
+    MetaContext context1 = new MetaContext();
     MetaContext context2 = new MetaContext();
     fury2.getSerializationContext().setMetaContext(context2);
     byte[] bytes2 = fury2.serialize(o2);
@@ -282,6 +338,16 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Object obj2 = fury2.deserialize(objBytes);
     Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(obj2, o2));
 
+    Fury fury =
+      Fury.builder()
+        .withLanguage(Language.JAVA)
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen1)
+        .withMetaContextShare(true)
+        .withCompatibleMode(CompatibleMode.COMPATIBLE)
+        .requireClassRegistration(false)
+        .build();
     // fury <-> fury2 is a new channel, which needs a new context.
     MetaContext context = new MetaContext();
     MetaContext ctx2 = new MetaContext();

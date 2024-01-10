@@ -514,24 +514,20 @@ public class ClassResolver {
    * non-final to write class def, so that it can be deserialized by the peer still..
    */
   public boolean isMonomorphic(Class<?> clz) {
-    if (clz.isArray()) {
-      return isMonomorphic(clz.getComponentType());
-    }
-    if (ReflectionUtils.isMonomorphic(clz)) {
-      if (fury.getConfig().shareMetaContext()) {
-        boolean isInnerClass = isInnerClass(clz);
-        if (!isInnerClass) {
-          return false;
-        } else {
-          // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
-          // TypeToken<V>)
-          return !Map.class.isAssignableFrom(clz) && !Collection.class.isAssignableFrom(clz);
-        }
+    if (fury.getConfig().shareMetaContext()) {
+      if (!ReflectionUtils.isMonomorphic(clz)) {
+        return false;
+      }
+      boolean isInnerClass = isInnerClass(clz);
+      if (!isInnerClass) {
+        return false;
       } else {
-        return true;
+        // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
+        // TypeToken<V>)
+        return !Map.class.isAssignableFrom(clz) && !Collection.class.isAssignableFrom(clz);
       }
     }
-    return false;
+    return ReflectionUtils.isMonomorphic(clz);
   }
 
   /** Returns true if <code>cls</code> is fury inner registered class. */
