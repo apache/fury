@@ -4,11 +4,11 @@ cc_library(
     name = "fury_encoder",
     srcs = glob(["*.cc"], exclude=["*test.cc"]),
     hdrs = glob(["*.h"]),
-    strip_include_prefix = "/src",
+    strip_include_prefix = "/cpp",
     deps = [
-      "@local_config_pyarrow//:arrow", 
-      "//src/fury/row:fury_row_format",
-      "//src/fury/meta:fury_meta"
+      "@local_config_pyarrow//:arrow",
+      "//cpp/fury/row:fury_row_format",
+      "//cpp/fury/meta:fury_meta"
     ],
     visibility = ["//visibility:public"],
 )

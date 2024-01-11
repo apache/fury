@@ -4,9 +4,9 @@ cc_library(
     name = "fury_columnar_format",
     srcs = ["arrow_writer.cc"],
     hdrs = ["arrow_writer.h"],
-    strip_include_prefix = "/src",
+    strip_include_prefix = "/cpp",
     deps = [
-      "@local_config_pyarrow//:arrow", "//src/fury/util:fury_util", "//src/fury/row:fury_row_format"
+      "@local_config_pyarrow//:arrow", "//cpp/fury/util:fury_util", "//cpp/fury/row:fury_row_format"
     ],
     visibility = ["//visibility:public"],
 )

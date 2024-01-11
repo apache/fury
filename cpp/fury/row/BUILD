@@ -4,9 +4,9 @@ cc_library(
     name = "fury_row_format",
     srcs = glob(["*.cc"], exclude=["*test.cc"]),
     hdrs = glob(["*.h"]),
-    strip_include_prefix = "/src",
+    strip_include_prefix = "/cpp",
     deps = [
-      "@local_config_pyarrow//:arrow", "//src/fury/util:fury_util"
+      "@local_config_pyarrow//:arrow", "//cpp/fury/util:fury_util"
     ],
     visibility = ["//visibility:public"],
 )
