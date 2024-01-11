@@ -51,7 +51,7 @@ excludes = [
     "java/fury-format/src/main/java/org/apache/fury/format/vectorized/ArrowWriter.java",
     "javascript/packages/hps/src/v8-fast-api-calls.h",
     "javascript/packages/fury/lib/murmurHash3.ts",
-    "src/fury/thirdparty/MurmurHash3.*",
+    "cpp/fury/thirdparty/MurmurHash3.*",
 ]
 
 [mapping.DOUBLESLASH_STYLE]
