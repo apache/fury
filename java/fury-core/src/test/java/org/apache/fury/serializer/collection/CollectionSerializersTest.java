@@ -111,11 +111,11 @@ public class CollectionSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testBasicListNestedJIT(boolean referenceTracking) {
     Fury fury =
-      Fury.builder()
-        .withRefTracking(referenceTracking)
-        .withCodegen(true)
-        .requireClassRegistration(false)
-        .build();
+        Fury.builder()
+            .withRefTracking(referenceTracking)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
     List<List<List<String>>> list = new ArrayList<>();
     list.add(ofArrayList(ofArrayList("a", "b")));
     list.add(ofArrayList(ofArrayList("a", "b")));

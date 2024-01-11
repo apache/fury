@@ -1263,8 +1263,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         elemSerializer =
             new If(
                 isDeclType,
-              new Cast(getOrCreateSerializer(elemClass), serializerType),
-              new Cast(serializer.inline(), serializerType),
+                new Cast(getOrCreateSerializer(elemClass), serializerType),
+                new Cast(serializer.inline(), serializerType),
                 false,
                 serializerType);
       } else {
