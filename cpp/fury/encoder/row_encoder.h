@@ -20,7 +20,7 @@
 #pragma once
 
 #include "fury/encoder/row_encode_trait.h"
-#include "src/fury/row/writer.h"
+#include "fury/row/writer.h"
 #include <memory>
 #include <type_traits>
 

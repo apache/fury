@@ -4,11 +4,11 @@ cc_library(
     name = "fury_util",
     srcs = glob(["*.cc"], exclude=["*test.cc"]),
     hdrs = glob(["*.h"]),
-    strip_include_prefix = "/src",
+    strip_include_prefix = "/cpp",
     alwayslink=True,
     linkstatic=True,
     deps = [
-        "//src/fury/meta:fury_meta",
+        "//cpp/fury/meta:fury_meta",
         "@com_google_absl//absl/debugging:failure_signal_handler",
         "@com_google_absl//absl/debugging:stacktrace",
         "@com_google_absl//absl/debugging:symbolize",

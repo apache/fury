@@ -4,7 +4,7 @@ cc_library(
     name = "fury_meta",
     srcs = glob(["*.cc"], exclude=["*test.cc"]),
     hdrs = glob(["*.h"]),
-    strip_include_prefix = "/src",
+    strip_include_prefix = "/cpp",
     visibility = ["//visibility:public"],
 )
 

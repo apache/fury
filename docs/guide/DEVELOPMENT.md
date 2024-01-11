@@ -38,14 +38,14 @@ Build fury row format：
 
 ```bash
 pip install pyarrow==14.0.0
-bazel build //src/fury/row:fury_row_format
+bazel build //cpp/fury/row:fury_row_format
 ```
 
 Build fury row format encoder:
 
 ```bash
 pip install pyarrow==14.0.0
-bazel build //src/fury/encoder:fury_encoder
+bazel build //cpp/fury/encoder:fury_encoder
 ```
 
 #### Environment Requirements

@@ -4,7 +4,7 @@ cc_library(
     name = "libmmh3",
     srcs = ["MurmurHash3.cc"],
     hdrs = ["MurmurHash3.h"],
-    strip_include_prefix = "/src",
+    strip_include_prefix = "/cpp",
     alwayslink=True,
     linkstatic=True,
     visibility = ["//visibility:public"],

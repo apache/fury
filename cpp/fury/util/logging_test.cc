@@ -30,7 +30,7 @@ namespace fury {
 TEST(PrintLogTest, BasicLog) {
   FURY_LOG(INFO) << "test info";
   ASSERT_DEATH(FURY_LOG(FATAL) << "test fatal",
-               "\\[.*\\] FATAL src/fury/util/logging_test.cc:.*: test fatal");
+               "\\[.*\\] FATAL cpp/fury/util/logging_test.cc:.*: test fatal");
 }
 
 TEST(PrintLogTest, TestCheckOp) {
