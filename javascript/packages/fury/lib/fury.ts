@@ -21,30 +21,29 @@ import ClassResolver from "./classResolver";
 import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
-import { ConfigFlags, Serializer, Config, InternalSerializerType, Language, BinaryReader as BinaryReaderType, BinaryWriter as BinaryWriterType } from "./type";
+import { ConfigFlags, Serializer, Config, Language, BinaryReader as BinaryReaderType, BinaryWriter as BinaryWriterType } from "./type";
 import { OwnershipError } from "./error";
 import { ToRecordType, TypeDescription } from "./description";
-import { generateSerializer } from "./gen";
-
+import { generateSerializer, AnySerializer } from "./gen";
 
 export default class {
   binaryReader: BinaryReaderType;
   binaryWriter: BinaryWriterType;
   classResolver = new ClassResolver();
   referenceResolver: ReturnType<typeof ReferenceResolver>;
-  private anySerializer: Serializer;
+  anySerializer: AnySerializer;
 
   constructor(public config: Config = {
     refTracking: false,
     useSliceString: false,
     hooks: {
-    }
+    },
   }) {
     this.binaryReader = BinaryReader(config);
     this.binaryWriter = BinaryWriter(config);
     this.referenceResolver = ReferenceResolver(config, this.binaryWriter, this.binaryReader);
     this.classResolver.init(this);
-    this.anySerializer = this.classResolver.getSerializerById(InternalSerializerType.ANY);
+    this.anySerializer = new AnySerializer(this);
   }
 
   registerSerializer<T extends TypeDescription>(description: T) {
@@ -126,4 +125,4 @@ export default class {
   serializeVolatile<T = any>(data: T, serializer: Serializer = this.anySerializer) {
     return this.serializeInternal(data, serializer).dumpAndOwn();
   }
-};
+}

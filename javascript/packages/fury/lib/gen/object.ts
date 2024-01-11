@@ -70,10 +70,8 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   writeStmt(accessor: string): string {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
-    const tagWriter = this.scope.declare("tagWriter", `${this.builder.classResolver.createTagWriter(this.safeTag())}`);
 
     return `
-            ${tagWriter}.write(${this.builder.writer.ownName()});
             ${this.builder.writer.int32(expectHash)};
             ${Object.entries(options.props).sort().map(([key, inner]) => {
             const InnerGeneratorClass = CodegenRegistry.get(inner.type);
@@ -118,20 +116,26 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     return CodecBuilder.replaceBackslashAndQuote(this.description.options.tag);
   }
 
-  toReadEmbed(accessor: (expr: string) => string): string {
+  toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean): string {
     const name = this.scope.declare(
       "tag_ser",
             `fury.classResolver.getSerializerByTag("${this.safeTag()}")`
     );
-    return accessor(`${name}.read()`);
+    if (!excludeHead) {
+      return accessor(`${name}.read()`);
+    }
+    return accessor(`${name}.readInner()`);
   }
 
-  toWriteEmbed(accessor: string): string {
+  toWriteEmbed(accessor: string, excludeHead?: boolean): string {
     const name = this.scope.declare(
       "tag_ser",
             `fury.classResolver.getSerializerByTag("${this.safeTag()}")`
     );
-    return `${name}.write(${accessor})`;
+    if (!excludeHead) {
+      return `${name}.write(${accessor})`;
+    }
+    return `${name}.writeInner(${accessor})`;
   }
 }
 

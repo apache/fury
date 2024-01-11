@@ -18,7 +18,6 @@
  */
 
 import { InternalSerializerType, Serializer, BinaryReader, BinaryWriter as TBinaryWriter } from "./type";
-import anySerializer from "./any";
 import { fromString } from "./platformBuffer";
 import { x64hash128 } from "./murmurHash3";
 import { BinaryWriter } from "./writer";
@@ -70,7 +69,9 @@ const uninitSerialize = {
   },
   meta: {
     fixedSize: 0,
+    type: InternalSerializerType.ANY,
     noneable: false,
+    needToWriteRef: false,
   },
 };
 
@@ -88,7 +89,6 @@ export default class SerializerResolver {
   }
 
   private initInternalSerializer(fury: Fury) {
-    this.internalSerializer[InternalSerializerType.ANY] = anySerializer(fury);
     this.registerSerializer(fury, Type.string());
     this.registerSerializer(fury, Type.array(Type.any()));
     this.registerSerializer(fury, Type.map(Type.any(), Type.any()));
@@ -206,5 +206,45 @@ export default class SerializerResolver {
         return this.readStringPool[idx].toString(binaryReader);
       };
     }
+  }
+
+  getSerializerByData(v: any) {
+    if (v === null || v === undefined) {
+      return null;
+    }
+
+    if (typeof v === "number") {
+      return this.getSerializerById(InternalSerializerType.DOUBLE);
+    }
+
+    if (typeof v === "bigint") {
+      return this.getSerializerById(InternalSerializerType.INT64);
+    }
+
+    if (typeof v === "boolean") {
+      return this.getSerializerById(InternalSerializerType.BOOL);
+    }
+
+    if (v instanceof Date) {
+      return this.getSerializerById(InternalSerializerType.TIMESTAMP);
+    }
+
+    if (typeof v === "string") {
+      return this.getSerializerById(InternalSerializerType.STRING);
+    }
+
+    if (v instanceof Map) {
+      return this.getSerializerById(InternalSerializerType.MAP);
+    }
+
+    if (v instanceof Set) {
+      return this.getSerializerById(InternalSerializerType.FURY_SET);
+    }
+
+    if (Array.isArray(v)) {
+      return this.getSerializerById(InternalSerializerType.ARRAY);
+    }
+
+    throw new Error(`Failed to detect the Fury type from JavaScript type: ${typeof v}`);
   }
 }

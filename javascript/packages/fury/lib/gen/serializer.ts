@@ -22,14 +22,14 @@ import { CodecBuilder } from "./builder";
 import { makeHead } from "../referenceResolver";
 import { RefFlags } from "../type";
 import { Scope } from "./scope";
-import { TypeDescription } from "../description";
+import { TypeDescription, ObjectTypeDescription } from "../description";
 
 export interface SerializerGenerator {
   writeStmt(accessor: string): string
   readStmt(accessor: (expr: string) => string): string
   toSerializer(): string
-  toWriteEmbed(accessor: string, withHead?: boolean): string
-  toReadEmbed(accessor: (expr: string) => string, withHead?: boolean): string
+  toWriteEmbed(accessor: string, excludeHead?: boolean): string
+  toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean): string
 }
 
 export abstract class BaseSerializerGenerator implements SerializerGenerator {
@@ -52,12 +52,24 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     return this.builder.referenceResolver.reference(accessor);
   }
 
+  safeTag() {
+    return CodecBuilder.replaceBackslashAndQuote((<ObjectTypeDescription> this.description).options.tag);
+  }
+
   protected wrapWriteHead(accessor: string, stmt: (accessor: string) => string) {
     const meta = this.builder.meta(this.description);
     const noneable = meta.noneable;
+
+    const maybeTag = () => {
+      if (this.description.type !== InternalSerializerType.FURY_TYPE_TAG) {
+        return "";
+      }
+      const tagWriter = this.scope.declare("tagWriter", `${this.builder.classResolver.createTagWriter(this.safeTag())}`);
+      return `${tagWriter}.write(${this.builder.writer.ownName()})`;
+    };
+
     if (noneable) {
       const head = makeHead(RefFlags.RefValueFlag, this.description.type);
-
       if (this.builder.config().refTracking) {
         const existsId = this.scope.uniqueName("existsId");
         return `
@@ -69,6 +81,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
                     } else {
                         ${this.builder.referenceResolver.writeRef(accessor)}
                         ${this.builder.writer.int24(head)};
+                        ${maybeTag()}
                         ${stmt(accessor)};
                     }
                 } else {
@@ -79,6 +92,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
         return `
           if (${accessor} !== null && ${accessor} !== undefined) {
               ${this.builder.writer.int24(head)};
+              ${maybeTag()}
               ${stmt(accessor)};
           } else {
               ${this.builder.writer.int8(RefFlags.NullFlag)};
@@ -89,6 +103,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
       const head = makeHead(RefFlags.NotNullValueFlag, this.description.type);
       return `
             ${this.builder.writer.int24(head)};
+            ${maybeTag()}
             if (${accessor} !== null && ${accessor} !== undefined) {
                 ${stmt(accessor)};
             } else {
@@ -117,15 +132,15 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
       `;
   }
 
-  toWriteEmbed(accessor: string, withHead = true) {
-    if (!withHead) {
+  toWriteEmbed(accessor: string, excludeHead = false) {
+    if (excludeHead) {
       return this.writeStmt(accessor);
     }
     return this.wrapWriteHead(accessor, accessor => this.writeStmt(accessor));
   }
 
-  toReadEmbed(accessor: (expr: string) => string, withHead = true) {
-    if (!withHead) {
+  toReadEmbed(accessor: (expr: string) => string, excludeHead = false) {
+    if (excludeHead) {
       return this.readStmt(accessor);
     }
     return this.wrapReadHead(accessor, accessor => this.readStmt(accessor));

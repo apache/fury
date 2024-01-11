@@ -19,7 +19,6 @@
 
 import type { BinaryWriter } from "./writer";
 import type { BinaryReader } from "./reader";
-import type FuryFunc from "./fury";
 import { Meta } from "./meta";
 
 export type BinaryWriter = ReturnType<typeof BinaryWriter>;

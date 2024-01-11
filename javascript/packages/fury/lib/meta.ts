@@ -22,10 +22,12 @@ import ClassResolver from "./classResolver";
 import { ObjectTypeDescription, TypeDescription } from "./description";
 import { InternalSerializerType } from "./type";
 
-export type Meta<T> = {
+export type Meta<T = any> = {
   fixedSize: number
   noneable: boolean
   default?: T
+  needToWriteRef: boolean
+  type: InternalSerializerType
 };
 
 const epochDate = new Date("1970/01/01 00:00");
@@ -37,22 +39,30 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta<any> => 
       return {
         fixedSize: 8,
         noneable: false,
+        needToWriteRef: Boolean(fury.config.refTracking) && true,
         default: "",
+        type,
       };
     case InternalSerializerType.ARRAY:
       return {
         fixedSize: 7,
         noneable: true,
+        needToWriteRef: Boolean(fury.config.refTracking) && true,
+        type,
       };
     case InternalSerializerType.TUPLE:
       return {
         fixedSize: 7,
         noneable: true,
+        needToWriteRef: Boolean(fury.config.refTracking) && true,
+        type,
       };
     case InternalSerializerType.MAP:
       return {
         fixedSize: 7,
         noneable: true,
+        needToWriteRef: Boolean(fury.config.refTracking) && true,
+        type,
       };
     case InternalSerializerType.BOOL:
     case InternalSerializerType.UINT8:
@@ -60,14 +70,18 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta<any> => 
       return {
         fixedSize: 4,
         noneable: false,
+        needToWriteRef: Boolean(fury.config.refTracking) && false,
         default: 0,
+        type,
       };
     case InternalSerializerType.UINT16:
     case InternalSerializerType.INT16:
       return {
         fixedSize: 5,
         noneable: false,
+        needToWriteRef: Boolean(fury.config.refTracking) && false,
         default: 0,
+        type,
       };
     case InternalSerializerType.UINT32:
     case InternalSerializerType.INT32:
@@ -75,7 +89,9 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta<any> => 
       return {
         fixedSize: 7,
         noneable: false,
+        needToWriteRef: Boolean(fury.config.refTracking) && false,
         default: 0,
+        type,
       };
     case InternalSerializerType.UINT64:
     case InternalSerializerType.INT64:
@@ -83,24 +99,32 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta<any> => 
       return {
         fixedSize: 11,
         noneable: false,
+        needToWriteRef: Boolean(fury.config.refTracking) && false,
         default: 0,
+        type,
       };
     case InternalSerializerType.BINARY:
       return {
         fixedSize: 8,
         noneable: true,
+        needToWriteRef: Boolean(fury.config.refTracking) && true,
+        type,
       };
     case InternalSerializerType.DATE:
       return {
         fixedSize: 7,
         noneable: false,
         default: epochDate.getTime(),
+        needToWriteRef: Boolean(fury.config.refTracking) && false,
+        type,
       };
     case InternalSerializerType.TIMESTAMP:
       return {
         fixedSize: 11,
         noneable: false,
         default: epochDate.getTime(),
+        needToWriteRef: Boolean(fury.config.refTracking) && false,
+        type,
       };
     case InternalSerializerType.FURY_TYPE_TAG:
     {
@@ -114,6 +138,8 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta<any> => 
       return {
         fixedSize,
         noneable: true,
+        needToWriteRef: Boolean(fury.config.refTracking) && true,
+        type,
       };
     }
 
@@ -121,6 +147,8 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta<any> => 
       return {
         fixedSize: 7,
         noneable: true,
+        needToWriteRef: Boolean(fury.config.refTracking) && true,
+        type,
       };
     case InternalSerializerType.FURY_PRIMITIVE_BOOL_ARRAY:
     case InternalSerializerType.FURY_PRIMITIVE_SHORT_ARRAY:
@@ -132,11 +160,15 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta<any> => 
       return {
         fixedSize: 7,
         noneable: true,
+        needToWriteRef: Boolean(fury.config.refTracking) && true,
+        type,
       };
     case InternalSerializerType.ANY:
       return {
         fixedSize: 11,
         noneable: true,
+        needToWriteRef: Boolean(fury.config.refTracking) && true,
+        type,
       };
     default:
       throw new Error(`Meta of ${description.type} not exists`);

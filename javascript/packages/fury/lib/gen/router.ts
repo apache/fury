@@ -27,12 +27,22 @@ type SerializerGeneratorConstructor = new (description: TypeDescription, builder
 
 export class CodegenRegistry {
   static map = new Map<string, SerializerGeneratorConstructor>();
+  static external = new Map<string, any>();
 
   static register(type: InternalSerializerType, generator: SerializerGeneratorConstructor) {
     this.map.set(InternalSerializerType[type], generator);
+    this.external.set(generator.name, generator);
+  }
+
+  static registerExternal(object: { name: string }) {
+    this.external.set(object.name, object);
   }
 
   static get(type: InternalSerializerType) {
     return this.map.get(InternalSerializerType[type]);
+  }
+
+  static getExternal() {
+    return Object.fromEntries(Array.from(CodegenRegistry.external.entries()).map(([key, value]) => [key, value]));
   }
 }

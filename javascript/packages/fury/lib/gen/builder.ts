@@ -107,8 +107,8 @@ class BinaryReaderBuilder {
     return `${this.holder}.uint64()`;
   }
 
-  skip() {
-    return `${this.holder}.skip()`;
+  skip(v: number) {
+    return `${this.holder}.skip(${v})`;
   }
 
   int64() {
@@ -284,6 +284,10 @@ class ClassResolverBuilder {
   readTag(binaryReader: string) {
     return `${this.holder}.readTag(${binaryReader})`;
   }
+
+  getSerializerByData(v: string) {
+    return `${this.holder}.readTag(${v})`;
+  }
 }
 
 export class CodecBuilder {
@@ -292,7 +296,7 @@ export class CodecBuilder {
   referenceResolver: ReferenceResolverBuilder;
   classResolver: ClassResolverBuilder;
 
-  constructor(scope: Scope, private fury: Fury) {
+  constructor(scope: Scope, public fury: Fury) {
     const br = scope.declareByName("br", "fury.binaryReader");
     const bw = scope.declareByName("bw", "fury.binaryWriter");
     const cr = scope.declareByName("cr", "fury.classResolver");
@@ -301,6 +305,10 @@ export class CodecBuilder {
     this.writer = new BinaryWriterBuilder(bw);
     this.classResolver = new ClassResolverBuilder(cr);
     this.referenceResolver = new ReferenceResolverBuilder(rr);
+  }
+
+  furyName() {
+    return "fury";
   }
 
   meta(description: TypeDescription) {
@@ -335,5 +343,9 @@ export class CodecBuilder {
       return `["${CodecBuilder.replaceBackslashAndQuote(prop)}"]`;
     }
     return prop;
+  }
+
+  getExternal(key: string) {
+    return `external.${key}`;
   }
 }

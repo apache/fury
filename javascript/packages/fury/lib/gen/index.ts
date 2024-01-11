@@ -31,10 +31,12 @@ import "./datetime";
 import "./map";
 import "./number";
 import "./set";
-import "./any";
 import "./tuple";
 import "./typedArray";
 import Fury from "../fury";
+export { AnySerializer } from "./any";
+
+const external = CodegenRegistry.getExternal();
 
 export const generate = (fury: Fury, description: TypeDescription) => {
   const InnerGeneratorClass = CodegenRegistry.get(description.type);
@@ -61,7 +63,7 @@ function regDependencies(fury: Fury, description: TypeDescription) {
         regDependencies(fury, x);
       });
       const func = generate(fury, description);
-      fury.classResolver.registerSerializerByTag(options.tag, func()(fury, {}));
+      fury.classResolver.registerSerializerByTag(options.tag, func()(fury, external));
     }
   }
   if (description.type === InternalSerializerType.ARRAY) {
@@ -87,5 +89,5 @@ export const generateSerializer = (fury: Fury, description: TypeDescription) => 
     return fury.classResolver.getSerializerByTag((<ObjectTypeDescription>description).options.tag);
   }
   const func = generate(fury, description);
-  return func()(fury, {});
+  return func()(fury, external);
 };

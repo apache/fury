@@ -53,7 +53,7 @@ function build(inner: TypeDescription) {
                 ${this.builder.writer.varUInt32(`${accessor}.length`)}
                 ${this.builder.writer.reserve(`${innerMeta.fixedSize} * ${accessor}.length`)};
                 for (const ${item} of ${accessor}) {
-                    ${innerGenerator.toWriteEmbed(item, false)}
+                    ${innerGenerator.toWriteEmbed(item, true)}
                 }
             `;
     }
@@ -69,7 +69,7 @@ function build(inner: TypeDescription) {
                 const ${result} = new Array(${len});
                 ${this.pushReadRefStmt(result)}
                 for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
-                    ${innerGenerator.toReadEmbed(x => `${result}[${idx}] = ${x};`, false)}
+                    ${innerGenerator.toReadEmbed(x => `${result}[${idx}] = ${x};`, true)}
                 }
                 ${accessor(result)}
              `;
