@@ -122,12 +122,16 @@ jobs:
 
   rust:
     name: Rust CI
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-2022]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@nightly
-      - run: ./ci/run_ci.sh rust
+      - name: Run Rust CI
+        run: python ./ci/run_ci.py rust
 
   cpp:
     name: C++ CI
