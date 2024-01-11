@@ -340,8 +340,8 @@ public final class FuryBuilder {
   }
 
   /** Build thread safe fury. */
-  public ThreadSafeFury buildThreadSafeFury() {
-    return buildThreadLocalFury();
+  public ThreadSafeFury buildThreadSafeFury(int minPoolSize, int maxPoolSize) {
+    return buildThreadSafeFuryPool(minPoolSize, maxPoolSize);
   }
 
   /** Build thread safe fury backed by {@link ThreadLocalFury}. */
