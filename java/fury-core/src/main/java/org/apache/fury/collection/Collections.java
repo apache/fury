@@ -73,7 +73,6 @@ public class Collections {
     return list;
   }
 
-
   /** Create an {@link ArrayList} from provided elements. */
   public static <T> ArrayList<T> ofArrayList(T e1, T e2, T e3, T e4, T e5) {
     ArrayList<T> list = new ArrayList(3);
@@ -90,12 +89,14 @@ public class Collections {
     set.add(e);
     return set;
   }
+
   public static <E> HashSet<E> ofHashSet(E e1, E e2) {
     HashSet<E> set = new HashSet<>(2);
     set.add(e1);
     set.add(e2);
     return set;
   }
+
   public static <E> HashSet<E> ofHashSet(E e1, E e2, E e3) {
     HashSet<E> set = new HashSet<>(2);
     set.add(e1);
@@ -103,6 +104,7 @@ public class Collections {
     set.add(e3);
     return set;
   }
+
   public static <E> HashSet<E> ofHashSet(E e1, E e2, E e3, E e4) {
     HashSet<E> set = new HashSet<>(2);
     set.add(e1);
@@ -111,6 +113,7 @@ public class Collections {
     set.add(e4);
     return set;
   }
+
   public static <E> HashSet<E> ofHashSet(E e1, E e2, E e3, E e4, E e5) {
     HashSet<E> set = new HashSet<>(2);
     set.add(e1);
@@ -147,7 +150,7 @@ public class Collections {
   public static <K, V> HashMap<K, V> ofHashMap(Object... kv) {
     if (kv.length % 2 != 0) {
       throw new IllegalArgumentException(
-        String.format("entries got %d objects, which aren't pairs", kv.length));
+          String.format("entries got %d objects, which aren't pairs", kv.length));
     }
     int size = kv.length / 2;
     HashMap map = new HashMap<>(size);
