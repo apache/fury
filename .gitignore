@@ -2,7 +2,6 @@
 **/*.so
 **/*.dylib
 bazel-*
-bazel-fury
 .whl
 python/.cache
 python/pyfury/__pycache__/
@@ -35,3 +34,5 @@ java/**/generated
 javascript/**/dist/
 javascript/**/node_modules/
 javascript/**/build
+MODULE.bazel
+MODULE.bazel.lock
