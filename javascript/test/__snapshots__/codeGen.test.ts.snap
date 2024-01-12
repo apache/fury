@@ -28,15 +28,11 @@ return function(fury, external) {
     
     if (fromRef) {
       rr.reference(result_0)
-    } else {
-      
     }
     
     
-    let fromRef_1 = false;
-    switch (br.int8()) {
-      case 0:
-        fromRef_1 = true;
+    const refFlag_1 = br.int8();
+    switch (refFlag_1) {
       case -1:
       case 0:
         if (br.int16() === 256) {
@@ -46,10 +42,8 @@ return function(fury, external) {
         const len_3 = br.varUInt32();
         const result_2 = new Array(len_3);
         
-        if (fromRef_1) {
+        if (refFlag_1 === 0) {
           rr.reference(result_2)
-        } else {
-          
         }
         
         
@@ -73,10 +67,8 @@ return function(fury, external) {
         break;
     };
     
-    let fromRef_6 = false;
-    switch (br.int8()) {
-      case 0:
-        fromRef_6 = true;
+    const refFlag_6 = br.int8();
+    switch (refFlag_6) {
       case -1:
       case 0:
         if (br.int16() === 256) {
@@ -86,10 +78,8 @@ return function(fury, external) {
         const len_8 = br.varUInt32();
         const result_7 = new Array(len_8);
         
-        if (fromRef_6) {
+        if (refFlag_6 === 0) {
           rr.reference(result_7)
-        } else {
-          
         }
         
         
@@ -113,10 +103,8 @@ return function(fury, external) {
         break;
     };
     
-    let fromRef_11 = false;
-    switch (br.int8()) {
-      case 0:
-        fromRef_11 = true;
+    const refFlag_11 = br.int8();
+    switch (refFlag_11) {
       case -1:
       case 0:
         if (br.int16() === 256) {
@@ -126,10 +114,8 @@ return function(fury, external) {
         const len_13 = br.varUInt32();
         const result_12 = new Array(len_13);
         
-        if (fromRef_11) {
+        if (refFlag_11 === 0) {
           rr.reference(result_12)
-        } else {
-          
         }
         
         
@@ -158,10 +144,8 @@ return function(fury, external) {
         break;
     };
     
-    let fromRef_17 = false;
-    switch (br.int8()) {
-      case 0:
-        fromRef_17 = true;
+    const refFlag_17 = br.int8();
+    switch (refFlag_17) {
       case -1:
       case 0:
         if (br.int16() === 256) {
@@ -171,10 +155,8 @@ return function(fury, external) {
         const len_19 = br.varUInt32();
         const result_18 = new Array(len_19);
         
-        if (fromRef_17) {
+        if (refFlag_17 === 0) {
           rr.reference(result_18)
-        } else {
-          
         }
         
         
@@ -208,16 +190,14 @@ return function(fury, external) {
   };
   const read = () => {
     
-    let fromRef_23 = false;
-    switch (br.int8()) {
-      case 0:
-        fromRef_23 = true;
+    const refFlag_23 = br.int8();
+    switch (refFlag_23) {
       case -1:
       case 0:
         if (br.int16() === 256) {
           cr.readTag(br);
         }
-        return readInner(true)
+        return readInner(refFlag_23 === 0)
         break;
       case -2:
         return rr.getReadObject(br.varUInt32())
@@ -367,15 +347,11 @@ return function(fury, external) {
     
     if (fromRef) {
       rr.reference(result_0)
-    } else {
-      
     }
     
     
-    let fromRef_1 = false;
-    switch (br.int8()) {
-      case 0:
-        fromRef_1 = true;
+    const refFlag_1 = br.int8();
+    switch (refFlag_1) {
       case -1:
       case 0:
         if (br.int16() === 256) {
@@ -385,19 +361,15 @@ return function(fury, external) {
         const len_3 = br.varUInt32();
         const result_2 = new Array(len_3);
         
-        if (fromRef_1) {
+        if (refFlag_1 === 0) {
           rr.reference(result_2)
-        } else {
-          
         }
         
         
         if (len_3 > 0) {
           
-          let fromRef_4 = false;
-          switch (br.int8()) {
-            case 0:
-              fromRef_4 = true;
+          const refFlag_4 = br.int8();
+          switch (refFlag_4) {
             case -1:
             case 0:
               if (br.int16() === 256) {
@@ -418,10 +390,8 @@ return function(fury, external) {
         
         if (len_3 > 1) {
           
-          let fromRef_5 = false;
-          switch (br.int8()) {
-            case 0:
-              fromRef_5 = true;
+          const refFlag_5 = br.int8();
+          switch (refFlag_5) {
             case -1:
             case 0:
               if (br.int16() === 256) {
@@ -442,10 +412,8 @@ return function(fury, external) {
         
         if (len_3 > 2) {
           
-          let fromRef_6 = false;
-          switch (br.int8()) {
-            case 0:
-              fromRef_6 = true;
+          const refFlag_6 = br.int8();
+          switch (refFlag_6) {
             case -1:
             case 0:
               if (br.int16() === 256) {
@@ -466,10 +434,8 @@ return function(fury, external) {
         
         if (len_3 > 3) {
           
-          let fromRef_7 = false;
-          switch (br.int8()) {
-            case 0:
-              fromRef_7 = true;
+          const refFlag_7 = br.int8();
+          switch (refFlag_7) {
             case -1:
             case 0:
               if (br.int16() === 256) {
@@ -479,19 +445,15 @@ return function(fury, external) {
               const len_9 = br.varUInt32();
               const result_8 = new Array(len_9);
               
-              if (fromRef_7) {
+              if (refFlag_7 === 0) {
                 rr.reference(result_8)
-              } else {
-                
               }
               
               
               if (len_9 > 0) {
                 
-                let fromRef_10 = false;
-                switch (br.int8()) {
-                  case 0:
-                    fromRef_10 = true;
+                const refFlag_10 = br.int8();
+                switch (refFlag_10) {
                   case -1:
                   case 0:
                     if (br.int16() === 256) {
@@ -501,10 +463,8 @@ return function(fury, external) {
                     br.uint8()
                     result_11 = br.buffer(br.int32());
                     
-                    if (fromRef_10) {
+                    if (refFlag_10 === 0) {
                       rr.reference(result_11)
-                    } else {
-                      
                     };
                     result_8[0] = result_11
                     
@@ -548,16 +508,14 @@ return function(fury, external) {
   };
   const read = () => {
     
-    let fromRef_12 = false;
-    switch (br.int8()) {
-      case 0:
-        fromRef_12 = true;
+    const refFlag_12 = br.int8();
+    switch (refFlag_12) {
       case -1:
       case 0:
         if (br.int16() === 256) {
           cr.readTag(br);
         }
-        return readInner(true)
+        return readInner(refFlag_12 === 0)
         break;
       case -2:
         return rr.getReadObject(br.varUInt32())

@@ -124,9 +124,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     if (!excludeHead) {
       return accessor(`${name}.read()`);
     }
-    return refState!.wrap((need) => {
-      return accessor(`${name}.readInner(${need})`);
-    });
+    return accessor(`${name}.readInner(${refState!.toConditionExpr()})`)
   }
 
   toWriteEmbed(accessor: string, excludeHead?: boolean): string {

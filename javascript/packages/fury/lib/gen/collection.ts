@@ -290,7 +290,7 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
     const len = this.scope.uniqueName("len");
     const flags = this.scope.uniqueName("flags");
     const idx = this.scope.uniqueName("idx");
-    const fromRef = this.scope.uniqueName("fromRef");
+    const refFlag = this.scope.uniqueName("refFlag");
 
     // If track elements ref, use first bit 0b1 of header to flag it.
     // If collection has null, use second bit 0b10 of header to flag it. If ref tracking is enabled for this element type, this flag is invalid.
@@ -304,13 +304,11 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
             ${this.maybeReference(result, refState)}
             if (${flags} & ${CollectionFlags.TRACKING_REF}) {
                 for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
-                    let ${fromRef} = false;
-                    switch (${this.builder.reader.int8()}) {
-                        case ${RefFlags.RefValueFlag}:
-                            ${fromRef} = true;
+                    const ${refFlag} = ${this.builder.reader.int8()};
+                    switch (${refFlag}) {
                         case ${RefFlags.NotNullValueFlag}:
                         case ${RefFlags.RefValueFlag}:
-                            ${innerGenerator.toReadEmbed(x => `${this.putAccessor(result, x, idx)}`, true, RefState.fromCondition(fromRef))}
+                            ${innerGenerator.toReadEmbed(x => `${this.putAccessor(result, x, idx)}`, true, RefState.fromCondition(`${refFlag} === ${RefFlags.RefValueFlag}`))}
                             break;
                         case ${RefFlags.RefFlag}:
                             ${this.putAccessor(result, this.builder.referenceResolver.getReadObject(this.builder.reader.varUInt32()), idx)}
@@ -350,12 +348,10 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
 
   readStmt(accessor: (expr: string) => string, refState: RefState): string {
     if (this.isAny()) {
-      return refState.wrap((need) => {
-        return accessor(`new (${this.builder.getExternal(CollectionAnySerializer.name)})(${this.builder.furyName()}).read((result, i, v) => {
-                ${this.putAccessor("result", "v", "i")};
-            }, (len) => ${this.newCollection("len")}, ${need});
-        `);
-      });
+      return accessor(`new (${this.builder.getExternal(CollectionAnySerializer.name)})(${this.builder.furyName()}).read((result, i, v) => {
+              ${this.putAccessor("result", "v", "i")};
+          }, (len) => ${this.newCollection("len")}, ${refState.toConditionExpr()});
+      `);
     }
     return this.readStmtSpecificType(accessor, refState);
   }

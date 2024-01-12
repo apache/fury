@@ -66,6 +66,17 @@ export class RefState {
     return v ? new RefState(RefStateType.True) : new RefState(RefStateType.False);
   }
 
+  toConditionExpr() {
+    const ref = this!.getState();
+    if (ref === RefStateType.Condition) {
+      return this.conditionAccessor;
+    } else if (ref === RefStateType.False) {
+      return 'false'
+    } else {
+      return 'true'
+    }
+  }
+
   wrap(inner: (need: boolean) => string) {
     const ref = this!.getState();
     if (ref === RefStateType.Condition) {
@@ -98,13 +109,19 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
   abstract readStmt(accessor: (expr: string) => string, refState: RefState): string;
 
   protected maybeReference(accessor: string, refState: RefState) {
-    return refState.wrap((fromRef) => {
-      if (fromRef) {
-        return this.builder.referenceResolver.reference(accessor);
-      } else {
-        return "";
-      }
-    });
+    if (refState.getState() === RefStateType.False) {
+      return '';
+    }
+    if (refState.getState() === RefStateType.True) {
+      return this.builder.referenceResolver.reference(accessor);
+    }
+    if (refState.getState() === RefStateType.Condition) {
+      return `
+        if (${refState.getCondition()}) {
+          ${this.builder.referenceResolver.reference(accessor)}
+        }
+      `
+    }
   }
 
   safeTag() {
@@ -155,19 +172,17 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
   }
 
   protected wrapReadHead(accessor: (expr: string) => string, stmt: (accessor: (expr: string) => string, refState: RefState) => string) {
-    const fromRef = this.scope.uniqueName("fromRef");
+    const refFlag = this.scope.uniqueName("refFlag");
 
     return `
-      let ${fromRef} = false;
-      switch (${this.builder.reader.int8()}) {
-          case ${RefFlags.RefValueFlag}:
-              ${fromRef} = true;
+      const ${refFlag} = ${this.builder.reader.int8()};
+      switch (${refFlag}) {
           case ${RefFlags.NotNullValueFlag}:
           case ${RefFlags.RefValueFlag}:
               if (${this.builder.reader.int16()} === ${InternalSerializerType.FURY_TYPE_TAG}) {
                   ${this.builder.classResolver.readTag(this.builder.reader.ownName())};
               }
-              ${stmt(accessor, RefState.fromCondition(fromRef))}
+              ${stmt(accessor, RefState.fromCondition(`${refFlag} === ${RefFlags.RefValueFlag}`))}
               break;
           case ${RefFlags.RefFlag}:
               ${accessor(this.builder.referenceResolver.getReadObject(this.builder.reader.varUInt32()))}
@@ -204,7 +219,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
         ${this.readStmt(x => `return ${x}`, RefState.fromCondition("fromRef"))}
       };
       const read = () => {
-        ${this.wrapReadHead(x => `return ${x}`, (accessor, fromRef) => accessor(`readInner(${Boolean(fromRef)})`))}
+        ${this.wrapReadHead(x => `return ${x}`, (accessor, refState) => accessor(`readInner(${refState.getCondition()})`))}
       };
       const writeInner = (v) => {
         ${this.writeStmt("v")}
