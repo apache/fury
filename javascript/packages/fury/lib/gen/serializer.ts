@@ -155,7 +155,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
   }
 
   protected wrapReadHead(accessor: (expr: string) => string, stmt: (accessor: (expr: string) => string, refState: RefState) => string) {
-    const fromRef = this.scope.uniqueName('fromRef');
+    const fromRef = this.scope.uniqueName("fromRef");
 
     return `
       let ${fromRef} = false;

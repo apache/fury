@@ -290,7 +290,7 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
     const len = this.scope.uniqueName("len");
     const flags = this.scope.uniqueName("flags");
     const idx = this.scope.uniqueName("idx");
-    const fromRef = this.scope.uniqueName('fromRef');
+    const fromRef = this.scope.uniqueName("fromRef");
 
     // If track elements ref, use first bit 0b1 of header to flag it.
     // If collection has null, use second bit 0b10 of header to flag it. If ref tracking is enabled for this element type, this flag is invalid.
