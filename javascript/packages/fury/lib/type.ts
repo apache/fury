@@ -68,7 +68,7 @@ export type Serializer<T = any, T2 = any> = {
   write: (v: T2) => T
   readInner: () => T2
   writeInner: (v: T2) => T
-  meta: Meta<T2>
+  meta: Meta
 };
 
 export enum RefFlags {

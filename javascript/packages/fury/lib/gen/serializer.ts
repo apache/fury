@@ -53,12 +53,11 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
   }
 
   safeTag() {
-    return CodecBuilder.replaceBackslashAndQuote((<ObjectTypeDescription> this.description).options.tag);
+    return CodecBuilder.replaceBackslashAndQuote((<ObjectTypeDescription>this.description).options.tag);
   }
 
   protected wrapWriteHead(accessor: string, stmt: (accessor: string) => string) {
     const meta = this.builder.meta(this.description);
-    const noneable = meta.noneable;
 
     const maybeTag = () => {
       if (this.description.type !== InternalSerializerType.FURY_TYPE_TAG) {
@@ -68,11 +67,10 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
       return `${tagWriter}.write(${this.builder.writer.ownName()})`;
     };
 
-    if (noneable) {
+    if (meta.needToWriteRef) {
       const head = makeHead(RefFlags.RefValueFlag, this.description.type);
-      if (this.builder.config().refTracking) {
-        const existsId = this.scope.uniqueName("existsId");
-        return `
+      const existsId = this.scope.uniqueName("existsId");
+      return `
                 if (${accessor} !== null && ${accessor} !== undefined) {
                     const ${existsId} = ${this.builder.referenceResolver.existsWriteObject(accessor)};
                     if (typeof ${existsId} === "number") {
@@ -88,26 +86,15 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
                     ${this.builder.writer.int8(RefFlags.NullFlag)};
                 }
                 `;
-      } else {
-        return `
-          if (${accessor} !== null && ${accessor} !== undefined) {
-              ${this.builder.writer.int24(head)};
-              ${maybeTag()}
-              ${stmt(accessor)};
-          } else {
-              ${this.builder.writer.int8(RefFlags.NullFlag)};
-          }
-        `;
-      }
     } else {
       const head = makeHead(RefFlags.NotNullValueFlag, this.description.type);
       return `
-            ${this.builder.writer.int24(head)};
-            ${maybeTag()}
             if (${accessor} !== null && ${accessor} !== undefined) {
+                ${this.builder.writer.int24(head)};
+                ${maybeTag()}
                 ${stmt(accessor)};
             } else {
-                ${typeof meta.default === "string" ? stmt(`"${meta.default}"`) : stmt(meta.default)};
+                ${this.builder.writer.int8(RefFlags.NullFlag)};
             }`;
     }
   }

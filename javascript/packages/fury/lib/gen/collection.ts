@@ -220,16 +220,14 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
     if (meta.needToWriteRef) {
       stmts.push(`${flagAccessor} |= ${CollectionFlags.TRACKING_REF}`);
     }
-    if (meta.noneable) {
-      stmts.push(`
-                for (const ${item} of ${accessor}) {
-                    if (${item} === null || ${item} === undefined) {
-                        ${flagAccessor} |= ${CollectionFlags.HAS_NULL};
-                        break;
-                    }
-                }
-            `);
-    }
+    stmts.push(`
+        for (const ${item} of ${accessor}) {
+            if (${item} === null || ${item} === undefined) {
+                ${flagAccessor} |= ${CollectionFlags.HAS_NULL};
+                break;
+            }
+        }
+    `);
     stmts.push(`${this.builder.writer.uint8(flagAccessor)}`);
     return stmts.join("\n");
   }

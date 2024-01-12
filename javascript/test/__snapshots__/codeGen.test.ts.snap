@@ -12,7 +12,7 @@ return function(fury, external) {
   const tag_ser_4 = fury.classResolver.getSerializerByTag("example.foo.2");
   const tag_ser_12 = fury.classResolver.getSerializerByTag("example.bar.1");
   const tag_ser_13 = fury.classResolver.getSerializerByTag("example.bar.2");
-  const tagWriter_19 = cr.createTagWriter("tuple-object-wrapper");
+  const tagWriter_34 = cr.createTagWriter("tuple-object-wrapper");
   
   const readInner = () => {
     
@@ -185,17 +185,17 @@ return function(fury, external) {
   };
   const writeInner = (v) => {
     
-    tagWriter_19.write(bw);
     bw.int32(16469457);
     
     if (v.tuple1 !== null && v.tuple1 !== undefined) {
-      const existsId_20 = rr.existsWriteObject(v.tuple1);
-      if (typeof existsId_20 === "number") {
+      const existsId_19 = rr.existsWriteObject(v.tuple1);
+      if (typeof existsId_19 === "number") {
         bw.int8(-2)
-        bw.varUInt32(existsId_20)
+        bw.varUInt32(existsId_19)
       } else {
         rr.writeRef(v.tuple1)
         bw.int24(6400);
+        
         
         bw.varUInt32(2)
         bw.reserve(148);
@@ -207,13 +207,14 @@ return function(fury, external) {
     };
     
     if (v.tuple1_ !== null && v.tuple1_ !== undefined) {
-      const existsId_23 = rr.existsWriteObject(v.tuple1_);
-      if (typeof existsId_23 === "number") {
+      const existsId_22 = rr.existsWriteObject(v.tuple1_);
+      if (typeof existsId_22 === "number") {
         bw.int8(-2)
-        bw.varUInt32(existsId_23)
+        bw.varUInt32(existsId_22)
       } else {
         rr.writeRef(v.tuple1_)
         bw.int24(6400);
+        
         
         bw.varUInt32(2)
         bw.reserve(148);
@@ -225,13 +226,14 @@ return function(fury, external) {
     };
     
     if (v.tuple2 !== null && v.tuple2 !== undefined) {
-      const existsId_26 = rr.existsWriteObject(v.tuple2);
-      if (typeof existsId_26 === "number") {
+      const existsId_25 = rr.existsWriteObject(v.tuple2);
+      if (typeof existsId_25 === "number") {
         bw.int8(-2)
-        bw.varUInt32(existsId_26)
+        bw.varUInt32(existsId_25)
       } else {
         rr.writeRef(v.tuple2)
         bw.int24(6400);
+        
         
         bw.varUInt32(3)
         bw.reserve(222);
@@ -244,13 +246,14 @@ return function(fury, external) {
     };
     
     if (v.tuple2_ !== null && v.tuple2_ !== undefined) {
-      const existsId_30 = rr.existsWriteObject(v.tuple2_);
-      if (typeof existsId_30 === "number") {
+      const existsId_29 = rr.existsWriteObject(v.tuple2_);
+      if (typeof existsId_29 === "number") {
         bw.int8(-2)
-        bw.varUInt32(existsId_30)
+        bw.varUInt32(existsId_29)
       } else {
         rr.writeRef(v.tuple2_)
         bw.int24(6400);
+        
         
         bw.varUInt32(3)
         bw.reserve(222);
@@ -267,13 +270,14 @@ return function(fury, external) {
   const write = (v) => {
     
     if (v !== null && v !== undefined) {
-      const existsId_34 = rr.existsWriteObject(v);
-      if (typeof existsId_34 === "number") {
+      const existsId_33 = rr.existsWriteObject(v);
+      if (typeof existsId_33 === "number") {
         bw.int8(-2)
-        bw.varUInt32(existsId_34)
+        bw.varUInt32(existsId_33)
       } else {
         rr.writeRef(v)
         bw.int24(65536);
+        tagWriter_34.write(bw)
         writeInner(v);
       }
     } else {
@@ -289,7 +293,8 @@ return function(fury, external) {
     writeInner,
     meta: {
       "fixedSize": 67,
-      "noneable": true
+      "needToWriteRef": true,
+      "type": 256
     }
   };
 }
@@ -304,7 +309,7 @@ return function(fury, external) {
   const bw = fury.binaryWriter;
   const cr = fury.classResolver;
   const rr = fury.referenceResolver;
-  const tagWriter_6 = cr.createTagWriter("tuple-object-type3-tag");
+  const tagWriter_10 = cr.createTagWriter("tuple-object-type3-tag");
   
   const readInner = () => {
     
@@ -476,62 +481,67 @@ return function(fury, external) {
   };
   const writeInner = (v) => {
     
-    tagWriter_6.write(bw);
     bw.int32(552);
     
     if (v.tuple !== null && v.tuple !== undefined) {
-      const existsId_7 = rr.existsWriteObject(v.tuple);
-      if (typeof existsId_7 === "number") {
+      const existsId_6 = rr.existsWriteObject(v.tuple);
+      if (typeof existsId_6 === "number") {
         bw.int8(-2)
-        bw.varUInt32(existsId_7)
+        bw.varUInt32(existsId_6)
       } else {
         rr.writeRef(v.tuple)
         bw.int24(6400);
         
+        
         bw.varUInt32(4)
         bw.reserve(26);
         
-        bw.int24(3583);
         if (v.tuple[0] !== null && v.tuple[0] !== undefined) {
+          bw.int24(3583);
+          
           bw.stringOfVarUInt32(v.tuple[0]);
         } else {
-          bw.stringOfVarUInt32("");
+          bw.int8(-3);
         }
         
-        bw.int24(511);
         if (v.tuple[1] !== null && v.tuple[1] !== undefined) {
+          bw.int24(511);
+          
           bw.uint8(v.tuple[1] ? 1 : 0);
         } else {
-          bw.uint8(0 ? 1 : 0);
+          bw.int8(-3);
         }
         
-        bw.int24(1791);
         if (v.tuple[2] !== null && v.tuple[2] !== undefined) {
+          bw.int24(1791);
+          
           bw.uint32(v.tuple[2]);
         } else {
-          bw.uint32(0);
+          bw.int8(-3);
         }
         
         if (v.tuple[3] !== null && v.tuple[3] !== undefined) {
-          const existsId_8 = rr.existsWriteObject(v.tuple[3]);
-          if (typeof existsId_8 === "number") {
+          const existsId_7 = rr.existsWriteObject(v.tuple[3]);
+          if (typeof existsId_7 === "number") {
             bw.int8(-2)
-            bw.varUInt32(existsId_8)
+            bw.varUInt32(existsId_7)
           } else {
             rr.writeRef(v.tuple[3])
             bw.int24(6400);
+            
             
             bw.varUInt32(1)
             bw.reserve(8);
             
             if (v.tuple[3][0] !== null && v.tuple[3][0] !== undefined) {
-              const existsId_9 = rr.existsWriteObject(v.tuple[3][0]);
-              if (typeof existsId_9 === "number") {
+              const existsId_8 = rr.existsWriteObject(v.tuple[3][0]);
+              if (typeof existsId_8 === "number") {
                 bw.int8(-2)
-                bw.varUInt32(existsId_9)
+                bw.varUInt32(existsId_8)
               } else {
                 rr.writeRef(v.tuple[3][0])
                 bw.int24(3584);
+                
                 
                 bw.uint8(1)
                 bw.uint32(v.tuple[3][0].byteLength)
@@ -558,13 +568,14 @@ return function(fury, external) {
   const write = (v) => {
     
     if (v !== null && v !== undefined) {
-      const existsId_10 = rr.existsWriteObject(v);
-      if (typeof existsId_10 === "number") {
+      const existsId_9 = rr.existsWriteObject(v);
+      if (typeof existsId_9 === "number") {
         bw.int8(-2)
-        bw.varUInt32(existsId_10)
+        bw.varUInt32(existsId_9)
       } else {
         rr.writeRef(v)
         bw.int24(65536);
+        tagWriter_10.write(bw)
         writeInner(v);
       }
     } else {
@@ -580,7 +591,8 @@ return function(fury, external) {
     writeInner,
     meta: {
       "fixedSize": 48,
-      "noneable": true
+      "needToWriteRef": true,
+      "type": 256
     }
   };
 }

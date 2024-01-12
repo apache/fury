@@ -231,7 +231,7 @@ describe('object', () => {
         kind: "123",
     });
     const obj = deserialize(bin);
-    expect({kind: "123", path: ""}).toEqual(obj)
+    expect({kind: "123", path: null}).toEqual(obj)
 })
 });
 

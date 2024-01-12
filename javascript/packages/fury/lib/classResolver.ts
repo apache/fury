@@ -70,7 +70,6 @@ const uninitSerialize = {
   meta: {
     fixedSize: 0,
     type: InternalSerializerType.ANY,
-    noneable: false,
     needToWriteRef: false,
   },
 };
