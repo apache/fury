@@ -333,7 +333,7 @@ export const BinaryWriter = (config: Config) => {
     varUInt32,
     varUInt64,
     varInt64,
-    stringOfVarUInt32: config?.hps
+    stringOfVarUInt32: config && config.hps
       ? stringOfVarUInt32Fast()
       : stringOfVarUInt32Slow,
     bufferWithoutMemCheck,
