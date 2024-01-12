@@ -23,7 +23,6 @@ import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.reflect.TypeToken;
 import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -33,6 +32,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.ReflectionUtils;
 
 /** GenericType for building java generics as a tree and binding with fury serializers. */
 // TODO(chaokunyang) refine generics which can be inspired by spring ResolvableType.
@@ -41,9 +41,9 @@ public class GenericType {
   static final Predicate<Type> defaultFinalPredicate =
       type -> {
         if (type.getClass() == Class.class) {
-          return Modifier.isFinal(((Class<?>) type).getModifiers());
+          return ReflectionUtils.isMonomorphic(((Class<?>) type));
         } else {
-          return Modifier.isFinal((getRawType(type)).getModifiers());
+          return ReflectionUtils.isMonomorphic((getRawType(type)));
         }
       };
 
@@ -54,18 +54,18 @@ public class GenericType {
   final GenericType typeParameter0;
   final GenericType typeParameter1;
   final boolean hasGenericParameters;
-  final boolean isFinal;
+  final boolean isMonomorphic;
   // Used to cache serializer for final class to avoid hash lookup for serializer.
   Serializer<?> serializer;
   private Boolean trackingRef;
 
-  public GenericType(TypeToken<?> typeToken, boolean isFinal, GenericType... typeParameters) {
+  public GenericType(TypeToken<?> typeToken, boolean isMonomorphic, GenericType... typeParameters) {
     this.typeToken = typeToken;
     this.cls = getRawType(typeToken);
     this.typeParameters = typeParameters;
     typeParametersCount = typeParameters.length;
     hasGenericParameters = typeParameters.length > 0;
-    this.isFinal = isFinal;
+    this.isMonomorphic = isMonomorphic;
     if (typeParameters.length > 0) {
       typeParameter0 = typeParameters[0];
     } else {
@@ -187,12 +187,12 @@ public class GenericType {
     return serializer;
   }
 
-  public boolean isFinal() {
-    return isFinal;
+  public boolean isMonomorphic() {
+    return isMonomorphic;
   }
 
   public Serializer<?> getSerializerOrNull(ClassResolver classResolver) {
-    if (isFinal) {
+    if (isMonomorphic) {
       return getSerializer(classResolver);
     } else {
       return null;

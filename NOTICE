@@ -39,7 +39,7 @@ The text of each license is the standard Apache 2.0 license.
 
 * fast-serialization (https://github.com/RuedigerMoeller/fast-serialization)
     Files:
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/Identity2IdMap.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/Identity2IdMap.java
 
 * ray (https://github.com/ray-project/ray)
     Files:
@@ -54,13 +54,13 @@ The text of each license is also included in licenses/LICENSE-[project].txt.
 
 * kryo (https://github.com/EsotericSoftware/kryo)
     Files:
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Data.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Image.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Media.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/MediaContent.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Sample.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/BufferType.java
-      java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/KryoState.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/data/Data.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/data/Image.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/data/Media.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/data/MediaContent.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/data/Sample.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/state/BufferType.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/state/KryoState.java
       java/fury-core/src/main/java/org/apache/fury/collection/FuryObjectMap.java
       java/fury-core/src/main/java/org/apache/fury/collection/IdentityMap.java
       java/fury-core/src/main/java/org/apache/fury/collection/IdentityObjectIntMap.java

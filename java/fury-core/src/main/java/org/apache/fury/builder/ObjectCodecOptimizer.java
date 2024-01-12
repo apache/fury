@@ -95,8 +95,8 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
     // Note get field value also took some byte code if not public.
     List<Descriptor> primitiveDescriptorsList =
         new ArrayList<>(descriptorGrouper.getPrimitiveDescriptors());
-    while (primitiveDescriptorsList.size() > 0) {
-      int endIndex = Math.min(24, primitiveDescriptorsList.size());
+    while (!primitiveDescriptorsList.isEmpty()) {
+      int endIndex = Math.min(20, primitiveDescriptorsList.size());
       primitiveGroups.add(primitiveDescriptorsList.subList(0, endIndex));
       primitiveDescriptorsList =
           primitiveDescriptorsList.subList(endIndex, primitiveDescriptorsList.size());

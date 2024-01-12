@@ -1,4 +1,3 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load("@com_github_grpc_grpc//bazel:cython_library.bzl", "pyx_library")
 
 
@@ -14,7 +13,7 @@ pyx_library(
         linkstatic = 1,
     ),
     deps = [
-        "//src/fury/util:fury_util",
+        "//cpp/fury/util:fury_util",
     ],
 )
 
@@ -29,7 +28,7 @@ pyx_library(
         linkstatic = 1,
     ),
     deps = [
-        "//src/fury/thirdparty:libmmh3",
+        "//cpp/fury/thirdparty:libmmh3",
     ],
 )
 
@@ -45,7 +44,7 @@ pyx_library(
         linkstatic = 1,
     ),
     deps = [
-        "//src/fury/util:fury_util",
+        "//cpp/fury/util:fury_util",
         "@com_google_absl//absl/container:flat_hash_map",
     ],
 )
@@ -65,7 +64,7 @@ pyx_library(
         linkstatic = 1,
     ),
     deps = [
-        "//src/fury:fury",
+        "//cpp/fury:fury",
         "@local_config_pyarrow//:python_numpy_headers",
         "@local_config_pyarrow//:arrow_python_shared_library"
     ],

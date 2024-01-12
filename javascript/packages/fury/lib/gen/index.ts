@@ -34,6 +34,8 @@ import "./set";
 import "./tuple";
 import "./typedArray";
 import Fury from "../fury";
+import "./enum";
+
 export { AnySerializer } from "./any";
 
 const external = CodegenRegistry.getExternal();

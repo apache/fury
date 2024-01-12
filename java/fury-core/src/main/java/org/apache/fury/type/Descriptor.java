@@ -143,6 +143,10 @@ public class Descriptor {
     return modifier;
   }
 
+  public boolean isFinalField() {
+    return Modifier.isFinal(modifier);
+  }
+
   public String getDeclaringClass() {
     return declaringClass;
   }

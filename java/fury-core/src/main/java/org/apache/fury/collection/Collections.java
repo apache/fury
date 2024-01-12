@@ -19,8 +19,6 @@
 
 package org.apache.fury.collection;
 
-import static org.apache.fury.util.unsafe._Collections.setArrayListElements;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,6 +27,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class Collections {
   /**
    * Returns a sequential {@link Stream} of the contents of {@code iterable}, delegating to {@link
@@ -41,29 +40,91 @@ public class Collections {
   }
 
   /** Create an {@link ArrayList} from provided elements. */
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public static <T> ArrayList<T> ofArrayList(T... elements) {
-    ArrayList list = new ArrayList(elements.length);
-    setArrayListElements(list, elements);
+  public static <T> ArrayList<T> ofArrayList(T e) {
+    ArrayList<T> list = new ArrayList(1);
+    list.add(e);
     return list;
   }
 
-  /** Create a {@link HashMap} from provided kv pairs. */
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public static <K, V> HashMap<K, V> ofHashMap(Object... kv) {
-    if (kv.length % 2 != 0) {
-      throw new IllegalArgumentException(
-          String.format("entries got %d objects, which aren't pairs", kv.length));
-    }
-    int size = kv.length / 2;
-    HashMap map = new HashMap<>(size);
-    for (int i = 0; i < kv.length; i += 2) {
-      map.put(kv[i], kv[i + 1]);
-    }
-    return map;
+  /** Create an {@link ArrayList} from provided elements. */
+  public static <T> ArrayList<T> ofArrayList(T e1, T e2) {
+    ArrayList<T> list = new ArrayList(2);
+    list.add(e1);
+    list.add(e2);
+    return list;
   }
 
-  public static <E> HashSet<E> ofHashSet(E... elements) {
+  /** Create an {@link ArrayList} from provided elements. */
+  public static <T> ArrayList<T> ofArrayList(T e1, T e2, T e3) {
+    ArrayList<T> list = new ArrayList(3);
+    list.add(e1);
+    list.add(e2);
+    list.add(e3);
+    return list;
+  }
+
+  /** Create an {@link ArrayList} from provided elements. */
+  public static <T> ArrayList<T> ofArrayList(T e1, T e2, T e3, T e4) {
+    ArrayList<T> list = new ArrayList(3);
+    list.add(e1);
+    list.add(e2);
+    list.add(e3);
+    list.add(e4);
+    return list;
+  }
+
+  /** Create an {@link ArrayList} from provided elements. */
+  public static <T> ArrayList<T> ofArrayList(T e1, T e2, T e3, T e4, T e5) {
+    ArrayList<T> list = new ArrayList(3);
+    list.add(e1);
+    list.add(e2);
+    list.add(e3);
+    list.add(e4);
+    list.add(e5);
+    return list;
+  }
+
+  public static <E> HashSet<E> ofHashSet(E e) {
+    HashSet<E> set = new HashSet<>(1);
+    set.add(e);
+    return set;
+  }
+
+  public static <E> HashSet<E> ofHashSet(E e1, E e2) {
+    HashSet<E> set = new HashSet<>(2);
+    set.add(e1);
+    set.add(e2);
+    return set;
+  }
+
+  public static <E> HashSet<E> ofHashSet(E e1, E e2, E e3) {
+    HashSet<E> set = new HashSet<>(2);
+    set.add(e1);
+    set.add(e2);
+    set.add(e3);
+    return set;
+  }
+
+  public static <E> HashSet<E> ofHashSet(E e1, E e2, E e3, E e4) {
+    HashSet<E> set = new HashSet<>(2);
+    set.add(e1);
+    set.add(e2);
+    set.add(e3);
+    set.add(e4);
+    return set;
+  }
+
+  public static <E> HashSet<E> ofHashSet(E e1, E e2, E e3, E e4, E e5) {
+    HashSet<E> set = new HashSet<>(2);
+    set.add(e1);
+    set.add(e2);
+    set.add(e3);
+    set.add(e4);
+    set.add(e5);
+    return set;
+  }
+
+  public static <E> HashSet<E> ofHashSet(E[] elements) {
     HashSet<E> set = new HashSet<>(elements.length);
     java.util.Collections.addAll(set, elements);
     return set;
@@ -83,5 +144,19 @@ public class Collections {
       }
     }
     return false;
+  }
+
+  /** Create a {@link HashMap} from provided kv pairs. */
+  public static <K, V> HashMap<K, V> ofHashMap(Object... kv) {
+    if (kv.length % 2 != 0) {
+      throw new IllegalArgumentException(
+          String.format("entries got %d objects, which aren't pairs", kv.length));
+    }
+    int size = kv.length / 2;
+    HashMap map = new HashMap<>(size);
+    for (int i = 0; i < kv.length; i += 2) {
+      map.put(kv[i], kv[i + 1]);
+    }
+    return map;
   }
 }

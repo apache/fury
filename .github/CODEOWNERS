@@ -3,7 +3,7 @@ scala @chaokunyang
 go @chaokunyang
 integration_tests @chaokunyang
 python @chaokunyang
-src @chaokunyang @PragmaTwice
+cpp @chaokunyang @PragmaTwice
 rust @theweipeng @chaokunyang
 javascript @theweipeng
 docs @chaokunyang @theweipeng @PragmaTwice

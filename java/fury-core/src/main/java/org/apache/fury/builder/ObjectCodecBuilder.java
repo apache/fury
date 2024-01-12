@@ -128,8 +128,8 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
 
   /** Mark non-inner registered final types as non-final to write class def for those types. */
   @Override
-  protected boolean isFinal(Class<?> clz) {
-    return visitFury(f -> f.getClassResolver().isFinal(clz));
+  protected boolean isMonomorphic(Class<?> clz) {
+    return visitFury(f -> f.getClassResolver().isMonomorphic(clz));
   }
 
   /**

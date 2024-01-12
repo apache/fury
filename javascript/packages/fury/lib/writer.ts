@@ -229,13 +229,30 @@ export const BinaryWriter = (config: Config) => {
     return varUInt32((v << 1) ^ (v >> 31));
   }
 
-  function varUInt32(val: number) {
-    val = (val >>> 0) & 0xFFFFFFFF; // keep only the lower 32 bits
-    while (val > 127) {
-      arrayBuffer[cursor++] = val & 127 | 128;
-      val >>>= 7;
+  function varUInt32(value: number) {
+    value = (value >>> 0) & 0xFFFFFFFF; // keep only the lower 32 bits
+
+    if (value >> 7 == 0) {
+      arrayBuffer[cursor++] = value;
+      return;
     }
-    arrayBuffer[cursor++] = val;
+    const rawCursor = cursor;
+    let u32 = 0;
+    if (value >> 14 == 0) {
+      u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7) << 16);
+      cursor += 2;
+    } else if (value >> 21 == 0) {
+      u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7 & 0x7f | 0x80) << 16) | ((value >> 14) << 8);
+      cursor += 3;
+    } else if (value >> 28 == 0) {
+      u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7 & 0x7f | 0x80) << 16) | ((value >> 14 & 0x7f | 0x80) << 8) | (value >> 21);
+      cursor += 4;
+    } else {
+      u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7 & 0x7f | 0x80) << 16) | ((value >> 14 & 0x7f | 0x80) << 8) | (value >> 21 & 0x7f | 0x80);
+      arrayBuffer[rawCursor + 4] = value >> 28;
+      cursor += 5;
+    }
+    dataView.setUint32(rawCursor, u32);
   }
 
   function varInt64(v: bigint) {

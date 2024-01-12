@@ -414,7 +414,19 @@ public class ReflectionUtils {
     return Modifier.isPrivate(cls.getModifiers());
   }
 
-  public static boolean isFinal(Class<?> targetType) {
+  /** Returns true if this type can be assigned from other types. */
+  public static boolean isPolyMorphic(Class<?> targetType) {
+    if (targetType.isArray()) {
+      return isPolyMorphic(targetType.getComponentType());
+    }
+    return !Modifier.isFinal(targetType.getModifiers());
+  }
+
+  /** Returns true if this type can't be assigned from other types. */
+  public static boolean isMonomorphic(Class<?> targetType) {
+    if (targetType.isArray()) {
+      return isMonomorphic(targetType.getComponentType());
+    }
     return Modifier.isFinal(targetType.getModifiers());
   }
 

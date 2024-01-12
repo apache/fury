@@ -144,6 +144,11 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         needToWriteRef: Boolean(fury.config.refTracking) && true,
         type,
       };
+    case InternalSerializerType.ENUM:
+      return {
+        fixedSize: 7,
+        noneable: true,
+      };
     default:
       throw new Error(`Meta of ${description.type} not exists`);
   }

@@ -102,10 +102,6 @@ jobs:
         with:
           java-version: 8
           distribution: 'temurin'
-      - name: Install fury-benchmark jar
-        run: |
-          cd java && mvn -T10 -B --no-transfer-progress clean install -DskipTests && cd -
-          cd java/fury-benchmark && mvn -T10 -B --no-transfer-progress clean install -DskipTests -Pjmh && cd -
       - name: Run CI
         run: ./ci/run_ci.sh integration_tests
 
@@ -145,11 +141,8 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
-      - name: Install bazel
-        run: ./ci/run_ci.sh install_bazel
       - name: Run C++ CI with Bazel
-        run: ./ci/run_ci.sh cpp
-
+        run: python ./ci/run_ci.py cpp
   python:
     name: Python CI
     # Fix python 3.6 install issue, see
