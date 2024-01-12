@@ -339,6 +339,13 @@ public final class FuryBuilder {
     return newFury(this, loader);
   }
 
+  /** Build thread safe fury with default params. */
+  public ThreadSafeFury buildThreadSafeFury() {
+    Runtime runtime = Runtime.getRuntime();
+    int cores = runtime.availableProcessors();
+    return buildThreadSafeFuryPool(cores, cores * 2);
+  }
+
   /** Build thread safe fury. */
   public ThreadSafeFury buildThreadSafeFury(int minPoolSize, int maxPoolSize) {
     return buildThreadSafeFuryPool(minPoolSize, maxPoolSize);

@@ -145,13 +145,13 @@ public class ThreadSafeFuryTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .buildThreadSafeFury(5, 10);
+            .buildThreadSafeFury();
     ThreadSafeFury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withMetaContextShare(true)
             .requireClassRegistration(false)
-            .buildThreadSafeFury(5, 10);
+            .buildThreadSafeFury();
     BeanA beanA = BeanA.createBeanA(2);
     ExecutorService executorService = Executors.newFixedThreadPool(12);
     ConcurrentHashMap<Thread, MetaContext> metaMap = new ConcurrentHashMap<>();
@@ -220,7 +220,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
 
   @Test(dataProvider = "stagingConfig")
   public void testClassDuplicateName(StagingType staging) {
-    ThreadSafeFury fury = Fury.builder().requireClassRegistration(false).buildThreadSafeFury(5, 10);
+    ThreadSafeFury fury = Fury.builder().requireClassRegistration(false).buildThreadSafeFury();
     String className = "DuplicateStruct";
 
     Class<?> structClass1 = Struct.createStructClass(className, 1);
@@ -277,7 +277,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   }
 
   private WeakHashMap<Class<?>, Boolean> generateClassForGC() {
-    ThreadSafeFury fury = Fury.builder().requireClassRegistration(false).buildThreadSafeFury(5, 10);
+    ThreadSafeFury fury = Fury.builder().requireClassRegistration(false).buildThreadSafeFury();
     String className = "DuplicateStruct";
     WeakHashMap<Class<?>, Boolean> map = new WeakHashMap<>();
     {
@@ -309,7 +309,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   public void testSerializeJavaObject() {
     for (ThreadSafeFury fury :
         new ThreadSafeFury[] {
-          Fury.builder().requireClassRegistration(false).buildThreadSafeFury(5, 10),
+          Fury.builder().requireClassRegistration(false).buildThreadSafeFury(),
           Fury.builder().requireClassRegistration(false).buildThreadSafeFuryPool(2, 2)
         }) {
       byte[] bytes = fury.serializeJavaObject("abc");

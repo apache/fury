@@ -39,7 +39,7 @@ public class FuryInitPerf {
   private static final Logger LOG = LoggerFactory.getLogger(FuryInitPerf.class);
 
   public void testFuryInit() {
-    Fury.builder().buildThreadSafeFury(5, 10);
+    Fury.builder().buildThreadSafeFury();
     int num = 1000;
     List<Fury> furyList = new ArrayList<>(num);
     List<Double> durations = new ArrayList<>(num);
@@ -71,7 +71,7 @@ public class FuryInitPerf {
   }
 
   public void testNewFurySerialization() {
-    Fury.builder().buildThreadSafeFury(5, 10);
+    Fury.builder().buildThreadSafeFury();
     int num = 1000;
     Fury fury =
         Fury.builder()
