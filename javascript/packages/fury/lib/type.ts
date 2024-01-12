@@ -66,7 +66,7 @@ export enum ConfigFlags {
 export type Serializer<T = any, T2 = any> = {
   read: () => T2
   write: (v: T2) => T
-  readInner: () => T2
+  readInner: (refValue?: boolean) => T2
   writeInner: (v: T2) => T
   meta: Meta
 };

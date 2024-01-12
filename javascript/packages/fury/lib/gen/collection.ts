@@ -19,7 +19,7 @@
 
 import { TypeDescription } from "../description";
 import { CodecBuilder } from "./builder";
-import { BaseSerializerGenerator } from "./serializer";
+import { BaseSerializerGenerator, RefState } from "./serializer";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType, RefFlags, Serializer } from "../type";
 import { Scope } from "./scope";
@@ -131,7 +131,7 @@ class CollectionAnySerializer {
     }
   }
 
-  read(accessor: (result: any, index: number, v: any) => void, createCollection: (len: number) => any): any {
+  read(accessor: (result: any, index: number, v: any) => void, createCollection: (len: number) => any, fromRef: boolean): any {
     const flags = this.fury.binaryReader.uint8();
     const isSame = !(flags & CollectionFlags.NOT_SAME_TYPE);
     const includeNone = flags & CollectionFlags.HAS_NULL;
@@ -139,6 +139,9 @@ class CollectionAnySerializer {
       const serializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.int16());
       const len = this.fury.binaryReader.varUInt32();
       const result = createCollection(len);
+      if (fromRef) {
+        this.fury.referenceResolver.reference(result);
+      }
       if (!includeNone) {
         for (let index = 0; index < len; index++) {
           accessor(result, index, serializer.read());
@@ -281,12 +284,13 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
         `;
   }
 
-  readStmtSpecificType(accessor: (expr: string) => string): string {
+  readStmtSpecificType(accessor: (expr: string) => string, refState: RefState): string {
     const innerGenerator = this.innerGenerator();
     const result = this.scope.uniqueName("result");
     const len = this.scope.uniqueName("len");
     const flags = this.scope.uniqueName("flags");
     const idx = this.scope.uniqueName("idx");
+    const fromRef = this.scope.uniqueName('fromRef');
 
     // If track elements ref, use first bit 0b1 of header to flag it.
     // If collection has null, use second bit 0b10 of header to flag it. If ref tracking is enabled for this element type, this flag is invalid.
@@ -297,13 +301,16 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
             ${this.builder.reader.skip(2)};
             const ${len} = ${this.builder.reader.varUInt32()};
             const ${result} = ${this.newCollection(len)};
-            ${this.pushReadRefStmt(result)}
+            ${this.maybeReference(result, refState)}
             if (${flags} & ${CollectionFlags.TRACKING_REF}) {
                 for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
+                    let ${fromRef} = false;
                     switch (${this.builder.reader.int8()}) {
+                        case ${RefFlags.RefValueFlag}:
+                            ${fromRef} = true;
                         case ${RefFlags.NotNullValueFlag}:
                         case ${RefFlags.RefValueFlag}:
-                            ${innerGenerator.toReadEmbed(x => `${this.putAccessor(result, x, idx)}`, true)}
+                            ${innerGenerator.toReadEmbed(x => `${this.putAccessor(result, x, idx)}`, true, RefState.fromCondition(fromRef))}
                             break;
                         case ${RefFlags.RefFlag}:
                             ${this.putAccessor(result, this.builder.referenceResolver.getReadObject(this.builder.reader.varUInt32()), idx)}
@@ -316,14 +323,14 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
             } else {
                 if (!(${flags} & ${CollectionFlags.HAS_NULL})) {
                     for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
-                        ${innerGenerator.toReadEmbed(x => `${this.putAccessor(result, x, idx)}`, true)}
+                        ${innerGenerator.toReadEmbed(x => `${this.putAccessor(result, x, idx)}`, true, RefState.fromFalse())}
                     }
                 } else {
                     for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
                         if (${this.builder.reader.uint8()} == ${RefFlags.NullFlag}) {
                             ${this.putAccessor(result, "null", idx)}
                         } else {
-                            ${innerGenerator.toReadEmbed(x => `${this.putAccessor(result, x, idx)}`, true)}
+                            ${innerGenerator.toReadEmbed(x => `${this.putAccessor(result, x, idx)}`, true, RefState.fromFalse())}
                         }
                     }
                 }
@@ -341,14 +348,16 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
     return this.writeStmtSpecificType(accessor);
   }
 
-  readStmt(accessor: (expr: string) => string): string {
+  readStmt(accessor: (expr: string) => string, refState: RefState): string {
     if (this.isAny()) {
-      return accessor(`new (${this.builder.getExternal(CollectionAnySerializer.name)})(${this.builder.furyName()}).read((result, i, v) => {
-                    ${this.putAccessor("result", "v", "i")};
-                }, (len) => ${this.newCollection("len")});
-            `);
+      return refState.wrap((need) => {
+        return accessor(`new (${this.builder.getExternal(CollectionAnySerializer.name)})(${this.builder.furyName()}).read((result, i, v) => {
+                ${this.putAccessor("result", "v", "i")};
+            }, (len) => ${this.newCollection("len")}, ${need});
+        `);
+      });
     }
-    return this.readStmtSpecificType(accessor);
+    return this.readStmtSpecificType(accessor, refState);
   }
 }
 

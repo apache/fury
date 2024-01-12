@@ -60,13 +60,13 @@ export class AnySerializer {
     const flag = this.fury.referenceResolver.readRefFlag();
     switch (flag) {
       case RefFlags.RefValueFlag:
-        return this.detectSerializer().readInner();
+        return this.detectSerializer().readInner(true);
       case RefFlags.RefFlag:
         return this.fury.referenceResolver.getReadObject(this.fury.binaryReader.varUInt32());
       case RefFlags.NullFlag:
         return null;
       case RefFlags.NotNullValueFlag:
-        return this.detectSerializer().readInner();
+        return this.detectSerializer().readInner(false);
     }
   }
 

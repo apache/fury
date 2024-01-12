@@ -19,7 +19,7 @@
 
 import { TupleTypeDescription, TypeDescription } from "../description";
 import { CodecBuilder } from "./builder";
-import { BaseSerializerGenerator } from "./serializer";
+import { BaseSerializerGenerator, RefState } from "./serializer";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
@@ -64,7 +64,7 @@ class TupleSerializerGenerator extends BaseSerializerGenerator {
         `;
   }
 
-  readStmt(accessor: (expr: string) => string): string {
+  readStmt(accessor: (expr: string) => string, refState: RefState): string {
     const innerGenerator = this.innerGenerator();
     const result = this.scope.uniqueName("result");
     const len = this.scope.uniqueName("len");
@@ -72,7 +72,7 @@ class TupleSerializerGenerator extends BaseSerializerGenerator {
     return `
             const ${len} = ${this.builder.reader.varUInt32()};
             const ${result} = new Array(${len});
-            ${this.pushReadRefStmt(result)}
+            ${this.maybeReference(result, refState)}
             ${
                 innerGenerator.map((generator, index) => {
                     return `

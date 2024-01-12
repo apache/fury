@@ -26,10 +26,62 @@ import { TypeDescription, ObjectTypeDescription } from "../description";
 
 export interface SerializerGenerator {
   writeStmt(accessor: string): string
-  readStmt(accessor: (expr: string) => string): string
+  readStmt(accessor: (expr: string) => string, refState: RefState): string
   toSerializer(): string
   toWriteEmbed(accessor: string, excludeHead?: boolean): string
-  toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean): string
+  toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean, refState?: RefState): string
+}
+
+export enum RefStateType {
+  Condition = "condition",
+  True = "true",
+  False = "false",
+}
+export class RefState {
+  constructor(private state: RefStateType, private conditionAccessor?: string) {
+
+  }
+
+  getState() {
+    return this.state;
+  }
+
+  getCondition() {
+    return this.conditionAccessor;
+  }
+
+  static fromCondition(conditionAccessor: string) {
+    return new RefState(RefStateType.Condition, conditionAccessor);
+  }
+
+  static fromTrue() {
+    return new RefState(RefStateType.True);
+  }
+
+  static fromFalse() {
+    return new RefState(RefStateType.False);
+  }
+
+  static fromBool(v: boolean) {
+    return v ? new RefState(RefStateType.True) : new RefState(RefStateType.False);
+  }
+
+  wrap(inner: (need: boolean) => string) {
+    const ref = this!.getState();
+    if (ref === RefStateType.Condition) {
+      return `
+        if (${this.conditionAccessor}) {
+          ${inner(true)}
+        } else {
+          ${inner(false)}
+        }
+      `;
+    } else if (ref === RefStateType.False) {
+      return inner(false);
+    } else {
+      return inner(true);
+    }
+  }
 }
 
 export abstract class BaseSerializerGenerator implements SerializerGenerator {
@@ -43,17 +95,20 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
 
   abstract writeStmt(accessor: string): string;
 
-  abstract readStmt(accessor: (expr: string) => string): string;
+  abstract readStmt(accessor: (expr: string) => string, refState: RefState): string;
 
-  protected pushReadRefStmt(accessor: string) {
-    if (!this.builder.config().refTracking) {
-      return "";
-    }
-    return this.builder.referenceResolver.reference(accessor);
+  protected maybeReference(accessor: string, refState: RefState) {
+    return refState.wrap((fromRef) => {
+      if (fromRef) {
+        return this.builder.referenceResolver.reference(accessor);
+      } else {
+        return "";
+      }
+    });
   }
 
   safeTag() {
-    return CodecBuilder.replaceBackslashAndQuote((<ObjectTypeDescription>this.description).options.tag);
+    return CodecBuilder.replaceBackslashAndQuote((<ObjectTypeDescription> this.description).options.tag);
   }
 
   protected wrapWriteHead(accessor: string, stmt: (accessor: string) => string) {
@@ -99,15 +154,20 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     }
   }
 
-  protected wrapReadHead(accessor: (expr: string) => string, stmt: (accessor: (expr: string) => string) => string) {
+  protected wrapReadHead(accessor: (expr: string) => string, stmt: (accessor: (expr: string) => string, refState: RefState) => string) {
+    const fromRef = this.scope.uniqueName('fromRef');
+
     return `
+      let ${fromRef} = false;
       switch (${this.builder.reader.int8()}) {
+          case ${RefFlags.RefValueFlag}:
+              ${fromRef} = true;
           case ${RefFlags.NotNullValueFlag}:
           case ${RefFlags.RefValueFlag}:
               if (${this.builder.reader.int16()} === ${InternalSerializerType.FURY_TYPE_TAG}) {
                   ${this.builder.classResolver.readTag(this.builder.reader.ownName())};
               }
-              ${stmt(accessor)}
+              ${stmt(accessor, RefState.fromCondition(fromRef))}
               break;
           case ${RefFlags.RefFlag}:
               ${accessor(this.builder.referenceResolver.getReadObject(this.builder.reader.varUInt32()))}
@@ -126,11 +186,11 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     return this.wrapWriteHead(accessor, accessor => this.writeStmt(accessor));
   }
 
-  toReadEmbed(accessor: (expr: string) => string, excludeHead = false) {
+  toReadEmbed(accessor: (expr: string) => string, excludeHead = false, refState?: RefState) {
     if (excludeHead) {
-      return this.readStmt(accessor);
+      return this.readStmt(accessor, refState!);
     }
-    return this.wrapReadHead(accessor, accessor => this.readStmt(accessor));
+    return this.wrapReadHead(accessor, (accessor, refState) => this.readStmt(accessor, refState));
   }
 
   toSerializer() {
@@ -140,11 +200,11 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     this.scope.assertNameNotDuplicate("writeInner");
 
     const declare = `
-      const readInner = () => {
-        ${this.readStmt(x => `return ${x}`)}
+      const readInner = (fromRef) => {
+        ${this.readStmt(x => `return ${x}`, RefState.fromCondition("fromRef"))}
       };
       const read = () => {
-        ${this.wrapReadHead(x => `return ${x}`, accessor => accessor(`readInner()`))}
+        ${this.wrapReadHead(x => `return ${x}`, (accessor, fromRef) => accessor(`readInner(${Boolean(fromRef)})`))}
       };
       const writeInner = (v) => {
         ${this.writeStmt("v")}

@@ -28,7 +28,6 @@ export type Meta = {
   type: InternalSerializerType
 };
 
-
 export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
   const type = description.type;
   switch (type) {

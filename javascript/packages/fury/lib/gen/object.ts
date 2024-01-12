@@ -23,7 +23,7 @@ import { CodecBuilder } from "./builder";
 import { ObjectTypeDescription, TypeDescription } from "../description";
 import { fromString } from "../platformBuffer";
 import { CodegenRegistry } from "./router";
-import { BaseSerializerGenerator } from "./serializer";
+import { BaseSerializerGenerator, RefState } from "./serializer";
 
 function computeFieldHash(hash: number, id: number): number {
   let newHash = (hash) * 31 + (id);
@@ -85,7 +85,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
         `;
   }
 
-  readStmt(accessor: (expr: string) => string): string {
+  readStmt(accessor: (expr: string) => string, refState: RefState): string {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
     const result = this.scope.uniqueName("result");
@@ -98,7 +98,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
             return `${CodecBuilder.safePropName(key)}: null`;
         }).join(",\n")}
         };
-        ${this.pushReadRefStmt(result)}
+        ${this.maybeReference(result, refState)}
         ${Object.entries(options.props).sort().map(([key, inner]) => {
             const InnerGeneratorClass = CodegenRegistry.get(inner.type);
             if (!InnerGeneratorClass) {
@@ -116,7 +116,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     return CodecBuilder.replaceBackslashAndQuote(this.description.options.tag);
   }
 
-  toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean): string {
+  toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean, refState?: RefState): string {
     const name = this.scope.declare(
       "tag_ser",
             `fury.classResolver.getSerializerByTag("${this.safeTag()}")`
@@ -124,7 +124,9 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     if (!excludeHead) {
       return accessor(`${name}.read()`);
     }
-    return accessor(`${name}.readInner()`);
+    return refState!.wrap((need) => {
+      return accessor(`${name}.readInner(${need})`);
+    });
   }
 
   toWriteEmbed(accessor: string, excludeHead?: boolean): string {
