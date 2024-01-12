@@ -71,9 +71,9 @@ export class RefState {
     if (ref === RefStateType.Condition) {
       return this.conditionAccessor;
     } else if (ref === RefStateType.False) {
-      return 'false'
+      return "false";
     } else {
-      return 'true'
+      return "true";
     }
   }
 
@@ -110,7 +110,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
 
   protected maybeReference(accessor: string, refState: RefState) {
     if (refState.getState() === RefStateType.False) {
-      return '';
+      return "";
     }
     if (refState.getState() === RefStateType.True) {
       return this.builder.referenceResolver.reference(accessor);
@@ -120,7 +120,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
         if (${refState.getCondition()}) {
           ${this.builder.referenceResolver.reference(accessor)}
         }
-      `
+      `;
     }
   }
 
