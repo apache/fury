@@ -35,8 +35,6 @@ return function(fury, external) {
     
     let fromRef_1 = false;
     switch (br.int8()) {
-      case -1:
-        fromRef_1 = false;
       case 0:
         fromRef_1 = true;
       case -1:
@@ -77,8 +75,6 @@ return function(fury, external) {
     
     let fromRef_6 = false;
     switch (br.int8()) {
-      case -1:
-        fromRef_6 = false;
       case 0:
         fromRef_6 = true;
       case -1:
@@ -119,8 +115,6 @@ return function(fury, external) {
     
     let fromRef_11 = false;
     switch (br.int8()) {
-      case -1:
-        fromRef_11 = false;
       case 0:
         fromRef_11 = true;
       case -1:
@@ -166,8 +160,6 @@ return function(fury, external) {
     
     let fromRef_17 = false;
     switch (br.int8()) {
-      case -1:
-        fromRef_17 = false;
       case 0:
         fromRef_17 = true;
       case -1:
@@ -218,8 +210,6 @@ return function(fury, external) {
     
     let fromRef_23 = false;
     switch (br.int8()) {
-      case -1:
-        fromRef_23 = false;
       case 0:
         fromRef_23 = true;
       case -1:
@@ -384,8 +374,6 @@ return function(fury, external) {
     
     let fromRef_1 = false;
     switch (br.int8()) {
-      case -1:
-        fromRef_1 = false;
       case 0:
         fromRef_1 = true;
       case -1:
@@ -408,8 +396,6 @@ return function(fury, external) {
           
           let fromRef_4 = false;
           switch (br.int8()) {
-            case -1:
-              fromRef_4 = false;
             case 0:
               fromRef_4 = true;
             case -1:
@@ -434,8 +420,6 @@ return function(fury, external) {
           
           let fromRef_5 = false;
           switch (br.int8()) {
-            case -1:
-              fromRef_5 = false;
             case 0:
               fromRef_5 = true;
             case -1:
@@ -460,8 +444,6 @@ return function(fury, external) {
           
           let fromRef_6 = false;
           switch (br.int8()) {
-            case -1:
-              fromRef_6 = false;
             case 0:
               fromRef_6 = true;
             case -1:
@@ -486,8 +468,6 @@ return function(fury, external) {
           
           let fromRef_7 = false;
           switch (br.int8()) {
-            case -1:
-              fromRef_7 = false;
             case 0:
               fromRef_7 = true;
             case -1:
@@ -510,8 +490,6 @@ return function(fury, external) {
                 
                 let fromRef_10 = false;
                 switch (br.int8()) {
-                  case -1:
-                    fromRef_10 = false;
                   case 0:
                     fromRef_10 = true;
                   case -1:
@@ -572,8 +550,6 @@ return function(fury, external) {
     
     let fromRef_12 = false;
     switch (br.int8()) {
-      case -1:
-        fromRef_12 = false;
       case 0:
         fromRef_12 = true;
       case -1:
