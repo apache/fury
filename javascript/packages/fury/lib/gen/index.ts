@@ -45,10 +45,13 @@ export const generate = (fury: Fury, description: TypeDescription) => {
   const generator = new InnerGeneratorClass(description, new CodecBuilder(scope, fury), scope);
 
   const funcString = generator.toSerializer();
-  const afterCodeGenerated = fury.config?.hooks?.afterCodeGenerated;
-  if (typeof afterCodeGenerated === "function") {
-    return new Function(afterCodeGenerated(funcString));
+  if (fury.config && fury.config.hooks) {
+    const afterCodeGenerated = fury.config.hooks.afterCodeGenerated;
+    if (typeof afterCodeGenerated === "function") {
+      return new Function(afterCodeGenerated(funcString));
+    }
   }
+
   return new Function(funcString);
 };
 
