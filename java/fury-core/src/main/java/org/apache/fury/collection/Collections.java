@@ -65,7 +65,7 @@ public class Collections {
 
   /** Create an {@link ArrayList} from provided elements. */
   public static <T> ArrayList<T> ofArrayList(T e1, T e2, T e3, T e4) {
-    ArrayList<T> list = new ArrayList(3);
+    ArrayList<T> list = new ArrayList(4);
     list.add(e1);
     list.add(e2);
     list.add(e3);
@@ -75,7 +75,7 @@ public class Collections {
 
   /** Create an {@link ArrayList} from provided elements. */
   public static <T> ArrayList<T> ofArrayList(T e1, T e2, T e3, T e4, T e5) {
-    ArrayList<T> list = new ArrayList(3);
+    ArrayList<T> list = new ArrayList(5);
     list.add(e1);
     list.add(e2);
     list.add(e3);
@@ -98,7 +98,7 @@ public class Collections {
   }
 
   public static <E> HashSet<E> ofHashSet(E e1, E e2, E e3) {
-    HashSet<E> set = new HashSet<>(2);
+    HashSet<E> set = new HashSet<>(3);
     set.add(e1);
     set.add(e2);
     set.add(e3);
@@ -106,7 +106,7 @@ public class Collections {
   }
 
   public static <E> HashSet<E> ofHashSet(E e1, E e2, E e3, E e4) {
-    HashSet<E> set = new HashSet<>(2);
+    HashSet<E> set = new HashSet<>(4);
     set.add(e1);
     set.add(e2);
     set.add(e3);
@@ -115,7 +115,7 @@ public class Collections {
   }
 
   public static <E> HashSet<E> ofHashSet(E e1, E e2, E e3, E e4, E e5) {
-    HashSet<E> set = new HashSet<>(2);
+    HashSet<E> set = new HashSet<>(5);
     set.add(e1);
     set.add(e2);
     set.add(e3);
@@ -148,11 +148,14 @@ public class Collections {
 
   /** Create a {@link HashMap} from provided kv pairs. */
   public static <K, V> HashMap<K, V> ofHashMap(Object... kv) {
-    if (kv.length % 2 != 0) {
+    if (kv == null || kv.length == 0) {
+      throw new IllegalArgumentException("entries got no objects, which aren't pairs");
+    }
+    if ((kv.length & 1) != 0) {
       throw new IllegalArgumentException(
           String.format("entries got %d objects, which aren't pairs", kv.length));
     }
-    int size = kv.length / 2;
+    int size = kv.length >> 1;
     HashMap map = new HashMap<>(size);
     for (int i = 0; i < kv.length; i += 2) {
       map.put(kv[i], kv[i + 1]);
