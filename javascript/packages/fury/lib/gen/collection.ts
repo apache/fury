@@ -160,6 +160,9 @@ class CollectionAnySerializer {
     } else {
       const len = this.fury.binaryReader.varUInt32();
       const result = createCollection(len);
+      if (fromRef) {
+        this.fury.referenceResolver.reference(result);
+      }
       if (!includeNone) {
         for (let index = 0; index < len; index++) {
           const serializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.int16());
