@@ -112,11 +112,11 @@ class CollectionAnySerializer {
     } else {
       if (includeNone) {
         for (const item of value) {
-          const serializer = this.fury.classResolver.getSerializerByData(item);
           if (item === null || item === undefined) {
             this.fury.binaryWriter.uint8(RefFlags.NullFlag);
             continue;
           }
+          const serializer = this.fury.classResolver.getSerializerByData(item);
           this.fury.binaryWriter.uint8(RefFlags.NotNullValueFlag);
           this.fury.binaryWriter.uint16(serializer!.meta.type);
           serializer!.write(item);

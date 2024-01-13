@@ -1,0 +1,159 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`collection can generate collection declaration code 1`] = `
+"function anonymous(
+) {
+return function(fury, external) {
+  const br = fury.binaryReader;
+  const bw = fury.binaryWriter;
+  const cr = fury.classResolver;
+  const rr = fury.referenceResolver;
+  
+  const readInner = (fromRef) => {
+    
+    const flags_2 = br.uint8();
+    br.skip(2);
+    const len_1 = br.varUInt32();
+    const result_0 = new Array(len_1);
+    
+    if (fromRef) {
+      rr.reference(result_0)
+    }
+    
+    if (flags_2 & 1) {
+      for (let idx_3 = 0; idx_3 < len_1; idx_3++) {
+        const refFlag_4 = br.int8();
+        switch (refFlag_4) {
+          case -1:
+          case 0:
+            result_0[idx_3] = br.stringOfVarUInt32()
+            break;
+          case -2:
+            result_0[idx_3] = rr.getReadObject(br.varUInt32())
+            break;
+          case -3:
+            result_0[idx_3] = null
+            break;
+        }
+      }
+    } else {
+      if (!(flags_2 & 2)) {
+        for (let idx_3 = 0; idx_3 < len_1; idx_3++) {
+          result_0[idx_3] = br.stringOfVarUInt32()
+        }
+      } else {
+        for (let idx_3 = 0; idx_3 < len_1; idx_3++) {
+          if (br.uint8() == -3) {
+            result_0[idx_3] = null
+          } else {
+            result_0[idx_3] = br.stringOfVarUInt32()
+          }
+        }
+      }
+    }
+    return result_0
+    
+  };
+  const read = () => {
+    
+    const refFlag_5 = br.int8();
+    switch (refFlag_5) {
+      case -1:
+      case 0:
+        if (br.int16() === 256) {
+          cr.readTag(br);
+        }
+        return readInner(refFlag_5 === 0)
+        break;
+      case -2:
+        return rr.getReadObject(br.varUInt32())
+        break;
+      case -3:
+        return null
+        break;
+    }
+    
+  };
+  const writeInner = (v) => {
+    
+    let flags_7 = 0;
+    
+    for (const item_9 of v) {
+      if (item_9 === null || item_9 === undefined) {
+        flags_7 |= 2;
+        break;
+      }
+    }
+    
+    bw.uint8(flags_7)
+    bw.int16(25)
+    bw.varUInt32(v.length)
+    bw.reserve(8 * v.length);
+    if (flags_7 & 1) {
+      
+      for (const item_6 of v) {
+        if (v !== null && v !== undefined) {
+          const existsId_8 = rr.existsWriteObject(item_6);
+          if (typeof existsId_8 === "number") {
+            bw.int8(-2)
+            bw.varUInt32(existsId_8)
+          } else {
+            rr.writeRef(v)
+            bw.int8(0);
+            bw.stringOfVarUInt32(item_6)
+          }
+        } else {
+          bw.int8(-3);
+        }
+      }
+    } else {
+      if (flags_7 & 2) {
+        for (const item_6 of v) {
+          if (v !== null && v !== undefined) {
+            bw.int8(-1);
+            bw.stringOfVarUInt32(item_6)
+          } else {
+            bw.int8(-3);
+          }
+        }
+      } else {
+        for (const item_6 of v) {
+          bw.stringOfVarUInt32(item_6)
+        }
+      }
+    }
+    
+  };
+  const write = (v) => {
+    
+    if (v !== null && v !== undefined) {
+      const existsId_10 = rr.existsWriteObject(v);
+      if (typeof existsId_10 === "number") {
+        bw.int8(-2)
+        bw.varUInt32(existsId_10)
+      } else {
+        rr.writeRef(v)
+        bw.int24(6400);
+        
+        writeInner(v);
+      }
+    } else {
+      bw.int8(-3);
+    }
+    
+  };
+  
+  return {
+    read,
+    readInner,
+    write,
+    writeInner,
+    meta: {
+      "fixedSize": 7,
+      "needToWriteRef": true,
+      "type": 25
+    }
+  };
+}
+}"
+`;
