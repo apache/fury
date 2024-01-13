@@ -149,8 +149,7 @@ public class Collections {
   /** Create a {@link HashMap} from provided kv pairs. */
   public static <K, V> HashMap<K, V> ofHashMap(Object... kv) {
     if (kv == null || kv.length == 0) {
-      throw new IllegalArgumentException(
-          String.format("entries got no objects, which aren't pairs"));
+      throw new IllegalArgumentException("entries got no objects, which aren't pairs");
     }
     if ((kv.length & 1) != 0) {
       throw new IllegalArgumentException(
