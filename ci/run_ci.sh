@@ -121,6 +121,9 @@ integration_tests() {
   echo "Start jdk compatibility tests"
   cd "$ROOT"/integration_tests/jdk_compatibility_tests
   mvn -T10 -B --no-transfer-progress clean test
+  echo "Start JPMS tests"
+  cd "$ROOT"/integration_tests/jpms_tests
+  mvn -T10 -B --no-transfer-progress clean compile
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$ROOT/$jdk"
      export PATH=$JAVA_HOME/bin:$PATH
