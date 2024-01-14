@@ -23,74 +23,46 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>fury-parent</artifactId>
     <groupId>org.apache.fury</groupId>
+    <artifactId>fury-parent</artifactId>
     <version>0.5.0-SNAPSHOT</version>
+    <relativePath>../../java</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-
-  <artifactId>fury-testsuite</artifactId>
+  <artifactId>jpms_tests</artifactId>
 
   <properties>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>8</maven.compiler.target>
-    <maven.deploy.skip>true</maven.deploy.skip>
-    <maven.javadoc.skip>true</maven.javadoc.skip>
-    <fury.java.rootdir>${basedir}/..</fury.java.rootdir>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <maven.compiler.release>11</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.testng</groupId>
-      <artifactId>testng</artifactId>
-      <scope>test</scope>
+      <groupId>org.apache.fury</groupId>
+      <artifactId>benchmark</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.fury</groupId>
       <artifactId>fury-core</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.fury</groupId>
       <artifactId>fury-format</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.fury</groupId>
       <artifactId>fury-test-core</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.esotericsoftware</groupId>
-      <artifactId>kryo</artifactId>
-      <version>4.0.0</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.esotericsoftware</groupId>
-      <artifactId>reflectasm</artifactId>
-      <version>1.11.3</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.esotericsoftware.minlog</groupId>
-      <artifactId>minlog</artifactId>
-      <version>1.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>de.ruedigermoeller</groupId>
-      <artifactId>fst</artifactId>
-      <version>2.57</version>
-      <scope>test</scope>
+      <groupId>org.apache.fury</groupId>
+      <artifactId>fury-testsuite</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 
@@ -98,22 +70,8 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <Automatic-Module-Name>org.apache.fury.test.suite</Automatic-Module-Name>
-            </manifestEntries>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <version>2.7</version>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
       </plugin>
     </plugins>
   </build>

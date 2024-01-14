@@ -118,6 +118,9 @@ integration_tests() {
   export JAVA_HOME="$ROOT/zulu21.28.85-ca-jdk21.0.0-linux_x64"
   export PATH=$JAVA_HOME/bin:$PATH
   mvn -T10 -B --no-transfer-progress clean test
+  echo "Start JPMS tests"
+  cd "$ROOT"/integration_tests/jpms_tests
+  mvn -T10 -B --no-transfer-progress clean compile
   echo "Start jdk compatibility tests"
   cd "$ROOT"/integration_tests/jdk_compatibility_tests
   mvn -T10 -B --no-transfer-progress clean test
