@@ -63,6 +63,10 @@ class CollectionSerializerTest extends AnyWordSpec with Matchers {
         val struct2 = CollectionStruct1(Nil)
         fury1.deserialize(fury1.serialize(struct2)) shouldEqual struct2
       }
+      "serialize/deserialize NestedCollectionStruct" in {
+        val struct = NestedCollectionStruct(List(List("a", "b"), List("a", "b")), Set(Set("c", "d")))
+        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+      }
     }
     s"fury scala map support: setOpt $setOpt, setFactory $setFactory" should {
       "serialize/deserialize Map" in {
@@ -77,10 +81,18 @@ class CollectionSerializerTest extends AnyWordSpec with Matchers {
         val struct = MapStruct1(Map.empty)
         fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
       }
+      "serialize/deserialize NestedMapStruct" in {
+        val struct = NestedMapStruct(Map("K1" -> Map("k1" -> "v1", "k2" -> "v2"), "K2" -> Map("k1" -> "v1")))
+        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+      }
     }
   }}
 }
 
 case class CollectionStruct1(list: List[String])
 
+case class NestedCollectionStruct(list: List[List[String]], set: Set[Set[String]])
+
 case class MapStruct1(map: Map[String, String])
+
+case class NestedMapStruct(map: Map[String, Map[String, String]])

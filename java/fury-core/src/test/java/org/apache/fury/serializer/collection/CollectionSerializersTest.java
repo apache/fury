@@ -21,6 +21,7 @@ package org.apache.fury.serializer.collection;
 
 import static org.apache.fury.collection.Collections.ofArrayList;
 import static org.apache.fury.collection.Collections.ofHashMap;
+import static org.apache.fury.collection.Collections.ofHashSet;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
@@ -97,6 +98,33 @@ public class CollectionSerializersTest extends FuryTestBase {
     serDeCheckSerializer(fury, Arrays.asList("a", "b", "c"), "ArraysAsList");
     serDeCheckSerializer(fury, new HashSet<>(data), "HashSet");
     serDeCheckSerializer(fury, new LinkedHashSet<>(data), "LinkedHashSet");
+  }
+
+  @Data
+  public static class BasicListNestedJIT {
+    public Set<List<List<String>>> data;
+    public Set<Set<List<String>>> data1;
+    public Collection<ArrayList<Object>> data2;
+    public Collection<Set<Collection<String>>> data3;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testBasicListNestedJIT(boolean referenceTracking) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTracking)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
+    List<List<List<String>>> list = new ArrayList<>();
+    list.add(ofArrayList(ofArrayList("a", "b")));
+    list.add(ofArrayList(ofArrayList("a", "b")));
+    BasicListNestedJIT o = new BasicListNestedJIT();
+    o.data = new HashSet<>(list);
+    o.data1 = ofHashSet(ofHashSet(ofArrayList("a", "b")), ofHashSet(ofArrayList("a", "b")));
+    o.data2 = ofHashSet(ofArrayList("a", "b"));
+    o.data3 = ofHashSet(ofHashSet(ofArrayList("a", "b")), ofHashSet(ofArrayList("a", "b")));
+    serDeCheckSerializer(fury, o, "Codec");
   }
 
   @Test(dataProvider = "referenceTrackingConfig")

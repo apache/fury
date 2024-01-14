@@ -628,23 +628,13 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected TypeToken<?> getSerializerType(TypeToken<?> objType) {
-    if (COLLECTION_TYPE.isSupertypeOf(objType)) {
+    Class<?> rawType = getRawType(objType);
+    if (classResolver.isCollection(rawType)) {
       return COLLECTION_SERIALIZER_TYPE;
-    } else if (MAP_TYPE.isSupertypeOf(objType)) {
+    } else if (classResolver.isMap(rawType)) {
       return MAP_SERIALIZER_TYPE;
     }
     return SERIALIZER_TYPE;
-  }
-
-  protected Expression castSerializer(Expression serializer, TypeToken<?> objType) {
-    if (COLLECTION_TYPE.isSupertypeOf(objType)
-        && !COLLECTION_SERIALIZER_TYPE.isSupertypeOf(serializer.type())) {
-      serializer = new Cast(serializer, COLLECTION_SERIALIZER_TYPE, "colSerializer");
-    } else if (MAP_TYPE.isSupertypeOf(objType)
-        && !MAP_SERIALIZER_TYPE.isSupertypeOf(serializer.type())) {
-      serializer = new Cast(serializer, TypeToken.of(AbstractMapSerializer.class), "mapSerializer");
-    }
-    return serializer;
   }
 
   /**
@@ -751,16 +741,17 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
       Expression elemSerializer; // make it in scope of `if(sameElementClass)`
       boolean maybeDecl = visitFury(f -> f.getClassResolver().isSerializable(elemClass));
+      TypeToken<?> serializerType = getSerializerType(elementType);
       if (maybeDecl) {
         elemSerializer =
             new If(
                 isDeclType,
-                getOrCreateSerializer(elemClass),
-                castSerializer(writeElementsHeader.f1.inline(), elementType),
+                new Cast(getOrCreateSerializer(elemClass), serializerType),
+                new Cast(writeElementsHeader.f1.inline(), serializerType),
                 false,
-                getSerializerType(elementType));
+                serializerType);
       } else {
-        elemSerializer = castSerializer(writeElementsHeader.f1.inline(), elementType);
+        elemSerializer = new Cast(writeElementsHeader.f1.inline(), serializerType);
       }
       elemSerializer = uninline(elemSerializer);
       Expression action;
@@ -1272,12 +1263,12 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         elemSerializer =
             new If(
                 isDeclType,
-                getOrCreateSerializer(elemClass),
-                castSerializer(serializer.inline(), elementType),
+                new Cast(getOrCreateSerializer(elemClass), serializerType),
+                new Cast(serializer.inline(), serializerType),
                 false,
                 serializerType);
       } else {
-        elemSerializer = castSerializer(serializer.inline(), elementType);
+        elemSerializer = new Cast(serializer.inline(), serializerType);
       }
       elemSerializer = uninline(elemSerializer);
       builder.add(sameElementClass);
