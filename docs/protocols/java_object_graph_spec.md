@@ -412,13 +412,13 @@ Object fields will be serialized one by one using following format:
 
 ```
 Primitive field value:
-+~~~~~~~~~~~~+
++============+
 | value data |
-+~~~~~~~~~~~~+
++============+
 Boxed field value:
-+-----------+~~~~~~~~~~~~~+
++-----------+=============+
 | null flag | field value |
-+-----------+~~~~~~~~~~~~~+
++-----------+=============+
 field value of final type with ref tracking:
 +===========+~~~~~~~~~~~~+
 | ref meta  | value data |
