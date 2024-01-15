@@ -36,13 +36,11 @@ import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Serializer for all collection like object. All collection serializer should extend this class.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   private MethodHandle constructor;
-  protected int numElements;
+  private int numElements;
   private final boolean supportCodegenHook;
   // TODO remove elemSerializer, support generics in CompatibleSerializer.
   private Serializer<?> elemSerializer;
@@ -118,7 +116,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     GenericType elemGenericType = getElementGenericType(fury);
     if (elemGenericType != null) {
       boolean trackingRef = elemGenericType.trackingRef(fury.getClassResolver());
-      if (elemGenericType.isFinal()) {
+      if (elemGenericType.isMonomorphic()) {
         if (trackingRef) {
           buffer.writeByte(CollectionFlags.TRACKING_REF);
           return CollectionFlags.TRACKING_REF;
@@ -244,7 +242,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   /**
-   * Element type is not final by {@link ClassResolver#isFinal}, need to write element type.
+   * Element type is not final by {@link ClassResolver#isMonomorphic}, need to write element type.
    * Elements ref tracking is disabled, write whether any elements is null.
    */
   @CodegenInvoke
@@ -357,7 +355,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     }
     // Note: ObjectSerializer should mark `FinalElemType` in `Collection<FinalElemType>`
     // as non-final to write class def when meta share is enabled.
-    if (elemGenericType.isFinal()) {
+    if (elemGenericType.isMonomorphic()) {
       Serializer serializer = elemGenericType.getSerializer(fury.getClassResolver());
       writeSameTypeElements(fury, buffer, serializer, flags, collection);
     } else {
@@ -452,7 +450,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       if (hasGenericParameters) {
         fury.getGenerics().pushGenericType(elemGenericType);
       }
-      if (elemGenericType.isFinal()) {
+      if (elemGenericType.isMonomorphic()) {
         Serializer elemSerializer = elemGenericType.getSerializer(fury.getClassResolver());
         for (Object elem : value) {
           fury.xwriteRef(buffer, elem, elemSerializer);
@@ -509,9 +507,19 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     }
   }
 
-  /** Get numElements of deserializing collection. Should be called after {@link #newCollection}. */
-  public int getNumElements() {
-    return numElements;
+  /**
+   * Get and reset numElements of deserializing collection. Should be called after {@link
+   * #newCollection}. Nested read may overwrite this element, reset is necessary to avoid use wrong
+   * value by mistake.
+   */
+  public int getAndClearNumElements() {
+    int size = numElements;
+    numElements = -1; // nested read may overwrite this element.
+    return size;
+  }
+
+  protected void setNumElements(int numElements) {
+    this.numElements = numElements;
   }
 
   public abstract T onCollectionRead(Collection collection);
@@ -578,7 +586,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     if (hasGenericParameters) {
       fury.getGenerics().pushGenericType(elemGenericType);
     }
-    if (elemGenericType.isFinal()) {
+    if (elemGenericType.isMonomorphic()) {
       Serializer serializer = elemGenericType.getSerializer(fury.getClassResolver());
       readSameTypeElements(fury, buffer, serializer, flags, collection, numElements);
     } else {
@@ -678,7 +686,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       if (hasGenericParameters) {
         fury.getGenerics().pushGenericType(elemGenericType);
       }
-      if (elemGenericType.isFinal()) {
+      if (elemGenericType.isMonomorphic()) {
         Serializer elemSerializer = elemGenericType.getSerializer(fury.getClassResolver());
         for (int i = 0; i < numElements; i++) {
           Object elem = fury.xreadRefByNullableSerializer(buffer, elemSerializer);

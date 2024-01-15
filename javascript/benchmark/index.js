@@ -20,13 +20,14 @@
 const Fury = require("@furyjs/fury");
 const utils = require("../test/util");
 const hps = require('@furyjs/hps');
-const fury = new Fury.default({ hps, refTracking: false, useLatin1: true, useSliceString: true });
+const fury = new Fury.default({ hps, refTracking: false, useSliceString: true });
 const Benchmark = require("benchmark");
 const protobuf = require("protobufjs");
 const path = require('path');
 const Type = Fury.Type;
 const assert = require('assert');
 const { spawn } = require("child_process");
+
 
 const sample = {
   id: 123456,
@@ -106,8 +107,9 @@ const sample = {
   `,
 };
 
+
 const description = utils.mockData2Description(sample, "fury.test.foo");
-const { serialize, deserialize } = fury.registerSerializer(description);
+const { serialize, deserialize, serializeVolatile } = fury.registerSerializer(description);
 
 const furyAb = serialize(sample);
 const sampleJson = JSON.stringify(sample);
@@ -164,7 +166,7 @@ async function start() {
     var suite = new Benchmark.Suite();
     suite
       .add("fury", function () {
-        serialize(sample);
+        serializeVolatile(sample).dispose();
       })
       .add("json", function () {
         JSON.stringify(sample);

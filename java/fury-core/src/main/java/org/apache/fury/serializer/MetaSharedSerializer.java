@@ -65,7 +65,6 @@ import org.apache.fury.util.record.RecordUtils;
  * @see FuryBuilder#withMetaContextShare
  * @see MetaSharedCodecBuilder
  * @see ObjectSerializer
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked"})
 public class MetaSharedSerializer<T> extends Serializer<T> {
@@ -74,7 +73,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
   /**
    * Whether write class def for non-inner final types.
    *
-   * @see ClassResolver#isFinal(Class)
+   * @see ClassResolver#isMonomorphic(Class)
    */
   private final boolean[] isFinal;
 

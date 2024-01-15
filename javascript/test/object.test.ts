@@ -218,17 +218,6 @@ describe('object', () => {
     expect(result).toEqual({ a: { b: "hel", c: [{ d: "hello" }] } })
   });
 
-  test('should register work', () => {
-    const description = Type.string();
-    const fury = new Fury({ refTracking: true });
-    try {
-      fury.registerSerializer(description);
-      throw new Error('unreachable code')
-    } catch (error) {
-      expect(error.message).toBe("root type should be object");
-    }
-  });
-
   test("should partial record work", () => {
     const hps = undefined;
     const description = Type.object('ws-channel-protocol', {

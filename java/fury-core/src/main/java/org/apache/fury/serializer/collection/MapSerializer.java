@@ -23,11 +23,7 @@ import java.util.Map;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 
-/**
- * Base serializer for all java maps.
- *
- * @author chaokunyang
- */
+/** Base serializer for all java maps. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class MapSerializer<T extends Map> extends AbstractMapSerializer<T> {
   public MapSerializer(Fury fury, Class<T> cls) {
@@ -47,7 +43,7 @@ public class MapSerializer<T extends Map> extends AbstractMapSerializer<T> {
   @Override
   public T read(MemoryBuffer buffer) {
     Map map = newMap(buffer);
-    readElements(buffer, numElements, map);
+    readElements(buffer, getAndClearNumElements(), map);
     return onMapRead(map);
   }
 

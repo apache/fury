@@ -17,8 +17,9 @@
  * under the License.
  */
 
-import { Config, LATIN1, UTF8 } from "./type";
+import { Config, HalfMaxInt32, HalfMinInt32, LATIN1, UTF8 } from "./type";
 import { PlatformBuffer, alloc, strByteLength } from "./platformBuffer";
+import { OwnershipError } from "./error";
 
 const MAX_POOL_SIZE = 1024 * 1024 * 3; // 3MB
 
@@ -28,6 +29,7 @@ export const BinaryWriter = (config: Config) => {
   let arrayBuffer: PlatformBuffer;
   let dataView: DataView;
   let reserved = 0;
+  let locked = false;
 
   function initPoll() {
     byteLength = 1024 * 100;
@@ -49,6 +51,9 @@ export const BinaryWriter = (config: Config) => {
   }
 
   function reset() {
+    if (locked) {
+      throw new OwnershipError("Ownership of writer was held by dumpAndOwn, but not released");
+    }
     cursor = 0;
     reserved = 0;
   }
@@ -92,13 +97,27 @@ export const BinaryWriter = (config: Config) => {
     cursor += 4;
   }
 
-  function int64(v: bigint | number) {
-    if (typeof v === "number") {
-      dataView.setBigInt64(cursor, BigInt(v), true);
-    } else {
-      dataView.setBigInt64(cursor, v, true);
-    }
+  function int64(v: bigint) {
+    dataView.setBigInt64(cursor, v, true);
     cursor += 8;
+  }
+
+  function sliLong(v: bigint | number) {
+    if (v <= HalfMaxInt32 && v >= HalfMinInt32) {
+      // write:
+      // 00xxx -> 0xxx
+      // 11xxx -> 1xxx
+      // read:
+      // 0xxx -> 00xxx
+      // 1xxx -> 11xxx
+      dataView.setUint32(cursor, Number(v) << 1, true);
+      cursor += 4;
+    } else {
+      const BIG_LONG_FLAG = 0b1; // bit 0 set, means big long.
+      dataView.setUint8(cursor, BIG_LONG_FLAG);
+      cursor += 1;
+      varInt64(BigInt(v));
+    }
   }
 
   function float(v: number) {
@@ -117,12 +136,8 @@ export const BinaryWriter = (config: Config) => {
     cursor += v.byteLength;
   }
 
-  function uint64(v: bigint | number) {
-    if (typeof v === "number") {
-      dataView.setBigUint64(cursor, BigInt(v), true);
-    } else {
-      dataView.setBigUint64(cursor, v, true);
-    }
+  function uint64(v: bigint) {
+    dataView.setBigUint64(cursor, v, true);
     cursor += 8;
   }
 
@@ -165,15 +180,13 @@ export const BinaryWriter = (config: Config) => {
     }
   }
 
-  function stringOfVarInt32Fast() {
+  function stringOfVarUInt32Fast() {
     const { isLatin1: detectIsLatin1, stringCopy } = config!.hps!;
     return function (v: string) {
       const isLatin1 = detectIsLatin1(v);
       const len = isLatin1 ? v.length : strByteLength(v);
-      if (config.useLatin1) {
-        dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
-      }
-      varInt32(len);
+      dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
+      varUInt32(len);
       reserve(len);
       if (isLatin1) {
         stringCopy(v, arrayBuffer, cursor);
@@ -188,13 +201,11 @@ export const BinaryWriter = (config: Config) => {
     };
   }
 
-  function stringOfVarInt32Slow(v: string) {
+  function stringOfVarUInt32Slow(v: string) {
     const len = strByteLength(v);
     const isLatin1 = len === v.length;
-    if (config.useLatin1) {
-      dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
-    }
-    varInt32(len);
+    dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
+    varUInt32(len);
     reserve(len);
     if (isLatin1) {
       if (len < 40) {
@@ -214,13 +225,55 @@ export const BinaryWriter = (config: Config) => {
     cursor += len;
   }
 
-  function varInt32(val: number) {
-    val = val >>> 0;
-    while (val > 127) {
-      arrayBuffer[cursor++] = val & 127 | 128;
-      val >>>= 7;
+  function varInt32(v: number) {
+    return varUInt32((v << 1) ^ (v >> 31));
+  }
+
+  function varUInt32(value: number) {
+    value = (value >>> 0) & 0xFFFFFFFF; // keep only the lower 32 bits
+
+    if (value >> 7 == 0) {
+      arrayBuffer[cursor++] = value;
+      return;
     }
-    arrayBuffer[cursor++] = val;
+    const rawCursor = cursor;
+    let u32 = 0;
+    if (value >> 14 == 0) {
+      u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7) << 16);
+      cursor += 2;
+    } else if (value >> 21 == 0) {
+      u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7 & 0x7f | 0x80) << 16) | ((value >> 14) << 8);
+      cursor += 3;
+    } else if (value >> 28 == 0) {
+      u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7 & 0x7f | 0x80) << 16) | ((value >> 14 & 0x7f | 0x80) << 8) | (value >> 21);
+      cursor += 4;
+    } else {
+      u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7 & 0x7f | 0x80) << 16) | ((value >> 14 & 0x7f | 0x80) << 8) | (value >> 21 & 0x7f | 0x80);
+      arrayBuffer[rawCursor + 4] = value >> 28;
+      cursor += 5;
+    }
+    dataView.setUint32(rawCursor, u32);
+  }
+
+  function varInt64(v: bigint) {
+    if (typeof v !== "bigint") {
+      v = BigInt(v);
+    }
+    return varUInt64((v << 1n) ^ (v >> 63n));
+  }
+
+  function varUInt64(val: bigint | number) {
+    if (typeof val !== "bigint") {
+      val = BigInt(val);
+    }
+    val = val & 0xFFFFFFFFFFFFFFFFn; // keep only the lower 64 bits
+
+    while (val > 127) {
+      arrayBuffer[cursor++] = Number(val & 127n | 128n);
+      val >>= 7n;
+    }
+    arrayBuffer[cursor++] = Number(val);
+    return;
   }
 
   function tryFreePool() {
@@ -234,6 +287,18 @@ export const BinaryWriter = (config: Config) => {
     arrayBuffer.copy(result, 0, 0, cursor);
     tryFreePool();
     return result;
+  }
+
+  function dumpAndOwn() {
+    locked = true;
+    return {
+      get() {
+        return arrayBuffer.subarray(0, cursor);
+      },
+      dispose() {
+        locked = false;
+      },
+    };
   }
 
   function getCursor() {
@@ -265,18 +330,23 @@ export const BinaryWriter = (config: Config) => {
     uint8,
     int16,
     varInt32,
-    stringOfVarInt32: config?.hps
-      ? stringOfVarInt32Fast()
-      : stringOfVarInt32Slow,
+    varUInt32,
+    varUInt64,
+    varInt64,
+    stringOfVarUInt32: config && config.hps
+      ? stringOfVarUInt32Fast()
+      : stringOfVarUInt32Slow,
     bufferWithoutMemCheck,
     uint64,
     buffer,
     double,
     float,
     int64,
+    sliLong,
     uint32,
     int32,
     getCursor,
     setUint32Position,
+    dumpAndOwn,
   };
 };

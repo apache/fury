@@ -88,7 +88,7 @@ public class ChildContainerSerializersTest extends FuryTestBase {
       ChildArrayList<Integer> list = new ChildArrayList<>();
       list.addAll(data);
       list.state = 3;
-      ChildArrayList<Integer> newList = (ChildArrayList) serDe(fury, list);
+      ChildArrayList<Integer> newList = serDe(fury, list);
       Assert.assertEquals(newList, list);
       Assert.assertEquals(newList.state, 3);
       Assert.assertEquals(

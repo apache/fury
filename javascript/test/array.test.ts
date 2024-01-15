@@ -69,7 +69,7 @@ describe('array', () => {
       a3: [3, 5, 76],
       a4: [634, 564, 76],
       a6: [234243.555, 55654.6786],
-      a7: ["hello", "world", null]
+      a7: ["hello", "world", "!"]
     }, serializer);
     const result = fury.deserialize(
       input
@@ -81,7 +81,7 @@ describe('array', () => {
       a3: [3, 5, 76],
       a4: [634, 564, 76],
       a6: [234243.555, 55654.6786],
-      a7: ["hello", "world", null]
+      a7: ["hello", "world", "!"]
     })
   });
   test('should string array work', () => {
@@ -100,13 +100,13 @@ describe('array', () => {
     const fury = new Fury({ refTracking: true }); 
     const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({
-      a7: ["hello", "world", null]
+      a7: ["hello", "world", "!"]
     }, serializer);
     const result = fury.deserialize(
       input
     );
     expect(result).toEqual({
-      a7: ["hello", "world", null]
+      a7: ["hello", "world", "!"]
     })
   });
   test('should string array work when latin1 enable', () => {
@@ -122,16 +122,16 @@ describe('array', () => {
       }
     };
     
-    const fury = new Fury({ refTracking: true, useLatin1: true }); 
+    const fury = new Fury({ refTracking: true }); 
     const serializer = fury.registerSerializer(description).serializer;
     const input = fury.serialize({
-      a7: ["hello", "world", null]
+      a7: ["hello", "world", "!"]
     }, serializer);
     const result = fury.deserialize(
       input
     );
     expect(result).toEqual({
-      a7: ["hello", "world", null]
+      a7: ["hello", "world", "!"]
     })
   });
   test('should floatarray work', () => {

@@ -19,11 +19,7 @@
 
 package org.apache.fury.config;
 
-/**
- * Type forward/backward compatibility config.
- *
- * @author chaokunyang
- */
+/** Type forward/backward compatibility config. */
 public enum CompatibleMode {
   /** Class schema must be consistent between serialization peer and deserialization peer. */
   SCHEMA_CONSISTENT,

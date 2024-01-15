@@ -21,18 +21,20 @@ package org.apache.fury.pool;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
+import org.apache.fury.AbstractThreadSafeFury;
 import org.apache.fury.Fury;
-import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.util.LoaderBinding;
 
 @ThreadSafe
-public class ThreadPoolFury implements ThreadSafeFury {
+public class ThreadPoolFury extends AbstractThreadSafeFury {
 
   private final FuryPooledObjectFactory furyPooledObjectFactory;
+  private Consumer<Fury> factoryCallback = f -> {};
 
   public ThreadPoolFury(
       Function<ClassLoader, Fury> furyFactory,
@@ -42,6 +44,16 @@ public class ThreadPoolFury implements ThreadSafeFury {
       TimeUnit timeUnit) {
     this.furyPooledObjectFactory =
         new FuryPooledObjectFactory(furyFactory, minPoolSize, maxPoolSize, expireTime, timeUnit);
+  }
+
+  @Override
+  protected void processCallback(Consumer<Fury> callback) {
+    factoryCallback = factoryCallback.andThen(callback);
+    for (ClassLoaderFuryPooled furyPooled :
+        furyPooledObjectFactory.classLoaderFuryPooledCache.asMap().values()) {
+      furyPooled.allFury.keySet().forEach(callback);
+      furyPooled.setFactoryCallback(factoryCallback);
+    }
   }
 
   public <R> R execute(Function<Fury, R> action) {

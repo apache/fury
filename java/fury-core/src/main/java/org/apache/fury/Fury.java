@@ -54,6 +54,7 @@ import org.apache.fury.serializer.OpaqueObjects;
 import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
+import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.Type;
@@ -71,8 +72,6 @@ import org.slf4j.Logger;
  *
  * <p>serialize/deserialize is user API for root object serialization, write/read api is for inner
  * serialization.
- *
- * @author chaokunyang
  */
 @NotThreadSafe
 public final class Fury {
@@ -178,6 +177,13 @@ public final class Fury {
     classResolver.register(cls, typeTag);
   }
 
+  /**
+   * Register a Serializer.
+   *
+   * @param type class needed to be serialized/deserialized
+   * @param serializerClass serializer class can be created with {@link Serializers#newSerializer}
+   * @param <T> type of class
+   */
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
     classResolver.registerSerializer(type, serializerClass);
   }

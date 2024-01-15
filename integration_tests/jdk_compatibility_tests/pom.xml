@@ -40,7 +40,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.fury</groupId>
-      <artifactId>fury-benchmark</artifactId>
+      <artifactId>benchmark</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

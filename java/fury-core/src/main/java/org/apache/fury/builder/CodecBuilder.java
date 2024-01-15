@@ -78,8 +78,6 @@ import sun.misc.Unsafe;
  *   <li>For instance inner class, ignore outer class field.
  *   <li>For instance inner class, deserialized outer class field is null
  * </ul>
- *
- * @author chaokunyang
  */
 @SuppressWarnings("UnstableApiUsage")
 public abstract class CodecBuilder {
@@ -347,12 +345,12 @@ public abstract class CodecBuilder {
     if (duplicatedFields.contains(fieldName) || !sourcePublicAccessible(beanClass)) {
       return unsafeSetField(bean, d, value);
     }
-    if (!Modifier.isFinal(d.getModifiers()) && Modifier.isPublic(d.getModifiers())) {
+    if (!d.isFinalField() && Modifier.isPublic(d.getModifiers())) {
       return new Expression.SetField(bean, fieldName, value);
     } else if (d.getWriteMethod() != null && Modifier.isPublic(d.getWriteMethod().getModifiers())) {
       return new Invoke(bean, d.getWriteMethod().getName(), value);
     } else {
-      if (!Modifier.isFinal(d.getModifiers()) && !Modifier.isPrivate(d.getModifiers())) {
+      if (!d.isFinalField() && !Modifier.isPrivate(d.getModifiers())) {
         if (AccessorHelper.defineSetter(d.getField())) {
           Class<?> accessorClass = AccessorHelper.getAccessorClass(d.getField());
           if (!value.type().equals(d.getTypeToken())) {

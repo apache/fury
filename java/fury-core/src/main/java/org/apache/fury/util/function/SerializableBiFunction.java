@@ -22,9 +22,5 @@ package org.apache.fury.util.function;
 import java.io.Serializable;
 import java.util.function.BiFunction;
 
-/**
- * Serializable {@link BiFunction}.
- *
- * @author chaokunyang
- */
+/** Serializable {@link BiFunction}. */
 public interface SerializableBiFunction<T, U, R> extends BiFunction<T, U, R>, Serializable {}

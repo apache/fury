@@ -25,11 +25,7 @@ import java.lang.reflect.Type;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.util.ReflectionUtils;
 
-/**
- * Scala types utils using reflection without dependency on scala library.
- *
- * @author chaokunyang
- */
+/** Scala types utils using reflection without dependency on scala library. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ScalaTypes {
   private static final Class<?> SCALA_MAP_TYPE;

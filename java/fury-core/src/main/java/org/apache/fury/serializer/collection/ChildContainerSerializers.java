@@ -51,8 +51,6 @@ import org.apache.fury.util.ReflectionUtils;
  * defined, which will use JDK compatible serializers, thus inefficient. Serializers will optimize
  * the serialization for those cases by serializing super classes part separately using existing
  * JIT/interpreter-mode serializers.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ChildContainerSerializers {
@@ -161,6 +159,8 @@ public class ChildContainerSerializers {
     @Override
     public T newCollection(MemoryBuffer buffer) {
       T collection = (T) super.newCollection(buffer);
+      int numElements = getAndClearNumElements();
+      setNumElements(numElements);
       collection.ensureCapacity(numElements);
       return collection;
     }

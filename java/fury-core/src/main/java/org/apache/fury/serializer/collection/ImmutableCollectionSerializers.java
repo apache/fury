@@ -34,11 +34,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.unsafe._JDKAccess;
 
-/**
- * Serializers for jdk9+ java.util.ImmutableCollections.
- *
- * @author chaokunyang
- */
+/** Serializers for jdk9+ java.util.ImmutableCollections. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ImmutableCollectionSerializers {
   private static Class<?> List12;
@@ -113,7 +109,8 @@ public class ImmutableCollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       if (Platform.JAVA_VERSION > 8) {
         return new CollectionContainer<>(numElements);
       } else {
@@ -145,7 +142,8 @@ public class ImmutableCollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       if (Platform.JAVA_VERSION > 8) {
         return new CollectionContainer<>(numElements);
       } else {
@@ -177,7 +175,8 @@ public class ImmutableCollectionSerializers {
 
     @Override
     public Map newMap(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       if (Platform.JAVA_VERSION > 8) {
         return new JDKImmutableMapContainer(numElements);
       } else {

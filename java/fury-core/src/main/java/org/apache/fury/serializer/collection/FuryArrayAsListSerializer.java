@@ -25,11 +25,7 @@ import org.apache.fury.annotation.Internal;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.Type;
 
-/**
- * Serializer for {@link ArrayAsList}. Helper for serialization of other classes.
- *
- * @author chaokunyang
- */
+/** Serializer for {@link ArrayAsList}. Helper for serialization of other classes. */
 @Internal
 @SuppressWarnings("rawtypes")
 public final class FuryArrayAsListSerializer extends CollectionSerializer<ArrayAsList> {
@@ -43,7 +39,8 @@ public final class FuryArrayAsListSerializer extends CollectionSerializer<ArrayA
   }
 
   public Collection newCollection(MemoryBuffer buffer) {
-    numElements = buffer.readPositiveVarInt();
+    int numElements = buffer.readPositiveVarInt();
+    setNumElements(numElements);
     return new ArrayAsList(numElements);
   }
 }

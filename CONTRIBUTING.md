@@ -8,6 +8,18 @@ See [Good First Issues](https://github.com/apache/incubator-fury/contribute).
 
 Create an issue with [this form](https://github.com/apache/incubator-fury/issues/new/choose).
 
+## How to title your PR
+
+Generally we follows the [Conventional Commits](https://www.conventionalcommits.org/) for pull request titles, 
+since we will squash and merge the PR and use the PR title as the first line of commit message.
+
+For example, here are good PR titles:
+- feat(java): support xxx feature
+- fix(c++): blablabla
+- chore(python): remove useless yyy file
+
+For more details, please check [pr-lint.yml](./.github/workflows/pr-lint.yml).
+
 ## 🧪 Testing
 
 ### Python
@@ -69,7 +81,7 @@ mvn checkstyle:check
 ### Python
 
 ```bash
-cd python 
+cd python
 # install dependencies fro styling
 pip install black==22.1.0 flake8==3.9.1 flake8-quotes flake8-bugbear
 # format python code
@@ -103,7 +115,7 @@ cargo fmt
 Fury supports dump jit generated code into local file for better debug by configuring environment variables:
 
 - `FURY_CODE_DIR`：The directory for fury to dump generated code. Set to empty by default to skip dump code.
-- `ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID`: Append an unique id for dynamically generated files by default to avoid serializer collision for different classes with same name. Set this to `false` to keep serializer name same for multiple execution or `AOT` codegen. 
+- `ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID`: Append an unique id for dynamically generated files by default to avoid serializer collision for different classes with same name. Set this to `false` to keep serializer name same for multiple execution or `AOT` codegen.
 
 By using those environment variables, we can generate code to source directory and debug the generated code in next run.
 
@@ -132,12 +144,12 @@ See the [Debugging C++](docs/cpp_debug.md) doc.
 Enable core dump on Macos Monterey 12.1:
 
 ```bash
-/usr/libexec/PlistBuddy -c "Add :com.apple.security.get-task-allow bool true" tmp.entitlements     
+/usr/libexec/PlistBuddy -c "Add :com.apple.security.get-task-allow bool true" tmp.entitlements
 codesign -s - -f --entitlements tmp.entitlements /Users/chaokunyang/anaconda3/envs/py3.8/bin/python
 ulimit -c unlimited
 ```
 
-... then, run the code:
+then run the code:
 
 ```bash
 python fury_serializer.py

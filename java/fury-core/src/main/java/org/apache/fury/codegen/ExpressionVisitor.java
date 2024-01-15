@@ -44,8 +44,6 @@ import org.apache.fury.util.ReflectionUtils;
  * site. If action return false, the subtree will stop traverse. Big method split can use this util
  * for update subtree root nodes with {@link Reference} to cutoff dependencies to avoid duplicate
  * codegen.
- *
- * @author chaokunyang
  */
 @SuppressWarnings("UnstableApiUsage")
 public class ExpressionVisitor {

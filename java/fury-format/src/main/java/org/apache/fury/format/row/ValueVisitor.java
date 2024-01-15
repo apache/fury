@@ -23,11 +23,7 @@ import java.util.function.Function;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.fury.format.type.DefaultTypeVisitor;
 
-/**
- * An arrow visitor to visit values in {@link Row} and {@link ArrayData}.
- *
- * @author chaokunyang
- */
+/** An arrow visitor to visit values in {@link Row} and {@link ArrayData}. */
 class ValueVisitor extends DefaultTypeVisitor<Function<Integer, Object>> {
   private final Getters getters;
 

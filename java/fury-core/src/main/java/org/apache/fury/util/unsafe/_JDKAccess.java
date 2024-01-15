@@ -47,11 +47,7 @@ import org.apache.fury.util.function.ToFloatFunction;
 import org.apache.fury.util.function.ToShortFunction;
 import sun.misc.Unsafe;
 
-/**
- * Unsafe JDK utils.
- *
- * @author chaokunyang
- */
+/** Unsafe JDK utils. */
 // CHECKSTYLE.OFF:TypeName
 public class _JDKAccess {
   // CHECKSTYLE.ON:TypeName

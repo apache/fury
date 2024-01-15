@@ -78,7 +78,6 @@ import org.apache.fury.util.record.RecordUtils;
  * types.
  *
  * @see ObjectCodecOptimizer for code stats and split heuristics.
- * @author chaokunyang
  */
 public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   public static final String BUFFER_NAME = "buffer";
@@ -129,8 +128,8 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
 
   /** Mark non-inner registered final types as non-final to write class def for those types. */
   @Override
-  protected boolean isFinal(Class<?> clz) {
-    return visitFury(f -> f.getClassResolver().isFinal(clz));
+  protected boolean isMonomorphic(Class<?> clz) {
+    return visitFury(f -> f.getClassResolver().isMonomorphic(clz));
   }
 
   /**

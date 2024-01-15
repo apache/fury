@@ -34,7 +34,6 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -149,8 +148,6 @@ import org.slf4j.Logger;
 /**
  * Class registry for types of serializing objects, responsible for reading/writing types, setting
  * up relations between serializer and types.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class ClassResolver {
@@ -516,22 +513,15 @@ public class ClassResolver {
    * a class is registered but not an inner class with inner serializer, it will still be taken as
    * non-final to write class def, so that it can be deserialized by the peer still..
    */
-  public boolean isFinal(Class<?> clz) {
-    if (Modifier.isFinal(clz.getModifiers())) {
-      if (fury.getConfig().shareMetaContext()) {
-        boolean isInnerClass = isInnerClass(clz);
-        if (!isInnerClass) {
-          return false;
-        } else {
-          // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
-          // TypeToken<V>)
-          return !Map.class.isAssignableFrom(clz) && !Collection.class.isAssignableFrom(clz);
-        }
-      } else {
-        return true;
-      }
+  public boolean isMonomorphic(Class<?> clz) {
+    if (fury.getConfig().shareMetaContext()) {
+      // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
+      // TypeToken<V>)
+      return ReflectionUtils.isMonomorphic(clz)
+          && isInnerClass(clz)
+          && (!Map.class.isAssignableFrom(clz) && !Collection.class.isAssignableFrom(clz));
     }
-    return false;
+    return ReflectionUtils.isMonomorphic(clz);
   }
 
   /** Returns true if <code>cls</code> is fury inner registered class. */
@@ -1754,9 +1744,9 @@ public class ClassResolver {
         typeToken.getType(),
         t -> {
           if (t.getClass() == Class.class) {
-            return isFinal((Class<?>) t);
+            return isMonomorphic((Class<?>) t);
           } else {
-            return isFinal(getRawType(t));
+            return isMonomorphic(getRawType(t));
           }
         });
   }
@@ -1766,9 +1756,9 @@ public class ClassResolver {
         type,
         t -> {
           if (t.getClass() == Class.class) {
-            return isFinal((Class<?>) t);
+            return isMonomorphic((Class<?>) t);
           } else {
-            return isFinal(getRawType(t));
+            return isMonomorphic(getRawType(t));
           }
         });
   }

@@ -54,11 +54,7 @@ import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 import org.slf4j.Logger;
 
-/**
- * Expression builder for building jit row encoder class.
- *
- * @author chaokunyang
- */
+/** Expression builder for building jit row encoder class. */
 @SuppressWarnings("UnstableApiUsage")
 public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
   private static final Logger LOG = LoggerFactory.getLogger(RowEncoderBuilder.class);

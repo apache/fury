@@ -1,8 +1,8 @@
-<!-- fury_frontmatter --
+---
 title: Scala Serialization Guide
 sidebar_position: 4
 id: scala_guide
--- fury_frontmatter -->
+---
 
 # Scala serialization
 Fury supports all scala object serialization:

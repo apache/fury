@@ -56,7 +56,6 @@ import org.apache.fury.util.record.RecordUtils;
  * Build descriptors for a class.
  *
  * @see Ignore
- * @author chaokunyang
  */
 @SuppressWarnings("UnstableApiUsage")
 public class Descriptor {
@@ -142,6 +141,10 @@ public class Descriptor {
 
   public int getModifiers() {
     return modifier;
+  }
+
+  public boolean isFinalField() {
+    return Modifier.isFinal(modifier);
   }
 
   public String getDeclaringClass() {

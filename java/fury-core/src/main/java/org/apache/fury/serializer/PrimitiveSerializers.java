@@ -29,11 +29,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.Preconditions;
 
-/**
- * Serializers for java primitive types.
- *
- * @author chaokunyang
- */
+/** Serializers for java primitive types. */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class PrimitiveSerializers {
   public static final class BooleanSerializer

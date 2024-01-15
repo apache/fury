@@ -27,7 +27,7 @@ import org.apache.fury.annotation.Internal;
 import org.apache.fury.codegen.CodegenContext;
 import org.apache.fury.codegen.Expression;
 import org.apache.fury.codegen.ExpressionOptimizer;
-import org.apache.fury.collection.Tuple3;
+import org.apache.fury.collection.MutableTuple3;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.function.SerializableSupplier;
@@ -60,7 +60,6 @@ import org.apache.fury.util.function.SerializableSupplier;
  * update too.
  *
  * @see #buildGroups() for detailed heuristic rules.
- * @author chaokunyang
  */
 @Internal
 public class ObjectCodecOptimizer extends ExpressionOptimizer {
@@ -96,8 +95,8 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
     // Note get field value also took some byte code if not public.
     List<Descriptor> primitiveDescriptorsList =
         new ArrayList<>(descriptorGrouper.getPrimitiveDescriptors());
-    while (primitiveDescriptorsList.size() > 0) {
-      int endIndex = Math.min(24, primitiveDescriptorsList.size());
+    while (!primitiveDescriptorsList.isEmpty()) {
+      int endIndex = Math.min(20, primitiveDescriptorsList.size());
       primitiveGroups.add(primitiveDescriptorsList.subList(0, endIndex));
       primitiveDescriptorsList =
           primitiveDescriptorsList.subList(endIndex, primitiveDescriptorsList.size());
@@ -107,23 +106,25 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
     if (boxedRefTracking) {
       boxedReadWeight = 4;
     }
-    List<Tuple3<List<Descriptor>, Integer, List<List<Descriptor>>>> groups =
+    List<MutableTuple3<List<Descriptor>, Integer, List<List<Descriptor>>>> groups =
         Arrays.asList(
-            Tuple3.of(
+            MutableTuple3.of(
                 new ArrayList<>(descriptorGrouper.getBoxedDescriptors()),
                 boxedWriteWeight,
                 boxedWriteGroups),
-            Tuple3.of(
+            MutableTuple3.of(
                 new ArrayList<>(descriptorGrouper.getBoxedDescriptors()),
                 boxedReadWeight,
                 boxedReadGroups),
-            Tuple3.of(
+            MutableTuple3.of(
                 new ArrayList<>(descriptorGrouper.getFinalDescriptors()), 9, finalWriteGroups),
-            Tuple3.of(new ArrayList<>(descriptorGrouper.getFinalDescriptors()), 5, finalReadGroups),
-            Tuple3.of(new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 5, otherReadGroups),
-            Tuple3.of(
+            MutableTuple3.of(
+                new ArrayList<>(descriptorGrouper.getFinalDescriptors()), 5, finalReadGroups),
+            MutableTuple3.of(
+                new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 5, otherReadGroups),
+            MutableTuple3.of(
                 new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 9, otherWriteGroups));
-    for (Tuple3<List<Descriptor>, Integer, List<List<Descriptor>>> decs : groups) {
+    for (MutableTuple3<List<Descriptor>, Integer, List<List<Descriptor>>> decs : groups) {
       while (decs.f0.size() > 0) {
         int endIndex = Math.min(decs.f1, decs.f0.size());
         decs.f2.add(decs.f0.subList(0, endIndex));

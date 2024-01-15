@@ -36,8 +36,6 @@ import org.apache.fury.util.function.SerializableSupplier;
 /**
  * Optimizer to generate expression logic in a new method and return an {@link
  * org.apache.fury.codegen.Expression} to invoke the new generated method.
- *
- * @author chaokunyang
  */
 public class ExpressionOptimizer {
 

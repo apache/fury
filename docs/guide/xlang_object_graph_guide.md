@@ -1,8 +1,8 @@
-<!-- fury_frontmatter --
+---
 title: Xlang Object Graph Guide
 sidebar_position: 2
 id: xlang_object_graph_guide
--- fury_frontmatter -->
+---
 
 ## Cross-language object graph serialization
 

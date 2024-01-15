@@ -23,11 +23,7 @@ import org.apache.fury.builder.Generated;
 import org.apache.fury.format.row.binary.BinaryArray;
 import org.apache.fury.format.row.binary.BinaryMap;
 
-/**
- * A map container row format codec for java bean.
- *
- * @author ganrunsheng
- */
+/** A map container row format codec for java bean. */
 public interface GeneratedMapEncoder extends Generated {
 
   BinaryMap toMap(Object obj);

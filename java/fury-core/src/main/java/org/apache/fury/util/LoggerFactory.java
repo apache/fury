@@ -24,8 +24,6 @@ import org.slf4j.helpers.NOPLogger;
 
 /**
  * A logger factory which can be used to disable fury logging more easily than configure logging.
- *
- * @author chaokunyang
  */
 public class LoggerFactory {
   private static boolean disableLogging;

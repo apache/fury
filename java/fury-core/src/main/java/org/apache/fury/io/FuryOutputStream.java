@@ -23,11 +23,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import org.apache.fury.memory.MemoryBuffer;
 
-/**
- * OutputStream based on {@link MemoryBuffer}.
- *
- * @author chaokunyang
- */
+/** OutputStream based on {@link MemoryBuffer}. */
 public class FuryOutputStream extends OutputStream {
   private final MemoryBuffer buffer;
 

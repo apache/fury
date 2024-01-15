@@ -19,11 +19,7 @@
 
 package org.apache.fury.util;
 
-/**
- * A helper for Graalvm native image support.
- *
- * @author chaokunyang
- */
+/** A helper for Graalvm native image support. */
 public class GraalvmSupport {
   // https://github.com/oracle/graal/blob/master/sdk/src/org.graalvm.nativeimage/src/org/graalvm/nativeimage/ImageInfo.java
   public static final boolean IN_GRAALVM_NATIVE_IMAGE;

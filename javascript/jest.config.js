@@ -30,6 +30,9 @@ module.exports = {
   ],
   transform: {
     '\\.ts$': ['ts-jest', {
+      tsconfig: {
+        target: "ES2021"
+      },
       diagnostics: {
         ignoreCodes: [151001]
       }

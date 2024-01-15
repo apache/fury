@@ -28,8 +28,6 @@ import org.apache.fury.type.ClassDef;
 /**
  * Context for sharing class meta across multiple serialization. Class name, field name and field
  * type will be shared between different serialization.
- *
- * @author chaokunyang
  */
 public class MetaContext {
   /** Classes which has sent definitions to peer. */

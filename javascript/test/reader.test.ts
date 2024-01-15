@@ -28,11 +28,6 @@ const hps = process.env.enableHps ? require('@furyjs/hps') : null;
 
 [
     {
-        useLatin1: true,
-        hps,
-    },
-    {
-        useLatin1: false,
         hps,
     }
 ].forEach((config: Config) => {

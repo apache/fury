@@ -34,11 +34,7 @@ import java.util.Map;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.util.unsafe._JDKAccess;
 
-/**
- * Utils for java.lang.Record.
- *
- * @author chaokunyang
- */
+/** Utils for java.lang.Record. */
 @SuppressWarnings({"rawtypes"})
 public class RecordUtils {
   private static final Method IS_RECORD;

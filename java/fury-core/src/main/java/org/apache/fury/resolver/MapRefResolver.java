@@ -32,11 +32,7 @@ import org.apache.fury.collection.ObjectArray;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Preconditions;
 
-/**
- * Resolving reference by tracking reference by an IdentityMap.
- *
- * @author chaokunyang
- */
+/** Resolving reference by tracking reference by an IdentityMap. */
 // FIXME Will binding a separate reference resolver to every type have better performance?
 //  If so, we can have sophisticated reference control for every type.
 public final class MapRefResolver implements RefResolver {

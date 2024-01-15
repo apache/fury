@@ -61,8 +61,6 @@ import org.apache.fury.util.record.RecordUtils;
  *   <li>anonymous class
  *   <li>class that can't be handled by other serializers or codegen-based serializers
  * </ul>
- *
- * @author chaokunyang
  */
 // TODO(chaokunyang) support generics optimization for {@code SomeClass<T>}
 @SuppressWarnings({"unchecked"})
@@ -76,7 +74,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
   /**
    * Whether write class def for non-inner final types.
    *
-   * @see ClassResolver#isFinal(Class)
+   * @see ClassResolver#isMonomorphic(Class)
    */
   private final boolean[] isFinal;
 
@@ -151,7 +149,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     boolean[] isFinal = new boolean[finalFields.length];
     for (int i = 0; i < isFinal.length; i++) {
       ClassInfo classInfo = finalFields[i].classInfo;
-      isFinal[i] = classInfo != null && fury.getClassResolver().isFinal(classInfo.getCls());
+      isFinal[i] = classInfo != null && fury.getClassResolver().isMonomorphic(classInfo.getCls());
     }
     cnt = 0;
     GenericTypeField[] otherFields = new GenericTypeField[grouper.getOtherDescriptors().size()];

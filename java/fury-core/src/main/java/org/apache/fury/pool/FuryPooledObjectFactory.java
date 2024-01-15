@@ -31,8 +31,6 @@ import org.slf4j.Logger;
 /**
  * fury pool factory The pool is used to initialize instances of fury related objects for soft.
  * connections
- *
- * @author yanhuai
  */
 public class FuryPooledObjectFactory {
 
@@ -47,7 +45,7 @@ public class FuryPooledObjectFactory {
    * @see Cache
    * @see com.google.common.cache.CacheBuilder
    */
-  private final Cache<ClassLoader, ClassLoaderFuryPooled> classLoaderFuryPooledCache;
+  final Cache<ClassLoader, ClassLoaderFuryPooled> classLoaderFuryPooledCache;
 
   /** ThreadLocal: ClassLoader. */
   private final ThreadLocal<ClassLoader> classLoaderLocal =

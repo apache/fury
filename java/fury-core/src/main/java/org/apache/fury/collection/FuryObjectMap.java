@@ -312,6 +312,7 @@ public class FuryObjectMap<K, V> {
 
     @Override
     public boolean hasNext() {
+      K[] keyTable = FuryObjectMap.this.keyTable;
       for (int i = nextIndex; i < keyTable.length; i++) {
         if (keyTable[i] != null) {
           nextIndex = i;

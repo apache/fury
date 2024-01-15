@@ -34,11 +34,7 @@ import org.apache.fury.io.FuryOutputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.DecimalUtils;
 
-/**
- * Arrow utils.
- *
- * @author chaokunyang
- */
+/** Arrow utils. */
 public class ArrowUtils {
   // RootAllocator is thread-safe, so we don't have to use thread-local.
   // FIXME JDK17: Unable to make field long java.nio.Buffer.address

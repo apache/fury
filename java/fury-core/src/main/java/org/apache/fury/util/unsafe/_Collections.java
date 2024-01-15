@@ -22,11 +22,7 @@ package org.apache.fury.util.unsafe;
 import java.util.ArrayList;
 import org.apache.fury.util.Platform;
 
-/**
- * Unsafe collection utils.
- *
- * @author chaokunyang
- */
+/** Unsafe collection utils. */
 // CHECKSTYLE.OFF:TypeName
 public class _Collections {
   // CHECKSTYLE.ON:TypeName

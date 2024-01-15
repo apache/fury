@@ -47,7 +47,7 @@ describe('bool', () => {
     test('should write big number work', () => {
         const fury = new Fury();
         const bin = fury.serialize(3000000000);
-        expect(fury.deserialize(bin)).toBe(BigInt(3000000000))
+        expect(fury.deserialize(bin)).toBe(3000000000n);
     });
 
     test('should write INFINITY work', () => {

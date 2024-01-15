@@ -39,11 +39,7 @@ import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.StringUtils;
 import org.slf4j.Logger;
 
-/**
- * Expression builder for building jit map encoder class.
- *
- * @author ganrunsheng
- */
+/** Expression builder for building jit map encoder class. */
 @SuppressWarnings("UnstableApiUsage")
 public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
   private static final Logger LOG = LoggerFactory.getLogger(MapEncoderBuilder.class);

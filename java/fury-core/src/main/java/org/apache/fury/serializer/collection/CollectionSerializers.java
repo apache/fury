@@ -55,8 +55,6 @@ import org.apache.fury.util.ReflectionUtils;
 /**
  * Serializers for classes implements {@link Collection}. All collection serializers should extend
  * {@link CollectionSerializer}.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class CollectionSerializers {
@@ -73,7 +71,8 @@ public class CollectionSerializers {
 
     @Override
     public ArrayList newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       ArrayList arrayList = new ArrayList(numElements);
       fury.getRefResolver().reference(arrayList);
       return arrayList;
@@ -149,7 +148,8 @@ public class CollectionSerializers {
 
     @Override
     public HashSet newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       HashSet hashSet = new HashSet(numElements);
       fury.getRefResolver().reference(hashSet);
       return hashSet;
@@ -168,7 +168,8 @@ public class CollectionSerializers {
 
     @Override
     public LinkedHashSet newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       LinkedHashSet hashSet = new LinkedHashSet(numElements);
       fury.getRefResolver().reference(hashSet);
       return hashSet;
@@ -199,7 +200,8 @@ public class CollectionSerializers {
     @SuppressWarnings("unchecked")
     @Override
     public T newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       T collection;
       Comparator comparator = (Comparator) fury.readRef(buffer);
       if (type == TreeSet.class) {
@@ -378,7 +380,8 @@ public class CollectionSerializers {
 
     @Override
     public ConcurrentSkipListSet newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);
       ConcurrentSkipListSet skipListSet = new ConcurrentSkipListSet(comparator);
       fury.getRefResolver().reference(skipListSet);
@@ -394,7 +397,8 @@ public class CollectionSerializers {
 
     @Override
     public Vector newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       Vector<Object> vector = new Vector<>(numElements);
       fury.getRefResolver().reference(vector);
       return vector;
@@ -409,7 +413,8 @@ public class CollectionSerializers {
 
     @Override
     public ArrayDeque newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       ArrayDeque deque = new ArrayDeque(numElements);
       fury.getRefResolver().reference(deque);
       return deque;
@@ -488,7 +493,8 @@ public class CollectionSerializers {
 
     @Override
     public PriorityQueue newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);
       PriorityQueue queue = new PriorityQueue(comparator);
       fury.getRefResolver().reference(queue);

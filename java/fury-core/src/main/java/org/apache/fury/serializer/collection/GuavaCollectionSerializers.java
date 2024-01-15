@@ -41,11 +41,7 @@ import org.apache.fury.type.Type;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.unsafe._JDKAccess;
 
-/**
- * Serializers for common guava types.
- *
- * @author chaokunyang
- */
+/** Serializers for common guava types. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class GuavaCollectionSerializers {
   abstract static class GuavaCollectionSerializer<T extends Collection>
@@ -77,7 +73,8 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       return new CollectionContainer<>(numElements);
     }
 
@@ -128,7 +125,8 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       return new CollectionContainer(numElements);
     }
 
@@ -160,7 +158,8 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       return new CollectionContainer<>(numElements);
     }
 
@@ -199,7 +198,8 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);
       return new SortedCollectionContainer(comparator, numElements);
     }
@@ -225,7 +225,9 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Map newMap(MemoryBuffer buffer) {
-      return new MapContainer(numElements = buffer.readPositiveVarInt());
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
+      return new MapContainer(numElements);
     }
 
     @Override
@@ -337,7 +339,8 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Map newMap(MemoryBuffer buffer) {
-      numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readPositiveVarInt();
+      setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);
       return new SortedMapContainer<>(comparator, numElements);
     }

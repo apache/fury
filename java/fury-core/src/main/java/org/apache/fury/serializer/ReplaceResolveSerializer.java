@@ -42,8 +42,6 @@ import org.slf4j.Logger;
 /**
  * Serializer for class which has jdk `writeReplace`/`readResolve` method defined. This serializer
  * will skip classname writing if object returned by `writeReplace` is different from current class.
- *
- * @author chaokunyang
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ReplaceResolveSerializer extends Serializer {

@@ -25,8 +25,6 @@ import org.apache.fury.config.CompatibleMode;
  * Exception for class compatibility. If {@link CompatibleMode#COMPATIBLE} is not enabled, and the
  * class when serializing is different from deserialization, for example, the class add/delete some
  * fields, this exception will be thrown.
- *
- * @author chaokunyang
  */
 public class ClassNotCompatibleException extends FuryException {
   public ClassNotCompatibleException(String message) {

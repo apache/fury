@@ -19,11 +19,7 @@
 
 package org.apache.fury.config;
 
-/**
- * Language supported by fury.
- *
- * @author chaokunyang
- */
+/** Language supported by fury. */
 public enum Language {
   XLANG,
   JAVA,

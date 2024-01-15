@@ -1,4 +1,4 @@
-# Fury Scala
+# Apache Fury™ Scala
 
 Fury supports all scala object serialization:
 - `case` class serialization supported

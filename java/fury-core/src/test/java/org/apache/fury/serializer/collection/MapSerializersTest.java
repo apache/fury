@@ -22,6 +22,7 @@ package org.apache.fury.serializer.collection;
 import static com.google.common.collect.ImmutableList.of;
 import static org.apache.fury.TestUtils.mapOf;
 import static org.apache.fury.collection.Collections.ofArrayList;
+import static org.apache.fury.collection.Collections.ofHashMap;
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableMap;
@@ -65,6 +66,20 @@ public class MapSerializersTest extends FuryTestBase {
             .requireClassRegistration(false)
             .build();
     Map<String, Integer> data = new HashMap<>(ImmutableMap.of("a", 1, "b", 2));
+    serDeCheckSerializer(fury, data, "HashMap");
+    serDeCheckSerializer(fury, new LinkedHashMap<>(data), "LinkedHashMap");
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testBasicMapNested(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
+            .build();
+    Map<String, Integer> data0 = new HashMap<>(ImmutableMap.of("a", 1, "b", 2));
+    Map<String, Map<String, Integer>> data = ofHashMap("k1", data0, "k2", data0);
     serDeCheckSerializer(fury, data, "HashMap");
     serDeCheckSerializer(fury, new LinkedHashMap<>(data), "LinkedHashMap");
   }
@@ -333,8 +348,19 @@ public class MapSerializersTest extends FuryTestBase {
     // see https://github.com/apache/incubator-fury/issues/1170
     Fury fury = Fury.builder().withRefTracking(true).build();
     fury.registerSerializer(StringKeyMap.class, MapSerializers.StringKeyMapSerializer.class);
-    StringKeyMap<List<String>> list = new StringKeyMap<>();
-    list.put("k1", ofArrayList("a", "b"));
-    serDeCheck(fury, list);
+    {
+      StringKeyMap<List<String>> map = new StringKeyMap<>();
+      map.put("k1", ofArrayList("a", "b"));
+      serDeCheck(fury, map);
+    }
+    {
+      // test nested map
+      StringKeyMap<StringKeyMap<String>> map = new StringKeyMap<>();
+      StringKeyMap<String> map2 = new StringKeyMap<>();
+      map2.put("k-k1", "v1");
+      map2.put("k-k2", "v2");
+      map.put("k1", map2);
+      serDeCheck(fury, map);
+    }
   }
 }

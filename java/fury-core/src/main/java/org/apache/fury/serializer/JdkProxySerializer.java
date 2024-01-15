@@ -26,11 +26,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 
-/**
- * Serializer for jdk {@link Proxy}.
- *
- * @author chaokunyang
- */
+/** Serializer for jdk {@link Proxy}. */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class JdkProxySerializer extends Serializer {
 

@@ -29,11 +29,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.ReflectionUtils;
 
-/**
- * Serializer for class implements {@link Externalizable}.
- *
- * @author chaokunyang
- */
+/** Serializer for class implements {@link Externalizable}. */
 public class ExternalizableSerializer<T extends Externalizable> extends Serializer<T> {
   private final MethodHandle constructor;
   private final FuryObjectInput objectInput;

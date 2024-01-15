@@ -36,7 +36,6 @@ import static org.apache.fury.type.TypeUtils.getRawType;
 import com.google.common.reflect.TypeToken;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -78,14 +77,11 @@ import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.function.SerializableSupplier;
 import org.apache.fury.util.record.RecordUtils;
 
-/**
- * A jit-version of {@link CompatibleSerializer}.
- *
- * @author chaokunyang
- */
+/** A jit-version of {@link CompatibleSerializer}. */
 public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   public static final String FIELD_RESOLVER_NAME = "fieldResolver";
   private final FieldResolver fieldResolver;
@@ -139,8 +135,8 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   }
 
   @Override
-  protected boolean isFinal(Class<?> clz) {
-    return Modifier.isFinal(clz.getModifiers());
+  protected boolean isMonomorphic(Class<?> clz) {
+    return ReflectionUtils.isMonomorphic(clz);
   }
 
   private Descriptor createDescriptor(FieldInfo fieldInfo) {
@@ -319,7 +315,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                                                 buffer, mapFieldInfo.getValueType()));
                                       }
                                       Class<?> clz = descriptor.getRawType();
-                                      if (Modifier.isFinal(clz.getModifiers())) {
+                                      if (ReflectionUtils.isMonomorphic(clz)) {
                                         // serializeForNotNull won't write field type if it's final,
                                         // but the type is useful if peer doesn't have this field.
                                         writeFieldValue.add(writeFinalClassInfo(buffer, clz));
@@ -841,7 +837,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                       skipFinalClassInfo(((MapFieldInfo) fieldInfo).getValueType(), buffer));
                 }
                 Class<?> clz = getRawType(typeToken);
-                if (Modifier.isFinal(clz.getModifiers())) {
+                if (ReflectionUtils.isMonomorphic(clz)) {
                   // deserializeForNotNull won't read field type if it's final
                   deserializedValue.add(skipFinalClassInfo(clz, buffer));
                 }
@@ -874,14 +870,14 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   }
 
   protected Expression getFinalClassInfo(Class<?> cls) {
-    Preconditions.checkArgument(Modifier.isFinal(cls.getModifiers()));
+    Preconditions.checkArgument(ReflectionUtils.isMonomorphic(cls));
     Tuple2<Reference, Boolean> classInfoRef = addClassInfoField(cls);
     Preconditions.checkArgument(!classInfoRef.f1);
     return classInfoRef.f0;
   }
 
   protected Expression writeFinalClassInfo(Expression buffer, Class<?> cls) {
-    Preconditions.checkArgument(Modifier.isFinal(cls.getModifiers()));
+    Preconditions.checkArgument(ReflectionUtils.isMonomorphic(cls));
     ClassInfo classInfo = visitFury(f -> f.getClassResolver().getClassInfo(cls, false));
     if (classInfo != null && classInfo.getClassId() != ClassResolver.NO_CLASS_ID) {
       return fury.getClassResolver().writeClassExpr(buffer, classInfo.getClassId());
@@ -891,7 +887,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   }
 
   protected Expression skipFinalClassInfo(Class<?> cls, Expression buffer) {
-    Preconditions.checkArgument(Modifier.isFinal(cls.getModifiers()));
+    Preconditions.checkArgument(ReflectionUtils.isMonomorphic(cls));
     ClassInfo classInfo = visitFury(f -> f.getClassResolver().getClassInfo(cls, false));
     if (classInfo != null && classInfo.getClassId() != ClassResolver.NO_CLASS_ID) {
       return fury.getClassResolver().skipRegisteredClassExpr(buffer);

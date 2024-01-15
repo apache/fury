@@ -27,16 +27,19 @@ public class Tuple2<T0, T1> implements Serializable {
   private static final long serialVersionUID = 1L;
 
   /** Field 0 of the tuple. */
-  public T0 f0;
+  public final T0 f0;
 
   /** Field 1 of the tuple. */
-  public T1 f1;
+  public final T1 f1;
 
   /** Creates a new tuple where all fields are null. */
-  public Tuple2() {}
+  public Tuple2() {
+    this(null, null);
+  }
 
   /**
-   * Creates a new tuple and assigns the given values to the tuple's fields.
+   * Creates a new tuple and assigns the given values to the tuple's fields, with field value final.
+   * In case field value is nonFinal, use {@link MutableTuple2}
    *
    * @param value0 The value for field 0
    * @param value1 The value for field 1

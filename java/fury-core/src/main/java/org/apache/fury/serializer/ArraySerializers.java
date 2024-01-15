@@ -20,7 +20,6 @@
 package org.apache.fury.serializer;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Modifier;
 import java.util.IdentityHashMap;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
@@ -35,12 +34,9 @@ import org.apache.fury.type.Type;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.ReflectionUtils;
 
-/**
- * Serializers for array types.
- *
- * @author chaokunyang
- */
+/** Serializers for array types. */
 public class ArraySerializers {
 
   /** May be multi-dimension array, or multi-dimension primitive array. */
@@ -68,7 +64,7 @@ public class ArraySerializers {
       this.dimension = dimension;
       this.innerType = (Class<T>) innerType;
       Class<?> componentType = cls.getComponentType();
-      if (Modifier.isFinal(componentType.getModifiers())) {
+      if (ReflectionUtils.isMonomorphic(componentType)) {
         this.componentTypeSerializer = fury.getClassResolver().getSerializer(componentType);
       } else {
         // TODO add ClassInfo cache for non-final component type.

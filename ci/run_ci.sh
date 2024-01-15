@@ -51,7 +51,13 @@ install_bazel() {
     echo "existing bazel version $(bazel version)"
   fi
   # GRPC support bazel 6.3.2 https://grpc.github.io/grpc/core/md_doc_bazel_support.html
-  URL="https://github.com/bazelbuild/bazel/releases/download/6.3.2/bazel-6.3.2-installer-linux-x86_64.sh"
+  UNAME_OUT="$(uname -s)"
+  case "${UNAME_OUT}" in
+    Linux*)     MACHINE=linux;;
+    Darwin*)    MACHINE=darwin;;
+    *)          echo "unknown machine: $UNAME_OUT"
+  esac
+  URL="https://github.com/bazelbuild/bazel/releases/download/6.3.2/bazel-6.3.2-installer-$MACHINE-x86_64.sh"
   wget -q -O install.sh $URL
   chmod +x install.sh
   set +x
@@ -63,10 +69,12 @@ install_bazel() {
   rm -f install.sh
   VERSION=`bazel version`
   echo "bazel version: $VERSION"
-  MEM=`cat /proc/meminfo | grep MemTotal | awk '{print $2}'`
-  JOBS=`expr $MEM / 1024 / 1024 / 3`
-  echo "build --jobs="$JOBS >> ~/.bazelrc
-  grep "jobs" ~/.bazelrc
+  if [[ "$MACHINE" == linux ]]; then
+    MEM=`cat /proc/meminfo | grep MemTotal | awk '{print $2}'`
+    JOBS=`expr $MEM / 1024 / 1024 / 3`
+    echo "build --jobs="$JOBS >> ~/.bazelrc
+    grep "jobs" ~/.bazelrc
+  fi
 }
 
 JDKS=(
@@ -101,14 +109,18 @@ graalvm_test() {
 integration_tests() {
   cd "$ROOT"/java
   mvn -T10 -B --no-transfer-progress clean install -DskipTests
-  echo "Start perf tests"
-  cd "$ROOT"/integration_tests/perftests
+  echo "benchmark tests"
+  cd "$ROOT"/java/benchmark
+  mvn -T10 -B --no-transfer-progress clean test install -Pjmh
   echo "Start latest jdk tests"
   cd "$ROOT"/integration_tests/latest_jdk_tests
   echo "latest_jdk_tests: JDK 21"
   export JAVA_HOME="$ROOT/zulu21.28.85-ca-jdk21.0.0-linux_x64"
   export PATH=$JAVA_HOME/bin:$PATH
   mvn -T10 -B --no-transfer-progress clean test
+  echo "Start JPMS tests"
+  cd "$ROOT"/integration_tests/jpms_tests
+  mvn -T10 -B --no-transfer-progress clean compile
   echo "Start jdk compatibility tests"
   cd "$ROOT"/integration_tests/jdk_compatibility_tests
   mvn -T10 -B --no-transfer-progress clean test
@@ -131,7 +143,7 @@ jdk17_plus_tests() {
   echo "Executing fury java tests"
   cd "$ROOT/java"
   set +e
-  mvn -T10 --batch-mode --no-transfer-progress test install -pl '!fury-format,!fury-testsuite,!fury-benchmark'
+  mvn -T10 --batch-mode --no-transfer-progress test install -pl '!fury-format,!fury-testsuite'
   testcode=$?
   if [[ $testcode -ne 0 ]]; then
     exit $testcode

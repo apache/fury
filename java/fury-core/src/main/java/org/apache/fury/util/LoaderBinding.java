@@ -20,7 +20,10 @@
 package org.apache.fury.util;
 
 import java.lang.ref.SoftReference;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -31,8 +34,6 @@ import org.apache.fury.annotation.Internal;
  * An util to bind {@link Fury} with {@link ClassLoader}. If {@link ClassLoader} are changed, the
  * previous bind {@link Fury} will be canceled by default, one can set different {@link StagingType}
  * to preserve previous {@link Fury} in a strong/soft referenced way.
- *
- * @author chaokunyang
  */
 @Internal
 public final class LoaderBinding {
@@ -52,6 +53,33 @@ public final class LoaderBinding {
 
   public Fury get() {
     return fury;
+  }
+
+  public void visitAllFury(Consumer<Fury> consumer) {
+    if (furySoftMap.isEmpty()) {
+      for (Fury f : furyMap.values()) {
+        consumer.accept(f);
+      }
+    } else if (furyMap.isEmpty()) {
+      for (SoftReference<Fury> ref : furySoftMap.values()) {
+        Fury f = ref.get();
+        if (f != null) {
+          consumer.accept(f);
+        }
+      }
+    } else {
+      Set<Fury> furySet = new HashSet<>(furyMap.size());
+      Collections.addAll(furyMap.values());
+      for (SoftReference<Fury> ref : furySoftMap.values()) {
+        Fury f = ref.get();
+        if (f != null) {
+          furySet.add(f);
+        }
+      }
+      for (Fury f : furySet) {
+        consumer.accept(f);
+      }
+    }
   }
 
   public ClassLoader getClassLoader() {
@@ -143,6 +171,10 @@ public final class LoaderBinding {
     Preconditions.checkArgument(id < Short.MAX_VALUE);
     furyMap.values().forEach(fury -> fury.register(clz, (short) id));
     bindingCallback = bindingCallback.andThen(fury -> fury.register(clz, (short) id));
+  }
+
+  public void setBindingCallback(Consumer<Fury> bindingCallback) {
+    this.bindingCallback = bindingCallback;
   }
 
   public enum StagingType {

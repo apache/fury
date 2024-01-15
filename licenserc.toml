@@ -18,21 +18,23 @@
 headerPath = "Apache-2.0-ASF.txt"
 
 excludes = [
+    # Skipped
     "*.txt",
+    "go.sum",
 
     # Generated
-    "integration_tests/perftests/src/main/java/org/apache/fury/integration_tests/state/generated/**",
-    
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/state/generated/**",
+
     # Derived
     "ci/format.sh",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/Identity2IdMap.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Data.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Image.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Media.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/MediaContent.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/data/Sample.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/BufferType.java",
-    "java/fury-benchmark/src/main/java/org/apache/fury/benchmark/state/KryoState.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/Identity2IdMap.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/data/Data.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/data/Image.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/data/Media.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/data/MediaContent.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/data/Sample.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/state/BufferType.java",
+    "java/benchmark/src/main/java/org/apache/fury/benchmark/state/KryoState.java",
     "java/fury-core/src/main/java/org/apache/fury/codegen/Code.java",
     "java/fury-core/src/main/java/org/apache/fury/collection/FuryObjectMap.java",
     "java/fury-core/src/main/java/org/apache/fury/collection/IdentityMap.java",
@@ -42,13 +44,14 @@ excludes = [
     "java/fury-core/src/main/java/org/apache/fury/io/ClassLoaderObjectInputStream.java",
     "java/fury-core/src/main/java/org/apache/fury/memory/MemoryBuffer.java",
     "java/fury-core/src/main/java/org/apache/fury/type/Generics.java",
+    "java/fury-core/src/main/java/org/apache/fury/util/MurmurHash3.java",
     "java/fury-core/src/main/java/org/apache/fury/util/Platform.java",
+    "java/fury-core/src/main/java/org/apache/fury/util/Preconditions.java",
     "java/fury-core/src/test/java/org/apache/fury/type/GenericsTest.java",
     "java/fury-format/src/main/java/org/apache/fury/format/vectorized/ArrowWriter.java",
     "javascript/packages/hps/src/v8-fast-api-calls.h",
     "javascript/packages/fury/lib/murmurHash3.ts",
-    "src/fury/thirdparty/MurmurHash3.*",
-    "go/fury/go.sum",
+    "cpp/fury/thirdparty/MurmurHash3.*",
 ]
 
 [mapping.DOUBLESLASH_STYLE]

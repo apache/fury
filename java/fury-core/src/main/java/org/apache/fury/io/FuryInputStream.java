@@ -24,11 +24,7 @@ import java.io.InputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Preconditions;
 
-/**
- * InputStream based on {@link MemoryBuffer}.
- *
- * @author chaokunyang
- */
+/** InputStream based on {@link MemoryBuffer}. */
 public class FuryInputStream extends InputStream {
   private final MemoryBuffer buffer;
 

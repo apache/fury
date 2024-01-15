@@ -55,11 +55,7 @@ import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.Utils;
 import org.apache.fury.util.unsafe._JDKAccess;
 
-/**
- * Serialization utils and common serializers.
- *
- * @author chaokunyang
- */
+/** Serialization utils and common serializers. */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Serializers {
   // avoid duplicate reflect inspection and cache for graalvm support too.

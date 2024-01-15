@@ -22,11 +22,7 @@ package org.apache.fury.resolver;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 
-/**
- * A no-op resolver which ignore reference, only handle null/non-null.
- *
- * @author chaokunyang
- */
+/** A no-op resolver which ignore reference, only handle null/non-null. */
 public final class NoRefResolver implements RefResolver {
 
   @Override

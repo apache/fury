@@ -69,7 +69,6 @@ import org.slf4j.Logger;
  * @see CompatibleSerializer
  * @see FuryBuilder#withMetaContextShare
  * @see ReflectionUtils#getFieldOffset
- * @author chaokunyang
  */
 @SuppressWarnings("UnstableApiUsage")
 public class ClassDef implements Serializable {
@@ -367,14 +366,14 @@ public class ClassDef implements Serializable {
   }
 
   public abstract static class FieldType implements Serializable {
-    public FieldType(boolean isFinal) {
-      this.isFinal = isFinal;
+    public FieldType(boolean isMonomorphic) {
+      this.isMonomorphic = isMonomorphic;
     }
 
-    private final boolean isFinal;
+    private final boolean isMonomorphic;
 
-    public boolean isFinal() {
-      return isFinal;
+    public boolean isMonomorphic() {
+      return isMonomorphic;
     }
 
     /**
@@ -395,16 +394,16 @@ public class ClassDef implements Serializable {
         return false;
       }
       FieldType fieldType = (FieldType) o;
-      return isFinal == fieldType.isFinal;
+      return isMonomorphic == fieldType.isMonomorphic;
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(isFinal);
+      return Objects.hash(isMonomorphic);
     }
 
     public void write(MemoryBuffer buffer) {
-      buffer.writeBoolean(isFinal);
+      buffer.writeBoolean(isMonomorphic);
       if (this instanceof RegisteredFieldType) {
         buffer.writeByte(0);
         buffer.writeShort(((RegisteredFieldType) this).getClassId());
@@ -480,7 +479,12 @@ public class ClassDef implements Serializable {
 
     @Override
     public String toString() {
-      return "RegisteredFieldType{" + "isFinal=" + isFinal() + ", classId=" + classId + '}';
+      return "RegisteredFieldType{"
+          + "isMonomorphic="
+          + isMonomorphic()
+          + ", classId="
+          + classId
+          + '}';
     }
   }
 
@@ -531,7 +535,12 @@ public class ClassDef implements Serializable {
 
     @Override
     public String toString() {
-      return "CollectionFieldType{" + "elementType=" + elementType + ", isFinal=" + isFinal() + '}';
+      return "CollectionFieldType{"
+          + "elementType="
+          + elementType
+          + ", isFinal="
+          + isMonomorphic()
+          + '}';
     }
   }
 
@@ -594,7 +603,7 @@ public class ClassDef implements Serializable {
           + ", valueType="
           + valueType
           + ", isFinal="
-          + isFinal()
+          + isMonomorphic()
           + '}';
     }
   }
@@ -608,7 +617,7 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeToken<?> toTypeToken(ClassResolver classResolver) {
-      return isFinal() ? TypeToken.of(FinalObjectTypeStub.class) : TypeToken.of(Object.class);
+      return isMonomorphic() ? TypeToken.of(FinalObjectTypeStub.class) : TypeToken.of(Object.class);
     }
 
     @Override
@@ -663,7 +672,7 @@ public class ClassDef implements Serializable {
   /** Build field type from generics, nested generics will be extracted too. */
   private static FieldType buildFieldType(ClassResolver classResolver, GenericType genericType) {
     Preconditions.checkNotNull(genericType);
-    boolean isFinal = genericType.isFinal();
+    boolean isFinal = genericType.isMonomorphic();
     if (COLLECTION_TYPE.isSupertypeOf(genericType.typeToken)) {
       return new CollectionFieldType(
           isFinal,

@@ -23,11 +23,7 @@ import java.util.Collection;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 
-/**
- * Base serializer for all java collections.
- *
- * @author chaokunyang
- */
+/** Base serializer for all java collections. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class CollectionSerializer<T extends Collection> extends AbstractCollectionSerializer<T> {
   public CollectionSerializer(Fury fury, Class<T> type) {
@@ -52,6 +48,7 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
   @Override
   public T read(MemoryBuffer buffer) {
     Collection collection = newCollection(buffer);
+    int numElements = getAndClearNumElements();
     if (numElements != 0) {
       readElements(fury, buffer, collection, numElements);
     }

@@ -17,60 +17,102 @@
  * under the License.
  */
 
-import { arraySerializer, stringArraySerializer, boolArraySerializer, shortArraySerializer, intArraySerializer, longArraySerializer, floatArraySerializer, doubleArraySerializer } from "./internalSerializer/array";
-import stringSerializer from "./internalSerializer/string";
-import binarySerializer from "./internalSerializer/binary";
-import { dateSerializer, timestampSerializer } from "./internalSerializer/datetime";
-import mapSerializer from "./internalSerializer/map";
-import setSerializer from "./internalSerializer/set";
-import boolSerializer from "./internalSerializer/bool";
-import { uInt16Serializer, int16Serializer, int32Serializer, uInt32Serializer, uInt64Serializer, floatSerializer, doubleSerializer, uInt8Serializer, int64Serializer, int8Serializer } from "./internalSerializer/number";
 import { InternalSerializerType, Serializer, Fury, BinaryReader, BinaryWriter as TBinaryWriter } from "./type";
-import anySerializer from "./internalSerializer/any";
+import anySerializer from "./any";
 import { fromString } from "./platformBuffer";
 import { x64hash128 } from "./murmurHash3";
 import { BinaryWriter } from "./writer";
+import { generateSerializer } from "./gen";
+import { Type, TypeDescription } from "./description";
 
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1;
+
+class LazyString {
+  private string: string | null = null;
+  private start: number | null = null;
+  private len: number | null = null;
+
+  static fromPair(start: number, len: number) {
+    const result = new LazyString();
+    result.start = start;
+    result.len = len;
+    return result;
+  }
+
+  static fromString(str: string) {
+    const result = new LazyString();
+    result.string = str;
+    return result;
+  }
+
+  toString(binaryReader: BinaryReader) {
+    if (this.string == null) {
+      this.string = binaryReader.stringUtf8At(this.start!, this.len!);
+    }
+    return this.string;
+  }
+}
+
+const uninitSerialize = {
+  read: () => {
+    throw new Error("uninitSerialize");
+  },
+  write: () => {
+    throw new Error("uninitSerialize");
+  },
+  readInner: () => {
+    throw new Error("uninitSerialize");
+  },
+  writeInner: () => {
+    throw new Error("uninitSerialize");
+  },
+  meta: {
+    fixedSize: 0,
+    noneable: false,
+  },
+};
 
 export default class SerializerResolver {
   private internalSerializer: Serializer[] = new Array(300);
   private customSerializer: { [key: string]: Serializer } = {
   };
 
-  private readStringPool: string[] = [];
+  private readStringPool: LazyString[] = [];
   private writeStringCount = 0;
   private writeStringIndex: number[] = [];
 
+  private registerSerializer(fury: Fury, description: TypeDescription) {
+    return fury.classResolver.registerSerializerById(description.type, generateSerializer(fury, description));
+  }
+
   private initInternalSerializer(fury: Fury) {
-    const _anySerializer = anySerializer(fury);
-    this.internalSerializer[InternalSerializerType.ANY] = _anySerializer;
-    this.internalSerializer[InternalSerializerType.STRING] = stringSerializer(fury);
-    this.internalSerializer[InternalSerializerType.ARRAY] = arraySerializer(fury, _anySerializer);
-    this.internalSerializer[InternalSerializerType.MAP] = mapSerializer(fury, _anySerializer, _anySerializer);
-    this.internalSerializer[InternalSerializerType.BOOL] = boolSerializer(fury);
-    this.internalSerializer[InternalSerializerType.UINT8] = uInt8Serializer(fury);
-    this.internalSerializer[InternalSerializerType.INT8] = int8Serializer(fury);
-    this.internalSerializer[InternalSerializerType.UINT16] = uInt16Serializer(fury);
-    this.internalSerializer[InternalSerializerType.INT16] = int16Serializer(fury);
-    this.internalSerializer[InternalSerializerType.UINT32] = uInt32Serializer(fury);
-    this.internalSerializer[InternalSerializerType.INT32] = int32Serializer(fury);
-    this.internalSerializer[InternalSerializerType.UINT64] = uInt64Serializer(fury);
-    this.internalSerializer[InternalSerializerType.INT64] = int64Serializer(fury);
-    this.internalSerializer[InternalSerializerType.FLOAT] = floatSerializer(fury);
-    this.internalSerializer[InternalSerializerType.DOUBLE] = doubleSerializer(fury);
-    this.internalSerializer[InternalSerializerType.TIMESTAMP] = timestampSerializer(fury);
-    this.internalSerializer[InternalSerializerType.DATE] = dateSerializer(fury);
-    this.internalSerializer[InternalSerializerType.FURY_SET] = setSerializer(fury, anySerializer(fury));
-    this.internalSerializer[InternalSerializerType.FURY_STRING_ARRAY] = stringArraySerializer(fury);
-    this.internalSerializer[InternalSerializerType.FURY_PRIMITIVE_BOOL_ARRAY] = boolArraySerializer(fury);
-    this.internalSerializer[InternalSerializerType.FURY_PRIMITIVE_SHORT_ARRAY] = shortArraySerializer(fury);
-    this.internalSerializer[InternalSerializerType.FURY_PRIMITIVE_INT_ARRAY] = intArraySerializer(fury);
-    this.internalSerializer[InternalSerializerType.FURY_PRIMITIVE_LONG_ARRAY] = longArraySerializer(fury);
-    this.internalSerializer[InternalSerializerType.FURY_PRIMITIVE_FLOAT_ARRAY] = floatArraySerializer(fury);
-    this.internalSerializer[InternalSerializerType.FURY_PRIMITIVE_DOUBLE_ARRAY] = doubleArraySerializer(fury);
-    this.internalSerializer[InternalSerializerType.BINARY] = binarySerializer(fury);
+    this.internalSerializer[InternalSerializerType.ANY] = anySerializer(fury);
+    this.registerSerializer(fury, Type.string());
+    this.registerSerializer(fury, Type.array(Type.any()));
+    this.registerSerializer(fury, Type.map(Type.any(), Type.any()));
+    this.registerSerializer(fury, Type.bool());
+    this.registerSerializer(fury, Type.uint8());
+    this.registerSerializer(fury, Type.int8());
+    this.registerSerializer(fury, Type.uint16());
+    this.registerSerializer(fury, Type.int16());
+    this.registerSerializer(fury, Type.uint32());
+    this.registerSerializer(fury, Type.int32());
+    this.registerSerializer(fury, Type.uint64());
+    this.registerSerializer(fury, Type.int64());
+    this.registerSerializer(fury, Type.float());
+    this.registerSerializer(fury, Type.double());
+    this.registerSerializer(fury, Type.timestamp());
+    this.registerSerializer(fury, Type.date());
+    this.registerSerializer(fury, Type.set(Type.any()));
+    this.registerSerializer(fury, Type.binary());
+    this.registerSerializer(fury, Type.stringTypedArray());
+    this.registerSerializer(fury, Type.boolTypedArray());
+    this.registerSerializer(fury, Type.shortTypedArray());
+    this.registerSerializer(fury, Type.intTypedArray());
+    this.registerSerializer(fury, Type.longTypedArray());
+    this.registerSerializer(fury, Type.floatTypedArray());
+    this.registerSerializer(fury, Type.doubleTypedArray());
   }
 
   init(fury: Fury) {
@@ -86,7 +128,16 @@ export default class SerializerResolver {
     return this.internalSerializer[id];
   }
 
-  registerSerializerByTag(tag: string, serializer: Serializer) {
+  registerSerializerById(id: number, serializer: Serializer) {
+    if (this.internalSerializer[id]) {
+      Object.assign(this.internalSerializer[id], serializer);
+    } else {
+      this.internalSerializer[id] = { ...serializer };
+    }
+    return this.internalSerializer[id];
+  }
+
+  registerSerializerByTag(tag: string, serializer: Serializer = uninitSerialize) {
     if (this.customSerializer[tag]) {
       Object.assign(this.customSerializer[tag], serializer);
     } else {
@@ -99,25 +150,27 @@ export default class SerializerResolver {
     return this.customSerializer[tag];
   }
 
-  createTagWriter(tag: string) {
-    this.writeStringIndex.push(-1);
-    const idx = this.writeStringIndex.length - 1;
+  static tagBuffer(tag: string) {
     const tagBuffer = fromString(tag);
     const bufferLen = tagBuffer.byteLength;
-
     const writer = BinaryWriter({});
 
     let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
-    if (tagHash === BigInt(0)) {
-      tagHash = BigInt(1);
+    if (tagHash === 0n) {
+      tagHash = 1n;
     }
 
     writer.uint8(USESTRINGVALUE);
     writer.uint64(tagHash);
     writer.int16(bufferLen);
     writer.bufferWithoutMemCheck(tagBuffer, bufferLen);
+    return writer.dump();
+  }
 
-    const fullBuffer = writer.dump();
+  createTagWriter(tag: string) {
+    this.writeStringIndex.push(-1);
+    const idx = this.writeStringIndex.length - 1;
+    const fullBuffer = SerializerResolver.tagBuffer(tag);
 
     return {
       write: (binaryWriter: TBinaryWriter) => {
@@ -131,30 +184,26 @@ export default class SerializerResolver {
         this.writeStringIndex[idx] = this.writeStringCount++;
         binaryWriter.buffer(fullBuffer);
       },
-      bufferLen,
     };
-  }
-
-  detectTag(binaryReader: BinaryReader) {
-    const flag = binaryReader.uint8();
-    if (flag === USESTRINGVALUE) {
-      binaryReader.skip(8); // The tag hash is not needed at the moment.
-      const str = binaryReader.stringUtf8(binaryReader.int16());
-      return str;
-    } else {
-      return this.readStringPool[binaryReader.int16()];
-    }
   }
 
   readTag(binaryReader: BinaryReader) {
     const flag = binaryReader.uint8();
     if (flag === USESTRINGVALUE) {
       binaryReader.skip(8); // The tag hash is not needed at the moment.
-      const str = binaryReader.stringUtf8(binaryReader.int16());
-      this.readStringPool.push(str);
-      return str;
+      const len = binaryReader.int16();
+      const start = binaryReader.getCursor();
+      binaryReader.skip(len);
+      this.readStringPool.push(LazyString.fromPair(start, len));
+      const idx = this.readStringPool.length;
+      return () => {
+        return this.readStringPool[idx - 1].toString(binaryReader);
+      };
     } else {
-      return this.readStringPool[binaryReader.int16()];
+      const idx = binaryReader.int16();
+      return () => {
+        return this.readStringPool[idx].toString(binaryReader);
+      };
     }
   }
 }

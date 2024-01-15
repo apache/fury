@@ -44,11 +44,7 @@ import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.DecimalUtils;
 import org.apache.fury.util.Preconditions;
 
-/**
- * Arrow related type inference.
- *
- * @author chaokunyang
- */
+/** Arrow related type inference. */
 @SuppressWarnings("UnstableApiUsage")
 public class TypeInference {
 

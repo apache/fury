@@ -22,8 +22,6 @@ package org.apache.fury.resolver;
 /**
  * Check whether class or objects of class should be serialized. If class checker will be invoked by
  * multiple {@link ClassResolver}, class checker should be thread safe.
- *
- * @author chaokunyang
  */
 public interface ClassChecker {
   /**

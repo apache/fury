@@ -4,7 +4,7 @@
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/apache/incubator-fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/incubator-fury/actions/workflows/ci.yml)
 [![Slack Channel](https://img.shields.io/badge/slack-join-3f0e40?logo=slack&style=for-the-badge)](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
-[![Twitter](https://img.shields.io/badge/@fury__community-follow-blue?logo=twitter&style=for-the-badge)](https://twitter.com/fury_community)
+[![Twitter](https://img.shields.io/badge/@ApacheFury-follow-blue?logo=twitter&style=for-the-badge)](https://twitter.com/ApacheFury)
 [![Maven Version](https://img.shields.io/maven-central/v/org.furyio/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.furyio"%20AND%20a:"fury-core")
 
 
@@ -25,11 +25,11 @@ https://fury.apache.org
 
 In addition to cross-language serialization, Fury also features at:
 
-- Drop-in replace Java serialization frameworks such as JDK/Kryo/Hessian without modifying any code, but 100x faster. 
-  It can greatly improve the efficiency of high-performance RPC calls, data transfer, and object persistence.
-- **100% compatible** with JDK serialization API with much faster implementation: supporting JDK `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` API. 
+- Drop-in replace Java serialization frameworks such as JDK/Kryo/Hessian, but 100x faster at most, which can greatly improve 
+ the efficiency of high-performance RPC calls, data transfer, and object persistence.
+- **100% compatible** with JDK serialization API with much faster implementation: supporting JDK `writeObject`/`readObject`/`writeReplace`/`readResolve`/`readObjectNoData`/`Externalizable` API. 
 - Supports **Java 8~21**, Java 17+ `record` is supported too.
-- Support [AOT compilation serialization](docs/guide/graalvm_guide.md) for **GraalVM native image**, and no reflection/serialization json config are needed.
+- Supports [AOT compilation serialization](docs/guide/graalvm_guide.md) for **GraalVM native image**, and no reflection/serialization json config are needed.
 - Supports shared and circular reference object serialization for golang.
 - Supports [scala serialization](docs/guide/scala_guide.md)
 - Supports automatic object serialization for golang.
@@ -46,7 +46,7 @@ multiple binary protocols for those requirements:
 - **Row format protocol**: A cache-friendly binary random access format, supports skipping serialization and partial serialization,
   and can convert to column-format automatically.
 
-New protocols can be easily added based on fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol
+New protocols can be easily added based on Fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol
 can be reused by another protocol.
 
 ## Benchmarks
@@ -55,14 +55,12 @@ Different serialization frameworks are suitable for different scenarios, and ben
 If you need to benchmark for your specific scenario, make sure all serialization frameworks are appropriately configured for that scenario.
 
 Dynamic serialization frameworks support polymorphism and references, but they often come with a higher cost compared to static serialization frameworks, unless they utilize JIT techniques like Fury does.
-Because Fury generates code at runtime, it is recommended to **warm up** the system before collecting benchmark statistics.
+To ensure accurate benchmark statistics, it is advisable to **warm up** the system before collecting data due to Fury's runtime code generation.
 
 ### Java Serialization
-Title containing "compatible" represent schema compatible mode: support type forward/backward compatibility.
+In these charts below, titles containing "compatible" represent schema compatible mode: type forward/backward compatibility is enabled; while titles without "compatible" represent schema consistent mode: class schema must be the same between serialization and deserialization.
 
-Title without "compatible" represent schema consistent mode: class schema must be the same between serialization and deserialization.
-
-`Struct` is a class with [100 primitive fields](https://github.com/apache/incubator-fury/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
+Where `Struct` is a class with [100 primitive fields](https://github.com/apache/incubator-fury/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), and `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
 
 <p align="center">
 <img width="24%" alt="" src="docs/benchmarks/compatible/bench_serialize_compatible_STRUCT_to_directBuffer_tps.png">
@@ -83,11 +81,12 @@ See [benchmarks](https://github.com/apache/incubator-fury/tree/main/docs/benchma
 ## Installation
 ### Java
 Nightly snapshot:
+
 ```xml
 <repositories>
   <repository>
-    <id>sonatype</id>
-    <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+    <id>apache</id>
+    <url>https://repository.apache.org/snapshots/</url>
     <releases>
       <enabled>false</enabled>
     </releases>
@@ -108,24 +107,27 @@ Nightly snapshot:
   <version>0.5.0-SNAPSHOT</version>
 </dependency> -->
 ```
+
 Release version:
 ```xml
 <dependency>
-  <groupId>org.apache.fury</groupId>
+  <groupId>org.furyio</groupId>
   <artifactId>fury-core</artifactId>
   <version>0.4.1</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
-  <groupId>org.apache.fury</groupId>
+  <groupId>org.furyio</groupId>
   <artifactId>fury-format</artifactId>
   <version>0.4.1</version>
 </dependency> -->
 ```
 
+Maven groupId will be changed to `org.apache.fury` when next version is released.
+
 ### Scala
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-core" % "0.4.1"
+libraryDependencies += "org.furyio" % "fury-core" % "0.4.1"
 ```
 
 ### Python
@@ -144,11 +146,11 @@ go get github.com/apache/incubator-fury/go/fury
 ```
 
 ## Quickstart
-Here we give a quick start about how to use fury, see [user guide](https://github.com/apache/incubator-fury/blob/main/docs/README.md) for more details about [java](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md), [cross language](https://github.com/apache/incubator-fury/blob/main/docs/guide/xlang_object_graph_guide.md), and [row format](https://github.com/apache/incubator-fury/blob/main/docs/guide/row_format_guide.md).
+Here we give a quick start about how to use Fury, see [user guide](https://github.com/apache/incubator-fury/blob/main/docs/README.md) for more details about [java](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md), [cross language](https://github.com/apache/incubator-fury/blob/main/docs/guide/xlang_object_graph_guide.md), and [row format](https://github.com/apache/incubator-fury/blob/main/docs/guide/row_format_guide.md).
 
 ### Fury java object graph serialization
 If you don't have cross-language requirements, using this mode will 
-have better performance.
+result in better performance.
 ```java
 import org.apache.fury.*;
 import org.apache.fury.config.*;
@@ -351,20 +353,21 @@ print(foo_row.f2[100000], foo_row.f4[100000].f1, foo_row.f4[200000].f2[5])
 ```
 
 ## Compatibility
-### Schema Compatibility
-Fury java object graph serialization support class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
 
-We plan to add support cross-language serialization after [meta compression](https://github.com/apache/incubator-fury/issues/203) is finished.
+### Schema Compatibility
+Fury java object graph serialization supports class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
+
+We plan to add the schema compatibility support of cross-language serialization after [meta compression](https://github.com/apache/incubator-fury/issues/203) is finished.
 
 ### Binary Compatibility
-We are still improving our protocols, binary compatibility is not ensured between fury major releases for now.
-it's ensured between minor versions only. Please
-`versioning` your data by fury major version if you will upgrade fury in the future, see [how to upgrade fury](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
+We are still improving our protocols, thus binary compatibility is not guaranteed between Fury major releases for now.
+However, it is guaranteed between minor versions. Please
+`versioning` your data by Fury major version if you will upgrade Fury in the future, see [how to upgrade fury](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
 
-Binary compatibility will be ensured when fury 1.0 is released.
+Binary compatibility will be guaranteed when Fury 1.0 is released.
 
 ## Security
-Static serialization is secure. But dynamic serialization such as fury java/python native serialization supports deserializing unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
+Static serialization is relatively secure. But dynamic serialization such as Fury java/python native serialization supports deserializing unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
 
 For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risk.
 
@@ -374,6 +377,8 @@ Fury provides a class registration option that is enabled by default for such pr
 If this option is disabled, you are responsible for serialization security. You can configure `org.apache.fury.resolver.ClassChecker` by
 `ClassResolver#setClassChecker` to control which classes are allowed for serialization.
 
+To report security vulnerabilities found in Fury, please follow the [ASF vulnerability reporting process](https://apache.org/security/#reporting-a-vulnerability).
+
 ## How to Build
 
 Please read the [BUILD](docs/guide/DEVELOPMENT.md) guide for instructions on how to build.
@@ -381,8 +386,6 @@ Please read the [BUILD](docs/guide/DEVELOPMENT.md) guide for instructions on how
 ## How to Contribute
 
 Please read the [CONTRIBUTING](CONTRIBUTING.md) guide for instructions on how to contribute.
-
-For ecosystem projects, please see https://github.com/fury-project
 
 ## License
 

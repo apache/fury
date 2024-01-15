@@ -27,11 +27,7 @@ import java.util.Set;
 
 class Container {}
 
-/**
- * A collection container to hold collection elements by array.
- *
- * @author chaokunyang
- */
+/** A collection container to hold collection elements by array. */
 class CollectionContainer<T> extends AbstractCollection<T> {
   final Object[] elements;
   int size;
@@ -57,11 +53,7 @@ class CollectionContainer<T> extends AbstractCollection<T> {
   }
 }
 
-/**
- * A sorted collection container to hold collection elements and comparator.
- *
- * @author chaokunyang
- */
+/** A sorted collection container to hold collection elements and comparator. */
 class SortedCollectionContainer<T> extends CollectionContainer<T> {
   Comparator<T> comparator;
 
@@ -71,11 +63,7 @@ class SortedCollectionContainer<T> extends CollectionContainer<T> {
   }
 }
 
-/**
- * A map container to hold map key and value elements by arrays.
- *
- * @author chaokunyang
- */
+/** A map container to hold map key and value elements by arrays. */
 class MapContainer<K, V> extends AbstractMap<K, V> {
   final Object[] keyArray;
   final Object[] valueArray;
@@ -99,11 +87,7 @@ class MapContainer<K, V> extends AbstractMap<K, V> {
   }
 }
 
-/**
- * A sorted map container to hold map data and comparator.
- *
- * @author chaokunyang
- */
+/** A sorted map container to hold map data and comparator. */
 class SortedMapContainer<K, V> extends MapContainer<K, V> {
 
   final Comparator<K> comparator;
@@ -114,11 +98,7 @@ class SortedMapContainer<K, V> extends MapContainer<K, V> {
   }
 }
 
-/**
- * A map container to hold map key and value elements in one array.
- *
- * @author chaokunyang
- */
+/** A map container to hold map key and value elements in one array. */
 class JDKImmutableMapContainer<K, V> extends AbstractMap<K, V> {
   final Object[] array;
   private int offset;

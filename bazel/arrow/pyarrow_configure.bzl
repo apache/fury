@@ -2,15 +2,6 @@
 
 # This file is derived from https://github.com/tensorflow/tensorflow/blob/5a244072f2b33d2347e803146c244c179c1ddb75/third_party/py/python_configure.bzl.
 
-def _tpl(repository_ctx, tpl, substitutions = {}, out = None):
-    if not out:
-        out = tpl
-    repository_ctx.template(
-        out,
-        Label("//:%s.tpl" % tpl),
-        substitutions,
-    )
-
 def _fail(msg):
     """Output failure message when auto configuration fails."""
     red = "\033[0;31m"
@@ -171,7 +162,7 @@ def _symlink_genrule_for_dir(
     )
     return genrule
 
-def _get_pyarrow_include(repository_ctx, python_bin="python"):
+def _get_pyarrow_include(repository_ctx, python_bin="python3"):
     """Gets the pyarrow include path."""
     result = _execute(
         repository_ctx, [
@@ -183,7 +174,7 @@ def _get_pyarrow_include(repository_ctx, python_bin="python"):
             + python_bin + ".) " + "Is distutils installed?"))
     return result.stdout.splitlines()[0]
 
-def _get_pyarrow_shared_library(repository_ctx, library_name, python_bin="python"):
+def _get_pyarrow_shared_library(repository_ctx, library_name, python_bin="python3"):
     """Gets the pyarrow shared library path."""
     code = """import pyarrow, os, glob;print(glob.glob(os.path.join(""" +\
         """os.path.dirname(pyarrow.__file__), 'lib{}.*'))[0])""".format(library_name)
@@ -198,7 +189,7 @@ def _get_pyarrow_shared_library(repository_ctx, library_name, python_bin="python
     return result.stdout.splitlines()[0]
 
 #python numpy include
-def _get_python_numpy_include(repository_ctx, python_bin="python"):
+def _get_python_numpy_include(repository_ctx, python_bin="python3"):
     """Gets the python numpy include path."""
     result = _execute(
         repository_ctx, [
