@@ -93,41 +93,21 @@ class CollectionAnySerializer {
   write(value: any, size: number) {
     const { serializer, isSame, includeNone } = this.writeElementsHeader(value);
     this.fury.binaryWriter.varUInt32(size);
-    if (isSame) {
-      if (!includeNone) {
-        for (const item of value) {
-          serializer!.write(item);
-        }
-        return;
-      } else {
-        for (const item of value) {
-          if (item === null || item === undefined) {
-            this.fury.binaryWriter.uint8(RefFlags.NullFlag);
-            continue;
-          }
-          this.fury.binaryWriter.uint8(RefFlags.NotNullValueFlag);
-          serializer!.write(item);
-        }
-      }
-    } else {
+    for (const item of value) {
       if (includeNone) {
-        for (const item of value) {
-          if (item === null || item === undefined) {
-            this.fury.binaryWriter.uint8(RefFlags.NullFlag);
-            continue;
-          }
-          const serializer = this.fury.classResolver.getSerializerByData(item);
+        if (item === null || item === undefined) {
+          this.fury.binaryWriter.uint8(RefFlags.NullFlag);
+          continue;
+        } else {
           this.fury.binaryWriter.uint8(RefFlags.NotNullValueFlag);
-          this.fury.binaryWriter.uint16(serializer!.meta.type);
-          serializer!.write(item);
-        }
-      } else {
-        for (const item of value) {
-          const serializer = this.fury.classResolver.getSerializerByData(item);
-          this.fury.binaryWriter.uint16(serializer!.meta.type);
-          serializer!.write(item);
         }
       }
+      let finalSerializer = serializer;
+      if (!isSame) {
+        finalSerializer = this.fury.classResolver.getSerializerByData(item);
+        this.fury.binaryWriter.uint16(finalSerializer!.meta.type);
+      }
+      finalSerializer!.write(item);
     }
   }
 
@@ -135,52 +115,30 @@ class CollectionAnySerializer {
     const flags = this.fury.binaryReader.uint8();
     const isSame = !(flags & CollectionFlags.NOT_SAME_TYPE);
     const includeNone = flags & CollectionFlags.HAS_NULL;
+    
+    let serializer: Serializer;
     if (isSame) {
-      const serializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.int16());
-      const len = this.fury.binaryReader.varUInt32();
-      const result = createCollection(len);
-      if (fromRef) {
-        this.fury.referenceResolver.reference(result);
-      }
-      if (!includeNone) {
-        for (let index = 0; index < len; index++) {
-          accessor(result, index, serializer.read());
-        }
-      } else {
-        for (let index = 0; index < len; index++) {
-          const refFlag = this.fury.binaryReader.uint8();
-          if (RefFlags.NullFlag === refFlag) {
-            accessor(result, index, null);
-          } else {
-            accessor(result, index, serializer.read());
-          }
-        }
-      }
-      return result;
-    } else {
-      const len = this.fury.binaryReader.varUInt32();
-      const result = createCollection(len);
-      if (fromRef) {
-        this.fury.referenceResolver.reference(result);
-      }
-      if (!includeNone) {
-        for (let index = 0; index < len; index++) {
-          const serializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.int16());
-          accessor(result, index, serializer.read());
-        }
-      } else {
-        for (let index = 0; index < len; index++) {
-          const refFlag = this.fury.binaryReader.uint8();
-          if (RefFlags.NullFlag === refFlag) {
-            accessor(result, index, null);
-          } else {
-            const serializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.int16());
-            accessor(result, index, serializer.read());
-          }
-        }
-      }
-      return result;
+      serializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.int16());
     }
+    const len = this.fury.binaryReader.varUInt32();
+    const result = createCollection(len);
+    if (fromRef) {
+      this.fury.referenceResolver.reference(result);
+    }
+    for (let index = 0; index < len; index++) {
+      if (includeNone) {
+        const refFlag = this.fury.binaryReader.uint8();
+        if (RefFlags.NullFlag === refFlag) {
+          accessor(result, index, null);
+          continue;
+        }
+      }
+      if (!isSame) {
+        serializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.int16());
+      }
+      accessor(result, index, serializer!.read());
+    }
+    return result;
   }
 }
 
