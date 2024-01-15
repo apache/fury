@@ -19,7 +19,7 @@ Here is the overall format:
 | fury header | object ref meta | object class meta | object value data |
 ```
 
-The data are serialized using little endian byte order overall. If bytes swap is costly for some object, 
+The data are serialized using little endian byte order overall. If bytes swap is costly for some object,
 Fury will write the byte order for that object into the data instead of converting it to little endian.
 
 ## Fury header
@@ -44,12 +44,12 @@ corresponding flags and maintain internal state.
 
 Reference flags:
 
-| Flag                | Byte Value | Description                                                                                                                   |
-|---------------------|------------|-------------------------------------------------------------------------------------------------------------------------------|
-| NULL FLAG           | `-3`       | This flag indicates that object is a not-null value. We don't use another byte to indicate REF, so that we can save one byte. |
-| REF FLAG            | `-2`       | this flag indicates the object is written before, and fury will write a unsigned ref id instead of serialize it again         |
-| NOT_NULL VALUE FLAG | `-1`       | this flag indicates that the object is a non-null value and fury doesn't track ref for this type of object.                   |
-| REF VALUE FLAG      | `0`        | this flag indicates that the object is a referencable and first read.                                                         |
+| Flag                | Byte Value | Description                                                                                                                              |
+|---------------------|------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| NULL FLAG           | `-3`       | This flag indicates that object is a not-null value. We don't use another byte to indicate REF, so that we can save one byte.            |
+| REF FLAG            | `-2`       | this flag indicates the object is written before, and fury will write a ref id with unsigned varint format instead of serialize it again |
+| NOT_NULL VALUE FLAG | `-1`       | this flag indicates that the object is a non-null value and fury doesn't track ref for this type of object.                              |
+| REF VALUE FLAG      | `0`        | this flag indicates that the object is a referencable and first read.                                                                    |
 
 When reference tracking is disabled globally or only for some type, or for some type under some context such as some
 field of a class, only `NULL FLAG` and ` NOT_NULL VALUE FLAG` will be used.
@@ -68,10 +68,10 @@ If schema consistent mode is enabled globally or enabled for current class, clas
 
 - If class is registered, it will be written as a little-endian unsigned int: `class_id << 1` using fury unsigned int
   format.
-- If class is not registered, fury will write one byte `0b01/0b11` first, then write class name.
-    - The higher bit will be 1 if the class is an
-      array, and written class will be the component class. This can reduce array class name cost if component class is
-      serialized before.
+- If class is not registered, fury will write one byte `0bxxxxxxx1` first, then write class name.
+    - The higher bits will be `0` if the class is not an array, and will be dimensions of if it's an array, which is
+      greater than 0, and written class will be the component class. This can reduce array class name cost if
+      component class is serialized before.
     - The little bit is different first bit of
       encoded class id, which is `0`. Fury can use this information to determine whether read class by class id.
     - If meta share mode is enabled, class will be written as a unsigned int.
@@ -83,17 +83,17 @@ If schema consistent mode is enabled globally or enabled for current class, clas
 
 If schema evolution mode is enabled globally or enabled for current class, class meta will be written as follows:
 
-- If meta share mode is not enabled, class meta will be written as scheme consistent mode. Additionally, field meta such
+- If meta share mode is not enabled, class meta will be written as schema consistent mode. Additionally, field meta such
   as field type
   and name will be written when the object value is being serialized using a key-value like layout.
 - If meta share mode is enabled, class meta will be written as a meta-share encoded binary if class hasn't been written
-  before, otherwise unsigned it will be written as an unsigned varint which references to previous written class meta.
+  before, otherwise an id which references to previous written class meta will be written using an unsigned varint format.
 
 ## Meta share
 
 > This mode will forbid streaming writing since it needs to look back for update the offset after the whole object graph
 > writing and mete collecting is finished.
-> We plan to streamline meta writing but haven't started yet.
+> Meta streamline will be supported in the future.
 
 ### Schema consistent
 
@@ -120,11 +120,13 @@ Meta header is a 64 bits number value encoded in little endian order.
 #### Single layer class meta
 
 ```
-| enumerated class name string | unsigned int: num fields | field info: type info + field name | next field info | ... |
+| enumerated class name string binary | unsigned int: num fields | field info: type info + field name | next field info | ... |
 ```
 
+Enumerated class name string binary will be written without unique hash, Fury use meta hash instead.
+
 Type info of custom type field will be written as an one-byte flag instead of inline its meta, because the field value
-may be null, and Fury can reduce this field type meta writing if object of this type is serialized to in current object
+may be null, and Fury can reduce this field type meta writing if object of this type is serialized in current object
 graph.
 
 Field order are left as implementation details, which is not exposed to specification, the deserialization need to
@@ -149,13 +151,13 @@ Header are written using little endian order, Fury can read this flag first to d
 If string hasn't been written before, the data will be written as follows:
 
 ```
-| unsigned int: string binary size + 1bit: not written before | 61bits: murmur hash + 3 bits encoding flags | string binary |
+| unsigned varint: string binary size + 1bit: not written before | 61bits: murmur hash + 3 bits encoding flags | string binary |
 ```
 
 Murmur hash can be omitted if caller pass a flag. In such cases, the format will be:
 
 ```
-| unsigned int: string binary size + 1bit: not written before | 8 bits encoding flags | string binary |
+| unsigned varint: string binary size + 1bit: not written before | 8 bits encoding flags | string binary |
 ```
 
 5 bits in `8 bits encoding flags` will be left empty.
@@ -175,7 +177,7 @@ Encoding flags:
 If string has been written before, the data will be written as follows:
 
 ```
-| unsigned int: written string id + 1bit: written before |
+| unsigned varint: written string id + 1bit: written before |
 ```
 
 ### String binary
