@@ -115,7 +115,7 @@ class CollectionAnySerializer {
     const flags = this.fury.binaryReader.uint8();
     const isSame = !(flags & CollectionFlags.NOT_SAME_TYPE);
     const includeNone = flags & CollectionFlags.HAS_NULL;
-    
+
     let serializer: Serializer;
     if (isSame) {
       serializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.int16());
