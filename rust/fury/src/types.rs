@@ -184,7 +184,7 @@ pub enum FieldType {
 
 const MAX_UNT32: u64 = (1 << 31) - 1;
 
-// todo: struct hash 
+// todo: struct hash
 #[allow(dead_code)]
 pub fn compute_string_hash(s: &str) -> u32 {
     let mut hash: u64 = 17;
