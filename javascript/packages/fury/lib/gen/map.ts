@@ -19,7 +19,7 @@
 
 import { MapTypeDescription, TypeDescription } from "../description";
 import { CodecBuilder } from "./builder";
-import { BaseSerializerGenerator } from "./serializer";
+import { BaseSerializerGenerator, RefState } from "./serializer";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
@@ -69,7 +69,7 @@ class MapSerializerGenerator extends BaseSerializerGenerator {
         `;
   }
 
-  readStmt(accessor: (expr: string) => string): string {
+  readStmt(accessor: (expr: string) => string, refState: RefState): string {
     const [keyGenerator, valueGenerator] = this.innerGenerator();
     const key = this.scope.uniqueName("key");
     const value = this.scope.uniqueName("value");
@@ -80,7 +80,7 @@ class MapSerializerGenerator extends BaseSerializerGenerator {
 
     return `
             const ${result} = new Map();
-            ${this.pushReadRefStmt(result)};
+            ${this.maybeReference(result, refState)};
             const ${len} = ${this.builder.reader.varUInt32()};
             for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
                 let ${key};

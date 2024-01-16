@@ -41,19 +41,19 @@ describe('bool', () => {
     test('should write NaN work', () => {
         const fury = new Fury();
         const bin = fury.serialize(NaN);
-        expect(fury.deserialize(bin)).toBe(null)
+        expect(fury.deserialize(bin)).toBe(NaN)
     });
 
     test('should write big number work', () => {
         const fury = new Fury();
         const bin = fury.serialize(3000000000);
-        expect(fury.deserialize(bin)).toBe(3000000000n);
+        expect(fury.deserialize(bin)).toBe(3000000000);
     });
 
     test('should write INFINITY work', () => {
         const fury = new Fury();
         const bin = fury.serialize(Number.NEGATIVE_INFINITY);
-        expect(fury.deserialize(bin)).toBe(null)
+        expect(fury.deserialize(bin)).toBe(Number.NEGATIVE_INFINITY)
     });
 
     test('should write float work', () => {

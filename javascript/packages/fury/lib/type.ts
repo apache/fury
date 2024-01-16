@@ -19,10 +19,8 @@
 
 import type { BinaryWriter } from "./writer";
 import type { BinaryReader } from "./reader";
-import type FuryFunc from "./fury";
 import { Meta } from "./meta";
 
-export type Fury = ReturnType<typeof FuryFunc>;
 export type BinaryWriter = ReturnType<typeof BinaryWriter>;
 export type BinaryReader = ReturnType<typeof BinaryReader>;
 
@@ -69,9 +67,9 @@ export enum ConfigFlags {
 export type Serializer<T = any, T2 = any> = {
   read: () => T2
   write: (v: T2) => T
-  readInner: () => T2
+  readInner: (refValue?: boolean) => T2
   writeInner: (v: T2) => T
-  meta: Meta<T2>
+  meta: Meta
 };
 
 export enum RefFlags {

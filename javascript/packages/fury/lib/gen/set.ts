@@ -19,12 +19,12 @@
 
 import { SetTypeDescription, TypeDescription } from "../description";
 import { CodecBuilder } from "./builder";
-import { BaseSerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
+import { CollectionSerializerGenerator } from "./collection";
 
-class SetSerializerGenerator extends BaseSerializerGenerator {
+class SetSerializerGenerator extends CollectionSerializerGenerator {
   description: SetTypeDescription;
 
   constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
@@ -32,48 +32,20 @@ class SetSerializerGenerator extends BaseSerializerGenerator {
     this.description = <SetTypeDescription>description;
   }
 
-  private innerMeta() {
-    const inner = this.description.options.key;
-    return this.builder.meta(inner);
+  genericTypeDescriptin(): TypeDescription {
+    return this.description.options.key;
   }
 
-  private innerGenerator() {
-    const inner = this.description.options.key;
-    const InnerGeneratorClass = CodegenRegistry.get(inner.type);
-    if (!InnerGeneratorClass) {
-      throw new Error(`${inner.type} generator not exists`);
-    }
-    return new InnerGeneratorClass(inner, this.builder, this.scope);
+  newCollection(): string {
+    return `new Set()`;
   }
 
-  writeStmt(accessor: string): string {
-    const innerMeta = this.innerMeta();
-    const innerGenerator = this.innerGenerator();
-    const item = this.scope.uniqueName("item");
-    return `
-            ${this.builder.writer.varUInt32(`${accessor}.size`)}
-            ${this.builder.writer.reserve(`${innerMeta.fixedSize} * ${accessor}.size`)};
-            for (const ${item} of ${accessor}.values()) {
-                ${innerGenerator.toWriteEmbed(item)}
-            }
-        `;
+  sizeProp() {
+    return "size";
   }
 
-  readStmt(accessor: (expr: string) => string): string {
-    const innerGenerator = this.innerGenerator();
-    const result = this.scope.uniqueName("result");
-    const idx = this.scope.uniqueName("idx");
-    const len = this.scope.uniqueName("len");
-
-    return `
-            const ${result} = new Set();
-            ${this.pushReadRefStmt(result)}
-            const ${len} = ${this.builder.reader.varUInt32()};
-            for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
-                ${innerGenerator.toReadEmbed(x => `${result}.add(${x});`)}
-            }
-            ${accessor(result)}
-         `;
+  putAccessor(result: string, item: string): string {
+    return `${result}.add(${item})`;
   }
 }
 

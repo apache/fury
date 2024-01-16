@@ -17,12 +17,74 @@
  * under the License.
  */
 
-import { TypeDescription } from "../description";
+import { Type, TypeDescription } from "../description";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
-import { InternalSerializerType } from "../type";
+import { InternalSerializerType, RefFlags, Serializer } from "../type";
 import { Scope } from "./scope";
+import Fury from "../fury";
+import { Meta, getMeta } from "../meta";
+
+export class AnySerializer {
+  meta: Meta;
+
+  constructor(private fury: Fury) {
+    this.meta = getMeta(Type.any(), fury);
+  }
+
+  readInner() {
+    throw new Error("Anonymous serializer can't call directly");
+  }
+
+  writeInner() {
+    throw new Error("Anonymous serializer can't call directly");
+  }
+
+  detectSerializer() {
+    const typeId = this.fury.binaryReader.int16();
+    let serializer: Serializer;
+    if (typeId === InternalSerializerType.FURY_TYPE_TAG) {
+      const tag = this.fury.classResolver.readTag(this.fury.binaryReader)();
+      serializer = this.fury.classResolver.getSerializerByTag(tag);
+    } else {
+      serializer = this.fury.classResolver.getSerializerById(typeId);
+    }
+    if (!serializer) {
+      throw new Error(`cant find implements of typeId: ${typeId}`);
+    }
+    return serializer;
+  }
+
+  read() {
+    const flag = this.fury.referenceResolver.readRefFlag();
+    switch (flag) {
+      case RefFlags.RefValueFlag:
+        return this.detectSerializer().readInner(true);
+      case RefFlags.RefFlag:
+        return this.fury.referenceResolver.getReadObject(this.fury.binaryReader.varUInt32());
+      case RefFlags.NullFlag:
+        return null;
+      case RefFlags.NotNullValueFlag:
+        return this.detectSerializer().readInner(false);
+    }
+  }
+
+  write(v: any) {
+    if (v === null || v === undefined) {
+      this.fury.binaryWriter.reserve(1);
+      this.fury.binaryWriter.int8(RefFlags.NullFlag); // null
+      return;
+    }
+
+    const serializer = this.fury.classResolver.getSerializerByData(v);
+    if (!serializer) {
+      throw new Error(`Failed to detect the Fury serializer from JavaScript type: ${typeof v}`);
+    }
+    this.fury.binaryWriter.reserve(serializer?.meta.fixedSize);
+    serializer?.write(v);
+  }
+}
 
 class AnySerializerGenerator extends BaseSerializerGenerator {
   description: TypeDescription;
@@ -32,32 +94,28 @@ class AnySerializerGenerator extends BaseSerializerGenerator {
     this.description = description;
   }
 
-  private addDep() {
-    return this.scope.declare(
-      "any_ser",
-      this.builder.classResolver.getSerializerById(InternalSerializerType.ANY)
-    );
-  }
-
   writeStmt(accessor: string): string {
-    const name = this.addDep();
-    return `${name}.writeInner(${accessor})`;
+    return `${this.builder.furyName()}.anySerializer.writeInner(${accessor})`;
   }
 
   readStmt(accessor: (expr: string) => string): string {
-    const name = this.addDep();
-    return `${name}.readInner(${accessor})`;
+    return `${this.builder.furyName()}.anySerializer.readInner(${accessor})`;
   }
 
-  toReadEmbed(accessor: (expr: string) => string): string {
-    const name = this.addDep();
-    return accessor(`${name}.read()`);
+  toReadEmbed(accessor: (expr: string) => string, excludeHead = false): string {
+    if (excludeHead) {
+      throw new Error("Anonymous can't excludeHead");
+    }
+    return accessor(`${this.builder.furyName()}.anySerializer.read()`);
   }
 
-  toWriteEmbed(accessor: string): string {
-    const name = this.addDep();
-    return `${name}.write(${accessor})`;
+  toWriteEmbed(accessor: string, excludeHead = false): string {
+    if (excludeHead) {
+      throw new Error("Anonymous can't excludeHead");
+    }
+    return `${this.builder.furyName()}.anySerializer.write(${accessor})`;
   }
 }
 
 CodegenRegistry.register(InternalSerializerType.ANY, AnySerializerGenerator);
+CodegenRegistry.registerExternal(AnySerializer);
