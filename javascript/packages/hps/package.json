@@ -1,8 +1,9 @@
 {
   "name": "@furyjs/hps",
-  "version": "0.5.0.dev",
+  "version": "0.5.1-beta",
   "description": "fury nodejs high-performance suite",
   "main": "dist/index.js",
+  "types": "types/index.d.ts",
   "files": [
     "dist",
     "src",
@@ -10,7 +11,7 @@
   ],
   "scripts": {
     "postinstall": "npx node-gyp rebuild",
-    "build": "npx node-gyp rebuild && tsc",
+    "build": "npx node-gyp rebuild && tsc -p tsconfig.json",
     "prepublishOnly": "npm run build"
   },
   "license": "Apache",

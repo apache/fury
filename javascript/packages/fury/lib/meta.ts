@@ -20,12 +20,32 @@
 import Fury from "./fury";
 import ClassResolver from "./classResolver";
 import { ObjectTypeDescription, TypeDescription } from "./description";
-import { InternalSerializerType } from "./type";
+import { InternalSerializerType, USESTRINGVALUE } from "./type";
+import { fromString } from "./platformBuffer";
+import { BinaryWriter } from "./writer";
+import { x64hash128 } from "./murmurHash3";
 
 export type Meta = {
   fixedSize: number
   needToWriteRef: boolean
   type: InternalSerializerType
+};
+
+export const tagBuffer = (tag: string) => {
+  const tagBuffer = fromString(tag);
+  const bufferLen = tagBuffer.byteLength;
+  const writer = BinaryWriter({});
+
+  let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
+  if (tagHash === 0n) {
+    tagHash = 1n;
+  }
+
+  writer.uint8(USESTRINGVALUE);
+  writer.uint64(tagHash);
+  writer.int16(bufferLen);
+  writer.bufferWithoutMemCheck(tagBuffer, bufferLen);
+  return writer.dump();
 };
 
 export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
@@ -107,7 +127,7 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
     case InternalSerializerType.FURY_TYPE_TAG:
     {
       const options = (<ObjectTypeDescription>description).options;
-      let fixedSize = ClassResolver.tagBuffer(options.tag).byteLength + 8;
+      let fixedSize = tagBuffer(options.tag).byteLength + 8;
       if (options.props) {
         Object.values(options.props).forEach(x => fixedSize += getMeta(x, fury).fixedSize);
       } else {

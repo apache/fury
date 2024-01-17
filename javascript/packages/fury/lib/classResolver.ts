@@ -17,16 +17,11 @@
  * under the License.
  */
 
-import { InternalSerializerType, Serializer, BinaryReader, BinaryWriter as TBinaryWriter } from "./type";
-import { fromString } from "./platformBuffer";
-import { x64hash128 } from "./murmurHash3";
-import { BinaryWriter } from "./writer";
+import { InternalSerializerType, Serializer, BinaryReader, BinaryWriter as TBinaryWriter, USESTRINGID, USESTRINGVALUE } from "./type";
 import { generateSerializer } from "./gen";
 import { Type, TypeDescription } from "./description";
 import Fury from "./fury";
-
-const USESTRINGVALUE = 0;
-const USESTRINGID = 1;
+import { tagBuffer } from "./meta";
 
 class LazyString {
   private string: string | null = null;
@@ -150,27 +145,10 @@ export default class SerializerResolver {
     return this.customSerializer[tag];
   }
 
-  static tagBuffer(tag: string) {
-    const tagBuffer = fromString(tag);
-    const bufferLen = tagBuffer.byteLength;
-    const writer = BinaryWriter({});
-
-    let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
-    if (tagHash === 0n) {
-      tagHash = 1n;
-    }
-
-    writer.uint8(USESTRINGVALUE);
-    writer.uint64(tagHash);
-    writer.int16(bufferLen);
-    writer.bufferWithoutMemCheck(tagBuffer, bufferLen);
-    return writer.dump();
-  }
-
   createTagWriter(tag: string) {
     this.writeStringIndex.push(-1);
     const idx = this.writeStringIndex.length - 1;
-    const fullBuffer = SerializerResolver.tagBuffer(tag);
+    const fullBuffer = tagBuffer(tag);
 
     return {
       write: (binaryWriter: TBinaryWriter) => {
