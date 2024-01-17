@@ -80,6 +80,28 @@ def _run_cpp():
     )
 
 
+def _run_rust():
+    _exec_cmd("rustup component add clippy-preview")
+    _exec_cmd("rustup component add rustfmt")
+    logging.info("Executing fury rust tests")
+    cur_script_abs_path = os.path.split(os.path.realpath(__file__))[0]
+    os.chdir(os.path.join(cur_script_abs_path, "../rust"))
+
+    cmds = (
+        "cargo doc --no-deps --document-private-items --all-features --open",
+        "cargo fmt --all -- --check",
+        "cargo fmt --all",
+        "cargo clippy --workspace --all-features --all-targets",
+        "cargo doc",
+        "cargo build --all-features --all-targets",
+        "cargo test",
+        "cargo clean",
+    )
+    for cmd in cmds:
+        _exec_cmd(cmd)
+    logging.info("Executing fury rust tests succeeds")
+
+
 def _install_cpp_deps():
     _exec_cmd(f"pip install pyarrow=={PYARROW_VERSION}")
     _exec_cmd("pip install psutil")
@@ -125,6 +147,14 @@ def _parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     cpp_parser.set_defaults(func=_run_cpp)
+
+    rust_parser = subparsers.add_parser(
+        "rust",
+        description="Run Rust CI",
+        help="Run Rust CI",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    rust_parser.set_defaults(func=_run_rust)
 
     args = parser.parse_args()
     arg_dict = dict(vars(args))
