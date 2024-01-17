@@ -31,7 +31,7 @@ pub use serializer::to_buffer;
 pub mod __derive {
     pub use crate::buffer::{Reader, Writer};
     pub use crate::deserializer::{Deserialize, DeserializerState};
-    pub use crate::row::{Row, StructViewer, StructWriter};
+    pub use crate::row::{ArrayViewer, ArrayWriter, Row, StructViewer, StructWriter};
     pub use crate::serializer::{Serialize, SerializerState};
     pub use crate::types::{compute_struct_hash, FieldType, FuryMeta, SIZE_OF_REF_AND_TYPE};
     pub use crate::Error;
