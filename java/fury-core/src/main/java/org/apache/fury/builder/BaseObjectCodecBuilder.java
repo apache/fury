@@ -479,15 +479,18 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Class<? extends Serializer> serializerClass =
           visitFury(f -> f.getClassResolver().getSerializerClass(cls));
       Preconditions.checkNotNull(serializerClass, "Unsupported for class " + cls);
-      ClassLoader beanClassClassLoader =
-          beanClass.getClassLoader() == null
-              ? Thread.currentThread().getContextClassLoader()
-              : beanClass.getClassLoader();
       if (!ReflectionUtils.isPublic(serializerClass)) {
         // TODO(chaokunyang) add jdk17+ unexported class check.
         // non-public class can't be accessed in generated class.
         serializerClass = Serializer.class;
       } else {
+        ClassLoader beanClassClassLoader = beanClass.getClassLoader();
+        if (beanClassClassLoader == null) {
+          beanClassClassLoader = Thread.currentThread().getContextClassLoader();
+          if (beanClassClassLoader == null) {
+            beanClassClassLoader = Fury.class.getClassLoader();
+          }
+        }
         try {
           beanClassClassLoader.loadClass(serializerClass.getName());
         } catch (ClassNotFoundException e) {

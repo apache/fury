@@ -114,6 +114,10 @@ public class FuryPooledObjectFactory {
 
   /** todo setClassLoader support LoaderBinding.StagingType */
   public void setClassLoader(ClassLoader classLoader, LoaderBinding.StagingType stagingType) {
+    if (classLoader == null) {
+      // may be used to clear some classloader
+      classLoader = Fury.class.getClassLoader();
+    }
     classLoaderLocal.set(classLoader);
     getOrAddCache(classLoader);
   }
