@@ -67,6 +67,24 @@ describe('oneof', () => {
         );
         expect(result).toEqual(obj.option3)
     });
+    test('should nested oneof work1', () => {
+        const fury = new Fury({ refTracking: true });
+        const { serialize, deserialize } = fury.registerSerializer(Type.object("foo2", {
+            f: oneOfThree
+        }));
+        const obj = {
+            option1: "hello"
+        }
+        const input = serialize({
+            f: obj
+        });
+        const result = deserialize(
+            input
+        );
+        expect(result).toEqual({
+            f: obj.option1
+        })
+    });
 });
 
 
