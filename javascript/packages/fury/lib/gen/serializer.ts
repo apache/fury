@@ -25,8 +25,6 @@ import { Scope } from "./scope";
 import { TypeDescription, ObjectTypeDescription } from "../description";
 
 export interface SerializerGenerator {
-  writeStmt(accessor: string): string
-  readStmt(accessor: (expr: string) => string, refState: RefState): string
   toSerializer(): string
   toWriteEmbed(accessor: string, excludeHead?: boolean): string
   toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean, refState?: RefState): string
@@ -124,10 +122,6 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     }
   }
 
-  safeTag() {
-    return CodecBuilder.replaceBackslashAndQuote((<ObjectTypeDescription> this.description).options.tag);
-  }
-
   protected wrapWriteHead(accessor: string, stmt: (accessor: string) => string) {
     const meta = this.builder.meta(this.description);
 
@@ -135,7 +129,8 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
       if (this.description.type !== InternalSerializerType.FURY_TYPE_TAG) {
         return "";
       }
-      const tagWriter = this.scope.declare("tagWriter", `${this.builder.classResolver.createTagWriter(this.safeTag())}`);
+      const safeTag = CodecBuilder.replaceBackslashAndQuote((<ObjectTypeDescription> this.description).options.tag);
+      const tagWriter = this.scope.declare("tagWriter", `${this.builder.classResolver.createTagWriter(safeTag)}`);
       return `${tagWriter}.write(${this.builder.writer.ownName()})`;
     };
 
@@ -171,7 +166,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     }
   }
 
-  protected wrapReadHead(accessor: (expr: string) => string, stmt: (accessor: (expr: string) => string, refState: RefState) => string) {
+  private wrapReadHead(accessor: (expr: string) => string, stmt: (accessor: (expr: string) => string, refState: RefState) => string) {
     const refFlag = this.scope.uniqueName("refFlag");
 
     return `

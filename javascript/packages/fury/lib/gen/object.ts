@@ -112,7 +112,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
          `;
   }
 
-  safeTag() {
+  private safeTag() {
     return CodecBuilder.replaceBackslashAndQuote(this.description.options.tag);
   }
 

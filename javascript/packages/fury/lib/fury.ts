@@ -23,7 +23,7 @@ import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
 import { ConfigFlags, Serializer, Config, Language, BinaryReader as BinaryReaderType, BinaryWriter as BinaryWriterType } from "./type";
 import { OwnershipError } from "./error";
-import { ToRecordType, TypeDescription } from "./description";
+import { InputType, ResultType, TypeDescription } from "./description";
 import { generateSerializer, AnySerializer } from "./gen";
 
 export default class {
@@ -50,14 +50,14 @@ export default class {
     const serializer = generateSerializer(this, description);
     return {
       serializer,
-      serialize: (data: ToRecordType<T>) => {
+      serialize: (data: InputType<T>) => {
         return this.serialize(data, serializer);
       },
-      serializeVolatile: (data: ToRecordType<T>) => {
+      serializeVolatile: (data: InputType<T>) => {
         return this.serializeVolatile(data, serializer);
       },
       deserialize: (bytes: Uint8Array) => {
-        return this.deserialize(bytes, serializer) as ToRecordType<T>;
+        return this.deserialize(bytes, serializer) as ResultType<T>;
       },
     };
   }

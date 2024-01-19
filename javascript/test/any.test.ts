@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType } from '../packages/fury/index';
+import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('bool', () => {
@@ -121,5 +121,13 @@ describe('bool', () => {
         const ret = fury.deserialize(bin);
         expect(ret instanceof Array).toBe(true)
         expect(ret).toEqual(obj)
+    });
+
+    test('should root any work', () => {
+        const fury = new Fury();
+        const { serialize, deserialize } = fury.registerSerializer(Type.any());
+        const bin = serialize("hello");
+        const result = deserialize(bin);
+        expect(result).toEqual("hello")
     });
 });

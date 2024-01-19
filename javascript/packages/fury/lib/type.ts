@@ -54,6 +54,7 @@ export enum InternalSerializerType {
   FURY_PRIMITIVE_DOUBLE_ARRAY = 263,
   FURY_STRING_ARRAY = 264,
   ANY = -1,
+  ONEOF = -2,
 }
 
 export enum ConfigFlags {
