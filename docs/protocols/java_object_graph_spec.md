@@ -154,14 +154,6 @@ If string hasn't been written before, the data will be written as follows:
 | unsigned varint: string binary size + 1bit: not written before | 61bits: murmur hash + 3 bits encoding flags | string binary |
 ```
 
-Murmur hash can be omitted if caller pass a flag. In such cases, the format will be:
-
-```
-| unsigned varint: string binary size + 1bit: not written before | 8 bits encoding flags | string binary |
-```
-
-5 bits in `8 bits encoding flags` will be left empty.
-
 Encoding flags:
 
 | Encoding Flag | Pattern                                                   | Encoding Action                                                                                                                     |
@@ -171,6 +163,16 @@ Encoding flags:
 | 2             | every char is in `a-zA-Z._$`                              | replace every upper case char by `\|` + `lower case`, then use `LOWER_SPECIAL`, use this encoding if it's smaller than Encoding `3` |
 | 3             | every char is in `a-zA-Z._$`                              | use `LOWER_UPPER_DIGIT_SPECIAL` encoding if it's smaller than Encoding `2`                                                          |
 | 4             | any utf-8 char                                            | use `UTF-8` encoding                                                                                                                |
+
+Murmur hash can be omitted if caller pass a flag. In such cases, the format will be:
+
+```
+| unsigned varint: string binary size + 1bit: not written before | 8 bits encoding flags | string binary |
+```
+
+5 bits in `8 bits encoding flags` will be left empty.
+
+For small string, `61bits` hash will take too much space. If string binary size is less than `16` bytes,the hash will be ignored too.
 
 #### Write by ref
 
