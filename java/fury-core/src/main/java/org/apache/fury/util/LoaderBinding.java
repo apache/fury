@@ -109,6 +109,10 @@ public final class LoaderBinding {
    */
   public void setClassLoader(ClassLoader classLoader, StagingType stagingType) {
     if (this.loader != classLoader) {
+      if (classLoader == null) {
+        // may be used to clear some classloader
+        classLoader = Fury.class.getClassLoader();
+      }
       this.loader = classLoader;
       switch (stagingType) {
         case NO_STAGING:

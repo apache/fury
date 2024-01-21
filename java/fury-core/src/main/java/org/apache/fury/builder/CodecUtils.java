@@ -78,6 +78,9 @@ public class CodecUtils {
         beanClass.getClassLoader() == null
             ? Thread.currentThread().getContextClassLoader()
             : beanClass.getClassLoader();
+    if (beanClassClassLoader == null) {
+      beanClassClassLoader = fury.getClass().getClassLoader();
+    }
     try {
       // generated code imported fury classes.
       beanClassClassLoader.loadClass(Fury.class.getName());
