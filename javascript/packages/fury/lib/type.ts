@@ -114,3 +114,6 @@ export enum Language {
   CPP = 3,
   GO = 4,
 }
+
+export const USESTRINGVALUE = 0;
+export const USESTRINGID = 1;

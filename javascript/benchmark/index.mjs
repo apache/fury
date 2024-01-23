@@ -17,17 +17,19 @@
  * under the License.
  */
 
-const Fury = require("@furyjs/fury");
-const utils = require("../test/util");
-const hps = require('@furyjs/hps');
-const fury = new Fury.default({ hps, refTracking: false, useSliceString: true });
-const Benchmark = require("benchmark");
-const protobuf = require("protobufjs");
-const path = require('path');
-const Type = Fury.Type;
-const assert = require('assert');
-const { spawn } = require("child_process");
+import utils from '../test/util.js';
+import Fury from "@furyjs/fury";
+import Hps from '@furyjs/hps';
+import Benchmark from 'benchmark';
+import protobuf from 'protobufjs';
+import path, { dirname } from 'path';
+import assert from 'assert';
+import { fileURLToPath } from 'url';
+import { spawn } from 'child_process';
 
+const fury = new Fury({ hps: Hps, refTracking: false, useSliceString: true });
+const currentModulePath = fileURLToPath(import.meta.url);
+const currentModuleDir = dirname(currentModulePath);
 
 const sample = {
   id: 123456,
@@ -116,7 +118,7 @@ const sampleJson = JSON.stringify(sample);
 
 function loadProto() {
   return new Promise((resolve) => {
-    protobuf.load(path.join(__dirname, 'sample.proto'), function (err, root) {
+    protobuf.load(path.join(currentModuleDir, 'sample.proto'), function (err, root) {
       if (err) throw err;
       const AwesomeMessage = root.lookupType("SomeMessage");
       resolve({
@@ -208,7 +210,7 @@ async function start() {
     `python3`,
     ['draw.py', result.json.serialize, result.json.deserialize, result.protobuf.serialize, result.protobuf.deserialize, result.fury.serialize, result.fury.deserialize],
     {
-      cwd: __dirname,
+      cwd: currentModuleDir,
     }
   )
 }

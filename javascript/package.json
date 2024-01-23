@@ -11,9 +11,11 @@
     "packages/fury"
   ],
   "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.6",
     "@stylistic/eslint-plugin": "^1.5.1",
     "@types/js-beautify": "^1.14.3",
     "eslint": "^8.55.0",
-    "js-beautify": "^1.14.11"
+    "js-beautify": "^1.14.11",
+    "rollup": "^4.9.5"
   }
 }
