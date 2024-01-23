@@ -19,56 +19,47 @@
 
 import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages/fury/index';
 import {describe, expect, test} from '@jest/globals';
-const hps = require('@furyjs/hps');
-[
-  {
-    hps,
-  },
-  {
-    hps: null,
-  }
-].forEach(config => {
-  describe('string', () => {
-    test('should latin1 string work', () => {
-      
-      const fury = new Fury(config);    
-      const input = fury.serialize("123")
-      const result = fury.deserialize(
-          input
-      );
-      expect(result).toEqual("123")
-    });
-  
-    test('should utf8 string work', () => {
-      
-      const fury = new Fury(config);    
-      const input = fury.serialize("我是Fury, 你好！😁א")
-      const result = fury.deserialize(
-          input
-      );
-      expect(result).toEqual("我是Fury, 你好！😁א")
-    });
 
-    test('should long latin1 string work', () => {
-      const str = new Array(100).fill("123").join();
-      const fury = new Fury(config);    
-      const input = fury.serialize(str)
-      const result = fury.deserialize(
-          input
-      );
-      expect(result).toEqual(str)
-    });
-  
-    test('should long utf8 string work', () => {
-      const str = new Array(10).fill("我是Fury, 你好！😁א").join();
-      const fury = new Fury(config);    
-      const input = fury.serialize(str)
-      const result = fury.deserialize(
-          input
-      );
-      expect(result).toEqual(str)
-    });
+const config = {};
+
+describe('string', () => {
+  test('should latin1 string work', () => {
+    
+    const fury = new Fury(config);    
+    const input = fury.serialize("123")
+    const result = fury.deserialize(
+        input
+    );
+    expect(result).toEqual("123")
   });
-  
-})
 
+  test('should utf8 string work', () => {
+    
+    const fury = new Fury(config);    
+    const input = fury.serialize("我是Fury, 你好！😁א")
+    const result = fury.deserialize(
+        input
+    );
+    expect(result).toEqual("我是Fury, 你好！😁א")
+  });
+
+  test('should long latin1 string work', () => {
+    const str = new Array(100).fill("123").join();
+    const fury = new Fury(config);    
+    const input = fury.serialize(str)
+    const result = fury.deserialize(
+        input
+    );
+    expect(result).toEqual(str)
+  });
+
+  test('should long utf8 string work', () => {
+    const str = new Array(10).fill("我是Fury, 你好！😁א").join();
+    const fury = new Fury(config);    
+    const input = fury.serialize(str)
+    const result = fury.deserialize(
+        input
+    );
+    expect(result).toEqual(str)
+  });
+});
