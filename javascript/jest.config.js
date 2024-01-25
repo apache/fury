@@ -19,7 +19,7 @@
 
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 const semver = require("semver");
-const hpsEnable = semver.gt(process.versions.node, '20.0.0')
+const hpsEnable = semver.gt(process.versions.node, '20.0.0') && process.platform !== 'win32';
 
 module.exports = {
   collectCoverage: hpsEnable,
