@@ -20,11 +20,11 @@
 import { isNodeEnv } from "./util";
 
 export interface PlatformBuffer extends Uint8Array {
-  latin1Slice(start: number, end: number): string
-  utf8Slice(start: number, end: number): string
-  latin1Write(v: string, offset: number): void
-  utf8Write(v: string, offset: number): void
-  copy(target: Uint8Array, targetStart?: number, sourceStart?: number, sourceEnd?: number): void
+  latin1Slice(start: number, end: number): string;
+  utf8Slice(start: number, end: number): string;
+  latin1Write(v: string, offset: number): void;
+  utf8Write(v: string, offset: number): void;
+  copy(target: Uint8Array, targetStart?: number, sourceStart?: number, sourceEnd?: number): void;
 }
 
 export class BrowserBuffer extends Uint8Array implements PlatformBuffer {

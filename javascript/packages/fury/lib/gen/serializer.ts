@@ -25,9 +25,9 @@ import { Scope } from "./scope";
 import { TypeDescription, ObjectTypeDescription } from "../description";
 
 export interface SerializerGenerator {
-  toSerializer(): string
-  toWriteEmbed(accessor: string, excludeHead?: boolean): string
-  toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean, refState?: RefState): string
+  toSerializer(): string;
+  toWriteEmbed(accessor: string, excludeHead?: boolean): string;
+  toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean, refState?: RefState): string;
 }
 
 export enum RefStateType {
