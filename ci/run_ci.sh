@@ -201,8 +201,7 @@ case $1 in
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         echo "Executing fury javascript tests failed"
-        # TODO(bigtech) enable js ci
-        # exit $testcode
+        exit $testcode
       fi
       echo "Executing fury javascript tests succeeds"
     ;;
