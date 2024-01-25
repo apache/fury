@@ -107,10 +107,11 @@ jobs:
 
   javascript:
     name: JavaScript CI
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: [14.x, 16.x, 18.x, 20.x]
+        os: [ubuntu-latest, macos-latest, windows-2022]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
@@ -119,8 +120,17 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Upgrade npm
         run: npm install -g npm@8
+      # node-gyp needs to use python and relies on the distutils module.
+      # The distutils module has been removed starting from python 3.12
+      # (see https://docs.python.org/3.10/library/distutils.html). Some
+      # OS (such as macos -latest) uses python3.12 by default, so python 3.8
+      # is used here to avoid this problem.
+      - name: Set up Python3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
       - name: Run CI with NodeJS
-        run: ./ci/run_ci.sh javascript
+        run: python ./ci/run_ci.py javascript
 
   rust:
     name: Rust CI
