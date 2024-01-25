@@ -11,7 +11,7 @@
   "gypfile": false,
   "scripts": {
     "postinstall": "node -e \"if (process.version.match(/v(\\d+)/)[1] >= 20 && process.platform !== 'win32') { require('child_process').execSync('npx node-gyp rebuild') } \"",
-    "build": "npx node-gyp rebuild && tsc",
+    "build": "node -e \"if (process.version.match(/v(\\d+)/)[1] >= 20 && process.platform !== 'win32') { require('child_process').execSync('npx node-gyp rebuild && tsc') } \"",
     "prepublishOnly": "npm run build"
   },
   "license": "Apache",
