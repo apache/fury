@@ -124,13 +124,13 @@ class AnySerializerGenerator extends BaseSerializerGenerator {
 
     const declare = `
       const readInner = (fromRef) => {
-        throw new Error("Type oneof readInner can't call directly");
+        throw new Error("Type Any readInner can't call directly");
       };
       const read = () => {
         ${this.toReadEmbed(expr => `return ${expr}`)}
       };
       const writeInner = (v) => {
-        throw new Error("Type oneof writeInner can't call directly");
+        throw new Error("Type Any writeInner can't call directly");
       };
       const write = (v) => {
         ${this.toWriteEmbed("v")}
