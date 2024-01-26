@@ -29,6 +29,9 @@ BAZEL_VERSION = "6.3.2"
 
 PYARROW_VERSION = "14.0.0"
 
+PROJECT_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
+
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -71,6 +74,10 @@ def _get_bazel_download_url():
     )
 
 
+def _cd_project_subdir(subdir):
+    os.chdir(os.path.join(PROJECT_ROOT_DIR, subdir))
+
+
 def _run_cpp():
     _install_cpp_deps()
     # run test
@@ -84,8 +91,7 @@ def _run_rust():
     _exec_cmd("rustup component add clippy-preview")
     _exec_cmd("rustup component add rustfmt")
     logging.info("Executing fury rust tests")
-    cur_script_abs_path = os.path.split(os.path.realpath(__file__))[0]
-    os.chdir(os.path.join(cur_script_abs_path, "../rust"))
+    _cd_project_subdir("rust")
 
     cmds = (
         "cargo doc --no-deps --document-private-items --all-features --open",
@@ -100,6 +106,14 @@ def _run_rust():
     for cmd in cmds:
         _exec_cmd(cmd)
     logging.info("Executing fury rust tests succeeds")
+
+
+def _run_js():
+    logging.info("Executing fury javascript tests.")
+    _cd_project_subdir("javascript")
+    _exec_cmd("npm install")
+    _exec_cmd("npm run test")
+    logging.info("Executing fury javascript tests succeeds.")
 
 
 def _install_cpp_deps():
@@ -155,6 +169,14 @@ def _parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     rust_parser.set_defaults(func=_run_rust)
+
+    js_parser = subparsers.add_parser(
+        "javascript",
+        description="Run Javascript CI",
+        help="Run Javascript CI",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    js_parser.set_defaults(func=_run_js)
 
     args = parser.parse_args()
     arg_dict = dict(vars(args))
