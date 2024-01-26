@@ -28,14 +28,16 @@ export const BinaryReader = (config: Config) => {
   let dataView!: DataView;
   let buffer!: PlatformBuffer;
   let bigString: string;
+  let byteLength: number;
 
   const stringLatin1 = sliceStringEnable ? stringLatin1Fast : stringLatin1Slow;
 
   function reset(ab: Uint8Array) {
     buffer = fromUint8Array(ab);
+    byteLength = buffer.byteLength;
     dataView = new DataView(buffer.buffer, buffer.byteOffset);
     if (sliceStringEnable) {
-      bigString = buffer.latin1Slice(0, buffer.byteLength);
+      bigString = buffer.latin1Slice(0, byteLength);
     }
     cursor = 0;
   }
@@ -153,7 +155,7 @@ export const BinaryReader = (config: Config) => {
 
   function varUInt32() {
     // Reduce memory reads as much as possible. Reading a uint32 at once is far faster than reading four uint8s separately.
-    if (buffer.byteLength - cursor >= 5) {
+    if (byteLength - cursor >= 5) {
       const u32 = dataView.getUint32(cursor++, true);
       let result = u32 & 0x7f;
       if ((u32 & 0x80) != 0) {
@@ -208,7 +210,7 @@ export const BinaryReader = (config: Config) => {
 
   function varUInt64() {
     // Creating BigInts is too performance-intensive; we'll use uint32 instead.
-    if (buffer.byteLength - cursor < 8) {
+    if (byteLength - cursor < 8) {
       let byte = bigUInt8();
       let result = byte & 0x7fn;
       if ((byte & 0x80n) != 0n) {

@@ -30,7 +30,7 @@ export const makeHead = (flag: RefFlags, type: InternalSerializerType) => {
 
 export const ReferenceResolver = (
   config: {
-    refTracking?: boolean
+    refTracking?: boolean;
   },
   binaryWriter: BinaryWriter,
   binaryReader: BinaryReader,

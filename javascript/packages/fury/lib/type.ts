@@ -54,6 +54,7 @@ export enum InternalSerializerType {
   FURY_PRIMITIVE_DOUBLE_ARRAY = 263,
   FURY_STRING_ARRAY = 264,
   ANY = -1,
+  ONEOF = -2,
 }
 
 export enum ConfigFlags {
@@ -65,11 +66,11 @@ export enum ConfigFlags {
 
 // read, write
 export type Serializer<T = any, T2 = any> = {
-  read: () => T2
-  write: (v: T2) => T
-  readInner: (refValue?: boolean) => T2
-  writeInner: (v: T2) => T
-  meta: Meta
+  read: () => T2;
+  write: (v: T2) => T;
+  readInner: (refValue?: boolean) => T2;
+  writeInner: (v: T2) => T;
+  meta: Meta;
 };
 
 export enum RefFlags {
@@ -94,17 +95,17 @@ export const LATIN1 = 0;
 export const UTF8 = 1;
 
 export interface Hps {
-  isLatin1: (str: string) => boolean
-  stringCopy: (str: string, dist: Uint8Array, offset: number) => void
+  isLatin1: (str: string) => boolean;
+  stringCopy: (str: string, dist: Uint8Array, offset: number) => void;
 }
 
 export interface Config {
-  hps?: Hps
-  refTracking?: boolean
-  useSliceString?: boolean
+  hps?: Hps;
+  refTracking?: boolean;
+  useSliceString?: boolean;
   hooks?: {
-    afterCodeGenerated?: (code: string) => string
-  }
+    afterCodeGenerated?: (code: string) => string;
+  };
 }
 
 export enum Language {

@@ -23,9 +23,9 @@ import { ObjectTypeDescription, TypeDescription } from "./description";
 import { InternalSerializerType } from "./type";
 
 export type Meta = {
-  fixedSize: number
-  needToWriteRef: boolean
-  type: InternalSerializerType
+  fixedSize: number;
+  needToWriteRef: boolean;
+  type: InternalSerializerType;
 };
 
 export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
@@ -138,6 +138,7 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         needToWriteRef: Boolean(fury.config.refTracking) && true,
         type,
       };
+    case InternalSerializerType.ONEOF:
     case InternalSerializerType.ANY:
       return {
         fixedSize: 11,

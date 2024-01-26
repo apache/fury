@@ -18,7 +18,7 @@
  */
 
 import { InternalSerializerType } from "../type";
-import { ArrayTypeDescription, MapTypeDescription, ObjectTypeDescription, SetTypeDescription, TupleTypeDescription, TypeDescription } from "../description";
+import { ArrayTypeDescription, MapTypeDescription, ObjectTypeDescription, OneofTypeDescription, SetTypeDescription, TupleTypeDescription, TypeDescription } from "../description";
 import { CodegenRegistry } from "./router";
 import { CodecBuilder } from "./builder";
 import { Scope } from "./scope";
@@ -35,6 +35,7 @@ import "./tuple";
 import "./typedArray";
 import Fury from "../fury";
 import "./enum";
+import "./oneof";
 
 export { AnySerializer } from "./any";
 
@@ -85,6 +86,14 @@ function regDependencies(fury: Fury, description: TypeDescription) {
     (<TupleTypeDescription>description).options.inner.forEach((x) => {
       regDependencies(fury, x);
     });
+  }
+  if (description.type === InternalSerializerType.ONEOF) {
+    const options = (<OneofTypeDescription>description).options;
+    if (options.inner) {
+      Object.values(options.inner).forEach((x) => {
+        regDependencies(fury, x);
+      });
+    }
   }
 }
 

@@ -94,12 +94,12 @@ class AnySerializerGenerator extends BaseSerializerGenerator {
     this.description = description;
   }
 
-  writeStmt(accessor: string): string {
-    return `${this.builder.furyName()}.anySerializer.writeInner(${accessor})`;
+  writeStmt(): string {
+    throw new Error("Type Any writeStmt can't inline");
   }
 
-  readStmt(accessor: (expr: string) => string): string {
-    return `${this.builder.furyName()}.anySerializer.readInner(${accessor})`;
+  readStmt(): string {
+    throw new Error("Type Any readStmt can't inline");
   }
 
   toReadEmbed(accessor: (expr: string) => string, excludeHead = false): string {
@@ -114,6 +114,41 @@ class AnySerializerGenerator extends BaseSerializerGenerator {
       throw new Error("Anonymous can't excludeHead");
     }
     return `${this.builder.furyName()}.anySerializer.write(${accessor})`;
+  }
+
+  toSerializer() {
+    this.scope.assertNameNotDuplicate("read");
+    this.scope.assertNameNotDuplicate("readInner");
+    this.scope.assertNameNotDuplicate("write");
+    this.scope.assertNameNotDuplicate("writeInner");
+
+    const declare = `
+      const readInner = (fromRef) => {
+        throw new Error("Type Any readInner can't call directly");
+      };
+      const read = () => {
+        ${this.toReadEmbed(expr => `return ${expr}`)}
+      };
+      const writeInner = (v) => {
+        throw new Error("Type Any writeInner can't call directly");
+      };
+      const write = (v) => {
+        ${this.toWriteEmbed("v")}
+      };
+    `;
+    return `
+        return function (fury, external) {
+            ${this.scope.generate()}
+            ${declare}
+            return {
+              read,
+              readInner,
+              write,
+              writeInner,
+              meta: ${JSON.stringify(this.builder.meta(this.description))}
+            };
+        }
+        `;
   }
 }
 

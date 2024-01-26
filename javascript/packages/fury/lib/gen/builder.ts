@@ -331,6 +331,13 @@ export class CodecBuilder {
     return v.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
   }
 
+  static safeString(target: string) {
+    if (!CodecBuilder.isDotPropAccessor(target) || CodecBuilder.isReserved(target)) {
+      return `"${CodecBuilder.replaceBackslashAndQuote(target)}"`;
+    }
+    return `"${target}"`;
+  }
+
   static safePropAccessor(prop: string) {
     if (!CodecBuilder.isDotPropAccessor(prop) || CodecBuilder.isReserved(prop)) {
       return `["${CodecBuilder.replaceBackslashAndQuote(prop)}"]`;
