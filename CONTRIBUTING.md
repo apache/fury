@@ -1,6 +1,6 @@
 # How to contribute to Fury
 
-## 🔎 Finding good first issues
+## Finding good first issues
 
 See [Good First Issues](https://github.com/apache/incubator-fury/contribute).
 
@@ -20,7 +20,9 @@ For example, here are good PR titles:
 
 For more details, please check [pr-lint.yml](./.github/workflows/pr-lint.yml).
 
-## 🧪 Testing
+## Testing
+
+For environmental requirements, please check [DEVELOPMENT.md](./docs/guide/DEVELOPMENT.md).
 
 ### Python
 
@@ -57,7 +59,14 @@ cd rust
 cargo test
 ```
 
-## 😎 Code Style
+### JavaScript
+
+```bash
+cd javascript
+npm run test
+```
+
+## Code Style
 
 Run all checks: `bash ci/format.sh --all`.
 
@@ -106,6 +115,13 @@ gofmt -s -w .
 ```bash
 cd rust
 cargo fmt
+```
+
+### JavaScript
+
+```bash
+cd javascript
+npm run lint
 ```
 
 ## Debug
