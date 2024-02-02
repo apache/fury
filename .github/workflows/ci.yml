@@ -33,6 +33,9 @@ on:
       - 'LICENSE'
       - '.vscode/**'
       - '.gitignore'
+      - 'licenses/**'
+      - 'DISCLAIMER'
+      - 'NOTICE'
     types: ['opened', 'reopened', 'synchronize']
 
 jobs:
