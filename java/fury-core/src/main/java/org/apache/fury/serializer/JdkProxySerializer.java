@@ -23,12 +23,27 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 
 /** Serializer for jdk {@link Proxy}. */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class JdkProxySerializer extends Serializer {
+
+  // Make offset compatible with graalvm native image.
+  private static final long PROXY_HANDLER_FIELD_OFFSET;
+
+  static {
+    try {
+      // Make offset compatible with graalvm native image.
+      PROXY_HANDLER_FIELD_OFFSET =
+          Platform.objectFieldOffset(Proxy.class.getDeclaredField("h"));
+    } catch (NoSuchFieldException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   public JdkProxySerializer(Fury fury, Class cls) {
     super(fury, cls);
@@ -39,17 +54,23 @@ public class JdkProxySerializer extends Serializer {
 
   @Override
   public void write(MemoryBuffer buffer, Object value) {
-    fury.writeRef(buffer, Proxy.getInvocationHandler(value));
     fury.writeRef(buffer, value.getClass().getInterfaces());
+    fury.writeRef(buffer, Proxy.getInvocationHandler(value));
   }
 
   @Override
   public Object read(MemoryBuffer buffer) {
-    InvocationHandler invocationHandler = (InvocationHandler) fury.readRef(buffer);
-    Preconditions.checkNotNull(invocationHandler);
+    final RefResolver resolver = fury.getRefResolver();
+    final int refId = resolver.lastPreservedRefId();
     final Class<?>[] interfaces = (Class<?>[]) fury.readRef(buffer);
     Preconditions.checkNotNull(interfaces);
-    return Proxy.newProxyInstance(fury.getClassLoader(), interfaces, invocationHandler);
+    final Class<?> proxyClass = Proxy.getProxyClass(fury.getClassLoader(), interfaces);
+    Object proxy = Platform.newInstance(proxyClass);
+    resolver.setReadObject(refId, proxy);
+    InvocationHandler invocationHandler = (InvocationHandler) fury.readRef(buffer);
+    Preconditions.checkNotNull(invocationHandler);
+    Platform.putObject(proxy, PROXY_HANDLER_FIELD_OFFSET, invocationHandler);
+    return proxy;
   }
 
   public static class ReplaceStub {}

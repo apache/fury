@@ -57,4 +57,51 @@ public class JdkProxySerializerTest extends FuryTestBase {
     Function deserializedFunction = (Function) fury.deserialize(fury.serialize(function));
     assertEquals(deserializedFunction.apply(null), 1);
   }
+
+  private static class RefTestInvocationHandler implements InvocationHandler, Serializable {
+
+    private Function  proxy;
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      if (method.getName().equals("equals")) {
+        return args[0] == this.proxy;
+      }
+      return "Hello world from " + (proxy == null ? "null" : proxy.getClass().getName() + "@" + System.identityHashCode(proxy));
+    }
+
+    private void setProxy(Function myProxy) {
+      this.proxy = myProxy;
+    }
+
+    private Function getProxy() {
+      return proxy;
+    }
+  }
+
+  @Test
+  public void testJdkProxyRef() {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .build();
+    RefTestInvocationHandler hdlr =
+        new RefTestInvocationHandler();
+    Function function =
+        (Function)
+            Proxy.newProxyInstance(
+                fury.getClassLoader(), new Class[] {Function.class}, hdlr);
+    hdlr.setProxy(function);
+    assertEquals(hdlr.getProxy(), function);
+
+    Function deserializedFunction =
+        (Function)
+            fury.deserialize(fury.serialize(function));
+    RefTestInvocationHandler deserializedHandler =
+        (RefTestInvocationHandler)
+            Proxy.getInvocationHandler(deserializedFunction);
+    assertEquals(deserializedHandler.getProxy(), deserializedFunction);
+  }
 }
