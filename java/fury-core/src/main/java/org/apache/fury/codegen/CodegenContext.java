@@ -289,8 +289,9 @@ public class CodegenContext {
     if (type.startsWith("java.lang")) {
       if (!type.substring("java.lang.".length()).contains(".")) {
         String simpleName = clz.getSimpleName();
+        boolean hasPackage = StringUtils.isNotBlank(pkg);
         Map<String, Boolean> packageMap =
-            nameConflicts.computeIfAbsent(pkg, p -> new ConcurrentHashMap<>());
+            nameConflicts.computeIfAbsent(hasPackage ? pkg : "", p -> new ConcurrentHashMap<>());
         Boolean conflictRes =
             packageMap.computeIfAbsent(
                 simpleName,
@@ -300,7 +301,7 @@ public class CodegenContext {
                         clz.getClassLoader() == null
                             ? Thread.currentThread().getContextClassLoader()
                             : clz.getClassLoader();
-                    beanClassClassLoader.loadClass(pkg + "." + sn);
+                    beanClassClassLoader.loadClass(hasPackage ? pkg + "." + sn : sn);
                     return Boolean.TRUE;
                   } catch (ClassNotFoundException e) {
                     return Boolean.FALSE;
