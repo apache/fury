@@ -38,8 +38,7 @@ public class JdkProxySerializer extends Serializer {
   static {
     try {
       // Make offset compatible with graalvm native image.
-      PROXY_HANDLER_FIELD_OFFSET =
-          Platform.objectFieldOffset(Proxy.class.getDeclaredField("h"));
+      PROXY_HANDLER_FIELD_OFFSET = Platform.objectFieldOffset(Proxy.class.getDeclaredField("h"));
     } catch (NoSuchFieldException e) {
       throw new RuntimeException(e);
     }
