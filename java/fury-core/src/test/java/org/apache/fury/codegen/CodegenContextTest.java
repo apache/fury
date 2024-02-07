@@ -97,4 +97,21 @@ public class CodegenContextTest {
     Assert.assertTrue(code.contains("int value = \"abc\".length();"));
     Assert.assertTrue(code.contains("catch (Throwable e)"));
   }
+
+  // test case for #1363
+  @Test
+  public void testJavaLangNameConflict() {
+    CodegenContext ctx = new CodegenContext();
+
+    ctx.setPackage(CodegenContextTest.class.getPackage().getName());
+    // we expect the simple name here.
+    Assert.assertEquals(ctx.type(Object.class), Object.class.getSimpleName());
+
+    ctx.setPackage(
+        org.apache.fury.codegen.javalangnameconflict.Object.class.getPackage().getName());
+    // we expect the full name here.
+    Assert.assertEquals(ctx.type(Object.class), Object.class.getName());
+    // we expect the simple name here.
+    Assert.assertEquals(ctx.type(Integer.class), Integer.class.getSimpleName());
+  }
 }

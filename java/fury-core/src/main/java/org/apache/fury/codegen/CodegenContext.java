@@ -36,6 +36,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.fury.codegen.Expression.BaseInvoke;
 import org.apache.fury.codegen.Expression.Reference;
@@ -114,6 +115,8 @@ public class CodegenContext {
             "null"));
     JAVA_RESERVED_WORDS = ImmutableSet.copyOf(JAVA_RESERVED_WORDS);
   }
+
+  private static Map<String, Map<String, Boolean>> nameConflicts = new ConcurrentHashMap<>();
 
   Map<String, Long> newValNameIds = new HashMap<>();
   Set<String> valNames = new HashSet<>();
@@ -285,7 +288,26 @@ public class CodegenContext {
     String type = ReflectionUtils.getCanonicalName(clz);
     if (type.startsWith("java.lang")) {
       if (!type.substring("java.lang.".length()).contains(".")) {
-        return clz.getSimpleName();
+        String simpleName = clz.getSimpleName();
+        boolean hasPackage = StringUtils.isNotBlank(pkg);
+        Map<String, Boolean> packageMap =
+            nameConflicts.computeIfAbsent(hasPackage ? pkg : "", p -> new ConcurrentHashMap<>());
+        Boolean conflictRes =
+            packageMap.computeIfAbsent(
+                simpleName,
+                sn -> {
+                  try {
+                    ClassLoader beanClassClassLoader =
+                        clz.getClassLoader() == null
+                            ? Thread.currentThread().getContextClassLoader()
+                            : clz.getClassLoader();
+                    beanClassClassLoader.loadClass(hasPackage ? pkg + "." + sn : sn);
+                    return Boolean.TRUE;
+                  } catch (ClassNotFoundException e) {
+                    return Boolean.FALSE;
+                  }
+                });
+        return conflictRes ? clz.getName() : simpleName;
       }
     }
     if (imports.contains(type)) {
