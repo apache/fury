@@ -307,7 +307,7 @@ public class CodegenContext {
                     return Boolean.FALSE;
                   }
                 });
-        return conflictRes.booleanValue() ? clz.getName() : simpleName;
+        return conflictRes ? clz.getName() : simpleName;
       }
     }
     if (imports.contains(type)) {
