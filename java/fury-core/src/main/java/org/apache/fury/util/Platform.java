@@ -144,11 +144,11 @@ public final class Platform {
   }
 
   /**
-   * Gets the offset of the only field in the class matching the required type
+   * Gets the offset of the only field in the class matching the required type.
    *
    * @param clazz the class in which the field should be declared
    * @param fieldType the required type of the field
-   * @return
+   * @return offset of the field
    * @throws IllegalStateException if there are multiple fields of the required type
    * @throws IllegalArgumentException if there are no fields of the required type
    */
@@ -156,7 +156,7 @@ public final class Platform {
     Field f = null;
     for (Field fi : clazz.getDeclaredFields()) {
       if (fieldType.equals(fi.getType())) {
-        if (f != null)
+        if (f != null) {
           throw new IllegalStateException(
               "Found multiple field s matching "
                   + fieldType
@@ -166,13 +166,14 @@ public final class Platform {
                   + f
                   + " and "
                   + fi);
-
+        }
         f = fi;
       }
     }
-    if (f == null)
+    if (f == null) {
       throw new IllegalArgumentException(
           "Found no field matching " + fieldType.getName() + " in " + clazz + "!");
+    }
     return objectFieldOffset(f);
   }
 
