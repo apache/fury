@@ -34,15 +34,20 @@ import org.apache.fury.util.ReflectionUtils;
 public class JdkProxySerializer extends Serializer {
 
   // Make offset compatible with graalvm native image.
-  private static final long PROXY_HANDLER_FIELD_OFFSET =
-      Platform.objectFieldOffset(Proxy.class, InvocationHandler.class);
-  private static final InvocationHandler STUB_HANDLER =
-      new InvocationHandler() {
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-          throw new IllegalStateException("Deserialization stub handler still active");
-        }
-      };
+  private static final long PROXY_HANDLER_FIELD_OFFSET;
+  private static final InvocationHandler STUB_HANDLER;
+
+  static {
+    // Make offset compatible with graalvm native image.
+    PROXY_HANDLER_FIELD_OFFSET = Platform.objectFieldOffset(Proxy.class, InvocationHandler.class);
+    STUB_HANDLER =
+        new InvocationHandler() {
+          @Override
+          public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            throw new IllegalStateException("Deserialization stub handler still active");
+          }
+        };
+  }
 
   public JdkProxySerializer(Fury fury, Class cls) {
     super(fury, cls);
