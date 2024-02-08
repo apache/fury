@@ -20,6 +20,7 @@
 package org.apache.fury.serializer;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
@@ -33,16 +34,15 @@ import org.apache.fury.util.ReflectionUtils;
 public class JdkProxySerializer extends Serializer {
 
   // Make offset compatible with graalvm native image.
-  private static final long PROXY_HANDLER_FIELD_OFFSET;
-
-  static {
-    try {
-      // Make offset compatible with graalvm native image.
-      PROXY_HANDLER_FIELD_OFFSET = Platform.objectFieldOffset(Proxy.class.getDeclaredField("h"));
-    } catch (NoSuchFieldException e) {
-      throw new RuntimeException(e);
-    }
-  }
+  private static final long PROXY_HANDLER_FIELD_OFFSET =
+      Platform.objectFieldOffset(Proxy.class, InvocationHandler.class);
+  private static final InvocationHandler STUB_HANDLER =
+      new InvocationHandler() {
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+          throw new IllegalStateException("Deserialization stub handler still active");
+        }
+      };
 
   public JdkProxySerializer(Fury fury, Class cls) {
     super(fury, cls);
@@ -63,8 +63,7 @@ public class JdkProxySerializer extends Serializer {
     final int refId = resolver.lastPreservedRefId();
     final Class<?>[] interfaces = (Class<?>[]) fury.readRef(buffer);
     Preconditions.checkNotNull(interfaces);
-    final Class<?> proxyClass = Proxy.getProxyClass(fury.getClassLoader(), interfaces);
-    Object proxy = Platform.newInstance(proxyClass);
+    Object proxy = Proxy.newProxyInstance(fury.getClassLoader(), interfaces, STUB_HANDLER);
     resolver.setReadObject(refId, proxy);
     InvocationHandler invocationHandler = (InvocationHandler) fury.readRef(buffer);
     Preconditions.checkNotNull(invocationHandler);

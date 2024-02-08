@@ -143,6 +143,39 @@ public final class Platform {
     return UNSAFE.objectFieldOffset(f);
   }
 
+  /**
+   * Gets the offset of the only field in the class matching the required type
+   *
+   * @param clazz the class in which the field should be declared
+   * @param fieldType the required type of the field
+   * @return
+   * @throws IllegalStateException if there are multiple fields of the required type
+   * @throws IllegalArgumentException if there are no fields of the required type
+   */
+  public static long objectFieldOffset(Class<?> clazz, Class<?> fieldType) {
+    Field f = null;
+    for (Field fi : clazz.getDeclaredFields()) {
+      if (fieldType.equals(fi.getType())) {
+        if (f != null)
+          throw new IllegalStateException(
+              "Found multiple field s matching "
+                  + fieldType
+                  + " in "
+                  + clazz
+                  + ": "
+                  + f
+                  + " and "
+                  + fi);
+
+        f = fi;
+      }
+    }
+    if (f == null)
+      throw new IllegalArgumentException(
+          "Found no field matching " + fieldType.getName() + " in " + clazz + "!");
+    return objectFieldOffset(f);
+  }
+
   public static int getInt(Object object, long offset) {
     return UNSAFE.getInt(object, offset);
   }
