@@ -28,15 +28,14 @@ import com.alibaba.fastjson2.JSONWriter;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferInput;
+import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferInput;
-import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferOutput;
 import org.apache.fury.Fury;
 import org.apache.fury.benchmark.data.ComparableByteArray;
 import org.apache.fury.benchmark.data.SerializableByteBuffer;

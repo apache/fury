@@ -23,10 +23,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
-import java.util.ArrayList;
-
 import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferInput;
 import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferOutput;
+import java.util.ArrayList;
 import org.apache.fury.benchmark.IntsSerializationSuite;
 import org.apache.fury.benchmark.LongStringSerializationSuite;
 import org.apache.fury.benchmark.LongsSerializationSuite;
