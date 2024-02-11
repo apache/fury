@@ -56,6 +56,7 @@ public class SerializerFactoryTest {
     public KryoSerializer(Fury fury, Class cls) {
       super(fury, cls);
       kryo = new Kryo();
+      kryo.setRegistrationRequired(false);
       output = new Output(64, Integer.MAX_VALUE);
       input = new ByteBufferInput();
     }
