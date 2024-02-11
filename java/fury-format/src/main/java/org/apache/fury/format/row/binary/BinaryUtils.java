@@ -19,8 +19,8 @@
 
 package org.apache.fury.format.row.binary;
 
-import com.google.common.reflect.TypeToken;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.type.TypeUtils;
 
 /** Util class for building generated binary encoder. */

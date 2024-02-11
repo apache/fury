@@ -33,7 +33,6 @@ import static org.apache.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -65,6 +64,7 @@ import org.apache.fury.codegen.Expression.While;
 import org.apache.fury.codegen.ExpressionOptimizer;
 import org.apache.fury.codegen.ExpressionUtils;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;

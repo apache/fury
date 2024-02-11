@@ -22,7 +22,6 @@ package org.apache.fury.format.encoder;
 import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.reflect.TypeToken;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CodeGenerator;
@@ -32,6 +31,7 @@ import org.apache.fury.codegen.ExpressionUtils;
 import org.apache.fury.format.row.binary.BinaryArray;
 import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.type.TypeInference;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.StringUtils;

@@ -19,11 +19,11 @@
 
 package org.apache.fury.builder;
 
-import com.google.common.reflect.TypeToken;
 import java.util.Collections;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CompileUnit;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.resolver.FieldResolver;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.ClassDef;

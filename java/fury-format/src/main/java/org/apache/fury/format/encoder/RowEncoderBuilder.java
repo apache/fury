@@ -23,7 +23,6 @@ import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.base.CaseFormat;
-import com.google.common.reflect.TypeToken;
 import java.lang.reflect.Modifier;
 import java.util.SortedMap;
 import org.apache.arrow.vector.types.pojo.Field;
@@ -46,6 +45,7 @@ import org.apache.fury.format.row.binary.BinaryUtils;
 import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
 import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.format.type.TypeInference;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;

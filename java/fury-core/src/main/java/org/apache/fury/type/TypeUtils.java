@@ -21,7 +21,6 @@ package org.apache.fury.type;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.TypeParameter;
-import com.google.common.reflect.TypeToken;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
@@ -50,6 +49,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 

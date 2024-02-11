@@ -19,10 +19,10 @@
 
 package org.apache.fury.type;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.util.ReflectionUtils;
 
 /** Scala types utils using reflection without dependency on scala library. */

@@ -21,7 +21,6 @@ package org.apache.fury.format.encoder;
 
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.reflect.TypeToken;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -43,6 +42,7 @@ import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.format.type.TypeInference;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.LoggerFactory;
 import org.slf4j.Logger;

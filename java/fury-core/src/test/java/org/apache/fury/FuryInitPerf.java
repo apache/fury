@@ -19,12 +19,12 @@
 
 package org.apache.fury;
 
-import com.google.common.reflect.TypeToken;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.BeanB;

@@ -19,13 +19,13 @@
 
 package org.apache.fury.format.encoder;
 
-import com.google.common.reflect.TypeToken;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.fury.format.row.binary.BinaryArray;
+import org.apache.fury.reflect.TypeToken;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

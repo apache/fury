@@ -21,13 +21,13 @@ package org.apache.fury.serializer.collection;
 
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;

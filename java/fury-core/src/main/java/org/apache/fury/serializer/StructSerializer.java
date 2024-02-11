@@ -19,7 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -32,6 +31,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.ClassNotCompatibleException;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;

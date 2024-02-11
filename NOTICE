@@ -21,6 +21,7 @@ The text of each license is the standard Apache 2.0 license.
 * guava (https://github.com/google/guava)
     Files:
       java/fury-core/src/main/java/org/apache/fury/util/Preconditions.java
+      java/fury-core/src/main/java/org/apache/fury/reflect/TypeToken.java
 
 * spark (https://github.com/apache/spark)
     Files:

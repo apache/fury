@@ -21,7 +21,6 @@ package org.apache.fury.codegen;
 
 import static org.testng.Assert.assertEquals;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -29,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.fury.codegen.Expression.Literal;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.testng.annotations.Test;

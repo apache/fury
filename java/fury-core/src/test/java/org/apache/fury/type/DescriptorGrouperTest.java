@@ -22,7 +22,6 @@ package org.apache.fury.type;
 import static org.testng.Assert.*;
 
 import com.google.common.primitives.Primitives;
-import com.google.common.reflect.TypeToken;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
+import org.apache.fury.reflect.TypeToken;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("UnstableApiUsage")

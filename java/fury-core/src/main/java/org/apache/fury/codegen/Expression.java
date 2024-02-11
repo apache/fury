@@ -47,7 +47,6 @@ import static org.apache.fury.type.TypeUtils.isPrimitive;
 import static org.apache.fury.type.TypeUtils.maxType;
 import static org.apache.fury.util.Preconditions.checkArgument;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -56,6 +55,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;

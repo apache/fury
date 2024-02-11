@@ -34,7 +34,6 @@ import static org.apache.fury.type.TypeUtils.isPrimitive;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.reflect.TypeToken;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,6 +55,7 @@ import org.apache.fury.codegen.Expression.Reference;
 import org.apache.fury.codegen.Expression.ReplaceStub;
 import org.apache.fury.codegen.Expression.StaticInvoke;
 import org.apache.fury.codegen.ExpressionVisitor;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.serializer.ObjectSerializer;
 import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
 import org.apache.fury.type.Descriptor;

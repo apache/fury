@@ -21,7 +21,6 @@ package org.apache.fury.format.encoder;
 
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.reflect.TypeToken;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,6 +62,7 @@ import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
 import org.apache.fury.format.row.binary.writer.BinaryWriter;
 import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.DateTimeUtils;
 import org.apache.fury.util.Preconditions;

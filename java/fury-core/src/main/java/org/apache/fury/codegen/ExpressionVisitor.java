@@ -19,7 +19,6 @@
 
 package org.apache.fury.codegen;
 
-import com.google.common.reflect.TypeToken;
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Field;
@@ -34,6 +33,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.fury.codegen.Expression.ListExpression;
 import org.apache.fury.codegen.Expression.Reference;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;

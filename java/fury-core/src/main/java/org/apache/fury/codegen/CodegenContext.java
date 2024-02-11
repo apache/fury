@@ -26,7 +26,6 @@ import static org.apache.fury.type.TypeUtils.getArrayType;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.reflect.TypeToken;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,6 +41,7 @@ import org.apache.fury.codegen.Expression.BaseInvoke;
 import org.apache.fury.codegen.Expression.Reference;
 import org.apache.fury.collection.Collections;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;

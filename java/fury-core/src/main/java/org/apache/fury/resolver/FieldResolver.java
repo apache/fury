@@ -27,7 +27,6 @@ import static org.apache.fury.resolver.FieldResolver.FieldInfoEncodingType.EMBED
 import static org.apache.fury.resolver.FieldResolver.FieldInfoEncodingType.SEPARATE_TYPES_HASH;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -47,6 +46,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.exception.ClassNotCompatibleException;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.TypeToken;
 import org.apache.fury.serializer.PrimitiveSerializers;
 import org.apache.fury.serializer.collection.CollectionSerializer;
 import org.apache.fury.serializer.collection.MapSerializer;
