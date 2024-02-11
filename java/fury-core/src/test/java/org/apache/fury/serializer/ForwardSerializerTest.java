@@ -72,7 +72,7 @@ public class ForwardSerializerTest {
               @Override
               protected byte[] serialize(Kryo serializer, Object obj) {
                 Output output = outputLocal.get();
-                output.clear();
+                output.reset();
                 serializer.writeClassAndObject(output, obj);
                 return output.toBytes();
               }

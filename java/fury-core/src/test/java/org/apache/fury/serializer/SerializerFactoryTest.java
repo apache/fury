@@ -62,7 +62,7 @@ public class SerializerFactoryTest {
 
     @Override
     public void write(MemoryBuffer buffer, Object value) {
-      output.clear();
+      output.reset();
       kryo.writeObject(output, value);
       buffer.writeBytes(output.getBuffer(), 0, output.position());
     }
