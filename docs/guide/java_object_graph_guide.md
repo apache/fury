@@ -27,10 +27,10 @@ import org.apache.fury.config.*;
 public class Example {
   public static void main(String[] args) {
     SomeClass object = new SomeClass();
-    // Note that Fury instances should be reused between 
+    // Note that Fury instances should be reused between
     // multiple serializations of different objects.
     Fury fury = Fury.builder().withLanguage(Language.JAVA)
-      // Allow to deserialize objects unknown types, more flexible 
+      // Allow to deserialize objects unknown types, more flexible
       // but may be insecure if the classes contains malicious code.
       .requireClassRegistration(true)
       .build();
@@ -55,7 +55,7 @@ import org.apache.fury.config.*;
 public class Example {
   public static void main(String[] args) {
     SomeClass object = new SomeClass();
-    // Note that Fury instances should be reused between 
+    // Note that Fury instances should be reused between
     // multiple serializations of different objects.
     ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
       Fury f = Fury.builder().withLanguage(Language.JAVA)
@@ -81,7 +81,7 @@ import org.apache.fury.config.*;
 public class Example {
   // reuse fury.
   private static final ThreadSafeFury fury = Fury.builder()
-    // Allow to deserialize objects unknown types, more flexible 
+    // Allow to deserialize objects unknown types, more flexible
     // but may be insecure if the classes contains malicious code.
     .requireClassRegistration(true)
     .buildThreadSafeFury();
@@ -165,7 +165,7 @@ ThreadSafeFury fury=Fury.builder()
 `FuryBuilder#withIntCompressed`/`FuryBuilder#withLongCompressed` can be used to compress int/long for smaller size.
 Normally compress int is enough.
 
-Both compression are enabled by default, if the serialized is not important, for example, you use flatbuffers for 
+Both compression are enabled by default, if the serialized is not important, for example, you use flatbuffers for
 serialization before, which doesn't compress anything, then you should disable compression. If your data are all numbers,
 the compression may bring 80% performance regression.
 
@@ -179,7 +179,7 @@ For long compression, fury support two encoding:
     - First bit in every byte indicate whether has next byte. if first bit is set, then next byte will be read util first bit of next byte is unset.
     - Negative number will be converted to positive number by ` (v << 1) ^ (v >> 63)` to reduce cost of small negative numbers.
 
-If a number are `long` type, it can't be represented by smaller bytes mostly, the compression won't get good enough result, 
+If a number are `long` type, it can't be represented by smaller bytes mostly, the compression won't get good enough result,
 not worthy compared to performance cost. Maybe you should try to disable long compression if you find it didn't bring much
 space savings.
 
@@ -196,11 +196,11 @@ class Foo {
   }
 }
 
-class FooSerializer implements Serializer<Foo> {
+class FooSerializer extends Serializer<Foo> {
   public FooSerializer(Fury fury) {
     super(fury, Foo.class);
   }
-  
+
   @Override
   public void write(MemoryBuffer buffer, Foo value) {
     buffer.writeLong(value.f1);
@@ -245,7 +245,7 @@ fury.register(SomeClass1.class, 200);
 ```
 
 If you invoke `FuryBuilder#requireClassRegistration(false)` to disable class registration check,
-you can set `org.apache.fury.resolver.ClassChecker` by `ClassResolver#setClassChecker` to control which classes are allowed 
+you can set `org.apache.fury.resolver.ClassChecker` by `ClassResolver#setClassChecker` to control which classes are allowed
 for serialization. For example,you can allow classes started with `org.example.*` by:
 ```java
 Fury fury = xxx;
@@ -262,7 +262,7 @@ ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
 checker.allowClass("org.example.*");
 ```
 
-Fury also provided a `org.apache.fury.resolver.AllowListChecker` which is white/blacklist based checker to simplify 
+Fury also provided a `org.apache.fury.resolver.AllowListChecker` which is white/blacklist based checker to simplify
 the customization of class check mechanism. You can use this checker or implement more sophisticated checker by yourself.
 
 ### Serializer Registration
@@ -370,8 +370,8 @@ if(JavaSerializer.serializedByJDK(bytes)){
 ```
 
 ### Upgrade fury
-Currently binary compatibility is ensured for minor versions only. For example, if you are using fury`v0.2.0`, binary compatibility will 
-be provided if you upgrade to fury `v0.2.1`. But if upgrade to fury `v0.4.1`, no  binary compatibility are ensured. 
+Currently binary compatibility is ensured for minor versions only. For example, if you are using fury`v0.2.0`, binary compatibility will
+be provided if you upgrade to fury `v0.2.1`. But if upgrade to fury `v0.4.1`, no  binary compatibility are ensured.
 Most of the time there is no need to upgrade fury to newer major version, the current version is fast and compact enough,
 and we provide some minor fix for recent older versions.
 
@@ -389,7 +389,7 @@ int furyVersion = buffer.readVarInt()
 Fury fury = getFury(furyVersion);
 fury.deserialize(buffer);
 ```
-`getFury` is a method to load corresponding fury, you can shade and relocate different version of fury to different 
+`getFury` is a method to load corresponding fury, you can shade and relocate different version of fury to different
 package, and load fury by version.
 
 If you upgrade fury by minor version, or you won't have data serialized by older fury, you can upgrade fury directly,
@@ -400,13 +400,13 @@ no need to `versioning` the data.
 If you create fury without setting `CompatibleMode` to `org.apache.fury.config.CompatibleMode.COMPATIBLE`, and you got a strange
 serialization error, it may be caused by class inconsistency between serialization peer and deserialization peer.
 
-In such cases, you can invoke `FuryBuilder#withClassVersionCheck` to create fury to validate it, if deserialization throws `org.apache.fury.exception.ClassNotCompatibleException`, it shows class are inconsistent, and you should create fury with 
+In such cases, you can invoke `FuryBuilder#withClassVersionCheck` to create fury to validate it, if deserialization throws `org.apache.fury.exception.ClassNotCompatibleException`, it shows class are inconsistent, and you should create fury with
 `FuryBuilder#withCompaibleMode(CompatibleMode.COMPATIBLE)`.
 
 `CompatibleMode.COMPATIBLE` has more performance and space cost, do not set it by default if your classes are always consistent between serialization and deserialization.
 
 ### Use wrong API for deserialization
-If you serialize an object by invoking `Fury#serialize`, you should invoke `Fury#deserialize` for deserialization instead of 
+If you serialize an object by invoking `Fury#serialize`, you should invoke `Fury#deserialize` for deserialization instead of
 `Fury#deserializeJavaObject`.
 
 If you serialize an object by invoking `Fury#serializeJavaObject`, you should invoke `Fury#deserializeJavaObject` for deserialization instead of `Fury#deserializeJavaObjectAndClass`/`Fury#deserialize`.
