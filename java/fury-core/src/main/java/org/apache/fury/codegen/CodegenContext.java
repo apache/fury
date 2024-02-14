@@ -154,11 +154,8 @@ public class CodegenContext {
 
   public CodegenContext() {}
 
-  public CodegenContext(LinkedHashSet<String> imports) {
-    this.imports = imports;
-  }
-
-  public CodegenContext(Set<String> valNames, LinkedHashSet<String> imports) {
+  public CodegenContext(String pkg, Set<String> valNames, LinkedHashSet<String> imports) {
+    this.pkg = pkg;
     this.valNames = valNames;
     this.imports = imports;
   }
@@ -280,7 +277,7 @@ public class CodegenContext {
    */
   public String type(Class<?> clz) {
     if (!sourcePkgLevelAccessible(clz)) {
-      return "Object";
+      clz = Object.class;
     }
     if (clz.isArray()) {
       return getArrayType(clz);
@@ -292,15 +289,16 @@ public class CodegenContext {
         boolean hasPackage = StringUtils.isNotBlank(pkg);
         Map<String, Boolean> packageMap =
             nameConflicts.computeIfAbsent(hasPackage ? pkg : "", p -> new ConcurrentHashMap<>());
+        Class<?> c = clz;
         Boolean conflictRes =
             packageMap.computeIfAbsent(
                 simpleName,
                 sn -> {
                   try {
                     ClassLoader beanClassClassLoader =
-                        clz.getClassLoader() == null
+                        c.getClassLoader() == null
                             ? Thread.currentThread().getContextClassLoader()
-                            : clz.getClassLoader();
+                            : c.getClassLoader();
                     beanClassClassLoader.loadClass(hasPackage ? pkg + "." + sn : sn);
                     return Boolean.TRUE;
                   } catch (ClassNotFoundException e) {
@@ -337,6 +335,10 @@ public class CodegenContext {
    */
   public void setPackage(String pkg) {
     this.pkg = pkg;
+  }
+
+  public String getPackage() {
+    return pkg;
   }
 
   public Set<String> getValNames() {
@@ -575,7 +577,7 @@ public class CodegenContext {
       List<String> initCodes;
       if (isStatic) {
         if (staticInitCtx == null) {
-          staticInitCtx = new CodegenContext(valNames, imports);
+          staticInitCtx = new CodegenContext(pkg, valNames, imports);
         }
         ctx = staticInitCtx;
         initCodes = staticInitCodes;
@@ -585,7 +587,7 @@ public class CodegenContext {
         }
       } else {
         if (instanceInitCtx == null) {
-          instanceInitCtx = new CodegenContext(valNames, imports);
+          instanceInitCtx = new CodegenContext(pkg, valNames, imports);
         }
         ctx = instanceInitCtx;
         initCodes = instanceInitCodes;
