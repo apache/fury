@@ -54,7 +54,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .withAsyncCompilation(true)
-            .buildThreadSafeFuryPool(5, 10);
+            .buildThreadSafeFuryPool(1, 8);
     for (int i = 0; i < 2000; i++) {
       new Thread(
               () -> {
@@ -118,7 +118,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .withAsyncCompilation(true)
-            .buildThreadSafeFury();
+            .buildThreadSafeFury(5, 10);
     ExecutorService executorService = Executors.newFixedThreadPool(12);
     for (int i = 0; i < 2000; i++) {
       executorService.execute(
