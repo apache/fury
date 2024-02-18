@@ -100,6 +100,6 @@ export const readLatin1String = (buffer: PlatformBuffer, len: number, cursor: nu
     case 15:
       return read15(buffer, cursor);
     default:
-      return buffer.latin1Slice(cursor, cursor + len);
+      return buffer.toString("latin1", cursor, cursor + len,);
   }
 };

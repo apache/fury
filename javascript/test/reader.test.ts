@@ -50,7 +50,7 @@ describe('reader', () => {
 
     test('should bufferRef work', () => {
         const bb = alloc(100);
-        bb.latin1Write("hello", 0);
+        bb.write("hello", 0, 'latin1');
         const target = new Uint8Array(5);
         bb.copy(target, 0, 0, 5);
         expect([...target]).toEqual([ 104, 101, 108, 108, 111 ])

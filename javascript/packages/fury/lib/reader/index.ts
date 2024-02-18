@@ -37,7 +37,7 @@ export const BinaryReader = (config: Config) => {
     byteLength = buffer.byteLength;
     dataView = new DataView(buffer.buffer, buffer.byteOffset);
     if (sliceStringEnable) {
-      bigString = buffer.latin1Slice(0, byteLength);
+      bigString = buffer.toString("latin1", 0, byteLength);
     }
     cursor = 0;
   }
@@ -113,11 +113,11 @@ export const BinaryReader = (config: Config) => {
   }
 
   function stringUtf8At(start: number, len: number) {
-    return buffer.utf8Slice(start, start + len);
+    return buffer.toString("utf8", start, start + len);
   }
 
   function stringUtf8(len: number) {
-    const result = buffer.utf8Slice(cursor, cursor + len);
+    const result = buffer.toString("utf8", cursor, cursor + len);
     cursor += len;
     return result;
   }
