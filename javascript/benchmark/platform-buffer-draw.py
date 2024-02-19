@@ -16,6 +16,7 @@
 # under the License.
 
 import matplotlib.pyplot as plt
+import sys
 
 [_, browser_utf8_write, browser_write, browser_write_1, native_write, browser_to_string, native_to_string] = sys.argv[0:7]
 
