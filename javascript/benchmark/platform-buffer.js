@@ -29,14 +29,14 @@ const jsonString = JSON.stringify({
 
 async function start() {
   const result = {
-    browserCompare: {},
-    browserVsNativeWrite: {},
-    browserVsNativeToString: {},
+    writeComparison: {},
+    toStringComparison: {},
   }
 
   {
     const platformBufferA = new BrowserBuffer(jsonString.length);
     const platformBufferB = new BrowserBuffer(jsonString.length);
+    const nativeBuffer = Buffer.alloc(jsonString.length);
 
     var suite = new Benchmark.Suite();
     suite
@@ -46,36 +46,17 @@ async function start() {
       .add("browser write", function () {
         platformBufferB.write(jsonString, 0, 'utf8');
       })
-      .on("complete", function (e) {
-        e.currentTarget.forEach(({ name, hz }) => {
-          result.browserCompare[name] = Math.ceil(hz);
-        });
-      })
-      .run({ async: false });
-      console.log("Write operation per second")
-      console.table(result.browserCompare);
-  }
-
-  {
-    const browserBuffer = new BrowserBuffer(jsonString.length);
-    const nativeBuffer = Buffer.alloc(jsonString.length);
-
-    var suite = new Benchmark.Suite();
-    suite
-      .add("browser write", function () {
-        browserBuffer.write(jsonString, 0, 'utf8');
-      })
       .add("native write", function () {
         nativeBuffer.write(jsonString, 0, 'utf8');
       })
       .on("complete", function (e) {
         e.currentTarget.forEach(({ name, hz }) => {
-          result.browserVsNativeWrite[name] = Math.ceil(hz);
+          result.writeComparison[name] = Math.ceil(hz);
         });
       })
       .run({ async: false });
       console.log("Write operation per second")
-      console.table(result.browserVsNativeWrite);
+      console.table(result.writeComparison);
   }
 
   {
@@ -94,17 +75,22 @@ async function start() {
       })
       .on("complete", function (e) {
         e.currentTarget.forEach(({ name, hz }) => {
-          result.browserVsNativeToString[name] = Math.ceil(hz);
+          result.toStringComparison[name] = Math.ceil(hz);
         });
       })
       .run({ async: false });
       console.log("toString operation per second")
-      console.table(result.browserVsNativeToString);
+      console.table(result.toStringComparison);
   }
+
+  const args = ['platform-buffer-draw.py', result.writeComparison['browser utf8Write'], result.writeComparison['browser write'], result.writeComparison['native write'], result.toStringComparison['browser toString'], result.toStringComparison['native toString']];
+
+  console.log("Running python script to draw the graph")
+  console.log("python3", ...args)
 
   spawn(
     `python3`,
-    ['platform-buffer-draw.py', result.browserCompare["browser utf8Write"], result.browserCompare["browser write"], result.browserVsNativeWrite["browser write"], result.browserVsNativeWrite["native write"], result.browserVsNativeToString["browser toString"], result.browserVsNativeToString["native toString"]],
+    ['platform-buffer-draw.py', result.writeComparison['browser utf8Write'], result.writeComparison['browser write'], result.writeComparison['native write'], result.toStringComparison['browser toString'], result.toStringComparison['native toString']],
     {
       cwd: __dirname,
     }
