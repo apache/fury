@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
 import matplotlib.pyplot as plt
 
 [_, browser_utf8_write, browser_write, browser_write_1, native_write, browser_to_string, native_to_string] = sys.argv[0:7]
