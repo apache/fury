@@ -81,8 +81,8 @@ export class AnySerializer {
     if (!serializer) {
       throw new Error(`Failed to detect the Fury serializer from JavaScript type: ${typeof v}`);
     }
-    this.fury.binaryWriter.reserve(serializer?.meta.fixedSize);
-    serializer?.write(v);
+    this.fury.binaryWriter.reserve(serializer.meta.fixedSize);
+    serializer.write(v);
   }
 }
 
