@@ -54,7 +54,6 @@ import org.apache.fury.serializer.OpaqueObjects;
 import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
-import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.Type;
@@ -74,7 +73,7 @@ import org.slf4j.Logger;
  * serialization.
  */
 @NotThreadSafe
-public final class Fury {
+public final class Fury implements BaseFury {
   private static final Logger LOG = LoggerFactory.getLogger(Fury.class);
 
   public static final byte NULL_FLAG = -3;
@@ -139,35 +138,22 @@ public final class Fury {
     LOG.info("Created new fury {}", this);
   }
 
-  /** register class. */
+  @Override
   public void register(Class<?> cls) {
     classResolver.register(cls);
   }
 
-  /**
-   * Register class.
-   *
-   * @param cls class to register
-   * @param createSerializer whether to create serializer, if true and codegen enabled, this will
-   *     generate the serializer code too.
-   */
+  @Override
   public void register(Class<?> cls, boolean createSerializer) {
     classResolver.register(cls, createSerializer);
   }
 
-  /** register class with given id. */
+  @Override
   public void register(Class<?> cls, Short id) {
     classResolver.register(cls, id);
   }
 
-  /**
-   * Register class with specified id.
-   *
-   * @param cls class to register
-   * @param id id for provided class.
-   * @param createSerializer whether to create serializer, if true and codegen enabled, this will
-   *     generate the serializer code too.
-   */
+  @Override
   public void register(Class<?> cls, Short id, boolean createSerializer) {
     classResolver.register(cls, id, createSerializer);
   }
@@ -177,13 +163,7 @@ public final class Fury {
     classResolver.register(cls, typeTag);
   }
 
-  /**
-   * Register a Serializer.
-   *
-   * @param type class needed to be serialized/deserialized
-   * @param serializerClass serializer class can be created with {@link Serializers#newSerializer}
-   * @param <T> type of class
-   */
+  @Override
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
     classResolver.registerSerializer(type, serializerClass);
   }
@@ -200,17 +180,14 @@ public final class Fury {
     return classResolver.getSerializerFactory();
   }
 
-  /**
-   * Serialize <code>obj</code> to a off-heap buffer specified by <code>address</code> and <code>
-   * size</code>.
-   */
+  @Override
   public MemoryBuffer serialize(Object obj, long address, int size) {
     MemoryBuffer buffer = MemoryUtils.buffer(address, size);
     serialize(buffer, obj, null);
     return buffer;
   }
 
-  /** Return serialized <code>obj</code> as a byte array. */
+  @Override
   public byte[] serialize(Object obj) {
     MemoryBuffer buf = getBuffer();
     buf.writerIndex(0);
@@ -226,6 +203,7 @@ public final class Fury {
     return buf.getBytes(0, buf.writerIndex());
   }
 
+  @Override
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj) {
     return serialize(buffer, obj, null);
   }
@@ -685,7 +663,7 @@ public final class Fury {
     return LongSerializer.readLong(buffer, longEncoding);
   }
 
-  /** Deserialize <code>obj</code> from a byte array. */
+  @Override
   public Object deserialize(byte[] bytes) {
     return deserialize(MemoryUtils.wrap(bytes), null);
   }
@@ -694,15 +672,12 @@ public final class Fury {
     return deserialize(MemoryUtils.wrap(bytes), outOfBandBuffers);
   }
 
-  /**
-   * Deserialize <code>obj</code> from a off-heap buffer specified by <code>address</code> and
-   * <code>size</code>.
-   */
+  @Override
   public Object deserialize(long address, int size) {
     return deserialize(MemoryUtils.buffer(address, size), null);
   }
 
-  /** Deserialize <code>obj</code> from a <code>buffer</code>. */
+  @Override
   public Object deserialize(MemoryBuffer buffer) {
     return deserialize(buffer, null);
   }
@@ -993,10 +968,7 @@ public final class Fury {
     }
   }
 
-  /**
-   * Serialize java object without class info, deserialization should use {@link
-   * #deserializeJavaObject}.
-   */
+  @Override
   public byte[] serializeJavaObject(Object obj) {
     MemoryBuffer buf = getBuffer();
     buf.writerIndex(0);
@@ -1004,10 +976,7 @@ public final class Fury {
     return buf.getBytes(0, buf.writerIndex());
   }
 
-  /**
-   * Serialize java object without class info, deserialization should use {@link
-   * #deserializeJavaObject}.
-   */
+  @Override
   public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
@@ -1043,18 +1012,12 @@ public final class Fury {
     serializeToStream(outputStream, buf -> serializeJavaObject(buf, obj));
   }
 
-  /**
-   * Deserialize java object from binary without class info, serialization should use {@link
-   * #serializeJavaObject}.
-   */
+  @Override
   public <T> T deserializeJavaObject(byte[] data, Class<T> cls) {
     return deserializeJavaObject(MemoryBuffer.fromByteArray(data), cls);
   }
 
-  /**
-   * Deserialize java object from binary by passing class info, serialization should use {@link
-   * #serializeJavaObject}.
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
     try {
