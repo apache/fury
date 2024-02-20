@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.Expression.BaseInvoke;
 import org.apache.fury.codegen.Expression.Reference;
@@ -302,7 +301,7 @@ public class CodegenContext {
                             ? Thread.currentThread().getContextClassLoader()
                             : c.getClassLoader();
                     if (beanClassClassLoader == null) {
-                        beanClassClassLoader = Fury.class.getClassLoader();
+                      beanClassClassLoader = Fury.class.getClassLoader();
                     }
                     beanClassClassLoader.loadClass(hasPackage ? pkg + "." + sn : sn);
                     return Boolean.TRUE;
