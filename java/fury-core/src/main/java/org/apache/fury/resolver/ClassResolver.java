@@ -307,8 +307,8 @@ public class ClassResolver {
     // primitive types will be boxed.
     addDefaultSerializer(String.class, new StringSerializer(fury));
     PrimitiveSerializers.registerDefaultSerializers(fury);
-    ArraySerializers.registerDefaultSerializers(fury);
     Serializers.registerDefaultSerializers(fury);
+    ArraySerializers.registerDefaultSerializers(fury);
     TimeSerializers.registerDefaultSerializers(fury);
     OptionalSerializers.registerDefaultSerializers(fury);
     CollectionSerializers.registerDefaultSerializers(fury);
@@ -1820,6 +1820,9 @@ public class ClassResolver {
       }
     }
     if (GraalvmSupport.isGraalRuntime()) {
+      if (Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls)) {
+        return null;
+      }
       throw new RuntimeException(String.format("Class %s is not registered", cls));
     }
     return null;

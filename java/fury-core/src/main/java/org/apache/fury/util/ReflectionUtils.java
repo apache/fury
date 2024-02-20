@@ -281,6 +281,44 @@ public class ReflectionUtils {
     return field;
   }
 
+  /**
+   * Gets the only field in the class matching the required type.
+   *
+   * @param clazz the class in which the field should be declared
+   * @param fieldType the required type of the field
+   * @return the field with specified type
+   * @throws IllegalStateException if there are multiple fields of the required type
+   * @throws IllegalArgumentException if there are no fields of the required type
+   */
+  public static Field getField(Class<?> clazz, Class<?> fieldType) {
+    Field f = null;
+    Class<?> cls = clazz;
+    while (cls != null) {
+      for (Field fi : cls.getDeclaredFields()) {
+        if (fieldType.equals(fi.getType())) {
+          if (f != null) {
+            throw new IllegalStateException(
+                "Found multiple field s matching "
+                    + fieldType
+                    + " in "
+                    + cls
+                    + ": "
+                    + f
+                    + " and "
+                    + fi);
+          }
+          f = fi;
+        }
+      }
+      cls = cls.getSuperclass();
+    }
+    if (f == null) {
+      throw new IllegalArgumentException(
+          "Found no field matching " + fieldType.getName() + " in " + clazz + "!");
+    }
+    return f;
+  }
+
   public static Field getFieldNullable(Class<?> cls, String fieldName) {
     Class<?> clazz = cls;
     do {
@@ -346,40 +384,6 @@ public class ReflectionUtils {
   public static long getFieldOffset(Class<?> cls, String fieldName) {
     Field field = getFieldNullable(cls, fieldName);
     return getFieldOffset(field);
-  }
-
-  /**
-   * Gets the offset of the only field in the class matching the required type.
-   *
-   * @param clazz the class in which the field should be declared
-   * @param fieldType the required type of the field
-   * @return offset of the field
-   * @throws IllegalStateException if there are multiple fields of the required type
-   * @throws IllegalArgumentException if there are no fields of the required type
-   */
-  public static long getFieldOffset(Class<?> clazz, Class<?> fieldType) {
-    Field f = null;
-    for (Field fi : clazz.getDeclaredFields()) {
-      if (fieldType.equals(fi.getType())) {
-        if (f != null) {
-          throw new IllegalStateException(
-              "Found multiple field s matching "
-                  + fieldType
-                  + " in "
-                  + clazz
-                  + ": "
-                  + f
-                  + " and "
-                  + fi);
-        }
-        f = fi;
-      }
-    }
-    if (f == null) {
-      throw new IllegalArgumentException(
-          "Found no field matching " + fieldType.getName() + " in " + clazz + "!");
-    }
-    return Platform.objectFieldOffset(f);
   }
 
   public static long getFieldOffsetChecked(Class<?> cls, String fieldName) {
