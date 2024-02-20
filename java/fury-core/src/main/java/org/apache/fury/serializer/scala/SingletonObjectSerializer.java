@@ -34,6 +34,7 @@ import org.apache.fury.util.Preconditions;
 @SuppressWarnings("rawtypes")
 public class SingletonObjectSerializer extends Serializer {
   private final Field field;
+  private Object base = null;
   private long offset = -1;
 
   public SingletonObjectSerializer(Fury fury, Class type) {
@@ -54,7 +55,8 @@ public class SingletonObjectSerializer extends Serializer {
     if (offset == -1) {
       Preconditions.checkArgument(!GraalvmSupport.isGraalBuildtime());
       offset = this.offset = Platform.UNSAFE.staticFieldOffset(field);
+      base = Platform.UNSAFE.staticFieldBase(field);
     }
-    return Platform.getObject(type, offset);
+    return Platform.getObject(base, offset);
   }
 }

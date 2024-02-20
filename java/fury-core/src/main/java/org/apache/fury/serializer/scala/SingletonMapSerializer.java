@@ -36,6 +36,7 @@ import org.apache.fury.util.Preconditions;
 @SuppressWarnings("rawtypes")
 public class SingletonMapSerializer extends AbstractMapSerializer {
   private final Field field;
+  private Object base = null;
   private long offset = -1;
 
   public SingletonMapSerializer(Fury fury, Class cls) {
@@ -61,8 +62,9 @@ public class SingletonMapSerializer extends AbstractMapSerializer {
     if (offset == -1) {
       Preconditions.checkArgument(!GraalvmSupport.isGraalBuildtime());
       offset = this.offset = Platform.UNSAFE.staticFieldOffset(field);
+      base = Platform.UNSAFE.staticFieldBase(field);
     }
-    return Platform.getObject(type, offset);
+    return Platform.getObject(base, offset);
   }
 
   @Override
