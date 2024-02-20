@@ -41,7 +41,8 @@ class _Lookup {
       try {
         Field implLookup = Lookup.class.getDeclaredField("IMPL_LOOKUP");
         long fieldOffset = _JDKAccess.UNSAFE.staticFieldOffset(implLookup);
-        trustedLookup = (Lookup) _JDKAccess.UNSAFE.getObject(Lookup.class, fieldOffset);
+        Object fieldBase = _JDKAccess.UNSAFE.staticFieldBase(implLookup);
+        trustedLookup = (Lookup) _JDKAccess.UNSAFE.getObject(fieldBase, fieldOffset);
       } catch (Throwable ignored) {
         // ignored
       }
