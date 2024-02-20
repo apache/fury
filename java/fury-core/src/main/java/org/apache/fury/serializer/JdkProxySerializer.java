@@ -19,12 +19,12 @@
 
 package org.apache.fury.serializer;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.RefResolver;
-import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
@@ -34,21 +34,12 @@ import org.apache.fury.util.ReflectionUtils;
 public class JdkProxySerializer extends Serializer {
 
   // Make offset compatible with graalvm native image.
+  private static final Field FIELD;
   private static final long PROXY_HANDLER_FIELD_OFFSET;
 
   static {
-    if (GraalvmSupport.isGraalBuildtime()) {
-      try {
-        // Make offset compatible with graalvm native image.
-        PROXY_HANDLER_FIELD_OFFSET = Platform.objectFieldOffset(Proxy.class.getDeclaredField("h"));
-      } catch (NoSuchFieldException e) {
-        throw new RuntimeException(e);
-      }
-    } else {
-      // not all JVM implementations use 'h' as internal InvocationHandler name
-      PROXY_HANDLER_FIELD_OFFSET =
-          ReflectionUtils.getFieldOffset(Proxy.class, InvocationHandler.class);
-    }
+    FIELD = ReflectionUtils.getField(Proxy.class, InvocationHandler.class);
+    PROXY_HANDLER_FIELD_OFFSET = Platform.objectFieldOffset(FIELD);
   }
 
   private static final InvocationHandler STUB_HANDLER =

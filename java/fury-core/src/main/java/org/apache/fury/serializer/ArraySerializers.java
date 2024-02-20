@@ -661,6 +661,7 @@ public class ArraySerializers {
 
   public static void registerDefaultSerializers(Fury fury) {
     fury.registerSerializer(Object[].class, new ObjectArraySerializer<>(fury, Object[].class));
+    fury.registerSerializer(Class[].class, new ObjectArraySerializer<>(fury, Class[].class));
     fury.registerSerializer(byte[].class, new ByteArraySerializer(fury));
     fury.registerSerializer(char[].class, new CharArraySerializer(fury));
     fury.registerSerializer(short[].class, new ShortArraySerializer(fury));

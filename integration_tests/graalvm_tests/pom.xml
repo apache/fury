@@ -172,6 +172,8 @@
               <buildArgs>
                 <!-- for fast build -->
                 <!-- <buildArg>-Ob</buildArg> -->
+                <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
+                <buildArg>-H:DynamicProxyConfigurationFiles=src/main/resources/META-INF/native-image/proxy-config.json</buildArg>
               </buildArgs>
             </configuration>
           </plugin>
