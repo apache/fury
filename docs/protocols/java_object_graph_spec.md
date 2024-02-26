@@ -137,15 +137,15 @@ Meta header is a 64 bits number value encoded in little endian order.
 - Package name encoding(omitted when class is registered):
     - Header:
         - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 128, then header will be
-          `7 bits size + 1 bit flag(set)`.
-          Otherwise, header will be `4 bits unset + 3 bits encoding flags + 1 bit flag(unset)`
+          `7 bits size + flag(set)`.
+          Otherwise, header will be `4 bits unset + 3 bits encoding flags + flag(unset)`
     - Package name:
         - If bit flag is set, then package name will be encoded meta string binary.
         - Otherwise, it will be `| unsigned varint length | encoded meta string binary |`
 - Class name encoding(omitted when class is registered)::
     - header:
         - If meta string encoding is in `LOWER_SPECIAL~LOWER_UPPER_DIGIT_SPECIAL (0~3)`, and the length of encoded
-          string `<=` 32， then the header will be `5 bits size + 2 bits encoding flags + 1 bit flag(set)`.
+          string `<=` 32， then the header will be `5 bits size + 2 bits encoding flags + flag(set)`.
         - Otherwise, header will be `| unsigned varint length | encoded meta string binary |`
 - Field info:
     - header(8
@@ -193,12 +193,12 @@ Same encoding algorithm as the previous layer except:
 
 - header + package name:
     - Header:
-        - If package name has been written before: `varint index + 1 bit sharing flag(set)` will be written
+        - If package name has been written before: `varint index + sharing flag(set)` will be written
         - If package name hasn't been written before:
             - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 64, then header will be
-              `6 bits size + 1 bit encoding flag(set) + 1 bit sharing flag(unset)`.
+              `6 bits size + encoding flag(set) + sharing flag(unset)`.
             - Otherwise, header will
-              be `3 bits unset + 3 bits encoding flags + 1 bit encoding flag(unset) + 1 bit sharing flag(unset)`
+              be `3 bits unset + 3 bits encoding flags + encoding flag(unset) + sharing flag(unset)`
 
 ## Meta String
 
