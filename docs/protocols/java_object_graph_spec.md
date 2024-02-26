@@ -7,7 +7,7 @@ will
 convert an object from/to fury java serialization binary format. Fury has two core concepts for java serialization:
 
 - **Fury Java Binary format**
-- Framework to convert object to/from Fury Java Binary format
+- **Framework to convert object to/from Fury Java Binary format**
 
 The serialization format is a dynamic binary format. The dynamics and reference/polymorphism support make Fury flexible,
 much more easy to use, but
@@ -27,29 +27,30 @@ Fury will write the byte order for that object into the data instead of converti
 Fury header consists starts one byte:
 
 ```
-| resvered 4 bits | oob | xlang | endian | null |
+|     4 bits    | 1 bit | 1 bit | 1 bit  | 1 bit |          optional 4 bytes          |
+| reserved bits |  oob  | xlang | endian | null  | unsigned int for meta start offset |
 ```
 
-- null flag: set when object is null, unset otherwise. If object is null, other bits won't be set.
-- endian flag: set when system use little endian, unset otherwise.
-- xlang flag: set when serialization uses xlang format, unset when serialization use Fury java format.
-- oob flag: set when passed `BufferCallback` is not null, unset otherwise.
+- null flag: 1 when object is null, 0 otherwise. If an object is null, other bits won't be set.
+- endian flag: 1 when the system uses little endian, 0 otherwise.
+- xlang flag: 1 when serialization uses xlang format, 0 when serialization uses Fury java format.
+- oob flag: 1 when passed `BufferCallback` is not null, 0 otherwise.
 
-If meta share mode is enabled, uncompressed little-endian 4 bytes is appended to indicate the start offset of meta data.
+If meta share mode is enabled, an uncompressed unsigned int is appended to indicate the start offset of metadata.
 
 ## Reference Meta
 
 Reference tracking handles whether the object is null, and whether to track reference for the object by writing
-corresponding flags and maintain internal state.
+corresponding flags and maintaining internal state.
 
 Reference flags:
 
 | Flag                | Byte Value | Description                                                                                                                              |
 |---------------------|------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| NULL FLAG           | `-3`       | This flag indicates that object is a not-null value. We don't use another byte to indicate REF, so that we can save one byte.            |
-| REF FLAG            | `-2`       | this flag indicates the object is written before, and fury will write a ref id with unsigned varint format instead of serialize it again |
-| NOT_NULL VALUE FLAG | `-1`       | this flag indicates that the object is a non-null value and fury doesn't track ref for this type of object.                              |
-| REF VALUE FLAG      | `0`        | this flag indicates that the object is a referencable and first read.                                                                    |
+| NULL FLAG           | `-3`       | This flag indicates the object is a not-null value. We don't use another byte to indicate REF, so that we can save one byte.             |
+| REF FLAG            | `-2`       | This flag indicates the object is written before, and fury will write a ref id with unsigned varint format instead of serialize it again |
+| NOT_NULL VALUE FLAG | `-1`       | This flag indicates the object is a non-null value and fury doesn't track ref for this type of object.                                   |
+| REF VALUE FLAG      | `0`        | This flag indicates the object is a referencable and first write.                                                                        |
 
 When reference tracking is disabled globally or only for some type, or for some type under some context such as some
 field of a class, only `NULL FLAG` and ` NOT_NULL VALUE FLAG` will be used.
@@ -57,27 +58,28 @@ field of a class, only `NULL FLAG` and ` NOT_NULL VALUE FLAG` will be used.
 ## Class Meta
 
 Fury support register class by an optional id, the registration can be used to security check, and identify the class.
-If the class is registered, the class will have a users provided or a auto-growing id unsigned int `class_id`.
+If the class is registered, the class will have a user-provided or an auto-growing unsigned int `class_id`.
 
-Depending on whether meta share mode or registration is enabled for current class, Fury will write class meta
+Depending on whether meta share mode and registration is enabled for current class, Fury will write class meta
 differently.
 
 ### Schema consistent
 
 If schema consistent mode is enabled globally or enabled for current class, class meta will be written as follows:
 
-- If class is registered, it will be written as a little-endian unsigned int: `class_id << 1` using fury unsigned int
-  format.
-- If class is not registered, fury will write one byte `0bxxxxxxx1` first, then write class name.
-    - The higher bits will be `0` if the class is not an array, and will be dimensions of if it's an array, which is
-      greater than 0, and written class will be the component class. This can reduce array class name cost if
-      component class is serialized before.
-    - The little bit is different first bit of
-      encoded class id, which is `0`. Fury can use this information to determine whether read class by class id.
-    - If meta share mode is enabled, class will be written as a unsigned int.
-    - If meta share mode is not enabled, class will be written as two enumerated string:
-        - package name.
-        - class name.
+- If class is registered, it will be written as a fury unsigned varint: `class_id << 1`.
+- If class is not registered:
+    - If class is not an array, fury will write one byte `0bxxxxxxx1` first, then write class name.
+        - The first little bit is `1`, which is different from first bit `0` of
+          encoded class id. Fury can use this information to determine whether to read class by class id for
+          deserialization.
+    - If class is not registered and class is an array, fury will write one byte `dimensions << 1 | 1` first, then write
+      component
+      class subsequently. This can reduce array class name cost if component class is or will be serialized.
+    - Class will be written as two enumerated fury unsigned by default: `package name` and `class name`. If meta share
+      mode is
+      enabled,
+      class will be written as an unsigned varint which points to index in `MetaContext`.
 
 ### Schema evolution
 
@@ -85,29 +87,29 @@ If schema evolution mode is enabled globally or enabled for current class, class
 
 - If meta share mode is not enabled, class meta will be written as schema consistent mode. Additionally, field meta such
   as field type
-  and name will be written when the object value is being serialized using a key-value like layout.
+  and name will be written with the field value using a key-value like layout.
 - If meta share mode is enabled, class meta will be written as a meta-share encoded binary if class hasn't been written
-  before, otherwise an id which references to previous written class meta will be written using an unsigned varint format.
+  before, otherwise an unsigned varint id which references to previous written class meta will be written.
 
 ## Meta share
 
-> This mode will forbid streaming writing since it needs to look back for update the offset after the whole object graph
-> writing and mete collecting is finished.
-> Meta streamline will be supported in the future.
+> This mode will forbid streaming writing since it needs to look back for update the start offset after the whole object
+> graph
+> writing and meta collecting is finished. Only in this way we can ensure deserialization failure doesn't lost shared
+> meta.
+> Meta streamline will be supported in the future for enclosed meta sharing without cross multiple serializations.
 
-### Schema consistent
-
-Class will be encoded as an enumerated string by full class name.
-
-### Schema evolution
-
-Class meta format:
+For Schema consistent mode, class will be encoded as an enumerated string by full class name. Here we mainly describe
+the meta layout for schema evolution mode:
 
 ```
-| meta header: hash + num classes | current class meta | parent class meta | ... |
+|      8 bytes meta header      |   variable bytes   |  variable bytes   | variable bytes |
+| 7 bytes hash + 1 bytes header | current class meta | parent class meta |      ...       |
 ```
 
-#### Meta header
+Class meta are encoded from parent class to leaf class, only class with serializable fields will be encoded.
+
+### Meta header
 
 Meta header is a 64 bits number value encoded in little endian order.
 
@@ -115,82 +117,138 @@ Meta header is a 64 bits number value encoded in little endian order.
   read more bytes for length using Fury unsigned int encoding. If current class doesn't has parent class, or parent
   class doesn't have fields to serialize, or we're in a context which serialize fields of current class
   only( `ObjectStreamSerializer#SlotInfo` is an example), num classes will be 1.
-- Other 60 bits is used to store murmur hash of `flags + all layers class meta`.
+- 5rd bit is used to indicate whether this class needs schema evolution.
+- Other 56 bits is used to store the unique hash of `flags + all layers class meta`.
 
-#### Single layer class meta
+### Single layer class meta
 
 ```
-| enumerated class name string binary | unsigned int: num fields | field info: type info + field name | next field info | ... |
+|      unsigned varint       |      meta string      |     meta string     |  field info: variable bytes   | variable bytes  | ... |
+| num fields + register flag | header + package name | header + class name | header + type id + field name | next field info | ... |
 ```
 
-Enumerated class name string binary will be written without unique hash, Fury use meta hash instead.
-
-Type info of custom type field will be written as an one-byte flag instead of inline its meta, because the field value
-may be null, and Fury can reduce this field type meta writing if object of this type is serialized in current object
-graph.
+- num fields: encode `num fields << 1 | register flag(1 when class registered)` as unsigned varint.
+    - If class is registered, then an unsigned varint class id will be written next, package and class name will be
+      omitted.
+    - If current class is schema consistent, then num field will be `0` to flag it.
+    - If current class isn't schema consistent, then num field will be the number of compatible fields. For example,
+      users
+      can use tag id to mark some field as compatible field in schema consistent context.
+- Package name encoding(omitted when class is registered):
+    - Header:
+        - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 128, then header will be
+          `7 bits size + 1 bit flag(set)`.
+          Otherwise, header will be `4 bits unset + 3 bits encoding flags + 1 bit flag(unset)`
+    - Package name:
+        - If bit flag is set, then package name will be encoded meta string binary.
+        - Otherwise, it will be `| unsigned varint length | encoded meta string binary |`
+- Class name encoding(omitted when class is registered)::
+    - header:
+        - If meta string encoding is in `LOWER_SPECIAL~LOWER_UPPER_DIGIT_SPECIAL (0~3)`, and the length of encoded
+          string `<=` 32， then the header will be `5 bits size + 2 bits encoding flags + 1 bit flag(set)`.
+        - Otherwise, header will be `| unsigned varint length | encoded meta string binary |`
+- Field info:
+    - header(8
+      bits): `reserved 1 bit + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag + tag id flag`.
+      Users can use annotation to provide those info.
+        - tag id: when set to 1, field name will be written by an unsigned varint tag id.
+        - ref tracking: when set to 0, ref tracking will be disabled for this field.
+        - nullability: when set to 0, this field won't be null.
+        - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
+          not `final`.
+        - 3 bits field name encoding will be set to meta string encoding flags when tag id is not set.
+    - type id:
+        - For registered type-consistent classes, it will be the registered class id.
+        - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
+          meta
+          for such types is written separately instead of inlining here is to reduce meta space cost if object of this
+          type is serialized in current object graph multiple times, and the field value may be null too.
+    - List Type Info: list type will have an extra byte for elements info.
+      Users can use annotation to provide those info.
+        - elements type same
+        - elements tracking ref
+        - elements nullability
+        - elements declared type
+    - Map Type Info: map type will have an extra byte for kv items info.
+      Users can use annotation to provide those info.
+        - keys type same
+        - keys tracking ref
+        - keys nullability
+        - keys declared type
+        - values type same
+        - values tracking ref
+        - values nullability
+        - values declared type
+    - Field name: If type id is set, type id will be used instead. Otherwise meta string encoding length and data will
+      be
+      written instead.
 
 Field order are left as implementation details, which is not exposed to specification, the deserialization need to
 resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
 using a more compact encoding.
 
-Class name will be written as an unsigned id if the class is registered.
+### Others layers class meta
 
-Field name will be written as an unsigned id if the field is marked with an ID by an annotation.
+Same encoding algorithm as the previous layer.
 
-## Enumerated String
+## Meta String
 
-Enumerated string are mainly used to encode meta string such class name and field names. The format consists of header
-and binary.
+Meta string is mainly used to encode meta strings such class name and field names.
 
-Header are written using little endian order, Fury can read this flag first to determine how to deserialize the data.
+### Encoding Algorithms
 
-### Header
+String binary encoding algorithm:
+
+| Algorithm                 | Pattern        | Description                                                                                                                                      |
+|---------------------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| LOWER_SPECIAL             | `a-z._$\|`     | every char is written using 5 bits, `a-z`: `0b00000~0b11001`, `._$\|`: `0b11010~0b11101`                                                         |
+| LOWER_UPPER_DIGIT_SPECIAL | `a-zA-Z0~9._$` | every char is written using 6 bits, `a-z`: `0b00000~0b11110`, `A-Z`: `0b11010~0b110011`, `0~9`: `0b110100~0b111101`, `._$`: `0b111110~0b1000000` |
+| UTF-8                     | any chars      | UTF-8 encoding                                                                                                                                   |
+
+Encoding flags:
+
+| Encoding Flag             | Pattern                                                   | Encoding Algorithm                                                                                                                  |
+|---------------------------|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| LOWER_SPECIAL             | every char is in `a-z._$\|`                               | `LOWER_SPECIAL`                                                                                                                     |
+| REP_FIRST_LOWER_SPECIAL   | every char is in `a-z._$` except first char is upper case | replace first upper case char to lower case, then use `LOWER_SPECIAL`                                                               |
+| REP_MUL_LOWER_SPECIAL     | every char is in `a-zA-Z._$`                              | replace every upper case char by `\|` + `lower case`, then use `LOWER_SPECIAL`, use this encoding if it's smaller than Encoding `3` |
+| LOWER_UPPER_DIGIT_SPECIAL | every char is in `a-zA-Z._$`                              | use `LOWER_UPPER_DIGIT_SPECIAL` encoding if it's smaller than Encoding `2`                                                          |
+| UTF8                      | any utf-8 char                                            | use `UTF-8` encoding                                                                                                                |
+| Compression               | any utf-8 char                                            | lossless compression                                                                                                                |
+
+Depending on cases, one can choose encoding `flags + data` jointly, uses 3 bits of first byte for flags and other bytes
+for data.
+
+### Shared meta string
+
+The shared meta string format consists of header and encoded string binary. Header of encoded string binary will be
+inlined
+in shared meta header.
+
+Header is written using little endian order, Fury can read this flag first to determine how to deserialize the data.
 
 #### Write by data
 
 If string hasn't been written before, the data will be written as follows:
 
 ```
-| unsigned varint: string binary size + 1bit: not written before | 61bits: murmur hash + 3 bits encoding flags | string binary |
+| unsigned varint: string binary size + 1 bit: not written before | 56 bits: unique hash | 3 bits encoding flags + string binary |
 ```
 
-Encoding flags:
-
-| Encoding Flag | Pattern                                                   | Encoding Action                                                                                                                     |
-|---------------|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| 0             | every char is in `a-z._$\|`                               | `LOWER_SPECIAL`                                                                                                                     |
-| 1             | every char is in `a-z._$` except first char is upper case | replace first upper case char to lower case, then use `LOWER_SPECIAL`                                                               |
-| 2             | every char is in `a-zA-Z._$`                              | replace every upper case char by `\|` + `lower case`, then use `LOWER_SPECIAL`, use this encoding if it's smaller than Encoding `3` |
-| 3             | every char is in `a-zA-Z._$`                              | use `LOWER_UPPER_DIGIT_SPECIAL` encoding if it's smaller than Encoding `2`                                                          |
-| 4             | any utf-8 char                                            | use `UTF-8` encoding                                                                                                                |
-
-Murmur hash can be omitted if caller pass a flag. In such cases, the format will be:
+If string binary size is less than `16` bytes, the hash will be omitted to save spaces. Unique hash can be omitted too
+if caller pass a flag to disable it. In such cases, the format will be:
 
 ```
-| unsigned varint: string binary size + 1bit: not written before | 8 bits encoding flags | string binary |
+| unsigned varint: string binary size + 1 bit: not written before  | 3 bits encoding flags + string binary |
 ```
-
-5 bits in `8 bits encoding flags` will be left empty.
-
-For small string, `61bits` hash will take too much space. If string binary size is less than `16` bytes,the hash will be ignored too.
 
 #### Write by ref
 
 If string has been written before, the data will be written as follows:
 
 ```
-| unsigned varint: written string id + 1bit: written before |
+| unsigned varint: written string id + 1 bit: written before |
 ```
-
-### String binary
-
-String binary encoding:
-
-| Algorithm                 | Pattern        | Description                                                                                                                                     |
-|---------------------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| LOWER_SPECIAL             | `a-z._$\|`     | every char is writen using 5 bits, `a-z`: `0b00000~0b11001`, `._$\|`: `0b11010~0b11101`                                                         |
-| LOWER_UPPER_DIGIT_SPECIAL | `a-zA-Z0~9._$` | every char is writen using 6 bits, `a-z`: `0b00000~0b11110`, `A-Z`: `0b11010~0b110011`, `0~9`: `0b110100~0b111101`, `._$`: `0b111110~0b1000000` |
-| UTF-8                     | any chars      | UTF-8 encoding                                                                                                                                  |
 
 ## Value Format
 
@@ -219,8 +277,9 @@ String binary encoding:
 #### Unsigned int
 
 - size: 1~5 byte
-- Format: first bit in every byte indicate whether to has next byte. if first bit is set i.e. `b & 0x80 == 0x80`, then
-  next byte should be read util first bit of next byte is unset.
+- Format: The first bit in every byte indicates whether to have the next byte. If first bit is set
+  i.e. `b & 0x80 == 0x80`, then
+  the next byte should be read until the first bit of the next byte is unset.
 
 #### Signed int
 
@@ -232,15 +291,15 @@ String binary encoding:
 
 - size: 1~9 byte
 - Fury PVL(Progressive Variable-length Long) Encoding:
-    - positive long format: first bit in every byte indicate whether to has next byte. if first bit is set
-      i.e. `b & 0x80 == 0x80`, then next byte should be read util first bit is unset.
+    - positive long format: first bit in every byte indicates whether to have the next byte. If first bit is set
+      i.e. `b & 0x80 == 0x80`, then the next byte should be read until the first bit is unset.
 
 #### Signed long
 
 - size: 1~9 byte
 - Fury SLI(Small long as int) Encoding:
     - If long is in [-1073741824, 1073741823], encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
-    - Otherwise write as 9 bytes: `| 0b1 | little-endian 8bytes long |`
+    - Otherwise write as 9 bytes: `| 0b1 | little-endian 8 bytes long |`
 - Fury PVL(Progressive Variable-length Long) Encoding:
     - First convert the number into positive unsigned long by ` (v << 1) ^ (v >> 63)` ZigZag algorithm to reduce cost of
       small negative numbers, then encoding it as an unsigned long.
@@ -263,7 +322,8 @@ Format:
 | header: size + encoding | binary data |
 ```
 
-- `size + encoding` will be concat as a long and encoded as a unsigned var long. The little 2 bits is used for encoding:
+- `size + encoding` will be concat as a long and encoded as an unsigned var long. The little 2 bits is used for
+  encoding:
   0 for `latin`, 1 for `utf-16`, 2 for `utf-8`.
 - encoded string binary data based on encoding: `latin/utf-16/utf-8`.
 
@@ -273,11 +333,11 @@ Which encoding to choose:
   use `utf-16`.
 - For JDK9+: fury use `coder` in `String` object for encoding, `latin`/`utf-16` will be used for encoding.
 - If the string is encoded by `utf-8`, then fury will use `utf-8` to decode the data. But currently fury doesn't enable
-  utf-8 encoding by default for java. Cross-language string serialization of fury use `utf-8` by default.
+  utf-8 encoding by default for java. Cross-language string serialization of fury uses `utf-8` by default.
 
 ### Collection
 
-> All collection serializer must extends `AbstractCollectionSerializer`.
+> All collection serializers must extend `AbstractCollectionSerializer`.
 
 Format:
 
@@ -294,17 +354,17 @@ length(unsigned varint) | collection header | elements header | elements data
 #### Elements header
 
 In most cases, all collection elements are same type and not null, elements header will encode those homogeneous
-information to avoid the cost of writing it for every elements. Specifically, there are four kinds of information
+information to avoid the cost of writing it for every element. Specifically, there are four kinds of information
 which will be encoded by elements header, each use one bit:
 
-- If track elements ref, use first bit `0b1` of header to flag it.
-- If collection has null, use second bit `0b10` of header to flag it. If ref tracking is enabled for this
+- If track elements ref, use the first bit `0b1` of the header to flag it.
+- If the collection has null, use the second bit `0b10` of the header to flag it. If ref tracking is enabled for this
   element type, this flag is invalid.
-- If collection element types is not declared type, use 3rd bit `0b100` of header to flag it.
-- If collection element types different, use 4rd bit `0b1000` of header to flag it.
+- If the collection element types are not declared type, use the 3rd bit `0b100` of the header to flag it.
+- If the collection element types are different, use the 4rd bit `0b1000` header to flag it.
 
-By default, all bits are unset, which means all elements won't track ref, all elements are same type,, not null and the
-actual element is the declare type in custom class field.
+By default, all bits are unset, which means all elements won't track ref, all elements are same type, not null and
+the actual element is the declared type in the custom class field.
 
 #### Elements data
 
@@ -324,12 +384,13 @@ serializers for such types.
 
 #### Object array
 
-Object array is serialized using collection format. Object component type will be taken as collection element generic
+Object array is serialized using the collection format. Object component type will be taken as collection element
+generic
 type.
 
 ### Map
 
-> All Map serializer must extends `AbstractMapSerializer`.
+> All Map serializers must extend `AbstractMapSerializer`.
 
 Format:
 
@@ -348,7 +409,7 @@ Format:
 Map iteration is too expensive, Fury can't compute the header like for collection before since it introduce
 [considerable overhead](https://github.com/alipay/fury/issues/925).
 Users can use `MapFieldInfo` annotation to provide header in advance. Otherwise Fury will use first key-value pair to
-predict header optimistically, and update the chunk header if predict failed at some pair.
+predict header optimistically, and update the chunk header if the prediction failed at some pair.
 
 Fury will serialize map chunk by chunk, every chunk
 has 127 pairs at most.
@@ -361,16 +422,16 @@ has 127 pairs at most.
 
 KV header:
 
-- If track key ref, use first bit `0b1` of header to flag it.
-- If key has null, use second bit `0b10` of header to flag it. If ref tracking is enabled for this
+- If track key ref, use the first bit `0b1` of the header to flag it.
+- If the key has null, use the second bit `0b10` of the header to flag it. If ref tracking is enabled for this
   key type, this flag is invalid.
-- If map key type is not declared type, use 3rd bit `0b100` of header to flag it.
-- If map key type different, use 4rd bit `0b1000` of header to flag it.
-- If track value ref, use 5rd bit `0b10000` of header to flag it.
-- If value has null, use 6rd bit `0b100000` of header to flag it. If ref tracking is enabled for this
+- If the map key type is not declared, use the 3rd bit `0b100` of the header to flag it.
+- If the map key types are different, use the 4rd bit `0b1000` of the header to flag it.
+- If track value ref, use the 5th bit `0b10000` of the header to flag it.
+- If the value has null, use the 6th bit `0b100000` of the header to flag it. If ref tracking is enabled for this
   value type, this flag is invalid.
-- If map value type is not declared type, use 7rd bit `0b1000000` of header to flag it.
-- If map value type different, use 8rd bit `0b10000000` of header to flag it.
+- If the map value type is not the declared type, use the 7rd bit `0b1000000` of the header to flag it.
+- If the map value types are different, use the 8rd bit `0b10000000` header to flag it.
 
 If streaming write is enabled, which means Fury can't update written `chunk size`. In such cases, map key-value data
 format will be:
@@ -381,12 +442,12 @@ format will be:
 +----------------+~~~~~~~~~~~~~~~~~+
 ```
 
-`KV header` will be header marked by `MapFieldInfo` in java. For languages such as golang, this can be computed in
-advance for non-interface type mostly.
+`KV header` will be a header marked by `MapFieldInfo` in java. For languages such as golang, this can be computed in
+advance for non-interface types mostly.
 
 ### Enum
 
-Enum are serialized as an unsigned var int. If the order of enum values change, the deserialized enum value may not be
+Enums are serialized as an unsigned var int. If the order of enum values change, the deserialized enum value may not be
 the value users expect. In such cases, users must register enum serializer by make it write enum value as a enumerated
 string with unique hash disabled.
 
@@ -395,15 +456,15 @@ string with unique hash disabled.
 Object means object of `pojo/struct/bean` type.
 Object will be serialized by writing its fields data in fury order.
 
-Depends on schema compatibility, object will have different format.
+Depending on schema compatibility, objects will have different formats.
 
 #### Field order
 
-Field will be ordered as following, every group of fields will have it's own order:
+Field will be ordered as following, every group of fields will have its own order:
 
 - primitive fields: larger size type first, smaller later, variable size type last.
 - boxed primitive fields: same sort as primitive fields
-- final fields: same type together, then sort by field name lexicographically.
+- final fields: same type together, then sorted by field name lexicographically.
 - collection fields: same sort as final fields
 - map fields: same sort as final fields
 - other fields: same sort as final fields
@@ -445,7 +506,7 @@ Schema evolution have similar format as schema consistent mode for object except
 
 - For this object type itself, `schema consistent` mode will write class by id/name, but `schema evolution` mode will
   write class field names, types and other meta too, see [Class meta](#class-meta).
-- Class meta of `final custom type` need to be written too, because peer may not have this class defined.
+- Class meta of `final custom type` needs to be written too, because peers may not have this class defined.
 
 ### Class
 
@@ -454,6 +515,6 @@ Class will be serialized using class meta format.
 ## Implementation guidelines
 
 - Try to merge multiple bytes into an int/long write before writing to reduce memory IO and bound check cost.
-- Read multiple bytes as an int/long, then spilt into multiple bytes to reduce memory IO and bound check cost.
+- Read multiple bytes as an int/long, then split into multiple bytes to reduce memory IO and bound check cost.
 - Try to use one varint/long to write flags and length together to save one byte cost and reduce memory io.
-- Condition branch is less expensive compared to memory IO cost unless there are too much branches.
+- Condition branches are less expensive compared to memory IO cost unless there are too many branches.
