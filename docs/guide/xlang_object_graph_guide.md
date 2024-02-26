@@ -115,13 +115,12 @@ console.log(result);
 
 ```rust
 use chrono::{NaiveDate, NaiveDateTime};
-use fury::{from_buffer, to_buffer};
-use fury_derive::Fury;
+use fury::{from_buffer, to_buffer, Fury};
 use std::collections::HashMap;
 
 fn run() {
     let bin: Vec<u8> = to_buffer(&"hello".to_string());
-    let obj: String = from_buffer(&bin2).expect("should success");
+    let obj: String = from_buffer(&bin).expect("should success");
     assert_eq!("hello".to_string(), obj);
 }
 ```
@@ -339,8 +338,7 @@ console.log(result);
 
 ```rust
 use chrono::{NaiveDate, NaiveDateTime};
-use fury::{from_buffer, to_buffer};
-use fury_derive::Fury;
+use fury::{from_buffer, to_buffer, Fury};
 use std::collections::HashMap;
 
 #[test]
