@@ -187,9 +187,16 @@ Field order are left as implementation details, which is not exposed to specific
 resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
 using a more compact encoding.
 
-### Others layers class meta
+### Other layers class meta
 
-Same encoding algorithm as the previous layer.
+Same encoding algorithm as the previous layer except:
+- header + package name:
+  - Header:
+    - If package name has been written before: `varint index + 1 bit sharing flag(set)` will be written
+    - If package name hasn't been written before:
+      - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 64, then header will be
+        `6 bits size + 1 bit encoding flag(set) + 1 bit sharing flag(unset)`.
+      - Otherwise, header will be `3 bits unset + 3 bits encoding flags + 1 bit encoding flag(unset) + 1 bit sharing flag(unset)`
 
 ## Meta String
 
