@@ -23,7 +23,7 @@
 //! # Examples:
 //! ```
 //!
-//! use fury_derive::Fury;
+//! use fury::Fury;
 //! #[derive(Fury)]
 //! #[tag("example.foo2")]
 //! struct Animal {
@@ -31,7 +31,7 @@
 //! }
 //!
 //! ```
-//! fury_derive would expand the code and automatic implements the Serialize trait
+//! fury::Fury would expand the code and automatic implements the Serialize trait
 
 use super::buffer::Writer;
 use super::types::{config_flags, FuryMeta, Language, RefFlag, SIZE_OF_REF_AND_TYPE};

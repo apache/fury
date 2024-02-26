@@ -115,8 +115,7 @@ console.log(result);
 
 ```rust
 use chrono::{NaiveDate, NaiveDateTime};
-use fury::{from_buffer, to_buffer};
-use fury_derive::Fury;
+use fury::{from_buffer, to_buffer, Fury};
 use std::collections::HashMap;
 
 fn run() {
@@ -339,8 +338,7 @@ console.log(result);
 
 ```rust
 use chrono::{NaiveDate, NaiveDateTime};
-use fury::{from_buffer, to_buffer};
-use fury_derive::Fury;
+use fury::{from_buffer, to_buffer, Fury};
 use std::collections::HashMap;
 
 #[test]
