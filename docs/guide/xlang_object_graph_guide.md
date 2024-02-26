@@ -120,7 +120,7 @@ use std::collections::HashMap;
 
 fn run() {
     let bin: Vec<u8> = to_buffer(&"hello".to_string());
-    let obj: String = from_buffer(&bin2).expect("should success");
+    let obj: String = from_buffer(&bin).expect("should success");
     assert_eq!("hello".to_string(), obj);
 }
 ```
