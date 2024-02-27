@@ -46,19 +46,20 @@ corresponding flags and maintaining internal state.
 
 Reference flags:
 
-| Flag                | Byte Value | Description                                                                                                                              |
-|---------------------|------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| NULL FLAG           | `-3`       | This flag indicates the object is a not-null value. We don't use another byte to indicate REF, so that we can save one byte.             |
+| Flag                | Byte Value | Description                                                                                                                                             |
+|---------------------|------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NULL FLAG           | `-3`       | This flag indicates the object is a null value. We don't use another byte to indicate REF, so that we can save one byte.                                |
 | REF FLAG            | `-2`       | This flag indicates the object is already serialized previously, and fury will write a ref id with unsigned varint format instead of serialize it again |
-| NOT_NULL VALUE FLAG | `-1`       | This flag indicates the object is a non-null value and fury doesn't track ref for this type of object.                                   |
-| REF VALUE FLAG      | `0`        | This flag indicates the object is referencable and the first time to serialize.                                                                        |
+| NOT_NULL VALUE FLAG | `-1`       | This flag indicates the object is a non-null value and fury doesn't track ref for this type of object.                                                  |
+| REF VALUE FLAG      | `0`        | This flag indicates the object is referencable and the first time to serialize.                                                                         |
 
-When reference tracking is disabled globally or only for some type, or for some type under some context such as some
-field of a class, only `NULL FLAG` and ` NOT_NULL VALUE FLAG` will be used.
+When reference tracking is disabled globally or for specific types, or for certain types within a particular
+context(e.g., a field of a class), only the `NULL` and `NOT_NULL VALUE` flags will be used for reference meta.
 
 ## Class Meta
 
-Fury supports to register class by an optional id, the registration can be used for security check and class identification.
+Fury supports to register class by an optional id, the registration can be used for security check and class
+identification.
 If a class is registered, it will have a user-provided or an auto-growing unsigned int i.e. `class_id`.
 
 Depending on whether meta share mode and registration is enabled for current class, Fury will write class meta
