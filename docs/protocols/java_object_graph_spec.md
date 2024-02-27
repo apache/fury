@@ -49,7 +49,7 @@ Reference flags:
 | Flag                | Byte Value | Description                                                                                                                              |
 |---------------------|------------|------------------------------------------------------------------------------------------------------------------------------------------|
 | NULL FLAG           | `-3`       | This flag indicates the object is a not-null value. We don't use another byte to indicate REF, so that we can save one byte.             |
-| REF FLAG            | `-2`       | This flag indicates the object is written before, and fury will write a ref id with unsigned varint format instead of serialize it again |
+| REF FLAG            | `-2`       | This flag indicates the object is already serialized previously, and fury will write a ref id with unsigned varint format instead of serialize it again |
 | NOT_NULL VALUE FLAG | `-1`       | This flag indicates the object is a non-null value and fury doesn't track ref for this type of object.                                   |
 | REF VALUE FLAG      | `0`        | This flag indicates the object is a referencable and first write.                                                                        |
 
