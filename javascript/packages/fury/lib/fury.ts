@@ -78,11 +78,12 @@ export default class {
     if (!isCrossLanguage) {
       throw new Error("support crosslanguage mode only");
     }
-    this.binaryReader.uint8(); // skip language
     const isOutOfBandEnabled = (bitmap & ConfigFlags.isOutOfBandFlag) === ConfigFlags.isOutOfBandFlag;
     if (isOutOfBandEnabled) {
       throw new Error("outofband mode is not supported now");
     }
+
+    this.binaryReader.uint8(); // skip language
     this.binaryReader.int32(); // native object offset. should skip.  javascript support cross mode only
     this.binaryReader.int32(); // native object size. should skip.
     return serializer.read();
