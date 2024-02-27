@@ -28,6 +28,7 @@ Fury header consists starts one byte:
 
 ```
 |     4 bits    | 1 bit | 1 bit | 1 bit  | 1 bit |          optional 4 bytes          |
++---------------+-------+-------+--------+-------+------------------------------------+
 | reserved bits |  oob  | xlang | endian | null  | unsigned int for meta start offset |
 ```
 
@@ -104,6 +105,7 @@ the meta layout for schema evolution mode:
 
 ```
 |      8 bytes meta header      |   variable bytes   |  variable bytes   | variable bytes |
++-------------------------------+--------------------+-------------------+----------------+
 | 7 bytes hash + 1 bytes header | current class meta | parent class meta |      ...       |
 ```
 
@@ -124,6 +126,7 @@ Meta header is a 64 bits number value encoded in little endian order.
 
 ```
 |      unsigned varint       |      meta string      |     meta string     |  field info: variable bytes   | variable bytes  | ... |
++----------------------------+-----------------------+---------------------+-------------------------------+-----------------+-----+
 | num fields + register flag | header + package name | header + class name | header + type id + field name | next field info | ... |
 ```
 
@@ -133,7 +136,11 @@ Meta header is a 64 bits number value encoded in little endian order.
     - If current class is schema consistent, then num field will be `0` to flag it.
     - If current class isn't schema consistent, then num field will be the number of compatible fields. For example,
       users
-      can use tag id to mark some field as compatible field in schema consistent context.
+      can use tag id to mark some field as compatible field in schema consistent context. In such cases, schema
+      consistent
+      fields will be serialized first, then compatible fields will be serialized next. At deserialization, Fury will use
+      fields info of those fields which aren't annotated by tag id for deserializing schema consistent fields, then use
+      fields info in meta for deserializing compatible fields.
 - Package name encoding(omitted when class is registered):
     - Header:
         - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 128, then header will be
@@ -328,7 +335,7 @@ If string has been written before, the data will be written as follows:
 Format:
 
 ```
-| header: size + encoding | binary data |
+| header: size << 2 | 2 bits encoding flags | binary data |
 ```
 
 - `size + encoding` will be concat as a long and encoded as an unsigned var long. The little 2 bits is used for
@@ -415,18 +422,17 @@ Format:
 
 #### Map Key-Value data
 
-Map iteration is too expensive, Fury can't compute the header like for collection before since it introduce
-[considerable overhead](https://github.com/alipay/fury/issues/925).
+Map iteration is too expensive, Fury won't compute the header like for collection before since it introduce
+[considerable overhead](https://github.com/apache/incubator-fury/issues/925).
 Users can use `MapFieldInfo` annotation to provide header in advance. Otherwise Fury will use first key-value pair to
 predict header optimistically, and update the chunk header if the prediction failed at some pair.
 
-Fury will serialize map chunk by chunk, every chunk
-has 127 pairs at most.
+Fury will serialize map chunk by chunk, every chunk has 127 pairs at most.
 
 ```
-+----------------+----------------+~~~~~~~~~~~~~~~~~+
+|    1 byte      |     1 byte     | variable bytes  |
++----------------+----------------+-----------------+
 | chunk size: N  |    KV header   |   N*2 objects   |
-+----------------+----------------+~~~~~~~~~~~~~~~~~+
 ```
 
 KV header:
@@ -446,13 +452,13 @@ If streaming write is enabled, which means Fury can't update written `chunk size
 format will be:
 
 ```
-+----------------+~~~~~~~~~~~~~~~~~+
+|    1 byte      | variable bytes  |
++----------------+-----------------+
 |    KV header   |   N*2 objects   |
-+----------------+~~~~~~~~~~~~~~~~~+
 ```
 
 `KV header` will be a header marked by `MapFieldInfo` in java. For languages such as golang, this can be computed in
-advance for non-interface types mostly.
+advance for non-interface types in most times.
 
 ### Enum
 
@@ -462,7 +468,7 @@ string with unique hash disabled.
 
 ### Object
 
-Object means object of `pojo/struct/bean` type.
+Object means object of `pojo/struct/bean/record` type.
 Object will be serialized by writing its fields data in fury order.
 
 Depending on schema compatibility, objects will have different formats.
@@ -484,29 +490,35 @@ Object fields will be serialized one by one using following format:
 
 ```
 Primitive field value:
-+============+
-| value data |
-+============+
+|   var bytes    |
++----------------+
+|   value data   |
++----------------+
 Boxed field value:
-+-----------+=============+
-| null flag | field value |
-+-----------+=============+
+| one byte  |   var bytes   |
++-----------+---------------+
+| null flag |  field value  |
++-----------+---------------+
 field value of final type with ref tracking:
-+===========+~~~~~~~~~~~~+
-| ref meta  | value data |
-+===========+~~~~~~~~~~~~+
+| var bytes | var objects |
++-----------+-------------+
+| ref meta  | value data  |
++-----------+-------------+
 field value of final type without ref tracking:
-+-----------+~~~~~~~~~~~~~+
+| one byte  | var objects |
++-----------+-------------+
 | null flag | field value |
-+-----------+~~~~~~~~~~~~~+
++-----------+-------------+
 field value of non-final type with ref tracking:
-+===========+~~~~~~~~~~~~+~~~~~~~~~~~~+
-| ref meta  | class meta | value data |
-+===========+~~~~~~~~~~~~+~~~~~~~~~~~~+
+| one byte  | var bytes | var objects |
++-----------+-------------+-------------+
+| ref meta  | class meta  | value data  |
++-----------+-------------+-------------+
 field value of non-final type without ref tracking:
-+-----------+~~~~~~~~~~~~+~~~~~~~~~~~~+
+| one byte  | var bytes | var objects |
++-----------+------------+------------+
 | null flag | class meta | value data |
-+-----------+~~~~~~~~~~~~+~~~~~~~~~~~~+
++-----------+------------+------------+
 ```
 
 #### Schema evolution
