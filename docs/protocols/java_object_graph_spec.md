@@ -58,8 +58,8 @@ field of a class, only `NULL FLAG` and ` NOT_NULL VALUE FLAG` will be used.
 
 ## Class Meta
 
-Fury support register class by an optional id, the registration can be used to security check, and identify the class.
-If the class is registered, the class will have a user-provided or an auto-growing unsigned int `class_id`.
+Fury supports to register class by an optional id, the registration can be used for security check and class identification.
+If a class is registered, it will have a user-provided or an auto-growing unsigned int i.e. `class_id`.
 
 Depending on whether meta share mode and registration is enabled for current class, Fury will write class meta
 differently.
