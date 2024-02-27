@@ -35,7 +35,7 @@ export const BinaryReader = (config: Config) => {
   function reset(ab: Uint8Array) {
     buffer = fromUint8Array(ab);
     byteLength = buffer.byteLength;
-    dataView = new DataView(buffer.buffer, buffer.byteOffset);
+    dataView = new DataView(buffer.buffer, buffer.byteOffset, byteLength);
     if (sliceStringEnable) {
       bigString = buffer.toString("latin1", 0, byteLength);
     }

@@ -140,7 +140,9 @@ export class BrowserBuffer extends Uint8Array implements PlatformBuffer {
 export const fromUint8Array = hasBuffer
   ? (ab: Buffer | Uint8Array) => {
       if (!Buffer.isBuffer(ab)) {
-        return (Buffer.from(ab) as unknown as PlatformBuffer);
+        // https://nodejs.org/docs/latest/api/buffer.html#static-method-bufferfromarraybuffer-byteoffset-length
+        // Create a zero-copy Buffer wrapper around the ArrayBuffer pointed to by the Uint8Array
+        return (Buffer.from(ab.buffer, ab.byteOffset, ab.byteLength) as unknown as PlatformBuffer);
       } else {
         return ab as unknown as PlatformBuffer;
       }
