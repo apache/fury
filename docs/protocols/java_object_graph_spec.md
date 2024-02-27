@@ -440,13 +440,13 @@ KV header:
 - If track key ref, use the first bit `0b1` of the header to flag it.
 - If the key has null, use the second bit `0b10` of the header to flag it. If ref tracking is enabled for this
   key type, this flag is invalid.
-- If the map key type is not declared, use the 3rd bit `0b100` of the header to flag it.
-- If the map key types are different, use the 4rd bit `0b1000` of the header to flag it.
+- If the key types of map are different, use the 3rd bit `0b100` of the header to flag it.
+- If the actual key type of map is not the declared key type, use the 4rd bit `0b1000` of the header to flag it.
 - If track value ref, use the 5th bit `0b10000` of the header to flag it.
 - If the value has null, use the 6th bit `0b100000` of the header to flag it. If ref tracking is enabled for this
   value type, this flag is invalid.
-- If the map value type is not the declared type, use the 7rd bit `0b1000000` of the header to flag it.
-- If the map value types are different, use the 8rd bit `0b10000000` header to flag it.
+- If the value types of map are different, use the 7rd bit `0b1000000` header to flag it.
+- If the value type of map is not the declared value type, use the 8rd bit `0b10000000` of the header to flag it.
 
 If streaming write is enabled, which means Fury can't update written `chunk size`. In such cases, map key-value data
 format will be:
