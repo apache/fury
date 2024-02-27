@@ -19,7 +19,7 @@
 
 import { TypeDescription } from "../description";
 import { CodecBuilder } from "./builder";
-import { BaseSerializerGenerator } from "./serializer";
+import { BaseSerializerGenerator, RefState } from "./serializer";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
@@ -40,12 +40,12 @@ class BinarySerializerGenerator extends BaseSerializerGenerator {
         `;
   }
 
-  readStmt(accessor: (expr: string) => string): string {
+  readStmt(accessor: (expr: string) => string, refState: RefState): string {
     const result = this.scope.uniqueName("result");
     return `
         ${this.builder.reader.uint8()}
         ${result} = ${this.builder.reader.buffer(this.builder.reader.int32())};
-        ${this.pushReadRefStmt(result)};
+        ${this.maybeReference(result, refState)};
         ${accessor(result)}
         `;
   }

@@ -82,3 +82,21 @@ cargo test
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
+
+### Build Fury JavaScript
+
+```bash
+cd javascript
+npm install
+
+# run build
+npm run build
+# run test
+npm run test
+```
+
+#### Environment Requirements
+
+- node 14+
+- npm 8+
+

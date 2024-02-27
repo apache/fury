@@ -194,7 +194,7 @@ export const BinaryWriter = (config: Config) => {
         if (len < 40) {
           fastWriteStringUtf8(v, arrayBuffer, cursor);
         } else {
-          arrayBuffer.utf8Write(v, cursor);
+          arrayBuffer.write(v, cursor, "utf8");
         }
       }
       cursor += len;
@@ -213,13 +213,13 @@ export const BinaryWriter = (config: Config) => {
           arrayBuffer[cursor + index] = v.charCodeAt(index);
         }
       } else {
-        arrayBuffer.latin1Write(v, cursor);
+        arrayBuffer.write(v, cursor, "latin1");
       }
     } else {
       if (len < 40) {
         fastWriteStringUtf8(v, arrayBuffer, cursor);
       } else {
-        arrayBuffer.utf8Write(v, cursor);
+        arrayBuffer.write(v, cursor, "utf8");
       }
     }
     cursor += len;

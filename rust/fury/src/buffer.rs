@@ -15,27 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::{
-    mem, ptr,
-    slice::{from_raw_parts, from_raw_parts_mut},
-};
-
-use byteorder::{ByteOrder, LittleEndian};
+use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
 
 #[derive(Default)]
 pub struct Writer {
     bf: Vec<u8>,
     reserved: usize,
-}
-
-macro_rules! write_num {
-    ($name: ident, $ty: tt) => {
-        pub fn $name(&mut self, v: $ty) {
-            let c = self.cast::<$ty>(mem::size_of::<$ty>());
-            c[0] = v;
-            self.move_next(mem::size_of::<$ty>());
-        }
-    };
 }
 
 impl Writer {
@@ -47,20 +32,6 @@ impl Writer {
         self.bf.len()
     }
 
-    fn move_next(&mut self, additional: usize) {
-        unsafe { self.bf.set_len(self.bf.len() + additional) }
-    }
-    fn ptr(&mut self) -> *mut u8 {
-        unsafe {
-            let t = self.bf.as_mut_ptr();
-            t.add(self.bf.len())
-        }
-    }
-
-    fn cast<T>(&mut self, len: usize) -> &mut [T] {
-        unsafe { from_raw_parts_mut(self.ptr() as *mut T, len) }
-    }
-
     pub fn reserve(&mut self, additional: usize) {
         self.reserved += additional;
         if self.bf.capacity() < self.reserved {
@@ -68,27 +39,48 @@ impl Writer {
         }
     }
 
-    write_num!(u8, u8);
-    write_num!(u16, u16);
-    write_num!(u32, u32);
-    write_num!(u64, u64);
-    write_num!(i8, i8);
-    write_num!(i16, i16);
-    write_num!(i32, i32);
-    write_num!(i64, i64);
+    pub fn u8(&mut self, value: u8) {
+        self.bf.write_u8(value).unwrap();
+    }
+
+    pub fn i8(&mut self, value: i8) {
+        self.bf.write_i8(value).unwrap();
+    }
+
+    pub fn u16(&mut self, value: u16) {
+        self.bf.write_u16::<LittleEndian>(value).unwrap();
+    }
+
+    pub fn i16(&mut self, value: i16) {
+        self.bf.write_i16::<LittleEndian>(value).unwrap();
+    }
+
+    pub fn u32(&mut self, value: u32) {
+        self.bf.write_u32::<LittleEndian>(value).unwrap();
+    }
 
     pub fn skip(&mut self, len: usize) {
-        self.move_next(len);
+        self.bf.resize(self.bf.len() + len, 0);
+    }
+
+    pub fn i32(&mut self, value: i32) {
+        self.bf.write_i32::<LittleEndian>(value).unwrap();
     }
 
     pub fn f32(&mut self, value: f32) {
-        LittleEndian::write_f32(self.cast::<u8>(4), value);
-        self.move_next(4);
+        self.bf.write_f32::<LittleEndian>(value).unwrap();
+    }
+
+    pub fn i64(&mut self, value: i64) {
+        self.bf.write_i64::<LittleEndian>(value).unwrap();
     }
 
     pub fn f64(&mut self, value: f64) {
-        LittleEndian::write_f64(self.cast::<u8>(8), value);
-        self.move_next(8);
+        self.bf.write_f64::<LittleEndian>(value).unwrap();
+    }
+
+    pub fn u64(&mut self, value: u64) {
+        self.bf.write_u64::<LittleEndian>(value).unwrap();
     }
 
     pub fn var_int32(&mut self, value: i32) {
@@ -121,10 +113,7 @@ impl Writer {
 
     pub fn bytes(&mut self, v: &[u8]) {
         self.reserve(v.len());
-        unsafe {
-            ptr::copy_nonoverlapping(v.as_ptr(), self.ptr(), v.len());
-        }
-        self.move_next(v.len());
+        self.bf.extend_from_slice(v);
     }
 
     pub fn set_bytes(&mut self, offset: usize, data: &[u8]) {
@@ -140,17 +129,6 @@ pub struct Reader<'de> {
     cursor: usize,
 }
 
-macro_rules! read_num {
-    ($name: ident, $ty: tt) => {
-        pub fn $name(&mut self) -> $ty {
-            let c = self.cast::<$ty>(mem::size_of::<$ty>());
-            let result = c[0];
-            self.move_next(mem::size_of::<$ty>());
-            result
-        }
-    };
-}
-
 impl<'bf> Reader<'bf> {
     pub fn new(bf: &[u8]) -> Reader {
         Reader { bf, cursor: 0 }
@@ -160,34 +138,66 @@ impl<'bf> Reader<'bf> {
         self.cursor += additional;
     }
 
-    fn ptr(&self) -> *const u8 {
-        unsafe {
-            let t = self.bf.as_ptr();
-            t.add(self.cursor)
-        }
+    fn slice_after_cursor(&self) -> &[u8] {
+        &self.bf[self.cursor..self.bf.len()]
     }
 
-    fn cast<T>(&self, len: usize) -> &[T] {
-        unsafe { from_raw_parts(self.ptr() as *const T, len) }
+    pub fn u8(&mut self) -> u8 {
+        let result = self.bf[self.cursor];
+        self.move_next(1);
+        result
     }
 
-    read_num!(u8, u8);
-    read_num!(u16, u16);
-    read_num!(u32, u32);
-    read_num!(u64, u64);
-    read_num!(i8, i8);
-    read_num!(i16, i16);
-    read_num!(i32, i32);
-    read_num!(i64, i64);
+    pub fn i8(&mut self) -> i8 {
+        let result = self.bf[self.cursor];
+        self.move_next(1);
+        result as i8
+    }
+
+    pub fn u16(&mut self) -> u16 {
+        let result = LittleEndian::read_u16(self.slice_after_cursor());
+        self.move_next(2);
+        result
+    }
+
+    pub fn i16(&mut self) -> i16 {
+        let result = LittleEndian::read_i16(self.slice_after_cursor());
+        self.move_next(2);
+        result as i16
+    }
+
+    pub fn u32(&mut self) -> u32 {
+        let result = LittleEndian::read_u32(self.slice_after_cursor());
+        self.move_next(4);
+        result
+    }
+
+    pub fn i32(&mut self) -> i32 {
+        let result = LittleEndian::read_i32(self.slice_after_cursor());
+        self.move_next(4);
+        result as i32
+    }
+
+    pub fn u64(&mut self) -> u64 {
+        let result = LittleEndian::read_u64(self.slice_after_cursor());
+        self.move_next(8);
+        result
+    }
+
+    pub fn i64(&mut self) -> i64 {
+        let result = LittleEndian::read_i64(self.slice_after_cursor());
+        self.move_next(8);
+        result as i64
+    }
 
     pub fn f32(&mut self) -> f32 {
-        let result = LittleEndian::read_f32(self.cast::<u8>(4));
+        let result = LittleEndian::read_f32(self.slice_after_cursor());
         self.move_next(4);
         result
     }
 
     pub fn f64(&mut self) -> f64 {
-        let result = LittleEndian::read_f64(self.cast::<u8>(8));
+        let result = LittleEndian::read_f64(self.slice_after_cursor());
         self.move_next(8);
         result
     }
@@ -214,9 +224,9 @@ impl<'bf> Reader<'bf> {
         result
     }
 
-    pub fn string(&mut self, len: u32) -> String {
-        let result = String::from_utf8_lossy(self.cast::<u8>(len as usize)).to_string();
-        self.move_next(len as usize);
+    pub fn string(&mut self, len: usize) -> String {
+        let result = String::from_utf8_lossy(&self.bf[self.cursor..self.cursor + len]).to_string();
+        self.move_next(len);
         result
     }
 

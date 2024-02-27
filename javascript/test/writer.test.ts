@@ -17,8 +17,8 @@
  * under the License.
  */
 
-import { OwnershipError } from '@furyjs/fury/lib/error';
-import { BinaryWriter } from '@furyjs/fury/lib/writer';
+import { OwnershipError } from '../packages/fury/lib/error';
+import { BinaryWriter } from '../packages/fury/lib/writer';
 import { describe, expect, test } from '@jest/globals';
 
 describe('writer', () => {

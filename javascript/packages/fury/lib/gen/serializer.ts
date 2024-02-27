@@ -22,14 +22,75 @@ import { CodecBuilder } from "./builder";
 import { makeHead } from "../referenceResolver";
 import { RefFlags } from "../type";
 import { Scope } from "./scope";
-import { TypeDescription } from "../description";
+import { TypeDescription, ObjectTypeDescription } from "../description";
 
 export interface SerializerGenerator {
-  writeStmt(accessor: string): string
-  readStmt(accessor: (expr: string) => string): string
-  toSerializer(): string
-  toWriteEmbed(accessor: string, withHead?: boolean): string
-  toReadEmbed(accessor: (expr: string) => string, withHead?: boolean): string
+  toSerializer(): string;
+  toWriteEmbed(accessor: string, excludeHead?: boolean): string;
+  toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean, refState?: RefState): string;
+}
+
+export enum RefStateType {
+  Condition = "condition",
+  True = "true",
+  False = "false",
+}
+export class RefState {
+  constructor(private state: RefStateType, private conditionAccessor?: string) {
+
+  }
+
+  getState() {
+    return this.state;
+  }
+
+  getCondition() {
+    return this.conditionAccessor;
+  }
+
+  static fromCondition(conditionAccessor: string) {
+    return new RefState(RefStateType.Condition, conditionAccessor);
+  }
+
+  static fromTrue() {
+    return new RefState(RefStateType.True);
+  }
+
+  static fromFalse() {
+    return new RefState(RefStateType.False);
+  }
+
+  static fromBool(v: boolean) {
+    return v ? new RefState(RefStateType.True) : new RefState(RefStateType.False);
+  }
+
+  toConditionExpr() {
+    const ref = this!.getState();
+    if (ref === RefStateType.Condition) {
+      return this.conditionAccessor;
+    } else if (ref === RefStateType.False) {
+      return "false";
+    } else {
+      return "true";
+    }
+  }
+
+  wrap(inner: (need: boolean) => string) {
+    const ref = this!.getState();
+    if (ref === RefStateType.Condition) {
+      return `
+        if (${this.conditionAccessor}) {
+          ${inner(true)}
+        } else {
+          ${inner(false)}
+        }
+      `;
+    } else if (ref === RefStateType.False) {
+      return inner(false);
+    } else {
+      return inner(true);
+    }
+  }
 }
 
 export abstract class BaseSerializerGenerator implements SerializerGenerator {
@@ -43,68 +104,83 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
 
   abstract writeStmt(accessor: string): string;
 
-  abstract readStmt(accessor: (expr: string) => string): string;
+  abstract readStmt(accessor: (expr: string) => string, refState: RefState): string;
 
-  protected pushReadRefStmt(accessor: string) {
-    if (!this.builder.config().refTracking) {
+  protected maybeReference(accessor: string, refState: RefState) {
+    if (refState.getState() === RefStateType.False) {
       return "";
     }
-    return this.builder.referenceResolver.pushReadObject(accessor);
+    if (refState.getState() === RefStateType.True) {
+      return this.builder.referenceResolver.reference(accessor);
+    }
+    if (refState.getState() === RefStateType.Condition) {
+      return `
+        if (${refState.getCondition()}) {
+          ${this.builder.referenceResolver.reference(accessor)}
+        }
+      `;
+    }
   }
 
   protected wrapWriteHead(accessor: string, stmt: (accessor: string) => string) {
     const meta = this.builder.meta(this.description);
-    const noneable = meta.noneable;
-    if (noneable) {
-      const head = makeHead(RefFlags.RefValueFlag, this.description.type);
 
-      const normaStmt = `
-            if (${accessor} !== null && ${accessor} !== undefined) {
-                ${this.builder.writer.int24(head)};
-                ${stmt(accessor)};
-            } else {
-                ${this.builder.writer.int8(RefFlags.NullFlag)};
-            }
-            `;
-      if (this.builder.config().refTracking) {
-        const existsId = this.scope.uniqueName("existsId");
-        return `
-                const ${existsId} = ${this.builder.referenceResolver.existsWriteObject(accessor)};
-                if (typeof ${existsId} === "number") {
-                    ${this.builder.writer.int8(RefFlags.RefFlag)}
-                    ${this.builder.writer.varUInt32(existsId)}
+    const maybeTag = () => {
+      if (this.description.type !== InternalSerializerType.FURY_TYPE_TAG) {
+        return "";
+      }
+      const safeTag = CodecBuilder.replaceBackslashAndQuote((<ObjectTypeDescription> this.description).options.tag);
+      const tagWriter = this.scope.declare("tagWriter", `${this.builder.classResolver.createTagWriter(safeTag)}`);
+      return `${tagWriter}.write(${this.builder.writer.ownName()})`;
+    };
+
+    if (meta.needToWriteRef) {
+      const head = makeHead(RefFlags.RefValueFlag, this.description.type);
+      const existsId = this.scope.uniqueName("existsId");
+      return `
+                if (${accessor} !== null && ${accessor} !== undefined) {
+                    const ${existsId} = ${this.builder.referenceResolver.existsWriteObject(accessor)};
+                    if (typeof ${existsId} === "number") {
+                        ${this.builder.writer.int8(RefFlags.RefFlag)}
+                        ${this.builder.writer.varUInt32(existsId)}
+                    } else {
+                        ${this.builder.referenceResolver.writeRef(accessor)}
+                        ${this.builder.writer.int24(head)};
+                        ${maybeTag()}
+                        ${stmt(accessor)};
+                    }
                 } else {
-                    ${this.builder.referenceResolver.pushWriteObject(accessor)}
-                    ${normaStmt}
+                    ${this.builder.writer.int8(RefFlags.NullFlag)};
                 }
                 `;
-      } else {
-        return normaStmt;
-      }
     } else {
       const head = makeHead(RefFlags.NotNullValueFlag, this.description.type);
       return `
-            ${this.builder.writer.int24(head)};
             if (${accessor} !== null && ${accessor} !== undefined) {
+                ${this.builder.writer.int24(head)};
+                ${maybeTag()}
                 ${stmt(accessor)};
             } else {
-                ${typeof meta.default === "string" ? stmt(`"${meta.default}"`) : stmt(meta.default)};
+                ${this.builder.writer.int8(RefFlags.NullFlag)};
             }`;
     }
   }
 
-  protected wrapReadHead(accessor: (expr: string) => string, stmt: (accessor: (expr: string) => string) => string) {
+  private wrapReadHead(accessor: (expr: string) => string, stmt: (accessor: (expr: string) => string, refState: RefState) => string) {
+    const refFlag = this.scope.uniqueName("refFlag");
+
     return `
-      switch (${this.builder.reader.int8()}) {
+      const ${refFlag} = ${this.builder.reader.int8()};
+      switch (${refFlag}) {
           case ${RefFlags.NotNullValueFlag}:
           case ${RefFlags.RefValueFlag}:
               if (${this.builder.reader.int16()} === ${InternalSerializerType.FURY_TYPE_TAG}) {
                   ${this.builder.classResolver.readTag(this.builder.reader.ownName())};
               }
-              ${stmt(accessor)}
+              ${stmt(accessor, RefState.fromCondition(`${refFlag} === ${RefFlags.RefValueFlag}`))}
               break;
           case ${RefFlags.RefFlag}:
-              ${accessor(this.builder.referenceResolver.getReadObjectByRefId(this.builder.reader.varUInt32()))}
+              ${accessor(this.builder.referenceResolver.getReadObject(this.builder.reader.varUInt32()))}
               break;
           case ${RefFlags.NullFlag}:
               ${accessor("null")}
@@ -113,18 +189,18 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
       `;
   }
 
-  toWriteEmbed(accessor: string, withHead = true) {
-    if (!withHead) {
+  toWriteEmbed(accessor: string, excludeHead = false) {
+    if (excludeHead) {
       return this.writeStmt(accessor);
     }
     return this.wrapWriteHead(accessor, accessor => this.writeStmt(accessor));
   }
 
-  toReadEmbed(accessor: (expr: string) => string, withHead = true) {
-    if (!withHead) {
-      return this.readStmt(accessor);
+  toReadEmbed(accessor: (expr: string) => string, excludeHead = false, refState?: RefState) {
+    if (excludeHead) {
+      return this.readStmt(accessor, refState!);
     }
-    return this.wrapReadHead(accessor, accessor => this.readStmt(accessor));
+    return this.wrapReadHead(accessor, (accessor, refState) => this.readStmt(accessor, refState));
   }
 
   toSerializer() {
@@ -134,11 +210,11 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     this.scope.assertNameNotDuplicate("writeInner");
 
     const declare = `
-      const readInner = () => {
-        ${this.readStmt(x => `return ${x}`)}
+      const readInner = (fromRef) => {
+        ${this.readStmt(x => `return ${x}`, RefState.fromCondition("fromRef"))}
       };
       const read = () => {
-        ${this.wrapReadHead(x => `return ${x}`, accessor => accessor(`readInner()`))}
+        ${this.wrapReadHead(x => `return ${x}`, (accessor, refState) => accessor(`readInner(${refState.getCondition()})`))}
       };
       const writeInner = (v) => {
         ${this.writeStmt("v")}

@@ -38,6 +38,7 @@ import org.apache.fury.FuryTestBase;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CompileUnit;
 import org.apache.fury.codegen.JaninoUtils;
+import org.apache.fury.codegen.javalangnameconflict.MethodSpiltObject;
 import org.apache.fury.config.Language;
 import org.apache.fury.serializer.collection.CollectionSerializersTest;
 import org.apache.fury.test.bean.AccessBeans;
@@ -185,5 +186,15 @@ public class ObjectCodecBuilderTest extends FuryTestBase {
     Fury fury = Fury.builder().requireClassRegistration(false).build();
     AccessBeans.PublicClass object = AccessBeans.createPublicClassObject();
     serDeCheckSerializer(fury, object, "Codec");
+  }
+
+  @Test
+  public void testTypeConflictWhenMethodSplits() {
+    // For issue #1370
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+    fury.serialize(new MethodSpiltObject());
+    Assert.assertTrue(
+        fury.getClassResolver().getSerializer(MethodSpiltObject.class)
+            instanceof Generated.GeneratedSerializer);
   }
 }

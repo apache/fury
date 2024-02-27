@@ -56,13 +56,14 @@ public class SerializerFactoryTest {
     public KryoSerializer(Fury fury, Class cls) {
       super(fury, cls);
       kryo = new Kryo();
+      kryo.setRegistrationRequired(false);
       output = new Output(64, Integer.MAX_VALUE);
       input = new ByteBufferInput();
     }
 
     @Override
     public void write(MemoryBuffer buffer, Object value) {
-      output.clear();
+      output.reset();
       kryo.writeObject(output, value);
       buffer.writeBytes(output.getBuffer(), 0, output.position());
     }

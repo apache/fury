@@ -17,8 +17,8 @@
  * under the License.
  */
 
-import { InternalSerializerType, Fury } from "../type";
-import { ArrayTypeDescription, MapTypeDescription, ObjectTypeDescription, SetTypeDescription, TupleTypeDescription, TypeDescription } from "../description";
+import { InternalSerializerType } from "../type";
+import { ArrayTypeDescription, MapTypeDescription, ObjectTypeDescription, OneofTypeDescription, SetTypeDescription, TupleTypeDescription, TypeDescription } from "../description";
 import { CodegenRegistry } from "./router";
 import { CodecBuilder } from "./builder";
 import { Scope } from "./scope";
@@ -31,10 +31,15 @@ import "./datetime";
 import "./map";
 import "./number";
 import "./set";
-import "./any";
 import "./tuple";
 import "./typedArray";
+import Fury from "../fury";
 import "./enum";
+import "./oneof";
+
+export { AnySerializer } from "./any";
+
+const external = CodegenRegistry.getExternal();
 
 export const generate = (fury: Fury, description: TypeDescription) => {
   const InnerGeneratorClass = CodegenRegistry.get(description.type);
@@ -64,7 +69,7 @@ function regDependencies(fury: Fury, description: TypeDescription) {
         regDependencies(fury, x);
       });
       const func = generate(fury, description);
-      fury.classResolver.registerSerializerByTag(options.tag, func()(fury, {}));
+      fury.classResolver.registerSerializerByTag(options.tag, func()(fury, external));
     }
   }
   if (description.type === InternalSerializerType.ARRAY) {
@@ -82,6 +87,14 @@ function regDependencies(fury: Fury, description: TypeDescription) {
       regDependencies(fury, x);
     });
   }
+  if (description.type === InternalSerializerType.ONEOF) {
+    const options = (<OneofTypeDescription>description).options;
+    if (options.inner) {
+      Object.values(options.inner).forEach((x) => {
+        regDependencies(fury, x);
+      });
+    }
+  }
 }
 
 export const generateSerializer = (fury: Fury, description: TypeDescription) => {
@@ -90,5 +103,5 @@ export const generateSerializer = (fury: Fury, description: TypeDescription) => 
     return fury.classResolver.getSerializerByTag((<ObjectTypeDescription>description).options.tag);
   }
   const func = generate(fury, description);
-  return func()(fury, {});
+  return func()(fury, external);
 };

@@ -22,3 +22,5 @@ export const isNodeEnv: boolean
   && process.versions != null
   && process.env.ECMA_ONLY !== "true"
   && process.versions.node != null;
+
+export const hasBuffer = isNodeEnv && typeof Buffer !== "undefined";

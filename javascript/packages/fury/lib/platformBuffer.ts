@@ -17,23 +17,38 @@
  * under the License.
  */
 
-import { isNodeEnv } from "./util";
+import { hasBuffer } from "./util";
+
+export type SupportedEncodings = "latin1" | "utf8";
 
 export interface PlatformBuffer extends Uint8Array {
-  latin1Slice(start: number, end: number): string
-  utf8Slice(start: number, end: number): string
-  latin1Write(v: string, offset: number): void
-  utf8Write(v: string, offset: number): void
-  copy(target: Uint8Array, targetStart?: number, sourceStart?: number, sourceEnd?: number): void
+  toString(encoding?: SupportedEncodings, start?: number, end?: number): string;
+  write(string: string, offset: number, encoding?: SupportedEncodings): void;
+  copy(target: Uint8Array, targetStart?: number, sourceStart?: number, sourceEnd?: number): void;
 }
 
 export class BrowserBuffer extends Uint8Array implements PlatformBuffer {
+  write(string: string, offset: number, encoding: SupportedEncodings = "utf8"): void {
+    if (encoding === "latin1") {
+      return this.latin1Write(string, offset);
+    }
+    return this.utf8Write(string, offset);
+  }
+
+  toString(encoding: SupportedEncodings = "utf8", start = 0, end = this.length): string {
+    if (encoding === "latin1") {
+      return this.latin1Slice(start, end);
+    }
+    return this.utf8Slice(start, end);
+  }
+
   static alloc(size: number) {
     return new BrowserBuffer(new Uint8Array(size));
   }
 
   latin1Write(string: string, offset: number) {
-    for (let index = 0; index < string.length; index++) {
+    let index = 0;
+    for (; index < string.length; index++) {
       this[offset++] = string.charCodeAt(index);
     }
   }
@@ -122,7 +137,7 @@ export class BrowserBuffer extends Uint8Array implements PlatformBuffer {
   }
 }
 
-export const fromUint8Array = isNodeEnv
+export const fromUint8Array = hasBuffer
   ? (ab: Buffer | Uint8Array) => {
       if (!Buffer.isBuffer(ab)) {
         return (Buffer.from(ab) as unknown as PlatformBuffer);
@@ -132,14 +147,14 @@ export const fromUint8Array = isNodeEnv
     }
   : (ab: Buffer | Uint8Array) => new BrowserBuffer(ab);
 
-export const alloc = (isNodeEnv ? Buffer.allocUnsafe : BrowserBuffer.alloc) as unknown as (size: number) => PlatformBuffer;
+export const alloc = (hasBuffer ? Buffer.allocUnsafe : BrowserBuffer.alloc) as unknown as (size: number) => PlatformBuffer;
 
-export const strByteLength = isNodeEnv ? Buffer.byteLength : BrowserBuffer.byteLength;
+export const strByteLength = hasBuffer ? Buffer.byteLength : BrowserBuffer.byteLength;
 
 let utf8Encoder: TextEncoder | null;
 
 export const fromString
-= isNodeEnv
+= hasBuffer
   ? (str: string) => Buffer.from(str) as unknown as PlatformBuffer
   : (str: string) => {
       if (!utf8Encoder) {

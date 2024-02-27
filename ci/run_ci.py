@@ -29,6 +29,9 @@ BAZEL_VERSION = "6.3.2"
 
 PYARROW_VERSION = "14.0.0"
 
+PROJECT_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
+
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -71,6 +74,10 @@ def _get_bazel_download_url():
     )
 
 
+def _cd_project_subdir(subdir):
+    os.chdir(os.path.join(PROJECT_ROOT_DIR, subdir))
+
+
 def _run_cpp():
     _install_cpp_deps()
     # run test
@@ -78,6 +85,35 @@ def _run_cpp():
     _exec_cmd(
         "bazel test {}".format(query_result.replace("\n", " ").replace("\r", " "))
     )
+
+
+def _run_rust():
+    _exec_cmd("rustup component add clippy-preview")
+    _exec_cmd("rustup component add rustfmt")
+    logging.info("Executing fury rust tests")
+    _cd_project_subdir("rust")
+
+    cmds = (
+        "cargo doc --no-deps --document-private-items --all-features --open",
+        "cargo fmt --all -- --check",
+        "cargo fmt --all",
+        "cargo clippy --workspace --all-features --all-targets",
+        "cargo doc",
+        "cargo build --all-features --all-targets",
+        "cargo test",
+        "cargo clean",
+    )
+    for cmd in cmds:
+        _exec_cmd(cmd)
+    logging.info("Executing fury rust tests succeeds")
+
+
+def _run_js():
+    logging.info("Executing fury javascript tests.")
+    _cd_project_subdir("javascript")
+    _exec_cmd("npm install")
+    _exec_cmd("npm run test")
+    logging.info("Executing fury javascript tests succeeds.")
 
 
 def _install_cpp_deps():
@@ -125,6 +161,22 @@ def _parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     cpp_parser.set_defaults(func=_run_cpp)
+
+    rust_parser = subparsers.add_parser(
+        "rust",
+        description="Run Rust CI",
+        help="Run Rust CI",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    rust_parser.set_defaults(func=_run_rust)
+
+    js_parser = subparsers.add_parser(
+        "javascript",
+        description="Run Javascript CI",
+        help="Run Javascript CI",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    js_parser.set_defaults(func=_run_js)
 
     args = parser.parse_args()
     arg_dict = dict(vars(args))

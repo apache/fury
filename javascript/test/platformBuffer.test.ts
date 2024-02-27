@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { fromUint8Array, alloc, BrowserBuffer } from '../packages/fury/lib/platformBuffer';
+import { fromUint8Array, alloc, BrowserBuffer, PlatformBuffer } from '../packages/fury/lib/platformBuffer';
 import { describe, expect, test } from '@jest/globals';
 
 describe('platformBuffer', () => {
@@ -38,21 +38,53 @@ describe('platformBuffer', () => {
     });
 
 
-    test('should latin1 work', () => {
+    test('should latin1Write work', () => {
         const bb = BrowserBuffer.alloc(100);
         bb.latin1Write("hello, world", 0);
 
         const str = bb.latin1Slice(0, 12);
         expect(str).toBe("hello, world");
+
+        const str2 = bb.toString('latin1', 0, 12);
+        expect(str2).toBe("hello, world");
+    });
+
+    test('should write latin1 work', () => {
+        const bb = BrowserBuffer.alloc(100);
+        bb.write("hello, world", 0, 'latin1');
+
+        const str = bb.latin1Slice(0, 12);
+        expect(str).toBe("hello, world");
+
+        const str2 = bb.toString('latin1', 0, 12);
+        expect(str2).toBe("hello, world");
+    });
+
+
+    test('should utf8Write work', () => {
+        const rawStr = "我是Fury, 你好！😁א";
+        const bb = BrowserBuffer.alloc(100);
+        bb.utf8Write(rawStr, 0);
+
+        const str = bb.utf8Slice(0, 27);
+        expect(str).toBe(rawStr);
+
+        const str2 = bb.toString('utf8', 0, 27);
+        expect(str2).toBe(rawStr);
     });
 
     test('should utf8 work', () => {
+        const rawStr = "我是Fury, 你好！😁א";
         const bb = BrowserBuffer.alloc(100);
-        bb.utf8Write("我是Fury, 你好！😁א", 0);
+        bb.write(rawStr, 0, 'utf8');
 
         const str = bb.utf8Slice(0, 27);
-        expect(str).toBe("我是Fury, 你好！😁א");
+        expect(str).toBe(rawStr);
+
+        const str2 = bb.toString('utf8', 0, 27);
+        expect(str2).toBe(rawStr);
     });
+
 
     test('should byteLength work', () => {
         expect(BrowserBuffer.byteLength("hello, world")).toBe(12);
@@ -66,6 +98,13 @@ describe('platformBuffer', () => {
         bb.copy(target, 0, 0, 5);
         expect([...target]).toEqual([ 104, 101, 108, 108, 111 ])
     });
+
+    test('Buffer can be assigned to PlatformBuffer', () => {
+        const cc = Buffer.alloc(20);
+        cc.write("hello", 0, "latin1");
+        const bb: PlatformBuffer = cc;
+        expect(bb.toString('latin1', 0 , 5)).toBe("hello");
+        bb.write("world", 5, "latin1");
+        expect(bb.toString('latin1', 0, 10)).toBe("helloworld");
+    })
 });
-
-

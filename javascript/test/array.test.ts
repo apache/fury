@@ -19,6 +19,7 @@
 
 import Fury, { TypeDescription, InternalSerializerType, ObjectTypeDescription, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
+import * as beautify from 'js-beautify';
 
 describe('array', () => {
   test('should array work', () => {
@@ -29,7 +30,11 @@ describe('array', () => {
         a: Type.string()
       }))
     });
-    const fury = new Fury({ refTracking: true });
+    const fury = new Fury({ refTracking: true, hooks: {
+      afterCodeGenerated: (code: string) => {
+        return beautify.js(code, { indent_size: 2, space_in_empty_paren: true, indent_empty_lines: true });
+      }
+    } });
     const { serialize, deserialize } = fury.registerSerializer(description);
     const o = { a: "123" };
     expect(deserialize(serialize({ c: [o, o] }))).toEqual({ c: [o, o] })

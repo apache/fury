@@ -17,10 +17,10 @@
  * under the License.
  */
 
-import { Fury } from "../type";
 import { Scope } from "./scope";
 import { getMeta } from "../meta";
 import { TypeDescription } from "../description";
+import Fury from "../fury";
 
 class BinaryReaderBuilder {
   constructor(private holder: string) {
@@ -107,8 +107,8 @@ class BinaryReaderBuilder {
     return `${this.holder}.uint64()`;
   }
 
-  skip() {
-    return `${this.holder}.skip()`;
+  skip(v: number) {
+    return `${this.holder}.skip(${v})`;
   }
 
   int64() {
@@ -243,16 +243,16 @@ class ReferenceResolverBuilder {
     return this.holder;
   }
 
-  getReadObjectByRefId(id: string | number) {
-    return `${this.holder}.getReadObjectByRefId(${id})`;
+  getReadObject(id: string | number) {
+    return `${this.holder}.getReadObject(${id})`;
   }
 
-  pushReadObject(obj: string) {
-    return `${this.holder}.pushReadObject(${obj})`;
+  reference(obj: string) {
+    return `${this.holder}.reference(${obj})`;
   }
 
-  pushWriteObject(obj: string) {
-    return `${this.holder}.pushWriteObject(${obj})`;
+  writeRef(obj: string) {
+    return `${this.holder}.writeRef(${obj})`;
   }
 
   existsWriteObject(obj: string) {
@@ -284,6 +284,10 @@ class ClassResolverBuilder {
   readTag(binaryReader: string) {
     return `${this.holder}.readTag(${binaryReader})`;
   }
+
+  getSerializerByData(v: string) {
+    return `${this.holder}.readTag(${v})`;
+  }
 }
 
 export class CodecBuilder {
@@ -292,7 +296,7 @@ export class CodecBuilder {
   referenceResolver: ReferenceResolverBuilder;
   classResolver: ClassResolverBuilder;
 
-  constructor(scope: Scope, private fury: Fury) {
+  constructor(scope: Scope, public fury: Fury) {
     const br = scope.declareByName("br", "fury.binaryReader");
     const bw = scope.declareByName("bw", "fury.binaryWriter");
     const cr = scope.declareByName("cr", "fury.classResolver");
@@ -301,6 +305,10 @@ export class CodecBuilder {
     this.writer = new BinaryWriterBuilder(bw);
     this.classResolver = new ClassResolverBuilder(cr);
     this.referenceResolver = new ReferenceResolverBuilder(rr);
+  }
+
+  furyName() {
+    return "fury";
   }
 
   meta(description: TypeDescription) {
@@ -323,6 +331,13 @@ export class CodecBuilder {
     return v.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
   }
 
+  static safeString(target: string) {
+    if (!CodecBuilder.isDotPropAccessor(target) || CodecBuilder.isReserved(target)) {
+      return `"${CodecBuilder.replaceBackslashAndQuote(target)}"`;
+    }
+    return `"${target}"`;
+  }
+
   static safePropAccessor(prop: string) {
     if (!CodecBuilder.isDotPropAccessor(prop) || CodecBuilder.isReserved(prop)) {
       return `["${CodecBuilder.replaceBackslashAndQuote(prop)}"]`;
@@ -335,5 +350,9 @@ export class CodecBuilder {
       return `["${CodecBuilder.replaceBackslashAndQuote(prop)}"]`;
     }
     return prop;
+  }
+
+  getExternal(key: string) {
+    return `external.${key}`;
   }
 }

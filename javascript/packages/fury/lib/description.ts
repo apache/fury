@@ -20,112 +20,136 @@
 import { InternalSerializerType } from "./type";
 
 export interface TypeDescription {
-  type: InternalSerializerType
-  label?: string
+  type: InternalSerializerType;
+  label?: string;
 }
 
 export interface ObjectTypeDescription extends TypeDescription {
   options: {
-    props: { [key: string]: TypeDescription }
-    tag: string
-  }
+    props: { [key: string]: TypeDescription };
+    tag: string;
+  };
 }
 
 export interface EnumTypeDescription extends TypeDescription {
   options: {
-    inner: { [key: string]: any }
-  }
+    inner: { [key: string]: any };
+  };
+}
+
+export interface OneofTypeDescription extends TypeDescription {
+  options: {
+    inner: { [key: string]: TypeDescription };
+  };
 }
 
 export interface ArrayTypeDescription extends TypeDescription {
   options: {
-    inner: TypeDescription
-  }
+    inner: TypeDescription;
+  };
 }
 
 export interface TupleTypeDescription extends TypeDescription {
   options: {
-    inner: TypeDescription[]
-  }
+    inner: TypeDescription[];
+  };
 }
 
 export interface SetTypeDescription extends TypeDescription {
   options: {
-    key: TypeDescription
-  }
+    key: TypeDescription;
+  };
 }
 
 export interface MapTypeDescription extends TypeDescription {
   options: {
-    key: TypeDescription
-    value: TypeDescription
-  }
+    key: TypeDescription;
+    value: TypeDescription;
+  };
 }
 
 type Props<T> = T extends {
   options: {
-    props?: infer T2 extends { [key: string]: any }
-    tag: string
-  }
+    props?: infer T2 extends { [key: string]: any };
+    tag: string;
+  };
 }
   ? {
-      [P in keyof T2]?: (ToRecordType<T2[P]> | null);
+      [P in keyof T2]?: (InputType<T2[P]> | null);
     }
   : unknown;
 
 type InnerProps<T> = T extends {
   options: {
-    inner: infer T2 extends TypeDescription
-  }
+    inner: infer T2 extends TypeDescription;
+  };
 }
-  ? (ToRecordType<T2> | null)[]
+  ? (InputType<T2> | null)[]
   : unknown;
 
 type MapProps<T> = T extends {
   options: {
-    key: infer T2 extends TypeDescription
-    value: infer T3 extends TypeDescription
-  }
+    key: infer T2 extends TypeDescription;
+    value: infer T3 extends TypeDescription;
+  };
 }
-  ? Map<ToRecordType<T2>, ToRecordType<T3> | null>
+  ? Map<InputType<T2>, InputType<T3> | null>
   : unknown;
 
 type TupleProps<T> = T extends {
   options: {
-    inner: infer T2 extends readonly [...TypeDescription[]]
-  }
+    inner: infer T2 extends readonly [...TypeDescription[]];
+  };
 }
-  ? { [K in keyof T2]: ToRecordType<T2[K]> }
+  ? { [K in keyof T2]: InputType<T2[K]> }
   : unknown;
 
 type Value<T> = T extends { [s: string]: infer T2 } ? T2 : unknown;
 
 type EnumProps<T> = T extends {
   options: {
-    inner: infer T2
-  }
+    inner: infer T2;
+  };
 }
   ? Value<T2>
   : unknown;
 
-type SetProps<T> = T extends {
+type OneofProps<T> = T extends {
   options: {
-    key: infer T2 extends TypeDescription
-  }
+    inner?: infer T2 extends { [key: string]: any };
+  };
 }
-  ? Set<(ToRecordType<T2> | null)>
+  ? {
+      [P in keyof T2]?: (InputType<T2[P]> | null);
+    }
   : unknown;
 
-export type ToRecordType<T> = T extends {
-  type: InternalSerializerType.FURY_TYPE_TAG
+type OneofResult<T> = T extends {
+  options: {
+    inner?: infer T2;
+  };
+}
+  ? ResultType<Value<T2>>
+  : unknown;
+
+type SetProps<T> = T extends {
+  options: {
+    key: infer T2 extends TypeDescription;
+  };
+}
+  ? Set<(InputType<T2> | null)>
+  : unknown;
+
+export type InputType<T> = T extends {
+  type: InternalSerializerType.FURY_TYPE_TAG;
 }
   ? Props<T>
   : T extends {
-    type: InternalSerializerType.STRING
+    type: InternalSerializerType.STRING;
   }
     ? string
     : T extends {
-      type: InternalSerializerType.TUPLE
+      type: InternalSerializerType.TUPLE;
     }
       ? TupleProps<T>
       : T extends {
@@ -137,51 +161,122 @@ export type ToRecordType<T> = T extends {
           | InternalSerializerType.INT16
           | InternalSerializerType.INT32
           | InternalSerializerType.FLOAT
-          | InternalSerializerType.DOUBLE
+          | InternalSerializerType.DOUBLE;
       }
         ? number
 
         : T extends {
           type: InternalSerializerType.UINT64
-            | InternalSerializerType.INT64
+            | InternalSerializerType.INT64;
         }
           ? bigint
           : T extends {
-            type: InternalSerializerType.MAP
+            type: InternalSerializerType.MAP;
           }
             ? MapProps<T>
             : T extends {
-              type: InternalSerializerType.FURY_SET
+              type: InternalSerializerType.FURY_SET;
             }
               ? SetProps<T>
               : T extends {
-                type: InternalSerializerType.ARRAY
+                type: InternalSerializerType.ARRAY;
               }
                 ? InnerProps<T>
                 : T extends {
-                  type: InternalSerializerType.BOOL
+                  type: InternalSerializerType.BOOL;
                 }
                   ? boolean
                   : T extends {
-                    type: InternalSerializerType.DATE
+                    type: InternalSerializerType.DATE;
                   }
                     ? Date
                     : T extends {
-                      type: InternalSerializerType.TIMESTAMP
+                      type: InternalSerializerType.TIMESTAMP;
                     }
                       ? number
                       : T extends {
-                        type: InternalSerializerType.BINARY
+                        type: InternalSerializerType.BINARY;
                       }
                         ? Uint8Array
                         : T extends {
-                          type: InternalSerializerType.ANY
+                          type: InternalSerializerType.ANY;
                         }
                           ? any
                           : T extends {
-                            type: InternalSerializerType.ENUM
+                            type: InternalSerializerType.ENUM;
                           }
-                            ? EnumProps<T> : unknown;
+                            ? EnumProps<T> : T extends {
+                              type: InternalSerializerType.ONEOF;
+                            } ? OneofProps<T> : unknown;
+
+export type ResultType<T> = T extends {
+  type: InternalSerializerType.FURY_TYPE_TAG;
+}
+  ? Props<T>
+  : T extends {
+    type: InternalSerializerType.STRING;
+  }
+    ? string
+    : T extends {
+      type: InternalSerializerType.TUPLE;
+    }
+      ? TupleProps<T>
+      : T extends {
+        type:
+          | InternalSerializerType.UINT8
+          | InternalSerializerType.UINT16
+          | InternalSerializerType.UINT32
+          | InternalSerializerType.INT8
+          | InternalSerializerType.INT16
+          | InternalSerializerType.INT32
+          | InternalSerializerType.FLOAT
+          | InternalSerializerType.DOUBLE;
+      }
+        ? number
+
+        : T extends {
+          type: InternalSerializerType.UINT64
+            | InternalSerializerType.INT64;
+        }
+          ? bigint
+          : T extends {
+            type: InternalSerializerType.MAP;
+          }
+            ? MapProps<T>
+            : T extends {
+              type: InternalSerializerType.FURY_SET;
+            }
+              ? SetProps<T>
+              : T extends {
+                type: InternalSerializerType.ARRAY;
+              }
+                ? InnerProps<T>
+                : T extends {
+                  type: InternalSerializerType.BOOL;
+                }
+                  ? boolean
+                  : T extends {
+                    type: InternalSerializerType.DATE;
+                  }
+                    ? Date
+                    : T extends {
+                      type: InternalSerializerType.TIMESTAMP;
+                    }
+                      ? number
+                      : T extends {
+                        type: InternalSerializerType.BINARY;
+                      }
+                        ? Uint8Array
+                        : T extends {
+                          type: InternalSerializerType.ANY;
+                        }
+                          ? any
+                          : T extends {
+                            type: InternalSerializerType.ENUM;
+                          }
+                            ? EnumProps<T> : T extends {
+                              type: InternalSerializerType.ONEOF;
+                            } ? OneofResult<T> : unknown;
 
 export const Type = {
   any() {
@@ -194,6 +289,14 @@ export const Type = {
       type: InternalSerializerType.ENUM as const,
       options: {
         inner: t1,
+      },
+    };
+  },
+  oneof<T extends { [key: string]: TypeDescription }>(inner?: T) {
+    return {
+      type: InternalSerializerType.ONEOF as const,
+      options: {
+        inner,
       },
     };
   },

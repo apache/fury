@@ -177,7 +177,7 @@ impl<'a> MapWriter<'a> {
     pub fn write_end(&mut self, data_start: usize) {
         let size: usize = self.writer.len() - data_start;
         self.writer
-            .set_bytes(self.base_offset, &(size as u32).to_le_bytes());
+            .set_bytes(self.base_offset, &(size as u64).to_le_bytes());
     }
 }
 

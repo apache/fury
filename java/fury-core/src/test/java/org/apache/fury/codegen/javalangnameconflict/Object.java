@@ -17,22 +17,7 @@
  * under the License.
  */
 
-import {
-  ObjectTypeDescription,
-  TypeDescription,
-  ArrayTypeDescription,
-  Type,
-} from "./lib/description";
-import { Serializer, InternalSerializerType } from "./lib/type";
-import Fury from "./lib/fury";
+package org.apache.fury.codegen.javalangnameconflict;
 
-export {
-  Serializer,
-  InternalSerializerType,
-  TypeDescription,
-  ArrayTypeDescription,
-  ObjectTypeDescription,
-  Type,
-};
-
-export default Fury;
+/** this is just in place to trigger the name conflict for #1363 */
+public class Object {}

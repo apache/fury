@@ -51,9 +51,6 @@ public final class FuryBuilder {
         System.getProperty(
             "fury.enable_fury_security_mode_forcibly",
             System.getenv("ENABLE_CLASS_REGISTRATION_FORCIBLY"));
-    if (flagValue == null) {
-      flagValue = "false";
-    }
     ENABLE_CLASS_REGISTRATION_FORCIBLY = "true".equals(flagValue) || "1".equals(flagValue);
   }
 

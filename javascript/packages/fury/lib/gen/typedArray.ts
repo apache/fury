@@ -19,7 +19,7 @@
 
 import { Type, TypeDescription } from "../description";
 import { CodecBuilder } from "./builder";
-import { BaseSerializerGenerator } from "./serializer";
+import { BaseSerializerGenerator, RefState } from "./serializer";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
@@ -53,12 +53,12 @@ function build(inner: TypeDescription) {
                 ${this.builder.writer.varUInt32(`${accessor}.length`)}
                 ${this.builder.writer.reserve(`${innerMeta.fixedSize} * ${accessor}.length`)};
                 for (const ${item} of ${accessor}) {
-                    ${innerGenerator.toWriteEmbed(item, false)}
+                    ${innerGenerator.toWriteEmbed(item, true)}
                 }
             `;
     }
 
-    readStmt(accessor: (expr: string) => string): string {
+    readStmt(accessor: (expr: string) => string, refState: RefState): string {
       const innerGenerator = this.innerGenerator();
       const result = this.scope.uniqueName("result");
       const len = this.scope.uniqueName("len");
@@ -67,15 +67,16 @@ function build(inner: TypeDescription) {
       return `
                 const ${len} = ${this.builder.reader.varUInt32()};
                 const ${result} = new Array(${len});
-                ${this.pushReadRefStmt(result)}
+                ${this.maybeReference(result, refState)}
                 for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
-                    ${innerGenerator.toReadEmbed(x => `${result}[${idx}] = ${x};`, false)}
+                    ${innerGenerator.toReadEmbed(x => `${result}[${idx}] = ${x};`, true, RefState.fromFalse())}
                 }
                 ${accessor(result)}
              `;
     }
   };
 }
+
 CodegenRegistry.register(InternalSerializerType.FURY_STRING_ARRAY, build(Type.string()));
 CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_BOOL_ARRAY, build(Type.bool()));
 CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_LONG_ARRAY, build(Type.int64()));

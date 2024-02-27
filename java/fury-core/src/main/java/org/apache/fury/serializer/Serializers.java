@@ -33,7 +33,6 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Currency;
-import java.util.IdentityHashMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,7 +46,6 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.type.Type;
-import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
@@ -532,20 +530,8 @@ public class Serializers {
   }
 
   public static final class ClassSerializer extends Serializer<Class> {
-    private static final byte USE_CLASS_ID = 0;
-    private static final byte USE_CLASSNAME = 1;
-    private static final byte PRIMITIVE_FLAG = 2;
-    private final IdentityHashMap<Class<?>, Byte> primitivesMap = new IdentityHashMap<>();
-    private final Class<?>[] id2PrimitiveClasses = new Class[9];
-
     public ClassSerializer(Fury fury) {
       super(fury, Class.class);
-      byte count = 0;
-      for (Class<?> primitiveType : TypeUtils.getSortedPrimitiveClasses()) {
-        primitivesMap.put(primitiveType, count);
-        id2PrimitiveClasses[count] = primitiveType;
-        count++;
-      }
     }
 
     @Override

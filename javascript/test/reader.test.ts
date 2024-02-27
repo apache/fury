@@ -17,49 +17,40 @@
  * under the License.
  */
 
-import { alloc } from '@furyjs/fury/lib/platformBuffer';
-import { BinaryReader } from '@furyjs/fury/lib/reader';
-import { Config } from '@furyjs/fury/lib/type';
-import { BinaryWriter } from '@furyjs/fury/lib/writer';
+import { alloc } from '../packages/fury/lib/platformBuffer';
+import { BinaryReader } from '../packages/fury/lib/reader';
+import { BinaryWriter } from '../packages/fury/lib/writer';
 import { describe, expect, test } from '@jest/globals';
-const hps = process.env.enableHps ? require('@furyjs/hps') : null;
 
 
+describe('writer', () => {
+    test('should uint8 work', () => {
+        const writer = BinaryWriter({});
+        {
+            writer.uint8(10);
+            var ab = writer.dump();
+            expect(ab.byteLength).toBe(1);
+            expect(ab[0]).toBe(10);
+            expect(writer.getCursor()).toBe(1);
+        }
 
-[
-    {
-        hps,
-    }
-].forEach((config: Config) => {
-    describe('writer', () => {
-        test('should uint8 work', () => {
-            const writer = BinaryWriter(config);
-            {
-                writer.uint8(10);
-                var ab = writer.dump();
-                expect(ab.byteLength).toBe(1);
-                expect(ab[0]).toBe(10);
-                expect(writer.getCursor()).toBe(1);
-            }
+        {
+            writer.uint8(256);
+            var ab = writer.dump();
 
-            {
-                writer.uint8(256);
-                var ab = writer.dump();
-
-                expect(ab.byteLength).toBe(2);
-                expect(ab[1]).toBe(0);
-                expect(writer.getCursor()).toBe(2);
-            }
-        });
+            expect(ab.byteLength).toBe(2);
+            expect(ab[1]).toBe(0);
+            expect(writer.getCursor()).toBe(2);
+        }
     });
-})
+});
 
 
 describe('reader', () => {
 
     test('should bufferRef work', () => {
         const bb = alloc(100);
-        bb.latin1Write("hello", 0);
+        bb.write("hello", 0, 'latin1');
         const target = new Uint8Array(5);
         bb.copy(target, 0, 0, 5);
         expect([...target]).toEqual([ 104, 101, 108, 108, 111 ])

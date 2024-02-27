@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType } from '../packages/fury/index';
+import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('bool', () => {
@@ -41,19 +41,19 @@ describe('bool', () => {
     test('should write NaN work', () => {
         const fury = new Fury();
         const bin = fury.serialize(NaN);
-        expect(fury.deserialize(bin)).toBe(null)
+        expect(fury.deserialize(bin)).toBe(NaN)
     });
 
     test('should write big number work', () => {
         const fury = new Fury();
         const bin = fury.serialize(3000000000);
-        expect(fury.deserialize(bin)).toBe(3000000000n);
+        expect(fury.deserialize(bin)).toBe(3000000000);
     });
 
     test('should write INFINITY work', () => {
         const fury = new Fury();
         const bin = fury.serialize(Number.NEGATIVE_INFINITY);
-        expect(fury.deserialize(bin)).toBe(null)
+        expect(fury.deserialize(bin)).toBe(Number.NEGATIVE_INFINITY)
     });
 
     test('should write float work', () => {
@@ -121,5 +121,13 @@ describe('bool', () => {
         const ret = fury.deserialize(bin);
         expect(ret instanceof Array).toBe(true)
         expect(ret).toEqual(obj)
+    });
+
+    test('should root any work', () => {
+        const fury = new Fury();
+        const { serialize, deserialize } = fury.registerSerializer(Type.any());
+        const bin = serialize("hello");
+        const result = deserialize(bin);
+        expect(result).toEqual("hello")
     });
 });

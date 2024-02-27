@@ -21,50 +21,13 @@ package org.apache.fury;
 
 import java.nio.ByteBuffer;
 import java.util.function.Function;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.serializer.Serializer;
-import org.apache.fury.serializer.Serializers;
 import org.apache.fury.util.LoaderBinding;
 
 /**
  * Thread safe serializer interface. {@link Fury} is not thread-safe, the implementation of this
  * interface will be thread-safe. And support switch classloader dynamically.
  */
-public interface ThreadSafeFury {
-
-  /** register class. */
-  void register(Class<?> cls);
-
-  /**
-   * Register class.
-   *
-   * @param cls class to register
-   * @param createSerializer whether to create serializer, if true and codegen enabled, this will
-   *     generate the serializer code too.
-   */
-  void register(Class<?> cls, boolean createSerializer);
-
-  /** register class with given id. */
-  void register(Class<?> cls, Short id);
-
-  /**
-   * Register class with specified id.
-   *
-   * @param cls class to register
-   * @param id id for provided class.
-   * @param createSerializer whether to create serializer, if true and codegen enabled, this will
-   *     generate the serializer code too.
-   */
-  void register(Class<?> cls, Short id, boolean createSerializer);
-
-  /**
-   * Register a Serializer.
-   *
-   * @param type class needed to be serialized/deserialized
-   * @param serializerClass serializer class can be created with {@link Serializers#newSerializer}
-   * @param <T> type of class
-   */
-  <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass);
+public interface ThreadSafeFury extends BaseFury {
 
   /**
    * Provide a context to execution operations on {@link Fury} directly and return the executed
@@ -72,56 +35,8 @@ public interface ThreadSafeFury {
    */
   <R> R execute(Function<Fury, R> action);
 
-  /** Return serialized <code>obj</code> as a byte array. */
-  byte[] serialize(Object obj);
-
-  /**
-   * Serialize <code>obj</code> to a off-heap buffer specified by <code>address</code> and <code>
-   * size</code>.
-   */
-  MemoryBuffer serialize(Object obj, long address, int size);
-
-  /** Serialize data into buffer. */
-  MemoryBuffer serialize(MemoryBuffer buffer, Object obj);
-
-  /** Deserialize <code>obj</code> from a byte array. */
-  Object deserialize(byte[] bytes);
-
-  /**
-   * Deserialize <code>obj</code> from a off-heap buffer specified by <code>address</code> and
-   * <code>size</code>.
-   */
-  Object deserialize(long address, int size);
-
-  /** Deserialize <code>obj</code> from a <code>buffer</code>. */
-  Object deserialize(MemoryBuffer buffer);
-
   /** Deserialize <code>obj</code> from a {@link ByteBuffer}. */
   Object deserialize(ByteBuffer byteBuffer);
-
-  /**
-   * Serialize java object without class info, deserialization should use {@link
-   * #deserializeJavaObject}.
-   */
-  byte[] serializeJavaObject(Object obj);
-
-  /**
-   * Serialize java object without class info, deserialization should use {@link
-   * #deserializeJavaObject}.
-   */
-  void serializeJavaObject(MemoryBuffer buffer, Object obj);
-
-  /**
-   * Deserialize java object from binary without class info, serialization should use {@link
-   * #serializeJavaObject}.
-   */
-  <T> T deserializeJavaObject(byte[] data, Class<T> cls);
-
-  /**
-   * Deserialize java object from binary by passing class info, serialization should use {@link
-   * #serializeJavaObject}.
-   */
-  <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls);
 
   /**
    * Set classLoader of serializer for current thread only.

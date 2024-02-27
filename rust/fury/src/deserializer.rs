@@ -124,7 +124,7 @@ impl_num_deserialize_and_pritimive_vec!(f64, f64);
 impl Deserialize for String {
     fn read(deserializer: &mut DeserializerState) -> Result<Self, Error> {
         let len = deserializer.reader.var_int32();
-        Ok(deserializer.reader.string(len as u32))
+        Ok(deserializer.reader.string(len as usize))
     }
 }
 
