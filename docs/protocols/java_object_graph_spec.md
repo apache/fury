@@ -465,7 +465,7 @@ advance for non-interface types in most times.
 ### Enum
 
 Enums are serialized as an unsigned var int. If the order of enum values change, the deserialized enum value may not be
-the value users expect. In such cases, users must register enum serializer by make it write enum value as a enumerated
+the value users expect. In such cases, users must register enum serializer by make it write enum value as an enumerated
 string with unique hash disabled.
 
 ### Object
