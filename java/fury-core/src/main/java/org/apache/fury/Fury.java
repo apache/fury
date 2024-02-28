@@ -82,7 +82,7 @@ public final class Fury implements BaseFury {
   public static final byte REF_FLAG = -2;
   // this flag indicates that the object is a non-null value.
   public static final byte NOT_NULL_VALUE_FLAG = -1;
-  // this flag indicates that the object is a referencable and first read.
+  // this flag indicates that the object is a referencable and first write.
   public static final byte REF_VALUE_FLAG = 0;
   public static final byte NOT_SUPPORT_CROSS_LANGUAGE = 0;
   public static final short FURY_TYPE_TAG_ID = Type.FURY_TYPE_TAG.getId();
