@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.fury.test.Accessor;
 import lombok.Data;
 import org.apache.fury.TestUtils;
 import org.apache.fury.builder.pkg.AccessLevelClass;
@@ -68,6 +69,11 @@ public class AccessorHelperTest {
     assertTrue(AccessorHelper.defineAccessor(A.class.getDeclaredField("f1")));
     assertTrue(AccessorHelper.defineAccessor(A.class.getDeclaredMethod("getF1")));
     assertSame(AccessorHelper.getAccessorClass(A.class), accessorClass);
+  }
+
+  @Test
+  public void testJavaxPackage() {
+    assertTrue(AccessorHelper.defineAccessorClass(Accessor.class));
   }
 
   @Data
