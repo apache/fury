@@ -482,9 +482,9 @@ Field will be ordered as following, every group of fields will have its own orde
 - primitive fields: larger size type first, smaller later, variable size type last.
 - boxed primitive fields: same sort as primitive fields
 - final fields: same type together, then sorted by field name lexicographically.
-- collection fields: same sort as final fields
-- map fields: same sort as final fields
-- other fields: same sort as final fields
+- collection fields: same order as final fields
+- map fields: same order as final fields
+- other fields: same order as final fields
 
 #### Schema consistent
 
