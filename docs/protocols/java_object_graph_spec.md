@@ -295,7 +295,7 @@ If string has been written before, the data will be written as follows:
 #### Unsigned int
 
 - size: 1~5 byte
-- Format: The first bit in every byte indicates whether to have the next byte. If first bit is set
+- Format: The most significant bit (MSB) in every byte indicates whether to have the next byte. If first bit is set
   i.e. `b & 0x80 == 0x80`, then
   the next byte should be read until the first bit of the next byte is unset.
 
