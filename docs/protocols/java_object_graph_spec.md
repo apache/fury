@@ -33,7 +33,7 @@ Fury header consists starts one byte:
 ```
 
 - null flag: 1 when object is null, 0 otherwise. If an object is null, other bits won't be set.
-- endian flag: 1 when the system uses little endian, 0 otherwise.
+- endian flag: 1 when data is encoded by little endian, 0 for big endian.
 - xlang flag: 1 when serialization uses xlang format, 0 when serialization uses Fury java format.
 - oob flag: 1 when passed `BufferCallback` is not null, 0 otherwise.
 
