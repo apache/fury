@@ -331,7 +331,7 @@ public class CodeGenerator {
    */
   public static String getPackage(Class<?> cls) {
     String pkg = ReflectionUtils.getPackage(cls);
-    if (pkg.startsWith("java")) {
+    if (pkg.startsWith("java.")) {
       return FALLBACK_PACKAGE;
     } else {
       return pkg;
