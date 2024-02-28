@@ -480,7 +480,7 @@ Depending on schema compatibility, objects will have different formats.
 Field will be ordered as following, every group of fields will have its own order:
 
 - primitive fields: larger size type first, smaller later, variable size type last.
-- boxed primitive fields: same sort as primitive fields
+- boxed primitive fields: same order as primitive fields
 - final fields: same type together, then sorted by field name lexicographically.
 - collection fields: same order as final fields
 - map fields: same order as final fields
