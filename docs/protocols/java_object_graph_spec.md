@@ -99,7 +99,8 @@ If schema evolution mode is enabled globally or enabled for current class, class
 > graph
 > writing and meta collecting is finished. Only in this way we can ensure deserialization failure doesn't lost shared
 > meta.
-> Meta streamline will be supported in the future for enclosed meta sharing without cross multiple serializations.
+> Meta streamline will be supported in the future for enclosed meta sharing which doesn't cross multiple serializations
+> of different objects.
 
 For Schema consistent mode, class will be encoded as an enumerated string by full class name. Here we mainly describe
 the meta layout for schema evolution mode:
