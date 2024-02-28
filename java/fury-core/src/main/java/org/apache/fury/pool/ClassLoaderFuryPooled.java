@@ -87,10 +87,6 @@ public class ClassLoaderFuryPooled {
           furyCondition.await();
         }
         fury = idleCacheQueue.poll();
-        if (fury == null) {
-          continue;
-        }
-        break;
       }
       activeCacheNumber.incrementAndGet();
       return fury;
