@@ -1174,8 +1174,8 @@ public final class Fury implements BaseFury {
     }
   }
 
-    private static void readToBufferFromStream(InputStream inputStream, MemoryBuffer buffer)
-        throws IOException {
+  private static void readToBufferFromStream(InputStream inputStream, MemoryBuffer buffer)
+      throws IOException {
     buffer.readerIndex(0);
     int read = readBytes(inputStream, buffer.getHeapMemory(), 0, 4);
     Preconditions.checkArgument(read == 4);
