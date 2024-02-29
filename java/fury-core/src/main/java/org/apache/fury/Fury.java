@@ -1177,19 +1177,25 @@ public final class Fury implements BaseFury {
   private static void readToBufferFromStream(InputStream inputStream, MemoryBuffer buffer)
       throws IOException {
     buffer.readerIndex(0);
-    int read = inputStream.read(buffer.getHeapMemory(), 0, 4);
+    int read = readBytes(inputStream, buffer.getHeapMemory(), 0, 4);
     Preconditions.checkArgument(read == 4);
     int size = buffer.readInt();
     buffer.ensure(4 + size);
-    read = 0;
+    read = readBytes(inputStream, buffer.getHeapMemory(), 4, size);
+    Preconditions.checkArgument(read == size);
+  }
+
+  private static int readBytes(InputStream inputStream, byte[] buffer, int offset, int size)
+      throws IOException {
+    int read = 0;
+    int count = 0;
     while (read < size) {
-      int count;
-      if ((count = inputStream.read(buffer.getHeapMemory(), read + 4, size - read)) == -1) {
+      if ((count = inputStream.read(buffer, offset + read, size - read)) == -1) {
         break;
       }
       read += count;
     }
-    Preconditions.checkArgument(read == size);
+    return (read == 0 && count == -1) ? -1 : read;
   }
 
   public void reset() {
