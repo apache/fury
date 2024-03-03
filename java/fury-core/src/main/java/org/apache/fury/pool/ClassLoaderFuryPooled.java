@@ -19,6 +19,7 @@
 
 package org.apache.fury.pool;
 
+import java.util.Objects;
 import java.util.Queue;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -67,6 +68,7 @@ public class ClassLoaderFuryPooled {
       Function<ClassLoader, Fury> furyFactory,
       int minPoolSize,
       int maxPoolSize) {
+    Objects.requireNonNull(furyFactory);
     this.maxPoolSize = maxPoolSize;
     this.furyFactory = furyFactory;
     this.classLoader = classLoader;
@@ -99,6 +101,7 @@ public class ClassLoaderFuryPooled {
   }
 
   public void returnFury(Fury fury) {
+    Objects.requireNonNull(fury);
     try {
       lock.lock();
       idleCacheQueue.add(fury);
