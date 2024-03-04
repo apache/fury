@@ -67,118 +67,56 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   public byte[] serialize(Object obj) {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury.serialize(obj);
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
+    return execute(fury -> fury.serialize(obj));
   }
 
   @Override
   public MemoryBuffer serialize(Object obj, long address, int size) {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury.serialize(obj, address, size);
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
+    return execute(fury -> fury.serialize(obj, address, size));
   }
 
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj) {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury.serialize(buffer, obj);
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
+    return execute(fury -> fury.serialize(buffer, obj));
   }
 
   public Object deserialize(byte[] bytes) {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury.deserialize(bytes);
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
+    return execute(fury -> fury.deserialize(bytes));
   }
 
   public Object deserialize(long address, int size) {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury.deserialize(address, size);
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
+    return execute(fury -> fury.deserialize(address, size));
   }
 
   public Object deserialize(MemoryBuffer buffer) {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury.deserialize(buffer);
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
+    return execute(fury -> fury.deserialize(buffer));
   }
 
   public Object deserialize(ByteBuffer byteBuffer) {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury.deserialize(MemoryUtils.wrap(byteBuffer));
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
+    return execute(fury -> fury.deserialize(MemoryUtils.wrap(byteBuffer)));
   }
 
   @Override
   public byte[] serializeJavaObject(Object obj) {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury.serializeJavaObject(obj);
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
+    return execute(fury -> fury.serializeJavaObject(obj));
   }
 
   @Override
   public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      fury.serializeJavaObject(buffer, obj);
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
+    execute(
+        fury -> {
+          fury.serializeJavaObject(buffer, obj);
+          return null;
+        });
   }
 
   @Override
   public <T> T deserializeJavaObject(byte[] data, Class<T> cls) {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury.deserializeJavaObject(data, cls);
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
+    return execute(fury -> fury.deserializeJavaObject(data, cls));
   }
 
   @Override
   public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
-    Fury fury = null;
-    try {
-      fury = furyPooledObjectFactory.getFury();
-      return fury.deserializeJavaObject(buffer, cls);
-    } finally {
-      furyPooledObjectFactory.returnFury(fury);
-    }
+    return execute(fury -> fury.deserializeJavaObject(buffer, cls));
   }
 
   public void setClassLoader(ClassLoader classLoader) {
