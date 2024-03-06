@@ -91,6 +91,7 @@ public final class Fury implements BaseFury {
   private static final byte isCrossLanguageFlag = 1 << 2;
   private static final byte isOutOfBandFlag = 1 << 3;
   private static final boolean isLittleEndian = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
+  private static final int BUFFER_SIZE_LIMIT = 128 * 1024;
 
   private final Config config;
   private final boolean refTracking;
@@ -1217,6 +1218,10 @@ public final class Fury implements BaseFury {
     nativeObjects.clear();
     bufferCallback = null;
     depth = 0;
+    MemoryBuffer buf = buffer;
+    if (buf != null && buf.size() > BUFFER_SIZE_LIMIT) {
+      buffer = MemoryBuffer.newHeapBuffer(BUFFER_SIZE_LIMIT);
+    }
   }
 
   public void resetRead() {
@@ -1227,6 +1232,10 @@ public final class Fury implements BaseFury {
     nativeObjects.clear();
     peerOutOfBandEnabled = false;
     depth = 0;
+    MemoryBuffer buf = buffer;
+    if (buf != null && buf.size() > BUFFER_SIZE_LIMIT) {
+      buffer = MemoryBuffer.newHeapBuffer(BUFFER_SIZE_LIMIT);
+    }
   }
 
   private void checkDepthForSerialization() {
