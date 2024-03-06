@@ -714,12 +714,15 @@ public class ClassResolver {
         typeTagToClassXLangMap.put(typeTag, type);
       }
     }
+
+    // 1. Try to get ClassInfo from `registeredId2ClassInfo` and
+    // `classInfoMap` or create a new `ClassInfo`.
     ClassInfo classInfo;
     Short classId = extRegistry.registeredClassIdMap.get(type);
+    boolean registered = classId != null;
     // set serializer for class if it's registered by now.
-    if (classId != null) {
+    if (registered) {
       classInfo = registeredId2ClassInfo[classId];
-      classInfo.serializer = serializer;
     } else {
       if (serializer instanceof ReplaceResolveSerializer) {
         classId = REPLACE_STUB_ID;
@@ -728,13 +731,17 @@ public class ClassResolver {
       }
       classInfo = classInfoMap.get(type);
     }
+
     if (classInfo == null || typeTag != null || classId != classInfo.classId) {
-      classInfo = new ClassInfo(this, type, typeTag, serializer, classId);
-    } else {
-      classInfo.serializer = serializer;
+      classInfo = new ClassInfo(this, type, typeTag, null, classId);
+      classInfoMap.put(type, classInfo);
+      if (registered) {
+        registeredId2ClassInfo[classId] = classInfo;
+      }
     }
-    // make `extRegistry.registeredClassIdMap` and `classInfoMap` share same classInfo instances.
-    classInfoMap.put(type, classInfo);
+
+    // 2. Set `Serializer` for `ClassInfo`.
+    classInfo.serializer = serializer;
   }
 
   @SuppressWarnings("unchecked")
