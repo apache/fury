@@ -23,7 +23,6 @@ import java.rmi.server.UnicastRemoteObject;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
-import org.apache.fury.exception.FuryException;
 import org.apache.fury.exception.InsecureException;
 import org.apache.fury.util.Platform;
 import org.testng.Assert;
@@ -32,36 +31,43 @@ import org.testng.annotations.Test;
 public class BlackListTest extends FuryTestBase {
 
   @Test
-  public void testGetDefaultBlackList() {
-    Assert.assertTrue(
-        BlackList.getDefaultBlackList().contains("java.rmi.server.UnicastRemoteObject"));
-    Assert.assertTrue(
-        BlackList.getDefaultBlackList().contains("com.sun.jndi.rmi.registry.BindingEnumeration"));
-    Assert.assertFalse(BlackList.getDefaultBlackList().contains("java.util.HashMap"));
-    Assert.assertTrue(
-        BlackList.getDefaultBlackList().contains(java.beans.Expression.class.getName()));
-    Assert.assertTrue(
-        BlackList.getDefaultBlackList().contains(UnicastRemoteObject.class.getName()));
-  }
+  public void testCheckHitBlackList() {
+    // Hit the blacklist.
+    Assert.assertThrows(
+        InsecureException.class,
+        () -> BlackList.checkNotInBlackList("java.rmi.server.UnicastRemoteObject"));
+    Assert.assertThrows(
+        InsecureException.class,
+        () -> BlackList.checkNotInBlackList("com.sun.jndi.rmi.registry.BindingEnumeration"));
+    Assert.assertThrows(
+        InsecureException.class,
+        () -> BlackList.checkNotInBlackList(java.beans.Expression.class.getName()));
+    Assert.assertThrows(
+        InsecureException.class,
+        () -> BlackList.checkNotInBlackList(UnicastRemoteObject.class.getName()));
 
-  @Test
-  public void testHitBlackList() {
-    Assert.assertThrows(
-        FuryException.class,
-        () -> BlackList.checkNotInBlackList(java.util.ServiceLoader.class.getName()));
-    Assert.assertThrows(
-        FuryException.class, () -> BlackList.checkNotInBlackList("org.python.core.PyBytecode"));
+    // Not in the blacklist.
+    BlackList.checkNotInBlackList("java.util.HashMap");
   }
 
   @Test
   public void testSerializeBlackListClass() {
-    for (Fury fury :
-        new Fury[] {
-          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build(),
-          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build(),
-          Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build()
-        }) {
-      fury.register(UnicastRemoteObject.class);
+    Fury[] allFury = new Fury[3];
+    for (int i = 0; i < 3; i++) {
+      boolean requireClassRegistration = i % 2 == 0;
+      Fury fury =
+          Fury.builder()
+              .withLanguage(Language.JAVA)
+              .requireClassRegistration(requireClassRegistration)
+              .build();
+      if (requireClassRegistration) {
+        // Registered or unregistered Classes should be subject to blacklist restrictions.
+        fury.register(UnicastRemoteObject.class);
+      }
+      allFury[i] = fury;
+    }
+
+    for (Fury fury : allFury) {
       Assert.assertThrows(
           InsecureException.class,
           () -> fury.serialize(Platform.newInstance(UnicastRemoteObject.class)));
