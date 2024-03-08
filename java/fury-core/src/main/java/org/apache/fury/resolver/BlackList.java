@@ -51,6 +51,14 @@ class BlackList {
     }
   }
 
+  /**
+   * Determine whether the current Class is in the default blacklist.
+   *
+   * <p>Note that if Class exists in the blacklist, {@link InsecureException} will be thrown.
+   *
+   * @param clsName Class Name that needs to be judged.
+   * @throws InsecureException If the class is in the blacklist.
+   */
   static void checkNotInBlackList(String clsName) {
     if (DEFAULT_BLACKLIST_SET.contains(clsName)) {
       throw new InsecureException(String.format("%s hit blacklist", clsName));
