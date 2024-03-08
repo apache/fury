@@ -303,7 +303,7 @@ public final class FuryBuilder {
               + "`ClassResolver#setClassChecker`");
     }
     if (suppressClassRegistrationWarnings == null) {
-      suppressClassRegistrationWarnings = !requireClassRegistration;
+      suppressClassRegistrationWarnings = requireClassRegistration;
     }
     if (GraalvmSupport.IN_GRAALVM_NATIVE_IMAGE && asyncCompilationEnabled) {
       LOG.info("Use sync compilation for graalvm native image since it doesn't support JIT.");

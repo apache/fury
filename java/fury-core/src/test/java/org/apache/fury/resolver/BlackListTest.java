@@ -23,6 +23,7 @@ import java.rmi.server.UnicastRemoteObject;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
+import org.apache.fury.exception.FuryException;
 import org.apache.fury.exception.InsecureException;
 import org.apache.fury.util.Platform;
 import org.testng.Assert;
@@ -44,6 +45,15 @@ public class BlackListTest extends FuryTestBase {
   }
 
   @Test
+  public void testHitBlackList() {
+    Assert.assertThrows(
+        FuryException.class,
+        () -> BlackList.checkNotInBlackList(java.util.ServiceLoader.class.getName()));
+    Assert.assertThrows(
+        FuryException.class, () -> BlackList.checkNotInBlackList("org.python.core.PyBytecode"));
+  }
+
+  @Test
   public void testSerializeBlackListClass() {
     for (Fury fury :
         new Fury[] {
@@ -51,6 +61,7 @@ public class BlackListTest extends FuryTestBase {
           Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build(),
           Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build()
         }) {
+      fury.register(UnicastRemoteObject.class);
       Assert.assertThrows(
           InsecureException.class,
           () -> fury.serialize(Platform.newInstance(UnicastRemoteObject.class)));
