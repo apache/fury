@@ -74,7 +74,7 @@ public final class FuryBuilder {
   boolean asyncCompilationEnabled = false;
   boolean registerGuavaTypes = true;
   boolean scalaOptimizationEnabled = false;
-  Boolean suppressClassRegistrationWarnings;
+  boolean suppressClassRegistrationWarnings = true;
 
   public FuryBuilder() {}
 
@@ -214,9 +214,8 @@ public final class FuryBuilder {
   }
 
   /**
-   * Whether suppress class registration warnings when class registration is disabled. The warnings
-   * can be used for security audit, but may be annoying. When `requireClassRegistration=false`,
-   * this suppression will be enabled by default.
+   * Whether suppress class registration warnings. The warnings can be used for security audit, but
+   * may be annoying, this suppression will be enabled by default.
    *
    * @see Config#suppressClassRegistrationWarnings()
    */
@@ -301,9 +300,6 @@ public final class FuryBuilder {
               + "If the environment isn't secure, please enable class registration by "
               + "`FuryBuilder#requireClassRegistration(true)` or configure ClassChecker by "
               + "`ClassResolver#setClassChecker`");
-    }
-    if (suppressClassRegistrationWarnings == null) {
-      suppressClassRegistrationWarnings = requireClassRegistration;
     }
     if (GraalvmSupport.IN_GRAALVM_NATIVE_IMAGE && asyncCompilationEnabled) {
       LOG.info("Use sync compilation for graalvm native image since it doesn't support JIT.");
