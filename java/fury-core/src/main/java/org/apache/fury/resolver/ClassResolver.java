@@ -1149,26 +1149,27 @@ public class ClassResolver {
   }
 
   private Serializer createSerializer(Class<?> cls) {
-    if (!extRegistry.registeredClassIdMap.containsKey(cls) && !shimDispatcher.contains(cls)) {
-      String msg =
-          String.format(
-              "%s is not registered, please check whether it's the type you want to serialize or "
-                  + "a **vulnerability**. If safe, you should invoke `Fury#register` to register class, "
-                  + " which will have better performance by skipping classname serialization. "
-                  + "If your env is 100%% secure, you can also avoid this exception by disabling class "
-                  + "registration check using `FuryBuilder#requireClassRegistration(false)`",
-              cls);
-      boolean forbidden = BlackList.getDefaultBlackList().contains(cls.getName());
-      if (forbidden || !isSecure(extRegistry.registeredClassIdMap, cls)) {
-        throw new InsecureException(msg);
-      } else {
-        if (!fury.getConfig().suppressClassRegistrationWarnings()
-            && !Functions.isLambda(cls)
-            && !ReflectionUtils.isJdkProxy(cls)) {
-          LOG.warn(msg);
-        }
+    BlackList.checkNotInBlackList(cls.getName());
+    String msg =
+        String.format(
+            "%s is not registered, please check whether it's the type you want to serialize or "
+                + "a **vulnerability**. If safe, you should invoke `Fury#register` to register class, "
+                + " which will have better performance by skipping classname serialization. "
+                + "If your env is 100%% secure, you can also avoid this exception by disabling class "
+                + "registration check using `FuryBuilder#requireClassRegistration(false)`",
+            cls);
+    if (!isSecure(cls)) {
+      throw new InsecureException(msg);
+    } else {
+      if (!fury.getConfig().suppressClassRegistrationWarnings()
+          && !Functions.isLambda(cls)
+          && !ReflectionUtils.isJdkProxy(cls)
+          && !extRegistry.registeredClassIdMap.containsKey(cls)
+          && !shimDispatcher.contains(cls)) {
+        LOG.warn(msg);
       }
     }
+
     if (extRegistry.serializerFactory != null) {
       Serializer serializer = extRegistry.serializerFactory.createSerializer(fury, cls);
       if (serializer != null) {
@@ -1185,18 +1186,18 @@ public class ClassResolver {
     return Serializers.newSerializer(fury, cls, serializerClass);
   }
 
-  private boolean isSecure(IdentityMap<Class<?>, Short> registeredClasses, Class<?> cls) {
-    if (BlackList.getDefaultBlackList().contains(cls.getName())) {
-      return false;
-    }
-    if (registeredClasses.containsKey(cls)) {
+  private boolean isSecure(Class<?> cls) {
+    if (extRegistry.registeredClassIdMap.containsKey(cls) || shimDispatcher.contains(cls)) {
       return true;
     }
     if (cls.isArray()) {
-      return isSecure(registeredClasses, TypeUtils.getArrayComponent(cls));
+      return isSecure(TypeUtils.getArrayComponent(cls));
     }
     if (fury.getConfig().requireClassRegistration()) {
-      return Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls);
+      return Functions.isLambda(cls)
+          || ReflectionUtils.isJdkProxy(cls)
+          || extRegistry.registeredClassIdMap.containsKey(cls)
+          || shimDispatcher.contains(cls);
     } else {
       return extRegistry.classChecker.checkClass(this, cls.getName());
     }
