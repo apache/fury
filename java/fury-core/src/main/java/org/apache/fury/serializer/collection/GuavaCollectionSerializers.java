@@ -56,9 +56,7 @@ public class GuavaCollectionSerializers {
       int size = buffer.readPositiveVarInt();
       List list = new ArrayList<>();
       xreadElements(fury, buffer, list, size);
-      T immutableList = xnewInstance(list);
-      fury.getRefResolver().reference(immutableList);
-      return immutableList;
+      return xnewInstance(list);
     }
 
     protected abstract T xnewInstance(Collection collection);
@@ -82,7 +80,6 @@ public class GuavaCollectionSerializers {
     public T onCollectionRead(Collection collection) {
       Object[] elements = ((CollectionContainer) collection).elements;
       ImmutableList list = ImmutableList.copyOf(elements);
-      fury.getRefResolver().reference(list);
       return (T) list;
     }
 
@@ -133,9 +130,7 @@ public class GuavaCollectionSerializers {
     @Override
     public T onCollectionRead(Collection collection) {
       Object[] elements = ((CollectionContainer) collection).elements;
-      T t = (T) function.apply(elements);
-      fury.getRefResolver().reference(t);
-      return t;
+      return (T) function.apply(elements);
     }
 
     @Override
@@ -166,9 +161,7 @@ public class GuavaCollectionSerializers {
     @Override
     public T onCollectionRead(Collection collection) {
       Object[] elements = ((CollectionContainer) collection).elements;
-      T t = (T) ImmutableSet.copyOf(elements);
-      fury.getRefResolver().reference(t);
-      return t;
+      return (T) ImmutableSet.copyOf(elements);
     }
 
     @Override
@@ -208,9 +201,7 @@ public class GuavaCollectionSerializers {
     public T onCollectionRead(Collection collection) {
       SortedCollectionContainer data = (SortedCollectionContainer) collection;
       Object[] elements = data.elements;
-      T t = (T) new ImmutableSortedSet.Builder<>(data.comparator).add(elements).build();
-      fury.getRefResolver().reference(t);
-      return t;
+      return (T) new ImmutableSortedSet.Builder<>(data.comparator).add(elements).build();
     }
   }
 
@@ -240,9 +231,7 @@ public class GuavaCollectionSerializers {
       for (int i = 0; i < size; i++) {
         builder.put(keyArray[i], valueArray[i]);
       }
-      T t = (T) builder.build();
-      fury.getRefResolver().reference(t);
-      return t;
+      return (T) builder.build();
     }
 
     @Override
@@ -255,9 +244,7 @@ public class GuavaCollectionSerializers {
       int size = buffer.readPositiveVarInt();
       Map map = new HashMap();
       xreadElements(fury, buffer, map, size);
-      T immutableMap = xnewInstance(map);
-      fury.getRefResolver().reference(immutableMap);
-      return immutableMap;
+      return xnewInstance(map);
     }
 
     protected abstract T xnewInstance(Map map);
@@ -355,9 +342,7 @@ public class GuavaCollectionSerializers {
       for (int i = 0; i < size; i++) {
         builder.put(keyArray[i], valueArray[i]);
       }
-      T t = (T) builder.build();
-      fury.getRefResolver().reference(t);
-      return t;
+      return (T) builder.build();
     }
   }
 

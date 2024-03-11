@@ -130,7 +130,6 @@ public class ImmutableCollectionSerializers {
       } else {
         collection = Collections.unmodifiableList((List) collection);
       }
-      fury.getRefResolver().reference(collection);
       return collection;
     }
   }
@@ -163,7 +162,6 @@ public class ImmutableCollectionSerializers {
       } else {
         collection = Collections.unmodifiableSet((HashSet) collection);
       }
-      fury.getRefResolver().reference(collection);
       return collection;
     }
   }
@@ -200,7 +198,6 @@ public class ImmutableCollectionSerializers {
       } else {
         map = Collections.unmodifiableMap(map);
       }
-      fury.getRefResolver().reference(map);
       return map;
     }
   }
