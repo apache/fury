@@ -68,6 +68,7 @@ import org.apache.fury.test.bean.Struct;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.util.DateTimeUtils;
 import org.apache.fury.util.Platform;
+import org.apache.fury.util.ReflectionUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -621,5 +622,29 @@ public class FuryTest extends FuryTestBase {
     HashBasedTable<Object, Object, Object> table = HashBasedTable.create(2, 4);
     table.put("r", "c", 100);
     serDeCheckSerializer(fury, table, "Codec");
+  }
+
+  @Test
+  public void testBufferReset() {
+    Fury fury = Fury.builder().withRefTracking(true).requireClassRegistration(false).build();
+    fury.serialize(new byte[1000 * 1000]);
+    checkBuffer(fury);
+    fury.serializeJavaObject(new byte[1000 * 1000]);
+    checkBuffer(fury);
+    fury.serializeJavaObjectAndClass(new byte[1000 * 1000]);
+    checkBuffer(fury);
+    fury.serialize(new ByteArrayOutputStream(), new byte[1000 * 1000]);
+    checkBuffer(fury);
+    fury.serializeJavaObject(new ByteArrayOutputStream(), new byte[1000 * 1000]);
+    checkBuffer(fury);
+    fury.serializeJavaObjectAndClass(new ByteArrayOutputStream(), new byte[1000 * 1000]);
+    checkBuffer(fury);
+  }
+
+  private void checkBuffer(Fury fury) {
+    Object buf = ReflectionUtils.getObjectFieldValue(fury, "buffer");
+    MemoryBuffer buffer = (MemoryBuffer) buf;
+    assert buffer != null;
+    assertTrue(buffer.size() < 1000 * 1000);
   }
 }
