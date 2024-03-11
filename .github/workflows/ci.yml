@@ -144,6 +144,10 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v3
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
       - uses: dtolnay/rust-toolchain@nightly
       - name: Run Rust CI
         run: python ./ci/run_ci.py rust
