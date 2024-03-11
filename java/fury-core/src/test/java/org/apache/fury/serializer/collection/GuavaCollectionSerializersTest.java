@@ -121,7 +121,7 @@ public class GuavaCollectionSerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "javaFury")
   void testNestedRefTracking(Fury fury) {
-    Pojo pojo = new Pojo(List.of(List.of(1, 2), List.of(2, 2)));
+    Pojo pojo = new Pojo(ImmutableList.of(ImmutableList.of(1, 2), ImmutableList.of(2, 2)));
     byte[] bytes = fury.serialize(pojo);
     Pojo deserializedPojo = (Pojo) fury.deserialize(bytes);
     System.out.println(deserializedPojo);
