@@ -627,18 +627,34 @@ public class FuryTest extends FuryTestBase {
   @Test
   public void testBufferReset() {
     Fury fury = Fury.builder().withRefTracking(true).requireClassRegistration(false).build();
-    fury.serialize(new byte[1000 * 1000]);
+    byte[] bytes = fury.serialize(new byte[1000 * 1000]);
     checkBuffer(fury);
-    fury.serializeJavaObject(new byte[1000 * 1000]);
+    assertEquals(fury.deserialize(bytes), new byte[1000 * 1000]);
+    bytes = fury.serializeJavaObject(new byte[1000 * 1000]);
     checkBuffer(fury);
-    fury.serializeJavaObjectAndClass(new byte[1000 * 1000]);
+    assertEquals(fury.deserializeJavaObject(bytes, byte[].class), new byte[1000 * 1000]);
+
+    bytes = fury.serializeJavaObjectAndClass(new byte[1000 * 1000]);
     checkBuffer(fury);
-    fury.serialize(new ByteArrayOutputStream(), new byte[1000 * 1000]);
+    assertEquals(fury.deserializeJavaObjectAndClass(bytes), new byte[1000 * 1000]);
+
+    ByteArrayOutputStream bas = new ByteArrayOutputStream();
+    fury.serialize(bas, new byte[1000 * 1000]);
     checkBuffer(fury);
-    fury.serializeJavaObject(new ByteArrayOutputStream(), new byte[1000 * 1000]);
+    Object o = fury.deserialize(new ByteArrayInputStream(bas.toByteArray()));
+    assertEquals(o, new byte[1000 * 1000]);
+
+    bas.reset();
+    fury.serializeJavaObject(bas, new byte[1000 * 1000]);
     checkBuffer(fury);
-    fury.serializeJavaObjectAndClass(new ByteArrayOutputStream(), new byte[1000 * 1000]);
+    o = fury.deserializeJavaObject(new ByteArrayInputStream(bas.toByteArray()), byte[].class);
+    assertEquals(o, new byte[1000 * 1000]);
+
+    bas.reset();
+    fury.serializeJavaObjectAndClass(bas, new byte[1000 * 1000]);
     checkBuffer(fury);
+    o = fury.deserializeJavaObjectAndClass(new ByteArrayInputStream(bas.toByteArray()));
+    assertEquals(o, new byte[1000 * 1000]);
   }
 
   private void checkBuffer(Fury fury) {
