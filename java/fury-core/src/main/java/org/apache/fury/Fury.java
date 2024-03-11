@@ -193,7 +193,9 @@ public final class Fury implements BaseFury {
     MemoryBuffer buf = getBuffer();
     buf.writerIndex(0);
     serialize(buf, obj, null);
-    return buf.getBytes(0, buf.writerIndex());
+    byte[] bytes = buf.getBytes(0, buf.writerIndex());
+    resetBuffer();
+    return bytes;
   }
 
   /** Return serialized <code>obj</code> as a byte array. */
@@ -201,7 +203,9 @@ public final class Fury implements BaseFury {
     MemoryBuffer buf = getBuffer();
     buf.writerIndex(0);
     serialize(buf, obj, callback);
-    return buf.getBytes(0, buf.writerIndex());
+    byte[] bytes = buf.getBytes(0, buf.writerIndex());
+    resetBuffer();
+    return bytes;
   }
 
   @Override
@@ -262,12 +266,13 @@ public final class Fury implements BaseFury {
     buf.writerIndex(0);
     buf.writeInt(-1);
     serialize(buf, obj, callback);
-
     buf.putInt(0, buf.writerIndex() - 4);
     try {
       outputStream.write(buf.getBytes(0, buf.writerIndex()));
     } catch (IOException e) {
       throw new RuntimeException(e);
+    } finally {
+      resetBuffer();
     }
   }
 
@@ -294,6 +299,13 @@ public final class Fury implements BaseFury {
       buf = buffer = MemoryBuffer.newHeapBuffer(64);
     }
     return buf;
+  }
+
+  private void resetBuffer() {
+    MemoryBuffer buf = buffer;
+    if (buf != null && buf.size() > BUFFER_SIZE_LIMIT) {
+      buffer = MemoryBuffer.newHeapBuffer(BUFFER_SIZE_LIMIT);
+    }
   }
 
   private void write(MemoryBuffer buffer, Object obj) {
@@ -752,6 +764,8 @@ public final class Fury implements BaseFury {
       return deserialize(buf, outOfBandBuffers);
     } catch (IOException e) {
       throw new RuntimeException(e);
+    } finally {
+      resetBuffer();
     }
   }
 
@@ -974,7 +988,9 @@ public final class Fury implements BaseFury {
     MemoryBuffer buf = getBuffer();
     buf.writerIndex(0);
     serializeJavaObject(buf, obj);
-    return buf.getBytes(0, buf.writerIndex());
+    byte[] bytes = buf.getBytes(0, buf.writerIndex());
+    resetBuffer();
+    return bytes;
   }
 
   @Override
@@ -1058,7 +1074,9 @@ public final class Fury implements BaseFury {
     MemoryBuffer buf = getBuffer();
     buf.writerIndex(0);
     serializeJavaObjectAndClass(buf, obj);
-    return buf.getBytes(0, buf.writerIndex());
+    byte[] bytes = buf.getBytes(0, buf.writerIndex());
+    resetBuffer();
+    return bytes;
   }
 
   /**
@@ -1146,6 +1164,8 @@ public final class Fury implements BaseFury {
         outputStream.flush();
       } catch (IOException e) {
         throw new RuntimeException(e);
+      } finally {
+        resetBuffer();
       }
     }
   }
@@ -1172,6 +1192,8 @@ public final class Fury implements BaseFury {
       return o;
     } catch (IOException e) {
       throw new RuntimeException(e);
+    } finally {
+      resetBuffer();
     }
   }
 
@@ -1218,10 +1240,6 @@ public final class Fury implements BaseFury {
     nativeObjects.clear();
     bufferCallback = null;
     depth = 0;
-    MemoryBuffer buf = buffer;
-    if (buf != null && buf.size() > BUFFER_SIZE_LIMIT) {
-      buffer = MemoryBuffer.newHeapBuffer(BUFFER_SIZE_LIMIT);
-    }
   }
 
   public void resetRead() {
@@ -1232,10 +1250,6 @@ public final class Fury implements BaseFury {
     nativeObjects.clear();
     peerOutOfBandEnabled = false;
     depth = 0;
-    MemoryBuffer buf = buffer;
-    if (buf != null && buf.size() > BUFFER_SIZE_LIMIT) {
-      buffer = MemoryBuffer.newHeapBuffer(BUFFER_SIZE_LIMIT);
-    }
   }
 
   private void checkDepthForSerialization() {
