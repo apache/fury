@@ -59,6 +59,28 @@ public abstract class FuryTestBase {
   }
 
   @DataProvider
+  public static Object[][] trackingRefFury() {
+    return new Object[][] {
+      {
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(true)
+            .withCodegen(false)
+            .requireClassRegistration(false)
+            .build()
+      },
+      {
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(false)
+            .withCodegen(false)
+            .requireClassRegistration(false)
+            .build()
+      }
+    };
+  }
+
+  @DataProvider
   public static Object[][] endian() {
     return new Object[][] {{false}, {true}};
   }
