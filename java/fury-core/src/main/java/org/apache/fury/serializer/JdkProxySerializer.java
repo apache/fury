@@ -74,5 +74,11 @@ public class JdkProxySerializer extends Serializer {
     return proxy;
   }
 
+  public static void registerDefaultSerializers(Fury fury) {
+    fury.registerSerializer(
+        JdkProxySerializer.ReplaceStub.class,
+        new JdkProxySerializer(fury, JdkProxySerializer.ReplaceStub.class));
+  }
+
   public static class ReplaceStub {}
 }

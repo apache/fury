@@ -238,5 +238,10 @@ public final class UnexistedClassSerializers {
       obj.setEntries(entries);
       return obj;
     }
+
+    public static void registerDefaultSerializers(Fury fury) {
+      fury.registerSerializer(
+          UnexistedMetaSharedClass.class, new UnexistedClassSerializer(fury, null));
+    }
   }
 }

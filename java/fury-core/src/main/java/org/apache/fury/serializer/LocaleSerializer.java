@@ -102,4 +102,8 @@ public final class LocaleSerializer extends Serializer<Locale> {
         && locale.getCountry().equals(country)
         && locale.getVariant().equals(variant));
   }
+
+  public static void registerDefaultSerializers(Fury fury) {
+    fury.registerSerializer(Locale.class, new LocaleSerializer(fury));
+  }
 }

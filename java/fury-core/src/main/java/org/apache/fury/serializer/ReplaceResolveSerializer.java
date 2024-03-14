@@ -330,4 +330,10 @@ public class ReplaceResolveSerializer extends Serializer {
       return o;
     }
   }
+
+  public static void registerDefaultSerializers(Fury fury) {
+    fury.registerSerializer(
+        ReplaceResolveSerializer.ReplaceStub.class,
+        new ReplaceResolveSerializer(fury, ReplaceResolveSerializer.ReplaceStub.class));
+  }
 }

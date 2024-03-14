@@ -114,6 +114,12 @@ public class LambdaSerializer extends Serializer {
     return dataSerializer;
   }
 
+  public static void registerDefaultSerializers(Fury fury) {
+    fury.registerSerializer(
+        LambdaSerializer.ReplaceStub.class,
+        new LambdaSerializer(fury, LambdaSerializer.ReplaceStub.class));
+  }
+
   /**
    * Class name of dynamic generated class is not fixed, so we use a stub class to mock dynamic
    * class.

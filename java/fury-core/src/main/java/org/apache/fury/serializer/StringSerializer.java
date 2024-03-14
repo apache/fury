@@ -694,4 +694,8 @@ public final class StringSerializer extends Serializer<String> {
       return new String(tmpArray, 0, numBytes, StandardCharsets.UTF_8);
     }
   }
+
+  public static void registerDefaultSerializers(Fury fury) {
+    fury.registerSerializer(String.class, new StringSerializer(fury));
+  }
 }

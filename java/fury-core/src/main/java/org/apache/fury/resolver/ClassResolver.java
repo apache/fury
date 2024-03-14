@@ -57,7 +57,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -305,7 +304,7 @@ public class ClassResolver {
 
   private void addDefaultSerializers() {
     // primitive types will be boxed.
-    addDefaultSerializer(String.class, new StringSerializer(fury));
+    StringSerializer.registerDefaultSerializers(fury);
     PrimitiveSerializers.registerDefaultSerializers(fury);
     Serializers.registerDefaultSerializers(fury);
     ArraySerializers.registerDefaultSerializers(fury);
@@ -313,16 +312,10 @@ public class ClassResolver {
     OptionalSerializers.registerDefaultSerializers(fury);
     CollectionSerializers.registerDefaultSerializers(fury);
     MapSerializers.registerDefaultSerializers(fury);
-    addDefaultSerializer(Locale.class, new LocaleSerializer(fury));
-    addDefaultSerializer(
-        LambdaSerializer.ReplaceStub.class,
-        new LambdaSerializer(fury, LambdaSerializer.ReplaceStub.class));
-    addDefaultSerializer(
-        JdkProxySerializer.ReplaceStub.class,
-        new JdkProxySerializer(fury, JdkProxySerializer.ReplaceStub.class));
-    addDefaultSerializer(
-        ReplaceResolveSerializer.ReplaceStub.class,
-        new ReplaceResolveSerializer(fury, ReplaceResolveSerializer.ReplaceStub.class));
+    LocaleSerializer.registerDefaultSerializers(fury);
+    LambdaSerializer.registerDefaultSerializers(fury);
+    JdkProxySerializer.registerDefaultSerializers(fury);
+    ReplaceResolveSerializer.registerDefaultSerializers(fury);
     SynchronizedSerializers.registerSerializers(fury);
     UnmodifiableSerializers.registerSerializers(fury);
     ImmutableCollectionSerializers.registerSerializers(fury);
@@ -330,8 +323,7 @@ public class ClassResolver {
       GuavaCollectionSerializers.registerDefaultSerializers(fury);
     }
     if (metaContextShareEnabled) {
-      addDefaultSerializer(
-          UnexistedMetaSharedClass.class, new UnexistedClassSerializer(fury, null));
+      UnexistedClassSerializer.registerDefaultSerializers(fury);
       // Those class id must be known in advance, here is two bytes, so
       // `UnexistedClassSerializer.writeClassDef`
       // can overwrite written classinfo and replace with real classinfo.
@@ -341,15 +333,6 @@ public class ClassResolver {
     } else {
       register(UnexistedSkipClass.class);
     }
-  }
-
-  private void addDefaultSerializer(Class<?> type, Class<? extends Serializer> serializerClass) {
-    addDefaultSerializer(type, Serializers.newSerializer(fury, type, serializerClass));
-  }
-
-  private void addDefaultSerializer(Class type, Serializer serializer) {
-    registerSerializer(type, serializer);
-    register(type);
   }
 
   /** Register common class ahead to get smaller class id for serialization. */
