@@ -228,6 +228,8 @@ public class ClassResolver {
   private final ShimDispatcher shimDispatcher;
 
   private static class ExtRegistry {
+    // Here we set it to 1 because `NO_CLASS_ID` is 0 to avoid calculating it again in
+    // `register(Class<?> cls)`.
     private short registeredClassIdCounter = 1;
     private SerializerFactory serializerFactory;
     private final IdentityMap<Class<?>, Short> registeredClassIdMap =
