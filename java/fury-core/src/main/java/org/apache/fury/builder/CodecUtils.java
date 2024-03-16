@@ -87,26 +87,22 @@ public class CodecUtils {
       // generated code imported fury classes.
       beanClassClassLoader.loadClass(Fury.class.getName());
       codeGenerator = classResolver.getCodeGenerator(beanClassClassLoader);
-      if (codeGenerator != null) {
-        // populate cache in case that soft reference got gc, and serializers of other new Fury
-        // needs recompilation.
-        CodeGenerator.setSharedCodeGenerator(beanClassClassLoader, codeGenerator, false);
-      } else {
+      if (codeGenerator == null) {
         codeGenerator = CodeGenerator.getSharedCodeGenerator(beanClassClassLoader);
+        // Hold strong reference of {@link CodeGenerator}, so the referent of `DelayedRef`
+        // won't be null.
         classResolver.setCodeGenerator(beanClassClassLoader, codeGenerator);
       }
     } catch (ClassNotFoundException e) {
       codeGenerator =
           classResolver.getCodeGenerator(beanClassClassLoader, fury.getClass().getClassLoader());
       ClassLoader[] loaders = {beanClassClassLoader, fury.getClass().getClassLoader()};
-      if (codeGenerator != null) {
-        // populate cache in case that soft reference got gc, and serializers of other new Fury
-        // needs recompilation.
-        CodeGenerator.setSharedCodeGenerator(loaders, codeGenerator, false);
-      } else {
+      if (codeGenerator == null) {
         codeGenerator =
             CodeGenerator.getSharedCodeGenerator(
                 beanClassClassLoader, fury.getClass().getClassLoader());
+        // Hold strong reference of {@link CodeGenerator}, so the referent of `DelayedRef`
+        // won't be null.
         classResolver.setCodeGenerator(loaders, codeGenerator);
       }
     }

@@ -23,7 +23,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -41,6 +40,7 @@ import org.apache.fury.collection.Collections;
 import org.apache.fury.collection.MultiKeyWeakMap;
 import org.apache.fury.util.ClassLoaderUtils;
 import org.apache.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
+import org.apache.fury.util.DelayedRef;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Preconditions;
@@ -71,9 +71,9 @@ public class CodeGenerator {
   // FIXME The classloaders will only be reclaimed when the generated class are not be referenced.
   // FIXME CodeGenerator may reference to classloader, thus cause circular reference, neither can
   //  be gc.
-  private static final WeakHashMap<ClassLoader, SoftReference<CodeGenerator>> sharedCodeGenerator =
+  private static final WeakHashMap<ClassLoader, DelayedRef<CodeGenerator>> sharedCodeGenerator =
       new WeakHashMap<>();
-  private static final MultiKeyWeakMap<SoftReference<CodeGenerator>> sharedCodeGenerator2 =
+  private static final MultiKeyWeakMap<DelayedRef<CodeGenerator>> sharedCodeGenerator2 =
       new MultiKeyWeakMap<>();
 
   // use this package when bean class name starts with java.
@@ -301,11 +301,11 @@ public class CodeGenerator {
   }
 
   public static synchronized CodeGenerator getSharedCodeGenerator(ClassLoader... classLoaders) {
-    SoftReference<CodeGenerator> codeGeneratorWeakRef = sharedCodeGenerator2.get(classLoaders);
+    DelayedRef<CodeGenerator> codeGeneratorWeakRef = sharedCodeGenerator2.get(classLoaders);
     CodeGenerator codeGenerator = codeGeneratorWeakRef != null ? codeGeneratorWeakRef.get() : null;
     if (codeGenerator == null) {
       codeGenerator = new CodeGenerator(new ClassLoaderUtils.ComposedClassLoader(classLoaders));
-      sharedCodeGenerator2.put(classLoaders, new SoftReference<>(codeGenerator));
+      sharedCodeGenerator2.put(classLoaders, new DelayedRef<>(codeGenerator));
     }
     return codeGenerator;
   }
@@ -314,38 +314,13 @@ public class CodeGenerator {
     if (classLoader == null) {
       classLoader = CodeGenerator.class.getClassLoader();
     }
-    SoftReference<CodeGenerator> codeGeneratorWeakRef = sharedCodeGenerator.get(classLoader);
-    CodeGenerator codeGenerator = codeGeneratorWeakRef != null ? codeGeneratorWeakRef.get() : null;
+    DelayedRef<CodeGenerator> ref = sharedCodeGenerator.get(classLoader);
+    CodeGenerator codeGenerator = ref != null ? ref.get() : null;
     if (codeGenerator == null) {
       codeGenerator = new CodeGenerator(classLoader);
-      sharedCodeGenerator.put(classLoader, new SoftReference<>(codeGenerator));
+      sharedCodeGenerator.put(classLoader, new DelayedRef<>(codeGenerator));
     }
     return codeGenerator;
-  }
-
-  public static synchronized void setSharedCodeGenerator(
-      ClassLoader loader, CodeGenerator codeGenerator, boolean overwrite) {
-    setSharedCodeGenerator(new ClassLoader[] {loader}, codeGenerator, overwrite);
-  }
-
-  public static synchronized void setSharedCodeGenerator(
-      ClassLoader[] loaders, CodeGenerator codeGenerator, boolean overwrite) {
-    if (loaders.length == 1) {
-      if (overwrite) {
-        sharedCodeGenerator.put(loaders[0], new SoftReference<>(codeGenerator));
-      } else {
-        sharedCodeGenerator.putIfAbsent(loaders[0], new SoftReference<>(codeGenerator));
-      }
-    } else {
-      if (overwrite) {
-        sharedCodeGenerator2.put(loaders, new SoftReference<>(codeGenerator));
-      } else {
-        SoftReference<CodeGenerator> codeGeneratorRef = sharedCodeGenerator2.get(loaders);
-        if (codeGeneratorRef == null || codeGeneratorRef.get() == null) {
-          sharedCodeGenerator2.put(loaders, new SoftReference<>(codeGenerator));
-        }
-      }
-    }
   }
 
   /**
