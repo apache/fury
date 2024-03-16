@@ -83,6 +83,7 @@ import org.apache.fury.annotation.Internal;
 import org.apache.fury.builder.CodecUtils;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.builder.JITContext;
+import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.Expression;
 import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.codegen.Expression.Literal;
@@ -245,6 +246,7 @@ public class ClassResolver {
         descriptorsCache = new ConcurrentHashMap<>();
     private ClassChecker classChecker = (classResolver, className) -> true;
     private GenericType objectGenericType;
+    private Map<List<ClassLoader>, CodeGenerator> codeGeneratorMap = new HashMap<>();
   }
 
   public ClassResolver(Fury fury) {
@@ -1794,6 +1796,20 @@ public class ClassResolver {
 
   public EnumStringResolver getEnumStringResolver() {
     return enumStringResolver;
+  }
+
+  public CodeGenerator getCodeGenerator(ClassLoader... loaders) {
+    List<ClassLoader> loaderList = new ArrayList<>(loaders.length);
+    Collections.addAll(loaderList, loaders);
+    return extRegistry.codeGeneratorMap.get(loaderList);
+  }
+
+  public void setCodeGenerator(ClassLoader loader, CodeGenerator codeGenerator) {
+    setCodeGenerator(new ClassLoader[] {loader}, codeGenerator);
+  }
+
+  public void setCodeGenerator(ClassLoader[] loaders, CodeGenerator codeGenerator) {
+    extRegistry.codeGeneratorMap.put(Arrays.asList(loaders), codeGenerator);
   }
 
   public Fury getFury() {

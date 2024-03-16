@@ -24,6 +24,7 @@ import java.util.Collections;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CompileUnit;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.ClassDef;
@@ -81,14 +82,33 @@ public class CodecUtils {
     if (beanClassClassLoader == null) {
       beanClassClassLoader = fury.getClass().getClassLoader();
     }
+    ClassResolver classResolver = fury.getClassResolver();
     try {
       // generated code imported fury classes.
       beanClassClassLoader.loadClass(Fury.class.getName());
-      codeGenerator = CodeGenerator.getSharedCodeGenerator(beanClassClassLoader);
+      codeGenerator = classResolver.getCodeGenerator(beanClassClassLoader);
+      if (codeGenerator != null) {
+        // populate cache in case that soft reference got gc, and serializers of other new Fury
+        // needs recompilation.
+        CodeGenerator.setSharedCodeGenerator(beanClassClassLoader, codeGenerator, false);
+      } else {
+        codeGenerator = CodeGenerator.getSharedCodeGenerator(beanClassClassLoader);
+        classResolver.setCodeGenerator(beanClassClassLoader, codeGenerator);
+      }
     } catch (ClassNotFoundException e) {
       codeGenerator =
-          CodeGenerator.getSharedCodeGenerator(
-              beanClassClassLoader, fury.getClass().getClassLoader());
+          classResolver.getCodeGenerator(beanClassClassLoader, fury.getClass().getClassLoader());
+      ClassLoader[] loaders = {beanClassClassLoader, fury.getClass().getClassLoader()};
+      if (codeGenerator != null) {
+        // populate cache in case that soft reference got gc, and serializers of other new Fury
+        // needs recompilation.
+        CodeGenerator.setSharedCodeGenerator(loaders, codeGenerator, false);
+      } else {
+        codeGenerator =
+            CodeGenerator.getSharedCodeGenerator(
+                beanClassClassLoader, fury.getClass().getClassLoader());
+        classResolver.setCodeGenerator(loaders, codeGenerator);
+      }
     }
     ClassLoader classLoader =
         codeGenerator.compile(

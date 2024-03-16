@@ -323,6 +323,31 @@ public class CodeGenerator {
     return codeGenerator;
   }
 
+  public static synchronized void setSharedCodeGenerator(
+      ClassLoader loader, CodeGenerator codeGenerator, boolean overwrite) {
+    setSharedCodeGenerator(new ClassLoader[] {loader}, codeGenerator, overwrite);
+  }
+
+  public static synchronized void setSharedCodeGenerator(
+      ClassLoader[] loaders, CodeGenerator codeGenerator, boolean overwrite) {
+    if (loaders.length == 1) {
+      if (overwrite) {
+        sharedCodeGenerator.put(loaders[0], new SoftReference<>(codeGenerator));
+      } else {
+        sharedCodeGenerator.putIfAbsent(loaders[0], new SoftReference<>(codeGenerator));
+      }
+    } else {
+      if (overwrite) {
+        sharedCodeGenerator2.put(loaders, new SoftReference<>(codeGenerator));
+      } else {
+        SoftReference<CodeGenerator> codeGeneratorRef = sharedCodeGenerator2.get(loaders);
+        if (codeGeneratorRef == null || codeGeneratorRef.get() == null) {
+          sharedCodeGenerator2.put(loaders, new SoftReference<>(codeGenerator));
+        }
+      }
+    }
+  }
+
   /**
    * Can't create a codec class that has package starts with java, which throws
    * java.lang.SecurityException: Prohibited package name.<br>
