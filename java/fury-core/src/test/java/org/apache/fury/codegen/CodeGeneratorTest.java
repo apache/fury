@@ -23,7 +23,6 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
-import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,13 +38,14 @@ import org.apache.fury.collection.MultiKeyWeakMap;
 import org.apache.fury.test.bean.Foo;
 import org.apache.fury.util.ClassLoaderUtils;
 import org.apache.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
+import org.apache.fury.util.DelayedRef;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class CodeGeneratorTest {
-  private static WeakHashMap<ClassLoader, SoftReference<CodeGenerator>> sharedCodeGenerator;
-  private static MultiKeyWeakMap<SoftReference<CodeGenerator>> sharedCodeGenerator2;
+  private static WeakHashMap<ClassLoader, DelayedRef<CodeGenerator>> sharedCodeGenerator;
+  private static MultiKeyWeakMap<DelayedRef<CodeGenerator>> sharedCodeGenerator2;
 
   static {
     try {
