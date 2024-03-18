@@ -1,7 +1,5 @@
 # Cross language object graph serialization
 
-## Spec overview
-
 Fury xlang serialization is an automatic object serialization framework that supports reference and polymorphism.
 Fury will convert an object from/to fury xlang serialization binary format.
 Fury has two core concepts for xlang serialization:
@@ -12,6 +10,11 @@ Fury has two core concepts for xlang serialization:
 The serialization format is a dynamic binary format. The dynamics and reference/polymorphism support make Fury flexible,
 much more easy to use, but
 also introduce more complexities compared to static serialization frameworks. So the format will be more complex.
+
+## Type Systems
+
+
+## Spec overview
 
 Here is the overall format:
 
@@ -332,12 +335,14 @@ If string has been written before, the data will be written as follows:
 #### Float
 
 - size: 4 byte
-- format: convert float to 4 bytes int by `Float.floatToRawIntBits`, then write as binary by little endian order.
+- format: encode the specified floating-point value according to the IEEE 754 floating-point "single format" bit layout,
+  preserving Not-a-Number (NaN) values, then write as binary by little endian order.
 
 #### Double
 
 - size: 8 byte
-- format: convert double to 8 bytes int by `Double.doubleToRawLongBits`, then write as binary by little endian order.
+- format: encode the specified floating-point value according to the IEEE 754 floating-point "double format" bit layout,
+  preserving Not-a-Number (NaN) values. then write as binary by little endian order.
 
 ### String
 
@@ -367,14 +372,8 @@ Which encoding to choose:
 Format:
 
 ```
-length(unsigned varint) | collection header | elements header | elements data
+length(unsigned varint) | elements header | elements data
 ```
-
-#### Collection header
-
-- For `ArrayList/LinkedArrayList/HashSet/LinkedHashSet`, this will be empty.
-- For `TreeSet`, this will be `Comparator`
-- For subclass of `ArrayList`, this may be extra object field info.
 
 #### Elements header
 
@@ -419,14 +418,8 @@ generic type.
 Format:
 
 ```
-| length(unsigned varint) | map header | key value pairs data |
+| length(unsigned varint) | key value chunk data | ... | key value chunk data |
 ```
-
-#### Map header
-
-- For `HashMap/LinkedHashMap`, this will be empty.
-- For `TreeMap`, this will be `Comparator`
-- For other `Map`, this may be extra object field info.
 
 #### Map Key-Value data
 
