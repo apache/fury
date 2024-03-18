@@ -89,7 +89,6 @@ import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.IdentityObjectIntMap;
-import org.apache.fury.collection.LongMap;
 import org.apache.fury.collection.ObjectMap;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.CompatibleMode;
@@ -230,8 +229,9 @@ public class ClassResolver {
   private final ShimDispatcher shimDispatcher;
 
   private static class ExtRegistry {
-    private short registeredClassIdCounter = 0;
-    private final LongMap<Class<?>> registeredId2Classes = new LongMap<>(initialCapacity);
+    // Here we set it to 1 because `NO_CLASS_ID` is 0 to avoid calculating it again in
+    // `register(Class<?> cls)`.
+    private short classIdGenerator = 1;
     private SerializerFactory serializerFactory;
     private final IdentityMap<Class<?>, Short> registeredClassIdMap =
         new IdentityMap<>(initialCapacity);
@@ -298,11 +298,13 @@ public class ClassResolver {
     registerWithCheck(Class.class, CLASS_CLASS_ID);
     registerWithCheck(Object.class, EMPTY_OBJECT_ID);
     // Register common class ahead to get smaller class id for serialization.
+    // TODO(Liangliang Sui): Clean up duplicately registered Classes and throw exceptions when
+    // Classes are duplicately registered.
     registerCommonUsedClasses();
     addDefaultSerializers();
     registerDefaultClasses();
     shimDispatcher.initialize();
-    innerEndClassId = extRegistry.registeredClassIdCounter;
+    innerEndClassId = extRegistry.classIdGenerator;
   }
 
   private void addDefaultSerializers() {
@@ -394,10 +396,11 @@ public class ClassResolver {
   /** register class. */
   public void register(Class<?> cls) {
     if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
-      while (extRegistry.registeredId2Classes.containsKey(extRegistry.registeredClassIdCounter)) {
-        extRegistry.registeredClassIdCounter++;
+      while (extRegistry.classIdGenerator < registeredId2ClassInfo.length
+          && registeredId2ClassInfo[extRegistry.classIdGenerator] != null) {
+        extRegistry.classIdGenerator++;
       }
-      register(cls, extRegistry.registeredClassIdCounter);
+      register(cls, extRegistry.classIdGenerator);
     }
   }
 
@@ -441,12 +444,11 @@ public class ClassResolver {
                 "Class %s with name %s has been registered, registering class with same name are not allowed.",
                 extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
       }
-      Class<?> idToClass = extRegistry.registeredId2Classes.get(id);
-      if (idToClass != null) {
+      if (id < registeredId2ClassInfo.length && registeredId2ClassInfo[id] != null) {
         throw new IllegalArgumentException(
             String.format(
                 "Class %s with id %s has been registered, registering class %s with same id are not allowed.",
-                idToClass, id, cls.getName()));
+                registeredId2ClassInfo[id].getCls(), id, cls.getName()));
       }
       extRegistry.registeredClassIdMap.put(cls, id);
       if (registeredId2ClassInfo.length <= id) {
@@ -466,8 +468,7 @@ public class ClassResolver {
       // serializer will be set lazily in `addSerializer` method if it's null.
       registeredId2ClassInfo[id] = classInfo;
       extRegistry.registeredClasses.put(cls.getName(), cls);
-      extRegistry.registeredClassIdCounter++;
-      extRegistry.registeredId2Classes.put(id, cls);
+      extRegistry.classIdGenerator++;
     }
   }
 
