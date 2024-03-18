@@ -1,13 +1,13 @@
-# Fury Java Serialization Specification
+# Cross language object graph serialization
 
 ## Spec overview
 
-Fury Java Serialization is an automatic object serialization framework that supports reference and polymorphism. Fury
-will
-convert an object from/to fury java serialization binary format. Fury has two core concepts for java serialization:
+Fury xlang serialization is an automatic object serialization framework that supports reference and polymorphism.
+Fury will convert an object from/to fury xlang serialization binary format.
+Fury has two core concepts for xlang serialization:
 
-- **Fury Java Binary format**
-- **Framework to convert object to/from Fury Java Binary format**
+- **Fury xlang binary format**
+- **Framework implemented in different languages to convert object to/from Fury xlang binary format**
 
 The serialization format is a dynamic binary format. The dynamics and reference/polymorphism support make Fury flexible,
 much more easy to use, but
@@ -16,7 +16,7 @@ also introduce more complexities compared to static serialization frameworks. So
 Here is the overall format:
 
 ```
-| fury header | object ref meta | object class meta | object value data |
+| fury header | object ref meta | object type meta | object value data |
 ```
 
 The data are serialized using little endian byte order overall. If bytes swap is costly for some object,
@@ -54,44 +54,51 @@ Reference flags:
 | REF VALUE FLAG      | `0`        | This flag indicates the object is referencable and the first time to serialize.                                                                         |
 
 When reference tracking is disabled globally or for specific types, or for certain types within a particular
-context(e.g., a field of a class), only the `NULL` and `NOT_NULL VALUE` flags will be used for reference meta.
+context(e.g., a field of a type), only the `NULL` and `NOT_NULL VALUE` flags will be used for reference meta.
 
-## Class Meta
+For languages which doesn't support reference such as rust, reference tracking must be disabled for correct
+deserialization
+by fury rust implementation.
 
-Fury supports to register class by an optional id, the registration can be used for security check and class
+In languages which doesn't support GC, Fury use `optional` to indicate nullability:
+
+- In rust, Fury takes `Option:None` as a null value
+- In c++, Fury takes `std::nullopt` as a null value
+
+## Type Meta
+
+Fury supports to register type by an optional id, the registration can be used for security check and type
 identification.
-If a class is registered, it will have a user-provided or an auto-growing unsigned int i.e. `class_id`.
+If a type is registered, it will have a user-provided or an auto-growing unsigned int i.e. `type_id`.
 
-Depending on whether meta share mode and registration is enabled for current class, Fury will write class meta
+Depending on whether meta share mode and registration is enabled for current type, Fury will write type meta
 differently.
 
 ### Schema consistent
 
-If schema consistent mode is enabled globally or enabled for current class, class meta will be written as follows:
+If schema consistent mode is enabled globally or enabled for current type, type meta will be written as follows:
 
-- If class is registered, it will be written as a fury unsigned varint: `class_id << 1`.
-- If class is not registered:
-    - If class is not an array, fury will write one byte `0bxxxxxxx1` first, then write class name.
+- If type is registered, it will be written as a fury unsigned varint: `type_id << 1`.
+- If type is not registered:
+    - If type is not an array, fury will write one byte `0bxxxxxxx1` first, then write type name.
         - The first little bit is `1`, which is different from first bit `0` of
-          encoded class id. Fury can use this information to determine whether to read class by class id for
+          encoded type id. Fury can use this information to determine whether to read type by type id for
           deserialization.
-    - If class is not registered and class is an array, fury will write one byte `dimensions << 1 | 1` first, then write
+    - If type is not registered and type is an array, fury will write one byte `dimensions << 1 | 1` first, then write
       component
-      class subsequently. This can reduce array class name cost if component class is or will be serialized.
-    - Class will be written as two enumerated fury unsigned by default: `package name` and `class name`. If meta share
-      mode is
-      enabled,
-      class will be written as an unsigned varint which points to index in `MetaContext`.
+      type subsequently. This can reduce array type name cost if component type is or will be serialized.
+    - Type will be written as two enumerated fury unsigned by default: `namespace` and `type name`. If meta share
+      mode is enabled, type will be written as an unsigned varint which points to index in `MetaContext`.
 
 ### Schema evolution
 
-If schema evolution mode is enabled globally or enabled for current class, class meta will be written as follows:
+If schema evolution mode is enabled globally or enabled for current type, type meta will be written as follows:
 
-- If meta share mode is not enabled, class meta will be written as schema consistent mode. Additionally, field meta such
+- If meta share mode is not enabled, type meta will be written as schema consistent mode. Additionally, field meta such
   as field type
   and name will be written with the field value using a key-value like layout.
-- If meta share mode is enabled, class meta will be written as a meta-share encoded binary if class hasn't been written
-  before, otherwise an unsigned varint id which references to previous written class meta will be written.
+- If meta share mode is enabled, type meta will be written as a meta-share encoded binary if type hasn't been written
+  before, otherwise an unsigned varint id which references to previous written type meta will be written.
 
 ## Meta share
 
@@ -102,56 +109,58 @@ If schema evolution mode is enabled globally or enabled for current class, class
 > Meta streamline will be supported in the future for enclosed meta sharing which doesn't cross multiple serializations
 > of different objects.
 
-For Schema consistent mode, class will be encoded as an enumerated string by full class name. Here we mainly describe
+For Schema consistent mode, type will be encoded as an enumerated string by full type name. Here we mainly describe
 the meta layout for schema evolution mode:
 
 ```
 |      8 bytes meta header      |   variable bytes   |  variable bytes   | variable bytes |
 +-------------------------------+--------------------+-------------------+----------------+
-| 7 bytes hash + 1 bytes header | current class meta | parent class meta |      ...       |
+| 7 bytes hash + 1 bytes header |  current type meta |  parent type meta |      ...       |
 ```
 
-Class meta are encoded from parent class to leaf class, only class with serializable fields will be encoded.
+Type meta are encoded from parent type to leaf type, only type with serializable fields will be encoded.
 
 ### Meta header
 
 Meta header is a 64 bits number value encoded in little endian order.
 
 - Lowest 4 digits `0b0000~0b1110` are used to record num classes. `0b1111` is preserved to indicate that Fury need to
-  read more bytes for length using Fury unsigned int encoding. If current class doesn't has parent class, or parent
-  class doesn't have fields to serialize, or we're in a context which serialize fields of current class
-  only( `ObjectStreamSerializer#SlotInfo` is an example), num classes will be 1.
-- 5rd bit is used to indicate whether this class needs schema evolution.
-- Other 56 bits is used to store the unique hash of `flags + all layers class meta`.
+  read more bytes for length using Fury unsigned int encoding. If current type doesn't has parent type, or parent
+  type doesn't have fields to serialize, or we're in a context which serialize fields of current type
+  only, num classes will be 1.
+- 5rd bit is used to indicate whether this type needs schema evolution.
+- Other 56 bits is used to store the unique hash of `flags + all layers type meta`.
+- Inheritance: Fury
+    - For languages
 
-### Single layer class meta
+### Single layer type meta
 
 ```
-|      unsigned varint       |      meta string      |     meta string     |  field info: variable bytes   | variable bytes  | ... |
-+----------------------------+-----------------------+---------------------+-------------------------------+-----------------+-----+
-| num fields + register flag | header + package name | header + class name | header + type id + field name | next field info | ... |
+|      unsigned varint       |       meta string       |     meta string     |  field info: variable bytes   | variable bytes  | ... |
++----------------------------+-------------------------+---------------------+-------------------------------+-----------------+-----+
+| num fields + register flag | header + namespace name |  header + type name | header + type id + field name | next field info | ... |
 ```
 
-- num fields: encode `num fields << 1 | register flag(1 when class registered)` as unsigned varint.
-    - If class is registered, then an unsigned varint class id will be written next, package and class name will be
+- num fields: encode `num fields << 1 | register flag(1 when type registered)` as unsigned varint.
+    - If type is registered, then an unsigned varint type id will be written next, namespace and type name will be
       omitted.
-    - If current class is schema consistent, then num field will be `0` to flag it.
-    - If current class isn't schema consistent, then num field will be the number of compatible fields. For example,
+    - If current type is schema consistent, then num field will be `0` to flag it.
+    - If current type isn't schema consistent, then num field will be the number of compatible fields. For example,
       users
       can use tag id to mark some field as compatible field in schema consistent context. In such cases, schema
       consistent
       fields will be serialized first, then compatible fields will be serialized next. At deserialization, Fury will use
       fields info of those fields which aren't annotated by tag id for deserializing schema consistent fields, then use
       fields info in meta for deserializing compatible fields.
-- Package name encoding(omitted when class is registered):
+- Package name encoding(omitted when type is registered):
     - Header:
         - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 128, then header will be
           `7 bits size + flag(set)`.
           Otherwise, header will be `4 bits unset + 3 bits encoding flags + flag(unset)`
     - Package name:
-        - If bit flag is set, then package name will be encoded meta string binary.
+        - If bit flag is set, then namespace name will be encoded meta string binary.
         - Otherwise, it will be `| unsigned varint length | encoded meta string binary |`
-- Class name encoding(omitted when class is registered)::
+- Type name encoding(omitted when type is registered)::
     - header:
         - If meta string encoding is in `LOWER_SPECIAL~LOWER_UPPER_DIGIT_SPECIAL (0~3)`, and the length of encoded
           string `<=` 32， then the header will be `5 bits size + 2 bits encoding flags + flag(set)`.
@@ -167,7 +176,7 @@ Meta header is a 64 bits number value encoded in little endian order.
           not `final`.
         - 3 bits field name encoding will be set to meta string encoding flags when tag id is not set.
     - type id:
-        - For registered type-consistent classes, it will be the registered class id.
+        - For registered type-consistent classes, it will be the registered type id.
         - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
           meta
           for such types is written separately instead of inlining here is to reduce meta space cost if object of this
@@ -196,14 +205,14 @@ Field order are left as implementation details, which is not exposed to specific
 resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
 using a more compact encoding.
 
-### Other layers class meta
+### Other layers type meta
 
 Same encoding algorithm as the previous layer except:
 
-- header + package name:
+- header + namespace name:
     - Header:
-        - If package name has been written before: `varint index + sharing flag(set)` will be written
-        - If package name hasn't been written before:
+        - If namespace name has been written before: `varint index + sharing flag(set)` will be written
+        - If namespace name hasn't been written before:
             - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 64, then header will be
               `6 bits size + encoding flag(set) + sharing flag(unset)`.
             - Otherwise, header will
@@ -211,7 +220,7 @@ Same encoding algorithm as the previous layer except:
 
 ## Meta String
 
-Meta string is mainly used to encode meta strings such class name and field names.
+Meta string is mainly used to encode meta strings such type name and field names.
 
 ### Encoding Algorithms
 
@@ -382,11 +391,11 @@ which will be encoded by elements header, each use one bit:
 - If the collection element types are different, use the 4rd bit `0b1000` header to flag it.
 
 By default, all bits are unset, which means all elements won't track ref, all elements are same type, not null and
-the actual element is the declared type in the custom class field.
+the actual element is the declared type in the custom type field.
 
 #### Elements data
 
-Based on the elements header, the serialization of elements data may skip `ref flag`/`null flag`/`element class info`.
+Based on the elements header, the serialization of elements data may skip `ref flag`/`null flag`/`element type info`.
 
 `CollectionSerializer#write/read` can be taken as an example.
 
@@ -403,8 +412,7 @@ serializers for such types.
 #### Object array
 
 Object array is serialized using the collection format. Object component type will be taken as collection element
-generic
-type.
+generic type.
 
 ### Map
 
@@ -514,12 +522,12 @@ field value of final type without ref tracking:
 field value of non-final type with ref tracking:
 | one byte  | var bytes | var objects |
 +-----------+-------------+-------------+
-| ref meta  | class meta  | value data  |
+| ref meta  | type meta  | value data  |
 +-----------+-------------+-------------+
 field value of non-final type without ref tracking:
 | one byte  | var bytes | var objects |
 +-----------+------------+------------+
-| null flag | class meta | value data |
+| null flag | type meta | value data |
 +-----------+------------+------------+
 ```
 
@@ -527,13 +535,13 @@ field value of non-final type without ref tracking:
 
 Schema evolution have similar format as schema consistent mode for object except:
 
-- For this object type itself, `schema consistent` mode will write class by id/name, but `schema evolution` mode will
-  write class field names, types and other meta too, see [Class meta](#class-meta).
-- Class meta of `final custom type` needs to be written too, because peers may not have this class defined.
+- For this object type itself, `schema consistent` mode will write type by id/name, but `schema evolution` mode will
+  write type field names, types and other meta too, see [Type meta](#type-meta).
+- Type meta of `final custom type` needs to be written too, because peers may not have this type defined.
 
-### Class
+### Type
 
-Class will be serialized using class meta format.
+Type will be serialized using type meta format.
 
 ## Implementation guidelines
 
