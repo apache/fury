@@ -57,13 +57,16 @@ When reference tracking is disabled globally or for specific types, or for certa
 context(e.g., a field of a type), only the `NULL` and `NOT_NULL VALUE` flags will be used for reference meta.
 
 For languages which doesn't support reference such as rust, reference tracking must be disabled for correct
-deserialization
-by fury rust implementation.
+deserialization by fury rust implementation.
 
-In languages which doesn't support GC, Fury use `optional` to indicate nullability:
+For languages whose object values are not null by default:
 
 - In rust, Fury takes `Option:None` as a null value
 - In c++, Fury takes `std::nullopt` as a null value
+- In golang, Fury takes `null interface/pointer` as a null value
+
+If one want to deserialize in languages like `Java/Python/JavaScript`, he should mark the type with all fields
+not-null by default, or using schema-evolution mode to carry the not-null fields info in the data.
 
 ## Type Meta
 
@@ -292,11 +295,6 @@ If string has been written before, the data will be written as follows:
 - format: write as pure byte.
 
 #### Short
-
-- size: 2 byte
-- byte order: little endian order
-
-#### Char
 
 - size: 2 byte
 - byte order: little endian order
