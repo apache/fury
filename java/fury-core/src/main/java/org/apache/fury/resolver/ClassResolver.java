@@ -230,7 +230,7 @@ public class ClassResolver {
   private static class ExtRegistry {
     // Here we set it to 1 because `NO_CLASS_ID` is 0 to avoid calculating it again in
     // `register(Class<?> cls)`.
-    private short registeredClassIdCounter = 1;
+    private short classIdGenerator = 1;
     private SerializerFactory serializerFactory;
     private final IdentityMap<Class<?>, Short> registeredClassIdMap =
         new IdentityMap<>(initialCapacity);
@@ -302,7 +302,7 @@ public class ClassResolver {
     addDefaultSerializers();
     registerDefaultClasses();
     shimDispatcher.initialize();
-    innerEndClassId = extRegistry.registeredClassIdCounter;
+    innerEndClassId = extRegistry.classIdGenerator;
   }
 
   private void addDefaultSerializers() {
@@ -394,11 +394,11 @@ public class ClassResolver {
   /** register class. */
   public void register(Class<?> cls) {
     if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
-      while (extRegistry.registeredClassIdCounter < registeredId2ClassInfo.length
-          && registeredId2ClassInfo[extRegistry.registeredClassIdCounter] != null) {
-        extRegistry.registeredClassIdCounter++;
+      while (extRegistry.classIdGenerator < registeredId2ClassInfo.length
+          && registeredId2ClassInfo[extRegistry.classIdGenerator] != null) {
+        extRegistry.classIdGenerator++;
       }
-      register(cls, extRegistry.registeredClassIdCounter);
+      register(cls, extRegistry.classIdGenerator);
     }
   }
 
@@ -466,7 +466,7 @@ public class ClassResolver {
       // serializer will be set lazily in `addSerializer` method if it's null.
       registeredId2ClassInfo[id] = classInfo;
       extRegistry.registeredClasses.put(cls.getName(), cls);
-      extRegistry.registeredClassIdCounter++;
+      extRegistry.classIdGenerator++;
     }
   }
 
