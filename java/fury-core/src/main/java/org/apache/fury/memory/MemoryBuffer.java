@@ -63,9 +63,6 @@ import org.apache.fury.util.Preconditions;
 public final class MemoryBuffer {
   // The unsafe handle for transparent memory copied (heap/off-heap).
   private static final sun.misc.Unsafe UNSAFE = Platform.UNSAFE;
-  // The beginning of the byte array contents, relative to the byte array object.
-  // Note: this offset will change between graalvm build time and runtime.
-  private static final long BYTE_ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
   // Constant that flags the byte order. Because this is a boolean constant, the JIT compiler can
   // use this well to aggressively eliminate the non-applicable code paths.
   private static final boolean LITTLE_ENDIAN = (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN);
@@ -117,7 +114,7 @@ public final class MemoryBuffer {
     }
     this.heapMemory = buffer;
     this.heapOffset = offset;
-    final long startPos = BYTE_ARRAY_BASE_OFFSET + offset;
+    final long startPos = Platform.BYTE_ARRAY_OFFSET + offset;
     this.address = startPos;
     this.size = length;
     this.addressLimit = startPos + length;
@@ -293,7 +290,7 @@ public final class MemoryBuffer {
     }
     final long pos = address + index;
     if (index >= 0 && pos <= addressLimit - length) {
-      final long arrayAddress = BYTE_ARRAY_BASE_OFFSET + offset;
+      final long arrayAddress = Platform.BYTE_ARRAY_OFFSET + offset;
       Platform.copyMemory(heapMemory, pos, dst, arrayAddress, length);
     } else {
       // index is in fact invalid
@@ -439,7 +436,7 @@ public final class MemoryBuffer {
     }
     final long pos = address + index;
     if (index >= 0 && pos <= addressLimit - length) {
-      final long arrayAddress = BYTE_ARRAY_BASE_OFFSET + offset;
+      final long arrayAddress = Platform.BYTE_ARRAY_OFFSET + offset;
       Platform.copyMemory(src, arrayAddress, heapMemory, pos, length);
     } else {
       // index is in fact invalid
@@ -1978,7 +1975,7 @@ public final class MemoryBuffer {
   public void ensure(int length) {
     if (length > size) {
       byte[] data = new byte[length * 2];
-      copyToUnsafe(0, data, BYTE_ARRAY_BASE_OFFSET, size());
+      copyToUnsafe(0, data, Platform.BYTE_ARRAY_OFFSET, size());
       initHeapBuffer(data, 0, data.length);
     }
   }
@@ -2139,7 +2136,7 @@ public final class MemoryBuffer {
     if (dstIndex > dst.length - length) {
       throw new IndexOutOfBoundsException();
     }
-    copyToUnsafe(readerIdx, dst, BYTE_ARRAY_BASE_OFFSET + dstIndex, length);
+    copyToUnsafe(readerIdx, dst, Platform.BYTE_ARRAY_OFFSET + dstIndex, length);
     readerIndex = readerIdx + length;
   }
 
@@ -2378,7 +2375,7 @@ public final class MemoryBuffer {
       throw new IllegalArgumentException();
     }
     byte[] data = new byte[length];
-    copyToUnsafe(index, data, BYTE_ARRAY_BASE_OFFSET, length);
+    copyToUnsafe(index, data, Platform.BYTE_ARRAY_OFFSET, length);
     return data;
   }
 
@@ -2390,7 +2387,7 @@ public final class MemoryBuffer {
       throw new IndexOutOfBoundsException(
           String.format("offset(%d) + length(%d) exceeds size(%d): %s", index, length, size, this));
     }
-    copyToUnsafe(index, dst, BYTE_ARRAY_BASE_OFFSET + dstIndex, length);
+    copyToUnsafe(index, dst, Platform.BYTE_ARRAY_OFFSET + dstIndex, length);
   }
 
   public MemoryBuffer slice(int offset) {
