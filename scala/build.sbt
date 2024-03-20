@@ -1,6 +1,6 @@
 name := "fury-scala"
-scalaVersion := "2.13.12"
-crossScalaVersions := Seq("2.13.12", "3.3.1")
+scalaVersion := "2.13.13"
+crossScalaVersions := Seq("2.13.12", "3.3.3")
 resolvers += Resolver.mavenLocal
 
 val furyVersion = "0.5.0-SNAPSHOT"
