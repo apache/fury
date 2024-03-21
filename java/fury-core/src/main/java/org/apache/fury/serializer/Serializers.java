@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.ClassIdAllocator.BuiltinClassId;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Platform;
@@ -149,25 +149,25 @@ public class Serializers {
 
   public static Object readPrimitiveValue(Fury fury, MemoryBuffer buffer, short classId) {
     switch (classId) {
-      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_BOOLEAN_CLASS_ID:
         return buffer.readBoolean();
-      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_BYTE_CLASS_ID:
         return buffer.readByte();
-      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_CHAR_CLASS_ID:
         return buffer.readChar();
-      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_SHORT_CLASS_ID:
         return buffer.readShort();
-      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
           return buffer.readVarInt();
         } else {
           return buffer.readInt();
         }
-      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_FLOAT_CLASS_ID:
         return buffer.readFloat();
-      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_LONG_CLASS_ID:
         return fury.readLong(buffer);
-      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_DOUBLE_CLASS_ID:
         return buffer.readDouble();
       default:
         {

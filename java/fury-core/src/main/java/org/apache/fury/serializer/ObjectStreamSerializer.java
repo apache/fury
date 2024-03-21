@@ -51,6 +51,7 @@ import org.apache.fury.builder.Generated;
 import org.apache.fury.collection.ObjectArray;
 import org.apache.fury.collection.ObjectIntMap;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassIdAllocator.BuiltinClassId;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
@@ -327,7 +328,7 @@ public class ObjectStreamSerializer extends Serializer {
 
     public SlotsInfo(Fury fury, Class<?> type) {
       this.cls = type;
-      classInfo = fury.getClassResolver().newClassInfo(type, null, ClassResolver.NO_CLASS_ID);
+      classInfo = fury.getClassResolver().newClassInfo(type, null, BuiltinClassId.NO_CLASS_ID);
       ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(type);
       streamClassInfo = STREAM_CLASS_INFO_CACHE.get(type);
       // `putFields/writeFields` will convert to fields value to be written by

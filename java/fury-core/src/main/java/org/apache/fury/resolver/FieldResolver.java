@@ -19,8 +19,7 @@
 
 package org.apache.fury.resolver;
 
-import static org.apache.fury.resolver.ClassResolver.NO_CLASS_ID;
-import static org.apache.fury.resolver.ClassResolver.PRIMITIVE_LONG_CLASS_ID;
+import static org.apache.fury.resolver.ClassIdAllocator.BuiltinClassId;
 import static org.apache.fury.resolver.FieldResolver.FieldInfoEncodingType.EMBED_TYPES_4;
 import static org.apache.fury.resolver.FieldResolver.FieldInfoEncodingType.EMBED_TYPES_9;
 import static org.apache.fury.resolver.FieldResolver.FieldInfoEncodingType.EMBED_TYPES_HASH;
@@ -478,9 +477,9 @@ public class FieldResolver {
       }
       ClassInfo classInfo = classResolver.getClassInfo(classId);
       if (classId >= minPrimitiveClassId && classId <= maxPrimitiveClassId) {
-        if (classId == ClassResolver.PRIMITIVE_INT_CLASS_ID) {
+        if (classId == BuiltinClassId.PRIMITIVE_INT_CLASS_ID) {
           intSerializer.read(buffer);
-        } else if (classId == PRIMITIVE_LONG_CLASS_ID) {
+        } else if (classId == BuiltinClassId.PRIMITIVE_LONG_CLASS_ID) {
           longSerializer.read(buffer);
         } else {
           fury.readData(buffer, classInfo);
@@ -739,7 +738,7 @@ public class FieldResolver {
             FieldTypes.OBJECT,
             fieldInfoEncodingType,
             encodedFieldInfo,
-            NO_CLASS_ID);
+            BuiltinClassId.NO_CLASS_ID);
       }
       if (Collection.class.isAssignableFrom(field.getType())) {
         TypeToken<?> elementTypeToken =
@@ -783,7 +782,7 @@ public class FieldResolver {
             FieldTypes.OBJECT,
             fieldInfoEncodingType,
             encodedFieldInfo,
-            NO_CLASS_ID);
+            BuiltinClassId.NO_CLASS_ID);
       }
     }
 
@@ -825,8 +824,8 @@ public class FieldResolver {
 
     public ClassInfo getClassInfo(short classId) {
       ClassInfo classInfo = this.classInfoHolder.classInfo;
-      if (classInfo.classId == NO_CLASS_ID) {
-        Preconditions.checkArgument(classId != NO_CLASS_ID);
+      if (classInfo.classId == BuiltinClassId.NO_CLASS_ID) {
+        Preconditions.checkArgument(classId != BuiltinClassId.NO_CLASS_ID);
         this.classInfoHolder.classInfo = classInfo = classResolver.getClassInfo(classId);
       }
       return classInfo;
@@ -875,7 +874,7 @@ public class FieldResolver {
           fieldType,
           fieldInfoEncodingType,
           encodedFieldInfo,
-          NO_CLASS_ID);
+          BuiltinClassId.NO_CLASS_ID);
       Preconditions.checkArgument(field != STUB_FIELD);
       this.elementTypeToken = elementTypeToken;
       this.elementType = getRawType(elementTypeToken);
@@ -926,7 +925,7 @@ public class FieldResolver {
           fieldType,
           separateTypesHash,
           encodedFieldInfo,
-          NO_CLASS_ID);
+          BuiltinClassId.NO_CLASS_ID);
       Preconditions.checkArgument(field != STUB_FIELD);
       this.keyTypeToken = keyTypeToken;
       this.valueTypeToken = valueTypeToken;

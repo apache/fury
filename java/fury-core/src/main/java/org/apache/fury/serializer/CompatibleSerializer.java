@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassIdAllocator.BuiltinClassId;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
@@ -151,7 +152,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       Object fieldValue;
       fieldValue = fieldAccessor.getObject(targetObject);
       if (ObjectSerializer.writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId)) {
-        if (classId == ClassResolver.NO_CLASS_ID) { // SEPARATE_TYPES_HASH
+        if (classId == BuiltinClassId.NO_CLASS_ID) { // SEPARATE_TYPES_HASH
           writeSeparateFieldValue(fieldInfo, buffer, fieldValue);
         } else {
           ClassInfo classInfo = fieldInfo.getClassInfo(classId);
@@ -167,38 +168,38 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     short classId = fieldInfo.getEmbeddedClassId();
     // PRIMITIVE fields, not need for null check.
     switch (classId) {
-      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_BOOLEAN_CLASS_ID:
         buffer.writeBoolean((Boolean) fieldValue);
         return;
-      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_BYTE_CLASS_ID:
         buffer.writeByte((Byte) fieldValue);
         return;
-      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_CHAR_CLASS_ID:
         buffer.writeChar((Character) fieldValue);
         return;
-      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_SHORT_CLASS_ID:
         buffer.writeShort((Short) fieldValue);
         return;
-      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
           buffer.writeVarInt((Integer) fieldValue);
         } else {
           buffer.writeInt((Integer) fieldValue);
         }
         return;
-      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_FLOAT_CLASS_ID:
         buffer.writeFloat((Float) fieldValue);
         return;
-      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_LONG_CLASS_ID:
         fury.writeLong(buffer, (Long) fieldValue);
         return;
-      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_DOUBLE_CLASS_ID:
         buffer.writeDouble((Double) fieldValue);
         return;
-      case ClassResolver.STRING_CLASS_ID:
+      case BuiltinClassId.STRING_CLASS_ID:
         fury.writeJavaStringRef(buffer, (String) fieldValue);
         break;
-      case ClassResolver.NO_CLASS_ID: // SEPARATE_TYPES_HASH
+      case BuiltinClassId.NO_CLASS_ID: // SEPARATE_TYPES_HASH
         writeSeparateFieldValue(fieldInfo, buffer, fieldValue);
         break;
       default:
@@ -552,7 +553,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
             fury, buffer, targetObject, fieldAccessor, classId)
         && ObjectSerializer.readBasicObjectFieldValueFailed(
             fury, buffer, targetObject, fieldAccessor, classId)) {
-      if (classId == ClassResolver.NO_CLASS_ID) {
+      if (classId == BuiltinClassId.NO_CLASS_ID) {
         // SEPARATE_TYPES_HASH
         Object fieldValue = fieldResolver.readObjectField(buffer, fieldInfo);
         fieldAccessor.putObject(targetObject, fieldValue);
@@ -568,29 +569,29 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     short classId = fieldInfo.getEmbeddedClassId();
     // PRIMITIVE fields, not need for null check.
     switch (classId) {
-      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_BOOLEAN_CLASS_ID:
         return buffer.readBoolean();
-      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_BYTE_CLASS_ID:
         return buffer.readByte();
-      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_CHAR_CLASS_ID:
         return buffer.readChar();
-      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_SHORT_CLASS_ID:
         return buffer.readShort();
-      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
           return buffer.readVarInt();
         } else {
           return buffer.readInt();
         }
-      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_FLOAT_CLASS_ID:
         return buffer.readFloat();
-      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_LONG_CLASS_ID:
         return fury.readLong(buffer);
-      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_DOUBLE_CLASS_ID:
         return buffer.readDouble();
-      case ClassResolver.STRING_CLASS_ID:
+      case BuiltinClassId.STRING_CLASS_ID:
         return fury.readJavaStringRef(buffer);
-      case ClassResolver.NO_CLASS_ID:
+      case BuiltinClassId.NO_CLASS_ID:
         return fieldResolver.readObjectField(buffer, fieldInfo);
       default:
         {

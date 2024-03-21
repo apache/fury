@@ -44,6 +44,7 @@ import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.ClassIdAllocator;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.util.LoggerFactory;
@@ -661,7 +662,7 @@ public class ClassDef implements Serializable {
                   : genericType.getTypeParameter1()));
     } else {
       Short classId = classResolver.getRegisteredClassId(rawType);
-      if (classId != null && classId != ClassResolver.NO_CLASS_ID) {
+      if (classId != null && classId != ClassIdAllocator.BuiltinClassId.NO_CLASS_ID) {
         return new RegisteredFieldType(isFinal, classId);
       } else {
         return new ObjectFieldType(isFinal);
@@ -696,7 +697,7 @@ public class ClassDef implements Serializable {
                   : genericType.getTypeParameter1()));
     } else {
       Short classId = classResolver.getRegisteredClassId(genericType.cls);
-      if (classId != null && classId != ClassResolver.NO_CLASS_ID) {
+      if (classId != null && classId != ClassIdAllocator.BuiltinClassId.NO_CLASS_ID) {
         return new RegisteredFieldType(isFinal, classId);
       } else {
         return new ObjectFieldType(isFinal);

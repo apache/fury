@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassIdAllocator.BuiltinClassId;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -216,7 +217,7 @@ public class ReplaceResolveSerializer extends Serializer {
       jdkMethodInfoWriteCache = newJDKMethodInfoCache(type, fury);
       classClassInfoHolderMap.put(type, jdkMethodInfoWriteCache);
       // FIXME new classinfo may miss serializer update in async compilation mode.
-      writeClassInfo = classResolver.newClassInfo(type, this, ClassResolver.NO_CLASS_ID);
+      writeClassInfo = classResolver.newClassInfo(type, this, BuiltinClassId.NO_CLASS_ID);
     } else {
       jdkMethodInfoWriteCache = null;
       writeClassInfo = null;
