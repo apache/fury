@@ -206,7 +206,7 @@ Meta header is a 64 bits number value encoded in little endian order.
       Fury will use fields info of those fields which aren't annotated by tag id for deserializing schema consistent
       fields, then use fields info in meta for deserializing compatible fields.
 - Field info:
-    - header(8 bits):
+    - Header(8 bits):
         - Format:
             - `reserved 1 bit + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag + tag id flag`.
         - Users can use annotation to provide those info.
@@ -216,7 +216,7 @@ Meta header is a 64 bits number value encoded in little endian order.
             - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
               not `final`.
             - 3 bits field name encoding will be set to meta string encoding flags when tag id is not set.
-    - type id:
+    - Type id:
         - For registered type-consistent classes, it will be the registered type id.
         - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
           meta
