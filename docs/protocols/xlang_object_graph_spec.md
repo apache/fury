@@ -13,6 +13,67 @@ also introduce more complexities compared to static serialization frameworks. So
 
 ## Type Systems
 
+### Data Types
+
+- bool: A boolean value (true or false).
+- byte: An 8-bit signed integer.
+- i16: A 16-bit signed integer.
+- i32: A 32-bit signed integer.
+- i64: A 64-bit signed integer.
+- half-float: A 16-bit floating point number.
+- float: A 32-bit floating point number.
+- double: A 64-bit floating point number including NaN and Infinity.
+- string: A text string encoded using Latin1/UTF16/UTF-8 encoding.
+- list: A sequence of objects.
+- set: An unordered set of unique elements.
+- map: A map of key-value pairs.
+- time types:
+    - Duration: an absolute length of time independent of any calendar/timezone, as a count of seconds and
+      fractions of seconds at nanosecond resolution.
+    - Timestamp: a point in time independent of any calendar/timezone, as a count of seconds and fractions of
+      seconds at nanosecond resolution. The count is relative to an epoch at UTC midnight on January 1, 1970.
+- decimal: exact decimal value represented as an integer value in two's complement.
+- binary: binary data.
+- array type: only allow numeric component. Other arrays will be taken as List. The implementation should support the
+  interoperability between array and list.
+    - array: multiple dimension array which every subarray can have have different size.
+    - int16_array: one dimension int16 array.
+    - int32_array: one dimension int32 array.
+    - int64_array: one dimension int64 array.
+    - half_float_array: one dimension half_float_16 array.
+    - float_array: one dimension float32 array.
+    - double_array: one dimension float64 array.
+- tensor: a multidimensional dense array of fixed-size values such as a NumPy ndarray.
+- sparse tensor: a multidimensional array whose elements are almost all zeros.
+- arrow record batch: an arrow [record batch](https://arrow.apache.org/docs/cpp/tables.html#record-batches) object.
+- arrow table: an arrow [table](https://arrow.apache.org/docs/cpp/tables.html#tables) object.
+
+### Type ambiguities
+
+Due to differences between type systems of languages, those types can't mapped one-to-one between languages. When
+deserializing, Fury use the target data structure type and the data type in the data jointly to determine how to
+deserialize and populate the target data structure. For example:
+
+```java
+class Foo {
+  int[] intArray;
+  Object[] objectArray;
+  List<Object> objectList;
+}
+```
+
+`intArray` has `int32_array` type. But both `objectArray` and `objectList` field in the serialize data have `list` data
+type. When deserializing, the implementation will create an `Object` array for `objectArray`, but create a `ArrayList`
+for `objectList` to populate it's elements.
+
+### Type ID
+
+All internal data types are expressed using unsigned ID `-64~-1`. Users can use `0~32703` for representing their types.
+At runtime, all type ids are added by `64`, represented and encoded as an unsigned int.
+
+### Type mapping
+
+See [Type mapping](../guide/xlang_type_mapping.md)
 
 ## Spec overview
 
@@ -84,17 +145,10 @@ differently.
 
 If schema consistent mode is enabled globally or enabled for current type, type meta will be written as follows:
 
-- If type is registered, it will be written as a fury unsigned varint: `type_id << 1`.
-- If type is not registered:
-    - If type is not an array, fury will write one byte `0bxxxxxxx1` first, then write type name.
-        - The first little bit is `1`, which is different from first bit `0` of
-          encoded type id. Fury can use this information to determine whether to read type by type id for
-          deserialization.
-    - If type is not registered and type is an array, fury will write one byte `dimensions << 1 | 1` first, then write
-      component
-      type subsequently. This can reduce array type name cost if component type is or will be serialized.
-    - Type will be written as two enumerated fury unsigned by default: `namespace` and `type name`. If meta share
-      mode is enabled, type will be written as an unsigned varint which points to index in `MetaContext`.
+- If type is registered as an id, it will be written as a fury unsigned varint: `type_id + 1`.
+- If type is registered as `namespace + type name`: Type will be written as two enumerated fury unsigned by
+  default: `namespace` and `type name`. If meta share mode is enabled, type will be written as an unsigned varint which
+  points to index in `MetaContext`.
 
 ### Schema evolution
 
