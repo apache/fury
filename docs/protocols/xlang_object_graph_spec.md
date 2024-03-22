@@ -62,6 +62,7 @@ class Foo {
   Object[] objects;
   List<Object> objectList;
 }
+
 class Foo2 {
   int[] intArray;
   List<Object> objects;
@@ -537,7 +538,27 @@ Type will be serialized using type meta format.
 
 ## Implementation guidelines
 
+### How to reduce memory read/write code
+
 - Try to merge multiple bytes into an int/long write before writing to reduce memory IO and bound check cost.
 - Read multiple bytes as an int/long, then split into multiple bytes to reduce memory IO and bound check cost.
 - Try to use one varint/long to write flags and length together to save one byte cost and reduce memory io.
 - Condition branches are less expensive compared to memory IO cost unless there are too many branches.
+
+### Fast deserialization for languages without runtime codegen support
+
+The Rust and C++ don't support dynamic codegen. We need to generate all code are compile-time use meta programing.
+
+For type evolution, the serializer will encode the type meta into the serialized data. The deserializer will compare
+this meta with class meta in current process, and use the diff to determine how to deserialize the data.
+
+For java/javascript/python, we can use the diff to generate serializer code at runtime and load it as class/function for
+deserialization. In this way, the type evolution will be as fast as type consist mode.
+
+For C++/Rust, we can't generate the serializer code at runtime. So we need to generate the code at compile-time. But at
+that time, we don't know the type schema in other processes. So we can't generate the serializer code for such
+inconsistent types. We may need to generate the code which has a loop and compare field name one by one to decide
+whether deserialize and assign the field or deserialize and skip the field. One lucky thing is that we can optimize the
+string comparison into long comparison: generate **a 64-bit id** for every field name of a type at build time,
+cache the type meta, and **generate a 64-bit id** for its every field name too, then we can convert the field name
+comparison into long comparison, and it will be fast.
