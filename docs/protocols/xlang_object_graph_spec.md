@@ -24,6 +24,8 @@ also introduce more complexities compared to static serialization frameworks. So
 - float: A 32-bit floating point number.
 - double: A 64-bit floating point number including NaN and Infinity.
 - string: A text string encoded using Latin1/UTF16/UTF-8 encoding.
+- enum: a data type consisting of a set of named values. Rust enum with non-predefined field values are not supported as
+  an enum
 - list: A sequence of objects.
 - set: An unordered set of unique elements.
 - map: A map of key-value pairs.
@@ -50,7 +52,7 @@ also introduce more complexities compared to static serialization frameworks. So
 
 ### Type ambiguities
 
-Due to differences between type systems of languages, those types can't mapped one-to-one between languages. When
+Due to differences between type systems of languages, those types can't be mapped one-to-one between languages. When
 deserializing, Fury use the target data structure type and the data type in the data jointly to determine how to
 deserialize and populate the target data structure. For example:
 
