@@ -207,8 +207,8 @@ Meta header is a 64 bits number value encoded in little endian order.
       fields, then use fields info in meta for deserializing compatible fields.
 - Field info:
     - header(8 bits):
-        -
-        Format: `reserved 1 bit + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag + tag id flag`.
+        - Format:
+            - `reserved 1 bit + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag + tag id flag`.
         - Users can use annotation to provide those info.
             - tag id: when set to 1, field name will be written by an unsigned varint tag id.
             - ref tracking: when set to 0, ref tracking will be disabled for this field.
