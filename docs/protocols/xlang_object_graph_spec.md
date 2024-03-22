@@ -241,7 +241,7 @@ Meta header is a 64 bits number value encoded in little endian order.
           meta
           for such types is written separately instead of inlining here is to reduce meta space cost if object of this
           type is serialized in current object graph multiple times, and the field value may be null too.
-    - Collection Type Info: collection type will have an extra byte for elements info.
+    - List Type Info: collection type will have an extra byte for elements info.
       Users can use annotation to provide those info.
         - elements type same
         - elements tracking ref
@@ -419,9 +419,7 @@ Which encoding to choose:
 - If the string is encoded by `utf-8`, then fury will use `utf-8` to decode the data. But currently fury doesn't enable
   utf-8 encoding by default for java. Cross-language string serialization of fury uses `utf-8` by default.
 
-### Collection
-
-> All collection serializers must extend `AbstractCollectionSerializer`.
+### List
 
 Format:
 
@@ -431,15 +429,15 @@ length(unsigned varint) | elements header | elements data
 
 #### Elements header
 
-In most cases, all collection elements are same type and not null, elements header will encode those homogeneous
+In most cases, all elements are same type and not null, elements header will encode those homogeneous
 information to avoid the cost of writing it for every element. Specifically, there are four kinds of information
 which will be encoded by elements header, each use one bit:
 
 - If track elements ref, use the first bit `0b1` of the header to flag it.
-- If the collection has null, use the second bit `0b10` of the header to flag it. If ref tracking is enabled for this
+- If the elements has null, use the second bit `0b10` of the header to flag it. If ref tracking is enabled for this
   element type, this flag is invalid.
-- If the collection element types are not declared type, use the 3rd bit `0b100` of the header to flag it.
-- If the collection element types are different, use the 4rd bit `0b1000` header to flag it.
+- If the element types are not declared type, use the 3rd bit `0b100` of the header to flag it.
+- If the element types are different, use the 4rd bit `0b1000` header to flag it.
 
 By default, all bits are unset, which means all elements won't track ref, all elements are same type, not null and
 the actual element is the declared type in the custom type field.
@@ -462,7 +460,7 @@ serializers for such types.
 
 #### Object array
 
-Object array is serialized using the collection format. Object component type will be taken as collection element
+Object array is serialized using the list format. Object component type will be taken as list element
 generic type.
 
 ### Map
@@ -477,7 +475,7 @@ Format:
 
 #### Map Key-Value data
 
-Map iteration is too expensive, Fury won't compute the header like for collection before since it introduce
+Map iteration is too expensive, Fury won't compute the header like for list since it introduce
 [considerable overhead](https://github.com/apache/incubator-fury/issues/925).
 Users can use `MapFieldInfo` annotation to provide header in advance. Otherwise Fury will use first key-value pair to
 predict header optimistically, and update the chunk header if the prediction failed at some pair.
