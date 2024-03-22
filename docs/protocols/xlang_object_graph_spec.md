@@ -136,29 +136,24 @@ not-null by default, or using schema-evolution mode to carry the not-null fields
 
 ## Type Meta
 
-Fury supports to register type by an optional id, the registration can be used for security check and type
-identification.
-If a type is registered, it will have a user-provided or an auto-growing unsigned int i.e. `type_id`.
+For every type to be serialized, it must be registered with an optional ID first. The registered type will have a
+user-provided or an auto-growing unsigned int i.e. `type_id`. The registration can be used for security check and type
+identification. The id of user registered type will be added by `64` to make space for Fury internal data types.
 
 Depending on whether meta share mode and registration is enabled for current type, Fury will write type meta
 differently.
 
 ### Schema consistent
 
-If schema consistent mode is enabled globally or enabled for current type, type meta will be written as follows:
-
-- If type is registered as an id, it will be written as a fury unsigned varint: `type_id + 1`.
-- If type is registered as `namespace + type name`: Type will be written as two enumerated fury unsigned by
-  default: `namespace` and `type name`. If meta share mode is enabled, type will be written as an unsigned varint which
-  points to index in `MetaContext`.
+If schema consistent mode is enabled globally or enabled for current type, type meta will be written as a fury unsigned
+varint of `type_id`.
 
 ### Schema evolution
 
 If schema evolution mode is enabled globally or enabled for current type, type meta will be written as follows:
 
 - If meta share mode is not enabled, type meta will be written as schema consistent mode. Additionally, field meta such
-  as field type
-  and name will be written with the field value using a key-value like layout.
+  as field type and name will be written with the field value using a key-value like layout.
 - If meta share mode is enabled, type meta will be written as a meta-share encoded binary if type hasn't been written
   before, otherwise an unsigned varint id which references to previous written type meta will be written.
 
@@ -198,58 +193,42 @@ Meta header is a 64 bits number value encoded in little endian order.
 ### Single layer type meta
 
 ```
-|      unsigned varint       |       meta string       |     meta string     |  field info: variable bytes   | variable bytes  | ... |
-+----------------------------+-------------------------+---------------------+-------------------------------+-----------------+-----+
-| num fields + register flag | header + namespace name |  header + type name | header + type id + field name | next field info | ... |
+| unsigned varint | var uint |  field info: variable bytes   | variable bytes  | ... |
++-----------------+----------+-------------------------------+-----------------+-----+
+|   num_fields    | type id  | header + type id + field name | next field info | ... |
 ```
 
-- num fields: encode `num fields << 1 | register flag(1 when type registered)` as unsigned varint.
-    - If type is registered, then an unsigned varint type id will be written next, namespace and type name will be
-      omitted.
-    - If current type is schema consistent, then num field will be `0` to flag it.
-    - If current type isn't schema consistent, then num field will be the number of compatible fields. For example,
-      users
-      can use tag id to mark some field as compatible field in schema consistent context. In such cases, schema
-      consistent
-      fields will be serialized first, then compatible fields will be serialized next. At deserialization, Fury will use
-      fields info of those fields which aren't annotated by tag id for deserializing schema consistent fields, then use
-      fields info in meta for deserializing compatible fields.
-- Package name encoding(omitted when type is registered):
-    - Header:
-        - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 128, then header will be
-          `7 bits size + flag(set)`.
-          Otherwise, header will be `4 bits unset + 3 bits encoding flags + flag(unset)`
-    - Package name:
-        - If bit flag is set, then namespace name will be encoded meta string binary.
-        - Otherwise, it will be `| unsigned varint length | encoded meta string binary |`
-- Type name encoding(omitted when type is registered)::
-    - header:
-        - If meta string encoding is in `LOWER_SPECIAL~LOWER_UPPER_DIGIT_SPECIAL (0~3)`, and the length of encoded
-          string `<=` 32， then the header will be `5 bits size + 2 bits encoding flags + flag(set)`.
-        - Otherwise, header will be `| unsigned varint length | encoded meta string binary |`
+- num fields: encode `num fields` as unsigned varint.
+    - If current type is schema consistent, then num_fields will be `0` to flag it.
+    - If current type isn't schema consistent, then num_fields will be the number of compatible fields. For example,
+      users can use tag id to mark some field as compatible field in schema consistent context. In such cases, schema
+      consistent fields will be serialized first, then compatible fields will be serialized next. At deserialization,
+      Fury will use fields info of those fields which aren't annotated by tag id for deserializing schema consistent
+      fields, then use fields info in meta for deserializing compatible fields.
 - Field info:
-    - header(8
-      bits): `reserved 1 bit + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag + tag id flag`.
-      Users can use annotation to provide those info.
-        - tag id: when set to 1, field name will be written by an unsigned varint tag id.
-        - ref tracking: when set to 0, ref tracking will be disabled for this field.
-        - nullability: when set to 0, this field won't be null.
-        - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
-          not `final`.
-        - 3 bits field name encoding will be set to meta string encoding flags when tag id is not set.
+    - header(8 bits):
+        -
+        Format: `reserved 1 bit + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag + tag id flag`.
+        - Users can use annotation to provide those info.
+            - tag id: when set to 1, field name will be written by an unsigned varint tag id.
+            - ref tracking: when set to 0, ref tracking will be disabled for this field.
+            - nullability: when set to 0, this field won't be null.
+            - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
+              not `final`.
+            - 3 bits field name encoding will be set to meta string encoding flags when tag id is not set.
     - type id:
         - For registered type-consistent classes, it will be the registered type id.
         - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
           meta
           for such types is written separately instead of inlining here is to reduce meta space cost if object of this
           type is serialized in current object graph multiple times, and the field value may be null too.
-    - List Type Info: collection type will have an extra byte for elements info.
+    - List Type Info: this type will have an extra byte for elements info.
       Users can use annotation to provide those info.
         - elements type same
         - elements tracking ref
         - elements nullability
         - elements declared type
-    - Map Type Info: map type will have an extra byte for kv items info.
+    - Map Type Info: this type will have an extra byte for kv items info.
       Users can use annotation to provide those info.
         - keys type same
         - keys tracking ref
@@ -259,9 +238,8 @@ Meta header is a 64 bits number value encoded in little endian order.
         - values tracking ref
         - values nullability
         - values declared type
-    - Field name: If type id is set, type id will be used instead. Otherwise meta string encoding length and data will
-      be
-      written instead.
+    - Field name: If tag id is set, tag id will be used instead. Otherwise meta string encoding length and data will
+      be written instead.
 
 Field order are left as implementation details, which is not exposed to specification, the deserialization need to
 resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
@@ -269,20 +247,11 @@ using a more compact encoding.
 
 ### Other layers type meta
 
-Same encoding algorithm as the previous layer except:
-
-- header + namespace name:
-    - Header:
-        - If namespace name has been written before: `varint index + sharing flag(set)` will be written
-        - If namespace name hasn't been written before:
-            - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 64, then header will be
-              `6 bits size + encoding flag(set) + sharing flag(unset)`.
-            - Otherwise, header will
-              be `3 bits unset + 3 bits encoding flags + encoding flag(unset) + sharing flag(unset)`
+Same encoding algorithm as the previous layer.
 
 ## Meta String
 
-Meta string is mainly used to encode meta strings such type name and field names.
+Meta string is mainly used to encode meta strings such as field names.
 
 ### Encoding Algorithms
 
@@ -307,37 +276,6 @@ Encoding flags:
 
 Depending on cases, one can choose encoding `flags + data` jointly, uses 3 bits of first byte for flags and other bytes
 for data.
-
-### Shared meta string
-
-The shared meta string format consists of header and encoded string binary. Header of encoded string binary will be
-inlined
-in shared meta header.
-
-Header is written using little endian order, Fury can read this flag first to determine how to deserialize the data.
-
-#### Write by data
-
-If string hasn't been written before, the data will be written as follows:
-
-```
-| unsigned varint: string binary size + 1 bit: not written before | 56 bits: unique hash | 3 bits encoding flags + string binary |
-```
-
-If string binary size is less than `16` bytes, the hash will be omitted to save spaces. Unique hash can be omitted too
-if caller pass a flag to disable it. In such cases, the format will be:
-
-```
-| unsigned varint: string binary size + 1 bit: not written before  | 3 bits encoding flags + string binary |
-```
-
-#### Write by ref
-
-If string has been written before, the data will be written as follows:
-
-```
-| unsigned varint: written string id + 1 bit: written before |
-```
 
 ## Value Format
 
@@ -420,6 +358,10 @@ Which encoding to choose:
 - For JDK9+: fury use `coder` in `String` object for encoding, `latin`/`utf-16` will be used for encoding.
 - If the string is encoded by `utf-8`, then fury will use `utf-8` to decode the data. But currently fury doesn't enable
   utf-8 encoding by default for java. Cross-language string serialization of fury uses `utf-8` by default.
+
+### Enum
+
+Enum will be serialized as an unsigned varint of the ordinal.
 
 ### List
 
@@ -521,6 +463,10 @@ Enums are serialized as an unsigned var int. If the order of enum values change,
 the value users expect. In such cases, users must register enum serializer by make it write enum value as an enumerated
 string with unique hash disabled.
 
+### Decimal
+
+Not supported for now.
+
 ### Object
 
 Object means object of `pojo/struct/bean/record` type.
@@ -535,7 +481,7 @@ Field will be ordered as following, every group of fields will have its own orde
 - primitive fields: larger size type first, smaller later, variable size type last.
 - boxed primitive fields: same order as primitive fields
 - final fields: same type together, then sorted by field name lexicographically.
-- collection fields: same order as final fields
+- list fields: same order as final fields
 - map fields: same order as final fields
 - other fields: same order as final fields
 

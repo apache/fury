@@ -211,7 +211,7 @@ Same encoding algorithm as the previous layer except:
 
 ## Meta String
 
-Meta string is mainly used to encode meta strings such class name and field names.
+Meta string is mainly used to encode meta strings such as class name and field names.
 
 ### Encoding Algorithms
 
