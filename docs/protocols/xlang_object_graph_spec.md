@@ -50,7 +50,7 @@ also introduce more complexities compared to static serialization frameworks. So
 - arrow record batch: an arrow [record batch](https://arrow.apache.org/docs/cpp/tables.html#record-batches) object.
 - arrow table: an arrow [table](https://arrow.apache.org/docs/cpp/tables.html#tables) object.
 
-### Type ambiguities
+### Type disambiguation
 
 Due to differences between type systems of languages, those types can't be mapped one-to-one between languages. When
 deserializing, Fury use the target data structure type and the data type in the data jointly to determine how to
@@ -59,14 +59,19 @@ deserialize and populate the target data structure. For example:
 ```java
 class Foo {
   int[] intArray;
-  Object[] objectArray;
+  Object[] objects;
+  List<Object> objectList;
+}
+class Foo2 {
+  int[] intArray;
+  List<Object> objects;
   List<Object> objectList;
 }
 ```
 
-`intArray` has `int32_array` type. But both `objectArray` and `objectList` field in the serialize data have `list` data
-type. When deserializing, the implementation will create an `Object` array for `objectArray`, but create a `ArrayList`
-for `objectList` to populate it's elements.
+`intArray` has `int32_array` type. But both `objects` and `objectList` field in the serialize data have `list` data
+type. When deserializing, the implementation will create an `Object` array for `objects`, but create a `ArrayList`
+for `objectList` to populate it's elements. And the serialized data of `Foo` can be deserialized into `Foo2` too.
 
 ### Type ID
 
