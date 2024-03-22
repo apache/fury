@@ -359,10 +359,6 @@ Which encoding to choose:
 - If the string is encoded by `utf-8`, then fury will use `utf-8` to decode the data. But currently fury doesn't enable
   utf-8 encoding by default for java. Cross-language string serialization of fury uses `utf-8` by default.
 
-### Enum
-
-Enum will be serialized as an unsigned varint of the ordinal.
-
 ### List
 
 Format:
