@@ -26,17 +26,20 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.builder.JITContext;
+import org.apache.fury.collection.ObjectArray;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Config;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.config.LongEncoding;
+import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassInfo;
@@ -59,6 +62,7 @@ import org.apache.fury.type.Generics;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 import org.slf4j.Logger;
@@ -747,6 +751,9 @@ public final class Fury implements BaseFury {
         obj = readRef(buffer);
       }
       return obj;
+    } catch (Throwable t) {
+      handleReadFailed(t);
+      throw new IllegalStateException("unreachable");
     } finally {
       resetRead();
       jitContext.unlock();
@@ -766,6 +773,17 @@ public final class Fury implements BaseFury {
       throw new RuntimeException(e);
     } finally {
       resetBuffer();
+    }
+  }
+
+  private void handleReadFailed(Throwable t) {
+    if (refResolver instanceof MapRefResolver) {
+      ObjectArray readObjects = ((MapRefResolver) refResolver).getReadObjects();
+      // carry with read objects for better trouble shooting.
+      List<Object> objects = Arrays.asList(readObjects.objects).subList(0, readObjects.size);
+      throw new DeserializationException(objects, t);
+    } else {
+      Platform.throwException(t);
     }
   }
 
@@ -1051,6 +1069,9 @@ public final class Fury implements BaseFury {
       } else {
         return null;
       }
+    } catch (Throwable t) {
+      handleReadFailed(t);
+      throw new IllegalStateException("unreachable");
     } finally {
       resetRead();
       jitContext.unlock();
@@ -1124,6 +1145,9 @@ public final class Fury implements BaseFury {
         classResolver.readClassDefs(buffer);
       }
       return readRef(buffer);
+    } catch (Throwable t) {
+      handleReadFailed(t);
+      throw new IllegalStateException("unreachable");
     } finally {
       resetRead();
       jitContext.unlock();
@@ -1190,8 +1214,9 @@ public final class Fury implements BaseFury {
         buf.pointTo(oldBytes, 0, oldBytes.length);
       }
       return o;
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    } catch (Throwable t) {
+      handleReadFailed(t);
+      throw new IllegalStateException("unreachable");
     } finally {
       resetBuffer();
     }

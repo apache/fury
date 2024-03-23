@@ -56,6 +56,7 @@ import org.apache.fury.annotation.Ignore;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
+import org.apache.fury.exception.FuryException;
 import org.apache.fury.exception.InsecureException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
@@ -662,5 +663,31 @@ public class FuryTest extends FuryTestBase {
     MemoryBuffer buffer = (MemoryBuffer) buf;
     assert buffer != null;
     assertTrue(buffer.size() < 1000 * 1000);
+  }
+
+  @Data
+  static class PrintReadObject {
+    public PrintReadObject() {
+      throw new RuntimeException();
+    }
+
+    public PrintReadObject(boolean b) {}
+  }
+
+  @Test
+  public void testPrintReadObjectsWhenFailed() {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(true)
+            .withCodegen(false)
+            .requireClassRegistration(false)
+            .build();
+    PrintReadObject o = new PrintReadObject(true);
+    try {
+      serDe(fury, ImmutableList.of(ImmutableList.of("a", "b"), o));
+      Assert.fail();
+    } catch (FuryException e) {
+      Assert.assertTrue(e.getMessage().contains("[a, b]"));
+    }
   }
 }

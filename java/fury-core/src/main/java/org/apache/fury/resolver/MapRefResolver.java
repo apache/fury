@@ -211,6 +211,10 @@ public final class MapRefResolver implements RefResolver {
     }
   }
 
+  public ObjectArray getReadObjects() {
+    return readObjects;
+  }
+
   @Override
   public void reset() {
     resetWrite();
