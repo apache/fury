@@ -545,9 +545,7 @@ Type will be serialized using type meta format.
 - Try to use one varint/long to write flags and length together to save one byte cost and reduce memory io.
 - Condition branches are less expensive compared to memory IO cost unless there are too many branches.
 
-### Fast deserialization for languages without runtime codegen support
-
-The Rust and C++ don't support dynamic codegen. We need to generate all code are compile-time use meta programing.
+### Fast deserialization for static languages without runtime codegen support
 
 For type evolution, the serializer will encode the type meta into the serialized data. The deserializer will compare
 this meta with class meta in current process, and use the diff to determine how to deserialize the data.
@@ -555,10 +553,60 @@ this meta with class meta in current process, and use the diff to determine how 
 For java/javascript/python, we can use the diff to generate serializer code at runtime and load it as class/function for
 deserialization. In this way, the type evolution will be as fast as type consist mode.
 
-For C++/Rust, we can't generate the serializer code at runtime. So we need to generate the code at compile-time. But at
-that time, we don't know the type schema in other processes. So we can't generate the serializer code for such
-inconsistent types. We may need to generate the code which has a loop and compare field name one by one to decide
-whether deserialize and assign the field or deserialize and skip the field. One lucky thing is that we can optimize the
-string comparison into long comparison: generate **a 64-bit id** for every field name of a type at build time,
-cache the type meta, and **generate a 64-bit id** for its every field name too, then we can convert the field name
-comparison into long comparison, and it will be fast.
+For C++/Rust, we can't generate the serializer code at runtime. So we need to generate the code at compile-time using
+meta programing. But at that time, we don't know the type schema in other processes, so we can't generate the serializer
+code for such inconsistent types. We may need to generate the code which has a loop and compare field name one by one to
+decide whether deserialize and assign the field or skip the field value.
+
+One fast way is that we can optimize the string comparison into `jump` instructions:
+
+- Assume current type has `n` fields, peer type has `n1` fields.
+- Generate an auto growing `field id` from `0` for every sorted field in current type at the compile time.
+- Compare the received type meta with current type, generate same id if the field name is same, otherwise generate an
+  auto growing id starting from `n`, cache this meta at runtime.
+- Iterate the fields of received type meta, use a `switch` to compare the `field id` to deserialize data
+  and `assign/skip` field value. **Continuous** field id will be optimized into `jump` in `switch` block, so it will
+  very fast.
+
+Here is an example, suppose process A has a class `Foo` with version 1 defined as `Foo1`, process B has a class `Foo`
+with version 2 defined as `Foo2`:
+
+```c++
+// class Foo with version 1
+class Foo1 {
+  int32_t v1; // id 0
+  std::string v2; // id 1
+}
+// class Foo with version 2
+class Foo2 {
+  // id 0, but will have id 2 in process A
+  bool v0;
+  // id 1, but will have id 0 in process A
+  int32_t v1;
+  // id 2, but will have id 3 in process A
+  int64_t long_value;
+  // id 3, but will have id 1 in process A
+  std::string v2;
+  // id 4, but will have id 4 in process A
+  std::vector<std::string> list;
+}
+```
+
+When process A received serialized `Foo2` from process B, here is how it deserialize the data:
+
+```c++
+Foo1 &foo1 = xxx;
+std::vector<fury::FieldInfo> &field_infos = type_meta.field_infos;
+for (auto &field_info : field_infos) {
+  switch (field_info.field_id) {
+    case 0:
+      foo1.v1 = buffer.read_varint32();
+      break;
+    case 1:
+      foo1.v2 = fury.read_string();
+      break;
+    default:
+      fury.skip_data(field_info);
+  }
+}
+```
