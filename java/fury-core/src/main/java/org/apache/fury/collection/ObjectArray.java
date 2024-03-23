@@ -109,4 +109,12 @@ public final class ObjectArray {
       }
     }
   }
+
+  @Override
+  public String toString() {
+    if (size == 0) {
+      return "[]";
+    }
+    return Arrays.asList(objects).subList(0, size).toString();
+  }
 }
