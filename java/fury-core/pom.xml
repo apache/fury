@@ -51,10 +51,6 @@
       <artifactId>janino</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.javassist</groupId>
-      <artifactId>javassist</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.apache.fury</groupId>
       <artifactId>fury-test-core</artifactId>
       <version>${project.version}</version>
@@ -89,17 +85,12 @@
               <artifactSet>
                 <includes>
                   <include>org.codehaus.janino</include>
-                  <include>org.javassist</include>
                 </includes>
               </artifactSet>
               <relocations>
                 <relocation>
                   <pattern>org.codehaus</pattern>
                   <shadedPattern>org.apache.fury.shaded.org.codehaus</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>javassist</pattern>
-                  <shadedPattern>org.apache.fury.shaded.javassist</shadedPattern>
                 </relocation>
               </relocations>
               <filters>

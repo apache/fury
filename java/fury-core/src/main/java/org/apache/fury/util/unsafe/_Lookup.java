@@ -25,6 +25,9 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.ProtectionDomain;
 
 // CHECKSTYLE.OFF:TypeName
 class _Lookup {
@@ -103,6 +106,46 @@ class _Lookup {
           );
     } catch (Exception e) {
       return null;
+    }
+  }
+
+  private static volatile Method PRIVATE_LOOKUP_IN = null;
+
+  public static Lookup privateLookupIn(Class<?> targetClass, Lookup caller) {
+    try {
+      // This doesn't have side effect, it's ok to read and assign it in multi-threaded way.
+      if (PRIVATE_LOOKUP_IN == null) {
+        Method m =
+            MethodHandles.class.getDeclaredMethod("privateLookupIn", Class.class, Lookup.class);
+        m.setAccessible(true);
+        PRIVATE_LOOKUP_IN = m;
+      }
+      return (Lookup) PRIVATE_LOOKUP_IN.invoke(null, targetClass, caller);
+    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static volatile Method DEFINE_CLASS = null;
+
+  /**
+   * Creates and links a class or interface from {@code bytes} with the same class loader and in the
+   * same runtime package and {@linkplain java.security.ProtectionDomain protection domain} as this
+   * lookup's {@linkplain Lookup#lookupClass() lookup class} as if calling {@link
+   * ClassLoader#defineClass(String,byte[],int,int, ProtectionDomain) ClassLoader::defineClass}.
+   * Note that classes in bytecode must be in same package as lookup class.
+   */
+  public static Class<?> defineClass(Lookup lookup, byte[] bytes) {
+    try {
+      // This doesn't have side effect, it's ok to read and assign it in multi-threaded way.
+      if (DEFINE_CLASS == null) {
+        Method m = Lookup.class.getDeclaredMethod("defineClass", byte[].class);
+        m.setAccessible(true);
+        DEFINE_CLASS = m;
+      }
+      return (Class<?>) DEFINE_CLASS.invoke(lookup, (Object) bytes);
+    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+      throw new RuntimeException(e);
     }
   }
 }

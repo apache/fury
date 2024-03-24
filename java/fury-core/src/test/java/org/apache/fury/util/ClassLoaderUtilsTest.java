@@ -78,18 +78,15 @@ public class ClassLoaderUtilsTest {
             .values()
             .iterator()
             .next();
-    if (Platform.JAVA_VERSION >= 17) {
+    if (ClassLoaderUtils.class.getPackage().getName().equals(pkg)) {
       Class<?> cls =
           ClassLoaderUtils.tryDefineClassesInClassLoader(
-              pkg + "." + classname, null, getClass().getClassLoader(), bytes);
-      Assert.assertNull(cls);
-      cls =
-          ClassLoaderUtils.tryDefineClassesInClassLoader(
-              pkg + "." + classname, getClass(), getClass().getClassLoader(), bytes);
-      if (ClassLoaderUtils.class.getPackage().getName().equals(pkg)) {
-        Assert.assertNotNull(cls);
-        Assert.assertEquals(cls.getSimpleName(), classname);
-      }
+              pkg + "." + classname,
+              ClassLoaderUtils.class,
+              ClassLoaderUtils.class.getClassLoader(),
+              bytes);
+      Assert.assertNotNull(cls);
+      Assert.assertEquals(cls.getSimpleName(), classname);
     } else {
       Class<?> cls =
           ClassLoaderUtils.tryDefineClassesInClassLoader(

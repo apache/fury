@@ -35,7 +35,9 @@
   <packaging>pom</packaging>
   <version>0.5.0-SNAPSHOT</version>
   <name>Fury Project Parent POM</name>
-  <description>A blazing fast multi-language serialization framework powered by jit and zero-copy.</description>
+  <description>
+    Apache Fury™ is a blazing fast multi-language serialization framework powered by jit and zero-copy.
+  </description>
   <url>https://github.com/apache/incubator-fury</url>
 
   <licenses>
@@ -89,11 +91,6 @@
         <groupId>org.codehaus.janino</groupId>
         <artifactId>janino</artifactId>
         <version>${janino.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.javassist</groupId>
-        <artifactId>javassist</artifactId>
-        <version>3.28.0-GA</version>
       </dependency>
       <!-- Cxeb68d52e-5509 -->
       <dependency>
@@ -161,6 +158,10 @@
           </executions>
           <configuration>
             <doclint>none</doclint>
+            <bottom>
+              Copyright © 2023-2024, The Apache Software Foundation. Apache Fury™, Fury™, and Apache
+              are either registered trademarks or trademarks of the Apache Software Foundation.
+            </bottom>
           </configuration>
         </plugin>
         <plugin>
