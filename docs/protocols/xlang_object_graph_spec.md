@@ -74,6 +74,29 @@ class Foo2 {
 type. When deserializing, the implementation will create an `Object` array for `objects`, but create a `ArrayList`
 for `objectList` to populate it's elements. And the serialized data of `Foo` can be deserialized into `Foo2` too.
 
+Users can also provide meta hint for fields of a type, or the type whole. Here is an example in java which use
+annotation to provide such information.
+
+```java
+
+@TypeInfo(fieldsNullable = false, trackingRef = false, polymorphic = false)
+class Foo {
+  @FieldInfo(trackingRef = false)
+  int[] intArray;
+  @FieldInfo(polymorphic = true)
+  Object object;
+  @FieldInfo(tagId = 1, nullable = true)
+  List<Object> objectList;
+}
+```
+
+Such information can be provided in other languages too:
+
+- cpp: use macro and template.
+- golang: use struct tag.
+- python: use typehint.
+- rust: use macro.
+
 ### Type ID
 
 All internal data types are expressed using a ID in range `-64~-1`. Users can use `0~32703` for representing their
