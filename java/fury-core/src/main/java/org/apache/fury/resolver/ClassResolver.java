@@ -1698,8 +1698,7 @@ public class ClassResolver {
                 "Class %s not found from classloaders [%s, %s]",
                 className, fury.getClassLoader(), Thread.currentThread().getContextClassLoader());
         if (fury.getConfig().deserializeUnexistedClass()) {
-          // ex.printStackTrace();
-          LOG.error(msg, e);
+          LOG.warn(msg);
           // FIXME create a subclass dynamically may be better?
           return UnexistedSkipClass.class;
         }
