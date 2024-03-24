@@ -97,6 +97,9 @@ public class ClassResolverTest extends FuryTestBase {
     classResolver.register(org.apache.fury.test.bean.Foo.class);
     Assert.assertThrows(
         IllegalArgumentException.class,
+        () -> classResolver.register(org.apache.fury.test.bean.Foo.class, 100));
+    Assert.assertThrows(
+        IllegalArgumentException.class,
         () -> classResolver.register(org.apache.fury.test.bean.Foo.createCompatibleClass1()));
     classResolver.register(Interface1.class, 200);
     Assert.assertThrows(

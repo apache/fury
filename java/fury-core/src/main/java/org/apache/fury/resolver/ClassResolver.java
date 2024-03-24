@@ -263,46 +263,42 @@ public class ClassResolver {
     register(LambdaSerializer.ReplaceStub.class, LAMBDA_STUB_ID);
     register(JdkProxySerializer.ReplaceStub.class, JDK_PROXY_STUB_ID);
     register(ReplaceResolveSerializer.ReplaceStub.class, REPLACE_STUB_ID);
-    registerWithCheck(void.class, PRIMITIVE_VOID_CLASS_ID);
-    registerWithCheck(boolean.class, PRIMITIVE_BOOLEAN_CLASS_ID);
-    registerWithCheck(byte.class, PRIMITIVE_BYTE_CLASS_ID);
-    registerWithCheck(char.class, PRIMITIVE_CHAR_CLASS_ID);
-    registerWithCheck(short.class, PRIMITIVE_SHORT_CLASS_ID);
-    registerWithCheck(int.class, PRIMITIVE_INT_CLASS_ID);
-    registerWithCheck(float.class, PRIMITIVE_FLOAT_CLASS_ID);
-    registerWithCheck(long.class, PRIMITIVE_LONG_CLASS_ID);
-    registerWithCheck(double.class, PRIMITIVE_DOUBLE_CLASS_ID);
-    registerWithCheck(Void.class, VOID_CLASS_ID);
-    registerWithCheck(Boolean.class, BOOLEAN_CLASS_ID);
-    registerWithCheck(Byte.class, BYTE_CLASS_ID);
-    registerWithCheck(Character.class, CHAR_CLASS_ID);
-    registerWithCheck(Short.class, SHORT_CLASS_ID);
-    registerWithCheck(Integer.class, INTEGER_CLASS_ID);
-    registerWithCheck(Float.class, FLOAT_CLASS_ID);
-    registerWithCheck(Long.class, LONG_CLASS_ID);
-    registerWithCheck(Double.class, DOUBLE_CLASS_ID);
-    registerWithCheck(String.class, STRING_CLASS_ID);
-    registerWithCheck(boolean[].class, PRIMITIVE_BOOLEAN_ARRAY_CLASS_ID);
-    registerWithCheck(byte[].class, PRIMITIVE_BYTE_ARRAY_CLASS_ID);
-    registerWithCheck(char[].class, PRIMITIVE_CHAR_ARRAY_CLASS_ID);
-    registerWithCheck(short[].class, PRIMITIVE_SHORT_ARRAY_CLASS_ID);
-    registerWithCheck(int[].class, PRIMITIVE_INT_ARRAY_CLASS_ID);
-    registerWithCheck(float[].class, PRIMITIVE_FLOAT_ARRAY_CLASS_ID);
-    registerWithCheck(long[].class, PRIMITIVE_LONG_ARRAY_CLASS_ID);
-    registerWithCheck(double[].class, PRIMITIVE_DOUBLE_ARRAY_CLASS_ID);
-    registerWithCheck(String[].class, STRING_ARRAY_CLASS_ID);
-    registerWithCheck(Object[].class, OBJECT_ARRAY_CLASS_ID);
-    registerWithCheck(ArrayList.class, ARRAYLIST_CLASS_ID);
-    registerWithCheck(HashMap.class, HASHMAP_CLASS_ID);
-    registerWithCheck(HashSet.class, HASHSET_CLASS_ID);
-    registerWithCheck(Class.class, CLASS_CLASS_ID);
-    registerWithCheck(Object.class, EMPTY_OBJECT_ID);
-    // Register common class ahead to get smaller class id for serialization.
-    // TODO(Liangliang Sui): Clean up duplicately registered Classes and throw exceptions when
-    // Classes are duplicately registered.
-    registerCommonUsedClasses();
-    addDefaultSerializers();
+    register(void.class, PRIMITIVE_VOID_CLASS_ID);
+    register(boolean.class, PRIMITIVE_BOOLEAN_CLASS_ID);
+    register(byte.class, PRIMITIVE_BYTE_CLASS_ID);
+    register(char.class, PRIMITIVE_CHAR_CLASS_ID);
+    register(short.class, PRIMITIVE_SHORT_CLASS_ID);
+    register(int.class, PRIMITIVE_INT_CLASS_ID);
+    register(float.class, PRIMITIVE_FLOAT_CLASS_ID);
+    register(long.class, PRIMITIVE_LONG_CLASS_ID);
+    register(double.class, PRIMITIVE_DOUBLE_CLASS_ID);
+    register(Void.class, VOID_CLASS_ID);
+    register(Boolean.class, BOOLEAN_CLASS_ID);
+    register(Byte.class, BYTE_CLASS_ID);
+    register(Character.class, CHAR_CLASS_ID);
+    register(Short.class, SHORT_CLASS_ID);
+    register(Integer.class, INTEGER_CLASS_ID);
+    register(Float.class, FLOAT_CLASS_ID);
+    register(Long.class, LONG_CLASS_ID);
+    register(Double.class, DOUBLE_CLASS_ID);
+    register(String.class, STRING_CLASS_ID);
+    register(boolean[].class, PRIMITIVE_BOOLEAN_ARRAY_CLASS_ID);
+    register(byte[].class, PRIMITIVE_BYTE_ARRAY_CLASS_ID);
+    register(char[].class, PRIMITIVE_CHAR_ARRAY_CLASS_ID);
+    register(short[].class, PRIMITIVE_SHORT_ARRAY_CLASS_ID);
+    register(int[].class, PRIMITIVE_INT_ARRAY_CLASS_ID);
+    register(float[].class, PRIMITIVE_FLOAT_ARRAY_CLASS_ID);
+    register(long[].class, PRIMITIVE_LONG_ARRAY_CLASS_ID);
+    register(double[].class, PRIMITIVE_DOUBLE_ARRAY_CLASS_ID);
+    register(String[].class, STRING_ARRAY_CLASS_ID);
+    register(Object[].class, OBJECT_ARRAY_CLASS_ID);
+    register(ArrayList.class, ARRAYLIST_CLASS_ID);
+    register(HashMap.class, HASHMAP_CLASS_ID);
+    register(HashSet.class, HASHSET_CLASS_ID);
+    register(Class.class, CLASS_CLASS_ID);
+    register(Object.class, EMPTY_OBJECT_ID);
     registerDefaultClasses();
+    addDefaultSerializers();
     shimDispatcher.initialize();
     innerEndClassId = extRegistry.classIdGenerator;
   }
@@ -356,20 +352,12 @@ public class ClassResolver {
     register(type);
   }
 
-  /** Register common class ahead to get smaller class id for serialization. */
-  private void registerCommonUsedClasses() {
-    register(Class.class);
-    register(ArrayList.class, LinkedList.class, HashSet.class, TreeSet.class);
-    register(HashMap.class, LinkedHashMap.class, TreeMap.class);
-    register(ByteBuffer.allocate(1).getClass());
-    register(Integer[].class, Long[].class);
+  private void registerDefaultClasses() {
+    register(LinkedList.class, TreeSet.class);
+    register(LinkedHashMap.class, TreeMap.class);
     register(Date.class, Timestamp.class, LocalDateTime.class, Instant.class);
     register(BigInteger.class, BigDecimal.class);
     register(Optional.class, OptionalInt.class);
-  }
-
-  private void registerDefaultClasses() {
-    register(Object.class, Object[].class, Void.class);
     register(ByteBuffer.allocate(1).getClass());
     register(ByteBuffer.allocateDirect(1).getClass());
     register(Comparator.naturalOrder().getClass());
@@ -436,40 +424,43 @@ public class ClassResolver {
   public void register(Class<?> cls, int classId) {
     // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
     Preconditions.checkArgument(classId >= 0 && classId < Short.MAX_VALUE);
+    Preconditions.checkArgument(
+        !extRegistry.registeredClassIdMap.containsKey(cls),
+        String.format(
+            "Class %s already registered with id %s.",
+            cls, extRegistry.registeredClassIdMap.get(cls)));
+    Preconditions.checkArgument(
+        !extRegistry.registeredClasses.containsKey(cls.getName()),
+        String.format(
+            "Class %s with name %s has been registered, registering class with same name are not allowed.",
+            extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
+
     short id = (short) classId;
-    if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
-      if (extRegistry.registeredClasses.containsKey(cls.getName())) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Class %s with name %s has been registered, registering class with same name are not allowed.",
-                extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
-      }
-      if (id < registeredId2ClassInfo.length && registeredId2ClassInfo[id] != null) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Class %s with id %s has been registered, registering class %s with same id are not allowed.",
-                registeredId2ClassInfo[id].getCls(), id, cls.getName()));
-      }
-      extRegistry.registeredClassIdMap.put(cls, id);
-      if (registeredId2ClassInfo.length <= id) {
-        ClassInfo[] tmp = new ClassInfo[(id + 1) * 2];
-        System.arraycopy(registeredId2ClassInfo, 0, tmp, 0, registeredId2ClassInfo.length);
-        registeredId2ClassInfo = tmp;
-      }
-      ClassInfo classInfo = classInfoMap.get(cls);
-      if (classInfo != null) {
-        classInfo.classId = id;
-      } else {
-        classInfo = new ClassInfo(this, cls, null, null, id);
-        // make `extRegistry.registeredClassIdMap` and `classInfoMap` share same classInfo
-        // instances.
-        classInfoMap.put(cls, classInfo);
-      }
-      // serializer will be set lazily in `addSerializer` method if it's null.
-      registeredId2ClassInfo[id] = classInfo;
-      extRegistry.registeredClasses.put(cls.getName(), cls);
-      extRegistry.classIdGenerator++;
+    if (id < registeredId2ClassInfo.length && registeredId2ClassInfo[id] != null) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s with id %s has been registered, registering class %s with same id are not allowed.",
+              registeredId2ClassInfo[id].getCls(), id, cls.getName()));
     }
+    extRegistry.registeredClassIdMap.put(cls, id);
+    if (registeredId2ClassInfo.length <= id) {
+      ClassInfo[] tmp = new ClassInfo[(id + 1) * 2];
+      System.arraycopy(registeredId2ClassInfo, 0, tmp, 0, registeredId2ClassInfo.length);
+      registeredId2ClassInfo = tmp;
+    }
+    ClassInfo classInfo = classInfoMap.get(cls);
+    if (classInfo != null) {
+      classInfo.classId = id;
+    } else {
+      classInfo = new ClassInfo(this, cls, null, null, id);
+      // make `extRegistry.registeredClassIdMap` and `classInfoMap` share same classInfo
+      // instances.
+      classInfoMap.put(cls, classInfo);
+    }
+    // serializer will be set lazily in `addSerializer` method if it's null.
+    registeredId2ClassInfo[id] = classInfo;
+    extRegistry.registeredClasses.put(cls.getName(), cls);
+    extRegistry.classIdGenerator++;
   }
 
   public void register(Class<?> cls, Short id, boolean createSerializer) {
@@ -477,17 +468,6 @@ public class ClassResolver {
     if (createSerializer) {
       getSerializer(cls);
     }
-  }
-
-  /** register class with given id. */
-  public void registerWithCheck(Class<?> cls, short id) {
-    if (extRegistry.registeredClassIdMap.containsKey(cls)) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Class %s already registered with id %s.",
-              cls, extRegistry.registeredClassIdMap.get(cls)));
-    }
-    register(cls, id);
   }
 
   public Short getRegisteredClassId(Class<?> cls) {
