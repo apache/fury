@@ -76,8 +76,8 @@ for `objectList` to populate it's elements. And the serialized data of `Foo` can
 
 ### Type ID
 
-All internal data types are expressed using unsigned ID `-64~-1`. Users can use `0~32703` for representing their types.
-At runtime, all type ids are added by `64`, represented and encoded as an unsigned int.
+All internal data types are expressed using a ID in range `-64~-1`. Users can use `0~32703` for representing their
+types. At runtime, all type ids are added by `64`, and then encoded as an unsigned varint.
 
 ### Type mapping
 
