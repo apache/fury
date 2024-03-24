@@ -16,35 +16,35 @@ also introduce more complexities compared to static serialization frameworks. So
 ### Data Types
 
 - bool: A boolean value (true or false).
-- byte: An 8-bit signed integer.
-- i16: A 16-bit signed integer.
-- i32: A 32-bit signed integer.
-- i64: A 64-bit signed integer.
-- half-float: A 16-bit floating point number.
-- float: A 32-bit floating point number.
-- double: A 64-bit floating point number including NaN and Infinity.
+- int8: An 8-bit signed integer.
+- int16: A 16-bit signed integer.
+- int32: A 32-bit signed integer.
+- int64: A 64-bit signed integer.
+- float16: A 16-bit floating point number.
+- float32: A 32-bit floating point number.
+- float64: A 64-bit floating point number including NaN and Infinity.
 - string: A text string encoded using Latin1/UTF16/UTF-8 encoding.
-- enum: a data type consisting of a set of named values. Rust enum with non-predefined field values are not supported as
-  an enum
+- enum: A data type consisting of a set of named values. Rust enum with non-predefined field values are not supported as
+  an enum.
 - list: A sequence of objects.
 - set: An unordered set of unique elements.
 - map: A map of key-value pairs.
 - time types:
-    - Duration: an absolute length of time independent of any calendar/timezone, as a count of seconds and
-      fractions of seconds at nanosecond resolution.
-    - Timestamp: a point in time independent of any calendar/timezone, as a count of seconds and fractions of
-      seconds at nanosecond resolution. The count is relative to an epoch at UTC midnight on January 1, 1970.
+    - Duration: an absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
+    - Timestamp: a point in time, independent of any calendar/timezone, as a count of nanoseconds. The count is relative
+      to an epoch at UTC midnight on January 1, 1970.
 - decimal: exact decimal value represented as an integer value in two's complement.
-- binary: binary data.
+- binary: An variable-length array of bytes.
 - array type: only allow numeric component. Other arrays will be taken as List. The implementation should support the
   interoperability between array and list.
-    - array: multiple dimension array which every subarray can have have different size.
+    - array: multidimensional array which every sub-array can have different size but all have same type.
+    - bool_array: one dimension int16 array.
     - int16_array: one dimension int16 array.
     - int32_array: one dimension int32 array.
     - int64_array: one dimension int64 array.
-    - half_float_array: one dimension half_float_16 array.
-    - float_array: one dimension float32 array.
-    - double_array: one dimension float64 array.
+    - float16_array: one dimension half_float_16 array.
+    - float32_array: one dimension float32 array.
+    - float64_array: one dimension float64 array.
 - tensor: a multidimensional dense array of fixed-size values such as a NumPy ndarray.
 - sparse tensor: a multidimensional array whose elements are almost all zeros.
 - arrow record batch: an arrow [record batch](https://arrow.apache.org/docs/cpp/tables.html#record-batches) object.
