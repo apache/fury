@@ -38,14 +38,13 @@ public class DefineClass {
       ClassLoader loader,
       ProtectionDomain domain,
       byte[] bytecodes) {
+    Preconditions.checkNotNull(loader);
     Preconditions.checkArgument(Platform.JAVA_VERSION >= 8);
-    if (Platform.JAVA_VERSION >= 9) {
+    if (neighbor != null && Platform.JAVA_VERSION >= 9) {
+      // classes in bytecode must be in same package as lookup class.
       MethodHandles.Lookup lookup = MethodHandles.lookup();
-      if (neighbor != null) {
-        _JDKAccess.addReads(
-            _JDKAccess.getModule(DefineClass.class), _JDKAccess.getModule(neighbor));
-        lookup = _Lookup.privateLookupIn(neighbor, lookup);
-      }
+      _JDKAccess.addReads(_JDKAccess.getModule(DefineClass.class), _JDKAccess.getModule(neighbor));
+      lookup = _Lookup.privateLookupIn(neighbor, lookup);
       return _Lookup.defineClass(lookup, bytecodes);
     }
     if (classloaderDefineClassHandle == null) {

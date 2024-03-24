@@ -115,8 +115,10 @@ class _Lookup {
     try {
       // This doesn't have side effect, it's ok to read and assign it in multi-threaded way.
       if (PRIVATE_LOOKUP_IN == null) {
-        PRIVATE_LOOKUP_IN =
+        Method m =
             MethodHandles.class.getDeclaredMethod("privateLookupIn", Class.class, Lookup.class);
+        m.setAccessible(true);
+        PRIVATE_LOOKUP_IN = m;
       }
       return (Lookup) PRIVATE_LOOKUP_IN.invoke(null, targetClass, caller);
     } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
@@ -131,12 +133,15 @@ class _Lookup {
    * same runtime package and {@linkplain java.security.ProtectionDomain protection domain} as this
    * lookup's {@linkplain Lookup#lookupClass() lookup class} as if calling {@link
    * ClassLoader#defineClass(String,byte[],int,int, ProtectionDomain) ClassLoader::defineClass}.
+   * Note that classes in bytecode must be in same package as lookup class.
    */
   public static Class<?> defineClass(Lookup lookup, byte[] bytes) {
     try {
       // This doesn't have side effect, it's ok to read and assign it in multi-threaded way.
       if (DEFINE_CLASS == null) {
-        DEFINE_CLASS = Lookup.class.getDeclaredMethod("defineClass", byte[].class);
+        Method m = Lookup.class.getDeclaredMethod("defineClass", byte[].class);
+        m.setAccessible(true);
+        DEFINE_CLASS = m;
       }
       return (Class<?>) DEFINE_CLASS.invoke(lookup, (Object) bytes);
     } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
