@@ -23,6 +23,7 @@ import java.util.Collections;
 import org.apache.fury.codegen.CompileUnit;
 import org.apache.fury.codegen.JaninoUtils;
 import org.apache.fury.util.ClassLoaderUtils;
+import org.apache.fury.util.Platform;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -55,12 +56,17 @@ public class DefineClassTest {
         new ClassLoaderUtils.ByteArrayClassLoader(Collections.singletonMap(className, bytecodes));
     DefineClass.defineClass(className, DefineClassTest.class, loader, null, bytecodes);
     Class<?> clz = loader.loadClass(className);
-    Assert.assertEquals(clz.getClassLoader(), DefineClassTest.class.getClassLoader());
-    Assert.assertThrows(
-        Exception.class,
-        () -> {
-          DefineClass.defineClass(
-              className, null, DefineClassTest.class.getClassLoader(), null, bytecodes);
-        });
+    if (Platform.JAVA_VERSION >= 9) {
+      Assert.assertEquals(clz.getClassLoader(), DefineClassTest.class.getClassLoader());
+      Assert.assertThrows(
+          Exception.class,
+          () ->
+              DefineClass.defineClass(
+                  className, null, DefineClassTest.class.getClassLoader(), null, bytecodes));
+    } else {
+      Assert.assertEquals(clz.getClassLoader(), loader);
+      DefineClass.defineClass(
+          className, null, DefineClassTest.class.getClassLoader(), null, bytecodes);
+    }
   }
 }
