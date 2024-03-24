@@ -15,26 +15,26 @@ also introduce more complexities compared to static serialization frameworks. So
 
 ### Data Types
 
-- bool: A boolean value (true or false).
-- int8: An 8-bit signed integer.
-- int16: A 16-bit signed integer.
-- int32: A 32-bit signed integer.
-- int64: A 64-bit signed integer.
-- float16: A 16-bit floating point number.
-- float32: A 32-bit floating point number.
-- float64: A 64-bit floating point number including NaN and Infinity.
-- string: A text string encoded using Latin1/UTF16/UTF-8 encoding.
-- enum: A data type consisting of a set of named values. Rust enum with non-predefined field values are not supported as
+- bool: a boolean value (true or false).
+- int8: a 8-bit signed integer.
+- int16: a 16-bit signed integer.
+- int32: a 32-bit signed integer.
+- int64: a 64-bit signed integer.
+- float16: a 16-bit floating point number.
+- float32: a 32-bit floating point number.
+- float64: a 64-bit floating point number including NaN and Infinity.
+- string: a text string encoded using Latin1/UTF16/UTF-8 encoding.
+- enum: a data type consisting of a set of named values. Rust enum with non-predefined field values are not supported as
   an enum.
-- list: A sequence of objects.
-- set: An unordered set of unique elements.
-- map: A map of key-value pairs.
+- list: a sequence of objects.
+- set: an unordered set of unique elements.
+- map: a map of key-value pairs.
 - time types:
-    - Duration: an absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
-    - Timestamp: a point in time, independent of any calendar/timezone, as a count of nanoseconds. The count is relative
+    - duration: an absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
+    - timestamp: a point in time, independent of any calendar/timezone, as a count of nanoseconds. The count is relative
       to an epoch at UTC midnight on January 1, 1970.
 - decimal: exact decimal value represented as an integer value in two's complement.
-- binary: An variable-length array of bytes.
+- binary: an variable-length array of bytes.
 - array type: only allow numeric component. Other arrays will be taken as List. The implementation should support the
   interoperability between array and list.
     - array: multidimensional array which every sub-array can have different size but all have same type.
