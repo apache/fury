@@ -51,14 +51,17 @@
       <artifactId>janino</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.javassist</groupId>
-      <artifactId>javassist</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.apache.fury</groupId>
       <artifactId>fury-test-core</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-core -->
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-core</artifactId>
+      <version>1.19.0</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
@@ -89,17 +92,12 @@
               <artifactSet>
                 <includes>
                   <include>org.codehaus.janino</include>
-                  <include>org.javassist</include>
                 </includes>
               </artifactSet>
               <relocations>
                 <relocation>
                   <pattern>org.codehaus</pattern>
                   <shadedPattern>org.apache.fury.shaded.org.codehaus</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>javassist</pattern>
-                  <shadedPattern>org.apache.fury.shaded.javassist</shadedPattern>
                 </relocation>
               </relocations>
               <filters>
