@@ -35,16 +35,16 @@ also introduce more complexities compared to static serialization frameworks. So
       to an epoch at UTC midnight on January 1, 1970.
 - decimal: exact decimal value represented as an integer value in two's complement.
 - binary: an variable-length array of bytes.
-- array type: only allow numeric component. Other arrays will be taken as List. The implementation should support the
+- array type: only allow numeric components. Other arrays will be taken as List. The implementation should support the
   interoperability between array and list.
-    - array: multidimensional array which every sub-array can have different size but all have same type.
-    - bool_array: one dimension int16 array.
-    - int16_array: one dimension int16 array.
-    - int32_array: one dimension int32 array.
-    - int64_array: one dimension int64 array.
-    - float16_array: one dimension half_float_16 array.
-    - float32_array: one dimension float32 array.
-    - float64_array: one dimension float64 array.
+    - array: multidimensional array which every sub-array can have different sizes but all have same type.
+    - bool_array: one dimensional int16 array.
+    - int16_array: one dimensional int16 array.
+    - int32_array: one dimensional int32 array.
+    - int64_array: one dimensional int64 array.
+    - float16_array: one dimensional half_float_16 array.
+    - float32_array: one dimensional float32 array.
+    - float64_array: one dimensional float64 array.
 - tensor: a multidimensional dense array of fixed-size values such as a NumPy ndarray.
 - sparse tensor: a multidimensional array whose elements are almost all zeros.
 - arrow record batch: an arrow [record batch](https://arrow.apache.org/docs/cpp/tables.html#record-batches) object.
@@ -70,11 +70,11 @@ class Foo2 {
 }
 ```
 
-`intArray` has `int32_array` type. But both `objects` and `objectList` field in the serialize data have `list` data
+`intArray` has an `int32_array` type. But both `objects` and `objectList` fields in the serialize data have `list` data
 type. When deserializing, the implementation will create an `Object` array for `objects`, but create a `ArrayList`
-for `objectList` to populate it's elements. And the serialized data of `Foo` can be deserialized into `Foo2` too.
+for `objectList` to populate its elements. And the serialized data of `Foo` can be deserialized into `Foo2` too.
 
-Users can also provide meta hint for fields of a type, or the type whole. Here is an example in java which use
+Users can also provide meta hints for fields of a type, or the type whole. Here is an example in java which use
 annotation to provide such information.
 
 ```java
@@ -99,7 +99,7 @@ Such information can be provided in other languages too:
 
 ### Type ID
 
-All internal data types are expressed using a ID in range `-64~-1`. Users can use `0~32703` for representing their
+All internal data types are expressed using an ID in range `-64~-1`. Users can use `0~32703` for representing their
 types. At runtime, all type ids are added by `64`, and then encoded as an unsigned varint.
 
 ### Type mapping
@@ -214,8 +214,8 @@ Meta header is a 64 bits number value encoded in little endian order.
   read more bytes for length using Fury unsigned int encoding. If current type doesn't has parent type, or parent
   type doesn't have fields to serialize, or we're in a context which serialize fields of current type
   only, num classes will be 1.
-- 5rd bit is used to indicate whether this type needs schema evolution.
-- Other 56 bits is used to store the unique hash of `flags + all layers type meta`.
+- The 5th bit is used to indicate whether this type needs schema evolution.
+- Other 56 bits are used to store the unique hash of `flags + all layers type meta`.
 - Inheritance: Fury
     - For languages
 
@@ -228,9 +228,9 @@ Meta header is a 64 bits number value encoded in little endian order.
 ```
 
 - num fields: encode `num fields` as unsigned varint.
-    - If current type is schema consistent, then num_fields will be `0` to flag it.
-    - If current type isn't schema consistent, then num_fields will be the number of compatible fields. For example,
-      users can use tag id to mark some field as compatible field in schema consistent context. In such cases, schema
+    - If the current type is schema consistent, then num_fields will be `0` to flag it.
+    - If the current type isn't schema consistent, then num_fields will be the number of compatible fields. For example,
+      users can use tag id to mark some fields as compatible fields in schema consistent context. In such cases, schema
       consistent fields will be serialized first, then compatible fields will be serialized next. At deserialization,
       Fury will use fields info of those fields which aren't annotated by tag id for deserializing schema consistent
       fields, then use fields info in meta for deserializing compatible fields.
@@ -238,8 +238,8 @@ Meta header is a 64 bits number value encoded in little endian order.
     - Header(8 bits):
         - Format:
             - `reserved 1 bit + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag + tag id flag`.
-        - Users can use annotation to provide those info.
-            - tag id: when set to 1, field name will be written by an unsigned varint tag id.
+        - Users can use annotation to provide that info.
+            - tag id: when set to 1, the field name will be written by an unsigned varint tag id.
             - ref tracking: when set to 0, ref tracking will be disabled for this field.
             - nullability: when set to 0, this field won't be null.
             - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
@@ -248,17 +248,16 @@ Meta header is a 64 bits number value encoded in little endian order.
     - Type id:
         - For registered type-consistent classes, it will be the registered type id.
         - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
-          meta
-          for such types is written separately instead of inlining here is to reduce meta space cost if object of this
-          type is serialized in current object graph multiple times, and the field value may be null too.
+          meta for such types is written separately instead of inlining here is to reduce meta space cost if object of
+          this type is serialized in the current object graph multiple times, and the field value may be null too.
     - List Type Info: this type will have an extra byte for elements info.
-      Users can use annotation to provide those info.
+      Users can use annotation to provide that info.
         - elements type same
         - elements tracking ref
         - elements nullability
         - elements declared type
     - Map Type Info: this type will have an extra byte for kv items info.
-      Users can use annotation to provide those info.
+      Users can use annotation to provide that info.
         - keys type same
         - keys tracking ref
         - keys nullability
@@ -335,8 +334,8 @@ for data.
 #### Signed int
 
 - size: 1~5 byte
-- Format: First convert the number into positive unsigned int by `(v << 1) ^ (v >> 31)` ZigZag algorithm, then encoding
-  it as an unsigned int.
+- Format: First convert the number into positive unsigned int by `(v << 1) ^ (v >> 31)` ZigZag algorithm, then encode
+  it as an unsigned varint.
 
 #### Unsigned long
 
@@ -403,9 +402,9 @@ information to avoid the cost of writing it for every element. Specifically, the
 which will be encoded by elements header, each use one bit:
 
 - If track elements ref, use the first bit `0b1` of the header to flag it.
-- If the elements has null, use the second bit `0b10` of the header to flag it. If ref tracking is enabled for this
+- If the elements have null, use the second bit `0b10` of the header to flag it. If ref tracking is enabled for this
   element type, this flag is invalid.
-- If the element types are not declared type, use the 3rd bit `0b100` of the header to flag it.
+- If the element types are not the declared type, use the 3rd bit `0b100` of the header to flag it.
 - If the element types are different, use the 4rd bit `0b1000` header to flag it.
 
 By default, all bits are unset, which means all elements won't track ref, all elements are same type, not null and
@@ -446,10 +445,10 @@ Format:
 
 Map iteration is too expensive, Fury won't compute the header like for list since it introduce
 [considerable overhead](https://github.com/apache/incubator-fury/issues/925).
-Users can use `MapFieldInfo` annotation to provide header in advance. Otherwise Fury will use first key-value pair to
-predict header optimistically, and update the chunk header if the prediction failed at some pair.
+Users can use `MapFieldInfo` annotation to provide the header in advance. Otherwise Fury will use first key-value pair
+to predict header optimistically, and update the chunk header if the prediction failed at some pair.
 
-Fury will serialize map chunk by chunk, every chunk has 127 pairs at most.
+Fury will serialize the map chunk by chunk, every chunk has 127 pairs at most.
 
 ```
 |    1 byte      |     1 byte     | variable bytes  |
@@ -463,11 +462,11 @@ KV header:
 - If the key has null, use the second bit `0b10` of the header to flag it. If ref tracking is enabled for this
   key type, this flag is invalid.
 - If the key types of map are different, use the 3rd bit `0b100` of the header to flag it.
-- If the actual key type of map is not the declared key type, use the 4rd bit `0b1000` of the header to flag it.
+- If the actual key type of the map is not the declared key type, use the 4rd bit `0b1000` of the header to flag it.
 - If track value ref, use the 5th bit `0b10000` of the header to flag it.
 - If the value has null, use the 6th bit `0b100000` of the header to flag it. If ref tracking is enabled for this
   value type, this flag is invalid.
-- If the value types of map are different, use the 7rd bit `0b1000000` header to flag it.
+- If the value types of the map are different, use the 7rd bit `0b1000000` header to flag it.
 - If the value type of map is not the declared value type, use the 8rd bit `0b10000000` of the header to flag it.
 
 If streaming write is enabled, which means Fury can't update written `chunk size`. In such cases, map key-value data
@@ -480,7 +479,7 @@ format will be:
 ```
 
 `KV header` will be a header marked by `MapFieldInfo` in java. For languages such as golang, this can be computed in
-advance for non-interface types in most times.
+advance for non-interface types most times.
 
 ### Enum
 
@@ -571,20 +570,20 @@ Type will be serialized using type meta format.
 ### Fast deserialization for static languages without runtime codegen support
 
 For type evolution, the serializer will encode the type meta into the serialized data. The deserializer will compare
-this meta with class meta in current process, and use the diff to determine how to deserialize the data.
+this meta with class meta in the current process, and use the diff to determine how to deserialize the data.
 
 For java/javascript/python, we can use the diff to generate serializer code at runtime and load it as class/function for
 deserialization. In this way, the type evolution will be as fast as type consist mode.
 
 For C++/Rust, we can't generate the serializer code at runtime. So we need to generate the code at compile-time using
-meta programing. But at that time, we don't know the type schema in other processes, so we can't generate the serializer
-code for such inconsistent types. We may need to generate the code which has a loop and compare field name one by one to
-decide whether deserialize and assign the field or skip the field value.
+meta programming. But at that time, we don't know the type schema in other processes, so we can't generate the
+serializer code for such inconsistent types. We may need to generate the code which has a loop and compare field name
+one by one to decide whether to deserialize and assign the field or skip the field value.
 
 One fast way is that we can optimize the string comparison into `jump` instructions:
 
-- Assume current type has `n` fields, peer type has `n1` fields.
-- Generate an auto growing `field id` from `0` for every sorted field in current type at the compile time.
+- Assume the current type has `n` fields, and the peer type has `n1` fields.
+- Generate an auto growing `field id` from `0` for every sorted field in the current type at the compile time.
 - Compare the received type meta with current type, generate same id if the field name is same, otherwise generate an
   auto growing id starting from `n`, cache this meta at runtime.
 - Iterate the fields of received type meta, use a `switch` to compare the `field id` to deserialize data
