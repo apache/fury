@@ -598,7 +598,7 @@ with version 2 defined as `Foo2`:
 class Foo1 {
   int32_t v1; // id 0
   std::string v2; // id 1
-}
+};
 // class Foo with version 2
 class Foo2 {
   // id 0, but will have id 2 in process A
@@ -611,7 +611,7 @@ class Foo2 {
   std::string v2;
   // id 4, but will have id 4 in process A
   std::vector<std::string> list;
-}
+};
 ```
 
 When process A received serialized `Foo2` from process B, here is how it deserialize the data:
