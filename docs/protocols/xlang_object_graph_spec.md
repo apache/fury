@@ -340,6 +340,9 @@ for data.
 #### unsigned int64
 
 - size: 1~9 byte
+- Fury SLI(Small long as int) Encoding:
+    - If long is in `[0, 2147483647]`, encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
+    - Otherwise write as 9 bytes: `| 0b1 | little-endian 8 bytes long |`
 - Fury PVL(Progressive Variable-length Long) Encoding:
     - positive long format: first bit in every byte indicates whether to have the next byte. If first bit is set
       i.e. `b & 0x80 == 0x80`, then the next byte should be read until the first bit is unset.
@@ -348,10 +351,10 @@ for data.
 
 - size: 1~9 byte
 - Fury SLI(Small long as int) Encoding:
-    - If long is in [-1073741824, 1073741823], encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
+    - If long is in `[-1073741824, 1073741823]`, encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
     - Otherwise write as 9 bytes: `| 0b1 | little-endian 8 bytes long |`
 - Fury PVL(Progressive Variable-length Long) Encoding:
-    - First convert the number into positive unsigned long by ` (v << 1) ^ (v >> 63)` ZigZag algorithm to reduce cost of
+    - First convert the number into positive unsigned long by `(v << 1) ^ (v >> 63)` ZigZag algorithm to reduce cost of
       small negative numbers, then encoding it as an unsigned long.
 
 #### float32
