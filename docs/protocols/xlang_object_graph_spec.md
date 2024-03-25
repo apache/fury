@@ -19,7 +19,12 @@ also introduce more complexities compared to static serialization frameworks. So
 - int8: a 8-bit signed integer.
 - int16: a 16-bit signed integer.
 - int32: a 32-bit signed integer.
+- var_int32: a 32-bit signed integer which use fury var_int32 encoding.
+- fixed_int32: a 32-bit signed integer which use two's complement encoding.
 - int64: a 64-bit signed integer.
+- var_int64: a 64-bit signed integer which use fury PVL encoding.
+- sli_int64: a 64-bit signed integer which use fury SLI encoding.
+- fixed_int64: a 64-bit signed integer which use two's complement encoding.
 - float16: a 16-bit floating point number.
 - float32: a 32-bit floating point number.
 - float64: a 64-bit floating point number including NaN and Infinity.
@@ -49,6 +54,10 @@ also introduce more complexities compared to static serialization frameworks. So
 - sparse tensor: a multidimensional array whose elements are almost all zeros.
 - arrow record batch: an arrow [record batch](https://arrow.apache.org/docs/cpp/tables.html#record-batches) object.
 - arrow table: an arrow [table](https://arrow.apache.org/docs/cpp/tables.html#tables) object.
+
+Note:
+
+- Unsigned int/long are not added here, since not every language support those types.
 
 ### Type disambiguation
 
