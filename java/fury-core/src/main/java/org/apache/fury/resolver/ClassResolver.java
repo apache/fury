@@ -297,6 +297,7 @@ public class ClassResolver {
     register(HashSet.class, HASHSET_CLASS_ID);
     register(Class.class, CLASS_CLASS_ID);
     register(Object.class, EMPTY_OBJECT_ID);
+    registerCommonUsedClasses();
     registerDefaultClasses();
     addDefaultSerializers();
     shimDispatcher.initialize();
@@ -352,12 +353,18 @@ public class ClassResolver {
     register(type);
   }
 
-  private void registerDefaultClasses() {
+  /** Register common class ahead to get smaller class id for serialization. */
+  private void registerCommonUsedClasses() {
     register(LinkedList.class, TreeSet.class);
     register(LinkedHashMap.class, TreeMap.class);
     register(Date.class, Timestamp.class, LocalDateTime.class, Instant.class);
     register(BigInteger.class, BigDecimal.class);
     register(Optional.class, OptionalInt.class);
+    register(Boolean[].class, Byte[].class, Short[].class, Character[].class);
+    register(Integer[].class, Float[].class, Long[].class, Double[].class);
+  }
+
+  private void registerDefaultClasses() {
     register(ByteBuffer.allocate(1).getClass());
     register(ByteBuffer.allocateDirect(1).getClass());
     register(Comparator.naturalOrder().getClass());
