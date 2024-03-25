@@ -40,7 +40,7 @@ except FileExistsError:
 
 pyarrow_version = "12.0.0"
 # Check if we're running 64-bit Python
-if not sys.maxsize > 2 ** 32:
+if not sys.maxsize > 2**32:
     raise RuntimeError("Not supported on 32-bit")
 
 if Cython.__version__ < "0.29":
@@ -142,11 +142,11 @@ setup(
     include_package_data=True,
     packages=find_packages(),
     description="Apache Fury™(incubating) is a blazing fast multi-language serialization "
-                + "framework powered by jit and zero-copy",
+    + "framework powered by jit and zero-copy",
     long_description=long_description,
     long_description_content_type="text/markdown",
     keywords="fury serialization multi-language arrow row-format jit "
-             + "codegen polymorphic zero-copy",
+    + "codegen polymorphic zero-copy",
     classfiers=[
         "License :: OSI Approved :: Apache Software License",
         "Development Status :: 4 - Beta",
