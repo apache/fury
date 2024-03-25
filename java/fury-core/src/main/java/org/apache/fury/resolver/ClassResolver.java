@@ -372,8 +372,6 @@ public class ClassResolver {
     register(ConcurrentHashMap.class);
     register(ArrayBlockingQueue.class);
     register(LinkedBlockingQueue.class);
-    register(Boolean[].class, Byte[].class, Short[].class, Character[].class);
-    register(Integer[].class, Float[].class, Long[].class, Double[].class);
     register(AtomicBoolean.class);
     register(AtomicInteger.class);
     register(AtomicLong.class);
