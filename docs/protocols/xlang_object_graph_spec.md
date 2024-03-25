@@ -511,6 +511,17 @@ Field will be ordered as following, every group of fields will have its own orde
 
 #### schema consistent
 
+Object will be written as:
+
+```
+|    4 byte     |  variable bytes  |
++---------------+------------------+
+|   type hash   |   field values   |
+```
+
+Type hash is used to check the type schema consistency across languages. Type hash will be the first 32 bits of 56 bits
+value of the type meta.
+
 Object fields will be serialized one by one using following format:
 
 ```
