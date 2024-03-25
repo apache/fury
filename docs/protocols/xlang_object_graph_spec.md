@@ -617,9 +617,9 @@ class Foo2 {
 When process A received serialized `Foo2` from process B, here is how it deserialize the data:
 
 ```c++
-Foo1 &foo1 = xxx;
-std::vector<fury::FieldInfo> &field_infos = type_meta.field_infos;
-for (auto &field_info : field_infos) {
+Foo1 foo1 = ...;
+const std::vector<fury::FieldInfo> &field_infos = type_meta.field_infos;
+for (const auto &field_info : field_infos) {
   switch (field_info.field_id) {
     case 0:
       foo1.v1 = buffer.read_varint32();
