@@ -309,42 +309,42 @@ for data.
 
 ### Basic types
 
-#### Bool
+#### bool
 
 - size: 1 byte
 - format: 0 for `false`, 1 for `true`
 
-#### Byte
+#### int8
 
 - size: 1 byte
 - format: write as pure byte.
 
-#### Short
+#### int16
 
 - size: 2 byte
 - byte order: little endian order
 
-#### Unsigned int
+#### unsigned int32
 
 - size: 1~5 byte
 - Format: The most significant bit (MSB) in every byte indicates whether to have the next byte. If first bit is set
   i.e. `b & 0x80 == 0x80`, then
   the next byte should be read until the first bit of the next byte is unset.
 
-#### Signed int
+#### signed int32
 
 - size: 1~5 byte
 - Format: First convert the number into positive unsigned int by `(v << 1) ^ (v >> 31)` ZigZag algorithm, then encode
   it as an unsigned varint.
 
-#### Unsigned long
+#### unsigned int64
 
 - size: 1~9 byte
 - Fury PVL(Progressive Variable-length Long) Encoding:
     - positive long format: first bit in every byte indicates whether to have the next byte. If first bit is set
       i.e. `b & 0x80 == 0x80`, then the next byte should be read until the first bit is unset.
 
-#### Signed long
+#### signed int64
 
 - size: 1~9 byte
 - Fury SLI(Small long as int) Encoding:
@@ -354,19 +354,19 @@ for data.
     - First convert the number into positive unsigned long by ` (v << 1) ^ (v >> 63)` ZigZag algorithm to reduce cost of
       small negative numbers, then encoding it as an unsigned long.
 
-#### Float
+#### float32
 
 - size: 4 byte
 - format: encode the specified floating-point value according to the IEEE 754 floating-point "single format" bit layout,
   preserving Not-a-Number (NaN) values, then write as binary by little endian order.
 
-#### Double
+#### float64
 
 - size: 8 byte
 - format: encode the specified floating-point value according to the IEEE 754 floating-point "double format" bit layout,
   preserving Not-a-Number (NaN) values. then write as binary by little endian order.
 
-### String
+### string
 
 Format:
 
@@ -387,7 +387,7 @@ Which encoding to choose:
 - If the string is encoded by `utf-8`, then fury will use `utf-8` to decode the data. But currently fury doesn't enable
   utf-8 encoding by default for java. Cross-language string serialization of fury uses `utf-8` by default.
 
-### List
+### list
 
 Format:
 
@@ -395,7 +395,7 @@ Format:
 length(unsigned varint) | elements header | elements data
 ```
 
-#### Elements header
+#### elements header
 
 In most cases, all elements are same type and not null, elements header will encode those homogeneous
 information to avoid the cost of writing it for every element. Specifically, there are four kinds of information
@@ -410,15 +410,15 @@ which will be encoded by elements header, each use one bit:
 By default, all bits are unset, which means all elements won't track ref, all elements are same type, not null and
 the actual element is the declared type in the custom type field.
 
-#### Elements data
+#### elements data
 
 Based on the elements header, the serialization of elements data may skip `ref flag`/`null flag`/`element type info`.
 
 `CollectionSerializer#write/read` can be taken as an example.
 
-### Array
+### array
 
-#### Primitive array
+#### primitive array
 
 Primitive array are taken as a binary buffer, serialization will just write the length of array size as an unsigned int,
 then copy the whole buffer into the stream.
@@ -426,12 +426,12 @@ then copy the whole buffer into the stream.
 Such serialization won't compress the array. If users want to compress primitive array, users need to register custom
 serializers for such types.
 
-#### Object array
+#### object array
 
 Object array is serialized using the list format. Object component type will be taken as list element
 generic type.
 
-### Map
+### map
 
 > All Map serializers must extend `AbstractMapSerializer`.
 
@@ -441,7 +441,7 @@ Format:
 | length(unsigned varint) | key value chunk data | ... | key value chunk data |
 ```
 
-#### Map Key-Value data
+#### map key-value data
 
 Map iteration is too expensive, Fury won't compute the header like for list since it introduce
 [considerable overhead](https://github.com/apache/incubator-fury/issues/925).
@@ -481,24 +481,24 @@ format will be:
 `KV header` will be a header marked by `MapFieldInfo` in java. For languages such as golang, this can be computed in
 advance for non-interface types most times.
 
-### Enum
+### enum
 
 Enums are serialized as an unsigned var int. If the order of enum values change, the deserialized enum value may not be
 the value users expect. In such cases, users must register enum serializer by make it write enum value as an enumerated
 string with unique hash disabled.
 
-### Decimal
+### decimal
 
 Not supported for now.
 
-### Object
+### struct
 
-Object means object of `pojo/struct/bean/record` type.
-Object will be serialized by writing its fields data in fury order.
+Struct means object of `class/pojo/struct/bean/record` type.
+Struct will be serialized by writing its fields data in fury order.
 
-Depending on schema compatibility, objects will have different formats.
+Depending on schema compatibility, structs will have different formats.
 
-#### Field order
+#### field order
 
 Field will be ordered as following, every group of fields will have its own order:
 
@@ -509,17 +509,17 @@ Field will be ordered as following, every group of fields will have its own orde
 - map fields: same order as final fields
 - other fields: same order as final fields
 
-#### Schema consistent
+#### schema consistent
 
 Object fields will be serialized one by one using following format:
 
 ```
-Primitive field value:
+not null primitive field value:
 |   var bytes    |
 +----------------+
 |   value data   |
 +----------------+
-Boxed field value:
+nullable primitive field value:
 | one byte  |   var bytes   |
 +-----------+---------------+
 | null flag |  field value  |
