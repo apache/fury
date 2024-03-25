@@ -58,7 +58,7 @@ public class ClassInfo {
     this.typeTagBytes = typeTagBytes;
     this.serializer = serializer;
     this.classId = classId;
-    if (cls != null && classId == ClassResolver.NO_CLASS_ID) {
+    if (cls != null && classId == ClassIdAllocator.BuiltinClassId.NO_CLASS_ID) {
       Preconditions.checkArgument(classNameBytes != null);
     }
   }
@@ -78,7 +78,8 @@ public class ClassInfo {
       this.fullClassNameBytes = null;
     }
     if (cls != null
-        && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
+        && (classId == ClassIdAllocator.BuiltinClassId.NO_CLASS_ID
+            || classId == ClassIdAllocator.BuiltinClassId.REPLACE_STUB_ID)) {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       String packageName = ReflectionUtils.getPackage(cls);
       this.packageNameBytes = enumStringResolver.getOrCreateEnumStringBytes(packageName);
@@ -100,10 +101,10 @@ public class ClassInfo {
       boolean isProxy = ReflectionUtils.isJdkProxy(cls);
       this.isDynamicGeneratedClass = isLambda || isProxy;
       if (isLambda) {
-        this.classId = ClassResolver.LAMBDA_STUB_ID;
+        this.classId = ClassIdAllocator.BuiltinClassId.LAMBDA_STUB_ID;
       }
       if (isProxy) {
-        this.classId = ClassResolver.JDK_PROXY_STUB_ID;
+        this.classId = ClassIdAllocator.BuiltinClassId.JDK_PROXY_STUB_ID;
       }
     } else {
       this.isDynamicGeneratedClass = false;

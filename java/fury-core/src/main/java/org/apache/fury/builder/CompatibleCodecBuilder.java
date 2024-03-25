@@ -65,8 +65,8 @@ import org.apache.fury.codegen.Expression.While;
 import org.apache.fury.codegen.ExpressionOptimizer;
 import org.apache.fury.codegen.ExpressionUtils;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.resolver.ClassIdAllocator.BuiltinClassId;
 import org.apache.fury.resolver.ClassInfo;
-import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
 import org.apache.fury.resolver.FieldResolver.CollectionFieldInfo;
 import org.apache.fury.resolver.FieldResolver.FieldInfo;
@@ -879,7 +879,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   protected Expression writeFinalClassInfo(Expression buffer, Class<?> cls) {
     Preconditions.checkArgument(ReflectionUtils.isMonomorphic(cls));
     ClassInfo classInfo = visitFury(f -> f.getClassResolver().getClassInfo(cls, false));
-    if (classInfo != null && classInfo.getClassId() != ClassResolver.NO_CLASS_ID) {
+    if (classInfo != null && classInfo.getClassId() != BuiltinClassId.NO_CLASS_ID) {
       return fury.getClassResolver().writeClassExpr(buffer, classInfo.getClassId());
     }
     Expression classInfoExpr = getFinalClassInfo(cls);
@@ -889,7 +889,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   protected Expression skipFinalClassInfo(Class<?> cls, Expression buffer) {
     Preconditions.checkArgument(ReflectionUtils.isMonomorphic(cls));
     ClassInfo classInfo = visitFury(f -> f.getClassResolver().getClassInfo(cls, false));
-    if (classInfo != null && classInfo.getClassId() != ClassResolver.NO_CLASS_ID) {
+    if (classInfo != null && classInfo.getClassId() != BuiltinClassId.NO_CLASS_ID) {
       return fury.getClassResolver().skipRegisteredClassExpr(buffer);
     }
     // read `ClassInfo` is not used, set `inlineReadClassInfo` false,

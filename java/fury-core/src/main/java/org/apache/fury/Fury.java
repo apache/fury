@@ -42,6 +42,7 @@ import org.apache.fury.config.LongEncoding;
 import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.ClassIdAllocator.BuiltinClassId;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -518,35 +519,35 @@ public final class Fury implements BaseFury {
   /** Write not null data to buffer. */
   private void writeData(MemoryBuffer buffer, ClassInfo classInfo, Object obj) {
     switch (classInfo.getClassId()) {
-      case ClassResolver.BOOLEAN_CLASS_ID:
+      case BuiltinClassId.BOOLEAN_CLASS_ID:
         buffer.writeBoolean((Boolean) obj);
         break;
-      case ClassResolver.BYTE_CLASS_ID:
+      case BuiltinClassId.BYTE_CLASS_ID:
         buffer.writeByte((Byte) obj);
         break;
-      case ClassResolver.CHAR_CLASS_ID:
+      case BuiltinClassId.CHAR_CLASS_ID:
         buffer.writeChar((Character) obj);
         break;
-      case ClassResolver.SHORT_CLASS_ID:
+      case BuiltinClassId.SHORT_CLASS_ID:
         buffer.writeShort((Short) obj);
         break;
-      case ClassResolver.INTEGER_CLASS_ID:
+      case BuiltinClassId.INTEGER_CLASS_ID:
         if (compressInt) {
           buffer.writeVarInt((Integer) obj);
         } else {
           buffer.writeInt((Integer) obj);
         }
         break;
-      case ClassResolver.FLOAT_CLASS_ID:
+      case BuiltinClassId.FLOAT_CLASS_ID:
         buffer.writeFloat((Float) obj);
         break;
-      case ClassResolver.LONG_CLASS_ID:
+      case BuiltinClassId.LONG_CLASS_ID:
         LongSerializer.writeLong(buffer, (Long) obj, longEncoding);
         break;
-      case ClassResolver.DOUBLE_CLASS_ID:
+      case BuiltinClassId.DOUBLE_CLASS_ID:
         buffer.writeDouble((Double) obj);
         break;
-      case ClassResolver.STRING_CLASS_ID:
+      case BuiltinClassId.STRING_CLASS_ID:
         stringSerializer.writeJavaString(buffer, (String) obj);
         break;
         // TODO(add fastpath for other types)
@@ -888,27 +889,27 @@ public final class Fury implements BaseFury {
 
   private Object readDataInternal(MemoryBuffer buffer, ClassInfo classInfo) {
     switch (classInfo.getClassId()) {
-      case ClassResolver.BOOLEAN_CLASS_ID:
+      case BuiltinClassId.BOOLEAN_CLASS_ID:
         return buffer.readBoolean();
-      case ClassResolver.BYTE_CLASS_ID:
+      case BuiltinClassId.BYTE_CLASS_ID:
         return buffer.readByte();
-      case ClassResolver.CHAR_CLASS_ID:
+      case BuiltinClassId.CHAR_CLASS_ID:
         return buffer.readChar();
-      case ClassResolver.SHORT_CLASS_ID:
+      case BuiltinClassId.SHORT_CLASS_ID:
         return buffer.readShort();
-      case ClassResolver.INTEGER_CLASS_ID:
+      case BuiltinClassId.INTEGER_CLASS_ID:
         if (compressInt) {
           return buffer.readVarInt();
         } else {
           return buffer.readInt();
         }
-      case ClassResolver.FLOAT_CLASS_ID:
+      case BuiltinClassId.FLOAT_CLASS_ID:
         return buffer.readFloat();
-      case ClassResolver.LONG_CLASS_ID:
+      case BuiltinClassId.LONG_CLASS_ID:
         return LongSerializer.readLong(buffer, longEncoding);
-      case ClassResolver.DOUBLE_CLASS_ID:
+      case BuiltinClassId.DOUBLE_CLASS_ID:
         return buffer.readDouble();
-      case ClassResolver.STRING_CLASS_ID:
+      case BuiltinClassId.STRING_CLASS_ID:
         return stringSerializer.readJavaString(buffer);
         // TODO(add fastpath for other types)
       default:

@@ -36,6 +36,7 @@ import org.apache.fury.collection.Tuple3;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassIdAllocator.BuiltinClassId;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -216,8 +217,8 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         assert fieldInfo.classInfo != null;
         short classId = fieldInfo.classId;
         // primitive field won't write null flag.
-        if (classId >= ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID
-            && classId <= ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID) {
+        if (classId >= BuiltinClassId.PRIMITIVE_BOOLEAN_CLASS_ID
+            && classId <= BuiltinClassId.PRIMITIVE_DOUBLE_CLASS_ID) {
           fields[counter++] = Serializers.readPrimitiveValue(fury, buffer, classId);
         } else {
           Object fieldValue =
@@ -253,32 +254,32 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
   /** Skip primitive primitive field value since it doesn't write null flag. */
   static boolean skipPrimitiveFieldValueFailed(Fury fury, short classId, MemoryBuffer buffer) {
     switch (classId) {
-      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_BOOLEAN_CLASS_ID:
         buffer.increaseReaderIndex(1);
         return false;
-      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_BYTE_CLASS_ID:
         buffer.increaseReaderIndex(1);
         return false;
-      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_CHAR_CLASS_ID:
         buffer.increaseReaderIndex(2);
         return false;
-      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_SHORT_CLASS_ID:
         buffer.increaseReaderIndex(2);
         return false;
-      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
           buffer.readVarInt();
         } else {
           buffer.increaseReaderIndex(4);
         }
         return false;
-      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_FLOAT_CLASS_ID:
         buffer.increaseReaderIndex(4);
         return false;
-      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_LONG_CLASS_ID:
         fury.readLong(buffer);
         return false;
-      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+      case BuiltinClassId.PRIMITIVE_DOUBLE_CLASS_ID:
         buffer.increaseReaderIndex(8);
         return false;
       default:
