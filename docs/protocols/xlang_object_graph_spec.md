@@ -190,12 +190,28 @@ varint of `type_id`.
 
 If schema evolution mode is enabled globally or enabled for current type, type meta will be written as follows:
 
-- If meta share mode is not enabled, type meta will be written as schema consistent mode. Additionally, field meta such
-  as field type and name will be written with the field value using a key-value like layout.
-- If meta share mode is enabled, type meta will be written as a meta-share encoded binary if type hasn't been written
-  before, otherwise an unsigned varint id which references to previous written type meta will be written.
+- If meta share mode is not enabled:
+    - If type meta hasn't been written before, the data will be written as:
+      ```
+      | unsigned varint: 0b11111111 | type def |
+      ```
+    - If type meta has been written before, the data will be written as:
+      ```
+      | unsigned varint: written index << 1 | type def |
+      ```
+- If meta share mode is enabled:
+    - If type meta hasn't been written before, add `type def` to `MetaContext`, then get
+      index of the meta in `MetaContext`, write that index as an unsigned varint.
+    - The type meta in `MetaContext` will be carried into the serialized data when the type is first serialized in a
+      batch. That what's `optional 4 bytes` used for. It records the start offset of serialized type defs which not in
+      provided `MetaContext` in current object graph serialization. Type defs
+      ```python
+      buffer.write_var_uint32(len(writting_type_metas))
+      for type_meta in writting_type_metas:
+          type_meta.write_type_def(buffer)
+      ```
 
-## Meta share
+#### Type Def
 
 > This mode will forbid streaming writing since it needs to look back for update the start offset after the whole object
 > graph
@@ -204,8 +220,7 @@ If schema evolution mode is enabled globally or enabled for current type, type m
 > Meta streamline will be supported in the future for enclosed meta sharing which doesn't cross multiple serializations
 > of different objects.
 
-For Schema consistent mode, type will be encoded as an enumerated string by full type name. Here we mainly describe
-the meta layout for schema evolution mode:
+Here we mainly describe the meta layout for schema evolution mode:
 
 ```
 |      8 bytes meta header      |   variable bytes   |  variable bytes   | variable bytes |
@@ -215,7 +230,7 @@ the meta layout for schema evolution mode:
 
 Type meta are encoded from parent type to leaf type, only type with serializable fields will be encoded.
 
-### Meta header
+##### Meta header
 
 Meta header is a 64 bits number value encoded in little endian order.
 
@@ -225,10 +240,8 @@ Meta header is a 64 bits number value encoded in little endian order.
   only, num classes will be 1.
 - The 5th bit is used to indicate whether this type needs schema evolution.
 - Other 56 bits are used to store the unique hash of `flags + all layers type meta`.
-- Inheritance: Fury
-    - For languages
 
-### Single layer type meta
+##### Single layer type meta
 
 ```
 | unsigned varint | var uint |  field info: variable bytes   | variable bytes  | ... |
@@ -243,7 +256,8 @@ Meta header is a 64 bits number value encoded in little endian order.
       consistent fields will be serialized first, then compatible fields will be serialized next. At deserialization,
       Fury will use fields info of those fields which aren't annotated by tag id for deserializing schema consistent
       fields, then use fields info in meta for deserializing compatible fields.
-- Field info:
+- type id: the registered id for the current type, which will be written as an unsigned varint.
+- field info:
     - Header(8 bits):
         - Format:
             - `reserved 1 bit + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag + tag id flag`.
@@ -282,7 +296,7 @@ Field order are left as implementation details, which is not exposed to specific
 resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
 using a more compact encoding.
 
-### Other layers type meta
+##### Other layers type meta
 
 Same encoding algorithm as the previous layer.
 
@@ -573,8 +587,8 @@ field value of non-final type without ref tracking:
 
 Schema evolution have similar format as schema consistent mode for object except:
 
-- For this object type itself, `schema consistent` mode will write type by id/name, but `schema evolution` mode will
-  write type field names, types and other meta too, see [Type meta](#type-meta).
+- For the object type, `schema consistent` mode will write type by id only, but `schema evolution` mode will
+  write type consisting of field names, types and other meta too, see [Type meta](#type-meta).
 - Type meta of `final custom type` needs to be written too, because peers may not have this type defined.
 
 ### Type
