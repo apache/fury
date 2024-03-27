@@ -460,7 +460,8 @@ the actual element is the declared type in the custom type field.
 
 Based on the elements header, the serialization of elements data may skip `ref flag`/`null flag`/`element type info`.
 
-`CollectionSerializer#write/read` can be taken as an example.
+[`CollectionSerializer#writeElements`](https://github.com/apache/incubator-fury/blob/20a1a78b17a75a123a6f5b7094c06ff77defc0fe/java/fury-core/src/main/java/org/apache/fury/serializer/collection/AbstractCollectionSerializer.java#L302)
+can be taken as an example.
 
 ### array
 
