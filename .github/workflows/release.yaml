@@ -26,6 +26,7 @@ jobs:
   release-python:
     name: Publish Fury Python to PyPI
     runs-on: ubuntu-20.04
+    if: github.repository == 'apache/incubator-fury'
     environment:
       name: pypi
       url: https://pypi.org/project/pyfury
@@ -33,9 +34,9 @@ jobs:
       matrix:
         python-version: [3.7, 3.8, 3.9, 3.10.12, 3.11, 3.12]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install bazel
