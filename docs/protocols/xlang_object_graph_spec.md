@@ -345,9 +345,14 @@ for data.
 #### int16
 
 - size: 2 byte
-- byte order: little endian order
+- byte order: raw bytes of little endian order
 
 #### unsigned int32
+
+- size: 4 byte
+- byte order: raw bytes of little endian order
+
+#### unsigned varint32
 
 - size: 1~5 byte
 - Format: The most significant bit (MSB) in every byte indicates whether to have the next byte. If first bit is set
@@ -356,11 +361,21 @@ for data.
 
 #### signed int32
 
+- size: 4 byte
+- byte order: raw bytes of little endian order
+
+#### signed varint32
+
 - size: 1~5 byte
 - Format: First convert the number into positive unsigned int by `(v << 1) ^ (v >> 31)` ZigZag algorithm, then encode
   it as an unsigned varint.
 
 #### unsigned int64
+
+- size: 8 byte
+- byte order: raw bytes of little endian order
+
+#### unsigned varint64
 
 - size: 1~9 byte
 - Fury SLI(Small long as int) Encoding:
@@ -371,6 +386,11 @@ for data.
       i.e. `b & 0x80 == 0x80`, then the next byte should be read until the first bit is unset.
 
 #### signed int64
+
+- size: 8 byte
+- byte order: raw bytes of little endian order
+
+#### signed varint64
 
 - size: 1~9 byte
 - Fury SLI(Small long as int) Encoding:
