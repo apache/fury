@@ -471,7 +471,7 @@ Primitive array are taken as a binary buffer, serialization will just write the 
 then copy the whole buffer into the stream.
 
 Such serialization won't compress the array. If users want to compress primitive array, users need to register custom
-serializers for such types.
+serializers for such types or mark it as list type.
 
 #### object array
 
@@ -488,7 +488,7 @@ Format:
 | length(unsigned varint) | key value chunk data | ... | key value chunk data |
 ```
 
-#### map key-value data
+#### map key-value chunk data
 
 Map iteration is too expensive, Fury won't compute the header like for list since it introduce
 [considerable overhead](https://github.com/apache/incubator-fury/issues/925).
