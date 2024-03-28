@@ -35,22 +35,22 @@ def bump_version(**kwargs):
         if lang == "java":
             bump_java_version(new_version)
         elif lang == "scala":
-            _bump_version("scala", "build.sbt", new_version, _bump_scala_version)
+            _bump_version("scala", "build.sbt", new_version, _update_scala_version)
         elif lang == "rust":
-            _bump_version("rust", "Cargo.toml", new_version, _bump_rust_version)
+            _bump_version("rust", "Cargo.toml", new_version, _update_rust_version)
         elif lang == "python":
             _bump_version(
-                "python/pyfury", "__init__.py", new_version, _bump_python_version
+                "python/pyfury", "__init__.py", new_version, _update_python_version
             )
         elif lang == "javascript":
             _bump_version(
                 "javascript/packages/fury",
                 "package.json",
                 new_version,
-                _bump_js_version,
+                _update_js_version,
             )
             _bump_version(
-                "javascript/packages/hps", "package.json", new_version, _bump_js_version
+                "javascript/packages/hps", "package.json", new_version, _update_js_version
             )
         else:
             raise NotImplemented(f"Unsupported {lang}")
@@ -75,7 +75,7 @@ def bump_java_version(new_version):
         "integration_tests/latest_jdk_tests",
         "java/benchmark",
     ]:
-        _bump_version(p, "pom.xml", new_version, _bump_pom_parent_version)
+        _bump_version(p, "pom.xml", new_version, _update_pom_parent_version)
     os.chdir(os.path.join(PROJECT_ROOT_DIR, "java"))
     subprocess.check_output(
         f"mvn versions:set -DnewVersion={new_version}",
@@ -84,7 +84,7 @@ def bump_java_version(new_version):
     )
 
 
-def _bump_pom_parent_version(lines, new_version):
+def _update_pom_parent_version(lines, new_version):
     start_index, end_index = -1, -1
     for i, line in enumerate(lines):
         if "<parent>" in line:
@@ -103,7 +103,7 @@ def _bump_pom_parent_version(lines, new_version):
             lines[line_number] = line
 
 
-def _bump_scala_version(lines, v):
+def _update_scala_version(lines, v):
     for index, line in enumerate(lines):
         if "furyVersion = " in line:
             lines[index] = f'val furyVersion = "{v}"\n'
@@ -111,7 +111,7 @@ def _bump_scala_version(lines, v):
     return lines
 
 
-def _bump_rust_version(lines, v):
+def _update_rust_version(lines, v):
     for index, line in enumerate(lines):
         if "version = " in line:
             lines[index] = f'version = "{v}"\n'
@@ -119,7 +119,7 @@ def _bump_rust_version(lines, v):
     return lines
 
 
-def _bump_python_version(lines, v: str):
+def _update_python_version(lines, v: str):
     for index, line in enumerate(lines):
         if "version = " in line:
             v = v.replace("-alpha", "a")
@@ -129,7 +129,7 @@ def _bump_python_version(lines, v: str):
             break
 
 
-def _bump_js_version(lines, v: str):
+def _update_js_version(lines, v: str):
     for index, line in enumerate(lines):
         if "version" in line:
             # "version": "0.5.9-beta"
