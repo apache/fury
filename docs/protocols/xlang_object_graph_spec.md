@@ -190,7 +190,36 @@ varint of `type_id`.
 
 If schema evolution mode is enabled globally or enabled for current type, type meta will be written as follows:
 
-- If meta share mode is not enabled:
+- Normal mode(meta share not enabled):
+    - If type meta hasn't been written before, add `type def`
+      to `captured_type_defs`: `captured_type_defs[type def] = map size`
+    - Get index of the meta in `captured_type_defs`, write that index as an unsigned varint.
+    - The meta will be written as:
+      ```
+      | unsigned varint: written index |
+      ```
+    - After finished the serialization of the object graph, fury will start to write `captured_type_defs`:
+        - Firstly, set current to `meta start offset` of fury header
+        - Then write `captured_type_defs` one by one:
+          ```python
+          buffer.write_var_uint32(len(writting_type_defs))
+          for type_meta in writting_type_defs:
+          type_meta.write_type_def(buffer)
+          ```
+- Meta share mode: the writing steps are same as the normal mode, but `captured_type_defs` will be shared across
+  multiple serializations of different objects. For example, suppose we have a batch to serialize:
+    ```python
+    captured_type_defs = {}
+    stream = ...
+    # add `Type1` to `captured_type_defs` and write `Type1`
+    fury.serialize(stream, [Type1()])
+    # add `Type2` to `captured_type_defs` and write `Type2`, `Type1` is written before.
+    fury.serialize(stream, [Type1(), Type2()])
+    # `Type1` and `Type2` are written before, no need to write meta.
+    fury.serialize(stream, [Type1(), Type2()])
+    ```
+
+- Streaming mode(streaming mode doesn't support meta share):
     - If type meta hasn't been written before, the data will be written as:
       ```
       | unsigned varint: 0b11111111 | type def |
@@ -199,26 +228,14 @@ If schema evolution mode is enabled globally or enabled for current type, type m
       ```
       | unsigned varint: written index << 1 |
       ```
-- If meta share mode is enabled:
-    - If type meta hasn't been written before, add `type def` to `MetaContext`, then get
-      index of the meta in `MetaContext`, write that index as an unsigned varint.
-    - The type meta in `MetaContext` will be carried into the serialized data when the type is first serialized in a
-      batch. That what's `optional 4 bytes` used for. It records the start offset of serialized type defs which not in
-      provided `MetaContext` in current object graph serialization. Type defs
-      ```python
-      buffer.write_var_uint32(len(writting_type_metas))
-      for type_meta in writting_type_metas:
-          type_meta.write_type_def(buffer)
-      ```
+      `written index` is the id in `captured_type_defs`.
+    - With this mode, `meta start offset` can be omitted.
+
+> The normal mode and meta share mode will forbid streaming writing since it needs to look back for update the start
+> offset after the whole object graph writing and meta collecting is finished. Only in this way we can ensure
+> deserialization failure in meta share mode doesn't lost shared meta.
 
 #### Type Def
-
-> This mode will forbid streaming writing since it needs to look back for update the start offset after the whole object
-> graph
-> writing and meta collecting is finished. Only in this way we can ensure deserialization failure doesn't lost shared
-> meta.
-> Meta streamline will be supported in the future for enclosed meta sharing which doesn't cross multiple serializations
-> of different objects.
 
 Here we mainly describe the meta layout for schema evolution mode:
 
