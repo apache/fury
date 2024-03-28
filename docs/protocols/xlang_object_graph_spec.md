@@ -422,7 +422,7 @@ Format:
 
 - `size + encoding` will be concat as a long and encoded as an unsigned var long. The little 2 bits is used for
   encoding:
-  0 for `latin`, 1 for `utf-16`, 2 for `utf-8`.
+  0 for `latin1(ISO-8859-1)`, 1 for `utf-16`, 2 for `utf-8`.
 - encoded string binary data based on encoding: `latin/utf-16/utf-8`.
 
 Which encoding to choose:
@@ -430,8 +430,8 @@ Which encoding to choose:
 - For JDK8: fury detect `latin` at runtime, if string is `latin` string, then use `latin` encoding, otherwise
   use `utf-16`.
 - For JDK9+: fury use `coder` in `String` object for encoding, `latin`/`utf-16` will be used for encoding.
-- If the string is encoded by `utf-8`, then fury will use `utf-8` to decode the data. But currently fury doesn't enable
-  utf-8 encoding by default for java. Cross-language string serialization of fury uses `utf-8` by default.
+- If the string is encoded by `utf-8`, then fury will use `utf-8` to decode the data. Cross-language string
+  serialization of fury uses `utf-8` by default.
 
 ### list
 
