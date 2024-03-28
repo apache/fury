@@ -24,7 +24,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 
@@ -48,8 +47,8 @@ public class LoggerFactory {
     } else {
       if (GraalvmSupport.IN_GRAALVM_NATIVE_IMAGE) {
         return (Logger)
-          Proxy.newProxyInstance(
-            clazz.getClassLoader(), new Class[]{Logger.class}, new GraalvmLogger(clazz));
+            Proxy.newProxyInstance(
+                clazz.getClassLoader(), new Class[] {Logger.class}, new GraalvmLogger(clazz));
       }
       return org.slf4j.LoggerFactory.getLogger(clazz);
     }
@@ -57,7 +56,7 @@ public class LoggerFactory {
 
   private static final class GraalvmLogger implements InvocationHandler {
     private static final DateTimeFormatter dateTimeFormatter =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
+        DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
     private final Class<?> targetClass;
 
     private GraalvmLogger(Class<?> targetClass) {
