@@ -30,6 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Currency;
@@ -338,19 +339,20 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigDecimal value) {
       final byte[] bytes = value.unscaledValue().toByteArray();
-      Preconditions.checkArgument(bytes.length <= 16);
-      buffer.writeByte((byte) value.scale());
-      buffer.writeByte((byte) bytes.length);
+      buffer.writePositiveVarInt(value.scale());
+      buffer.writePositiveVarInt(value.precision());
+      buffer.writePositiveVarInt(bytes.length);
       buffer.writeBytes(bytes);
     }
 
     @Override
     public BigDecimal read(MemoryBuffer buffer) {
-      int scale = buffer.readByte();
-      int len = buffer.readByte();
+      int scale = buffer.readPositiveVarInt();
+      int precision = buffer.readPositiveVarInt();
+      int len = buffer.readPositiveVarInt();
       byte[] bytes = buffer.readBytes(len);
       final BigInteger bigInteger = new BigInteger(bytes);
-      return new BigDecimal(bigInteger, scale);
+      return new BigDecimal(bigInteger, scale, new MathContext(precision));
     }
   }
 
