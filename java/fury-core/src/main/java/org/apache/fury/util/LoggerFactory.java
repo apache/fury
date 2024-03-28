@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 
@@ -47,8 +48,8 @@ public class LoggerFactory {
     } else {
       if (GraalvmSupport.IN_GRAALVM_NATIVE_IMAGE) {
         return (Logger)
-            Proxy.newProxyInstance(
-                clazz.getClassLoader(), new Class[] {Logger.class}, new GraalvmLogger(clazz));
+          Proxy.newProxyInstance(
+            clazz.getClassLoader(), new Class[]{Logger.class}, new GraalvmLogger(clazz));
       }
       return org.slf4j.LoggerFactory.getLogger(clazz);
     }
@@ -56,7 +57,7 @@ public class LoggerFactory {
 
   private static final class GraalvmLogger implements InvocationHandler {
     private static final DateTimeFormatter dateTimeFormatter =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
+      DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
     private final Class<?> targetClass;
 
     private GraalvmLogger(Class<?> targetClass) {
@@ -66,23 +67,31 @@ public class LoggerFactory {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       String name = method.getName();
-      if (name.equals("info")) {
-        log("INFO", false, args);
+      switch (name) {
+        case "isEnabledForLevel":
+        case "isInfoEnabled":
+        case "isWarnEnabled":
+        case "isErrorEnabled":
+          return true;
+        case "info":
+          log("INFO", false, args);
+          return null;
+        case "warn":
+          log("WARN", false, args);
+          return null;
+        case "error":
+          log("ERROR", false, args);
+          return null;
+        default:
+          return method.invoke(NOPLogger.NOP_LOGGER, args);
       }
-      if (name.equals("warn")) {
-        log("WARN", false, args);
-      }
-      if (name.equals("error")) {
-        log("ERROR", true, args);
-      }
-      return null;
     }
 
     private void log(String level, boolean mayPrintTrace, Object[] args) {
       StringBuilder builder = new StringBuilder(dateTimeFormatter.format(LocalDateTime.now()));
       builder.append(" ").append(level);
       builder.append(" ").append(targetClass.getSimpleName());
-      builder.append(" ").append(Thread.currentThread().getName());
+      builder.append(" [").append(Thread.currentThread().getName()).append(']');
       builder.append(" -");
       for (Object arg : args) {
         builder.append(" ").append(arg);
