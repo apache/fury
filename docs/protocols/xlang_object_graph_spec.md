@@ -131,11 +131,11 @@ Fury will write the byte order for that object into the data instead of converti
 Fury header consists starts one byte:
 
 ```
-|     4 bits    | 1 bit | 1 bit | 1 bit  | 1 bit |          optional 4 bytes          |
-+---------------+-------+-------+--------+-------+------------------------------------+
-| reserved bits |  oob  | xlang | endian | null  | unsigned int for meta start offset |
+|    2 bytes   |     4 bits    | 1 bit | 1 bit | 1 bit  | 1 bit |          optional 4 bytes          |
++--------------+---------------+-------+-------+--------+-------+------------------------------------+
+| magic number | reserved bits |  oob  | xlang | endian | null  | unsigned int for meta start offset |
 ```
-
+- magic number: used to identify fury serialization protocol, current version use `0x62d4`.
 - null flag: 1 when object is null, 0 otherwise. If an object is null, other bits won't be set.
 - endian flag: 1 when data is encoded by little endian, 0 for big endian.
 - xlang flag: 1 when serialization uses xlang format, 0 when serialization uses Fury java format.
