@@ -32,7 +32,7 @@
   <artifactId>fury-format</artifactId>
 
   <description>
-    Apache Fury™ is a blazing fast multi-language serialization framework powered by jit and zero-copy.
+    Apache Fury™ is a blazingly fast multi-language serialization framework powered by jit and zero-copy.
 
     Apache Fury (incubating) is an effort undergoing incubation at the Apache
     Software Foundation (ASF), sponsored by the Apache Incubator PMC.

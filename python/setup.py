@@ -141,7 +141,7 @@ setup(
     },
     include_package_data=True,
     packages=find_packages(),
-    description="Apache Fury™(incubating) is a blazing fast multi-language serialization "
+    description="Apache Fury™(incubating) is a blazingly fast multi-language serialization "
     + "framework powered by jit and zero-copy",
     long_description=long_description,
     long_description_content_type="text/markdown",
