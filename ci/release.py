@@ -53,7 +53,7 @@ def bump_version(**kwargs):
                 "javascript/packages/hps", "package.json", new_version, _update_js_version
             )
         else:
-            raise NotImplemented(f"Unsupported {lang}")
+            raise NotImplementedError(f"Unsupported {lang}")
 
 
 def _bump_version(path, file, new_version, func):
