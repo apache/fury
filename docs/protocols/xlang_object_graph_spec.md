@@ -477,6 +477,40 @@ the actual element is the declared type in the custom type field.
 
 Based on the elements header, the serialization of elements data may skip `ref flag`/`null flag`/`element type info`.
 
+```python
+fury = ...
+buffer = ...
+elems = ...
+if element_type_is_same:
+    if not is_declared_type:
+        fury.write_type(buffer, elem_type)
+    elem_serializer = get_serializer(...)
+    if track_ref:
+        for elem in elems:
+            if not ref_resolver.write_ref_or_null(buffer, elem):
+                elem_serializer.write(buffer, elem)
+    elif has_null:
+        for elem in elems:
+            if elem is None:
+                buffer.write_byte(null_flag)
+            else:
+                buffer.write_byte(not_null_flag)
+                elem_serializer.write(buffer, elem)
+    else:
+        for elem in elems:
+            elem_serializer.write(buffer, elem)
+else:
+    if track_ref:
+        for elem in elems:
+            fury.write_ref(buffer, elem)
+    elif has_null:
+        for elem in elems:
+            fury.write_nullable(buffer, elem)
+    else:
+        for elem in elems:
+            fury.write_value(buffer, elem)
+```
+
 [`CollectionSerializer#writeElements`](https://github.com/apache/incubator-fury/blob/20a1a78b17a75a123a6f5b7094c06ff77defc0fe/java/fury-core/src/main/java/org/apache/fury/serializer/collection/AbstractCollectionSerializer.java#L302)
 can be taken as an example.
 
