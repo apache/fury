@@ -17,7 +17,6 @@
 
 
 import argparse
-import re
 import subprocess
 import platform
 import urllib.request as ulib
