@@ -197,7 +197,7 @@ If schema evolution mode is enabled globally or enabled for current type, type m
       ```
     - If type meta has been written before, the data will be written as:
       ```
-      | unsigned varint: written index << 1 | type def |
+      | unsigned varint: written index << 1 |
       ```
 - If meta share mode is enabled:
     - If type meta hasn't been written before, add `type def` to `MetaContext`, then get
