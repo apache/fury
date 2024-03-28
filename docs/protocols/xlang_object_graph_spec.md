@@ -33,7 +33,7 @@ also introduce more complexities compared to static serialization frameworks. So
   an enum.
 - list: a sequence of objects.
 - set: an unordered set of unique elements.
-- map: a map of key-value pairs.
+- map: a map of key-value pairs. Mutable types such as `list/map/set/array/tensor/arrow` are not allowed as key of map.
 - time types:
     - duration: an absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
     - timestamp: a point in time, independent of any calendar/timezone, as a count of nanoseconds. The count is relative
