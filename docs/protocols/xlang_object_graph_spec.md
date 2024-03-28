@@ -1,5 +1,8 @@
 # Cross language object graph serialization
 
+> Format Version History:
+> - Version 0.1 - serialization spec formalized
+
 Fury xlang serialization is an automatic object serialization framework that supports reference and polymorphism.
 Fury will convert an object from/to fury xlang serialization binary format.
 Fury has two core concepts for xlang serialization:
@@ -135,6 +138,7 @@ Fury header consists starts one byte:
 +--------------+---------------+-------+-------+--------+-------+------------------------------------+
 | magic number | reserved bits |  oob  | xlang | endian | null  | unsigned int for meta start offset |
 ```
+
 - magic number: used to identify fury serialization protocol, current version use `0x62d4`.
 - null flag: 1 when object is null, 0 otherwise. If an object is null, other bits won't be set.
 - endian flag: 1 when data is encoded by little endian, 0 for big endian.
