@@ -442,10 +442,10 @@ for data.
 Format:
 
 ```
-| header: size << 2 | 2 bits encoding flags | binary data |
+| unsigned varint64: size << 2 `bitor` 2 bits encoding flags | binary data |
 ```
 
-- `size + encoding` will be concat as a long and encoded as an unsigned var long. The little 2 bits is used for
+- `size + encoding` will be concat as a long and encoded as an unsigned varint64. The little 2 bits is used for
   encoding:
   0 for `latin1(ISO-8859-1)`, 1 for `utf-16`, 2 for `utf-8`.
 - encoded string binary data based on encoding: `latin/utf-16/utf-8`.
@@ -463,7 +463,7 @@ Which encoding to choose:
 Format:
 
 ```
-length(unsigned varint) | elements header | elements data
+| unsigned varint64: length << 4 `bitor` 4 bits elements header | elements data |
 ```
 
 #### elements header
