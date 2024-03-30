@@ -208,9 +208,10 @@ using one of the following mode. Which mode to use is configured when creating f
         - Firstly, set current to `meta start offset` of fury header
         - Then write `captured_type_defs` one by one:
           ```python
-          buffer.write_var_uint32(len(writting_type_defs))
+          buffer.write_var_uint32(len(writting_type_defs) - len(schema_consistent_type_def_stubs))
           for type_meta in writting_type_defs:
-              type_meta.write_type_def(buffer)
+              if not type_meta.is_stub():
+                  type_meta.write_type_def(buffer)
           writing_type_defs = copy(schema_consistent_type_def_stubs)
           ```
 - Meta share mode: the writing steps are same as the normal mode, but `captured_type_defs` will be shared across
