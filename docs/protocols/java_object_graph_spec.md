@@ -172,7 +172,7 @@ Meta header is a 64 bits number value encoded in little endian order.
           meta
           for such types is written separately instead of inlining here is to reduce meta space cost if object of this
           type is serialized in current object graph multiple times, and the field value may be null too.
-    - List Type Info: list type will have an extra byte for elements info.
+    - Collection Type Info: collection type will have an extra byte for elements info.
       Users can use annotation to provide those info.
         - elements type same
         - elements tracking ref
@@ -211,7 +211,7 @@ Same encoding algorithm as the previous layer except:
 
 ## Meta String
 
-Meta string is mainly used to encode meta strings such class name and field names.
+Meta string is mainly used to encode meta strings such as class name and field names.
 
 ### Encoding Algorithms
 
