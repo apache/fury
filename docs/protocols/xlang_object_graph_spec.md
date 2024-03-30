@@ -187,22 +187,23 @@ differently.
 
 ### Schema consistent
 
-If schema consistent mode is enabled globally or enabled for current type, type meta will be written as a fury unsigned
-varint of `type_id`.
+- If schema consistent mode is enabled globally, type meta will be written as a fury unsigned varint of `type_id`.
+  Schema evolution related meta will be ignored.
+- If schema evolution mode is enabled globally and current class is configured to use schema consistent mode like struct
+  vs table in flatbuffers:
+    - Type meta will be add to `captured_type_defs`: `captured_type_defs[type def stub] = map size` ahead when
+      registering type.
+    - Get index of the meta in `captured_type_defs`, write that index as `| unsigned varint: index |`.
 
 ### Schema evolution
 
-If schema evolution mode is enabled globally or enabled for current type, type meta will be written using on of the
+If schema evolution mode is enabled globally and enabled for current type, type meta will be written using one of the
 following mode. Which mode to use is configured when creating fury.
 
 - Normal mode(meta share not enabled):
     - If type meta hasn't been written before, add `type def`
-      to `captured_type_defs`: `captured_type_defs[type def] = map size`
-    - Get index of the meta in `captured_type_defs`, write that index as an unsigned varint.
-    - The meta will be written as:
-      ```
-      | unsigned varint: written index |
-      ```
+      to `captured_type_defs`: `captured_type_defs[type def] = map size`.
+    - Get index of the meta in `captured_type_defs`, write that index as `| unsigned varint: index |`.
     - After finished the serialization of the object graph, fury will start to write `captured_type_defs`:
         - Firstly, set current to `meta start offset` of fury header
         - Then write `captured_type_defs` one by one:
@@ -210,7 +211,7 @@ following mode. Which mode to use is configured when creating fury.
           buffer.write_var_uint32(len(writting_type_defs))
           for type_meta in writting_type_defs:
               type_meta.write_type_def(buffer)
-          writting_type_defs.clear()
+          writing_type_defs = schema_consistent_type_def_stubs
           ```
 - Meta share mode: the writing steps are same as the normal mode, but `captured_type_defs` will be shared across
   multiple serializations of different objects. For example, suppose we have a batch to serialize:
