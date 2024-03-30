@@ -211,7 +211,7 @@ using one of the following mode. Which mode to use is configured when creating f
           buffer.write_var_uint32(len(writting_type_defs))
           for type_meta in writting_type_defs:
               type_meta.write_type_def(buffer)
-          writing_type_defs = schema_consistent_type_def_stubs
+          writing_type_defs = copy(schema_consistent_type_def_stubs)
           ```
 - Meta share mode: the writing steps are same as the normal mode, but `captured_type_defs` will be shared across
   multiple serializations of different objects. For example, suppose we have a batch to serialize:
