@@ -192,7 +192,8 @@ varint of `type_id`.
 
 ### Schema evolution
 
-If schema evolution mode is enabled globally or enabled for current type, type meta will be written as follows:
+If schema evolution mode is enabled globally or enabled for current type, type meta will be written using on of the
+following mode. Which mode to use is configured when creating fury.
 
 - Normal mode(meta share not enabled):
     - If type meta hasn't been written before, add `type def`
@@ -208,7 +209,8 @@ If schema evolution mode is enabled globally or enabled for current type, type m
           ```python
           buffer.write_var_uint32(len(writting_type_defs))
           for type_meta in writting_type_defs:
-          type_meta.write_type_def(buffer)
+              type_meta.write_type_def(buffer)
+          writting_type_defs.clear()
           ```
 - Meta share mode: the writing steps are same as the normal mode, but `captured_type_defs` will be shared across
   multiple serializations of different objects. For example, suppose we have a batch to serialize:
