@@ -72,7 +72,7 @@ class _Lookup {
           }
           int fullAccessMask = 31; // for IBM Open J9 JDK
           return (Lookup)
-              constructor.invoke(objectClass, _JDKAccess.OPEN_J9 ? fullAccessMask : trusted);
+              constructor.invoke(objectClass, _JDKAccess.IS_OPEN_J9 ? fullAccessMask : trusted);
         } else {
           if (constructor == null) {
             constructor =
