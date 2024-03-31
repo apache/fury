@@ -64,8 +64,8 @@ public class _JDKAccess {
     if (property.startsWith("1.")) {
       property = property.substring(2);
     }
-    String jmvName = System.getProperty("java.vm.name", "");
-    IS_OPEN_J9 = jmvName.contains("OpenJ9");
+    String jvmName = System.getProperty("java.vm.name", "");
+    IS_OPEN_J9 = jvmName.contains("OpenJ9");
     JAVA_VERSION = Integer.parseInt(property);
     Unsafe unsafe;
     try {
