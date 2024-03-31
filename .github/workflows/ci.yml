@@ -79,7 +79,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           distribution: 'adopt-openj9'
       - name: Install bazel
-        run: ./ci/run_ci.sh install_bazeloo
+        run: ./ci/run_ci.sh install_bazel
       - name: Install python
         run: ./ci/run_ci.sh install_python
       - name: Install pyfury
