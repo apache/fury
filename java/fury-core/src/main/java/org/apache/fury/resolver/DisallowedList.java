@@ -29,39 +29,39 @@ import java.util.stream.Collectors;
 import org.apache.fury.exception.InsecureException;
 
 /** A class to record which classes are not allowed for serialization. */
-class BlackList {
-  private static final String BLACKLIST_TXT_PATH = "fury/blacklist.txt";
-  private static final Set<String> DEFAULT_BLACKLIST_SET;
+class DisallowedList {
+  private static final String DISALLOWED_LIST_TXT_PATH = "fury/disallowed.txt";
+  private static final Set<String> DEFAULT_DISALLOWED_LIST_SET;
 
   static {
     try (InputStream is =
-        BlackList.class.getClassLoader().getResourceAsStream(BLACKLIST_TXT_PATH)) {
+        DisallowedList.class.getClassLoader().getResourceAsStream(DISALLOWED_LIST_TXT_PATH)) {
       if (is != null) {
-        DEFAULT_BLACKLIST_SET =
+        DEFAULT_DISALLOWED_LIST_SET =
             new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
                 .lines()
                 .collect(Collectors.toSet());
       } else {
         throw new IllegalStateException(
-            String.format("Read blacklist %s failed", BLACKLIST_TXT_PATH));
+            String.format("Read disallowed list %s failed", DISALLOWED_LIST_TXT_PATH));
       }
     } catch (IOException e) {
       throw new IllegalStateException(
-          String.format("Read blacklist %s failed", BLACKLIST_TXT_PATH), e);
+          String.format("Read disallowed list %s failed", DISALLOWED_LIST_TXT_PATH), e);
     }
   }
 
   /**
-   * Determine whether the current Class is in the default blacklist.
+   * Determine whether the current Class is in the default disallowed list.
    *
-   * <p>Note that if Class exists in the blacklist, {@link InsecureException} will be thrown.
+   * <p>Note that if Class exists in the disallowed list, {@link InsecureException} will be thrown.
    *
    * @param clsName Class Name that needs to be judged.
-   * @throws InsecureException If the class is in the blacklist.
+   * @throws InsecureException If the class is in the disallowed list.
    */
-  static void checkNotInBlackList(String clsName) {
-    if (DEFAULT_BLACKLIST_SET.contains(clsName)) {
-      throw new InsecureException(String.format("%s hit blacklist", clsName));
+  static void checkNotInDisallowedList(String clsName) {
+    if (DEFAULT_DISALLOWED_LIST_SET.contains(clsName)) {
+      throw new InsecureException(String.format("%s hit disallowed list", clsName));
     }
   }
 }
