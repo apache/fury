@@ -62,7 +62,30 @@ jobs:
         run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
-
+  openj9:
+    name: Openj9 Java CI
+    runs-on: ubuntu-latest
+    env:
+      MY_VAR: "PATH"
+    strategy:
+      matrix:
+        # String in openj9 1.8 share byte array by offset, fury doesn't allow it.
+        java-version: ["21"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'adopt-openj9'
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Install python
+        run: ./ci/run_ci.sh install_python
+      - name: Install pyfury
+        run: ./ci/run_ci.sh install_pyfury
+      - name: Run CI with Maven
+        run: ./ci/run_ci.sh java${{ matrix.java-version }}
   graalvm:
     name: GraalVM CI
     runs-on: ubuntu-latest

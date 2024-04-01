@@ -40,6 +40,7 @@ class BlackList {
         DEFAULT_BLACKLIST_SET =
             new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
                 .lines()
+                .filter(line -> !line.isEmpty() && !line.startsWith("#"))
                 .collect(Collectors.toSet());
       } else {
         throw new IllegalStateException(

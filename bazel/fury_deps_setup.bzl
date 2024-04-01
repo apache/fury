@@ -1,3 +1,5 @@
+# This file is derived from  https://github.com/ray-project/ray/blob/7fb3feb25e2c19616944f16b026b7f5052451e8d/bazel/ray_deps_setup.bzl
+
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 

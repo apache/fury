@@ -344,10 +344,12 @@ public class CodeGenerator {
     }
     // classLoader will be null for jdk classes.
     ClassLoader classLoader = cls.getClassLoader();
+    // Hashcode may be negative in open-j9 jdk. While using `abs` to remove sign works fine too.
+    // it's still possible that hashCodes of two objects only differ in sign.
     if (classLoader == null) {
-      return String.valueOf(cls.hashCode());
+      return String.valueOf(cls.hashCode()).replace("-", "_");
     } else {
-      return String.format("%s_%s", classLoader.hashCode(), cls.hashCode());
+      return String.format("%s_%s", classLoader.hashCode(), cls.hashCode()).replace("-", "_");
     }
   }
 

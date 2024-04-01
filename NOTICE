@@ -69,6 +69,10 @@ The text of each license is also included in licenses/LICENSE-[project].txt.
       java/fury-core/src/main/java/org/apache/fury/type/Generics.java
       java/fury-core/src/test/java/org/apache/fury/type/GenericsTest.java
 
+* v8 (https://chromium.googlesource.com/v8/v8.git)
+    Files:
+      javascript/packages/hps/src/v8-fast-api-calls.h
+
 
 ================================================================
 MIT licenses
@@ -79,17 +83,6 @@ The text of each license is also included in licenses/LICENSE-[project].txt
 * murmurHash3.js (https://github.com/karanlyons/murmurHash3.js)
     Files:
       javascript/packages/fury/lib/murmurHash3.ts
-
-
-================================================================
-Node.js licenses
-================================================================
-The following components are provided under the Node.js License. See project link for details.
-The text of each license is also included in licenses/LICENSE-[project].txt.
-
-* node (https://github.com/nodejs/node)
-    Files:
-      javascript/packages/hps/src/v8-fast-api-calls.h
 
 
 ================================================================
