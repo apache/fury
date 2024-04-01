@@ -48,9 +48,13 @@ The text of each license is the standard Apache 2.0 license.
       bazel/grpc-cython-copts.patch
       bazel/grpc-python.patch
 
-* tensorflow ()
+* tensorflow (https://github.com/tensorflow/tensorflow)
     Files:
       bazel/arrow/pyarrow_configure.bzl
+
+* cython-abseil-sample (https://github.com/messense/cython-abseil-sample)
+    Files:
+      python/pyfury/includes/libabsl.pxd
 
 
 ================================================================
