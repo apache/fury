@@ -47,13 +47,6 @@ github:
     merge:   false
     rebase:  false
   protected_branches:
-    main:
-      required_status_checks:
-        strict: false
-      required_pull_request_reviews:
-        dismiss_stale_reviews: false
-        required_approving_review_count: 1
-        required_linear_history: true
     releases-0.4.1: {}
     releases-0.4.0: {}
     releases-0.3.1: {}
@@ -61,7 +54,7 @@ github:
     releases-0.2.1: {}
     releases-0.2.0: {}
     releases-0.1.2: {}
-  
+
 notifications:
   commits:      commits@fury.apache.org
   issues:       commits@fury.apache.org
