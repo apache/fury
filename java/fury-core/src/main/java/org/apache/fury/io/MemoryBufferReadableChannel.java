@@ -19,48 +19,33 @@
 
 package org.apache.fury.io;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.Preconditions;
 
-/** InputStream based on {@link MemoryBuffer}. */
-public class FuryInputStream extends InputStream {
+/** {@link ReadableByteChannel} based on fury {@link MemoryBuffer}. */
+public class MemoryBufferReadableChannel implements ReadableByteChannel {
+  private boolean open = true;
   private final MemoryBuffer buffer;
 
-  public FuryInputStream(MemoryBuffer buffer) {
+  public MemoryBufferReadableChannel(MemoryBuffer buffer) {
     this.buffer = buffer;
   }
 
-  public int read() {
-    if (buffer.remaining() == 0) {
-      return -1;
-    } else {
-      return buffer.readByte() & 0xFF;
-    }
-  }
-
-  public int read(byte[] bytes, int offset, int length) throws IOException {
-    if (length == 0) {
-      return 0;
-    }
-    int size = Math.min(buffer.remaining(), length);
-    if (size == 0) {
-      return -1;
-    }
-    buffer.readBytes(bytes, offset, size);
-    return size;
+  @Override
+  public int read(ByteBuffer dst) {
+    int position = dst.position();
+    buffer.read(dst);
+    return dst.position() - position;
   }
 
   @Override
-  public long skip(long n) throws IOException {
-    Preconditions.checkArgument(n < Integer.MAX_VALUE);
-    int nbytes = (int) Math.min(n, buffer.remaining());
-    buffer.increaseReaderIndex(nbytes);
-    return nbytes;
+  public boolean isOpen() {
+    return open;
   }
 
-  public int available() throws IOException {
-    return buffer.remaining();
+  @Override
+  public void close() {
+    open = false;
   }
 }

@@ -31,9 +31,9 @@ import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.ipc.message.IpcOption;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
 import org.apache.fury.Fury;
-import org.apache.fury.io.FuryReadableByteChannel;
-import org.apache.fury.io.FuryWritableByteChannel;
-import org.apache.fury.io.MockWritableByteChannel;
+import org.apache.fury.io.MemoryBufferReadableChannel;
+import org.apache.fury.io.MemoryBufferWritableChannel;
+import org.apache.fury.io.MockWritableChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferObject;
@@ -70,7 +70,7 @@ public class ArrowSerializers {
     public VectorSchemaRoot read(MemoryBuffer buffer) {
       MemoryBuffer buf = fury.readBufferObject(buffer);
       try {
-        ReadableByteChannel channel = new FuryReadableByteChannel(buf);
+        ReadableByteChannel channel = new MemoryBufferReadableChannel(buf);
         ArrowStreamReader reader = new ArrowStreamReader(channel, allocator);
         // FIXME close reader will close `root`.
         // since there is no possibility for resource leak, we can skip `reader.close`
@@ -93,9 +93,9 @@ public class ArrowSerializers {
 
     VectorSchemaRootBufferObject(VectorSchemaRoot root) {
       this.root = root;
-      MockWritableByteChannel mockWritableByteChannel = new MockWritableByteChannel();
-      write(root, mockWritableByteChannel);
-      totalBytes = mockWritableByteChannel.totalBytes();
+      MockWritableChannel mockWritableChannel = new MockWritableChannel();
+      write(root, mockWritableChannel);
+      totalBytes = mockWritableChannel.totalBytes();
     }
 
     @Override
@@ -105,7 +105,7 @@ public class ArrowSerializers {
 
     @Override
     public void writeTo(MemoryBuffer buffer) {
-      write(root, new FuryWritableByteChannel(buffer));
+      write(root, new MemoryBufferWritableChannel(buffer));
     }
 
     private static void write(VectorSchemaRoot root, WritableByteChannel byteChannel) {
@@ -119,7 +119,7 @@ public class ArrowSerializers {
     @Override
     public MemoryBuffer toBuffer() {
       MemoryBuffer buffer = MemoryUtils.buffer(totalBytes);
-      write(root, new FuryWritableByteChannel(buffer));
+      write(root, new MemoryBufferWritableChannel(buffer));
       return buffer.slice(0, buffer.writerIndex());
     }
   }
@@ -130,9 +130,9 @@ public class ArrowSerializers {
 
     public ArrowTableBufferObject(ArrowTable table) {
       this.table = table;
-      MockWritableByteChannel mockWritableByteChannel = new MockWritableByteChannel();
-      write(table, mockWritableByteChannel);
-      totalBytes = mockWritableByteChannel.totalBytes();
+      MockWritableChannel mockWritableChannel = new MockWritableChannel();
+      write(table, mockWritableChannel);
+      totalBytes = mockWritableChannel.totalBytes();
     }
 
     @Override
@@ -142,7 +142,7 @@ public class ArrowSerializers {
 
     @Override
     public void writeTo(MemoryBuffer buffer) {
-      write(table, new FuryWritableByteChannel(buffer));
+      write(table, new MemoryBufferWritableChannel(buffer));
     }
 
     private static void write(ArrowTable table, WritableByteChannel byteChannel) {
@@ -160,7 +160,7 @@ public class ArrowSerializers {
     @Override
     public MemoryBuffer toBuffer() {
       MemoryBuffer buffer = MemoryUtils.buffer(totalBytes);
-      write(table, new FuryWritableByteChannel(buffer));
+      write(table, new MemoryBufferWritableChannel(buffer));
       return buffer.slice(0, buffer.writerIndex());
     }
   }

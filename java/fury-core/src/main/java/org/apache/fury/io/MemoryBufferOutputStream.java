@@ -19,22 +19,27 @@
 
 package org.apache.fury.io;
 
-import static org.testng.Assert.assertEquals;
-
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import org.testng.annotations.Test;
+import org.apache.fury.memory.MemoryBuffer;
 
-public class MockWritableByteChannelTest {
+/** OutputStream based on {@link MemoryBuffer}. */
+public class MemoryBufferOutputStream extends OutputStream {
+  private final MemoryBuffer buffer;
 
-  @Test
-  public void testTotalBytes() {
-    try (MockWritableByteChannel channel = new MockWritableByteChannel()) {
-      channel.write(ByteBuffer.allocate(100));
-      channel.write(ByteBuffer.allocateDirect(100));
-      ByteBuffer buffer = ByteBuffer.allocate(100);
-      buffer.position(50);
-      channel.write(buffer);
-      assertEquals(channel.totalBytes(), 250);
-    }
+  public MemoryBufferOutputStream(MemoryBuffer buffer) {
+    this.buffer = buffer;
+  }
+
+  public void write(int b) {
+    buffer.writeByte((byte) b);
+  }
+
+  public void write(byte[] bytes, int offset, int length) {
+    buffer.writeBytes(bytes, offset, length);
+  }
+
+  public void write(ByteBuffer byteBuffer, int numBytes) {
+    buffer.write(byteBuffer, numBytes);
   }
 }

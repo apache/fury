@@ -33,7 +33,7 @@ import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
-import org.apache.fury.io.FuryWritableByteChannel;
+import org.apache.fury.io.MemoryBufferWritableChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
@@ -71,7 +71,7 @@ public class ArrowSerializersTest {
 
     MemoryBuffer buffer2 = MemoryUtils.buffer(32);
     try (ArrowStreamWriter writer =
-        new ArrowStreamWriter(root, null, new FuryWritableByteChannel(buffer2))) {
+        new ArrowStreamWriter(root, null, new MemoryBufferWritableChannel(buffer2))) {
       // this will make root empty.
       writer.writeBatch();
     }

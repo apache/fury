@@ -19,27 +19,33 @@
 
 package org.apache.fury.io;
 
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.WritableByteChannel;
 import org.apache.fury.memory.MemoryBuffer;
 
-/** OutputStream based on {@link MemoryBuffer}. */
-public class FuryOutputStream extends OutputStream {
+/** {@link WritableByteChannel} based on fury {@link MemoryBuffer}. */
+public class MemoryBufferWritableChannel implements WritableByteChannel {
+  private boolean open = true;
   private final MemoryBuffer buffer;
 
-  public FuryOutputStream(MemoryBuffer buffer) {
+  public MemoryBufferWritableChannel(MemoryBuffer buffer) {
     this.buffer = buffer;
   }
 
-  public void write(int b) {
-    buffer.writeByte((byte) b);
+  @Override
+  public int write(ByteBuffer src) {
+    int remaining = src.remaining();
+    buffer.write(src, remaining);
+    return remaining;
   }
 
-  public void write(byte[] bytes, int offset, int length) {
-    buffer.writeBytes(bytes, offset, length);
+  @Override
+  public boolean isOpen() {
+    return open;
   }
 
-  public void write(ByteBuffer byteBuffer, int numBytes) {
-    buffer.write(byteBuffer, numBytes);
+  @Override
+  public void close() {
+    open = false;
   }
 }

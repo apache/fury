@@ -23,8 +23,8 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import org.apache.fury.Fury;
-import org.apache.fury.io.FuryObjectInput;
-import org.apache.fury.io.FuryObjectOutput;
+import org.apache.fury.io.MemoryBufferObjectInput;
+import org.apache.fury.io.MemoryBufferObjectOutput;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.ReflectionUtils;
@@ -32,15 +32,15 @@ import org.apache.fury.util.ReflectionUtils;
 /** Serializer for class implements {@link Externalizable}. */
 public class ExternalizableSerializer<T extends Externalizable> extends Serializer<T> {
   private final MethodHandle constructor;
-  private final FuryObjectInput objectInput;
-  private final FuryObjectOutput objectOutput;
+  private final MemoryBufferObjectInput objectInput;
+  private final MemoryBufferObjectOutput objectOutput;
 
   public ExternalizableSerializer(Fury fury, Class<T> cls) {
     super(fury, cls);
     constructor = ReflectionUtils.getCtrHandle(cls, false);
 
-    objectInput = new FuryObjectInput(fury, null);
-    objectOutput = new FuryObjectOutput(fury, null);
+    objectInput = new MemoryBufferObjectInput(fury, null);
+    objectOutput = new MemoryBufferObjectOutput(fury, null);
   }
 
   @Override
