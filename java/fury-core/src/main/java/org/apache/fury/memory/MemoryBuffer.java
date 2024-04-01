@@ -2104,7 +2104,7 @@ public final class MemoryBuffer {
     readBytes(dst, 0, dst.length);
   }
 
-  public void read(ByteBuffer dst) {
+  public int read(ByteBuffer dst) {
     int readerIdx = readerIndex;
     int len = Math.min(dst.remaining(), size - readerIdx);
     // use subtract to avoid overflow
@@ -2115,6 +2115,7 @@ public final class MemoryBuffer {
     }
     readerIndex = readerIdx + len;
     dst.put(sliceAsByteBuffer(readerIdx, len));
+    return len;
   }
 
   public byte[] readBytesWithSizeEmbedded() {
