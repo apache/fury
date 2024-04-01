@@ -52,10 +52,6 @@ The text of each license is the standard Apache 2.0 license.
     Files:
       bazel/arrow/pyarrow_configure.bzl
 
-* cython-abseil-sample (https://github.com/messense/cython-abseil-sample)
-    Files:
-      python/pyfury/includes/libabsl.pxd
-
 
 ================================================================
 BSD-3-Clause licenses
@@ -94,6 +90,10 @@ The text of each license is also included in licenses/LICENSE-[project].txt
 * murmurHash3.js (https://github.com/karanlyons/murmurHash3.js)
     Files:
       javascript/packages/fury/lib/murmurHash3.ts
+
+* cython-abseil-sample (https://github.com/messense/cython-abseil-sample)
+    Files:
+      python/pyfury/includes/libabsl.pxd
 
 
 ================================================================
