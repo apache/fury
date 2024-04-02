@@ -262,7 +262,7 @@ ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
 checker.allowClass("org.example.*");
 ```
 
-Fury also provided a `org.apache.fury.resolver.AllowListChecker` which is white/blacklist based checker to simplify
+Fury also provided a `org.apache.fury.resolver.AllowListChecker` which is allowed/disallowed list based checker to simplify
 the customization of class check mechanism. You can use this checker or implement more sophisticated checker by yourself.
 
 ### Serializer Registration
