@@ -33,7 +33,7 @@ public class CollectionSuite {
 
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
-      String commandLine = "io.*CollectionSuite.* -f 3 -wi 5 -i 5 -t 1 -w 2s -r 2s -rf csv";
+      String commandLine = "org.apache.fury.*CollectionSuite.* -f 3 -wi 5 -i 5 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

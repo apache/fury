@@ -141,7 +141,7 @@ public class RowSuite {
 
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
-      String commandLine = "io.*RowSuite.* -f 3 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+      String commandLine = "org.apache.fury.*RowSuite.* -f 3 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       args = commandLine.split(" ");
     }
     LOG.info("command line: {}", Arrays.toString(args));
