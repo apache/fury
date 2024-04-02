@@ -18,5 +18,7 @@
 apache/incubator-fury-site@main:
   - source: docs/guide/
     dest: docs/guide/
+  - source: docs/specification/
+    dest: docs/specification/
   - source: docs/benchmarks/
     dest: static/img/benchmarks/

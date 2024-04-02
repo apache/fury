@@ -1,4 +1,10 @@
-# Cross language object graph serialization
+---
+title: Fury Xlang Serialization Format
+sidebar_position: 0
+id: fury_xlang_serialization_spec
+---
+
+# Cross-language Serialization Specification
 
 > Format Version History:
 > - Version 0.1 - serialization spec formalized
