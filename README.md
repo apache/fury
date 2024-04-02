@@ -36,13 +36,13 @@ In addition to cross-language serialization, Fury also features at:
 
 ## Protocols
 Fury designed and implemented multiple binary protocols for different scenarios:
-- **[Cross-language serialization protocol](docs/specification/xlang_serialization_spec.md)**:
+- **[xlang serialization format](docs/specification/xlang_serialization_spec.md)**:
   - Cross-language serialize any object automatically, no need for IDL definition, schema compilation and object to/from
     protocol conversion.
   - Support optional shared reference and circular reference, no duplicate data or recursion error.
   - Support object polymorphism.
-- **[Native Java serialization protocol](docs/specification/java_serialization_spec.md)**: Highly-optimized and drop-in replacement for Java serialization.
-- **[Row format protocol](docs/specification/row_format_spec.md)**: A cache-friendly binary random access format, supports skipping serialization and
+- **[Java serialization format](docs/specification/java_serialization_spec.md)**: Highly-optimized and drop-in replacement for Java serialization.
+- **[Row format format](docs/specification/row_format_spec.md)**: A cache-friendly binary random access format, supports skipping serialization and
   partial serialization, and can convert to column-format automatically.
 
 New protocols can be easily added based on Fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol can be reused by another protocol.
