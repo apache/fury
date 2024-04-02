@@ -37,7 +37,7 @@ import org.openjdk.jmh.infra.Blackhole;
 public class MapSuite {
   public static void main(String[] args) throws IOException {
     if (args.length == 0) {
-      String commandLine = "io.*MapSuite.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+      String commandLine = "org.apache.fury.*MapSuite.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }
