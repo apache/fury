@@ -19,10 +19,8 @@
 
 package org.apache.fury;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -30,7 +28,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.builder.JITContext;
 import org.apache.fury.collection.ObjectArray;
@@ -40,6 +37,7 @@ import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.config.LongEncoding;
 import org.apache.fury.exception.DeserializationException;
+import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassInfo;
@@ -760,19 +758,16 @@ public final class Fury implements BaseFury {
     }
   }
 
-  public Object deserialize(InputStream inputStream) {
+  public Object deserialize(FuryInputStream inputStream) {
     return deserialize(inputStream, null);
   }
 
-  public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
+  public Object deserialize(FuryInputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
-      MemoryBuffer buf = getBuffer();
-      readToBufferFromStream(inputStream, buf);
+      MemoryBuffer buf = inputStream.getBuffer();
       return deserialize(buf, outOfBandBuffers);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     } finally {
-      resetBuffer();
+      inputStream.shrinkBuffer();
     }
   }
 
@@ -1082,9 +1077,13 @@ public final class Fury implements BaseFury {
    * Deserialize java object from binary by passing class info, serialization should use {@link
    * #serializeJavaObject}.
    */
-  @SuppressWarnings("unchecked")
-  public <T> T deserializeJavaObject(InputStream inputStream, Class<T> cls) {
-    return (T) deserializeFromStream(inputStream, buf -> this.deserializeJavaObject(buf, cls));
+  public <T> T deserializeJavaObject(FuryInputStream inputStream, Class<T> cls) {
+    try {
+      MemoryBuffer buf = inputStream.getBuffer();
+      return deserializeJavaObject(buf, cls);
+    } finally {
+      inputStream.shrinkBuffer();
+    }
   }
 
   /**
@@ -1158,8 +1157,13 @@ public final class Fury implements BaseFury {
    * Deserialize class info and java object from binary, serialization should use {@link
    * #serializeJavaObjectAndClass}.
    */
-  public Object deserializeJavaObjectAndClass(InputStream inputStream) {
-    return deserializeFromStream(inputStream, this::deserializeJavaObjectAndClass);
+  public Object deserializeJavaObjectAndClass(FuryInputStream inputStream) {
+    try {
+      MemoryBuffer buf = inputStream.getBuffer();
+      return deserializeJavaObjectAndClass(buf);
+    } finally {
+      inputStream.shrinkBuffer();
+    }
   }
 
   private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {
@@ -1167,17 +1171,12 @@ public final class Fury implements BaseFury {
     if (outputStream.getClass() == ByteArrayOutputStream.class) {
       byte[] oldBytes = buf.getHeapMemory(); // Note: This should not be null.
       MemoryUtils.wrap((ByteArrayOutputStream) outputStream, buf);
-      int writerIndex = buf.writerIndex();
-      buf.writeInt(-1);
       function.accept(buf);
-      buf.putInt(writerIndex, buf.writerIndex() - writerIndex);
       MemoryUtils.wrap(buf, (ByteArrayOutputStream) outputStream);
       buf.pointTo(oldBytes, 0, oldBytes.length);
     } else {
       buf.writerIndex(0);
-      buf.writeInt(-1);
       function.accept(buf);
-      buf.putInt(0, buf.writerIndex() - 4);
       try {
         byte[] bytes = buf.getHeapMemory();
         if (bytes != null) {
@@ -1192,58 +1191,6 @@ public final class Fury implements BaseFury {
         resetBuffer();
       }
     }
-  }
-
-  private Object deserializeFromStream(
-      InputStream inputStream, Function<MemoryBuffer, Object> function) {
-    MemoryBuffer buf = getBuffer();
-    try {
-      boolean isBis = inputStream.getClass() == ByteArrayInputStream.class;
-      byte[] oldBytes = null;
-      if (isBis) {
-        buf.readerIndex(0);
-        oldBytes = buf.getHeapMemory(); // Note: This should not be null.
-        MemoryUtils.wrap((ByteArrayInputStream) inputStream, buf);
-        buf.increaseReaderIndex(4); // skip size.
-      } else {
-        readToBufferFromStream(inputStream, buf);
-      }
-      Object o = function.apply(buf);
-      if (isBis) {
-        inputStream.skip(buf.readerIndex());
-        buf.pointTo(oldBytes, 0, oldBytes.length);
-      }
-      return o;
-    } catch (Throwable t) {
-      handleReadFailed(t);
-      throw new IllegalStateException("unreachable");
-    } finally {
-      resetBuffer();
-    }
-  }
-
-  private static void readToBufferFromStream(InputStream inputStream, MemoryBuffer buffer)
-      throws IOException {
-    buffer.readerIndex(0);
-    int read = readBytes(inputStream, buffer.getHeapMemory(), 0, 4);
-    Preconditions.checkArgument(read == 4);
-    int size = buffer.readInt();
-    buffer.ensure(4 + size);
-    read = readBytes(inputStream, buffer.getHeapMemory(), 4, size);
-    Preconditions.checkArgument(read == size);
-  }
-
-  private static int readBytes(InputStream inputStream, byte[] buffer, int offset, int size)
-      throws IOException {
-    int read = 0;
-    int count = 0;
-    while (read < size) {
-      if ((count = inputStream.read(buffer, offset + read, size - read)) == -1) {
-        break;
-      }
-      read += count;
-    }
-    return (read == 0 && count == -1) ? -1 : read;
   }
 
   public void reset() {

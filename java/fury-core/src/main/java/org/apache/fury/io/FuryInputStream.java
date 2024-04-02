@@ -81,13 +81,19 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     return buffer;
   }
 
-  public void clear() {
+  public InputStream getStream() {
+    return stream;
+  }
+
+  public void shrinkBuffer() {
     int remaining = buffer.remaining();
-    if (remaining > bufferSize) {
+    int bufferSize = this.bufferSize;
+    if (remaining > bufferSize || buffer.size() > bufferSize) {
       byte[] heapMemory = buffer.getHeapMemory();
-      byte[] newBuffer = new byte[remaining];
+      byte[] newBuffer = new byte[Math.max(bufferSize, remaining)];
       System.arraycopy(heapMemory, buffer.readerIndex(), newBuffer, 0, remaining);
       buffer.initHeapBuffer(newBuffer, 0, remaining);
+      buffer.readerIndex(0);
     }
   }
 

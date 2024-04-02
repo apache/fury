@@ -22,12 +22,15 @@ package org.apache.fury.io;
 import java.io.InputStream;
 import org.apache.fury.memory.MemoryBuffer;
 
+/**
+ * A streaming reader to make {@link MemoryBuffer} to support streaming reading.
+ */
 public interface FuryStreamReader {
   int fillBuffer(int minFillSize);
 
   MemoryBuffer getBuffer();
 
   static FuryInputStream of(InputStream stream) {
-    return null;
+    return new FuryInputStream(stream);
   }
 }
