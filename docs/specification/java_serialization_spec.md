@@ -1,5 +1,5 @@
 ---
-title: Fury Java Serialization Specification
+title: Fury Java Serialization Format
 sidebar_position: 1
 id: fury_java_serialization_spec
 ---

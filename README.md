@@ -42,7 +42,7 @@ Fury designed and implemented multiple binary protocols for different scenarios:
   - Support optional shared reference and circular reference, no duplicate data or recursion error.
   - Support object polymorphism.
 - **[Native Java serialization protocol](docs/specification/java_serialization_spec.md)**: Highly-optimized and drop-in replacement for Java serialization.
-- **[Row format protocol](docs/specification/row_format.md)**: A cache-friendly binary random access format, supports skipping serialization and
+- **[Row format protocol](docs/specification/row_format_spec.md)**: A cache-friendly binary random access format, supports skipping serialization and
   partial serialization, and can convert to column-format automatically.
 
 New protocols can be easily added based on Fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol can be reused by another protocol.
