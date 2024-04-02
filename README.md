@@ -25,9 +25,9 @@ https://fury.apache.org
 
 In addition to cross-language serialization, Fury also features at:
 
-- Drop-in replace Java serialization frameworks such as JDK/Kryo/Hessian, but 100x faster at most, which can greatly improve 
+- Drop-in replace Java serialization frameworks such as JDK/Kryo/Hessian, but 100x faster at most, which can greatly improve
  the efficiency of high-performance RPC calls, data transfer, and object persistence.
-- **100% compatible** with JDK serialization API with much faster implementation: supporting JDK `writeObject`/`readObject`/`writeReplace`/`readResolve`/`readObjectNoData`/`Externalizable` API. 
+- **100% compatible** with JDK serialization API with much faster implementation: supporting JDK `writeObject`/`readObject`/`writeReplace`/`readResolve`/`readObjectNoData`/`Externalizable` API.
 - Supports **Java 8~21**, Java 17+ `record` is supported too.
 - Supports [AOT compilation serialization](docs/guide/graalvm_guide.md) for **GraalVM native image**, and no reflection/serialization json config are needed.
 - Supports shared and circular reference object serialization for golang.
@@ -35,19 +35,17 @@ In addition to cross-language serialization, Fury also features at:
 - Supports automatic object serialization for golang.
 
 ## Protocols
-Different scenarios have different serialization requirements. Fury designed and implemented 
-multiple binary protocols for those requirements:
-- **Cross-language object graph protocol**:
-  - Cross-language serialize any object automatically, no need for IDL definition, schema compilation and object to/from protocol
-    conversion.
-  - Support shared reference and circular reference, no duplicate data or recursion error.
+Fury designed and implemented multiple binary protocols for different scenarios:
+- **[Cross-language serialization protocol](docs/specification/xlang_serialization_spec.md)**:
+  - Cross-language serialize any object automatically, no need for IDL definition, schema compilation and object to/from
+    protocol conversion.
+  - Support optional shared reference and circular reference, no duplicate data or recursion error.
   - Support object polymorphism.
-- **Native java/python object graph protocol**: Highly-optimized based on type system of the language.
-- **Row format protocol**: A cache-friendly binary random access format, supports skipping serialization and partial serialization,
-  and can convert to column-format automatically.
+- **[Native Java serialization protocol](docs/specification/java_serialization_spec.md)**: Highly-optimized and drop-in replacement for Java serialization.
+- **[Row format protocol](docs/specification/row_format.md)**: A cache-friendly binary random access format, supports skipping serialization and
+  partial serialization, and can convert to column-format automatically.
 
-New protocols can be easily added based on Fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol
-can be reused by another protocol.
+New protocols can be easily added based on Fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol can be reused by another protocol.
 
 ## Benchmarks
 Different serialization frameworks are suitable for different scenarios, and benchmark results here are for reference only.
@@ -149,7 +147,7 @@ go get github.com/apache/incubator-fury/go/fury
 Here we give a quick start about how to use Fury, see [user guide](https://github.com/apache/incubator-fury/blob/main/docs/README.md) for more details about [java](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md), [cross language](https://github.com/apache/incubator-fury/blob/main/docs/guide/xlang_object_graph_guide.md), and [row format](https://github.com/apache/incubator-fury/blob/main/docs/guide/row_format_guide.md).
 
 ### Fury java object graph serialization
-If you don't have cross-language requirements, using this mode will 
+If you don't have cross-language requirements, using this mode will
 result in better performance.
 ```java
 import org.apache.fury.*;
@@ -159,11 +157,11 @@ import java.util.*;
 public class Example {
   public static void main(String[] args) {
     SomeClass object = new SomeClass();
-    // Note that Fury instances should be reused between 
+    // Note that Fury instances should be reused between
     // multiple serializations of different objects.
     {
       Fury fury = Fury.builder().withLanguage(Language.JAVA)
-        // Allow to deserialize objects unknown types, more flexible 
+        // Allow to deserialize objects unknown types, more flexible
         // but may be insecure if the classes contains malicious code.
         .requireClassRegistration(true)
         .build();
@@ -175,7 +173,7 @@ public class Example {
     }
     {
       ThreadSafeFury fury = Fury.builder().withLanguage(Language.JAVA)
-        // Allow to deserialize objects unknown types, more flexible 
+        // Allow to deserialize objects unknown types, more flexible
         // but may be insecure if the classes contains malicious code.
         .requireClassRegistration(true)
         .buildThreadSafeFury();
@@ -251,7 +249,7 @@ data = fury.serialize(obj)
 print(fury.deserialize(data))
 ```
 
-**Golang** 
+**Golang**
 
 ```go
 package main

@@ -1,4 +1,4 @@
-# Cross language object graph serialization
+# Cross-language Serialization Specification
 
 > Format Version History:
 > - Version 0.1 - serialization spec formalized
