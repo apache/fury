@@ -1,3 +1,9 @@
+---
+title: Fury Cross-language Serialization Specification
+sidebar_position: 0
+id: fury_xlang_serialization_spec
+---
+
 # Cross-language Serialization Specification
 
 > Format Version History:

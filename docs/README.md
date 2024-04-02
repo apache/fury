@@ -5,6 +5,11 @@
 - For Scala Guide, see [scala_guide](guide/scala_guide.md) doc.
 - For using Fury with GraalVM native image, see [graalvm native image guide](guide/graalvm_guide.md) doc.
 
+## Serialization Protocols
+- For Cross Language Serialization Protocol, see [xlang_serialization_spec](specification/xlang_serialization_spec.md) doc.
+- For Java Object Graph Protocol, see [java_serialization_spec](specification/java_serialization_spec.md) doc.
+- For Row Format Protocol, see [row format_spec](specification/row_format.md) doc.
+
 # Development
 - For cpp debug, see [cpp_debug](cpp_debug.md) doc.
 - For development, see [CONTRIBUTING](../CONTRIBUTING.md) doc.

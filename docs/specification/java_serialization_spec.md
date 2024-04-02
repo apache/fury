@@ -1,3 +1,8 @@
+---
+title: Fury Java Serialization Specification
+sidebar_position: 1
+id: fury_java_serialization_spec
+---
 # Fury Java Serialization Specification
 
 ## Spec overview
