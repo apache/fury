@@ -94,7 +94,7 @@ public class NewStringSuite {
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
       String commandLine =
-	  "org.apache.fury.*NewStringSuite.* -f 1 -wi 10 -i 3 -t 1 -w 2s -r 2s -rf csv";
+          "org.apache.fury.*NewStringSuite.* -f 1 -wi 10 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

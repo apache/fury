@@ -89,7 +89,7 @@ public class ZeroCopySuite {
 
     if (args.length == 0) {
       String commandLine =
-	  "org.apache.fury.*ZeroCopy.*_deserialize$ -f 1 -wi 0 -i 1 -t 1 -w 1s -r 1s -rf csv";
+          "org.apache.fury.*ZeroCopy.*_deserialize$ -f 1 -wi 0 -i 1 -t 1 -w 1s -r 1s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

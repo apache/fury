@@ -241,7 +241,7 @@ public class MemorySuite {
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
       String commandLine =
-	  "org.apache.fury.*MemorySuite.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+          "org.apache.fury.*MemorySuite.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }
