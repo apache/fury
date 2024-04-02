@@ -19,43 +19,49 @@
 
 package org.apache.fury.io;
 
-import org.apache.fury.memory.MemoryBuffer;
-
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import org.apache.fury.memory.MemoryBuffer;
 
-public class FuryReadableChannel implements ReadableByteChannel {
-    private final ReadableByteChannel channel;
-    private final ByteBuffer byteBuffer;
-    private final MemoryBuffer buffer;
+public class FuryReadableChannel implements ReadableByteChannel, FuryStreamReader {
+  private final ReadableByteChannel channel;
+  private final ByteBuffer byteBuffer;
+  private final MemoryBuffer buffer;
 
-    public FuryReadableChannel(ReadableByteChannel channel) {
-        this(channel, ByteBuffer.allocate(0));
-    }
+  public FuryReadableChannel(ReadableByteChannel channel) {
+    this(channel, ByteBuffer.allocate(4096));
+  }
 
-    private FuryReadableChannel(ReadableByteChannel channel, ByteBuffer byteBuffer) {
-        this.channel = channel;
-        this.byteBuffer = byteBuffer;
-        this.buffer = MemoryBuffer.fromByteBuffer(byteBuffer);
-    }
+  private FuryReadableChannel(ReadableByteChannel channel, ByteBuffer directBuffer) {
+    this.channel = channel;
+    this.byteBuffer = directBuffer;
+    this.buffer = MemoryBuffer.fromByteBuffer(directBuffer);
+  }
 
-    @Override
-    public int read(ByteBuffer dst) throws IOException {
-        if (buffer.remaining() < dst.remaining()) {
-            int size = channel.read(byteBuffer);
+  @Override
+  public int read(ByteBuffer dst) throws IOException {
+    throw new UnsupportedEncodingException();
+  }
 
-        }
-        return buffer.read(dst);
-    }
+  @Override
+  public boolean isOpen() {
+    return channel.isOpen();
+  }
 
-    @Override
-    public boolean isOpen() {
-        return channel.isOpen();
-    }
+  @Override
+  public void close() throws IOException {
+    channel.close();
+  }
 
-    @Override
-    public void close() throws IOException {
-        channel.close();
-    }
+  @Override
+  public int fillBuffer(int minFillSize) {
+    return 0;
+  }
+
+  @Override
+  public MemoryBuffer getBuffer() {
+    return buffer;
+  }
 }

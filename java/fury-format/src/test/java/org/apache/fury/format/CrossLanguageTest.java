@@ -245,7 +245,8 @@ public class CrossLanguageTest {
       ArrowUtils.serializeRecordBatch(recordBatch, buffer);
       arrowWriter.reset();
       ArrowStreamWriter.writeEndOfStream(
-          new WriteChannel(Channels.newChannel(new MemoryBufferOutputStream(buffer))), new IpcOption());
+          new WriteChannel(Channels.newChannel(new MemoryBufferOutputStream(buffer))),
+          new IpcOption());
       Files.write(dataFile, buffer.getBytes(0, buffer.writerIndex()));
       Assert.assertTrue(executeCommand(command, 30));
     }

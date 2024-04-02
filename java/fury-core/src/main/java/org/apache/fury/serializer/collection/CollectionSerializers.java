@@ -442,7 +442,7 @@ public class CollectionSerializers {
       }
       fury.getClassResolver().writeClassAndUpdateCache(buffer, elemClass);
       Serializer serializer = fury.getClassResolver().getSerializer(elemClass);
-      buffer.writePositiveVarIntAligned(object.size());
+      buffer.writePositiveVarInt(object.size());
       for (Object element : object) {
         serializer.write(buffer, element);
       }
@@ -453,7 +453,7 @@ public class CollectionSerializers {
       Class elemClass = fury.getClassResolver().readClassInfo(buffer).getCls();
       EnumSet object = EnumSet.noneOf(elemClass);
       Serializer elemSerializer = fury.getClassResolver().getSerializer(elemClass);
-      int length = buffer.readPositiveAlignedVarInt();
+      int length = buffer.readPositiveVarInt();
       for (int i = 0; i < length; i++) {
         object.add(elemSerializer.read(buffer));
       }

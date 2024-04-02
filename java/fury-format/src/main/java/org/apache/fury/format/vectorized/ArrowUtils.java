@@ -73,7 +73,8 @@ public class ArrowUtils {
   public static ArrowRecordBatch deserializeRecordBatch(MemoryBuffer recordBatchMessageBuffer) {
     // TODO(chaokunyang) add custom ReadableByteChannel to avoid copy in `ReadableByteChannelImpl`
     try (ReadChannel channel =
-        new ReadChannel(Channels.newChannel(new MemoryBufferInputStream(recordBatchMessageBuffer)))) {
+        new ReadChannel(
+            Channels.newChannel(new MemoryBufferInputStream(recordBatchMessageBuffer)))) {
       return MessageSerializer.deserializeRecordBatch(channel, allocator);
     } catch (IOException e) {
       throw new RuntimeException("Deserialize record batch failed", e);

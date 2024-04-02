@@ -271,9 +271,7 @@ public class ArraySerializers {
         int size = buffer.readPositiveVarInt();
         int numElements = size / elemSize;
         boolean[] values = new boolean[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -309,9 +307,7 @@ public class ArraySerializers {
         int size = buffer.readPositiveVarInt();
         int numElements = size / elemSize;
         byte[] values = new byte[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -347,9 +343,7 @@ public class ArraySerializers {
         int size = buffer.readPositiveVarInt();
         int numElements = size / elemSize;
         char[] values = new char[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -400,9 +394,7 @@ public class ArraySerializers {
         int size = buffer.readPositiveVarInt();
         int numElements = size / elemSize;
         short[] values = new short[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -438,9 +430,7 @@ public class ArraySerializers {
         int size = buffer.readPositiveVarInt();
         int numElements = size / elemSize;
         int[] values = new int[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -476,9 +466,7 @@ public class ArraySerializers {
         int size = buffer.readPositiveVarInt();
         int numElements = size / elemSize;
         long[] values = new long[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -514,9 +502,7 @@ public class ArraySerializers {
         int size = buffer.readPositiveVarInt();
         int numElements = size / elemSize;
         float[] values = new float[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -552,9 +538,7 @@ public class ArraySerializers {
         int size = buffer.readPositiveVarInt();
         int numElements = size / elemSize;
         double[] values = new double[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }

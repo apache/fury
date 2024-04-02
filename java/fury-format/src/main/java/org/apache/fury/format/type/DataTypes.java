@@ -465,7 +465,7 @@ public class DataTypes {
 
   public static void serializeSchema(Schema schema, MemoryBuffer buffer) {
     try (MemoryBufferOutputStream outputStream = new MemoryBufferOutputStream(buffer);
-         WriteChannel writeChannel = new WriteChannel(Channels.newChannel(outputStream))) {
+        WriteChannel writeChannel = new WriteChannel(Channels.newChannel(outputStream))) {
       MessageSerializer.serialize(writeChannel, schema);
     } catch (IOException e) {
       throw new FuryException(String.format("Write schema %s failed", schema), e);

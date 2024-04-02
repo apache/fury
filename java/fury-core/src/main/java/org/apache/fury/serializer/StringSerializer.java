@@ -479,6 +479,7 @@ public final class StringSerializer extends Serializer<String> {
   private char[] readLatinChars(MemoryBuffer buffer) {
     final int numBytes = buffer.readPositiveVarInt();
     char[] chars = new char[numBytes];
+    buffer.checkReadableBytes(numBytes);
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       int srcIndex = buffer.unsafeHeapReaderIndex();
@@ -507,9 +508,9 @@ public final class StringSerializer extends Serializer<String> {
       // FIXME JDK11 utf16 string uses little-endian order.
       buffer.readChars(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
     } else {
+      buffer.checkReadableBytes(numBytes);
       final byte[] targetArray = buffer.getHeapMemory();
       if (targetArray != null) {
-        buffer.checkReadableBytes(numBytes);
         int charIndex = 0;
         for (int i = buffer.unsafeHeapReaderIndex(), end = i + numBytes; i < end; i += 2) {
           char c =
@@ -682,6 +683,7 @@ public final class StringSerializer extends Serializer<String> {
 
   public String readUTF8String(MemoryBuffer buffer) {
     int numBytes = buffer.readPositiveVarInt();
+    buffer.checkReadableBytes(numBytes);
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       String str =

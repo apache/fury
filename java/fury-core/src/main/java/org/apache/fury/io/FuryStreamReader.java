@@ -20,10 +20,14 @@
 package org.apache.fury.io;
 
 import java.io.InputStream;
+import org.apache.fury.memory.MemoryBuffer;
 
-public class FuryStreamReader {
-    static FuryInputStream of(InputStream stream) {
-        return null;
-    }
+public interface FuryStreamReader {
+  int fillBuffer(int minFillSize);
 
+  MemoryBuffer getBuffer();
+
+  static FuryInputStream of(InputStream stream) {
+    return null;
+  }
 }
