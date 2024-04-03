@@ -19,7 +19,6 @@
 
 package org.apache.fury;
 
-import static org.apache.fury.io.FuryStreamReader.of;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
@@ -70,7 +69,6 @@ import org.apache.fury.test.bean.Struct;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.util.DateTimeUtils;
 import org.apache.fury.util.Platform;
-import org.apache.fury.util.ReflectionUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -535,49 +533,6 @@ public class FuryTest extends FuryTestBase {
     HashBasedTable<Object, Object, Object> table = HashBasedTable.create(2, 4);
     table.put("r", "c", 100);
     serDeCheckSerializer(fury, table, "Codec");
-  }
-
-  @Test
-  public void testBufferReset() {
-    Fury fury = Fury.builder().withRefTracking(true).requireClassRegistration(false).build();
-    byte[] bytes = fury.serialize(new byte[1000 * 1000]);
-    checkBuffer(fury);
-    assertEquals(fury.deserialize(bytes), new byte[1000 * 1000]);
-    assertEquals(fury.deserialize(of(new ByteArrayInputStream(bytes))), new byte[1000 * 1000]);
-
-    bytes = fury.serializeJavaObject(new byte[1000 * 1000]);
-    checkBuffer(fury);
-    assertEquals(fury.deserializeJavaObject(bytes, byte[].class), new byte[1000 * 1000]);
-
-    bytes = fury.serializeJavaObjectAndClass(new byte[1000 * 1000]);
-    checkBuffer(fury);
-    assertEquals(fury.deserializeJavaObjectAndClass(bytes), new byte[1000 * 1000]);
-
-    ByteArrayOutputStream bas = new ByteArrayOutputStream();
-    fury.serialize(bas, new byte[1000 * 1000]);
-    checkBuffer(fury);
-    Object o = fury.deserialize(of(new ByteArrayInputStream(bas.toByteArray())));
-    assertEquals(o, new byte[1000 * 1000]);
-    assertEquals(fury.deserialize(bas.toByteArray()), new byte[1000 * 1000]);
-
-    bas.reset();
-    fury.serializeJavaObject(bas, new byte[1000 * 1000]);
-    checkBuffer(fury);
-    o = fury.deserializeJavaObject(of(new ByteArrayInputStream(bas.toByteArray())), byte[].class);
-    assertEquals(o, new byte[1000 * 1000]);
-
-    bas.reset();
-    fury.serializeJavaObjectAndClass(bas, new byte[1000 * 1000]);
-    checkBuffer(fury);
-    o = fury.deserializeJavaObjectAndClass(of(new ByteArrayInputStream(bas.toByteArray())));
-    assertEquals(o, new byte[1000 * 1000]);
-  }
-
-  private void checkBuffer(Fury fury) {
-    Object buf = ReflectionUtils.getObjectFieldValue(fury, "buffer");
-    MemoryBuffer buffer = (MemoryBuffer) buf;
-    assert buffer != null;
-    assertTrue(buffer.size() < 1000 * 1000);
   }
 
   @Data

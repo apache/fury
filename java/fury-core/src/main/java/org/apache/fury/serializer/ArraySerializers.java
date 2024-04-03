@@ -286,11 +286,11 @@ public class ArraySerializers {
     @Override
     public void write(MemoryBuffer buffer, byte[] value) {
       if (fury.getBufferCallback() == null) {
-        int size = Math.multiplyExact(value.length, elemSize);
+        int size = Math.multiplyExact(value.length, 1);
         buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
       } else {
         fury.writeBufferObject(
-            buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
+            buffer, new PrimitiveArrayBufferObject(value, offset, 1, value.length));
       }
     }
 
@@ -299,14 +299,12 @@ public class ArraySerializers {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
         int size = buf.remaining();
-        int numElements = size / elemSize;
-        byte[] values = new byte[numElements];
+        byte[] values = new byte[size];
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
         int size = buffer.readPositiveVarInt();
-        int numElements = size / elemSize;
-        byte[] values = new byte[numElements];
+        byte[] values = new byte[size];
         buffer.readToUnsafe(values, offset, size);
         return values;
       }

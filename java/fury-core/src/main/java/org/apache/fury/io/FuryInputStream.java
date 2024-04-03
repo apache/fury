@@ -56,12 +56,16 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     int offset = buffer.size();
     int targetSize = offset + minFillSize;
     if (targetSize > heapMemory.length) {
+      int newSize;
       if (targetSize < BUFFER_GROW_STEP_THRESHOLD) {
-        buffer.grow(targetSize * 2);
+        newSize = targetSize << 2;
       } else {
-        buffer.grow((int) (targetSize * 1.5));
+        newSize = (int) (targetSize * 1.5);
       }
-      heapMemory = buffer.getHeapMemory();
+      byte[] newBuffer = new byte[newSize];
+      System.arraycopy(heapMemory, 0, newBuffer, 0, buffer.size());
+      buffer.initHeapBuffer(newBuffer, 0, buffer.size());
+      heapMemory = newBuffer;
     }
     try {
       int read;
