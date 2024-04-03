@@ -36,7 +36,12 @@ public abstract class AbstractStreamReader implements FuryStreamReader {
   public void readToUnsafe(Object target, long targetPointer, int numBytes) {}
 
   @Override
-  public void readToByteBuffer(ByteBuffer dst, int pos, int length) {}
+  public void readToByteBuffer(ByteBuffer dst, int length) {}
+
+  @Override
+  public int readToByteBuffer(ByteBuffer dst) {
+    return 0;
+  }
 
   @Override
   public MemoryBuffer getBuffer() {

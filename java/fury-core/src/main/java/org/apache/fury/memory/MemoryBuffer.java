@@ -2185,11 +2185,22 @@ public final class MemoryBuffer {
     readBytes(dst, 0, dst.length);
   }
 
-  public void read(ByteBuffer dst, int pos, int len) {
+  public int read(ByteBuffer dst) {
+    int readerIdx = readerIndex;
+    int len = dst.remaining();
+    // use subtract to avoid overflow
+    if (readerIdx > size - len) {
+      return streamReader.readToByteBuffer(dst);
+    }
+    read(dst, len);
+    return len;
+  }
+
+  public void read(ByteBuffer dst, int len) {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - len) {
-      streamReader.readToByteBuffer(dst, pos, len);
+      streamReader.readToByteBuffer(dst, len);
       return;
     }
     readerIndex = readerIdx + len;

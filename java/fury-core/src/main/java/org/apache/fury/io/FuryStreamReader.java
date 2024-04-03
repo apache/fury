@@ -45,7 +45,9 @@ public interface FuryStreamReader {
   /**
    * Read data into `dst`. This method will block until the enough data are written into the `dst`.
    */
-  void readToByteBuffer(ByteBuffer dst, int pos, int length);
+  void readToByteBuffer(ByteBuffer dst, int length);
+
+  int readToByteBuffer(ByteBuffer dst);
 
   /**
    * Returns the underlying {@link MemoryBuffer}. This method will return same instance of buffer

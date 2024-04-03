@@ -34,7 +34,7 @@ public class MemoryBufferReadableChannel implements ReadableByteChannel {
 
   @Override
   public int read(ByteBuffer dst) {
-    return -1;
+    return buffer.read(dst);
   }
 
   @Override

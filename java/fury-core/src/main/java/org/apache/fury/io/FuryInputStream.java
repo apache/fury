@@ -123,7 +123,7 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
   }
 
   @Override
-  public void readToByteBuffer(ByteBuffer dst, int pos, int length) {
+  public void readToByteBuffer(ByteBuffer dst, int length) {
     MemoryBuffer buf = buffer;
     int remaining = buf.remaining();
     if (remaining < length) {
@@ -132,6 +132,32 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     byte[] heapMemory = buf.getHeapMemory();
     dst.put(heapMemory, buf.unsafeHeapReaderIndex(), length);
     buf.increaseReaderIndexUnsafe(length);
+  }
+
+  @Override
+  public int readToByteBuffer(ByteBuffer dst) {
+    MemoryBuffer buf = buffer;
+    int remaining = buf.remaining();
+    int len = dst.remaining();
+    if (remaining >= len) {
+      buf.read(dst, len);
+      return len;
+    } else {
+      try {
+        buf.read(dst, remaining);
+        int available = stream.available();
+        if (available > 0) {
+          fillBuffer(available);
+          int newRemaining = buf.remaining();
+          buf.read(dst, newRemaining);
+          return newRemaining + remaining;
+        } else {
+          return remaining;
+        }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   @Override
