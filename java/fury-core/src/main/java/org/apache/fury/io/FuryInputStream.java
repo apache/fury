@@ -31,6 +31,7 @@ import org.apache.fury.memory.MemoryBuffer;
  */
 @NotThreadSafe
 public class FuryInputStream extends InputStream implements FuryStreamReader {
+  private static final int BUFFER_GROW_STEP_THRESHOLD = 100 * 1024 * 1024;
   private final InputStream stream;
   private final int bufferSize;
   private final MemoryBuffer buffer;
@@ -42,7 +43,9 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
   public FuryInputStream(InputStream stream, int bufferSize) {
     this.stream = stream;
     this.bufferSize = bufferSize;
-    this.buffer = MemoryBuffer.newHeapBuffer(bufferSize);
+    byte[] bytes = new byte[bufferSize];
+    this.buffer = MemoryBuffer.fromByteArray(bytes, 0, 0);
+    buffer.setStreamReader(this);
   }
 
   @Override
@@ -52,7 +55,7 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     int offset = buffer.size();
     int targetSize = offset + minFillSize;
     if (targetSize > heapMemory.length) {
-      if (targetSize < 536870912) {
+      if (targetSize < BUFFER_GROW_STEP_THRESHOLD) {
         buffer.grow(targetSize * 2);
       } else {
         buffer.grow((int) (targetSize * 1.5));
@@ -61,7 +64,7 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     }
     try {
       int read;
-      read = stream.read(heapMemory, offset, heapMemory.length);
+      read = stream.read(heapMemory, offset, Math.min(stream.available(), heapMemory.length));
       while (read < minFillSize) {
         int newRead = stream.read(heapMemory, offset + read, minFillSize - read);
         if (newRead > 0) {
@@ -70,6 +73,7 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
           return read;
         }
       }
+      buffer.increaseSize(read);
       return read;
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -85,6 +89,10 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     return stream;
   }
 
+  /**
+   * Shrink buffer to release memory, do not invoke this method is the deserialization for an object
+   * didn't finish.
+   */
   public void shrinkBuffer() {
     int remaining = buffer.remaining();
     int bufferSize = this.bufferSize;

@@ -91,7 +91,7 @@ public final class MemoryBuffer {
   private int size;
   private int readerIndex;
   private int writerIndex;
-  private FuryStreamReader reader;
+  private FuryStreamReader streamReader;
 
   /**
    * Creates a new memory buffer that represents the memory of the byte array.
@@ -163,6 +163,10 @@ public final class MemoryBuffer {
    */
   public int size() {
     return size;
+  }
+
+  public void increaseSize(int diff) {
+    this.addressLimit = address + (size += diff);
   }
 
   /**
@@ -2220,8 +2224,8 @@ public final class MemoryBuffer {
   }
 
   private void fillReadableBytes(int minimumReadableBytes) {
-    if (reader != null) {
-      reader.fillBuffer(minimumReadableBytes);
+    if (streamReader != null) {
+      streamReader.fillBuffer(minimumReadableBytes);
       return;
     }
     throw new IndexOutOfBoundsException(
@@ -2233,8 +2237,8 @@ public final class MemoryBuffer {
   public void checkReadableBytes(int minimumReadableBytes) {
     // use subtract to avoid overflow
     if (readerIndex > size - minimumReadableBytes) {
-      if (reader != null) {
-        reader.fillBuffer(minimumReadableBytes);
+      if (streamReader != null) {
+        streamReader.fillBuffer(minimumReadableBytes);
         return;
       }
       throw new IndexOutOfBoundsException(
@@ -2251,7 +2255,9 @@ public final class MemoryBuffer {
   public void readToUnsafe(Object target, long targetPointer, int numBytes) {
     int readerIdx = readerIndex;
     final long thisPointer = this.address + readerIdx;
-    fillReadableBytes(numBytes);
+    if (readerIdx > size - numBytes) {
+      fillReadableBytes(numBytes);
+    }
     Platform.copyMemory(this.heapMemory, thisPointer, target, targetPointer, numBytes);
     readerIndex = readerIdx + numBytes;
   }
@@ -2405,6 +2411,14 @@ public final class MemoryBuffer {
         return Platform.createDirectByteBufferFromNativeAddress(address + offset, length);
       }
     }
+  }
+
+  public void setStreamReader(FuryStreamReader streamReader) {
+    this.streamReader = streamReader;
+  }
+
+  public FuryStreamReader getStreamReader() {
+    return streamReader;
   }
 
   /**

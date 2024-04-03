@@ -22,14 +22,25 @@ package org.apache.fury.io;
 import java.io.InputStream;
 import org.apache.fury.memory.MemoryBuffer;
 
-/**
- * A streaming reader to make {@link MemoryBuffer} to support streaming reading.
- */
+/** A streaming reader to make {@link MemoryBuffer} to support streaming reading. */
 public interface FuryStreamReader {
+  /**
+   * Read stream and fill the data to underlying {@link MemoryBuffer}, which is also the buffer
+   * returned by {@link #getBuffer}.
+   */
   int fillBuffer(int minFillSize);
 
+  /**
+   * Returns the underlying {@link MemoryBuffer}. This method will return same instance of buffer
+   * for same {@link FuryStreamReader} instance.
+   */
   MemoryBuffer getBuffer();
 
+  /**
+   * Create a {@link FuryInputStream} from the provided {@link InputStream}. Note that the provided
+   * stream will be owned by the returned {@link FuryInputStream}, <bold>do not</bold> read the
+   * provided {@link InputStream} anymore, read the returned stream instead.
+   */
   static FuryInputStream of(InputStream stream) {
     return new FuryInputStream(stream);
   }

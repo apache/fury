@@ -36,7 +36,6 @@ import org.apache.fury.config.Config;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.config.LongEncoding;
-import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
@@ -260,22 +259,11 @@ public final class Fury implements BaseFury {
   }
 
   public void serialize(OutputStream outputStream, Object obj) {
-    serialize(outputStream, obj, null);
+    serializeToStream(outputStream, buf -> serialize(buf, obj, null));
   }
 
   public void serialize(OutputStream outputStream, Object obj, BufferCallback callback) {
-    MemoryBuffer buf = getBuffer();
-    buf.writerIndex(0);
-    buf.writeInt(-1);
-    serialize(buf, obj, callback);
-    buf.putInt(0, buf.writerIndex() - 4);
-    try {
-      outputStream.write(buf.getBytes(0, buf.writerIndex()));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    } finally {
-      resetBuffer();
-    }
+    serializeToStream(outputStream, buf -> serialize(buf, obj, callback));
   }
 
   private StackOverflowError processStackOverflowError(StackOverflowError e) {
@@ -776,7 +764,7 @@ public final class Fury implements BaseFury {
       ObjectArray readObjects = ((MapRefResolver) refResolver).getReadObjects();
       // carry with read objects for better trouble shooting.
       List<Object> objects = Arrays.asList(readObjects.objects).subList(0, readObjects.size);
-      throw new DeserializationException(objects, t);
+      throw new RuntimeException(t);
     } else {
       Platform.throwException(t);
     }
@@ -1170,6 +1158,7 @@ public final class Fury implements BaseFury {
     MemoryBuffer buf = getBuffer();
     if (outputStream.getClass() == ByteArrayOutputStream.class) {
       byte[] oldBytes = buf.getHeapMemory(); // Note: This should not be null.
+      assert oldBytes != null;
       MemoryUtils.wrap((ByteArrayOutputStream) outputStream, buf);
       function.accept(buf);
       MemoryUtils.wrap(buf, (ByteArrayOutputStream) outputStream);
