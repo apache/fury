@@ -1582,7 +1582,7 @@ public class ClassResolver {
     short classId;
     // use classId
     if ((flag & 0x80) != 0) { // class id is written using multiple bytes.
-      buffer.increaseReaderIndexUnsafe(-1);
+      buffer.increaseReaderIndex(-1);
       classId = (short) buffer.readPositiveVarInt();
     } else {
       classId = (short) (flag & 0x7F);

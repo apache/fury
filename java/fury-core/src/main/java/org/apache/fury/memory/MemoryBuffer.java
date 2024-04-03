@@ -1041,18 +1041,16 @@ public final class MemoryBuffer {
     return readerIndex + heapOffset;
   }
 
-  public void increaseReaderIndexUnsafe(int diff) {
-    readerIndex += diff;
-  }
-
   public void increaseReaderIndex(int diff) {
-    int readerIdx = readerIndex + diff;
-    if (readerIdx < 0 || readerIdx > size) {
+    int readerIdx = readerIndex += diff;
+    if (readerIdx < 0) {
       throw new IndexOutOfBoundsException(
           String.format(
               "readerIndex: %d (expected: 0 <= readerIndex <= size(%d))", readerIdx, size));
+    } else if (readerIdx > size) {
+      // in this case, diff must be greater than 0.
+      streamReader.fillBuffer(readerIdx - size);
     }
-    this.readerIndex = readerIdx;
   }
 
   public long getUnsafeReaderAddress() {

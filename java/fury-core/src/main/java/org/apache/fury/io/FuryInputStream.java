@@ -119,7 +119,7 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     byte[] heapMemory = buf.getHeapMemory();
     long address = buf.getUnsafeReaderAddress();
     Platform.copyMemory(heapMemory, address, target, targetPointer, numBytes);
-    buf.increaseReaderIndexUnsafe(numBytes);
+    buf.increaseReaderIndex(numBytes);
   }
 
   @Override
@@ -131,7 +131,7 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     }
     byte[] heapMemory = buf.getHeapMemory();
     dst.put(heapMemory, buf.unsafeHeapReaderIndex(), length);
-    buf.increaseReaderIndexUnsafe(length);
+    buf.increaseReaderIndex(length);
   }
 
   @Override

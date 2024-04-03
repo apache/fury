@@ -256,12 +256,12 @@ public final class StringSerializer extends Serializer<String> {
       }
       if (coder == UTF8) {
         String str = new String(heapMemory, arrIndex, numBytes, StandardCharsets.UTF_8);
-        buffer.increaseReaderIndexUnsafe(arrIndex - targetIndex + numBytes);
+        buffer.increaseReaderIndex(arrIndex - targetIndex + numBytes);
         return str;
       }
       final byte[] bytes = new byte[numBytes];
       System.arraycopy(heapMemory, arrIndex, bytes, 0, numBytes);
-      buffer.increaseReaderIndexUnsafe(arrIndex - targetIndex + numBytes);
+      buffer.increaseReaderIndex(arrIndex - targetIndex + numBytes);
       return newBytesStringZeroCopy(coder, bytes);
     } else {
       byte coder = buffer.readByte();
@@ -486,7 +486,7 @@ public final class StringSerializer extends Serializer<String> {
       for (int i = 0; i < numBytes; i++) {
         chars[i] = (char) (targetArray[srcIndex++] & 0xff);
       }
-      buffer.increaseReaderIndexUnsafe(numBytes);
+      buffer.increaseReaderIndex(numBytes);
     } else {
       byte[] byteArray = getByteArray(numBytes);
       buffer.readBytes(byteArray, 0, numBytes);
@@ -519,7 +519,7 @@ public final class StringSerializer extends Serializer<String> {
                       | ((targetArray[i + 1] & 0xff) << StringUTF16.LO_BYTE_SHIFT));
           chars[charIndex++] = c;
         }
-        buffer.increaseReaderIndexUnsafe(numBytes);
+        buffer.increaseReaderIndex(numBytes);
       } else {
         final byte[] tmpArray = getByteArray(numBytes);
         buffer.readBytes(tmpArray, 0, numBytes);
