@@ -44,6 +44,13 @@ The text of each license is the standard Apache 2.0 license.
 * ray (https://github.com/ray-project/ray)
     Files:
       ci/format.sh
+      bazel/fury_deps_setup.bzl
+      bazel/grpc-cython-copts.patch
+      bazel/grpc-python.patch
+
+* tensorflow (https://github.com/tensorflow/tensorflow)
+    Files:
+      bazel/arrow/pyarrow_configure.bzl
 
 
 ================================================================
@@ -69,6 +76,10 @@ The text of each license is also included in licenses/LICENSE-[project].txt.
       java/fury-core/src/main/java/org/apache/fury/type/Generics.java
       java/fury-core/src/test/java/org/apache/fury/type/GenericsTest.java
 
+* v8 (https://chromium.googlesource.com/v8/v8.git)
+    Files:
+      javascript/packages/hps/src/v8-fast-api-calls.h
+
 
 ================================================================
 MIT licenses
@@ -80,16 +91,9 @@ The text of each license is also included in licenses/LICENSE-[project].txt
     Files:
       javascript/packages/fury/lib/murmurHash3.ts
 
-
-================================================================
-Node.js licenses
-================================================================
-The following components are provided under the Node.js License. See project link for details.
-The text of each license is also included in licenses/LICENSE-[project].txt.
-
-* node (https://github.com/nodejs/node)
+* cython-abseil-sample (https://github.com/messense/cython-abseil-sample)
     Files:
-      javascript/packages/hps/src/v8-fast-api-calls.h
+      python/pyfury/includes/libabsl.pxd
 
 
 ================================================================
