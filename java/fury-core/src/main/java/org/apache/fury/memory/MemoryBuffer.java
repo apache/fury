@@ -1042,7 +1042,8 @@ public final class MemoryBuffer {
   }
 
   public void increaseReaderIndex(int diff) {
-    int readerIdx = readerIndex += diff;
+    int readerIdx = readerIndex;
+    readerIndex = readerIdx += diff;
     if (readerIdx < 0) {
       throw new IndexOutOfBoundsException(
           String.format(
@@ -1925,6 +1926,15 @@ public final class MemoryBuffer {
 
   /** Read fury SLI(Small Long as Int) encoded long. */
   public long readSliLong() {
+    if (LITTLE_ENDIAN) {
+      return readSliLongLE();
+    } else {
+      return readSliLongBE();
+    }
+  }
+
+  public long readSliLongLE() {
+    // noinspection Duplicates
     final int readIdx = readerIndex;
     final long pos = address + readIdx;
     final byte[] heapMemory = this.heapMemory;
@@ -1932,30 +1942,38 @@ public final class MemoryBuffer {
     if (diff < 4) {
       streamReader.fillBuffer(4 - diff);
     }
-    if (LITTLE_ENDIAN) {
-      int i = UNSAFE.getInt(heapMemory, pos);
-      if ((i & 0b1) != 0b1) {
-        readerIndex = readIdx + 4;
-        return i >> 1;
-      } else {
-        if (diff < 9) {
-          streamReader.fillBuffer(9 - diff);
-        }
-        readerIndex = readIdx + 9;
-        return UNSAFE.getLong(heapMemory, pos + 1);
-      }
+    int i = UNSAFE.getInt(heapMemory, pos);
+    if ((i & 0b1) != 0b1) {
+      readerIndex = readIdx + 4;
+      return i >> 1;
     } else {
-      int i = Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos));
-      if ((i & 0b1) != 0b1) {
-        readerIndex = readIdx + 4;
-        return i >> 1;
-      } else {
-        if (diff < 9) {
-          streamReader.fillBuffer(9 - diff);
-        }
-        readerIndex = readIdx + 9;
-        return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos + 1));
+      if (diff < 9) {
+        streamReader.fillBuffer(9 - diff);
       }
+      readerIndex = readIdx + 9;
+      return UNSAFE.getLong(heapMemory, pos + 1);
+    }
+  }
+
+  public long readSliLongBE() {
+    // noinspection Duplicates
+    final int readIdx = readerIndex;
+    final long pos = address + readIdx;
+    final byte[] heapMemory = this.heapMemory;
+    int diff = size - readIdx;
+    if (diff < 4) {
+      streamReader.fillBuffer(4 - diff);
+    }
+    int i = Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos));
+    if ((i & 0b1) != 0b1) {
+      readerIndex = readIdx + 4;
+      return i >> 1;
+    } else {
+      if (diff < 9) {
+        streamReader.fillBuffer(9 - diff);
+      }
+      readerIndex = readIdx + 9;
+      return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos + 1));
     }
   }
 
