@@ -24,18 +24,28 @@ public class StreamTest {
     bas.flush();
     ByteArrayInputStream bis = new ByteArrayInputStream(bas.toByteArray());
     FuryInputStream stream = of(bis);
+    MemoryBuffer buf = MemoryBuffer.fromByteArray(bas.toByteArray());
     Object newObj = fury.deserialize(stream);
     assertEquals(newObj, beanA);
+    newObj = fury.deserialize(buf);
+    assertEquals(newObj, beanA);
     newObj = fury.deserialize(stream);
+    assertEquals(newObj, beanA);
+    newObj = fury.deserialize(buf);
     assertEquals(newObj, beanA);
 
     fury = Fury.builder().requireClassRegistration(false).build();
     // test reader buffer grow
     bis = new ByteArrayInputStream(bas.toByteArray());
     stream = of(bis);
+    buf = MemoryBuffer.fromByteArray(bas.toByteArray());
     newObj = fury.deserialize(stream);
     assertEquals(newObj, beanA);
+    newObj = fury.deserialize(buf);
+    assertEquals(newObj, beanA);
     newObj = fury.deserialize(stream);
+    assertEquals(newObj, beanA);
+    newObj = fury.deserialize(buf);
     assertEquals(newObj, beanA);
   }
 
@@ -65,9 +75,15 @@ public class StreamTest {
     // test reader buffer grow
     bis = new ByteArrayInputStream(bas.toByteArray());
     stream = of(bis);
+    MemoryBuffer buf = MemoryBuffer.fromByteArray(bas.toByteArray());
     newObj = fury.deserialize(stream);
     assertEquals(newObj, beanA);
+    newObj = fury.deserialize(buf);
+    assertEquals(newObj, beanA);
+
     newObj = fury.deserialize(stream);
+    assertEquals(newObj, beanA);
+    newObj = fury.deserialize(buf);
     assertEquals(newObj, beanA);
   }
 
