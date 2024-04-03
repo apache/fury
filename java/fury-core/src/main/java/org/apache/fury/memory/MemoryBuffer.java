@@ -29,7 +29,7 @@ import java.util.Arrays;
 import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.io.FuryStreamReader;
 import org.apache.fury.util.Platform;
-import org.apache.fury.util.Preconditions;
+import sun.misc.Unsafe;
 
 /**
  * A class for operations on memory managed by Fury. The buffer may be backed by heap memory (byte
@@ -63,7 +63,7 @@ import org.apache.fury.util.Preconditions;
 // org.apache.arrow.memory.ArrowBuf.
 public final class MemoryBuffer {
   // The unsafe handle for transparent memory copied (heap/off-heap).
-  private static final sun.misc.Unsafe UNSAFE = Platform.UNSAFE;
+  private static final Unsafe UNSAFE = Platform.UNSAFE;
   // Constant that flags the byte order. Because this is a boolean constant, the JIT compiler can
   // use this well to aggressively eliminate the non-applicable code paths.
   private static final boolean LITTLE_ENDIAN = (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN);
@@ -91,7 +91,7 @@ public final class MemoryBuffer {
   private int size;
   private int readerIndex;
   private int writerIndex;
-  private FuryStreamReader streamReader;
+  private final FuryStreamReader streamReader;
 
   /**
    * Creates a new memory buffer that represents the memory of the byte array.
@@ -102,24 +102,30 @@ public final class MemoryBuffer {
    * @param length buffer size
    */
   private MemoryBuffer(byte[] buffer, int offset, int length) {
-    Preconditions.checkArgument(offset >= 0 && length >= 0);
+    this(buffer, offset, length, null);
+  }
+
+  /**
+   * Creates a new memory buffer that represents the memory of the byte array.
+   *
+   * @param buffer The byte array whose memory is represented by this memory buffer.
+   * @param offset The offset of the sub array to be used; must be non-negative and no larger than
+   *     <tt>array.length</tt>.
+   * @param length buffer size
+   * @param streamReader a reader for reading from a stream.
+   */
+  private MemoryBuffer(byte[] buffer, int offset, int length, FuryStreamReader streamReader) {
+    checkArgument(offset >= 0 && length >= 0);
     if (offset + length > buffer.length) {
       throw new IllegalArgumentException(
           String.format("%d exceeds buffer size %d", offset + length, buffer.length));
     }
     initHeapBuffer(buffer, offset, length);
-  }
-
-  public void initHeapBuffer(byte[] buffer, int offset, int length) {
-    if (buffer == null) {
-      throw new NullPointerException("buffer");
+    if (streamReader != null) {
+      this.streamReader = streamReader;
+    } else {
+      this.streamReader = new BoundCheckReader();
     }
-    this.heapMemory = buffer;
-    this.heapOffset = offset;
-    final long startPos = Platform.BYTE_ARRAY_OFFSET + offset;
-    this.address = startPos;
-    this.size = length;
-    this.addressLimit = startPos + length;
   }
 
   /**
@@ -133,6 +139,22 @@ public final class MemoryBuffer {
    *     the memory being released.
    */
   private MemoryBuffer(long offHeapAddress, int size, ByteBuffer offHeapBuffer) {
+    this(offHeapAddress, size, offHeapBuffer, null);
+  }
+
+  /**
+   * Creates a new memory buffer that represents the native memory at the absolute address given by
+   * the pointer.
+   *
+   * @param offHeapAddress The address of the memory represented by this memory buffer.
+   * @param size The size of this memory buffer.
+   * @param offHeapBuffer The byte buffer whose memory is represented by this memory buffer which
+   *     may be null if the memory is not allocated by `DirectByteBuffer`. Hold this buffer to avoid
+   *     the memory being released.
+   * @param streamReader a reader for reading from a stream.
+   */
+  private MemoryBuffer(
+      long offHeapAddress, int size, ByteBuffer offHeapBuffer, FuryStreamReader streamReader) {
     this.offHeapBuffer = offHeapBuffer;
     if (offHeapAddress <= 0) {
       throw new IllegalArgumentException("negative pointer or size");
@@ -150,6 +172,38 @@ public final class MemoryBuffer {
     this.address = offHeapAddress;
     this.addressLimit = this.address + size;
     this.size = size;
+    if (streamReader != null) {
+      this.streamReader = streamReader;
+    } else {
+      this.streamReader = new BoundCheckReader();
+    }
+  }
+
+  private class BoundCheckReader implements FuryStreamReader {
+    @Override
+    public int fillBuffer(int minFillSize) {
+      throw new IndexOutOfBoundsException(
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s",
+              readerIndex, minFillSize, size, this));
+    }
+
+    @Override
+    public MemoryBuffer getBuffer() {
+      return MemoryBuffer.this;
+    }
+  }
+
+  public void initHeapBuffer(byte[] buffer, int offset, int length) {
+    if (buffer == null) {
+      throw new NullPointerException("buffer");
+    }
+    this.heapMemory = buffer;
+    this.heapOffset = offset;
+    final long startPos = Platform.BYTE_ARRAY_OFFSET + offset;
+    this.address = startPos;
+    this.size = length;
+    this.addressLimit = startPos + length;
   }
 
   // ------------------------------------------------------------------------
@@ -1606,7 +1660,7 @@ public final class MemoryBuffer {
         b = readByte();
         if ((b & 0x40) == 0) { // has 3rd padding bytes
           b = readByte();
-          Preconditions.checkArgument((b & 0x40) != 0, "At most 3 padding bytes.");
+          checkArgument((b & 0x40) != 0, "At most 3 padding bytes.");
         }
       }
     }
@@ -1621,7 +1675,7 @@ public final class MemoryBuffer {
         b = UNSAFE.getByte(heapMemory, pos++);
         if ((b & 0x40) == 0) { // has 3rd padding bytes
           b = UNSAFE.getByte(heapMemory, pos++);
-          Preconditions.checkArgument((b & 0x40) != 0, "At most 3 padding bytes.");
+          checkArgument((b & 0x40) != 0, "At most 3 padding bytes.");
         }
       }
     }
@@ -1877,7 +1931,7 @@ public final class MemoryBuffer {
     int size = this.size;
     final byte[] heapMemory = this.heapMemory;
     if (size - readIdx < 4) {
-      fillReadableBytes(4 - (size - readIdx));
+      streamReader.fillBuffer(4 - (size - readIdx));
       size = this.size;
     }
     if (LITTLE_ENDIAN) {
@@ -1887,7 +1941,7 @@ public final class MemoryBuffer {
         return i >> 1;
       } else {
         if (size - readIdx < 9) {
-          fillReadableBytes(9 - (size - readIdx));
+          streamReader.fillBuffer(9 - (size - readIdx));
         }
         readerIndex = readIdx + 9;
         return UNSAFE.getLong(heapMemory, pos + 1);
@@ -1899,7 +1953,7 @@ public final class MemoryBuffer {
         return i >> 1;
       } else {
         if (size - readIdx < 9) {
-          fillReadableBytes(9 - (size - readIdx));
+          streamReader.fillBuffer(9 - (size - readIdx));
         }
         readerIndex = readIdx + 9;
         return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos + 1));
@@ -1982,7 +2036,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - 1) {
-      fillReadableBytes(1);
+      streamReader.fillBuffer(1);
     }
     readerIndex = readerIdx + 1;
     return UNSAFE.getByte(heapMemory, address + readerIdx) != 0;
@@ -1991,7 +2045,7 @@ public final class MemoryBuffer {
   public byte readByte() {
     int readerIdx = readerIndex;
     if (readerIdx > size - 1) {
-      fillReadableBytes(1);
+      streamReader.fillBuffer(1);
     }
     readerIndex = readerIdx + 1;
     return UNSAFE.getByte(heapMemory, address + readerIdx);
@@ -2001,7 +2055,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - 2) {
-      fillReadableBytes(2);
+      streamReader.fillBuffer(2);
     }
     readerIndex = readerIdx + 2;
     final long pos = address + readerIdx;
@@ -2016,7 +2070,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - 2) {
-      fillReadableBytes(2);
+      streamReader.fillBuffer(2);
     }
     readerIndex = readerIdx + 2;
     final long pos = address + readerIdx;
@@ -2031,7 +2085,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - 4) {
-      fillReadableBytes(4);
+      streamReader.fillBuffer(4);
     }
     readerIndex = readerIdx + 4;
     final long pos = address + readerIdx;
@@ -2046,7 +2100,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - 8) {
-      fillReadableBytes(8);
+      streamReader.fillBuffer(8);
     }
     readerIndex = readerIdx + 8;
     final long pos = address + readerIdx;
@@ -2061,7 +2115,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - 4) {
-      fillReadableBytes(4);
+      streamReader.fillBuffer(4);
     }
     readerIndex = readerIdx + 4;
     final long pos = address + readerIdx;
@@ -2076,7 +2130,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - 8) {
-      fillReadableBytes(8);
+      streamReader.fillBuffer(8);
     }
     readerIndex = readerIdx + 8;
     final long pos = address + readerIdx;
@@ -2091,7 +2145,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - length) {
-      fillReadableBytes(length);
+      streamReader.fillBuffer(length);
     }
     byte[] heapMemory = this.heapMemory;
     final byte[] bytes = new byte[length];
@@ -2109,7 +2163,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - length) {
-      fillReadableBytes(length);
+      streamReader.fillBuffer(length);
     }
     if (dstIndex > dst.length - length) {
       throw new IndexOutOfBoundsException();
@@ -2139,7 +2193,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - numBytes) {
-      fillReadableBytes(numBytes);
+      streamReader.fillBuffer(numBytes);
     }
     final byte[] arr = new byte[numBytes];
     byte[] heapMemory = this.heapMemory;
@@ -2158,7 +2212,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - numBytes) {
-      fillReadableBytes(numBytes);
+      streamReader.fillBuffer(numBytes);
     }
     final byte[] arr = new byte[numBytes];
     Platform.UNSAFE.copyMemory(
@@ -2176,7 +2230,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - numBytes) {
-      fillReadableBytes(numBytes);
+      streamReader.fillBuffer(numBytes);
     }
     final char[] chars = new char[numBytes / 2];
     Platform.copyMemory(
@@ -2190,7 +2244,7 @@ public final class MemoryBuffer {
     final int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - numBytes) {
-      fillReadableBytes(numBytes);
+      streamReader.fillBuffer(numBytes);
     }
     final char[] chars = new char[numBytes / 2];
     Platform.copyMemory(
@@ -2204,7 +2258,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - numBytes) {
-      fillReadableBytes(numBytes);
+      streamReader.fillBuffer(numBytes);
     }
     final long[] longs = new long[numBytes / 8];
     Platform.copyMemory(
@@ -2217,34 +2271,16 @@ public final class MemoryBuffer {
     final int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - numBytes) {
-      fillReadableBytes(numBytes);
+      streamReader.fillBuffer(numBytes);
     }
     Platform.copyMemory(heapMemory, address + readerIdx, chars, offset, numBytes);
     readerIndex = readerIdx + numBytes;
   }
 
-  private void fillReadableBytes(int minimumReadableBytes) {
-    if (streamReader != null) {
-      streamReader.fillBuffer(minimumReadableBytes);
-      return;
-    }
-    throw new IndexOutOfBoundsException(
-        String.format(
-            "readerIndex(%d) + length(%d) exceeds size(%d): %s",
-            readerIndex, minimumReadableBytes, size, this));
-  }
-
   public void checkReadableBytes(int minimumReadableBytes) {
     // use subtract to avoid overflow
     if (readerIndex > size - minimumReadableBytes) {
-      if (streamReader != null) {
-        streamReader.fillBuffer(minimumReadableBytes);
-        return;
-      }
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s",
-              readerIndex, minimumReadableBytes, size, this));
+      streamReader.fillBuffer(minimumReadableBytes);
     }
   }
 
@@ -2256,7 +2292,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     final long thisPointer = this.address + readerIdx;
     if (readerIdx > size - numBytes) {
-      fillReadableBytes(numBytes);
+      streamReader.fillBuffer(numBytes);
     }
     Platform.copyMemory(this.heapMemory, thisPointer, target, targetPointer, numBytes);
     readerIndex = readerIdx + numBytes;
@@ -2413,10 +2449,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public void setStreamReader(FuryStreamReader streamReader) {
-    this.streamReader = streamReader;
-  }
-
   public FuryStreamReader getStreamReader() {
     return streamReader;
   }
@@ -2470,8 +2502,8 @@ public final class MemoryBuffer {
   public boolean equalTo(MemoryBuffer buf2, int offset1, int offset2, int len) {
     final long pos1 = address + offset1;
     final long pos2 = buf2.address + offset2;
-    Preconditions.checkArgument(pos1 < addressLimit);
-    Preconditions.checkArgument(pos2 < buf2.addressLimit);
+    checkArgument(pos1 < addressLimit);
+    checkArgument(pos2 < buf2.addressLimit);
     return Platform.arrayEquals(heapMemory, pos1, buf2.heapMemory, pos2, len);
   }
 
@@ -2519,7 +2551,12 @@ public final class MemoryBuffer {
 
   /** Creates a new memory buffer that targets to the given heap memory region. */
   public static MemoryBuffer fromByteArray(byte[] buffer, int offset, int length) {
-    return new MemoryBuffer(buffer, offset, length);
+    return new MemoryBuffer(buffer, offset, length, null);
+  }
+
+  public static MemoryBuffer fromByteArray(
+      byte[] buffer, int offset, int length, FuryStreamReader streamReader) {
+    return new MemoryBuffer(buffer, offset, length, streamReader);
   }
 
   /** Creates a new memory buffer that targets to the given heap memory region. */

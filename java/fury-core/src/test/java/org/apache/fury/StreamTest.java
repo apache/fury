@@ -13,7 +13,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.test.bean.BeanA;
 import org.testng.annotations.Test;
 
-public class StreamingTest {
+public class StreamTest {
   @Test
   public void testOutputStream() throws IOException {
     Fury fury = Fury.builder().requireClassRegistration(false).build();

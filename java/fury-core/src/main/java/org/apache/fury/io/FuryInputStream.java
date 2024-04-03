@@ -44,8 +44,7 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     this.stream = stream;
     this.bufferSize = bufferSize;
     byte[] bytes = new byte[bufferSize];
-    this.buffer = MemoryBuffer.fromByteArray(bytes, 0, 0);
-    buffer.setStreamReader(this);
+    this.buffer = MemoryBuffer.fromByteArray(bytes, 0, 0, this);
   }
 
   @Override
