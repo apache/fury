@@ -171,7 +171,7 @@ public class ClassDef implements Serializable {
       for (FieldInfo fieldInfo : fieldsInfo) {
         writeSharedString(buf, map, fieldInfo.definedClass);
         byte[] bytes = fieldInfo.fieldName.getBytes(StandardCharsets.UTF_8);
-        buf.writePrimitiveArrayWithSizeEmbedded(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
+        buf.writePrimitiveArrayWithSize(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
         fieldInfo.fieldType.write(buf);
       }
       buf.writePositiveVarInt(extMeta.size());
@@ -179,9 +179,8 @@ public class ClassDef implements Serializable {
           (k, v) -> {
             byte[] keyBytes = k.getBytes(StandardCharsets.UTF_8);
             byte[] valueBytes = v.getBytes(StandardCharsets.UTF_8);
-            buf.writePrimitiveArrayWithSizeEmbedded(
-                keyBytes, Platform.BYTE_ARRAY_OFFSET, keyBytes.length);
-            buf.writePrimitiveArrayWithSizeEmbedded(
+            buf.writePrimitiveArrayWithSize(keyBytes, Platform.BYTE_ARRAY_OFFSET, keyBytes.length);
+            buf.writePrimitiveArrayWithSize(
                 valueBytes, Platform.BYTE_ARRAY_OFFSET, valueBytes.length);
           });
       serialized = this.serialized = buf.getBytes(0, buf.writerIndex());
@@ -204,7 +203,7 @@ public class ClassDef implements Serializable {
     } else {
       buffer.writeBoolean(false);
       byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
-      buffer.writePrimitiveArrayWithSizeEmbedded(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
+      buffer.writePrimitiveArrayWithSize(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
     }
   }
 

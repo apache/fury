@@ -1983,12 +1983,12 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void writeBytesWithSizeEmbedded(byte[] arr) {
-    writePrimitiveArrayWithSizeEmbedded(arr, Platform.BYTE_ARRAY_OFFSET, arr.length);
+  public void writeBytesWithSize(byte[] arr) {
+    writePrimitiveArrayWithSize(arr, Platform.BYTE_ARRAY_OFFSET, arr.length);
   }
 
   /** Write a primitive array into buffer with size varint encoded into the buffer. */
-  public void writePrimitiveArrayWithSizeEmbedded(Object arr, int offset, int numBytes) {
+  public void writePrimitiveArrayWithSize(Object arr, int offset, int numBytes) {
     int idx = writerIndex;
     ensure(idx + 5 + numBytes);
     idx += unsafeWritePositiveVarInt(numBytes);
@@ -1997,7 +1997,7 @@ public final class MemoryBuffer {
     writerIndex = idx + numBytes;
   }
 
-  public void writePrimitiveArrayAlignedSizeEmbedded(Object arr, int offset, int numBytes) {
+  public void writePrimitiveArrayAlignedSize(Object arr, int offset, int numBytes) {
     writePositiveVarIntAligned(numBytes);
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + numBytes;
@@ -2234,7 +2234,7 @@ public final class MemoryBuffer {
     return arr;
   }
 
-  public byte[] readBytesAlignedSizeEmbedded() {
+  public byte[] readBytesWithAlignedSize() {
     final int numBytes = readPositiveAlignedVarInt();
     int readerIdx = readerIndex;
     final byte[] arr = new byte[numBytes];
@@ -2249,10 +2249,7 @@ public final class MemoryBuffer {
     return arr;
   }
 
-  /**
-   * This method should be used to read data written by {@link
-   * #writePrimitiveArrayWithSizeEmbedded}.
-   */
+  /** This method should be used to read data written by {@link #writePrimitiveArrayWithSize}. */
   public char[] readChars(int numBytes) {
     int readerIdx = readerIndex;
     final char[] chars = new char[numBytes >> 1];
@@ -2278,7 +2275,7 @@ public final class MemoryBuffer {
     readerIndex = readerIdx + numBytes;
   }
 
-  public char[] readCharsAlignedSizeEmbedded() {
+  public char[] readCharsWithAlignedSize() {
     final int numBytes = readPositiveAlignedVarInt();
     return readChars(numBytes);
   }

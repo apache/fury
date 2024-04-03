@@ -127,7 +127,7 @@ public class StringSerializerTest extends FuryTestBase {
     final char[] chars =
         (char[]) Platform.getObject(value, ReflectionUtils.getFieldOffset(String.class, "value"));
     int numBytes = MathUtils.doubleExact(value.length());
-    buffer.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+    buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
   }
 
   @Test

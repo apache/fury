@@ -188,7 +188,7 @@ public final class StringSerializer extends Serializer<String> {
   public void writeCharsStringUncompressed(MemoryBuffer buffer, String value) {
     int numBytes = MathUtils.doubleExact(value.length());
     final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    buffer.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+    buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
   }
 
   public String readString(MemoryBuffer buffer) {
@@ -317,7 +317,7 @@ public final class StringSerializer extends Serializer<String> {
         }
       } else {
         int numBytes = MathUtils.doubleExact(value.length());
-        buffer.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+        buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
       }
     }
   }
@@ -439,7 +439,7 @@ public final class StringSerializer extends Serializer<String> {
     if (Platform.IS_LITTLE_ENDIAN) {
       buffer.writeByte(UTF16);
       // FIXME JDK11 utf16 string uses little-endian order.
-      buffer.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+      buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
     } else {
       // The `ensure` ensure next operations are safe without bound checks,
       // and inner heap buffer doesn't change.

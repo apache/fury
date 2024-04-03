@@ -251,7 +251,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, boolean[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -287,7 +287,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, byte[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, 1);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, 1, value.length));
@@ -321,7 +321,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, char[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -372,7 +372,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, short[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -408,7 +408,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, int[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -444,7 +444,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, long[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -480,7 +480,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, float[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -516,7 +516,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, double[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));

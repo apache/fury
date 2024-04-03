@@ -469,7 +469,7 @@ public class CollectionSerializers {
     @Override
     public void write(MemoryBuffer buffer, BitSet set) {
       long[] values = set.toLongArray();
-      buffer.writePrimitiveArrayWithSizeEmbedded(
+      buffer.writePrimitiveArrayWithSize(
           values, Platform.LONG_ARRAY_OFFSET, Math.multiplyExact(values.length, 8));
     }
 
