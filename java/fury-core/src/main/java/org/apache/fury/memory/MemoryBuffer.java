@@ -2192,7 +2192,12 @@ public final class MemoryBuffer {
     if (readerIdx > size - len) {
       return streamReader.readToByteBuffer(dst);
     }
-    read(dst, len);
+    if (heapMemory != null) {
+      dst.put(heapMemory, readerIndex + heapOffset, len);
+    } else {
+      dst.put(sliceAsByteBuffer(readerIdx, len));
+    }
+    readerIndex = readerIdx + len;
     return len;
   }
 
@@ -2201,13 +2206,13 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     if (readerIdx > size - len) {
       streamReader.readToByteBuffer(dst, len);
-      return;
-    }
-    readerIndex = readerIdx + len;
-    if (heapMemory != null) {
-      dst.put(heapMemory, readerIndex + heapOffset, len);
     } else {
-      dst.put(sliceAsByteBuffer(readerIdx, len));
+      if (heapMemory != null) {
+        dst.put(heapMemory, readerIndex + heapOffset, len);
+      } else {
+        dst.put(sliceAsByteBuffer(readerIdx, len));
+      }
+      readerIndex = readerIdx + len;
     }
   }
 
