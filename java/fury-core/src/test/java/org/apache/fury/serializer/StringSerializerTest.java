@@ -85,7 +85,8 @@ public class StringSerializerTest extends FuryTestBase {
       if (STRING_VALUE_FIELD_IS_BYTES) {
         return readJDK11String(buffer);
       } else if (STRING_VALUE_FIELD_IS_CHARS) {
-        return StringSerializer.newCharsStringZeroCopy(buffer.readCharsWithSizeEmbedded());
+        return StringSerializer.newCharsStringZeroCopy(
+            buffer.readChars(buffer.readPositiveVarInt()));
       }
       return null;
     } catch (Exception e) {
@@ -95,7 +96,7 @@ public class StringSerializerTest extends FuryTestBase {
 
   static String readJDK11String(MemoryBuffer buffer) {
     byte coder = buffer.readByte();
-    byte[] value = buffer.readBytesWithSizeEmbedded();
+    byte[] value = buffer.readBytesAndSize();
     return newBytesStringZeroCopy(coder, value);
   }
 

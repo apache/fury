@@ -369,7 +369,7 @@ public final class StringSerializer extends Serializer<String> {
           return readUTF8String(buffer);
         }
       } else {
-        return newCharsStringZeroCopy(buffer.readCharsWithSizeEmbedded());
+        return newCharsStringZeroCopy(buffer.readChars(buffer.readPositiveVarInt()));
       }
     }
   }

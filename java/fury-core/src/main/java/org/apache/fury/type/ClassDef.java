@@ -216,15 +216,15 @@ public class ClassDef implements Serializable {
     int numFields = buffer.readPositiveVarInt();
     for (int i = 0; i < numFields; i++) {
       String definedClass = readSharedString(buffer, strings);
-      String fieldName = new String(buffer.readBytesWithSizeEmbedded(), StandardCharsets.UTF_8);
+      String fieldName = new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8);
       fieldInfos.add(new FieldInfo(definedClass, fieldName, FieldType.read(buffer)));
     }
     int extMetaSize = buffer.readPositiveVarInt();
     Map<String, String> extMeta = new HashMap<>();
     for (int i = 0; i < extMetaSize; i++) {
       extMeta.put(
-          new String(buffer.readBytesWithSizeEmbedded(), StandardCharsets.UTF_8),
-          new String(buffer.readBytesWithSizeEmbedded(), StandardCharsets.UTF_8));
+          new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8),
+          new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8));
     }
     long id = buffer.readLong();
     ClassDef classDef = new ClassDef(className, fieldInfos, extMeta);
@@ -237,7 +237,7 @@ public class ClassDef implements Serializable {
     if (buffer.readBoolean()) {
       return strings.get(buffer.readPositiveVarInt());
     } else {
-      str = new String(buffer.readBytesWithSizeEmbedded(), StandardCharsets.UTF_8);
+      str = new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8);
       strings.add(str);
       return str;
     }

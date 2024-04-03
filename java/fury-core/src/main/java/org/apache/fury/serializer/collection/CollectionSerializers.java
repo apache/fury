@@ -475,7 +475,7 @@ public class CollectionSerializers {
 
     @Override
     public BitSet read(MemoryBuffer buffer) {
-      long[] values = buffer.readLongsWithSizeEmbedded();
+      long[] values = buffer.readLongs(buffer.readPositiveVarInt());
       return BitSet.valueOf(values);
     }
   }

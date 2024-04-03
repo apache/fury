@@ -21,8 +21,10 @@ package org.apache.fury.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.Platform;
 
 /**
  * A buffered stream by fury. Do not use original {@link InputStream} when this stream object
@@ -66,17 +68,66 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
       read = stream.read(heapMemory, offset, Math.min(stream.available(), heapMemory.length));
       while (read < minFillSize) {
         int newRead = stream.read(heapMemory, offset + read, minFillSize - read);
-        if (newRead > 0) {
-          read += newRead;
-        } else {
-          return read;
+        if (newRead < 0) {
+          throw new IndexOutOfBoundsException("No enough data in the stream " + stream);
         }
+        read += newRead;
       }
       buffer.increaseSize(read);
       return read;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public void readTo(byte[] dst, int dstIndex, int len) {
+    MemoryBuffer buf = buffer;
+    int remaining = buf.remaining();
+    if (remaining >= len) {
+      buf.readBytes(dst, dstIndex, len);
+    } else {
+      buf.readBytes(dst, dstIndex, remaining);
+      len -= remaining;
+      dstIndex += remaining;
+      try {
+        int read = stream.read(dst, dstIndex, len);
+        while (read < len) {
+          int newRead = stream.read(dst, dstIndex + read, len - read);
+          if (newRead < 0) {
+            throw new IndexOutOfBoundsException("No enough data in the stream " + stream);
+          }
+          read += newRead;
+        }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  @Override
+  public void readToUnsafe(Object target, long targetPointer, int numBytes) {
+    MemoryBuffer buf = buffer;
+    int remaining = buf.remaining();
+    if (remaining < numBytes) {
+      fillBuffer(numBytes - remaining);
+    }
+    byte[] heapMemory = buf.getHeapMemory();
+    long address = buf.getUnsafeReaderAddress();
+    Platform.copyMemory(heapMemory, address, target, targetPointer, numBytes);
+    buf.increaseReaderIndexUnsafe(numBytes);
+  }
+
+  @Override
+  public void readToByteBuffer(ByteBuffer dst, int pos, int length) {
+    MemoryBuffer buf = buffer;
+    int remaining = buf.remaining();
+    if (remaining < length) {
+      fillBuffer(length - remaining);
+    }
+    byte[] heapMemory = buf.getHeapMemory();
+    dst.put(heapMemory, buf.unsafeHeapReaderIndex(), length);
+    buf.increaseReaderIndexUnsafe(length);
   }
 
   @Override
@@ -107,12 +158,15 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
   @Override
   public int read() throws IOException {
     MemoryBuffer buf = buffer;
-    if (buf.remaining() <= 0) {
-      if (fillBuffer(1) == -1) {
-        return -1;
-      }
+    if (buf.remaining() > 0) {
+      return buf.readByte() & 0xFF;
     }
-    return buf.readByte() & 0xFF;
+    int available = stream.available();
+    if (available > 0) {
+      fillBuffer(1);
+      return buf.readByte() & 0xFF;
+    }
+    return stream.read();
   }
 
   @Override

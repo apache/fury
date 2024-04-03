@@ -213,8 +213,8 @@ public class MemoryBufferTest {
     }
     buf.writePrimitiveArrayWithSizeEmbedded(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
     buf.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, chars.length * 2);
-    assertEquals(bytes, buf.readBytesWithSizeEmbedded());
-    assertEquals(chars, buf.readCharsWithSizeEmbedded());
+    assertEquals(bytes, buf.readBytesAndSize());
+    assertEquals(chars, buf.readChars(buf.readPositiveVarInt()));
     buf.writePrimitiveArrayAlignedSizeEmbedded(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
     buf.writePrimitiveArrayAlignedSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, chars.length * 2);
     assertEquals(bytes, buf.readBytesAlignedSizeEmbedded());

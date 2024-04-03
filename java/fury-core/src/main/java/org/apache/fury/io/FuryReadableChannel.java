@@ -25,7 +25,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import org.apache.fury.memory.MemoryBuffer;
 
-public class FuryReadableChannel implements ReadableByteChannel, FuryStreamReader {
+// TODO support zero-copy channel reading.
+public class FuryReadableChannel extends AbstractStreamReader implements ReadableByteChannel {
   private final ReadableByteChannel channel;
   private final ByteBuffer byteBuffer;
   private final MemoryBuffer buffer;
@@ -53,11 +54,6 @@ public class FuryReadableChannel implements ReadableByteChannel, FuryStreamReade
   @Override
   public void close() throws IOException {
     channel.close();
-  }
-
-  @Override
-  public int fillBuffer(int minFillSize) {
-    return 0;
   }
 
   @Override

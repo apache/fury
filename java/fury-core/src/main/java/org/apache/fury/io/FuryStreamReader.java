@@ -20,6 +20,7 @@
 package org.apache.fury.io;
 
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import org.apache.fury.memory.MemoryBuffer;
 
 /** A streaming reader to make {@link MemoryBuffer} to support streaming reading. */
@@ -29,6 +30,22 @@ public interface FuryStreamReader {
    * returned by {@link #getBuffer}.
    */
   int fillBuffer(int minFillSize);
+
+  /**
+   * Read data into `dst`. This method will block until the enough data are written into the `dst`.
+   */
+  void readTo(byte[] dst, int dstIndex, int length);
+
+  /**
+   * Read data into `target`. This method will block until the enough data are written into the
+   * `target`.
+   */
+  void readToUnsafe(Object target, long targetPointer, int numBytes);
+
+  /**
+   * Read data into `dst`. This method will block until the enough data are written into the `dst`.
+   */
+  void readToByteBuffer(ByteBuffer dst, int pos, int length);
 
   /**
    * Returns the underlying {@link MemoryBuffer}. This method will return same instance of buffer

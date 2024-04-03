@@ -34,9 +34,7 @@ public class MemoryBufferReadableChannel implements ReadableByteChannel {
 
   @Override
   public int read(ByteBuffer dst) {
-    int position = dst.position();
-    buffer.read(dst);
-    return dst.position() - position;
+    return -1;
   }
 
   @Override
