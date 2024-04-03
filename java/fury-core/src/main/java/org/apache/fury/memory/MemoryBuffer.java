@@ -125,7 +125,7 @@ public final class MemoryBuffer {
     if (streamReader != null) {
       this.streamReader = streamReader;
     } else {
-      this.streamReader = new BoundCheckReader();
+      this.streamReader = new BoundChecker();
     }
   }
 
@@ -176,11 +176,11 @@ public final class MemoryBuffer {
     if (streamReader != null) {
       this.streamReader = streamReader;
     } else {
-      this.streamReader = new BoundCheckReader();
+      this.streamReader = new BoundChecker();
     }
   }
 
-  private class BoundCheckReader extends AbstractStreamReader {
+  private class BoundChecker extends AbstractStreamReader {
     @Override
     public int fillBuffer(int minFillSize) {
       throw new IndexOutOfBoundsException(
