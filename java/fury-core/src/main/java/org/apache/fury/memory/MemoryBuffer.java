@@ -2241,7 +2241,7 @@ public final class MemoryBuffer {
    */
   public char[] readChars(int numBytes) {
     int readerIdx = readerIndex;
-    final char[] chars = new char[numBytes >> 2];
+    final char[] chars = new char[numBytes >> 1];
     // use subtract to avoid overflow
     if (readerIdx > size - numBytes) {
       streamReader.readToUnsafe(chars, 0, numBytes);

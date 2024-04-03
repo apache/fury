@@ -36,6 +36,7 @@ import org.apache.fury.config.Config;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.config.LongEncoding;
+import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
@@ -764,7 +765,7 @@ public final class Fury implements BaseFury {
       ObjectArray readObjects = ((MapRefResolver) refResolver).getReadObjects();
       // carry with read objects for better trouble shooting.
       List<Object> objects = Arrays.asList(readObjects.objects).subList(0, readObjects.size);
-      throw new RuntimeException(t);
+      throw new DeserializationException(objects, t);
     } else {
       Platform.throwException(t);
     }
