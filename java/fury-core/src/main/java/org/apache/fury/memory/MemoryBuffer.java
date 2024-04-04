@@ -57,11 +57,13 @@ import sun.misc.Unsafe;
  *
  * <p>Warning: The instance of this class should not be hold on graalvm build time, the heap unsafe
  * offset are not correct in runtime since graalvm will change array base offset.
+ *
+ * <p>Note(chaokunyang): Buffer operations are very common, and jvm inline and branch elimination
+ * is not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually.
+ * jvm jit may stop inline for some reasons: NodeCountInliningCutoff,
+ * DesiredMethodLimit,MaxRecursiveInlineLevel,FreqInlineSize,MaxInlineSize
  */
-// FIXME Buffer operations is most common, and jvm inline and branch elimination
-// is not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually.
-// Note: This class is based on org.apache.flink.core.memory.MemorySegment and
-// org.apache.arrow.memory.ArrowBuf.
+//  DesiredMethodLimit,MaxRecursiveInlineLevel,FreqInlineSize,MaxInlineSize
 public final class MemoryBuffer {
   // The unsafe handle for transparent memory copied (heap/off-heap).
   private static final Unsafe UNSAFE = Platform.UNSAFE;
@@ -1276,6 +1278,7 @@ public final class MemoryBuffer {
    * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
    * to avoid using two memory operations.
    */
+  @CodegenInvoke
   public int unsafeWriteVarInt(int v) {
     // Ensure negatives close to zero is encode in little bytes.
     v = (v << 1) ^ (v >> 31);
@@ -1283,6 +1286,7 @@ public final class MemoryBuffer {
   }
 
   /** Reads the 1-5 byte int part of a varint. */
+  @CodegenInvoke
   public int readVarInt() {
     if (LITTLE_ENDIAN) {
       return readVarIntLE();
@@ -1291,6 +1295,7 @@ public final class MemoryBuffer {
     }
   }
 
+  @CodegenInvoke
   public int readVarIntLE() {
     // noinspection Duplicates
     int readIdx = readerIndex;
@@ -1301,6 +1306,7 @@ public final class MemoryBuffer {
       long address = this.address;
       // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
       int fourByteValue = UNSAFE.getInt(heapMemory, address + readIdx);
+      // Duplicate and manual inline for performance.
       // noinspection Duplicates
       readIdx++;
       result = fourByteValue & 0x7F;
@@ -1329,6 +1335,7 @@ public final class MemoryBuffer {
     return (result >>> 1) ^ -(result & 1);
   }
 
+  @CodegenInvoke
   public int readVarIntBE() {
     // noinspection Duplicates
     int readIdx = readerIndex;
@@ -1338,6 +1345,7 @@ public final class MemoryBuffer {
     } else {
       long address = this.address;
       int fourByteValue = Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readIdx));
+      // Duplicate and manual inline for performance.
       // noinspection Duplicates
       readIdx++;
       result = fourByteValue & 0x7F;
@@ -1425,26 +1433,28 @@ public final class MemoryBuffer {
     if (size - readIdx < 5) {
       return readPositiveVarIntSlow();
     }
-    // varint are written using little endian byte order, so read by little endian byte order.
+    // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
     int fourByteValue = unsafeGetInt(readIdx);
-    int b = fourByteValue & 0xFF;
-    readIdx++; // read one byte
-    int result = b & 0x7F;
-    if ((b & 0x80) != 0) {
-      readIdx++; // read one byte
-      b = (fourByteValue >>> 8) & 0xFF;
-      result |= (b & 0x7F) << 7;
-      if ((b & 0x80) != 0) {
-        readIdx++; // read one byte
-        b = (fourByteValue >>> 16) & 0xFF;
-        result |= (b & 0x7F) << 14;
-        if ((b & 0x80) != 0) {
-          readIdx++; // read one byte
-          b = (fourByteValue >>> 24) & 0xFF;
-          result |= (b & 0x7F) << 21;
-          if ((b & 0x80) != 0) {
-            b = unsafeGet(readIdx++); // read one byte
-            result |= (b & 0x7F) << 28;
+    readIdx++;
+    int result = fourByteValue & 0x7F;
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    if ((fourByteValue & 0x80) != 0) {
+      readIdx++;
+      // 0x3f80: 0b1111111 << 7
+      result |= (fourByteValue >>> 1) & 0x3f80;
+      // 0x8000: 0b1 << 15
+      if ((fourByteValue & 0x8000) != 0) {
+        readIdx++;
+        // 0x1fc000: 0b1111111 << 14
+        result |= (fourByteValue >>> 2) & 0x1fc000;
+        // 0x800000: 0b1 << 23
+        if ((fourByteValue & 0x800000) != 0) {
+          readIdx++;
+          // 0xfe00000: 0b1111111 << 21
+          result |= (fourByteValue >>> 3) & 0xfe00000;
+          if ((fourByteValue & 0x80000000) != 0) {
+            result |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
           }
         }
       }
@@ -2012,6 +2022,7 @@ public final class MemoryBuffer {
   }
 
   public long readSliLongLE() {
+    // Duplicate and manual inline for performance.
     // noinspection Duplicates
     final int readIdx = readerIndex;
     int diff = size - readIdx;
