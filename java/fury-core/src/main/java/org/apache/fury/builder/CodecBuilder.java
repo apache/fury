@@ -610,4 +610,50 @@ public abstract class CodecBuilder {
     return new StaticInvoke(
         MemoryBuffer.class, "unsafeGetDouble", PRIMITIVE_DOUBLE_TYPE, base, pos);
   }
+
+  protected Expression readChar(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readCharLE" : "readCharBE";
+    return new Invoke(buffer, func, PRIMITIVE_CHAR_TYPE);
+  }
+
+  protected Expression readShort(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readShortLE" : "readShortBE";
+    return new Invoke(buffer, func, PRIMITIVE_SHORT_TYPE);
+  }
+
+  protected Expression readInt(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readIntLE" : "readIntBE";
+    return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
+  }
+
+  protected Expression readVarInt(Expression buffer) {
+    return new Invoke(buffer, "readVarInt", PRIMITIVE_INT_TYPE);
+  }
+
+  protected Expression readLong(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readLongLE" : "readLongBE";
+    return new Invoke(buffer, func, PRIMITIVE_LONG_TYPE);
+  }
+
+  protected Expression readVarLong(Expression buffer) {
+    return new Invoke(buffer, "readVarLong", PRIMITIVE_LONG_TYPE);
+  }
+
+  protected Expression readFloat(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readFloatLE" : "readFloatBE";
+    return new Invoke(buffer, func, PRIMITIVE_FLOAT_TYPE);
+  }
+
+  protected Expression readDouble(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readDoubleLE" : "readDoubleBE";
+    return new Invoke(buffer, func, PRIMITIVE_DOUBLE_TYPE);
+  }
+
+  public static String readIntFunc() {
+    return Platform.IS_LITTLE_ENDIAN ? "readIntLE" : "readIntBE";
+  }
+
+  public static String readLongFunc() {
+    return Platform.IS_LITTLE_ENDIAN ? "readLongLE" : "readLongBE";
+  }
 }

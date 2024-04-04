@@ -2083,6 +2083,32 @@ public final class MemoryBuffer {
     }
   }
 
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public char readCharLE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 2) {
+      streamReader.fillBuffer(2 - remaining);
+    }
+    readerIndex = readerIdx + 2;
+    return UNSAFE.getChar(heapMemory, address + readerIdx);
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public char readCharBE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 2) {
+      streamReader.fillBuffer(2 - remaining);
+    }
+    readerIndex = readerIdx + 2;
+    return Character.reverseBytes(UNSAFE.getChar(heapMemory, address + readerIdx));
+  }
+
   public short readShort() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
@@ -2097,6 +2123,32 @@ public final class MemoryBuffer {
     } else {
       return Short.reverseBytes(UNSAFE.getShort(heapMemory, pos));
     }
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public short readShortLE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 2) {
+      streamReader.fillBuffer(2 - remaining);
+    }
+    readerIndex = readerIdx + 2;
+    return UNSAFE.getShort(heapMemory, address + readerIdx);
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public short readShortBE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 2) {
+      streamReader.fillBuffer(2 - remaining);
+    }
+    readerIndex = readerIdx + 2;
+    return Short.reverseBytes(UNSAFE.getShort(heapMemory, address + readerIdx));
   }
 
   public int readInt() {
@@ -2115,6 +2167,32 @@ public final class MemoryBuffer {
     }
   }
 
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public int readIntLE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 4) {
+      streamReader.fillBuffer(4 - remaining);
+    }
+    readerIndex = readerIdx + 4;
+    return UNSAFE.getInt(heapMemory, address + readerIdx);
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public int readIntBE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 4) {
+      streamReader.fillBuffer(4 - remaining);
+    }
+    readerIndex = readerIdx + 4;
+    return Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx));
+  }
+
   public long readLong() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
@@ -2129,6 +2207,32 @@ public final class MemoryBuffer {
     } else {
       return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos));
     }
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public long readLongLE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 8) {
+      streamReader.fillBuffer(8 - remaining);
+    }
+    readerIndex = readerIdx + 8;
+    return UNSAFE.getLong(heapMemory, address + readerIdx);
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public long readLongBE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 8) {
+      streamReader.fillBuffer(8 - remaining);
+    }
+    readerIndex = readerIdx + 8;
+    return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readerIdx));
   }
 
   public float readFloat() {
@@ -2147,6 +2251,33 @@ public final class MemoryBuffer {
     }
   }
 
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public float readFloatLE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 4) {
+      streamReader.fillBuffer(4 - remaining);
+    }
+    readerIndex = readerIdx + 4;
+    return Float.intBitsToFloat(UNSAFE.getInt(heapMemory, address + readerIdx));
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public float readFloatBE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 4) {
+      streamReader.fillBuffer(4 - remaining);
+    }
+    readerIndex = readerIdx + 4;
+    return Float.intBitsToFloat(
+        Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx)));
+  }
+
   public double readDouble() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
@@ -2161,6 +2292,33 @@ public final class MemoryBuffer {
     } else {
       return Double.longBitsToDouble(Long.reverseBytes(UNSAFE.getLong(heapMemory, pos)));
     }
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public double readDoubleLE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 8) {
+      streamReader.fillBuffer(8 - remaining);
+    }
+    readerIndex = readerIdx + 8;
+    return Double.longBitsToDouble(UNSAFE.getLong(heapMemory, address + readerIdx));
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public double readDoubleBE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 8) {
+      streamReader.fillBuffer(8 - remaining);
+    }
+    readerIndex = readerIdx + 8;
+    return Double.longBitsToDouble(
+        Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readerIdx)));
   }
 
   public byte[] readBytes(int length) {

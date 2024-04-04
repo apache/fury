@@ -560,7 +560,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         PRIMITIVE_VOID_TYPE,
         false,
         furyRef,
-        inlineInvoke(buffer, "readInt", PRIMITIVE_INT_TYPE),
+        inlineInvoke(buffer, readIntFunc(), PRIMITIVE_INT_TYPE),
         Objects.requireNonNull(classVersionHash));
   }
 
@@ -695,7 +695,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               compressStarted = true;
               addIncReaderIndexExpr(groupExpressions, buffer, acc);
             }
-            fieldValue = new Invoke(buffer, "readVarInt", PRIMITIVE_INT_TYPE);
+            fieldValue = readVarInt(buffer);
           }
         } else if (clz == long.class) {
           if (!fury.compressLong()) {

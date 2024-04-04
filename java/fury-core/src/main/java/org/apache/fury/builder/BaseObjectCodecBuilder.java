@@ -37,10 +37,7 @@ import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_DOUBLE_TYPE;
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_FLOAT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static org.apache.fury.type.TypeUtils.SET_TYPE;
 import static org.apache.fury.type.TypeUtils.getElementType;
@@ -1131,18 +1128,17 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (cls == boolean.class || cls == Boolean.class) {
         return new Invoke(buffer, "readBoolean", PRIMITIVE_BOOLEAN_TYPE);
       } else if (cls == char.class || cls == Character.class) {
-        return new Invoke(buffer, "readChar", TypeToken.of(char.class));
+        return readChar(buffer);
       } else if (cls == short.class || cls == Short.class) {
-        return new Invoke(buffer, "readShort", PRIMITIVE_SHORT_TYPE);
+        return readShort(buffer);
       } else if (cls == int.class || cls == Integer.class) {
-        String func = fury.compressInt() ? "readVarInt" : "readInt";
-        return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
+        return fury.compressInt() ? readVarInt(buffer) : readInt(buffer);
       } else if (cls == long.class || cls == Long.class) {
         return LongSerializer.readLong(buffer, fury.longEncoding());
       } else if (cls == float.class || cls == Float.class) {
-        return new Invoke(buffer, "readFloat", PRIMITIVE_FLOAT_TYPE);
+        return readFloat(buffer);
       } else if (cls == double.class || cls == Double.class) {
-        return new Invoke(buffer, "readDouble", PRIMITIVE_DOUBLE_TYPE);
+        return readDouble(buffer);
       } else {
         throw new IllegalStateException("impossible");
       }
