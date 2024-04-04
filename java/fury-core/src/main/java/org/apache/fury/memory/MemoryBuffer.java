@@ -1292,12 +1292,13 @@ public final class MemoryBuffer {
   }
 
   public int readVarIntLE() {
+    // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
     if (size - readIdx < 5) {
-       result = readPositiveVarIntSlow();
+      result = readPositiveVarIntSlow();
     } else {
-      // varint are written using little endian byte order, so read by little endian byte order.
+      long address = this.address;
       int fourByteValue = UNSAFE.getInt(heapMemory, address + readIdx);
       // noinspection Duplicates
       int b = fourByteValue & 0xFF;
@@ -1308,9 +1309,19 @@ public final class MemoryBuffer {
         b = (fourByteValue >>> 8) & 0xFF;
         result |= (b & 0x7F) << 7;
         if ((b & 0x80) != 0) {
-          // those are not frequent, move it to s separate method to reduce critical path code size
-          // for better jit inline.
-         return readVarIntMore(fourByteValue, result, readIdx);
+          readIdx++; // read one byte
+          b = (fourByteValue >>> 16) & 0xFF;
+          result |= (b & 0x7F) << 14;
+          if ((b & 0x80) != 0) {
+            readIdx++; // read one byte
+            b = (fourByteValue >>> 24) & 0xFF;
+            result |= (b & 0x7F) << 21;
+            if ((b & 0x80) != 0) {
+              // read one byte
+              b = UNSAFE.getByte(heapMemory, address + readIdx++);
+              result |= (b & 0x7F) << 28;
+            }
+          }
         }
       }
       readerIndex = readIdx;
@@ -1319,50 +1330,42 @@ public final class MemoryBuffer {
   }
 
   public int readVarIntBE() {
+    // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
     if (size - readIdx < 5) {
       result = readPositiveVarIntSlow();
     } else {
-      // varint are written using little endian byte order, so read by little endian byte order.
+      long address = this.address;
       int fourByteValue = Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readIdx));
       // noinspection Duplicates
       int b = fourByteValue & 0xFF;
       readIdx++; // read one byte
       result = b & 0x7F;
+      // noinspection Duplicates
       if ((b & 0x80) != 0) {
         readIdx++; // read one byte
         b = (fourByteValue >>> 8) & 0xFF;
         result |= (b & 0x7F) << 7;
         if ((b & 0x80) != 0) {
-          // those are not frequent, move it to s separate method to reduce critical path code size
-          // for better jit inline.
-          return readVarIntMore(fourByteValue, result, readIdx);
+          readIdx++; // read one byte
+          b = (fourByteValue >>> 16) & 0xFF;
+          result |= (b & 0x7F) << 14;
+          if ((b & 0x80) != 0) {
+            readIdx++; // read one byte
+            b = (fourByteValue >>> 24) & 0xFF;
+            result |= (b & 0x7F) << 21;
+            if ((b & 0x80) != 0) {
+              b = UNSAFE.getByte(heapMemory, address + readIdx++);
+              result |= (b & 0x7F) << 28;
+            }
+          }
         }
       }
       readerIndex = readIdx;
     }
     return (result >>> 1) ^ -(result & 1);
   }
-
-  private int readVarIntMore(int fourByteValue, int result, int readIdx) {
-    // noinspection Duplicates
-    readIdx++; // read one byte
-    int b = (fourByteValue >>> 16) & 0xFF;
-    result |= (b & 0x7F) << 14;
-    if ((b & 0x80) != 0) {
-      readIdx++; // read one byte
-      b = (fourByteValue >>> 24) & 0xFF;
-      result |= (b & 0x7F) << 21;
-      if ((b & 0x80) != 0) {
-        b = unsafeGet(readIdx++); // read one byte
-        result |= (b & 0x7F) << 28;
-      }
-    }
-    readerIndex = readIdx;
-    return (result >>> 1) ^ -(result & 1);
-  }
-
 
   /**
    * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
@@ -1437,28 +1440,14 @@ public final class MemoryBuffer {
         b = (fourByteValue >>> 16) & 0xFF;
         result |= (b & 0x7F) << 14;
         if ((b & 0x80) != 0) {
-          // those are not frequent, move it to s separate method to reduce critical path code size
-          // for better jit inline.
-          return readVarUintMore(fourByteValue, result, readIdx);
+          readIdx++; // read one byte
+          b = (fourByteValue >>> 24) & 0xFF;
+          result |= (b & 0x7F) << 21;
+          if ((b & 0x80) != 0) {
+            b = unsafeGet(readIdx++); // read one byte
+            result |= (b & 0x7F) << 28;
+          }
         }
-      }
-    }
-    readerIndex = readIdx;
-    return result;
-  }
-
-  private int readVarUintMore(int fourByteValue, int result, int readIdx) {
-    // noinspection Duplicates
-    readIdx++; // read one byte
-    int b = (fourByteValue >>> 16) & 0xFF;
-    result |= (b & 0x7F) << 14;
-    if ((b & 0x80) != 0) {
-      readIdx++; // read one byte
-      b = (fourByteValue >>> 24) & 0xFF;
-      result |= (b & 0x7F) << 21;
-      if ((b & 0x80) != 0) {
-        b = unsafeGet(readIdx++); // read one byte
-        result |= (b & 0x7F) << 28;
       }
     }
     readerIndex = readIdx;
@@ -2066,7 +2055,7 @@ public final class MemoryBuffer {
       streamReader.fillBuffer(9 - diff);
     }
     readerIndex = readIdx + 9;
-    return UNSAFE.getLong(heapMemory, address + readIdx + 1);
+    return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx + 1));
   }
 
   public void writeBytes(byte[] bytes) {

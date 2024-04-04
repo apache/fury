@@ -21,6 +21,7 @@ package org.apache.fury.builder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.apache.fury.annotation.Internal;
@@ -74,15 +75,21 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
   final List<List<Descriptor>> finalReadGroups = new ArrayList<>();
   final List<List<Descriptor>> otherWriteGroups = new ArrayList<>();
   final List<List<Descriptor>> otherReadGroups = new ArrayList<>();
+  private final boolean compressInt;
+  private final boolean compressLong;
 
   ObjectCodecOptimizer(
       Class<?> cls,
       DescriptorGrouper descriptorGrouper,
       boolean boxedRefTracking,
+      boolean compressInt,
+      boolean compressLong,
       CodegenContext ctx) {
     this.cls = cls;
     this.descriptorGrouper = descriptorGrouper;
     this.boxedRefTracking = boxedRefTracking;
+    this.compressInt = compressInt;
+    this.compressLong = compressLong;
     this.ctx = ctx;
     buildGroups();
   }
@@ -101,8 +108,26 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
       primitiveDescriptorsList =
           primitiveDescriptorsList.subList(endIndex, primitiveDescriptorsList.size());
     }
-    int boxedWriteWeight = 7;
-    int boxedReadWeight = 7;
+    Iterator<List<Descriptor>> iterator = primitiveGroups.iterator();
+    List<List<Descriptor>> splits = new ArrayList<>();
+    while (iterator.hasNext()) {
+      List<Descriptor> list = iterator.next();
+      if ((compressLong &&
+        list.stream().filter(d -> d.getRawType() == long.class).count() > 10)
+       ||
+        (compressInt &&
+          list.stream().filter(d -> d.getRawType() == int.class).count() > 10)) {
+        splits.add(list);
+        iterator.remove();
+      }
+    }
+    for (List<Descriptor> split : splits) {
+      int end = split.size() / 2;
+      primitiveGroups.add(split.subList(0, end));
+      primitiveGroups.add(split.subList(end, split.size()));
+    }
+    int boxedWriteWeight = 6;
+    int boxedReadWeight = 6;
     if (boxedRefTracking) {
       boxedReadWeight = 4;
     }
@@ -125,7 +150,7 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
             MutableTuple3.of(
                 new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 9, otherWriteGroups));
     for (MutableTuple3<List<Descriptor>, Integer, List<List<Descriptor>>> decs : groups) {
-      while (decs.f0.size() > 0) {
+      while (!decs.f0.isEmpty()) {
         int endIndex = Math.min(decs.f1, decs.f0.size());
         decs.f2.add(decs.f0.subList(0, endIndex));
         decs.f0 = decs.f0.subList(endIndex, decs.f0.size());

@@ -95,7 +95,8 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         DescriptorGrouper.createDescriptorGrouper(
             descriptors, false, fury.compressInt(), fury.compressLong());
     objectCodecOptimizer =
-        new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
+        new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(),
+          fury.compressInt(), fury.compressLong(), ctx);
     if (isRecord) {
       if (!recordCtrAccessible) {
         buildRecordComponentDefaultValues();
