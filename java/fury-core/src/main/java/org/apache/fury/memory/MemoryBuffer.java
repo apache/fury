@@ -1695,40 +1695,39 @@ public final class MemoryBuffer {
       return readPositiveVarLongSlow();
     }
     // varint are written using little endian byte order, so read by little endian byte order.
-    long eightByteValue = unsafeGetLong(readIdx);
-    long b = eightByteValue & 0xFF;
-    readIdx++; // read one byte
-    long result = b & 0x7F;
-    if ((b & 0x80) != 0) {
-      readIdx++; // read one byte
-      b = (eightByteValue >>> 8) & 0xFF;
-      result |= (b & 0x7F) << 7;
-      if ((b & 0x80) != 0) {
-        readIdx++; // read one byte
-        b = (eightByteValue >>> 16) & 0xFF;
-        result |= (b & 0x7F) << 14;
-        if ((b & 0x80) != 0) {
-          readIdx++; // read one byte
-          b = (eightByteValue >>> 24) & 0xFF;
-          result |= (b & 0x7F) << 21;
-          if ((b & 0x80) != 0) {
-            readIdx++; // read one byte
-            b = (eightByteValue >>> 32) & 0xFF;
-            result |= (b & 0x7F) << 28;
-            if ((b & 0x80) != 0) {
-              readIdx++; // read one byte
-              b = (eightByteValue >>> 40) & 0xFF;
-              result |= (b & 0x7F) << 35;
-              if ((b & 0x80) != 0) {
-                readIdx++; // read one byte
-                b = (eightByteValue >>> 48) & 0xFF;
-                result |= (b & 0x7F) << 42;
-                if ((b & 0x80) != 0) {
-                  readIdx++; // read one byte
-                  b = (eightByteValue >>> 56) & 0xFF;
-                  result |= (b & 0x7F) << 49;
-                  if ((b & 0x80) != 0) {
-                    b = unsafeGet(readIdx++); // read one byte
+    long value = unsafeGetLong(readIdx);
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    readIdx++;
+    long result = value & 0x7F;
+    if ((value & 0x80) != 0) {
+      readIdx++;
+      // 0x3f80: 0b1111111 << 7
+      result |= (value >>> 1) & 0x3f80;
+      // 0x8000: 0b1 << 15
+      if ((value & 0x8000) != 0) {
+        readIdx++;
+        // 0x1fc000: 0b1111111 << 14
+        result |= (value >>> 2) & 0x1fc000;
+        // 0x800000: 0b1 << 23
+        if ((value & 0x800000) != 0) {
+          readIdx++;
+          // 0xfe00000: 0b1111111 << 21
+          result |= (value >>> 3) & 0xfe00000;
+          if ((value & 0x80000000L) != 0) {
+            readIdx++;
+            result |= (value >>> 4) & 0x7f0000000L;
+            if ((value & 0x8000000000L) != 0) {
+              readIdx++;
+              result |= (value >>> 5) & 0x3f800000000L;
+              if ((value & 0x800000000000L) != 0) {
+                readIdx++;
+                result |= (value >>> 6) & 0x1fc0000000000L;
+                if ((value & 0x80000000000000L) != 0) {
+                  readIdx++;
+                  result |= (value >>> 7) & 0xfe000000000000L;
+                  if ((value & 0x8000000000000000L) != 0) {
+                    long b = UNSAFE.getByte(heapMemory, address + readIdx++);
                     result |= b << 56;
                   }
                 }
