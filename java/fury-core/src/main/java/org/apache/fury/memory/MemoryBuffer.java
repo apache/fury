@@ -1299,27 +1299,27 @@ public final class MemoryBuffer {
       result = readPositiveVarIntSlow();
     } else {
       long address = this.address;
+      // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
       int fourByteValue = UNSAFE.getInt(heapMemory, address + readIdx);
       // noinspection Duplicates
-      int b = fourByteValue & 0xFF;
-      readIdx++; // read one byte
-      result = b & 0x7F;
-      if ((b & 0x80) != 0) {
-        readIdx++; // read one byte
-        b = (fourByteValue >>> 8) & 0xFF;
-        result |= (b & 0x7F) << 7;
-        if ((b & 0x80) != 0) {
-          readIdx++; // read one byte
-          b = (fourByteValue >>> 16) & 0xFF;
-          result |= (b & 0x7F) << 14;
-          if ((b & 0x80) != 0) {
-            readIdx++; // read one byte
-            b = (fourByteValue >>> 24) & 0xFF;
-            result |= (b & 0x7F) << 21;
-            if ((b & 0x80) != 0) {
-              // read one byte
-              b = UNSAFE.getByte(heapMemory, address + readIdx++);
-              result |= (b & 0x7F) << 28;
+      readIdx++;
+      result = fourByteValue & 0x7F;
+      if ((fourByteValue & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (fourByteValue >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((fourByteValue & 0x8000) != 0) {
+          readIdx++;
+          // 0x1fc000: 0b1111111 << 14
+          result |= (fourByteValue >>> 2) & 0x1fc000;
+          // 0x800000: 0b1 << 23
+          if ((fourByteValue & 0x800000) != 0) {
+            readIdx++;
+            // 0xfe00000: 0b1111111 << 21
+            result |= (fourByteValue >>> 3) & 0xfe00000;
+            if ((fourByteValue & 0x80000000) != 0) {
+              result |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
             }
           }
         }
@@ -1339,25 +1339,24 @@ public final class MemoryBuffer {
       long address = this.address;
       int fourByteValue = Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readIdx));
       // noinspection Duplicates
-      int b = fourByteValue & 0xFF;
-      readIdx++; // read one byte
-      result = b & 0x7F;
-      // noinspection Duplicates
-      if ((b & 0x80) != 0) {
-        readIdx++; // read one byte
-        b = (fourByteValue >>> 8) & 0xFF;
-        result |= (b & 0x7F) << 7;
-        if ((b & 0x80) != 0) {
-          readIdx++; // read one byte
-          b = (fourByteValue >>> 16) & 0xFF;
-          result |= (b & 0x7F) << 14;
-          if ((b & 0x80) != 0) {
-            readIdx++; // read one byte
-            b = (fourByteValue >>> 24) & 0xFF;
-            result |= (b & 0x7F) << 21;
-            if ((b & 0x80) != 0) {
-              b = UNSAFE.getByte(heapMemory, address + readIdx++);
-              result |= (b & 0x7F) << 28;
+      readIdx++;
+      result = fourByteValue & 0x7F;
+      if ((fourByteValue & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (fourByteValue >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((fourByteValue & 0x8000) != 0) {
+          readIdx++;
+          // 0x1fc000: 0b1111111 << 14
+          result |= (fourByteValue >>> 2) & 0x1fc000;
+          // 0x800000: 0b1 << 23
+          if ((fourByteValue & 0x800000) != 0) {
+            readIdx++;
+            // 0xfe00000: 0b1111111 << 21
+            result |= (fourByteValue >>> 3) & 0xfe00000;
+            if ((fourByteValue & 0x80000000) != 0) {
+              result |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
             }
           }
         }
@@ -2024,10 +2023,6 @@ public final class MemoryBuffer {
       readerIndex = readIdx + 4;
       return i >> 1;
     }
-    return readSliLongLEBig(readIdx, diff);
-  }
-
-  private long readSliLongLEBig(int readIdx, int diff) {
     if (diff < 9) {
       streamReader.fillBuffer(9 - diff);
     }
@@ -2047,10 +2042,6 @@ public final class MemoryBuffer {
       readerIndex = readIdx + 4;
       return i >> 1;
     }
-    return readSliLongBEBig(readIdx, diff);
-  }
-
-  private long readSliLongBEBig(int readIdx, int diff) {
     if (diff < 9) {
       streamReader.fillBuffer(9 - diff);
     }
