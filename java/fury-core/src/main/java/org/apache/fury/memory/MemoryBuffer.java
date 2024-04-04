@@ -1287,26 +1287,28 @@ public final class MemoryBuffer {
     if (size - readIdx < 5) {
       return readPositiveVarIntSlow();
     }
-    // varint are written using little endian byte order, so read by little endian byte order.
+    // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
     int fourByteValue = unsafeGetInt(readIdx);
-    int b = fourByteValue & 0xFF;
-    readIdx++; // read one byte
-    int result = b & 0x7F;
-    if ((b & 0x80) != 0) {
-      readIdx++; // read one byte
-      b = (fourByteValue >>> 8) & 0xFF;
-      result |= (b & 0x7F) << 7;
-      if ((b & 0x80) != 0) {
-        readIdx++; // read one byte
-        b = (fourByteValue >>> 16) & 0xFF;
-        result |= (b & 0x7F) << 14;
-        if ((b & 0x80) != 0) {
-          readIdx++; // read one byte
-          b = (fourByteValue >>> 24) & 0xFF;
-          result |= (b & 0x7F) << 21;
-          if ((b & 0x80) != 0) {
-            b = unsafeGet(readIdx++); // read one byte
-            result |= (b & 0x7F) << 28;
+    readIdx++;
+    int result = fourByteValue & 0x7F;
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    if ((fourByteValue & 0x80) != 0) {
+      readIdx++;
+      // 0x3f80: 0b1111111 << 7
+      result |= (fourByteValue >>> 1) & 0x3f80;
+      // 0x8000: 0b1 << 15
+      if ((fourByteValue & 0x8000) != 0) {
+        readIdx++;
+        // 0x1fc000: 0b1111111 << 14
+        result |= (fourByteValue >>> 2) & 0x1fc000;
+        // 0x800000: 0b1 << 23
+        if ((fourByteValue & 0x800000) != 0) {
+          readIdx++;
+          // 0xfe00000: 0b1111111 << 21
+          result |= (fourByteValue >>> 3) & 0xfe00000;
+          if ((fourByteValue & 0x80000000) != 0) {
+            result |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
           }
         }
       }
