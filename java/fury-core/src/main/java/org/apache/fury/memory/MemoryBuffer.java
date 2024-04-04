@@ -58,9 +58,9 @@ import sun.misc.Unsafe;
  * <p>Warning: The instance of this class should not be hold on graalvm build time, the heap unsafe
  * offset are not correct in runtime since graalvm will change array base offset.
  *
- * <p>Note(chaokunyang): Buffer operations are very common, and jvm inline and branch elimination
- * is not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually.
- * jvm jit may stop inline for some reasons: NodeCountInliningCutoff,
+ * <p>Note(chaokunyang): Buffer operations are very common, and jvm inline and branch elimination is
+ * not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually. jvm
+ * jit may stop inline for some reasons: NodeCountInliningCutoff,
  * DesiredMethodLimit,MaxRecursiveInlineLevel,FreqInlineSize,MaxInlineSize
  */
 //  DesiredMethodLimit,MaxRecursiveInlineLevel,FreqInlineSize,MaxInlineSize
@@ -1803,64 +1803,57 @@ public final class MemoryBuffer {
       this.writerIndex = writerIndex + 1;
       return 1;
     }
-    varInt |= 0x80;
-    varInt |= ((value & 0x7F) << 8);
+    varInt |= (int) ((value & 0x7F) << 8) | 0x80;
     value >>>= 7;
     if (value == 0) {
       unsafePutInt(writerIndex, varInt);
       this.writerIndex = writerIndex + 2;
       return 2;
     }
-    varInt |= (0x80 << 8);
-    varInt |= ((value & 0x7F) << 16);
+    varInt |= (int) ((value & 0x7F) << 16) | 0x8000;
     value >>>= 7;
     if (value == 0) {
       unsafePutInt(writerIndex, varInt);
       this.writerIndex = writerIndex + 3;
       return 3;
     }
-    varInt |= (0x80 << 16);
-    varInt |= ((value & 0x7F) << 24);
+    varInt |= (int) ((value & 0x7F) << 24) | 0x800000;
     value >>>= 7;
     if (value == 0) {
       unsafePutInt(writerIndex, varInt);
       this.writerIndex = writerIndex + 4;
       return 4;
     }
-    varInt |= (0x80L << 24);
     long varLong = (varInt & 0xFFFFFFFFL);
-    varLong |= ((value & 0x7F) << 32);
+    varLong |= ((value & 0x7F) << 32) | 0x80000000L;
     value >>>= 7;
     if (value == 0) {
       unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 5;
       return 5;
     }
-    varLong |= (0x80L << 32);
-    varLong |= ((value & 0x7F) << 40);
+    varLong |= ((value & 0x7F) << 40) | 0x8000000000L;
     value >>>= 7;
     if (value == 0) {
       unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 6;
       return 6;
     }
-    varLong |= (0x80L << 40);
-    varLong |= ((value & 0x7F) << 48);
+    varLong |= ((value & 0x7F) << 48) | 0x800000000000L;
     value >>>= 7;
     if (value == 0) {
       unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 7;
       return 7;
     }
-    varLong |= (0x80L << 48);
-    varLong |= ((value & 0x7F) << 56);
+    varLong |= ((value & 0x7F) << 56) | 0x80000000000000L;
     value >>>= 7;
     if (value == 0) {
       unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 8;
       return 8;
     }
-    varLong |= (0x80L << 56);
+    varLong |= 0x8000000000000000L;
     unsafePutLong(writerIndex, varLong);
     UNSAFE.putByte(heapMemory, address + writerIndex + 8, (byte) (value & 0xFF));
     this.writerIndex = writerIndex + 9;
@@ -1873,6 +1866,114 @@ public final class MemoryBuffer {
     return ((result >>> 1) ^ -(result & 1));
   }
 
+  public long readVarLongLE() {
+    int readIdx = readerIndex;
+    long result;
+    if (size - readIdx < 9) {
+      result = readPositiveVarLongSlow();
+    } else {
+      long address = this.address;
+      long value = Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx));
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      readIdx++;
+      result = value & 0x7F;
+      if ((value & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (value >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((value & 0x8000) != 0) {
+          readIdx++;
+          // 0x1fc000: 0b1111111 << 14
+          result |= (value >>> 2) & 0x1fc000;
+          // 0x800000: 0b1 << 23
+          if ((value & 0x800000) != 0) {
+            readIdx++;
+            // 0xfe00000: 0b1111111 << 21
+            result |= (value >>> 3) & 0xfe00000;
+            if ((value & 0x80000000L) != 0) {
+              readIdx++;
+              result |= (value >>> 4) & 0x7f0000000L;
+              if ((value & 0x8000000000L) != 0) {
+                readIdx++;
+                result |= (value >>> 5) & 0x3f800000000L;
+                if ((value & 0x800000000000L) != 0) {
+                  readIdx++;
+                  result |= (value >>> 6) & 0x1fc0000000000L;
+                  if ((value & 0x80000000000000L) != 0) {
+                    readIdx++;
+                    result |= (value >>> 7) & 0xfe000000000000L;
+                    if ((value & 0x8000000000000000L) != 0) {
+                      long b = UNSAFE.getByte(heapMemory, address + readIdx++);
+                      result |= b << 56;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      readerIndex = readIdx;
+    }
+    return ((result >>> 1) ^ -(result & 1));
+  }
+
+  public long readVarLongBE() {
+    int readIdx = readerIndex;
+    long result;
+    if (size - readIdx < 9) {
+      result = readPositiveVarLongSlow();
+    } else {
+      long address = this.address;
+      long value = UNSAFE.getLong(heapMemory, address + readIdx);
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      readIdx++;
+      result = value & 0x7F;
+      if ((value & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (value >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((value & 0x8000) != 0) {
+          readIdx++;
+          // 0x1fc000: 0b1111111 << 14
+          result |= (value >>> 2) & 0x1fc000;
+          // 0x800000: 0b1 << 23
+          if ((value & 0x800000) != 0) {
+            readIdx++;
+            // 0xfe00000: 0b1111111 << 21
+            result |= (value >>> 3) & 0xfe00000;
+            if ((value & 0x80000000L) != 0) {
+              readIdx++;
+              result |= (value >>> 4) & 0x7f0000000L;
+              if ((value & 0x8000000000L) != 0) {
+                readIdx++;
+                result |= (value >>> 5) & 0x3f800000000L;
+                if ((value & 0x800000000000L) != 0) {
+                  readIdx++;
+                  result |= (value >>> 6) & 0x1fc0000000000L;
+                  if ((value & 0x80000000000000L) != 0) {
+                    readIdx++;
+                    result |= (value >>> 7) & 0xfe000000000000L;
+                    if ((value & 0x8000000000000000L) != 0) {
+                      long b = UNSAFE.getByte(heapMemory, address + readIdx++);
+                      result |= b << 56;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      readerIndex = readIdx;
+    }
+    return ((result >>> 1) ^ -(result & 1));
+  }
+
   /** Reads the 1-9 byte int part of a non-negative var long. */
   public long readPositiveVarLong() {
     int readIdx = readerIndex;
@@ -1880,40 +1981,39 @@ public final class MemoryBuffer {
       return readPositiveVarLongSlow();
     }
     // varint are written using little endian byte order, so read by little endian byte order.
-    long eightByteValue = unsafeGetLong(readIdx);
-    long b = eightByteValue & 0xFF;
-    readIdx++; // read one byte
-    long result = b & 0x7F;
-    if ((b & 0x80) != 0) {
-      readIdx++; // read one byte
-      b = (eightByteValue >>> 8) & 0xFF;
-      result |= (b & 0x7F) << 7;
-      if ((b & 0x80) != 0) {
-        readIdx++; // read one byte
-        b = (eightByteValue >>> 16) & 0xFF;
-        result |= (b & 0x7F) << 14;
-        if ((b & 0x80) != 0) {
-          readIdx++; // read one byte
-          b = (eightByteValue >>> 24) & 0xFF;
-          result |= (b & 0x7F) << 21;
-          if ((b & 0x80) != 0) {
-            readIdx++; // read one byte
-            b = (eightByteValue >>> 32) & 0xFF;
-            result |= (b & 0x7F) << 28;
-            if ((b & 0x80) != 0) {
-              readIdx++; // read one byte
-              b = (eightByteValue >>> 40) & 0xFF;
-              result |= (b & 0x7F) << 35;
-              if ((b & 0x80) != 0) {
-                readIdx++; // read one byte
-                b = (eightByteValue >>> 48) & 0xFF;
-                result |= (b & 0x7F) << 42;
-                if ((b & 0x80) != 0) {
-                  readIdx++; // read one byte
-                  b = (eightByteValue >>> 56) & 0xFF;
-                  result |= (b & 0x7F) << 49;
-                  if ((b & 0x80) != 0) {
-                    b = unsafeGet(readIdx++); // read one byte
+    long value = unsafeGetLong(readIdx);
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    readIdx++;
+    long result = value & 0x7F;
+    if ((value & 0x80) != 0) {
+      readIdx++;
+      // 0x3f80: 0b1111111 << 7
+      result |= (value >>> 1) & 0x3f80;
+      // 0x8000: 0b1 << 15
+      if ((value & 0x8000) != 0) {
+        readIdx++;
+        // 0x1fc000: 0b1111111 << 14
+        result |= (value >>> 2) & 0x1fc000;
+        // 0x800000: 0b1 << 23
+        if ((value & 0x800000) != 0) {
+          readIdx++;
+          // 0xfe00000: 0b1111111 << 21
+          result |= (value >>> 3) & 0xfe00000;
+          if ((value & 0x80000000L) != 0) {
+            readIdx++;
+            result |= (value >>> 4) & 0x7f0000000L;
+            if ((value & 0x8000000000L) != 0) {
+              readIdx++;
+              result |= (value >>> 5) & 0x3f800000000L;
+              if ((value & 0x800000000000L) != 0) {
+                readIdx++;
+                result |= (value >>> 6) & 0x1fc0000000000L;
+                if ((value & 0x80000000000000L) != 0) {
+                  readIdx++;
+                  result |= (value >>> 7) & 0xfe000000000000L;
+                  if ((value & 0x8000000000000000L) != 0) {
+                    long b = UNSAFE.getByte(heapMemory, address + readIdx++);
                     result |= b << 56;
                   }
                 }
