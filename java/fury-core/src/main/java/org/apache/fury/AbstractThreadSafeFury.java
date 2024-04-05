@@ -45,11 +45,6 @@ public abstract class AbstractThreadSafeFury implements ThreadSafeFury {
   }
 
   @Override
-  public void register(Class<?> cls, String typeTag) {
-    processCallback(fury -> fury.register(cls, typeTag));
-  }
-
-  @Override
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
     processCallback(fury -> fury.registerSerializer(type, serializerClass));
   }

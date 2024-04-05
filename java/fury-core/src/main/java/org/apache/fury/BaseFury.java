@@ -59,9 +59,6 @@ public interface BaseFury {
    */
   void register(Class<?> cls, Short id, boolean createSerializer);
 
-  /** register class with given type tag which will be used for cross-language serialization. */
-  void register(Class<?> cls, String typeTag);
-
   /**
    * Register a Serializer.
    *

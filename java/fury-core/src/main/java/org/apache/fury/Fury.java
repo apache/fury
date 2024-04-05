@@ -163,7 +163,7 @@ public final class Fury implements BaseFury {
     classResolver.register(cls, id, createSerializer);
   }
 
-  @Override
+  /** register class with given type tag which will be used for cross-language serialization. */
   public void register(Class<?> cls, String typeTag) {
     classResolver.register(cls, typeTag);
   }
