@@ -2364,6 +2364,35 @@ public final class MemoryBuffer {
     }
   }
 
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public double readDoubleOnLE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 8) {
+      throw new IndexOutOfBoundsException(
+        String.format(
+          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));    }
+    readerIndex = readerIdx + 8;
+    return Double.longBitsToDouble(UNSAFE.getLong(heapMemory, address + readerIdx));
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public double readDoubleOnBE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 8) {
+      throw new IndexOutOfBoundsException(
+        String.format(
+          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));    }
+    readerIndex = readerIdx + 8;
+    return Double.longBitsToDouble(
+      Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readerIdx)));
+  }
+
   public byte[] readBytes(int length) {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
