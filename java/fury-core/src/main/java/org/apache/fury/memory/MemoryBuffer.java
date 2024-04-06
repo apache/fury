@@ -475,14 +475,6 @@ public final class MemoryBuffer {
     return UNSAFE.getChar(heapMemory, pos);
   }
 
-  public char getCharB(int index) {
-    if (LITTLE_ENDIAN) {
-      return Character.reverseBytes(getCharN(index));
-    } else {
-      return getCharN(index);
-    }
-  }
-
   public char getChar(int index) {
     if (LITTLE_ENDIAN) {
       return getCharN(index);
@@ -548,12 +540,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public void putShortN(int index, short value) {
-    final long pos = address + index;
-    checkPosition(index, pos, 2);
-    UNSAFE.putShort(heapMemory, pos, value);
-  }
-
   public void putShort(int index, short value) {
     final long pos = address + index;
     checkPosition(index, pos, 2);
@@ -590,12 +576,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public int getIntN(int index) {
-    final long pos = address + index;
-    checkPosition(index, pos, 4);
-    return UNSAFE.getInt(heapMemory, pos);
-  }
-
   public int getInt(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 4);
@@ -606,12 +586,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public void putIntN(int index, int value) {
-    final long pos = address + index;
-    checkPosition(index, pos, 4);
-    UNSAFE.putInt(heapMemory, pos, value);
-  }
-
   public void putInt(int index, int value) {
     final long pos = address + index;
     checkPosition(index, pos, 4);
@@ -620,11 +594,6 @@ public final class MemoryBuffer {
     } else {
       UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(value));
     }
-  }
-
-  public int unsafeGetIntN(int index) {
-    final long pos = address + index;
-    return UNSAFE.getInt(heapMemory, pos);
   }
 
   public int unsafeGetInt(int index) {
@@ -644,11 +613,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public void unsafePutIntN(int index, int value) {
-    final long pos = address + index;
-    UNSAFE.putInt(heapMemory, pos, value);
-  }
-
   public void unsafePutInt(int index, int value) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
@@ -664,12 +628,6 @@ public final class MemoryBuffer {
     } else {
       UNSAFE.putInt(o, pos, Integer.reverseBytes(value));
     }
-  }
-
-  public long getLongN(int index) {
-    final long pos = address + index;
-    checkPosition(index, pos, 8);
-    return UNSAFE.getLong(heapMemory, pos);
   }
 
   public long getLong(int index) {
@@ -716,11 +674,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public long unsafeGetLongN(int index) {
-    final long pos = address + index;
-    return UNSAFE.getLong(heapMemory, pos);
-  }
-
   public long unsafeGetLong(int index) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
@@ -736,11 +689,6 @@ public final class MemoryBuffer {
     } else {
       return Long.reverseBytes(UNSAFE.getLong(o, pos));
     }
-  }
-
-  public void unsafePutLongN(int index, long value) {
-    final long pos = address + index;
-    UNSAFE.putLong(heapMemory, pos, value);
   }
 
   public void unsafePutLong(int index, long value) {
@@ -760,10 +708,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public float getFloatN(int index) {
-    return Float.intBitsToFloat(getIntN(index));
-  }
-
   public float getFloat(int index) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
@@ -771,10 +715,6 @@ public final class MemoryBuffer {
     } else {
       return Float.intBitsToFloat(Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos)));
     }
-  }
-
-  public void putFloatN(int index, float value) {
-    putIntN(index, Float.floatToRawIntBits(value));
   }
 
   public void putFloat(int index, float value) {
@@ -813,10 +753,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public double getDoubleN(int index) {
-    return Double.longBitsToDouble(getLongN(index));
-  }
-
   public double getDouble(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 8);
@@ -825,10 +761,6 @@ public final class MemoryBuffer {
     } else {
       return Double.longBitsToDouble(Long.reverseBytes(UNSAFE.getLong(heapMemory, pos)));
     }
-  }
-
-  public void putDoubleN(int index, double value) {
-    putLongN(index, Double.doubleToRawLongBits(value));
   }
 
   public void putDouble(int index, double value) {
@@ -848,10 +780,6 @@ public final class MemoryBuffer {
     } else {
       return Double.longBitsToDouble(Long.reverseBytes(UNSAFE.getLong(heapMemory, pos)));
     }
-  }
-
-  public void unsafePutDoubleN(int index, double value) {
-    unsafePutLongN(index, Double.doubleToRawLongBits(value));
   }
 
   public void unsafePutDouble(int index, double value) {
