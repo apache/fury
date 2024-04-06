@@ -1240,8 +1240,8 @@ public final class MemoryBuffer {
 
   private int readPositiveVarIntSlow() {
     // Note:
-    //  Loop are not used here to improve performance.
-    //  We manually unroll the loop for better performance.
+    //  Loop are not used here to improve performance,
+    //  we manually unroll the loop for better performance.
     int b = readByte();
     int result = b & 0x7F;
     if ((b & 0x80) != 0) {
