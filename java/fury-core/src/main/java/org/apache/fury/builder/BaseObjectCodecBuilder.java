@@ -40,7 +40,6 @@ import static org.apache.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_DOUBLE_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_FLOAT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static org.apache.fury.type.TypeUtils.SET_TYPE;
 import static org.apache.fury.type.TypeUtils.getElementType;
@@ -1131,9 +1130,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (cls == boolean.class || cls == Boolean.class) {
         return new Invoke(buffer, "readBoolean", PRIMITIVE_BOOLEAN_TYPE);
       } else if (cls == char.class || cls == Character.class) {
-        return new Invoke(buffer, "readChar", TypeToken.of(char.class));
+        return readChar(buffer);
       } else if (cls == short.class || cls == Short.class) {
-        return new Invoke(buffer, "readShort", PRIMITIVE_SHORT_TYPE);
+        return readShort(buffer);
       } else if (cls == int.class || cls == Integer.class) {
         return fury.compressInt() ? readVarInt(buffer) : readInt(buffer);
       } else if (cls == long.class || cls == Long.class) {
