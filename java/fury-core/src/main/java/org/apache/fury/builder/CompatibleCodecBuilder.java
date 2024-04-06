@@ -718,7 +718,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                 setFieldValue(bean, descriptor, tryInlineCast(expr, descriptor.getTypeToken())));
     return new ListExpression(
         deserializeAction,
-        new Assign(partFieldInfo, inlineInvoke(buffer, "readLong", PRIMITIVE_LONG_TYPE)));
+        new Assign(partFieldInfo, inlineInvoke(buffer, readLongFunc(), PRIMITIVE_LONG_TYPE)));
   }
 
   private void readSeparateTypesHashFields(
@@ -866,7 +866,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             fieldInfo.getEncodedFieldInfo());
     return new ListExpression(
         new Expression.ForceEvaluate(readAction),
-        new Assign(partFieldInfo, inlineInvoke(buffer, "readLong", PRIMITIVE_LONG_TYPE)));
+        new Assign(partFieldInfo, inlineInvoke(buffer, readLongFunc(), PRIMITIVE_LONG_TYPE)));
   }
 
   protected Expression getFinalClassInfo(Class<?> cls) {
@@ -939,7 +939,8 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                             partFieldInfo),
                         endTagLiteral),
                     returnEndTag ? new Return(endTagLiteral) : new Return(bean)),
-                new Assign(partFieldInfo, inlineInvoke(buffer, "readLong", PRIMITIVE_LONG_TYPE))));
+                new Assign(
+                    partFieldInfo, inlineInvoke(buffer, readLongFunc(), PRIMITIVE_LONG_TYPE))));
   }
 
   private Expression skipField8End(
@@ -958,7 +959,8 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                             partFieldInfo),
                         endTagLiteral),
                     new Return(bean)),
-                new Assign(partFieldInfo, inlineInvoke(buffer, "readLong", PRIMITIVE_LONG_TYPE))));
+                new Assign(
+                    partFieldInfo, inlineInvoke(buffer, readLongFunc(), PRIMITIVE_LONG_TYPE))));
   }
 
   private Comparator isEmbedType(Expression partFieldInfo, int flagBits, byte flagValue) {

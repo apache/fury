@@ -2128,8 +2128,8 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining < 8) {
       throw new IndexOutOfBoundsException(
-        String.format(
-          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
     }
     readerIndex = readerIdx + 8;
     final long pos = address + readerIdx;
@@ -2148,8 +2148,8 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining < 8) {
       throw new IndexOutOfBoundsException(
-        String.format(
-          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
     }
     readerIndex = readerIdx + 8;
     return UNSAFE.getLong(heapMemory, address + readerIdx);
@@ -2163,8 +2163,8 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining < 8) {
       throw new IndexOutOfBoundsException(
-        String.format(
-          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
     }
     readerIndex = readerIdx + 8;
     return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readerIdx));
