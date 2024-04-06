@@ -1133,7 +1133,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (cls == char.class || cls == Character.class) {
         return readChar(buffer);
       } else if (cls == short.class || cls == Short.class) {
-        return new Invoke(buffer, "readShort", PRIMITIVE_SHORT_TYPE);
+        return readShort(buffer);
       } else if (cls == int.class || cls == Integer.class) {
         return fury.compressInt() ? readVarInt(buffer) : readInt(buffer);
       } else if (cls == long.class || cls == Long.class) {
