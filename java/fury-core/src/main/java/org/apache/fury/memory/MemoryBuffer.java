@@ -505,33 +505,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public char unsafeGetCharN(int index) {
-    final long pos = address + index;
-    return UNSAFE.getChar(heapMemory, pos);
-  }
-
-  public char unsafeGetChar(int index) {
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getChar(heapMemory, pos);
-    } else {
-      return Character.reverseBytes(UNSAFE.getChar(heapMemory, pos));
-    }
-  }
-
-  public static char unsafeGetChar(Object o, long pos) {
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getChar(o, pos);
-    } else {
-      return Character.reverseBytes(UNSAFE.getChar(o, pos));
-    }
-  }
-
-  public void unsafePutCharN(int index, char value) {
-    final long pos = address + index;
-    UNSAFE.putChar(heapMemory, pos, value);
-  }
-
   public void unsafePutChar(int index, char value) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
@@ -2139,8 +2112,8 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining < 2) {
       throw new IndexOutOfBoundsException(
-        String.format(
-          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
     }
     readerIndex = readerIdx + 2;
     return UNSAFE.getChar(heapMemory, address + readerIdx);
@@ -2154,8 +2127,8 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining < 2) {
       throw new IndexOutOfBoundsException(
-        String.format(
-          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
     }
     readerIndex = readerIdx + 2;
     return Character.reverseBytes(UNSAFE.getChar(heapMemory, address + readerIdx));
