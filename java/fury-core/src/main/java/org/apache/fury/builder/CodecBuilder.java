@@ -572,18 +572,13 @@ public abstract class CodecBuilder {
     return new StaticInvoke(MemoryBuffer.class, "unsafePutDouble", base, pos, value);
   }
 
-  /**
-   * Build unsafeGet operation.
-   *
-   * @see MemoryBuffer#unsafeGet(Object, long)
-   */
+  /** Build unsafeGet operation. */
   protected Expression unsafeGet(Expression base, Expression pos) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafeGet", PRIMITIVE_BYTE_TYPE, base, pos);
+    return new StaticInvoke(Platform.class, "getByte", PRIMITIVE_BYTE_TYPE, base, pos);
   }
 
   protected Expression unsafeGetBoolean(Expression base, Expression pos) {
-    return new StaticInvoke(
-        MemoryBuffer.class, "unsafeGetBoolean", PRIMITIVE_BOOLEAN_TYPE, base, pos);
+    return new StaticInvoke(Platform.class, "getBoolean", PRIMITIVE_BOOLEAN_TYPE, base, pos);
   }
 
   protected Expression unsafeGetChar(Expression base, Expression pos) {

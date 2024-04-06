@@ -252,10 +252,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public static byte unsafeGet(Object o, long offset) {
-    return UNSAFE.getByte(o, offset);
-  }
-
   public byte unsafeGet(int index) {
     final long pos = address + index;
     return UNSAFE.getByte(heapMemory, pos);
@@ -442,15 +438,6 @@ public final class MemoryBuffer {
       // index is in fact invalid
       throw new IndexOutOfBoundsException();
     }
-  }
-
-  public static boolean unsafeGetBoolean(Object o, long offset) {
-    return UNSAFE.getBoolean(o, offset);
-  }
-
-  public boolean unsafeGetBoolean(int index) {
-    final long pos = address + index;
-    return UNSAFE.getByte(heapMemory, pos) != 0;
   }
 
   public boolean getBoolean(int index) {
