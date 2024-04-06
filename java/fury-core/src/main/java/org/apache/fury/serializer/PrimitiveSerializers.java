@@ -27,6 +27,7 @@ import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.config.LongEncoding;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.Type;
+import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 
 /** Serializers for java primitive types. */
@@ -268,11 +269,11 @@ public class PrimitiveSerializers {
     public static String readLongFunc(LongEncoding longEncoding) {
       switch (longEncoding) {
         case LE_RAW_BYTES:
-          return "readLong";
+          return Platform.IS_LITTLE_ENDIAN ? "readLongOnLE" : "readLongOnBE";
         case SLI:
-          return "readSliLong";
+          return Platform.IS_LITTLE_ENDIAN ? "readSliLongOnLE" : "readSliLongOnBE";
         case PVL:
-          return "readVarLong";
+          return Platform.IS_LITTLE_ENDIAN ? "readVarLongOnLE" : "readVarLongOnBE";
         default:
           throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
       }
