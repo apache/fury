@@ -610,4 +610,14 @@ public abstract class CodecBuilder {
     return new StaticInvoke(
         MemoryBuffer.class, "unsafeGetDouble", PRIMITIVE_DOUBLE_TYPE, base, pos);
   }
+
+  protected Expression readInt(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readIntLE" : "readIntBE";
+    return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
+  }
+
+  protected Expression readVarInt(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readVarIntOnLE" : "readVarIntOnBE";
+    return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
+  }
 }
