@@ -564,11 +564,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public short unsafeGetShortN(int index) {
-    final long pos = address + index;
-    return UNSAFE.getShort(heapMemory, pos);
-  }
-
   public short unsafeGetShort(int index) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
@@ -576,19 +571,6 @@ public final class MemoryBuffer {
     } else {
       return Short.reverseBytes(UNSAFE.getShort(heapMemory, pos));
     }
-  }
-
-  public static short unsafeGetShort(Object o, long offset) {
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getShort(o, offset);
-    } else {
-      return Short.reverseBytes(UNSAFE.getShort(o, offset));
-    }
-  }
-
-  public void unsafePutShortN(int index, short value) {
-    final long pos = address + index;
-    UNSAFE.putShort(heapMemory, pos, value);
   }
 
   public void unsafePutShort(int index, short value) {
@@ -2145,7 +2127,6 @@ public final class MemoryBuffer {
     }
   }
 
-
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
   public short readShortOnLE() {
@@ -2154,8 +2135,9 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining < 2) {
       throw new IndexOutOfBoundsException(
-        String.format(
-          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));    }
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+    }
     readerIndex = readerIdx + 2;
     return UNSAFE.getShort(heapMemory, address + readerIdx);
   }
@@ -2168,12 +2150,12 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining < 2) {
       throw new IndexOutOfBoundsException(
-        String.format(
-          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));    }
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+    }
     readerIndex = readerIdx + 2;
     return Short.reverseBytes(UNSAFE.getShort(heapMemory, address + readerIdx));
   }
-
 
   public int readInt() {
     int readerIdx = readerIndex;

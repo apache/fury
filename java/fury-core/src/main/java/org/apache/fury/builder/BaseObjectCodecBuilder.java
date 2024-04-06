@@ -40,7 +40,6 @@ import static org.apache.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_DOUBLE_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_FLOAT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static org.apache.fury.type.TypeUtils.SET_TYPE;
 import static org.apache.fury.type.TypeUtils.getElementType;

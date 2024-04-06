@@ -83,7 +83,7 @@ public class MemoryBufferTest {
       pos -= 4;
       assertEquals(MemoryBuffer.unsafeGetInt(heapMemory, pos), Integer.MIN_VALUE);
       pos -= 2;
-      assertEquals(MemoryBuffer.unsafeGetShort(heapMemory, pos), Short.MAX_VALUE);
+      assertEquals(buffer.getShort((int) (pos - Platform.BYTE_ARRAY_OFFSET)), Short.MAX_VALUE);
       pos -= 1;
       assertEquals(MemoryBuffer.unsafeGet(heapMemory, pos), Byte.MIN_VALUE);
     }
