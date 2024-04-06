@@ -253,7 +253,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       return "CutPoint{" + "genNewMethod=" + genNewMethod + ", cutPoints=" + cutPoints + '}';
     }
   }
-`
+
   protected void registerJITNotifyCallback() {
     // build encode/decode expr before add constructor to fill up jitCallbackUpdateFields.
     if (!jitCallbackUpdateFields.isEmpty()) {
