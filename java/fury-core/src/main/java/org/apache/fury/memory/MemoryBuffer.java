@@ -1239,6 +1239,9 @@ public final class MemoryBuffer {
   }
 
   private int readPositiveVarIntSlow() {
+    // Note:
+    //  Loop are not used here to improve performance,
+    //  we manually unroll the loop for better performance.
     int b = readByte();
     int result = b & 0x7F;
     if ((b & 0x80) != 0) {
@@ -1468,6 +1471,9 @@ public final class MemoryBuffer {
     // Mask first 6 bits,
     // bit 8 `set` indicates have next data bytes.
     int result = b & 0x3F;
+    // Note:
+    //  Loop are not used here to improve performance.
+    //  We manually unroll the loop for better performance.
     if ((b & 0x80) != 0) { // has 2nd byte
       b = UNSAFE.getByte(heapMemory, pos++);
       result |= (b & 0x3F) << 6;
@@ -1768,6 +1774,9 @@ public final class MemoryBuffer {
   private long readPositiveVarLongSlow() {
     long b = readByte();
     long result = b & 0x7F;
+    // Note:
+    //  Loop are not used here to improve performance.
+    //  We manually unroll the loop for better performance.
     if ((b & 0x80) != 0) {
       b = readByte();
       result |= (b & 0x7F) << 7;
