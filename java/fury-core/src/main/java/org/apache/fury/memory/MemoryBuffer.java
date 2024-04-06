@@ -695,6 +695,16 @@ public final class MemoryBuffer {
     }
   }
 
+  @CodegenInvoke
+  public static int unsafeGetIntOnLE(Object o, long pos) {
+    return UNSAFE.getInt(o, pos);
+  }
+
+  @CodegenInvoke
+  public static int unsafeGetIntOnBE(Object o, long pos) {
+    return Integer.reverseBytes(UNSAFE.getInt(o, pos));
+  }
+
   public void unsafePutIntN(int index, int value) {
     final long pos = address + index;
     UNSAFE.putInt(heapMemory, pos, value);

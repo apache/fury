@@ -595,7 +595,8 @@ public abstract class CodecBuilder {
   }
 
   protected Expression unsafeGetInt(Expression base, Expression pos) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafeGetInt", PRIMITIVE_INT_TYPE, base, pos);
+    String func = Platform.IS_LITTLE_ENDIAN ? "unsafeGetIntOnLE" : "unsafeGetIntOnBE";
+    return new StaticInvoke(MemoryBuffer.class, func, PRIMITIVE_INT_TYPE, base, pos);
   }
 
   protected Expression unsafeGetLong(Expression base, Expression pos) {
