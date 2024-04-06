@@ -787,10 +787,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public float unsafeGetFloatN(int index) {
-    return Float.intBitsToFloat(unsafeGetIntN(index));
-  }
-
   public float unsafeGetFloat(int index) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
@@ -798,18 +794,6 @@ public final class MemoryBuffer {
     } else {
       return Float.intBitsToFloat(Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos)));
     }
-  }
-
-  public static float unsafeGetFloat(Object o, long pos) {
-    if (LITTLE_ENDIAN) {
-      return Float.intBitsToFloat(UNSAFE.getInt(o, pos));
-    } else {
-      return Float.intBitsToFloat(Integer.reverseBytes(UNSAFE.getInt(o, pos)));
-    }
-  }
-
-  public void unsafePutFloatN(int index, float value) {
-    unsafePutIntN(index, Float.floatToRawIntBits(value));
   }
 
   public void unsafePutFloat(int index, float value) {
@@ -857,24 +841,12 @@ public final class MemoryBuffer {
     }
   }
 
-  public double unsafeGetDoubleN(int index) {
-    return Double.longBitsToDouble(unsafeGetLongN(index));
-  }
-
   public double unsafeGetDouble(int index) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       return Double.longBitsToDouble(UNSAFE.getLong(heapMemory, pos));
     } else {
       return Double.longBitsToDouble(Long.reverseBytes(UNSAFE.getLong(heapMemory, pos)));
-    }
-  }
-
-  public static double unsafeGetDouble(Object o, long pos) {
-    if (LITTLE_ENDIAN) {
-      return Double.longBitsToDouble(UNSAFE.getLong(o, pos));
-    } else {
-      return Double.longBitsToDouble(Long.reverseBytes(UNSAFE.getLong(o, pos)));
     }
   }
 

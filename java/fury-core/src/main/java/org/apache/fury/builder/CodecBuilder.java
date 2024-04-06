@@ -620,12 +620,19 @@ public abstract class CodecBuilder {
   }
 
   protected Expression unsafeGetFloat(Expression base, Expression pos) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafeGetFloat", PRIMITIVE_FLOAT_TYPE, base, pos);
+    StaticInvoke expr = new StaticInvoke(Platform.class, "getInt", PRIMITIVE_INT_TYPE, base, pos);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      expr = new StaticInvoke(Integer.class, "reverseBytes", PRIMITIVE_INT_TYPE, expr.inline());
+    }
+    return new StaticInvoke(Float.class, "intBitsToFloat", PRIMITIVE_FLOAT_TYPE, expr.inline());
   }
 
   protected Expression unsafeGetDouble(Expression base, Expression pos) {
-    return new StaticInvoke(
-        MemoryBuffer.class, "unsafeGetDouble", PRIMITIVE_DOUBLE_TYPE, base, pos);
+    StaticInvoke expr = new StaticInvoke(Platform.class, "getLong", PRIMITIVE_LONG_TYPE, base, pos);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      expr = new StaticInvoke(Long.class, "reverseBytes", PRIMITIVE_INT_TYPE, expr.inline());
+    }
+    return new StaticInvoke(Float.class, "longBitsToDouble", PRIMITIVE_FLOAT_TYPE, expr.inline());
   }
 
   protected Expression readChar(Expression buffer) {
