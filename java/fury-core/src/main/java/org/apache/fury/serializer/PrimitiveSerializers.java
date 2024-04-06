@@ -271,7 +271,7 @@ public class PrimitiveSerializers {
         case LE_RAW_BYTES:
           return Platform.IS_LITTLE_ENDIAN ? "readLongOnLE" : "readLongOnBE";
         case SLI:
-          return Platform.IS_LITTLE_ENDIAN ? "readSliLongLE" : "readSliLongBE";
+          return Platform.IS_LITTLE_ENDIAN ? "readSliLongOnLE" : "readSliLongOnBE";
         case PVL:
           return Platform.IS_LITTLE_ENDIAN ? "readVarLongOnLE" : "readVarLongOnBE";
         default:
