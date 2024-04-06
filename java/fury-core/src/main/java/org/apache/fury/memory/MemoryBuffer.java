@@ -1707,13 +1707,15 @@ public final class MemoryBuffer {
 
   @CodegenInvoke
   public long readVarLongOnLE() {
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
     int readIdx = readerIndex;
     long result;
     if (size - readIdx < 9) {
       result = readPositiveVarLongSlow();
     } else {
       long address = this.address;
-      long value = Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx));
+      long value = UNSAFE.getLong(heapMemory, address + readIdx);
       // Duplicate and manual inline for performance.
       // noinspection Duplicates
       readIdx++;
@@ -1768,7 +1770,7 @@ public final class MemoryBuffer {
       result = readPositiveVarLongSlow();
     } else {
       long address = this.address;
-      long value = UNSAFE.getLong(heapMemory, address + readIdx);
+      long value = Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx));
       // Duplicate and manual inline for performance.
       // noinspection Duplicates
       readIdx++;
