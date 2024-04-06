@@ -2298,8 +2298,9 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining < 4) {
       throw new IndexOutOfBoundsException(
-        String.format(
-          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 4, size, this));    }
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 4, size, this));
+    }
     readerIndex = readerIdx + 4;
     return Float.intBitsToFloat(UNSAFE.getInt(heapMemory, address + readerIdx));
   }
@@ -2312,11 +2313,12 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining < 4) {
       throw new IndexOutOfBoundsException(
-        String.format(
-          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 4, size, this));    }
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 4, size, this));
+    }
     readerIndex = readerIdx + 4;
     return Float.intBitsToFloat(
-      Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx)));
+        Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx)));
   }
 
   public double readDouble() {
@@ -2344,8 +2346,9 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining < 8) {
       throw new IndexOutOfBoundsException(
-        String.format(
-          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));    }
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+    }
     readerIndex = readerIdx + 8;
     return Double.longBitsToDouble(UNSAFE.getLong(heapMemory, address + readerIdx));
   }
@@ -2358,11 +2361,12 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining < 8) {
       throw new IndexOutOfBoundsException(
-        String.format(
-          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));    }
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+    }
     readerIndex = readerIdx + 8;
     return Double.longBitsToDouble(
-      Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readerIdx)));
+        Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readerIdx)));
   }
 
   public byte[] readBytes(int length) {
