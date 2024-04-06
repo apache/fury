@@ -587,7 +587,11 @@ public abstract class CodecBuilder {
   }
 
   protected Expression unsafeGetChar(Expression base, Expression pos) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafeGetChar", PRIMITIVE_CHAR_TYPE, base, pos);
+    StaticInvoke expr = new StaticInvoke(Platform.class, "getChar", PRIMITIVE_CHAR_TYPE, base, pos);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      expr = new StaticInvoke(Character.class, "reverseBytes", PRIMITIVE_CHAR_TYPE, expr.inline());
+    }
+    return expr;
   }
 
   protected Expression unsafeGetShort(Expression base, Expression pos) {
