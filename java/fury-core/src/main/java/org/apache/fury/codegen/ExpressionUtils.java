@@ -144,9 +144,17 @@ public class ExpressionUtils {
     return new Cast(value, typeToken);
   }
 
+  public static Expression inline(Expression expression) {
+    return inline(expression, true);
+  }
+
   public static Expression uninline(Expression expression) {
+    return inline(expression, false);
+  }
+
+  private static Expression inline(Expression expression, boolean inline) {
     if (expression instanceof Expression.Inlineable) {
-      ((Expression.Inlineable) (expression)).inline(false);
+      ((Expression.Inlineable) (expression)).inline(inline);
     }
     return expression;
   }

@@ -25,6 +25,7 @@ import static org.apache.fury.codegen.Expression.Reference.fieldRef;
 import static org.apache.fury.codegen.ExpressionOptimizer.invokeGenerated;
 import static org.apache.fury.codegen.ExpressionUtils.eq;
 import static org.apache.fury.codegen.ExpressionUtils.gt;
+import static org.apache.fury.codegen.ExpressionUtils.inline;
 import static org.apache.fury.codegen.ExpressionUtils.neq;
 import static org.apache.fury.codegen.ExpressionUtils.not;
 import static org.apache.fury.codegen.ExpressionUtils.nullValue;
@@ -1240,7 +1241,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         builder.add(readContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
         Literal hasNullFlag = Literal.ofInt(CollectionFlags.HAS_NULL);
-        Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
+        Expression hasNull = eq(new BitAnd(flags.inline(), hasNullFlag), hasNullFlag, "hasNull");
         builder.add(
             hasNull,
             readContainerElements(elementType, false, null, hasNull, buffer, collection, size));
@@ -1351,7 +1352,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                 trackingRef,
                 exprHolder.get("hasNull"),
                 exprHolder.get("serializer"),
-                v -> new Invoke(exprHolder.get("collection"), "add", v)));
+                v -> new Invoke(exprHolder.get("collection"), "add", inline(v))));
   }
 
   private Expression readContainerElement(
