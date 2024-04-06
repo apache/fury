@@ -1289,14 +1289,14 @@ public final class MemoryBuffer {
   @CodegenInvoke
   public int readVarInt() {
     if (LITTLE_ENDIAN) {
-      return readVarIntLE();
+      return readVarIntOnLE();
     } else {
-      return readVarIntBE();
+      return readVarIntOnBE();
     }
   }
 
   @CodegenInvoke
-  public int readVarIntLE() {
+  public int readVarIntOnLE() {
     // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
@@ -1336,7 +1336,7 @@ public final class MemoryBuffer {
   }
 
   @CodegenInvoke
-  public int readVarIntBE() {
+  public int readVarIntOnBE() {
     // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
@@ -2352,7 +2352,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public int readIntLE() {
+  public int readIntOnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2365,7 +2365,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public int readIntBE() {
+  public int readIntOnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
