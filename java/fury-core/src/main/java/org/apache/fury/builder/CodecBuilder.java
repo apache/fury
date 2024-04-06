@@ -627,7 +627,7 @@ public abstract class CodecBuilder {
     if (!Platform.IS_LITTLE_ENDIAN) {
       expr = new StaticInvoke(Long.class, "reverseBytes", PRIMITIVE_INT_TYPE, expr.inline());
     }
-    return new StaticInvoke(Float.class, "longBitsToDouble", PRIMITIVE_FLOAT_TYPE, expr.inline());
+    return new StaticInvoke(Double.class, "longBitsToDouble", PRIMITIVE_FLOAT_TYPE, expr.inline());
   }
 
   protected Expression readChar(Expression buffer) {
