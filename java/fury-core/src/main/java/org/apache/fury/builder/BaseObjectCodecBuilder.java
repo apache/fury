@@ -1135,8 +1135,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (cls == short.class || cls == Short.class) {
         return new Invoke(buffer, "readShort", PRIMITIVE_SHORT_TYPE);
       } else if (cls == int.class || cls == Integer.class) {
-        String func = fury.compressInt() ? "readVarInt" : "readInt";
-        return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
+        return fury.compressInt() ? readVarInt(buffer) : readInt(buffer);
       } else if (cls == long.class || cls == Long.class) {
         return LongSerializer.readLong(buffer, fury.longEncoding());
       } else if (cls == float.class || cls == Float.class) {

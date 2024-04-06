@@ -595,7 +595,11 @@ public abstract class CodecBuilder {
   }
 
   protected Expression unsafeGetInt(Expression base, Expression pos) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafeGetInt", PRIMITIVE_INT_TYPE, base, pos);
+    StaticInvoke expr = new StaticInvoke(Platform.class, "getInt", PRIMITIVE_INT_TYPE, base, pos);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      expr = new StaticInvoke(Integer.class, "reverseBytes", PRIMITIVE_INT_TYPE, expr.inline());
+    }
+    return expr;
   }
 
   protected Expression unsafeGetLong(Expression base, Expression pos) {
@@ -609,5 +613,15 @@ public abstract class CodecBuilder {
   protected Expression unsafeGetDouble(Expression base, Expression pos) {
     return new StaticInvoke(
         MemoryBuffer.class, "unsafeGetDouble", PRIMITIVE_DOUBLE_TYPE, base, pos);
+  }
+
+  protected Expression readInt(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readIntOnLE" : "readIntOnBE";
+    return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
+  }
+
+  protected Expression readVarInt(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readVarIntOnLE" : "readVarIntOnBE";
+    return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
   }
 }

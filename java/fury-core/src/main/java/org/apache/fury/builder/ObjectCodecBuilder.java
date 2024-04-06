@@ -695,7 +695,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               compressStarted = true;
               addIncReaderIndexExpr(groupExpressions, buffer, acc);
             }
-            fieldValue = new Invoke(buffer, "readVarInt", PRIMITIVE_INT_TYPE);
+            fieldValue = readVarInt(buffer);
           }
         } else if (clz == long.class) {
           if (!fury.compressLong()) {
