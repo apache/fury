@@ -96,6 +96,11 @@ public abstract class FuryTestBase {
   }
 
   @DataProvider
+  public static Object[][] compressNumberAndCodeGen() {
+    return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
+  }
+
+  @DataProvider
   public static Object[][] refTrackingAndCompressNumber() {
     return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
   }

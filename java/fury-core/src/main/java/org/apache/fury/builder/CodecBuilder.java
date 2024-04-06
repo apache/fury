@@ -572,44 +572,62 @@ public abstract class CodecBuilder {
     return new StaticInvoke(MemoryBuffer.class, "unsafePutDouble", base, pos, value);
   }
 
-  /**
-   * Build unsafeGet operation.
-   *
-   * @see MemoryBuffer#unsafeGet(Object, long)
-   */
+  /** Build unsafeGet operation. */
   protected Expression unsafeGet(Expression base, Expression pos) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafeGet", PRIMITIVE_BYTE_TYPE, base, pos);
+    return new StaticInvoke(Platform.class, "getByte", PRIMITIVE_BYTE_TYPE, base, pos);
   }
 
   protected Expression unsafeGetBoolean(Expression base, Expression pos) {
-    return new StaticInvoke(
-        MemoryBuffer.class, "unsafeGetBoolean", PRIMITIVE_BOOLEAN_TYPE, base, pos);
+    return new StaticInvoke(Platform.class, "getBoolean", PRIMITIVE_BOOLEAN_TYPE, base, pos);
   }
 
   protected Expression unsafeGetChar(Expression base, Expression pos) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafeGetChar", PRIMITIVE_CHAR_TYPE, base, pos);
+    StaticInvoke expr = new StaticInvoke(Platform.class, "getChar", PRIMITIVE_CHAR_TYPE, base, pos);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      expr = new StaticInvoke(Character.class, "reverseBytes", PRIMITIVE_CHAR_TYPE, expr.inline());
+    }
+    return expr;
   }
 
   protected Expression unsafeGetShort(Expression base, Expression pos) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafeGetShort", PRIMITIVE_SHORT_TYPE, base, pos);
+    StaticInvoke expr =
+        new StaticInvoke(Platform.class, "getShort", PRIMITIVE_SHORT_TYPE, base, pos);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      expr = new StaticInvoke(Short.class, "reverseBytes", PRIMITIVE_SHORT_TYPE, expr.inline());
+    }
+    return expr;
   }
 
   protected Expression unsafeGetInt(Expression base, Expression pos) {
-    String func = Platform.IS_LITTLE_ENDIAN ? "unsafeGetIntOnLE" : "unsafeGetIntOnBE";
-    return new StaticInvoke(MemoryBuffer.class, func, PRIMITIVE_INT_TYPE, base, pos);
+    StaticInvoke expr = new StaticInvoke(Platform.class, "getInt", PRIMITIVE_INT_TYPE, base, pos);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      expr = new StaticInvoke(Integer.class, "reverseBytes", PRIMITIVE_INT_TYPE, expr.inline());
+    }
+    return expr;
   }
 
   protected Expression unsafeGetLong(Expression base, Expression pos) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafeGetLong", PRIMITIVE_LONG_TYPE, base, pos);
+    StaticInvoke expr = new StaticInvoke(Platform.class, "getLong", PRIMITIVE_LONG_TYPE, base, pos);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      expr = new StaticInvoke(Long.class, "reverseBytes", PRIMITIVE_LONG_TYPE, expr.inline());
+    }
+    return expr;
   }
 
   protected Expression unsafeGetFloat(Expression base, Expression pos) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafeGetFloat", PRIMITIVE_FLOAT_TYPE, base, pos);
+    StaticInvoke expr = new StaticInvoke(Platform.class, "getInt", PRIMITIVE_INT_TYPE, base, pos);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      expr = new StaticInvoke(Integer.class, "reverseBytes", PRIMITIVE_INT_TYPE, expr.inline());
+    }
+    return new StaticInvoke(Float.class, "intBitsToFloat", PRIMITIVE_FLOAT_TYPE, expr.inline());
   }
 
   protected Expression unsafeGetDouble(Expression base, Expression pos) {
-    return new StaticInvoke(
-        MemoryBuffer.class, "unsafeGetDouble", PRIMITIVE_DOUBLE_TYPE, base, pos);
+    StaticInvoke expr = new StaticInvoke(Platform.class, "getLong", PRIMITIVE_LONG_TYPE, base, pos);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      expr = new StaticInvoke(Long.class, "reverseBytes", PRIMITIVE_LONG_TYPE, expr.inline());
+    }
+    return new StaticInvoke(Double.class, "longBitsToDouble", PRIMITIVE_DOUBLE_TYPE, expr.inline());
   }
 
   protected Expression readChar(Expression buffer) {
@@ -627,6 +645,10 @@ public abstract class CodecBuilder {
     return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
   }
 
+  public static String readIntFunc() {
+    return Platform.IS_LITTLE_ENDIAN ? "readIntOnLE" : "readIntOnBE";
+  }
+
   protected Expression readVarInt(Expression buffer) {
     String func = Platform.IS_LITTLE_ENDIAN ? "readVarIntOnLE" : "readVarIntOnBE";
     return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
@@ -634,6 +656,10 @@ public abstract class CodecBuilder {
 
   protected Expression readLong(Expression buffer) {
     return new Invoke(buffer, readLongFunc(), PRIMITIVE_LONG_TYPE);
+  }
+
+  public static String readLongFunc() {
+    return Platform.IS_LITTLE_ENDIAN ? "readLongOnLE" : "readLongOnBE";
   }
 
   protected Expression readFloat(Expression buffer) {
@@ -644,13 +670,5 @@ public abstract class CodecBuilder {
   protected Expression readDouble(Expression buffer) {
     String func = Platform.IS_LITTLE_ENDIAN ? "readDoubleOnLE" : "readDoubleOnBE";
     return new Invoke(buffer, func, PRIMITIVE_DOUBLE_TYPE);
-  }
-
-  public static String readIntFunc() {
-    return Platform.IS_LITTLE_ENDIAN ? "readIntOnLE" : "readIntOnBE";
-  }
-
-  public static String readLongFunc() {
-    return Platform.IS_LITTLE_ENDIAN ? "readLongOnLE" : "readLongOnBE";
   }
 }

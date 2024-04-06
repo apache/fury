@@ -19,6 +19,8 @@
 
 package org.apache.fury.pool;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -28,6 +30,7 @@ import org.apache.fury.AbstractThreadSafeFury;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.util.LoaderBinding;
 
 @ThreadSafe
@@ -56,6 +59,7 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
     }
   }
 
+  @Override
   public <R> R execute(Function<Fury, R> action) {
     Fury fury = null;
     try {
@@ -66,8 +70,14 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
     }
   }
 
+  @Override
   public byte[] serialize(Object obj) {
     return execute(fury -> fury.serialize(obj));
+  }
+
+  @Override
+  public byte[] serialize(Object obj, BufferCallback callback) {
+    return execute(fury -> fury.serialize(obj, callback));
   }
 
   @Override
@@ -75,24 +85,72 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
     return execute(fury -> fury.serialize(obj, address, size));
   }
 
+  @Override
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj) {
     return execute(fury -> fury.serialize(buffer, obj));
   }
 
+  @Override
+  public MemoryBuffer serialize(MemoryBuffer buffer, Object obj, BufferCallback callback) {
+    return execute(fury -> fury.serialize(buffer, obj, callback));
+  }
+
+  @Override
+  public void serialize(OutputStream outputStream, Object obj) {
+    execute(
+        fury -> {
+          fury.serialize(outputStream, obj);
+          return null;
+        });
+  }
+
+  @Override
+  public void serialize(OutputStream outputStream, Object obj, BufferCallback callback) {
+    execute(
+        fury -> {
+          fury.serialize(outputStream, obj, callback);
+          return null;
+        });
+  }
+
+  @Override
   public Object deserialize(byte[] bytes) {
     return execute(fury -> fury.deserialize(bytes));
   }
 
+  @Override
+  public Object deserialize(byte[] bytes, Iterable<MemoryBuffer> outOfBandBuffers) {
+    return execute(fury -> fury.deserialize(bytes, outOfBandBuffers));
+  }
+
+  @Override
   public Object deserialize(long address, int size) {
     return execute(fury -> fury.deserialize(address, size));
   }
 
+  @Override
   public Object deserialize(MemoryBuffer buffer) {
     return execute(fury -> fury.deserialize(buffer));
   }
 
+  @Override
   public Object deserialize(ByteBuffer byteBuffer) {
     return execute(fury -> fury.deserialize(MemoryUtils.wrap(byteBuffer)));
+  }
+
+  @Override
+  public Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
+    return execute(fury -> fury.deserialize(buffer, outOfBandBuffers));
+  }
+
+  @Override
+  public Object deserialize(InputStream inputStream) {
+    return execute(fury -> fury.deserialize(inputStream));
+  }
+
+  @Override
+  public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
+    return execute(fury -> fury.deserialize(inputStream, outOfBandBuffers));
   }
 
   @Override
@@ -110,6 +168,15 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   @Override
+  public void serializeJavaObject(OutputStream outputStream, Object obj) {
+    execute(
+        fury -> {
+          fury.serializeJavaObject(outputStream, obj);
+          return null;
+        });
+  }
+
+  @Override
   public <T> T deserializeJavaObject(byte[] data, Class<T> cls) {
     return execute(fury -> fury.deserializeJavaObject(data, cls));
   }
@@ -119,18 +186,65 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
     return execute(fury -> fury.deserializeJavaObject(buffer, cls));
   }
 
+  @Override
+  public <T> T deserializeJavaObject(InputStream inputStream, Class<T> cls) {
+    return execute(fury -> fury.deserializeJavaObject(inputStream, cls));
+  }
+
+  @Override
+  public byte[] serializeJavaObjectAndClass(Object obj) {
+    return execute(fury -> fury.serializeJavaObjectAndClass(obj));
+  }
+
+  @Override
+  public void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj) {
+    execute(
+        fury -> {
+          fury.serializeJavaObjectAndClass(buffer, obj);
+          return null;
+        });
+  }
+
+  @Override
+  public void serializeJavaObjectAndClass(OutputStream outputStream, Object obj) {
+    execute(
+        fury -> {
+          fury.serializeJavaObjectAndClass(outputStream, obj);
+          return null;
+        });
+  }
+
+  @Override
+  public Object deserializeJavaObjectAndClass(byte[] data) {
+    return execute(fury -> fury.deserializeJavaObjectAndClass(data));
+  }
+
+  @Override
+  public Object deserializeJavaObjectAndClass(MemoryBuffer buffer) {
+    return execute(fury -> fury.deserializeJavaObjectAndClass(buffer));
+  }
+
+  @Override
+  public Object deserializeJavaObjectAndClass(InputStream inputStream) {
+    return execute(fury -> fury.deserializeJavaObjectAndClass(inputStream));
+  }
+
+  @Override
   public void setClassLoader(ClassLoader classLoader) {
     setClassLoader(classLoader, LoaderBinding.StagingType.SOFT_STAGING);
   }
 
+  @Override
   public void setClassLoader(ClassLoader classLoader, LoaderBinding.StagingType stagingType) {
     furyPooledObjectFactory.setClassLoader(classLoader, stagingType);
   }
 
+  @Override
   public ClassLoader getClassLoader() {
     return furyPooledObjectFactory.getClassLoader();
   }
 
+  @Override
   public void clearClassLoader(ClassLoader loader) {
     furyPooledObjectFactory.clearClassLoader(loader);
   }

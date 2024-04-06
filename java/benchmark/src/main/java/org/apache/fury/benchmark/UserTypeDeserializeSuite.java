@@ -136,7 +136,7 @@ public class UserTypeDeserializeSuite {
   public static void main(String[] args) throws IOException {
     if (args.length == 0) {
       String commandLine =
-          "io.*UserTypeDeserializeSuite.kryo* -f 0 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+          "org.apache.fury.*UserTypeDeserializeSuite.kryo* -f 0 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

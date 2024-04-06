@@ -75,17 +75,17 @@ public class MemoryBufferTest {
       MemoryBuffer.unsafePutDouble(heapMemory, pos, -1);
       pos += 8;
       MemoryBuffer.unsafePutFloat(heapMemory, pos, -1);
-      assertEquals(MemoryBuffer.unsafeGetFloat(heapMemory, pos), -1);
+      assertEquals(buffer.unsafeGetFloat((int) (pos - Platform.BYTE_ARRAY_OFFSET)), -1);
       pos -= 8;
-      assertEquals(MemoryBuffer.unsafeGetDouble(heapMemory, pos), -1);
+      assertEquals(buffer.unsafeGetDouble((int) (pos - Platform.BYTE_ARRAY_OFFSET)), -1);
       pos -= 8;
       assertEquals(MemoryBuffer.unsafeGetLong(heapMemory, pos), Long.MAX_VALUE);
       pos -= 4;
       assertEquals(MemoryBuffer.unsafeGetInt(heapMemory, pos), Integer.MIN_VALUE);
       pos -= 2;
-      assertEquals(MemoryBuffer.unsafeGetShort(heapMemory, pos), Short.MAX_VALUE);
+      assertEquals(buffer.getShort((int) (pos - Platform.BYTE_ARRAY_OFFSET)), Short.MAX_VALUE);
       pos -= 1;
-      assertEquals(MemoryBuffer.unsafeGet(heapMemory, pos), Byte.MIN_VALUE);
+      assertEquals(buffer.get((int) (pos - Platform.BYTE_ARRAY_OFFSET)), Byte.MIN_VALUE);
     }
     {
       MemoryBuffer buffer = MemoryUtils.buffer(1024);

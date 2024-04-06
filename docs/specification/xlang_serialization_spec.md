@@ -1,4 +1,10 @@
-# Cross language object graph serialization
+---
+title: Fury Xlang Serialization Format
+sidebar_position: 0
+id: fury_xlang_serialization_spec
+---
+
+# Cross-language Serialization Specification
 
 > Format Version History:
 > - Version 0.1 - serialization spec formalized
@@ -23,11 +29,9 @@ also introduce more complexities compared to static serialization frameworks. So
 - int16: a 16-bit signed integer.
 - int32: a 32-bit signed integer.
 - var_int32: a 32-bit signed integer which use fury var_int32 encoding.
-- fixed_int32: a 32-bit signed integer which use two's complement encoding.
 - int64: a 64-bit signed integer.
 - var_int64: a 64-bit signed integer which use fury PVL encoding.
 - sli_int64: a 64-bit signed integer which use fury SLI encoding.
-- fixed_int64: a 64-bit signed integer which use two's complement encoding.
 - float16: a 16-bit floating point number.
 - float32: a 32-bit floating point number.
 - float64: a 64-bit floating point number including NaN and Infinity.

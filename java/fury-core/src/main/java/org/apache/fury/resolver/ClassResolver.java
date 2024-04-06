@@ -1137,7 +1137,7 @@ public class ClassResolver {
   }
 
   private Serializer createSerializer(Class<?> cls) {
-    BlackList.checkNotInBlackList(cls.getName());
+    DisallowedList.checkNotInDisallowedList(cls.getName());
     String msg =
         String.format(
             "%s is not registered, please check whether it's the type you want to serialize or "

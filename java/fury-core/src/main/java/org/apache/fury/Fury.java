@@ -171,10 +171,12 @@ public final class Fury implements BaseFury {
     classResolver.registerSerializer(type, serializerClass);
   }
 
+  @Override
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
     classResolver.registerSerializer(type, serializer);
   }
 
+  @Override
   public void setSerializerFactory(SerializerFactory serializerFactory) {
     classResolver.setSerializerFactory(serializerFactory);
   }
@@ -200,7 +202,7 @@ public final class Fury implements BaseFury {
     return bytes;
   }
 
-  /** Return serialized <code>obj</code> as a byte array. */
+  @Override
   public byte[] serialize(Object obj, BufferCallback callback) {
     MemoryBuffer buf = getBuffer();
     buf.writerIndex(0);
@@ -215,7 +217,7 @@ public final class Fury implements BaseFury {
     return serialize(buffer, obj, null);
   }
 
-  /** Serialize <code>obj</code> to a <code>buffer</code>. */
+  @Override
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj, BufferCallback callback) {
     this.bufferCallback = callback;
     int maskIndex = buffer.writerIndex();
@@ -259,10 +261,12 @@ public final class Fury implements BaseFury {
     }
   }
 
+  @Override
   public void serialize(OutputStream outputStream, Object obj) {
     serializeToStream(outputStream, buf -> serialize(buf, obj, null));
   }
 
+  @Override
   public void serialize(OutputStream outputStream, Object obj, BufferCallback callback) {
     serializeToStream(outputStream, buf -> serialize(buf, obj, callback));
   }
@@ -672,6 +676,7 @@ public final class Fury implements BaseFury {
     return deserialize(MemoryUtils.wrap(bytes), null);
   }
 
+  @Override
   public Object deserialize(byte[] bytes, Iterable<MemoryBuffer> outOfBandBuffers) {
     return deserialize(MemoryUtils.wrap(bytes), outOfBandBuffers);
   }
@@ -699,6 +704,7 @@ public final class Fury implements BaseFury {
    *     It is an error for <code>outOfBandBuffers</code> to be null if the serialized stream was
    *     produced with a non-null `bufferCallback`.
    */
+  @Override
   public Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
       jitContext.lock();
@@ -747,10 +753,12 @@ public final class Fury implements BaseFury {
     }
   }
 
+  @Override
   public Object deserialize(FuryInputStream inputStream) {
     return deserialize(inputStream, null);
   }
 
+  @Override
   public Object deserialize(FuryInputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
       MemoryBuffer buf = inputStream.getBuffer();
@@ -1027,6 +1035,7 @@ public final class Fury implements BaseFury {
    * Serialize java object without class info, deserialization should use {@link
    * #deserializeJavaObject}.
    */
+  @Override
   public void serializeJavaObject(OutputStream outputStream, Object obj) {
     serializeToStream(outputStream, buf -> serializeJavaObject(buf, obj));
   }
@@ -1066,6 +1075,7 @@ public final class Fury implements BaseFury {
    * Deserialize java object from binary by passing class info, serialization should use {@link
    * #serializeJavaObject}.
    */
+  @Override
   public <T> T deserializeJavaObject(FuryInputStream inputStream, Class<T> cls) {
     try {
       MemoryBuffer buf = inputStream.getBuffer();
@@ -1079,6 +1089,7 @@ public final class Fury implements BaseFury {
    * Deserialize java object from binary by passing class info, serialization should use {@link
    * #deserializeJavaObjectAndClass}.
    */
+  @Override
   public byte[] serializeJavaObjectAndClass(Object obj) {
     MemoryBuffer buf = getBuffer();
     buf.writerIndex(0);
@@ -1092,6 +1103,7 @@ public final class Fury implements BaseFury {
    * Serialize java object with class info, deserialization should use {@link
    * #deserializeJavaObjectAndClass}.
    */
+  @Override
   public void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
@@ -1109,6 +1121,7 @@ public final class Fury implements BaseFury {
    * Serialize java object with class info, deserialization should use {@link
    * #deserializeJavaObjectAndClass}.
    */
+  @Override
   public void serializeJavaObjectAndClass(OutputStream outputStream, Object obj) {
     serializeToStream(outputStream, buf -> serializeJavaObjectAndClass(buf, obj));
   }
@@ -1117,6 +1130,7 @@ public final class Fury implements BaseFury {
    * Deserialize class info and java object from binary, serialization should use {@link
    * #serializeJavaObjectAndClass}.
    */
+  @Override
   public Object deserializeJavaObjectAndClass(byte[] data) {
     return deserializeJavaObjectAndClass(MemoryBuffer.fromByteArray(data));
   }
@@ -1125,6 +1139,7 @@ public final class Fury implements BaseFury {
    * Deserialize class info and java object from binary, serialization should use {@link
    * #serializeJavaObjectAndClass}.
    */
+  @Override
   public Object deserializeJavaObjectAndClass(MemoryBuffer buffer) {
     try {
       jitContext.lock();
@@ -1146,6 +1161,7 @@ public final class Fury implements BaseFury {
    * Deserialize class info and java object from binary, serialization should use {@link
    * #serializeJavaObjectAndClass}.
    */
+  @Override
   public Object deserializeJavaObjectAndClass(FuryInputStream inputStream) {
     try {
       MemoryBuffer buf = inputStream.getBuffer();

@@ -28,30 +28,32 @@ import org.apache.fury.util.Platform;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class BlackListTest extends FuryTestBase {
+public class DisallowedListTest extends FuryTestBase {
 
   @Test
-  public void testCheckHitBlackList() {
-    // Hit the blacklist.
+  public void testCheckHitDisallowedList() {
+    // Hit the disallowed list.
     Assert.assertThrows(
         InsecureException.class,
-        () -> BlackList.checkNotInBlackList("java.rmi.server.UnicastRemoteObject"));
+        () -> DisallowedList.checkNotInDisallowedList("java.rmi.server.UnicastRemoteObject"));
     Assert.assertThrows(
         InsecureException.class,
-        () -> BlackList.checkNotInBlackList("com.sun.jndi.rmi.registry.BindingEnumeration"));
+        () ->
+            DisallowedList.checkNotInDisallowedList(
+                "com.sun.jndi.rmi.registry.BindingEnumeration"));
     Assert.assertThrows(
         InsecureException.class,
-        () -> BlackList.checkNotInBlackList(java.beans.Expression.class.getName()));
+        () -> DisallowedList.checkNotInDisallowedList(java.beans.Expression.class.getName()));
     Assert.assertThrows(
         InsecureException.class,
-        () -> BlackList.checkNotInBlackList(UnicastRemoteObject.class.getName()));
+        () -> DisallowedList.checkNotInDisallowedList(UnicastRemoteObject.class.getName()));
 
-    // Not in the blacklist.
-    BlackList.checkNotInBlackList("java.util.HashMap");
+    // Not in the disallowed list.
+    DisallowedList.checkNotInDisallowedList("java.util.HashMap");
   }
 
   @Test
-  public void testSerializeBlackListClass() {
+  public void testSerializeDisallowedClass() {
     Fury[] allFury = new Fury[3];
     for (int i = 0; i < 3; i++) {
       boolean requireClassRegistration = i % 2 == 0;
@@ -61,7 +63,7 @@ public class BlackListTest extends FuryTestBase {
               .requireClassRegistration(requireClassRegistration)
               .build();
       if (requireClassRegistration) {
-        // Registered or unregistered Classes should be subject to blacklist restrictions.
+        // Registered or unregistered Classes should be subject to disallowed list restrictions.
         fury.register(UnicastRemoteObject.class);
       }
       allFury[i] = fury;
