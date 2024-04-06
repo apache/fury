@@ -655,4 +655,14 @@ public abstract class CodecBuilder {
   public static String readLongFunc() {
     return Platform.IS_LITTLE_ENDIAN ? "readLongOnLE" : "readLongOnBE";
   }
+
+  protected Expression readFloat(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readFloatOnLE" : "readFloatOnBE";
+    return new Invoke(buffer, func, PRIMITIVE_FLOAT_TYPE);
+  }
+
+  protected Expression readDouble(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readDoubleOnLE" : "readDoubleOnBE";
+    return new Invoke(buffer, func, PRIMITIVE_DOUBLE_TYPE);
+  }
 }
