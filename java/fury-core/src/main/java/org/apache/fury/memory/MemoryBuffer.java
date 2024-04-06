@@ -2125,10 +2125,11 @@ public final class MemoryBuffer {
   public long readLong() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - 8) {
+    int remaining = size - readerIdx;
+    if (remaining < 8) {
       throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+        String.format(
+          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
     }
     readerIndex = readerIdx + 8;
     final long pos = address + readerIdx;
@@ -2137,6 +2138,36 @@ public final class MemoryBuffer {
     } else {
       return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos));
     }
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public long readLongOnLE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 8) {
+      throw new IndexOutOfBoundsException(
+        String.format(
+          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+    }
+    readerIndex = readerIdx + 8;
+    return UNSAFE.getLong(heapMemory, address + readerIdx);
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public long readLongOnBE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 8) {
+      throw new IndexOutOfBoundsException(
+        String.format(
+          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+    }
+    readerIndex = readerIdx + 8;
+    return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readerIdx));
   }
 
   public float readFloat() {
