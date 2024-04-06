@@ -2131,6 +2131,36 @@ public final class MemoryBuffer {
     }
   }
 
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public char readCharOnLE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 2) {
+      throw new IndexOutOfBoundsException(
+        String.format(
+          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+    }
+    readerIndex = readerIdx + 2;
+    return UNSAFE.getChar(heapMemory, address + readerIdx);
+  }
+
+  // Reduce method body for better inline in the caller.
+  @CodegenInvoke
+  public char readCharOnBE() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining < 2) {
+      throw new IndexOutOfBoundsException(
+        String.format(
+          "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+    }
+    readerIndex = readerIdx + 2;
+    return Character.reverseBytes(UNSAFE.getChar(heapMemory, address + readerIdx));
+  }
+
   public short readShort() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow

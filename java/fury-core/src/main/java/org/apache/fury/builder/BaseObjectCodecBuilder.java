@@ -1131,7 +1131,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (cls == boolean.class || cls == Boolean.class) {
         return new Invoke(buffer, "readBoolean", PRIMITIVE_BOOLEAN_TYPE);
       } else if (cls == char.class || cls == Character.class) {
-        return new Invoke(buffer, "readChar", TypeToken.of(char.class));
+        return readChar(buffer);
       } else if (cls == short.class || cls == Short.class) {
         return new Invoke(buffer, "readShort", PRIMITIVE_SHORT_TYPE);
       } else if (cls == int.class || cls == Integer.class) {
