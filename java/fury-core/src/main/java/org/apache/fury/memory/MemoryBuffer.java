@@ -1768,6 +1768,114 @@ public final class MemoryBuffer {
     return ((result >>> 1) ^ -(result & 1));
   }
 
+  public long readVarLongOnLE() {
+    int readIdx = readerIndex;
+    long result;
+    if (size - readIdx < 9) {
+      result = readPositiveVarLongSlow();
+    } else {
+      long address = this.address;
+      long value = Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx));
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      readIdx++;
+      result = value & 0x7F;
+      if ((value & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (value >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((value & 0x8000) != 0) {
+          readIdx++;
+          // 0x1fc000: 0b1111111 << 14
+          result |= (value >>> 2) & 0x1fc000;
+          // 0x800000: 0b1 << 23
+          if ((value & 0x800000) != 0) {
+            readIdx++;
+            // 0xfe00000: 0b1111111 << 21
+            result |= (value >>> 3) & 0xfe00000;
+            if ((value & 0x80000000L) != 0) {
+              readIdx++;
+              result |= (value >>> 4) & 0x7f0000000L;
+              if ((value & 0x8000000000L) != 0) {
+                readIdx++;
+                result |= (value >>> 5) & 0x3f800000000L;
+                if ((value & 0x800000000000L) != 0) {
+                  readIdx++;
+                  result |= (value >>> 6) & 0x1fc0000000000L;
+                  if ((value & 0x80000000000000L) != 0) {
+                    readIdx++;
+                    result |= (value >>> 7) & 0xfe000000000000L;
+                    if ((value & 0x8000000000000000L) != 0) {
+                      long b = UNSAFE.getByte(heapMemory, address + readIdx++);
+                      result |= b << 56;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      readerIndex = readIdx;
+    }
+    return ((result >>> 1) ^ -(result & 1));
+  }
+
+  public long readVarLongOnBE() {
+    int readIdx = readerIndex;
+    long result;
+    if (size - readIdx < 9) {
+      result = readPositiveVarLongSlow();
+    } else {
+      long address = this.address;
+      long value = UNSAFE.getLong(heapMemory, address + readIdx);
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      readIdx++;
+      result = value & 0x7F;
+      if ((value & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (value >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((value & 0x8000) != 0) {
+          readIdx++;
+          // 0x1fc000: 0b1111111 << 14
+          result |= (value >>> 2) & 0x1fc000;
+          // 0x800000: 0b1 << 23
+          if ((value & 0x800000) != 0) {
+            readIdx++;
+            // 0xfe00000: 0b1111111 << 21
+            result |= (value >>> 3) & 0xfe00000;
+            if ((value & 0x80000000L) != 0) {
+              readIdx++;
+              result |= (value >>> 4) & 0x7f0000000L;
+              if ((value & 0x8000000000L) != 0) {
+                readIdx++;
+                result |= (value >>> 5) & 0x3f800000000L;
+                if ((value & 0x800000000000L) != 0) {
+                  readIdx++;
+                  result |= (value >>> 6) & 0x1fc0000000000L;
+                  if ((value & 0x80000000000000L) != 0) {
+                    readIdx++;
+                    result |= (value >>> 7) & 0xfe000000000000L;
+                    if ((value & 0x8000000000000000L) != 0) {
+                      long b = UNSAFE.getByte(heapMemory, address + readIdx++);
+                      result |= b << 56;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      readerIndex = readIdx;
+    }
+    return ((result >>> 1) ^ -(result & 1));
+  }
+
   /** Reads the 1-9 byte int part of a non-negative var long. */
   public long readPositiveVarLong() {
     int readIdx = readerIndex;
