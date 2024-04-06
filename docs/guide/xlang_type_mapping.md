@@ -8,7 +8,7 @@ Note:
 
 - For type definition, see [Type Systems in Spec](../specification/xlang_serialization_spec.md#type-systems)
 - `int16_t[x]/vector<~>` indicates `int16_t[x]/vector<int16_t>`
-- The cross-language serialization is not stable, use it carefully.
+- The cross-language serialization is not stable, do not use it in your production environment.
 
 # Type Mapping
 
