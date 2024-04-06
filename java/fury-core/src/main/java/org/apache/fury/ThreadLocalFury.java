@@ -19,13 +19,13 @@
 
 package org.apache.fury;
 
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
+import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
@@ -155,13 +155,14 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public Object deserialize(InputStream inputStream) {
-    return bindingThreadLocal.get().get().deserialize(inputStream);
+  public Object deserialize(FuryInputStream FuryInputStream) {
+    return bindingThreadLocal.get().get().deserialize(FuryInputStream);
   }
 
   @Override
-  public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
-    return bindingThreadLocal.get().get().deserialize(inputStream, outOfBandBuffers);
+  public Object deserialize(
+      FuryInputStream FuryInputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
+    return bindingThreadLocal.get().get().deserialize(FuryInputStream, outOfBandBuffers);
   }
 
   @Override
@@ -190,8 +191,8 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public <T> T deserializeJavaObject(InputStream inputStream, Class<T> cls) {
-    return bindingThreadLocal.get().get().deserializeJavaObject(inputStream, cls);
+  public <T> T deserializeJavaObject(FuryInputStream FuryInputStream, Class<T> cls) {
+    return bindingThreadLocal.get().get().deserializeJavaObject(FuryInputStream, cls);
   }
 
   @Override
@@ -220,8 +221,8 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public Object deserializeJavaObjectAndClass(InputStream inputStream) {
-    return bindingThreadLocal.get().get().deserializeJavaObjectAndClass(inputStream);
+  public Object deserializeJavaObjectAndClass(FuryInputStream FuryInputStream) {
+    return bindingThreadLocal.get().get().deserializeJavaObjectAndClass(FuryInputStream);
   }
 
   @Override
