@@ -23,28 +23,28 @@ Note:
 | var_int64          | 7       | long/Long       | int/pyfury.VarInt64  | Type.varint64() | fury::varint64_t               | fury.varint64    | fury::varint64   |
 | sli_int64          | 8       | long/Long       | int/pyfury.SliInt64  | Type.sliint64() | fury::sliint64_t               | fury.sliint64    | fury::sliint64   |
 | float16            | 9       | float/Float     | float/pyfury.Float16 | Type.float16()  | fury::float16_t                | fury.float16     | fury::f16        |
-| float32            | 9       | float/Float     | float/pyfury.Float32 | Type.float32()  | float                          | float32          | f32              |
-| float64            | 9       | double/Double   | float/pyfury.Float64 | Type.float64()  | double                         | float64          | f64              |
-| string             | 9       | String          | str                  | String          | string                         | string           | String/str       |
-| enum               | 9       | Enum subclasses | enum subclasses      | /               | enum                           | /                | enum             |
-| list               | 9       | List/Collection | list/tuple           | array           | vector                         | slice            | Vec              |
-| set                | 9       | Set             | set                  | /               | set                            | fury.Set         | Set              |
-| map                | 9       | Map             | dict                 | Map             | unordered_map                  | map              | HashMap          |
-| duration           | 9       | Duration        | timedelta            | Number          | duration                       | Duration         | Duration         |
-| timestamp          | 9       | Instant         | datetime             | Number          | std::chrono::nanoseconds       | Time             | DateTime         |
-| decimal            | 9       | BigDecimal      | Decimal              | bigint          | /                              | /                | /                |
-| array              | 9       | array           | np.ndarray           | /               | /                              | array/slice      | Vec              |
-| bool_array         | 9       | bool[]          | ndarray(np.bool_)    | /               | `bool[x]`                      | `[x]bool/[]~`    | `Vec<bool>`      |
-| int16_array        | 9       | short[]         | ndarray(int16)       | /               | `int16_t[x]/vector<~>`         | `[x]int16/[]~`   | `Vec<i16>`       |
-| int32_array        | 9       | int[]           | ndarray(int32)       | /               | `int32_t[x]/vector<~>`         | `[x]int32/[]~`   | `Vec<i32>`       |
-| int64_array        | 9       | long[]          | ndarray(int64)       | /               | `int64_t[x]/vector<~>`         | `[x]int64/[]~`   | `Vec<i64>`       |
-| float16_array      | 9       | float[]         | ndarray(float16)     | /               | `fury::float16_t[x]/vector<~>` | `[x]float16/[]~` | `Vec<fury::f16>` |
-| float32_array      | 9       | float[]         | ndarray(float32)     | /               | `float[x]/vector<~>`           | `[x]float32/[]~` | `Vec<f32>`       |
-| float64_array      | 9       | float[]         | ndarray(float64)     | /               | `double[x]/vector<~>`          | `[x]float64/[]~` | `Vec<f64>`       |
-| tensor             | 9       | /               | /                    | /               | /                              | /                | /                |
-| sparse tensor      | 9       | /               | /                    | /               | /                              | /                | /                |
-| arrow record batch | 9       | /               | /                    | /               | /                              | /                | /                |
-| arrow table        | 9       | /               | /                    | /               | /                              | /                | /                |
+| float32            | 10      | float/Float     | float/pyfury.Float32 | Type.float32()  | float                          | float32          | f32              |
+| float64            | 11      | double/Double   | float/pyfury.Float64 | Type.float64()  | double                         | float64          | f64              |
+| string             | 12      | String          | str                  | String          | string                         | string           | String/str       |
+| enum               | 13      | Enum subclasses | enum subclasses      | /               | enum                           | /                | enum             |
+| list               | 14      | List/Collection | list/tuple           | array           | vector                         | slice            | Vec              |
+| set                | 15      | Set             | set                  | /               | set                            | fury.Set         | Set              |
+| map                | 16      | Map             | dict                 | Map             | unordered_map                  | map              | HashMap          |
+| duration           | 17      | Duration        | timedelta            | Number          | duration                       | Duration         | Duration         |
+| timestamp          | 18      | Instant         | datetime             | Number          | std::chrono::nanoseconds       | Time             | DateTime         |
+| decimal            | 19      | BigDecimal      | Decimal              | bigint          | /                              | /                | /                |
+| array              | 20      | array           | np.ndarray           | /               | /                              | array/slice      | Vec              |
+| bool_array         | 21      | bool[]          | ndarray(np.bool_)    | /               | `bool[x]`                      | `[x]bool/[]~`    | `Vec<bool>`      |
+| int16_array        | 22      | short[]         | ndarray(int16)       | /               | `int16_t[x]/vector<~>`         | `[x]int16/[]~`   | `Vec<i16>`       |
+| int32_array        | 23      | int[]           | ndarray(int32)       | /               | `int32_t[x]/vector<~>`         | `[x]int32/[]~`   | `Vec<i32>`       |
+| int64_array        | 24      | long[]          | ndarray(int64)       | /               | `int64_t[x]/vector<~>`         | `[x]int64/[]~`   | `Vec<i64>`       |
+| float16_array      | 25      | float[]         | ndarray(float16)     | /               | `fury::float16_t[x]/vector<~>` | `[x]float16/[]~` | `Vec<fury::f16>` |
+| float32_array      | 26      | float[]         | ndarray(float32)     | /               | `float[x]/vector<~>`           | `[x]float32/[]~` | `Vec<f32>`       |
+| float64_array      | 27      | float[]         | ndarray(float64)     | /               | `double[x]/vector<~>`          | `[x]float64/[]~` | `Vec<f64>`       |
+| tensor             | 28      | /               | /                    | /               | /                              | /                | /                |
+| sparse tensor      | 29      | /               | /                    | /               | /                              | /                | /                |
+| arrow record batch | 30      | /               | /                    | /               | /                              | /                | /                |
+| arrow table        | 31      | /               | /                    | /               | /                              | /                | /                |
 
 # Type annotation(not implemented)
 
