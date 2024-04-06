@@ -2014,42 +2014,6 @@ public final class MemoryBuffer {
     }
   }
 
-  /** Read fury SLI(Small Long as Int) encoded long. */
-  public long readSliLong() {
-    final int readIdx = readerIndex;
-    final long pos = address + readIdx;
-    final int size = this.size;
-    final byte[] heapMemory = this.heapMemory;
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readIdx > size - 4) {
-      throwIndexOutOfBoundsException(readIdx, size, 4);
-    }
-    if (LITTLE_ENDIAN) {
-      int i = UNSAFE.getInt(heapMemory, pos);
-      if ((i & 0b1) != 0b1) {
-        readerIndex = readIdx + 4;
-        return i >> 1;
-      } else {
-        if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readIdx > size - 9) {
-          throwIndexOutOfBoundsException(readIdx, size, 9);
-        }
-        readerIndex = readIdx + 9;
-        return UNSAFE.getLong(heapMemory, pos + 1);
-      }
-    } else {
-      int i = Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos));
-      if ((i & 0b1) != 0b1) {
-        readerIndex = readIdx + 4;
-        return i >> 1;
-      } else {
-        if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readIdx > size - 9) {
-          throwIndexOutOfBoundsException(readIdx, size, 9);
-        }
-        readerIndex = readIdx + 9;
-        return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos + 1));
-      }
-    }
-  }
-
   private void throwIndexOutOfBoundsException(int readIdx, int size, int need) {
     throw new IndexOutOfBoundsException(
         String.format(
@@ -2276,6 +2240,56 @@ public final class MemoryBuffer {
     }
     readerIndex = readerIdx + 8;
     return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readerIdx));
+  }
+
+  /** Read fury SLI(Small Long as Int) encoded long. */
+  public long readSliLong() {
+    if (LITTLE_ENDIAN) {
+      return readSliLongOnLE();
+    } else {
+      return readSliLongOnBE();
+    }
+  }
+
+  @CodegenInvoke
+  public long readSliLongOnLE() {
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    final int readIdx = readerIndex;
+    int diff = size - readIdx;
+    if (diff < 4) {
+      throwIndexOutOfBoundsException(readIdx, size, 4 - diff);
+    }
+    int i = UNSAFE.getInt(heapMemory, address + readIdx);
+    if ((i & 0b1) != 0b1) {
+      readerIndex = readIdx + 4;
+      return i >> 1;
+    }
+    if (diff < 9) {
+      throwIndexOutOfBoundsException(readIdx, size, 9 - diff);
+    }
+    readerIndex = readIdx + 9;
+    return UNSAFE.getLong(heapMemory, address + readIdx + 1);
+  }
+
+  @CodegenInvoke
+  public long readSliLongOnBE() {
+    // noinspection Duplicates
+    final int readIdx = readerIndex;
+    int diff = size - readIdx;
+    if (diff < 4) {
+      throwIndexOutOfBoundsException(readIdx, size, 4 - diff);
+    }
+    int i = Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readIdx));
+    if ((i & 0b1) != 0b1) {
+      readerIndex = readIdx + 4;
+      return i >> 1;
+    }
+    if (diff < 9) {
+      throwIndexOutOfBoundsException(readIdx, size, 9 - diff);
+    }
+    readerIndex = readIdx + 9;
+    return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx + 1));
   }
 
   public float readFloat() {
