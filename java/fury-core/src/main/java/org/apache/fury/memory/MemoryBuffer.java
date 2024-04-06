@@ -1866,7 +1866,8 @@ public final class MemoryBuffer {
     return ((result >>> 1) ^ -(result & 1));
   }
 
-  public long readVarLongLE() {
+  @CodegenInvoke
+  public long readVarLongOnLE() {
     int readIdx = readerIndex;
     long result;
     if (size - readIdx < 9) {
@@ -1920,7 +1921,8 @@ public final class MemoryBuffer {
     return ((result >>> 1) ^ -(result & 1));
   }
 
-  public long readVarLongBE() {
+  @CodegenInvoke
+  public long readVarLongOnBE() {
     int readIdx = readerIndex;
     long result;
     if (size - readIdx < 9) {
@@ -2115,13 +2117,14 @@ public final class MemoryBuffer {
   /** Read fury SLI(Small Long as Int) encoded long. */
   public long readSliLong() {
     if (LITTLE_ENDIAN) {
-      return readSliLongLE();
+      return readSliLongOnLE();
     } else {
-      return readSliLongBE();
+      return readSliLongOnBE();
     }
   }
 
-  public long readSliLongLE() {
+  @CodegenInvoke
+  public long readSliLongOnLE() {
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     final int readIdx = readerIndex;
@@ -2141,7 +2144,8 @@ public final class MemoryBuffer {
     return UNSAFE.getLong(heapMemory, address + readIdx + 1);
   }
 
-  public long readSliLongBE() {
+  @CodegenInvoke
+  public long readSliLongOnBE() {
     // noinspection Duplicates
     final int readIdx = readerIndex;
     int diff = size - readIdx;
@@ -2268,7 +2272,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public char readCharLE() {
+  public char readCharOnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2281,7 +2285,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public char readCharBE() {
+  public char readCharOnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2310,7 +2314,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public short readShortLE() {
+  public short readShortOnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2323,7 +2327,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public short readShortBE() {
+  public short readShortOnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2394,7 +2398,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public long readLongLE() {
+  public long readLongOnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2407,7 +2411,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public long readLongBE() {
+  public long readLongOnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;

@@ -269,11 +269,11 @@ public class PrimitiveSerializers {
     public static String readLongFunc(LongEncoding longEncoding) {
       switch (longEncoding) {
         case LE_RAW_BYTES:
-          return Platform.IS_LITTLE_ENDIAN ? "readLongLE" : "readLongBE";
+          return Platform.IS_LITTLE_ENDIAN ? "readLongOnLE" : "readLongOnBE";
         case SLI:
-          return Platform.IS_LITTLE_ENDIAN ? "readSliLongLE" : "readSliLongBE";
+          return Platform.IS_LITTLE_ENDIAN ? "readSliLongOnLE" : "readSliLongOnBE";
         case PVL:
-          return "readVarLong";
+          return Platform.IS_LITTLE_ENDIAN ? "readVarLongOnLE" : "readVarLongOnBE";
         default:
           throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
       }
