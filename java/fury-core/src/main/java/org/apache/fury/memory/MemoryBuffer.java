@@ -1331,52 +1331,6 @@ public final class MemoryBuffer {
     return result;
   }
 
-  public int readBinarySize() {
-    int binarySize;
-    int readIdx = readerIndex;
-    if (size - readIdx >= 5) {
-      int fourByteValue = unsafeGetInt(readIdx++);
-      binarySize = fourByteValue & 0x7F;
-      if ((fourByteValue & 0x80) != 0) {
-        readIdx++;
-        binarySize |= (fourByteValue >>> 1) & 0x3f80;
-        if ((fourByteValue & 0x8000) != 0) {
-          // merely executed path, make it as a separate method to reduce
-          // code size of current method for better jvm inline
-          return continueRead(readIdx, fourByteValue, binarySize);
-        }
-      }
-      readerIndex = readIdx;
-    } else {
-      binarySize = readPositiveVarIntSlow();
-      readIdx = readerIndex;
-    }
-    int diff = size - readIdx;
-    if (diff < binarySize) {
-      streamReader.fillBuffer(diff);
-    }
-    return binarySize;
-  }
-
-  private int continueRead(int readIdx, int bulkRead, int binarySize) {
-    // Duplicate and manual inline for performance.
-    // noinspection Duplicates
-    readIdx++;
-    binarySize |= (bulkRead >>> 2) & 0x1fc000;
-    if ((bulkRead & 0x800000) != 0) {
-      readIdx++;
-      binarySize |= (bulkRead >>> 3) & 0xfe00000;
-      if ((bulkRead & 0x80000000) != 0) {
-        binarySize |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
-      }
-    }
-    int diff = size - readIdx;
-    if (diff < binarySize) {
-      streamReader.fillBuffer(diff);
-    }
-    return binarySize;
-  }
-
   /**
    * Writes a 1-9 byte int, padding necessary bytes to align `writerIndex` to 4-byte.
    *
@@ -2090,9 +2044,9 @@ public final class MemoryBuffer {
 
   public byte readByte() {
     int readerIdx = readerIndex;
-    // if (readerIdx > size - 1) {
-    //   streamReader.fillBuffer(1);
-    // }
+    if (readerIdx > size - 1) {
+      streamReader.fillBuffer(1);
+    }
     readerIndex = readerIdx + 1;
     return UNSAFE.getByte(heapMemory, address + readerIdx);
   }
@@ -2403,14 +2357,13 @@ public final class MemoryBuffer {
 
   public byte[] readBytes(int length) {
     int readerIdx = readerIndex;
+    byte[] bytes = new byte[length];
     // use subtract to avoid overflow
     if (length > size - readerIdx) {
-      byte[] bytes = new byte[length];
       streamReader.readTo(bytes, 0, length);
       return bytes;
     }
     byte[] heapMemory = this.heapMemory;
-    final byte[] bytes = new byte[length];
     if (heapMemory != null) {
       // System.arraycopy faster for some jdk than Unsafe.
       System.arraycopy(heapMemory, heapOffset + readerIdx, bytes, 0, length);
@@ -2428,7 +2381,7 @@ public final class MemoryBuffer {
       streamReader.readTo(dst, dstIndex, length);
       return;
     }
-    if (dstIndex > dst.length - length) {
+    if (dstIndex < 0 || dstIndex > dst.length - length) {
       throw new IndexOutOfBoundsException();
     }
     copyToUnsafe(readerIdx, dst, Platform.BYTE_ARRAY_OFFSET + dstIndex, length);
@@ -2470,15 +2423,56 @@ public final class MemoryBuffer {
     }
   }
 
+  public int readBinarySize() {
+    int binarySize;
+    int readIdx = readerIndex;
+    if (size - readIdx >= 5) {
+      int fourByteValue = unsafeGetInt(readIdx++);
+      binarySize = fourByteValue & 0x7F;
+      if ((fourByteValue & 0x80) != 0) {
+        readIdx++;
+        binarySize |= (fourByteValue >>> 1) & 0x3f80;
+        if ((fourByteValue & 0x8000) != 0) {
+          // merely executed path, make it as a separate method to reduce
+          // code size of current method for better jvm inline
+          return continueRead(readIdx, fourByteValue, binarySize);
+        }
+      }
+      readerIndex = readIdx;
+    } else {
+      binarySize = readPositiveVarIntSlow();
+      readIdx = readerIndex;
+    }
+    int diff = size - readIdx;
+    if (diff < binarySize) {
+      streamReader.fillBuffer(diff);
+    }
+    return binarySize;
+  }
+
+  private int continueRead(int readIdx, int bulkRead, int binarySize) {
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    readIdx++;
+    binarySize |= (bulkRead >>> 2) & 0x1fc000;
+    if ((bulkRead & 0x800000) != 0) {
+      readIdx++;
+      binarySize |= (bulkRead >>> 3) & 0xfe00000;
+      if ((bulkRead & 0x80000000) != 0) {
+        binarySize |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
+      }
+    }
+    int diff = size - readIdx;
+    if (diff < binarySize) {
+      streamReader.fillBuffer(diff);
+    }
+    return binarySize;
+  }
+
   public byte[] readBytesAndSize() {
-    final int numBytes = readPositiveVarInt();
+    final int numBytes = readBinarySize();
     int readerIdx = readerIndex;
     final byte[] arr = new byte[numBytes];
-    // use subtract to avoid overflow
-    if (readerIdx > size - numBytes) {
-      streamReader.readTo(arr, 0, numBytes);
-      return arr;
-    }
     byte[] heapMemory = this.heapMemory;
     if (heapMemory != null) {
       System.arraycopy(heapMemory, heapOffset + readerIdx, arr, 0, numBytes);
