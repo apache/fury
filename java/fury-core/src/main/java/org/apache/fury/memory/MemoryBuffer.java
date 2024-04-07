@@ -864,7 +864,7 @@ public final class MemoryBuffer {
    * @throws IndexOutOfBoundsException if the specified {@code readerIndex} is less than {@code 0}
    *     or greater than {@code this.size}
    */
-  public MemoryBuffer readerIndex(int readerIndex) {
+  public void readerIndex(int readerIndex) {
     if (readerIndex < 0) {
       throw new IndexOutOfBoundsException(
           String.format("readerIndex: %d (expected: 0 <= readerIndex)", readerIndex));
@@ -873,12 +873,19 @@ public final class MemoryBuffer {
       streamReader.fillBuffer(readerIndex - size);
     }
     this.readerIndex = readerIndex;
-    return this;
   }
 
-  /** Returns array index for reader index if buffer is a heap buffer. */
+  public void readerIndexUnsafe(int readerIndex) {
+    this.readerIndex = readerIndex;
+  }
+
+    /** Returns array index for reader index if buffer is a heap buffer. */
   public int unsafeHeapReaderIndex() {
     return readerIndex + heapOffset;
+  }
+
+  public void increaseReaderIndexUnsafe(int diff) {
+    readerIndex += diff;
   }
 
   public void increaseReaderIndex(int diff) {
@@ -1324,6 +1331,48 @@ public final class MemoryBuffer {
     return result;
   }
 
+  public int readBinarySize() {
+    int binarySize;
+    int readIdx = readerIndex;
+    if (size - readIdx < 5) {
+      binarySize = readPositiveVarIntSlow();
+      readIdx = readerIndex;
+    } else {
+      // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
+      int fourByteValue = unsafeGetInt(readIdx);
+      readIdx++;
+      binarySize = fourByteValue & 0x7F;
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      if ((fourByteValue & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        binarySize |= (fourByteValue >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((fourByteValue & 0x8000) != 0) {
+          readIdx++;
+          // 0x1fc000: 0b1111111 << 14
+          binarySize |= (fourByteValue >>> 2) & 0x1fc000;
+          // 0x800000: 0b1 << 23
+          if ((fourByteValue & 0x800000) != 0) {
+            readIdx++;
+            // 0xfe00000: 0b1111111 << 21
+            binarySize |= (fourByteValue >>> 3) & 0xfe00000;
+            if ((fourByteValue & 0x80000000) != 0) {
+              binarySize |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
+            }
+          }
+        }
+      }
+      readerIndex = readIdx;
+    }
+    int diff = size - readIdx;
+    if (diff < binarySize) {
+      streamReader.fillBuffer(diff);
+    }
+    return binarySize;
+  }
+
   /**
    * Writes a 1-9 byte int, padding necessary bytes to align `writerIndex` to 4-byte.
    *
@@ -1701,8 +1750,7 @@ public final class MemoryBuffer {
 
   /** Reads the 1-9 byte int part of a var long. */
   public long readVarLong() {
-    long result = readPositiveVarLong();
-    return ((result >>> 1) ^ -(result & 1));
+    return LITTLE_ENDIAN ? readVarLongOnLE() : readVarLongOnBE();
   }
 
   @CodegenInvoke
@@ -2038,9 +2086,9 @@ public final class MemoryBuffer {
 
   public byte readByte() {
     int readerIdx = readerIndex;
-    if (readerIdx > size - 1) {
-      streamReader.fillBuffer(1);
-    }
+    // if (readerIdx > size - 1) {
+    //   streamReader.fillBuffer(1);
+    // }
     readerIndex = readerIdx + 1;
     return UNSAFE.getByte(heapMemory, address + readerIdx);
   }
