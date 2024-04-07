@@ -1329,6 +1329,33 @@ public final class MemoryBuffer {
     return result;
   }
 
+  /**
+   * Fast path for read a unsigned varint which is mostly a smaller value in [0, 16384). When the
+   * value is equal or greater than 16384, the read will be a little slower.
+   */
+  public int readVarUintSmall() {
+    int readIdx = readerIndex;
+    if (size - readIdx >= 5) {
+      int fourByteValue = unsafeGetInt(readIdx++);
+      int binarySize = fourByteValue & 0x7F;
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      if ((fourByteValue & 0x80) != 0) {
+        readIdx++;
+        binarySize |= (fourByteValue >>> 1) & 0x3f80;
+        if ((fourByteValue & 0x8000) != 0) {
+          // merely executed path, make it as a separate method to reduce
+          // code size of current method for better jvm inline
+          return continueRead(readIdx, fourByteValue, binarySize);
+        }
+      }
+      readerIndex = readIdx;
+      return binarySize;
+    } else {
+      return readPositiveVarIntSlow();
+    }
+  }
+
   private int readPositiveVarIntSlow() {
     int b = readByte();
     int result = b & 0x7F;
