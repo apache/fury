@@ -1011,7 +1011,9 @@ public final class Fury implements BaseFury {
   public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
-      throwDepthSerializationException();
+      if (depth != 0) {
+        throwDepthSerializationException();
+      }
       if (config.shareMetaContext()) {
         int startOffset = buffer.writerIndex();
         buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
@@ -1112,7 +1114,9 @@ public final class Fury implements BaseFury {
   public void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
-      throwDepthSerializationException();
+      if (depth != 0) {
+        throwDepthSerializationException();
+      }
       write(buffer, obj);
     } catch (StackOverflowError t) {
       throw processStackOverflowError(t);
