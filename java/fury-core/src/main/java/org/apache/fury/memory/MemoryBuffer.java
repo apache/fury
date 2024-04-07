@@ -310,7 +310,7 @@ public final class MemoryBuffer {
     if (BoundsChecking.BOUNDS_CHECKING_ENABLED) {
       if (index < 0 || pos > addressLimit - length) {
         // index is in fact invalid
-        throwIndexOutOfBoundsException();
+        throwOOBException();
       }
     }
   }
@@ -345,7 +345,7 @@ public final class MemoryBuffer {
   public void get(int index, byte[] dst, int offset, int length) {
     // check the byte array offset and length and the status
     if ((offset | length | (offset + length) | (dst.length - (offset + length))) < 0) {
-      throwIndexOutOfBoundsException();
+      throwOOBException();
     }
     final long pos = address + index;
     if (index >= 0 && pos <= addressLimit - length) {
@@ -353,7 +353,7 @@ public final class MemoryBuffer {
       Platform.copyMemory(heapMemory, pos, dst, arrayAddress, length);
     } else {
       // index is in fact invalid
-      throwIndexOutOfBoundsException();
+      throwOOBException();
     }
   }
 
@@ -375,16 +375,16 @@ public final class MemoryBuffer {
   public void get(int offset, ByteBuffer target, int numBytes) {
     // check the byte array offset and length
     if ((offset | numBytes | (offset + numBytes)) < 0) {
-      throwIndexOutOfBoundsException();
+      throwOOBException();
     }
     final int targetOffset = target.position();
     final int remaining = target.remaining();
     if (remaining < numBytes) {
-      throwIndexOutOfBoundsException();
+      throwOOBException();
     }
     if (target.isDirect()) {
       if (target.isReadOnly()) {
-        throwIndexOutOfBoundsException();
+        throwOOBException();
       }
       // copy to the target memory directly
       final long targetPointer = Platform.getAddress(target) + targetOffset;
@@ -393,7 +393,7 @@ public final class MemoryBuffer {
         Platform.copyMemory(heapMemory, sourcePointer, null, targetPointer, numBytes);
         target.position(targetOffset + numBytes);
       } else {
-        throwIndexOutOfBoundsException();
+        throwOOBException();
       }
     } else if (target.hasArray()) {
       // move directly into the byte array
@@ -435,12 +435,12 @@ public final class MemoryBuffer {
   public void put(int offset, ByteBuffer source, int numBytes) {
     // check the byte array offset and length
     if ((offset | numBytes | (offset + numBytes)) < 0) {
-      throwIndexOutOfBoundsException();
+      throwOOBException();
     }
     final int sourceOffset = source.position();
     final int remaining = source.remaining();
     if (remaining < numBytes) {
-      throwIndexOutOfBoundsException();
+      throwOOBException();
     }
     if (source.isDirect()) {
       // copy to the target memory directly
@@ -450,7 +450,7 @@ public final class MemoryBuffer {
         Platform.copyMemory(null, sourcePointer, heapMemory, targetPointer, numBytes);
         source.position(sourceOffset + numBytes);
       } else {
-        throwIndexOutOfBoundsException();
+        throwOOBException();
       }
     } else if (source.hasArray()) {
       // move directly into the byte array
@@ -491,7 +491,7 @@ public final class MemoryBuffer {
   public void put(int index, byte[] src, int offset, int length) {
     // check the byte array offset and length
     if ((offset | length | (offset + length) | (src.length - (offset + length))) < 0) {
-      throwIndexOutOfBoundsException();
+      throwOOBException();
     }
     final long pos = address + index;
     if (index >= 0 && pos <= addressLimit - length) {
@@ -499,7 +499,7 @@ public final class MemoryBuffer {
       Platform.copyMemory(src, arrayAddress, heapMemory, pos, length);
     } else {
       // index is in fact invalid
-      throwIndexOutOfBoundsException();
+      throwOOBException();
     }
   }
 
@@ -930,17 +930,20 @@ public final class MemoryBuffer {
             "writerIndex: %d (expected: 0 <= writerIndex <= size(%d))", writerIndex, size));
   }
 
-  private void throwIndexOutOfBoundsException() {
+  // Check should be done outside to avoid this method got into the critical path.
+  private void throwOOBException() {
     throw new IndexOutOfBoundsException(
         String.format("size: %d, address %s, addressLimit %d", size, address, addressLimit));
   }
 
+  // Check should be done outside to avoid this method got into the critical path.
   private void throwIndexOOBExceptionForRead() {
     throw new IndexOutOfBoundsException(
         String.format(
             "readerIndex: %d (expected: 0 <= readerIndex <= size(%d))", readerIndex, size));
   }
 
+  // Check should be done outside to avoid this method got into the critical path.
   private void throwIndexOOBExceptionForRead(int length) {
     throw new IndexOutOfBoundsException(
         String.format(
@@ -2471,8 +2474,8 @@ public final class MemoryBuffer {
   }
 
   /**
-   * Read size for following binary, this method will check and fill readable bytes too.
-   * This method is optimized for small size, it will be faster than {@link #readPositiveVarInt}.
+   * Read size for following binary, this method will check and fill readable bytes too. This method
+   * is optimized for small size, it will be faster than {@link #readPositiveVarInt}.
    */
   public int readFollowingBinarySize() {
     int binarySize;
@@ -2724,10 +2727,10 @@ public final class MemoryBuffer {
 
   public void getBytes(int index, byte[] dst, int dstIndex, int length) {
     if (dstIndex > dst.length - length) {
-      throwIndexOutOfBoundsException();
+      throwOOBException();
     }
     if (index > size - length) {
-      throwIndexOutOfBoundsException();
+      throwOOBException();
     }
     copyToUnsafe(index, dst, Platform.BYTE_ARRAY_OFFSET + dstIndex, length);
   }
