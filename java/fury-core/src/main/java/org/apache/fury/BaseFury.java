@@ -110,9 +110,9 @@ public interface BaseFury {
 
   Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers);
 
-  Object deserialize(FuryInputStream FuryInputStream);
+  Object deserialize(FuryInputStream inputStream);
 
-  Object deserialize(FuryInputStream FuryInputStream, Iterable<MemoryBuffer> outOfBandBuffers);
+  Object deserialize(FuryInputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers);
 
   /**
    * Serialize java object without class info, deserialization should use {@link
@@ -140,7 +140,7 @@ public interface BaseFury {
    */
   <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls);
 
-  <T> T deserializeJavaObject(FuryInputStream FuryInputStream, Class<T> cls);
+  <T> T deserializeJavaObject(FuryInputStream inputStream, Class<T> cls);
 
   byte[] serializeJavaObjectAndClass(Object obj);
 
@@ -152,5 +152,5 @@ public interface BaseFury {
 
   Object deserializeJavaObjectAndClass(MemoryBuffer buffer);
 
-  Object deserializeJavaObjectAndClass(FuryInputStream FuryInputStream);
+  Object deserializeJavaObjectAndClass(FuryInputStream inputStream);
 }
