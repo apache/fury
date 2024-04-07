@@ -869,7 +869,7 @@ public final class MemoryBuffer {
       throwIndexOOBExceptionForRead();
     } else if (readerIndex > size) {
       // in this case, diff must be greater than 0.
-      streamReader.fillBuffer(readerIndex - size);
+      fillBuffer(readerIndex - size);
     }
     this.readerIndex = readerIndex;
   }
@@ -894,7 +894,7 @@ public final class MemoryBuffer {
       throwIndexOOBExceptionForRead();
     } else if (readerIdx > size) {
       // in this case, diff must be greater than 0.
-      streamReader.fillBuffer(readerIdx - size);
+      fillBuffer(readerIdx - size);
     }
   }
 
@@ -2086,7 +2086,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - 1) {
-      streamReader.fillBuffer(1);
+      fillBuffer(1);
     }
     readerIndex = readerIdx + 1;
     return UNSAFE.getByte(heapMemory, address + readerIdx) != 0;
@@ -2617,6 +2617,8 @@ public final class MemoryBuffer {
   }
 
   private void fillBuffer(int minimumReadableBytes) {
+    // virtual method call has bigger code size than a method call,
+    // move this out from critical path.
     streamReader.fillBuffer(minimumReadableBytes);
   }
 
@@ -2624,7 +2626,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIndex;
     if (minimumReadableBytes > remaining) {
-      streamReader.fillBuffer(minimumReadableBytes - remaining);
+      fillBuffer(minimumReadableBytes - remaining);
     }
   }
 
