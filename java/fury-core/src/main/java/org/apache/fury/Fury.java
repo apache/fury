@@ -246,7 +246,9 @@ public final class Fury implements BaseFury {
     buffer.put(maskIndex, bitmap);
     try {
       jitContext.lock();
-      checkDepthForSerialization();
+      if (depth != 0) {
+        throwDepthSerializationException();
+      }
       if (language == Language.JAVA) {
         write(buffer, obj);
       } else {
@@ -708,7 +710,9 @@ public final class Fury implements BaseFury {
   public Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
       jitContext.lock();
-      checkDepthForDeserialization();
+      if (depth != 0) {
+        throwDepthDeserializationException();
+      }
       byte bitmap = buffer.readByte();
       if ((bitmap & isNilFlag) == isNilFlag) {
         return null;
@@ -745,8 +749,7 @@ public final class Fury implements BaseFury {
       }
       return obj;
     } catch (Throwable t) {
-      handleReadFailed(t);
-      throw new IllegalStateException("unreachable");
+      throw handleReadFailed(t);
     } finally {
       resetRead();
       jitContext.unlock();
@@ -768,7 +771,7 @@ public final class Fury implements BaseFury {
     }
   }
 
-  private void handleReadFailed(Throwable t) {
+  private RuntimeException handleReadFailed(Throwable t) {
     if (refResolver instanceof MapRefResolver) {
       ObjectArray readObjects = ((MapRefResolver) refResolver).getReadObjects();
       // carry with read objects for better trouble shooting.
@@ -776,6 +779,7 @@ public final class Fury implements BaseFury {
       throw new DeserializationException(objects, t);
     } else {
       Platform.throwException(t);
+      throw new IllegalStateException("unreachable");
     }
   }
 
@@ -1007,7 +1011,7 @@ public final class Fury implements BaseFury {
   public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
-      checkDepthForSerialization();
+      throwDepthSerializationException();
       if (config.shareMetaContext()) {
         int startOffset = buffer.writerIndex();
         buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
@@ -1050,7 +1054,9 @@ public final class Fury implements BaseFury {
   public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
     try {
       jitContext.lock();
-      checkDepthForDeserialization();
+      if (depth != 0) {
+        throwDepthDeserializationException();
+      }
       if (config.shareMetaContext()) {
         classResolver.readClassDefs(buffer);
       }
@@ -1063,8 +1069,7 @@ public final class Fury implements BaseFury {
         return null;
       }
     } catch (Throwable t) {
-      handleReadFailed(t);
-      throw new IllegalStateException("unreachable");
+      throw handleReadFailed(t);
     } finally {
       resetRead();
       jitContext.unlock();
@@ -1107,7 +1112,7 @@ public final class Fury implements BaseFury {
   public void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
-      checkDepthForSerialization();
+      throwDepthSerializationException();
       write(buffer, obj);
     } catch (StackOverflowError t) {
       throw processStackOverflowError(t);
@@ -1143,14 +1148,15 @@ public final class Fury implements BaseFury {
   public Object deserializeJavaObjectAndClass(MemoryBuffer buffer) {
     try {
       jitContext.lock();
-      checkDepthForDeserialization();
+      if (depth != 0) {
+        throwDepthDeserializationException();
+      }
       if (config.shareMetaContext()) {
         classResolver.readClassDefs(buffer);
       }
       return readRef(buffer);
     } catch (Throwable t) {
-      handleReadFailed(t);
-      throw new IllegalStateException("unreachable");
+      throw handleReadFailed(t);
     } finally {
       resetRead();
       jitContext.unlock();
@@ -1230,24 +1236,20 @@ public final class Fury implements BaseFury {
     depth = 0;
   }
 
-  private void checkDepthForSerialization() {
-    if (depth != 0) {
-      String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "writeXXX";
-      throw new IllegalStateException(
-          String.format(
-              "Nested call Fury.serializeXXX is not allowed when serializing, Please use %s instead",
-              method));
-    }
+  private void throwDepthSerializationException() {
+    String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "writeXXX";
+    throw new IllegalStateException(
+        String.format(
+            "Nested call Fury.serializeXXX is not allowed when serializing, Please use %s instead",
+            method));
   }
 
-  private void checkDepthForDeserialization() {
-    if (depth != 0) {
-      String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "readXXX";
-      throw new IllegalStateException(
-          String.format(
-              "Nested call Fury.deserializeXXX is not allowed when deserializing, Please use %s instead",
-              method));
-    }
+  private void throwDepthDeserializationException() {
+    String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "readXXX";
+    throw new IllegalStateException(
+        String.format(
+            "Nested call Fury.deserializeXXX is not allowed when deserializing, Please use %s instead",
+            method));
   }
 
   public JITContext getJITContext() {
