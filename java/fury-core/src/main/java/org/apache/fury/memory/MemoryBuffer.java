@@ -869,7 +869,7 @@ public final class MemoryBuffer {
       throwIndexOOBExceptionForRead();
     } else if (readerIndex > size) {
       // in this case, diff must be greater than 0.
-      fillBuffer(readerIndex - size);
+      streamReader.fillBuffer(readerIndex - size);
     }
     this.readerIndex = readerIndex;
   }
@@ -894,7 +894,7 @@ public final class MemoryBuffer {
       throwIndexOOBExceptionForRead();
     } else if (readerIdx > size) {
       // in this case, diff must be greater than 0.
-      fillBuffer(readerIdx - size);
+      streamReader.fillBuffer(readerIdx - size);
     }
   }
 
@@ -2086,7 +2086,7 @@ public final class MemoryBuffer {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     if (readerIdx > size - 1) {
-      fillBuffer(1);
+      streamReader.fillBuffer(1);
     }
     readerIndex = readerIdx + 1;
     return UNSAFE.getByte(heapMemory, address + readerIdx) != 0;
@@ -2095,7 +2095,7 @@ public final class MemoryBuffer {
   public byte readByte() {
     int readerIdx = readerIndex;
     if (readerIdx > size - 1) {
-      fillBuffer(1);
+      streamReader.fillBuffer(1);
     }
     readerIndex = readerIdx + 1;
     return UNSAFE.getByte(heapMemory, address + readerIdx);
@@ -2106,7 +2106,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 2) {
-      fillBuffer(2 - remaining);
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     final long pos = address + readerIdx;
@@ -2124,7 +2124,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 2) {
-      fillBuffer(2 - remaining);
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     return UNSAFE.getChar(heapMemory, address + readerIdx);
@@ -2137,7 +2137,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 2) {
-      fillBuffer(2 - remaining);
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     return Character.reverseBytes(UNSAFE.getChar(heapMemory, address + readerIdx));
@@ -2148,7 +2148,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 2) {
-      fillBuffer(2 - remaining);
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     final long pos = address + readerIdx;
@@ -2166,7 +2166,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 2) {
-      fillBuffer(2 - remaining);
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     return UNSAFE.getShort(heapMemory, address + readerIdx);
@@ -2179,7 +2179,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 2) {
-      fillBuffer(2 - remaining);
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     return Short.reverseBytes(UNSAFE.getShort(heapMemory, address + readerIdx));
@@ -2190,7 +2190,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 4) {
-      fillBuffer(4 - remaining);
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     final long pos = address + readerIdx;
@@ -2208,7 +2208,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 4) {
-      fillBuffer(4 - remaining);
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     return UNSAFE.getInt(heapMemory, address + readerIdx);
@@ -2221,7 +2221,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 4) {
-      fillBuffer(4 - remaining);
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     return Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx));
@@ -2232,7 +2232,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 8) {
-      fillBuffer(8 - remaining);
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     final long pos = address + readerIdx;
@@ -2250,7 +2250,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 8) {
-      fillBuffer(8 - remaining);
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     return UNSAFE.getLong(heapMemory, address + readerIdx);
@@ -2263,7 +2263,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 8) {
-      fillBuffer(8 - remaining);
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readerIdx));
@@ -2285,7 +2285,7 @@ public final class MemoryBuffer {
     final int readIdx = readerIndex;
     int diff = size - readIdx;
     if (diff < 4) {
-      fillBuffer(4 - diff);
+      streamReader.fillBuffer(4 - diff);
     }
     int i = UNSAFE.getInt(heapMemory, address + readIdx);
     if ((i & 0b1) != 0b1) {
@@ -2293,7 +2293,7 @@ public final class MemoryBuffer {
       return i >> 1;
     }
     if (diff < 9) {
-      fillBuffer(9 - diff);
+      streamReader.fillBuffer(9 - diff);
     }
     readerIndex = readIdx + 9;
     return UNSAFE.getLong(heapMemory, address + readIdx + 1);
@@ -2305,7 +2305,7 @@ public final class MemoryBuffer {
     final int readIdx = readerIndex;
     int diff = size - readIdx;
     if (diff < 4) {
-      fillBuffer(4 - diff);
+      streamReader.fillBuffer(4 - diff);
     }
     int i = Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readIdx));
     if ((i & 0b1) != 0b1) {
@@ -2313,7 +2313,7 @@ public final class MemoryBuffer {
       return i >> 1;
     }
     if (diff < 9) {
-      fillBuffer(9 - diff);
+      streamReader.fillBuffer(9 - diff);
     }
     readerIndex = readIdx + 9;
     return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx + 1));
@@ -2324,7 +2324,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 4) {
-      fillBuffer(4 - remaining);
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     final long pos = address + readerIdx;
@@ -2342,7 +2342,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 4) {
-      fillBuffer(4 - remaining);
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     return Float.intBitsToFloat(UNSAFE.getInt(heapMemory, address + readerIdx));
@@ -2355,7 +2355,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 4) {
-      fillBuffer(4 - remaining);
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     return Float.intBitsToFloat(
@@ -2367,7 +2367,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 8) {
-      fillBuffer(8 - remaining);
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     final long pos = address + readerIdx;
@@ -2385,7 +2385,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 8) {
-      fillBuffer(8 - remaining);
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     return Double.longBitsToDouble(UNSAFE.getLong(heapMemory, address + readerIdx));
@@ -2398,7 +2398,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 8) {
-      fillBuffer(8 - remaining);
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     return Double.longBitsToDouble(
@@ -2501,7 +2501,7 @@ public final class MemoryBuffer {
     }
     int diff = size - readIdx;
     if (diff < binarySize) {
-      fillBuffer(diff);
+      streamReader.fillBuffer(diff);
     }
     return binarySize;
   }
@@ -2520,7 +2520,7 @@ public final class MemoryBuffer {
     }
     int diff = size - readIdx;
     if (diff < binarySize) {
-      fillBuffer(diff);
+      streamReader.fillBuffer(diff);
     }
     return binarySize;
   }
@@ -2616,17 +2616,11 @@ public final class MemoryBuffer {
     }
   }
 
-  private void fillBuffer(int minimumReadableBytes) {
-    // virtual method call has bigger code size than a method call,
-    // move this out from critical path.
-    streamReader.fillBuffer(minimumReadableBytes);
-  }
-
   public void checkReadableBytes(int minimumReadableBytes) {
     // use subtract to avoid overflow
     int remaining = size - readerIndex;
     if (minimumReadableBytes > remaining) {
-      fillBuffer(minimumReadableBytes - remaining);
+      streamReader.fillBuffer(minimumReadableBytes - remaining);
     }
   }
 
