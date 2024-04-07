@@ -226,7 +226,7 @@ public final class StringSerializer extends Serializer<String> {
   public String readBytesString(MemoryBuffer buffer) {
     byte coder = buffer.readByte();
     // may fill heap array, if array not big enough, a new array will be allocated.
-    final int numBytes = buffer.readFollowingBinarySize();
+    final int numBytes = buffer.readBinarySize();
     byte[] bytes;
     byte[] heapMemory = buffer.getHeapMemory();
     if (heapMemory != null) {

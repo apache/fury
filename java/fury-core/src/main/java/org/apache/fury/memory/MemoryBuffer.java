@@ -2475,9 +2475,9 @@ public final class MemoryBuffer {
 
   /**
    * Read size for following binary, this method will check and fill readable bytes too. This method
-   * is optimized for small size, it will be faster than {@link #readPositiveVarInt}.
+   * is optimized for small size, it's faster than {@link #readPositiveVarInt}.
    */
-  public int readFollowingBinarySize() {
+  public int readBinarySize() {
     int binarySize;
     int readIdx = readerIndex;
     if (size - readIdx >= 5) {
@@ -2526,7 +2526,7 @@ public final class MemoryBuffer {
   }
 
   public byte[] readBytesAndSize() {
-    final int numBytes = readFollowingBinarySize();
+    final int numBytes = readBinarySize();
     int readerIdx = readerIndex;
     final byte[] arr = new byte[numBytes];
     byte[] heapMemory = this.heapMemory;
