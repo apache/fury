@@ -203,10 +203,6 @@ public final class StringSerializer extends Serializer<String> {
   public Expression readStringExpr(Expression strSerializer, Expression buffer) {
     if (isJava) {
       if (STRING_VALUE_FIELD_IS_BYTES) {
-        // Expression coder = inlineInvoke(buffer, "readByte", BYTE_TYPE);
-        // Expression value = inlineInvoke(buffer, "readBytesAndSize", BINARY_TYPE);
-        // return new StaticInvoke(
-        //     StringSerializer.class, "newBytesStringZeroCopy", STRING_TYPE, coder, value);
         return new Invoke(strSerializer, "readBytesString", STRING_TYPE, buffer);
       } else {
         if (!STRING_VALUE_FIELD_IS_CHARS) {
@@ -230,18 +226,18 @@ public final class StringSerializer extends Serializer<String> {
   public String readBytesString(MemoryBuffer buffer) {
     byte coder = buffer.readByte();
     // may fill heap array, if array not big enough, a new array will be allocated.
-    final int numBytes = buffer.readBinarySize();
+    final int numBytes = buffer.readFollowingBinarySize();
+    byte[] bytes;
     byte[] heapMemory = buffer.getHeapMemory();
     if (heapMemory != null) {
       final int arrIndex = buffer.unsafeHeapReaderIndex();
-      buffer.increaseReaderIndex(numBytes);
-      final byte[] bytes = new byte[numBytes];
+      buffer.increaseReaderIndexUnsafe(numBytes);
+      bytes = new byte[numBytes];
       System.arraycopy(heapMemory, arrIndex, bytes, 0, numBytes);
-      return newBytesStringZeroCopy(coder, bytes);
     } else {
-      byte[] bytes = buffer.readBytes(numBytes);
-      return newBytesStringZeroCopy(coder, bytes);
+      bytes = buffer.readBytes(numBytes);
     }
+    return newBytesStringZeroCopy(coder, bytes);
   }
 
   @CodegenInvoke
@@ -339,7 +335,7 @@ public final class StringSerializer extends Serializer<String> {
           return readUTF8String(buffer);
         }
       } else {
-        return newCharsStringZeroCopy(buffer.readChars(buffer.readPositiveVarInt()));
+        return newCharsStringZeroCopy(buffer.readChars(buffer.readVarUintSmall()));
       }
     }
   }
@@ -447,7 +443,7 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   private char[] readLatinChars(MemoryBuffer buffer) {
-    final int numBytes = buffer.readPositiveVarInt();
+    final int numBytes = buffer.readVarUintSmall();
     char[] chars = new char[numBytes];
     buffer.checkReadableBytes(numBytes);
     byte[] targetArray = buffer.getHeapMemory();
@@ -471,7 +467,7 @@ public final class StringSerializer extends Serializer<String> {
     if (coder != UTF16) {
       throw new UnsupportedOperationException(String.format("Unsupported coder %s", coder));
     }
-    int numBytes = buffer.readPositiveVarInt();
+    int numBytes = buffer.readVarUintSmall();
     char[] chars = new char[numBytes >> 1];
     if (Platform.IS_LITTLE_ENDIAN) {
       // FIXME JDK11 utf16 string uses little-endian order.
@@ -516,9 +512,7 @@ public final class StringSerializer extends Serializer<String> {
 
   public static String newCharsStringZeroCopy(char[] data) {
     if (!STRING_VALUE_FIELD_IS_CHARS) {
-      throw new IllegalStateException(
-          String.format(
-              "String value isn't char[], current java %s isn't supported", Platform.JAVA_VERSION));
+      throw new IllegalStateException("String value isn't char[], current java isn't supported");
     }
     // 25% faster than unsafe put field, only 10% slower than `new String(str)`
     return CHARS_STRING_ZERO_COPY_CTR.apply(data, Boolean.TRUE);
@@ -646,7 +640,7 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   public String readUTF8String(MemoryBuffer buffer) {
-    int numBytes = buffer.readPositiveVarInt();
+    int numBytes = buffer.readVarUintSmall();
     buffer.checkReadableBytes(numBytes);
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
