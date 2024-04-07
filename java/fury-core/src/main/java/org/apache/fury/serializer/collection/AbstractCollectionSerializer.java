@@ -493,7 +493,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
    * will raise NPE.
    */
   public Collection newCollection(MemoryBuffer buffer) {
-    numElements = buffer.readPositiveVarInt();
+    numElements = buffer.readVarUintSmall();
     if (constructor == null) {
       constructor = ReflectionUtils.getCtrHandle(type, true);
     }
@@ -502,9 +502,14 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       fury.getRefResolver().reference(instance);
       return (Collection) instance;
     } catch (Throwable e) {
-      throw new IllegalArgumentException(
-          "Please provide public no arguments constructor for class " + type, e);
+      // reduce code size of critical path.
+      throw buildException(e);
     }
+  }
+
+  private RuntimeException buildException(Throwable e) {
+    return new IllegalArgumentException(
+        "Please provide public no arguments constructor for class " + type, e);
   }
 
   /**

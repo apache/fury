@@ -149,7 +149,7 @@ public final class MapRefResolver implements RefResolver {
     byte headFlag = buffer.readByte();
     if (headFlag == Fury.REF_FLAG) {
       // read reference id and get object from reference resolver
-      int referenceId = buffer.readPositiveVarInt();
+      int referenceId = buffer.readVarUintSmall();
       readObject = getReadObject(referenceId);
     } else {
       readObject = null;
@@ -170,8 +170,7 @@ public final class MapRefResolver implements RefResolver {
     byte headFlag = buffer.readByte();
     if (headFlag == Fury.REF_FLAG) {
       // read reference id and get object from reference resolver
-      int referenceId = buffer.readPositiveVarInt();
-      readObject = getReadObject(referenceId);
+      readObject = getReadObject(buffer.readVarUintSmall());
     } else {
       readObject = null;
       if (headFlag == Fury.REF_VALUE_FLAG) {
