@@ -90,7 +90,7 @@ export const BinaryReader = (config: Config) => {
     return result;
   }
 
-  function sliLong() {
+  function sliInt64() {
     const i = dataView.getUint32(cursor, true);
     if ((i & 0b1) != 0b1) {
       cursor += 4;
@@ -100,13 +100,13 @@ export const BinaryReader = (config: Config) => {
     return varInt64();
   }
 
-  function float() {
+  function float32() {
     const result = dataView.getFloat32(cursor, true);
     cursor += 4;
     return result;
   }
 
-  function double() {
+  function float64() {
     const result = dataView.getFloat64(cursor, true);
     cursor += 8;
     return result;
@@ -298,6 +298,34 @@ export const BinaryReader = (config: Config) => {
     return (v >> 1n) ^ -(v & 1n); // zigZag decode
   }
 
+  function float16() {
+    const asUint16 = uint16();
+    const sign = asUint16 >> 15; 
+    const exponent = (asUint16 >> 10) & 0x1F;
+    const mantissa = asUint16 & 0x3FF;
+  
+    // IEEE 754-2008
+    if (exponent === 0) {
+      if (mantissa === 0) {
+        // +-0
+        return sign === 0 ? 0 : -0;
+      } else {
+        // Denormalized number
+        return (sign === 0 ? 1 : -1) * mantissa * 2 ** (1 - 15 - 10);
+      }
+    } else if (exponent === 31) {
+      if (mantissa === 0) {
+        // Infinity
+        return sign === 0 ? Infinity : -Infinity;
+      } else {
+        // NaN
+        return NaN;
+      }
+    } else {
+      // Normalized number
+      return (sign === 0 ? 1 : -1) * (1 + mantissa * 2 ** -10) * 2 ** (exponent - 15);
+    }
+  }
   return {
     getCursor: () => cursor,
     setCursor: (v: number) => (cursor = v),
@@ -314,15 +342,16 @@ export const BinaryReader = (config: Config) => {
     stringUtf8,
     stringLatin1,
     stringOfVarUInt32,
-    double,
-    float,
+    float64,
+    float32,
     uint16,
     int16,
     uint64,
     skip,
     int64,
-    sliLong,
+    sliInt64,
     uint32,
     int32,
+    float16,
   };
 };

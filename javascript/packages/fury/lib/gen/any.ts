@@ -25,6 +25,7 @@ import { InternalSerializerType, RefFlags, Serializer } from "../type";
 import { Scope } from "./scope";
 import Fury from "../fury";
 import { Meta, getMeta } from "../meta";
+import SerializerResolver from "../classResolver";
 
 export class AnySerializer {
   meta: Meta;
@@ -44,7 +45,7 @@ export class AnySerializer {
   detectSerializer() {
     const typeId = this.fury.binaryReader.int16();
     let serializer: Serializer;
-    if (typeId === InternalSerializerType.FURY_TYPE_TAG) {
+    if (typeId === SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.OBJECT)) {
       const tag = this.fury.classResolver.readTag(this.fury.binaryReader)();
       serializer = this.fury.classResolver.getSerializerByTag(tag);
     } else {

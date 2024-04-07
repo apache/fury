@@ -17,9 +17,10 @@
  * under the License.
  */
 
-import { Config, HalfMaxInt32, HalfMinInt32, LATIN1, UTF8 } from "./type";
-import { PlatformBuffer, alloc, strByteLength } from "./platformBuffer";
-import { OwnershipError } from "./error";
+import { Config, HalfMaxInt32, HalfMinInt32, LATIN1, UTF8 } from "../type";
+import { PlatformBuffer, alloc, strByteLength } from "../platformBuffer";
+import { OwnershipError } from "../error";
+import { toFloat16 } from './number';
 
 const MAX_POOL_SIZE = 1024 * 1024 * 3; // 3MB
 
@@ -102,7 +103,7 @@ export const BinaryWriter = (config: Config) => {
     cursor += 8;
   }
 
-  function sliLong(v: bigint | number) {
+  function sliInt64(v: bigint | number) {
     if (v <= HalfMaxInt32 && v >= HalfMinInt32) {
       // write:
       // 00xxx -> 0xxx
@@ -120,12 +121,12 @@ export const BinaryWriter = (config: Config) => {
     }
   }
 
-  function float(v: number) {
+  function float32(v: number) {
     dataView.setFloat32(cursor, v, true);
     cursor += 4;
   }
 
-  function double(v: number) {
+  function float64(v: number) {
     dataView.setFloat64(cursor, v, true);
     cursor += 8;
   }
@@ -301,6 +302,10 @@ export const BinaryWriter = (config: Config) => {
     };
   }
 
+  function float16(value: number) {
+    uint16(toFloat16(value));
+  }
+
   function getCursor() {
     return cursor;
   }
@@ -339,10 +344,11 @@ export const BinaryWriter = (config: Config) => {
     bufferWithoutMemCheck,
     uint64,
     buffer,
-    double,
-    float,
+    float16,
+    float64,
+    float32,
     int64,
-    sliLong,
+    sliInt64,
     uint32,
     int32,
     getCursor,

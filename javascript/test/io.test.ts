@@ -293,22 +293,22 @@ function num2Bin(num: number) {
 
         test('should float work', () => {
             const writer = BinaryWriter(config);
-            writer.float(10.01);
+            writer.float32(10.01);
             const ab = writer.dump();
             expect(ab.byteLength).toBe(4);
             const reader = BinaryReader(config);
             reader.reset(ab);
-            expect(reader.float().toFixed(2)).toBe((10.01).toFixed(2));
+            expect(reader.float32().toFixed(2)).toBe((10.01).toFixed(2));
         });
 
-        test('should double work', () => {
+        test('should float64 work', () => {
             const writer = BinaryWriter(config);
-            writer.double(10.01);
+            writer.float64(10.01);
             const ab = writer.dump();
             expect(ab.byteLength).toBe(8);
             const reader = BinaryReader(config);
             reader.reset(ab);
-            expect(reader.double().toFixed(2)).toBe((10.01).toFixed(2));
+            expect(reader.float64().toFixed(2)).toBe((10.01).toFixed(2));
         });
 
         test('should reserve work', () => {
@@ -391,20 +391,20 @@ function num2Bin(num: number) {
 
         test('should silong work', () => {
             const writer = BinaryWriter(config);
-            writer.sliLong(2n ** 2n);
+            writer.sliInt64(2n ** 2n);
             const ab = writer.dump();
             const reader = BinaryReader({});
             reader.reset(ab)
-            expect(reader.sliLong()).toBe(2n ** 2n);
+            expect(reader.sliInt64()).toBe(2n ** 2n);
         });
 
         test('should silong work', () => {
             const writer = BinaryWriter(config);
-            writer.sliLong(2n ** 62n);
+            writer.sliInt64(2n ** 62n);
             const ab = writer.dump();
             const reader = BinaryReader({});
             reader.reset(ab)
-            expect(reader.sliLong()).toBe(2n ** 62n);
+            expect(reader.sliInt64()).toBe(2n ** 62n);
         });
     });
 })

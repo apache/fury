@@ -72,5 +72,5 @@ class DateSerializerGenerator extends BaseSerializerGenerator {
   }
 }
 
-CodegenRegistry.register(InternalSerializerType.DATE, DateSerializerGenerator);
+CodegenRegistry.register(InternalSerializerType.DURATION, DateSerializerGenerator);
 CodegenRegistry.register(InternalSerializerType.TIMESTAMP, TimestampSerializerGenerator);

@@ -26,8 +26,8 @@ describe('protocol', () => {
         
         const fury = new Fury({ refTracking: true });
         const { serialize, deserialize } = fury.registerSerializer(Type.object("example.foo", {
-            foo: Type.any(),
-            bar: Type.any(),
+            foo: Type.string(),
+            bar: Type.int32(),
             map: Type.map(Type.any(), Type.any()),
             set: Type.set(Type.any()),
             list: Type.array(Type.any()),
