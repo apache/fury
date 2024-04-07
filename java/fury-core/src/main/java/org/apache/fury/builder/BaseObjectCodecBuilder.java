@@ -276,7 +276,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    * @see CodeGenerator#getClassUniqueId
    */
   protected void addCommonImports() {
-    ctx.addImports(Fury.class, MemoryBuffer.class, fury.getRefResolver().getClass(), Platform.class);
+    ctx.addImports(
+        Fury.class, MemoryBuffer.class, fury.getRefResolver().getClass(), Platform.class);
     ctx.addImports(ClassInfo.class, ClassInfoHolder.class, ClassResolver.class);
     ctx.addImport(Generated.class);
     ctx.addImports(LazyInitBeanSerializer.class, Serializers.EnumSerializer.class);
