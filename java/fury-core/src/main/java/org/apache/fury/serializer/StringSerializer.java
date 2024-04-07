@@ -237,7 +237,11 @@ public final class StringSerializer extends Serializer<String> {
     } else {
       bytes = buffer.readBytes(numBytes);
     }
-    return newBytesStringZeroCopy(coder, bytes);
+    if (coder != UTF8) {
+      return newBytesStringZeroCopy(coder, bytes);
+    } else {
+      return new String(bytes, 0, numBytes, StandardCharsets.UTF_8);
+    }
   }
 
   @CodegenInvoke
