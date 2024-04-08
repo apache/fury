@@ -39,11 +39,13 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
   }
 
   public FuryReadableChannel(ReadableByteChannel channel, ByteBuffer directBuffer) {
-    Preconditions.checkArgument(directBuffer.isDirect(), "FuryReadableChannel support only direct ByteBuffer.");
+    Preconditions.checkArgument(
+        directBuffer.isDirect(), "FuryReadableChannel support only direct ByteBuffer.");
     this.channel = channel;
     this.byteBuffer = directBuffer;
-    this.memoryBuffer = new MemoryBuffer(
-            Platform.getAddress(directBuffer) + directBuffer.position(), 0, directBuffer, this);
+
+    long offHeapAddress = Platform.getAddress(directBuffer) + directBuffer.position();
+    this.memoryBuffer = new MemoryBuffer(offHeapAddress, 0, directBuffer, this);
   }
 
   @Override

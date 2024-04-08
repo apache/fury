@@ -18,11 +18,7 @@
 
 package org.apache.fury.memory;
 
-import org.apache.fury.annotation.CodegenInvoke;
-import org.apache.fury.io.AbstractStreamReader;
-import org.apache.fury.io.FuryStreamReader;
-import org.apache.fury.util.Platform;
-import sun.misc.Unsafe;
+import static org.apache.fury.util.Preconditions.checkArgument;
 
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
@@ -30,8 +26,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
 import java.util.Arrays;
-
-import static org.apache.fury.util.Preconditions.checkArgument;
+import org.apache.fury.annotation.CodegenInvoke;
+import org.apache.fury.io.AbstractStreamReader;
+import org.apache.fury.io.FuryStreamReader;
+import org.apache.fury.util.Platform;
+import sun.misc.Unsafe;
 
 /**
  * A class for operations on memory managed by Fury. The buffer may be backed by heap memory (byte
