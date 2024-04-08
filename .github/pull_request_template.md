@@ -26,7 +26,7 @@ Is there any related issue? Please attach here.
 -->
 
 
-## Does this PR introduce _any_ user-facing change?
+## Does this PR introduce any user-facing change?
 
 <!--
 If any user-facing interface changes, please [open an issue](https://github.com/apache/incubator-fury/issues/new/choose) describing the need to do so and update the document if necessary.
