@@ -364,14 +364,13 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigInteger value) {
       final byte[] bytes = value.toByteArray();
-      Preconditions.checkArgument(bytes.length <= 16);
-      buffer.writeByte((byte) bytes.length);
+      buffer.writePositiveVarInt((byte) bytes.length);
       buffer.writeBytes(bytes);
     }
 
     @Override
     public BigInteger read(MemoryBuffer buffer) {
-      int len = buffer.readByte();
+      int len = buffer.readPositiveVarInt();
       byte[] bytes = buffer.readBytes(len);
       return new BigInteger(bytes);
     }
