@@ -26,6 +26,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
 
 @NotThreadSafe
 public class FuryReadableChannel implements FuryStreamReader, ReadableByteChannel {
@@ -34,15 +35,15 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
   private ByteBuffer byteBuffer;
 
   public FuryReadableChannel(ReadableByteChannel channel) {
-    this(channel, ByteBuffer.allocate(4096));
+    this(channel, ByteBuffer.allocateDirect(4096));
   }
 
   public FuryReadableChannel(ReadableByteChannel channel, ByteBuffer directBuffer) {
+    Preconditions.checkArgument(directBuffer.isDirect(), "FuryReadableChannel support only direct ByteBuffer.");
     this.channel = channel;
     this.byteBuffer = directBuffer;
-
-    int offset = directBuffer.arrayOffset() + directBuffer.position();
-    this.memoryBuffer = MemoryBuffer.fromByteArray(directBuffer.array(), offset, 0, this);
+    this.memoryBuffer = new MemoryBuffer(
+            Platform.getAddress(directBuffer) + directBuffer.position(), 0, directBuffer, this);
   }
 
   @Override
@@ -50,18 +51,18 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
     try {
       ByteBuffer byteBuf = byteBuffer;
       MemoryBuffer memoryBuf = memoryBuffer;
-      int newLimit = byteBuf.position() + minFillSize;
+      int position = byteBuf.position();
+      int newLimit = position + minFillSize;
       if (newLimit > byteBuf.capacity()) {
         int newSize =
             newLimit < BUFFER_GROW_STEP_THRESHOLD ? newLimit << 2 : (int) (newLimit * 1.5);
-        ByteBuffer newByteBuf = ByteBuffer.allocate(newSize);
+        ByteBuffer newByteBuf = ByteBuffer.allocateDirect(newSize);
         byteBuf.position(0);
         newByteBuf.put(byteBuf);
         byteBuf = byteBuffer = newByteBuf;
-        memoryBuf.initHeapBuffer(byteBuf.array(), 0, newLimit);
-      } else {
-        byteBuf.limit(newLimit);
+        memoryBuf.initDirectBuffer(Platform.getAddress(byteBuf), position, byteBuf);
       }
+      byteBuf.limit(newLimit);
       int readCount = channel.read(byteBuf);
       memoryBuf.increaseSize(readCount);
       return readCount;
@@ -77,19 +78,20 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
       return 0;
     }
     MemoryBuffer buf = memoryBuffer;
-    int readerIndex = buf.readerIndex();
-    int remaining = buf.size() - readerIndex;
+    int remaining = buf.remaining();
     if (remaining <= 0) {
       return -1;
     }
-    if (dstRemaining <= remaining) {
-      dst.put(buf.getHeapMemory(), readerIndex, remaining);
+    if (remaining >= dstRemaining) {
+      byte[] bytes = buf.readBytes(dstRemaining);
+      dst.put(bytes);
       return dstRemaining;
     } else {
-      dst.put(buf.getHeapMemory(), readerIndex, remaining);
-      int filledSize = fillBuffer(remaining - dstRemaining);
-      dst.put(buf.getHeapMemory(), remaining, filledSize);
-      return remaining + filledSize;
+      int filledSize = fillBuffer(dstRemaining - remaining);
+      int length = remaining + filledSize;
+      byte[] bytes = buf.readBytes(length);
+      dst.put(bytes);
+      return length;
     }
   }
 
@@ -117,9 +119,8 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
     if (remaining < numBytes) {
       fillBuffer(numBytes - remaining);
     }
-    byte[] heapMemory = buf.getHeapMemory();
     long address = buf.getUnsafeReaderAddress();
-    Platform.copyMemory(heapMemory, address, target, targetPointer, numBytes);
+    Platform.copyMemory(null, address, target, targetPointer, numBytes);
     buf.increaseReaderIndex(numBytes);
   }
 
@@ -136,27 +137,11 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
   private int readToByteBuffer0(ByteBuffer dst, int length) {
     MemoryBuffer buf = memoryBuffer;
     int remaining = buf.remaining();
-    if (remaining >= length) {
-      buf.read(dst, length);
-      return length;
-    } else {
-      buf.read(dst, remaining);
-      try {
-        if (dst.isDirect()) {
-          ByteBuffer tempBuff = ByteBuffer.allocate(length - remaining);
-          int read = channel.read(tempBuff);
-          dst.put(tempBuff);
-          return remaining + read;
-        } else {
-          int offset = dst.arrayOffset() + dst.position();
-          ByteBuffer wrap = ByteBuffer.wrap(dst.array(), offset, length - remaining);
-          int read = channel.read(wrap);
-          return remaining + read;
-        }
-      } catch (IOException e) {
-        throw new DeserializationException("Failed to read the provided byte channel", e);
-      }
+    if (remaining < length) {
+      remaining += fillBuffer(length - remaining);
     }
+    buf.read(dst, remaining);
+    return remaining;
   }
 
   @Override

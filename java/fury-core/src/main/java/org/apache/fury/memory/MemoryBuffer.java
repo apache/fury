@@ -18,7 +18,11 @@
 
 package org.apache.fury.memory;
 
-import static org.apache.fury.util.Preconditions.checkArgument;
+import org.apache.fury.annotation.CodegenInvoke;
+import org.apache.fury.io.AbstractStreamReader;
+import org.apache.fury.io.FuryStreamReader;
+import org.apache.fury.util.Platform;
+import sun.misc.Unsafe;
 
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
@@ -26,11 +30,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
 import java.util.Arrays;
-import org.apache.fury.annotation.CodegenInvoke;
-import org.apache.fury.io.AbstractStreamReader;
-import org.apache.fury.io.FuryStreamReader;
-import org.apache.fury.util.Platform;
-import sun.misc.Unsafe;
+
+import static org.apache.fury.util.Preconditions.checkArgument;
 
 /**
  * A class for operations on memory managed by Fury. The buffer may be backed by heap memory (byte
@@ -156,8 +157,17 @@ public final class MemoryBuffer {
    *     the memory being released.
    * @param streamReader a reader for reading from a stream.
    */
-  private MemoryBuffer(
+  public MemoryBuffer(
       long offHeapAddress, int size, ByteBuffer offHeapBuffer, FuryStreamReader streamReader) {
+    initDirectBuffer(offHeapAddress, size, offHeapBuffer);
+    if (streamReader != null) {
+      this.streamReader = streamReader;
+    } else {
+      this.streamReader = new BoundChecker();
+    }
+  }
+
+  public void initDirectBuffer(long offHeapAddress, int size, ByteBuffer offHeapBuffer) {
     this.offHeapBuffer = offHeapBuffer;
     if (offHeapAddress <= 0) {
       throw new IllegalArgumentException("negative pointer or size");
@@ -175,11 +185,6 @@ public final class MemoryBuffer {
     this.address = offHeapAddress;
     this.addressLimit = this.address + size;
     this.size = size;
-    if (streamReader != null) {
-      this.streamReader = streamReader;
-    } else {
-      this.streamReader = new BoundChecker();
-    }
   }
 
   private class BoundChecker extends AbstractStreamReader {
