@@ -71,9 +71,9 @@ Here is en example:
     ```
 - Python:
 
-```python
-class Foo:
-    f1: Int32Type(varint=True)
-    f2: List[Int32Type(varint=True)]
-```
+    ```python
+    class Foo:
+        f1: Int32Type(varint=True)
+        f2: List[Int32Type(varint=True)]
+    ```
 
