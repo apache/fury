@@ -364,7 +364,7 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigInteger value) {
       final byte[] bytes = value.toByteArray();
-      buffer.writePositiveVarInt((byte) bytes.length);
+      buffer.writePositiveVarInt(bytes.length);
       buffer.writeBytes(bytes);
     }
 
