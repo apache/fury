@@ -33,7 +33,6 @@ import org.apache.fury.util.Platform;
  */
 @NotThreadSafe
 public class FuryInputStream extends InputStream implements FuryStreamReader {
-  private static final int BUFFER_GROW_STEP_THRESHOLD = 100 * 1024 * 1024;
   private final InputStream stream;
   private final int bufferSize;
   private final MemoryBuffer buffer;

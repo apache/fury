@@ -28,7 +28,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.fury.io.FuryInputStream;
+import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.util.ReflectionUtils;
@@ -202,6 +205,40 @@ public class StreamTest {
       assertEquals(newObj, beanA);
       newObj = fury.deserializeJavaObjectAndClass(buf);
       assertEquals(newObj, beanA);
+    }
+  }
+
+  @Test
+  public void testReadableChannel() throws IOException {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    BeanA beanA = BeanA.createBeanA(2);
+    {
+      ByteArrayOutputStream bas = new ByteArrayOutputStream();
+      fury.serializeJavaObject(bas, beanA);
+      bas.flush();
+
+      Path tempFile = Files.createTempFile("readable_channel_test", "data");
+      Files.write(tempFile, bas.toByteArray());
+
+      FuryReadableChannel channel = of(Files.newByteChannel(tempFile));
+      Object newObj = fury.deserializeJavaObject(channel, BeanA.class);
+      assertEquals(newObj, beanA);
+
+      Files.delete(tempFile);
+    }
+    {
+      ByteArrayOutputStream bas = new ByteArrayOutputStream();
+      fury.serializeJavaObjectAndClass(bas, beanA);
+      bas.flush();
+
+      Path tempFile = Files.createTempFile("readable_channel_test", "data_2");
+      Files.write(tempFile, bas.toByteArray());
+
+      FuryReadableChannel channel = of(Files.newByteChannel(tempFile));
+      Object newObj = fury.deserializeJavaObjectAndClass(channel);
+      assertEquals(newObj, beanA);
+
+      Files.delete(tempFile);
     }
   }
 }
