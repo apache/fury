@@ -19,34 +19,33 @@
 
 package org.apache.fury.io;
 
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.WritableByteChannel;
+import org.apache.fury.memory.MemoryBuffer;
 
-/**
- * A helper class to track the size of allocations. Writes to this stream do not copy or retain any
- * data, they just bump a size counter that can be later used to know exactly which data size needs
- * to be allocated for actual writing.
- *
- * <p>Note that {@link OutputStream} doesn't support {@link ByteBuffer}, which may incur extra copy.
- * See also {@link MockWritableChannel}.
- */
-public class MockOutputStream extends OutputStream {
-  private int totalBytes;
+/** {@link WritableByteChannel} based on fury {@link MemoryBuffer}. */
+public class MemoryBufferWritableChannel implements WritableByteChannel {
+  private boolean open = true;
+  private final MemoryBuffer buffer;
 
-  // Writes the specified byte to this output stream.
-  public void write(int b) {
-    totalBytes += 1;
+  public MemoryBufferWritableChannel(MemoryBuffer buffer) {
+    this.buffer = buffer;
   }
 
-  public void write(byte[] bytes, int offset, int length) {
-    totalBytes += length;
+  @Override
+  public int write(ByteBuffer src) {
+    int remaining = src.remaining();
+    buffer.write(src, remaining);
+    return remaining;
   }
 
-  public void write(ByteBuffer byteBuffer, int numBytes) {
-    totalBytes += numBytes;
+  @Override
+  public boolean isOpen() {
+    return open;
   }
 
-  public int totalBytes() {
-    return totalBytes;
+  @Override
+  public void close() {
+    open = false;
   }
 }

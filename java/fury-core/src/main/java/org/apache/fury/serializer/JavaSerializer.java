@@ -30,8 +30,8 @@ import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import org.apache.fury.Fury;
 import org.apache.fury.io.ClassLoaderObjectInputStream;
-import org.apache.fury.io.FuryObjectInput;
-import org.apache.fury.io.FuryObjectOutput;
+import org.apache.fury.io.MemoryBufferObjectInput;
+import org.apache.fury.io.MemoryBufferObjectOutput;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.LoggerFactory;
@@ -49,8 +49,8 @@ import org.slf4j.Logger;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class JavaSerializer extends Serializer {
   private static final Logger LOG = LoggerFactory.getLogger(JavaSerializer.class);
-  private final FuryObjectInput objectInput;
-  private final FuryObjectOutput objectOutput;
+  private final MemoryBufferObjectInput objectInput;
+  private final MemoryBufferObjectOutput objectOutput;
 
   public JavaSerializer(Fury fury, Class<?> cls) {
     super(fury, cls);
@@ -64,8 +64,8 @@ public class JavaSerializer extends Serializer {
           Serializer.class.getName(),
           Externalizable.class.getName());
     }
-    objectInput = new FuryObjectInput(fury, null);
-    objectOutput = new FuryObjectOutput(fury, null);
+    objectInput = new MemoryBufferObjectInput(fury, null);
+    objectOutput = new MemoryBufferObjectOutput(fury, null);
   }
 
   @Override

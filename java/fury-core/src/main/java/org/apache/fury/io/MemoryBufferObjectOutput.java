@@ -29,13 +29,13 @@ import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.util.Preconditions;
 
 /** ObjectOutput based on {@link Fury} and {@link MemoryBuffer}. */
-public class FuryObjectOutput extends OutputStream implements ObjectOutput {
+public class MemoryBufferObjectOutput extends OutputStream implements ObjectOutput {
   private final Fury fury;
   private final DataOutputStream utf8out = new DataOutputStream(this);
   private final StringSerializer stringSerializer;
   private MemoryBuffer buffer;
 
-  public FuryObjectOutput(Fury fury, MemoryBuffer buffer) {
+  public MemoryBufferObjectOutput(Fury fury, MemoryBuffer buffer) {
     this.fury = fury;
     this.buffer = buffer;
     this.stringSerializer = new StringSerializer(fury);

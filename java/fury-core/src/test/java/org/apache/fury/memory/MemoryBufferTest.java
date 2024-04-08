@@ -211,14 +211,14 @@ public class MemoryBufferTest {
     for (int i = 0; i < chars.length; i++) {
       chars[i] = (char) random.nextInt();
     }
-    buf.writePrimitiveArrayWithSizeEmbedded(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
-    buf.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, chars.length * 2);
-    assertEquals(bytes, buf.readBytesWithSizeEmbedded());
-    assertEquals(chars, buf.readCharsWithSizeEmbedded());
-    buf.writePrimitiveArrayAlignedSizeEmbedded(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
-    buf.writePrimitiveArrayAlignedSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, chars.length * 2);
-    assertEquals(bytes, buf.readBytesAlignedSizeEmbedded());
-    assertEquals(chars, buf.readCharsAlignedSizeEmbedded());
+    buf.writePrimitiveArrayWithSize(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
+    buf.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, chars.length * 2);
+    assertEquals(bytes, buf.readBytesAndSize());
+    assertEquals(chars, buf.readChars(buf.readPositiveVarInt()));
+    buf.writePrimitiveArrayAlignedSize(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
+    buf.writePrimitiveArrayAlignedSize(chars, Platform.CHAR_ARRAY_OFFSET, chars.length * 2);
+    assertEquals(bytes, buf.readBytesWithAlignedSize());
+    assertEquals(chars, buf.readCharsWithAlignedSize());
   }
 
   @Test

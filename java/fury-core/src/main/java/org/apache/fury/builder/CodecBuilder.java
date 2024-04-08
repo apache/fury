@@ -645,6 +645,10 @@ public abstract class CodecBuilder {
     return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
   }
 
+  public static String readIntFunc() {
+    return Platform.IS_LITTLE_ENDIAN ? "readIntOnLE" : "readIntOnBE";
+  }
+
   protected Expression readVarInt(Expression buffer) {
     String func = Platform.IS_LITTLE_ENDIAN ? "readVarIntOnLE" : "readVarIntOnBE";
     return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);

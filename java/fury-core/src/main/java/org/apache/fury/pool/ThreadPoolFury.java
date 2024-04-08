@@ -19,7 +19,6 @@
 
 package org.apache.fury.pool;
 
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +27,7 @@ import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
 import org.apache.fury.AbstractThreadSafeFury;
 import org.apache.fury.Fury;
+import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferCallback;
@@ -144,12 +144,12 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public Object deserialize(InputStream inputStream) {
+  public Object deserialize(FuryInputStream inputStream) {
     return execute(fury -> fury.deserialize(inputStream));
   }
 
   @Override
-  public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
+  public Object deserialize(FuryInputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
     return execute(fury -> fury.deserialize(inputStream, outOfBandBuffers));
   }
 
@@ -187,7 +187,7 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public <T> T deserializeJavaObject(InputStream inputStream, Class<T> cls) {
+  public <T> T deserializeJavaObject(FuryInputStream inputStream, Class<T> cls) {
     return execute(fury -> fury.deserializeJavaObject(inputStream, cls));
   }
 
@@ -225,7 +225,7 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public Object deserializeJavaObjectAndClass(InputStream inputStream) {
+  public Object deserializeJavaObjectAndClass(FuryInputStream inputStream) {
     return execute(fury -> fury.deserializeJavaObjectAndClass(inputStream));
   }
 

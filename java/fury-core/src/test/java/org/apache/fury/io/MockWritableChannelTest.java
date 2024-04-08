@@ -24,11 +24,11 @@ import static org.testng.Assert.assertEquals;
 import java.nio.ByteBuffer;
 import org.testng.annotations.Test;
 
-public class MockWritableByteChannelTest {
+public class MockWritableChannelTest {
 
   @Test
   public void testTotalBytes() {
-    try (MockWritableByteChannel channel = new MockWritableByteChannel()) {
+    try (MockWritableChannel channel = new MockWritableChannel()) {
       channel.write(ByteBuffer.allocate(100));
       channel.write(ByteBuffer.allocateDirect(100));
       ByteBuffer buffer = ByteBuffer.allocate(100);

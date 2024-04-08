@@ -19,8 +19,8 @@
 
 package org.apache.fury;
 
-import java.io.InputStream;
 import java.io.OutputStream;
+import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.serializer.Serializer;
@@ -110,9 +110,9 @@ public interface BaseFury {
 
   Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers);
 
-  Object deserialize(InputStream inputStream);
+  Object deserialize(FuryInputStream inputStream);
 
-  Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers);
+  Object deserialize(FuryInputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers);
 
   /**
    * Serialize java object without class info, deserialization should use {@link
@@ -140,7 +140,7 @@ public interface BaseFury {
    */
   <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls);
 
-  <T> T deserializeJavaObject(InputStream inputStream, Class<T> cls);
+  <T> T deserializeJavaObject(FuryInputStream inputStream, Class<T> cls);
 
   byte[] serializeJavaObjectAndClass(Object obj);
 
@@ -152,5 +152,5 @@ public interface BaseFury {
 
   Object deserializeJavaObjectAndClass(MemoryBuffer buffer);
 
-  Object deserializeJavaObjectAndClass(InputStream inputStream);
+  Object deserializeJavaObjectAndClass(FuryInputStream inputStream);
 }

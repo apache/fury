@@ -25,6 +25,7 @@ import static org.apache.fury.codegen.Expression.Reference.fieldRef;
 import static org.apache.fury.codegen.ExpressionOptimizer.invokeGenerated;
 import static org.apache.fury.codegen.ExpressionUtils.eq;
 import static org.apache.fury.codegen.ExpressionUtils.gt;
+import static org.apache.fury.codegen.ExpressionUtils.inline;
 import static org.apache.fury.codegen.ExpressionUtils.neq;
 import static org.apache.fury.codegen.ExpressionUtils.not;
 import static org.apache.fury.codegen.ExpressionUtils.nullValue;
@@ -37,8 +38,6 @@ import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_DOUBLE_TYPE;
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_FLOAT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static org.apache.fury.type.TypeUtils.SET_TYPE;
@@ -95,6 +94,7 @@ import org.apache.fury.serializer.collection.AbstractMapSerializer;
 import org.apache.fury.serializer.collection.CollectionFlags;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
+import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
@@ -276,8 +276,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    * @see CodeGenerator#getClassUniqueId
    */
   protected void addCommonImports() {
-    ctx.addImports(List.class, Map.class, Set.class);
-    ctx.addImports(Fury.class, MemoryBuffer.class, fury.getRefResolver().getClass());
+    ctx.addImports(
+        Fury.class, MemoryBuffer.class, fury.getRefResolver().getClass(), Platform.class);
     ctx.addImports(ClassInfo.class, ClassInfoHolder.class, ClassResolver.class);
     ctx.addImport(Generated.class);
     ctx.addImports(LazyInitBeanSerializer.class, Serializers.EnumSerializer.class);
@@ -1138,9 +1138,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (cls == long.class || cls == Long.class) {
         return LongSerializer.readLong(buffer, fury.longEncoding());
       } else if (cls == float.class || cls == Float.class) {
-        return new Invoke(buffer, "readFloat", PRIMITIVE_FLOAT_TYPE);
+        return readFloat(buffer);
       } else if (cls == double.class || cls == Double.class) {
-        return new Invoke(buffer, "readDouble", PRIMITIVE_DOUBLE_TYPE);
+        return readDouble(buffer);
       } else {
         throw new IllegalStateException("impossible");
       }
@@ -1242,7 +1242,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         builder.add(readContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
         Literal hasNullFlag = Literal.ofInt(CollectionFlags.HAS_NULL);
-        Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
+        Expression hasNull = eq(new BitAnd(flags.inline(), hasNullFlag), hasNullFlag, "hasNull");
         builder.add(
             hasNull,
             readContainerElements(elementType, false, null, hasNull, buffer, collection, size));
@@ -1353,7 +1353,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                 trackingRef,
                 exprHolder.get("hasNull"),
                 exprHolder.get("serializer"),
-                v -> new Invoke(exprHolder.get("collection"), "add", v)));
+                v -> new Invoke(exprHolder.get("collection"), "add", inline(v))));
   }
 
   private Expression readContainerElement(

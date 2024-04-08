@@ -19,13 +19,13 @@
 
 package org.apache.fury;
 
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
+import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
@@ -155,12 +155,12 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public Object deserialize(InputStream inputStream) {
+  public Object deserialize(FuryInputStream inputStream) {
     return bindingThreadLocal.get().get().deserialize(inputStream);
   }
 
   @Override
-  public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
+  public Object deserialize(FuryInputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
     return bindingThreadLocal.get().get().deserialize(inputStream, outOfBandBuffers);
   }
 
@@ -190,7 +190,7 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public <T> T deserializeJavaObject(InputStream inputStream, Class<T> cls) {
+  public <T> T deserializeJavaObject(FuryInputStream inputStream, Class<T> cls) {
     return bindingThreadLocal.get().get().deserializeJavaObject(inputStream, cls);
   }
 
@@ -220,7 +220,7 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public Object deserializeJavaObjectAndClass(InputStream inputStream) {
+  public Object deserializeJavaObjectAndClass(FuryInputStream inputStream) {
     return bindingThreadLocal.get().get().deserializeJavaObjectAndClass(inputStream);
   }
 

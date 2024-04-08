@@ -19,33 +19,45 @@
 
 package org.apache.fury.io;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import org.apache.fury.memory.MemoryBuffer;
 
-/** {@link ReadableByteChannel} based on fury {@link MemoryBuffer}. */
-public class FuryReadableByteChannel implements ReadableByteChannel {
-  private boolean open = true;
+// TODO support zero-copy channel reading.
+public class FuryReadableChannel extends AbstractStreamReader implements ReadableByteChannel {
+  private final ReadableByteChannel channel;
+  private final ByteBuffer byteBuffer;
   private final MemoryBuffer buffer;
 
-  public FuryReadableByteChannel(MemoryBuffer buffer) {
-    this.buffer = buffer;
+  public FuryReadableChannel(ReadableByteChannel channel) {
+    this(channel, ByteBuffer.allocate(4096));
+  }
+
+  private FuryReadableChannel(ReadableByteChannel channel, ByteBuffer directBuffer) {
+    this.channel = channel;
+    this.byteBuffer = directBuffer;
+    this.buffer = MemoryBuffer.fromByteBuffer(directBuffer);
   }
 
   @Override
-  public int read(ByteBuffer dst) {
-    int position = dst.position();
-    buffer.read(dst);
-    return dst.position() - position;
+  public int read(ByteBuffer dst) throws IOException {
+    throw new UnsupportedEncodingException();
   }
 
   @Override
   public boolean isOpen() {
-    return open;
+    return channel.isOpen();
   }
 
   @Override
-  public void close() {
-    open = false;
+  public void close() throws IOException {
+    channel.close();
+  }
+
+  @Override
+  public MemoryBuffer getBuffer() {
+    return buffer;
   }
 }

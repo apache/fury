@@ -73,6 +73,7 @@ public class PrimitiveSerializersTest extends FuryTestBase {
     int int2;
     long long1;
     long long2;
+    long long3;
     float float1;
     float float2;
     double double1;
@@ -93,6 +94,7 @@ public class PrimitiveSerializersTest extends FuryTestBase {
             Integer.MIN_VALUE,
             Long.MIN_VALUE,
             Long.MIN_VALUE,
+            -3763915443215605988L, // test Long.reverseBytes in readVarLongOnBE
             Float.MIN_VALUE,
             Float.MIN_VALUE,
             Double.MIN_VALUE,

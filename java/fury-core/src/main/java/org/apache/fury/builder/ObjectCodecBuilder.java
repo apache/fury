@@ -560,7 +560,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         PRIMITIVE_VOID_TYPE,
         false,
         furyRef,
-        inlineInvoke(buffer, "readInt", PRIMITIVE_INT_TYPE),
+        inlineInvoke(buffer, readIntFunc(), PRIMITIVE_INT_TYPE),
         Objects.requireNonNull(classVersionHash));
   }
 
@@ -642,7 +642,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     }
     Expression increaseReaderIndex =
         new Invoke(
-            buffer, "increaseReaderIndexUnsafe", new Literal(totalSizeLiteral, PRIMITIVE_INT_TYPE));
+            buffer, "increaseReaderIndex", new Literal(totalSizeLiteral, PRIMITIVE_INT_TYPE));
     expressions.add(increaseReaderIndex);
     return expressions;
   }
@@ -734,7 +734,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
 
   private void addIncReaderIndexExpr(ListExpression expressions, Expression buffer, int diff) {
     if (diff != 0) {
-      expressions.add(new Invoke(buffer, "increaseReaderIndexUnsafe", Literal.ofInt(diff)));
+      expressions.add(new Invoke(buffer, "increaseReaderIndex", Literal.ofInt(diff)));
     }
   }
 

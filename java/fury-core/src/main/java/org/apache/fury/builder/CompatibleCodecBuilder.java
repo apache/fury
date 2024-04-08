@@ -393,12 +393,13 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
         new StaticInvoke(
             Platform.class, "copyObjectArray", OBJECT_ARRAY_TYPE, recordComponentDefaultValues);
     ListExpression readAndSetFieldsExpr = new ListExpression();
-    Expression partFieldInfo = new Invoke(buffer, "readInt", "partFieldInfo", PRIMITIVE_LONG_TYPE);
+    Expression partFieldInfo =
+        new Invoke(buffer, readIntFunc(), "partFieldInfo", PRIMITIVE_LONG_TYPE);
     readAndSetFieldsExpr.add(partFieldInfo);
     readEmbedTypes4Fields(buffer, readAndSetFieldsExpr, components, partFieldInfo);
     BitOr newPartFieldInfo =
         new BitOr(
-            new BitShift("<<", new Invoke(buffer, "readInt", PRIMITIVE_LONG_TYPE), 32),
+            new BitShift("<<", new Invoke(buffer, readIntFunc(), PRIMITIVE_LONG_TYPE), 32),
             new BitAnd(partFieldInfo, new Literal(0x00000000ffffffffL, PRIMITIVE_LONG_TYPE)));
     readAndSetFieldsExpr.add(new Assign(partFieldInfo, newPartFieldInfo));
     readEmbedTypes9Fields(buffer, readAndSetFieldsExpr, components, partFieldInfo);
@@ -434,12 +435,13 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   private ListExpression readAndSetFields(Reference buffer, Expression bean) {
     ListExpression readAndSetFieldsExpr = new ListExpression();
-    Expression partFieldInfo = new Invoke(buffer, "readInt", "partFieldInfo", PRIMITIVE_LONG_TYPE);
+    Expression partFieldInfo =
+        new Invoke(buffer, readIntFunc(), "partFieldInfo", PRIMITIVE_LONG_TYPE);
     readAndSetFieldsExpr.add(partFieldInfo);
     readEmbedTypes4Fields(buffer, readAndSetFieldsExpr, bean, partFieldInfo);
     BitOr newPartFieldInfo =
         new BitOr(
-            new BitShift("<<", new Invoke(buffer, "readInt", PRIMITIVE_LONG_TYPE), 32),
+            new BitShift("<<", new Invoke(buffer, readIntFunc(), PRIMITIVE_LONG_TYPE), 32),
             new BitAnd(partFieldInfo, new Literal(0x00000000ffffffffL, PRIMITIVE_LONG_TYPE)));
     readAndSetFieldsExpr.add(new Assign(partFieldInfo, newPartFieldInfo));
     readEmbedTypes9Fields(buffer, readAndSetFieldsExpr, bean, partFieldInfo);
@@ -514,7 +516,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                 setFieldValue(bean, descriptor, tryInlineCast(expr, descriptor.getTypeToken())));
     return new ListExpression(
         deserializeAction,
-        new Assign(partFieldInfo, inlineInvoke(buffer, "readInt", PRIMITIVE_LONG_TYPE)));
+        new Assign(partFieldInfo, inlineInvoke(buffer, readIntFunc(), PRIMITIVE_LONG_TYPE)));
   }
 
   /**
@@ -557,7 +559,8 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                             cast(partFieldInfo, PRIMITIVE_INT_TYPE)),
                         endTagLiteral),
                     returnEndTag ? new Return(endTagLiteral) : new Return(bean)),
-                new Assign(partFieldInfo, inlineInvoke(buffer, "readInt", PRIMITIVE_LONG_TYPE))));
+                new Assign(
+                    partFieldInfo, inlineInvoke(buffer, readIntFunc(), PRIMITIVE_LONG_TYPE))));
   }
 
   /**
@@ -589,7 +592,8 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                             cast(partFieldInfo, PRIMITIVE_INT_TYPE)),
                         endTagLiteral),
                     new Return(bean)),
-                new Assign(partFieldInfo, inlineInvoke(buffer, "readInt", PRIMITIVE_LONG_TYPE))));
+                new Assign(
+                    partFieldInfo, inlineInvoke(buffer, readIntFunc(), PRIMITIVE_LONG_TYPE))));
   }
 
   private void readEmbedTypes9Fields(

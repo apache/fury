@@ -19,33 +19,48 @@
 
 package org.apache.fury.io;
 
-import java.nio.ByteBuffer;
-import java.nio.channels.WritableByteChannel;
+import java.io.IOException;
+import java.io.InputStream;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.Preconditions;
 
-/** {@link WritableByteChannel} based on fury {@link MemoryBuffer}. */
-public class FuryWritableByteChannel implements WritableByteChannel {
-  private boolean open = true;
+/** InputStream based on {@link MemoryBuffer}. */
+public class MemoryBufferInputStream extends InputStream {
   private final MemoryBuffer buffer;
 
-  public FuryWritableByteChannel(MemoryBuffer buffer) {
+  public MemoryBufferInputStream(MemoryBuffer buffer) {
     this.buffer = buffer;
   }
 
-  @Override
-  public int write(ByteBuffer src) {
-    int remaining = src.remaining();
-    buffer.write(src, remaining);
-    return remaining;
+  public int read() {
+    if (buffer.remaining() == 0) {
+      return -1;
+    } else {
+      return buffer.readByte() & 0xFF;
+    }
+  }
+
+  public int read(byte[] bytes, int offset, int length) throws IOException {
+    if (length == 0) {
+      return 0;
+    }
+    int size = Math.min(buffer.remaining(), length);
+    if (size == 0) {
+      return -1;
+    }
+    buffer.readBytes(bytes, offset, size);
+    return size;
   }
 
   @Override
-  public boolean isOpen() {
-    return open;
+  public long skip(long n) throws IOException {
+    Preconditions.checkArgument(n < Integer.MAX_VALUE);
+    int nbytes = (int) Math.min(n, buffer.remaining());
+    buffer.increaseReaderIndex(nbytes);
+    return nbytes;
   }
 
-  @Override
-  public void close() {
-    open = false;
+  public int available() throws IOException {
+    return buffer.remaining();
   }
 }
