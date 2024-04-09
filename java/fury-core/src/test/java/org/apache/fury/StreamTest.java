@@ -214,31 +214,45 @@ public class StreamTest {
     BeanA beanA = BeanA.createBeanA(2);
     {
       ByteArrayOutputStream bas = new ByteArrayOutputStream();
-      fury.serializeJavaObject(bas, beanA);
-      bas.flush();
+      fury.serialize(bas, beanA);
 
-      Path tempFile = Files.createTempFile("readable_channel_test", "data");
+      Path tempFile = Files.createTempFile("readable_channel_test", "data_1");
       Files.write(tempFile, bas.toByteArray());
 
-      FuryReadableChannel channel = of(Files.newByteChannel(tempFile));
-      Object newObj = fury.deserializeJavaObject(channel, BeanA.class);
-      assertEquals(newObj, beanA);
-
-      Files.delete(tempFile);
+      try (FuryReadableChannel channel = of(Files.newByteChannel(tempFile))) {
+        Object newObj = fury.deserialize(channel);
+        assertEquals(newObj, beanA);
+      } finally {
+        Files.delete(tempFile);
+      }
     }
     {
       ByteArrayOutputStream bas = new ByteArrayOutputStream();
-      fury.serializeJavaObjectAndClass(bas, beanA);
-      bas.flush();
+      fury.serializeJavaObject(bas, beanA);
 
       Path tempFile = Files.createTempFile("readable_channel_test", "data_2");
       Files.write(tempFile, bas.toByteArray());
 
-      FuryReadableChannel channel = of(Files.newByteChannel(tempFile));
-      Object newObj = fury.deserializeJavaObjectAndClass(channel);
-      assertEquals(newObj, beanA);
+      try (FuryReadableChannel channel = of(Files.newByteChannel(tempFile))) {
+        Object newObj = fury.deserializeJavaObject(channel, BeanA.class);
+        assertEquals(newObj, beanA);
+      } finally {
+        Files.delete(tempFile);
+      }
+    }
+    {
+      ByteArrayOutputStream bas = new ByteArrayOutputStream();
+      fury.serializeJavaObjectAndClass(bas, beanA);
 
-      Files.delete(tempFile);
+      Path tempFile = Files.createTempFile("readable_channel_test", "data_3");
+      Files.write(tempFile, bas.toByteArray());
+
+      try (FuryReadableChannel channel = of(Files.newByteChannel(tempFile))) {
+        Object newObj = fury.deserializeJavaObjectAndClass(channel);
+        assertEquals(newObj, beanA);
+      } finally {
+        Files.delete(tempFile);
+      }
     }
   }
 }
