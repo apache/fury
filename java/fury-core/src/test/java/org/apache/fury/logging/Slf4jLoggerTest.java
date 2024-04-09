@@ -12,9 +12,9 @@ public class Slf4jLoggerTest {
     logger.info("testInfo {}", "placeHolder");
     logger.warn("testInfo {}", "placeHolder");
     logger.error("testInfo {}", "placeHolder", new Exception("test log"));
+    furyLogger.info("testInfo");
     furyLogger.info("testInfo {}", "placeHolder");
     furyLogger.warn("testInfo {}", "placeHolder");
-    furyLogger.error("testInfo {}", "placeHolder", new Exception("test log"));
     furyLogger.error("testInfo {}", "placeHolder", new Exception("test log"));
   }
 }

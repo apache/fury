@@ -126,7 +126,7 @@ public class FuryLogger implements Logger {
     if (mayPrintTrace && length > 0) {
       Object o = args[length - 1];
       if (o instanceof Throwable) {
-        ((Throwable) o).printStackTrace();
+        ((Throwable) o).printStackTrace(System.out);
       }
     }
   }
