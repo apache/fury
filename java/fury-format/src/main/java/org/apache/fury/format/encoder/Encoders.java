@@ -353,7 +353,7 @@ public class Encoders {
 
     Set<TypeToken<?>> set1 = beanSet(tuple2.f0);
     Set<TypeToken<?>> set2 = beanSet(tuple2.f1);
-    LOG.debug("Find beans to load: {}, {}", set1, set2);
+    LOG.info("Find beans to load: {}, {}", set1, set2);
 
     if (set1.isEmpty() && set2.isEmpty()) {
       throw new IllegalArgumentException("can not find bean class.");
@@ -456,7 +456,7 @@ public class Encoders {
     for (TypeToken<?> tt : set) {
       keyToken = tt;
       Encoders.loadOrGenRowCodecClass(getRawType(tt));
-      LOG.debug("bean {} load finished", getRawType(tt));
+      LOG.info("bean {} load finished", getRawType(tt));
     }
     return keyToken;
   }
@@ -525,7 +525,7 @@ public class Encoders {
 
   public static Class<?> loadOrGenRowCodecClass(Class<?> beanClass) {
     Set<Class<?>> classes = TypeUtils.listBeansRecursiveInclusive(beanClass);
-    LOG.debug("Create RowCodec for classes {}", classes);
+    LOG.info("Create RowCodec for classes {}", classes);
     CompileUnit[] compileUnits =
         classes.stream()
             .map(
@@ -543,7 +543,7 @@ public class Encoders {
 
   private static <B> Class<?> loadOrGenArrayCodecClass(
       TypeToken<? extends Collection> arrayCls, TypeToken<B> elementType) {
-    LOG.debug("Create ArrayCodec for classes {}", elementType);
+    LOG.info("Create ArrayCodec for classes {}", elementType);
     Class<?> cls = getRawType(elementType);
     // class name prefix
     String prefix = TypeInference.inferTypeName(arrayCls);
@@ -560,7 +560,7 @@ public class Encoders {
 
   private static <K, V> Class<?> loadOrGenMapCodecClass(
       TypeToken<? extends Map> mapCls, TypeToken<K> keyToken, TypeToken<V> valueToken) {
-    LOG.debug("Create MapCodec for classes {}, {}", keyToken, valueToken);
+    LOG.info("Create MapCodec for classes {}, {}", keyToken, valueToken);
     boolean keyIsBean = TypeUtils.isBean(keyToken);
     boolean valIsBean = TypeUtils.isBean(valueToken);
     TypeToken<?> beanToken;

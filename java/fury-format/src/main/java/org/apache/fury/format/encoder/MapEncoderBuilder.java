@@ -140,7 +140,7 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
     long startTime = System.nanoTime();
     String code = ctx.genCode();
     long durationMs = (System.nanoTime() - startTime) / 1000_000;
-    LOG.debug("Generate map codec for class {} take {} us", beanClass, durationMs);
+    LOG.info("Generate map codec for class {} take {} us", beanClass, durationMs);
     return code;
   }
 

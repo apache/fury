@@ -143,7 +143,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     long startTime = System.nanoTime();
     String code = ctx.genCode();
     long durationMs = (System.nanoTime() - startTime) / 1000;
-    LOG.debug("Generate codec for class {} take {} us", beanClass, durationMs);
+    LOG.info("Generate codec for class {} take {} us", beanClass, durationMs);
     return code;
   }
 

@@ -48,10 +48,14 @@ public class LoggerFactory {
         return new FuryLogger(clazz);
       }
       if (useSlf4jlogger) {
-        return new Slf4jLogger(clazz);
+        return createSlf4jLogger(clazz);
       } else {
         return new FuryLogger(clazz);
       }
     }
+  }
+
+  private static Logger createSlf4jLogger(Class<?> clazz) {
+    return new Slf4jLogger(clazz);
   }
 }
