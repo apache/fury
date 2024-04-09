@@ -24,7 +24,8 @@ package org.apache.fury.logging;
  * don't big string using this interface. And the format template only support `{}` placeholder. If
  * more sophisticated logger are needed, please config fury to use slf4j by {@link
  * LoggerFactory#useSlf4jLogging} .
- * <p>This logger is used to reduce dependency conflict and reduce jar size.</p>
+ *
+ * <p>This logger is used to reduce dependency conflict and reduce jar size.
  */
 public interface Logger {
   void info(String msg);

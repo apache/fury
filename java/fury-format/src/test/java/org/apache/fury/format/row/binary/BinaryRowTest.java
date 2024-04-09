@@ -104,9 +104,7 @@ public class BinaryRowTest {
       }
     }
     long duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info("Array access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
-    }
+    LOG.info("Array access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
 
     int headerInBytes = 64;
     // warm
@@ -125,9 +123,7 @@ public class BinaryRowTest {
       }
     }
     duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info("Compute access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
-    }
+    LOG.info("Compute access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
   }
 
   @Test

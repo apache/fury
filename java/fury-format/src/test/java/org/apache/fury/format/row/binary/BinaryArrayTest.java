@@ -67,9 +67,7 @@ public class BinaryArrayTest {
       }
     }
     long duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info("access array take " + duration + "ns, " + duration / 1000_000 + " ms\n");
-    }
+    LOG.info("access array take " + duration + "ns, " + duration / 1000_000 + " ms\n");
 
     for (int i = 0; i < iterNums; i++) {
       for (int j = 0; j < length; j++) {
@@ -84,9 +82,7 @@ public class BinaryArrayTest {
       }
     }
     duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info("access BinaryArray take " + duration + "ns, " + duration / 1000_000 + " ms\n");
-    }
+    LOG.info("access BinaryArray take " + duration + "ns, " + duration / 1000_000 + " ms\n");
   }
 
   @Test
