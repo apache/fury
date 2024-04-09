@@ -128,21 +128,21 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
 
   @Override
   public void readToByteBuffer(ByteBuffer dst, int length) {
-    readToByteBuffer0(dst, length);
-  }
-
-  @Override
-  public int readToByteBuffer(ByteBuffer dst) {
-    return readToByteBuffer0(dst, dst.remaining());
-  }
-
-  private int readToByteBuffer0(ByteBuffer dst, int length) {
     MemoryBuffer buf = memoryBuffer;
     int remaining = buf.remaining();
     if (remaining < length) {
       remaining += fillBuffer(length - remaining);
     }
     buf.read(dst, remaining);
+  }
+
+  @Override
+  public int readToByteBuffer(ByteBuffer dst) {
+    MemoryBuffer buf = memoryBuffer;
+    int remaining = buf.remaining();
+    if (remaining > 0) {
+      buf.read(dst, remaining);
+    }
     return remaining;
   }
 
