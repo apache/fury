@@ -43,9 +43,7 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
         directBuffer.isDirect(), "FuryReadableChannel support only direct ByteBuffer.");
     this.channel = channel;
     this.byteBuffer = directBuffer;
-
-    long offHeapAddress = Platform.getAddress(directBuffer) + directBuffer.position();
-    this.memoryBuffer = new MemoryBuffer(offHeapAddress, 0, directBuffer, this);
+    this.memoryBuffer = MemoryBuffer.fromDirectByteBuffer(directBuffer, 0, this);
   }
 
   @Override
@@ -75,26 +73,7 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
 
   @Override
   public int read(ByteBuffer dst) throws IOException {
-    int dstRemaining = dst.remaining();
-    if (dstRemaining <= 0) {
-      return 0;
-    }
-    MemoryBuffer buf = memoryBuffer;
-    int remaining = buf.remaining();
-    if (remaining <= 0) {
-      return -1;
-    }
-    if (remaining >= dstRemaining) {
-      byte[] bytes = buf.readBytes(dstRemaining);
-      dst.put(bytes);
-      return dstRemaining;
-    } else {
-      int filledSize = fillBuffer(dstRemaining - remaining);
-      int length = remaining + filledSize;
-      byte[] bytes = buf.readBytes(length);
-      dst.put(bytes);
-      return length;
-    }
+    return readToByteBuffer0(dst, dst.remaining());
   }
 
   @Override
@@ -128,12 +107,7 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
 
   @Override
   public void readToByteBuffer(ByteBuffer dst, int length) {
-    MemoryBuffer buf = memoryBuffer;
-    int remaining = buf.remaining();
-    if (remaining < length) {
-      remaining += fillBuffer(length - remaining);
-    }
-    buf.read(dst, remaining);
+    readToByteBuffer0(dst, length);
   }
 
   @Override
@@ -143,6 +117,16 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
     if (remaining > 0) {
       buf.read(dst, remaining);
     }
+    return remaining;
+  }
+
+  private int readToByteBuffer0(ByteBuffer dst, int length) {
+    MemoryBuffer buf = memoryBuffer;
+    int remaining = buf.remaining();
+    if (remaining < length) {
+      remaining += fillBuffer(length - remaining);
+    }
+    buf.read(dst, remaining);
     return remaining;
   }
 

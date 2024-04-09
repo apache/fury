@@ -156,7 +156,7 @@ public final class MemoryBuffer {
    *     the memory being released.
    * @param streamReader a reader for reading from a stream.
    */
-  public MemoryBuffer(
+  private MemoryBuffer(
       long offHeapAddress, int size, ByteBuffer offHeapBuffer, FuryStreamReader streamReader) {
     initDirectBuffer(offHeapAddress, size, offHeapBuffer);
     if (streamReader != null) {
@@ -2917,6 +2917,12 @@ public final class MemoryBuffer {
       int offset = buffer.arrayOffset() + buffer.position();
       return new MemoryBuffer(buffer.array(), offset, buffer.remaining());
     }
+  }
+
+  public static MemoryBuffer fromDirectByteBuffer(
+      ByteBuffer buffer, int size, FuryStreamReader streamReader) {
+    long offHeapAddress = Platform.getAddress(buffer) + buffer.position();
+    return new MemoryBuffer(offHeapAddress, size, buffer, streamReader);
   }
 
   /**
