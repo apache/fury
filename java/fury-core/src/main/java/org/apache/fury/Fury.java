@@ -38,6 +38,8 @@ import org.apache.fury.config.Language;
 import org.apache.fury.config.LongEncoding;
 import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.io.FuryInputStream;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassInfo;
@@ -59,11 +61,9 @@ import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.ExceptionUtils;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
-import org.slf4j.Logger;
 
 /**
  * Cross-Lang Data layout: 1byte mask: 1-bit null: 0->null, 1->not null 1-bit endianness: 0->le,

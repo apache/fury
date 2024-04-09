@@ -32,11 +32,11 @@ import org.apache.fury.Fury;
 import org.apache.fury.io.ClassLoaderObjectInputStream;
 import org.apache.fury.io.MemoryBufferObjectInput;
 import org.apache.fury.io.MemoryBufferObjectOutput;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
-import org.slf4j.Logger;
 
 /**
  * Serializes objects using Java's built in serialization to be compatible with java serialization.
