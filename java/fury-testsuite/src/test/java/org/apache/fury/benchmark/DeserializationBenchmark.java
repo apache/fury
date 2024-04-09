@@ -35,11 +35,11 @@ import org.apache.fury.config.Language;
 import org.apache.fury.format.encoder.Encoders;
 import org.apache.fury.format.encoder.RowEncoder;
 import org.apache.fury.format.row.binary.BinaryRow;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.test.bean.Foo;
-import org.apache.fury.util.LoggerFactory;
 import org.nustaq.serialization.FSTConfiguration;
 import org.objenesis.strategy.StdInstantiatorStrategy;
-import org.slf4j.Logger;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 

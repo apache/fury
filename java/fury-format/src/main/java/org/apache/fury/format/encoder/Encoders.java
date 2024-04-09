@@ -41,11 +41,11 @@ import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
 import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.format.type.TypeInference;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * Factory to create {@link Encoder}.

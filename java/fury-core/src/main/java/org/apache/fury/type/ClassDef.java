@@ -42,16 +42,16 @@ import org.apache.fury.builder.MetaSharedCodecBuilder;
 import org.apache.fury.collection.IdentityObjectIntMap;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
-import org.slf4j.Logger;
 
 /**
  * Serializable class definition to be sent to other process. So if sender peer and receiver peer

@@ -20,7 +20,6 @@
 package org.apache.fury.io;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import org.apache.fury.memory.MemoryBuffer;
@@ -43,7 +42,20 @@ public class FuryReadableChannel extends AbstractStreamReader implements Readabl
 
   @Override
   public int read(ByteBuffer dst) throws IOException {
-    throw new UnsupportedEncodingException();
+    MemoryBuffer buf = buffer;
+    int remaining = buf.remaining();
+    int len = dst.remaining();
+    if (remaining >= len) {
+      buf.read(dst, len);
+      return len;
+    } else {
+      try {
+        buf.read(dst, remaining);
+        return channel.read(dst) + remaining;
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   @Override

@@ -32,7 +32,8 @@ import org.apache.fury.benchmark.data.Data;
 import org.apache.fury.benchmark.data.MediaContent;
 import org.apache.fury.benchmark.data.Sample;
 import org.apache.fury.benchmark.data.Struct;
-import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.util.Preconditions;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -45,7 +46,6 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.slf4j.Logger;
 
 @BenchmarkMode(Mode.Throughput)
 @Warmup(iterations = 3)

@@ -22,8 +22,8 @@ package org.apache.fury.collection;
 import java.lang.ref.Reference;
 import java.lang.reflect.Field;
 import java.util.Set;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.testng.annotations.Test;
 
 public class MultiKeyWeakMapTest {

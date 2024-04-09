@@ -27,11 +27,11 @@ import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
 import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
-import org.slf4j.Logger;
 import org.testng.annotations.Test;
 
 public class BinaryRowTest {

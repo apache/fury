@@ -46,13 +46,13 @@ import org.apache.fury.format.row.binary.BinaryUtils;
 import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
 import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.format.type.TypeInference;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
-import org.slf4j.Logger;
 
 /** Expression builder for building jit row encoder class. */
 @SuppressWarnings("UnstableApiUsage")

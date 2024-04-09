@@ -22,8 +22,8 @@ package org.apache.fury.format.row.binary;
 import java.util.Random;
 import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.type.DataTypes;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

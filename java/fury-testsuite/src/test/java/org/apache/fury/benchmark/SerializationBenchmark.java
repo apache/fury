@@ -28,12 +28,12 @@ import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
 import org.apache.fury.format.encoder.Encoders;
 import org.apache.fury.format.encoder.RowEncoder;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.test.bean.Foo;
-import org.apache.fury.util.LoggerFactory;
 import org.nustaq.serialization.FSTConfiguration;
-import org.slf4j.Logger;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
