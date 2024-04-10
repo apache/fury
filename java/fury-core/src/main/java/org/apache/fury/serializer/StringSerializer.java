@@ -211,8 +211,7 @@ public final class StringSerializer extends Serializer<String> {
         if (compressString) {
           return new Invoke(strSerializer, "readCompressedCharsString", STRING_TYPE, buffer);
         } else {
-          Expression chars =
-              new Invoke(buffer, "readCharsAndSize", PRIMITIVE_CHAR_ARRAY_TYPE);
+          Expression chars = new Invoke(buffer, "readCharsAndSize", PRIMITIVE_CHAR_ARRAY_TYPE);
           return new StaticInvoke(
               StringSerializer.class, "newCharsStringZeroCopy", STRING_TYPE, chars);
         }
@@ -224,9 +223,10 @@ public final class StringSerializer extends Serializer<String> {
 
   @CodegenInvoke
   public String readBytesString(MemoryBuffer buffer) {
-    byte coder = buffer.readByte();
-    // may fill heap array, if array not big enough, a new array will be allocated.
-    final int numBytes = buffer.readBinarySize();
+    long header = buffer.readVarUint36Small();
+    byte coder = (byte) (header & 0b11);
+    int numBytes = (int) (header >>> 2);
+    buffer.checkReadableBytes(numBytes);
     byte[] bytes;
     byte[] heapMemory = buffer.getHeapMemory();
     if (heapMemory != null) {
@@ -246,12 +246,22 @@ public final class StringSerializer extends Serializer<String> {
 
   @CodegenInvoke
   public String readCompressedCharsString(MemoryBuffer buffer) {
-    byte coder = buffer.readByte();
+    long header = buffer.readVarUint36Small();
+    byte coder = (byte) (header & 0b11);
+    int numBytes = (int) (header >>> 2);
     if (coder == LATIN1) {
-      return newCharsStringZeroCopy(readLatinChars(buffer));
+      return newCharsStringZeroCopy(readLatinChars(buffer, numBytes));
+    } else if (coder == UTF16) {
+      return newCharsStringZeroCopy(readUTF16Chars(buffer, numBytes));
     } else {
-      return newCharsStringZeroCopy(readUTF16Chars(buffer, coder));
+      return readUtf8(buffer, coder, numBytes);
     }
+  }
+
+  private String readUtf8(MemoryBuffer buffer, byte coder, int numBytes) {
+    Preconditions.checkArgument(coder == UTF8, UTF8);
+    byte[] bytes = buffer.readBytes(numBytes);
+    return new String(bytes, 0, numBytes, StandardCharsets.UTF_8);
   }
 
   private byte[] getByteArray(int numElements) {
@@ -321,23 +331,11 @@ public final class StringSerializer extends Serializer<String> {
     if (STRING_VALUE_FIELD_IS_BYTES) {
       return readBytesString(buffer);
     } else {
-      if (!STRING_VALUE_FIELD_IS_CHARS) {
-        throw new UnsupportedOperationException();
-      }
+      assert STRING_VALUE_FIELD_IS_CHARS;
       if (compressString) {
-        byte coder = buffer.readByte();
-        if (coder == LATIN1) {
-          return newCharsStringZeroCopy(readLatinChars(buffer));
-        } else if (coder == UTF16) {
-          return newCharsStringZeroCopy(readUTF16Chars(buffer, coder));
-        } else {
-          if (coder != UTF8) {
-            throw new UnsupportedOperationException("Unsupported encoding: " + coder);
-          }
-          return readUTF8String(buffer);
-        }
+        return readCompressedCharsString(buffer);
       } else {
-        return newCharsStringZeroCopy(buffer.readChars(buffer.readVarUintSmall()));
+        return newCharsStringZeroCopy(buffer.readCharsAndSize());
       }
     }
   }
@@ -345,7 +343,8 @@ public final class StringSerializer extends Serializer<String> {
   public static void writeBytesString(MemoryBuffer buffer, String value) {
     byte[] bytes = (byte[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
     int bytesLen = bytes.length;
-    long header = ((long) bytesLen << 2) | Platform.getByte(value, Offset.STRING_CODER_FIELD_OFFSET);
+    long header =
+        ((long) bytesLen << 2) | Platform.getByte(value, Offset.STRING_CODER_FIELD_OFFSET);
     int writerIndex = buffer.writerIndex();
     // The `ensure` ensure next operations are safe without bound checks,
     // and inner heap buffer doesn't change.
@@ -411,7 +410,8 @@ public final class StringSerializer extends Serializer<String> {
       writerIndex += MemoryUtils.putVarUint36Small(targetArray, targetIndex, header) + numBytes;
       if (Platform.IS_LITTLE_ENDIAN) {
         // FIXME JDK11 utf16 string uses little-endian order.
-        Platform.UNSAFE.copyMemory(chars, Platform.CHAR_ARRAY_OFFSET, targetArray, targetIndex, strLen);
+        Platform.UNSAFE.copyMemory(
+            chars, Platform.CHAR_ARRAY_OFFSET, targetArray, targetIndex, strLen);
       } else {
         heapWriteCharsUTF16BE(chars, targetIndex, numBytes, targetArray);
       }
@@ -421,7 +421,8 @@ public final class StringSerializer extends Serializer<String> {
     buffer.unsafeWriterIndex(writerIndex);
   }
 
-  private static void heapWriteCharsUTF16BE(char[] chars, int arrIndex, int numBytes, byte[] targetArray) {
+  private static void heapWriteCharsUTF16BE(
+      char[] chars, int arrIndex, int numBytes, byte[] targetArray) {
     // Write to heap memory then copy is 250% faster than unsafe write to direct memory.
     int charIndex = 0;
     for (int i = arrIndex, end = i + numBytes; i < end; i += 2) {
@@ -432,8 +433,7 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   private int offHeapWriteCharsUTF16(
-    MemoryBuffer buffer, char[] chars, int strLen,
-    int writerIndex, long header, int numBytes) {
+      MemoryBuffer buffer, char[] chars, int strLen, int writerIndex, long header, int numBytes) {
     writerIndex += buffer.unsafePutVarUint36Small(writerIndex, header);
     byte[] tmpArray = getByteArray(strLen);
     int charIndex = 0;
@@ -447,8 +447,7 @@ public final class StringSerializer extends Serializer<String> {
     return writerIndex;
   }
 
-  private char[] readLatinChars(MemoryBuffer buffer) {
-    final int numBytes = buffer.readVarUintSmall();
+  private char[] readLatinChars(MemoryBuffer buffer, int numBytes) {
     char[] chars = new char[numBytes];
     buffer.checkReadableBytes(numBytes);
     byte[] targetArray = buffer.getHeapMemory();
@@ -468,11 +467,7 @@ public final class StringSerializer extends Serializer<String> {
     return chars;
   }
 
-  private char[] readUTF16Chars(MemoryBuffer buffer, byte coder) {
-    if (coder != UTF16) {
-      throw new UnsupportedOperationException(String.format("Unsupported coder %s", coder));
-    }
-    int numBytes = buffer.readVarUintSmall();
+  private char[] readUTF16Chars(MemoryBuffer buffer, int numBytes) {
     char[] chars = new char[numBytes >> 1];
     if (Platform.IS_LITTLE_ENDIAN) {
       // FIXME JDK11 utf16 string uses little-endian order.

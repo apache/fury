@@ -381,10 +381,10 @@ public class StringSerializerTest extends FuryTestBase {
       StringSerializer serializer = new StringSerializer(fury);
       serializer.write(buffer, "abc你好");
       assertEquals(serializer.read(buffer), "abc你好");
+      byte[] bytes = "abc你好".getBytes(StandardCharsets.UTF_8);
       byte UTF8 = 2;
-      buffer.writeByte(UTF8);
-      buffer.writePositiveVarInt("abc你好".getBytes(StandardCharsets.UTF_8).length);
-      buffer.writeBytes("abc你好".getBytes(StandardCharsets.UTF_8));
+      buffer.writePositiveVarLong(((long) bytes.length) << 2 | UTF8);
+      buffer.writeBytes(bytes);
       assertEquals(serializer.read(buffer), "abc你好");
       assertEquals(buffer.readerIndex(), buffer.writerIndex());
     }

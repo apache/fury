@@ -246,15 +246,16 @@ public class Serializers {
       if (GET_CODER != null) {
         int coder = GET_CODER.applyAsInt(value);
         byte[] v = (byte[]) GET_VALUE.apply(value);
-        buffer.writeByte(coder);
-        if (coder == 0) {
-          buffer.writePrimitiveArrayWithSize(v, Platform.BYTE_ARRAY_OFFSET, value.length());
-        } else {
+        int bytesLen = value.length();
+        if (coder != 0) {
           if (coder != 1) {
             throw new UnsupportedOperationException("Unsupported coder " + coder);
           }
-          buffer.writePrimitiveArrayWithSize(v, Platform.BYTE_ARRAY_OFFSET, value.length() << 1);
+          bytesLen <<= 1;
         }
+        long header = ((long) bytesLen << 2) | coder;
+        buffer.writePositiveVarLong(header);
+        buffer.writeBytes(v, 0, bytesLen);
       } else {
         char[] v = (char[]) GET_VALUE.apply(value);
         if (StringSerializer.isLatin(v)) {
