@@ -21,10 +21,13 @@ package org.apache.fury.io;
 
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import org.apache.fury.memory.MemoryBuffer;
 
 /** A streaming reader to make {@link MemoryBuffer} to support streaming reading. */
 public interface FuryStreamReader {
+  int BUFFER_GROW_STEP_THRESHOLD = 100 * 1024 * 1024;
+
   /**
    * Read stream and fill the data to underlying {@link MemoryBuffer}, which is also the buffer
    * returned by {@link #getBuffer}.
@@ -62,5 +65,15 @@ public interface FuryStreamReader {
    */
   static FuryInputStream of(InputStream stream) {
     return new FuryInputStream(stream);
+  }
+
+  /**
+   * Create a {@link FuryReadableChannel} from the provided {@link SeekableByteChannel}. Note that
+   * the provided channel will be owned by the returned {@link FuryReadableChannel}, <bold>do
+   * not</bold> read the provided {@link SeekableByteChannel} anymore, read the returned stream
+   * instead.
+   */
+  static FuryReadableChannel of(SeekableByteChannel channel) {
+    return new FuryReadableChannel(channel);
   }
 }

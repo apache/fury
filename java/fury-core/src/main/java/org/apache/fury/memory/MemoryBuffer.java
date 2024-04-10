@@ -158,6 +158,15 @@ public final class MemoryBuffer {
    */
   private MemoryBuffer(
       long offHeapAddress, int size, ByteBuffer offHeapBuffer, FuryStreamReader streamReader) {
+    initDirectBuffer(offHeapAddress, size, offHeapBuffer);
+    if (streamReader != null) {
+      this.streamReader = streamReader;
+    } else {
+      this.streamReader = new BoundChecker();
+    }
+  }
+
+  public void initDirectBuffer(long offHeapAddress, int size, ByteBuffer offHeapBuffer) {
     this.offHeapBuffer = offHeapBuffer;
     if (offHeapAddress <= 0) {
       throw new IllegalArgumentException("negative pointer or size");
@@ -175,11 +184,6 @@ public final class MemoryBuffer {
     this.address = offHeapAddress;
     this.addressLimit = this.address + size;
     this.size = size;
-    if (streamReader != null) {
-      this.streamReader = streamReader;
-    } else {
-      this.streamReader = new BoundChecker();
-    }
   }
 
   private class BoundChecker extends AbstractStreamReader {
@@ -2913,6 +2917,12 @@ public final class MemoryBuffer {
       int offset = buffer.arrayOffset() + buffer.position();
       return new MemoryBuffer(buffer.array(), offset, buffer.remaining());
     }
+  }
+
+  public static MemoryBuffer fromDirectByteBuffer(
+      ByteBuffer buffer, int size, FuryStreamReader streamReader) {
+    long offHeapAddress = Platform.getAddress(buffer) + buffer.position();
+    return new MemoryBuffer(offHeapAddress, size, buffer, streamReader);
   }
 
   /**
