@@ -195,10 +195,6 @@ export type InputType<T> = T extends {
                     }
                       ? number
                       : T extends {
-                        type: InternalSerializerType.BINARY;
-                      }
-                        ? Uint8Array
-                        : T extends {
                           type: InternalSerializerType.ANY;
                         }
                           ? any
@@ -263,10 +259,6 @@ export type ResultType<T> = T extends {
                     }
                       ? number
                       : T extends {
-                        type: InternalSerializerType.BINARY;
-                      }
-                        ? Uint8Array
-                        : T extends {
                           type: InternalSerializerType.ANY;
                         }
                           ? any
@@ -397,11 +389,6 @@ export const Type = {
   float64() {
     return {
       type: InternalSerializerType.FLOAT64 as const,
-    };
-  },
-  binary() {
-    return {
-      type: InternalSerializerType.BINARY as const,
     };
   },
   duration() {

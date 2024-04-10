@@ -25,7 +25,6 @@ import { Scope } from "./scope";
 import "./array";
 import "./object";
 import "./string";
-import "./binary";
 import "./bool";
 import "./datetime";
 import "./map";

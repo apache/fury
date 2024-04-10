@@ -47,7 +47,7 @@ describe('tuple', () => {
       false,
       2333,
       [
-        Buffer.alloc(10)
+        "hello"
       ]
     ]
   };
@@ -71,7 +71,7 @@ describe('tuple', () => {
         false,
         2333,
         [
-          Buffer.alloc(10)
+          "hello"
         ],
         1234,
         12345,

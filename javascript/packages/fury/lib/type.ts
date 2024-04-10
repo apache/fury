@@ -53,7 +53,6 @@ export enum InternalSerializerType {
   FLOAT16_ARRAY,
   FLOAT32_ARRAY,
   FLOAT64_ARRAY,
-  BINARY,
   OBJECT,
 
   // alias type, only use by javascript

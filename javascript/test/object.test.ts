@@ -89,7 +89,6 @@ describe('object', () => {
         c: Type.bool(),
         d: Type.int32(),
         e: Type.int64(),
-        f: Type.binary(),
       }))
     })
     
@@ -100,7 +99,7 @@ describe('object', () => {
       input
     );
     result.a.forEach(x => x.e = Number(x.e))
-    expect(result).toEqual({ a: [{ b: "hel", c: true, d: 123, e: 123, f: Buffer.from([1,2,3]) }] })
+    expect(result).toEqual({ a: [{ b: "hel", c: true, d: 123, e: 123 }] })
   });
 
   test('should write tag and read tag work', () => {

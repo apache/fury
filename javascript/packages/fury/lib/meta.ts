@@ -85,12 +85,6 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         needToWriteRef: Boolean(fury.config.refTracking) && false,
         type,
       };
-    case InternalSerializerType.BINARY:
-      return {
-        fixedSize: 8,
-        needToWriteRef: Boolean(fury.config.refTracking) && true,
-        type,
-      };
     case InternalSerializerType.DURATION:
       return {
         fixedSize: 7,

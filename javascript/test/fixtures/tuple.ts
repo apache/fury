@@ -55,7 +55,7 @@ export const tupleType3 = Type.tuple([
   Type.bool(),
   Type.int32(),
   Type.tuple([
-    Type.binary()
+    Type.string()
   ])
 ])
 

@@ -85,9 +85,6 @@ describe('fury', () => {
             const description6 = Type.float64()
             testDescription(description6, 123.456789)
 
-            const description7 = Type.binary()
-            testDescription(description7, new Uint8Array([1, 2, 3]), fromUint8Array(new Uint8Array([1, 2, 3])));
-
             const description8 = Type.string()
             testDescription(description8, '123')
 
