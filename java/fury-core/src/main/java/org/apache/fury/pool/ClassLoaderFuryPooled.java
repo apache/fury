@@ -30,8 +30,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.fury.Fury;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 
 /** A thread-safe object pool of {@link Fury}. */
 public class ClassLoaderFuryPooled {

@@ -33,8 +33,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.util.unsafe.DefineClass;
-import org.slf4j.Logger;
 
 /** ClassLoader utility for defining class and loading class by strategies. */
 public class ClassLoaderUtils {
@@ -256,7 +257,6 @@ public class ClassLoaderUtils {
       }
       return DefineClass.defineClass(className, neighbor, classLoader, domain, bytecode);
     } catch (Exception | LinkageError e) {
-      LOG.debug("Unable define class {} in classloader {}.", className, classLoader, e);
       return null;
     }
   }

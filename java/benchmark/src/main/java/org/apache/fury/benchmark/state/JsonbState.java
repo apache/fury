@@ -39,7 +39,8 @@ import org.apache.fury.benchmark.data.CustomJDKSerialization;
 import org.apache.fury.benchmark.data.MediaContent;
 import org.apache.fury.benchmark.data.Sample;
 import org.apache.fury.benchmark.data.Struct;
-import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -52,7 +53,6 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import org.slf4j.Logger;
 
 @Warmup(iterations = 3)
 @Measurement(iterations = 3)
@@ -85,7 +85,7 @@ public class JsonbState {
     @Override
     public void setup() {
       super.setup();
-      switch (objectType) {
+      switch (ObjectType.MEDIA_CONTENT) {
         case SAMPLE:
           object = new Sample().populate(references);
           break;

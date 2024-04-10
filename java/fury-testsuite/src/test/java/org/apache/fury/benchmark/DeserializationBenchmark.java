@@ -35,11 +35,11 @@ import org.apache.fury.config.Language;
 import org.apache.fury.format.encoder.Encoders;
 import org.apache.fury.format.encoder.RowEncoder;
 import org.apache.fury.format.row.binary.BinaryRow;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.test.bean.Foo;
-import org.apache.fury.util.LoggerFactory;
 import org.nustaq.serialization.FSTConfiguration;
 import org.objenesis.strategy.StdInstantiatorStrategy;
-import org.slf4j.Logger;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -52,9 +52,7 @@ public class DeserializationBenchmark {
   public void setArrSize() {
     int defaultIterNums = 20000000;
     iterNums = Integer.parseInt(System.getProperty("iterNums", String.valueOf(defaultIterNums)));
-    if (LOG.isInfoEnabled()) {
-      LOG.info("iterNums: " + iterNums);
-    }
+    LOG.info("iterNums: " + iterNums);
   }
 
   // mvn test -Dtest=org.apache.fury.benchmark.DeserializationBenchmark#deserializationBenchmark
@@ -90,18 +88,16 @@ public class DeserializationBenchmark {
       encoder.fromRow(row);
     }
     long duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info(
-          "encoder decode\t take "
-              + duration
-              + " ns, "
-              + duration / 1000_000
-              + "ms. "
-              + (double) duration / iterNums
-              + "/ns, "
-              + (double) duration / iterNums / 1000_000
-              + "/ms\n");
-    }
+    LOG.info(
+        "encoder decode\t take "
+            + duration
+            + " ns, "
+            + duration / 1000_000
+            + "ms. "
+            + (double) duration / iterNums
+            + "/ns, "
+            + (double) duration / iterNums / 1000_000
+            + "/ms\n");
   }
 
   private void testFury(Object obj) {
@@ -125,18 +121,16 @@ public class DeserializationBenchmark {
       fury.deserialize(serializedBytes);
     }
     long duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info(
-          "fury decode\t take "
-              + duration
-              + " ns, "
-              + duration / 1000_000
-              + "ms. "
-              + (double) duration / iterNums
-              + "/ns, "
-              + (double) duration / iterNums / 1000_000
-              + "/ms\n");
-    }
+    LOG.info(
+        "fury decode\t take "
+            + duration
+            + " ns, "
+            + duration / 1000_000
+            + "ms. "
+            + (double) duration / iterNums
+            + "/ns, "
+            + (double) duration / iterNums / 1000_000
+            + "/ms\n");
   }
 
   private void testFst(Object obj) {
@@ -158,18 +152,16 @@ public class DeserializationBenchmark {
     }
     System.out.println(newObj);
     long duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info(
-          "fst\t take "
-              + duration
-              + " ns, "
-              + duration / 1000_000
-              + "ms. "
-              + (double) duration / iterNums
-              + "/ns, "
-              + (double) duration / iterNums / 1000_000
-              + "/ms\n");
-    }
+    LOG.info(
+        "fst\t take "
+            + duration
+            + " ns, "
+            + duration / 1000_000
+            + "ms. "
+            + (double) duration / iterNums
+            + "/ns, "
+            + (double) duration / iterNums / 1000_000
+            + "/ms\n");
   }
 
   private void testKryo(Object obj) {
@@ -193,18 +185,16 @@ public class DeserializationBenchmark {
     }
     System.out.println(newObj);
     long duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info(
-          "kryo decode\t take "
-              + duration
-              + " ns, "
-              + duration / 1000_000
-              + "ms. "
-              + (double) duration / iterNums
-              + "/ns, "
-              + (double) duration / iterNums / 1000_000
-              + "/ms\n");
-    }
+    LOG.info(
+        "kryo decode\t take "
+            + duration
+            + " ns, "
+            + duration / 1000_000
+            + "ms. "
+            + (double) duration / iterNums
+            + "/ns, "
+            + (double) duration / iterNums / 1000_000
+            + "/ms\n");
   }
 
   private void testJDK(Object data) throws Exception {
@@ -237,18 +227,16 @@ public class DeserializationBenchmark {
     }
     System.out.println(System.identityHashCode(((ArrayList) newObj).get(1)));
     long duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info(
-          "jdk\t {} take "
-              + duration
-              + " ns, "
-              + duration / 1000_000
-              + "ms. "
-              + (double) duration / iterNums
-              + "/ns, "
-              + (double) duration / iterNums / 1000_000
-              + "/ms\n",
-          bas.size());
-    }
+    LOG.info(
+        "jdk\t {} take "
+            + duration
+            + " ns, "
+            + duration / 1000_000
+            + "ms. "
+            + (double) duration / iterNums
+            + "/ns, "
+            + (double) duration / iterNums / 1000_000
+            + "/ms\n",
+        bas.size());
   }
 }

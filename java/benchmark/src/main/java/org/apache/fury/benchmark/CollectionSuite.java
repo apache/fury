@@ -22,10 +22,10 @@ package org.apache.fury.benchmark;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.fury.Fury;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Test suite for collection. */
 public class CollectionSuite {

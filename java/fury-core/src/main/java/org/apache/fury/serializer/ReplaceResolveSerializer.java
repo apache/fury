@@ -28,16 +28,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import org.apache.fury.Fury;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.unsafe._JDKAccess;
-import org.slf4j.Logger;
 
 /**
  * Serializer for class which has jdk `writeReplace`/`readResolve` method defined. This serializer
