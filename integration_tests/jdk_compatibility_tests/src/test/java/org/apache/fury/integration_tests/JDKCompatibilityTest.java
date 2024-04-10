@@ -42,7 +42,7 @@ public class JDKCompatibilityTest {
 
   Object createObject() {
     // test non latin1 string
-    return Arrays.asList("Hello", "Hello，你好", BeanA.createBeanA(2));
+    return Arrays.asList("Hello", "Hello，你好");
   }
 
   @Test

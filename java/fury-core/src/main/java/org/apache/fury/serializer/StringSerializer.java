@@ -376,10 +376,10 @@ public final class StringSerializer extends Serializer<String> {
     long header = ((long) strLen << 2) | LATIN1;
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
-      final int targetIndex = buffer.unsafeHeapWriterIndex();
-      int arrIndex = targetIndex;
-      arrIndex += MemoryUtils.putVarUint36Small(targetArray, arrIndex, header);
-      writerIndex += arrIndex - targetIndex + strLen;
+      int arrIndex = buffer.unsafeHeapWriterIndex();
+      int written = MemoryUtils.putVarUint36Small(targetArray, arrIndex, header);
+      arrIndex += written;
+      writerIndex += written + strLen;
       for (int i = 0; i < strLen; i++) {
         targetArray[arrIndex + i] = (byte) chars[i];
       }
@@ -399,24 +399,30 @@ public final class StringSerializer extends Serializer<String> {
 
   public void writeCharsUTF16(MemoryBuffer buffer, char[] chars, int strLen) {
     int numBytes = MathUtils.doubleExact(strLen);
-    long header = ((long) numBytes << 2) | LATIN1;
+    long header = ((long) numBytes << 2) | UTF16;
     // The `ensure` ensure next operations are safe without bound checks,
     // and inner heap buffer doesn't change.
     int writerIndex = buffer.writerIndex();
     buffer.ensure(writerIndex + 9 + numBytes);
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
-      final int targetIndex = buffer.unsafeHeapWriterIndex();
-      writerIndex += MemoryUtils.putVarUint36Small(targetArray, targetIndex, header) + numBytes;
+      int arrIndex = buffer.unsafeHeapWriterIndex();
+      int written = MemoryUtils.putVarUint36Small(targetArray, arrIndex, header);
+      arrIndex += written;
+      writerIndex += written + numBytes;
       if (Platform.IS_LITTLE_ENDIAN) {
         // FIXME JDK11 utf16 string uses little-endian order.
         Platform.UNSAFE.copyMemory(
-            chars, Platform.CHAR_ARRAY_OFFSET, targetArray, targetIndex, strLen);
+            chars,
+            Platform.CHAR_ARRAY_OFFSET,
+            targetArray,
+            Platform.BYTE_ARRAY_OFFSET + arrIndex,
+            numBytes);
       } else {
-        heapWriteCharsUTF16BE(chars, targetIndex, numBytes, targetArray);
+        heapWriteCharsUTF16BE(chars, arrIndex, numBytes, targetArray);
       }
     } else {
-      writerIndex = offHeapWriteCharsUTF16(buffer, chars, strLen, writerIndex, header, numBytes);
+      writerIndex = offHeapWriteCharsUTF16(buffer, chars, writerIndex, header, numBytes);
     }
     buffer.unsafeWriterIndex(writerIndex);
   }
@@ -433,9 +439,9 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   private int offHeapWriteCharsUTF16(
-      MemoryBuffer buffer, char[] chars, int strLen, int writerIndex, long header, int numBytes) {
+      MemoryBuffer buffer, char[] chars, int writerIndex, long header, int numBytes) {
     writerIndex += buffer.unsafePutVarUint36Small(writerIndex, header);
-    byte[] tmpArray = getByteArray(strLen);
+    byte[] tmpArray = getByteArray(numBytes);
     int charIndex = 0;
     for (int i = 0; i < numBytes; i += 2) {
       char c = chars[charIndex++];
