@@ -1248,7 +1248,7 @@ public final class MemoryBuffer {
    * to avoid using two memory operations.
    */
   public int unsafeWritePositiveVarInt(int v) {
-    int varintBytes = unsafePutPositiveVarInt(writerIndex, v);
+    int varintBytes = unsafePutVarUint36Small(writerIndex, v);
     writerIndex += varintBytes;
     return varintBytes;
   }
@@ -1256,43 +1256,43 @@ public final class MemoryBuffer {
   /**
    * Caller must ensure there must be at least 8 bytes for writing, otherwise the crash may occur.
    */
-  public int unsafePutPositiveVarInt(int index, int v) {
-    // The encoding algorithm are based on kryo UnsafeMemoryOutput.writeVarInt
-    // varint are written using little endian byte order.
-    // This version should have better performance since it remove an index update.
-    long value = v;
-    long varInt = (value & 0x7F);
+  public int unsafePutVarUint36Small(int index, long value) {
+    long encoded = (value & 0x7F);
     value >>>= 7;
     if (value == 0) {
-      UNSAFE.putByte(heapMemory, address + index, (byte) varInt);
+      UNSAFE.putByte(heapMemory, address + index, (byte) encoded);
       return 1;
     }
     // bit 8 `set` indicates have next data bytes.
-    varInt |= 0x80;
-    varInt |= ((value & 0x7F) << 8);
+    encoded |= 0x80;
+    encoded |= ((value & 0x7F) << 8);
     value >>>= 7;
     if (value == 0) {
-      unsafePutInt(index, (int) varInt);
+      unsafePutInt(index, (int) encoded);
       return 2;
     }
-    varInt |= (0x80 << 8);
-    varInt |= ((value & 0x7F) << 16);
+    return continuePutVarInt36(index, encoded, value);
+  }
+
+  private int continuePutVarInt36(int index, long encoded, long value) {
+    encoded |= (0x80 << 8);
+    encoded |= ((value & 0x7F) << 16);
     value >>>= 7;
     if (value == 0) {
-      unsafePutInt(index, (int) varInt);
+      unsafePutInt(index, (int) encoded);
       return 3;
     }
-    varInt |= (0x80 << 16);
-    varInt |= ((value & 0x7F) << 24);
+    encoded |= (0x80 << 16);
+    encoded |= ((value & 0x7F) << 24);
     value >>>= 7;
     if (value == 0) {
-      unsafePutInt(index, (int) varInt);
+      unsafePutInt(index, (int) encoded);
       return 4;
     }
-    varInt |= (0x80L << 24);
-    varInt |= ((value & 0x7F) << 32);
-    varInt &= 0xFFFFFFFFFL;
-    unsafePutLong(index, varInt);
+    encoded |= (0x80L << 24);
+    encoded |= ((value & 0x7F) << 32);
+    encoded &= 0xFFFFFFFFFL;
+    unsafePutLong(index, encoded);
     return 5;
   }
 
@@ -1761,6 +1761,8 @@ public final class MemoryBuffer {
     this.writerIndex = writerIndex + 9;
     return 9;
   }
+
+
 
   /** Reads the 1-9 byte int part of a var long. */
   public long readVarLong() {

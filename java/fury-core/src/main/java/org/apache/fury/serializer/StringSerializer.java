@@ -275,9 +275,7 @@ public final class StringSerializer extends Serializer<String> {
     if (STRING_VALUE_FIELD_IS_BYTES) {
       writeBytesString(buffer, value);
     } else {
-      if (!STRING_VALUE_FIELD_IS_CHARS) {
-        throw new UnsupportedOperationException();
-      }
+      assert STRING_VALUE_FIELD_IS_CHARS;
       final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
       if (compressString) {
         if (isLatin(chars)) {
@@ -346,8 +344,8 @@ public final class StringSerializer extends Serializer<String> {
 
   public static void writeBytesString(MemoryBuffer buffer, String value) {
     byte[] bytes = (byte[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    byte coder = Platform.getByte(value, Offset.STRING_CODER_FIELD_OFFSET);
     int bytesLen = bytes.length;
+    long header = ((long) bytesLen << 2) | Platform.getByte(value, Offset.STRING_CODER_FIELD_OFFSET);
     int writerIndex = buffer.writerIndex();
     // The `ensure` ensure next operations are safe without bound checks,
     // and inner heap buffer doesn't change.
@@ -358,19 +356,16 @@ public final class StringSerializer extends Serializer<String> {
       // jvm doesn't eliminate well in some jdk.
       final int targetIndex = buffer.unsafeHeapWriterIndex();
       int arrIndex = targetIndex;
-      targetArray[arrIndex++] = coder;
-      arrIndex += MemoryUtils.writePositiveVarInt(targetArray, arrIndex, bytesLen);
+      arrIndex += MemoryUtils.putVarUint36Small(targetArray, arrIndex, header);
       writerIndex += arrIndex - targetIndex;
       System.arraycopy(bytes, 0, targetArray, arrIndex, bytesLen);
-      writerIndex += bytesLen;
     } else {
-      buffer.unsafePut(writerIndex++, coder);
-      writerIndex += buffer.unsafePutPositiveVarInt(writerIndex, bytesLen);
+      writerIndex += buffer.unsafePutVarUint36Small(writerIndex, header);
       long offHeapAddress = buffer.getUnsafeAddress();
       Platform.copyMemory(
           bytes, Platform.BYTE_ARRAY_OFFSET, null, offHeapAddress + writerIndex, bytesLen);
-      writerIndex += bytesLen;
     }
+    writerIndex += bytesLen;
     buffer.unsafeWriterIndex(writerIndex);
   }
 
@@ -379,20 +374,19 @@ public final class StringSerializer extends Serializer<String> {
     // The `ensure` ensure next operations are safe without bound checks,
     // and inner heap buffer doesn't change.
     buffer.ensure(writerIndex + 9 + strLen);
+    long header = ((long) strLen << 2) | LATIN1;
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       final int targetIndex = buffer.unsafeHeapWriterIndex();
       int arrIndex = targetIndex;
-      targetArray[arrIndex++] = LATIN1;
-      arrIndex += MemoryUtils.writePositiveVarInt(targetArray, arrIndex, strLen);
+      arrIndex += MemoryUtils.putVarUint36Small(targetArray, arrIndex, header);
       writerIndex += arrIndex - targetIndex + strLen;
       for (int i = 0; i < strLen; i++) {
         targetArray[arrIndex + i] = (byte) chars[i];
       }
       buffer.unsafeWriterIndex(writerIndex);
     } else {
-      buffer.unsafePut(writerIndex++, LATIN1);
-      writerIndex += buffer.unsafePutPositiveVarInt(writerIndex, strLen);
+      writerIndex += buffer.unsafePutVarUint36Small(writerIndex, header);
       final byte[] tmpArray = getByteArray(strLen);
       // Write to heap memory then copy is 60% faster than unsafe write to direct memory.
       for (int i = 0; i < strLen; i++) {
@@ -406,44 +400,51 @@ public final class StringSerializer extends Serializer<String> {
 
   public void writeCharsUTF16(MemoryBuffer buffer, char[] chars, int strLen) {
     int numBytes = MathUtils.doubleExact(strLen);
-    if (Platform.IS_LITTLE_ENDIAN) {
-      buffer.writeByte(UTF16);
-      // FIXME JDK11 utf16 string uses little-endian order.
-      buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
-    } else {
-      // The `ensure` ensure next operations are safe without bound checks,
-      // and inner heap buffer doesn't change.
-      int writerIndex = buffer.writerIndex();
-      buffer.ensure(writerIndex + 9 + numBytes);
-      byte[] targetArray = buffer.getHeapMemory();
-      if (targetArray != null) {
-        final int targetIndex = buffer.unsafeHeapWriterIndex();
-        int arrIndex = targetIndex;
-        targetArray[arrIndex++] = UTF16;
-        arrIndex += MemoryUtils.writePositiveVarInt(targetArray, arrIndex, strLen);
-        // Write to heap memory then copy is 250% faster than unsafe write to direct memory.
-        int charIndex = 0;
-        for (int i = arrIndex, end = i + numBytes; i < end; i += 2) {
-          char c = chars[charIndex++];
-          targetArray[i] = (byte) (c >> StringUTF16.HI_BYTE_SHIFT);
-          targetArray[i + 1] = (byte) (c >> StringUTF16.LO_BYTE_SHIFT);
-        }
-        writerIndex += arrIndex - targetIndex + numBytes;
+    long header = ((long) numBytes << 2) | LATIN1;
+    // The `ensure` ensure next operations are safe without bound checks,
+    // and inner heap buffer doesn't change.
+    int writerIndex = buffer.writerIndex();
+    buffer.ensure(writerIndex + 9 + numBytes);
+    byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      final int targetIndex = buffer.unsafeHeapWriterIndex();
+      writerIndex += MemoryUtils.putVarUint36Small(targetArray, targetIndex, header) + numBytes;
+      if (Platform.IS_LITTLE_ENDIAN) {
+        // FIXME JDK11 utf16 string uses little-endian order.
+        Platform.UNSAFE.copyMemory(chars, Platform.CHAR_ARRAY_OFFSET, targetArray, targetIndex, strLen);
       } else {
-        buffer.unsafePut(writerIndex++, UTF16);
-        writerIndex += buffer.unsafePutPositiveVarInt(writerIndex, numBytes);
-        byte[] tmpArray = getByteArray(strLen);
-        int charIndex = 0;
-        for (int i = 0; i < numBytes; i += 2) {
-          char c = chars[charIndex++];
-          tmpArray[i] = (byte) (c >> StringUTF16.HI_BYTE_SHIFT);
-          tmpArray[i + 1] = (byte) (c >> StringUTF16.LO_BYTE_SHIFT);
-        }
-        buffer.put(writerIndex, tmpArray, 0, numBytes);
-        writerIndex += numBytes;
+        heapWriteCharsUTF16BE(chars, targetIndex, numBytes, targetArray);
       }
-      buffer.unsafeWriterIndex(writerIndex);
+    } else {
+      writerIndex = offHeapWriteCharsUTF16(buffer, chars, strLen, writerIndex, header, numBytes);
     }
+    buffer.unsafeWriterIndex(writerIndex);
+  }
+
+  private static void heapWriteCharsUTF16BE(char[] chars, int arrIndex, int numBytes, byte[] targetArray) {
+    // Write to heap memory then copy is 250% faster than unsafe write to direct memory.
+    int charIndex = 0;
+    for (int i = arrIndex, end = i + numBytes; i < end; i += 2) {
+      char c = chars[charIndex++];
+      targetArray[i] = (byte) (c >> StringUTF16.HI_BYTE_SHIFT);
+      targetArray[i + 1] = (byte) (c >> StringUTF16.LO_BYTE_SHIFT);
+    }
+  }
+
+  private int offHeapWriteCharsUTF16(
+    MemoryBuffer buffer, char[] chars, int strLen,
+    int writerIndex, long header, int numBytes) {
+    writerIndex += buffer.unsafePutVarUint36Small(writerIndex, header);
+    byte[] tmpArray = getByteArray(strLen);
+    int charIndex = 0;
+    for (int i = 0; i < numBytes; i += 2) {
+      char c = chars[charIndex++];
+      tmpArray[i] = (byte) (c >> StringUTF16.HI_BYTE_SHIFT);
+      tmpArray[i + 1] = (byte) (c >> StringUTF16.LO_BYTE_SHIFT);
+    }
+    buffer.put(writerIndex, tmpArray, 0, numBytes);
+    writerIndex += numBytes;
+    return writerIndex;
   }
 
   private char[] readLatinChars(MemoryBuffer buffer) {
