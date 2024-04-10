@@ -48,11 +48,18 @@ Note:
 | arrow record batch | 32      | /               | /                    | /               | /                              | /                | /                |
 | arrow table        | 33      | /               | /                    | /               | /                              | /                | /                |
 
-# Type annotation(not implemented)
+# Type info(not implemented currently)
 
-Due to differences between type systems of languages, those types can't be mapped one-to-one between languages. Users
-can provide meta hints for fields of a type, or for the whole type. Such information can be provided in other languages
-too:
+Due to differences between type systems of languages, those types can't be mapped one-to-one between languages.
+
+If a user sees one type has multiple fury types, for example, `long` in java has type `int64/varint64/sliint64`, it
+means
+the language lacks some types, and the user must provide extra type info when using Fury.
+
+## Type annotation
+
+If the type is a field of another class, users can provide meta hints for fields of a type, or for the whole type.
+Such information can be provided in other languages too:
 
 - java: use annotation.
 - cpp: use macro and template.
@@ -78,3 +85,9 @@ Here is en example:
         f2: List[Int32Type(varint=True)]
     ```
 
+## Type wrapper
+
+If the type is not a field of a class, the user must wrap this type with a Fury type to pass the extra type info.
+
+For example, suppose Fury Java provide a `VarInt64` type, when a user invoke `fury.serialize(long_value)`, he need to
+invoke like `fury.serialize(new VarInt64(long_value))`.
