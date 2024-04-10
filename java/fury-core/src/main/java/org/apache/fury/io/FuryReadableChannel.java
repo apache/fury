@@ -73,7 +73,16 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
 
   @Override
   public int read(ByteBuffer dst) throws IOException {
-    return readToByteBuffer0(dst, dst.remaining());
+    int length = dst.remaining();
+    MemoryBuffer buf = memoryBuffer;
+    int remaining = buf.remaining();
+    if (remaining >= length) {
+      buf.read(dst, length);
+      return length;
+    } else {
+      buf.read(dst, remaining);
+      return channel.read(dst) + remaining;
+    }
   }
 
   @Override
@@ -107,7 +116,26 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
 
   @Override
   public void readToByteBuffer(ByteBuffer dst, int length) {
-    readToByteBuffer0(dst, length);
+    MemoryBuffer buf = memoryBuffer;
+    int remaining = buf.remaining();
+    if (remaining >= length) {
+      buf.read(dst, length);
+    } else {
+      buf.read(dst, remaining);
+      try {
+        int dstLimit = dst.limit();
+        int newLimit = dst.position() + length - remaining;
+        if (dstLimit > newLimit) {
+          dst.limit(newLimit);
+          channel.read(dst);
+          dst.limit(dstLimit);
+        } else {
+          channel.read(dst);
+        }
+      } catch (IOException e) {
+        throw new DeserializationException("Failed to read the provided byte channel", e);
+      }
+    }
   }
 
   @Override
@@ -117,17 +145,11 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
     if (remaining > 0) {
       buf.read(dst, remaining);
     }
-    return remaining;
-  }
-
-  private int readToByteBuffer0(ByteBuffer dst, int length) {
-    MemoryBuffer buf = memoryBuffer;
-    int remaining = buf.remaining();
-    if (remaining < length) {
-      remaining += fillBuffer(length - remaining);
+    try {
+      return channel.read(dst) + remaining;
+    } catch (IOException e) {
+      throw new DeserializationException("Failed to read the provided byte channel", e);
     }
-    buf.read(dst, remaining);
-    return remaining;
   }
 
   @Override
