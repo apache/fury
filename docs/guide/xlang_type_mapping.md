@@ -33,7 +33,7 @@ Note:
 | duration           | 17      | Duration        | timedelta            | Number          | duration                       | Duration         | Duration         |
 | timestamp          | 18      | Instant         | datetime             | Number          | std::chrono::nanoseconds       | Time             | DateTime         |
 | decimal            | 19      | BigDecimal      | Decimal              | bigint          | /                              | /                | /                |
-| binary             | 20      | byte[]          | bytes                | /               | `int8_t[n]/vector<T>`          | `[n]int8/[]T`    | `Vec<i8>`        |
+| binary             | 20      | byte[]          | bytes                | /               | `uint8_t[n]/vector<T>`         | `[n]uint8/[]T`   | `Vec<uint8_t>`   |
 | array              | 21      | array           | np.ndarray           | /               | /                              | array/slice      | Vec              |
 | bool_array         | 22      | bool[]          | ndarray(np.bool_)    | /               | `bool[n]`                      | `[n]bool/[]T`    | `Vec<bool>`      |
 | int8_array         | 23      | byte[]          | ndarray(int8)        | /               | `int8_t[n]/vector<T>`          | `[n]int8/[]T`    | `Vec<i18>`       |
