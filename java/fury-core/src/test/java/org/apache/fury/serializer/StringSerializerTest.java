@@ -95,9 +95,10 @@ public class StringSerializerTest extends FuryTestBase {
   }
 
   static String readJDK11String(MemoryBuffer buffer) {
-    byte coder = buffer.readByte();
-    byte[] value = buffer.readBytesAndSize();
-    return newBytesStringZeroCopy(coder, value);
+    long header = buffer.readVarUint36Small();
+    byte coder = (byte) (header & 0b11);
+    int numBytes = (int) (header >>> 2);
+    return newBytesStringZeroCopy(coder, buffer.readBytes(numBytes));
   }
 
   private static boolean writeJavaStringZeroCopy(MemoryBuffer buffer, String value) {
