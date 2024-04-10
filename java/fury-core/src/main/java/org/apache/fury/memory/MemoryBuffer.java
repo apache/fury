@@ -2540,6 +2540,11 @@ public final class MemoryBuffer {
     final int numBytes = readBinarySize();
     int readerIdx = readerIndex;
     final byte[] arr = new byte[numBytes];
+    // use subtract to avoid overflow
+    if (readerIdx > size - numBytes) {
+      streamReader.readTo(arr, 0, numBytes);
+      return arr;
+    }
     byte[] heapMemory = this.heapMemory;
     if (heapMemory != null) {
       System.arraycopy(heapMemory, heapOffset + readerIdx, arr, 0, numBytes);
@@ -2590,6 +2595,22 @@ public final class MemoryBuffer {
     }
     Platform.copyMemory(heapMemory, address + readerIdx, chars, offset, numBytes);
     readerIndex = readerIdx + numBytes;
+  }
+
+  @CodegenInvoke
+  public char[] readCharsAndSize() {
+    final int numBytes = readBinarySize();
+    int readerIdx = readerIndex;
+    final char[] arr = new char[numBytes >> 1];
+    // use subtract to avoid overflow
+    if (readerIdx > size - numBytes) {
+      streamReader.readToUnsafe(arr, 0, numBytes);
+      return arr;
+    }
+    Platform.UNSAFE.copyMemory(
+      heapMemory, address + readerIdx, arr, Platform.CHAR_ARRAY_OFFSET, numBytes);
+    readerIndex = readerIdx + numBytes;
+    return arr;
   }
 
   public char[] readCharsWithAlignedSize() {

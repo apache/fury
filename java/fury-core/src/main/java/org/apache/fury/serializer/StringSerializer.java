@@ -212,7 +212,7 @@ public final class StringSerializer extends Serializer<String> {
           return new Invoke(strSerializer, "readCompressedCharsString", STRING_TYPE, buffer);
         } else {
           Expression chars =
-              new Invoke(buffer, "readCharsWithSizeEmbedded", PRIMITIVE_CHAR_ARRAY_TYPE);
+              new Invoke(buffer, "readCharsAndSize", PRIMITIVE_CHAR_ARRAY_TYPE);
           return new StaticInvoke(
               StringSerializer.class, "newCharsStringZeroCopy", STRING_TYPE, chars);
         }
