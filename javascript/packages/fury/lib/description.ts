@@ -195,15 +195,15 @@ export type InputType<T> = T extends {
                     }
                       ? number
                       : T extends {
-                          type: InternalSerializerType.ANY;
+                        type: InternalSerializerType.ANY;
+                      }
+                        ? any
+                        : T extends {
+                          type: InternalSerializerType.ENUM;
                         }
-                          ? any
-                          : T extends {
-                            type: InternalSerializerType.ENUM;
-                          }
-                            ? EnumProps<T> : T extends {
-                              type: InternalSerializerType.ONEOF;
-                            } ? OneofProps<T> : unknown;
+                          ? EnumProps<T> : T extends {
+                            type: InternalSerializerType.ONEOF;
+                          } ? OneofProps<T> : unknown;
 
 export type ResultType<T> = T extends {
   type: InternalSerializerType.OBJECT;
@@ -225,7 +225,7 @@ export type ResultType<T> = T extends {
           | InternalSerializerType.VAR_INT32
           | InternalSerializerType.FLOAT16
           | InternalSerializerType.FLOAT32
-          | InternalSerializerType.FLOAT64
+          | InternalSerializerType.FLOAT64;
       }
         ? number
 
@@ -259,15 +259,15 @@ export type ResultType<T> = T extends {
                     }
                       ? number
                       : T extends {
-                          type: InternalSerializerType.ANY;
+                        type: InternalSerializerType.ANY;
+                      }
+                        ? any
+                        : T extends {
+                          type: InternalSerializerType.ENUM;
                         }
-                          ? any
-                          : T extends {
-                            type: InternalSerializerType.ENUM;
-                          }
-                            ? EnumProps<T> : T extends {
-                              type: InternalSerializerType.ONEOF;
-                            } ? OneofResult<T> : unknown;
+                          ? EnumProps<T> : T extends {
+                            type: InternalSerializerType.ONEOF;
+                          } ? OneofResult<T> : unknown;
 
 export const Type = {
   any() {

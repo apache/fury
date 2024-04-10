@@ -300,10 +300,10 @@ export const BinaryReader = (config: Config) => {
 
   function float16() {
     const asUint16 = uint16();
-    const sign = asUint16 >> 15; 
+    const sign = asUint16 >> 15;
     const exponent = (asUint16 >> 10) & 0x1F;
     const mantissa = asUint16 & 0x3FF;
-  
+
     // IEEE 754-2008
     if (exponent === 0) {
       if (mantissa === 0) {

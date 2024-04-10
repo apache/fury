@@ -20,7 +20,7 @@
 import { Config, HalfMaxInt32, HalfMinInt32, LATIN1, UTF8 } from "../type";
 import { PlatformBuffer, alloc, strByteLength } from "../platformBuffer";
 import { OwnershipError } from "../error";
-import { toFloat16 } from './number';
+import { toFloat16 } from "./number";
 
 const MAX_POOL_SIZE = 1024 * 1024 * 3; // 3MB
 

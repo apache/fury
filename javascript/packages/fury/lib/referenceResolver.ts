@@ -23,7 +23,7 @@ import {
   BinaryWriter,
   InternalSerializerType,
 } from "./type";
-import SerializerResolver from './classResolver';
+import SerializerResolver from "./classResolver";
 
 export const makeHead = (flag: RefFlags, type: InternalSerializerType) => {
   return (((SerializerResolver.getTypeIdByInternalSerializerType(type) << 16) >>> 16) << 8) | ((flag << 24) >>> 24);

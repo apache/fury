@@ -98,20 +98,20 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         type,
       };
     case InternalSerializerType.OBJECT:
-      {
-        const options = (<ObjectTypeDescription>description).options;
-        let fixedSize = ClassResolver.tagBuffer(options.tag).byteLength + 8;
-        if (options.props) {
-          Object.values(options.props).forEach(x => fixedSize += getMeta(x, fury).fixedSize);
-        } else {
-          fixedSize += fury.classResolver.getSerializerByTag(options.tag).meta.fixedSize;
-        }
-        return {
-          fixedSize,
-          needToWriteRef: Boolean(fury.config.refTracking) && true,
-          type,
-        };
+    {
+      const options = (<ObjectTypeDescription>description).options;
+      let fixedSize = ClassResolver.tagBuffer(options.tag).byteLength + 8;
+      if (options.props) {
+        Object.values(options.props).forEach(x => fixedSize += getMeta(x, fury).fixedSize);
+      } else {
+        fixedSize += fury.classResolver.getSerializerByTag(options.tag).meta.fixedSize;
       }
+      return {
+        fixedSize,
+        needToWriteRef: Boolean(fury.config.refTracking) && true,
+        type,
+      };
+    }
 
     case InternalSerializerType.SET:
       return {

@@ -95,7 +95,7 @@ export default class SerializerResolver {
     this.registerSerializer(fury, Type.int8());
     this.registerSerializer(fury, Type.int16());
     this.registerSerializer(fury, Type.int32());
-    this.registerSerializer(fury, Type.varInt32()); 
+    this.registerSerializer(fury, Type.varInt32());
     this.registerSerializer(fury, Type.int64());
     this.registerSerializer(fury, Type.sliInt64());
     this.registerSerializer(fury, Type.float16());
@@ -306,7 +306,7 @@ export default class SerializerResolver {
         return 26;
       case InternalSerializerType.FLOAT64_ARRAY:
         return 27;
-      case InternalSerializerType.OBJECT: // todo 
+      case InternalSerializerType.OBJECT: // todo
         return 256;
       default:
         throw new Error(`typeId is not assigned to type ${InternalSerializerType[type]}`);
