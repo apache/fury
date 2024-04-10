@@ -34,18 +34,19 @@ Note:
 | timestamp          | 18      | Instant         | datetime             | Number          | std::chrono::nanoseconds       | Time             | DateTime         |
 | decimal            | 19      | BigDecimal      | Decimal              | bigint          | /                              | /                | /                |
 | binary             | 20      | byte[]          | bytes                | /               | `int8_t[n]/vector<T>`          | `[n]int8/[]T`    | `Vec<i8>`        |
-| array              | 20      | array           | np.ndarray           | /               | /                              | array/slice      | Vec              |
-| bool_array         | 21      | bool[]          | ndarray(np.bool_)    | /               | `bool[n]`                      | `[n]bool/[]T`    | `Vec<bool>`      |
-| int16_array        | 22      | short[]         | ndarray(int16)       | /               | `int16_t[n]/vector<T>`         | `[n]int16/[]T`   | `Vec<i16>`       |
-| int32_array        | 23      | int[]           | ndarray(int32)       | /               | `int32_t[n]/vector<T>`         | `[n]int32/[]T`   | `Vec<i32>`       |
-| int64_array        | 24      | long[]          | ndarray(int64)       | /               | `int64_t[n]/vector<T>`         | `[n]int64/[]T`   | `Vec<i64>`       |
-| float16_array      | 25      | float[]         | ndarray(float16)     | /               | `fury::float16_t[n]/vector<T>` | `[n]float16/[]T` | `Vec<fury::f16>` |
-| float32_array      | 26      | float[]         | ndarray(float32)     | /               | `float[n]/vector<T>`           | `[n]float32/[]T` | `Vec<f32>`       |
-| float64_array      | 27      | double[]        | ndarray(float64)     | /               | `double[n]/vector<T>`          | `[n]float64/[]T` | `Vec<f64>`       |
-| tensor             | 28      | /               | /                    | /               | /                              | /                | /                |
-| sparse tensor      | 29      | /               | /                    | /               | /                              | /                | /                |
-| arrow record batch | 30      | /               | /                    | /               | /                              | /                | /                |
-| arrow table        | 31      | /               | /                    | /               | /                              | /                | /                |
+| array              | 21      | array           | np.ndarray           | /               | /                              | array/slice      | Vec              |
+| bool_array         | 22      | bool[]          | ndarray(np.bool_)    | /               | `bool[n]`                      | `[n]bool/[]T`    | `Vec<bool>`      |
+| int8_array         | 23      | byte[]          | ndarray(int8)        | /               | `int8_t[n]/vector<T>`          | `[n]int8/[]T`    | `Vec<i18>`       |
+| int16_array        | 24      | short[]         | ndarray(int16)       | /               | `int16_t[n]/vector<T>`         | `[n]int16/[]T`   | `Vec<i16>`       |
+| int32_array        | 25      | int[]           | ndarray(int32)       | /               | `int32_t[n]/vector<T>`         | `[n]int32/[]T`   | `Vec<i32>`       |
+| int64_array        | 26      | long[]          | ndarray(int64)       | /               | `int64_t[n]/vector<T>`         | `[n]int64/[]T`   | `Vec<i64>`       |
+| float16_array      | 27      | float[]         | ndarray(float16)     | /               | `fury::float16_t[n]/vector<T>` | `[n]float16/[]T` | `Vec<fury::f16>` |
+| float32_array      | 28      | float[]         | ndarray(float32)     | /               | `float[n]/vector<T>`           | `[n]float32/[]T` | `Vec<f32>`       |
+| float64_array      | 29      | double[]        | ndarray(float64)     | /               | `double[n]/vector<T>`          | `[n]float64/[]T` | `Vec<f64>`       |
+| tensor             | 30      | /               | /                    | /               | /                              | /                | /                |
+| sparse tensor      | 31      | /               | /                    | /               | /                              | /                | /                |
+| arrow record batch | 32      | /               | /                    | /               | /                              | /                | /                |
+| arrow table        | 33      | /               | /                    | /               | /                              | /                | /                |
 
 # Type annotation(not implemented)
 
