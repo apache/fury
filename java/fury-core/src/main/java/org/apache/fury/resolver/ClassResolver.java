@@ -94,6 +94,8 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.InsecureException;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.BufferSerializers;
@@ -137,13 +139,11 @@ import org.apache.fury.type.GenericType;
 import org.apache.fury.type.ScalaTypes;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
-import org.slf4j.Logger;
 
 /**
  * Class registry for types of serializing objects, responsible for reading/writing types, setting
@@ -640,7 +640,6 @@ public class ClassResolver {
       Class<?> cls = entry.getKey();
       String className = cls.getName();
       if (extRegistry.registeredClasses.containsKey(className)) {
-        LOG.debug("Skip clear serializer for registered class {}", className);
         continue;
       }
       if (className.startsWith(classNamePrefix)) {
@@ -973,7 +972,7 @@ public class ClassResolver {
         }
       }
     } else {
-      LOG.debug("Object of type {} can't be serialized by jit", cls);
+      LOG.info("Object of type {} can't be serialized by jit", cls);
       switch (fury.getCompatibleMode()) {
         case SCHEMA_CONSISTENT:
           return ObjectSerializer.class;
@@ -1292,7 +1291,7 @@ public class ClassResolver {
         metaContext,
         "Meta context must be set before serialization,"
             + " please set meta context by SerializationContext.setMetaContext");
-    int id = buffer.readPositiveVarInt();
+    int id = buffer.readVarUintSmall();
     List<ClassInfo> readClassInfos = metaContext.readClassInfos;
     ClassInfo classInfo = readClassInfos.get(id);
     if (classInfo == null) {
@@ -1315,7 +1314,7 @@ public class ClassResolver {
         metaContext,
         "Meta context must be set before serialization,"
             + " please set meta context by SerializationContext.setMetaContext");
-    int id = buffer.readPositiveVarInt();
+    int id = buffer.readVarUintSmall();
     List<ClassInfo> readClassInfos = metaContext.readClassInfos;
     ClassInfo classInfo = readClassInfos.get(id);
     if (classInfo == null) {
@@ -1399,7 +1398,7 @@ public class ClassResolver {
     int classDefOffset = buffer.readInt();
     int readerIndex = buffer.readerIndex();
     buffer.readerIndex(classDefOffset);
-    int numClassDefs = buffer.readPositiveVarInt();
+    int numClassDefs = buffer.readVarUintSmall();
     for (int i = 0; i < numClassDefs; i++) {
       ClassDef readClassDef = ClassDef.readClassDef(buffer);
       // Share same class def to reduce memory footprint, since there may be many meta context.
@@ -1468,7 +1467,7 @@ public class ClassResolver {
 
   // Note: Thread safe fot jit thread to call.
   public Expression skipRegisteredClassExpr(Expression buffer) {
-    return new Invoke(buffer, "readPositiveVarInt");
+    return new Invoke(buffer, "readVarUintSmall");
   }
 
   /**
@@ -1538,8 +1537,7 @@ public class ClassResolver {
       currentReadClass = classInfo.cls;
       return classInfo;
     } else {
-      short classId = readClassId(buffer, flag);
-      ClassInfo classInfo = getOrUpdateClassInfo(classId);
+      ClassInfo classInfo = getOrUpdateClassInfo(readClassId(buffer, flag));
       currentReadClass = classInfo.cls;
       return classInfo;
     }
@@ -1582,8 +1580,8 @@ public class ClassResolver {
     short classId;
     // use classId
     if ((flag & 0x80) != 0) { // class id is written using multiple bytes.
-      buffer.increaseReaderIndexUnsafe(-1);
-      classId = (short) buffer.readPositiveVarInt();
+      buffer.increaseReaderIndex(-1);
+      classId = (short) buffer.readVarUintSmall();
     } else {
       classId = (short) (flag & 0x7F);
     }

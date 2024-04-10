@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apache.fury.Fury;
+import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.codegen.Expression;
 import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.codegen.Expression.StaticInvoke;
@@ -188,7 +189,7 @@ public final class StringSerializer extends Serializer<String> {
   public void writeCharsStringUncompressed(MemoryBuffer buffer, String value) {
     int numBytes = MathUtils.doubleExact(value.length());
     final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    buffer.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+    buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
   }
 
   public String readString(MemoryBuffer buffer) {
@@ -202,10 +203,6 @@ public final class StringSerializer extends Serializer<String> {
   public Expression readStringExpr(Expression strSerializer, Expression buffer) {
     if (isJava) {
       if (STRING_VALUE_FIELD_IS_BYTES) {
-        // Expression coder = inlineInvoke(buffer, "readByte", BYTE_TYPE);
-        // Expression value = inlineInvoke(buffer, "readBytesWithSizeEmbedded", BINARY_TYPE);
-        // return new StaticInvoke(
-        //     StringSerializer.class, "newBytesStringZeroCopy", STRING_TYPE, coder, value);
         return new Invoke(strSerializer, "readBytesString", STRING_TYPE, buffer);
       } else {
         if (!STRING_VALUE_FIELD_IS_CHARS) {
@@ -225,56 +222,29 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-  // Invoked by jit.
+  @CodegenInvoke
   public String readBytesString(MemoryBuffer buffer) {
+    byte coder = buffer.readByte();
+    // may fill heap array, if array not big enough, a new array will be allocated.
+    final int numBytes = buffer.readBinarySize();
+    byte[] bytes;
     byte[] heapMemory = buffer.getHeapMemory();
     if (heapMemory != null) {
-      final int targetIndex = buffer.unsafeHeapReaderIndex();
-      int arrIndex = targetIndex;
-      byte coder = heapMemory[arrIndex++];
-      // The encoding algorithm are based on kryo UnsafeMemoryOutput.writeVarInt
-      // varint are written using little endian byte order.
-      // inline the implementation here since java can't return varIntBytes and varint
-      // at the same time.
-      int b = heapMemory[arrIndex++];
-      int numBytes = b & 0x7F;
-      if ((b & 0x80) != 0) {
-        b = heapMemory[arrIndex++];
-        numBytes |= (b & 0x7F) << 7;
-        if ((b & 0x80) != 0) {
-          b = heapMemory[arrIndex++];
-          numBytes |= (b & 0x7F) << 14;
-          if ((b & 0x80) != 0) {
-            b = heapMemory[arrIndex++];
-            numBytes |= (b & 0x7F) << 21;
-            if ((b & 0x80) != 0) {
-              b = heapMemory[arrIndex];
-              numBytes |= (b & 0x7F) << 28;
-            }
-          }
-        }
-      }
-      if (coder == UTF8) {
-        String str = new String(heapMemory, arrIndex, numBytes, StandardCharsets.UTF_8);
-        buffer.increaseReaderIndexUnsafe(arrIndex - targetIndex + numBytes);
-        return str;
-      }
-      final byte[] bytes = new byte[numBytes];
+      final int arrIndex = buffer.unsafeHeapReaderIndex();
+      buffer.increaseReaderIndexUnsafe(numBytes);
+      bytes = new byte[numBytes];
       System.arraycopy(heapMemory, arrIndex, bytes, 0, numBytes);
-      buffer.increaseReaderIndexUnsafe(arrIndex - targetIndex + numBytes);
+    } else {
+      bytes = buffer.readBytes(numBytes);
+    }
+    if (coder != UTF8) {
       return newBytesStringZeroCopy(coder, bytes);
     } else {
-      byte coder = buffer.readByte();
-      final int numBytes = buffer.readPositiveVarInt();
-      byte[] bytes = buffer.readBytes(numBytes);
-      if (coder == UTF8) {
-        return new String(bytes, 0, numBytes, StandardCharsets.UTF_8);
-      }
-      return newBytesStringZeroCopy(coder, bytes);
+      return new String(bytes, 0, numBytes, StandardCharsets.UTF_8);
     }
   }
 
-  // Invoked by jit
+  @CodegenInvoke
   public String readCompressedCharsString(MemoryBuffer buffer) {
     byte coder = buffer.readByte();
     if (coder == LATIN1) {
@@ -317,7 +287,7 @@ public final class StringSerializer extends Serializer<String> {
         }
       } else {
         int numBytes = MathUtils.doubleExact(value.length());
-        buffer.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+        buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
       }
     }
   }
@@ -369,7 +339,7 @@ public final class StringSerializer extends Serializer<String> {
           return readUTF8String(buffer);
         }
       } else {
-        return newCharsStringZeroCopy(buffer.readCharsWithSizeEmbedded());
+        return newCharsStringZeroCopy(buffer.readChars(buffer.readVarUintSmall()));
       }
     }
   }
@@ -439,7 +409,7 @@ public final class StringSerializer extends Serializer<String> {
     if (Platform.IS_LITTLE_ENDIAN) {
       buffer.writeByte(UTF16);
       // FIXME JDK11 utf16 string uses little-endian order.
-      buffer.writePrimitiveArrayWithSizeEmbedded(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+      buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
     } else {
       // The `ensure` ensure next operations are safe without bound checks,
       // and inner heap buffer doesn't change.
@@ -477,8 +447,9 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   private char[] readLatinChars(MemoryBuffer buffer) {
-    final int numBytes = buffer.readPositiveVarInt();
+    final int numBytes = buffer.readVarUintSmall();
     char[] chars = new char[numBytes];
+    buffer.checkReadableBytes(numBytes);
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       int srcIndex = buffer.unsafeHeapReaderIndex();
@@ -500,16 +471,15 @@ public final class StringSerializer extends Serializer<String> {
     if (coder != UTF16) {
       throw new UnsupportedOperationException(String.format("Unsupported coder %s", coder));
     }
-    int numBytes = buffer.readPositiveVarInt();
-    int strLen = numBytes >> 1;
-    char[] chars = new char[strLen];
+    int numBytes = buffer.readVarUintSmall();
+    char[] chars = new char[numBytes >> 1];
     if (Platform.IS_LITTLE_ENDIAN) {
       // FIXME JDK11 utf16 string uses little-endian order.
       buffer.readChars(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
     } else {
+      buffer.checkReadableBytes(numBytes);
       final byte[] targetArray = buffer.getHeapMemory();
       if (targetArray != null) {
-        buffer.checkReadableBytes(numBytes);
         int charIndex = 0;
         for (int i = buffer.unsafeHeapReaderIndex(), end = i + numBytes; i < end; i += 2) {
           char c =
@@ -546,9 +516,7 @@ public final class StringSerializer extends Serializer<String> {
 
   public static String newCharsStringZeroCopy(char[] data) {
     if (!STRING_VALUE_FIELD_IS_CHARS) {
-      throw new IllegalStateException(
-          String.format(
-              "String value isn't char[], current java %s isn't supported", Platform.JAVA_VERSION));
+      throw new IllegalStateException("String value isn't char[], current java isn't supported");
     }
     // 25% faster than unsafe put field, only 10% slower than `new String(str)`
     return CHARS_STRING_ZERO_COPY_CTR.apply(data, Boolean.TRUE);
@@ -557,11 +525,6 @@ public final class StringSerializer extends Serializer<String> {
   // coder param first to make inline call args
   // `(buffer.readByte(), buffer.readBytesWithSizeEmbedded())` work.
   public static String newBytesStringZeroCopy(byte coder, byte[] data) {
-    if (!STRING_VALUE_FIELD_IS_BYTES) {
-      throw new IllegalStateException(
-          String.format(
-              "String value isn't byte[], current java %s isn't supported", Platform.JAVA_VERSION));
-    }
     if (coder == LATIN1) {
       // 700% faster than unsafe put field in java11, only 10% slower than `new String(str)` for
       // string length 230.
@@ -681,7 +644,8 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   public String readUTF8String(MemoryBuffer buffer) {
-    int numBytes = buffer.readPositiveVarInt();
+    int numBytes = buffer.readVarUintSmall();
+    buffer.checkReadableBytes(numBytes);
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       String str =

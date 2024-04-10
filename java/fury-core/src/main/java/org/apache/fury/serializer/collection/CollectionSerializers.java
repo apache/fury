@@ -71,7 +71,7 @@ public class CollectionSerializers {
 
     @Override
     public ArrayList newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUintSmall();
       setNumElements(numElements);
       ArrayList arrayList = new ArrayList(numElements);
       fury.getRefResolver().reference(arrayList);
@@ -442,7 +442,7 @@ public class CollectionSerializers {
       }
       fury.getClassResolver().writeClassAndUpdateCache(buffer, elemClass);
       Serializer serializer = fury.getClassResolver().getSerializer(elemClass);
-      buffer.writePositiveVarIntAligned(object.size());
+      buffer.writePositiveVarInt(object.size());
       for (Object element : object) {
         serializer.write(buffer, element);
       }
@@ -453,7 +453,7 @@ public class CollectionSerializers {
       Class elemClass = fury.getClassResolver().readClassInfo(buffer).getCls();
       EnumSet object = EnumSet.noneOf(elemClass);
       Serializer elemSerializer = fury.getClassResolver().getSerializer(elemClass);
-      int length = buffer.readPositiveAlignedVarInt();
+      int length = buffer.readPositiveVarInt();
       for (int i = 0; i < length; i++) {
         object.add(elemSerializer.read(buffer));
       }
@@ -469,13 +469,13 @@ public class CollectionSerializers {
     @Override
     public void write(MemoryBuffer buffer, BitSet set) {
       long[] values = set.toLongArray();
-      buffer.writePrimitiveArrayWithSizeEmbedded(
+      buffer.writePrimitiveArrayWithSize(
           values, Platform.LONG_ARRAY_OFFSET, Math.multiplyExact(values.length, 8));
     }
 
     @Override
     public BitSet read(MemoryBuffer buffer) {
-      long[] values = buffer.readLongsWithSizeEmbedded();
+      long[] values = buffer.readLongs(buffer.readPositiveVarInt());
       return BitSet.valueOf(values);
     }
   }

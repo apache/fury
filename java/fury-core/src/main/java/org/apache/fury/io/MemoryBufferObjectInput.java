@@ -28,12 +28,12 @@ import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.util.Preconditions;
 
 /** ObjectInput based on {@link Fury} and {@link MemoryBuffer}. */
-public class FuryObjectInput extends InputStream implements ObjectInput {
+public class MemoryBufferObjectInput extends InputStream implements ObjectInput {
   private final Fury fury;
   private MemoryBuffer buffer;
   private final StringSerializer stringSerializer;
 
-  public FuryObjectInput(Fury fury, MemoryBuffer buffer) {
+  public MemoryBufferObjectInput(Fury fury, MemoryBuffer buffer) {
     this.fury = fury;
     this.buffer = buffer;
     this.stringSerializer = new StringSerializer(fury);

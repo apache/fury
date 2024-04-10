@@ -42,16 +42,16 @@ import org.apache.fury.builder.MetaSharedCodecBuilder;
 import org.apache.fury.collection.IdentityObjectIntMap;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
-import org.slf4j.Logger;
 
 /**
  * Serializable class definition to be sent to other process. So if sender peer and receiver peer
@@ -171,7 +171,7 @@ public class ClassDef implements Serializable {
       for (FieldInfo fieldInfo : fieldsInfo) {
         writeSharedString(buf, map, fieldInfo.definedClass);
         byte[] bytes = fieldInfo.fieldName.getBytes(StandardCharsets.UTF_8);
-        buf.writePrimitiveArrayWithSizeEmbedded(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
+        buf.writePrimitiveArrayWithSize(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
         fieldInfo.fieldType.write(buf);
       }
       buf.writePositiveVarInt(extMeta.size());
@@ -179,9 +179,8 @@ public class ClassDef implements Serializable {
           (k, v) -> {
             byte[] keyBytes = k.getBytes(StandardCharsets.UTF_8);
             byte[] valueBytes = v.getBytes(StandardCharsets.UTF_8);
-            buf.writePrimitiveArrayWithSizeEmbedded(
-                keyBytes, Platform.BYTE_ARRAY_OFFSET, keyBytes.length);
-            buf.writePrimitiveArrayWithSizeEmbedded(
+            buf.writePrimitiveArrayWithSize(keyBytes, Platform.BYTE_ARRAY_OFFSET, keyBytes.length);
+            buf.writePrimitiveArrayWithSize(
                 valueBytes, Platform.BYTE_ARRAY_OFFSET, valueBytes.length);
           });
       serialized = this.serialized = buf.getBytes(0, buf.writerIndex());
@@ -204,7 +203,7 @@ public class ClassDef implements Serializable {
     } else {
       buffer.writeBoolean(false);
       byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
-      buffer.writePrimitiveArrayWithSizeEmbedded(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
+      buffer.writePrimitiveArrayWithSize(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
     }
   }
 
@@ -216,15 +215,15 @@ public class ClassDef implements Serializable {
     int numFields = buffer.readPositiveVarInt();
     for (int i = 0; i < numFields; i++) {
       String definedClass = readSharedString(buffer, strings);
-      String fieldName = new String(buffer.readBytesWithSizeEmbedded(), StandardCharsets.UTF_8);
+      String fieldName = new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8);
       fieldInfos.add(new FieldInfo(definedClass, fieldName, FieldType.read(buffer)));
     }
     int extMetaSize = buffer.readPositiveVarInt();
     Map<String, String> extMeta = new HashMap<>();
     for (int i = 0; i < extMetaSize; i++) {
       extMeta.put(
-          new String(buffer.readBytesWithSizeEmbedded(), StandardCharsets.UTF_8),
-          new String(buffer.readBytesWithSizeEmbedded(), StandardCharsets.UTF_8));
+          new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8),
+          new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8));
     }
     long id = buffer.readLong();
     ClassDef classDef = new ClassDef(className, fieldInfos, extMeta);
@@ -235,9 +234,9 @@ public class ClassDef implements Serializable {
   private static String readSharedString(MemoryBuffer buffer, List<String> strings) {
     String str;
     if (buffer.readBoolean()) {
-      return strings.get(buffer.readPositiveVarInt());
+      return strings.get(buffer.readVarUintSmall());
     } else {
-      str = new String(buffer.readBytesWithSizeEmbedded(), StandardCharsets.UTF_8);
+      str = new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8);
       strings.add(str);
       return str;
     }

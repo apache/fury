@@ -28,30 +28,26 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.testng.annotations.Test;
 
-public class FuryObjectOutputTest {
+public class MemoryBufferObjectInputTest {
 
   @Test
-  public void testFuryObjectOutput() throws IOException {
+  public void testFuryObjectInput() throws IOException {
     Fury fury = Fury.builder().build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
-    try (FuryObjectOutput output = new FuryObjectOutput(fury, buffer)) {
-      output.writeByte(1);
-      output.writeInt(2);
-      output.writeLong(3);
-      output.writeBoolean(true);
-      output.writeFloat(4.1f);
-      output.writeDouble(4.2);
-      output.writeChars("abc");
-      output.writeUTF("abc");
-    }
-    try (FuryObjectInput input = new FuryObjectInput(fury, buffer)) {
+    buffer.writeByte(1);
+    buffer.writeInt(2);
+    buffer.writeLong(3);
+    buffer.writeBoolean(true);
+    buffer.writeFloat(4.1f);
+    buffer.writeDouble(4.2);
+    fury.writeJavaString(buffer, "abc");
+    try (MemoryBufferObjectInput input = new MemoryBufferObjectInput(fury, buffer)) {
       assertEquals(input.readByte(), 1);
       assertEquals(input.readInt(), 2);
       assertEquals(input.readLong(), 3);
       assertTrue(input.readBoolean());
       assertEquals(input.readFloat(), 4.1f);
       assertEquals(input.readDouble(), 4.2);
-      assertEquals(input.readUTF(), "abc");
       assertEquals(input.readUTF(), "abc");
     }
   }

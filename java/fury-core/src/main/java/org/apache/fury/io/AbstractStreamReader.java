@@ -19,27 +19,32 @@
 
 package org.apache.fury.io;
 
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import org.apache.fury.memory.MemoryBuffer;
 
-/** OutputStream based on {@link MemoryBuffer}. */
-public class FuryOutputStream extends OutputStream {
-  private final MemoryBuffer buffer;
-
-  public FuryOutputStream(MemoryBuffer buffer) {
-    this.buffer = buffer;
+/** An abstract {@link FuryStreamReader} for subclass implementation convenience. */
+public abstract class AbstractStreamReader implements FuryStreamReader {
+  @Override
+  public int fillBuffer(int minFillSize) {
+    return 0;
   }
 
-  public void write(int b) {
-    buffer.writeByte((byte) b);
+  @Override
+  public void readTo(byte[] dst, int dstIndex, int length) {}
+
+  @Override
+  public void readToUnsafe(Object target, long targetPointer, int numBytes) {}
+
+  @Override
+  public void readToByteBuffer(ByteBuffer dst, int length) {}
+
+  @Override
+  public int readToByteBuffer(ByteBuffer dst) {
+    return 0;
   }
 
-  public void write(byte[] bytes, int offset, int length) {
-    buffer.writeBytes(bytes, offset, length);
-  }
-
-  public void write(ByteBuffer byteBuffer, int numBytes) {
-    buffer.write(byteBuffer, numBytes);
+  @Override
+  public MemoryBuffer getBuffer() {
+    return null;
   }
 }

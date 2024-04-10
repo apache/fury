@@ -20,27 +20,21 @@
 package org.apache.fury.io;
 
 import java.nio.ByteBuffer;
-import java.nio.channels.WritableByteChannel;
+import java.nio.channels.ReadableByteChannel;
+import org.apache.fury.memory.MemoryBuffer;
 
-/**
- * A helper class to track the size of allocations. Writes to this stream do not copy or retain any
- * data, they just bump a size counter that can be later used to know exactly which data size needs
- * to be allocated for actual writing.
- */
-public class MockWritableByteChannel implements WritableByteChannel {
+/** {@link ReadableByteChannel} based on fury {@link MemoryBuffer}. */
+public class MemoryBufferReadableChannel implements ReadableByteChannel {
   private boolean open = true;
-  private int totalBytes;
+  private final MemoryBuffer buffer;
 
-  @Override
-  public int write(ByteBuffer src) {
-    int remaining = src.remaining();
-    src.position(src.limit());
-    totalBytes += remaining;
-    return remaining;
+  public MemoryBufferReadableChannel(MemoryBuffer buffer) {
+    this.buffer = buffer;
   }
 
-  public int totalBytes() {
-    return totalBytes;
+  @Override
+  public int read(ByteBuffer dst) {
+    return buffer.read(dst);
   }
 
   @Override

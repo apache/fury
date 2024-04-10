@@ -41,7 +41,7 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.exception.FuryException;
-import org.apache.fury.io.FuryOutputStream;
+import org.apache.fury.io.MemoryBufferOutputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.DecimalUtils;
@@ -464,7 +464,7 @@ public class DataTypes {
   }
 
   public static void serializeSchema(Schema schema, MemoryBuffer buffer) {
-    try (FuryOutputStream outputStream = new FuryOutputStream(buffer);
+    try (MemoryBufferOutputStream outputStream = new MemoryBufferOutputStream(buffer);
         WriteChannel writeChannel = new WriteChannel(Channels.newChannel(outputStream))) {
       MessageSerializer.serialize(writeChannel, schema);
     } catch (IOException e) {

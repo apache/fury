@@ -27,11 +27,11 @@ import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
 import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
-import org.slf4j.Logger;
 import org.testng.annotations.Test;
 
 public class BinaryRowTest {
@@ -104,9 +104,7 @@ public class BinaryRowTest {
       }
     }
     long duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info("Array access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
-    }
+    LOG.info("Array access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
 
     int headerInBytes = 64;
     // warm
@@ -125,9 +123,7 @@ public class BinaryRowTest {
       }
     }
     duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info("Compute access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
-    }
+    LOG.info("Compute access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
   }
 
   @Test

@@ -27,8 +27,10 @@ import java.nio.ByteOrder;
 import java.nio.ReadOnlyBufferException;
 import java.util.Arrays;
 import org.apache.fury.annotation.CodegenInvoke;
+import org.apache.fury.io.AbstractStreamReader;
+import org.apache.fury.io.FuryStreamReader;
 import org.apache.fury.util.Platform;
-import org.apache.fury.util.Preconditions;
+import sun.misc.Unsafe;
 
 /**
  * A class for operations on memory managed by Fury. The buffer may be backed by heap memory (byte
@@ -55,14 +57,16 @@ import org.apache.fury.util.Preconditions;
  *
  * <p>Warning: The instance of this class should not be hold on graalvm build time, the heap unsafe
  * offset are not correct in runtime since graalvm will change array base offset.
+ *
+ * <p>Note(chaokunyang): Buffer operations are very common, and jvm inline and branch elimination is
+ * not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually. jvm
+ * jit may stop inline for some reasons: NodeCountInliningCutoff,
+ * DesiredMethodLimit,MaxRecursiveInlineLevel,FreqInlineSize,MaxInlineSize
  */
-// FIXME Buffer operations is most common, and jvm inline and branch elimination
-// is not reliable even in c2 compiler, so we try to inline and avoid checks as we can manually.
-// Note: This class is based on org.apache.flink.core.memory.MemorySegment and
-// org.apache.arrow.memory.ArrowBuf.
+//  DesiredMethodLimit,MaxRecursiveInlineLevel,FreqInlineSize,MaxInlineSize
 public final class MemoryBuffer {
   // The unsafe handle for transparent memory copied (heap/off-heap).
-  private static final sun.misc.Unsafe UNSAFE = Platform.UNSAFE;
+  private static final Unsafe UNSAFE = Platform.UNSAFE;
   // Constant that flags the byte order. Because this is a boolean constant, the JIT compiler can
   // use this well to aggressively eliminate the non-applicable code paths.
   private static final boolean LITTLE_ENDIAN = (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN);
@@ -90,6 +94,7 @@ public final class MemoryBuffer {
   private int size;
   private int readerIndex;
   private int writerIndex;
+  private final FuryStreamReader streamReader;
 
   /**
    * Creates a new memory buffer that represents the memory of the byte array.
@@ -100,24 +105,30 @@ public final class MemoryBuffer {
    * @param length buffer size
    */
   private MemoryBuffer(byte[] buffer, int offset, int length) {
-    Preconditions.checkArgument(offset >= 0 && length >= 0);
+    this(buffer, offset, length, null);
+  }
+
+  /**
+   * Creates a new memory buffer that represents the memory of the byte array.
+   *
+   * @param buffer The byte array whose memory is represented by this memory buffer.
+   * @param offset The offset of the sub array to be used; must be non-negative and no larger than
+   *     <tt>array.length</tt>.
+   * @param length buffer size
+   * @param streamReader a reader for reading from a stream.
+   */
+  private MemoryBuffer(byte[] buffer, int offset, int length, FuryStreamReader streamReader) {
+    checkArgument(offset >= 0 && length >= 0);
     if (offset + length > buffer.length) {
       throw new IllegalArgumentException(
           String.format("%d exceeds buffer size %d", offset + length, buffer.length));
     }
     initHeapBuffer(buffer, offset, length);
-  }
-
-  private void initHeapBuffer(byte[] buffer, int offset, int length) {
-    if (buffer == null) {
-      throw new NullPointerException("buffer");
+    if (streamReader != null) {
+      this.streamReader = streamReader;
+    } else {
+      this.streamReader = new BoundChecker();
     }
-    this.heapMemory = buffer;
-    this.heapOffset = offset;
-    final long startPos = Platform.BYTE_ARRAY_OFFSET + offset;
-    this.address = startPos;
-    this.size = length;
-    this.addressLimit = startPos + length;
   }
 
   /**
@@ -131,6 +142,31 @@ public final class MemoryBuffer {
    *     the memory being released.
    */
   private MemoryBuffer(long offHeapAddress, int size, ByteBuffer offHeapBuffer) {
+    this(offHeapAddress, size, offHeapBuffer, null);
+  }
+
+  /**
+   * Creates a new memory buffer that represents the native memory at the absolute address given by
+   * the pointer.
+   *
+   * @param offHeapAddress The address of the memory represented by this memory buffer.
+   * @param size The size of this memory buffer.
+   * @param offHeapBuffer The byte buffer whose memory is represented by this memory buffer which
+   *     may be null if the memory is not allocated by `DirectByteBuffer`. Hold this buffer to avoid
+   *     the memory being released.
+   * @param streamReader a reader for reading from a stream.
+   */
+  private MemoryBuffer(
+      long offHeapAddress, int size, ByteBuffer offHeapBuffer, FuryStreamReader streamReader) {
+    initDirectBuffer(offHeapAddress, size, offHeapBuffer);
+    if (streamReader != null) {
+      this.streamReader = streamReader;
+    } else {
+      this.streamReader = new BoundChecker();
+    }
+  }
+
+  public void initDirectBuffer(long offHeapAddress, int size, ByteBuffer offHeapBuffer) {
     this.offHeapBuffer = offHeapBuffer;
     if (offHeapAddress <= 0) {
       throw new IllegalArgumentException("negative pointer or size");
@@ -150,6 +186,33 @@ public final class MemoryBuffer {
     this.size = size;
   }
 
+  private class BoundChecker extends AbstractStreamReader {
+    @Override
+    public int fillBuffer(int minFillSize) {
+      throw new IndexOutOfBoundsException(
+          String.format(
+              "readerIndex(%d) + length(%d) exceeds size(%d): %s",
+              readerIndex, minFillSize, size, this));
+    }
+
+    @Override
+    public MemoryBuffer getBuffer() {
+      return MemoryBuffer.this;
+    }
+  }
+
+  public void initHeapBuffer(byte[] buffer, int offset, int length) {
+    if (buffer == null) {
+      throw new NullPointerException("buffer");
+    }
+    this.heapMemory = buffer;
+    this.heapOffset = offset;
+    final long startPos = Platform.BYTE_ARRAY_OFFSET + offset;
+    this.address = startPos;
+    this.size = length;
+    this.addressLimit = startPos + length;
+  }
+
   // ------------------------------------------------------------------------
   // Memory buffer Operations
   // ------------------------------------------------------------------------
@@ -161,6 +224,10 @@ public final class MemoryBuffer {
    */
   public int size() {
     return size;
+  }
+
+  public void increaseSize(int diff) {
+    this.addressLimit = address + (size += diff);
   }
 
   /**
@@ -247,7 +314,7 @@ public final class MemoryBuffer {
     if (BoundsChecking.BOUNDS_CHECKING_ENABLED) {
       if (index < 0 || pos > addressLimit - length) {
         // index is in fact invalid
-        throw new IndexOutOfBoundsException();
+        throwOOBException();
       }
     }
   }
@@ -282,7 +349,7 @@ public final class MemoryBuffer {
   public void get(int index, byte[] dst, int offset, int length) {
     // check the byte array offset and length and the status
     if ((offset | length | (offset + length) | (dst.length - (offset + length))) < 0) {
-      throw new IndexOutOfBoundsException();
+      throwOOBException();
     }
     final long pos = address + index;
     if (index >= 0 && pos <= addressLimit - length) {
@@ -290,7 +357,7 @@ public final class MemoryBuffer {
       Platform.copyMemory(heapMemory, pos, dst, arrayAddress, length);
     } else {
       // index is in fact invalid
-      throw new IndexOutOfBoundsException();
+      throwOOBException();
     }
   }
 
@@ -312,16 +379,16 @@ public final class MemoryBuffer {
   public void get(int offset, ByteBuffer target, int numBytes) {
     // check the byte array offset and length
     if ((offset | numBytes | (offset + numBytes)) < 0) {
-      throw new IndexOutOfBoundsException();
+      throwOOBException();
     }
     final int targetOffset = target.position();
     final int remaining = target.remaining();
     if (remaining < numBytes) {
-      throw new BufferOverflowException();
+      throwOOBException();
     }
     if (target.isDirect()) {
       if (target.isReadOnly()) {
-        throw new ReadOnlyBufferException();
+        throwOOBException();
       }
       // copy to the target memory directly
       final long targetPointer = Platform.getAddress(target) + targetOffset;
@@ -330,7 +397,7 @@ public final class MemoryBuffer {
         Platform.copyMemory(heapMemory, sourcePointer, null, targetPointer, numBytes);
         target.position(targetOffset + numBytes);
       } else {
-        throw new IndexOutOfBoundsException();
+        throwOOBException();
       }
     } else if (target.hasArray()) {
       // move directly into the byte array
@@ -372,12 +439,12 @@ public final class MemoryBuffer {
   public void put(int offset, ByteBuffer source, int numBytes) {
     // check the byte array offset and length
     if ((offset | numBytes | (offset + numBytes)) < 0) {
-      throw new IndexOutOfBoundsException();
+      throwOOBException();
     }
     final int sourceOffset = source.position();
     final int remaining = source.remaining();
     if (remaining < numBytes) {
-      throw new BufferUnderflowException();
+      throwOOBException();
     }
     if (source.isDirect()) {
       // copy to the target memory directly
@@ -387,7 +454,7 @@ public final class MemoryBuffer {
         Platform.copyMemory(null, sourcePointer, heapMemory, targetPointer, numBytes);
         source.position(sourceOffset + numBytes);
       } else {
-        throw new IndexOutOfBoundsException();
+        throwOOBException();
       }
     } else if (source.hasArray()) {
       // move directly into the byte array
@@ -428,7 +495,7 @@ public final class MemoryBuffer {
   public void put(int index, byte[] src, int offset, int length) {
     // check the byte array offset and length
     if ((offset | length | (offset + length) | (src.length - (offset + length))) < 0) {
-      throw new IndexOutOfBoundsException();
+      throwOOBException();
     }
     final long pos = address + index;
     if (index >= 0 && pos <= addressLimit - length) {
@@ -436,7 +503,7 @@ public final class MemoryBuffer {
       Platform.copyMemory(src, arrayAddress, heapMemory, pos, length);
     } else {
       // index is in fact invalid
-      throw new IndexOutOfBoundsException();
+      throwOOBException();
     }
   }
 
@@ -801,14 +868,18 @@ public final class MemoryBuffer {
    * @throws IndexOutOfBoundsException if the specified {@code readerIndex} is less than {@code 0}
    *     or greater than {@code this.size}
    */
-  public MemoryBuffer readerIndex(int readerIndex) {
-    if (readerIndex < 0 || readerIndex > size) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex: %d (expected: 0 <= readerIndex <= size(%d))", readerIndex, size));
+  public void readerIndex(int readerIndex) {
+    if (readerIndex < 0) {
+      throwIndexOOBExceptionForRead();
+    } else if (readerIndex > size) {
+      // in this case, diff must be greater than 0.
+      streamReader.fillBuffer(readerIndex - size);
     }
     this.readerIndex = readerIndex;
-    return this;
+  }
+
+  public void readerIndexUnsafe(int readerIndex) {
+    this.readerIndex = readerIndex;
   }
 
   /** Returns array index for reader index if buffer is a heap buffer. */
@@ -821,13 +892,14 @@ public final class MemoryBuffer {
   }
 
   public void increaseReaderIndex(int diff) {
-    int readerIdx = readerIndex + diff;
-    if (readerIdx < 0 || readerIdx > size) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex: %d (expected: 0 <= readerIndex <= size(%d))", readerIdx, size));
+    int readerIdx = readerIndex;
+    readerIndex = readerIdx += diff;
+    if (readerIdx < 0) {
+      throwIndexOOBExceptionForRead();
+    } else if (readerIdx > size) {
+      // in this case, diff must be greater than 0.
+      streamReader.fillBuffer(readerIdx - size);
     }
-    this.readerIndex = readerIdx;
   }
 
   public long getUnsafeReaderAddress() {
@@ -851,11 +923,36 @@ public final class MemoryBuffer {
    */
   public void writerIndex(int writerIndex) {
     if (writerIndex < 0 || writerIndex > size) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "writerIndex: %d (expected: 0 <= writerIndex <= size(%d))", writerIndex, size));
+      throwOOBExceptionForWriteIndex(writerIndex);
     }
     this.writerIndex = writerIndex;
+  }
+
+  private void throwOOBExceptionForWriteIndex(int writerIndex) {
+    throw new IndexOutOfBoundsException(
+        String.format(
+            "writerIndex: %d (expected: 0 <= writerIndex <= size(%d))", writerIndex, size));
+  }
+
+  // Check should be done outside to avoid this method got into the critical path.
+  private void throwOOBException() {
+    throw new IndexOutOfBoundsException(
+        String.format("size: %d, address %s, addressLimit %d", size, address, addressLimit));
+  }
+
+  // Check should be done outside to avoid this method got into the critical path.
+  private void throwIndexOOBExceptionForRead() {
+    throw new IndexOutOfBoundsException(
+        String.format(
+            "readerIndex: %d (expected: 0 <= readerIndex <= size(%d))", readerIndex, size));
+  }
+
+  // Check should be done outside to avoid this method got into the critical path.
+  private void throwIndexOOBExceptionForRead(int length) {
+    throw new IndexOutOfBoundsException(
+        String.format(
+            "readerIndex: %d (expected: 0 <= readerIndex <= size(%d)), length %d",
+            readerIndex, size, length));
   }
 
   public void unsafeWriterIndex(int writerIndex) {
@@ -1052,6 +1149,7 @@ public final class MemoryBuffer {
    * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
    * to avoid using two memory operations.
    */
+  @CodegenInvoke
   public int unsafeWriteVarInt(int v) {
     // Ensure negatives close to zero is encode in little bytes.
     v = (v << 1) ^ (v >> 31);
@@ -1236,6 +1334,33 @@ public final class MemoryBuffer {
     }
     readerIndex = readIdx;
     return result;
+  }
+
+  /**
+   * Fast path for read a unsigned varint which is mostly a smaller value in [0, 16384). When the
+   * value is equal or greater than 16384, the read will be a little slower.
+   */
+  public int readVarUintSmall() {
+    int readIdx = readerIndex;
+    if (size - readIdx >= 5) {
+      int fourByteValue = unsafeGetInt(readIdx++);
+      int binarySize = fourByteValue & 0x7F;
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      if ((fourByteValue & 0x80) != 0) {
+        readIdx++;
+        binarySize |= (fourByteValue >>> 1) & 0x3f80;
+        if ((fourByteValue & 0x8000) != 0) {
+          // merely executed path, make it as a separate method to reduce
+          // code size of current method for better jvm inline
+          return continueRead(readIdx, fourByteValue, binarySize);
+        }
+      }
+      readerIndex = readIdx;
+      return binarySize;
+    } else {
+      return readPositiveVarIntSlow();
+    }
   }
 
   private int readPositiveVarIntSlow() {
@@ -1460,10 +1585,8 @@ public final class MemoryBuffer {
   public int readPositiveAlignedVarInt() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
-    if (readerIdx > size - 1) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 1, size, this));
+    if (readerIdx < size - 10) {
+      return slowReadPositiveAlignedVarInt();
     }
     long pos = address + readerIdx;
     long startPos = pos;
@@ -1499,6 +1622,45 @@ public final class MemoryBuffer {
     return result;
   }
 
+  public int slowReadPositiveAlignedVarInt() {
+    int b = readByte();
+    // Mask first 6 bits,
+    // bit 8 `set` indicates have next data bytes.
+    int result = b & 0x3F;
+    if ((b & 0x80) != 0) { // has 2nd byte
+      b = readByte();
+      result |= (b & 0x3F) << 6;
+      if ((b & 0x80) != 0) { // has 3rd byte
+        b = readByte();
+        result |= (b & 0x3F) << 12;
+        if ((b & 0x80) != 0) { // has 4th byte
+          b = readByte();
+          result |= (b & 0x3F) << 18;
+          if ((b & 0x80) != 0) { // has 5th byte
+            b = readByte();
+            result |= (b & 0x3F) << 24;
+            if ((b & 0x80) != 0) { // has 6th byte
+              b = readByte();
+              result |= (b & 0x3F) << 30;
+            }
+          }
+        }
+      }
+    }
+    // bit 7 `unset` indicates have next padding bytes,
+    if ((b & 0x40) == 0) { // has first padding bytes
+      b = readByte();
+      if ((b & 0x40) == 0) { // has 2nd padding bytes
+        b = readByte();
+        if ((b & 0x40) == 0) { // has 3rd padding bytes
+          b = readByte();
+          checkArgument((b & 0x40) != 0, "At most 3 padding bytes.");
+        }
+      }
+    }
+    return result;
+  }
+
   private long skipPadding(long pos, int b) {
     // bit 7 `unset` indicates have next padding bytes,
     if ((b & 0x40) == 0) { // has first padding bytes
@@ -1507,7 +1669,7 @@ public final class MemoryBuffer {
         b = UNSAFE.getByte(heapMemory, pos++);
         if ((b & 0x40) == 0) { // has 3rd padding bytes
           b = UNSAFE.getByte(heapMemory, pos++);
-          Preconditions.checkArgument((b & 0x40) != 0, "At most 3 padding bytes.");
+          checkArgument((b & 0x40) != 0, "At most 3 padding bytes.");
         }
       }
     }
@@ -1606,18 +1768,20 @@ public final class MemoryBuffer {
 
   /** Reads the 1-9 byte int part of a var long. */
   public long readVarLong() {
-    long result = readPositiveVarLong();
-    return ((result >>> 1) ^ -(result & 1));
+    return LITTLE_ENDIAN ? readVarLongOnLE() : readVarLongOnBE();
   }
 
+  @CodegenInvoke
   public long readVarLongOnLE() {
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
     int readIdx = readerIndex;
     long result;
     if (size - readIdx < 9) {
       result = readPositiveVarLongSlow();
     } else {
       long address = this.address;
-      long value = Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx));
+      long value = UNSAFE.getLong(heapMemory, address + readIdx);
       // Duplicate and manual inline for performance.
       // noinspection Duplicates
       readIdx++;
@@ -1664,6 +1828,7 @@ public final class MemoryBuffer {
     return ((result >>> 1) ^ -(result & 1));
   }
 
+  @CodegenInvoke
   public long readVarLongOnBE() {
     int readIdx = readerIndex;
     long result;
@@ -1671,7 +1836,7 @@ public final class MemoryBuffer {
       result = readPositiveVarLongSlow();
     } else {
       long address = this.address;
-      long value = UNSAFE.getLong(heapMemory, address + readIdx);
+      long value = Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx));
       // Duplicate and manual inline for performance.
       // noinspection Duplicates
       readIdx++;
@@ -1859,12 +2024,6 @@ public final class MemoryBuffer {
     }
   }
 
-  private void throwIndexOutOfBoundsException(int readIdx, int size, int need) {
-    throw new IndexOutOfBoundsException(
-        String.format(
-            "readerIndex(%d) + length(%d) exceeds size(%d): %s", readIdx, need, size, this));
-  }
-
   public void writeBytes(byte[] bytes) {
     writeBytes(bytes, 0, bytes.length);
   }
@@ -1889,12 +2048,12 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void writeBytesWithSizeEmbedded(byte[] arr) {
-    writePrimitiveArrayWithSizeEmbedded(arr, Platform.BYTE_ARRAY_OFFSET, arr.length);
+  public void writeBytesWithSize(byte[] arr) {
+    writePrimitiveArrayWithSize(arr, Platform.BYTE_ARRAY_OFFSET, arr.length);
   }
 
   /** Write a primitive array into buffer with size varint encoded into the buffer. */
-  public void writePrimitiveArrayWithSizeEmbedded(Object arr, int offset, int numBytes) {
+  public void writePrimitiveArrayWithSize(Object arr, int offset, int numBytes) {
     int idx = writerIndex;
     ensure(idx + 5 + numBytes);
     idx += unsafeWritePositiveVarInt(numBytes);
@@ -1903,7 +2062,7 @@ public final class MemoryBuffer {
     writerIndex = idx + numBytes;
   }
 
-  public void writePrimitiveArrayAlignedSizeEmbedded(Object arr, int offset, int numBytes) {
+  public void writePrimitiveArrayAlignedSize(Object arr, int offset, int numBytes) {
     writePositiveVarIntAligned(numBytes);
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + numBytes;
@@ -1939,10 +2098,8 @@ public final class MemoryBuffer {
   public boolean readBoolean() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - 1) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 1, size, this));
+    if (readerIdx > size - 1) {
+      streamReader.fillBuffer(1);
     }
     readerIndex = readerIdx + 1;
     return UNSAFE.getByte(heapMemory, address + readerIdx) != 0;
@@ -1950,10 +2107,8 @@ public final class MemoryBuffer {
 
   public byte readByte() {
     int readerIdx = readerIndex;
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - 1) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 1, size, this));
+    if (readerIdx > size - 1) {
+      streamReader.fillBuffer(1);
     }
     readerIndex = readerIdx + 1;
     return UNSAFE.getByte(heapMemory, address + readerIdx);
@@ -1962,10 +2117,9 @@ public final class MemoryBuffer {
   public char readChar() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - 2) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+    int remaining = size - readerIdx;
+    if (remaining < 2) {
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     final long pos = address + readerIdx;
@@ -1983,9 +2137,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 2) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     return UNSAFE.getChar(heapMemory, address + readerIdx);
@@ -1998,9 +2150,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 2) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     return Character.reverseBytes(UNSAFE.getChar(heapMemory, address + readerIdx));
@@ -2009,10 +2159,9 @@ public final class MemoryBuffer {
   public short readShort() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - 2) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+    int remaining = size - readerIdx;
+    if (remaining < 2) {
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     final long pos = address + readerIdx;
@@ -2030,9 +2179,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 2) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     return UNSAFE.getShort(heapMemory, address + readerIdx);
@@ -2045,9 +2192,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 2) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 2, size, this));
+      streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
     return Short.reverseBytes(UNSAFE.getShort(heapMemory, address + readerIdx));
@@ -2056,10 +2201,9 @@ public final class MemoryBuffer {
   public int readInt() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - 4) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 4, size, this));
+    int remaining = size - readerIdx;
+    if (remaining < 4) {
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     final long pos = address + readerIdx;
@@ -2070,15 +2214,14 @@ public final class MemoryBuffer {
     }
   }
 
+  // Reduce method body for better inline in the caller.
   @CodegenInvoke
   public int readIntOnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 4) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 4, size, this));
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     return UNSAFE.getInt(heapMemory, address + readerIdx);
@@ -2091,9 +2234,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 4) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 4, size, this));
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     return Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx));
@@ -2104,9 +2245,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 8) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     final long pos = address + readerIdx;
@@ -2124,9 +2263,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 8) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     return UNSAFE.getLong(heapMemory, address + readerIdx);
@@ -2139,9 +2276,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 8) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readerIdx));
@@ -2163,7 +2298,7 @@ public final class MemoryBuffer {
     final int readIdx = readerIndex;
     int diff = size - readIdx;
     if (diff < 4) {
-      throwIndexOutOfBoundsException(readIdx, size, 4 - diff);
+      streamReader.fillBuffer(4 - diff);
     }
     int i = UNSAFE.getInt(heapMemory, address + readIdx);
     if ((i & 0b1) != 0b1) {
@@ -2171,7 +2306,7 @@ public final class MemoryBuffer {
       return i >> 1;
     }
     if (diff < 9) {
-      throwIndexOutOfBoundsException(readIdx, size, 9 - diff);
+      streamReader.fillBuffer(9 - diff);
     }
     readerIndex = readIdx + 9;
     return UNSAFE.getLong(heapMemory, address + readIdx + 1);
@@ -2183,7 +2318,7 @@ public final class MemoryBuffer {
     final int readIdx = readerIndex;
     int diff = size - readIdx;
     if (diff < 4) {
-      throwIndexOutOfBoundsException(readIdx, size, 4 - diff);
+      streamReader.fillBuffer(4 - diff);
     }
     int i = Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readIdx));
     if ((i & 0b1) != 0b1) {
@@ -2191,7 +2326,7 @@ public final class MemoryBuffer {
       return i >> 1;
     }
     if (diff < 9) {
-      throwIndexOutOfBoundsException(readIdx, size, 9 - diff);
+      streamReader.fillBuffer(9 - diff);
     }
     readerIndex = readIdx + 9;
     return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx + 1));
@@ -2200,10 +2335,9 @@ public final class MemoryBuffer {
   public float readFloat() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - 4) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 4, size, this));
+    int remaining = size - readerIdx;
+    if (remaining < 4) {
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     final long pos = address + readerIdx;
@@ -2221,9 +2355,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 4) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 4, size, this));
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     return Float.intBitsToFloat(UNSAFE.getInt(heapMemory, address + readerIdx));
@@ -2236,9 +2368,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 4) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 4, size, this));
+      streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
     return Float.intBitsToFloat(
@@ -2248,10 +2378,9 @@ public final class MemoryBuffer {
   public double readDouble() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - 8) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+    int remaining = size - readerIdx;
+    if (remaining < 8) {
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     final long pos = address + readerIdx;
@@ -2269,9 +2398,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 8) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     return Double.longBitsToDouble(UNSAFE.getLong(heapMemory, address + readerIdx));
@@ -2284,9 +2411,7 @@ public final class MemoryBuffer {
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining < 8) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, 8, size, this));
+      streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
     return Double.longBitsToDouble(
@@ -2295,14 +2420,13 @@ public final class MemoryBuffer {
 
   public byte[] readBytes(int length) {
     int readerIdx = readerIndex;
+    byte[] bytes = new byte[length];
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - length) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, length, size, this));
+    if (length > size - readerIdx) {
+      streamReader.readTo(bytes, 0, length);
+      return bytes;
     }
     byte[] heapMemory = this.heapMemory;
-    final byte[] bytes = new byte[length];
     if (heapMemory != null) {
       // System.arraycopy faster for some jdk than Unsafe.
       System.arraycopy(heapMemory, heapOffset + readerIdx, bytes, 0, length);
@@ -2316,13 +2440,12 @@ public final class MemoryBuffer {
   public void readBytes(byte[] dst, int dstIndex, int length) {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - length) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s", readerIdx, length, size, this));
+    if (readerIdx > size - length) {
+      streamReader.readTo(dst, dstIndex, length);
+      return;
     }
-    if (dstIndex > dst.length - length) {
-      throw new IndexOutOfBoundsException();
+    if (dstIndex < 0 || dstIndex > dst.length - length) {
+      throwIndexOOBExceptionForRead();
     }
     copyToUnsafe(readerIdx, dst, Platform.BYTE_ARRAY_OFFSET + dstIndex, length);
     readerIndex = readerIdx + length;
@@ -2332,29 +2455,92 @@ public final class MemoryBuffer {
     readBytes(dst, 0, dst.length);
   }
 
-  public void read(ByteBuffer dst) {
+  public int read(ByteBuffer dst) {
     int readerIdx = readerIndex;
-    int len = Math.min(dst.remaining(), size - readerIdx);
+    int len = dst.remaining();
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - len) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIdx(%d) + length(%d) exceeds size(%d): %s", readerIdx, len, size, this));
+    if (readerIdx > size - len) {
+      return streamReader.readToByteBuffer(dst);
+    }
+    if (heapMemory != null) {
+      dst.put(heapMemory, readerIndex + heapOffset, len);
+    } else {
+      dst.put(sliceAsByteBuffer(readerIdx, len));
     }
     readerIndex = readerIdx + len;
-    dst.put(sliceAsByteBuffer(readerIdx, len));
+    return len;
   }
 
-  public byte[] readBytesWithSizeEmbedded() {
-    final int numBytes = readPositiveVarInt();
+  public void read(ByteBuffer dst, int len) {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - numBytes) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s",
-              readerIdx, numBytes, size, this));
+    if (readerIdx > size - len) {
+      streamReader.readToByteBuffer(dst, len);
+    } else {
+      if (heapMemory != null) {
+        dst.put(heapMemory, readerIndex + heapOffset, len);
+      } else {
+        dst.put(sliceAsByteBuffer(readerIdx, len));
+      }
+      readerIndex = readerIdx + len;
     }
+  }
+
+  /**
+   * Read size for following binary, this method will check and fill readable bytes too. This method
+   * is optimized for small size, it's faster than {@link #readPositiveVarInt}.
+   */
+  public int readBinarySize() {
+    int binarySize;
+    int readIdx = readerIndex;
+    if (size - readIdx >= 5) {
+      int fourByteValue = unsafeGetInt(readIdx++);
+      binarySize = fourByteValue & 0x7F;
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      if ((fourByteValue & 0x80) != 0) {
+        readIdx++;
+        binarySize |= (fourByteValue >>> 1) & 0x3f80;
+        if ((fourByteValue & 0x8000) != 0) {
+          // merely executed path, make it as a separate method to reduce
+          // code size of current method for better jvm inline
+          return continueRead(readIdx, fourByteValue, binarySize);
+        }
+      }
+      readerIndex = readIdx;
+    } else {
+      binarySize = readPositiveVarIntSlow();
+      readIdx = readerIndex;
+    }
+    int diff = size - readIdx;
+    if (diff < binarySize) {
+      streamReader.fillBuffer(diff);
+    }
+    return binarySize;
+  }
+
+  private int continueRead(int readIdx, int bulkRead, int binarySize) {
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    readIdx++;
+    binarySize |= (bulkRead >>> 2) & 0x1fc000;
+    if ((bulkRead & 0x800000) != 0) {
+      readIdx++;
+      binarySize |= (bulkRead >>> 3) & 0xfe00000;
+      if ((bulkRead & 0x80000000) != 0) {
+        binarySize |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
+      }
+    }
+    int diff = size - readIdx;
+    if (diff < binarySize) {
+      streamReader.fillBuffer(diff);
+    }
+    return binarySize;
+  }
+
+  public byte[] readBytesAndSize() {
+    final int numBytes = readBinarySize();
+    int readerIdx = readerIndex;
     final byte[] arr = new byte[numBytes];
     byte[] heapMemory = this.heapMemory;
     if (heapMemory != null) {
@@ -2367,94 +2553,87 @@ public final class MemoryBuffer {
     return arr;
   }
 
-  public byte[] readBytesAlignedSizeEmbedded() {
+  public byte[] readBytesWithAlignedSize() {
     final int numBytes = readPositiveAlignedVarInt();
     int readerIdx = readerIndex;
-    // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - numBytes) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s",
-              readerIdx, numBytes, size, this));
-    }
     final byte[] arr = new byte[numBytes];
+    // use subtract to avoid overflow
+    if (readerIdx > size - numBytes) {
+      streamReader.readTo(arr, 0, numBytes);
+      return arr;
+    }
     Platform.UNSAFE.copyMemory(
         this.heapMemory, this.address + readerIdx, arr, Platform.BYTE_ARRAY_OFFSET, numBytes);
     readerIndex = readerIdx + numBytes;
     return arr;
   }
 
-  /**
-   * This method should be used to read data written by {@link
-   * #writePrimitiveArrayWithSizeEmbedded}.
-   */
-  public char[] readCharsWithSizeEmbedded() {
-    final int numBytes = readPositiveVarInt();
+  /** This method should be used to read data written by {@link #writePrimitiveArrayWithSize}. */
+  public char[] readChars(int numBytes) {
     int readerIdx = readerIndex;
-    // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - numBytes) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIdx(%d) + length(%d) exceeds size(%d): %s", readerIdx, numBytes, size, this));
-    }
-    final char[] chars = new char[numBytes / 2];
-    Platform.copyMemory(
-        heapMemory, address + readerIdx, chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
-    readerIndex = readerIdx + numBytes;
-    return chars;
-  }
-
-  public char[] readCharsAlignedSizeEmbedded() {
-    final int numBytes = readPositiveAlignedVarInt();
-    final int readerIdx = readerIndex;
-    // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - numBytes) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIdx(%d) + length(%d) exceeds size(%d): %s", readerIdx, numBytes, size, this));
-    }
-    final char[] chars = new char[numBytes / 2];
-    Platform.copyMemory(
-        heapMemory, address + readerIdx, chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
-    readerIndex = readerIdx + numBytes;
-    return chars;
-  }
-
-  public long[] readLongsWithSizeEmbedded() {
-    final int numBytes = readPositiveVarInt();
-    int readerIdx = readerIndex;
+    final char[] chars = new char[numBytes >> 1];
     // use subtract to avoid overflow
     if (readerIdx > size - numBytes) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIdx(%d) + length(%d) exceeds size(%d): %s", readerIdx, numBytes, size, this));
+      streamReader.readToUnsafe(chars, 0, numBytes);
+      return chars;
     }
-    final long[] longs = new long[numBytes / 8];
+    Platform.copyMemory(
+        heapMemory, address + readerIdx, chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+    readerIndex = readerIdx + numBytes;
+    return chars;
+  }
+
+  public void readChars(char[] chars, int offset, int numBytes) {
+    final int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    if (readerIdx > size - numBytes) {
+      streamReader.readToUnsafe(chars, offset, numBytes);
+      return;
+    }
+    Platform.copyMemory(heapMemory, address + readerIdx, chars, offset, numBytes);
+    readerIndex = readerIdx + numBytes;
+  }
+
+  public char[] readCharsWithAlignedSize() {
+    final int numBytes = readPositiveAlignedVarInt();
+    return readChars(numBytes);
+  }
+
+  public long[] readLongs(int numBytes) {
+    int readerIdx = readerIndex;
+    int numElements = numBytes >> 3;
+    final long[] longs = new long[numElements];
+    // use subtract to avoid overflow
+    if (readerIdx > size - numBytes) {
+      streamReader.readToUnsafe(longs, 0, numElements);
+      return longs;
+    }
     Platform.copyMemory(
         heapMemory, address + readerIdx, longs, Platform.LONG_ARRAY_OFFSET, numBytes);
     readerIndex = readerIdx + numBytes;
     return longs;
   }
 
-  public void readChars(char[] chars, int offset, int numBytes) {
-    final int readerIdx = readerIndex;
-    // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIdx > size - numBytes) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIdx(%d) + length(%d) exceeds size(%d): %s", readerIdx, numBytes, size, this));
+  /**
+   * Bulk copy method. Copies {@code numBytes} bytes to target unsafe object and pointer. NOTE: This
+   * is a unsafe method, no check here, please be carefully.
+   */
+  public void readToUnsafe(Object target, long targetPointer, int numBytes) {
+    int remaining = size - readerIndex;
+    if (numBytes > remaining) {
+      streamReader.readToUnsafe(target, targetPointer, numBytes);
+    } else {
+      int readerIdx = readerIndex;
+      Platform.copyMemory(heapMemory, address + readerIdx, target, targetPointer, numBytes);
+      readerIndex = readerIdx + numBytes;
     }
-    Platform.copyMemory(heapMemory, address + readerIdx, chars, offset, numBytes);
-    readerIndex = readerIdx + numBytes;
   }
 
   public void checkReadableBytes(int minimumReadableBytes) {
     // use subtract to avoid overflow
-    if (BoundsChecking.BOUNDS_CHECKING_ENABLED && readerIndex > size - minimumReadableBytes) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "readerIndex(%d) + length(%d) exceeds size(%d): %s",
-              readerIndex, minimumReadableBytes, size, this));
+    int remaining = size - readerIndex;
+    if (minimumReadableBytes > remaining) {
+      streamReader.fillBuffer(minimumReadableBytes - remaining);
     }
   }
 
@@ -2468,12 +2647,6 @@ public final class MemoryBuffer {
     Platform.copyMemory(this.heapMemory, thisPointer, target, targetPointer, numBytes);
   }
 
-  public void copyToUnsafeSmall(long offset, Object target, long targetPointer, int numBytes) {
-    final long thisPointer = this.address + offset;
-    checkArgument(thisPointer + numBytes <= addressLimit);
-    Platform.UNSAFE.copyMemory(this.heapMemory, thisPointer, target, targetPointer, numBytes);
-  }
-
   /**
    * Bulk copy method. Copies {@code numBytes} bytes from source unsafe object and pointer. NOTE:
    * This is an unsafe method, no check here, please be carefully.
@@ -2482,12 +2655,6 @@ public final class MemoryBuffer {
     final long thisPointer = this.address + offset;
     checkArgument(thisPointer + numBytes <= addressLimit);
     Platform.copyMemory(source, sourcePointer, this.heapMemory, thisPointer, numBytes);
-  }
-
-  public void copyFromUnsafeSmall(long offset, Object source, long sourcePointer, long numBytes) {
-    final long thisPointer = this.address + offset;
-    checkArgument(thisPointer + numBytes <= addressLimit);
-    Platform.UNSAFE.copyMemory(source, sourcePointer, this.heapMemory, thisPointer, numBytes);
   }
 
   /**
@@ -2560,7 +2727,7 @@ public final class MemoryBuffer {
       return Arrays.copyOf(heapMemory, length);
     }
     if (index + length > size) {
-      throw new IllegalArgumentException();
+      throwIndexOOBExceptionForRead(length);
     }
     byte[] data = new byte[length];
     copyToUnsafe(index, data, Platform.BYTE_ARRAY_OFFSET, length);
@@ -2569,11 +2736,10 @@ public final class MemoryBuffer {
 
   public void getBytes(int index, byte[] dst, int dstIndex, int length) {
     if (dstIndex > dst.length - length) {
-      throw new IndexOutOfBoundsException();
+      throwOOBException();
     }
     if (index > size - length) {
-      throw new IndexOutOfBoundsException(
-          String.format("offset(%d) + length(%d) exceeds size(%d): %s", index, length, size, this));
+      throwOOBException();
     }
     copyToUnsafe(index, dst, Platform.BYTE_ARRAY_OFFSET + dstIndex, length);
   }
@@ -2619,6 +2785,10 @@ public final class MemoryBuffer {
         return Platform.createDirectByteBufferFromNativeAddress(address + offset, length);
       }
     }
+  }
+
+  public FuryStreamReader getStreamReader() {
+    return streamReader;
   }
 
   /**
@@ -2670,8 +2840,8 @@ public final class MemoryBuffer {
   public boolean equalTo(MemoryBuffer buf2, int offset1, int offset2, int len) {
     final long pos1 = address + offset1;
     final long pos2 = buf2.address + offset2;
-    Preconditions.checkArgument(pos1 < addressLimit);
-    Preconditions.checkArgument(pos2 < buf2.addressLimit);
+    checkArgument(pos1 < addressLimit);
+    checkArgument(pos2 < buf2.addressLimit);
     return Platform.arrayEquals(heapMemory, pos1, buf2.heapMemory, pos2, len);
   }
 
@@ -2719,7 +2889,12 @@ public final class MemoryBuffer {
 
   /** Creates a new memory buffer that targets to the given heap memory region. */
   public static MemoryBuffer fromByteArray(byte[] buffer, int offset, int length) {
-    return new MemoryBuffer(buffer, offset, length);
+    return new MemoryBuffer(buffer, offset, length, null);
+  }
+
+  public static MemoryBuffer fromByteArray(
+      byte[] buffer, int offset, int length, FuryStreamReader streamReader) {
+    return new MemoryBuffer(buffer, offset, length, streamReader);
   }
 
   /** Creates a new memory buffer that targets to the given heap memory region. */
@@ -2742,6 +2917,12 @@ public final class MemoryBuffer {
       int offset = buffer.arrayOffset() + buffer.position();
       return new MemoryBuffer(buffer.array(), offset, buffer.remaining());
     }
+  }
+
+  public static MemoryBuffer fromDirectByteBuffer(
+      ByteBuffer buffer, int size, FuryStreamReader streamReader) {
+    long offHeapAddress = Platform.getAddress(buffer) + buffer.position();
+    return new MemoryBuffer(offHeapAddress, size, buffer, streamReader);
   }
 
   /**

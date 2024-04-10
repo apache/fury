@@ -62,12 +62,12 @@ import org.apache.fury.format.vectorized.ArrowSerializers;
 import org.apache.fury.format.vectorized.ArrowTable;
 import org.apache.fury.format.vectorized.ArrowUtils;
 import org.apache.fury.format.vectorized.ArrowWriter;
-import org.apache.fury.io.FuryOutputStream;
+import org.apache.fury.io.MemoryBufferOutputStream;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferObject;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -178,7 +178,7 @@ public class CrossLanguageTest {
     Path dataFile = Files.createTempFile("foo", "data");
     MemoryBuffer buffer = MemoryUtils.buffer(128);
     try (ArrowStreamWriter writer =
-        new ArrowStreamWriter(root, null, new FuryOutputStream(buffer))) {
+        new ArrowStreamWriter(root, null, new MemoryBufferOutputStream(buffer))) {
       writer.start();
       for (int i = 0; i < 1; i++) {
         vector.allocateNew(16);
@@ -220,7 +220,7 @@ public class CrossLanguageTest {
       VectorSchemaRoot root = ArrowUtils.createVectorSchemaRoot(encoder.schema());
       ArrowWriter arrowWriter = new ArrowWriter(root);
       try (ArrowStreamWriter writer =
-          new ArrowStreamWriter(root, null, new FuryOutputStream(buffer))) {
+          new ArrowStreamWriter(root, null, new MemoryBufferOutputStream(buffer))) {
         writer.start();
         for (int i = 0; i < numRows; i++) {
           BinaryRow row = encoder.toRow(foo);
@@ -245,7 +245,8 @@ public class CrossLanguageTest {
       ArrowUtils.serializeRecordBatch(recordBatch, buffer);
       arrowWriter.reset();
       ArrowStreamWriter.writeEndOfStream(
-          new WriteChannel(Channels.newChannel(new FuryOutputStream(buffer))), new IpcOption());
+          new WriteChannel(Channels.newChannel(new MemoryBufferOutputStream(buffer))),
+          new IpcOption());
       Files.write(dataFile, buffer.getBytes(0, buffer.writerIndex()));
       Assert.assertTrue(executeCommand(command, 30));
     }

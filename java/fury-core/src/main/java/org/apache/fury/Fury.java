@@ -19,10 +19,8 @@
 
 package org.apache.fury;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -30,7 +28,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.builder.JITContext;
 import org.apache.fury.collection.ObjectArray;
@@ -40,6 +37,10 @@ import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.config.LongEncoding;
 import org.apache.fury.exception.DeserializationException;
+import org.apache.fury.io.FuryInputStream;
+import org.apache.fury.io.FuryReadableChannel;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassInfo;
@@ -61,11 +62,9 @@ import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.ExceptionUtils;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
-import org.slf4j.Logger;
 
 /**
  * Cross-Lang Data layout: 1byte mask: 1-bit null: 0->null, 1->not null 1-bit endianness: 0->le,
@@ -248,7 +247,9 @@ public final class Fury implements BaseFury {
     buffer.put(maskIndex, bitmap);
     try {
       jitContext.lock();
-      checkDepthForSerialization();
+      if (depth != 0) {
+        throwDepthSerializationException();
+      }
       if (language == Language.JAVA) {
         write(buffer, obj);
       } else {
@@ -265,23 +266,12 @@ public final class Fury implements BaseFury {
 
   @Override
   public void serialize(OutputStream outputStream, Object obj) {
-    serialize(outputStream, obj, null);
+    serializeToStream(outputStream, buf -> serialize(buf, obj, null));
   }
 
   @Override
   public void serialize(OutputStream outputStream, Object obj, BufferCallback callback) {
-    MemoryBuffer buf = getBuffer();
-    buf.writerIndex(0);
-    buf.writeInt(-1);
-    serialize(buf, obj, callback);
-    buf.putInt(0, buf.writerIndex() - 4);
-    try {
-      outputStream.write(buf.getBytes(0, buf.writerIndex()));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    } finally {
-      resetBuffer();
-    }
+    serializeToStream(outputStream, buf -> serialize(buf, obj, callback));
   }
 
   private StackOverflowError processStackOverflowError(StackOverflowError e) {
@@ -721,7 +711,9 @@ public final class Fury implements BaseFury {
   public Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
       jitContext.lock();
-      checkDepthForDeserialization();
+      if (depth != 0) {
+        throwDepthDeserializationException();
+      }
       byte bitmap = buffer.readByte();
       if ((bitmap & isNilFlag) == isNilFlag) {
         return null;
@@ -758,8 +750,7 @@ public final class Fury implements BaseFury {
       }
       return obj;
     } catch (Throwable t) {
-      handleReadFailed(t);
-      throw new IllegalStateException("unreachable");
+      throw handleReadFailed(t);
     } finally {
       resetRead();
       jitContext.unlock();
@@ -767,24 +758,32 @@ public final class Fury implements BaseFury {
   }
 
   @Override
-  public Object deserialize(InputStream inputStream) {
+  public Object deserialize(FuryInputStream inputStream) {
     return deserialize(inputStream, null);
   }
 
   @Override
-  public Object deserialize(InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
+  public Object deserialize(FuryInputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
     try {
-      MemoryBuffer buf = getBuffer();
-      readToBufferFromStream(inputStream, buf);
+      MemoryBuffer buf = inputStream.getBuffer();
       return deserialize(buf, outOfBandBuffers);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     } finally {
-      resetBuffer();
+      inputStream.shrinkBuffer();
     }
   }
 
-  private void handleReadFailed(Throwable t) {
+  @Override
+  public Object deserialize(FuryReadableChannel channel) {
+    return deserialize(channel, null);
+  }
+
+  @Override
+  public Object deserialize(FuryReadableChannel channel, Iterable<MemoryBuffer> outOfBandBuffers) {
+    MemoryBuffer buf = channel.getBuffer();
+    return deserialize(buf, outOfBandBuffers);
+  }
+
+  private RuntimeException handleReadFailed(Throwable t) {
     if (refResolver instanceof MapRefResolver) {
       ObjectArray readObjects = ((MapRefResolver) refResolver).getReadObjects();
       // carry with read objects for better trouble shooting.
@@ -792,6 +791,7 @@ public final class Fury implements BaseFury {
       throw new DeserializationException(objects, t);
     } else {
       Platform.throwException(t);
+      throw new IllegalStateException("unreachable");
     }
   }
 
@@ -1023,7 +1023,9 @@ public final class Fury implements BaseFury {
   public void serializeJavaObject(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
-      checkDepthForSerialization();
+      if (depth != 0) {
+        throwDepthSerializationException();
+      }
       if (config.shareMetaContext()) {
         int startOffset = buffer.writerIndex();
         buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
@@ -1066,7 +1068,9 @@ public final class Fury implements BaseFury {
   public <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls) {
     try {
       jitContext.lock();
-      checkDepthForDeserialization();
+      if (depth != 0) {
+        throwDepthDeserializationException();
+      }
       if (config.shareMetaContext()) {
         classResolver.readClassDefs(buffer);
       }
@@ -1079,8 +1083,7 @@ public final class Fury implements BaseFury {
         return null;
       }
     } catch (Throwable t) {
-      handleReadFailed(t);
-      throw new IllegalStateException("unreachable");
+      throw handleReadFailed(t);
     } finally {
       resetRead();
       jitContext.unlock();
@@ -1092,9 +1095,23 @@ public final class Fury implements BaseFury {
    * #serializeJavaObject}.
    */
   @Override
-  @SuppressWarnings("unchecked")
-  public <T> T deserializeJavaObject(InputStream inputStream, Class<T> cls) {
-    return (T) deserializeFromStream(inputStream, buf -> this.deserializeJavaObject(buf, cls));
+  public <T> T deserializeJavaObject(FuryInputStream inputStream, Class<T> cls) {
+    try {
+      MemoryBuffer buf = inputStream.getBuffer();
+      return deserializeJavaObject(buf, cls);
+    } finally {
+      inputStream.shrinkBuffer();
+    }
+  }
+
+  /**
+   * Deserialize java object from binary channel by passing class info, serialization should use
+   * {@link #serializeJavaObject}.
+   */
+  @Override
+  public <T> T deserializeJavaObject(FuryReadableChannel channel, Class<T> cls) {
+    MemoryBuffer buf = channel.getBuffer();
+    return deserializeJavaObject(buf, cls);
   }
 
   /**
@@ -1119,7 +1136,9 @@ public final class Fury implements BaseFury {
   public void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj) {
     try {
       jitContext.lock();
-      checkDepthForSerialization();
+      if (depth != 0) {
+        throwDepthSerializationException();
+      }
       write(buffer, obj);
     } catch (StackOverflowError t) {
       throw processStackOverflowError(t);
@@ -1155,14 +1174,15 @@ public final class Fury implements BaseFury {
   public Object deserializeJavaObjectAndClass(MemoryBuffer buffer) {
     try {
       jitContext.lock();
-      checkDepthForDeserialization();
+      if (depth != 0) {
+        throwDepthDeserializationException();
+      }
       if (config.shareMetaContext()) {
         classResolver.readClassDefs(buffer);
       }
       return readRef(buffer);
     } catch (Throwable t) {
-      handleReadFailed(t);
-      throw new IllegalStateException("unreachable");
+      throw handleReadFailed(t);
     } finally {
       resetRead();
       jitContext.unlock();
@@ -1174,26 +1194,37 @@ public final class Fury implements BaseFury {
    * #serializeJavaObjectAndClass}.
    */
   @Override
-  public Object deserializeJavaObjectAndClass(InputStream inputStream) {
-    return deserializeFromStream(inputStream, this::deserializeJavaObjectAndClass);
+  public Object deserializeJavaObjectAndClass(FuryInputStream inputStream) {
+    try {
+      MemoryBuffer buf = inputStream.getBuffer();
+      return deserializeJavaObjectAndClass(buf);
+    } finally {
+      inputStream.shrinkBuffer();
+    }
+  }
+
+  /**
+   * Deserialize class info and java object from binary channel, serialization should use {@link
+   * #serializeJavaObjectAndClass}.
+   */
+  @Override
+  public Object deserializeJavaObjectAndClass(FuryReadableChannel channel) {
+    MemoryBuffer buf = channel.getBuffer();
+    return deserializeJavaObjectAndClass(buf);
   }
 
   private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {
     MemoryBuffer buf = getBuffer();
     if (outputStream.getClass() == ByteArrayOutputStream.class) {
       byte[] oldBytes = buf.getHeapMemory(); // Note: This should not be null.
+      assert oldBytes != null;
       MemoryUtils.wrap((ByteArrayOutputStream) outputStream, buf);
-      int writerIndex = buf.writerIndex();
-      buf.writeInt(-1);
       function.accept(buf);
-      buf.putInt(writerIndex, buf.writerIndex() - writerIndex);
       MemoryUtils.wrap(buf, (ByteArrayOutputStream) outputStream);
       buf.pointTo(oldBytes, 0, oldBytes.length);
     } else {
       buf.writerIndex(0);
-      buf.writeInt(-1);
       function.accept(buf);
-      buf.putInt(0, buf.writerIndex() - 4);
       try {
         byte[] bytes = buf.getHeapMemory();
         if (bytes != null) {
@@ -1208,58 +1239,6 @@ public final class Fury implements BaseFury {
         resetBuffer();
       }
     }
-  }
-
-  private Object deserializeFromStream(
-      InputStream inputStream, Function<MemoryBuffer, Object> function) {
-    MemoryBuffer buf = getBuffer();
-    try {
-      boolean isBis = inputStream.getClass() == ByteArrayInputStream.class;
-      byte[] oldBytes = null;
-      if (isBis) {
-        buf.readerIndex(0);
-        oldBytes = buf.getHeapMemory(); // Note: This should not be null.
-        MemoryUtils.wrap((ByteArrayInputStream) inputStream, buf);
-        buf.increaseReaderIndex(4); // skip size.
-      } else {
-        readToBufferFromStream(inputStream, buf);
-      }
-      Object o = function.apply(buf);
-      if (isBis) {
-        inputStream.skip(buf.readerIndex());
-        buf.pointTo(oldBytes, 0, oldBytes.length);
-      }
-      return o;
-    } catch (Throwable t) {
-      handleReadFailed(t);
-      throw new IllegalStateException("unreachable");
-    } finally {
-      resetBuffer();
-    }
-  }
-
-  private static void readToBufferFromStream(InputStream inputStream, MemoryBuffer buffer)
-      throws IOException {
-    buffer.readerIndex(0);
-    int read = readBytes(inputStream, buffer.getHeapMemory(), 0, 4);
-    Preconditions.checkArgument(read == 4);
-    int size = buffer.readInt();
-    buffer.ensure(4 + size);
-    read = readBytes(inputStream, buffer.getHeapMemory(), 4, size);
-    Preconditions.checkArgument(read == size);
-  }
-
-  private static int readBytes(InputStream inputStream, byte[] buffer, int offset, int size)
-      throws IOException {
-    int read = 0;
-    int count = 0;
-    while (read < size) {
-      if ((count = inputStream.read(buffer, offset + read, size - read)) == -1) {
-        break;
-      }
-      read += count;
-    }
-    return (read == 0 && count == -1) ? -1 : read;
   }
 
   public void reset() {
@@ -1293,24 +1272,20 @@ public final class Fury implements BaseFury {
     depth = 0;
   }
 
-  private void checkDepthForSerialization() {
-    if (depth != 0) {
-      String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "writeXXX";
-      throw new IllegalStateException(
-          String.format(
-              "Nested call Fury.serializeXXX is not allowed when serializing, Please use %s instead",
-              method));
-    }
+  private void throwDepthSerializationException() {
+    String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "writeXXX";
+    throw new IllegalStateException(
+        String.format(
+            "Nested call Fury.serializeXXX is not allowed when serializing, Please use %s instead",
+            method));
   }
 
-  private void checkDepthForDeserialization() {
-    if (depth != 0) {
-      String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "readXXX";
-      throw new IllegalStateException(
-          String.format(
-              "Nested call Fury.deserializeXXX is not allowed when deserializing, Please use %s instead",
-              method));
-    }
+  private void throwDepthDeserializationException() {
+    String method = "Fury#" + (language != Language.JAVA ? "x" : "") + "readXXX";
+    throw new IllegalStateException(
+        String.format(
+            "Nested call Fury.deserializeXXX is not allowed when deserializing, Please use %s instead",
+            method));
   }
 
   public JITContext getJITContext() {

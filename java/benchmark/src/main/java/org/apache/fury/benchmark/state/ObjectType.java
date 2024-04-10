@@ -24,8 +24,8 @@ import org.apache.fury.benchmark.data.Sample;
 import org.apache.fury.benchmark.data.Struct;
 
 public enum ObjectType {
-  SAMPLE,
   MEDIA_CONTENT,
+  SAMPLE,
   STRUCT,
   STRUCT2;
 

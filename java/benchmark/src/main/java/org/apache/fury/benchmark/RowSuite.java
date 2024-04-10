@@ -36,10 +36,10 @@ import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.fury.format.encoder.Encoder;
 import org.apache.fury.format.encoder.Encoders;
-import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
-import org.slf4j.Logger;
 
 public class RowSuite {
   private static final Logger LOG = LoggerFactory.getLogger(RowSuite.class);

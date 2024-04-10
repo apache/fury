@@ -248,13 +248,12 @@ public class Serializers {
         byte[] v = (byte[]) GET_VALUE.apply(value);
         buffer.writeByte(coder);
         if (coder == 0) {
-          buffer.writePrimitiveArrayWithSizeEmbedded(v, Platform.BYTE_ARRAY_OFFSET, value.length());
+          buffer.writePrimitiveArrayWithSize(v, Platform.BYTE_ARRAY_OFFSET, value.length());
         } else {
           if (coder != 1) {
             throw new UnsupportedOperationException("Unsupported coder " + coder);
           }
-          buffer.writePrimitiveArrayWithSizeEmbedded(
-              v, Platform.BYTE_ARRAY_OFFSET, value.length() << 1);
+          buffer.writePrimitiveArrayWithSize(v, Platform.BYTE_ARRAY_OFFSET, value.length() << 1);
         }
       } else {
         char[] v = (char[]) GET_VALUE.apply(value);
@@ -327,7 +326,7 @@ public class Serializers {
 
     @Override
     public Enum read(MemoryBuffer buffer) {
-      return enumConstants[buffer.readPositiveVarInt()];
+      return enumConstants[buffer.readVarUintSmall()];
     }
   }
 
@@ -364,14 +363,13 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigInteger value) {
       final byte[] bytes = value.toByteArray();
-      Preconditions.checkArgument(bytes.length <= 16);
-      buffer.writeByte((byte) bytes.length);
+      buffer.writePositiveVarInt(bytes.length);
       buffer.writeBytes(bytes);
     }
 
     @Override
     public BigInteger read(MemoryBuffer buffer) {
-      int len = buffer.readByte();
+      int len = buffer.readPositiveVarInt();
       byte[] bytes = buffer.readBytes(len);
       return new BigInteger(bytes);
     }

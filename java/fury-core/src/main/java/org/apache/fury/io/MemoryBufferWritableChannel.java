@@ -24,11 +24,11 @@ import java.nio.channels.WritableByteChannel;
 import org.apache.fury.memory.MemoryBuffer;
 
 /** {@link WritableByteChannel} based on fury {@link MemoryBuffer}. */
-public class FuryWritableByteChannel implements WritableByteChannel {
+public class MemoryBufferWritableChannel implements WritableByteChannel {
   private boolean open = true;
   private final MemoryBuffer buffer;
 
-  public FuryWritableByteChannel(MemoryBuffer buffer) {
+  public MemoryBufferWritableChannel(MemoryBuffer buffer) {
     this.buffer = buffer;
   }
 

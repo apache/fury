@@ -29,8 +29,8 @@ import org.apache.arrow.vector.ipc.WriteChannel;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
 import org.apache.arrow.vector.types.pojo.Schema;
-import org.apache.fury.io.FuryInputStream;
-import org.apache.fury.io.FuryOutputStream;
+import org.apache.fury.io.MemoryBufferInputStream;
+import org.apache.fury.io.MemoryBufferOutputStream;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.DecimalUtils;
 
@@ -63,7 +63,7 @@ public class ArrowUtils {
   public static void serializeRecordBatch(ArrowRecordBatch recordBatch, MemoryBuffer buffer) {
     // TODO(chaokunyang) add custom WritableByteChannel to avoid copy in `WritableByteChannelImpl`
     try (WriteChannel channel =
-        new WriteChannel(Channels.newChannel(new FuryOutputStream(buffer)))) {
+        new WriteChannel(Channels.newChannel(new MemoryBufferOutputStream(buffer)))) {
       MessageSerializer.serialize(channel, recordBatch);
     } catch (IOException e) {
       throw new RuntimeException(String.format("Serialize record batch %s failed", recordBatch), e);
@@ -73,7 +73,8 @@ public class ArrowUtils {
   public static ArrowRecordBatch deserializeRecordBatch(MemoryBuffer recordBatchMessageBuffer) {
     // TODO(chaokunyang) add custom ReadableByteChannel to avoid copy in `ReadableByteChannelImpl`
     try (ReadChannel channel =
-        new ReadChannel(Channels.newChannel(new FuryInputStream(recordBatchMessageBuffer)))) {
+        new ReadChannel(
+            Channels.newChannel(new MemoryBufferInputStream(recordBatchMessageBuffer)))) {
       return MessageSerializer.deserializeRecordBatch(channel, allocator);
     } catch (IOException e) {
       throw new RuntimeException("Deserialize record batch failed", e);
