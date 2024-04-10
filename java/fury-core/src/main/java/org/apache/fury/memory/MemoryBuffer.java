@@ -1300,24 +1300,24 @@ public final class MemoryBuffer {
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     int readIdx = readerIndex;
-    if (size - readIdx < 9) {
+    if (size - readIdx >= 9) {
+      long bulkValue = unsafeGetLong(readIdx++);
+      // noinspection Duplicates
+      long result = bulkValue & 0x7F;
+      if ((bulkValue & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (bulkValue >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((bulkValue & 0x8000) != 0) {
+          return continueReadVarLong64(readIdx, bulkValue, result);
+        }
+      }
+      readerIndex = readIdx;
+      return result;
+    } else {
       return readPositiveVarLongSlow();
     }
-    // varint are written using little endian byte order, so read by little endian byte order.
-    long bulkValue = unsafeGetLong(readIdx);
-    readIdx++;
-    long result = bulkValue & 0x7F;
-    if ((bulkValue & 0x80) != 0) {
-      readIdx++;
-      // 0x3f80: 0b1111111 << 7
-      result |= (bulkValue >>> 1) & 0x3f80;
-      // 0x8000: 0b1 << 15
-      if ((bulkValue & 0x8000) != 0) {
-        return continueReadVarLong64(readIdx, bulkValue, result);
-      }
-    }
-    readerIndex = readIdx;
-    return result;
   }
 
   /** Reads the 1-5 byte int part of a non-negative varint. */
