@@ -158,6 +158,15 @@ public final class MemoryBuffer {
    */
   private MemoryBuffer(
       long offHeapAddress, int size, ByteBuffer offHeapBuffer, FuryStreamReader streamReader) {
+    initDirectBuffer(offHeapAddress, size, offHeapBuffer);
+    if (streamReader != null) {
+      this.streamReader = streamReader;
+    } else {
+      this.streamReader = new BoundChecker();
+    }
+  }
+
+  public void initDirectBuffer(long offHeapAddress, int size, ByteBuffer offHeapBuffer) {
     this.offHeapBuffer = offHeapBuffer;
     if (offHeapAddress <= 0) {
       throw new IllegalArgumentException("negative pointer or size");
@@ -175,11 +184,6 @@ public final class MemoryBuffer {
     this.address = offHeapAddress;
     this.addressLimit = this.address + size;
     this.size = size;
-    if (streamReader != null) {
-      this.streamReader = streamReader;
-    } else {
-      this.streamReader = new BoundChecker();
-    }
   }
 
   private class BoundChecker extends AbstractStreamReader {
@@ -1256,18 +1260,16 @@ public final class MemoryBuffer {
   /**
    * Caller must ensure there must be at least 8 bytes for writing, otherwise the crash may occur.
    */
-  public int unsafePutVarUint36Small(int index, long value) {
+  public int unsafePutVarUint36Small(int index, int value) {
     long encoded = (value & 0x7F);
-    value >>>= 7;
-    if (value == 0) {
-      UNSAFE.putByte(heapMemory, address + index, (byte) encoded);
+    if (value >>> 7 == 0) {
+      UNSAFE.putByte(heapMemory, address + index, (byte) varInt);
       return 1;
     }
     // bit 8 `set` indicates have next data bytes.
-    encoded |= 0x80;
-    encoded |= ((value & 0x7F) << 8);
-    value >>>= 7;
-    if (value == 0) {
+    // 0x3f80: 0b1111111 << 7
+    encoded |= (((value & 0x3f80) << 1) | 0x80);
+    if (value >>> 14 == 0) {
       unsafePutInt(index, (int) encoded);
       return 2;
     }
@@ -1275,23 +1277,20 @@ public final class MemoryBuffer {
   }
 
   private int continuePutVarInt36(int index, long encoded, long value) {
-    encoded |= (0x80 << 8);
-    encoded |= ((value & 0x7F) << 16);
-    value >>>= 7;
-    if (value == 0) {
+    // 0x1fc000: 0b1111111 << 14
+    encoded |= (((value & 0x1fc000) << 2) | 0x8000);
+    if (value >>> 21 == 0) {
       unsafePutInt(index, (int) encoded);
       return 3;
     }
-    encoded |= (0x80 << 16);
-    encoded |= ((value & 0x7F) << 24);
-    value >>>= 7;
-    if (value == 0) {
+    // 0xfe00000: 0b1111111 << 21
+    encoded |= ((value & 0xfe00000) << 3) | 0x800000;
+    if (value >>> 28 == 0) {
       unsafePutInt(index, (int) encoded);
       return 4;
     }
-    encoded |= (0x80L << 24);
-    encoded |= ((value & 0x7F) << 32);
-    encoded &= 0xFFFFFFFFFL;
+    // 0xfe00000: 0b1111111 << 28
+    encoded |= ((value & 0x7f0000000L) << 4) | 0x80000000L;
     unsafePutLong(index, encoded);
     return 5;
   }
@@ -2910,6 +2909,12 @@ public final class MemoryBuffer {
       int offset = buffer.arrayOffset() + buffer.position();
       return new MemoryBuffer(buffer.array(), offset, buffer.remaining());
     }
+  }
+
+  public static MemoryBuffer fromDirectByteBuffer(
+      ByteBuffer buffer, int size, FuryStreamReader streamReader) {
+    long offHeapAddress = Platform.getAddress(buffer) + buffer.position();
+    return new MemoryBuffer(offHeapAddress, size, buffer, streamReader);
   }
 
   /**

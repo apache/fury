@@ -38,6 +38,7 @@ import org.apache.fury.config.Language;
 import org.apache.fury.config.LongEncoding;
 import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.io.FuryInputStream;
+import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
@@ -771,6 +772,17 @@ public final class Fury implements BaseFury {
     }
   }
 
+  @Override
+  public Object deserialize(FuryReadableChannel channel) {
+    return deserialize(channel, null);
+  }
+
+  @Override
+  public Object deserialize(FuryReadableChannel channel, Iterable<MemoryBuffer> outOfBandBuffers) {
+    MemoryBuffer buf = channel.getBuffer();
+    return deserialize(buf, outOfBandBuffers);
+  }
+
   private RuntimeException handleReadFailed(Throwable t) {
     if (refResolver instanceof MapRefResolver) {
       ObjectArray readObjects = ((MapRefResolver) refResolver).getReadObjects();
@@ -1093,6 +1105,16 @@ public final class Fury implements BaseFury {
   }
 
   /**
+   * Deserialize java object from binary channel by passing class info, serialization should use
+   * {@link #serializeJavaObject}.
+   */
+  @Override
+  public <T> T deserializeJavaObject(FuryReadableChannel channel, Class<T> cls) {
+    MemoryBuffer buf = channel.getBuffer();
+    return deserializeJavaObject(buf, cls);
+  }
+
+  /**
    * Deserialize java object from binary by passing class info, serialization should use {@link
    * #deserializeJavaObjectAndClass}.
    */
@@ -1179,6 +1201,16 @@ public final class Fury implements BaseFury {
     } finally {
       inputStream.shrinkBuffer();
     }
+  }
+
+  /**
+   * Deserialize class info and java object from binary channel, serialization should use {@link
+   * #serializeJavaObjectAndClass}.
+   */
+  @Override
+  public Object deserializeJavaObjectAndClass(FuryReadableChannel channel) {
+    MemoryBuffer buf = channel.getBuffer();
+    return deserializeJavaObjectAndClass(buf);
   }
 
   private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {
