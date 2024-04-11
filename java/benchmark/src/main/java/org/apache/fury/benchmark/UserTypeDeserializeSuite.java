@@ -136,7 +136,8 @@ public class UserTypeDeserializeSuite {
   public static void main(String[] args) throws IOException {
     if (args.length == 0) {
       String commandLine =
-          "org.apache.fury.*UserTypeDeserializeSuite.fury* -f 1 -wi 5 -i 10 -t 1 -w 2s -r 2s -rf csv -p objectType=MEDIA_CONTENT -p bufferType=array -p references=false";
+          "org.apache.fury.*UserTypeDeserializeSuite.fury* -f 1 -wi 5 -i 10 -t 1 -w 2s -r 2s -rf csv "
+              + "-p objectType=MEDIA_CONTENT -p bufferType=array -p references=false";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }
