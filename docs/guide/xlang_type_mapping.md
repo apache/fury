@@ -12,7 +12,7 @@ Note:
 
 # Type Mapping
 
-| Type               | Type ID | Java            | Python               | Javascript      | C++                            | Golang           | Rust             |
+| Fury Type          | Fury Type ID | Java            | Python               | Javascript      | C++                            | Golang           | Rust             |
 |--------------------|---------|-----------------|----------------------|-----------------|--------------------------------|------------------|------------------|
 | bool               | 1       | bool/Boolean    | bool                 | Boolean         | bool                           | bool             | bool             |
 | int8               | 2       | byte/Byte       | int/pyfury.Int8      | Type.int8()     | int8_t                         | int8             | i8               |
