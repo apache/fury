@@ -1260,10 +1260,10 @@ public final class MemoryBuffer {
   /**
    * Caller must ensure there must be at least 8 bytes for writing, otherwise the crash may occur.
    */
-  public int unsafePutVarUint36Small(int index, int value) {
+  public int unsafePutVarUint36Small(int index, long value) {
     long encoded = (value & 0x7F);
     if (value >>> 7 == 0) {
-      UNSAFE.putByte(heapMemory, address + index, (byte) varInt);
+      UNSAFE.putByte(heapMemory, address + index, (byte) value);
       return 1;
     }
     // bit 8 `set` indicates have next data bytes.
