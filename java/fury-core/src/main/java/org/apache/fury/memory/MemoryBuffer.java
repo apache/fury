@@ -1697,64 +1697,56 @@ public final class MemoryBuffer {
     final int writerIndex = this.writerIndex;
     int varInt;
     varInt = (int) (value & 0x7F);
-    value >>>= 7;
-    if (value == 0) {
+    if (value >>> 7 == 0) {
       UNSAFE.putByte(heapMemory, address + writerIndex, (byte) varInt);
       this.writerIndex = writerIndex + 1;
       return 1;
     }
-    varInt |= (int) ((value & 0x7F) << 8) | 0x80;
-    value >>>= 7;
-    if (value == 0) {
+    varInt |= (((value & 0x3f80) << 1) | 0x80);
+    if (value >>> 14 == 0) {
       unsafePutInt(writerIndex, varInt);
       this.writerIndex = writerIndex + 2;
       return 2;
     }
-    varInt |= (int) ((value & 0x7F) << 16) | 0x8000;
-    value >>>= 7;
-    if (value == 0) {
+    varInt |= (((value & 0x1fc000) << 2) | 0x8000);
+    if (value >>> 21 == 0) {
       unsafePutInt(writerIndex, varInt);
       this.writerIndex = writerIndex + 3;
       return 3;
     }
-    varInt |= (int) ((value & 0x7F) << 24) | 0x800000;
-    value >>>= 7;
-    if (value == 0) {
+    varInt |= ((value & 0xfe00000) << 3) | 0x800000;
+    if (value >>> 28 == 0) {
       unsafePutInt(writerIndex, varInt);
       this.writerIndex = writerIndex + 4;
       return 4;
     }
     long varLong = (varInt & 0xFFFFFFFFL);
-    varLong |= ((value & 0x7F) << 32) | 0x80000000L;
-    value >>>= 7;
-    if (value == 0) {
+    varLong |= ((value & 0x7f0000000L) << 4) | 0x80000000L;
+    if (value >>> 35 == 0) {
       unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 5;
       return 5;
     }
-    varLong |= ((value & 0x7F) << 40) | 0x8000000000L;
-    value >>>= 7;
-    if (value == 0) {
+    varLong |= ((value & 0x3f800000000L) << 5) | 0x8000000000L;
+    if (value >>> 42 == 0) {
       unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 6;
       return 6;
     }
-    varLong |= ((value & 0x7F) << 48) | 0x800000000000L;
-    value >>>= 7;
-    if (value == 0) {
+    varLong |= ((value & 0x1fc0000000000L) << 6) | 0x800000000000L;
+    if (value >>> 49 == 0) {
       unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 7;
       return 7;
     }
-    varLong |= ((value & 0x7F) << 56) | 0x80000000000000L;
-    value >>>= 7;
+    varLong |= ((value & 0xfe000000000000L) << 7) | 0x80000000000000L;
+    value >>>= 56;
     if (value == 0) {
       unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 8;
       return 8;
     }
-    varLong |= 0x8000000000000000L;
-    unsafePutLong(writerIndex, varLong);
+    unsafePutLong(writerIndex, varLong | 0x8000000000000000L);
     UNSAFE.putByte(heapMemory, address + writerIndex + 8, (byte) (value & 0xFF));
     this.writerIndex = writerIndex + 9;
     return 9;
