@@ -29,8 +29,6 @@ import org.apache.fury.benchmark.LongStringSerializationSuite;
 import org.apache.fury.benchmark.LongsSerializationSuite;
 import org.apache.fury.benchmark.StringSerializationSuite;
 import org.apache.fury.benchmark.data.Data;
-import org.apache.fury.benchmark.data.MediaContent;
-import org.apache.fury.benchmark.data.Sample;
 import org.apache.fury.benchmark.data.Struct;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
