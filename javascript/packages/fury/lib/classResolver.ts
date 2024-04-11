@@ -104,6 +104,7 @@ export default class SerializerResolver {
     this.registerSerializer(fury, Type.timestamp());
     this.registerSerializer(fury, Type.duration());
     this.registerSerializer(fury, Type.set(Type.any()));
+    this.registerSerializer(fury, Type.binary());
     this.registerSerializer(fury, Type.boolArray());
     this.registerSerializer(fury, Type.int16Array());
     this.registerSerializer(fury, Type.int32Array());
@@ -289,23 +290,27 @@ export default class SerializerResolver {
         return 18;
       case InternalSerializerType.DECIMAL:
         return 19;
+      case InternalSerializerType.BINARY:
+        return 20;
       case InternalSerializerType.TUPLE:
       case InternalSerializerType.ARRAY:
-        return 20;
-      case InternalSerializerType.BOOL_ARRAY:
         return 21;
-      case InternalSerializerType.INT16_ARRAY:
+      case InternalSerializerType.BOOL_ARRAY:
         return 22;
-      case InternalSerializerType.INT32_ARRAY:
+      case InternalSerializerType.INT8_ARRAY:
         return 23;
-      case InternalSerializerType.INT64_ARRAY:
+      case InternalSerializerType.INT16_ARRAY:
         return 24;
-      case InternalSerializerType.FLOAT16_ARRAY:
+      case InternalSerializerType.INT32_ARRAY:
         return 25;
-      case InternalSerializerType.FLOAT32_ARRAY:
+      case InternalSerializerType.INT64_ARRAY:
         return 26;
-      case InternalSerializerType.FLOAT64_ARRAY:
+      case InternalSerializerType.FLOAT16_ARRAY:
         return 27;
+      case InternalSerializerType.FLOAT32_ARRAY:
+        return 28;
+      case InternalSerializerType.FLOAT64_ARRAY:
+        return 29;
       case InternalSerializerType.OBJECT: // todo
         return 256;
       default:

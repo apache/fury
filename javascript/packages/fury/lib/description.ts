@@ -198,12 +198,15 @@ export type InputType<T> = T extends {
                         type: InternalSerializerType.ANY;
                       }
                         ? any
-                        : T extends {
-                          type: InternalSerializerType.ENUM;
+                        : T extends { type: InternalSerializerType.BINARY;
                         }
-                          ? EnumProps<T> : T extends {
-                            type: InternalSerializerType.ONEOF;
-                          } ? OneofProps<T> : unknown;
+                          ? Uint8Array
+                          : T extends {
+                            type: InternalSerializerType.ENUM;
+                          }
+                            ? EnumProps<T> : T extends {
+                              type: InternalSerializerType.ONEOF;
+                            } ? OneofProps<T> : unknown;
 
 export type ResultType<T> = T extends {
   type: InternalSerializerType.OBJECT;
@@ -258,16 +261,18 @@ export type ResultType<T> = T extends {
                       type: InternalSerializerType.TIMESTAMP;
                     }
                       ? number
-                      : T extends {
-                        type: InternalSerializerType.ANY;
+                      : T extends { type: InternalSerializerType.BINARY;
                       }
-                        ? any
-                        : T extends {
-                          type: InternalSerializerType.ENUM;
+                        ? Uint8Array : T extends {
+                          type: InternalSerializerType.ANY;
                         }
-                          ? EnumProps<T> : T extends {
-                            type: InternalSerializerType.ONEOF;
-                          } ? OneofResult<T> : unknown;
+                          ? any
+                          : T extends {
+                            type: InternalSerializerType.ENUM;
+                          }
+                            ? EnumProps<T> : T extends {
+                              type: InternalSerializerType.ONEOF;
+                            } ? OneofResult<T> : unknown;
 
 export const Type = {
   any() {
@@ -389,6 +394,11 @@ export const Type = {
   float64() {
     return {
       type: InternalSerializerType.FLOAT64 as const,
+    };
+  },
+  binary() {
+    return {
+      type: InternalSerializerType.BINARY as const,
     };
   },
   duration() {

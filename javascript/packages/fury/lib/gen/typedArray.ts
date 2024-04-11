@@ -78,6 +78,7 @@ function build(inner: TypeDescription) {
 }
 
 CodegenRegistry.register(InternalSerializerType.BOOL_ARRAY, build(Type.bool()));
+CodegenRegistry.register(InternalSerializerType.INT8_ARRAY, build(Type.int8()));
 CodegenRegistry.register(InternalSerializerType.INT16_ARRAY, build(Type.int16()));
 CodegenRegistry.register(InternalSerializerType.INT32_ARRAY, build(Type.int32()));
 CodegenRegistry.register(InternalSerializerType.INT64_ARRAY, build(Type.int64()));
