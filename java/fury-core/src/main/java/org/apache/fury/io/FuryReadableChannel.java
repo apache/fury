@@ -20,30 +20,136 @@
 package org.apache.fury.io;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import javax.annotation.concurrent.NotThreadSafe;
+import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.Platform;
+import org.apache.fury.util.Preconditions;
 
-// TODO support zero-copy channel reading.
-public class FuryReadableChannel extends AbstractStreamReader implements ReadableByteChannel {
+@NotThreadSafe
+public class FuryReadableChannel implements FuryStreamReader, ReadableByteChannel {
   private final ReadableByteChannel channel;
-  private final ByteBuffer byteBuffer;
-  private final MemoryBuffer buffer;
+  private final MemoryBuffer memoryBuffer;
+  private ByteBuffer byteBuffer;
 
   public FuryReadableChannel(ReadableByteChannel channel) {
-    this(channel, ByteBuffer.allocate(4096));
+    this(channel, ByteBuffer.allocateDirect(4096));
   }
 
-  private FuryReadableChannel(ReadableByteChannel channel, ByteBuffer directBuffer) {
+  public FuryReadableChannel(ReadableByteChannel channel, ByteBuffer directBuffer) {
+    Preconditions.checkArgument(
+        directBuffer.isDirect(), "FuryReadableChannel support only direct ByteBuffer.");
     this.channel = channel;
     this.byteBuffer = directBuffer;
-    this.buffer = MemoryBuffer.fromByteBuffer(directBuffer);
+    this.memoryBuffer = MemoryBuffer.fromDirectByteBuffer(directBuffer, 0, this);
+  }
+
+  @Override
+  public int fillBuffer(int minFillSize) {
+    try {
+      ByteBuffer byteBuf = byteBuffer;
+      MemoryBuffer memoryBuf = memoryBuffer;
+      int position = byteBuf.position();
+      int newLimit = position + minFillSize;
+      if (newLimit > byteBuf.capacity()) {
+        int newSize =
+            newLimit < BUFFER_GROW_STEP_THRESHOLD ? newLimit << 2 : (int) (newLimit * 1.5);
+        ByteBuffer newByteBuf = ByteBuffer.allocateDirect(newSize);
+        byteBuf.position(0);
+        newByteBuf.put(byteBuf);
+        byteBuf = byteBuffer = newByteBuf;
+        memoryBuf.initDirectBuffer(Platform.getAddress(byteBuf), position, byteBuf);
+      }
+      byteBuf.limit(newLimit);
+      int readCount = channel.read(byteBuf);
+      memoryBuf.increaseSize(readCount);
+      return readCount;
+    } catch (IOException e) {
+      throw new DeserializationException("Failed to read the provided byte channel", e);
+    }
   }
 
   @Override
   public int read(ByteBuffer dst) throws IOException {
-    throw new UnsupportedEncodingException();
+    int length = dst.remaining();
+    MemoryBuffer buf = memoryBuffer;
+    int remaining = buf.remaining();
+    if (remaining >= length) {
+      buf.read(dst, length);
+      return length;
+    } else {
+      buf.read(dst, remaining);
+      return channel.read(dst) + remaining;
+    }
+  }
+
+  @Override
+  public void readTo(byte[] dst, int dstIndex, int length) {
+    MemoryBuffer buf = memoryBuffer;
+    int remaining = buf.remaining();
+    if (remaining >= length) {
+      buf.readBytes(dst, dstIndex, length);
+    } else {
+      buf.readBytes(dst, dstIndex, remaining);
+      try {
+        ByteBuffer buffer = ByteBuffer.wrap(dst, dstIndex + remaining, length - remaining);
+        channel.read(buffer);
+      } catch (IOException e) {
+        throw new DeserializationException("Failed to read the provided byte channel", e);
+      }
+    }
+  }
+
+  @Override
+  public void readToUnsafe(Object target, long targetPointer, int numBytes) {
+    MemoryBuffer buf = memoryBuffer;
+    int remaining = buf.remaining();
+    if (remaining < numBytes) {
+      fillBuffer(numBytes - remaining);
+    }
+    long address = buf.getUnsafeReaderAddress();
+    Platform.copyMemory(null, address, target, targetPointer, numBytes);
+    buf.increaseReaderIndex(numBytes);
+  }
+
+  @Override
+  public void readToByteBuffer(ByteBuffer dst, int length) {
+    MemoryBuffer buf = memoryBuffer;
+    int remaining = buf.remaining();
+    if (remaining >= length) {
+      buf.read(dst, length);
+    } else {
+      buf.read(dst, remaining);
+      try {
+        int dstLimit = dst.limit();
+        int newLimit = dst.position() + length - remaining;
+        if (dstLimit > newLimit) {
+          dst.limit(newLimit);
+          channel.read(dst);
+          dst.limit(dstLimit);
+        } else {
+          channel.read(dst);
+        }
+      } catch (IOException e) {
+        throw new DeserializationException("Failed to read the provided byte channel", e);
+      }
+    }
+  }
+
+  @Override
+  public int readToByteBuffer(ByteBuffer dst) {
+    MemoryBuffer buf = memoryBuffer;
+    int remaining = buf.remaining();
+    if (remaining > 0) {
+      buf.read(dst, remaining);
+    }
+    try {
+      return channel.read(dst) + remaining;
+    } catch (IOException e) {
+      throw new DeserializationException("Failed to read the provided byte channel", e);
+    }
   }
 
   @Override
@@ -58,6 +164,6 @@ public class FuryReadableChannel extends AbstractStreamReader implements Readabl
 
   @Override
   public MemoryBuffer getBuffer() {
-    return buffer;
+    return memoryBuffer;
   }
 }

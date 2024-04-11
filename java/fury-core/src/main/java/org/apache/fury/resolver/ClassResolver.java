@@ -94,6 +94,8 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.InsecureException;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.BufferSerializers;
@@ -137,13 +139,11 @@ import org.apache.fury.type.GenericType;
 import org.apache.fury.type.ScalaTypes;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
-import org.slf4j.Logger;
 
 /**
  * Class registry for types of serializing objects, responsible for reading/writing types, setting
@@ -640,7 +640,6 @@ public class ClassResolver {
       Class<?> cls = entry.getKey();
       String className = cls.getName();
       if (extRegistry.registeredClasses.containsKey(className)) {
-        LOG.debug("Skip clear serializer for registered class {}", className);
         continue;
       }
       if (className.startsWith(classNamePrefix)) {
@@ -973,7 +972,7 @@ public class ClassResolver {
         }
       }
     } else {
-      LOG.debug("Object of type {} can't be serialized by jit", cls);
+      LOG.info("Object of type {} can't be serialized by jit", cls);
       switch (fury.getCompatibleMode()) {
         case SCHEMA_CONSISTENT:
           return ObjectSerializer.class;

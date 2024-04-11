@@ -20,10 +20,10 @@
 package org.apache.fury.codegen;
 
 import java.util.function.Supplier;
-import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
-import org.slf4j.Logger;
 
 /** A CompileUnit corresponds to java file, which have a package, main class and code. */
 public class CompileUnit {

@@ -24,9 +24,9 @@ import com.google.common.cache.CacheBuilder;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.apache.fury.Fury;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.util.LoaderBinding;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * fury pool factory The pool is used to initialize instances of fury related objects for soft.

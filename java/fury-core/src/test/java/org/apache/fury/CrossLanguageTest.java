@@ -50,13 +50,13 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Data;
 import org.apache.fury.config.Language;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.serializer.Serializer;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.MurmurHash3;
-import org.slf4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

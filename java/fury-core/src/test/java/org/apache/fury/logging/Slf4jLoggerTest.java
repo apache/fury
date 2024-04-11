@@ -17,30 +17,23 @@
  * under the License.
  */
 
-package org.apache.fury.benchmark.state;
+package org.apache.fury.logging;
 
-import org.apache.fury.benchmark.data.MediaContent;
-import org.apache.fury.benchmark.data.Sample;
-import org.apache.fury.benchmark.data.Struct;
+import org.testng.annotations.Test;
 
-public enum ObjectType {
-  MEDIA_CONTENT,
-  SAMPLE,
-  STRUCT,
-  STRUCT2;
+public class Slf4jLoggerTest {
 
-  public static Object createObject(ObjectType objectType, boolean references) {
-    switch (objectType) {
-      case SAMPLE:
-        return new Sample().populate(references);
-      case MEDIA_CONTENT:
-        return new MediaContent().populate(references);
-      case STRUCT:
-        return Struct.create(false);
-      case STRUCT2:
-        return Struct.create(true);
-      default:
-        throw new UnsupportedOperationException(String.valueOf(objectType));
-    }
+  @Test
+  public void testInfo() {
+    Slf4jLogger logger = new Slf4jLogger((Slf4jLoggerTest.class));
+    FuryLogger furyLogger = new FuryLogger((Slf4jLoggerTest.class));
+    logger.info("testInfo");
+    logger.info("testInfo {}", "placeHolder");
+    logger.warn("testInfo {}", "placeHolder");
+    logger.error("testInfo {}", "placeHolder", new Exception("test log"));
+    furyLogger.info("testInfo");
+    furyLogger.info("testInfo {}", "placeHolder");
+    furyLogger.warn("testInfo {}", "placeHolder");
+    furyLogger.error("testInfo {}", "placeHolder", new Exception("test log"));
   }
 }

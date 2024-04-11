@@ -48,6 +48,8 @@ import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.config.Language;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.longlongpkg.C1;
@@ -62,8 +64,6 @@ import org.apache.fury.serializer.collection.CollectionSerializers;
 import org.apache.fury.serializer.collection.MapSerializers;
 import org.apache.fury.test.bean.BeanB;
 import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
