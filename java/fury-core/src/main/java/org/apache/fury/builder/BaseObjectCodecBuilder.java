@@ -34,6 +34,7 @@ import static org.apache.fury.collection.Collections.ofHashSet;
 import static org.apache.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
 import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.COLLECTION_TYPE;
+import static org.apache.fury.type.TypeUtils.LIST_TYPE;
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
@@ -711,7 +712,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             TypeUtils.collectionOf(elementType),
             buffer,
             collection);
-    collection = onCollectionWrite;
+    boolean isList = List.class.isAssignableFrom(getRawType(collection.type()));
+    collection =
+        isList ? new Cast(onCollectionWrite.inline(), LIST_TYPE, "list") : onCollectionWrite;
     Expression size = new Invoke(collection, "size", PRIMITIVE_INT_TYPE);
     walkPath.add(elementType.toString());
     ListExpression builder = new ListExpression();
