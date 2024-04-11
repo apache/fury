@@ -610,8 +610,8 @@ public class MemoryBufferTest {
               buf.getHeapMemory(), index, 0b111111111111111111111111111111111111L);
       assertEquals(buf.readVarUint36Small(), 0b111111111111111111111111111111111111L);
       buf.increaseReaderIndex(-diff);
-      index += buf.unsafePutVarUint36Small(index, 0b111111111111111111111111111111111111L);
-      assertEquals(buf.readVarUint36Small(), 0b111111111111111111111111111111111111L);
+      buf.unsafePutVarUint36Small(index, 0b1000000000000000000000000000000000000L);
+      assertEquals(buf.readVarUint36Small(), 0); // overflow
     }
   }
 }
