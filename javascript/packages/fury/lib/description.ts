@@ -141,7 +141,7 @@ type SetProps<T> = T extends {
   : unknown;
 
 export type InputType<T> = T extends {
-  type: InternalSerializerType.FURY_TYPE_TAG;
+  type: InternalSerializerType.OBJECT;
 }
   ? Props<T>
   : T extends {
@@ -154,19 +154,19 @@ export type InputType<T> = T extends {
       ? TupleProps<T>
       : T extends {
         type:
-          | InternalSerializerType.UINT8
-          | InternalSerializerType.UINT16
-          | InternalSerializerType.UINT32
           | InternalSerializerType.INT8
           | InternalSerializerType.INT16
           | InternalSerializerType.INT32
-          | InternalSerializerType.FLOAT
-          | InternalSerializerType.DOUBLE;
+          | InternalSerializerType.VAR_INT32
+          | InternalSerializerType.FLOAT16
+          | InternalSerializerType.FLOAT32
+          | InternalSerializerType.FLOAT64;
       }
         ? number
 
         : T extends {
-          type: InternalSerializerType.UINT64
+          type: InternalSerializerType.VAR_INT64
+            | InternalSerializerType.SLI_INT64
             | InternalSerializerType.INT64;
         }
           ? bigint
@@ -175,7 +175,7 @@ export type InputType<T> = T extends {
           }
             ? MapProps<T>
             : T extends {
-              type: InternalSerializerType.FURY_SET;
+              type: InternalSerializerType.SET;
             }
               ? SetProps<T>
               : T extends {
@@ -187,7 +187,7 @@ export type InputType<T> = T extends {
                 }
                   ? boolean
                   : T extends {
-                    type: InternalSerializerType.DATE;
+                    type: InternalSerializerType.DURATION;
                   }
                     ? Date
                     : T extends {
@@ -195,13 +195,12 @@ export type InputType<T> = T extends {
                     }
                       ? number
                       : T extends {
-                        type: InternalSerializerType.BINARY;
+                        type: InternalSerializerType.ANY;
                       }
-                        ? Uint8Array
-                        : T extends {
-                          type: InternalSerializerType.ANY;
+                        ? any
+                        : T extends { type: InternalSerializerType.BINARY;
                         }
-                          ? any
+                          ? Uint8Array
                           : T extends {
                             type: InternalSerializerType.ENUM;
                           }
@@ -210,7 +209,7 @@ export type InputType<T> = T extends {
                             } ? OneofProps<T> : unknown;
 
 export type ResultType<T> = T extends {
-  type: InternalSerializerType.FURY_TYPE_TAG;
+  type: InternalSerializerType.OBJECT;
 }
   ? Props<T>
   : T extends {
@@ -223,19 +222,18 @@ export type ResultType<T> = T extends {
       ? TupleProps<T>
       : T extends {
         type:
-          | InternalSerializerType.UINT8
-          | InternalSerializerType.UINT16
-          | InternalSerializerType.UINT32
           | InternalSerializerType.INT8
           | InternalSerializerType.INT16
           | InternalSerializerType.INT32
-          | InternalSerializerType.FLOAT
-          | InternalSerializerType.DOUBLE;
+          | InternalSerializerType.VAR_INT32
+          | InternalSerializerType.FLOAT16
+          | InternalSerializerType.FLOAT32
+          | InternalSerializerType.FLOAT64;
       }
         ? number
 
         : T extends {
-          type: InternalSerializerType.UINT64
+          type: InternalSerializerType.SLI_INT64
             | InternalSerializerType.INT64;
         }
           ? bigint
@@ -244,7 +242,7 @@ export type ResultType<T> = T extends {
           }
             ? MapProps<T>
             : T extends {
-              type: InternalSerializerType.FURY_SET;
+              type: InternalSerializerType.SET;
             }
               ? SetProps<T>
               : T extends {
@@ -256,18 +254,16 @@ export type ResultType<T> = T extends {
                 }
                   ? boolean
                   : T extends {
-                    type: InternalSerializerType.DATE;
+                    type: InternalSerializerType.DURATION;
                   }
                     ? Date
                     : T extends {
                       type: InternalSerializerType.TIMESTAMP;
                     }
                       ? number
-                      : T extends {
-                        type: InternalSerializerType.BINARY;
+                      : T extends { type: InternalSerializerType.BINARY;
                       }
-                        ? Uint8Array
-                        : T extends {
+                        ? Uint8Array : T extends {
                           type: InternalSerializerType.ANY;
                         }
                           ? any
@@ -335,7 +331,7 @@ export const Type = {
   },
   set<T extends TypeDescription>(key: T) {
     return {
-      type: InternalSerializerType.FURY_SET as const,
+      type: InternalSerializerType.SET as const,
       options: {
         key,
       },
@@ -348,31 +344,11 @@ export const Type = {
   },
   object<T extends { [key: string]: TypeDescription }>(tag: string, props?: T) {
     return {
-      type: InternalSerializerType.FURY_TYPE_TAG as const,
+      type: InternalSerializerType.OBJECT as const,
       options: {
         tag,
         props,
       },
-    };
-  },
-  uint8() {
-    return {
-      type: InternalSerializerType.UINT8 as const,
-    };
-  },
-  uint16() {
-    return {
-      type: InternalSerializerType.UINT16 as const,
-    };
-  },
-  uint32() {
-    return {
-      type: InternalSerializerType.UINT32 as const,
-    };
-  },
-  uint64() {
-    return {
-      type: InternalSerializerType.UINT64 as const,
     };
   },
   int8() {
@@ -390,19 +366,34 @@ export const Type = {
       type: InternalSerializerType.INT32 as const,
     };
   },
+  varInt32() {
+    return {
+      type: InternalSerializerType.VAR_INT32 as const,
+    };
+  },
   int64() {
     return {
       type: InternalSerializerType.INT64 as const,
     };
   },
-  float() {
+  sliInt64() {
     return {
-      type: InternalSerializerType.FLOAT as const,
+      type: InternalSerializerType.SLI_INT64 as const,
     };
   },
-  double() {
+  float16() {
     return {
-      type: InternalSerializerType.DOUBLE as const,
+      type: InternalSerializerType.FLOAT16 as const,
+    };
+  },
+  float32() {
+    return {
+      type: InternalSerializerType.FLOAT32 as const,
+    };
+  },
+  float64() {
+    return {
+      type: InternalSerializerType.FLOAT64 as const,
     };
   },
   binary() {
@@ -410,9 +401,9 @@ export const Type = {
       type: InternalSerializerType.BINARY as const,
     };
   },
-  date() {
+  duration() {
     return {
-      type: InternalSerializerType.DATE as const,
+      type: InternalSerializerType.DURATION as const,
     };
   },
   timestamp() {
@@ -420,39 +411,44 @@ export const Type = {
       type: InternalSerializerType.TIMESTAMP as const,
     };
   },
-  stringTypedArray() {
+  boolArray() {
     return {
-      type: InternalSerializerType.FURY_STRING_ARRAY as const,
+      type: InternalSerializerType.BOOL_ARRAY as const,
     };
   },
-  boolTypedArray() {
+  int8Array() {
     return {
-      type: InternalSerializerType.FURY_PRIMITIVE_BOOL_ARRAY as const,
+      type: InternalSerializerType.INT8_ARRAY as const,
     };
   },
-  shortTypedArray() {
+  int16Array() {
     return {
-      type: InternalSerializerType.FURY_PRIMITIVE_SHORT_ARRAY as const,
+      type: InternalSerializerType.INT16_ARRAY as const,
     };
   },
-  intTypedArray() {
+  int32Array() {
     return {
-      type: InternalSerializerType.FURY_PRIMITIVE_INT_ARRAY as const,
+      type: InternalSerializerType.INT32_ARRAY as const,
     };
   },
-  longTypedArray() {
+  int64Array() {
     return {
-      type: InternalSerializerType.FURY_PRIMITIVE_LONG_ARRAY as const,
+      type: InternalSerializerType.INT64_ARRAY as const,
     };
   },
-  floatTypedArray() {
+  float16Array() {
     return {
-      type: InternalSerializerType.FURY_PRIMITIVE_FLOAT_ARRAY as const,
+      type: InternalSerializerType.FLOAT16_ARRAY as const,
     };
   },
-  doubleTypedArray() {
+  float32Array() {
     return {
-      type: InternalSerializerType.FURY_PRIMITIVE_DOUBLE_ARRAY as const,
+      type: InternalSerializerType.FLOAT32_ARRAY as const,
+    };
+  },
+  float64Array() {
+    return {
+      type: InternalSerializerType.FLOAT64_ARRAY as const,
     };
   },
 };

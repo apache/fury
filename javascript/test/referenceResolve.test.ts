@@ -24,6 +24,7 @@ import { makeHead } from '../packages/fury/lib/referenceResolver';
 import { RefFlags } from '../packages/fury/lib/type';
 import { BinaryWriter } from '../packages/fury/lib/writer';
 import { BinaryReader } from '../packages/fury/lib/reader';
+import SerializerResolver from '../packages/fury/lib/classResolver';
 
 describe('referenceResolve', () => {
     test('should write head work', () => {
@@ -40,7 +41,7 @@ describe('referenceResolve', () => {
         const reader = BinaryReader({});
         reader.reset(ab);
         expect(reader.int8()).toBe(RefFlags.NotNullValueFlag);
-        expect(reader.int16()).toBe(InternalSerializerType.STRING);
+        expect(reader.int16()).toBe(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.STRING));
     });
 
     test('should make head work when flag is zero', () => {
@@ -51,7 +52,7 @@ describe('referenceResolve', () => {
         const reader = BinaryReader({});
         reader.reset(ab);
         expect(reader.int8()).toBe(RefFlags.RefValueFlag);
-        expect(reader.int16()).toBe(InternalSerializerType.STRING);
+        expect(reader.int16()).toBe(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.STRING));
     });
 });
 

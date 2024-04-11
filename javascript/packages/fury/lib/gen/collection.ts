@@ -118,7 +118,7 @@ class CollectionAnySerializer {
 
     let serializer: Serializer;
     if (isSame) {
-      serializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.int16());
+      serializer = this.fury.classResolver.getSerializerByType(this.fury.binaryReader.int16());
     }
     const len = this.fury.binaryReader.varUInt32();
     const result = createCollection(len);
@@ -134,7 +134,7 @@ class CollectionAnySerializer {
         }
       }
       if (!isSame) {
-        serializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.int16());
+        serializer = this.fury.classResolver.getSerializerByType(this.fury.binaryReader.int16());
       }
       accessor(result, index, serializer!.read());
     }
