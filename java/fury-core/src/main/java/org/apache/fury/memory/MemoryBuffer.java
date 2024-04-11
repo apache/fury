@@ -1272,29 +1272,25 @@ public final class MemoryBuffer {
       return 1;
     }
     // bit 8 `set` indicates have next data bytes.
-    varInt |= 0x80;
-    varInt |= ((value & 0x7F) << 8);
+    varInt |= ((value & 0x7F) << 8) | 0x80;
     value >>>= 7;
     if (value == 0) {
       unsafePutInt(index, (int) varInt);
       return 2;
     }
-    varInt |= (0x80 << 8);
-    varInt |= ((value & 0x7F) << 16);
+    varInt |= ((value & 0x7F) << 16) | 0x8000;
     value >>>= 7;
     if (value == 0) {
       unsafePutInt(index, (int) varInt);
       return 3;
     }
-    varInt |= (0x80 << 16);
-    varInt |= ((value & 0x7F) << 24);
+    varInt |= ((value & 0x7F) << 24) | 0x800000;
     value >>>= 7;
     if (value == 0) {
       unsafePutInt(index, (int) varInt);
       return 4;
     }
-    varInt |= (0x80L << 24);
-    varInt |= ((value & 0x7F) << 32);
+    varInt |= ((value & 0x7F) << 32) | 0x80000000L;
     varInt &= 0xFFFFFFFFFL;
     unsafePutLong(index, varInt);
     return 5;
