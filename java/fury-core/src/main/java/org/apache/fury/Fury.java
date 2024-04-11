@@ -307,14 +307,20 @@ public final class Fury implements BaseFury {
   }
 
   private void write(MemoryBuffer buffer, Object obj) {
-    if (config.shareMetaContext()) {
-      int startOffset = buffer.writerIndex();
+    int startOffset = buffer.writerIndex();
+    boolean shareMetaContext = config.shareMetaContext();
+    if (shareMetaContext) {
       buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
-      writeRef(buffer, obj);
+    }
+    // reduce caller stack
+    if (!refResolver.writeRefOrNull(buffer, obj)) {
+      ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
+      classResolver.writeClass(buffer, classInfo);
+      writeData(buffer, classInfo, obj);
+    }
+    if (shareMetaContext) {
       buffer.putInt(startOffset, buffer.writerIndex());
       classResolver.writeClassDefs(buffer);
-    } else {
-      writeRef(buffer, obj);
     }
   }
 
