@@ -85,20 +85,7 @@ public class JsonbState {
     @Override
     public void setup() {
       super.setup();
-      switch (ObjectType.MEDIA_CONTENT) {
-        case SAMPLE:
-          object = new Sample().populate(references);
-          break;
-        case MEDIA_CONTENT:
-          object = new MediaContent().populate(references);
-          break;
-        case STRUCT:
-          object = Struct.create(false);
-          break;
-        case STRUCT2:
-          object = Struct.create(true);
-          break;
-      }
+      object = ObjectType.createObject(objectType, references);
       Thread.currentThread().setContextClassLoader(object.getClass().getClassLoader());
       JSONFactory.setContextObjectReaderProvider(new ObjectReaderProvider());
       buffer = serialize(null, this, object);

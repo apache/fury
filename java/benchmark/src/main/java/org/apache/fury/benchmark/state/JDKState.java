@@ -61,21 +61,7 @@ public class JDKState {
     @Override
     public void setup() {
       super.setup();
-      switch (objectType) {
-        case SAMPLE:
-          object = new Sample().populate(references);
-          break;
-        case MEDIA_CONTENT:
-          object = new MediaContent().populate(references);
-          break;
-        case STRUCT:
-          object = Struct.create(false);
-          break;
-        case STRUCT2:
-          object = Struct.create(true);
-          break;
-      }
-
+      object = ObjectType.createObject(objectType, references);
       bos.reset();
       serialize(bos, object);
       serializedLength = bos.size();

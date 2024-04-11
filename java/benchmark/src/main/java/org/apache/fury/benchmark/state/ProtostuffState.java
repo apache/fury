@@ -95,21 +95,7 @@ public class ProtostuffState {
     @Override
     public void setup() {
       super.setup();
-
-      switch (objectType) {
-        case SAMPLE:
-          object = new Sample().populate(references);
-          break;
-        case MEDIA_CONTENT:
-          object = new MediaContent().populate(references);
-          break;
-        case STRUCT:
-          object = Struct.create(false);
-          break;
-        case STRUCT2:
-          object = Struct.create(true);
-          break;
-      }
+      object = ObjectType.createObject(objectType, references);
       schema = RuntimeSchema.getSchema(object.getClass());
       protoStuff = serialize(object, schema, buffer);
       Preconditions.checkArgument(object.equals(deserialize(schema, protoStuff)));
