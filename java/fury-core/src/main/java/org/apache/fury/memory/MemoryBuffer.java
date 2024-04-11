@@ -1289,8 +1289,8 @@ public final class MemoryBuffer {
       unsafePutInt(index, (int) encoded);
       return 4;
     }
-    // 0xfe00000: 0b1111111 << 28
-    encoded |= ((value & 0x7f0000000L) << 4) | 0x80000000L;
+    // 0xff0000000: 0b11111111 << 28. Note eight `1` here instead of seven.
+    encoded |= ((value & 0xff0000000L) << 4) | 0x80000000L;
     unsafePutLong(index, encoded);
     return 5;
   }
@@ -1330,7 +1330,8 @@ public final class MemoryBuffer {
       result |= (bulkValue >>> 3) & 0xfe00000;
       if ((bulkValue & 0x80000000L) != 0) {
         readIdx++;
-        result |= (bulkValue >>> 4) & 0x7f0000000L;
+        // 0xff0000000: 0b11111111 << 28
+        result |= (bulkValue >>> 4) & 0xff0000000L;
       }
     }
     readerIndex = readIdx;
