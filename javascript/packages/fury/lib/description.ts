@@ -416,6 +416,11 @@ export const Type = {
       type: InternalSerializerType.BOOL_ARRAY as const,
     };
   },
+  int8Array() {
+    return {
+      type: InternalSerializerType.INT8_ARRAY as const,
+    };
+  },
   int16Array() {
     return {
       type: InternalSerializerType.INT16_ARRAY as const,

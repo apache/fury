@@ -106,6 +106,7 @@ export default class SerializerResolver {
     this.registerSerializer(fury, Type.set(Type.any()));
     this.registerSerializer(fury, Type.binary());
     this.registerSerializer(fury, Type.boolArray());
+    this.registerSerializer(fury, Type.int8Array());
     this.registerSerializer(fury, Type.int16Array());
     this.registerSerializer(fury, Type.int32Array());
     this.registerSerializer(fury, Type.int64Array());

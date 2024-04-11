@@ -126,6 +126,7 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         type,
       };
     case InternalSerializerType.BOOL_ARRAY:
+    case InternalSerializerType.INT8_ARRAY:
     case InternalSerializerType.INT16_ARRAY:
     case InternalSerializerType.INT32_ARRAY:
     case InternalSerializerType.INT64_ARRAY:
