@@ -49,4 +49,4 @@ class SetSerializerGenerator extends CollectionSerializerGenerator {
   }
 }
 
-CodegenRegistry.register(InternalSerializerType.FURY_SET, SetSerializerGenerator);
+CodegenRegistry.register(InternalSerializerType.SET, SetSerializerGenerator);

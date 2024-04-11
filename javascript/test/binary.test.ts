@@ -24,7 +24,7 @@ import { describe, expect, test } from '@jest/globals';
 describe('binary', () => {
     test('should binary work', () => {
         const description = {
-            type: InternalSerializerType.FURY_TYPE_TAG,
+            type: InternalSerializerType.OBJECT,
             options: {
                 props: {
                     a: {
