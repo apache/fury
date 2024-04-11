@@ -1260,38 +1260,36 @@ public final class MemoryBuffer {
   /**
    * Caller must ensure there must be at least 8 bytes for writing, otherwise the crash may occur.
    */
-  public int unsafePutPositiveVarInt(int index, int v) {
+  public int unsafePutPositiveVarInt(int index, int value) {
     // The encoding algorithm are based on kryo UnsafeMemoryOutput.writeVarInt
     // varint are written using little endian byte order.
     // This version should have better performance since it remove an index update.
-    long value = v;
     long varInt = (value & 0x7F);
-    value >>>= 7;
-    if (value == 0) {
+    if (value >>> 7 == 0) {
       UNSAFE.putByte(heapMemory, address + index, (byte) varInt);
       return 1;
     }
     // bit 8 `set` indicates have next data bytes.
-    varInt |= ((value & 0x7F) << 8) | 0x80;
-    value >>>= 7;
-    if (value == 0) {
+    // 0x3f80: 0b1111111 << 7
+    varInt |= (((value & 0x3f80) << 1) | 0x80);
+    if (value >>> 14 == 0) {
       unsafePutInt(index, (int) varInt);
       return 2;
     }
-    varInt |= ((value & 0x7F) << 16) | 0x8000;
-    value >>>= 7;
-    if (value == 0) {
+    // 0x1fc000: 0b1111111 << 14
+    varInt |= (((value & 0x1fc000) << 2) | 0x8000);
+    if (value >>> 21 == 0) {
       unsafePutInt(index, (int) varInt);
       return 3;
     }
-    varInt |= ((value & 0x7F) << 24) | 0x800000;
-    value >>>= 7;
-    if (value == 0) {
+    // 0xfe00000: 0b1111111 << 21
+    varInt |= ((value & 0xfe00000) << 3) | 0x800000;
+    if (value >>> 28 == 0) {
       unsafePutInt(index, (int) varInt);
       return 4;
     }
-    varInt |= ((value & 0x7F) << 32) | 0x80000000L;
-    varInt &= 0xFFFFFFFFFL;
+    // 0xfe00000: 0b1111111 << 28
+    varInt |= ((value & 0x7f0000000L) << 4) | 0x80000000L;
     unsafePutLong(index, varInt);
     return 5;
   }
