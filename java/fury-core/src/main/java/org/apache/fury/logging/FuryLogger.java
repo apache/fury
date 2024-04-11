@@ -19,6 +19,10 @@
 
 package org.apache.fury.logging;
 
+import static org.apache.fury.logging.LogLevel.ERROR_LEVEL;
+import static org.apache.fury.logging.LogLevel.INFO_LEVEL;
+import static org.apache.fury.logging.LogLevel.WARN_LEVEL;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -26,85 +30,119 @@ public class FuryLogger implements Logger {
   private static final DateTimeFormatter dateTimeFormatter =
       DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
   private final String name;
+  private final int level;
 
   public FuryLogger(Class<?> targetClass) {
+    this(targetClass, INFO_LEVEL);
+  }
+
+  public FuryLogger(Class<?> targetClass, int level) {
     this.name = targetClass.getSimpleName();
+    this.level = level;
   }
 
   // The implementation should not forward to other method, otherwise the fileNumber won't be right.
   @Override
   public void info(String msg) {
-    log("INFO", msg, new Object[0], false);
+    if (level >= INFO_LEVEL) {
+      log(INFO_LEVEL, msg, new Object[0], false);
+    }
   }
 
   @Override
   public void info(String msg, Object arg) {
-    log("INFO", msg, new Object[] {arg}, false);
+    if (level >= INFO_LEVEL) {
+      log(INFO_LEVEL, msg, new Object[] {arg}, false);
+    }
   }
 
   @Override
   public void info(String msg, Object arg1, Object arg2) {
-    log("INFO", msg, new Object[] {arg1, arg2}, false);
+    if (level >= INFO_LEVEL) {
+      log(INFO_LEVEL, msg, new Object[] {arg1, arg2}, false);
+    }
   }
 
   @Override
   public void info(String msg, Object... args) {
-    log("INFO", msg, args, false);
+    if (level >= INFO_LEVEL) {
+      log(INFO_LEVEL, msg, args, false);
+    }
   }
 
   @Override
   public void warn(String msg) {
-    log("WARN", msg, new Object[0], false);
+    if (level >= WARN_LEVEL) {
+      log(WARN_LEVEL, msg, new Object[0], false);
+    }
   }
 
   @Override
   public void warn(String msg, Object arg) {
-    log("WARN", msg, new Object[] {arg}, true);
+    if (level >= WARN_LEVEL) {
+      log(WARN_LEVEL, msg, new Object[] {arg}, true);
+    }
   }
 
   @Override
   public void warn(String msg, Object arg1, Object arg2) {
-    log("WARN", msg, new Object[] {arg1, arg2}, true);
+    if (level >= WARN_LEVEL) {
+      log(WARN_LEVEL, msg, new Object[] {arg1, arg2}, true);
+    }
   }
 
   @Override
   public void warn(String msg, Object... args) {
-    log("WARN", msg, args, true);
+    if (level >= WARN_LEVEL) {
+      log(WARN_LEVEL, msg, args, true);
+    }
   }
 
   @Override
   public void warn(String msg, Throwable t) {
-    log("WARN", msg, new Object[] {t}, true);
+    if (level >= WARN_LEVEL) {
+      log(WARN_LEVEL, msg, new Object[] {t}, true);
+    }
   }
 
   @Override
   public void error(String msg) {
-    log("ERROR", msg, new Object[0], false);
+    if (level >= ERROR_LEVEL) {
+      log(WARN_LEVEL, msg, new Object[0], false);
+    }
   }
 
   @Override
   public void error(String msg, Object arg) {
-    log("ERROR", msg, new Object[] {arg}, true);
+    if (level >= ERROR_LEVEL) {
+      log(ERROR_LEVEL, msg, new Object[] {arg}, true);
+    }
   }
 
   @Override
   public void error(String msg, Object arg1, Object arg2) {
-    log("ERROR", msg, new Object[] {arg1, arg2}, true);
+    if (level >= ERROR_LEVEL) {
+      log(ERROR_LEVEL, msg, new Object[] {arg1, arg2}, true);
+    }
   }
 
   @Override
   public void error(String msg, Object... args) {
-    log("ERROR", msg, args, true);
+    if (level >= ERROR_LEVEL) {
+      log(ERROR_LEVEL, msg, args, true);
+    }
   }
 
   @Override
   public void error(String msg, Throwable t) {
-    log("ERROR", msg, new Object[] {t}, true);
+    if (level >= ERROR_LEVEL) {
+      log(ERROR_LEVEL, msg, new Object[] {t}, true);
+    }
   }
 
-  private void log(String level, String msg, Object[] args, boolean mayPrintTrace) {
+  private void log(int level, String msg, Object[] args, boolean mayPrintTrace) {
     StringBuilder builder = new StringBuilder(dateTimeFormatter.format(LocalDateTime.now()));
-    builder.append(" ").append(level);
+    builder.append(" ").append(LogLevel.level2String(level));
     builder.append("  ").append(name);
     int lineNumber = Thread.currentThread().getStackTrace()[3].getLineNumber();
     builder.append(":").append(lineNumber);
