@@ -1309,14 +1309,58 @@ public final class MemoryBuffer {
         result |= (bulkValue >>> 1) & 0x3f80;
         // 0x8000: 0b1 << 15
         if ((bulkValue & 0x8000) != 0) {
-          return continueReadVarLong64(readIdx, bulkValue, result);
+          return continueReadVarLong36(readIdx, bulkValue, result);
         }
       }
       readerIndex = readIdx;
       return result;
     } else {
-      return readPositiveVarLongSlow();
+      return readVarUint36Slow();
     }
+  }
+
+  private long continueReadVarLong36(int readIdx, long bulkValue, long result) {
+    readIdx++;
+    // 0x1fc000: 0b1111111 << 14
+    result |= (bulkValue >>> 2) & 0x1fc000;
+    // 0x800000: 0b1 << 23
+    if ((bulkValue & 0x800000) != 0) {
+      readIdx++;
+      // 0xfe00000: 0b1111111 << 21
+      result |= (bulkValue >>> 3) & 0xfe00000;
+      if ((bulkValue & 0x80000000L) != 0) {
+        readIdx++;
+        result |= (bulkValue >>> 4) & 0x7f0000000L;
+      }
+    }
+    readerIndex = readIdx;
+    return result;
+  }
+
+  private long readVarUint36Slow() {
+    long b = readByte();
+    long result = b & 0x7F;
+    // Note:
+    //  Loop are not used here to improve performance.
+    //  We manually unroll the loop for better performance.
+    // noinspection Duplicates
+    if ((b & 0x80) != 0) {
+      b = readByte();
+      result |= (b & 0x7F) << 7;
+      if ((b & 0x80) != 0) {
+        b = readByte();
+        result |= (b & 0x7F) << 14;
+        if ((b & 0x80) != 0) {
+          b = readByte();
+          result |= (b & 0x7F) << 21;
+          if ((b & 0x80) != 0) {
+            b = readByte();
+            result |= (b & 0x7F) << 28;
+          }
+        }
+      }
+    }
+    return result;
   }
 
   /** Reads the 1-5 byte int part of a non-negative varint. */
