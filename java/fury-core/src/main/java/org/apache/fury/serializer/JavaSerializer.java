@@ -35,6 +35,7 @@ import org.apache.fury.io.MemoryBufferObjectOutput;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.Platform;
 
@@ -246,7 +247,7 @@ public class JavaSerializer extends Serializer {
    */
   public static boolean serializedByJDK(byte[] data, int offset) {
     // JDK serialization use big endian byte order.
-    short magicNumber = MemoryBuffer.getShortB(data, offset);
+    short magicNumber = MemoryUtils.getShortB(data, offset);
     return magicNumber == ObjectStreamConstants.STREAM_MAGIC;
   }
 

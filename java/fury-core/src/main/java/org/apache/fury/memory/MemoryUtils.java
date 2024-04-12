@@ -67,6 +67,11 @@ public class MemoryUtils {
     }
   }
 
+  /** Get short in big endian order from provided buffer. */
+  public static short getShortB(byte[] b, int off) {
+    return (short) ((b[off + 1] & 0xFF) + (b[off] << 8));
+  }
+
   // Lazy load offset and also follow graalvm offset auto replace pattern.
   private static class Offset {
     private static final long BAS_BUF_BUF;
@@ -163,5 +168,38 @@ public class MemoryUtils {
     arr[index++] = (byte) (v >>> 21 | 0x80);
     arr[index] = (byte) (v >>> 28);
     return 5;
+  }
+
+  public static void putInt(Object o, long pos, int value) {
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      value = Integer.reverseBytes(value);
+    }
+    Platform.putInt(o, pos, value);
+  }
+
+  public static int getInt(Object o, long pos) {
+    int i = Platform.getInt(o, pos);
+    return Platform.IS_LITTLE_ENDIAN ? i : Integer.reverseBytes(i);
+  }
+
+  public static long getLong(Object o, long pos) {
+    long v = Platform.getLong(o, pos);
+    return Platform.IS_LITTLE_ENDIAN ? v : Long.reverseBytes(v);
+  }
+
+  public static void putFloat(Object o, long pos, float value) {
+    int v = Float.floatToRawIntBits(value);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      v =  Integer.reverseBytes(v);
+    }
+    Platform.putInt(o, pos, v);
+  }
+
+  public static void putDouble(Object o, long pos, double value) {
+    long v = Double.doubleToRawLongBits(value);
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      v = Long.reverseBytes(v);
+    }
+    Platform.putLong(o, pos, v);
   }
 }

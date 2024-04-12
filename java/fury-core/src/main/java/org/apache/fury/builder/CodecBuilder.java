@@ -532,44 +532,40 @@ public abstract class CodecBuilder {
 
   /**
    * Build unsafePut operation.
-   *
-   * @see MemoryBuffer#unsafePut(Object, long, byte)
    */
   protected Expression unsafePut(Expression base, Expression pos, Expression value) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafePut", base, pos, value);
+    return new StaticInvoke(Platform.class, "put", base, pos, value);
   }
 
   protected Expression unsafePutBoolean(Expression base, Expression pos, Expression value) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafePutBoolean", base, pos, value);
+    return new StaticInvoke(Platform.class, "putBoolean", base, pos, value);
   }
 
   protected Expression unsafePutChar(Expression base, Expression pos, Expression value) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafePutChar", base, pos, value);
+    return new StaticInvoke(Platform.class, "putChar", base, pos, value);
   }
 
   protected Expression unsafePutShort(Expression base, Expression pos, Expression value) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafePutShort", base, pos, value);
+    return new StaticInvoke(Platform.class, "putShort", base, pos, value);
   }
 
   protected Expression unsafePutInt(Expression base, Expression pos, Expression value) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafePutInt", base, pos, value);
+    return new StaticInvoke(Platform.class, "putInt", base, pos, value);
   }
 
   protected Expression unsafePutLong(Expression base, Expression pos, Expression value) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafePutLong", base, pos, value);
+    return new StaticInvoke(Platform.class, "putLong", base, pos, value);
   }
 
   protected Expression unsafePutFloat(Expression base, Expression pos, Expression value) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafePutFloat", base, pos, value);
+    return new StaticInvoke(Platform.class, "putFloat", base, pos, value);
   }
 
   /**
    * Build unsafePutDouble operation.
-   *
-   * @see MemoryBuffer#unsafePutDouble(Object, long, double)
    */
   protected Expression unsafePutDouble(Expression base, Expression pos, Expression value) {
-    return new StaticInvoke(MemoryBuffer.class, "unsafePutDouble", base, pos, value);
+    return new StaticInvoke(Platform.class, "putDouble", base, pos, value);
   }
 
   /** Build unsafeGet operation. */

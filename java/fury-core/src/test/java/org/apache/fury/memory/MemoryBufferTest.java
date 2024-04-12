@@ -31,6 +31,25 @@ import org.testng.annotations.Test;
 public class MemoryBufferTest {
 
   @Test
+  public void testBufferPut() {
+    MemoryBuffer buffer = MemoryUtils.buffer(16);
+    buffer.put(0, (byte) 10);
+    assertEquals(buffer.get(0), (byte) 10);
+    buffer.putChar(0, 'a');
+    assertEquals(buffer.getChar(0), 'a');
+    buffer.putShort(0, (short) 10);
+    assertEquals(buffer.getShort(0), (short) 10);
+    buffer.putInt(0, Integer.MAX_VALUE);
+    assertEquals(buffer.getInt(0), Integer.MAX_VALUE);
+    buffer.putLong(0, Long.MAX_VALUE);
+    assertEquals(buffer.getLong(0), Long.MAX_VALUE);
+    buffer.putFloat(0, Float.MAX_VALUE);
+    assertEquals(buffer.getFloat(0), Float.MAX_VALUE);
+    buffer.putDouble(0, Double.MAX_VALUE);
+    assertEquals(buffer.getDouble(0), Double.MAX_VALUE);
+  }
+
+  @Test
   public void testBufferWrite() {
     MemoryBuffer buffer = MemoryUtils.buffer(8);
     buffer.writeBoolean(true);
@@ -64,24 +83,24 @@ public class MemoryBufferTest {
       long pos = buffer.getUnsafeAddress();
       assertEquals(buffer.getUnsafeWriterAddress(), pos);
       assertEquals(buffer.getUnsafeReaderAddress(), pos);
-      MemoryBuffer.unsafePut(heapMemory, pos, Byte.MIN_VALUE);
+      Platform.putByte(heapMemory, pos, Byte.MIN_VALUE);
       pos += 1;
-      MemoryBuffer.unsafePutShort(heapMemory, pos, Short.MAX_VALUE);
+      Platform.putShort(heapMemory, pos, Short.MAX_VALUE);
       pos += 2;
-      MemoryBuffer.unsafePutInt(heapMemory, pos, Integer.MIN_VALUE);
+      MemoryUtils.putInt(heapMemory, pos, Integer.MIN_VALUE);
       pos += 4;
-      MemoryBuffer.unsafePutLong(heapMemory, pos, Long.MAX_VALUE);
+      Platform.putLong(heapMemory, pos, Long.MAX_VALUE);
       pos += 8;
-      MemoryBuffer.unsafePutDouble(heapMemory, pos, -1);
+      MemoryUtils.putDouble(heapMemory, pos, -1);
       pos += 8;
-      MemoryBuffer.unsafePutFloat(heapMemory, pos, -1);
-      assertEquals(buffer.unsafeGetFloat((int) (pos - Platform.BYTE_ARRAY_OFFSET)), -1);
+      MemoryUtils.putFloat(heapMemory, pos, -1);
+      assertEquals(buffer.getFloat((int) (pos - Platform.BYTE_ARRAY_OFFSET)), -1);
       pos -= 8;
-      assertEquals(buffer.unsafeGetDouble((int) (pos - Platform.BYTE_ARRAY_OFFSET)), -1);
+      assertEquals(buffer.getDouble((int) (pos - Platform.BYTE_ARRAY_OFFSET)), -1);
       pos -= 8;
-      assertEquals(MemoryBuffer.unsafeGetLong(heapMemory, pos), Long.MAX_VALUE);
+      assertEquals(MemoryUtils.getLong(heapMemory, pos), Long.MAX_VALUE);
       pos -= 4;
-      assertEquals(MemoryBuffer.unsafeGetInt(heapMemory, pos), Integer.MIN_VALUE);
+      assertEquals(MemoryUtils.getInt(heapMemory, pos), Integer.MIN_VALUE);
       pos -= 2;
       assertEquals(buffer.getShort((int) (pos - Platform.BYTE_ARRAY_OFFSET)), Short.MAX_VALUE);
       pos -= 1;
@@ -94,22 +113,22 @@ public class MemoryBufferTest {
       index += 1;
       buffer.unsafePutShort(index, Short.MAX_VALUE);
       index += 2;
-      buffer.unsafePutInt(index, Integer.MIN_VALUE);
+      buffer.putInt(index, Integer.MIN_VALUE);
       index += 4;
       buffer.unsafePutLong(index, Long.MAX_VALUE);
       index += 8;
-      buffer.unsafePutDouble(index, -1);
+      buffer.putDouble(index, -1);
       index += 8;
-      buffer.unsafePutFloat(index, -1);
-      assertEquals(buffer.unsafeGetFloat(index), -1);
+      buffer.putFloat(index, -1);
+      assertEquals(buffer.getFloat(index), -1);
       index -= 8;
-      assertEquals(buffer.unsafeGetDouble(index), -1);
+      assertEquals(buffer.getDouble(index), -1);
       index -= 8;
       assertEquals(buffer.unsafeGetLong(index), Long.MAX_VALUE);
       index -= 4;
-      assertEquals(buffer.unsafeGetInt(index), Integer.MIN_VALUE);
+      assertEquals(buffer.getInt(index), Integer.MIN_VALUE);
       index -= 2;
-      assertEquals(buffer.unsafeGetShort(index), Short.MAX_VALUE);
+      assertEquals(buffer.getShort(index), Short.MAX_VALUE);
       index -= 1;
       assertEquals(buffer.unsafeGet(index), Byte.MIN_VALUE);
     }
@@ -179,8 +198,8 @@ public class MemoryBufferTest {
   public void testCompare() {
     MemoryBuffer buf1 = MemoryUtils.buffer(16);
     MemoryBuffer buf2 = MemoryUtils.buffer(16);
-    buf1.putLongB(0, 10);
-    buf2.putLongB(0, 10);
+    buf1.putLongBE(0, 10);
+    buf2.putLongBE(0, 10);
     buf1.put(9, (byte) 1);
     buf2.put(9, (byte) 2);
     Assert.assertTrue(buf1.compare(buf2, 0, 0, buf1.size()) < 0);
@@ -192,8 +211,8 @@ public class MemoryBufferTest {
   public void testEqualTo() {
     MemoryBuffer buf1 = MemoryUtils.buffer(16);
     MemoryBuffer buf2 = MemoryUtils.buffer(16);
-    buf1.putLongB(0, 10);
-    buf2.putLongB(0, 10);
+    buf1.putLongBE(0, 10);
+    buf2.putLongBE(0, 10);
     buf1.put(9, (byte) 1);
     buf2.put(9, (byte) 1);
     Assert.assertTrue(buf1.equalTo(buf2, 0, 0, buf1.size()));
@@ -533,8 +552,8 @@ public class MemoryBufferTest {
     byte[] data = new byte[4];
     data[0] = (byte) 0xac;
     data[1] = (byte) 0xed;
-    assertEquals(MemoryBuffer.getShortB(data, 0), (short) 0xaced);
-    assertEquals(MemoryBuffer.fromByteArray(data).getShortB(0), (short) 0xaced);
+    assertEquals(MemoryUtils.getShortB(data, 0), (short) 0xaced);
+    assertEquals(MemoryBuffer.fromByteArray(data).getShortBE(0), (short) 0xaced);
   }
 
   @Test
