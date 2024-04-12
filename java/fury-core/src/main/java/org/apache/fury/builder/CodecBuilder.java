@@ -650,7 +650,7 @@ public abstract class CodecBuilder {
   }
 
   public static String readLongFunc() {
-    return Platform.IS_LITTLE_ENDIAN ? "readInt64OnLE" : "readInt64OnBE";
+    return Platform.IS_LITTLE_ENDIAN ? "_readInt64OnLE" : "_readInt64OnBE";
   }
 
   protected Expression readFloat32(Expression buffer) {

@@ -265,7 +265,7 @@ public class PrimitiveSerializers {
     public static String readLongFunc(LongEncoding longEncoding) {
       switch (longEncoding) {
         case LE_RAW_BYTES:
-          return Platform.IS_LITTLE_ENDIAN ? "readInt64OnLE" : "readInt64OnBE";
+          return Platform.IS_LITTLE_ENDIAN ? "_readInt64OnLE" : "_readInt64OnBE";
         case SLI:
           return Platform.IS_LITTLE_ENDIAN ? "_readSliInt64OnLE" : "_readSliInt64OnBE";
         case PVL:

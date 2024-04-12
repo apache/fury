@@ -1048,7 +1048,9 @@ public final class MemoryBuffer {
   }
 
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public int _unsafeWriteVarInt64(long value) {
+    // CHECKSTYLE.ON:MethodName
     value = (value << 1) ^ (value >> 63);
     return _unsafeWriteVarUint64(value);
   }
@@ -1438,7 +1440,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public long readInt64OnLE() {
+  // CHECKSTYLE.OFF:MethodName
+  public long _readInt64OnLE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1451,7 +1455,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public long readInt64OnBE() {
+  // CHECKSTYLE.OFF:MethodName
+  public long _readInt64OnBE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1472,7 +1478,9 @@ public final class MemoryBuffer {
   }
 
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public long _readSliInt64OnLE() {
+    // CHECKSTYLE.ON:MethodName
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     final int readIdx = readerIndex;
@@ -1493,7 +1501,9 @@ public final class MemoryBuffer {
   }
 
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public long _readSliInt64OnBE() {
+    // CHECKSTYLE.ON:MethodName
     // noinspection Duplicates
     final int readIdx = readerIndex;
     int diff = size - readIdx;
@@ -1530,7 +1540,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public float _readFloat32OnLE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1543,7 +1555,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public float _readFloat32OnBE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1573,7 +1587,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public double _readFloat64OnLE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1586,7 +1602,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public double _readFloat64OnBE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1610,7 +1628,9 @@ public final class MemoryBuffer {
 
   /** Reads the 1-5 byte as a varint on a little endian mache. */
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public int _readVarInt32OnLE() {
+    // CHECKSTYLE.ON:MethodName
     // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
@@ -1651,7 +1671,9 @@ public final class MemoryBuffer {
 
   /** Reads the 1-5 byte as a varint on a big endian mache. */
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public int _readVarInt32OnBE() {
+    // CHECKSTYLE.ON:MethodName
     // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
@@ -1852,7 +1874,9 @@ public final class MemoryBuffer {
   }
 
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public long _readVarInt64OnLE() {
+    // CHECKSTYLE.ON:MethodName
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     int readIdx = readerIndex;
@@ -1882,7 +1906,9 @@ public final class MemoryBuffer {
   }
 
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public long _readVarInt64OnBE() {
+    // CHECKSTYLE.ON:MethodName
     int readIdx = readerIndex;
     long result;
     if (size - readIdx < 9) {
