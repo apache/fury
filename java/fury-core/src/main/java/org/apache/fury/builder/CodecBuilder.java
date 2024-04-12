@@ -623,8 +623,7 @@ public abstract class CodecBuilder {
   }
 
   protected Expression readChar(Expression buffer) {
-    String func = Platform.IS_LITTLE_ENDIAN ? "readCharOnLE" : "readCharOnBE";
-    return new Invoke(buffer, func, PRIMITIVE_CHAR_TYPE);
+    return new Invoke(buffer, "readChar", PRIMITIVE_CHAR_TYPE);
   }
 
   protected Expression readInt16(Expression buffer) {
@@ -642,7 +641,7 @@ public abstract class CodecBuilder {
   }
 
   protected Expression readVarInt32(Expression buffer) {
-    String func = Platform.IS_LITTLE_ENDIAN ? "readVarInt32OnLE" : "readVarInt32OnBE";
+    String func = Platform.IS_LITTLE_ENDIAN ? "_readVarInt32OnLE" : "_readVarInt32OnBE";
     return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
   }
 
@@ -655,12 +654,12 @@ public abstract class CodecBuilder {
   }
 
   protected Expression readFloat32(Expression buffer) {
-    String func = Platform.IS_LITTLE_ENDIAN ? "readFloat32OnLE" : "readFloat32OnBE";
+    String func = Platform.IS_LITTLE_ENDIAN ? "_readFloat32OnLE" : "_readFloat32OnBE";
     return new Invoke(buffer, func, PRIMITIVE_FLOAT_TYPE);
   }
 
   protected Expression readFloat64(Expression buffer) {
-    String func = Platform.IS_LITTLE_ENDIAN ? "readFloat64OnLE" : "readFloat64OnBE";
+    String func = Platform.IS_LITTLE_ENDIAN ? "_readFloat64OnLE" : "_readFloat64OnBE";
     return new Invoke(buffer, func, PRIMITIVE_DOUBLE_TYPE);
   }
 }

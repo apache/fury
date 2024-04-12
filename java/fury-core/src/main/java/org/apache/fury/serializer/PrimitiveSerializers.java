@@ -267,9 +267,9 @@ public class PrimitiveSerializers {
         case LE_RAW_BYTES:
           return Platform.IS_LITTLE_ENDIAN ? "readInt64OnLE" : "readInt64OnBE";
         case SLI:
-          return Platform.IS_LITTLE_ENDIAN ? "readSliInt64OnLE" : "readSliInt64OnBE";
+          return Platform.IS_LITTLE_ENDIAN ? "_readSliInt64OnLE" : "_readSliInt64OnBE";
         case PVL:
-          return Platform.IS_LITTLE_ENDIAN ? "readVarInt64OnLE" : "readVarInt64OnBE";
+          return Platform.IS_LITTLE_ENDIAN ? "_readVarInt64OnLE" : "_readVarInt64OnBE";
         default:
           throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
       }

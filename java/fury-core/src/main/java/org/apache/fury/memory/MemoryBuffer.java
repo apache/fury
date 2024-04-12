@@ -1332,38 +1332,8 @@ public final class MemoryBuffer {
       streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
-    final long pos = address + readerIdx;
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getChar(heapMemory, pos);
-    } else {
-      return Character.reverseBytes(UNSAFE.getChar(heapMemory, pos));
-    }
-  }
-
-  // Reduce method body for better inline in the caller.
-  @CodegenInvoke
-  public char readCharOnLE() {
-    int readerIdx = readerIndex;
-    // use subtract to avoid overflow
-    int remaining = size - readerIdx;
-    if (remaining < 2) {
-      streamReader.fillBuffer(2 - remaining);
-    }
-    readerIndex = readerIdx + 2;
-    return UNSAFE.getChar(heapMemory, address + readerIdx);
-  }
-
-  // Reduce method body for better inline in the caller.
-  @CodegenInvoke
-  public char readCharOnBE() {
-    int readerIdx = readerIndex;
-    // use subtract to avoid overflow
-    int remaining = size - readerIdx;
-    if (remaining < 2) {
-      streamReader.fillBuffer(2 - remaining);
-    }
-    readerIndex = readerIdx + 2;
-    return Character.reverseBytes(UNSAFE.getChar(heapMemory, address + readerIdx));
+    char c = UNSAFE.getChar(heapMemory, address + readerIdx);
+    return LITTLE_ENDIAN ? c : Character.reverseBytes(c);
   }
 
   public short readInt16() {
@@ -1495,14 +1465,14 @@ public final class MemoryBuffer {
   /** Read fury SLI(Small Long as Int) encoded long. */
   public long readSliInt64() {
     if (LITTLE_ENDIAN) {
-      return readSliInt64OnLE();
+      return _readSliInt64OnLE();
     } else {
-      return readSliInt64OnBE();
+      return _readSliInt64OnBE();
     }
   }
 
   @CodegenInvoke
-  public long readSliInt64OnLE() {
+  public long _readSliInt64OnLE() {
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     final int readIdx = readerIndex;
@@ -1523,7 +1493,7 @@ public final class MemoryBuffer {
   }
 
   @CodegenInvoke
-  public long readSliInt64OnBE() {
+  public long _readSliInt64OnBE() {
     // noinspection Duplicates
     final int readIdx = readerIndex;
     int diff = size - readIdx;
@@ -1560,7 +1530,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public float readFloat32OnLE() {
+  public float _readFloat32OnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1573,7 +1543,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public float readFloat32OnBE() {
+  public float _readFloat32OnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1582,7 +1552,7 @@ public final class MemoryBuffer {
     }
     readerIndex = readerIdx + 4;
     return Float.intBitsToFloat(
-        Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx)));
+      Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx)));
   }
 
   public double readFloat64() {
@@ -1603,7 +1573,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public double readFloat64OnLE() {
+  public double _readFloat64OnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1616,7 +1586,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public double readFloat64OnBE() {
+  public double _readFloat64OnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1632,15 +1602,15 @@ public final class MemoryBuffer {
   @CodegenInvoke
   public int readVarInt32() {
     if (LITTLE_ENDIAN) {
-      return readVarInt32OnLE();
+      return _readVarInt32OnLE();
     } else {
-      return readVarInt32OnBE();
+      return _readVarInt32OnBE();
     }
   }
 
   /** Reads the 1-5 byte as a varint on a little endian mache. */
   @CodegenInvoke
-  public int readVarInt32OnLE() {
+  public int _readVarInt32OnLE() {
     // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
@@ -1681,7 +1651,7 @@ public final class MemoryBuffer {
 
   /** Reads the 1-5 byte as a varint on a big endian mache. */
   @CodegenInvoke
-  public int readVarInt32OnBE() {
+  public int _readVarInt32OnBE() {
     // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
@@ -1878,11 +1848,11 @@ public final class MemoryBuffer {
 
   /** Reads the 1-9 byte int part of a var long. */
   public long readVarInt64() {
-    return LITTLE_ENDIAN ? readVarInt64OnLE() : readVarInt64OnBE();
+    return LITTLE_ENDIAN ? _readVarInt64OnLE() : _readVarInt64OnBE();
   }
 
   @CodegenInvoke
-  public long readVarInt64OnLE() {
+  public long _readVarInt64OnLE() {
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     int readIdx = readerIndex;
@@ -1912,7 +1882,7 @@ public final class MemoryBuffer {
   }
 
   @CodegenInvoke
-  public long readVarInt64OnBE() {
+  public long _readVarInt64OnBE() {
     int readIdx = readerIndex;
     long result;
     if (size - readIdx < 9) {
