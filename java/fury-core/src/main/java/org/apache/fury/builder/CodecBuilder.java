@@ -532,7 +532,7 @@ public abstract class CodecBuilder {
 
   /** Build unsafePut operation. */
   protected Expression unsafePut(Expression base, Expression pos, Expression value) {
-    return new StaticInvoke(Platform.class, "put", base, pos, value);
+    return new StaticInvoke(Platform.class, "putByte", base, pos, value);
   }
 
   protected Expression unsafePutBoolean(Expression base, Expression pos, Expression value) {
