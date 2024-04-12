@@ -1047,6 +1047,12 @@ public final class MemoryBuffer {
     return _unsafeWriteVarUint64(value);
   }
 
+  @CodegenInvoke
+  public int _unsafeWriteVarInt64(long value) {
+    value = (value << 1) ^ (value >> 63);
+    return _unsafeWriteVarUint64(value);
+  }
+
   public int writeVarUint64(long value) {
     // Var long encoding algorithm is based kryo UnsafeMemoryOutput.writeVarInt64.
     // var long are written using little endian byte order.
