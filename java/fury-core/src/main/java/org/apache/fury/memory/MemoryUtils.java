@@ -130,9 +130,7 @@ public class MemoryUtils {
     buffer.readerIndex(pos);
   }
 
-  public static int writePositiveVarInt(byte[] arr, int index, int v) {
-    // The encoding algorithm are based on kryo UnsafeMemoryOutput.writeVarInt
-    // varint are written using little endian byte order.
+  public static int putVarUint36Small(byte[] arr, int index, long v) {
     if (v >>> 7 == 0) {
       arr[index] = (byte) v;
       return 1;
@@ -142,6 +140,10 @@ public class MemoryUtils {
       arr[index] = (byte) (v >>> 7);
       return 2;
     }
+    return bigWriteUint36(arr, index, v);
+  }
+
+  private static int bigWriteUint36(byte[] arr, int index, long v) {
     if (v >>> 21 == 0) {
       arr[index++] = (byte) ((v & 0x7F) | 0x80);
       arr[index++] = (byte) (v >>> 7 | 0x80);
