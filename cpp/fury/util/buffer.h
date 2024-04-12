@@ -164,8 +164,7 @@ public:
     return 5;
   }
 
-  inline int32_t GetVarUint32(uint32_t offset,
-                                     uint32_t *readBytesLength) {
+  inline int32_t GetVarUint32(uint32_t offset, uint32_t *readBytesLength) {
     uint32_t position = offset;
     int b = data_[position++];
     int result = b & 0x7F;

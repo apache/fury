@@ -39,7 +39,7 @@ TEST(Buffer, ToString) {
 }
 
 void checkVarUint32(int32_t startOffset, std::shared_ptr<Buffer> buffer,
-                         int32_t value, uint32_t bytesWritten) {
+                    int32_t value, uint32_t bytesWritten) {
   uint32_t actualBytesWritten = buffer->PutVarUint32(startOffset, value);
   EXPECT_EQ(actualBytesWritten, bytesWritten);
   uint32_t readBytesLength;
