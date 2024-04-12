@@ -223,20 +223,10 @@ public final class StringSerializer extends Serializer<String> {
 
   @CodegenInvoke
   public String readBytesString(MemoryBuffer buffer) {
-    long header = buffer.readVarUint36Small();
+    long header = Platform.IS_LITTLE_ENDIAN ? buffer.readVarUint36SmallOnLE() : buffer.readVarUint36SmallOnBE();
     byte coder = (byte) (header & 0b11);
     int numBytes = (int) (header >>> 2);
-    buffer.checkReadableBytes(numBytes);
-    byte[] bytes;
-    byte[] heapMemory = buffer.getHeapMemory();
-    if (heapMemory != null) {
-      final int arrIndex = buffer.unsafeHeapReaderIndex();
-      buffer.increaseReaderIndexUnsafe(numBytes);
-      bytes = new byte[numBytes];
-      System.arraycopy(heapMemory, arrIndex, bytes, 0, numBytes);
-    } else {
-      bytes = buffer.readBytes(numBytes);
-    }
+    byte[] bytes = buffer.readBytes(numBytes);;
     if (coder != UTF8) {
       return newBytesStringZeroCopy(coder, bytes);
     } else {
@@ -246,13 +236,13 @@ public final class StringSerializer extends Serializer<String> {
 
   @CodegenInvoke
   public String readCompressedCharsString(MemoryBuffer buffer) {
-    long header = buffer.readVarUint36Small();
+    long header = Platform.IS_LITTLE_ENDIAN ? buffer.readVarUint36SmallOnLE() : buffer.readVarUint36SmallOnBE();
     byte coder = (byte) (header & 0b11);
     int numBytes = (int) (header >>> 2);
     if (coder == LATIN1) {
-      return newCharsStringZeroCopy(readLatinChars(buffer, numBytes));
+      return CHARS_STRING_ZERO_COPY_CTR.apply(readLatinChars(buffer, numBytes), Boolean.TRUE);
     } else if (coder == UTF16) {
-      return newCharsStringZeroCopy(readUTF16Chars(buffer, numBytes));
+      return CHARS_STRING_ZERO_COPY_CTR.apply(readUTF16Chars(buffer, numBytes), Boolean.TRUE);
     } else {
       return readUtf8(buffer, coder, numBytes);
     }

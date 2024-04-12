@@ -1319,6 +1319,54 @@ public final class MemoryBuffer {
     }
   }
 
+  public long readVarUint36SmallOnLE() {
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    int readIdx = readerIndex;
+    if (size - readIdx >= 9) {
+      long bulkValue = UNSAFE.getLong(heapMemory, address + readIdx++);
+      // noinspection Duplicates
+      long result = bulkValue & 0x7F;
+      if ((bulkValue & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (bulkValue >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((bulkValue & 0x8000) != 0) {
+          return continueReadVarLong36(readIdx, bulkValue, result);
+        }
+      }
+      readerIndex = readIdx;
+      return result;
+    } else {
+      return readVarUint36Slow();
+    }
+  }
+
+  public long readVarUint36SmallOnBE() {
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    int readIdx = readerIndex;
+    if (size - readIdx >= 9) {
+      long bulkValue = Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx++));
+      // noinspection Duplicates
+      long result = bulkValue & 0x7F;
+      if ((bulkValue & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (bulkValue >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((bulkValue & 0x8000) != 0) {
+          return continueReadVarLong36(readIdx, bulkValue, result);
+        }
+      }
+      readerIndex = readIdx;
+      return result;
+    } else {
+      return readVarUint36Slow();
+    }
+  }
+
   private long continueReadVarLong36(int readIdx, long bulkValue, long result) {
     readIdx++;
     // 0x1fc000: 0b1111111 << 14

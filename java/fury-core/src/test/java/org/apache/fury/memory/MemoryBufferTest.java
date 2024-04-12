@@ -594,12 +594,18 @@ public class MemoryBufferTest {
       int diff = MemoryUtils.putVarUint36Small(buf.getHeapMemory(), index, Short.MAX_VALUE);
       assertEquals(buf.readVarUint36Small(), Short.MAX_VALUE);
       buf.increaseReaderIndex(-diff);
+      long v = Platform.IS_LITTLE_ENDIAN ? buf.readVarUint36SmallOnLE() : buf.readVarUint36SmallOnBE();
+      assertEquals(v, Short.MAX_VALUE);
+      buf.increaseReaderIndex(-diff);
       index += buf.unsafePutVarUint36Small(index, Short.MAX_VALUE);
       assertEquals(buf.readVarUint36Small(), Short.MAX_VALUE);
     }
     {
       int diff = MemoryUtils.putVarUint36Small(buf.getHeapMemory(), index, Integer.MAX_VALUE);
       assertEquals(buf.readVarUint36Small(), Integer.MAX_VALUE);
+      buf.increaseReaderIndex(-diff);
+      long v = Platform.IS_LITTLE_ENDIAN ? buf.readVarUint36SmallOnLE() : buf.readVarUint36SmallOnBE();
+      assertEquals(v, Integer.MAX_VALUE);
       buf.increaseReaderIndex(-diff);
       index += buf.unsafePutVarUint36Small(index, Integer.MAX_VALUE);
       assertEquals(buf.readVarUint36Small(), Integer.MAX_VALUE);
@@ -609,6 +615,9 @@ public class MemoryBufferTest {
           MemoryUtils.putVarUint36Small(
               buf.getHeapMemory(), index, 0b111111111111111111111111111111111111L);
       assertEquals(buf.readVarUint36Small(), 0b111111111111111111111111111111111111L);
+      buf.increaseReaderIndex(-diff);
+      long v = Platform.IS_LITTLE_ENDIAN ? buf.readVarUint36SmallOnLE() : buf.readVarUint36SmallOnBE();
+      assertEquals(v, 0b111111111111111111111111111111111111L);
       buf.increaseReaderIndex(-diff);
       buf.unsafePutVarUint36Small(index, 0b1000000000000000000000000000000000000L);
       assertEquals(buf.readVarUint36Small(), 0); // overflow
