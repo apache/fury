@@ -28,10 +28,6 @@ The text of each license is the standard Apache 2.0 license.
       java/fury-core/src/main/java/org/apache/fury/util/Platform.java
       java/fury-format/src/main/java/org/apache/fury/format/vectorized/ArrowWriter.java
 
-* flink (https://github.com/apache/flink)
-    Files:
-      java/fury-core/src/main/java/org/apache/fury/memory/MemoryBuffer.java
-
 * commons-io (https://github.com/apache/commons-io)
     Files:
       java/fury-core/src/main/java/org/apache/fury/io/ClassLoaderObjectInputStream.java

@@ -425,10 +425,12 @@ public class ObjectStreamSerializer extends Serializer {
       this.fury = slotsInfo.slotsSerializer.fury;
     }
 
+    @Override
     protected final void writeObjectOverride(Object obj) throws IOException {
       fury.writeRef(buffer, obj);
     }
 
+    @Override
     public void writeUnshared(Object obj) throws IOException {
       fury.writeNonRef(buffer, obj);
     }
@@ -516,6 +518,7 @@ public class ObjectStreamSerializer extends Serializer {
     private final ObjectArray putFieldsCache = new ObjectArray();
     private PutFieldImpl curPut;
 
+    @Override
     public PutField putFields() throws IOException {
       if (curPut == null) {
         Object o = putFieldsCache.popOrNull();
@@ -527,6 +530,7 @@ public class ObjectStreamSerializer extends Serializer {
       return curPut;
     }
 
+    @Override
     public void writeFields() throws IOException {
       if (fieldsWritten) {
         throw new NotActiveException("not in writeObject invocation or fields already written");
@@ -542,6 +546,7 @@ public class ObjectStreamSerializer extends Serializer {
       fieldsWritten = true;
     }
 
+    @Override
     public void defaultWriteObject() throws IOException, NotActiveException {
       if (fieldsWritten) {
         throw new NotActiveException("not in writeObject invocation or fields already written");
@@ -550,32 +555,39 @@ public class ObjectStreamSerializer extends Serializer {
       fieldsWritten = true;
     }
 
+    @Override
     public void reset() throws IOException {
       Class cls = slotsInfo.slotsSerializer.getType();
       // Fury won't invoke this method, throw exception if the user invokes it.
       throwUnsupportedEncodingException(cls);
     }
 
+    @Override
     protected void annotateClass(Class<?> cl) throws IOException {
       throw new IllegalStateException();
     }
 
+    @Override
     protected void annotateProxyClass(Class<?> cl) throws IOException {
       throw new IllegalStateException();
     }
 
+    @Override
     protected void writeClassDescriptor(ObjectStreamClass desc) throws IOException {
       throw new UnsupportedEncodingException();
     }
 
+    @Override
     protected Object replaceObject(Object obj) throws IOException {
       throw new UnsupportedEncodingException();
     }
 
+    @Override
     protected boolean enableReplaceObject(boolean enable) throws SecurityException {
       throw new IllegalStateException();
     }
 
+    @Override
     protected void writeStreamHeader() throws IOException {
       throw new IllegalStateException();
     }
@@ -656,15 +668,19 @@ public class ObjectStreamSerializer extends Serializer {
       fury.writeJavaString(buffer, s);
     }
 
+    @Override
     public void useProtocolVersion(int version) throws IOException {
       Class cls = slotsInfo.cls;
       throwUnsupportedEncodingException(cls);
     }
 
+    @Override
     public void flush() throws IOException {}
 
+    @Override
     protected void drain() throws IOException {}
 
+    @Override
     public void close() throws IOException {}
   }
 
@@ -689,10 +705,12 @@ public class ObjectStreamSerializer extends Serializer {
       this.slotsInfo = slotsInfo;
     }
 
+    @Override
     protected Object readObjectOverride() {
       return fury.readRef(buffer);
     }
 
+    @Override
     public Object readUnshared() {
       return fury.readNonRef(buffer);
     }
@@ -819,6 +837,7 @@ public class ObjectStreamSerializer extends Serializer {
 
     // `readFields`/`writeFields` can handle fields which doesn't exist in current class.
     // `defaultReadObject` will skip those fields.
+    @Override
     public GetField readFields() throws IOException {
       if (fieldsRead) {
         throw new NotActiveException("not in readObject invocation or fields already read");
@@ -828,6 +847,7 @@ public class ObjectStreamSerializer extends Serializer {
       return getField;
     }
 
+    @Override
     public void defaultReadObject() throws IOException, ClassNotFoundException {
       if (fieldsRead) {
         throw new NotActiveException("not in readObject invocation or fields already read");
@@ -840,6 +860,7 @@ public class ObjectStreamSerializer extends Serializer {
     // restore it user may need access to other state which is created by the subclass and
     // at this point will be null. Users thus use `registerValidation`.
     // see `javax.swing.text.AbstractDocument.readObject` as an example.
+    @Override
     public void registerValidation(ObjectInputValidation obj, int prio)
         throws NotActiveException, InvalidObjectException {
       // Since this method is only visible to fury, it won't be invoked by users outside
@@ -851,10 +872,12 @@ public class ObjectStreamSerializer extends Serializer {
       callbacks.put(prio, obj);
     }
 
+    @Override
     public int read() throws IOException {
-      return buffer.readByte();
+      return buffer.readByte() & 0xFF;
     }
 
+    @Override
     public int read(byte[] buf, int offset, int length) throws IOException {
       if (buf == null) {
         throw new NullPointerException();
@@ -873,24 +896,29 @@ public class ObjectStreamSerializer extends Serializer {
       }
     }
 
+    @Override
     public int available() throws IOException {
       return buffer.remaining();
     }
 
+    @Override
     public boolean readBoolean() throws IOException {
       return buffer.readBoolean();
     }
 
+    @Override
     public byte readByte() throws IOException {
       return buffer.readByte();
     }
 
+    @Override
     public int readUnsignedByte() throws IOException {
       int b = buffer.readByte();
       return b & 0xff;
     }
 
-    public short readInt16() throws IOException {
+    @Override
+    public short readShort() throws IOException {
       return buffer.readInt16();
     }
 
@@ -899,47 +927,58 @@ public class ObjectStreamSerializer extends Serializer {
       return b & 0xffff;
     }
 
+    @Override
     public char readChar() throws IOException {
       return buffer.readChar();
     }
 
-    public int readInt32() throws IOException {
+    @Override
+    public int readInt() throws IOException {
       return buffer.readInt32();
     }
 
-    public long readInt64() throws IOException {
+    @Override
+    public long readLong() throws IOException {
       return buffer.readInt64();
     }
 
-    public float readFloat32() throws IOException {
+    @Override
+    public float readFloat() throws IOException {
       return buffer.readFloat32();
     }
 
-    public double readFloat64() throws IOException {
+    @Override
+    public double readDouble() throws IOException {
       return buffer.readFloat64();
     }
 
+    @Override
     public void readFully(byte[] data) throws IOException {
       buffer.readBytes(data);
     }
 
+    @Override
     public void readFully(byte[] data, int offset, int size) throws IOException {
       buffer.readBytes(data, offset, size);
     }
 
+    @Override
     public int skipBytes(int len) throws IOException {
       buffer.increaseReaderIndex(len);
       return len;
     }
 
+    @Override
     public String readLine() throws IOException {
       throw new UnsupportedOperationException();
     }
 
+    @Override
     public String readUTF() throws IOException {
       return fury.readJavaString(buffer);
     }
 
+    @Override
     public void close() throws IOException {}
   }
 }
