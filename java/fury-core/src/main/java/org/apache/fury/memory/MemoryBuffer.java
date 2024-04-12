@@ -1552,7 +1552,7 @@ public final class MemoryBuffer {
     }
     readerIndex = readerIdx + 4;
     return Float.intBitsToFloat(
-      Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx)));
+        Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx)));
   }
 
   public double readFloat64() {
