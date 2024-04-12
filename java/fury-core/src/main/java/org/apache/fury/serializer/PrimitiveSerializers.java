@@ -224,22 +224,18 @@ public class PrimitiveSerializers {
       return readLong(buffer, longEncoding);
     }
 
-    public static String writeLongFunc(LongEncoding longEncoding, boolean ensureBounds) {
+    public static Expression writeLong(
+        Expression buffer, Expression v, LongEncoding longEncoding, boolean ensureBounds) {
       switch (longEncoding) {
         case LE_RAW_BYTES:
-          return ensureBounds ? "writeLong" : "unsafeWriteVarInt64";
+          return new Invoke(buffer, "writeLong", v);
         case SLI:
-          return ensureBounds ? "writeSliLong" : "unsafeWriteSliLong";
+          return new Invoke(buffer, ensureBounds ? "writeSliLong" : "unsafeWriteSliLong", v);
         case PVL:
-          return ensureBounds ? "writeVarInt64" : "unsafeWriteVarInt64";
+          return new Invoke(buffer, ensureBounds ? "writeVarInt64" : "unsafeWriteVarInt64", v);
         default:
           throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
       }
-    }
-
-    public static Expression writeLong(
-        Expression buffer, Expression v, LongEncoding longEncoding, boolean ensureBounds) {
-      return new Invoke(buffer, writeLongFunc(longEncoding, ensureBounds), v);
     }
 
     public static void writeLong(MemoryBuffer buffer, long value, LongEncoding longEncoding) {

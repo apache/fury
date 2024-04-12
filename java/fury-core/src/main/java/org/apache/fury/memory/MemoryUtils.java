@@ -190,7 +190,7 @@ public class MemoryUtils {
   public static void putFloat(Object o, long pos, float value) {
     int v = Float.floatToRawIntBits(value);
     if (!Platform.IS_LITTLE_ENDIAN) {
-      v =  Integer.reverseBytes(v);
+      v = Integer.reverseBytes(v);
     }
     Platform.putInt(o, pos, v);
   }

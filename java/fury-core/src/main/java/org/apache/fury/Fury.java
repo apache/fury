@@ -600,7 +600,7 @@ public final class Fury implements BaseFury {
       int size;
       // TODO(chaokunyang) Remove branch when other languages support aligned varint.
       if (language == Language.JAVA) {
-        size = buffer.readPositiveAlignedVarInt();
+        size = buffer.readAlignedVarUint();
       } else {
         size = buffer.readVarUint32();
       }

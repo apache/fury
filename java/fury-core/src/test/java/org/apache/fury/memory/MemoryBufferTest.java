@@ -130,7 +130,7 @@ public class MemoryBufferTest {
       index -= 2;
       assertEquals(buffer.getShort(index), Short.MAX_VALUE);
       index -= 1;
-      assertEquals(buffer.unsafeGet(index), Byte.MIN_VALUE);
+      assertEquals(buffer.get(index), Byte.MIN_VALUE);
     }
   }
 
@@ -195,24 +195,11 @@ public class MemoryBufferTest {
   }
 
   @Test
-  public void testCompare() {
-    MemoryBuffer buf1 = MemoryUtils.buffer(16);
-    MemoryBuffer buf2 = MemoryUtils.buffer(16);
-    buf1.putLongBE(0, 10);
-    buf2.putLongBE(0, 10);
-    buf1.put(9, (byte) 1);
-    buf2.put(9, (byte) 2);
-    Assert.assertTrue(buf1.compare(buf2, 0, 0, buf1.size()) < 0);
-    buf1.put(9, (byte) 3);
-    Assert.assertFalse(buf1.compare(buf2, 0, 0, buf1.size()) < 0);
-  }
-
-  @Test
   public void testEqualTo() {
     MemoryBuffer buf1 = MemoryUtils.buffer(16);
     MemoryBuffer buf2 = MemoryUtils.buffer(16);
-    buf1.putLongBE(0, 10);
-    buf2.putLongBE(0, 10);
+    buf1.putLong(0, 10);
+    buf2.putLong(0, 10);
     buf1.put(9, (byte) 1);
     buf2.put(9, (byte) 1);
     Assert.assertTrue(buf1.equalTo(buf2, 0, 0, buf1.size()));
@@ -494,27 +481,27 @@ public class MemoryBufferTest {
   public void testWriteVarUint32Aligned() {
     MemoryBuffer buf = MemoryUtils.buffer(16);
     assertEquals(buf.writeVarUint32Aligned(1), 4);
-    assertEquals(buf.readPositiveAlignedVarInt(), 1);
+    assertEquals(buf.readAlignedVarUint(), 1);
     assertEquals(buf.writeVarUint32Aligned(1 << 5), 4);
-    assertEquals(buf.readPositiveAlignedVarInt(), 1 << 5);
+    assertEquals(buf.readAlignedVarUint(), 1 << 5);
     assertEquals(buf.writeVarUint32Aligned(1 << 10), 4);
-    assertEquals(buf.readPositiveAlignedVarInt(), 1 << 10);
+    assertEquals(buf.readAlignedVarUint(), 1 << 10);
     assertEquals(buf.writeVarUint32Aligned(1 << 15), 4);
-    assertEquals(buf.readPositiveAlignedVarInt(), 1 << 15);
+    assertEquals(buf.readAlignedVarUint(), 1 << 15);
     assertEquals(buf.writeVarUint32Aligned(1 << 20), 4);
-    assertEquals(buf.readPositiveAlignedVarInt(), 1 << 20);
+    assertEquals(buf.readAlignedVarUint(), 1 << 20);
     assertEquals(buf.writeVarUint32Aligned(1 << 25), 8);
-    assertEquals(buf.readPositiveAlignedVarInt(), 1 << 25);
+    assertEquals(buf.readAlignedVarUint(), 1 << 25);
     assertEquals(buf.writeVarUint32Aligned(1 << 30), 8);
-    assertEquals(buf.readPositiveAlignedVarInt(), 1 << 30);
+    assertEquals(buf.readAlignedVarUint(), 1 << 30);
     assertEquals(buf.writeVarUint32Aligned(Integer.MAX_VALUE), 8);
-    assertEquals(buf.readPositiveAlignedVarInt(), Integer.MAX_VALUE);
+    assertEquals(buf.readAlignedVarUint(), Integer.MAX_VALUE);
     buf.writeByte((byte) 1); // make address unaligned.
     buf.writeShort((short) 1); // make address unaligned.
     assertEquals(buf.writeVarUint32Aligned(Integer.MAX_VALUE), 9);
     buf.readByte();
     buf.readShort();
-    assertEquals(buf.readPositiveAlignedVarInt(), Integer.MAX_VALUE);
+    assertEquals(buf.readAlignedVarUint(), Integer.MAX_VALUE);
     for (int i = 0; i < 32; i++) {
       MemoryBuffer buf1 = MemoryUtils.buffer(16);
       assertAligned(i, buf1);
@@ -531,20 +518,20 @@ public class MemoryBufferTest {
       buffer.writeVarUint32Aligned(1 << j);
       assertEquals(buffer.writerIndex() % 4, 0);
       buffer.readByte();
-      assertEquals(buffer.readPositiveAlignedVarInt(), 1 << j);
+      assertEquals(buffer.readAlignedVarUint(), 1 << j);
       for (int k = 0; k < i % 4; k++) {
         buffer.writeByte((byte) i); // make address unaligned.
         buffer.writeVarUint32Aligned(1 << j);
         assertEquals(buffer.writerIndex() % 4, 0);
         buffer.readByte();
-        assertEquals(buffer.readPositiveAlignedVarInt(), 1 << j);
+        assertEquals(buffer.readAlignedVarUint(), 1 << j);
       }
     }
     buffer.writeByte((byte) i); // make address unaligned.
     buffer.writeVarUint32Aligned(Integer.MAX_VALUE);
     assertEquals(buffer.writerIndex() % 4, 0);
     buffer.readByte();
-    assertEquals(buffer.readPositiveAlignedVarInt(), Integer.MAX_VALUE);
+    assertEquals(buffer.readAlignedVarUint(), Integer.MAX_VALUE);
   }
 
   @Test
@@ -553,7 +540,6 @@ public class MemoryBufferTest {
     data[0] = (byte) 0xac;
     data[1] = (byte) 0xed;
     assertEquals(MemoryUtils.getShortB(data, 0), (short) 0xaced);
-    assertEquals(MemoryBuffer.fromByteArray(data).getShortBE(0), (short) 0xaced);
   }
 
   @Test

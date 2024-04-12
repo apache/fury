@@ -530,9 +530,7 @@ public abstract class CodecBuilder {
                 .inline());
   }
 
-  /**
-   * Build unsafePut operation.
-   */
+  /** Build unsafePut operation. */
   protected Expression unsafePut(Expression base, Expression pos, Expression value) {
     return new StaticInvoke(Platform.class, "put", base, pos, value);
   }
@@ -561,9 +559,7 @@ public abstract class CodecBuilder {
     return new StaticInvoke(Platform.class, "putFloat", base, pos, value);
   }
 
-  /**
-   * Build unsafePutDouble operation.
-   */
+  /** Build unsafePutDouble operation. */
   protected Expression unsafePutDouble(Expression base, Expression pos, Expression value) {
     return new StaticInvoke(Platform.class, "putDouble", base, pos, value);
   }
