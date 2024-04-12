@@ -1055,7 +1055,8 @@ public final class MemoryBuffer {
   }
 
   // CHECKSTYLE.OFF:MethodName
-  private int _unsafeWriteVarUint64(long value) {
+  @CodegenInvoke
+  public int _unsafeWriteVarUint64(long value) {
     // CHECKSTYLE.ON:MethodName
     final int writerIndex = this.writerIndex;
     int varInt;
