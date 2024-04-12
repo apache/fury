@@ -20,11 +20,8 @@ package org.apache.fury.memory;
 
 import static org.apache.fury.util.Preconditions.checkArgument;
 
-import java.nio.BufferOverflowException;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.ReadOnlyBufferException;
 import java.util.Arrays;
 import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.io.AbstractStreamReader;
@@ -63,12 +60,8 @@ import sun.misc.Unsafe;
  * jit may stop inline for some reasons: NodeCountInliningCutoff,
  * DesiredMethodLimit,MaxRecursiveInlineLevel,FreqInlineSize,MaxInlineSize
  */
-//  DesiredMethodLimit,MaxRecursiveInlineLevel,FreqInlineSize,MaxInlineSize
 public final class MemoryBuffer {
-  // The unsafe handle for transparent memory copied (heap/off-heap).
   private static final Unsafe UNSAFE = Platform.UNSAFE;
-  // Constant that flags the byte order. Because this is a boolean constant, the JIT compiler can
-  // use this well to aggressively eliminate the non-applicable code paths.
   private static final boolean LITTLE_ENDIAN = (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN);
 
   // If the data in on the heap, `heapMemory` will be non-null, and its' the object relative to
@@ -313,15 +306,9 @@ public final class MemoryBuffer {
   private void checkPosition(long index, long pos, long length) {
     if (BoundsChecking.BOUNDS_CHECKING_ENABLED) {
       if (index < 0 || pos > addressLimit - length) {
-        // index is in fact invalid
         throwOOBException();
       }
     }
-  }
-
-  public byte unsafeGet(int index) {
-    final long pos = address + index;
-    return UNSAFE.getByte(heapMemory, pos);
   }
 
   public byte get(int index) {
@@ -334,140 +321,65 @@ public final class MemoryBuffer {
     get(index, dst, 0, dst.length);
   }
 
-  /**
-   * Bulk get method. Copies length memory from the specified position to the destination memory,
-   * beginning at the given offset.
-   *
-   * @param index The position at which the first byte will be read.
-   * @param dst The memory into which the memory will be copied.
-   * @param offset The copying offset in the destination memory.
-   * @param length The number of bytes to be copied.
-   * @throws IndexOutOfBoundsException Thrown, if the index is negative, or too large that the
-   *     requested number of bytes exceed the amount of memory between the index and the memory
-   *     buffer's end.
-   */
   public void get(int index, byte[] dst, int offset, int length) {
-    // check the byte array offset and length and the status
-    if ((offset | length | (offset + length) | (dst.length - (offset + length))) < 0) {
-      throwOOBException();
-    }
     final long pos = address + index;
-    if (index >= 0 && pos <= addressLimit - length) {
-      final long arrayAddress = Platform.BYTE_ARRAY_OFFSET + offset;
-      Platform.copyMemory(heapMemory, pos, dst, arrayAddress, length);
-    } else {
-      // index is in fact invalid
+    if ((index
+            | offset
+            | length
+            | (offset + length)
+            | (dst.length - (offset + length))
+            | addressLimit - length - pos)
+        < 0) {
       throwOOBException();
     }
+    Platform.copyMemory(heapMemory, pos, dst, Platform.BYTE_ARRAY_OFFSET + offset, length);
   }
 
-  /**
-   * Bulk get method. Copies {@code numBytes} bytes from this memory buffer, starting at position
-   * {@code offset} to the target {@code ByteBuffer}. The bytes will be put into the target buffer
-   * starting at the buffer's current position. If this method attempts to write more bytes than the
-   * target byte buffer has remaining (with respect to {@link ByteBuffer#remaining()}), this method
-   * will cause a {@link BufferOverflowException}.
-   *
-   * @param offset The position where the bytes are started to be read from in this memory buffer.
-   * @param target The ByteBuffer to copy the bytes to.
-   * @param numBytes The number of bytes to copy.
-   * @throws IndexOutOfBoundsException If the offset is invalid, or this buffer does not contain the
-   *     given number of bytes (starting from offset), or the target byte buffer does not have
-   *     enough space for the bytes.
-   * @throws ReadOnlyBufferException If the target buffer is read-only.
-   */
   public void get(int offset, ByteBuffer target, int numBytes) {
-    // check the byte array offset and length
     if ((offset | numBytes | (offset + numBytes)) < 0) {
       throwOOBException();
     }
-    final int targetOffset = target.position();
-    final int remaining = target.remaining();
-    if (remaining < numBytes) {
+    if (target.remaining() < numBytes) {
       throwOOBException();
     }
+    if (target.isReadOnly()) {
+      throw new IllegalArgumentException("read only buffer");
+    }
+    final int targetPos = target.position();
     if (target.isDirect()) {
-      if (target.isReadOnly()) {
-        throwOOBException();
-      }
-      // copy to the target memory directly
-      final long targetPointer = Platform.getAddress(target) + targetOffset;
-      final long sourcePointer = address + offset;
-      if (sourcePointer <= addressLimit - numBytes) {
-        Platform.copyMemory(heapMemory, sourcePointer, null, targetPointer, numBytes);
-        target.position(targetOffset + numBytes);
+      final long targetAddr = Platform.getAddress(target) + targetPos;
+      final long sourceAddr = address + offset;
+      if (sourceAddr <= addressLimit - numBytes) {
+        Platform.copyMemory(heapMemory, sourceAddr, null, targetAddr, numBytes);
       } else {
         throwOOBException();
       }
-    } else if (target.hasArray()) {
-      // move directly into the byte array
-      get(offset, target.array(), targetOffset + target.arrayOffset(), numBytes);
-      // this must be after the get() call to ensue that the byte buffer is not
-      // modified in case the call fails
-      target.position(targetOffset + numBytes);
     } else {
-      // neither heap buffer nor direct buffer
-      while (target.hasRemaining()) {
-        target.put(get(offset++));
-      }
+      assert target.hasArray();
+      get(offset, target.array(), targetPos + target.arrayOffset(), numBytes);
     }
+    target.position(targetPos + numBytes);
   }
 
-  public static void unsafePut(Object o, long offset, byte b) {
-    UNSAFE.putByte(o, offset, b);
-  }
-
-  public void unsafePut(int index, byte b) {
-    final long pos = address + index;
-    UNSAFE.putByte(heapMemory, pos, b);
-  }
-
-  /**
-   * Bulk put method. Copies {@code numBytes} bytes from the given {@code ByteBuffer}, into this
-   * memory buffer. The bytes will be read from the target buffer starting at the buffer's current
-   * position, and will be written to this memory buffer starting at {@code offset}. If this method
-   * attempts to read more bytes than the target byte buffer has remaining (with respect to {@link
-   * ByteBuffer#remaining()}), this method will cause a {@link BufferUnderflowException}.
-   *
-   * @param offset The position where the bytes are started to be written to in this memory buffer.
-   * @param source The ByteBuffer to copy the bytes from.
-   * @param numBytes The number of bytes to copy.
-   * @throws IndexOutOfBoundsException If the offset is invalid, or the source buffer does not
-   *     contain the given number of bytes, or this buffer does not have enough space for the
-   *     bytes(counting from offset).
-   */
   public void put(int offset, ByteBuffer source, int numBytes) {
-    // check the byte array offset and length
-    if ((offset | numBytes | (offset + numBytes)) < 0) {
-      throwOOBException();
-    }
-    final int sourceOffset = source.position();
     final int remaining = source.remaining();
-    if (remaining < numBytes) {
+    if ((offset | numBytes | (offset + numBytes) | (remaining - numBytes)) < 0) {
       throwOOBException();
     }
+    final int sourcePos = source.position();
     if (source.isDirect()) {
-      // copy to the target memory directly
-      final long sourcePointer = Platform.getAddress(source) + sourceOffset;
-      final long targetPointer = address + offset;
-      if (targetPointer <= addressLimit - numBytes) {
-        Platform.copyMemory(null, sourcePointer, heapMemory, targetPointer, numBytes);
-        source.position(sourceOffset + numBytes);
+      final long sourceAddr = Platform.getAddress(source) + sourcePos;
+      final long targetAddr = address + offset;
+      if (targetAddr <= addressLimit - numBytes) {
+        Platform.copyMemory(null, sourceAddr, heapMemory, targetAddr, numBytes);
       } else {
         throwOOBException();
       }
-    } else if (source.hasArray()) {
-      // move directly into the byte array
-      put(offset, source.array(), sourceOffset + source.arrayOffset(), numBytes);
-      // this must be after the get() call to ensue that the byte buffer is not
-      // modified in case the call fails
-      source.position(sourceOffset + numBytes);
     } else {
-      // neither heap buffer nor direct buffer
-      while (source.hasRemaining()) {
-        put(offset++, source.get());
-      }
+      assert source.hasArray();
+      put(offset, source.array(), sourcePos + source.arrayOffset(), numBytes);
     }
+    source.position(sourcePos + numBytes);
   }
 
   public void put(int index, byte b) {
@@ -480,31 +392,27 @@ public final class MemoryBuffer {
     put(index, src, 0, src.length);
   }
 
-  /**
-   * Bulk put method. Copies length memory starting at position offset from the source memory into
-   * the memory buffer starting at the specified index.
-   *
-   * @param index The position in the memory buffer array, where the data is put.
-   * @param src The source array to copy the data from.
-   * @param offset The offset in the source array where the copying is started.
-   * @param length The number of bytes to copy.
-   * @throws IndexOutOfBoundsException Thrown, if the index is negative, or too large such that the
-   *     array portion to copy exceed the amount of memory between the index and the memory buffer's
-   *     end.
-   */
   public void put(int index, byte[] src, int offset, int length) {
-    // check the byte array offset and length
-    if ((offset | length | (offset + length) | (src.length - (offset + length))) < 0) {
-      throwOOBException();
-    }
     final long pos = address + index;
-    if (index >= 0 && pos <= addressLimit - length) {
-      final long arrayAddress = Platform.BYTE_ARRAY_OFFSET + offset;
-      Platform.copyMemory(src, arrayAddress, heapMemory, pos, length);
-    } else {
-      // index is in fact invalid
+    // check the byte array offset and length
+    if ((index
+            | offset
+            | length
+            | (offset + length)
+            | (src.length - (offset + length))
+            | addressLimit - length - pos)
+        < 0) {
       throwOOBException();
     }
+    final long arrayAddress = Platform.BYTE_ARRAY_OFFSET + offset;
+    Platform.copyMemory(src, arrayAddress, heapMemory, pos, length);
+  }
+
+  // CHECKSTYLE.OFF:MethodName
+  public void _unsafePut(int index, byte b) {
+    // CHECKSTYLE.ON:MethodName
+    final long pos = address + index;
+    UNSAFE.putByte(heapMemory, pos, b);
   }
 
   public boolean getBoolean(int index) {
@@ -515,73 +423,20 @@ public final class MemoryBuffer {
     put(index, (byte) (value ? 1 : 0));
   }
 
-  public void unsafePutBoolean(int index, boolean value) {
-    unsafePut(index, (byte) (value ? 1 : 0));
-  }
-
-  public static void unsafePutBoolean(Object o, long offset, boolean value) {
-    UNSAFE.putBoolean(o, offset, value);
-  }
-
-  public char getCharN(int index) {
-    final long pos = address + index;
-    checkPosition(index, pos, 2);
-    return UNSAFE.getChar(heapMemory, pos);
-  }
-
   public char getChar(int index) {
-    if (LITTLE_ENDIAN) {
-      return getCharN(index);
-    } else {
-      return Character.reverseBytes(getCharN(index));
-    }
-  }
-
-  public void putCharN(int index, char value) {
     final long pos = address + index;
     checkPosition(index, pos, 2);
-    UNSAFE.putChar(heapMemory, pos, value);
+    char c = UNSAFE.getChar(heapMemory, pos);
+    return LITTLE_ENDIAN ? c : Character.reverseBytes(c);
   }
 
   public void putChar(int index, char value) {
-    if (LITTLE_ENDIAN) {
-      putCharN(index, value);
-    } else {
-      putCharN(index, Character.reverseBytes(value));
-    }
-  }
-
-  public void unsafePutChar(int index, char value) {
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putChar(heapMemory, pos, value);
-    } else {
-      UNSAFE.putChar(heapMemory, pos, Character.reverseBytes(value));
-    }
-  }
-
-  public static void unsafePutChar(Object o, long offset, char value) {
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putChar(o, offset, value);
-    } else {
-      UNSAFE.putChar(o, offset, Character.reverseBytes(value));
-    }
-  }
-
-  /** Get short in big endian order from provided buffer. */
-  public static short getShortB(byte[] b, int off) {
-    return (short) ((b[off + 1] & 0xFF) + (b[off] << 8));
-  }
-
-  /** Get short in big endian order from specified offset. */
-  public short getShortB(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 2);
-    if (LITTLE_ENDIAN) {
-      return Short.reverseBytes(UNSAFE.getShort(heapMemory, pos));
-    } else {
-      return UNSAFE.getShort(heapMemory, pos);
+    if (!LITTLE_ENDIAN) {
+      value = Character.reverseBytes(value);
     }
+    UNSAFE.putChar(heapMemory, pos, value);
   }
 
   public short getShort(int index) {
@@ -604,29 +459,14 @@ public final class MemoryBuffer {
     }
   }
 
-  public short unsafeGetShort(int index) {
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getShort(heapMemory, pos);
-    } else {
-      return Short.reverseBytes(UNSAFE.getShort(heapMemory, pos));
-    }
-  }
-
-  public void unsafePutShort(int index, short value) {
+  // CHECKSTYLE.OFF:MethodName
+  public void _unsafePutShort(int index, short value) {
+    // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       UNSAFE.putShort(heapMemory, pos, value);
     } else {
       UNSAFE.putShort(heapMemory, pos, Short.reverseBytes(value));
-    }
-  }
-
-  public static void unsafePutShort(Object o, long pos, short value) {
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putShort(o, pos, value);
-    } else {
-      UNSAFE.putShort(o, pos, Short.reverseBytes(value));
     }
   }
 
@@ -650,7 +490,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public int unsafeGetInt(int index) {
+  private int unsafeGetInt(int index) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       return UNSAFE.getInt(heapMemory, pos);
@@ -659,28 +499,12 @@ public final class MemoryBuffer {
     }
   }
 
-  public static int unsafeGetInt(Object o, long pos) {
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getInt(o, pos);
-    } else {
-      return Integer.reverseBytes(UNSAFE.getInt(o, pos));
-    }
-  }
-
-  public void unsafePutInt(int index, int value) {
+  private void unsafePutInt(int index, int value) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       UNSAFE.putInt(heapMemory, pos, value);
     } else {
       UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(value));
-    }
-  }
-
-  public static void unsafePutInt(Object o, long pos, int value) {
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putInt(o, pos, value);
-    } else {
-      UNSAFE.putInt(o, pos, Integer.reverseBytes(value));
     }
   }
 
@@ -694,22 +518,6 @@ public final class MemoryBuffer {
     }
   }
 
-  public long getLongB(int index) {
-    final long pos = address + index;
-    checkPosition(index, pos, 8);
-    if (LITTLE_ENDIAN) {
-      return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos));
-    } else {
-      return UNSAFE.getLong(heapMemory, pos);
-    }
-  }
-
-  public void putLongN(int index, long value) {
-    final long pos = address + index;
-    checkPosition(index, pos, 8);
-    UNSAFE.putLong(heapMemory, pos, value);
-  }
-
   public void putLong(int index, long value) {
     final long pos = address + index;
     checkPosition(index, pos, 8);
@@ -720,15 +528,9 @@ public final class MemoryBuffer {
     }
   }
 
-  public void putLongB(int index, long value) {
-    if (LITTLE_ENDIAN) {
-      putLongN(index, Long.reverseBytes(value));
-    } else {
-      putLongN(index, value);
-    }
-  }
-
-  public long unsafeGetLong(int index) {
+  // CHECKSTYLE.OFF:MethodName
+  long _unsafeGetLong(int index) {
+    // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       return UNSAFE.getLong(heapMemory, pos);
@@ -737,28 +539,14 @@ public final class MemoryBuffer {
     }
   }
 
-  public static long unsafeGetLong(Object o, long pos) {
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getLong(o, pos);
-    } else {
-      return Long.reverseBytes(UNSAFE.getLong(o, pos));
-    }
-  }
-
-  public void unsafePutLong(int index, long value) {
+  // CHECKSTYLE.OFF:MethodName
+  public void _unsafePutLong(int index, long value) {
+    // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       UNSAFE.putLong(heapMemory, pos, value);
     } else {
       UNSAFE.putLong(heapMemory, pos, Long.reverseBytes(value));
-    }
-  }
-
-  public static void unsafePutLong(Object o, long pos, long value) {
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putLong(o, pos, value);
-    } else {
-      UNSAFE.putLong(o, pos, Long.reverseBytes(value));
     }
   }
 
@@ -778,32 +566,6 @@ public final class MemoryBuffer {
       UNSAFE.putInt(heapMemory, pos, Float.floatToRawIntBits(value));
     } else {
       UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(Float.floatToRawIntBits(value)));
-    }
-  }
-
-  public float unsafeGetFloat(int index) {
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      return Float.intBitsToFloat(UNSAFE.getInt(heapMemory, pos));
-    } else {
-      return Float.intBitsToFloat(Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos)));
-    }
-  }
-
-  public void unsafePutFloat(int index, float value) {
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putInt(heapMemory, pos, Float.floatToRawIntBits(value));
-    } else {
-      UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(Float.floatToRawIntBits(value)));
-    }
-  }
-
-  public static void unsafePutFloat(Object o, long pos, float value) {
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putInt(o, pos, Float.floatToRawIntBits(value));
-    } else {
-      UNSAFE.putInt(o, pos, Integer.reverseBytes(Float.floatToRawIntBits(value)));
     }
   }
 
@@ -827,88 +589,15 @@ public final class MemoryBuffer {
     }
   }
 
-  public double unsafeGetDouble(int index) {
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      return Double.longBitsToDouble(UNSAFE.getLong(heapMemory, pos));
-    } else {
-      return Double.longBitsToDouble(Long.reverseBytes(UNSAFE.getLong(heapMemory, pos)));
-    }
-  }
-
-  public void unsafePutDouble(int index, double value) {
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putLong(heapMemory, pos, Double.doubleToRawLongBits(value));
-    } else {
-      UNSAFE.putLong(heapMemory, pos, Long.reverseBytes(Double.doubleToRawLongBits(value)));
-    }
-  }
-
-  public static void unsafePutDouble(Object o, long pos, double value) {
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putLong(o, pos, Double.doubleToRawLongBits(value));
-    } else {
-      UNSAFE.putLong(o, pos, Long.reverseBytes(Double.doubleToRawLongBits(value)));
-    }
+  // Check should be done outside to avoid this method got into the critical path.
+  private void throwOOBException() {
+    throw new IndexOutOfBoundsException(
+        String.format("size: %d, address %s, addressLimit %d", size, address, addressLimit));
   }
 
   // -------------------------------------------------------------------------
-  //                     Read and Write Methods
+  //                          Write Methods
   // -------------------------------------------------------------------------
-
-  /** Returns the {@code readerIndex} of this buffer. */
-  public int readerIndex() {
-    return readerIndex;
-  }
-
-  /**
-   * Sets the {@code readerIndex} of this buffer.
-   *
-   * @throws IndexOutOfBoundsException if the specified {@code readerIndex} is less than {@code 0}
-   *     or greater than {@code this.size}
-   */
-  public void readerIndex(int readerIndex) {
-    if (readerIndex < 0) {
-      throwIndexOOBExceptionForRead();
-    } else if (readerIndex > size) {
-      // in this case, diff must be greater than 0.
-      streamReader.fillBuffer(readerIndex - size);
-    }
-    this.readerIndex = readerIndex;
-  }
-
-  public void readerIndexUnsafe(int readerIndex) {
-    this.readerIndex = readerIndex;
-  }
-
-  /** Returns array index for reader index if buffer is a heap buffer. */
-  public int unsafeHeapReaderIndex() {
-    return readerIndex + heapOffset;
-  }
-
-  public void increaseReaderIndexUnsafe(int diff) {
-    readerIndex += diff;
-  }
-
-  public void increaseReaderIndex(int diff) {
-    int readerIdx = readerIndex;
-    readerIndex = readerIdx += diff;
-    if (readerIdx < 0) {
-      throwIndexOOBExceptionForRead();
-    } else if (readerIdx > size) {
-      // in this case, diff must be greater than 0.
-      streamReader.fillBuffer(readerIdx - size);
-    }
-  }
-
-  public long getUnsafeReaderAddress() {
-    return address + readerIndex;
-  }
-
-  public int remaining() {
-    return size - readerIndex;
-  }
 
   /** Returns the {@code writerIndex} of this buffer. */
   public int writerIndex() {
@@ -932,27 +621,6 @@ public final class MemoryBuffer {
     throw new IndexOutOfBoundsException(
         String.format(
             "writerIndex: %d (expected: 0 <= writerIndex <= size(%d))", writerIndex, size));
-  }
-
-  // Check should be done outside to avoid this method got into the critical path.
-  private void throwOOBException() {
-    throw new IndexOutOfBoundsException(
-        String.format("size: %d, address %s, addressLimit %d", size, address, addressLimit));
-  }
-
-  // Check should be done outside to avoid this method got into the critical path.
-  private void throwIndexOOBExceptionForRead() {
-    throw new IndexOutOfBoundsException(
-        String.format(
-            "readerIndex: %d (expected: 0 <= readerIndex <= size(%d))", readerIndex, size));
-  }
-
-  // Check should be done outside to avoid this method got into the critical path.
-  private void throwIndexOOBExceptionForRead(int length) {
-    throw new IndexOutOfBoundsException(
-        String.format(
-            "readerIndex: %d (expected: 0 <= readerIndex <= size(%d)), length %d",
-            readerIndex, size, length));
   }
 
   public void unsafeWriterIndex(int writerIndex) {
@@ -988,7 +656,9 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void unsafeWriteByte(byte value) {
+  // CHECKSTYLE.OFF:MethodName
+  public void _unsafeWriteByte(byte value) {
+    // CHECKSTYLE.ON:MethodName
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 1;
     final long pos = address + writerIdx;
@@ -1022,19 +692,7 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void unsafeWriteShort(short value) {
-    final int writerIdx = writerIndex;
-    final int newIdx = writerIdx + 2;
-    final long pos = address + writerIdx;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putShort(heapMemory, pos, value);
-    } else {
-      UNSAFE.putShort(heapMemory, pos, Short.reverseBytes(value));
-    }
-    writerIndex = newIdx;
-  }
-
-  public void writeShort(short value) {
+  public void writeInt16(short value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 2;
     ensure(newIdx);
@@ -1047,7 +705,7 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void writeInt(int value) {
+  public void writeInt32(int value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 4;
     ensure(newIdx);
@@ -1060,19 +718,7 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void unsafeWriteInt(int value) {
-    final int writerIdx = writerIndex;
-    final int newIdx = writerIdx + 4;
-    final long pos = address + writerIdx;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putInt(heapMemory, pos, value);
-    } else {
-      UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(value));
-    }
-    writerIndex = newIdx;
-  }
-
-  public void writeLong(long value) {
+  public void writeInt64(long value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 8;
     ensure(newIdx);
@@ -1085,19 +731,7 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void unsafeWriteLong(long value) {
-    final int writerIdx = writerIndex;
-    final int newIdx = writerIdx + 8;
-    final long pos = address + writerIdx;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putLong(heapMemory, pos, value);
-    } else {
-      UNSAFE.putLong(heapMemory, pos, Long.reverseBytes(value));
-    }
-    writerIndex = newIdx;
-  }
-
-  public void writeFloat(float value) {
+  public void writeFloat32(float value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 4;
     ensure(newIdx);
@@ -1110,7 +744,7 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void writeDouble(double value) {
+  public void writeFloat64(double value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 8;
     ensure(newIdx);
@@ -1124,12 +758,12 @@ public final class MemoryBuffer {
   }
 
   /**
-   * Write int using variable length encoding. If the value is positive, use {@link
-   * #writePositiveVarInt} to save one bit.
+   * Write int using variable length encoding. If the value is positive, use {@link #writeVarUint32}
+   * to save one bit.
    */
-  public int writeVarInt(int v) {
+  public int writeVarInt32(int v) {
     ensure(writerIndex + 8);
-    return unsafeWriteVarInt(v);
+    return _unsafeWriteVarInt(v);
   }
 
   /**
@@ -1137,12 +771,12 @@ public final class MemoryBuffer {
    *
    * @return The number of bytes written.
    */
-  public int writePositiveVarInt(int v) {
+  public int writeVarUint32(int v) {
     // ensure at least 8 bytes are writable at once, so jvm-jit
     // generated code is smaller. Otherwise, `MapRefResolver.writeRefOrNull`
     // may be `callee is too large`/`already compiled into a big method`
     ensure(writerIndex + 8);
-    return unsafeWritePositiveVarInt(v);
+    return _unsafeWriteVarUint32(v);
   }
 
   /**
@@ -1150,109 +784,22 @@ public final class MemoryBuffer {
    * to avoid using two memory operations.
    */
   @CodegenInvoke
-  public int unsafeWriteVarInt(int v) {
+  // CHECKSTYLE.OFF:MethodName
+  public int _unsafeWriteVarInt(int v) {
+    // CHECKSTYLE.ON:MethodName
     // Ensure negatives close to zero is encode in little bytes.
     v = (v << 1) ^ (v >> 31);
-    return unsafeWritePositiveVarInt(v);
-  }
-
-  /** Reads the 1-5 byte int part of a varint. */
-  @CodegenInvoke
-  public int readVarInt() {
-    if (LITTLE_ENDIAN) {
-      return readVarIntOnLE();
-    } else {
-      return readVarIntOnBE();
-    }
-  }
-
-  /** Reads the 1-5 byte as a varint on a little endian mache. */
-  @CodegenInvoke
-  public int readVarIntOnLE() {
-    // noinspection Duplicates
-    int readIdx = readerIndex;
-    int result;
-    if (size - readIdx < 5) {
-      result = readPositiveVarIntSlow();
-    } else {
-      long address = this.address;
-      // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
-      int fourByteValue = UNSAFE.getInt(heapMemory, address + readIdx);
-      // Duplicate and manual inline for performance.
-      // noinspection Duplicates
-      readIdx++;
-      result = fourByteValue & 0x7F;
-      if ((fourByteValue & 0x80) != 0) {
-        readIdx++;
-        // 0x3f80: 0b1111111 << 7
-        result |= (fourByteValue >>> 1) & 0x3f80;
-        // 0x8000: 0b1 << 15
-        if ((fourByteValue & 0x8000) != 0) {
-          readIdx++;
-          // 0x1fc000: 0b1111111 << 14
-          result |= (fourByteValue >>> 2) & 0x1fc000;
-          // 0x800000: 0b1 << 23
-          if ((fourByteValue & 0x800000) != 0) {
-            readIdx++;
-            // 0xfe00000: 0b1111111 << 21
-            result |= (fourByteValue >>> 3) & 0xfe00000;
-            if ((fourByteValue & 0x80000000) != 0) {
-              result |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
-            }
-          }
-        }
-      }
-      readerIndex = readIdx;
-    }
-    return (result >>> 1) ^ -(result & 1);
-  }
-
-  /** Reads the 1-5 byte as a varint on a big endian mache. */
-  @CodegenInvoke
-  public int readVarIntOnBE() {
-    // noinspection Duplicates
-    int readIdx = readerIndex;
-    int result;
-    if (size - readIdx < 5) {
-      result = readPositiveVarIntSlow();
-    } else {
-      long address = this.address;
-      int fourByteValue = Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readIdx));
-      // Duplicate and manual inline for performance.
-      // noinspection Duplicates
-      readIdx++;
-      result = fourByteValue & 0x7F;
-      if ((fourByteValue & 0x80) != 0) {
-        readIdx++;
-        // 0x3f80: 0b1111111 << 7
-        result |= (fourByteValue >>> 1) & 0x3f80;
-        // 0x8000: 0b1 << 15
-        if ((fourByteValue & 0x8000) != 0) {
-          readIdx++;
-          // 0x1fc000: 0b1111111 << 14
-          result |= (fourByteValue >>> 2) & 0x1fc000;
-          // 0x800000: 0b1 << 23
-          if ((fourByteValue & 0x800000) != 0) {
-            readIdx++;
-            // 0xfe00000: 0b1111111 << 21
-            result |= (fourByteValue >>> 3) & 0xfe00000;
-            if ((fourByteValue & 0x80000000) != 0) {
-              result |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
-            }
-          }
-        }
-      }
-      readerIndex = readIdx;
-    }
-    return (result >>> 1) ^ -(result & 1);
+    return _unsafeWriteVarUint32(v);
   }
 
   /**
    * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
    * to avoid using two memory operations.
    */
-  public int unsafeWritePositiveVarInt(int v) {
-    int varintBytes = unsafePutVarUint36Small(writerIndex, v);
+  // CHECKSTYLE.OFF:MethodName
+  public int _unsafeWriteVarUint32(int v) {
+    // CHECKSTYLE.ON:MethodName
+    int varintBytes = _unsafePutVarUint36Small(writerIndex, v);
     writerIndex += varintBytes;
     return varintBytes;
   }
@@ -1260,7 +807,9 @@ public final class MemoryBuffer {
   /**
    * Caller must ensure there must be at least 8 bytes for writing, otherwise the crash may occur.
    */
-  public int unsafePutVarUint36Small(int index, long value) {
+  // CHECKSTYLE.OFF:MethodName
+  public int _unsafePutVarUint36Small(int index, long value) {
+    // CHECKSTYLE.ON:MethodName
     long encoded = (value & 0x7F);
     if (value >>> 7 == 0) {
       UNSAFE.putByte(heapMemory, address + index, (byte) value);
@@ -1291,165 +840,8 @@ public final class MemoryBuffer {
     }
     // 0xff0000000: 0b11111111 << 28. Note eight `1` here instead of seven.
     encoded |= ((value & 0xff0000000L) << 4) | 0x80000000L;
-    unsafePutLong(index, encoded);
+    _unsafePutLong(index, encoded);
     return 5;
-  }
-
-  public long readVarUint36Small() {
-    // Duplicate and manual inline for performance.
-    // noinspection Duplicates
-    int readIdx = readerIndex;
-    if (size - readIdx >= 9) {
-      long bulkValue = unsafeGetLong(readIdx++);
-      // noinspection Duplicates
-      long result = bulkValue & 0x7F;
-      if ((bulkValue & 0x80) != 0) {
-        readIdx++;
-        // 0x3f80: 0b1111111 << 7
-        result |= (bulkValue >>> 1) & 0x3f80;
-        // 0x8000: 0b1 << 15
-        if ((bulkValue & 0x8000) != 0) {
-          return continueReadVarLong36(readIdx, bulkValue, result);
-        }
-      }
-      readerIndex = readIdx;
-      return result;
-    } else {
-      return readVarUint36Slow();
-    }
-  }
-
-  private long continueReadVarLong36(int readIdx, long bulkValue, long result) {
-    readIdx++;
-    // 0x1fc000: 0b1111111 << 14
-    result |= (bulkValue >>> 2) & 0x1fc000;
-    // 0x800000: 0b1 << 23
-    if ((bulkValue & 0x800000) != 0) {
-      readIdx++;
-      // 0xfe00000: 0b1111111 << 21
-      result |= (bulkValue >>> 3) & 0xfe00000;
-      if ((bulkValue & 0x80000000L) != 0) {
-        readIdx++;
-        // 0xff0000000: 0b11111111 << 28
-        result |= (bulkValue >>> 4) & 0xff0000000L;
-      }
-    }
-    readerIndex = readIdx;
-    return result;
-  }
-
-  private long readVarUint36Slow() {
-    long b = readByte();
-    long result = b & 0x7F;
-    // Note:
-    //  Loop are not used here to improve performance.
-    //  We manually unroll the loop for better performance.
-    // noinspection Duplicates
-    if ((b & 0x80) != 0) {
-      b = readByte();
-      result |= (b & 0x7F) << 7;
-      if ((b & 0x80) != 0) {
-        b = readByte();
-        result |= (b & 0x7F) << 14;
-        if ((b & 0x80) != 0) {
-          b = readByte();
-          result |= (b & 0x7F) << 21;
-          if ((b & 0x80) != 0) {
-            b = readByte();
-            result |= (b & 0x7F) << 28;
-          }
-        }
-      }
-    }
-    return result;
-  }
-
-  /** Reads the 1-5 byte int part of a non-negative varint. */
-  public int readPositiveVarInt() {
-    int readIdx = readerIndex;
-    if (size - readIdx < 5) {
-      return readPositiveVarIntSlow();
-    }
-    // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
-    int fourByteValue = unsafeGetInt(readIdx);
-    readIdx++;
-    int result = fourByteValue & 0x7F;
-    // Duplicate and manual inline for performance.
-    // noinspection Duplicates
-    if ((fourByteValue & 0x80) != 0) {
-      readIdx++;
-      // 0x3f80: 0b1111111 << 7
-      result |= (fourByteValue >>> 1) & 0x3f80;
-      // 0x8000: 0b1 << 15
-      if ((fourByteValue & 0x8000) != 0) {
-        readIdx++;
-        // 0x1fc000: 0b1111111 << 14
-        result |= (fourByteValue >>> 2) & 0x1fc000;
-        // 0x800000: 0b1 << 23
-        if ((fourByteValue & 0x800000) != 0) {
-          readIdx++;
-          // 0xfe00000: 0b1111111 << 21
-          result |= (fourByteValue >>> 3) & 0xfe00000;
-          if ((fourByteValue & 0x80000000) != 0) {
-            result |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
-          }
-        }
-      }
-    }
-    readerIndex = readIdx;
-    return result;
-  }
-
-  /**
-   * Fast path for read a unsigned varint which is mostly a smaller value in [0, 16384). When the
-   * value is equal or greater than 16384, the read will be a little slower.
-   */
-  public int readVarUintSmall() {
-    int readIdx = readerIndex;
-    if (size - readIdx >= 5) {
-      int fourByteValue = unsafeGetInt(readIdx++);
-      int binarySize = fourByteValue & 0x7F;
-      // Duplicate and manual inline for performance.
-      // noinspection Duplicates
-      if ((fourByteValue & 0x80) != 0) {
-        readIdx++;
-        binarySize |= (fourByteValue >>> 1) & 0x3f80;
-        if ((fourByteValue & 0x8000) != 0) {
-          // merely executed path, make it as a separate method to reduce
-          // code size of current method for better jvm inline
-          return continueRead(readIdx, fourByteValue, binarySize);
-        }
-      }
-      readerIndex = readIdx;
-      return binarySize;
-    } else {
-      return readPositiveVarIntSlow();
-    }
-  }
-
-  private int readPositiveVarIntSlow() {
-    // Note:
-    //  Loop are not used here to improve performance,
-    //  we manually unroll the loop for better performance.
-    int b = readByte();
-    int result = b & 0x7F;
-    if ((b & 0x80) != 0) {
-      b = readByte();
-      result |= (b & 0x7F) << 7;
-      if ((b & 0x80) != 0) {
-        b = readByte();
-        result |= (b & 0x7F) << 14;
-        if ((b & 0x80) != 0) {
-          b = readByte();
-          result |= (b & 0x7F) << 21;
-          if ((b & 0x80) != 0) {
-            b = readByte();
-            result |= (b & 0x7F) << 28;
-          }
-        }
-      }
-    }
-    return result;
   }
 
   /**
@@ -1457,30 +849,30 @@ public final class MemoryBuffer {
    *
    * @return The number of bytes written.
    */
-  public int writePositiveVarIntAligned(int value) {
+  public int writeVarUint32Aligned(int value) {
     // Mask first 6 bits,
     // bit 7 `unset` indicates have next padding bytes,
     // bit 8 `set` indicates have next data bytes.
     if (value >>> 6 == 0) {
-      return writePositiveVarIntAligned1(value);
+      return writeVarUint32Aligned1(value);
     }
     if (value >>> 12 == 0) { // 2 byte data
-      return writePositiveVarIntAligned2(value);
+      return writeVarUint32Aligned2(value);
     }
     if (value >>> 18 == 0) { // 3 byte data
-      return writePositiveVarIntAligned3(value);
+      return writeVarUint32Aligned3(value);
     }
     if (value >>> 24 == 0) { // 4 byte data
-      return writePositiveVarIntAligned4(value);
+      return writeVarUint32Aligned4(value);
     }
     if (value >>> 30 == 0) { // 5 byte data
-      return writePositiveVarIntAligned5(value);
+      return writeVarUint32Aligned5(value);
     }
     // 6 byte data
-    return writePositiveVarIntAligned6(value);
+    return writeVarUint32Aligned6(value);
   }
 
-  private int writePositiveVarIntAligned1(int value) {
+  private int writeVarUint32Aligned1(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 5); // 1 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1502,7 +894,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private int writePositiveVarIntAligned2(int value) {
+  private int writeVarUint32Aligned2(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 6); // 2 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1531,7 +923,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private int writePositiveVarIntAligned3(int value) {
+  private int writeVarUint32Aligned3(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 7); // 3 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1561,7 +953,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private int writePositiveVarIntAligned4(int value) {
+  private int writeVarUint32Aligned4(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 8); // 4 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1586,7 +978,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private int writePositiveVarIntAligned5(int value) {
+  private int writeVarUint32Aligned5(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 9); // 5 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1612,7 +1004,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private int writePositiveVarIntAligned6(int value) {
+  private int writeVarUint32Aligned6(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 10); // 6 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1645,125 +1037,35 @@ public final class MemoryBuffer {
     }
   }
 
-  /** Reads the 1-9 byte int part of an aligned varint. */
-  public int readPositiveAlignedVarInt() {
-    int readerIdx = readerIndex;
-    // use subtract to avoid overflow
-    if (readerIdx < size - 10) {
-      return slowReadPositiveAlignedVarInt();
-    }
-    long pos = address + readerIdx;
-    long startPos = pos;
-    int b = UNSAFE.getByte(heapMemory, pos++);
-    // Mask first 6 bits,
-    // bit 8 `set` indicates have next data bytes.
-    int result = b & 0x3F;
-    // Note:
-    //  Loop are not used here to improve performance.
-    //  We manually unroll the loop for better performance.
-    if ((b & 0x80) != 0) { // has 2nd byte
-      b = UNSAFE.getByte(heapMemory, pos++);
-      result |= (b & 0x3F) << 6;
-      if ((b & 0x80) != 0) { // has 3rd byte
-        b = UNSAFE.getByte(heapMemory, pos++);
-        result |= (b & 0x3F) << 12;
-        if ((b & 0x80) != 0) { // has 4th byte
-          b = UNSAFE.getByte(heapMemory, pos++);
-          result |= (b & 0x3F) << 18;
-          if ((b & 0x80) != 0) { // has 5th byte
-            b = UNSAFE.getByte(heapMemory, pos++);
-            result |= (b & 0x3F) << 24;
-            if ((b & 0x80) != 0) { // has 6th byte
-              b = UNSAFE.getByte(heapMemory, pos++);
-              result |= (b & 0x3F) << 30;
-            }
-          }
-        }
-      }
-    }
-    pos = skipPadding(pos, b); // split method for `readPositiveVarInt` inlined
-    readerIndex = (int) (pos - startPos + readerIdx);
-    return result;
-  }
-
-  public int slowReadPositiveAlignedVarInt() {
-    int b = readByte();
-    // Mask first 6 bits,
-    // bit 8 `set` indicates have next data bytes.
-    int result = b & 0x3F;
-    if ((b & 0x80) != 0) { // has 2nd byte
-      b = readByte();
-      result |= (b & 0x3F) << 6;
-      if ((b & 0x80) != 0) { // has 3rd byte
-        b = readByte();
-        result |= (b & 0x3F) << 12;
-        if ((b & 0x80) != 0) { // has 4th byte
-          b = readByte();
-          result |= (b & 0x3F) << 18;
-          if ((b & 0x80) != 0) { // has 5th byte
-            b = readByte();
-            result |= (b & 0x3F) << 24;
-            if ((b & 0x80) != 0) { // has 6th byte
-              b = readByte();
-              result |= (b & 0x3F) << 30;
-            }
-          }
-        }
-      }
-    }
-    // bit 7 `unset` indicates have next padding bytes,
-    if ((b & 0x40) == 0) { // has first padding bytes
-      b = readByte();
-      if ((b & 0x40) == 0) { // has 2nd padding bytes
-        b = readByte();
-        if ((b & 0x40) == 0) { // has 3rd padding bytes
-          b = readByte();
-          checkArgument((b & 0x40) != 0, "At most 3 padding bytes.");
-        }
-      }
-    }
-    return result;
-  }
-
-  private long skipPadding(long pos, int b) {
-    // bit 7 `unset` indicates have next padding bytes,
-    if ((b & 0x40) == 0) { // has first padding bytes
-      b = UNSAFE.getByte(heapMemory, pos++);
-      if ((b & 0x40) == 0) { // has 2nd padding bytes
-        b = UNSAFE.getByte(heapMemory, pos++);
-        if ((b & 0x40) == 0) { // has 3rd padding bytes
-          b = UNSAFE.getByte(heapMemory, pos++);
-          checkArgument((b & 0x40) != 0, "At most 3 padding bytes.");
-        }
-      }
-    }
-    return pos;
-  }
-
   /**
    * Write long using variable length encoding. If the value is positive, use {@link
-   * #writePositiveVarLong} to save one bit.
+   * #writeVarUint64} to save one bit.
    */
-  public int writeVarLong(long value) {
+  public int writeVarInt64(long value) {
     ensure(writerIndex + 9);
     value = (value << 1) ^ (value >> 63);
-    return unsafeWritePositiveVarLong(value);
+    return _unsafeWriteVarUint64(value);
   }
 
   @CodegenInvoke
-  public int unsafeWriteVarLong(long value) {
+  // CHECKSTYLE.OFF:MethodName
+  public int _unsafeWriteVarInt64(long value) {
+    // CHECKSTYLE.ON:MethodName
     value = (value << 1) ^ (value >> 63);
-    return unsafeWritePositiveVarLong(value);
+    return _unsafeWriteVarUint64(value);
   }
 
-  public int writePositiveVarLong(long value) {
-    // Var long encoding algorithm is based kryo UnsafeMemoryOutput.writeVarLong.
+  public int writeVarUint64(long value) {
+    // Var long encoding algorithm is based kryo UnsafeMemoryOutput.writeVarInt64.
     // var long are written using little endian byte order.
     ensure(writerIndex + 9);
-    return unsafeWritePositiveVarLong(value);
+    return _unsafeWriteVarUint64(value);
   }
 
-  public int unsafeWritePositiveVarLong(long value) {
+  // CHECKSTYLE.OFF:MethodName
+  @CodegenInvoke
+  public int _unsafeWriteVarUint64(long value) {
+    // CHECKSTYLE.ON:MethodName
     final int writerIndex = this.writerIndex;
     int varInt;
     varInt = (int) (value & 0x7F);
@@ -1772,19 +1074,19 @@ public final class MemoryBuffer {
       this.writerIndex = writerIndex + 1;
       return 1;
     }
-    varInt |= (((value & 0x3f80) << 1) | 0x80);
+    varInt |= (int) (((value & 0x3f80) << 1) | 0x80);
     if (value >>> 14 == 0) {
       unsafePutInt(writerIndex, varInt);
       this.writerIndex = writerIndex + 2;
       return 2;
     }
-    varInt |= (((value & 0x1fc000) << 2) | 0x8000);
+    varInt |= (int) (((value & 0x1fc000) << 2) | 0x8000);
     if (value >>> 21 == 0) {
       unsafePutInt(writerIndex, varInt);
       this.writerIndex = writerIndex + 3;
       return 3;
     }
-    varInt |= ((value & 0xfe00000) << 3) | 0x800000;
+    varInt |= (int) (((value & 0xfe00000) << 3) | 0x800000);
     if (value >>> 28 == 0) {
       unsafePutInt(writerIndex, varInt);
       this.writerIndex = writerIndex + 4;
@@ -1793,197 +1095,33 @@ public final class MemoryBuffer {
     long varLong = (varInt & 0xFFFFFFFFL);
     varLong |= ((value & 0x7f0000000L) << 4) | 0x80000000L;
     if (value >>> 35 == 0) {
-      unsafePutLong(writerIndex, varLong);
+      _unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 5;
       return 5;
     }
     varLong |= ((value & 0x3f800000000L) << 5) | 0x8000000000L;
     if (value >>> 42 == 0) {
-      unsafePutLong(writerIndex, varLong);
+      _unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 6;
       return 6;
     }
     varLong |= ((value & 0x1fc0000000000L) << 6) | 0x800000000000L;
     if (value >>> 49 == 0) {
-      unsafePutLong(writerIndex, varLong);
+      _unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 7;
       return 7;
     }
     varLong |= ((value & 0xfe000000000000L) << 7) | 0x80000000000000L;
     value >>>= 56;
     if (value == 0) {
-      unsafePutLong(writerIndex, varLong);
+      _unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 8;
       return 8;
     }
-    unsafePutLong(writerIndex, varLong | 0x8000000000000000L);
+    _unsafePutLong(writerIndex, varLong | 0x8000000000000000L);
     UNSAFE.putByte(heapMemory, address + writerIndex + 8, (byte) (value & 0xFF));
     this.writerIndex = writerIndex + 9;
     return 9;
-  }
-
-  /** Reads the 1-9 byte int part of a var long. */
-  public long readVarLong() {
-    return LITTLE_ENDIAN ? readVarLongOnLE() : readVarLongOnBE();
-  }
-
-  @CodegenInvoke
-  public long readVarLongOnLE() {
-    // Duplicate and manual inline for performance.
-    // noinspection Duplicates
-    int readIdx = readerIndex;
-    long result;
-    if (size - readIdx < 9) {
-      result = readPositiveVarLongSlow();
-    } else {
-      long address = this.address;
-      long bulkValue = UNSAFE.getLong(heapMemory, address + readIdx);
-      // Duplicate and manual inline for performance.
-      // noinspection Duplicates
-      readIdx++;
-      result = bulkValue & 0x7F;
-      if ((bulkValue & 0x80) != 0) {
-        readIdx++;
-        // 0x3f80: 0b1111111 << 7
-        result |= (bulkValue >>> 1) & 0x3f80;
-        // 0x8000: 0b1 << 15
-        if ((bulkValue & 0x8000) != 0) {
-          result = continueReadVarLong64(readIdx, bulkValue, result);
-          return ((result >>> 1) ^ -(result & 1));
-        }
-      }
-      readerIndex = readIdx;
-    }
-    return ((result >>> 1) ^ -(result & 1));
-  }
-
-  @CodegenInvoke
-  public long readVarLongOnBE() {
-    int readIdx = readerIndex;
-    long result;
-    if (size - readIdx < 9) {
-      result = readPositiveVarLongSlow();
-    } else {
-      long address = this.address;
-      long bulkValue = Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx));
-      // Duplicate and manual inline for performance.
-      // noinspection Duplicates
-      readIdx++;
-      result = bulkValue & 0x7F;
-      if ((bulkValue & 0x80) != 0) {
-        readIdx++;
-        // 0x3f80: 0b1111111 << 7
-        result |= (bulkValue >>> 1) & 0x3f80;
-        // 0x8000: 0b1 << 15
-        if ((bulkValue & 0x8000) != 0) {
-          result = continueReadVarLong64(readIdx, bulkValue, result);
-          return ((result >>> 1) ^ -(result & 1));
-        }
-      }
-      readerIndex = readIdx;
-    }
-    return ((result >>> 1) ^ -(result & 1));
-  }
-
-  /** Reads the 1-9 byte int part of a non-negative var long. */
-  public long readPositiveVarLong() {
-    int readIdx = readerIndex;
-    if (size - readIdx < 9) {
-      return readPositiveVarLongSlow();
-    }
-    // varint are written using little endian byte order, so read by little endian byte order.
-    long bulkValue = unsafeGetLong(readIdx);
-    // Duplicate and manual inline for performance.
-    // noinspection Duplicates
-    readIdx++;
-    long result = bulkValue & 0x7F;
-    if ((bulkValue & 0x80) != 0) {
-      readIdx++;
-      // 0x3f80: 0b1111111 << 7
-      result |= (bulkValue >>> 1) & 0x3f80;
-      // 0x8000: 0b1 << 15
-      if ((bulkValue & 0x8000) != 0) {
-        return continueReadVarLong64(readIdx, bulkValue, result);
-      }
-    }
-    readerIndex = readIdx;
-    return result;
-  }
-
-  private long continueReadVarLong64(int readIdx, long bulkValue, long result) {
-    readIdx++;
-    // 0x1fc000: 0b1111111 << 14
-    result |= (bulkValue >>> 2) & 0x1fc000;
-    // 0x800000: 0b1 << 23
-    if ((bulkValue & 0x800000) != 0) {
-      readIdx++;
-      // 0xfe00000: 0b1111111 << 21
-      result |= (bulkValue >>> 3) & 0xfe00000;
-      if ((bulkValue & 0x80000000L) != 0) {
-        readIdx++;
-        result |= (bulkValue >>> 4) & 0x7f0000000L;
-        if ((bulkValue & 0x8000000000L) != 0) {
-          readIdx++;
-          result |= (bulkValue >>> 5) & 0x3f800000000L;
-          if ((bulkValue & 0x800000000000L) != 0) {
-            readIdx++;
-            result |= (bulkValue >>> 6) & 0x1fc0000000000L;
-            if ((bulkValue & 0x80000000000000L) != 0) {
-              readIdx++;
-              result |= (bulkValue >>> 7) & 0xfe000000000000L;
-              if ((bulkValue & 0x8000000000000000L) != 0) {
-                long b = UNSAFE.getByte(heapMemory, address + readIdx++);
-                result |= b << 56;
-              }
-            }
-          }
-        }
-      }
-    }
-    readerIndex = readIdx;
-    return result;
-  }
-
-  private long readPositiveVarLongSlow() {
-    long b = readByte();
-    long result = b & 0x7F;
-    // Note:
-    //  Loop are not used here to improve performance.
-    //  We manually unroll the loop for better performance.
-    if ((b & 0x80) != 0) {
-      b = readByte();
-      result |= (b & 0x7F) << 7;
-      if ((b & 0x80) != 0) {
-        b = readByte();
-        result |= (b & 0x7F) << 14;
-        if ((b & 0x80) != 0) {
-          b = readByte();
-          result |= (b & 0x7F) << 21;
-          if ((b & 0x80) != 0) {
-            b = readByte();
-            result |= (b & 0x7F) << 28;
-            if ((b & 0x80) != 0) {
-              b = readByte();
-              result |= (b & 0x7F) << 35;
-              if ((b & 0x80) != 0) {
-                b = readByte();
-                result |= (b & 0x7F) << 42;
-                if ((b & 0x80) != 0) {
-                  b = readByte();
-                  result |= (b & 0x7F) << 49;
-                  if ((b & 0x80) != 0) {
-                    b = readByte();
-                    // highest bit in last byte is symbols bit.
-                    result |= b << 56;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    return result;
   }
 
   /**
@@ -1991,9 +1129,9 @@ public final class MemoryBuffer {
    * encode as 4 bytes int: | little-endian: ((int) value) << 1 |; Otherwise write as 9 bytes: | 0b1
    * | little-endian 8bytes long |
    */
-  public int writeSliLong(long value) {
+  public int writeSliInt64(long value) {
     ensure(writerIndex + 9);
-    return unsafeWriteSliLong(value);
+    return _unsafeWriteSliInt64(value);
   }
 
   private static final long HALF_MAX_INT_VALUE = Integer.MAX_VALUE / 2;
@@ -2001,7 +1139,9 @@ public final class MemoryBuffer {
   private static final byte BIG_LONG_FLAG = 0b1; // bit 0 set, means big long.
 
   /** Write long using fury SLI(Small Long as Int) encoding. */
-  public int unsafeWriteSliLong(long value) {
+  // CHECKSTYLE.OFF:MethodName
+  public int _unsafeWriteSliInt64(long value) {
+    // CHECKSTYLE.ON:MethodName
     final int writerIndex = this.writerIndex;
     final long pos = address + writerIndex;
     final byte[] heapMemory = this.heapMemory;
@@ -2056,22 +1196,18 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void writeBytesWithSize(byte[] arr) {
-    writePrimitiveArrayWithSize(arr, Platform.BYTE_ARRAY_OFFSET, arr.length);
-  }
-
   /** Write a primitive array into buffer with size varint encoded into the buffer. */
   public void writePrimitiveArrayWithSize(Object arr, int offset, int numBytes) {
     int idx = writerIndex;
     ensure(idx + 5 + numBytes);
-    idx += unsafeWritePositiveVarInt(numBytes);
+    idx += _unsafeWriteVarUint32(numBytes);
     final long destAddr = address + idx;
     Platform.copyMemory(arr, offset, heapMemory, destAddr, numBytes);
     writerIndex = idx + numBytes;
   }
 
   public void writePrimitiveArrayAlignedSize(Object arr, int offset, int numBytes) {
-    writePositiveVarIntAligned(numBytes);
+    writeVarUint32Aligned(numBytes);
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + numBytes;
     ensure(newIdx);
@@ -2103,6 +1239,74 @@ public final class MemoryBuffer {
     }
   }
 
+  // -------------------------------------------------------------------------
+  //                          Read Methods
+  // -------------------------------------------------------------------------
+
+  // Check should be done outside to avoid this method got into the critical path.
+  private void throwIndexOOBExceptionForRead() {
+    throw new IndexOutOfBoundsException(
+        String.format(
+            "readerIndex: %d (expected: 0 <= readerIndex <= size(%d))", readerIndex, size));
+  }
+
+  // Check should be done outside to avoid this method got into the critical path.
+  private void throwIndexOOBExceptionForRead(int length) {
+    throw new IndexOutOfBoundsException(
+        String.format(
+            "readerIndex: %d (expected: 0 <= readerIndex <= size(%d)), length %d",
+            readerIndex, size, length));
+  }
+
+  /** Returns the {@code readerIndex} of this buffer. */
+  public int readerIndex() {
+    return readerIndex;
+  }
+
+  /**
+   * Sets the {@code readerIndex} of this buffer.
+   *
+   * @throws IndexOutOfBoundsException if the specified {@code readerIndex} is less than {@code 0}
+   *     or greater than {@code this.size}
+   */
+  public void readerIndex(int readerIndex) {
+    if (readerIndex < 0) {
+      throwIndexOOBExceptionForRead();
+    } else if (readerIndex > size) {
+      // in this case, diff must be greater than 0.
+      streamReader.fillBuffer(readerIndex - size);
+    }
+    this.readerIndex = readerIndex;
+  }
+
+  /** Returns array index for reader index if buffer is a heap buffer. */
+  public int unsafeHeapReaderIndex() {
+    return readerIndex + heapOffset;
+  }
+
+  public void increaseReaderIndexUnsafe(int diff) {
+    readerIndex += diff;
+  }
+
+  public void increaseReaderIndex(int diff) {
+    int readerIdx = readerIndex;
+    readerIndex = readerIdx += diff;
+    if (readerIdx < 0) {
+      throwIndexOOBExceptionForRead();
+    } else if (readerIdx > size) {
+      // in this case, diff must be greater than 0.
+      streamReader.fillBuffer(readerIdx - size);
+    }
+  }
+
+  public long getUnsafeReaderAddress() {
+    return address + readerIndex;
+  }
+
+  public int remaining() {
+    return size - readerIndex;
+  }
+
   public boolean readBoolean() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
@@ -2130,41 +1334,11 @@ public final class MemoryBuffer {
       streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
-    final long pos = address + readerIdx;
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getChar(heapMemory, pos);
-    } else {
-      return Character.reverseBytes(UNSAFE.getChar(heapMemory, pos));
-    }
+    char c = UNSAFE.getChar(heapMemory, address + readerIdx);
+    return LITTLE_ENDIAN ? c : Character.reverseBytes(c);
   }
 
-  // Reduce method body for better inline in the caller.
-  @CodegenInvoke
-  public char readCharOnLE() {
-    int readerIdx = readerIndex;
-    // use subtract to avoid overflow
-    int remaining = size - readerIdx;
-    if (remaining < 2) {
-      streamReader.fillBuffer(2 - remaining);
-    }
-    readerIndex = readerIdx + 2;
-    return UNSAFE.getChar(heapMemory, address + readerIdx);
-  }
-
-  // Reduce method body for better inline in the caller.
-  @CodegenInvoke
-  public char readCharOnBE() {
-    int readerIdx = readerIndex;
-    // use subtract to avoid overflow
-    int remaining = size - readerIdx;
-    if (remaining < 2) {
-      streamReader.fillBuffer(2 - remaining);
-    }
-    readerIndex = readerIdx + 2;
-    return Character.reverseBytes(UNSAFE.getChar(heapMemory, address + readerIdx));
-  }
-
-  public short readShort() {
+  public short readInt16() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2182,7 +1356,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public short readShortOnLE() {
+  public short readInt16OnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2195,7 +1369,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public short readShortOnBE() {
+  public short readInt16OnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2206,7 +1380,7 @@ public final class MemoryBuffer {
     return Short.reverseBytes(UNSAFE.getShort(heapMemory, address + readerIdx));
   }
 
-  public int readInt() {
+  public int readInt32() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2224,7 +1398,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public int readIntOnLE() {
+  public int readInt32OnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2237,7 +1411,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public int readIntOnBE() {
+  public int readInt32OnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2248,7 +1422,7 @@ public final class MemoryBuffer {
     return Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx));
   }
 
-  public long readLong() {
+  public long readInt64() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2266,7 +1440,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public long readLongOnLE() {
+  // CHECKSTYLE.OFF:MethodName
+  public long _readInt64OnLE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2279,7 +1455,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public long readLongOnBE() {
+  // CHECKSTYLE.OFF:MethodName
+  public long _readInt64OnBE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2291,16 +1469,18 @@ public final class MemoryBuffer {
   }
 
   /** Read fury SLI(Small Long as Int) encoded long. */
-  public long readSliLong() {
+  public long readSliInt64() {
     if (LITTLE_ENDIAN) {
-      return readSliLongOnLE();
+      return _readSliInt64OnLE();
     } else {
-      return readSliLongOnBE();
+      return _readSliInt64OnBE();
     }
   }
 
   @CodegenInvoke
-  public long readSliLongOnLE() {
+  // CHECKSTYLE.OFF:MethodName
+  public long _readSliInt64OnLE() {
+    // CHECKSTYLE.ON:MethodName
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     final int readIdx = readerIndex;
@@ -2321,7 +1501,9 @@ public final class MemoryBuffer {
   }
 
   @CodegenInvoke
-  public long readSliLongOnBE() {
+  // CHECKSTYLE.OFF:MethodName
+  public long _readSliInt64OnBE() {
+    // CHECKSTYLE.ON:MethodName
     // noinspection Duplicates
     final int readIdx = readerIndex;
     int diff = size - readIdx;
@@ -2340,7 +1522,7 @@ public final class MemoryBuffer {
     return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx + 1));
   }
 
-  public float readFloat() {
+  public float readFloat32() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2358,7 +1540,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public float readFloatOnLE() {
+  // CHECKSTYLE.OFF:MethodName
+  public float _readFloat32OnLE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2371,7 +1555,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public float readFloatOnBE() {
+  // CHECKSTYLE.OFF:MethodName
+  public float _readFloat32OnBE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2383,7 +1569,7 @@ public final class MemoryBuffer {
         Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx)));
   }
 
-  public double readDouble() {
+  public double readFloat64() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2401,7 +1587,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public double readDoubleOnLE() {
+  // CHECKSTYLE.OFF:MethodName
+  public double _readFloat64OnLE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2414,7 +1602,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public double readDoubleOnBE() {
+  // CHECKSTYLE.OFF:MethodName
+  public double _readFloat64OnBE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -2424,6 +1614,521 @@ public final class MemoryBuffer {
     readerIndex = readerIdx + 8;
     return Double.longBitsToDouble(
         Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readerIdx)));
+  }
+
+  /** Reads the 1-5 byte int part of a varint. */
+  @CodegenInvoke
+  public int readVarInt32() {
+    if (LITTLE_ENDIAN) {
+      return _readVarInt32OnLE();
+    } else {
+      return _readVarInt32OnBE();
+    }
+  }
+
+  /** Reads the 1-5 byte as a varint on a little endian mache. */
+  @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
+  public int _readVarInt32OnLE() {
+    // CHECKSTYLE.ON:MethodName
+    // noinspection Duplicates
+    int readIdx = readerIndex;
+    int result;
+    if (size - readIdx < 5) {
+      result = readVarUint32Slow();
+    } else {
+      long address = this.address;
+      // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
+      int fourByteValue = UNSAFE.getInt(heapMemory, address + readIdx);
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      readIdx++;
+      result = fourByteValue & 0x7F;
+      if ((fourByteValue & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (fourByteValue >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((fourByteValue & 0x8000) != 0) {
+          readIdx++;
+          // 0x1fc000: 0b1111111 << 14
+          result |= (fourByteValue >>> 2) & 0x1fc000;
+          // 0x800000: 0b1 << 23
+          if ((fourByteValue & 0x800000) != 0) {
+            readIdx++;
+            // 0xfe00000: 0b1111111 << 21
+            result |= (fourByteValue >>> 3) & 0xfe00000;
+            if ((fourByteValue & 0x80000000) != 0) {
+              result |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
+            }
+          }
+        }
+      }
+      readerIndex = readIdx;
+    }
+    return (result >>> 1) ^ -(result & 1);
+  }
+
+  /** Reads the 1-5 byte as a varint on a big endian mache. */
+  @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
+  public int _readVarInt32OnBE() {
+    // CHECKSTYLE.ON:MethodName
+    // noinspection Duplicates
+    int readIdx = readerIndex;
+    int result;
+    if (size - readIdx < 5) {
+      result = readVarUint32Slow();
+    } else {
+      long address = this.address;
+      int fourByteValue = Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readIdx));
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      readIdx++;
+      result = fourByteValue & 0x7F;
+      if ((fourByteValue & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (fourByteValue >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((fourByteValue & 0x8000) != 0) {
+          readIdx++;
+          // 0x1fc000: 0b1111111 << 14
+          result |= (fourByteValue >>> 2) & 0x1fc000;
+          // 0x800000: 0b1 << 23
+          if ((fourByteValue & 0x800000) != 0) {
+            readIdx++;
+            // 0xfe00000: 0b1111111 << 21
+            result |= (fourByteValue >>> 3) & 0xfe00000;
+            if ((fourByteValue & 0x80000000) != 0) {
+              result |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
+            }
+          }
+        }
+      }
+      readerIndex = readIdx;
+    }
+    return (result >>> 1) ^ -(result & 1);
+  }
+
+  public long readVarUint36Small() {
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    int readIdx = readerIndex;
+    if (size - readIdx >= 9) {
+      long bulkValue = _unsafeGetLong(readIdx++);
+      // noinspection Duplicates
+      long result = bulkValue & 0x7F;
+      if ((bulkValue & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (bulkValue >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((bulkValue & 0x8000) != 0) {
+          return continueReadVarInt36(readIdx, bulkValue, result);
+        }
+      }
+      readerIndex = readIdx;
+      return result;
+    } else {
+      return readVarUint36Slow();
+    }
+  }
+
+  private long continueReadVarInt36(int readIdx, long bulkValue, long result) {
+    readIdx++;
+    // 0x1fc000: 0b1111111 << 14
+    result |= (bulkValue >>> 2) & 0x1fc000;
+    // 0x800000: 0b1 << 23
+    if ((bulkValue & 0x800000) != 0) {
+      readIdx++;
+      // 0xfe00000: 0b1111111 << 21
+      result |= (bulkValue >>> 3) & 0xfe00000;
+      if ((bulkValue & 0x80000000L) != 0) {
+        readIdx++;
+        // 0xff0000000: 0b11111111 << 28
+        result |= (bulkValue >>> 4) & 0xff0000000L;
+      }
+    }
+    readerIndex = readIdx;
+    return result;
+  }
+
+  private long readVarUint36Slow() {
+    long b = readByte();
+    long result = b & 0x7F;
+    // Note:
+    //  Loop are not used here to improve performance.
+    //  We manually unroll the loop for better performance.
+    // noinspection Duplicates
+    if ((b & 0x80) != 0) {
+      b = readByte();
+      result |= (b & 0x7F) << 7;
+      if ((b & 0x80) != 0) {
+        b = readByte();
+        result |= (b & 0x7F) << 14;
+        if ((b & 0x80) != 0) {
+          b = readByte();
+          result |= (b & 0x7F) << 21;
+          if ((b & 0x80) != 0) {
+            b = readByte();
+            result |= (b & 0x7F) << 28;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  /** Reads the 1-5 byte int part of a non-negative varint. */
+  public int readVarUint32() {
+    int readIdx = readerIndex;
+    if (size - readIdx < 5) {
+      return readVarUint32Slow();
+    }
+    // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
+    int fourByteValue = unsafeGetInt(readIdx);
+    readIdx++;
+    int result = fourByteValue & 0x7F;
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    if ((fourByteValue & 0x80) != 0) {
+      readIdx++;
+      // 0x3f80: 0b1111111 << 7
+      result |= (fourByteValue >>> 1) & 0x3f80;
+      // 0x8000: 0b1 << 15
+      if ((fourByteValue & 0x8000) != 0) {
+        readIdx++;
+        // 0x1fc000: 0b1111111 << 14
+        result |= (fourByteValue >>> 2) & 0x1fc000;
+        // 0x800000: 0b1 << 23
+        if ((fourByteValue & 0x800000) != 0) {
+          readIdx++;
+          // 0xfe00000: 0b1111111 << 21
+          result |= (fourByteValue >>> 3) & 0xfe00000;
+          if ((fourByteValue & 0x80000000) != 0) {
+            result |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
+          }
+        }
+      }
+    }
+    readerIndex = readIdx;
+    return result;
+  }
+
+  /**
+   * Fast path for read a unsigned varint which is mostly a smaller value in [0, 16384). When the
+   * value is equal or greater than 16384, the read will be a little slower.
+   */
+  public int readVarUintSmall() {
+    int readIdx = readerIndex;
+    if (size - readIdx >= 5) {
+      int fourByteValue = unsafeGetInt(readIdx++);
+      int binarySize = fourByteValue & 0x7F;
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      if ((fourByteValue & 0x80) != 0) {
+        readIdx++;
+        binarySize |= (fourByteValue >>> 1) & 0x3f80;
+        if ((fourByteValue & 0x8000) != 0) {
+          // merely executed path, make it as a separate method to reduce
+          // code size of current method for better jvm inline
+          return continueRead(readIdx, fourByteValue, binarySize);
+        }
+      }
+      readerIndex = readIdx;
+      return binarySize;
+    } else {
+      return readVarUint32Slow();
+    }
+  }
+
+  private int readVarUint32Slow() {
+    // Note:
+    //  Loop are not used here to improve performance,
+    //  we manually unroll the loop for better performance.
+    int b = readByte();
+    int result = b & 0x7F;
+    if ((b & 0x80) != 0) {
+      b = readByte();
+      result |= (b & 0x7F) << 7;
+      if ((b & 0x80) != 0) {
+        b = readByte();
+        result |= (b & 0x7F) << 14;
+        if ((b & 0x80) != 0) {
+          b = readByte();
+          result |= (b & 0x7F) << 21;
+          if ((b & 0x80) != 0) {
+            b = readByte();
+            result |= (b & 0x7F) << 28;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  /** Reads the 1-9 byte int part of a var long. */
+  public long readVarInt64() {
+    return LITTLE_ENDIAN ? _readVarInt64OnLE() : _readVarInt64OnBE();
+  }
+
+  @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
+  public long _readVarInt64OnLE() {
+    // CHECKSTYLE.ON:MethodName
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    int readIdx = readerIndex;
+    long result;
+    if (size - readIdx < 9) {
+      result = readVarUint64Slow();
+    } else {
+      long address = this.address;
+      long bulkValue = UNSAFE.getLong(heapMemory, address + readIdx);
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      readIdx++;
+      result = bulkValue & 0x7F;
+      if ((bulkValue & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (bulkValue >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((bulkValue & 0x8000) != 0) {
+          result = continueReadVarInt64(readIdx, bulkValue, result);
+          return ((result >>> 1) ^ -(result & 1));
+        }
+      }
+      readerIndex = readIdx;
+    }
+    return ((result >>> 1) ^ -(result & 1));
+  }
+
+  @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
+  public long _readVarInt64OnBE() {
+    // CHECKSTYLE.ON:MethodName
+    int readIdx = readerIndex;
+    long result;
+    if (size - readIdx < 9) {
+      result = readVarUint64Slow();
+    } else {
+      long address = this.address;
+      long bulkValue = Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx));
+      // Duplicate and manual inline for performance.
+      // noinspection Duplicates
+      readIdx++;
+      result = bulkValue & 0x7F;
+      if ((bulkValue & 0x80) != 0) {
+        readIdx++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (bulkValue >>> 1) & 0x3f80;
+        // 0x8000: 0b1 << 15
+        if ((bulkValue & 0x8000) != 0) {
+          result = continueReadVarInt64(readIdx, bulkValue, result);
+          return ((result >>> 1) ^ -(result & 1));
+        }
+      }
+      readerIndex = readIdx;
+    }
+    return ((result >>> 1) ^ -(result & 1));
+  }
+
+  /** Reads the 1-9 byte int part of a non-negative var long. */
+  public long readVarUint64() {
+    int readIdx = readerIndex;
+    if (size - readIdx < 9) {
+      return readVarUint64Slow();
+    }
+    // varint are written using little endian byte order, so read by little endian byte order.
+    long bulkValue = _unsafeGetLong(readIdx);
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    readIdx++;
+    long result = bulkValue & 0x7F;
+    if ((bulkValue & 0x80) != 0) {
+      readIdx++;
+      // 0x3f80: 0b1111111 << 7
+      result |= (bulkValue >>> 1) & 0x3f80;
+      // 0x8000: 0b1 << 15
+      if ((bulkValue & 0x8000) != 0) {
+        return continueReadVarInt64(readIdx, bulkValue, result);
+      }
+    }
+    readerIndex = readIdx;
+    return result;
+  }
+
+  private long continueReadVarInt64(int readIdx, long bulkValue, long result) {
+    readIdx++;
+    // 0x1fc000: 0b1111111 << 14
+    result |= (bulkValue >>> 2) & 0x1fc000;
+    // 0x800000: 0b1 << 23
+    if ((bulkValue & 0x800000) != 0) {
+      readIdx++;
+      // 0xfe00000: 0b1111111 << 21
+      result |= (bulkValue >>> 3) & 0xfe00000;
+      if ((bulkValue & 0x80000000L) != 0) {
+        readIdx++;
+        result |= (bulkValue >>> 4) & 0x7f0000000L;
+        if ((bulkValue & 0x8000000000L) != 0) {
+          readIdx++;
+          result |= (bulkValue >>> 5) & 0x3f800000000L;
+          if ((bulkValue & 0x800000000000L) != 0) {
+            readIdx++;
+            result |= (bulkValue >>> 6) & 0x1fc0000000000L;
+            if ((bulkValue & 0x80000000000000L) != 0) {
+              readIdx++;
+              result |= (bulkValue >>> 7) & 0xfe000000000000L;
+              if ((bulkValue & 0x8000000000000000L) != 0) {
+                long b = UNSAFE.getByte(heapMemory, address + readIdx++);
+                result |= b << 56;
+              }
+            }
+          }
+        }
+      }
+    }
+    readerIndex = readIdx;
+    return result;
+  }
+
+  private long readVarUint64Slow() {
+    long b = readByte();
+    long result = b & 0x7F;
+    // Note:
+    //  Loop are not used here to improve performance.
+    //  We manually unroll the loop for better performance.
+    if ((b & 0x80) != 0) {
+      b = readByte();
+      result |= (b & 0x7F) << 7;
+      if ((b & 0x80) != 0) {
+        b = readByte();
+        result |= (b & 0x7F) << 14;
+        if ((b & 0x80) != 0) {
+          b = readByte();
+          result |= (b & 0x7F) << 21;
+          if ((b & 0x80) != 0) {
+            b = readByte();
+            result |= (b & 0x7F) << 28;
+            if ((b & 0x80) != 0) {
+              b = readByte();
+              result |= (b & 0x7F) << 35;
+              if ((b & 0x80) != 0) {
+                b = readByte();
+                result |= (b & 0x7F) << 42;
+                if ((b & 0x80) != 0) {
+                  b = readByte();
+                  result |= (b & 0x7F) << 49;
+                  if ((b & 0x80) != 0) {
+                    b = readByte();
+                    // highest bit in last byte is symbols bit.
+                    result |= b << 56;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  /** Reads the 1-9 byte int part of an aligned varint. */
+  public int readAlignedVarUint() {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    if (readerIdx < size - 10) {
+      return slowReadAlignedVarUint();
+    }
+    long pos = address + readerIdx;
+    long startPos = pos;
+    int b = UNSAFE.getByte(heapMemory, pos++);
+    // Mask first 6 bits,
+    // bit 8 `set` indicates have next data bytes.
+    int result = b & 0x3F;
+    // Note:
+    //  Loop are not used here to improve performance.
+    //  We manually unroll the loop for better performance.
+    if ((b & 0x80) != 0) { // has 2nd byte
+      b = UNSAFE.getByte(heapMemory, pos++);
+      result |= (b & 0x3F) << 6;
+      if ((b & 0x80) != 0) { // has 3rd byte
+        b = UNSAFE.getByte(heapMemory, pos++);
+        result |= (b & 0x3F) << 12;
+        if ((b & 0x80) != 0) { // has 4th byte
+          b = UNSAFE.getByte(heapMemory, pos++);
+          result |= (b & 0x3F) << 18;
+          if ((b & 0x80) != 0) { // has 5th byte
+            b = UNSAFE.getByte(heapMemory, pos++);
+            result |= (b & 0x3F) << 24;
+            if ((b & 0x80) != 0) { // has 6th byte
+              b = UNSAFE.getByte(heapMemory, pos++);
+              result |= (b & 0x3F) << 30;
+            }
+          }
+        }
+      }
+    }
+    pos = skipPadding(pos, b); // split method for `readVarUint` inlined
+    readerIndex = (int) (pos - startPos + readerIdx);
+    return result;
+  }
+
+  public int slowReadAlignedVarUint() {
+    int b = readByte();
+    // Mask first 6 bits,
+    // bit 8 `set` indicates have next data bytes.
+    int result = b & 0x3F;
+    if ((b & 0x80) != 0) { // has 2nd byte
+      b = readByte();
+      result |= (b & 0x3F) << 6;
+      if ((b & 0x80) != 0) { // has 3rd byte
+        b = readByte();
+        result |= (b & 0x3F) << 12;
+        if ((b & 0x80) != 0) { // has 4th byte
+          b = readByte();
+          result |= (b & 0x3F) << 18;
+          if ((b & 0x80) != 0) { // has 5th byte
+            b = readByte();
+            result |= (b & 0x3F) << 24;
+            if ((b & 0x80) != 0) { // has 6th byte
+              b = readByte();
+              result |= (b & 0x3F) << 30;
+            }
+          }
+        }
+      }
+    }
+    // bit 7 `unset` indicates have next padding bytes,
+    if ((b & 0x40) == 0) { // has first padding bytes
+      b = readByte();
+      if ((b & 0x40) == 0) { // has 2nd padding bytes
+        b = readByte();
+        if ((b & 0x40) == 0) { // has 3rd padding bytes
+          b = readByte();
+          checkArgument((b & 0x40) != 0, "At most 3 padding bytes.");
+        }
+      }
+    }
+    return result;
+  }
+
+  private long skipPadding(long pos, int b) {
+    // bit 7 `unset` indicates have next padding bytes,
+    if ((b & 0x40) == 0) { // has first padding bytes
+      b = UNSAFE.getByte(heapMemory, pos++);
+      if ((b & 0x40) == 0) { // has 2nd padding bytes
+        b = UNSAFE.getByte(heapMemory, pos++);
+        if ((b & 0x40) == 0) { // has 3rd padding bytes
+          b = UNSAFE.getByte(heapMemory, pos++);
+          checkArgument((b & 0x40) != 0, "At most 3 padding bytes.");
+        }
+      }
+    }
+    return pos;
   }
 
   public byte[] readBytes(int length) {
@@ -2496,7 +2201,7 @@ public final class MemoryBuffer {
 
   /**
    * Read size for following binary, this method will check and fill readable bytes too. This method
-   * is optimized for small size, it's faster than {@link #readPositiveVarInt}.
+   * is optimized for small size, it's faster than {@link #readVarUint32}.
    */
   public int readBinarySize() {
     int binarySize;
@@ -2517,7 +2222,7 @@ public final class MemoryBuffer {
       }
       readerIndex = readIdx;
     } else {
-      binarySize = readPositiveVarIntSlow();
+      binarySize = readVarUint32Slow();
       readIdx = readerIndex;
     }
     int diff = size - readIdx;
@@ -2567,7 +2272,7 @@ public final class MemoryBuffer {
   }
 
   public byte[] readBytesWithAlignedSize() {
-    final int numBytes = readPositiveAlignedVarInt();
+    final int numBytes = readAlignedVarUint();
     int readerIdx = readerIndex;
     final byte[] arr = new byte[numBytes];
     // use subtract to avoid overflow
@@ -2624,7 +2329,7 @@ public final class MemoryBuffer {
   }
 
   public char[] readCharsWithAlignedSize() {
-    final int numBytes = readPositiveAlignedVarInt();
+    final int numBytes = readAlignedVarUint();
     return readChars(numBytes);
   }
 
@@ -2667,65 +2372,6 @@ public final class MemoryBuffer {
   }
 
   /**
-   * Bulk copy method. Copies {@code numBytes} bytes to target unsafe object and pointer. NOTE: This
-   * is a unsafe method, no check here, please be carefully.
-   */
-  public void copyToUnsafe(long offset, Object target, long targetPointer, int numBytes) {
-    final long thisPointer = this.address + offset;
-    checkArgument(thisPointer + numBytes <= addressLimit);
-    Platform.copyMemory(this.heapMemory, thisPointer, target, targetPointer, numBytes);
-  }
-
-  /**
-   * Bulk copy method. Copies {@code numBytes} bytes from source unsafe object and pointer. NOTE:
-   * This is an unsafe method, no check here, please be carefully.
-   */
-  public void copyFromUnsafe(long offset, Object source, long sourcePointer, long numBytes) {
-    final long thisPointer = this.address + offset;
-    checkArgument(thisPointer + numBytes <= addressLimit);
-    Platform.copyMemory(source, sourcePointer, this.heapMemory, thisPointer, numBytes);
-  }
-
-  /**
-   * Bulk copy method. Copies {@code numBytes} bytes from this memory buffer, starting at position
-   * {@code offset} to the target memory buffer. The bytes will be put into the target buffer
-   * starting at position {@code targetOffset}.
-   *
-   * @param offset The position where the bytes are started to be read from in this memory buffer.
-   * @param target The memory buffer to copy the bytes to.
-   * @param targetOffset The position in the target memory buffer to copy the chunk to.
-   * @param numBytes The number of bytes to copy.
-   * @throws IndexOutOfBoundsException If either of the offsets is invalid, or the source buffer
-   *     does not contain the given number of bytes (starting from offset), or the target buffer
-   *     does not have enough space for the bytes (counting from targetOffset).
-   */
-  public void copyTo(int offset, MemoryBuffer target, int targetOffset, int numBytes) {
-    final byte[] thisHeapRef = this.heapMemory;
-    final byte[] otherHeapRef = target.heapMemory;
-    final long thisPointer = this.address + offset;
-    final long otherPointer = target.address + targetOffset;
-
-    if ((numBytes | offset | targetOffset) >= 0
-        && thisPointer <= this.addressLimit - numBytes
-        && otherPointer <= target.addressLimit - numBytes) {
-      UNSAFE.copyMemory(thisHeapRef, thisPointer, otherHeapRef, otherPointer, numBytes);
-    } else if (this.address > this.addressLimit) {
-      throw new IllegalStateException("this memory buffer has been freed.");
-    } else if (target.address > target.addressLimit) {
-      throw new IllegalStateException("target memory buffer has been freed.");
-    } else {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "offset=%d, targetOffset=%d, numBytes=%d, address=%d, targetAddress=%d",
-              offset, targetOffset, numBytes, this.address, target.address));
-    }
-  }
-
-  public void copyFrom(int offset, MemoryBuffer source, int sourcePointer, int numBytes) {
-    source.copyTo(sourcePointer, this, offset, numBytes);
-  }
-
-  /**
    * Returns internal byte array if data is on heap and remaining buffer size is equal to internal
    * byte array size, or create a new byte array which copy remaining data from off-heap.
    */
@@ -2738,16 +2384,47 @@ public final class MemoryBuffer {
     }
   }
 
+  // ------------------------- Read Methods Finished -------------------------------------
+
   /**
-   * Returns internal byte array if data is on heap and buffer size is equal to internal byte array
-   * size , or create a new byte array which copy data from off-heap.
+   * Bulk copy method. Copies {@code numBytes} bytes to target unsafe object and pointer. NOTE: This
+   * is a unsafe method, no check here, please be carefully.
    */
-  public byte[] getAllBytes() {
-    if (heapMemory != null && size == heapMemory.length) {
-      return heapMemory;
+  public void copyToUnsafe(long offset, Object target, long targetPointer, int numBytes) {
+    final long thisPointer = this.address + offset;
+    checkArgument(thisPointer + numBytes <= addressLimit);
+    Platform.copyMemory(this.heapMemory, thisPointer, target, targetPointer, numBytes);
+  }
+
+  /**
+   * Bulk copy method. Copies {@code numBytes} bytes from source unsafe object and pointer. NOTE:
+   * This is an unsafe method, no check here, please be careful.
+   */
+  public void copyFromUnsafe(long offset, Object source, long sourcePointer, long numBytes) {
+    final long thisPointer = this.address + offset;
+    checkArgument(thisPointer + numBytes <= addressLimit);
+    Platform.copyMemory(source, sourcePointer, this.heapMemory, thisPointer, numBytes);
+  }
+
+  public void copyTo(int offset, MemoryBuffer target, int targetOffset, int numBytes) {
+    final byte[] thisHeapRef = this.heapMemory;
+    final byte[] otherHeapRef = target.heapMemory;
+    final long thisPointer = this.address + offset;
+    final long otherPointer = target.address + targetOffset;
+    if ((numBytes | offset | targetOffset) >= 0
+        && thisPointer <= this.addressLimit - numBytes
+        && otherPointer <= target.addressLimit - numBytes) {
+      UNSAFE.copyMemory(thisHeapRef, thisPointer, otherHeapRef, otherPointer, numBytes);
     } else {
-      return getBytes(0, size);
+      throw new IndexOutOfBoundsException(
+          String.format(
+              "offset=%d, targetOffset=%d, numBytes=%d, address=%d, targetAddress=%d",
+              offset, targetOffset, numBytes, this.address, target.address));
     }
+  }
+
+  public void copyFrom(int offset, MemoryBuffer source, int sourcePointer, int numBytes) {
+    source.copyTo(sourcePointer, this, offset, numBytes);
   }
 
   public byte[] getBytes(int index, int length) {
@@ -2779,9 +2456,7 @@ public final class MemoryBuffer {
 
   public MemoryBuffer slice(int offset, int length) {
     if (offset + length > size) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "offset(%d) + length(%d) exceeds size(%d): %s", offset, length, size, this));
+      throwOOBExceptionForRange(offset, length);
     }
     if (heapMemory != null) {
       return new MemoryBuffer(heapMemory, heapOffset + offset, length);
@@ -2796,9 +2471,7 @@ public final class MemoryBuffer {
 
   public ByteBuffer sliceAsByteBuffer(int offset, int length) {
     if (offset + length > size) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "offset(%d) + length(%d) exceeds size(%d): %s", offset, length, size, this));
+      throwOOBExceptionForRange(offset, length);
     }
     if (heapMemory != null) {
       return ByteBuffer.wrap(heapMemory, heapOffset + offset, length).slice();
@@ -2816,45 +2489,13 @@ public final class MemoryBuffer {
     }
   }
 
-  public FuryStreamReader getStreamReader() {
-    return streamReader;
+  private void throwOOBExceptionForRange(int offset, int length) {
+    throw new IndexOutOfBoundsException(
+        String.format("offset(%d) + length(%d) exceeds size(%d): %s", offset, length, size, this));
   }
 
-  /**
-   * Compares two memory buffer regions.
-   *
-   * @param buf2 Buffer to compare this buffer with
-   * @param offset1 Offset of this buffer to start comparing
-   * @param offset2 Offset of buf2 to start comparing
-   * @param len Length of the compared memory region
-   * @return 0 if equal, -1 if buf1 &lt; buf2, 1 otherwise
-   */
-  public int compare(MemoryBuffer buf2, int offset1, int offset2, int len) {
-    while (len >= 8) {
-      // Since compare is byte-wise, we need to use big endian byte-order.
-      long l1 = this.getLongB(offset1);
-      long l2 = buf2.getLongB(offset2);
-
-      if (l1 != l2) {
-        return (l1 < l2) ^ (l1 < 0) ^ (l2 < 0) ? -1 : 1;
-      }
-
-      offset1 += 8;
-      offset2 += 8;
-      len -= 8;
-    }
-    while (len > 0) {
-      int b1 = this.get(offset1) & 0xff;
-      int b2 = buf2.get(offset2) & 0xff;
-      int cmp = b1 - b2;
-      if (cmp != 0) {
-        return cmp;
-      }
-      offset1++;
-      offset2++;
-      len--;
-    }
-    return 0;
+  public FuryStreamReader getStreamReader() {
+    return streamReader;
   }
 
   /**
@@ -2872,19 +2513,6 @@ public final class MemoryBuffer {
     checkArgument(pos1 < addressLimit);
     checkArgument(pos2 < buf2.addressLimit);
     return Platform.arrayEquals(heapMemory, pos1, buf2.heapMemory, pos2, len);
-  }
-
-  /**
-   * Return a new MemoryBuffer with the same buffer and clear the data (reuse the buffer).
-   *
-   * @return a new MemoryBuffer object.
-   */
-  public MemoryBuffer cloneReference() {
-    if (heapMemory != null) {
-      return new MemoryBuffer(heapMemory, heapOffset, size);
-    } else {
-      return new MemoryBuffer(address, size, offHeapBuffer);
-    }
   }
 
   @Override

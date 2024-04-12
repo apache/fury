@@ -36,8 +36,8 @@ import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.codegen.Expression;
 import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.codegen.Expression.StaticInvoke;
+import org.apache.fury.memory.LittleEndian;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.MathUtils;
 import org.apache.fury.util.Platform;
@@ -355,11 +355,11 @@ public final class StringSerializer extends Serializer<String> {
       // jvm doesn't eliminate well in some jdk.
       final int targetIndex = buffer.unsafeHeapWriterIndex();
       int arrIndex = targetIndex;
-      arrIndex += MemoryUtils.putVarUint36Small(targetArray, arrIndex, header);
+      arrIndex += LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
       writerIndex += arrIndex - targetIndex;
       System.arraycopy(bytes, 0, targetArray, arrIndex, bytesLen);
     } else {
-      writerIndex += buffer.unsafePutVarUint36Small(writerIndex, header);
+      writerIndex += buffer._unsafePutVarUint36Small(writerIndex, header);
       long offHeapAddress = buffer.getUnsafeAddress();
       Platform.copyMemory(
           bytes, Platform.BYTE_ARRAY_OFFSET, null, offHeapAddress + writerIndex, bytesLen);
@@ -377,7 +377,7 @@ public final class StringSerializer extends Serializer<String> {
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       int arrIndex = buffer.unsafeHeapWriterIndex();
-      int written = MemoryUtils.putVarUint36Small(targetArray, arrIndex, header);
+      int written = LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
       arrIndex += written;
       writerIndex += written + strLen;
       for (int i = 0; i < strLen; i++) {
@@ -385,7 +385,7 @@ public final class StringSerializer extends Serializer<String> {
       }
       buffer.unsafeWriterIndex(writerIndex);
     } else {
-      writerIndex += buffer.unsafePutVarUint36Small(writerIndex, header);
+      writerIndex += buffer._unsafePutVarUint36Small(writerIndex, header);
       final byte[] tmpArray = getByteArray(strLen);
       // Write to heap memory then copy is 60% faster than unsafe write to direct memory.
       for (int i = 0; i < strLen; i++) {
@@ -407,7 +407,7 @@ public final class StringSerializer extends Serializer<String> {
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       int arrIndex = buffer.unsafeHeapWriterIndex();
-      int written = MemoryUtils.putVarUint36Small(targetArray, arrIndex, header);
+      int written = LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
       arrIndex += written;
       writerIndex += written + numBytes;
       if (Platform.IS_LITTLE_ENDIAN) {
@@ -440,7 +440,7 @@ public final class StringSerializer extends Serializer<String> {
 
   private int offHeapWriteCharsUTF16(
       MemoryBuffer buffer, char[] chars, int writerIndex, long header, int numBytes) {
-    writerIndex += buffer.unsafePutVarUint36Small(writerIndex, header);
+    writerIndex += buffer._unsafePutVarUint36Small(writerIndex, header);
     byte[] tmpArray = getByteArray(numBytes);
     int charIndex = 0;
     for (int i = 0; i < numBytes; i += 2) {
@@ -641,7 +641,7 @@ public final class StringSerializer extends Serializer<String> {
 
   public void writeUTF8String(MemoryBuffer buffer, String value) {
     byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-    buffer.writePositiveVarInt(bytes.length);
+    buffer.writeVarUint32(bytes.length);
     buffer.writeBytes(bytes);
   }
 

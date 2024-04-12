@@ -772,7 +772,6 @@ public class ClassResolver {
   }
 
   public Class<? extends Serializer> getSerializerClass(Class<?> cls) {
-
     boolean codegen =
         supportCodegenForJavaSerialization(cls) && fury.getConfig().isCodeGenEnabled();
     return getSerializerClass(cls, codegen);
@@ -1205,9 +1204,9 @@ public class ClassResolver {
   public void writeClassAndUpdateCache(MemoryBuffer buffer, Class<?> cls) {
     // fast path for common type
     if (cls == Integer.class) {
-      buffer.writePositiveVarInt(INTEGER_CLASS_ID << 1);
+      buffer.writeVarUint32(INTEGER_CLASS_ID << 1);
     } else if (cls == Long.class) {
-      buffer.writePositiveVarInt(LONG_CLASS_ID << 1);
+      buffer.writeVarUint32(LONG_CLASS_ID << 1);
     } else {
       writeClass(buffer, getOrUpdateClassInfo(cls));
     }
@@ -1241,7 +1240,7 @@ public class ClassResolver {
       }
     } else {
       // use classId
-      buffer.writePositiveVarInt(classInfo.classId << 1);
+      buffer.writeVarUint32(classInfo.classId << 1);
     }
   }
 
@@ -1255,9 +1254,9 @@ public class ClassResolver {
     int newId = classMap.size;
     int id = classMap.putOrGet(classInfo.cls, newId);
     if (id >= 0) {
-      buffer.writePositiveVarInt(id);
+      buffer.writeVarUint32(id);
     } else {
-      buffer.writePositiveVarInt(newId);
+      buffer.writeVarUint32(newId);
       ClassDef classDef;
       Serializer<?> serializer = classInfo.serializer;
       Preconditions.checkArgument(serializer.getClass() != UnexistedClassSerializer.class);
@@ -1381,7 +1380,7 @@ public class ClassResolver {
    */
   public void writeClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    buffer.writePositiveVarInt(metaContext.writingClassDefs.size());
+    buffer.writeVarUint32(metaContext.writingClassDefs.size());
     for (ClassDef classDef : metaContext.writingClassDefs) {
       classDef.writeClassDef(buffer);
     }
@@ -1395,7 +1394,7 @@ public class ClassResolver {
    */
   public void readClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    int classDefOffset = buffer.readInt();
+    int classDefOffset = buffer.readInt32();
     int readerIndex = buffer.readerIndex();
     buffer.readerIndex(classDefOffset);
     int numClassDefs = buffer.readVarUintSmall();
@@ -1457,7 +1456,7 @@ public class ClassResolver {
 
   // Note: Thread safe fot jit thread to call.
   public Expression writeClassExpr(Expression buffer, Expression classId) {
-    return new Invoke(buffer, "writePositiveVarInt", new Expression.BitShift("<<", classId, 1));
+    return new Invoke(buffer, "writeVarUint32", new Expression.BitShift("<<", classId, 1));
   }
 
   // Invoked by Fury JIT.

@@ -144,7 +144,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     Expression bean = tryCastIfPublic(inputObject, beanType, ctx.newName(beanClass));
     expressions.add(bean);
     if (fury.checkClassVersion()) {
-      expressions.add(new Invoke(buffer, "writeInt", classVersionHash));
+      expressions.add(new Invoke(buffer, "writeInt32", classVersionHash));
     }
     expressions.addAll(serializePrimitives(bean, buffer, objectCodecOptimizer.primitiveGroups));
     int numGroups = getNumGroups(objectCodecOptimizer);
@@ -352,7 +352,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               addIncWriterIndexExpr(groupExpressions, buffer, acc);
               compressStarted = true;
             }
-            groupExpressions.add(new Invoke(buffer, "unsafeWriteVarInt", fieldValue));
+            groupExpressions.add(new Invoke(buffer, "_unsafeWriteVarInt", fieldValue));
             acc += 0;
           }
         } else if (clz == long.class) {
@@ -366,7 +366,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               compressStarted = true;
             }
             groupExpressions.add(
-                LongSerializer.writeLong(buffer, fieldValue, fury.longEncoding(), false));
+                LongSerializer.writeInt64(buffer, fieldValue, fury.longEncoding(), false));
           }
         } else {
           throw new IllegalStateException("impossible");
@@ -695,7 +695,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               compressStarted = true;
               addIncReaderIndexExpr(groupExpressions, buffer, acc);
             }
-            fieldValue = readVarInt(buffer);
+            fieldValue = readVarInt32(buffer);
           }
         } else if (clz == long.class) {
           if (!fury.compressLong()) {
@@ -706,7 +706,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               compressStarted = true;
               addIncReaderIndexExpr(groupExpressions, buffer, acc);
             }
-            fieldValue = LongSerializer.readLong(buffer, fury.longEncoding());
+            fieldValue = LongSerializer.readInt64(buffer, fury.longEncoding());
           }
         } else {
           throw new IllegalStateException("impossible");

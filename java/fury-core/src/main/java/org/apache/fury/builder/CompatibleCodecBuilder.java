@@ -196,7 +196,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                           groupExpressions.add(
                               new Invoke(
                                   buffer,
-                                  "writeInt",
+                                  "writeInt32",
                                   new Literal(
                                       (int) fieldInfo.getEncodedFieldInfo(), PRIMITIVE_INT_TYPE)));
                           groupExpressions.add(writeEmbedTypeFieldValue(bean, buffer, fieldInfo));
@@ -218,7 +218,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                           groupExpressions.add(
                               new Invoke(
                                   buffer,
-                                  "writeLong",
+                                  "writeInt64",
                                   new Literal(
                                       fieldInfo.getEncodedFieldInfo(), PRIMITIVE_LONG_TYPE)));
                           groupExpressions.add(writeEmbedTypeFieldValue(bean, buffer, fieldInfo));
@@ -240,7 +240,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                           groupExpressions.add(
                               new Invoke(
                                   buffer,
-                                  "writeLong",
+                                  "writeInt64",
                                   new Literal(
                                       fieldInfo.getEncodedFieldInfo(), PRIMITIVE_LONG_TYPE)));
                           groupExpressions.add(writeEmbedTypeFieldValue(bean, buffer, fieldInfo));
@@ -262,7 +262,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                           groupExpressions.add(
                               new Invoke(
                                   buffer,
-                                  "writeLong",
+                                  "writeInt64",
                                   new Literal(
                                       fieldInfo.getEncodedFieldInfo(), PRIMITIVE_LONG_TYPE)));
                           Descriptor descriptor = createDescriptor(fieldInfo);
@@ -340,7 +340,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
             });
     expressions.add(
         new Invoke(
-            buffer, "writeLong", new Literal(fieldResolver.getEndTag(), PRIMITIVE_LONG_TYPE)));
+            buffer, "writeInt64", new Literal(fieldResolver.getEndTag(), PRIMITIVE_LONG_TYPE)));
     return expressions;
   }
 
@@ -530,7 +530,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
    *   if (fieldResolver.skipDataBy4(buffer, (int) partFieldInfo)) {
    *     return bean;
    *   }
-   *   partFieldInfo = buffer.readInt();
+   *   partFieldInfo = buffer.readInt32();
    * }
    * }</pre>
    */
@@ -573,7 +573,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
    *   if (fieldResolver.skipDataBy4(buffer, (int) partFieldInfo)) {
    *     return bean;
    *   }
-   *   partFieldInfo = buffer.readInt();
+   *   partFieldInfo = buffer.readInt32();
    * }
    * }</pre>
    */
@@ -912,7 +912,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
    *   if (fieldResolver.skipDataBy8(buffer, partFieldInfo)) {
    *     return bean;
    *   }
-   *   partFieldInfo = buffer.readLong();
+   *   partFieldInfo = buffer.readInt64();
    * }
    * }</pre>
    */

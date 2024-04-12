@@ -94,7 +94,7 @@ public class PrimitiveSerializersTest extends FuryTestBase {
             Integer.MIN_VALUE,
             Long.MIN_VALUE,
             Long.MIN_VALUE,
-            -3763915443215605988L, // test Long.reverseBytes in readVarLongOnBE
+            -3763915443215605988L, // test Long.reverseBytes in _readVarInt64OnBE
             Float.MIN_VALUE,
             Float.MIN_VALUE,
             Double.MIN_VALUE,

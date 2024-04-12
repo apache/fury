@@ -211,7 +211,7 @@ public class MemorySuite {
     buffer1.readerIndex(0);
     int size = buffer1.size();
     for (int i = 0; i < size / 2; i++) {
-      x += buffer1.readShort();
+      x += buffer1.readInt16();
     }
     return x;
   }
@@ -233,7 +233,7 @@ public class MemorySuite {
     buffer1.readerIndex(0);
     int size = buffer1.size();
     for (int i = 0; i < size / 4; i++) {
-      x += buffer1.readInt();
+      x += buffer1.readInt32();
     }
     return x;
   }

@@ -35,11 +35,11 @@ public class MemoryBufferObjectInputTest {
     Fury fury = Fury.builder().build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     buffer.writeByte(1);
-    buffer.writeInt(2);
-    buffer.writeLong(3);
+    buffer.writeInt32(2);
+    buffer.writeInt64(3);
     buffer.writeBoolean(true);
-    buffer.writeFloat(4.1f);
-    buffer.writeDouble(4.2);
+    buffer.writeFloat32(4.1f);
+    buffer.writeFloat64(4.2);
     fury.writeJavaString(buffer, "abc");
     try (MemoryBufferObjectInput input = new MemoryBufferObjectInput(fury, buffer)) {
       assertEquals(input.readByte(), 1);

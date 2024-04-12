@@ -439,7 +439,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   public void xwrite(MemoryBuffer buffer, T value) {
     Collection collection = (Collection) value;
     int len = collection.size();
-    buffer.writePositiveVarInt(len);
+    buffer.writeVarUint32(len);
     xwriteElements(fury, buffer, collection);
   }
 

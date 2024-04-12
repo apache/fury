@@ -167,14 +167,14 @@ public class ClassDef implements Serializable {
       MemoryBuffer buf = MemoryUtils.buffer(32);
       IdentityObjectIntMap<String> map = new IdentityObjectIntMap<>(8, 0.5f);
       writeSharedString(buf, map, className);
-      buf.writePositiveVarInt(fieldsInfo.size());
+      buf.writeVarUint32(fieldsInfo.size());
       for (FieldInfo fieldInfo : fieldsInfo) {
         writeSharedString(buf, map, fieldInfo.definedClass);
         byte[] bytes = fieldInfo.fieldName.getBytes(StandardCharsets.UTF_8);
         buf.writePrimitiveArrayWithSize(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
         fieldInfo.fieldType.write(buf);
       }
-      buf.writePositiveVarInt(extMeta.size());
+      buf.writeVarUint32(extMeta.size());
       extMeta.forEach(
           (k, v) -> {
             byte[] keyBytes = k.getBytes(StandardCharsets.UTF_8);
@@ -189,7 +189,7 @@ public class ClassDef implements Serializable {
       id = Math.abs(id);
     }
     buffer.writeBytes(serialized);
-    buffer.writeLong(id);
+    buffer.writeInt64(id);
   }
 
   private static void writeSharedString(
@@ -199,7 +199,7 @@ public class ClassDef implements Serializable {
     if (id >= 0) {
       // TODO use flagged varint.
       buffer.writeBoolean(true);
-      buffer.writePositiveVarInt(id);
+      buffer.writeVarUint32(id);
     } else {
       buffer.writeBoolean(false);
       byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
@@ -212,20 +212,20 @@ public class ClassDef implements Serializable {
     List<String> strings = new ArrayList<>();
     String className = readSharedString(buffer, strings);
     List<FieldInfo> fieldInfos = new ArrayList<>();
-    int numFields = buffer.readPositiveVarInt();
+    int numFields = buffer.readVarUint32();
     for (int i = 0; i < numFields; i++) {
       String definedClass = readSharedString(buffer, strings);
       String fieldName = new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8);
       fieldInfos.add(new FieldInfo(definedClass, fieldName, FieldType.read(buffer)));
     }
-    int extMetaSize = buffer.readPositiveVarInt();
+    int extMetaSize = buffer.readVarUint32();
     Map<String, String> extMeta = new HashMap<>();
     for (int i = 0; i < extMetaSize; i++) {
       extMeta.put(
           new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8),
           new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8));
     }
-    long id = buffer.readLong();
+    long id = buffer.readInt64();
     ClassDef classDef = new ClassDef(className, fieldInfos, extMeta);
     classDef.id = id;
     return classDef;
@@ -405,7 +405,7 @@ public class ClassDef implements Serializable {
       buffer.writeBoolean(isMonomorphic);
       if (this instanceof RegisteredFieldType) {
         buffer.writeByte(0);
-        buffer.writeShort(((RegisteredFieldType) this).getClassId());
+        buffer.writeInt16(((RegisteredFieldType) this).getClassId());
       } else if (this instanceof CollectionFieldType) {
         buffer.writeByte(1);
         ((CollectionFieldType) this).elementType.write(buffer);
@@ -425,7 +425,7 @@ public class ClassDef implements Serializable {
       byte typecode = buffer.readByte();
       switch (typecode) {
         case 0:
-          return new RegisteredFieldType(isFinal, buffer.readShort());
+          return new RegisteredFieldType(isFinal, buffer.readInt16());
         case 1:
           return new CollectionFieldType(isFinal, read(buffer));
         case 2:

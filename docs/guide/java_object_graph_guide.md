@@ -203,13 +203,13 @@ class FooSerializer extends Serializer<Foo> {
 
   @Override
   public void write(MemoryBuffer buffer, Foo value) {
-    buffer.writeLong(value.f1);
+    buffer.writeInt64(value.f1);
   }
 
   @Override
   public Foo read(MemoryBuffer buffer) {
     Foo foo = new Foo();
-    foo.f1 = buffer.readLong();
+    foo.f1 = buffer.readInt64();
     return foo;
   }
 }
@@ -381,13 +381,13 @@ But if you do want to upgrade fury for better performance and smaller size, you 
 using code like following to keep binary compatibility:
 ```java
 MemoryBuffer buffer = xxx;
-buffer.writeVarInt(2);
+buffer.writeVarInt32(2);
 fury.serialize(buffer, obj);
 ```
 Then for deserialization, you need:
 ```java
 MemoryBuffer buffer = xxx;
-int furyVersion = buffer.readVarInt()
+int furyVersion = buffer.readVarInt32()
 Fury fury = getFury(furyVersion);
 fury.deserialize(buffer);
 ```
