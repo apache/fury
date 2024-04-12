@@ -310,12 +310,12 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
 
     private void writeObject(java.io.ObjectOutputStream s) throws IOException {
       s.defaultWriteObject();
-      s.writeInt32(state);
+      s.writeInt(state);
     }
 
     private void readObject(java.io.ObjectInputStream s) throws Exception {
       s.defaultReadObject();
-      this.state = s.readInt32();
+      this.state = s.readInt();
     }
   }
 
@@ -546,12 +546,12 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-      out.writeInt32(f1);
+      out.writeInt(f1);
     }
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-      f1 = in.readInt32();
+      f1 = in.readInt();
     }
 
     private Object writeReplace() {

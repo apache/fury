@@ -46,17 +46,17 @@ class Inaccessible implements Externalizable {
 
   @Override
   public void writeExternal(ObjectOutput out) throws IOException {
-    out.writeInt32(x);
-    out.writeInt32(y);
-    out.writeInt32(bytes.length);
+    out.writeInt(x);
+    out.writeInt(y);
+    out.writeInt(bytes.length);
     out.write(bytes);
   }
 
   @Override
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-    this.x = in.readInt32();
-    this.y = in.readInt32();
-    int len = in.readInt32();
+    this.x = in.readInt();
+    this.y = in.readInt();
+    int len = in.readInt();
     byte[] arr = new byte[len];
     Preconditions.checkArgument(in.read(arr) == len);
     this.bytes = arr;

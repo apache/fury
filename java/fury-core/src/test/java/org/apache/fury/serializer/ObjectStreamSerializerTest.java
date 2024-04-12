@@ -64,13 +64,13 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
 
     private void writeObject(ObjectOutputStream s) throws IOException {
       s.defaultWriteObject();
-      s.writeInt32(count);
+      s.writeInt(count);
       s.writeObject(value);
     }
 
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
       s.defaultReadObject();
-      count = s.readInt32();
+      count = s.readInt();
       value = (char[]) s.readObject();
     }
   }
@@ -107,13 +107,13 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
 
     private void writeObject(ObjectOutputStream s) throws IOException {
       s.defaultWriteObject();
-      s.writeInt32(100);
+      s.writeInt(100);
     }
 
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
       // defaultReadObject compatible with putFields
       s.defaultReadObject();
-      Preconditions.checkArgument(s.readInt32() == 100);
+      Preconditions.checkArgument(s.readInt() == 100);
     }
   }
 
