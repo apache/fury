@@ -87,20 +87,20 @@ public class MemoryBufferTest {
       pos += 1;
       Platform.putShort(heapMemory, pos, Short.MAX_VALUE);
       pos += 2;
-      MemoryUtils.putInt(heapMemory, pos, Integer.MIN_VALUE);
+      LittleEndian.putInt(heapMemory, pos, Integer.MIN_VALUE);
       pos += 4;
       Platform.putLong(heapMemory, pos, Long.MAX_VALUE);
       pos += 8;
-      MemoryUtils.putDouble(heapMemory, pos, -1);
+      LittleEndian.putDouble(heapMemory, pos, -1);
       pos += 8;
-      MemoryUtils.putFloat(heapMemory, pos, -1);
+      LittleEndian.putFloat(heapMemory, pos, -1);
       assertEquals(buffer.getFloat((int) (pos - Platform.BYTE_ARRAY_OFFSET)), -1);
       pos -= 8;
       assertEquals(buffer.getDouble((int) (pos - Platform.BYTE_ARRAY_OFFSET)), -1);
       pos -= 8;
-      assertEquals(MemoryUtils.getLong(heapMemory, pos), Long.MAX_VALUE);
+      assertEquals(LittleEndian.getLong(heapMemory, pos), Long.MAX_VALUE);
       pos -= 4;
-      assertEquals(MemoryUtils.getInt(heapMemory, pos), Integer.MIN_VALUE);
+      assertEquals(LittleEndian.getInt(heapMemory, pos), Integer.MIN_VALUE);
       pos -= 2;
       assertEquals(buffer.getShort((int) (pos - Platform.BYTE_ARRAY_OFFSET)), Short.MAX_VALUE);
       pos -= 1;
@@ -539,7 +539,7 @@ public class MemoryBufferTest {
     byte[] data = new byte[4];
     data[0] = (byte) 0xac;
     data[1] = (byte) 0xed;
-    assertEquals(MemoryUtils.getShortB(data, 0), (short) 0xaced);
+    assertEquals(BigEndian.getShortB(data, 0), (short) 0xaced);
   }
 
   @Test
@@ -587,21 +587,21 @@ public class MemoryBufferTest {
     MemoryBuffer buf = MemoryUtils.buffer(80);
     int index = 0;
     {
-      int diff = MemoryUtils.putVarUint36Small(buf.getHeapMemory(), index, 10);
+      int diff = LittleEndian.putVarUint36Small(buf.getHeapMemory(), index, 10);
       assertEquals(buf.readVarUint36Small(), 10);
       buf.increaseReaderIndex(-diff);
       index += buf._unsafePutVarUint36Small(index, 10);
       assertEquals(buf.readVarUint36Small(), 10);
     }
     {
-      int diff = MemoryUtils.putVarUint36Small(buf.getHeapMemory(), index, Short.MAX_VALUE);
+      int diff = LittleEndian.putVarUint36Small(buf.getHeapMemory(), index, Short.MAX_VALUE);
       assertEquals(buf.readVarUint36Small(), Short.MAX_VALUE);
       buf.increaseReaderIndex(-diff);
       index += buf._unsafePutVarUint36Small(index, Short.MAX_VALUE);
       assertEquals(buf.readVarUint36Small(), Short.MAX_VALUE);
     }
     {
-      int diff = MemoryUtils.putVarUint36Small(buf.getHeapMemory(), index, Integer.MAX_VALUE);
+      int diff = LittleEndian.putVarUint36Small(buf.getHeapMemory(), index, Integer.MAX_VALUE);
       assertEquals(buf.readVarUint36Small(), Integer.MAX_VALUE);
       buf.increaseReaderIndex(-diff);
       index += buf._unsafePutVarUint36Small(index, Integer.MAX_VALUE);
@@ -609,7 +609,7 @@ public class MemoryBufferTest {
     }
     {
       int diff =
-          MemoryUtils.putVarUint36Small(
+          LittleEndian.putVarUint36Small(
               buf.getHeapMemory(), index, 0b111111111111111111111111111111111111L);
       assertEquals(buf.readVarUint36Small(), 0b111111111111111111111111111111111111L);
       buf.increaseReaderIndex(-diff);

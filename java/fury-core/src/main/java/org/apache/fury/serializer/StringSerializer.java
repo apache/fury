@@ -36,8 +36,8 @@ import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.codegen.Expression;
 import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.codegen.Expression.StaticInvoke;
+import org.apache.fury.memory.LittleEndian;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.MathUtils;
 import org.apache.fury.util.Platform;
@@ -355,7 +355,7 @@ public final class StringSerializer extends Serializer<String> {
       // jvm doesn't eliminate well in some jdk.
       final int targetIndex = buffer.unsafeHeapWriterIndex();
       int arrIndex = targetIndex;
-      arrIndex += MemoryUtils.putVarUint36Small(targetArray, arrIndex, header);
+      arrIndex += LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
       writerIndex += arrIndex - targetIndex;
       System.arraycopy(bytes, 0, targetArray, arrIndex, bytesLen);
     } else {
@@ -377,7 +377,7 @@ public final class StringSerializer extends Serializer<String> {
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       int arrIndex = buffer.unsafeHeapWriterIndex();
-      int written = MemoryUtils.putVarUint36Small(targetArray, arrIndex, header);
+      int written = LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
       arrIndex += written;
       writerIndex += written + strLen;
       for (int i = 0; i < strLen; i++) {
@@ -407,7 +407,7 @@ public final class StringSerializer extends Serializer<String> {
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       int arrIndex = buffer.unsafeHeapWriterIndex();
-      int written = MemoryUtils.putVarUint36Small(targetArray, arrIndex, header);
+      int written = LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
       arrIndex += written;
       writerIndex += written + numBytes;
       if (Platform.IS_LITTLE_ENDIAN) {

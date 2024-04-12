@@ -408,7 +408,9 @@ public final class MemoryBuffer {
     Platform.copyMemory(src, arrayAddress, heapMemory, pos, length);
   }
 
+  // CHECKSTYLE.OFF:MethodName
   public void _unsafePut(int index, byte b) {
+    // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     UNSAFE.putByte(heapMemory, pos, b);
   }
@@ -457,7 +459,9 @@ public final class MemoryBuffer {
     }
   }
 
+  // CHECKSTYLE.OFF:MethodName
   public void _unsafePutShort(int index, short value) {
+    // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       UNSAFE.putShort(heapMemory, pos, value);
@@ -524,7 +528,9 @@ public final class MemoryBuffer {
     }
   }
 
+  // CHECKSTYLE.OFF:MethodName
   long _unsafeGetLong(int index) {
+    // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       return UNSAFE.getLong(heapMemory, pos);
@@ -533,7 +539,9 @@ public final class MemoryBuffer {
     }
   }
 
+  // CHECKSTYLE.OFF:MethodName
   public void _unsafePutLong(int index, long value) {
+    // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       UNSAFE.putLong(heapMemory, pos, value);
@@ -648,7 +656,9 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
+  // CHECKSTYLE.OFF:MethodName
   public void _unsafeWriteByte(byte value) {
+    // CHECKSTYLE.ON:MethodName
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 1;
     final long pos = address + writerIdx;
@@ -774,7 +784,9 @@ public final class MemoryBuffer {
    * to avoid using two memory operations.
    */
   @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
   public int _unsafeWriteVarInt(int v) {
+    // CHECKSTYLE.ON:MethodName
     // Ensure negatives close to zero is encode in little bytes.
     v = (v << 1) ^ (v >> 31);
     return _unsafeWriteVarUint32(v);
@@ -784,7 +796,9 @@ public final class MemoryBuffer {
    * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
    * to avoid using two memory operations.
    */
+  // CHECKSTYLE.OFF:MethodName
   public int _unsafeWriteVarUint32(int v) {
+    // CHECKSTYLE.ON:MethodName
     int varintBytes = _unsafePutVarUint36Small(writerIndex, v);
     writerIndex += varintBytes;
     return varintBytes;
@@ -793,7 +807,9 @@ public final class MemoryBuffer {
   /**
    * Caller must ensure there must be at least 8 bytes for writing, otherwise the crash may occur.
    */
+  // CHECKSTYLE.OFF:MethodName
   public int _unsafePutVarUint36Small(int index, long value) {
+    // CHECKSTYLE.ON:MethodName
     long encoded = (value & 0x7F);
     if (value >>> 7 == 0) {
       UNSAFE.putByte(heapMemory, address + index, (byte) value);
@@ -1038,7 +1054,9 @@ public final class MemoryBuffer {
     return _unsafeWriteVarUint64(value);
   }
 
+  // CHECKSTYLE.OFF:MethodName
   private int _unsafeWriteVarUint64(long value) {
+    // CHECKSTYLE.ON:MethodName
     final int writerIndex = this.writerIndex;
     int varInt;
     varInt = (int) (value & 0x7F);
@@ -1112,7 +1130,9 @@ public final class MemoryBuffer {
   private static final byte BIG_LONG_FLAG = 0b1; // bit 0 set, means big long.
 
   /** Write long using fury SLI(Small Long as Int) encoding. */
+  // CHECKSTYLE.OFF:MethodName
   public int _unsafeWriteSliLong(long value) {
+    // CHECKSTYLE.ON:MethodName
     final int writerIndex = this.writerIndex;
     final long pos = address + writerIndex;
     final byte[] heapMemory = this.heapMemory;
