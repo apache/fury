@@ -36,11 +36,11 @@ public class MemoryBufferObjectOutputTest {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     try (MemoryBufferObjectOutput output = new MemoryBufferObjectOutput(fury, buffer)) {
       output.writeByte(1);
-      output.writeInt(2);
-      output.writeLong(3);
+      output.writeInt32(2);
+      output.writeInt64(3);
       output.writeBoolean(true);
-      output.writeFloat(4.1f);
-      output.writeDouble(4.2);
+      output.writeFloat32(4.1f);
+      output.writeFloat64(4.2);
       output.writeChars("abc");
       output.writeUTF("abc");
     }

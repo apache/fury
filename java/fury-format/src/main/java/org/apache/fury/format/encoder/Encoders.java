@@ -169,7 +169,7 @@ public class Encoders {
         @Override
         public byte[] encode(T obj) {
           buffer.writerIndex(0);
-          buffer.writeLong(schemaHash);
+          buffer.writeInt64(schemaHash);
           writer.setBuffer(buffer);
           writer.reset();
           BinaryRow row = toRow(obj);

@@ -64,7 +64,7 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
 
     private void writeObject(ObjectOutputStream s) throws IOException {
       s.defaultWriteObject();
-      s.writeInt(count);
+      s.writeInt32(count);
       s.writeObject(value);
     }
 
@@ -107,7 +107,7 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
 
     private void writeObject(ObjectOutputStream s) throws IOException {
       s.defaultWriteObject();
-      s.writeInt(100);
+      s.writeInt32(100);
     }
 
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {

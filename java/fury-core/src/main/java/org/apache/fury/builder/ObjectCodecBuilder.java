@@ -144,7 +144,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     Expression bean = tryCastIfPublic(inputObject, beanType, ctx.newName(beanClass));
     expressions.add(bean);
     if (fury.checkClassVersion()) {
-      expressions.add(new Invoke(buffer, "writeInt", classVersionHash));
+      expressions.add(new Invoke(buffer, "writeInt32", classVersionHash));
     }
     expressions.addAll(serializePrimitives(bean, buffer, objectCodecOptimizer.primitiveGroups));
     int numGroups = getNumGroups(objectCodecOptimizer);
@@ -366,7 +366,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               compressStarted = true;
             }
             groupExpressions.add(
-                LongSerializer.writeLong(buffer, fieldValue, fury.longEncoding(), false));
+                LongSerializer.writeInt64(buffer, fieldValue, fury.longEncoding(), false));
           }
         } else {
           throw new IllegalStateException("impossible");

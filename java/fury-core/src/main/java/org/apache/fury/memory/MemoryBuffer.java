@@ -692,7 +692,7 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void writeShort(short value) {
+  public void writeInt16(short value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 2;
     ensure(newIdx);
@@ -705,7 +705,7 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void writeInt(int value) {
+  public void writeInt32(int value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 4;
     ensure(newIdx);
@@ -718,7 +718,7 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void writeLong(long value) {
+  public void writeInt64(long value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 8;
     ensure(newIdx);
@@ -731,7 +731,7 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void writeFloat(float value) {
+  public void writeFloat32(float value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 4;
     ensure(newIdx);
@@ -744,7 +744,7 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void writeDouble(double value) {
+  public void writeFloat64(double value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 8;
     ensure(newIdx);

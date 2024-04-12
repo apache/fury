@@ -59,7 +59,7 @@ public final class OptionalSerializers {
       boolean present = value.isPresent();
       buffer.writeBoolean(present);
       if (present) {
-        buffer.writeInt(value.getAsInt());
+        buffer.writeInt32(value.getAsInt());
       }
     }
 
@@ -83,7 +83,7 @@ public final class OptionalSerializers {
       boolean present = value.isPresent();
       buffer.writeBoolean(present);
       if (present) {
-        buffer.writeLong(value.getAsLong());
+        buffer.writeInt64(value.getAsLong());
       }
     }
 
@@ -107,7 +107,7 @@ public final class OptionalSerializers {
       boolean present = value.isPresent();
       buffer.writeBoolean(present);
       if (present) {
-        buffer.writeDouble(value.getAsDouble());
+        buffer.writeFloat64(value.getAsDouble());
       }
     }
 

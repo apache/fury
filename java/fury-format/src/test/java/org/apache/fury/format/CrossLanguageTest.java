@@ -443,8 +443,8 @@ public class CrossLanguageTest {
     Path outOfBandDataFile =
         Files.createTempFile("test_serialize_arrow_out_of_band", "out_of_band.data");
     MemoryBuffer outOfBandBuffer = MemoryUtils.buffer(32);
-    outOfBandBuffer.writeInt(bufferObjects.get(0).totalBytes());
-    outOfBandBuffer.writeInt(bufferObjects.get(1).totalBytes());
+    outOfBandBuffer.writeInt32(bufferObjects.get(0).totalBytes());
+    outOfBandBuffer.writeInt32(bufferObjects.get(1).totalBytes());
     bufferObjects.get(0).writeTo(outOfBandBuffer);
     bufferObjects.get(1).writeTo(outOfBandBuffer);
     Files.write(outOfBandDataFile, outOfBandBuffer.getBytes(0, outOfBandBuffer.writerIndex()));

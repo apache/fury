@@ -125,7 +125,7 @@ public class ObjectStreamSerializer extends Serializer {
 
   @Override
   public void write(MemoryBuffer buffer, Object value) {
-    buffer.writeShort((short) slotsInfos.length);
+    buffer.writeInt16((short) slotsInfos.length);
     try {
       for (SlotsInfo slotsInfo : slotsInfos) {
         // create a classinfo to avoid null class bytes when class id is a
@@ -607,7 +607,7 @@ public class ObjectStreamSerializer extends Serializer {
 
     @Override
     public void writeShort(int v) throws IOException {
-      buffer.writeShort((short) v);
+      buffer.writeInt16((short) v);
     }
 
     @Override
@@ -617,22 +617,22 @@ public class ObjectStreamSerializer extends Serializer {
 
     @Override
     public void writeInt(int v) throws IOException {
-      buffer.writeInt(v);
+      buffer.writeInt32(v);
     }
 
     @Override
     public void writeLong(long v) throws IOException {
-      buffer.writeLong(v);
+      buffer.writeInt64(v);
     }
 
     @Override
     public void writeFloat(float v) throws IOException {
-      buffer.writeFloat(v);
+      buffer.writeFloat32(v);
     }
 
     @Override
     public void writeDouble(double v) throws IOException {
-      buffer.writeDouble(v);
+      buffer.writeFloat64(v);
     }
 
     @Override

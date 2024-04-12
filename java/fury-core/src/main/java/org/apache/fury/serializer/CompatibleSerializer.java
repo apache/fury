@@ -94,22 +94,22 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   @Override
   public void write(MemoryBuffer buffer, T value) {
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypes4Fields()) {
-      buffer.writeInt((int) fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt32((int) fieldInfo.getEncodedFieldInfo());
       readAndWriteFieldValue(buffer, fieldInfo, value);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypes9Fields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       readAndWriteFieldValue(buffer, fieldInfo, value);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypesHashFields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       readAndWriteFieldValue(buffer, fieldInfo, value);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getSeparateTypesHashFields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       readAndWriteFieldValue(buffer, fieldInfo, value);
     }
-    buffer.writeLong(fieldResolver.getEndTag());
+    buffer.writeInt64(fieldResolver.getEndTag());
   }
 
   public void writeFieldsValues(MemoryBuffer buffer, Object[] vals) {
@@ -117,19 +117,19 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     Fury fury = this.fury;
     int index = 0;
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypes4Fields()) {
-      buffer.writeInt((int) fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt32((int) fieldInfo.getEncodedFieldInfo());
       writeFieldValue(fieldInfo, buffer, vals[index++]);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypes9Fields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       writeFieldValue(fieldInfo, buffer, vals[index++]);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypesHashFields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       writeFieldValue(fieldInfo, buffer, vals[index++]);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getSeparateTypesHashFields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       Object value = vals[index++];
       if (!fury.getRefResolver().writeRefOrNull(buffer, value)) {
         byte fieldType = fieldInfo.getFieldType();
@@ -139,7 +139,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         fury.writeNonRef(buffer, value, classInfo);
       }
     }
-    buffer.writeLong(fieldResolver.getEndTag());
+    buffer.writeInt64(fieldResolver.getEndTag());
   }
 
   private void readAndWriteFieldValue(
@@ -177,23 +177,23 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         buffer.writeChar((Character) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
-        buffer.writeShort((Short) fieldValue);
+        buffer.writeInt16((Short) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
           buffer.writeVarInt32((Integer) fieldValue);
         } else {
-          buffer.writeInt((Integer) fieldValue);
+          buffer.writeInt32((Integer) fieldValue);
         }
         return;
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-        buffer.writeFloat((Float) fieldValue);
+        buffer.writeFloat32((Float) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        fury.writeLong(buffer, (Long) fieldValue);
+        fury.writeInt64(buffer, (Long) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-        buffer.writeDouble((Double) fieldValue);
+        buffer.writeFloat64((Double) fieldValue);
         return;
       case ClassResolver.STRING_CLASS_ID:
         fury.writeJavaStringRef(buffer, (String) fieldValue);

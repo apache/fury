@@ -55,11 +55,11 @@ public class MemoryBufferTest {
     buffer.writeBoolean(true);
     buffer.writeByte(Byte.MIN_VALUE);
     buffer.writeChar('a');
-    buffer.writeShort(Short.MAX_VALUE);
-    buffer.writeInt(Integer.MAX_VALUE);
-    buffer.writeLong(Long.MAX_VALUE);
-    buffer.writeFloat(Float.MAX_VALUE);
-    buffer.writeDouble(Double.MAX_VALUE);
+    buffer.writeInt16(Short.MAX_VALUE);
+    buffer.writeInt32(Integer.MAX_VALUE);
+    buffer.writeInt64(Long.MAX_VALUE);
+    buffer.writeFloat32(Float.MAX_VALUE);
+    buffer.writeFloat64(Double.MAX_VALUE);
     byte[] bytes = new byte[] {1, 2, 3, 4};
     buffer.writeBytes(bytes);
 
@@ -497,7 +497,7 @@ public class MemoryBufferTest {
     assertEquals(buf.writeVarUint32Aligned(Integer.MAX_VALUE), 8);
     assertEquals(buf.readAlignedVarUint(), Integer.MAX_VALUE);
     buf.writeByte((byte) 1); // make address unaligned.
-    buf.writeShort((short) 1); // make address unaligned.
+    buf.writeInt16((short) 1); // make address unaligned.
     assertEquals(buf.writeVarUint32Aligned(Integer.MAX_VALUE), 9);
     buf.readByte();
     buf.readInt16();

@@ -33,6 +33,6 @@ public class CustomJDKSerialization implements Serializable {
 
   private void readObject(java.io.ObjectInputStream s) throws Exception {
     s.defaultReadObject();
-    this.age = s.readInt32();
+    this.age = s.readInt();
   }
 }

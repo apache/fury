@@ -203,7 +203,7 @@ class FooSerializer extends Serializer<Foo> {
 
   @Override
   public void write(MemoryBuffer buffer, Foo value) {
-    buffer.writeLong(value.f1);
+    buffer.writeInt64(value.f1);
   }
 
   @Override

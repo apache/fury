@@ -370,16 +370,16 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (clz == char.class || clz == Character.class) {
         return new Invoke(buffer, "writeChar", inputObject);
       } else if (clz == short.class || clz == Short.class) {
-        return new Invoke(buffer, "writeShort", inputObject);
+        return new Invoke(buffer, "writeInt16", inputObject);
       } else if (clz == int.class || clz == Integer.class) {
-        String func = fury.compressInt() ? "writeVarInt32" : "writeInt";
+        String func = fury.compressInt() ? "writeVarInt32" : "writeInt32";
         return new Invoke(buffer, func, inputObject);
       } else if (clz == long.class || clz == Long.class) {
-        return LongSerializer.writeLong(buffer, inputObject, fury.longEncoding(), true);
+        return LongSerializer.writeInt64(buffer, inputObject, fury.longEncoding(), true);
       } else if (clz == float.class || clz == Float.class) {
-        return new Invoke(buffer, "writeFloat", inputObject);
+        return new Invoke(buffer, "writeFloat32", inputObject);
       } else if (clz == double.class || clz == Double.class) {
-        return new Invoke(buffer, "writeDouble", inputObject);
+        return new Invoke(buffer, "writeFloat64", inputObject);
       } else {
         throw new IllegalStateException("impossible");
       }

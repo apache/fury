@@ -42,7 +42,7 @@ public class JavaSerializerTest extends FuryTestBase {
 
     private void writeObject(java.io.ObjectOutputStream s) throws IOException {
       s.defaultWriteObject();
-      s.writeInt(age);
+      s.writeInt32(age);
     }
 
     private void readObject(java.io.ObjectInputStream s) throws Exception {

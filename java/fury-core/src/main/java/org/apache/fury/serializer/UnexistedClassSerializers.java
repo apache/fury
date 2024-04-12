@@ -132,7 +132,7 @@ public final class UnexistedClassSerializers {
       RefResolver refResolver = fury.getRefResolver();
       ClassResolver classResolver = fury.getClassResolver();
       if (fury.checkClassVersion()) {
-        buffer.writeInt(fieldsInfo.classVersionHash);
+        buffer.writeInt32(fieldsInfo.classVersionHash);
       }
       // write order: primitive,boxed,final,other,collection,map
       ObjectSerializer.FinalTypeField[] finalFields = fieldsInfo.finalFields;

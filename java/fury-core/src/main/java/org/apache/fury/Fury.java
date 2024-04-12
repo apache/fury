@@ -309,7 +309,7 @@ public final class Fury implements BaseFury {
   private void write(MemoryBuffer buffer, Object obj) {
     if (config.shareMetaContext()) {
       int startOffset = buffer.writerIndex();
-      buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
+      buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
       writeRef(buffer, obj);
       buffer.putInt(startOffset, buffer.writerIndex());
       classResolver.writeClassDefs(buffer);
@@ -320,8 +320,8 @@ public final class Fury implements BaseFury {
 
   private void xserializeInternal(MemoryBuffer buffer, Object obj) {
     int startOffset = buffer.writerIndex();
-    buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
-    buffer.writeInt(-1); // preserve 4-byte for nativeObjects size
+    buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
+    buffer.writeInt32(-1); // preserve 4-byte for nativeObjects size
     xwriteRef(buffer, obj);
     buffer.putInt(startOffset, buffer.writerIndex());
     buffer.putInt(startOffset + 4, nativeObjects.size());
@@ -485,7 +485,7 @@ public final class Fury implements BaseFury {
       serializer = classResolver.getSerializer(cls);
     }
     short typeId = serializer.getXtypeId();
-    buffer.writeShort(typeId);
+    buffer.writeInt16(typeId);
     if (typeId != NOT_SUPPORT_CROSS_LANGUAGE) {
       if (typeId == FURY_TYPE_TAG_ID) {
         classResolver.xwriteTypeTag(buffer, cls);
@@ -522,23 +522,23 @@ public final class Fury implements BaseFury {
         buffer.writeChar((Character) obj);
         break;
       case ClassResolver.SHORT_CLASS_ID:
-        buffer.writeShort((Short) obj);
+        buffer.writeInt16((Short) obj);
         break;
       case ClassResolver.INTEGER_CLASS_ID:
         if (compressInt) {
           buffer.writeVarInt32((Integer) obj);
         } else {
-          buffer.writeInt((Integer) obj);
+          buffer.writeInt32((Integer) obj);
         }
         break;
       case ClassResolver.FLOAT_CLASS_ID:
-        buffer.writeFloat((Float) obj);
+        buffer.writeFloat32((Float) obj);
         break;
       case ClassResolver.LONG_CLASS_ID:
-        LongSerializer.writeLong(buffer, (Long) obj, longEncoding);
+        LongSerializer.writeInt64(buffer, (Long) obj, longEncoding);
         break;
       case ClassResolver.DOUBLE_CLASS_ID:
-        buffer.writeDouble((Double) obj);
+        buffer.writeFloat64((Double) obj);
         break;
       case ClassResolver.STRING_CLASS_ID:
         stringSerializer.writeJavaString(buffer, (String) obj);
@@ -666,8 +666,8 @@ public final class Fury implements BaseFury {
     return stringSerializer.readJavaString(buffer);
   }
 
-  public void writeLong(MemoryBuffer buffer, long value) {
-    LongSerializer.writeLong(buffer, value, longEncoding);
+  public void writeInt64(MemoryBuffer buffer, long value) {
+    LongSerializer.writeInt64(buffer, value, longEncoding);
   }
 
   public long readInt64(MemoryBuffer buffer) {
@@ -1028,7 +1028,7 @@ public final class Fury implements BaseFury {
       }
       if (config.shareMetaContext()) {
         int startOffset = buffer.writerIndex();
-        buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
+        buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
           writeData(buffer, classInfo, obj);

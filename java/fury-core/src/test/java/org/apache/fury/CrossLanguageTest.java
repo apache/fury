@@ -117,14 +117,14 @@ public class CrossLanguageTest {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     buffer.writeBoolean(true);
     buffer.writeByte(Byte.MAX_VALUE);
-    buffer.writeShort(Short.MAX_VALUE);
-    buffer.writeInt(Integer.MAX_VALUE);
-    buffer.writeLong(Long.MAX_VALUE);
-    buffer.writeFloat(-1.1f);
-    buffer.writeDouble(-1.1);
+    buffer.writeInt16(Short.MAX_VALUE);
+    buffer.writeInt32(Integer.MAX_VALUE);
+    buffer.writeInt64(Long.MAX_VALUE);
+    buffer.writeFloat32(-1.1f);
+    buffer.writeFloat64(-1.1);
     buffer.writeVarUint32(100);
     byte[] bytes = {'a', 'b'};
-    buffer.writeInt(bytes.length);
+    buffer.writeInt32(bytes.length);
     buffer.writeBytes(bytes);
     Path dataFile = Files.createTempFile("test_buffer", "data");
     Files.write(dataFile, buffer.getBytes(0, buffer.writerIndex()));
@@ -170,8 +170,8 @@ public class CrossLanguageTest {
     Assert.assertTrue(executeCommand(command, 30));
     long[] longs = MurmurHash3.murmurhash3_x64_128(new byte[] {1, 2, 8}, 0, 3, 47);
     buffer.writerIndex(0);
-    buffer.writeLong(longs[0]);
-    buffer.writeLong(longs[1]);
+    buffer.writeInt64(longs[0]);
+    buffer.writeInt64(longs[1]);
     Files.write(
         dataFile, buffer.getBytes(0, buffer.writerIndex()), StandardOpenOption.TRUNCATE_EXISTING);
     Assert.assertTrue(executeCommand(command, 30));
@@ -681,9 +681,9 @@ public class CrossLanguageTest {
     Files.deleteIfExists(outOfBandDataFile);
     Files.createFile(outOfBandDataFile);
     MemoryBuffer outOfBandBuffer = MemoryBuffer.newHeapBuffer(32);
-    outOfBandBuffer.writeInt(buffers.size());
+    outOfBandBuffer.writeInt32(buffers.size());
     for (int i = 0; i < buffers.size(); i++) {
-      outOfBandBuffer.writeInt(bufferObjects.get(i).totalBytes());
+      outOfBandBuffer.writeInt32(bufferObjects.get(i).totalBytes());
       bufferObjects.get(i).writeTo(outOfBandBuffer);
     }
     Files.write(outOfBandDataFile, outOfBandBuffer.getBytes(0, outOfBandBuffer.writerIndex()));

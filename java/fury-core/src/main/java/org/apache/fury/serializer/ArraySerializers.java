@@ -82,7 +82,7 @@ public class ArraySerializers {
     @Override
     public void write(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
-      buffer.writeInt(len);
+      buffer.writeInt32(len);
       RefResolver refResolver = fury.getRefResolver();
       Serializer componentSerializer = this.componentTypeSerializer;
       if (componentSerializer != null) {

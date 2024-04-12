@@ -310,7 +310,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
 
     private void writeObject(java.io.ObjectOutputStream s) throws IOException {
       s.defaultWriteObject();
-      s.writeInt(state);
+      s.writeInt32(state);
     }
 
     private void readObject(java.io.ObjectInputStream s) throws Exception {
@@ -546,7 +546,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-      out.writeInt(f1);
+      out.writeInt32(f1);
     }
 
     @Override

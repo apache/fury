@@ -118,7 +118,7 @@ public class MemoryBufferObjectInput extends InputStream implements ObjectInput 
   }
 
   @Override
-  public short readInt16() throws IOException {
+  public short readShort() throws IOException {
     return buffer.readInt16();
   }
 
@@ -133,22 +133,22 @@ public class MemoryBufferObjectInput extends InputStream implements ObjectInput 
   }
 
   @Override
-  public int readInt32() throws IOException {
+  public int readInt() throws IOException {
     return buffer.readInt32();
   }
 
   @Override
-  public long readInt64() throws IOException {
+  public long readLong() throws IOException {
     return buffer.readInt64();
   }
 
   @Override
-  public float readFloat32() throws IOException {
+  public float readFloat() throws IOException {
     return buffer.readFloat32();
   }
 
   @Override
-  public double readFloat64() throws IOException {
+  public double readDouble() throws IOException {
     return buffer.readFloat64();
   }
 

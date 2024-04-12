@@ -401,7 +401,7 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, AtomicInteger value) {
-      buffer.writeInt(value.get());
+      buffer.writeInt32(value.get());
     }
 
     @Override
@@ -418,7 +418,7 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, AtomicLong value) {
-      buffer.writeLong(value.get());
+      buffer.writeInt64(value.get());
     }
 
     @Override
@@ -501,7 +501,7 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, Pattern pattern) {
       fury.writeJavaString(buffer, pattern.pattern());
-      buffer.writeInt(pattern.flags());
+      buffer.writeInt32(pattern.flags());
     }
 
     @Override
@@ -520,8 +520,8 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, final UUID uuid) {
-      buffer.writeLong(uuid.getMostSignificantBits());
-      buffer.writeLong(uuid.getLeastSignificantBits());
+      buffer.writeInt64(uuid.getMostSignificantBits());
+      buffer.writeInt64(uuid.getLeastSignificantBits());
     }
 
     @Override

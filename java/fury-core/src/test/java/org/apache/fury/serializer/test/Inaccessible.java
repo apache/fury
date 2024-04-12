@@ -46,9 +46,9 @@ class Inaccessible implements Externalizable {
 
   @Override
   public void writeExternal(ObjectOutput out) throws IOException {
-    out.writeInt(x);
-    out.writeInt(y);
-    out.writeInt(bytes.length);
+    out.writeInt32(x);
+    out.writeInt32(y);
+    out.writeInt32(bytes.length);
     out.write(bytes);
   }
 

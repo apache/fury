@@ -189,7 +189,7 @@ public class ClassDef implements Serializable {
       id = Math.abs(id);
     }
     buffer.writeBytes(serialized);
-    buffer.writeLong(id);
+    buffer.writeInt64(id);
   }
 
   private static void writeSharedString(
@@ -405,7 +405,7 @@ public class ClassDef implements Serializable {
       buffer.writeBoolean(isMonomorphic);
       if (this instanceof RegisteredFieldType) {
         buffer.writeByte(0);
-        buffer.writeShort(((RegisteredFieldType) this).getClassId());
+        buffer.writeInt16(((RegisteredFieldType) this).getClassId());
       } else if (this instanceof CollectionFieldType) {
         buffer.writeByte(1);
         ((CollectionFieldType) this).elementType.write(buffer);

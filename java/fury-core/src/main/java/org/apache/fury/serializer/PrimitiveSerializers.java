@@ -149,7 +149,7 @@ public class PrimitiveSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Short value) {
-      buffer.writeShort(value);
+      buffer.writeInt16(value);
     }
 
     @Override
@@ -176,7 +176,7 @@ public class PrimitiveSerializers {
       if (compressNumber) {
         buffer.writeVarInt32(value);
       } else {
-        buffer.writeInt(value);
+        buffer.writeInt32(value);
       }
     }
 
@@ -192,7 +192,7 @@ public class PrimitiveSerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, Integer value) {
       // TODO support varint in cross-language serialization
-      buffer.writeInt(value);
+      buffer.writeInt32(value);
     }
 
     @Override
@@ -216,7 +216,7 @@ public class PrimitiveSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Long value) {
-      writeLong(buffer, value, longEncoding);
+      writeInt64(buffer, value, longEncoding);
     }
 
     @Override
@@ -224,11 +224,11 @@ public class PrimitiveSerializers {
       return readInt64(buffer, longEncoding);
     }
 
-    public static Expression writeLong(
+    public static Expression writeInt64(
         Expression buffer, Expression v, LongEncoding longEncoding, boolean ensureBounds) {
       switch (longEncoding) {
         case LE_RAW_BYTES:
-          return new Invoke(buffer, "writeLong", v);
+          return new Invoke(buffer, "writeInt64", v);
         case SLI:
           return new Invoke(buffer, ensureBounds ? "writeSliLong" : "_unsafeWriteSliLong", v);
         case PVL:
@@ -238,11 +238,11 @@ public class PrimitiveSerializers {
       }
     }
 
-    public static void writeLong(MemoryBuffer buffer, long value, LongEncoding longEncoding) {
+    public static void writeInt64(MemoryBuffer buffer, long value, LongEncoding longEncoding) {
       if (longEncoding == LongEncoding.SLI) {
         buffer.writeSliLong(value);
       } else if (longEncoding == LongEncoding.LE_RAW_BYTES) {
-        buffer.writeLong(value);
+        buffer.writeInt64(value);
       } else {
         buffer.writeVarInt64(value);
       }
@@ -278,7 +278,7 @@ public class PrimitiveSerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, Long value) {
       // TODO support var long in cross-language serialization
-      buffer.writeLong(value);
+      buffer.writeInt64(value);
     }
 
     @Override
@@ -299,7 +299,7 @@ public class PrimitiveSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Float value) {
-      buffer.writeFloat(value);
+      buffer.writeFloat32(value);
     }
 
     @Override
@@ -320,7 +320,7 @@ public class PrimitiveSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Double value) {
-      buffer.writeDouble(value);
+      buffer.writeFloat64(value);
     }
 
     @Override
