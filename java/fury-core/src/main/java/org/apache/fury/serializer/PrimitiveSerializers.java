@@ -230,9 +230,9 @@ public class PrimitiveSerializers {
         case LE_RAW_BYTES:
           return new Invoke(buffer, "writeLong", v);
         case SLI:
-          return new Invoke(buffer, ensureBounds ? "writeSliLong" : "unsafeWriteSliLong", v);
+          return new Invoke(buffer, ensureBounds ? "writeSliLong" : "_unsafeWriteSliLong", v);
         case PVL:
-          return new Invoke(buffer, ensureBounds ? "writeVarInt64" : "unsafeWriteVarInt64", v);
+          return new Invoke(buffer, ensureBounds ? "writeVarInt64" : "_unsafeWriteVarInt64", v);
         default:
           throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
       }

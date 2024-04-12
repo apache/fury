@@ -20,11 +20,8 @@ package org.apache.fury.memory;
 
 import static org.apache.fury.util.Preconditions.checkArgument;
 
-import java.nio.BufferOverflowException;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.ReadOnlyBufferException;
 import java.util.Arrays;
 import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.io.AbstractStreamReader;
@@ -63,12 +60,8 @@ import sun.misc.Unsafe;
  * jit may stop inline for some reasons: NodeCountInliningCutoff,
  * DesiredMethodLimit,MaxRecursiveInlineLevel,FreqInlineSize,MaxInlineSize
  */
-//  DesiredMethodLimit,MaxRecursiveInlineLevel,FreqInlineSize,MaxInlineSize
 public final class MemoryBuffer {
-  // The unsafe handle for transparent memory copied (heap/off-heap).
   private static final Unsafe UNSAFE = Platform.UNSAFE;
-  // Constant that flags the byte order. Because this is a boolean constant, the JIT compiler can
-  // use this well to aggressively eliminate the non-applicable code paths.
   private static final boolean LITTLE_ENDIAN = (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN);
 
   // If the data in on the heap, `heapMemory` will be non-null, and its' the object relative to
@@ -313,7 +306,6 @@ public final class MemoryBuffer {
   private void checkPosition(long index, long pos, long length) {
     if (BoundsChecking.BOUNDS_CHECKING_ENABLED) {
       if (index < 0 || pos > addressLimit - length) {
-        // index is in fact invalid
         throwOOBException();
       }
     }
@@ -329,136 +321,65 @@ public final class MemoryBuffer {
     get(index, dst, 0, dst.length);
   }
 
-  /**
-   * Bulk get method. Copies length memory from the specified position to the destination memory,
-   * beginning at the given offset.
-   *
-   * @param index The position at which the first byte will be read.
-   * @param dst The memory into which the memory will be copied.
-   * @param offset The copying offset in the destination memory.
-   * @param length The number of bytes to be copied.
-   * @throws IndexOutOfBoundsException Thrown, if the index is negative, or too large that the
-   *     requested number of bytes exceed the amount of memory between the index and the memory
-   *     buffer's end.
-   */
   public void get(int index, byte[] dst, int offset, int length) {
-    // check the byte array offset and length and the status
-    if ((offset | length | (offset + length) | (dst.length - (offset + length))) < 0) {
-      throwOOBException();
-    }
     final long pos = address + index;
-    if (index >= 0 && pos <= addressLimit - length) {
-      final long arrayAddress = Platform.BYTE_ARRAY_OFFSET + offset;
-      Platform.copyMemory(heapMemory, pos, dst, arrayAddress, length);
-    } else {
-      // index is in fact invalid
+    if ((index
+            | offset
+            | length
+            | (offset + length)
+            | (dst.length - (offset + length))
+            | addressLimit - length - pos)
+        < 0) {
       throwOOBException();
     }
+    Platform.copyMemory(heapMemory, pos, dst, Platform.BYTE_ARRAY_OFFSET + offset, length);
   }
 
-  /**
-   * Bulk get method. Copies {@code numBytes} bytes from this memory buffer, starting at position
-   * {@code offset} to the target {@code ByteBuffer}. The bytes will be put into the target buffer
-   * starting at the buffer's current position. If this method attempts to write more bytes than the
-   * target byte buffer has remaining (with respect to {@link ByteBuffer#remaining()}), this method
-   * will cause a {@link BufferOverflowException}.
-   *
-   * @param offset The position where the bytes are started to be read from in this memory buffer.
-   * @param target The ByteBuffer to copy the bytes to.
-   * @param numBytes The number of bytes to copy.
-   * @throws IndexOutOfBoundsException If the offset is invalid, or this buffer does not contain the
-   *     given number of bytes (starting from offset), or the target byte buffer does not have
-   *     enough space for the bytes.
-   * @throws ReadOnlyBufferException If the target buffer is read-only.
-   */
   public void get(int offset, ByteBuffer target, int numBytes) {
-    // check the byte array offset and length
     if ((offset | numBytes | (offset + numBytes)) < 0) {
       throwOOBException();
     }
-    final int targetOffset = target.position();
-    final int remaining = target.remaining();
-    if (remaining < numBytes) {
+    if (target.remaining() < numBytes) {
       throwOOBException();
     }
+    if (target.isReadOnly()) {
+      throw new IllegalArgumentException("read only buffer");
+    }
+    final int targetPos = target.position();
     if (target.isDirect()) {
-      if (target.isReadOnly()) {
-        throwOOBException();
-      }
-      // copy to the target memory directly
-      final long targetPointer = Platform.getAddress(target) + targetOffset;
-      final long sourcePointer = address + offset;
-      if (sourcePointer <= addressLimit - numBytes) {
-        Platform.copyMemory(heapMemory, sourcePointer, null, targetPointer, numBytes);
-        target.position(targetOffset + numBytes);
+      final long targetAddr = Platform.getAddress(target) + targetPos;
+      final long sourceAddr = address + offset;
+      if (sourceAddr <= addressLimit - numBytes) {
+        Platform.copyMemory(heapMemory, sourceAddr, null, targetAddr, numBytes);
       } else {
         throwOOBException();
       }
-    } else if (target.hasArray()) {
-      // move directly into the byte array
-      get(offset, target.array(), targetOffset + target.arrayOffset(), numBytes);
-      // this must be after the get() call to ensue that the byte buffer is not
-      // modified in case the call fails
-      target.position(targetOffset + numBytes);
     } else {
-      // neither heap buffer nor direct buffer
-      while (target.hasRemaining()) {
-        target.put(get(offset++));
-      }
+      assert target.hasArray();
+      get(offset, target.array(), targetPos + target.arrayOffset(), numBytes);
     }
+    target.position(targetPos + numBytes);
   }
 
-  public void unsafePut(int index, byte b) {
-    final long pos = address + index;
-    UNSAFE.putByte(heapMemory, pos, b);
-  }
-
-  /**
-   * Bulk put method. Copies {@code numBytes} bytes from the given {@code ByteBuffer}, into this
-   * memory buffer. The bytes will be read from the target buffer starting at the buffer's current
-   * position, and will be written to this memory buffer starting at {@code offset}. If this method
-   * attempts to read more bytes than the target byte buffer has remaining (with respect to {@link
-   * ByteBuffer#remaining()}), this method will cause a {@link BufferUnderflowException}.
-   *
-   * @param offset The position where the bytes are started to be written to in this memory buffer.
-   * @param source The ByteBuffer to copy the bytes from.
-   * @param numBytes The number of bytes to copy.
-   * @throws IndexOutOfBoundsException If the offset is invalid, or the source buffer does not
-   *     contain the given number of bytes, or this buffer does not have enough space for the
-   *     bytes(counting from offset).
-   */
   public void put(int offset, ByteBuffer source, int numBytes) {
-    // check the byte array offset and length
-    if ((offset | numBytes | (offset + numBytes)) < 0) {
-      throwOOBException();
-    }
-    final int sourceOffset = source.position();
     final int remaining = source.remaining();
-    if (remaining < numBytes) {
+    if ((offset | numBytes | (offset + numBytes) | (remaining - numBytes)) < 0) {
       throwOOBException();
     }
+    final int sourcePos = source.position();
     if (source.isDirect()) {
-      // copy to the target memory directly
-      final long sourcePointer = Platform.getAddress(source) + sourceOffset;
-      final long targetPointer = address + offset;
-      if (targetPointer <= addressLimit - numBytes) {
-        Platform.copyMemory(null, sourcePointer, heapMemory, targetPointer, numBytes);
-        source.position(sourceOffset + numBytes);
+      final long sourceAddr = Platform.getAddress(source) + sourcePos;
+      final long targetAddr = address + offset;
+      if (targetAddr <= addressLimit - numBytes) {
+        Platform.copyMemory(null, sourceAddr, heapMemory, targetAddr, numBytes);
       } else {
         throwOOBException();
       }
-    } else if (source.hasArray()) {
-      // move directly into the byte array
-      put(offset, source.array(), sourceOffset + source.arrayOffset(), numBytes);
-      // this must be after the get() call to ensue that the byte buffer is not
-      // modified in case the call fails
-      source.position(sourceOffset + numBytes);
     } else {
-      // neither heap buffer nor direct buffer
-      while (source.hasRemaining()) {
-        put(offset++, source.get());
-      }
+      assert source.hasArray();
+      put(offset, source.array(), sourcePos + source.arrayOffset(), numBytes);
     }
+    source.position(sourcePos + numBytes);
   }
 
   public void put(int index, byte b) {
@@ -471,31 +392,25 @@ public final class MemoryBuffer {
     put(index, src, 0, src.length);
   }
 
-  /**
-   * Bulk put method. Copies length memory starting at position offset from the source memory into
-   * the memory buffer starting at the specified index.
-   *
-   * @param index The position in the memory buffer array, where the data is put.
-   * @param src The source array to copy the data from.
-   * @param offset The offset in the source array where the copying is started.
-   * @param length The number of bytes to copy.
-   * @throws IndexOutOfBoundsException Thrown, if the index is negative, or too large such that the
-   *     array portion to copy exceed the amount of memory between the index and the memory buffer's
-   *     end.
-   */
   public void put(int index, byte[] src, int offset, int length) {
-    // check the byte array offset and length
-    if ((offset | length | (offset + length) | (src.length - (offset + length))) < 0) {
-      throwOOBException();
-    }
     final long pos = address + index;
-    if (index >= 0 && pos <= addressLimit - length) {
-      final long arrayAddress = Platform.BYTE_ARRAY_OFFSET + offset;
-      Platform.copyMemory(src, arrayAddress, heapMemory, pos, length);
-    } else {
-      // index is in fact invalid
+    // check the byte array offset and length
+    if ((index
+            | offset
+            | length
+            | (offset + length)
+            | (src.length - (offset + length))
+            | addressLimit - length - pos)
+        < 0) {
       throwOOBException();
     }
+    final long arrayAddress = Platform.BYTE_ARRAY_OFFSET + offset;
+    Platform.copyMemory(src, arrayAddress, heapMemory, pos, length);
+  }
+
+  public void _unsafePut(int index, byte b) {
+    final long pos = address + index;
+    UNSAFE.putByte(heapMemory, pos, b);
   }
 
   public boolean getBoolean(int index) {
@@ -542,7 +457,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public void unsafePutShort(int index, short value) {
+  public void _unsafePutShort(int index, short value) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       UNSAFE.putShort(heapMemory, pos, value);
@@ -609,7 +524,7 @@ public final class MemoryBuffer {
     }
   }
 
-  long unsafeGetLong(int index) {
+  long _unsafeGetLong(int index) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       return UNSAFE.getLong(heapMemory, pos);
@@ -618,7 +533,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public void unsafePutLong(int index, long value) {
+  public void _unsafePutLong(int index, long value) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       UNSAFE.putLong(heapMemory, pos, value);
@@ -666,8 +581,14 @@ public final class MemoryBuffer {
     }
   }
 
+  // Check should be done outside to avoid this method got into the critical path.
+  private void throwOOBException() {
+    throw new IndexOutOfBoundsException(
+        String.format("size: %d, address %s, addressLimit %d", size, address, addressLimit));
+  }
+
   // -------------------------------------------------------------------------
-  //                     Read and Write Methods
+  //                          Write Methods
   // -------------------------------------------------------------------------
 
   /** Returns the {@code writerIndex} of this buffer. */
@@ -692,27 +613,6 @@ public final class MemoryBuffer {
     throw new IndexOutOfBoundsException(
         String.format(
             "writerIndex: %d (expected: 0 <= writerIndex <= size(%d))", writerIndex, size));
-  }
-
-  // Check should be done outside to avoid this method got into the critical path.
-  private void throwOOBException() {
-    throw new IndexOutOfBoundsException(
-        String.format("size: %d, address %s, addressLimit %d", size, address, addressLimit));
-  }
-
-  // Check should be done outside to avoid this method got into the critical path.
-  private void throwIndexOOBExceptionForRead() {
-    throw new IndexOutOfBoundsException(
-        String.format(
-            "readerIndex: %d (expected: 0 <= readerIndex <= size(%d))", readerIndex, size));
-  }
-
-  // Check should be done outside to avoid this method got into the critical path.
-  private void throwIndexOOBExceptionForRead(int length) {
-    throw new IndexOutOfBoundsException(
-        String.format(
-            "readerIndex: %d (expected: 0 <= readerIndex <= size(%d)), length %d",
-            readerIndex, size, length));
   }
 
   public void unsafeWriterIndex(int writerIndex) {
@@ -748,7 +648,7 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  public void unsafeWriteByte(byte value) {
+  public void _unsafeWriteByte(byte value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 1;
     final long pos = address + writerIdx;
@@ -853,7 +753,7 @@ public final class MemoryBuffer {
    */
   public int writeVarInt32(int v) {
     ensure(writerIndex + 8);
-    return unsafeWriteVarInt(v);
+    return _unsafeWriteVarInt(v);
   }
 
   /**
@@ -866,7 +766,7 @@ public final class MemoryBuffer {
     // generated code is smaller. Otherwise, `MapRefResolver.writeRefOrNull`
     // may be `callee is too large`/`already compiled into a big method`
     ensure(writerIndex + 8);
-    return unsafeWriteVarUint32(v);
+    return _unsafeWriteVarUint32(v);
   }
 
   /**
@@ -874,18 +774,18 @@ public final class MemoryBuffer {
    * to avoid using two memory operations.
    */
   @CodegenInvoke
-  public int unsafeWriteVarInt(int v) {
+  public int _unsafeWriteVarInt(int v) {
     // Ensure negatives close to zero is encode in little bytes.
     v = (v << 1) ^ (v >> 31);
-    return unsafeWriteVarUint32(v);
+    return _unsafeWriteVarUint32(v);
   }
 
   /**
    * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
    * to avoid using two memory operations.
    */
-  public int unsafeWriteVarUint32(int v) {
-    int varintBytes = unsafePutVarUint36Small(writerIndex, v);
+  public int _unsafeWriteVarUint32(int v) {
+    int varintBytes = _unsafePutVarUint36Small(writerIndex, v);
     writerIndex += varintBytes;
     return varintBytes;
   }
@@ -893,7 +793,7 @@ public final class MemoryBuffer {
   /**
    * Caller must ensure there must be at least 8 bytes for writing, otherwise the crash may occur.
    */
-  public int unsafePutVarUint36Small(int index, long value) {
+  public int _unsafePutVarUint36Small(int index, long value) {
     long encoded = (value & 0x7F);
     if (value >>> 7 == 0) {
       UNSAFE.putByte(heapMemory, address + index, (byte) value);
@@ -924,7 +824,7 @@ public final class MemoryBuffer {
     }
     // 0xff0000000: 0b11111111 << 28. Note eight `1` here instead of seven.
     encoded |= ((value & 0xff0000000L) << 4) | 0x80000000L;
-    unsafePutLong(index, encoded);
+    _unsafePutLong(index, encoded);
     return 5;
   }
 
@@ -1128,17 +1028,17 @@ public final class MemoryBuffer {
   public int writeVarInt64(long value) {
     ensure(writerIndex + 9);
     value = (value << 1) ^ (value >> 63);
-    return unsafeWriteVarUint64(value);
+    return _unsafeWriteVarUint64(value);
   }
 
   public int writeVarUint64(long value) {
     // Var long encoding algorithm is based kryo UnsafeMemoryOutput.writeVarInt64.
     // var long are written using little endian byte order.
     ensure(writerIndex + 9);
-    return unsafeWriteVarUint64(value);
+    return _unsafeWriteVarUint64(value);
   }
 
-  public int unsafeWriteVarUint64(long value) {
+  private int _unsafeWriteVarUint64(long value) {
     final int writerIndex = this.writerIndex;
     int varInt;
     varInt = (int) (value & 0x7F);
@@ -1168,30 +1068,30 @@ public final class MemoryBuffer {
     long varLong = (varInt & 0xFFFFFFFFL);
     varLong |= ((value & 0x7f0000000L) << 4) | 0x80000000L;
     if (value >>> 35 == 0) {
-      unsafePutLong(writerIndex, varLong);
+      _unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 5;
       return 5;
     }
     varLong |= ((value & 0x3f800000000L) << 5) | 0x8000000000L;
     if (value >>> 42 == 0) {
-      unsafePutLong(writerIndex, varLong);
+      _unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 6;
       return 6;
     }
     varLong |= ((value & 0x1fc0000000000L) << 6) | 0x800000000000L;
     if (value >>> 49 == 0) {
-      unsafePutLong(writerIndex, varLong);
+      _unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 7;
       return 7;
     }
     varLong |= ((value & 0xfe000000000000L) << 7) | 0x80000000000000L;
     value >>>= 56;
     if (value == 0) {
-      unsafePutLong(writerIndex, varLong);
+      _unsafePutLong(writerIndex, varLong);
       this.writerIndex = writerIndex + 8;
       return 8;
     }
-    unsafePutLong(writerIndex, varLong | 0x8000000000000000L);
+    _unsafePutLong(writerIndex, varLong | 0x8000000000000000L);
     UNSAFE.putByte(heapMemory, address + writerIndex + 8, (byte) (value & 0xFF));
     this.writerIndex = writerIndex + 9;
     return 9;
@@ -1204,7 +1104,7 @@ public final class MemoryBuffer {
    */
   public int writeSliLong(long value) {
     ensure(writerIndex + 9);
-    return unsafeWriteSliLong(value);
+    return _unsafeWriteSliLong(value);
   }
 
   private static final long HALF_MAX_INT_VALUE = Integer.MAX_VALUE / 2;
@@ -1212,7 +1112,7 @@ public final class MemoryBuffer {
   private static final byte BIG_LONG_FLAG = 0b1; // bit 0 set, means big long.
 
   /** Write long using fury SLI(Small Long as Int) encoding. */
-  public int unsafeWriteSliLong(long value) {
+  public int _unsafeWriteSliLong(long value) {
     final int writerIndex = this.writerIndex;
     final long pos = address + writerIndex;
     final byte[] heapMemory = this.heapMemory;
@@ -1271,7 +1171,7 @@ public final class MemoryBuffer {
   public void writePrimitiveArrayWithSize(Object arr, int offset, int numBytes) {
     int idx = writerIndex;
     ensure(idx + 5 + numBytes);
-    idx += unsafeWriteVarUint32(numBytes);
+    idx += _unsafeWriteVarUint32(numBytes);
     final long destAddr = address + idx;
     Platform.copyMemory(arr, offset, heapMemory, destAddr, numBytes);
     writerIndex = idx + numBytes;
@@ -1308,6 +1208,25 @@ public final class MemoryBuffer {
       copyToUnsafe(0, data, Platform.BYTE_ARRAY_OFFSET, size());
       initHeapBuffer(data, 0, data.length);
     }
+  }
+
+  // -------------------------------------------------------------------------
+  //                          Read Methods
+  // -------------------------------------------------------------------------
+
+  // Check should be done outside to avoid this method got into the critical path.
+  private void throwIndexOOBExceptionForRead() {
+    throw new IndexOutOfBoundsException(
+        String.format(
+            "readerIndex: %d (expected: 0 <= readerIndex <= size(%d))", readerIndex, size));
+  }
+
+  // Check should be done outside to avoid this method got into the critical path.
+  private void throwIndexOOBExceptionForRead(int length) {
+    throw new IndexOutOfBoundsException(
+        String.format(
+            "readerIndex: %d (expected: 0 <= readerIndex <= size(%d)), length %d",
+            readerIndex, size, length));
   }
 
   /** Returns the {@code readerIndex} of this buffer. */
@@ -1778,7 +1697,7 @@ public final class MemoryBuffer {
     // noinspection Duplicates
     int readIdx = readerIndex;
     if (size - readIdx >= 9) {
-      long bulkValue = unsafeGetLong(readIdx++);
+      long bulkValue = _unsafeGetLong(readIdx++);
       // noinspection Duplicates
       long result = bulkValue & 0x7F;
       if ((bulkValue & 0x80) != 0) {
@@ -2000,7 +1919,7 @@ public final class MemoryBuffer {
       return readVarUint64Slow();
     }
     // varint are written using little endian byte order, so read by little endian byte order.
-    long bulkValue = unsafeGetLong(readIdx);
+    long bulkValue = _unsafeGetLong(readIdx);
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     readIdx++;
@@ -2430,6 +2349,21 @@ public final class MemoryBuffer {
   }
 
   /**
+   * Returns internal byte array if data is on heap and remaining buffer size is equal to internal
+   * byte array size, or create a new byte array which copy remaining data from off-heap.
+   */
+  public byte[] getRemainingBytes() {
+    int length = size - readerIndex;
+    if (heapMemory != null && size == length) {
+      return heapMemory;
+    } else {
+      return getBytes(readerIndex, length);
+    }
+  }
+
+  // ------------------------- Read Methods Finished -------------------------------------
+
+  /**
    * Bulk copy method. Copies {@code numBytes} bytes to target unsafe object and pointer. NOTE: This
    * is a unsafe method, no check here, please be carefully.
    */
@@ -2441,7 +2375,7 @@ public final class MemoryBuffer {
 
   /**
    * Bulk copy method. Copies {@code numBytes} bytes from source unsafe object and pointer. NOTE:
-   * This is an unsafe method, no check here, please be carefully.
+   * This is an unsafe method, no check here, please be careful.
    */
   public void copyFromUnsafe(long offset, Object source, long sourcePointer, long numBytes) {
     final long thisPointer = this.address + offset;
@@ -2449,33 +2383,15 @@ public final class MemoryBuffer {
     Platform.copyMemory(source, sourcePointer, this.heapMemory, thisPointer, numBytes);
   }
 
-  /**
-   * Bulk copy method. Copies {@code numBytes} bytes from this memory buffer, starting at position
-   * {@code offset} to the target memory buffer. The bytes will be put into the target buffer
-   * starting at position {@code targetOffset}.
-   *
-   * @param offset The position where the bytes are started to be read from in this memory buffer.
-   * @param target The memory buffer to copy the bytes to.
-   * @param targetOffset The position in the target memory buffer to copy the chunk to.
-   * @param numBytes The number of bytes to copy.
-   * @throws IndexOutOfBoundsException If either of the offsets is invalid, or the source buffer
-   *     does not contain the given number of bytes (starting from offset), or the target buffer
-   *     does not have enough space for the bytes (counting from targetOffset).
-   */
   public void copyTo(int offset, MemoryBuffer target, int targetOffset, int numBytes) {
     final byte[] thisHeapRef = this.heapMemory;
     final byte[] otherHeapRef = target.heapMemory;
     final long thisPointer = this.address + offset;
     final long otherPointer = target.address + targetOffset;
-
     if ((numBytes | offset | targetOffset) >= 0
         && thisPointer <= this.addressLimit - numBytes
         && otherPointer <= target.addressLimit - numBytes) {
       UNSAFE.copyMemory(thisHeapRef, thisPointer, otherHeapRef, otherPointer, numBytes);
-    } else if (this.address > this.addressLimit) {
-      throw new IllegalStateException("this memory buffer has been freed.");
-    } else if (target.address > target.addressLimit) {
-      throw new IllegalStateException("target memory buffer has been freed.");
     } else {
       throw new IndexOutOfBoundsException(
           String.format(
@@ -2486,19 +2402,6 @@ public final class MemoryBuffer {
 
   public void copyFrom(int offset, MemoryBuffer source, int sourcePointer, int numBytes) {
     source.copyTo(sourcePointer, this, offset, numBytes);
-  }
-
-  /**
-   * Returns internal byte array if data is on heap and remaining buffer size is equal to internal
-   * byte array size, or create a new byte array which copy remaining data from off-heap.
-   */
-  public byte[] getRemainingBytes() {
-    int length = size - readerIndex;
-    if (heapMemory != null && size == length) {
-      return heapMemory;
-    } else {
-      return getBytes(readerIndex, length);
-    }
   }
 
   public byte[] getBytes(int index, int length) {
@@ -2530,9 +2433,7 @@ public final class MemoryBuffer {
 
   public MemoryBuffer slice(int offset, int length) {
     if (offset + length > size) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "offset(%d) + length(%d) exceeds size(%d): %s", offset, length, size, this));
+      throwOOBExceptionForRange(offset, length);
     }
     if (heapMemory != null) {
       return new MemoryBuffer(heapMemory, heapOffset + offset, length);
@@ -2547,9 +2448,7 @@ public final class MemoryBuffer {
 
   public ByteBuffer sliceAsByteBuffer(int offset, int length) {
     if (offset + length > size) {
-      throw new IndexOutOfBoundsException(
-          String.format(
-              "offset(%d) + length(%d) exceeds size(%d): %s", offset, length, size, this));
+      throwOOBExceptionForRange(offset, length);
     }
     if (heapMemory != null) {
       return ByteBuffer.wrap(heapMemory, heapOffset + offset, length).slice();
@@ -2565,6 +2464,11 @@ public final class MemoryBuffer {
         return Platform.createDirectByteBufferFromNativeAddress(address + offset, length);
       }
     }
+  }
+
+  private void throwOOBExceptionForRange(int offset, int length) {
+    throw new IndexOutOfBoundsException(
+        String.format("offset(%d) + length(%d) exceeds size(%d): %s", offset, length, size, this));
   }
 
   public FuryStreamReader getStreamReader() {

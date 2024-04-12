@@ -109,13 +109,13 @@ public class MemoryBufferTest {
     {
       MemoryBuffer buffer = MemoryUtils.buffer(1024);
       int index = 0;
-      buffer.unsafePut(index, Byte.MIN_VALUE);
+      buffer._unsafePut(index, Byte.MIN_VALUE);
       index += 1;
-      buffer.unsafePutShort(index, Short.MAX_VALUE);
+      buffer._unsafePutShort(index, Short.MAX_VALUE);
       index += 2;
       buffer.putInt(index, Integer.MIN_VALUE);
       index += 4;
-      buffer.unsafePutLong(index, Long.MAX_VALUE);
+      buffer._unsafePutLong(index, Long.MAX_VALUE);
       index += 8;
       buffer.putDouble(index, -1);
       index += 8;
@@ -124,7 +124,7 @@ public class MemoryBufferTest {
       index -= 8;
       assertEquals(buffer.getDouble(index), -1);
       index -= 8;
-      assertEquals(buffer.unsafeGetLong(index), Long.MAX_VALUE);
+      assertEquals(buffer._unsafeGetLong(index), Long.MAX_VALUE);
       index -= 4;
       assertEquals(buffer.getInt(index), Integer.MIN_VALUE);
       index -= 2;
@@ -590,21 +590,21 @@ public class MemoryBufferTest {
       int diff = MemoryUtils.putVarUint36Small(buf.getHeapMemory(), index, 10);
       assertEquals(buf.readVarUint36Small(), 10);
       buf.increaseReaderIndex(-diff);
-      index += buf.unsafePutVarUint36Small(index, 10);
+      index += buf._unsafePutVarUint36Small(index, 10);
       assertEquals(buf.readVarUint36Small(), 10);
     }
     {
       int diff = MemoryUtils.putVarUint36Small(buf.getHeapMemory(), index, Short.MAX_VALUE);
       assertEquals(buf.readVarUint36Small(), Short.MAX_VALUE);
       buf.increaseReaderIndex(-diff);
-      index += buf.unsafePutVarUint36Small(index, Short.MAX_VALUE);
+      index += buf._unsafePutVarUint36Small(index, Short.MAX_VALUE);
       assertEquals(buf.readVarUint36Small(), Short.MAX_VALUE);
     }
     {
       int diff = MemoryUtils.putVarUint36Small(buf.getHeapMemory(), index, Integer.MAX_VALUE);
       assertEquals(buf.readVarUint36Small(), Integer.MAX_VALUE);
       buf.increaseReaderIndex(-diff);
-      index += buf.unsafePutVarUint36Small(index, Integer.MAX_VALUE);
+      index += buf._unsafePutVarUint36Small(index, Integer.MAX_VALUE);
       assertEquals(buf.readVarUint36Small(), Integer.MAX_VALUE);
     }
     {
@@ -613,7 +613,7 @@ public class MemoryBufferTest {
               buf.getHeapMemory(), index, 0b111111111111111111111111111111111111L);
       assertEquals(buf.readVarUint36Small(), 0b111111111111111111111111111111111111L);
       buf.increaseReaderIndex(-diff);
-      buf.unsafePutVarUint36Small(index, 0b1000000000000000000000000000000000000L);
+      buf._unsafePutVarUint36Small(index, 0b1000000000000000000000000000000000000L);
       assertEquals(buf.readVarUint36Small(), 0); // overflow
     }
   }

@@ -359,7 +359,7 @@ public final class StringSerializer extends Serializer<String> {
       writerIndex += arrIndex - targetIndex;
       System.arraycopy(bytes, 0, targetArray, arrIndex, bytesLen);
     } else {
-      writerIndex += buffer.unsafePutVarUint36Small(writerIndex, header);
+      writerIndex += buffer._unsafePutVarUint36Small(writerIndex, header);
       long offHeapAddress = buffer.getUnsafeAddress();
       Platform.copyMemory(
           bytes, Platform.BYTE_ARRAY_OFFSET, null, offHeapAddress + writerIndex, bytesLen);
@@ -385,7 +385,7 @@ public final class StringSerializer extends Serializer<String> {
       }
       buffer.unsafeWriterIndex(writerIndex);
     } else {
-      writerIndex += buffer.unsafePutVarUint36Small(writerIndex, header);
+      writerIndex += buffer._unsafePutVarUint36Small(writerIndex, header);
       final byte[] tmpArray = getByteArray(strLen);
       // Write to heap memory then copy is 60% faster than unsafe write to direct memory.
       for (int i = 0; i < strLen; i++) {
@@ -440,7 +440,7 @@ public final class StringSerializer extends Serializer<String> {
 
   private int offHeapWriteCharsUTF16(
       MemoryBuffer buffer, char[] chars, int writerIndex, long header, int numBytes) {
-    writerIndex += buffer.unsafePutVarUint36Small(writerIndex, header);
+    writerIndex += buffer._unsafePutVarUint36Small(writerIndex, header);
     byte[] tmpArray = getByteArray(numBytes);
     int charIndex = 0;
     for (int i = 0; i < numBytes; i += 2) {
