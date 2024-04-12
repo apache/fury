@@ -1457,7 +1457,7 @@ public class ClassResolver {
 
   // Note: Thread safe fot jit thread to call.
   public Expression writeClassExpr(Expression buffer, Expression classId) {
-    return new Invoke(buffer, "writeVarUint", new Expression.BitShift("<<", classId, 1));
+    return new Invoke(buffer, "writeVarUint32", new Expression.BitShift("<<", classId, 1));
   }
 
   // Invoked by Fury JIT.
