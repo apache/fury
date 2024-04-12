@@ -181,7 +181,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         return;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          buffer.writeVarInt((Integer) fieldValue);
+          buffer.writeVarInt32((Integer) fieldValue);
         } else {
           buffer.writeInt((Integer) fieldValue);
         }
@@ -578,7 +578,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         return buffer.readShort();
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          return buffer.readVarInt();
+          return buffer.readVarInt32();
         } else {
           return buffer.readInt();
         }

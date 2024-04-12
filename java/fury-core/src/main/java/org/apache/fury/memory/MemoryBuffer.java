@@ -1124,10 +1124,10 @@ public final class MemoryBuffer {
   }
 
   /**
-   * Write int using variable length encoding. If the value is positive, use {@link
-   * #writePositiveVarInt} to save one bit.
+   * Write int using variable length encoding. If the value is positive, use {@link #writeVarUint32}
+   * to save one bit.
    */
-  public int writeVarInt(int v) {
+  public int writeVarInt32(int v) {
     ensure(writerIndex + 8);
     return unsafeWriteVarInt(v);
   }
@@ -1137,12 +1137,12 @@ public final class MemoryBuffer {
    *
    * @return The number of bytes written.
    */
-  public int writePositiveVarInt(int v) {
+  public int writeVarUint32(int v) {
     // ensure at least 8 bytes are writable at once, so jvm-jit
     // generated code is smaller. Otherwise, `MapRefResolver.writeRefOrNull`
     // may be `callee is too large`/`already compiled into a big method`
     ensure(writerIndex + 8);
-    return unsafeWritePositiveVarInt(v);
+    return unsafeWriteVarUint32(v);
   }
 
   /**
@@ -1153,27 +1153,27 @@ public final class MemoryBuffer {
   public int unsafeWriteVarInt(int v) {
     // Ensure negatives close to zero is encode in little bytes.
     v = (v << 1) ^ (v >> 31);
-    return unsafeWritePositiveVarInt(v);
+    return unsafeWriteVarUint32(v);
   }
 
   /** Reads the 1-5 byte int part of a varint. */
   @CodegenInvoke
-  public int readVarInt() {
+  public int readVarInt32() {
     if (LITTLE_ENDIAN) {
-      return readVarIntOnLE();
+      return readVarInt32OnLE();
     } else {
-      return readVarIntOnBE();
+      return readVarInt32OnBE();
     }
   }
 
   /** Reads the 1-5 byte as a varint on a little endian mache. */
   @CodegenInvoke
-  public int readVarIntOnLE() {
+  public int readVarInt32OnLE() {
     // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
     if (size - readIdx < 5) {
-      result = readPositiveVarIntSlow();
+      result = readVarUint32Slow();
     } else {
       long address = this.address;
       // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
@@ -1209,12 +1209,12 @@ public final class MemoryBuffer {
 
   /** Reads the 1-5 byte as a varint on a big endian mache. */
   @CodegenInvoke
-  public int readVarIntOnBE() {
+  public int readVarInt32OnBE() {
     // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
     if (size - readIdx < 5) {
-      result = readPositiveVarIntSlow();
+      result = readVarUint32Slow();
     } else {
       long address = this.address;
       int fourByteValue = Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readIdx));
@@ -1251,7 +1251,7 @@ public final class MemoryBuffer {
    * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
    * to avoid using two memory operations.
    */
-  public int unsafeWritePositiveVarInt(int v) {
+  public int unsafeWriteVarUint32(int v) {
     int varintBytes = unsafePutVarUint36Small(writerIndex, v);
     writerIndex += varintBytes;
     return varintBytes;
@@ -1309,7 +1309,7 @@ public final class MemoryBuffer {
         result |= (bulkValue >>> 1) & 0x3f80;
         // 0x8000: 0b1 << 15
         if ((bulkValue & 0x8000) != 0) {
-          return continueReadVarLong36(readIdx, bulkValue, result);
+          return continueReadVarInt36(readIdx, bulkValue, result);
         }
       }
       readerIndex = readIdx;
@@ -1319,7 +1319,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private long continueReadVarLong36(int readIdx, long bulkValue, long result) {
+  private long continueReadVarInt36(int readIdx, long bulkValue, long result) {
     readIdx++;
     // 0x1fc000: 0b1111111 << 14
     result |= (bulkValue >>> 2) & 0x1fc000;
@@ -1365,10 +1365,10 @@ public final class MemoryBuffer {
   }
 
   /** Reads the 1-5 byte int part of a non-negative varint. */
-  public int readPositiveVarInt() {
+  public int readVarUint32() {
     int readIdx = readerIndex;
     if (size - readIdx < 5) {
-      return readPositiveVarIntSlow();
+      return readVarUint32Slow();
     }
     // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
     int fourByteValue = unsafeGetInt(readIdx);
@@ -1423,11 +1423,11 @@ public final class MemoryBuffer {
       readerIndex = readIdx;
       return binarySize;
     } else {
-      return readPositiveVarIntSlow();
+      return readVarUint32Slow();
     }
   }
 
-  private int readPositiveVarIntSlow() {
+  private int readVarUint32Slow() {
     // Note:
     //  Loop are not used here to improve performance,
     //  we manually unroll the loop for better performance.
@@ -1457,30 +1457,30 @@ public final class MemoryBuffer {
    *
    * @return The number of bytes written.
    */
-  public int writePositiveVarIntAligned(int value) {
+  public int writeVarUint32Aligned(int value) {
     // Mask first 6 bits,
     // bit 7 `unset` indicates have next padding bytes,
     // bit 8 `set` indicates have next data bytes.
     if (value >>> 6 == 0) {
-      return writePositiveVarIntAligned1(value);
+      return writeVarUint32Aligned1(value);
     }
     if (value >>> 12 == 0) { // 2 byte data
-      return writePositiveVarIntAligned2(value);
+      return writeVarUint32Aligned2(value);
     }
     if (value >>> 18 == 0) { // 3 byte data
-      return writePositiveVarIntAligned3(value);
+      return writeVarUint32Aligned3(value);
     }
     if (value >>> 24 == 0) { // 4 byte data
-      return writePositiveVarIntAligned4(value);
+      return writeVarUint32Aligned4(value);
     }
     if (value >>> 30 == 0) { // 5 byte data
-      return writePositiveVarIntAligned5(value);
+      return writeVarUint32Aligned5(value);
     }
     // 6 byte data
-    return writePositiveVarIntAligned6(value);
+    return writeVarUint32Aligned6(value);
   }
 
-  private int writePositiveVarIntAligned1(int value) {
+  private int writeVarUint32Aligned1(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 5); // 1 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1502,7 +1502,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private int writePositiveVarIntAligned2(int value) {
+  private int writeVarUint32Aligned2(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 6); // 2 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1531,7 +1531,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private int writePositiveVarIntAligned3(int value) {
+  private int writeVarUint32Aligned3(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 7); // 3 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1561,7 +1561,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private int writePositiveVarIntAligned4(int value) {
+  private int writeVarUint32Aligned4(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 8); // 4 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1586,7 +1586,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private int writePositiveVarIntAligned5(int value) {
+  private int writeVarUint32Aligned5(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 9); // 5 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1612,7 +1612,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private int writePositiveVarIntAligned6(int value) {
+  private int writeVarUint32Aligned6(int value) {
     final int writerIdx = writerIndex;
     int numPaddingBytes = 4 - writerIdx % 4;
     ensure(writerIdx + 10); // 6 byte + 4 bytes(zero out), padding range in (zero out)
@@ -1681,7 +1681,7 @@ public final class MemoryBuffer {
         }
       }
     }
-    pos = skipPadding(pos, b); // split method for `readPositiveVarInt` inlined
+    pos = skipPadding(pos, b); // split method for `readVarUint` inlined
     readerIndex = (int) (pos - startPos + readerIdx);
     return result;
   }
@@ -1742,28 +1742,28 @@ public final class MemoryBuffer {
 
   /**
    * Write long using variable length encoding. If the value is positive, use {@link
-   * #writePositiveVarLong} to save one bit.
+   * #writeVarUint64} to save one bit.
    */
-  public int writeVarLong(long value) {
+  public int writeVarInt64(long value) {
     ensure(writerIndex + 9);
     value = (value << 1) ^ (value >> 63);
-    return unsafeWritePositiveVarLong(value);
+    return unsafeWriteVarUint64(value);
   }
 
   @CodegenInvoke
-  public int unsafeWriteVarLong(long value) {
+  public int unsafeWriteVarInt64(long value) {
     value = (value << 1) ^ (value >> 63);
-    return unsafeWritePositiveVarLong(value);
+    return unsafeWriteVarUint64(value);
   }
 
-  public int writePositiveVarLong(long value) {
-    // Var long encoding algorithm is based kryo UnsafeMemoryOutput.writeVarLong.
+  public int writeVarUint64(long value) {
+    // Var long encoding algorithm is based kryo UnsafeMemoryOutput.writeVarInt64.
     // var long are written using little endian byte order.
     ensure(writerIndex + 9);
-    return unsafeWritePositiveVarLong(value);
+    return unsafeWriteVarUint64(value);
   }
 
-  public int unsafeWritePositiveVarLong(long value) {
+  public int unsafeWriteVarUint64(long value) {
     final int writerIndex = this.writerIndex;
     int varInt;
     varInt = (int) (value & 0x7F);
@@ -1823,18 +1823,18 @@ public final class MemoryBuffer {
   }
 
   /** Reads the 1-9 byte int part of a var long. */
-  public long readVarLong() {
-    return LITTLE_ENDIAN ? readVarLongOnLE() : readVarLongOnBE();
+  public long readVarInt64() {
+    return LITTLE_ENDIAN ? readVarInt64OnLE() : readVarInt64OnBE();
   }
 
   @CodegenInvoke
-  public long readVarLongOnLE() {
+  public long readVarInt64OnLE() {
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     int readIdx = readerIndex;
     long result;
     if (size - readIdx < 9) {
-      result = readPositiveVarLongSlow();
+      result = readVarUint64Slow();
     } else {
       long address = this.address;
       long bulkValue = UNSAFE.getLong(heapMemory, address + readIdx);
@@ -1848,7 +1848,7 @@ public final class MemoryBuffer {
         result |= (bulkValue >>> 1) & 0x3f80;
         // 0x8000: 0b1 << 15
         if ((bulkValue & 0x8000) != 0) {
-          result = continueReadVarLong64(readIdx, bulkValue, result);
+          result = continueReadVarInt64(readIdx, bulkValue, result);
           return ((result >>> 1) ^ -(result & 1));
         }
       }
@@ -1858,11 +1858,11 @@ public final class MemoryBuffer {
   }
 
   @CodegenInvoke
-  public long readVarLongOnBE() {
+  public long readVarInt64OnBE() {
     int readIdx = readerIndex;
     long result;
     if (size - readIdx < 9) {
-      result = readPositiveVarLongSlow();
+      result = readVarUint64Slow();
     } else {
       long address = this.address;
       long bulkValue = Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx));
@@ -1876,7 +1876,7 @@ public final class MemoryBuffer {
         result |= (bulkValue >>> 1) & 0x3f80;
         // 0x8000: 0b1 << 15
         if ((bulkValue & 0x8000) != 0) {
-          result = continueReadVarLong64(readIdx, bulkValue, result);
+          result = continueReadVarInt64(readIdx, bulkValue, result);
           return ((result >>> 1) ^ -(result & 1));
         }
       }
@@ -1886,10 +1886,10 @@ public final class MemoryBuffer {
   }
 
   /** Reads the 1-9 byte int part of a non-negative var long. */
-  public long readPositiveVarLong() {
+  public long readVarUint64() {
     int readIdx = readerIndex;
     if (size - readIdx < 9) {
-      return readPositiveVarLongSlow();
+      return readVarUint64Slow();
     }
     // varint are written using little endian byte order, so read by little endian byte order.
     long bulkValue = unsafeGetLong(readIdx);
@@ -1903,14 +1903,14 @@ public final class MemoryBuffer {
       result |= (bulkValue >>> 1) & 0x3f80;
       // 0x8000: 0b1 << 15
       if ((bulkValue & 0x8000) != 0) {
-        return continueReadVarLong64(readIdx, bulkValue, result);
+        return continueReadVarInt64(readIdx, bulkValue, result);
       }
     }
     readerIndex = readIdx;
     return result;
   }
 
-  private long continueReadVarLong64(int readIdx, long bulkValue, long result) {
+  private long continueReadVarInt64(int readIdx, long bulkValue, long result) {
     readIdx++;
     // 0x1fc000: 0b1111111 << 14
     result |= (bulkValue >>> 2) & 0x1fc000;
@@ -1944,7 +1944,7 @@ public final class MemoryBuffer {
     return result;
   }
 
-  private long readPositiveVarLongSlow() {
+  private long readVarUint64Slow() {
     long b = readByte();
     long result = b & 0x7F;
     // Note:
@@ -2064,14 +2064,14 @@ public final class MemoryBuffer {
   public void writePrimitiveArrayWithSize(Object arr, int offset, int numBytes) {
     int idx = writerIndex;
     ensure(idx + 5 + numBytes);
-    idx += unsafeWritePositiveVarInt(numBytes);
+    idx += unsafeWriteVarUint32(numBytes);
     final long destAddr = address + idx;
     Platform.copyMemory(arr, offset, heapMemory, destAddr, numBytes);
     writerIndex = idx + numBytes;
   }
 
   public void writePrimitiveArrayAlignedSize(Object arr, int offset, int numBytes) {
-    writePositiveVarIntAligned(numBytes);
+    writeVarUint32Aligned(numBytes);
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + numBytes;
     ensure(newIdx);
@@ -2496,7 +2496,7 @@ public final class MemoryBuffer {
 
   /**
    * Read size for following binary, this method will check and fill readable bytes too. This method
-   * is optimized for small size, it's faster than {@link #readPositiveVarInt}.
+   * is optimized for small size, it's faster than {@link #readVarUint32}.
    */
   public int readBinarySize() {
     int binarySize;
@@ -2517,7 +2517,7 @@ public final class MemoryBuffer {
       }
       readerIndex = readIdx;
     } else {
-      binarySize = readPositiveVarIntSlow();
+      binarySize = readVarUint32Slow();
       readIdx = readerIndex;
     }
     int diff = size - readIdx;

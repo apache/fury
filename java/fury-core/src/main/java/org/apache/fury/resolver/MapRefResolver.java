@@ -81,7 +81,7 @@ public final class MapRefResolver implements RefResolver {
       if (writtenRefId >= 0) {
         // The obj has been written previously.
         buffer.unsafeWriteByte(Fury.REF_FLAG);
-        buffer.unsafeWritePositiveVarInt(writtenRefId);
+        buffer.unsafeWriteVarUint32(writtenRefId);
         return true;
       } else {
         // The object is being written for the first time.
@@ -107,7 +107,7 @@ public final class MapRefResolver implements RefResolver {
     if (writtenRefId >= 0) {
       // The obj has been written previously.
       buffer.unsafeWriteByte(Fury.REF_FLAG);
-      buffer.unsafeWritePositiveVarInt(writtenRefId);
+      buffer.unsafeWriteVarUint32(writtenRefId);
       return false;
     } else {
       // The object is being written for the first time.

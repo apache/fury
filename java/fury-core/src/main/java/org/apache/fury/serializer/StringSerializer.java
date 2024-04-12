@@ -641,7 +641,7 @@ public final class StringSerializer extends Serializer<String> {
 
   public void writeUTF8String(MemoryBuffer buffer, String value) {
     byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-    buffer.writePositiveVarInt(bytes.length);
+    buffer.writeVarUint32(bytes.length);
     buffer.writeBytes(bytes);
   }
 

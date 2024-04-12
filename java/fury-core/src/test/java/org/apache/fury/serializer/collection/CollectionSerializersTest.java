@@ -538,7 +538,7 @@ public class CollectionSerializersTest extends FuryTestBase {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32();
       setNumElements(numElements);
       return new ArrayList<>(numElements);
     }

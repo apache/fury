@@ -381,13 +381,13 @@ But if you do want to upgrade fury for better performance and smaller size, you 
 using code like following to keep binary compatibility:
 ```java
 MemoryBuffer buffer = xxx;
-buffer.writeVarInt(2);
+buffer.writeVarInt32(2);
 fury.serialize(buffer, obj);
 ```
 Then for deserialization, you need:
 ```java
 MemoryBuffer buffer = xxx;
-int furyVersion = buffer.readVarInt()
+int furyVersion = buffer.readVarInt32()
 Fury fury = getFury(furyVersion);
 fury.deserialize(buffer);
 ```

@@ -160,7 +160,7 @@ public class Serializers {
         return buffer.readShort();
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          return buffer.readVarInt();
+          return buffer.readVarInt32();
         } else {
           return buffer.readInt();
         }
@@ -254,7 +254,7 @@ public class Serializers {
           bytesLen <<= 1;
         }
         long header = ((long) bytesLen << 2) | coder;
-        buffer.writePositiveVarLong(header);
+        buffer.writeVarUint64(header);
         buffer.writeBytes(v, 0, bytesLen);
       } else {
         char[] v = (char[]) GET_VALUE.apply(value);
@@ -322,7 +322,7 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, Enum value) {
-      buffer.writePositiveVarInt(value.ordinal());
+      buffer.writeVarUint32(value.ordinal());
     }
 
     @Override
@@ -339,17 +339,17 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigDecimal value) {
       final byte[] bytes = value.unscaledValue().toByteArray();
-      buffer.writePositiveVarInt(value.scale());
-      buffer.writePositiveVarInt(value.precision());
-      buffer.writePositiveVarInt(bytes.length);
+      buffer.writeVarUint32(value.scale());
+      buffer.writeVarUint32(value.precision());
+      buffer.writeVarUint32(bytes.length);
       buffer.writeBytes(bytes);
     }
 
     @Override
     public BigDecimal read(MemoryBuffer buffer) {
-      int scale = buffer.readPositiveVarInt();
-      int precision = buffer.readPositiveVarInt();
-      int len = buffer.readPositiveVarInt();
+      int scale = buffer.readVarUint32();
+      int precision = buffer.readVarUint32();
+      int len = buffer.readVarUint32();
       byte[] bytes = buffer.readBytes(len);
       final BigInteger bigInteger = new BigInteger(bytes);
       return new BigDecimal(bigInteger, scale, new MathContext(precision));
@@ -364,13 +364,13 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigInteger value) {
       final byte[] bytes = value.toByteArray();
-      buffer.writePositiveVarInt(bytes.length);
+      buffer.writeVarUint32(bytes.length);
       buffer.writeBytes(bytes);
     }
 
     @Override
     public BigInteger read(MemoryBuffer buffer) {
-      int len = buffer.readPositiveVarInt();
+      int len = buffer.readVarUint32();
       byte[] bytes = buffer.readBytes(len);
       return new BigInteger(bytes);
     }

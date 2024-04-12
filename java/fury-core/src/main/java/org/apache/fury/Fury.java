@@ -503,7 +503,7 @@ public final class Fury implements BaseFury {
       // fields/objects deserialization will use wrong reference id since we skip opaque objects
       // deserialization.
       // So we stash native objects and serialize all those object at the last.
-      buffer.writePositiveVarInt(nativeObjects.size());
+      buffer.writeVarUint32(nativeObjects.size());
       nativeObjects.add(obj);
     }
     depth--;
@@ -526,7 +526,7 @@ public final class Fury implements BaseFury {
         break;
       case ClassResolver.INTEGER_CLASS_ID:
         if (compressInt) {
-          buffer.writeVarInt((Integer) obj);
+          buffer.writeVarInt32((Integer) obj);
         } else {
           buffer.writeInt((Integer) obj);
         }
@@ -560,9 +560,9 @@ public final class Fury implements BaseFury {
       // efficient
       // TODO(chaokunyang) Remove branch when other languages support aligned varint.
       if (language == Language.JAVA) {
-        buffer.writePositiveVarIntAligned(totalBytes);
+        buffer.writeVarUint32Aligned(totalBytes);
       } else {
-        buffer.writePositiveVarInt(totalBytes);
+        buffer.writeVarUint32(totalBytes);
       }
       int writerIndex = buffer.writerIndex();
       buffer.ensure(writerIndex + bufferObject.totalBytes());
@@ -584,9 +584,9 @@ public final class Fury implements BaseFury {
       // efficient
       // TODO(chaokunyang) Remove branch when other languages support aligned varint.
       if (language == Language.JAVA) {
-        buffer.writePositiveVarIntAligned(totalBytes);
+        buffer.writeVarUint32Aligned(totalBytes);
       } else {
-        buffer.writePositiveVarInt(totalBytes);
+        buffer.writeVarUint32(totalBytes);
       }
       bufferObject.writeTo(buffer);
     } else {
@@ -602,7 +602,7 @@ public final class Fury implements BaseFury {
       if (language == Language.JAVA) {
         size = buffer.readPositiveAlignedVarInt();
       } else {
-        size = buffer.readPositiveVarInt();
+        size = buffer.readVarUint32();
       }
       MemoryBuffer slice = buffer.slice(buffer.readerIndex(), size);
       buffer.readerIndex(buffer.readerIndex() + size);
@@ -906,7 +906,7 @@ public final class Fury implements BaseFury {
         return buffer.readShort();
       case ClassResolver.INTEGER_CLASS_ID:
         if (compressInt) {
-          return buffer.readVarInt();
+          return buffer.readVarInt32();
         } else {
           return buffer.readInt();
         }
@@ -1000,7 +1000,7 @@ public final class Fury implements BaseFury {
       return o;
     } else {
       String className = classResolver.xreadClassName(buffer);
-      int ordinal = buffer.readPositiveVarInt();
+      int ordinal = buffer.readVarUint32();
       if (peerLanguage != Language.JAVA) {
         return OpaqueObjects.of(peerLanguage, className, ordinal);
       } else {

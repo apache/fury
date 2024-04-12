@@ -494,7 +494,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         {
           int fieldValue = (Integer) fieldAccessor.get(targetObject);
           if (fury.compressInt()) {
-            buffer.writeVarInt(fieldValue);
+            buffer.writeVarInt32(fieldValue);
           } else {
             buffer.writeInt(fieldValue);
           }
@@ -536,7 +536,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         {
           int fieldValue = Platform.getInt(targetObject, fieldOffset);
           if (fury.compressInt()) {
-            buffer.writeVarInt(fieldValue);
+            buffer.writeVarInt32(fieldValue);
           } else {
             buffer.writeInt(fieldValue);
           }
@@ -621,7 +621,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
             if (fury.compressInt()) {
-              buffer.writeVarInt((Integer) (fieldValue));
+              buffer.writeVarInt32((Integer) (fieldValue));
             } else {
               buffer.writeInt((Integer) (fieldValue));
             }
@@ -694,7 +694,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         return false;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          fieldAccessor.set(targetObject, buffer.readVarInt());
+          fieldAccessor.set(targetObject, buffer.readVarInt32());
         } else {
           fieldAccessor.set(targetObject, buffer.readInt());
         }
@@ -735,7 +735,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         return false;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          Platform.putInt(targetObject, fieldOffset, buffer.readVarInt());
+          Platform.putInt(targetObject, fieldOffset, buffer.readVarInt32());
         } else {
           Platform.putInt(targetObject, fieldOffset, buffer.readInt());
         }
@@ -815,7 +815,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
             fieldAccessor.putObject(targetObject, null);
           } else {
             if (fury.compressInt()) {
-              fieldAccessor.putObject(targetObject, buffer.readVarInt());
+              fieldAccessor.putObject(targetObject, buffer.readVarInt32());
             } else {
               fieldAccessor.putObject(targetObject, buffer.readInt());
             }

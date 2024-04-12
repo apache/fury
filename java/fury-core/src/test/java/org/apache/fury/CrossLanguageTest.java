@@ -122,7 +122,7 @@ public class CrossLanguageTest {
     buffer.writeLong(Long.MAX_VALUE);
     buffer.writeFloat(-1.1f);
     buffer.writeDouble(-1.1);
-    buffer.writePositiveVarInt(100);
+    buffer.writeVarUint32(100);
     byte[] bytes = {'a', 'b'};
     buffer.writeInt(bytes.length);
     buffer.writeBytes(bytes);
@@ -144,7 +144,7 @@ public class CrossLanguageTest {
     Assert.assertEquals(buffer.readLong(), Long.MAX_VALUE);
     Assert.assertEquals(buffer.readFloat(), -1.1f, 0.0001);
     Assert.assertEquals(buffer.readDouble(), -1.1, 0.0001);
-    Assert.assertEquals(buffer.readPositiveVarInt(), 100);
+    Assert.assertEquals(buffer.readVarUint32(), 100);
     Assert.assertTrue(Arrays.equals(buffer.readBytes(buffer.readInt()), bytes));
   }
 

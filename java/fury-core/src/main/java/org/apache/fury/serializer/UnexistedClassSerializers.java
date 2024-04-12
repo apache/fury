@@ -115,9 +115,9 @@ public final class UnexistedClassSerializers {
       // class not exist, use class def id for identity.
       int id = classMap.putOrGet(value.classDef.getId(), newId);
       if (id >= 0) {
-        buffer.writePositiveVarInt(id);
+        buffer.writeVarUint32(id);
       } else {
-        buffer.writePositiveVarInt(newId);
+        buffer.writeVarUint32(newId);
         metaContext.writingClassDefs.add(value.classDef);
       }
     }

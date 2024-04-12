@@ -267,7 +267,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         return false;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          buffer.readVarInt();
+          buffer.readVarInt32();
         } else {
           buffer.increaseReaderIndex(4);
         }

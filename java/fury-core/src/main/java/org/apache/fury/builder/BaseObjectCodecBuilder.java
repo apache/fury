@@ -372,7 +372,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (clz == short.class || clz == Short.class) {
         return new Invoke(buffer, "writeShort", inputObject);
       } else if (clz == int.class || clz == Integer.class) {
-        String func = fury.compressInt() ? "writeVarInt" : "writeInt";
+        String func = fury.compressInt() ? "writeVarInt32" : "writeInt";
         return new Invoke(buffer, func, inputObject);
       } else if (clz == long.class || clz == Long.class) {
         return LongSerializer.writeLong(buffer, inputObject, fury.longEncoding(), true);
@@ -1137,7 +1137,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (cls == short.class || cls == Short.class) {
         return readShort(buffer);
       } else if (cls == int.class || cls == Integer.class) {
-        return fury.compressInt() ? readVarInt(buffer) : readInt(buffer);
+        return fury.compressInt() ? readVarInt32(buffer) : readInt(buffer);
       } else if (cls == long.class || cls == Long.class) {
         return LongSerializer.readLong(buffer, fury.longEncoding());
       } else if (cls == float.class || cls == Float.class) {

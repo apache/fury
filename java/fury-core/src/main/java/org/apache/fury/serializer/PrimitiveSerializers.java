@@ -174,7 +174,7 @@ public class PrimitiveSerializers {
     @Override
     public void write(MemoryBuffer buffer, Integer value) {
       if (compressNumber) {
-        buffer.writeVarInt(value);
+        buffer.writeVarInt32(value);
       } else {
         buffer.writeInt(value);
       }
@@ -183,7 +183,7 @@ public class PrimitiveSerializers {
     @Override
     public Integer read(MemoryBuffer buffer) {
       if (compressNumber) {
-        return buffer.readVarInt();
+        return buffer.readVarInt32();
       } else {
         return buffer.readInt();
       }
@@ -227,11 +227,11 @@ public class PrimitiveSerializers {
     public static String writeLongFunc(LongEncoding longEncoding, boolean ensureBounds) {
       switch (longEncoding) {
         case LE_RAW_BYTES:
-          return ensureBounds ? "writeLong" : "unsafeWriteVarLong";
+          return ensureBounds ? "writeLong" : "unsafeWriteVarInt64";
         case SLI:
           return ensureBounds ? "writeSliLong" : "unsafeWriteSliLong";
         case PVL:
-          return ensureBounds ? "writeVarLong" : "unsafeWriteVarLong";
+          return ensureBounds ? "writeVarInt64" : "unsafeWriteVarInt64";
         default:
           throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
       }
@@ -248,7 +248,7 @@ public class PrimitiveSerializers {
       } else if (longEncoding == LongEncoding.LE_RAW_BYTES) {
         buffer.writeLong(value);
       } else {
-        buffer.writeVarLong(value);
+        buffer.writeVarInt64(value);
       }
     }
 
@@ -258,7 +258,7 @@ public class PrimitiveSerializers {
       } else if (longEncoding == LongEncoding.LE_RAW_BYTES) {
         return buffer.readLong();
       } else {
-        return buffer.readVarLong();
+        return buffer.readVarInt64();
       }
     }
 
@@ -273,7 +273,7 @@ public class PrimitiveSerializers {
         case SLI:
           return Platform.IS_LITTLE_ENDIAN ? "readSliLongOnLE" : "readSliLongOnBE";
         case PVL:
-          return Platform.IS_LITTLE_ENDIAN ? "readVarLongOnLE" : "readVarLongOnBE";
+          return Platform.IS_LITTLE_ENDIAN ? "readVarInt64OnLE" : "readVarInt64OnBE";
         default:
           throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
       }
