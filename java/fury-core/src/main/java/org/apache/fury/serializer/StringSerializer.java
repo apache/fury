@@ -223,10 +223,13 @@ public final class StringSerializer extends Serializer<String> {
 
   @CodegenInvoke
   public String readBytesString(MemoryBuffer buffer) {
-    long header = Platform.IS_LITTLE_ENDIAN ? buffer.readVarUint36SmallOnLE() : buffer.readVarUint36SmallOnBE();
+    long header =
+        Platform.IS_LITTLE_ENDIAN
+            ? buffer.readVarUint36SmallOnLE()
+            : buffer.readVarUint36SmallOnBE();
     byte coder = (byte) (header & 0b11);
     int numBytes = (int) (header >>> 2);
-    byte[] bytes = buffer.readBytes(numBytes);;
+    byte[] bytes = buffer.readBytes(numBytes);
     if (coder != UTF8) {
       return newBytesStringZeroCopy(coder, bytes);
     } else {
@@ -236,7 +239,10 @@ public final class StringSerializer extends Serializer<String> {
 
   @CodegenInvoke
   public String readCompressedCharsString(MemoryBuffer buffer) {
-    long header = Platform.IS_LITTLE_ENDIAN ? buffer.readVarUint36SmallOnLE() : buffer.readVarUint36SmallOnBE();
+    long header =
+        Platform.IS_LITTLE_ENDIAN
+            ? buffer.readVarUint36SmallOnLE()
+            : buffer.readVarUint36SmallOnBE();
     byte coder = (byte) (header & 0b11);
     int numBytes = (int) (header >>> 2);
     if (coder == LATIN1) {
