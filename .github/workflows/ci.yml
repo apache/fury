@@ -111,7 +111,7 @@ jobs:
           java-version: 8
           distribution: 'temurin'
       - name: Install fury java
-        run: cd java && mvn -T10 clean install -DskipTests && cd -
+        run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
       - name: Test
         run: |
           # Avoid sbt download jackson-databind error
