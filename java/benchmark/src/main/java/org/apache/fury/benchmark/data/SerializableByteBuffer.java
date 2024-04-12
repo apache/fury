@@ -49,7 +49,7 @@ public class SerializableByteBuffer implements Externalizable {
 
   @Override
   public void readExternal(ObjectInput in) throws IOException {
-    int size = in.readInt();
+    int size = in.readInt32();
     byte[] bytes = new byte[size];
     int read = 0;
     while (read != size) {

@@ -157,19 +157,19 @@ public class Serializers {
       case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
         return buffer.readChar();
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
-        return buffer.readShort();
+        return buffer.readInt16();
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
           return buffer.readVarInt32();
         } else {
-          return buffer.readInt();
+          return buffer.readInt32();
         }
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-        return buffer.readFloat();
+        return buffer.readFloat32();
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        return fury.readLong(buffer);
+        return fury.readInt64(buffer);
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-        return buffer.readDouble();
+        return buffer.readFloat64();
       default:
         {
           throw new IllegalStateException("unreachable");
@@ -406,7 +406,7 @@ public class Serializers {
 
     @Override
     public AtomicInteger read(MemoryBuffer buffer) {
-      return new AtomicInteger(buffer.readInt());
+      return new AtomicInteger(buffer.readInt32());
     }
   }
 
@@ -423,7 +423,7 @@ public class Serializers {
 
     @Override
     public AtomicLong read(MemoryBuffer buffer) {
-      return new AtomicLong(buffer.readLong());
+      return new AtomicLong(buffer.readInt64());
     }
   }
 
@@ -507,7 +507,7 @@ public class Serializers {
     @Override
     public Pattern read(MemoryBuffer buffer) {
       String regex = fury.readJavaString(buffer);
-      int flags = buffer.readInt();
+      int flags = buffer.readInt32();
       return Pattern.compile(regex, flags);
     }
   }
@@ -526,7 +526,7 @@ public class Serializers {
 
     @Override
     public UUID read(MemoryBuffer buffer) {
-      return new UUID(buffer.readLong(), buffer.readLong());
+      return new UUID(buffer.readInt64(), buffer.readInt64());
     }
   }
 

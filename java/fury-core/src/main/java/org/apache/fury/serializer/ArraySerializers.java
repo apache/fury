@@ -122,7 +122,7 @@ public class ArraySerializers {
     @Override
     public T[] read(MemoryBuffer buffer) {
       // Some jdk8 will crash if use varint, why?
-      int numElements = buffer.readInt();
+      int numElements = buffer.readInt32();
       Object[] value = newArray(numElements);
       RefResolver refResolver = fury.getRefResolver();
       refResolver.reference(value);

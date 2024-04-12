@@ -154,7 +154,7 @@ public class PrimitiveSerializers {
 
     @Override
     public Short read(MemoryBuffer buffer) {
-      return buffer.readShort();
+      return buffer.readInt16();
     }
   }
 
@@ -185,7 +185,7 @@ public class PrimitiveSerializers {
       if (compressNumber) {
         return buffer.readVarInt32();
       } else {
-        return buffer.readInt();
+        return buffer.readInt32();
       }
     }
 
@@ -197,7 +197,7 @@ public class PrimitiveSerializers {
 
     @Override
     public Integer xread(MemoryBuffer buffer) {
-      return buffer.readInt();
+      return buffer.readInt32();
     }
   }
 
@@ -221,7 +221,7 @@ public class PrimitiveSerializers {
 
     @Override
     public Long read(MemoryBuffer buffer) {
-      return readLong(buffer, longEncoding);
+      return readInt64(buffer, longEncoding);
     }
 
     public static Expression writeLong(
@@ -248,26 +248,26 @@ public class PrimitiveSerializers {
       }
     }
 
-    public static long readLong(MemoryBuffer buffer, LongEncoding longEncoding) {
+    public static long readInt64(MemoryBuffer buffer, LongEncoding longEncoding) {
       if (longEncoding == LongEncoding.SLI) {
-        return buffer.readSliLong();
+        return buffer.readSliInt64On();
       } else if (longEncoding == LongEncoding.LE_RAW_BYTES) {
-        return buffer.readLong();
+        return buffer.readInt64();
       } else {
         return buffer.readVarInt64();
       }
     }
 
-    public static Expression readLong(Expression buffer, LongEncoding longEncoding) {
+    public static Expression readInt64(Expression buffer, LongEncoding longEncoding) {
       return new Invoke(buffer, readLongFunc(longEncoding), PRIMITIVE_LONG_TYPE);
     }
 
     public static String readLongFunc(LongEncoding longEncoding) {
       switch (longEncoding) {
         case LE_RAW_BYTES:
-          return Platform.IS_LITTLE_ENDIAN ? "readLongOnLE" : "readLongOnBE";
+          return Platform.IS_LITTLE_ENDIAN ? "readInt64OnLE" : "readInt64OnBE";
         case SLI:
-          return Platform.IS_LITTLE_ENDIAN ? "readSliLongOnLE" : "readSliLongOnBE";
+          return Platform.IS_LITTLE_ENDIAN ? "readSliInt64OnLE" : "readSliInt64OnBE";
         case PVL:
           return Platform.IS_LITTLE_ENDIAN ? "readVarInt64OnLE" : "readVarInt64OnBE";
         default:
@@ -283,7 +283,7 @@ public class PrimitiveSerializers {
 
     @Override
     public Long xread(MemoryBuffer buffer) {
-      return buffer.readLong();
+      return buffer.readInt64();
     }
   }
 
@@ -304,7 +304,7 @@ public class PrimitiveSerializers {
 
     @Override
     public Float read(MemoryBuffer buffer) {
-      return buffer.readFloat();
+      return buffer.readFloat32();
     }
   }
 
@@ -325,7 +325,7 @@ public class PrimitiveSerializers {
 
     @Override
     public Double read(MemoryBuffer buffer) {
-      return buffer.readDouble();
+      return buffer.readFloat64();
     }
   }
 

@@ -670,8 +670,8 @@ public final class Fury implements BaseFury {
     LongSerializer.writeLong(buffer, value, longEncoding);
   }
 
-  public long readLong(MemoryBuffer buffer) {
-    return LongSerializer.readLong(buffer, longEncoding);
+  public long readInt64(MemoryBuffer buffer) {
+    return LongSerializer.readInt64(buffer, longEncoding);
   }
 
   @Override
@@ -797,8 +797,8 @@ public final class Fury implements BaseFury {
 
   private Object xdeserializeInternal(MemoryBuffer buffer) {
     Object obj;
-    int nativeObjectsStartOffset = buffer.readInt();
-    int nativeObjectsSize = buffer.readInt();
+    int nativeObjectsStartOffset = buffer.readInt32();
+    int nativeObjectsSize = buffer.readInt32();
     int endReaderIndex = nativeObjectsStartOffset;
     if (peerLanguage == Language.JAVA) {
       int readerIndex = buffer.readerIndex();
@@ -903,19 +903,19 @@ public final class Fury implements BaseFury {
       case ClassResolver.CHAR_CLASS_ID:
         return buffer.readChar();
       case ClassResolver.SHORT_CLASS_ID:
-        return buffer.readShort();
+        return buffer.readInt16();
       case ClassResolver.INTEGER_CLASS_ID:
         if (compressInt) {
           return buffer.readVarInt32();
         } else {
-          return buffer.readInt();
+          return buffer.readInt32();
         }
       case ClassResolver.FLOAT_CLASS_ID:
-        return buffer.readFloat();
+        return buffer.readFloat32();
       case ClassResolver.LONG_CLASS_ID:
-        return LongSerializer.readLong(buffer, longEncoding);
+        return LongSerializer.readInt64(buffer, longEncoding);
       case ClassResolver.DOUBLE_CLASS_ID:
-        return buffer.readDouble();
+        return buffer.readFloat64();
       case ClassResolver.STRING_CLASS_ID:
         return stringSerializer.readJavaString(buffer);
         // TODO(add fastpath for other types)
@@ -970,7 +970,7 @@ public final class Fury implements BaseFury {
 
   public Object xreadNonRef(MemoryBuffer buffer, Serializer<?> serializer) {
     depth++;
-    short typeId = buffer.readShort();
+    short typeId = buffer.readInt16();
     ClassResolver classResolver = this.classResolver;
     if (typeId != NOT_SUPPORT_CROSS_LANGUAGE) {
       Class<?> cls = null;

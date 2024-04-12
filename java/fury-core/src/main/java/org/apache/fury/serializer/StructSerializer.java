@@ -167,7 +167,7 @@ public class StructSerializer<T> extends Serializer<T> {
       typeHash = computeStructHash();
       this.typeHash = typeHash;
     }
-    int newHash = buffer.readInt();
+    int newHash = buffer.readInt32();
     if (newHash != typeHash) {
       throw new ClassNotCompatibleException(
           String.format(

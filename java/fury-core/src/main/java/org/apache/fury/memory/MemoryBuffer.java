@@ -1359,7 +1359,7 @@ public final class MemoryBuffer {
     return Character.reverseBytes(UNSAFE.getChar(heapMemory, address + readerIdx));
   }
 
-  public short readShort() {
+  public short readInt16() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1377,7 +1377,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public short readShortOnLE() {
+  public short readInt16OnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1390,7 +1390,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public short readShortOnBE() {
+  public short readInt16OnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1401,7 +1401,7 @@ public final class MemoryBuffer {
     return Short.reverseBytes(UNSAFE.getShort(heapMemory, address + readerIdx));
   }
 
-  public int readInt() {
+  public int readInt32() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1419,7 +1419,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public int readIntOnLE() {
+  public int readInt32OnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1432,7 +1432,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public int readIntOnBE() {
+  public int readInt32OnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1443,7 +1443,7 @@ public final class MemoryBuffer {
     return Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx));
   }
 
-  public long readLong() {
+  public long readInt64() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1461,7 +1461,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public long readLongOnLE() {
+  public long readInt64OnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1474,7 +1474,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public long readLongOnBE() {
+  public long readInt64OnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1486,16 +1486,16 @@ public final class MemoryBuffer {
   }
 
   /** Read fury SLI(Small Long as Int) encoded long. */
-  public long readSliLong() {
+  public long readSliInt64On() {
     if (LITTLE_ENDIAN) {
-      return readSliLongOnLE();
+      return readSliInt64OnLE();
     } else {
-      return readSliLongOnBE();
+      return readSliInt64OnBE();
     }
   }
 
   @CodegenInvoke
-  public long readSliLongOnLE() {
+  public long readSliInt64OnLE() {
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     final int readIdx = readerIndex;
@@ -1516,7 +1516,7 @@ public final class MemoryBuffer {
   }
 
   @CodegenInvoke
-  public long readSliLongOnBE() {
+  public long readSliInt64OnBE() {
     // noinspection Duplicates
     final int readIdx = readerIndex;
     int diff = size - readIdx;
@@ -1535,7 +1535,7 @@ public final class MemoryBuffer {
     return Long.reverseBytes(UNSAFE.getLong(heapMemory, address + readIdx + 1));
   }
 
-  public float readFloat() {
+  public float readFloat32() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1553,7 +1553,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public float readFloatOnLE() {
+  public float readFloat32OnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1566,7 +1566,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public float readFloatOnBE() {
+  public float readFloat32OnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1578,7 +1578,7 @@ public final class MemoryBuffer {
         Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readerIdx)));
   }
 
-  public double readDouble() {
+  public double readFloat64() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1596,7 +1596,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public double readDoubleOnLE() {
+  public double readFloat64OnLE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1609,7 +1609,7 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public double readDoubleOnBE() {
+  public double readFloat64OnBE() {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;

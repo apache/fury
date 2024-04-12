@@ -47,7 +47,7 @@ public class JavaSerializerTest extends FuryTestBase {
 
     private void readObject(java.io.ObjectInputStream s) throws Exception {
       s.defaultReadObject();
-      this.age = s.readInt();
+      this.age = s.readInt32();
     }
   }
 

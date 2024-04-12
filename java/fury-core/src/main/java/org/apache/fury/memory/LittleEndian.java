@@ -57,24 +57,24 @@ public class LittleEndian {
     return 5;
   }
 
-  public static void putInt(Object o, long pos, int value) {
+  public static void putInt32(Object o, long pos, int value) {
     if (!Platform.IS_LITTLE_ENDIAN) {
       value = Integer.reverseBytes(value);
     }
     Platform.putInt(o, pos, value);
   }
 
-  public static int getInt(Object o, long pos) {
+  public static int getInt32(Object o, long pos) {
     int i = Platform.getInt(o, pos);
     return Platform.IS_LITTLE_ENDIAN ? i : Integer.reverseBytes(i);
   }
 
-  public static long getLong(Object o, long pos) {
+  public static long getInt64(Object o, long pos) {
     long v = Platform.getLong(o, pos);
     return Platform.IS_LITTLE_ENDIAN ? v : Long.reverseBytes(v);
   }
 
-  public static void putFloat(Object o, long pos, float value) {
+  public static void putFloat32(Object o, long pos, float value) {
     int v = Float.floatToRawIntBits(value);
     if (!Platform.IS_LITTLE_ENDIAN) {
       v = Integer.reverseBytes(v);
@@ -82,7 +82,7 @@ public class LittleEndian {
     Platform.putInt(o, pos, v);
   }
 
-  public static void putDouble(Object o, long pos, double value) {
+  public static void putFloat64(Object o, long pos, double value) {
     long v = Double.doubleToRawLongBits(value);
     if (!Platform.IS_LITTLE_ENDIAN) {
       v = Long.reverseBytes(v);

@@ -225,7 +225,7 @@ public class ClassDef implements Serializable {
           new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8),
           new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8));
     }
-    long id = buffer.readLong();
+    long id = buffer.readInt64();
     ClassDef classDef = new ClassDef(className, fieldInfos, extMeta);
     classDef.id = id;
     return classDef;
@@ -425,7 +425,7 @@ public class ClassDef implements Serializable {
       byte typecode = buffer.readByte();
       switch (typecode) {
         case 0:
-          return new RegisteredFieldType(isFinal, buffer.readShort());
+          return new RegisteredFieldType(isFinal, buffer.readInt16());
         case 1:
           return new CollectionFieldType(isFinal, read(buffer));
         case 2:

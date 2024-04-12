@@ -276,7 +276,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         buffer.increaseReaderIndex(4);
         return false;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        fury.readLong(buffer);
+        fury.readInt64(buffer);
         return false;
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
         buffer.increaseReaderIndex(8);

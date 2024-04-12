@@ -177,7 +177,7 @@ public class ObjectStreamSerializer extends Serializer {
       obj = Platform.newInstance(type);
     }
     fury.getRefResolver().reference(obj);
-    int numClasses = buffer.readShort();
+    int numClasses = buffer.readInt16();
     int slotIndex = 0;
     try {
       TreeMap<Integer, ObjectInputValidation> callbacks = new TreeMap<>(Collections.reverseOrder());
@@ -890,12 +890,12 @@ public class ObjectStreamSerializer extends Serializer {
       return b & 0xff;
     }
 
-    public short readShort() throws IOException {
-      return buffer.readShort();
+    public short readInt16() throws IOException {
+      return buffer.readInt16();
     }
 
     public int readUnsignedShort() throws IOException {
-      int b = buffer.readShort();
+      int b = buffer.readInt16();
       return b & 0xffff;
     }
 
@@ -903,20 +903,20 @@ public class ObjectStreamSerializer extends Serializer {
       return buffer.readChar();
     }
 
-    public int readInt() throws IOException {
-      return buffer.readInt();
+    public int readInt32() throws IOException {
+      return buffer.readInt32();
     }
 
-    public long readLong() throws IOException {
-      return buffer.readLong();
+    public long readInt64() throws IOException {
+      return buffer.readInt64();
     }
 
-    public float readFloat() throws IOException {
-      return buffer.readFloat();
+    public float readFloat32() throws IOException {
+      return buffer.readFloat32();
     }
 
-    public double readDouble() throws IOException {
-      return buffer.readDouble();
+    public double readFloat64() throws IOException {
+      return buffer.readFloat64();
     }
 
     public void readFully(byte[] data) throws IOException {

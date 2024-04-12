@@ -152,7 +152,7 @@ public class Encoders {
         @Override
         public T decode(byte[] bytes) {
           MemoryBuffer buffer = MemoryUtils.wrap(bytes);
-          long peerSchemaHash = buffer.readLong();
+          long peerSchemaHash = buffer.readInt64();
           if (peerSchemaHash != schemaHash) {
             throw new ClassNotCompatibleException(
                 String.format(

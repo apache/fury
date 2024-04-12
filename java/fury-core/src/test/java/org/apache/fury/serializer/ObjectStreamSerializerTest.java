@@ -70,7 +70,7 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
 
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
       s.defaultReadObject();
-      count = s.readInt();
+      count = s.readInt32();
       value = (char[]) s.readObject();
     }
   }
@@ -113,7 +113,7 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
       // defaultReadObject compatible with putFields
       s.defaultReadObject();
-      Preconditions.checkArgument(s.readInt() == 100);
+      Preconditions.checkArgument(s.readInt32() == 100);
     }
   }
 

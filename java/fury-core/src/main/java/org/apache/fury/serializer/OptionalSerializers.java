@@ -66,7 +66,7 @@ public final class OptionalSerializers {
     @Override
     public OptionalInt read(MemoryBuffer buffer) {
       if (buffer.readBoolean()) {
-        return OptionalInt.of(buffer.readInt());
+        return OptionalInt.of(buffer.readInt32());
       } else {
         return OptionalInt.empty();
       }
@@ -90,7 +90,7 @@ public final class OptionalSerializers {
     @Override
     public OptionalLong read(MemoryBuffer buffer) {
       if (buffer.readBoolean()) {
-        return OptionalLong.of(buffer.readLong());
+        return OptionalLong.of(buffer.readInt64());
       } else {
         return OptionalLong.empty();
       }
@@ -114,7 +114,7 @@ public final class OptionalSerializers {
     @Override
     public OptionalDouble read(MemoryBuffer buffer) {
       if (buffer.readBoolean()) {
-        return OptionalDouble.of(buffer.readDouble());
+        return OptionalDouble.of(buffer.readFloat64());
       } else {
         return OptionalDouble.empty();
       }

@@ -1395,7 +1395,7 @@ public class ClassResolver {
    */
   public void readClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    int classDefOffset = buffer.readInt();
+    int classDefOffset = buffer.readInt32();
     int readerIndex = buffer.readerIndex();
     buffer.readerIndex(classDefOffset);
     int numClassDefs = buffer.readVarUintSmall();

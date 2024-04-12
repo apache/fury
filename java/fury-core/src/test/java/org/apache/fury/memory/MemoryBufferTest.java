@@ -66,11 +66,11 @@ public class MemoryBufferTest {
     assertTrue(buffer.readBoolean());
     assertEquals(buffer.readByte(), Byte.MIN_VALUE);
     assertEquals(buffer.readChar(), 'a');
-    assertEquals(buffer.readShort(), Short.MAX_VALUE);
-    assertEquals(buffer.readInt(), Integer.MAX_VALUE);
-    assertEquals(buffer.readLong(), Long.MAX_VALUE);
-    assertEquals(buffer.readFloat(), Float.MAX_VALUE, 0.1);
-    assertEquals(buffer.readDouble(), Double.MAX_VALUE, 0.1);
+    assertEquals(buffer.readInt16(), Short.MAX_VALUE);
+    assertEquals(buffer.readInt32(), Integer.MAX_VALUE);
+    assertEquals(buffer.readInt64(), Long.MAX_VALUE);
+    assertEquals(buffer.readFloat32(), Float.MAX_VALUE, 0.1);
+    assertEquals(buffer.readFloat64(), Double.MAX_VALUE, 0.1);
     assertEquals(buffer.readBytes(bytes.length), bytes);
     assertEquals(buffer.readerIndex(), buffer.writerIndex());
   }
@@ -87,20 +87,20 @@ public class MemoryBufferTest {
       pos += 1;
       Platform.putShort(heapMemory, pos, Short.MAX_VALUE);
       pos += 2;
-      LittleEndian.putInt(heapMemory, pos, Integer.MIN_VALUE);
+      LittleEndian.putInt32(heapMemory, pos, Integer.MIN_VALUE);
       pos += 4;
       Platform.putLong(heapMemory, pos, Long.MAX_VALUE);
       pos += 8;
-      LittleEndian.putDouble(heapMemory, pos, -1);
+      LittleEndian.putFloat64(heapMemory, pos, -1);
       pos += 8;
-      LittleEndian.putFloat(heapMemory, pos, -1);
+      LittleEndian.putFloat32(heapMemory, pos, -1);
       assertEquals(buffer.getFloat((int) (pos - Platform.BYTE_ARRAY_OFFSET)), -1);
       pos -= 8;
       assertEquals(buffer.getDouble((int) (pos - Platform.BYTE_ARRAY_OFFSET)), -1);
       pos -= 8;
-      assertEquals(LittleEndian.getLong(heapMemory, pos), Long.MAX_VALUE);
+      assertEquals(LittleEndian.getInt64(heapMemory, pos), Long.MAX_VALUE);
       pos -= 4;
-      assertEquals(LittleEndian.getInt(heapMemory, pos), Integer.MIN_VALUE);
+      assertEquals(LittleEndian.getInt32(heapMemory, pos), Integer.MIN_VALUE);
       pos -= 2;
       assertEquals(buffer.getShort((int) (pos - Platform.BYTE_ARRAY_OFFSET)), Short.MAX_VALUE);
       pos -= 1;
@@ -500,7 +500,7 @@ public class MemoryBufferTest {
     buf.writeShort((short) 1); // make address unaligned.
     assertEquals(buf.writeVarUint32Aligned(Integer.MAX_VALUE), 9);
     buf.readByte();
-    buf.readShort();
+    buf.readInt16();
     assertEquals(buf.readAlignedVarUint(), Integer.MAX_VALUE);
     for (int i = 0; i < 32; i++) {
       MemoryBuffer buf1 = MemoryUtils.buffer(16);
@@ -576,10 +576,10 @@ public class MemoryBufferTest {
     assertEquals(buf.writerIndex(), readerIndex);
     int actualBytesWritten = buf.writeSliLong(value);
     assertEquals(actualBytesWritten, bytesWritten);
-    long varLong = buf.readSliLong();
+    long varLong = buf.readSliInt64On();
     assertEquals(buf.writerIndex(), buf.readerIndex());
     assertEquals(value, varLong);
-    assertEquals(buf.slice(readerIndex, buf.readerIndex() - readerIndex).readSliLong(), value);
+    assertEquals(buf.slice(readerIndex, buf.readerIndex() - readerIndex).readSliInt64On(), value);
   }
 
   @Test

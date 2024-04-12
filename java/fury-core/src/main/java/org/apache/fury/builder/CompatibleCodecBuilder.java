@@ -530,7 +530,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
    *   if (fieldResolver.skipDataBy4(buffer, (int) partFieldInfo)) {
    *     return bean;
    *   }
-   *   partFieldInfo = buffer.readInt();
+   *   partFieldInfo = buffer.readInt32();
    * }
    * }</pre>
    */
@@ -573,7 +573,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
    *   if (fieldResolver.skipDataBy4(buffer, (int) partFieldInfo)) {
    *     return bean;
    *   }
-   *   partFieldInfo = buffer.readInt();
+   *   partFieldInfo = buffer.readInt32();
    * }
    * }</pre>
    */
@@ -912,7 +912,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
    *   if (fieldResolver.skipDataBy8(buffer, partFieldInfo)) {
    *     return bean;
    *   }
-   *   partFieldInfo = buffer.readLong();
+   *   partFieldInfo = buffer.readInt64();
    * }
    * }</pre>
    */

@@ -1135,15 +1135,15 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (cls == char.class || cls == Character.class) {
         return readChar(buffer);
       } else if (cls == short.class || cls == Short.class) {
-        return readShort(buffer);
+        return readInt16(buffer);
       } else if (cls == int.class || cls == Integer.class) {
-        return fury.compressInt() ? readVarInt32(buffer) : readInt(buffer);
+        return fury.compressInt() ? readVarInt32(buffer) : readInt32(buffer);
       } else if (cls == long.class || cls == Long.class) {
-        return LongSerializer.readLong(buffer, fury.longEncoding());
+        return LongSerializer.readInt64(buffer, fury.longEncoding());
       } else if (cls == float.class || cls == Float.class) {
-        return readFloat(buffer);
+        return readFloat32(buffer);
       } else if (cls == double.class || cls == Double.class) {
-        return readDouble(buffer);
+        return readFloat64(buffer);
       } else {
         throw new IllegalStateException("impossible");
       }

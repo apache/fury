@@ -706,7 +706,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               compressStarted = true;
               addIncReaderIndexExpr(groupExpressions, buffer, acc);
             }
-            fieldValue = LongSerializer.readLong(buffer, fury.longEncoding());
+            fieldValue = LongSerializer.readInt64(buffer, fury.longEncoding());
           }
         } else {
           throw new IllegalStateException("impossible");

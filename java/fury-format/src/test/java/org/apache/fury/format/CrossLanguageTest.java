@@ -460,8 +460,8 @@ public class CrossLanguageTest {
 
     MemoryBuffer intBandBuffer = MemoryUtils.wrap(Files.readAllBytes(intBandDataFile));
     outOfBandBuffer = MemoryUtils.wrap(Files.readAllBytes(outOfBandDataFile));
-    int len1 = outOfBandBuffer.readInt();
-    int len2 = outOfBandBuffer.readInt();
+    int len1 = outOfBandBuffer.readInt32();
+    int len2 = outOfBandBuffer.readInt32();
     buffers = Arrays.asList(outOfBandBuffer.slice(8, len1), outOfBandBuffer.slice(8 + len1, len2));
     objects = (List<?>) fury.deserialize(intBandBuffer, buffers);
     Assert.assertNotNull(objects);

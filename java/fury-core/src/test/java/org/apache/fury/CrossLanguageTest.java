@@ -139,13 +139,13 @@ public class CrossLanguageTest {
     buffer = MemoryUtils.wrap(Files.readAllBytes(dataFile));
     Assert.assertTrue(buffer.readBoolean());
     Assert.assertEquals(buffer.readByte(), Byte.MAX_VALUE);
-    Assert.assertEquals(buffer.readShort(), Short.MAX_VALUE);
-    Assert.assertEquals(buffer.readInt(), Integer.MAX_VALUE);
-    Assert.assertEquals(buffer.readLong(), Long.MAX_VALUE);
-    Assert.assertEquals(buffer.readFloat(), -1.1f, 0.0001);
-    Assert.assertEquals(buffer.readDouble(), -1.1, 0.0001);
+    Assert.assertEquals(buffer.readInt16(), Short.MAX_VALUE);
+    Assert.assertEquals(buffer.readInt32(), Integer.MAX_VALUE);
+    Assert.assertEquals(buffer.readInt64(), Long.MAX_VALUE);
+    Assert.assertEquals(buffer.readFloat32(), -1.1f, 0.0001);
+    Assert.assertEquals(buffer.readFloat64(), -1.1, 0.0001);
     Assert.assertEquals(buffer.readVarUint32(), 100);
-    Assert.assertTrue(Arrays.equals(buffer.readBytes(buffer.readInt()), bytes));
+    Assert.assertTrue(Arrays.equals(buffer.readBytes(buffer.readInt32()), bytes));
   }
 
   @Test
@@ -699,10 +699,10 @@ public class CrossLanguageTest {
 
     MemoryBuffer inBandBuffer = MemoryUtils.wrap(Files.readAllBytes(intBandDataFile));
     outOfBandBuffer = MemoryUtils.wrap(Files.readAllBytes(outOfBandDataFile));
-    int numBuffers = outOfBandBuffer.readInt();
+    int numBuffers = outOfBandBuffer.readInt32();
     buffers = new ArrayList<>();
     for (int i = 0; i < numBuffers; i++) {
-      int len = outOfBandBuffer.readInt();
+      int len = outOfBandBuffer.readInt32();
       int readerIndex = outOfBandBuffer.readerIndex();
       buffers.add(outOfBandBuffer.slice(readerIndex, len));
       outOfBandBuffer.readerIndex(readerIndex + len);

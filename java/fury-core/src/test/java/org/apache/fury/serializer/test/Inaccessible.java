@@ -54,9 +54,9 @@ class Inaccessible implements Externalizable {
 
   @Override
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-    this.x = in.readInt();
-    this.y = in.readInt();
-    int len = in.readInt();
+    this.x = in.readInt32();
+    this.y = in.readInt32();
+    int len = in.readInt32();
     byte[] arr = new byte[len];
     Preconditions.checkArgument(in.read(arr) == len);
     this.bytes = arr;

@@ -209,7 +209,7 @@ class FooSerializer extends Serializer<Foo> {
   @Override
   public Foo read(MemoryBuffer buffer) {
     Foo foo = new Foo();
-    foo.f1 = buffer.readLong();
+    foo.f1 = buffer.readInt64();
     return foo;
   }
 }

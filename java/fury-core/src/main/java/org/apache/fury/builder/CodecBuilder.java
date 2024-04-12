@@ -627,18 +627,18 @@ public abstract class CodecBuilder {
     return new Invoke(buffer, func, PRIMITIVE_CHAR_TYPE);
   }
 
-  protected Expression readShort(Expression buffer) {
-    String func = Platform.IS_LITTLE_ENDIAN ? "readShortOnLE" : "readShortOnBE";
+  protected Expression readInt16(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readInt16OnLE" : "readInt16OnBE";
     return new Invoke(buffer, func, PRIMITIVE_SHORT_TYPE);
   }
 
-  protected Expression readInt(Expression buffer) {
-    String func = Platform.IS_LITTLE_ENDIAN ? "readIntOnLE" : "readIntOnBE";
+  protected Expression readInt32(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readInt32OnLE" : "readInt32OnBE";
     return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
   }
 
   public static String readIntFunc() {
-    return Platform.IS_LITTLE_ENDIAN ? "readIntOnLE" : "readIntOnBE";
+    return Platform.IS_LITTLE_ENDIAN ? "readInt32OnLE" : "readInt32OnBE";
   }
 
   protected Expression readVarInt32(Expression buffer) {
@@ -646,21 +646,21 @@ public abstract class CodecBuilder {
     return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
   }
 
-  protected Expression readLong(Expression buffer) {
+  protected Expression readInt64(Expression buffer) {
     return new Invoke(buffer, readLongFunc(), PRIMITIVE_LONG_TYPE);
   }
 
   public static String readLongFunc() {
-    return Platform.IS_LITTLE_ENDIAN ? "readLongOnLE" : "readLongOnBE";
+    return Platform.IS_LITTLE_ENDIAN ? "readInt64OnLE" : "readInt64OnBE";
   }
 
-  protected Expression readFloat(Expression buffer) {
-    String func = Platform.IS_LITTLE_ENDIAN ? "readFloatOnLE" : "readFloatOnBE";
+  protected Expression readFloat32(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readFloat32OnLE" : "readFloat32OnBE";
     return new Invoke(buffer, func, PRIMITIVE_FLOAT_TYPE);
   }
 
-  protected Expression readDouble(Expression buffer) {
-    String func = Platform.IS_LITTLE_ENDIAN ? "readDoubleOnLE" : "readDoubleOnBE";
+  protected Expression readFloat64(Expression buffer) {
+    String func = Platform.IS_LITTLE_ENDIAN ? "readFloat64OnLE" : "readFloat64OnBE";
     return new Invoke(buffer, func, PRIMITIVE_DOUBLE_TYPE);
   }
 }

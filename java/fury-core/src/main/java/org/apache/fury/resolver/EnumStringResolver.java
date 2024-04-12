@@ -109,18 +109,18 @@ public final class EnumStringResolver {
 
   EnumStringBytes readEnumStringBytes(MemoryBuffer buffer) {
     if (buffer.readByte() == USE_STRING_VALUE) {
-      long hashCode = buffer.readLong();
+      long hashCode = buffer.readInt64();
       EnumStringBytes byteString = trySkipEnumStringBytes(buffer, hashCode);
       updateDynamicString(byteString);
       return byteString;
     } else {
-      return dynamicReadStringIds[buffer.readShort()];
+      return dynamicReadStringIds[buffer.readInt16()];
     }
   }
 
   EnumStringBytes readEnumStringBytes(MemoryBuffer buffer, EnumStringBytes cache) {
     if (buffer.readByte() == USE_STRING_VALUE) {
-      long hashCode = buffer.readLong();
+      long hashCode = buffer.readInt64();
       if (cache.hashCode == hashCode) {
         // skip byteString data
         buffer.increaseReaderIndex(2 + cache.bytes.length);
@@ -132,7 +132,7 @@ public final class EnumStringResolver {
         return byteString;
       }
     } else {
-      return dynamicReadStringIds[buffer.readShort()];
+      return dynamicReadStringIds[buffer.readInt16()];
     }
   }
 
@@ -140,7 +140,7 @@ public final class EnumStringResolver {
   private EnumStringBytes trySkipEnumStringBytes(MemoryBuffer buffer, long hashCode) {
     EnumStringBytes byteString = hash2EnumStringBytesMap.get(hashCode);
     if (byteString == null) {
-      int strBytesLength = buffer.readShort();
+      int strBytesLength = buffer.readInt16();
       byte[] strBytes = buffer.readBytes(strBytesLength);
       byteString = new EnumStringBytes(strBytes, hashCode);
       hash2EnumStringBytesMap.put(hashCode, byteString);
