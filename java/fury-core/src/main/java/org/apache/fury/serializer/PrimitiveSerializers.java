@@ -230,7 +230,7 @@ public class PrimitiveSerializers {
         case LE_RAW_BYTES:
           return new Invoke(buffer, "writeInt64", v);
         case SLI:
-          return new Invoke(buffer, ensureBounds ? "writeSliLong" : "_unsafeWriteSliLong", v);
+          return new Invoke(buffer, ensureBounds ? "writeSliInt64" : "_unsafeWriteSliInt64", v);
         case PVL:
           return new Invoke(buffer, ensureBounds ? "writeVarInt64" : "_unsafeWriteVarInt64", v);
         default:
@@ -240,7 +240,7 @@ public class PrimitiveSerializers {
 
     public static void writeInt64(MemoryBuffer buffer, long value, LongEncoding longEncoding) {
       if (longEncoding == LongEncoding.SLI) {
-        buffer.writeSliLong(value);
+        buffer.writeSliInt64(value);
       } else if (longEncoding == LongEncoding.LE_RAW_BYTES) {
         buffer.writeInt64(value);
       } else {
@@ -250,7 +250,7 @@ public class PrimitiveSerializers {
 
     public static long readInt64(MemoryBuffer buffer, LongEncoding longEncoding) {
       if (longEncoding == LongEncoding.SLI) {
-        return buffer.readSliInt64On();
+        return buffer.readSliInt64();
       } else if (longEncoding == LongEncoding.LE_RAW_BYTES) {
         return buffer.readInt64();
       } else {

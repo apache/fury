@@ -1127,9 +1127,9 @@ public final class MemoryBuffer {
    * encode as 4 bytes int: | little-endian: ((int) value) << 1 |; Otherwise write as 9 bytes: | 0b1
    * | little-endian 8bytes long |
    */
-  public int writeSliLong(long value) {
+  public int writeSliInt64(long value) {
     ensure(writerIndex + 9);
-    return _unsafeWriteSliLong(value);
+    return _unsafeWriteSliInt64(value);
   }
 
   private static final long HALF_MAX_INT_VALUE = Integer.MAX_VALUE / 2;
@@ -1138,7 +1138,7 @@ public final class MemoryBuffer {
 
   /** Write long using fury SLI(Small Long as Int) encoding. */
   // CHECKSTYLE.OFF:MethodName
-  public int _unsafeWriteSliLong(long value) {
+  public int _unsafeWriteSliInt64(long value) {
     // CHECKSTYLE.ON:MethodName
     final int writerIndex = this.writerIndex;
     final long pos = address + writerIndex;
@@ -1493,7 +1493,7 @@ public final class MemoryBuffer {
   }
 
   /** Read fury SLI(Small Long as Int) encoded long. */
-  public long readSliInt64On() {
+  public long readSliInt64() {
     if (LITTLE_ENDIAN) {
       return readSliInt64OnLE();
     } else {
