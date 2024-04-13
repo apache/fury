@@ -400,16 +400,17 @@ public final class MemoryBuffer {
   // CHECKSTYLE.OFF:MethodName
   public void _unsafePutByte(int index, byte b) {
     // CHECKSTYLE.ON:MethodName
-    final long pos = address + index;
-    UNSAFE.putByte(heapMemory, pos, b);
+    UNSAFE.putByte(heapMemory, address + index, b);
   }
 
   public boolean getBoolean(int index) {
-    return getByte(index) != 0;
+    final long pos = address + index;
+    checkPosition(index, pos, 1);
+    return UNSAFE.getByte(heapMemory, pos) != 0;
   }
 
   public void putBoolean(int index, boolean value) {
-    putByte(index, (byte) (value ? 1 : 0));
+    UNSAFE.putByte(heapMemory, address + index, (value ? (byte) 1 : (byte) 0));
   }
 
   public char getChar(int index) {
@@ -431,155 +432,130 @@ public final class MemoryBuffer {
   public short getInt16(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 2);
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getShort(heapMemory, pos);
-    } else {
-      return Short.reverseBytes(UNSAFE.getShort(heapMemory, pos));
-    }
+    short v = UNSAFE.getShort(heapMemory, pos);
+    return LITTLE_ENDIAN ? v : Short.reverseBytes(v);
   }
 
   public void putInt16(int index, short value) {
     final long pos = address + index;
     checkPosition(index, pos, 2);
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putShort(heapMemory, pos, value);
-    } else {
-      UNSAFE.putShort(heapMemory, pos, Short.reverseBytes(value));
+    if (!LITTLE_ENDIAN) {
+      value = Short.reverseBytes(value);
     }
+    UNSAFE.putShort(heapMemory, pos, value);
   }
 
   // CHECKSTYLE.OFF:MethodName
   public void _unsafePutInt16(int index, short value) {
     // CHECKSTYLE.ON:MethodName
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putShort(heapMemory, pos, value);
-    } else {
-      UNSAFE.putShort(heapMemory, pos, Short.reverseBytes(value));
+    if (!LITTLE_ENDIAN) {
+      value = Short.reverseBytes(value);
     }
+    UNSAFE.putShort(heapMemory, address + index, value);
   }
 
   public int getInt32(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 4);
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getInt(heapMemory, pos);
-    } else {
-      return Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos));
-    }
+    int v = UNSAFE.getInt(heapMemory, pos);
+    return LITTLE_ENDIAN ? v : Integer.reverseBytes(v);
   }
 
   public void putInt32(int index, int value) {
     final long pos = address + index;
     checkPosition(index, pos, 4);
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putInt(heapMemory, pos, value);
-    } else {
-      UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(value));
+    if (!LITTLE_ENDIAN) {
+      value = Integer.reverseBytes(value);
     }
+    UNSAFE.putInt(heapMemory, pos, value);
   }
 
   // CHECKSTYLE.OFF:MethodName
   private int _unsafeGetInt32(int index) {
     // CHECKSTYLE.ON:MethodName
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getInt(heapMemory, pos);
-    } else {
-      return Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos));
-    }
+    int v = UNSAFE.getInt(heapMemory, address + index);
+    return LITTLE_ENDIAN ? v : Integer.reverseBytes(v);
   }
 
   // CHECKSTYLE.OFF:MethodName
   private void _unsafePutInt32(int index, int value) {
     // CHECKSTYLE.ON:MethodName
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putInt(heapMemory, pos, value);
-    } else {
-      UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(value));
+    if (!LITTLE_ENDIAN) {
+      value = Integer.reverseBytes(value);
     }
+    UNSAFE.putInt(heapMemory, address + index, value);
   }
 
   public long getInt64(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 8);
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getLong(heapMemory, pos);
-    } else {
-      return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos));
-    }
+    long v = UNSAFE.getLong(heapMemory, pos);
+    return LITTLE_ENDIAN ? v : Long.reverseBytes(v);
   }
 
   public void putInt64(int index, long value) {
     final long pos = address + index;
     checkPosition(index, pos, 8);
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putLong(heapMemory, pos, value);
-    } else {
-      UNSAFE.putLong(heapMemory, pos, Long.reverseBytes(value));
+    if (!LITTLE_ENDIAN) {
+      value = Long.reverseBytes(value);
     }
+    UNSAFE.putLong(heapMemory, pos, value);
   }
 
   // CHECKSTYLE.OFF:MethodName
   long _unsafeGetInt64(int index) {
     // CHECKSTYLE.ON:MethodName
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getLong(heapMemory, pos);
-    } else {
-      return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos));
-    }
+    long v = UNSAFE.getLong(heapMemory, address + index);
+    return LITTLE_ENDIAN ? v : Long.reverseBytes(v);
   }
 
   // CHECKSTYLE.OFF:MethodName
   public void _unsafePutInt64(int index, long value) {
     // CHECKSTYLE.ON:MethodName
-    final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putLong(heapMemory, pos, value);
-    } else {
-      UNSAFE.putLong(heapMemory, pos, Long.reverseBytes(value));
+    if (!LITTLE_ENDIAN) {
+      value = Long.reverseBytes(value);
     }
+    UNSAFE.putLong(heapMemory, address + index, value);
   }
 
   public float getFloat32(int index) {
     final long pos = address + index;
-    if (LITTLE_ENDIAN) {
-      return Float.intBitsToFloat(UNSAFE.getInt(heapMemory, pos));
-    } else {
-      return Float.intBitsToFloat(Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos)));
+    checkPosition(index, pos, 8);
+    int v = UNSAFE.getInt(heapMemory, pos);
+    if (!LITTLE_ENDIAN) {
+      v = Integer.reverseBytes(v);
     }
+    return Float.intBitsToFloat(v);
   }
 
   public void putFloat32(int index, float value) {
     final long pos = address + index;
     checkPosition(index, pos, 4);
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putInt(heapMemory, pos, Float.floatToRawIntBits(value));
-    } else {
-      UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(Float.floatToRawIntBits(value)));
+    int v = Float.floatToRawIntBits(value);
+    if (!LITTLE_ENDIAN) {
+      v = Integer.reverseBytes(v);
     }
+    UNSAFE.putInt(heapMemory, pos, v);
   }
 
   public double getFloat64(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 8);
-    if (LITTLE_ENDIAN) {
-      return Double.longBitsToDouble(UNSAFE.getLong(heapMemory, pos));
-    } else {
-      return Double.longBitsToDouble(Long.reverseBytes(UNSAFE.getLong(heapMemory, pos)));
+    long v = UNSAFE.getLong(heapMemory, pos);
+    if (!LITTLE_ENDIAN) {
+      v = Long.reverseBytes(v);
     }
+    return Double.longBitsToDouble(v);
   }
 
   public void putFloat64(int index, double value) {
     final long pos = address + index;
     checkPosition(index, pos, 8);
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putLong(heapMemory, pos, Double.doubleToRawLongBits(value));
-    } else {
-      UNSAFE.putLong(heapMemory, pos, Long.reverseBytes(Double.doubleToRawLongBits(value)));
+    long v = Double.doubleToRawLongBits(value);
+    if (!LITTLE_ENDIAN) {
+      v = Long.reverseBytes(v);
     }
+    UNSAFE.putLong(heapMemory, pos, v);
   }
 
   // Check should be done outside to avoid this method got into the critical path.
@@ -685,11 +661,10 @@ public final class MemoryBuffer {
     final int newIdx = writerIdx + 2;
     ensure(newIdx);
     final long pos = address + writerIdx;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putChar(heapMemory, pos, value);
-    } else {
-      UNSAFE.putChar(heapMemory, pos, Character.reverseBytes(value));
+    if (!LITTLE_ENDIAN) {
+      value = Character.reverseBytes(value);
     }
+    UNSAFE.putChar(heapMemory, pos, value);
     writerIndex = newIdx;
   }
 
@@ -697,12 +672,10 @@ public final class MemoryBuffer {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 2;
     ensure(newIdx);
-    final long pos = address + writerIdx;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putShort(heapMemory, pos, value);
-    } else {
-      UNSAFE.putShort(heapMemory, pos, Short.reverseBytes(value));
+    if (!LITTLE_ENDIAN) {
+      value = Short.reverseBytes(value);
     }
+    UNSAFE.putShort(heapMemory, address + writerIdx, value);
     writerIndex = newIdx;
   }
 
@@ -710,12 +683,10 @@ public final class MemoryBuffer {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 4;
     ensure(newIdx);
-    final long pos = address + writerIdx;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putInt(heapMemory, pos, value);
-    } else {
-      UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(value));
+    if (!LITTLE_ENDIAN) {
+      value = Integer.reverseBytes(value);
     }
+    UNSAFE.putInt(heapMemory, address + writerIdx, value);
     writerIndex = newIdx;
   }
 
@@ -723,12 +694,10 @@ public final class MemoryBuffer {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 8;
     ensure(newIdx);
-    final long pos = address + writerIdx;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putLong(heapMemory, pos, value);
-    } else {
-      UNSAFE.putLong(heapMemory, pos, Long.reverseBytes(value));
+    if (!LITTLE_ENDIAN) {
+      value = Long.reverseBytes(value);
     }
+    UNSAFE.putLong(heapMemory, address + writerIdx, value);
     writerIndex = newIdx;
   }
 
@@ -736,12 +705,11 @@ public final class MemoryBuffer {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 4;
     ensure(newIdx);
-    final long pos = address + writerIdx;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putInt(heapMemory, pos, Float.floatToRawIntBits(value));
-    } else {
-      UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(Float.floatToRawIntBits(value)));
+    int v = Float.floatToRawIntBits(value);
+    if (!LITTLE_ENDIAN) {
+      v = Integer.reverseBytes(v);
     }
+    UNSAFE.putInt(heapMemory, address + writerIdx, v);
     writerIndex = newIdx;
   }
 
@@ -749,12 +717,11 @@ public final class MemoryBuffer {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 8;
     ensure(newIdx);
-    final long pos = address + writerIdx;
-    if (LITTLE_ENDIAN) {
-      UNSAFE.putLong(heapMemory, pos, Double.doubleToRawLongBits(value));
-    } else {
-      UNSAFE.putLong(heapMemory, pos, Long.reverseBytes(Double.doubleToRawLongBits(value)));
+    long v = Double.doubleToRawLongBits(value);
+    if (!LITTLE_ENDIAN) {
+      v = Long.reverseBytes(v);
     }
+    UNSAFE.putLong(heapMemory, address + writerIdx, v);
     writerIndex = newIdx;
   }
 
@@ -1154,20 +1121,18 @@ public final class MemoryBuffer {
       // 0xxx -> 00xxx
       // 1xxx -> 11xxx
       int v = ((int) value) << 1; // bit 0 unset, means int.
-      if (LITTLE_ENDIAN) {
-        UNSAFE.putInt(heapMemory, pos, v);
-      } else {
-        UNSAFE.putInt(heapMemory, pos, Integer.reverseBytes(v));
+      if (!LITTLE_ENDIAN) {
+        v = Integer.reverseBytes(v);
       }
+      UNSAFE.putInt(heapMemory, pos, v);
       this.writerIndex = writerIndex + 4;
       return 4;
     } else {
       UNSAFE.putByte(heapMemory, pos, BIG_LONG_FLAG);
-      if (LITTLE_ENDIAN) {
-        UNSAFE.putLong(heapMemory, pos + 1, value);
-      } else {
-        UNSAFE.putLong(heapMemory, pos + 1, Long.reverseBytes(value));
+      if (!LITTLE_ENDIAN) {
+        value = Long.reverseBytes(value);
       }
+      UNSAFE.putLong(heapMemory, pos + 1, value);
       this.writerIndex = writerIndex + 9;
       return 9;
     }
@@ -1351,17 +1316,15 @@ public final class MemoryBuffer {
       streamReader.fillBuffer(2 - remaining);
     }
     readerIndex = readerIdx + 2;
-    final long pos = address + readerIdx;
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getShort(heapMemory, pos);
-    } else {
-      return Short.reverseBytes(UNSAFE.getShort(heapMemory, pos));
-    }
+    short v = UNSAFE.getShort(heapMemory, address + readerIdx);
+    return LITTLE_ENDIAN ? v : Short.reverseBytes(v);
   }
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public short readInt16OnLE() {
+  // CHECKSTYLE.OFF:MethodName
+  public short _readInt16OnLE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1374,7 +1337,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public short readInt16OnBE() {
+  // CHECKSTYLE.OFF:MethodName
+  public short _readInt16OnBE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1393,17 +1358,15 @@ public final class MemoryBuffer {
       streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
-    final long pos = address + readerIdx;
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getInt(heapMemory, pos);
-    } else {
-      return Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos));
-    }
+    int v = UNSAFE.getInt(heapMemory, address + readerIdx);
+    return LITTLE_ENDIAN ? v : Integer.reverseBytes(v);
   }
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public int readInt32OnLE() {
+  // CHECKSTYLE.OFF:MethodName
+  public int _readInt32OnLE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1416,7 +1379,9 @@ public final class MemoryBuffer {
 
   // Reduce method body for better inline in the caller.
   @CodegenInvoke
-  public int readInt32OnBE() {
+  // CHECKSTYLE.OFF:MethodName
+  public int _readInt32OnBE() {
+    // CHECKSTYLE.ON:MethodName
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1435,12 +1400,8 @@ public final class MemoryBuffer {
       streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
-    final long pos = address + readerIdx;
-    if (LITTLE_ENDIAN) {
-      return UNSAFE.getLong(heapMemory, pos);
-    } else {
-      return Long.reverseBytes(UNSAFE.getLong(heapMemory, pos));
-    }
+    long v = UNSAFE.getLong(heapMemory, address + readerIdx);
+    return LITTLE_ENDIAN ? v : Long.reverseBytes(v);
   }
 
   // Reduce method body for better inline in the caller.
@@ -1528,6 +1489,7 @@ public final class MemoryBuffer {
   }
 
   public float readFloat32() {
+    // noinspection Duplicates
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1535,12 +1497,11 @@ public final class MemoryBuffer {
       streamReader.fillBuffer(4 - remaining);
     }
     readerIndex = readerIdx + 4;
-    final long pos = address + readerIdx;
-    if (LITTLE_ENDIAN) {
-      return Float.intBitsToFloat(UNSAFE.getInt(heapMemory, pos));
-    } else {
-      return Float.intBitsToFloat(Integer.reverseBytes(UNSAFE.getInt(heapMemory, pos)));
+    int v = UNSAFE.getInt(heapMemory, address + readerIdx);
+    if (!LITTLE_ENDIAN) {
+      v = Integer.reverseBytes(v);
     }
+    return Float.intBitsToFloat(v);
   }
 
   // Reduce method body for better inline in the caller.
@@ -1575,6 +1536,7 @@ public final class MemoryBuffer {
   }
 
   public double readFloat64() {
+    // noinspection Duplicates
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
@@ -1582,12 +1544,11 @@ public final class MemoryBuffer {
       streamReader.fillBuffer(8 - remaining);
     }
     readerIndex = readerIdx + 8;
-    final long pos = address + readerIdx;
-    if (LITTLE_ENDIAN) {
-      return Double.longBitsToDouble(UNSAFE.getLong(heapMemory, pos));
-    } else {
-      return Double.longBitsToDouble(Long.reverseBytes(UNSAFE.getLong(heapMemory, pos)));
+    long v = UNSAFE.getLong(heapMemory, address + readerIdx);
+    if (!LITTLE_ENDIAN) {
+      v = Long.reverseBytes(v);
     }
+    return Double.longBitsToDouble(v);
   }
 
   // Reduce method body for better inline in the caller.
