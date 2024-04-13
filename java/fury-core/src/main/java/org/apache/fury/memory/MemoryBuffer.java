@@ -1783,10 +1783,10 @@ public final class MemoryBuffer {
   }
 
   /**
-   * Fast path for read a unsigned varint which is mostly a smaller value in [0, 16384). When the
+   * Fast path for read a unsigned varint which is mostly a smaller value in 14 bits value in [0, 16384). When the
    * value is equal or greater than 16384, the read will be a little slower.
    */
-  public int readVarUint32Small() {
+  public int readVarUint32Small14() {
     int readIdx = readerIndex;
     if (size - readIdx >= 5) {
       int fourByteValue = _unsafeGetInt32(readIdx++);

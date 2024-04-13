@@ -646,7 +646,7 @@ public final class StringSerializer extends Serializer<String> {
   }
 
   public String readUTF8String(MemoryBuffer buffer) {
-    int numBytes = buffer.readVarUint32Small();
+    int numBytes = buffer.readVarUint32Small14();
     buffer.checkReadableBytes(numBytes);
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
