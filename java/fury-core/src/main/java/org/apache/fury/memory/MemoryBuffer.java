@@ -731,7 +731,23 @@ public final class MemoryBuffer {
    */
   public int writeVarInt32(int v) {
     ensure(writerIndex + 8);
-    return _unsafeWriteVarInt32(v);
+    int varintBytes = _unsafePutVarUint36Small(writerIndex, ((long) v << 1) ^ (v >> 31));
+    writerIndex += varintBytes;
+    return varintBytes;
+  }
+
+  /**
+   * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
+   * to avoid using two memory operations.
+   */
+  @CodegenInvoke
+  // CHECKSTYLE.OFF:MethodName
+  public int _unsafeWriteVarInt32(int v) {
+    // CHECKSTYLE.ON:MethodName
+    // Ensure negatives close to zero is encode in little bytes.
+    int varintBytes = _unsafePutVarUint36Small(writerIndex, ((long) v << 1) ^ (v >> 31));
+    writerIndex += varintBytes;
+    return varintBytes;
   }
 
   /**
@@ -744,20 +760,9 @@ public final class MemoryBuffer {
     // generated code is smaller. Otherwise, `MapRefResolver.writeRefOrNull`
     // may be `callee is too large`/`already compiled into a big method`
     ensure(writerIndex + 8);
-    return _unsafeWriteVarUint32(v);
-  }
-
-  /**
-   * For implementation efficiency, this method needs at most 8 bytes for writing 5 bytes using long
-   * to avoid using two memory operations.
-   */
-  @CodegenInvoke
-  // CHECKSTYLE.OFF:MethodName
-  public int _unsafeWriteVarInt32(int v) {
-    // CHECKSTYLE.ON:MethodName
-    // Ensure negatives close to zero is encode in little bytes.
-    v = (v << 1) ^ (v >> 31);
-    return _unsafeWriteVarUint32(v);
+    int varintBytes = _unsafePutVarUint36Small(writerIndex, v);
+    writerIndex += varintBytes;
+    return varintBytes;
   }
 
   /**
@@ -770,6 +775,33 @@ public final class MemoryBuffer {
     int varintBytes = _unsafePutVarUint36Small(writerIndex, v);
     writerIndex += varintBytes;
     return varintBytes;
+  }
+
+  /**
+   * Fast method for write an unsigned varint which is mostly a small value in 7 bits value in [0,
+   * 127). When the value is equal or greater than 127, the write will be a little slower.
+   */
+  public int writeVarUint32Small7(int value) {
+    ensure(writerIndex + 8);
+    if (value >>> 7 == 0) {
+      UNSAFE.putByte(heapMemory, address + writerIndex++, (byte) value);
+      return 1;
+    }
+    return continueWriteVarUint32Small7(value);
+  }
+
+  private int continueWriteVarUint32Small7(int value) {
+    long encoded = (value & 0x7F);
+    encoded |= (((value & 0x3f80) << 1) | 0x80);
+    int writerIdx = writerIndex;
+    if (value >>> 14 == 0) {
+      _unsafePutInt32(writerIdx, (int) encoded);
+      writerIndex += 2;
+      return 2;
+    }
+    int diff = continuePutVarInt36(writerIdx, encoded, value);
+    writerIndex += diff;
+    return diff;
   }
 
   /**
@@ -1011,16 +1043,14 @@ public final class MemoryBuffer {
    */
   public int writeVarInt64(long value) {
     ensure(writerIndex + 9);
-    value = (value << 1) ^ (value >> 63);
-    return _unsafeWriteVarUint64(value);
+    return _unsafeWriteVarUint64((value << 1) ^ (value >> 63));
   }
 
   @CodegenInvoke
   // CHECKSTYLE.OFF:MethodName
-  public int _unsafeWriteVarInt3264(long value) {
+  public int _unsafeWriteVarInt64(long value) {
     // CHECKSTYLE.ON:MethodName
-    value = (value << 1) ^ (value >> 63);
-    return _unsafeWriteVarUint64(value);
+    return _unsafeWriteVarUint64((value << 1) ^ (value >> 63));
   }
 
   public int writeVarUint64(long value) {
@@ -1167,8 +1197,7 @@ public final class MemoryBuffer {
     int idx = writerIndex;
     ensure(idx + 5 + numBytes);
     idx += _unsafeWriteVarUint32(numBytes);
-    final long destAddr = address + idx;
-    Platform.copyMemory(arr, offset, heapMemory, destAddr, numBytes);
+    Platform.copyMemory(arr, offset, heapMemory, address + idx, numBytes);
     writerIndex = idx + numBytes;
   }
 
@@ -1177,8 +1206,7 @@ public final class MemoryBuffer {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + numBytes;
     ensure(newIdx);
-    final long destAddr = address + writerIdx;
-    Platform.copyMemory(arr, offset, heapMemory, destAddr, numBytes);
+    Platform.copyMemory(arr, offset, heapMemory, address + writerIdx, numBytes);
     writerIndex = newIdx;
   }
 
@@ -1186,8 +1214,7 @@ public final class MemoryBuffer {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + numBytes;
     ensure(newIdx);
-    final long destAddr = address + writerIdx;
-    Platform.copyMemory(arr, offset, heapMemory, destAddr, numBytes);
+    Platform.copyMemory(arr, offset, heapMemory, address + writerIdx, numBytes);
     writerIndex = newIdx;
   }
 
@@ -1601,7 +1628,7 @@ public final class MemoryBuffer {
     int readIdx = readerIndex;
     int result;
     if (size - readIdx < 5) {
-      result = readVarUint32Slow();
+      result = (int) readVarUint36Slow();
     } else {
       long address = this.address;
       // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
@@ -1644,7 +1671,7 @@ public final class MemoryBuffer {
     int readIdx = readerIndex;
     int result;
     if (size - readIdx < 5) {
-      result = readVarUint32Slow();
+      result = (int) readVarUint36Slow();
     } else {
       long address = this.address;
       int fourByteValue = Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readIdx));
@@ -1750,7 +1777,7 @@ public final class MemoryBuffer {
   public int readVarUint32() {
     int readIdx = readerIndex;
     if (size - readIdx < 5) {
-      return readVarUint32Slow();
+      return (int) readVarUint36Slow();
     }
     // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
     int fourByteValue = _unsafeGetInt32(readIdx);
@@ -1783,55 +1810,62 @@ public final class MemoryBuffer {
   }
 
   /**
-   * Fast path for read a unsigned varint which is mostly a smaller value in [0, 16384). When the
-   * value is equal or greater than 16384, the read will be a little slower.
+   * Fast method for read an unsigned varint which is mostly a small value in 7 bits value in [0,
+   * 127). When the value is equal or greater than 127, the read will be a little slower.
    */
-  public int readVarUintSmall() {
+  public int readVarUint32Small7() {
+    int readIdx = readerIndex;
+    if (size - readIdx > 0) {
+      byte v = UNSAFE.getByte(heapMemory, address + readIdx++);
+      if ((v & 0x80) == 0) {
+        readerIndex = readIdx;
+        return v;
+      }
+    }
+    return readVarUint32Small14();
+  }
+
+  /**
+   * Fast path for read an unsigned varint which is mostly a small value in 14 bits value in [0,
+   * 16384). When the value is equal or greater than 16384, the read will be a little slower.
+   */
+  public int readVarUint32Small14() {
     int readIdx = readerIndex;
     if (size - readIdx >= 5) {
       int fourByteValue = _unsafeGetInt32(readIdx++);
-      int binarySize = fourByteValue & 0x7F;
+      int value = fourByteValue & 0x7F;
       // Duplicate and manual inline for performance.
       // noinspection Duplicates
       if ((fourByteValue & 0x80) != 0) {
         readIdx++;
-        binarySize |= (fourByteValue >>> 1) & 0x3f80;
+        value |= (fourByteValue >>> 1) & 0x3f80;
         if ((fourByteValue & 0x8000) != 0) {
           // merely executed path, make it as a separate method to reduce
           // code size of current method for better jvm inline
-          return continueRead(readIdx, fourByteValue, binarySize);
+          return continueReadVarUint32(readIdx, fourByteValue, value);
         }
       }
       readerIndex = readIdx;
-      return binarySize;
+      return value;
     } else {
-      return readVarUint32Slow();
+      return (int) readVarUint36Slow();
     }
   }
 
-  private int readVarUint32Slow() {
-    // Note:
-    //  Loop are not used here to improve performance,
-    //  we manually unroll the loop for better performance.
-    int b = readByte();
-    int result = b & 0x7F;
-    if ((b & 0x80) != 0) {
-      b = readByte();
-      result |= (b & 0x7F) << 7;
-      if ((b & 0x80) != 0) {
-        b = readByte();
-        result |= (b & 0x7F) << 14;
-        if ((b & 0x80) != 0) {
-          b = readByte();
-          result |= (b & 0x7F) << 21;
-          if ((b & 0x80) != 0) {
-            b = readByte();
-            result |= (b & 0x7F) << 28;
-          }
-        }
+  private int continueReadVarUint32(int readIdx, int bulkRead, int value) {
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    readIdx++;
+    value |= (bulkRead >>> 2) & 0x1fc000;
+    if ((bulkRead & 0x800000) != 0) {
+      readIdx++;
+      value |= (bulkRead >>> 3) & 0xfe00000;
+      if ((bulkRead & 0x80000000) != 0) {
+        value |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
       }
     }
-    return result;
+    readerIndex = readIdx;
+    return value;
   }
 
   /** Reads the 1-9 byte int part of a var long. */
@@ -2183,12 +2217,12 @@ public final class MemoryBuffer {
         if ((fourByteValue & 0x8000) != 0) {
           // merely executed path, make it as a separate method to reduce
           // code size of current method for better jvm inline
-          return continueRead(readIdx, fourByteValue, binarySize);
+          return continueReadBinarySize(readIdx, fourByteValue, binarySize);
         }
       }
       readerIndex = readIdx;
     } else {
-      binarySize = readVarUint32Slow();
+      binarySize = (int) readVarUint36Slow();
       readIdx = readerIndex;
     }
     int diff = size - readIdx;
@@ -2198,7 +2232,7 @@ public final class MemoryBuffer {
     return binarySize;
   }
 
-  private int continueRead(int readIdx, int bulkRead, int binarySize) {
+  private int continueReadBinarySize(int readIdx, int bulkRead, int binarySize) {
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     readIdx++;

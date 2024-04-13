@@ -583,6 +583,23 @@ public class MemoryBufferTest {
   }
 
   @Test
+  public void testVarUint32Small7() {
+    MemoryBuffer buf = MemoryUtils.buffer(1);
+    buf.writeVarUint32Small7(1);
+    assertEquals(buf.readVarUint32Small7(), 1);
+    assertEquals(buf.writeVarUint32Small7(127), 1);
+    assertEquals(buf.readVarUint32Small7(), 127);
+    assertEquals(buf.writeVarUint32Small7(Short.MAX_VALUE), 3);
+    assertEquals(buf.readVarUint32Small7(), Short.MAX_VALUE);
+    assertEquals(buf.writeVarUint32Small7(Integer.MAX_VALUE), 5);
+    assertEquals(buf.readVarUint32Small7(), Integer.MAX_VALUE);
+    assertEquals(buf.writeVarUint32Small7(-1), 5);
+    assertEquals(buf.readVarUint32Small7(), -1);
+    assertEquals(buf.writeVarUint32Small7(0), 1);
+    assertEquals(buf.readVarUint32Small7(), 0);
+  }
+
+  @Test
   public void testVarUint36Small() {
     MemoryBuffer buf = MemoryUtils.buffer(80);
     int index = 0;

@@ -322,12 +322,12 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, Enum value) {
-      buffer.writeVarUint32(value.ordinal());
+      buffer.writeVarUint32Small7(value.ordinal());
     }
 
     @Override
     public Enum read(MemoryBuffer buffer) {
-      return enumConstants[buffer.readVarUintSmall()];
+      return enumConstants[buffer.readVarUint32Small7()];
     }
   }
 
@@ -339,17 +339,17 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigDecimal value) {
       final byte[] bytes = value.unscaledValue().toByteArray();
-      buffer.writeVarUint32(value.scale());
-      buffer.writeVarUint32(value.precision());
-      buffer.writeVarUint32(bytes.length);
+      buffer.writeVarUint32Small7(value.scale());
+      buffer.writeVarUint32Small7(value.precision());
+      buffer.writeVarUint32Small7(bytes.length);
       buffer.writeBytes(bytes);
     }
 
     @Override
     public BigDecimal read(MemoryBuffer buffer) {
-      int scale = buffer.readVarUint32();
-      int precision = buffer.readVarUint32();
-      int len = buffer.readVarUint32();
+      int scale = buffer.readVarUint32Small7();
+      int precision = buffer.readVarUint32Small7();
+      int len = buffer.readVarUint32Small7();
       byte[] bytes = buffer.readBytes(len);
       final BigInteger bigInteger = new BigInteger(bytes);
       return new BigDecimal(bigInteger, scale, new MathContext(precision));
@@ -364,13 +364,13 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigInteger value) {
       final byte[] bytes = value.toByteArray();
-      buffer.writeVarUint32(bytes.length);
+      buffer.writeVarUint32Small7(bytes.length);
       buffer.writeBytes(bytes);
     }
 
     @Override
     public BigInteger read(MemoryBuffer buffer) {
-      int len = buffer.readVarUint32();
+      int len = buffer.readVarUint32Small7();
       byte[] bytes = buffer.readBytes(len);
       return new BigInteger(bytes);
     }

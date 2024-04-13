@@ -1204,9 +1204,9 @@ public class ClassResolver {
   public void writeClassAndUpdateCache(MemoryBuffer buffer, Class<?> cls) {
     // fast path for common type
     if (cls == Integer.class) {
-      buffer.writeVarUint32(INTEGER_CLASS_ID << 1);
+      buffer.writeVarUint32Small7(INTEGER_CLASS_ID << 1);
     } else if (cls == Long.class) {
-      buffer.writeVarUint32(LONG_CLASS_ID << 1);
+      buffer.writeVarUint32Small7(LONG_CLASS_ID << 1);
     } else {
       writeClass(buffer, getOrUpdateClassInfo(cls));
     }
@@ -1290,7 +1290,7 @@ public class ClassResolver {
         metaContext,
         "Meta context must be set before serialization,"
             + " please set meta context by SerializationContext.setMetaContext");
-    int id = buffer.readVarUintSmall();
+    int id = buffer.readVarUint32Small14();
     List<ClassInfo> readClassInfos = metaContext.readClassInfos;
     ClassInfo classInfo = readClassInfos.get(id);
     if (classInfo == null) {
@@ -1313,7 +1313,7 @@ public class ClassResolver {
         metaContext,
         "Meta context must be set before serialization,"
             + " please set meta context by SerializationContext.setMetaContext");
-    int id = buffer.readVarUintSmall();
+    int id = buffer.readVarUint32Small14();
     List<ClassInfo> readClassInfos = metaContext.readClassInfos;
     ClassInfo classInfo = readClassInfos.get(id);
     if (classInfo == null) {
@@ -1380,7 +1380,7 @@ public class ClassResolver {
    */
   public void writeClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    buffer.writeVarUint32(metaContext.writingClassDefs.size());
+    buffer.writeVarUint32Small7(metaContext.writingClassDefs.size());
     for (ClassDef classDef : metaContext.writingClassDefs) {
       classDef.writeClassDef(buffer);
     }
@@ -1397,7 +1397,7 @@ public class ClassResolver {
     int classDefOffset = buffer.readInt32();
     int readerIndex = buffer.readerIndex();
     buffer.readerIndex(classDefOffset);
-    int numClassDefs = buffer.readVarUintSmall();
+    int numClassDefs = buffer.readVarUint32Small14();
     for (int i = 0; i < numClassDefs; i++) {
       ClassDef readClassDef = ClassDef.readClassDef(buffer);
       // Share same class def to reduce memory footprint, since there may be many meta context.
@@ -1466,7 +1466,7 @@ public class ClassResolver {
 
   // Note: Thread safe fot jit thread to call.
   public Expression skipRegisteredClassExpr(Expression buffer) {
-    return new Invoke(buffer, "readVarUintSmall");
+    return new Invoke(buffer, "readVarUint32Small14");
   }
 
   /**
@@ -1580,7 +1580,7 @@ public class ClassResolver {
     // use classId
     if ((flag & 0x80) != 0) { // class id is written using multiple bytes.
       buffer.increaseReaderIndex(-1);
-      classId = (short) buffer.readVarUintSmall();
+      classId = (short) buffer.readVarUint32Small14();
     } else {
       classId = (short) (flag & 0x7F);
     }
