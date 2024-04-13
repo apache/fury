@@ -228,7 +228,7 @@ public final class Fury implements BaseFury {
     byte bitmap = 0;
     if (obj == null) {
       bitmap |= isNilFlag;
-      buffer.put(maskIndex, bitmap);
+      buffer.putByte(maskIndex, bitmap);
       return buffer;
     }
     // set endian.
@@ -244,7 +244,7 @@ public final class Fury implements BaseFury {
     if (bufferCallback != null) {
       bitmap |= isOutOfBandFlag;
     }
-    buffer.put(maskIndex, bitmap);
+    buffer.putByte(maskIndex, bitmap);
     try {
       jitContext.lock();
       if (depth != 0) {
@@ -310,7 +310,7 @@ public final class Fury implements BaseFury {
     int startOffset = buffer.writerIndex();
     boolean shareMetaContext = config.shareMetaContext();
     if (shareMetaContext) {
-      buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
+      buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
     }
     // reduce caller stack
     if (!refResolver.writeRefOrNull(buffer, obj)) {
@@ -319,18 +319,18 @@ public final class Fury implements BaseFury {
       writeData(buffer, classInfo, obj);
     }
     if (shareMetaContext) {
-      buffer.putInt(startOffset, buffer.writerIndex());
+      buffer.putInt32(startOffset, buffer.writerIndex());
       classResolver.writeClassDefs(buffer);
     }
   }
 
   private void xserializeInternal(MemoryBuffer buffer, Object obj) {
     int startOffset = buffer.writerIndex();
-    buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
-    buffer.writeInt(-1); // preserve 4-byte for nativeObjects size
+    buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
+    buffer.writeInt32(-1); // preserve 4-byte for nativeObjects size
     xwriteRef(buffer, obj);
-    buffer.putInt(startOffset, buffer.writerIndex());
-    buffer.putInt(startOffset + 4, nativeObjects.size());
+    buffer.putInt32(startOffset, buffer.writerIndex());
+    buffer.putInt32(startOffset + 4, nativeObjects.size());
     refResolver.resetWrite();
     // fury write opaque object classname which cause later write of classname only write an id.
     classResolver.resetWrite();
@@ -491,7 +491,7 @@ public final class Fury implements BaseFury {
       serializer = classResolver.getSerializer(cls);
     }
     short typeId = serializer.getXtypeId();
-    buffer.writeShort(typeId);
+    buffer.writeInt16(typeId);
     if (typeId != NOT_SUPPORT_CROSS_LANGUAGE) {
       if (typeId == FURY_TYPE_TAG_ID) {
         classResolver.xwriteTypeTag(buffer, cls);
@@ -509,7 +509,7 @@ public final class Fury implements BaseFury {
       // fields/objects deserialization will use wrong reference id since we skip opaque objects
       // deserialization.
       // So we stash native objects and serialize all those object at the last.
-      buffer.writePositiveVarInt(nativeObjects.size());
+      buffer.writeVarUint32(nativeObjects.size());
       nativeObjects.add(obj);
     }
     depth--;
@@ -528,23 +528,23 @@ public final class Fury implements BaseFury {
         buffer.writeChar((Character) obj);
         break;
       case ClassResolver.SHORT_CLASS_ID:
-        buffer.writeShort((Short) obj);
+        buffer.writeInt16((Short) obj);
         break;
       case ClassResolver.INTEGER_CLASS_ID:
         if (compressInt) {
-          buffer.writeVarInt((Integer) obj);
+          buffer.writeVarInt32((Integer) obj);
         } else {
-          buffer.writeInt((Integer) obj);
+          buffer.writeInt32((Integer) obj);
         }
         break;
       case ClassResolver.FLOAT_CLASS_ID:
-        buffer.writeFloat((Float) obj);
+        buffer.writeFloat32((Float) obj);
         break;
       case ClassResolver.LONG_CLASS_ID:
-        LongSerializer.writeLong(buffer, (Long) obj, longEncoding);
+        LongSerializer.writeInt64(buffer, (Long) obj, longEncoding);
         break;
       case ClassResolver.DOUBLE_CLASS_ID:
-        buffer.writeDouble((Double) obj);
+        buffer.writeFloat64((Double) obj);
         break;
       case ClassResolver.STRING_CLASS_ID:
         stringSerializer.writeJavaString(buffer, (String) obj);
@@ -566,9 +566,9 @@ public final class Fury implements BaseFury {
       // efficient
       // TODO(chaokunyang) Remove branch when other languages support aligned varint.
       if (language == Language.JAVA) {
-        buffer.writePositiveVarIntAligned(totalBytes);
+        buffer.writeVarUint32Aligned(totalBytes);
       } else {
-        buffer.writePositiveVarInt(totalBytes);
+        buffer.writeVarUint32(totalBytes);
       }
       int writerIndex = buffer.writerIndex();
       buffer.ensure(writerIndex + bufferObject.totalBytes());
@@ -590,9 +590,9 @@ public final class Fury implements BaseFury {
       // efficient
       // TODO(chaokunyang) Remove branch when other languages support aligned varint.
       if (language == Language.JAVA) {
-        buffer.writePositiveVarIntAligned(totalBytes);
+        buffer.writeVarUint32Aligned(totalBytes);
       } else {
-        buffer.writePositiveVarInt(totalBytes);
+        buffer.writeVarUint32(totalBytes);
       }
       bufferObject.writeTo(buffer);
     } else {
@@ -606,9 +606,9 @@ public final class Fury implements BaseFury {
       int size;
       // TODO(chaokunyang) Remove branch when other languages support aligned varint.
       if (language == Language.JAVA) {
-        size = buffer.readPositiveAlignedVarInt();
+        size = buffer.readAlignedVarUint();
       } else {
-        size = buffer.readPositiveVarInt();
+        size = buffer.readVarUint32();
       }
       MemoryBuffer slice = buffer.slice(buffer.readerIndex(), size);
       buffer.readerIndex(buffer.readerIndex() + size);
@@ -672,12 +672,12 @@ public final class Fury implements BaseFury {
     return stringSerializer.readJavaString(buffer);
   }
 
-  public void writeLong(MemoryBuffer buffer, long value) {
-    LongSerializer.writeLong(buffer, value, longEncoding);
+  public void writeInt64(MemoryBuffer buffer, long value) {
+    LongSerializer.writeInt64(buffer, value, longEncoding);
   }
 
-  public long readLong(MemoryBuffer buffer) {
-    return LongSerializer.readLong(buffer, longEncoding);
+  public long readInt64(MemoryBuffer buffer) {
+    return LongSerializer.readInt64(buffer, longEncoding);
   }
 
   @Override
@@ -803,8 +803,8 @@ public final class Fury implements BaseFury {
 
   private Object xdeserializeInternal(MemoryBuffer buffer) {
     Object obj;
-    int nativeObjectsStartOffset = buffer.readInt();
-    int nativeObjectsSize = buffer.readInt();
+    int nativeObjectsStartOffset = buffer.readInt32();
+    int nativeObjectsSize = buffer.readInt32();
     int endReaderIndex = nativeObjectsStartOffset;
     if (peerLanguage == Language.JAVA) {
       int readerIndex = buffer.readerIndex();
@@ -909,19 +909,19 @@ public final class Fury implements BaseFury {
       case ClassResolver.CHAR_CLASS_ID:
         return buffer.readChar();
       case ClassResolver.SHORT_CLASS_ID:
-        return buffer.readShort();
+        return buffer.readInt16();
       case ClassResolver.INTEGER_CLASS_ID:
         if (compressInt) {
-          return buffer.readVarInt();
+          return buffer.readVarInt32();
         } else {
-          return buffer.readInt();
+          return buffer.readInt32();
         }
       case ClassResolver.FLOAT_CLASS_ID:
-        return buffer.readFloat();
+        return buffer.readFloat32();
       case ClassResolver.LONG_CLASS_ID:
-        return LongSerializer.readLong(buffer, longEncoding);
+        return LongSerializer.readInt64(buffer, longEncoding);
       case ClassResolver.DOUBLE_CLASS_ID:
-        return buffer.readDouble();
+        return buffer.readFloat64();
       case ClassResolver.STRING_CLASS_ID:
         return stringSerializer.readJavaString(buffer);
         // TODO(add fastpath for other types)
@@ -976,7 +976,7 @@ public final class Fury implements BaseFury {
 
   public Object xreadNonRef(MemoryBuffer buffer, Serializer<?> serializer) {
     depth++;
-    short typeId = buffer.readShort();
+    short typeId = buffer.readInt16();
     ClassResolver classResolver = this.classResolver;
     if (typeId != NOT_SUPPORT_CROSS_LANGUAGE) {
       Class<?> cls = null;
@@ -1006,7 +1006,7 @@ public final class Fury implements BaseFury {
       return o;
     } else {
       String className = classResolver.xreadClassName(buffer);
-      int ordinal = buffer.readPositiveVarInt();
+      int ordinal = buffer.readVarUint32();
       if (peerLanguage != Language.JAVA) {
         return OpaqueObjects.of(peerLanguage, className, ordinal);
       } else {
@@ -1034,12 +1034,12 @@ public final class Fury implements BaseFury {
       }
       if (config.shareMetaContext()) {
         int startOffset = buffer.writerIndex();
-        buffer.writeInt(-1); // preserve 4-byte for nativeObjects start offsets.
+        buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
           writeData(buffer, classInfo, obj);
         }
-        buffer.putInt(startOffset, buffer.writerIndex());
+        buffer.putInt32(startOffset, buffer.writerIndex());
         classResolver.writeClassDefs(buffer);
       } else {
         if (!refResolver.writeRefOrNull(buffer, obj)) {

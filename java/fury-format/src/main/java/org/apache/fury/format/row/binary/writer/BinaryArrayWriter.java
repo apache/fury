@@ -104,17 +104,17 @@ public class BinaryArrayWriter extends BinaryWriter {
 
     // Write numElements and clear out null bits to header
     // store numElements in header in aligned 8 byte, though numElements is 4 byte int
-    buffer.putLong(startIndex, numElements);
+    buffer.putInt64(startIndex, numElements);
     int end = startIndex + headerInBytes;
     for (int i = startIndex + 8; i < end; i += 8) {
-      buffer.putLong(i, 0L);
+      buffer.putInt64(i, 0L);
     }
 
     // fill 0 into reminder part of 8-bytes alignment
     for (int i = elementSize * numElements; i < fixedPartInBytes; i++) {
-      buffer.put(startIndex + headerInBytes + i, (byte) 0);
+      buffer.putByte(startIndex + headerInBytes + i, (byte) 0);
     }
-    buffer.increaseWriterIndexUnsafe(headerInBytes + fixedPartInBytes);
+    buffer._increaseWriterIndexUnsafe(headerInBytes + fixedPartInBytes);
   }
 
   private void assertIndexIsValid(int index) {
@@ -130,7 +130,7 @@ public class BinaryArrayWriter extends BinaryWriter {
   @Override
   public void write(int ordinal, byte value) {
     setNotNullAt(ordinal);
-    buffer.put(getOffset(ordinal), value);
+    buffer.putByte(getOffset(ordinal), value);
   }
 
   @Override
@@ -142,19 +142,19 @@ public class BinaryArrayWriter extends BinaryWriter {
   @Override
   public void write(int ordinal, short value) {
     setNotNullAt(ordinal);
-    buffer.putShort(getOffset(ordinal), value);
+    buffer.putInt16(getOffset(ordinal), value);
   }
 
   @Override
   public void write(int ordinal, int value) {
     setNotNullAt(ordinal);
-    buffer.putInt(getOffset(ordinal), value);
+    buffer.putInt32(getOffset(ordinal), value);
   }
 
   @Override
   public void write(int ordinal, float value) {
     setNotNullAt(ordinal);
-    buffer.putFloat(getOffset(ordinal), value);
+    buffer.putFloat32(getOffset(ordinal), value);
   }
 
   @Override

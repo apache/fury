@@ -43,7 +43,7 @@ abstract class UnsafeTrait implements Getters, Setters {
     if (isNullAt(ordinal)) {
       return null;
     }
-    final long offsetAndSize = getLong(ordinal);
+    final long offsetAndSize = getInt64(ordinal);
     final int relativeOffset = (int) (offsetAndSize >> 32);
     final int size = (int) offsetAndSize;
     return getBuffer().slice(getBaseOffset() + relativeOffset, size);
@@ -66,42 +66,42 @@ abstract class UnsafeTrait implements Getters, Setters {
 
   public byte getByte(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().get(getOffset(ordinal));
+    return getBuffer().getByte(getOffset(ordinal));
   }
 
-  public short getShort(int ordinal) {
+  public short getInt16(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getShort(getOffset(ordinal));
+    return getBuffer().getInt16(getOffset(ordinal));
   }
 
-  public int getInt(int ordinal) {
+  public int getInt32(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getInt(getOffset(ordinal));
+    return getBuffer().getInt32(getOffset(ordinal));
   }
 
-  public long getLong(int ordinal) {
+  public long getInt64(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getLong(getOffset(ordinal));
+    return getBuffer().getInt64(getOffset(ordinal));
   }
 
-  public float getFloat(int ordinal) {
+  public float getFloat32(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getFloat(getOffset(ordinal));
+    return getBuffer().getFloat32(getOffset(ordinal));
   }
 
-  public double getDouble(int ordinal) {
+  public double getFloat64(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getDouble(getOffset(ordinal));
+    return getBuffer().getFloat64(getOffset(ordinal));
   }
 
   public int getDate(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getInt(getOffset(ordinal));
+    return getBuffer().getInt32(getOffset(ordinal));
   }
 
   public long getTimestamp(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getLong(getOffset(ordinal));
+    return getBuffer().getInt64(getOffset(ordinal));
   }
 
   // TODO when length of string utf-8 bytes is less than 8, store it in fixed-width region. Use one
@@ -121,7 +121,7 @@ abstract class UnsafeTrait implements Getters, Setters {
     if (isNullAt(ordinal)) {
       return null;
     } else {
-      final long offsetAndSize = getLong(ordinal);
+      final long offsetAndSize = getInt64(ordinal);
       final int relativeOffset = (int) (offsetAndSize >> 32);
       final int size = (int) offsetAndSize;
       final byte[] bytes = new byte[size];
@@ -147,7 +147,7 @@ abstract class UnsafeTrait implements Getters, Setters {
     if (isNullAt(ordinal)) {
       return null;
     }
-    final long offsetAndSize = getLong(ordinal);
+    final long offsetAndSize = getInt64(ordinal);
     final int relativeOffset = (int) (offsetAndSize >> 32);
     final int size = (int) offsetAndSize;
     BinaryRow row = new BinaryRow(DataTypes.createSchema(field));
@@ -159,7 +159,7 @@ abstract class UnsafeTrait implements Getters, Setters {
     if (isNullAt(ordinal)) {
       return null;
     }
-    final long offsetAndSize = getLong(ordinal);
+    final long offsetAndSize = getInt64(ordinal);
     final int relativeOffset = (int) (offsetAndSize >> 32);
     final int size = (int) offsetAndSize;
     BinaryArray array = new BinaryArray(field);
@@ -171,7 +171,7 @@ abstract class UnsafeTrait implements Getters, Setters {
     if (isNullAt(ordinal)) {
       return null;
     }
-    final long offsetAndSize = getLong(ordinal);
+    final long offsetAndSize = getInt64(ordinal);
     final int relativeOffset = (int) (offsetAndSize >> 32);
     final int size = (int) offsetAndSize;
     BinaryMap map = new BinaryMap(field);
@@ -194,57 +194,57 @@ abstract class UnsafeTrait implements Getters, Setters {
   public void setByte(int ordinal, byte value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().put(getOffset(ordinal), value);
+    getBuffer().putByte(getOffset(ordinal), value);
   }
 
   protected abstract void setNotNullAt(int ordinal);
 
   @Override
-  public void setShort(int ordinal, short value) {
+  public void setInt16(int ordinal, short value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putShort(getOffset(ordinal), value);
+    getBuffer().putInt16(getOffset(ordinal), value);
   }
 
   @Override
-  public void setInt(int ordinal, int value) {
+  public void setInt32(int ordinal, int value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putInt(getOffset(ordinal), value);
+    getBuffer().putInt32(getOffset(ordinal), value);
   }
 
   @Override
-  public void setLong(int ordinal, long value) {
+  public void setInt64(int ordinal, long value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putLong(getOffset(ordinal), value);
+    getBuffer().putInt64(getOffset(ordinal), value);
   }
 
   @Override
-  public void setFloat(int ordinal, float value) {
+  public void setFloat32(int ordinal, float value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putFloat(getOffset(ordinal), value);
+    getBuffer().putFloat32(getOffset(ordinal), value);
   }
 
   @Override
-  public void setDouble(int ordinal, double value) {
+  public void setFloat64(int ordinal, double value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putDouble(getOffset(ordinal), value);
+    getBuffer().putFloat64(getOffset(ordinal), value);
   }
 
   @Override
   public void setDate(int ordinal, int value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putInt(getOffset(ordinal), value);
+    getBuffer().putInt32(getOffset(ordinal), value);
   }
 
   @Override
   public void setTimestamp(int ordinal, long value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putLong(getOffset(ordinal), value);
+    getBuffer().putInt64(getOffset(ordinal), value);
   }
 }

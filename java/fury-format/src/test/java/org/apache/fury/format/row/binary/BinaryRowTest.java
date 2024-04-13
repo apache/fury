@@ -41,34 +41,34 @@ public class BinaryRowTest {
   @Test(enabled = false)
   public void testAlign() {
     MemoryBuffer buf = MemoryUtils.buffer(64);
-    buf.putLong(6, 100L);
-    buf.putLong(14, 100L);
+    buf.putInt64(6, 100L);
+    buf.putInt64(14, 100L);
     long nums = 1000_000_000;
     // warm
     for (int i = 0; i < nums; i++) {
-      buf.getLong(6);
-      buf.getLong(14);
+      buf.getInt64(6);
+      buf.getInt64(14);
     }
     long t = System.nanoTime();
     for (int i = 0; i < nums; i++) {
-      buf.getLong(6);
-      buf.getLong(14);
+      buf.getInt64(6);
+      buf.getInt64(14);
     }
     long duration = System.nanoTime() - t;
     System.out.format("non-aligned cost:\ttotal %sns %sms\n", duration, duration / 1000_000);
 
     MemoryBuffer buf2 = MemoryUtils.buffer(64);
-    buf2.putLong(8, 100L);
-    buf2.putLong(16, 100L);
+    buf2.putInt64(8, 100L);
+    buf2.putInt64(16, 100L);
     // warm
     for (int i = 0; i < nums; i++) {
-      buf2.getLong(8);
-      buf2.getLong(16);
+      buf2.getInt64(8);
+      buf2.getInt64(16);
     }
     t = System.nanoTime();
     for (int i = 0; i < nums; i++) {
-      buf2.getLong(8);
-      buf2.getLong(16);
+      buf2.getInt64(8);
+      buf2.getInt64(16);
     }
     duration = System.nanoTime() - t;
     System.out.format("aligned cost:\ttotal %sns %sms\n", duration, duration / 1000_000);

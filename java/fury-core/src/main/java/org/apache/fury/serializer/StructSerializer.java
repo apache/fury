@@ -122,7 +122,7 @@ public class StructSerializer<T> extends Serializer<T> {
       typeHash = computeStructHash();
       this.typeHash = typeHash;
     }
-    buffer.writeInt(typeHash);
+    buffer.writeInt32(typeHash);
     Generics generics = fury.getGenerics();
     GenericType[] fieldGenerics = getGenericTypes(generics);
     for (int i = 0; i < fieldAccessors.length; i++) {
@@ -167,7 +167,7 @@ public class StructSerializer<T> extends Serializer<T> {
       typeHash = computeStructHash();
       this.typeHash = typeHash;
     }
-    int newHash = buffer.readInt();
+    int newHash = buffer.readInt32();
     if (newHash != typeHash) {
       throw new ClassNotCompatibleException(
           String.format(

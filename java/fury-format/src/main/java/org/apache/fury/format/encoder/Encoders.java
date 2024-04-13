@@ -152,7 +152,7 @@ public class Encoders {
         @Override
         public T decode(byte[] bytes) {
           MemoryBuffer buffer = MemoryUtils.wrap(bytes);
-          long peerSchemaHash = buffer.readLong();
+          long peerSchemaHash = buffer.readInt64();
           if (peerSchemaHash != schemaHash) {
             throw new ClassNotCompatibleException(
                 String.format(
@@ -169,7 +169,7 @@ public class Encoders {
         @Override
         public byte[] encode(T obj) {
           buffer.writerIndex(0);
-          buffer.writeLong(schemaHash);
+          buffer.writeInt64(schemaHash);
           writer.setBuffer(buffer);
           writer.reset();
           BinaryRow row = toRow(obj);

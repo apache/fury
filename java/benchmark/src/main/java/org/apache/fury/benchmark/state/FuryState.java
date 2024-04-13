@@ -131,7 +131,7 @@ public class FuryState {
         furyBuilder.withCompatibleMode(CompatibleMode.COMPATIBLE);
       }
       fury = furyBuilder.build();
-      switch (ObjectType.MEDIA_CONTENT) {
+      switch (objectType) {
         case SAMPLE:
         case STRUCT:
         case STRUCT2:

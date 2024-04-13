@@ -347,7 +347,7 @@ cdef class Buffer:
     cpdef inline write_varint32(self, int32_t value):
         self.grow(<int8_t>5)
         cdef int32_t actual_bytes_written = self.c_buffer.get()\
-            .PutPositiveVarInt32(self.writer_index, value)
+            .PutVarUint32(self.writer_index, value)
         self.writer_index += actual_bytes_written
         return actual_bytes_written
 
@@ -357,7 +357,7 @@ cdef class Buffer:
             int8_t b
             int32_t result
         if self._c_size - self.reader_index > 5:
-            result = self.c_buffer.get().GetPositiveVarInt32(
+            result = self.c_buffer.get().GetVarUint32(
                 self.reader_index, &read_length)
             self.reader_index += read_length
             return result

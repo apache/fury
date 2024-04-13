@@ -130,7 +130,7 @@ public class ArraySuite {
     for (int i = 0; i < size; i++) {
       Integer o = list.get(i);
       if (o != null) {
-        buffer.writeVarInt(o);
+        buffer.writeVarInt32(o);
       }
     }
     return buffer;

@@ -44,11 +44,11 @@ class ValueVisitor extends DefaultTypeVisitor<Function<Integer, Object>> {
         case 1:
           return getters::getByte;
         case 2:
-          return getters::getShort;
+          return getters::getInt16;
         case 4:
-          return getters::getInt;
+          return getters::getInt32;
         case 8:
-          return getters::getLong;
+          return getters::getInt64;
         default:
           return unsupported(type);
       }
@@ -60,9 +60,9 @@ class ValueVisitor extends DefaultTypeVisitor<Function<Integer, Object>> {
   public Function<Integer, Object> visit(ArrowType.FloatingPoint type) {
     switch (type.getPrecision()) {
       case SINGLE:
-        return getters::getFloat;
+        return getters::getFloat32;
       case DOUBLE:
-        return getters::getDouble;
+        return getters::getFloat64;
       default:
         return unsupported(type);
     }

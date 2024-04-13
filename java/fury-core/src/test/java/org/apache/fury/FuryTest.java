@@ -176,10 +176,10 @@ public class FuryTest extends FuryTestBase {
     Fury fury1 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
     Fury fury2 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
     MemoryBuffer buffer0 = MemoryUtils.buffer(64);
-    buffer0.writeLong(-1);
-    buffer0.writeLong(-1);
-    buffer0.readLong();
-    buffer0.readLong();
+    buffer0.writeInt64(-1);
+    buffer0.writeInt64(-1);
+    buffer0.readInt64();
+    buffer0.readInt64();
     MemoryBuffer buffer = buffer0.slice(8);
     assertSerializationToBuffer(fury1, fury2, buffer);
   }
@@ -492,13 +492,13 @@ public class FuryTest extends FuryTestBase {
 
     @Override
     public UUID read(MemoryBuffer buffer) {
-      return new UUID(buffer.readLong(), buffer.readLong());
+      return new UUID(buffer.readInt64(), buffer.readInt64());
     }
 
     @Override
     public void write(MemoryBuffer buffer, UUID value) {
-      buffer.writeLong(value.getMostSignificantBits());
-      buffer.writeLong(value.getLeastSignificantBits());
+      buffer.writeInt64(value.getMostSignificantBits());
+      buffer.writeInt64(value.getLeastSignificantBits());
     }
   }
 

@@ -140,7 +140,7 @@ public class BinaryRow extends UnsafeTrait implements Row {
     // To preserve row equality, zero out the value when setting the column to null.
     // Since this row does not currently support updates to variable-length values, we don't
     // have to worry about zeroing out that data.
-    buffer.putLong(getOffset(ordinal), 0);
+    buffer.putInt64(getOffset(ordinal), 0);
   }
 
   public void setNotNullAt(int ordinal) {
@@ -210,7 +210,7 @@ public class BinaryRow extends UnsafeTrait implements Row {
         if (i != 0) {
           build.append(',');
         }
-        build.append(Long.toHexString(buffer.getLong(baseOffset + i)));
+        build.append(Long.toHexString(buffer.getInt64(baseOffset + i)));
       }
       return build.toString();
     }

@@ -71,14 +71,14 @@ public class BinaryArrayTest {
 
     for (int i = 0; i < iterNums; i++) {
       for (int j = 0; j < length; j++) {
-        elem = binaryArray.getInt(j);
+        elem = binaryArray.getInt32(j);
       }
     }
     // test binary array
     startTime = System.nanoTime();
     for (int i = 0; i < iterNums; i++) {
       for (int j = 0; j < length; j++) {
-        elem = binaryArray.getInt(j);
+        elem = binaryArray.getInt32(j);
       }
     }
     duration = System.nanoTime() - startTime;

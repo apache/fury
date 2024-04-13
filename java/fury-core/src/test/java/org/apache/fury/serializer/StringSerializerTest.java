@@ -85,8 +85,7 @@ public class StringSerializerTest extends FuryTestBase {
       if (STRING_VALUE_FIELD_IS_BYTES) {
         return readJDK11String(buffer);
       } else if (STRING_VALUE_FIELD_IS_CHARS) {
-        return StringSerializer.newCharsStringZeroCopy(
-            buffer.readChars(buffer.readPositiveVarInt()));
+        return StringSerializer.newCharsStringZeroCopy(buffer.readChars(buffer.readVarUint32()));
       }
       return null;
     } catch (Exception e) {
@@ -95,9 +94,10 @@ public class StringSerializerTest extends FuryTestBase {
   }
 
   static String readJDK11String(MemoryBuffer buffer) {
-    byte coder = buffer.readByte();
-    byte[] value = buffer.readBytesAndSize();
-    return newBytesStringZeroCopy(coder, value);
+    long header = buffer.readVarUint36Small();
+    byte coder = (byte) (header & 0b11);
+    int numBytes = (int) (header >>> 2);
+    return newBytesStringZeroCopy(coder, buffer.readBytes(numBytes));
   }
 
   private static boolean writeJavaStringZeroCopy(MemoryBuffer buffer, String value) {
@@ -381,10 +381,10 @@ public class StringSerializerTest extends FuryTestBase {
       StringSerializer serializer = new StringSerializer(fury);
       serializer.write(buffer, "abc你好");
       assertEquals(serializer.read(buffer), "abc你好");
+      byte[] bytes = "abc你好".getBytes(StandardCharsets.UTF_8);
       byte UTF8 = 2;
-      buffer.writeByte(UTF8);
-      buffer.writePositiveVarInt("abc你好".getBytes(StandardCharsets.UTF_8).length);
-      buffer.writeBytes("abc你好".getBytes(StandardCharsets.UTF_8));
+      buffer.writeVarUint64(((long) bytes.length) << 2 | UTF8);
+      buffer.writeBytes(bytes);
       assertEquals(serializer.read(buffer), "abc你好");
       assertEquals(buffer.readerIndex(), buffer.writerIndex());
     }

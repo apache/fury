@@ -36,9 +36,6 @@ import java.util.List;
 import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.benchmark.data.CustomJDKSerialization;
-import org.apache.fury.benchmark.data.MediaContent;
-import org.apache.fury.benchmark.data.Sample;
-import org.apache.fury.benchmark.data.Struct;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.util.Platform;
@@ -85,20 +82,7 @@ public class JsonbState {
     @Override
     public void setup() {
       super.setup();
-      switch (ObjectType.MEDIA_CONTENT) {
-        case SAMPLE:
-          object = new Sample().populate(references);
-          break;
-        case MEDIA_CONTENT:
-          object = new MediaContent().populate(references);
-          break;
-        case STRUCT:
-          object = Struct.create(false);
-          break;
-        case STRUCT2:
-          object = Struct.create(true);
-          break;
-      }
+      object = ObjectType.createObject(objectType, references);
       Thread.currentThread().setContextClassLoader(object.getClass().getClassLoader());
       JSONFactory.setContextObjectReaderProvider(new ObjectReaderProvider());
       buffer = serialize(null, this, object);

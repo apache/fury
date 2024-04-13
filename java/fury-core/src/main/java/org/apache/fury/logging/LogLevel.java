@@ -17,30 +17,25 @@
  * under the License.
  */
 
-package org.apache.fury.serializer.collection;
+package org.apache.fury.logging;
 
-import java.util.Collection;
-import org.apache.fury.Fury;
-import org.apache.fury.annotation.Internal;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.type.Type;
+public class LogLevel {
+  public static final int ERROR_LEVEL = 0;
 
-/** Serializer for {@link ArrayAsList}. Helper for serialization of other classes. */
-@Internal
-@SuppressWarnings("rawtypes")
-public final class FuryArrayAsListSerializer extends CollectionSerializer<ArrayAsList> {
-  public FuryArrayAsListSerializer(Fury fury) {
-    super(fury, ArrayAsList.class, true);
-  }
+  public static final int WARN_LEVEL = 1;
 
-  @Override
-  public short getXtypeId() {
-    return (short) -Type.LIST.getId();
-  }
+  public static final int INFO_LEVEL = 2;
 
-  public Collection newCollection(MemoryBuffer buffer) {
-    int numElements = buffer.readVarUint32();
-    setNumElements(numElements);
-    return new ArrayAsList(numElements);
+  public static String level2String(int level) {
+    switch (level) {
+      case ERROR_LEVEL:
+        return "ERROR";
+      case WARN_LEVEL:
+        return "WARN";
+      case INFO_LEVEL:
+        return "INFO";
+      default:
+        return "UNKNOWN";
+    }
   }
 }

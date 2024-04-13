@@ -436,7 +436,7 @@ public class FieldResolver {
         fury.readRef(buffer, classInfo.getSerializer());
       }
     } else {
-      long encodedFieldInfo = buffer.readInt();
+      long encodedFieldInfo = buffer.readInt32();
       encodedFieldInfo = encodedFieldInfo << 32 | (partFieldInfo & 0x00000000ffffffffL);
       if ((encodedFieldInfo & 0b11) == SEPARATE_TYPES_HASH_FLAG) {
         // bit `0 0` + field name(62 bits MurmurHash3 hash) + field type + ref + n-bytes class
@@ -527,7 +527,7 @@ public class FieldResolver {
       if (skipDataBy8(buffer, partFieldInfo) != partFieldInfo) {
         return;
       }
-      partFieldInfo = buffer.readLong();
+      partFieldInfo = buffer.readInt64();
     }
     if (partFieldInfo != endTag) {
       throw new IllegalStateException(
