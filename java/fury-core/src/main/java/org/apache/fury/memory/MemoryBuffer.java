@@ -731,19 +731,6 @@ public final class MemoryBuffer {
    */
   public int writeVarInt32(int v) {
     ensure(writerIndex + 8);
-    return _unsafeWriteVarInt32(v);
-  }
-
-  /**
-   * Writes a 1-5 byte int.
-   *
-   * @return The number of bytes written.
-   */
-  public int writeVarUint32(int v) {
-    // ensure at least 8 bytes are writable at once, so jvm-jit
-    // generated code is smaller. Otherwise, `MapRefResolver.writeRefOrNull`
-    // may be `callee is too large`/`already compiled into a big method`
-    ensure(writerIndex + 8);
     int varintBytes = _unsafePutVarUint36Small(writerIndex, ((long) v << 1) ^ (v >> 31));
     writerIndex += varintBytes;
     return varintBytes;
@@ -759,6 +746,21 @@ public final class MemoryBuffer {
     // CHECKSTYLE.ON:MethodName
     // Ensure negatives close to zero is encode in little bytes.
     int varintBytes = _unsafePutVarUint36Small(writerIndex, ((long) v << 1) ^ (v >> 31));
+    writerIndex += varintBytes;
+    return varintBytes;
+  }
+
+  /**
+   * Writes a 1-5 byte int.
+   *
+   * @return The number of bytes written.
+   */
+  public int writeVarUint32(int v) {
+    // ensure at least 8 bytes are writable at once, so jvm-jit
+    // generated code is smaller. Otherwise, `MapRefResolver.writeRefOrNull`
+    // may be `callee is too large`/`already compiled into a big method`
+    ensure(writerIndex + 8);
+    int varintBytes = _unsafePutVarUint36Small(writerIndex, v);
     writerIndex += varintBytes;
     return varintBytes;
   }
@@ -1041,16 +1043,14 @@ public final class MemoryBuffer {
    */
   public int writeVarInt64(long value) {
     ensure(writerIndex + 9);
-    value = (value << 1) ^ (value >> 63);
-    return _unsafeWriteVarUint64(value);
+    return _unsafeWriteVarUint64((value << 1) ^ (value >> 63));
   }
 
   @CodegenInvoke
   // CHECKSTYLE.OFF:MethodName
-  public int _unsafeWriteVarInt3264(long value) {
+  public int _unsafeWriteVarInt64(long value) {
     // CHECKSTYLE.ON:MethodName
-    value = (value << 1) ^ (value >> 63);
-    return _unsafeWriteVarUint64(value);
+    return _unsafeWriteVarUint64((value << 1) ^ (value >> 63));
   }
 
   public int writeVarUint64(long value) {
