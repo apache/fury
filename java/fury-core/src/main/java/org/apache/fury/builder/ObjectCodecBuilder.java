@@ -229,7 +229,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     // Must grow first, otherwise may get invalid address.
     Expression base = new Invoke(buffer, "getHeapMemory", "base", PRIMITIVE_BYTE_ARRAY_TYPE);
     Expression writerAddr =
-        new Invoke(buffer, "getUnsafeWriterAddress", "writerAddr", PRIMITIVE_LONG_TYPE);
+        new Invoke(buffer, "_unsafeWriterAddress", "writerAddr", PRIMITIVE_LONG_TYPE);
     expressions.add(base);
     expressions.add(writerAddr);
     int acc = 0;
@@ -312,7 +312,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     for (List<Descriptor> group : primitiveGroups) {
       ListExpression groupExpressions = new ListExpression();
       Expression writerAddr =
-          new Invoke(buffer, "getUnsafeWriterAddress", "writerAddr", PRIMITIVE_LONG_TYPE);
+          new Invoke(buffer, "_unsafeWriterAddress", "writerAddr", PRIMITIVE_LONG_TYPE);
       // use Reference to cut-off expr dependency.
       int acc = 0;
       boolean compressStarted = false;

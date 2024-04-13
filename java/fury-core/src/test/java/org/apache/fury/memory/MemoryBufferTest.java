@@ -81,7 +81,7 @@ public class MemoryBufferTest {
       MemoryBuffer buffer = MemoryUtils.buffer(1024);
       byte[] heapMemory = buffer.getHeapMemory();
       long pos = buffer.getUnsafeAddress();
-      assertEquals(buffer.getUnsafeWriterAddress(), pos);
+      assertEquals(buffer._unsafeWriterAddress(), pos);
       assertEquals(buffer.getUnsafeReaderAddress(), pos);
       Platform.putByte(heapMemory, pos, Byte.MIN_VALUE);
       pos += 1;

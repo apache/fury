@@ -479,7 +479,9 @@ public final class MemoryBuffer {
     }
   }
 
-  private int unsafeGetInt32(int index) {
+  // CHECKSTYLE.OFF:MethodName
+  private int _unsafeGetInt32(int index) {
+    // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       return UNSAFE.getInt(heapMemory, pos);
@@ -488,7 +490,9 @@ public final class MemoryBuffer {
     }
   }
 
-  private void unsafePutInt32(int index, int value) {
+  // CHECKSTYLE.OFF:MethodName
+  private void _unsafePutInt32(int index, int value) {
+    // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       UNSAFE.putInt(heapMemory, pos, value);
@@ -612,20 +616,28 @@ public final class MemoryBuffer {
             "writerIndex: %d (expected: 0 <= writerIndex <= size(%d))", writerIndex, size));
   }
 
-  public void unsafeWriterIndex(int writerIndex) {
+  // CHECKSTYLE.OFF:MethodName
+  public void _unsafeWriterIndex(int writerIndex) {
+    // CHECKSTYLE.ON:MethodName
     this.writerIndex = writerIndex;
   }
 
   /** Returns heap index for writer index if buffer is a heap buffer. */
-  public int unsafeHeapWriterIndex() {
+  // CHECKSTYLE.OFF:MethodName
+  public int _unsafeHeapWriterIndex() {
+    // CHECKSTYLE.ON:MethodName
     return writerIndex + heapOffset;
   }
 
-  public long getUnsafeWriterAddress() {
+  // CHECKSTYLE.OFF:MethodName
+  public long _unsafeWriterAddress() {
+    // CHECKSTYLE.ON:MethodName
     return address + writerIndex;
   }
 
-  public void increaseWriterIndexUnsafe(int diff) {
+  // CHECKSTYLE.OFF:MethodName
+  public void _increaseWriterIndexUnsafe(int diff) {
+    // CHECKSTYLE.ON:MethodName
     this.writerIndex = writerIndex + diff;
   }
 
@@ -808,7 +820,7 @@ public final class MemoryBuffer {
     // 0x3f80: 0b1111111 << 7
     encoded |= (((value & 0x3f80) << 1) | 0x80);
     if (value >>> 14 == 0) {
-      unsafePutInt32(index, (int) encoded);
+      _unsafePutInt32(index, (int) encoded);
       return 2;
     }
     return continuePutVarInt36(index, encoded, value);
@@ -818,13 +830,13 @@ public final class MemoryBuffer {
     // 0x1fc000: 0b1111111 << 14
     encoded |= (((value & 0x1fc000) << 2) | 0x8000);
     if (value >>> 21 == 0) {
-      unsafePutInt32(index, (int) encoded);
+      _unsafePutInt32(index, (int) encoded);
       return 3;
     }
     // 0xfe00000: 0b1111111 << 21
     encoded |= ((value & 0xfe00000) << 3) | 0x800000;
     if (value >>> 28 == 0) {
-      unsafePutInt32(index, (int) encoded);
+      _unsafePutInt32(index, (int) encoded);
       return 4;
     }
     // 0xff0000000: 0b11111111 << 28. Note eight `1` here instead of seven.
@@ -1065,19 +1077,19 @@ public final class MemoryBuffer {
     }
     varInt |= (int) (((value & 0x3f80) << 1) | 0x80);
     if (value >>> 14 == 0) {
-      unsafePutInt32(writerIndex, varInt);
+      _unsafePutInt32(writerIndex, varInt);
       this.writerIndex = writerIndex + 2;
       return 2;
     }
     varInt |= (int) (((value & 0x1fc000) << 2) | 0x8000);
     if (value >>> 21 == 0) {
-      unsafePutInt32(writerIndex, varInt);
+      _unsafePutInt32(writerIndex, varInt);
       this.writerIndex = writerIndex + 3;
       return 3;
     }
     varInt |= (int) (((value & 0xfe00000) << 3) | 0x800000);
     if (value >>> 28 == 0) {
-      unsafePutInt32(writerIndex, varInt);
+      _unsafePutInt32(writerIndex, varInt);
       this.writerIndex = writerIndex + 4;
       return 4;
     }
@@ -1269,11 +1281,15 @@ public final class MemoryBuffer {
   }
 
   /** Returns array index for reader index if buffer is a heap buffer. */
-  public int unsafeHeapReaderIndex() {
+  // CHECKSTYLE.OFF:MethodName
+  public int _unsafeHeapReaderIndex() {
+    // CHECKSTYLE.ON:MethodName
     return readerIndex + heapOffset;
   }
 
-  public void increaseReaderIndexUnsafe(int diff) {
+  // CHECKSTYLE.OFF:MethodName
+  public void _increaseReaderIndexUnsafe(int diff) {
+    // CHECKSTYLE.ON:MethodName
     readerIndex += diff;
   }
 
@@ -1776,7 +1792,7 @@ public final class MemoryBuffer {
       return readVarUint32Slow();
     }
     // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
-    int fourByteValue = unsafeGetInt32(readIdx);
+    int fourByteValue = _unsafeGetInt32(readIdx);
     readIdx++;
     int result = fourByteValue & 0x7F;
     // Duplicate and manual inline for performance.
@@ -1812,7 +1828,7 @@ public final class MemoryBuffer {
   public int readVarUintSmall() {
     int readIdx = readerIndex;
     if (size - readIdx >= 5) {
-      int fourByteValue = unsafeGetInt32(readIdx++);
+      int fourByteValue = _unsafeGetInt32(readIdx++);
       int binarySize = fourByteValue & 0x7F;
       // Duplicate and manual inline for performance.
       // noinspection Duplicates
@@ -2196,7 +2212,7 @@ public final class MemoryBuffer {
     int binarySize;
     int readIdx = readerIndex;
     if (size - readIdx >= 5) {
-      int fourByteValue = unsafeGetInt32(readIdx++);
+      int fourByteValue = _unsafeGetInt32(readIdx++);
       binarySize = fourByteValue & 0x7F;
       // Duplicate and manual inline for performance.
       // noinspection Duplicates

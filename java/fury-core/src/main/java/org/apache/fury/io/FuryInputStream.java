@@ -129,7 +129,7 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
       fillBuffer(length - remaining);
     }
     byte[] heapMemory = buf.getHeapMemory();
-    dst.put(heapMemory, buf.unsafeHeapReaderIndex(), length);
+    dst.put(heapMemory, buf._unsafeHeapReaderIndex(), length);
     buf.increaseReaderIndex(length);
   }
 

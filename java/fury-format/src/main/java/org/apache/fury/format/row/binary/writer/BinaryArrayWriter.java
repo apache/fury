@@ -114,7 +114,7 @@ public class BinaryArrayWriter extends BinaryWriter {
     for (int i = elementSize * numElements; i < fixedPartInBytes; i++) {
       buffer.putByte(startIndex + headerInBytes + i, (byte) 0);
     }
-    buffer.increaseWriterIndexUnsafe(headerInBytes + fixedPartInBytes);
+    buffer._increaseWriterIndexUnsafe(headerInBytes + fixedPartInBytes);
   }
 
   private void assertIndexIsValid(int index) {

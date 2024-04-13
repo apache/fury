@@ -76,7 +76,7 @@ public class BinaryRowWriter extends BinaryWriter {
   public void reset() {
     super.startIndex = buffer.writerIndex();
     grow(fixedSize);
-    buffer.increaseWriterIndexUnsafe(fixedSize);
+    buffer._increaseWriterIndexUnsafe(fixedSize);
     int end = startIndex + headerInBytes;
     for (int i = startIndex; i < end; i += 8) {
       buffer.putInt64(i, 0L);

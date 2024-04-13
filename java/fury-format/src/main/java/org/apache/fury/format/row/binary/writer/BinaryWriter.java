@@ -190,7 +190,7 @@ public abstract class BinaryWriter {
     zeroOutPaddingBytes(numBytes);
     buffer.put(buffer.writerIndex(), input, offset, numBytes);
     setOffsetAndSize(ordinal, numBytes);
-    buffer.increaseWriterIndexUnsafe(roundedSize);
+    buffer._increaseWriterIndexUnsafe(roundedSize);
   }
 
   /** This operation will increase writerIndex by aligned 8-byte. */
@@ -200,7 +200,7 @@ public abstract class BinaryWriter {
     zeroOutPaddingBytes(numBytes);
     buffer.copyFrom(buffer.writerIndex(), input, offset, numBytes);
     setOffsetAndSize(ordinal, numBytes);
-    buffer.increaseWriterIndexUnsafe(roundedSize);
+    buffer._increaseWriterIndexUnsafe(roundedSize);
   }
 
   public final void writeAlignedBytes(
@@ -232,7 +232,7 @@ public abstract class BinaryWriter {
   public final void writeDirectly(long value) {
     buffer.grow(8);
     buffer.putInt64(writerIndex(), value);
-    buffer.increaseWriterIndexUnsafe(8);
+    buffer._increaseWriterIndexUnsafe(8);
   }
 
   /** write long value to position pointed by offset. */
