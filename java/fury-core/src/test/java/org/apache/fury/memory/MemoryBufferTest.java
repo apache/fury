@@ -33,8 +33,8 @@ public class MemoryBufferTest {
   @Test
   public void testBufferPut() {
     MemoryBuffer buffer = MemoryUtils.buffer(16);
-    buffer.put(0, (byte) 10);
-    assertEquals(buffer.get(0), (byte) 10);
+    buffer.putByte(0, (byte) 10);
+    assertEquals(buffer.getByte(0), (byte) 10);
     buffer.putChar(0, 'a');
     assertEquals(buffer.getChar(0), 'a');
     buffer.putInt16(0, (short) 10);
@@ -104,12 +104,12 @@ public class MemoryBufferTest {
       pos -= 2;
       assertEquals(buffer.getInt16((int) (pos - Platform.BYTE_ARRAY_OFFSET)), Short.MAX_VALUE);
       pos -= 1;
-      assertEquals(buffer.get((int) (pos - Platform.BYTE_ARRAY_OFFSET)), Byte.MIN_VALUE);
+      assertEquals(buffer.getByte((int) (pos - Platform.BYTE_ARRAY_OFFSET)), Byte.MIN_VALUE);
     }
     {
       MemoryBuffer buffer = MemoryUtils.buffer(1024);
       int index = 0;
-      buffer._unsafePut(index, Byte.MIN_VALUE);
+      buffer._unsafePutByte(index, Byte.MIN_VALUE);
       index += 1;
       buffer._unsafePutInt16(index, Short.MAX_VALUE);
       index += 2;
@@ -130,7 +130,7 @@ public class MemoryBufferTest {
       index -= 2;
       assertEquals(buffer.getInt16(index), Short.MAX_VALUE);
       index -= 1;
-      assertEquals(buffer.get(index), Byte.MIN_VALUE);
+      assertEquals(buffer.getByte(index), Byte.MIN_VALUE);
     }
   }
 
@@ -200,10 +200,10 @@ public class MemoryBufferTest {
     MemoryBuffer buf2 = MemoryUtils.buffer(16);
     buf1.putInt64(0, 10);
     buf2.putInt64(0, 10);
-    buf1.put(9, (byte) 1);
-    buf2.put(9, (byte) 1);
+    buf1.putByte(9, (byte) 1);
+    buf2.putByte(9, (byte) 1);
     Assert.assertTrue(buf1.equalTo(buf2, 0, 0, buf1.size()));
-    buf1.put(9, (byte) 2);
+    buf1.putByte(9, (byte) 2);
     Assert.assertFalse(buf1.equalTo(buf2, 0, 0, buf1.size()));
   }
 

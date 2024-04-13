@@ -66,7 +66,7 @@ abstract class UnsafeTrait implements Getters, Setters {
 
   public byte getByte(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().get(getOffset(ordinal));
+    return getBuffer().getByte(getOffset(ordinal));
   }
 
   public short getShort(int ordinal) {
@@ -194,7 +194,7 @@ abstract class UnsafeTrait implements Getters, Setters {
   public void setByte(int ordinal, byte value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().put(getOffset(ordinal), value);
+    getBuffer().putByte(getOffset(ordinal), value);
   }
 
   protected abstract void setNotNullAt(int ordinal);

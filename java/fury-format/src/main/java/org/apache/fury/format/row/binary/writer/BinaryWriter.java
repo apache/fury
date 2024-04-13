@@ -93,7 +93,7 @@ public abstract class BinaryWriter {
       int newVal = end - writerIndex;
       buffer.grow(newVal);
       for (int i = maybeEnd; i < end; i++) {
-        buffer.put(i, (byte) 0);
+        buffer.putByte(i, (byte) 0);
       }
       buffer.increaseWriterIndex(newVal);
     }

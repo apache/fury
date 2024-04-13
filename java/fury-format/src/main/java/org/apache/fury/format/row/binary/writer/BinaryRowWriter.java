@@ -92,7 +92,7 @@ public class BinaryRowWriter extends BinaryWriter {
   public void write(int ordinal, byte value) {
     final int offset = getOffset(ordinal);
     buffer.putInt64(offset, 0L);
-    buffer.put(offset, value);
+    buffer.putByte(offset, value);
   }
 
   @Override

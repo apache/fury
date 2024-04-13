@@ -112,7 +112,7 @@ public class BinaryArrayWriter extends BinaryWriter {
 
     // fill 0 into reminder part of 8-bytes alignment
     for (int i = elementSize * numElements; i < fixedPartInBytes; i++) {
-      buffer.put(startIndex + headerInBytes + i, (byte) 0);
+      buffer.putByte(startIndex + headerInBytes + i, (byte) 0);
     }
     buffer.increaseWriterIndexUnsafe(headerInBytes + fixedPartInBytes);
   }
@@ -130,7 +130,7 @@ public class BinaryArrayWriter extends BinaryWriter {
   @Override
   public void write(int ordinal, byte value) {
     setNotNullAt(ordinal);
-    buffer.put(getOffset(ordinal), value);
+    buffer.putByte(getOffset(ordinal), value);
   }
 
   @Override

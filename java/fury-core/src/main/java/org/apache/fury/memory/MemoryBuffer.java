@@ -292,29 +292,12 @@ public final class MemoryBuffer {
   //                    Random Access get() and put() methods
   // ------------------------------------------------------------------------
 
-  // ------------------------------------------------------------------------
-  // Notes on the implementation: We try to collapse as many checks as
-  // possible. We need to obey the following rules to make this safe
-  // against segfaults:
-  //
-  //  - Grab mutable fields onto the stack before checking and using. This
-  //    guards us against concurrent modifications which invalidate the
-  //    pointers
-  //  - Use subtractions for range checks, as they are tolerant
-  // ------------------------------------------------------------------------
-
   private void checkPosition(long index, long pos, long length) {
     if (BoundsChecking.BOUNDS_CHECKING_ENABLED) {
       if (index < 0 || pos > addressLimit - length) {
         throwOOBException();
       }
     }
-  }
-
-  public byte get(int index) {
-    final long pos = address + index;
-    checkPosition(index, pos, 1);
-    return UNSAFE.getByte(heapMemory, pos);
   }
 
   public void get(int index, byte[] dst) {
@@ -382,12 +365,6 @@ public final class MemoryBuffer {
     source.position(sourcePos + numBytes);
   }
 
-  public void put(int index, byte b) {
-    final long pos = address + index;
-    checkPosition(index, pos, 1);
-    UNSAFE.putByte(heapMemory, pos, b);
-  }
-
   public void put(int index, byte[] src) {
     put(index, src, 0, src.length);
   }
@@ -408,19 +385,31 @@ public final class MemoryBuffer {
     Platform.copyMemory(src, arrayAddress, heapMemory, pos, length);
   }
 
+  public byte getByte(int index) {
+    final long pos = address + index;
+    checkPosition(index, pos, 1);
+    return UNSAFE.getByte(heapMemory, pos);
+  }
+
+  public void putByte(int index, byte b) {
+    final long pos = address + index;
+    checkPosition(index, pos, 1);
+    UNSAFE.putByte(heapMemory, pos, b);
+  }
+
   // CHECKSTYLE.OFF:MethodName
-  public void _unsafePut(int index, byte b) {
+  public void _unsafePutByte(int index, byte b) {
     // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     UNSAFE.putByte(heapMemory, pos, b);
   }
 
   public boolean getBoolean(int index) {
-    return get(index) != 0;
+    return getByte(index) != 0;
   }
 
   public void putBoolean(int index, boolean value) {
-    put(index, (byte) (value ? 1 : 0));
+    putByte(index, (byte) (value ? 1 : 0));
   }
 
   public char getChar(int index) {

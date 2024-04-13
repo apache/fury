@@ -228,7 +228,7 @@ public final class Fury implements BaseFury {
     byte bitmap = 0;
     if (obj == null) {
       bitmap |= isNilFlag;
-      buffer.put(maskIndex, bitmap);
+      buffer.putByte(maskIndex, bitmap);
       return buffer;
     }
     // set endian.
@@ -244,7 +244,7 @@ public final class Fury implements BaseFury {
     if (bufferCallback != null) {
       bitmap |= isOutOfBandFlag;
     }
-    buffer.put(maskIndex, bitmap);
+    buffer.putByte(maskIndex, bitmap);
     try {
       jitContext.lock();
       if (depth != 0) {
