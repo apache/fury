@@ -782,7 +782,7 @@ public final class MemoryBuffer {
    * 127). When the value is equal or greater than 127, the write will be a little slower.
    */
   public int writeVarUint32Small7(int value) {
-    ensure(8);
+    ensure(writerIndex + 8);
     if (value >>> 7 == 0) {
       UNSAFE.putByte(heapMemory, address + writerIndex++, (byte) value);
       return 1;
@@ -1833,23 +1833,39 @@ public final class MemoryBuffer {
     int readIdx = readerIndex;
     if (size - readIdx >= 5) {
       int fourByteValue = _unsafeGetInt32(readIdx++);
-      int binarySize = fourByteValue & 0x7F;
+      int value = fourByteValue & 0x7F;
       // Duplicate and manual inline for performance.
       // noinspection Duplicates
       if ((fourByteValue & 0x80) != 0) {
         readIdx++;
-        binarySize |= (fourByteValue >>> 1) & 0x3f80;
+        value |= (fourByteValue >>> 1) & 0x3f80;
         if ((fourByteValue & 0x8000) != 0) {
           // merely executed path, make it as a separate method to reduce
           // code size of current method for better jvm inline
-          return continueRead(readIdx, fourByteValue, binarySize);
+          return continueReadVarUint32(readIdx, fourByteValue, value);
         }
       }
       readerIndex = readIdx;
-      return binarySize;
+      return value;
     } else {
       return (int) readVarUint36Slow();
     }
+  }
+
+  private int continueReadVarUint32(int readIdx, int bulkRead, int value) {
+    // Duplicate and manual inline for performance.
+    // noinspection Duplicates
+    readIdx++;
+    value |= (bulkRead >>> 2) & 0x1fc000;
+    if ((bulkRead & 0x800000) != 0) {
+      readIdx++;
+      value |= (bulkRead >>> 3) & 0xfe00000;
+      if ((bulkRead & 0x80000000) != 0) {
+        value |= (UNSAFE.getByte(heapMemory, address + readIdx++) & 0x7F) << 28;
+      }
+    }
+    readerIndex = readIdx;
+    return value;
   }
 
   /** Reads the 1-9 byte int part of a var long. */
@@ -2201,7 +2217,7 @@ public final class MemoryBuffer {
         if ((fourByteValue & 0x8000) != 0) {
           // merely executed path, make it as a separate method to reduce
           // code size of current method for better jvm inline
-          return continueRead(readIdx, fourByteValue, binarySize);
+          return continueReadBinarySize(readIdx, fourByteValue, binarySize);
         }
       }
       readerIndex = readIdx;
@@ -2216,7 +2232,7 @@ public final class MemoryBuffer {
     return binarySize;
   }
 
-  private int continueRead(int readIdx, int bulkRead, int binarySize) {
+  private int continueReadBinarySize(int readIdx, int bulkRead, int binarySize) {
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     readIdx++;

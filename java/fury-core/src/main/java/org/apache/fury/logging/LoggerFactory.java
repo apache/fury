@@ -27,7 +27,7 @@ import org.apache.fury.util.GraalvmSupport;
 public class LoggerFactory {
   private static volatile boolean disableLogging;
   private static volatile boolean useSlf4jlogger;
-  private static volatile int logLevel;
+  private static volatile int logLevel = 2;
 
   public static void disableLogging() {
     disableLogging = true;
@@ -47,7 +47,7 @@ public class LoggerFactory {
 
   public static Logger getLogger(Class<?> clazz) {
     if (disableLogging) {
-      return new NilLogger();
+      return new FuryLogger(clazz, logLevel);
     } else {
       if (GraalvmSupport.IN_GRAALVM_NATIVE_IMAGE || !useSlf4jlogger) {
         return new FuryLogger(clazz, logLevel);
