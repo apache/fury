@@ -599,6 +599,9 @@ meta(tracking kef ref, key has null and so on). If we don't write chunk by chunk
 least `X` bytes to take up a place for later to update the number which has same elements, `X` is the num_bytes for
 encoding varint encoding of map size.
 
+And most map size are smaller than 255, if all pairs have same data, the chunk will be 1. This is common in golang/rust,
+which object are not reference by default.
+
 Also, if only one or two keys have different meta, we can make it into a different chunk, so that most pairs can share
 meta.
 
