@@ -94,6 +94,7 @@ public final class Fury implements BaseFury {
   private static final byte isCrossLanguageFlag = 1 << 2;
   private static final byte isOutOfBandFlag = 1 << 3;
   private static final boolean isLittleEndian = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
+  private static final byte BITMAP = isLittleEndian ? isLittleEndianFlag : 0;
   private static final int BUFFER_SIZE_LIMIT = 128 * 1024;
 
   private final Config config;
@@ -220,31 +221,20 @@ public final class Fury implements BaseFury {
 
   @Override
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj, BufferCallback callback) {
-    this.bufferCallback = callback;
-    int maskIndex = buffer.writerIndex();
-    // 1byte used for bit mask
-    buffer.ensure(maskIndex + 1);
-    buffer.writerIndex(maskIndex + 1);
-    byte bitmap = 0;
+    byte bitmap = BITMAP;
+    if (language != Language.JAVA) {
+      bitmap |= isCrossLanguageFlag;
+    }
     if (obj == null) {
       bitmap |= isNilFlag;
-      buffer.putByte(maskIndex, bitmap);
+      buffer.writeByte(bitmap);
       return buffer;
     }
-    // set endian.
-    if (isLittleEndian) {
-      bitmap |= isLittleEndianFlag;
-    }
-    if (language != Language.JAVA) {
-      // set reader as x_lang.
-      bitmap |= isCrossLanguageFlag;
-      // set writer language.
-      buffer.writeByte((byte) Language.JAVA.ordinal());
-    }
-    if (bufferCallback != null) {
+    if (callback != null) {
       bitmap |= isOutOfBandFlag;
+      bufferCallback = callback;
     }
-    buffer.putByte(maskIndex, bitmap);
+    buffer.writeByte(bitmap);
     try {
       jitContext.lock();
       if (depth != 0) {
@@ -253,6 +243,7 @@ public final class Fury implements BaseFury {
       if (language == Language.JAVA) {
         write(buffer, obj);
       } else {
+        buffer.writeByte((byte) Language.JAVA.ordinal());
         xserializeInternal(buffer, obj);
       }
       return buffer;
@@ -307,14 +298,20 @@ public final class Fury implements BaseFury {
   }
 
   private void write(MemoryBuffer buffer, Object obj) {
-    if (config.shareMetaContext()) {
-      int startOffset = buffer.writerIndex();
+    int startOffset = buffer.writerIndex();
+    boolean shareMetaContext = config.shareMetaContext();
+    if (shareMetaContext) {
       buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
-      writeRef(buffer, obj);
+    }
+    // reduce caller stack
+    if (!refResolver.writeRefOrNull(buffer, obj)) {
+      ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
+      classResolver.writeClass(buffer, classInfo);
+      writeData(buffer, classInfo, obj);
+    }
+    if (shareMetaContext) {
       buffer.putInt32(startOffset, buffer.writerIndex());
       classResolver.writeClassDefs(buffer);
-    } else {
-      writeRef(buffer, obj);
     }
   }
 
