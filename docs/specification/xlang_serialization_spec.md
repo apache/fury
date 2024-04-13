@@ -51,6 +51,7 @@ also introduce more complexities compared to static serialization frameworks. So
   interoperability between array and list.
     - array: multidimensional array which every sub-array can have different sizes but all have same type.
     - bool_array: one dimensional int16 array.
+    - int8_array: one dimensional int8 array.
     - int16_array: one dimensional int16 array.
     - int32_array: one dimensional int32 array.
     - int64_array: one dimensional int64 array.
