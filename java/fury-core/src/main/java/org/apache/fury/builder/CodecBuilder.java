@@ -627,17 +627,17 @@ public abstract class CodecBuilder {
   }
 
   protected Expression readInt16(Expression buffer) {
-    String func = Platform.IS_LITTLE_ENDIAN ? "readInt16OnLE" : "readInt16OnBE";
+    String func = Platform.IS_LITTLE_ENDIAN ? "_readInt16OnLE" : "_readInt16OnBE";
     return new Invoke(buffer, func, PRIMITIVE_SHORT_TYPE);
   }
 
   protected Expression readInt32(Expression buffer) {
-    String func = Platform.IS_LITTLE_ENDIAN ? "readInt32OnLE" : "readInt32OnBE";
+    String func = Platform.IS_LITTLE_ENDIAN ? "_readInt32OnLE" : "_readInt32OnBE";
     return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
   }
 
   public static String readIntFunc() {
-    return Platform.IS_LITTLE_ENDIAN ? "readInt32OnLE" : "readInt32OnBE";
+    return Platform.IS_LITTLE_ENDIAN ? "_readInt32OnLE" : "_readInt32OnBE";
   }
 
   protected Expression readVarInt32(Expression buffer) {
