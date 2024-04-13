@@ -97,13 +97,13 @@ public final class EnumStringResolver {
       buffer._unsafePut(writerIndex, USE_STRING_VALUE);
       // Since duplicate enum string writing are avoided by dynamic id,
       // use 8-byte hash won't increase too much space.
-      buffer._unsafePutLong(writerIndex + 1, byteString.hashCode);
-      buffer._unsafePutShort(writerIndex + 9, (short) bytesLen);
+      buffer._unsafePutInt64(writerIndex + 1, byteString.hashCode);
+      buffer._unsafePutInt16(writerIndex + 9, (short) bytesLen);
       buffer.put(writerIndex + 11, byteString.bytes, 0, bytesLen);
     } else {
       buffer.increaseWriterIndex(3);
       buffer._unsafePut(writerIndex, USE_STRING_ID);
-      buffer._unsafePutShort(writerIndex + 1, id);
+      buffer._unsafePutInt16(writerIndex + 1, id);
     }
   }
 

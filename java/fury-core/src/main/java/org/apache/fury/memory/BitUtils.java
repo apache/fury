@@ -101,7 +101,7 @@ public class BitUtils {
     int addr = baseOffset;
     int bitmapWidthInWords = bitmapWidthInBytes / WORD_SIZE;
     for (int i = 0; i < bitmapWidthInWords; i++, addr += WORD_SIZE) {
-      if (bitmapBuffer.getLong(addr) != 0) {
+      if (bitmapBuffer.getInt64(addr) != 0) {
         return true;
       }
     }

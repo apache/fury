@@ -116,7 +116,7 @@ public abstract class BinaryWriter {
   /** if numBytes is not multiple of 8, zero 8 byte until multiple of 8. */
   protected final void zeroOutPaddingBytes(int numBytes) {
     if ((numBytes & 0x07) > 0) {
-      buffer.putLong(buffer.writerIndex() + ((numBytes >> 3) << 3), 0L);
+      buffer.putInt64(buffer.writerIndex() + ((numBytes >> 3) << 3), 0L);
     }
   }
 
@@ -151,11 +151,11 @@ public abstract class BinaryWriter {
   public abstract void write(int ordinal, BigDecimal input);
 
   public final void write(int ordinal, long value) {
-    buffer.putLong(getOffset(ordinal), value);
+    buffer.putInt64(getOffset(ordinal), value);
   }
 
   public final void write(int ordinal, double value) {
-    buffer.putDouble(getOffset(ordinal), value);
+    buffer.putFloat64(getOffset(ordinal), value);
   }
 
   // String is not 8-byte aligned
@@ -231,13 +231,13 @@ public abstract class BinaryWriter {
   /** write long value to position pointed by current writerIndex. */
   public final void writeDirectly(long value) {
     buffer.grow(8);
-    buffer.putLong(writerIndex(), value);
+    buffer.putInt64(writerIndex(), value);
     buffer.increaseWriterIndexUnsafe(8);
   }
 
   /** write long value to position pointed by offset. */
   public final void writeDirectly(int offset, long value) {
-    buffer.putLong(offset, value);
+    buffer.putInt64(offset, value);
   }
 
   public final void copyTo(BinaryWriter writer, int ordinal) {

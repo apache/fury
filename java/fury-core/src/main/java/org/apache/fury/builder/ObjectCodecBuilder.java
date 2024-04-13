@@ -352,7 +352,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               addIncWriterIndexExpr(groupExpressions, buffer, acc);
               compressStarted = true;
             }
-            groupExpressions.add(new Invoke(buffer, "_unsafeWriteVarInt", fieldValue));
+            groupExpressions.add(new Invoke(buffer, "_unsafeWriteVarInt32", fieldValue));
             acc += 0;
           }
         } else if (clz == long.class) {

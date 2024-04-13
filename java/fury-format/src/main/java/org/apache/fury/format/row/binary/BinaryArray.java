@@ -67,7 +67,7 @@ public class BinaryArray extends UnsafeTrait implements ArrayData {
 
   public void pointTo(MemoryBuffer buffer, int offset, int sizeInBytes) {
     // Read the numElements of key array from the aligned first 8 bytes as int.
-    final int numElements = (int) buffer.getLong(offset);
+    final int numElements = (int) buffer.getInt64(offset);
     assert numElements >= 0 : "numElements (" + numElements + ") should >= 0";
     this.numElements = numElements;
     this.buffer = buffer;

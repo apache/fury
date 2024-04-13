@@ -439,7 +439,7 @@ public final class MemoryBuffer {
     UNSAFE.putChar(heapMemory, pos, value);
   }
 
-  public short getShort(int index) {
+  public short getInt16(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 2);
     if (LITTLE_ENDIAN) {
@@ -449,7 +449,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public void putShort(int index, short value) {
+  public void putInt16(int index, short value) {
     final long pos = address + index;
     checkPosition(index, pos, 2);
     if (LITTLE_ENDIAN) {
@@ -460,7 +460,7 @@ public final class MemoryBuffer {
   }
 
   // CHECKSTYLE.OFF:MethodName
-  public void _unsafePutShort(int index, short value) {
+  public void _unsafePutInt16(int index, short value) {
     // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
@@ -470,7 +470,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public int getInt(int index) {
+  public int getInt32(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 4);
     if (LITTLE_ENDIAN) {
@@ -480,7 +480,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public void putInt(int index, int value) {
+  public void putInt32(int index, int value) {
     final long pos = address + index;
     checkPosition(index, pos, 4);
     if (LITTLE_ENDIAN) {
@@ -490,7 +490,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private int unsafeGetInt(int index) {
+  private int unsafeGetInt32(int index) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       return UNSAFE.getInt(heapMemory, pos);
@@ -499,7 +499,7 @@ public final class MemoryBuffer {
     }
   }
 
-  private void unsafePutInt(int index, int value) {
+  private void unsafePutInt32(int index, int value) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       UNSAFE.putInt(heapMemory, pos, value);
@@ -508,7 +508,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public long getLong(int index) {
+  public long getInt64(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 8);
     if (LITTLE_ENDIAN) {
@@ -518,7 +518,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public void putLong(int index, long value) {
+  public void putInt64(int index, long value) {
     final long pos = address + index;
     checkPosition(index, pos, 8);
     if (LITTLE_ENDIAN) {
@@ -529,7 +529,7 @@ public final class MemoryBuffer {
   }
 
   // CHECKSTYLE.OFF:MethodName
-  long _unsafeGetLong(int index) {
+  long _unsafeGetInt64(int index) {
     // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
@@ -540,7 +540,7 @@ public final class MemoryBuffer {
   }
 
   // CHECKSTYLE.OFF:MethodName
-  public void _unsafePutLong(int index, long value) {
+  public void _unsafePutInt64(int index, long value) {
     // CHECKSTYLE.ON:MethodName
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
@@ -550,7 +550,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public float getFloat(int index) {
+  public float getFloat32(int index) {
     final long pos = address + index;
     if (LITTLE_ENDIAN) {
       return Float.intBitsToFloat(UNSAFE.getInt(heapMemory, pos));
@@ -559,7 +559,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public void putFloat(int index, float value) {
+  public void putFloat32(int index, float value) {
     final long pos = address + index;
     checkPosition(index, pos, 4);
     if (LITTLE_ENDIAN) {
@@ -569,7 +569,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public double getDouble(int index) {
+  public double getFloat64(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 8);
     if (LITTLE_ENDIAN) {
@@ -579,7 +579,7 @@ public final class MemoryBuffer {
     }
   }
 
-  public void putDouble(int index, double value) {
+  public void putFloat64(int index, double value) {
     final long pos = address + index;
     checkPosition(index, pos, 8);
     if (LITTLE_ENDIAN) {
@@ -763,7 +763,7 @@ public final class MemoryBuffer {
    */
   public int writeVarInt32(int v) {
     ensure(writerIndex + 8);
-    return _unsafeWriteVarInt(v);
+    return _unsafeWriteVarInt32(v);
   }
 
   /**
@@ -785,7 +785,7 @@ public final class MemoryBuffer {
    */
   @CodegenInvoke
   // CHECKSTYLE.OFF:MethodName
-  public int _unsafeWriteVarInt(int v) {
+  public int _unsafeWriteVarInt32(int v) {
     // CHECKSTYLE.ON:MethodName
     // Ensure negatives close to zero is encode in little bytes.
     v = (v << 1) ^ (v >> 31);
@@ -819,7 +819,7 @@ public final class MemoryBuffer {
     // 0x3f80: 0b1111111 << 7
     encoded |= (((value & 0x3f80) << 1) | 0x80);
     if (value >>> 14 == 0) {
-      unsafePutInt(index, (int) encoded);
+      unsafePutInt32(index, (int) encoded);
       return 2;
     }
     return continuePutVarInt36(index, encoded, value);
@@ -829,18 +829,18 @@ public final class MemoryBuffer {
     // 0x1fc000: 0b1111111 << 14
     encoded |= (((value & 0x1fc000) << 2) | 0x8000);
     if (value >>> 21 == 0) {
-      unsafePutInt(index, (int) encoded);
+      unsafePutInt32(index, (int) encoded);
       return 3;
     }
     // 0xfe00000: 0b1111111 << 21
     encoded |= ((value & 0xfe00000) << 3) | 0x800000;
     if (value >>> 28 == 0) {
-      unsafePutInt(index, (int) encoded);
+      unsafePutInt32(index, (int) encoded);
       return 4;
     }
     // 0xff0000000: 0b11111111 << 28. Note eight `1` here instead of seven.
     encoded |= ((value & 0xff0000000L) << 4) | 0x80000000L;
-    _unsafePutLong(index, encoded);
+    _unsafePutInt64(index, encoded);
     return 5;
   }
 
@@ -1049,7 +1049,7 @@ public final class MemoryBuffer {
 
   @CodegenInvoke
   // CHECKSTYLE.OFF:MethodName
-  public int _unsafeWriteVarInt64(long value) {
+  public int _unsafeWriteVarInt3264(long value) {
     // CHECKSTYLE.ON:MethodName
     value = (value << 1) ^ (value >> 63);
     return _unsafeWriteVarUint64(value);
@@ -1076,49 +1076,49 @@ public final class MemoryBuffer {
     }
     varInt |= (int) (((value & 0x3f80) << 1) | 0x80);
     if (value >>> 14 == 0) {
-      unsafePutInt(writerIndex, varInt);
+      unsafePutInt32(writerIndex, varInt);
       this.writerIndex = writerIndex + 2;
       return 2;
     }
     varInt |= (int) (((value & 0x1fc000) << 2) | 0x8000);
     if (value >>> 21 == 0) {
-      unsafePutInt(writerIndex, varInt);
+      unsafePutInt32(writerIndex, varInt);
       this.writerIndex = writerIndex + 3;
       return 3;
     }
     varInt |= (int) (((value & 0xfe00000) << 3) | 0x800000);
     if (value >>> 28 == 0) {
-      unsafePutInt(writerIndex, varInt);
+      unsafePutInt32(writerIndex, varInt);
       this.writerIndex = writerIndex + 4;
       return 4;
     }
     long varLong = (varInt & 0xFFFFFFFFL);
     varLong |= ((value & 0x7f0000000L) << 4) | 0x80000000L;
     if (value >>> 35 == 0) {
-      _unsafePutLong(writerIndex, varLong);
+      _unsafePutInt64(writerIndex, varLong);
       this.writerIndex = writerIndex + 5;
       return 5;
     }
     varLong |= ((value & 0x3f800000000L) << 5) | 0x8000000000L;
     if (value >>> 42 == 0) {
-      _unsafePutLong(writerIndex, varLong);
+      _unsafePutInt64(writerIndex, varLong);
       this.writerIndex = writerIndex + 6;
       return 6;
     }
     varLong |= ((value & 0x1fc0000000000L) << 6) | 0x800000000000L;
     if (value >>> 49 == 0) {
-      _unsafePutLong(writerIndex, varLong);
+      _unsafePutInt64(writerIndex, varLong);
       this.writerIndex = writerIndex + 7;
       return 7;
     }
     varLong |= ((value & 0xfe000000000000L) << 7) | 0x80000000000000L;
     value >>>= 56;
     if (value == 0) {
-      _unsafePutLong(writerIndex, varLong);
+      _unsafePutInt64(writerIndex, varLong);
       this.writerIndex = writerIndex + 8;
       return 8;
     }
-    _unsafePutLong(writerIndex, varLong | 0x8000000000000000L);
+    _unsafePutInt64(writerIndex, varLong | 0x8000000000000000L);
     UNSAFE.putByte(heapMemory, address + writerIndex + 8, (byte) (value & 0xFF));
     this.writerIndex = writerIndex + 9;
     return 9;
@@ -1716,7 +1716,7 @@ public final class MemoryBuffer {
     // noinspection Duplicates
     int readIdx = readerIndex;
     if (size - readIdx >= 9) {
-      long bulkValue = _unsafeGetLong(readIdx++);
+      long bulkValue = _unsafeGetInt64(readIdx++);
       // noinspection Duplicates
       long result = bulkValue & 0x7F;
       if ((bulkValue & 0x80) != 0) {
@@ -1787,7 +1787,7 @@ public final class MemoryBuffer {
       return readVarUint32Slow();
     }
     // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
-    int fourByteValue = unsafeGetInt(readIdx);
+    int fourByteValue = unsafeGetInt32(readIdx);
     readIdx++;
     int result = fourByteValue & 0x7F;
     // Duplicate and manual inline for performance.
@@ -1823,7 +1823,7 @@ public final class MemoryBuffer {
   public int readVarUintSmall() {
     int readIdx = readerIndex;
     if (size - readIdx >= 5) {
-      int fourByteValue = unsafeGetInt(readIdx++);
+      int fourByteValue = unsafeGetInt32(readIdx++);
       int binarySize = fourByteValue & 0x7F;
       // Duplicate and manual inline for performance.
       // noinspection Duplicates
@@ -1942,7 +1942,7 @@ public final class MemoryBuffer {
       return readVarUint64Slow();
     }
     // varint are written using little endian byte order, so read by little endian byte order.
-    long bulkValue = _unsafeGetLong(readIdx);
+    long bulkValue = _unsafeGetInt64(readIdx);
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     readIdx++;
@@ -2207,7 +2207,7 @@ public final class MemoryBuffer {
     int binarySize;
     int readIdx = readerIndex;
     if (size - readIdx >= 5) {
-      int fourByteValue = unsafeGetInt(readIdx++);
+      int fourByteValue = unsafeGetInt32(readIdx++);
       binarySize = fourByteValue & 0x7F;
       // Duplicate and manual inline for performance.
       // noinspection Duplicates

@@ -71,37 +71,37 @@ abstract class UnsafeTrait implements Getters, Setters {
 
   public short getShort(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getShort(getOffset(ordinal));
+    return getBuffer().getInt16(getOffset(ordinal));
   }
 
   public int getInt(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getInt(getOffset(ordinal));
+    return getBuffer().getInt32(getOffset(ordinal));
   }
 
   public long getLong(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getLong(getOffset(ordinal));
+    return getBuffer().getInt64(getOffset(ordinal));
   }
 
   public float getFloat(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getFloat(getOffset(ordinal));
+    return getBuffer().getFloat32(getOffset(ordinal));
   }
 
   public double getDouble(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getDouble(getOffset(ordinal));
+    return getBuffer().getFloat64(getOffset(ordinal));
   }
 
   public int getDate(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getInt(getOffset(ordinal));
+    return getBuffer().getInt32(getOffset(ordinal));
   }
 
   public long getTimestamp(int ordinal) {
     assertIndexIsValid(ordinal);
-    return getBuffer().getLong(getOffset(ordinal));
+    return getBuffer().getInt64(getOffset(ordinal));
   }
 
   // TODO when length of string utf-8 bytes is less than 8, store it in fixed-width region. Use one
@@ -203,48 +203,48 @@ abstract class UnsafeTrait implements Getters, Setters {
   public void setShort(int ordinal, short value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putShort(getOffset(ordinal), value);
+    getBuffer().putInt16(getOffset(ordinal), value);
   }
 
   @Override
   public void setInt(int ordinal, int value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putInt(getOffset(ordinal), value);
+    getBuffer().putInt32(getOffset(ordinal), value);
   }
 
   @Override
   public void setLong(int ordinal, long value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putLong(getOffset(ordinal), value);
+    getBuffer().putInt64(getOffset(ordinal), value);
   }
 
   @Override
   public void setFloat(int ordinal, float value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putFloat(getOffset(ordinal), value);
+    getBuffer().putFloat32(getOffset(ordinal), value);
   }
 
   @Override
   public void setDouble(int ordinal, double value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putDouble(getOffset(ordinal), value);
+    getBuffer().putFloat64(getOffset(ordinal), value);
   }
 
   @Override
   public void setDate(int ordinal, int value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putInt(getOffset(ordinal), value);
+    getBuffer().putInt32(getOffset(ordinal), value);
   }
 
   @Override
   public void setTimestamp(int ordinal, long value) {
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
-    getBuffer().putLong(getOffset(ordinal), value);
+    getBuffer().putInt64(getOffset(ordinal), value);
   }
 }

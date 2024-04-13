@@ -311,7 +311,7 @@ public final class Fury implements BaseFury {
       int startOffset = buffer.writerIndex();
       buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
       writeRef(buffer, obj);
-      buffer.putInt(startOffset, buffer.writerIndex());
+      buffer.putInt32(startOffset, buffer.writerIndex());
       classResolver.writeClassDefs(buffer);
     } else {
       writeRef(buffer, obj);
@@ -323,8 +323,8 @@ public final class Fury implements BaseFury {
     buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
     buffer.writeInt32(-1); // preserve 4-byte for nativeObjects size
     xwriteRef(buffer, obj);
-    buffer.putInt(startOffset, buffer.writerIndex());
-    buffer.putInt(startOffset + 4, nativeObjects.size());
+    buffer.putInt32(startOffset, buffer.writerIndex());
+    buffer.putInt32(startOffset + 4, nativeObjects.size());
     refResolver.resetWrite();
     // fury write opaque object classname which cause later write of classname only write an id.
     classResolver.resetWrite();
@@ -1033,7 +1033,7 @@ public final class Fury implements BaseFury {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
           writeData(buffer, classInfo, obj);
         }
-        buffer.putInt(startOffset, buffer.writerIndex());
+        buffer.putInt32(startOffset, buffer.writerIndex());
         classResolver.writeClassDefs(buffer);
       } else {
         if (!refResolver.writeRefOrNull(buffer, obj)) {
