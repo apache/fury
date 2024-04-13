@@ -122,7 +122,7 @@ public class MapSerializers {
 
     @Override
     public Map onMapWrite(MemoryBuffer buffer, T value) {
-      buffer.writeVarUint32(value.size());
+      buffer.writeVarUint32Small7(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
     }
@@ -164,7 +164,7 @@ public class MapSerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
       // write length
-      buffer.writeVarUint32(0);
+      buffer.writeVarUint32Small7(0);
     }
 
     @Override
@@ -213,7 +213,7 @@ public class MapSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
-      buffer.writeVarUint32(1);
+      buffer.writeVarUint32Small7(1);
       Map.Entry entry = value.entrySet().iterator().next();
       fury.xwriteRef(buffer, entry.getKey());
       fury.xwriteRef(buffer, entry.getValue());
@@ -299,7 +299,7 @@ public class MapSerializers {
 
     @Override
     public Map onMapWrite(MemoryBuffer buffer, EnumMap value) {
-      buffer.writeVarUint32(value.size());
+      buffer.writeVarUint32Small7(value.size());
       Class keyType = (Class) Platform.getObject(value, keyTypeFieldOffset);
       fury.getClassResolver().writeClassAndUpdateCache(buffer, keyType);
       return value;
@@ -322,7 +322,7 @@ public class MapSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Map<String, T> value) {
-      buffer.writeVarUint32(value.size());
+      buffer.writeVarUint32Small7(value.size());
       for (Map.Entry<String, T> e : value.entrySet()) {
         fury.writeJavaStringRef(buffer, e.getKey());
         // If value is a collection, the `newCollection` method will record itself to

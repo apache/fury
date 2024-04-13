@@ -82,7 +82,7 @@ public class ArraySerializers {
     @Override
     public void write(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
-      buffer.writeInt32(len);
+      buffer.writeVarUint32Small7(len);
       RefResolver refResolver = fury.getRefResolver();
       Serializer componentSerializer = this.componentTypeSerializer;
       if (componentSerializer != null) {
@@ -112,7 +112,7 @@ public class ArraySerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
-      buffer.writeVarUint32(len);
+      buffer.writeVarUint32Small7(len);
       // TODO(chaokunyang) use generics by creating component serializers to multi-dimension array.
       for (T t : arr) {
         fury.xwriteRef(buffer, t);
@@ -122,7 +122,7 @@ public class ArraySerializers {
     @Override
     public T[] read(MemoryBuffer buffer) {
       // Some jdk8 will crash if use varint, why?
-      int numElements = buffer.readInt32();
+      int numElements = buffer.readVarUint32Small7();
       Object[] value = newArray(numElements);
       RefResolver refResolver = fury.getRefResolver();
       refResolver.reference(value);
@@ -563,7 +563,7 @@ public class ArraySerializers {
     @Override
     public void write(MemoryBuffer buffer, String[] value) {
       int len = value.length;
-      buffer.writeVarUint32(len);
+      buffer.writeVarUint32Small7(len);
       if (len == 0) {
         return;
       }
@@ -615,7 +615,7 @@ public class ArraySerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, String[] value) {
       int len = value.length;
-      buffer.writeVarUint32(len);
+      buffer.writeVarUint32Small7(len);
       for (String elem : value) {
         if (elem != null) {
           buffer.writeByte(Fury.REF_VALUE_FLAG);
@@ -660,7 +660,7 @@ public class ArraySerializers {
   static void writePrimitiveArray(
       MemoryBuffer buffer, Object arr, int offset, int numElements, int elemSize) {
     int size = Math.multiplyExact(numElements, elemSize);
-    buffer.writeVarUint32(size);
+    buffer.writeVarUint32Small7(size);
     int writerIndex = buffer.writerIndex();
     int end = writerIndex + size;
     buffer.ensure(end);

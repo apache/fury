@@ -1204,9 +1204,9 @@ public class ClassResolver {
   public void writeClassAndUpdateCache(MemoryBuffer buffer, Class<?> cls) {
     // fast path for common type
     if (cls == Integer.class) {
-      buffer.writeVarUint32(INTEGER_CLASS_ID << 1);
+      buffer.writeVarUint32Small7(INTEGER_CLASS_ID << 1);
     } else if (cls == Long.class) {
-      buffer.writeVarUint32(LONG_CLASS_ID << 1);
+      buffer.writeVarUint32Small7(LONG_CLASS_ID << 1);
     } else {
       writeClass(buffer, getOrUpdateClassInfo(cls));
     }
@@ -1380,7 +1380,7 @@ public class ClassResolver {
    */
   public void writeClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    buffer.writeVarUint32(metaContext.writingClassDefs.size());
+    buffer.writeVarUint32Small7(metaContext.writingClassDefs.size());
     for (ClassDef classDef : metaContext.writingClassDefs) {
       classDef.writeClassDef(buffer);
     }

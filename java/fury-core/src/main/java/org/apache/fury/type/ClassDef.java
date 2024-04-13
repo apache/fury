@@ -167,14 +167,14 @@ public class ClassDef implements Serializable {
       MemoryBuffer buf = MemoryUtils.buffer(32);
       IdentityObjectIntMap<String> map = new IdentityObjectIntMap<>(8, 0.5f);
       writeSharedString(buf, map, className);
-      buf.writeVarUint32(fieldsInfo.size());
+      buf.writeVarUint32Small7(fieldsInfo.size());
       for (FieldInfo fieldInfo : fieldsInfo) {
         writeSharedString(buf, map, fieldInfo.definedClass);
         byte[] bytes = fieldInfo.fieldName.getBytes(StandardCharsets.UTF_8);
         buf.writePrimitiveArrayWithSize(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
         fieldInfo.fieldType.write(buf);
       }
-      buf.writeVarUint32(extMeta.size());
+      buf.writeVarUint32Small7(extMeta.size());
       extMeta.forEach(
           (k, v) -> {
             byte[] keyBytes = k.getBytes(StandardCharsets.UTF_8);
@@ -199,7 +199,7 @@ public class ClassDef implements Serializable {
     if (id >= 0) {
       // TODO use flagged varint.
       buffer.writeBoolean(true);
-      buffer.writeVarUint32(id);
+      buffer.writeVarUint32Small7(id);
     } else {
       buffer.writeBoolean(false);
       byte[] bytes = str.getBytes(StandardCharsets.UTF_8);

@@ -192,7 +192,7 @@ public class CollectionSerializers {
 
     @Override
     public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
-      buffer.writeVarUint32(value.size());
+      buffer.writeVarUint32Small7(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
     }
@@ -240,7 +240,7 @@ public class CollectionSerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, List<?> value) {
       // write length
-      buffer.writeVarUint32(0);
+      buffer.writeVarUint32Small7(0);
     }
 
     @Override
@@ -272,7 +272,7 @@ public class CollectionSerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, Set<?> value) {
       // write length
-      buffer.writeVarUint32(0);
+      buffer.writeVarUint32Small7(0);
     }
 
     @Override
@@ -321,7 +321,7 @@ public class CollectionSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, List<?> value) {
-      buffer.writeVarUint32(1);
+      buffer.writeVarUint32Small7(1);
       fury.xwriteRef(buffer, value.get(0));
     }
 
@@ -355,7 +355,7 @@ public class CollectionSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, Set<?> value) {
-      buffer.writeVarUint32(1);
+      buffer.writeVarUint32Small7(1);
       fury.xwriteRef(buffer, value.iterator().next());
     }
 
@@ -442,7 +442,7 @@ public class CollectionSerializers {
       }
       fury.getClassResolver().writeClassAndUpdateCache(buffer, elemClass);
       Serializer serializer = fury.getClassResolver().getSerializer(elemClass);
-      buffer.writeVarUint32(object.size());
+      buffer.writeVarUint32Small7(object.size());
       for (Object element : object) {
         serializer.write(buffer, element);
       }
@@ -486,7 +486,7 @@ public class CollectionSerializers {
     }
 
     public Collection onCollectionWrite(MemoryBuffer buffer, PriorityQueue value) {
-      buffer.writeVarUint32(value.size());
+      buffer.writeVarUint32Small7(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
     }

@@ -184,7 +184,7 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
-      buffer.writeVarUint32(value.size());
+      buffer.writeVarUint32Small7(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
     }
@@ -319,7 +319,7 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Map onMapWrite(MemoryBuffer buffer, T value) {
-      buffer.writeVarUint32(value.size());
+      buffer.writeVarUint32Small7(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
     }

@@ -322,7 +322,7 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, Enum value) {
-      buffer.writeVarUint32(value.ordinal());
+      buffer.writeVarUint32Small7(value.ordinal());
     }
 
     @Override
@@ -339,9 +339,9 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigDecimal value) {
       final byte[] bytes = value.unscaledValue().toByteArray();
-      buffer.writeVarUint32(value.scale());
-      buffer.writeVarUint32(value.precision());
-      buffer.writeVarUint32(bytes.length);
+      buffer.writeVarUint32Small7(value.scale());
+      buffer.writeVarUint32Small7(value.precision());
+      buffer.writeVarUint32Small7(bytes.length);
       buffer.writeBytes(bytes);
     }
 
@@ -364,7 +364,7 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigInteger value) {
       final byte[] bytes = value.toByteArray();
-      buffer.writeVarUint32(bytes.length);
+      buffer.writeVarUint32Small7(bytes.length);
       buffer.writeBytes(bytes);
     }
 

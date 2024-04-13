@@ -744,7 +744,9 @@ public final class MemoryBuffer {
     // generated code is smaller. Otherwise, `MapRefResolver.writeRefOrNull`
     // may be `callee is too large`/`already compiled into a big method`
     ensure(writerIndex + 8);
-    return _unsafeWriteVarUint32(v);
+    int varintBytes = _unsafePutVarUint36Small(writerIndex, ((long) v << 1) ^ (v >> 31));
+    writerIndex += varintBytes;
+    return varintBytes;
   }
 
   /**
@@ -756,8 +758,9 @@ public final class MemoryBuffer {
   public int _unsafeWriteVarInt32(int v) {
     // CHECKSTYLE.ON:MethodName
     // Ensure negatives close to zero is encode in little bytes.
-    v = (v << 1) ^ (v >> 31);
-    return _unsafeWriteVarUint32(v);
+    int varintBytes = _unsafePutVarUint36Small(writerIndex, ((long) v << 1) ^ (v >> 31));
+    writerIndex += varintBytes;
+    return varintBytes;
   }
 
   /**
@@ -770,6 +773,33 @@ public final class MemoryBuffer {
     int varintBytes = _unsafePutVarUint36Small(writerIndex, v);
     writerIndex += varintBytes;
     return varintBytes;
+  }
+
+  /**
+   * Fast method for write an unsigned varint which is mostly a small value in 7 bits value in [0,
+   * 127). When the value is equal or greater than 127, the write will be a little slower.
+   */
+  public int writeVarUint32Small7(int value) {
+    ensure(8);
+    if (value >>> 7 == 0) {
+      UNSAFE.putByte(heapMemory, address + writerIndex++, (byte) value);
+      return 1;
+    }
+    return continueWriteVarUint32Small7(value);
+  }
+
+  private int continueWriteVarUint32Small7(int value) {
+    long encoded = (value & 0x7F);
+    encoded |= (((value & 0x3f80) << 1) | 0x80);
+    int writerIdx = writerIndex;
+    if (value >>> 14 == 0) {
+      _unsafePutInt32(writerIdx, (int) encoded);
+      writerIndex += 2;
+      return 2;
+    }
+    int diff = continuePutVarInt36(writerIdx, encoded, value);
+    writerIndex += diff;
+    return diff;
   }
 
   /**
@@ -1167,8 +1197,7 @@ public final class MemoryBuffer {
     int idx = writerIndex;
     ensure(idx + 5 + numBytes);
     idx += _unsafeWriteVarUint32(numBytes);
-    final long destAddr = address + idx;
-    Platform.copyMemory(arr, offset, heapMemory, destAddr, numBytes);
+    Platform.copyMemory(arr, offset, heapMemory, address + idx, numBytes);
     writerIndex = idx + numBytes;
   }
 
@@ -1177,8 +1206,7 @@ public final class MemoryBuffer {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + numBytes;
     ensure(newIdx);
-    final long destAddr = address + writerIdx;
-    Platform.copyMemory(arr, offset, heapMemory, destAddr, numBytes);
+    Platform.copyMemory(arr, offset, heapMemory, address + writerIdx, numBytes);
     writerIndex = newIdx;
   }
 
@@ -1186,8 +1214,7 @@ public final class MemoryBuffer {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + numBytes;
     ensure(newIdx);
-    final long destAddr = address + writerIdx;
-    Platform.copyMemory(arr, offset, heapMemory, destAddr, numBytes);
+    Platform.copyMemory(arr, offset, heapMemory, address + writerIdx, numBytes);
     writerIndex = newIdx;
   }
 
@@ -1783,8 +1810,8 @@ public final class MemoryBuffer {
   }
 
   /**
-   * Fast path for read a unsigned varint which is mostly a smaller value in 7 bits value in [0, 127). When the
-   * value is equal or greater than 127, the read will be a little slower.
+   * Fast method for read an unsigned varint which is mostly a small value in 7 bits value in [0,
+   * 127). When the value is equal or greater than 127, the read will be a little slower.
    */
   public int readVarUint32Small7() {
     int readIdx = readerIndex;
@@ -1799,8 +1826,8 @@ public final class MemoryBuffer {
   }
 
   /**
-   * Fast path for read a unsigned varint which is mostly a smaller value in 14 bits value in [0, 16384). When the
-   * value is equal or greater than 16384, the read will be a little slower.
+   * Fast path for read an unsigned varint which is mostly a small value in 14 bits value in [0,
+   * 16384). When the value is equal or greater than 16384, the read will be a little slower.
    */
   public int readVarUint32Small14() {
     int readIdx = readerIndex;
