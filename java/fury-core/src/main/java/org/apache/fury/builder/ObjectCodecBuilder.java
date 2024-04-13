@@ -282,7 +282,9 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     }
     Expression increaseWriterIndex =
         new Invoke(
-            buffer, "_increaseWriterIndexUnsafe", new Literal(totalSizeLiteral, PRIMITIVE_INT_TYPE));
+            buffer,
+            "_increaseWriterIndexUnsafe",
+            new Literal(totalSizeLiteral, PRIMITIVE_INT_TYPE));
     expressions.add(increaseWriterIndex);
     return expressions;
   }
