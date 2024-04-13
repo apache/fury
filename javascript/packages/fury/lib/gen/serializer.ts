@@ -19,11 +19,15 @@
 
 import { InternalSerializerType } from "../type";
 import { CodecBuilder } from "./builder";
-import { makeHead } from "../referenceResolver";
 import SerializerResolver from "../classResolver";
 import { RefFlags } from "../type";
 import { Scope } from "./scope";
 import { TypeDescription, ObjectTypeDescription } from "../description";
+
+
+export const makeHead = (flag: RefFlags, type: InternalSerializerType) => {
+  return (((SerializerResolver.getTypeIdByInternalSerializerType(type) << 16) >>> 16) << 8) | ((flag << 24) >>> 24);
+};
 
 export interface SerializerGenerator {
   toSerializer(): string;

@@ -19,61 +19,43 @@
 
 import {
   RefFlags,
-  BinaryReader,
-  BinaryWriter,
-  InternalSerializerType,
 } from "./type";
-import SerializerResolver from "./classResolver";
+import { BinaryReader } from "./reader";
 
-export const makeHead = (flag: RefFlags, type: InternalSerializerType) => {
-  return (((SerializerResolver.getTypeIdByInternalSerializerType(type) << 16) >>> 16) << 8) | ((flag << 24) >>> 24);
-};
 
-export const ReferenceResolver = (
-  config: {
-    refTracking?: boolean;
-  },
-  binaryWriter: BinaryWriter,
-  binaryReader: BinaryReader,
-) => {
-  let readObjects: any[] = [];
-  let writeObjects: any[] = [];
+export class ReferenceResolver {
+  private readObjects: any[] = [];
+  private writeObjects: any[] = [];
 
-  function reset() {
-    readObjects = [];
-    writeObjects = [];
+  constructor(private binaryReader: BinaryReader) {
+
+  }
+  reset() {
+    this.readObjects = [];
+    this.writeObjects = [];
   }
 
-  function getReadObject(refId: number) {
-    return readObjects[refId];
+  getReadObject(refId: number) {
+    return this.readObjects[refId];
   }
 
-  function readRefFlag() {
-    return binaryReader.int8() as RefFlags;
+  readRefFlag() {
+    return this.binaryReader.int8() as RefFlags;
   }
 
-  function reference(object: any) {
-    readObjects.push(object);
+  reference(object: any) {
+    this.readObjects.push(object);
   }
 
-  function writeRef(object: any) {
-    writeObjects.push(object);
+  writeRef(object: any) {
+    this.writeObjects.push(object);
   }
 
-  function existsWriteObject(obj: any) {
-    for (let index = 0; index < writeObjects.length; index++) {
-      if (writeObjects[index] === obj) {
+  existsWriteObject(obj: any) {
+    for (let index = 0; index < this.writeObjects.length; index++) {
+      if (this.writeObjects[index] === obj) {
         return index;
       }
     }
   }
-
-  return {
-    existsWriteObject,
-    writeRef,
-    reference,
-    readRefFlag,
-    getReadObject,
-    reset,
-  };
-};
+}

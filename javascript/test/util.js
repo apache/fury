@@ -38,7 +38,7 @@ const mockData2Description = (data, tag) => {
     }
     if (data instanceof Date) {
         return {
-            type: InternalSerializerType.TIMESTAMP,
+            type: InternalSerializerType.DURATION,
             label: 'timestamp'
         }
     }
@@ -50,7 +50,7 @@ const mockData2Description = (data, tag) => {
     }
     if (data instanceof Set) {
         return {
-            type: InternalSerializerType.FURY_SET,
+            type: InternalSerializerType.SET,
             label: "set",
             options: {
                 key: mockData2Description([...data.values()][0], tag),
@@ -87,7 +87,7 @@ const mockData2Description = (data, tag) => {
     }
     if (typeof data === 'object') {
         return {
-            type: InternalSerializerType.FURY_TYPE_TAG,
+            type: InternalSerializerType.OBJECT,
             label: "object",
             options: {
                 props: Object.fromEntries(Object.entries(data).map(([key, value]) => {
