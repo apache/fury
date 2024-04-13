@@ -222,26 +222,19 @@ public final class Fury implements BaseFury {
   @Override
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj, BufferCallback callback) {
     this.bufferCallback = callback;
-    int maskIndex = buffer.writerIndex();
-    // 1byte used for bit mask
-    buffer.ensure(maskIndex + 1);
-    buffer.writerIndex(maskIndex + 1);
     byte bitmap = BITMAP;
+    if (language != Language.JAVA) {
+      bitmap |= isCrossLanguageFlag;
+    }
     if (obj == null) {
       bitmap |= isNilFlag;
-      buffer.putByte(maskIndex, bitmap);
+      buffer.writeByte(bitmap);
       return buffer;
-    }
-    if (language != Language.JAVA) {
-      // set reader as x_lang.
-      bitmap |= isCrossLanguageFlag;
-      // set writer language.
-      buffer.writeByte((byte) Language.JAVA.ordinal());
     }
     if (bufferCallback != null) {
       bitmap |= isOutOfBandFlag;
     }
-    buffer.putByte(maskIndex, bitmap);
+    buffer.writeByte(bitmap);
     try {
       jitContext.lock();
       if (depth != 0) {
@@ -250,6 +243,7 @@ public final class Fury implements BaseFury {
       if (language == Language.JAVA) {
         write(buffer, obj);
       } else {
+        buffer.writeByte((byte) Language.JAVA.ordinal());
         xserializeInternal(buffer, obj);
       }
       return buffer;
