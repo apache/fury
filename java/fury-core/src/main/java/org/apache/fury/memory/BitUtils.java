@@ -36,10 +36,10 @@ public class BitUtils {
   public static void set(MemoryBuffer bitmapBuffer, int baseOffset, int index) {
     final int byteIndex = baseOffset + (index >> 3);
     final int bitIndex = index & 7;
-    byte currentByte = bitmapBuffer.get(byteIndex);
+    byte currentByte = bitmapBuffer.getByte(byteIndex);
     final byte bitMask = (byte) (1L << bitIndex);
     currentByte |= bitMask;
-    bitmapBuffer.put(byteIndex, currentByte);
+    bitmapBuffer.putByte(byteIndex, currentByte);
   }
 
   public static void setAll(MemoryBuffer bitmapBuffer, int baseOffset, int valueCount) {
@@ -50,7 +50,7 @@ public class BitUtils {
     final int sizeInBytesMinus1 = sizeInBytes - 1;
     int bytesMinus1EndOffset = baseOffset + sizeInBytesMinus1;
     for (int i = baseOffset; i < bytesMinus1EndOffset; i++) {
-      bitmapBuffer.put(i, (byte) 0xff);
+      bitmapBuffer.putByte(i, (byte) 0xff);
     }
 
     // handling with the last byte
@@ -60,7 +60,7 @@ public class BitUtils {
     if (remainder != 0) {
       // Every byte is set form right to left
       byte byteValue = (byte) (0xff >>> (8 - remainder));
-      bitmapBuffer.put(baseOffset + sizeInBytesMinus1, byteValue);
+      bitmapBuffer.putByte(baseOffset + sizeInBytesMinus1, byteValue);
     }
   }
 
@@ -72,27 +72,27 @@ public class BitUtils {
   public static void setBit(MemoryBuffer bitmapBuffer, int baseOffset, int index, int value) {
     final int byteIndex = baseOffset + (index >> 3);
     final int bitIndex = index & 7;
-    byte current = bitmapBuffer.get(byteIndex);
+    byte current = bitmapBuffer.getByte(byteIndex);
     final byte bitMask = (byte) (1L << bitIndex);
     if (value != 0) {
       current |= bitMask;
     } else {
       current -= (bitMask & current);
     }
-    bitmapBuffer.put(byteIndex, current);
+    bitmapBuffer.putByte(byteIndex, current);
   }
 
   public static boolean isSet(MemoryBuffer bitmapBuffer, int baseOffset, int index) {
     final int byteIndex = baseOffset + (index >> 3);
     final int bitIndex = index & 7;
-    final byte b = bitmapBuffer.get(byteIndex);
+    final byte b = bitmapBuffer.getByte(byteIndex);
     return ((b >> bitIndex) & 0x01) != 0;
   }
 
   public static boolean isNotSet(MemoryBuffer bitmapBuffer, int baseOffset, int index) {
     final int byteIndex = baseOffset + (index >> 3);
     final int bitIndex = index & 7;
-    final byte b = bitmapBuffer.get(byteIndex);
+    final byte b = bitmapBuffer.getByte(byteIndex);
     return ((b >> bitIndex) & 0x01) == 0;
   }
 
@@ -101,7 +101,7 @@ public class BitUtils {
     int addr = baseOffset;
     int bitmapWidthInWords = bitmapWidthInBytes / WORD_SIZE;
     for (int i = 0; i < bitmapWidthInWords; i++, addr += WORD_SIZE) {
-      if (bitmapBuffer.getLong(addr) != 0) {
+      if (bitmapBuffer.getInt64(addr) != 0) {
         return true;
       }
     }
@@ -117,7 +117,7 @@ public class BitUtils {
     final int sizeInBytesMinus1 = sizeInBytes - 1;
     int bytesMinus1EndOffset = baseOffset + sizeInBytesMinus1;
     for (int i = baseOffset; i < bytesMinus1EndOffset; i++) {
-      if (bitmapBuffer.get(i) != (byte) 0xFF) {
+      if (bitmapBuffer.getByte(i) != (byte) 0xFF) {
         return true;
       }
     }
@@ -128,7 +128,7 @@ public class BitUtils {
     // for bit operations, native byte order may be subject to change between machine,
     // so we use getByte
     if (remainder != 0) {
-      byte byteValue = bitmapBuffer.get(baseOffset + sizeInBytesMinus1);
+      byte byteValue = bitmapBuffer.getByte(baseOffset + sizeInBytesMinus1);
       // Every byte is set form right to left
       byte mask = (byte) (0xFF >>> (8 - remainder));
       return byteValue != mask;
@@ -154,14 +154,14 @@ public class BitUtils {
     final int sizeInBytesMinus1 = sizeInBytes - 1;
     int bytesMinus1EndOffset = baseOffset + sizeInBytesMinus1;
     for (int i = baseOffset; i < bytesMinus1EndOffset; i++) {
-      byte byteValue = bitmapBuffer.get(i);
+      byte byteValue = bitmapBuffer.getByte(i);
       // byteValue & 0xFF: sets int to the (unsigned) 8 bits value resulting from
       // putting the 8 bits of value in the lowest 8 bits of int.
       count += Integer.bitCount(byteValue & 0xFF);
     }
 
     // handling with the last byte
-    byte byteValue = bitmapBuffer.get(baseOffset + sizeInBytesMinus1);
+    byte byteValue = bitmapBuffer.getByte(baseOffset + sizeInBytesMinus1);
     if (remainder != 0) {
       // making the remaining bits all 1s if it is not fully filled
       byte mask = (byte) (0xFF << remainder);

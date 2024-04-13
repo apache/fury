@@ -232,7 +232,7 @@ public class PrimitiveSerializers {
         case SLI:
           return new Invoke(buffer, ensureBounds ? "writeSliInt64" : "_unsafeWriteSliInt64", v);
         case PVL:
-          return new Invoke(buffer, ensureBounds ? "writeVarInt64" : "_unsafeWriteVarInt64", v);
+          return new Invoke(buffer, ensureBounds ? "writeVarInt64" : "_unsafeWriteVarInt3264", v);
         default:
           throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
       }

@@ -230,8 +230,8 @@ public final class StringSerializer extends Serializer<String> {
     byte[] bytes;
     byte[] heapMemory = buffer.getHeapMemory();
     if (heapMemory != null) {
-      final int arrIndex = buffer.unsafeHeapReaderIndex();
-      buffer.increaseReaderIndexUnsafe(numBytes);
+      final int arrIndex = buffer._unsafeHeapReaderIndex();
+      buffer._increaseReaderIndexUnsafe(numBytes);
       bytes = new byte[numBytes];
       System.arraycopy(heapMemory, arrIndex, bytes, 0, numBytes);
     } else {
@@ -353,7 +353,7 @@ public final class StringSerializer extends Serializer<String> {
     if (targetArray != null) {
       // Some JDK11 Unsafe.copyMemory will `copyMemoryChecks`, and
       // jvm doesn't eliminate well in some jdk.
-      final int targetIndex = buffer.unsafeHeapWriterIndex();
+      final int targetIndex = buffer._unsafeHeapWriterIndex();
       int arrIndex = targetIndex;
       arrIndex += LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
       writerIndex += arrIndex - targetIndex;
@@ -365,7 +365,7 @@ public final class StringSerializer extends Serializer<String> {
           bytes, Platform.BYTE_ARRAY_OFFSET, null, offHeapAddress + writerIndex, bytesLen);
     }
     writerIndex += bytesLen;
-    buffer.unsafeWriterIndex(writerIndex);
+    buffer._unsafeWriterIndex(writerIndex);
   }
 
   public void writeCharsLatin(MemoryBuffer buffer, char[] chars, final int strLen) {
@@ -376,14 +376,14 @@ public final class StringSerializer extends Serializer<String> {
     long header = ((long) strLen << 2) | LATIN1;
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
-      int arrIndex = buffer.unsafeHeapWriterIndex();
+      int arrIndex = buffer._unsafeHeapWriterIndex();
       int written = LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
       arrIndex += written;
       writerIndex += written + strLen;
       for (int i = 0; i < strLen; i++) {
         targetArray[arrIndex + i] = (byte) chars[i];
       }
-      buffer.unsafeWriterIndex(writerIndex);
+      buffer._unsafeWriterIndex(writerIndex);
     } else {
       writerIndex += buffer._unsafePutVarUint36Small(writerIndex, header);
       final byte[] tmpArray = getByteArray(strLen);
@@ -393,7 +393,7 @@ public final class StringSerializer extends Serializer<String> {
       }
       buffer.put(writerIndex, tmpArray, 0, strLen);
       writerIndex += strLen;
-      buffer.unsafeWriterIndex(writerIndex);
+      buffer._unsafeWriterIndex(writerIndex);
     }
   }
 
@@ -406,7 +406,7 @@ public final class StringSerializer extends Serializer<String> {
     buffer.ensure(writerIndex + 9 + numBytes);
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
-      int arrIndex = buffer.unsafeHeapWriterIndex();
+      int arrIndex = buffer._unsafeHeapWriterIndex();
       int written = LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
       arrIndex += written;
       writerIndex += written + numBytes;
@@ -424,7 +424,7 @@ public final class StringSerializer extends Serializer<String> {
     } else {
       writerIndex = offHeapWriteCharsUTF16(buffer, chars, writerIndex, header, numBytes);
     }
-    buffer.unsafeWriterIndex(writerIndex);
+    buffer._unsafeWriterIndex(writerIndex);
   }
 
   private static void heapWriteCharsUTF16BE(
@@ -458,11 +458,11 @@ public final class StringSerializer extends Serializer<String> {
     buffer.checkReadableBytes(numBytes);
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
-      int srcIndex = buffer.unsafeHeapReaderIndex();
+      int srcIndex = buffer._unsafeHeapReaderIndex();
       for (int i = 0; i < numBytes; i++) {
         chars[i] = (char) (targetArray[srcIndex++] & 0xff);
       }
-      buffer.increaseReaderIndexUnsafe(numBytes);
+      buffer._increaseReaderIndexUnsafe(numBytes);
     } else {
       byte[] byteArray = getByteArray(numBytes);
       buffer.readBytes(byteArray, 0, numBytes);
@@ -483,14 +483,14 @@ public final class StringSerializer extends Serializer<String> {
       final byte[] targetArray = buffer.getHeapMemory();
       if (targetArray != null) {
         int charIndex = 0;
-        for (int i = buffer.unsafeHeapReaderIndex(), end = i + numBytes; i < end; i += 2) {
+        for (int i = buffer._unsafeHeapReaderIndex(), end = i + numBytes; i < end; i += 2) {
           char c =
               (char)
                   ((targetArray[i] & 0xff << StringUTF16.HI_BYTE_SHIFT)
                       | ((targetArray[i + 1] & 0xff) << StringUTF16.LO_BYTE_SHIFT));
           chars[charIndex++] = c;
         }
-        buffer.increaseReaderIndexUnsafe(numBytes);
+        buffer._increaseReaderIndexUnsafe(numBytes);
       } else {
         final byte[] tmpArray = getByteArray(numBytes);
         buffer.readBytes(tmpArray, 0, numBytes);
@@ -651,7 +651,8 @@ public final class StringSerializer extends Serializer<String> {
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       String str =
-          new String(targetArray, buffer.unsafeHeapReaderIndex(), numBytes, StandardCharsets.UTF_8);
+          new String(
+              targetArray, buffer._unsafeHeapReaderIndex(), numBytes, StandardCharsets.UTF_8);
       buffer.increaseReaderIndex(numBytes);
       return str;
     } else {

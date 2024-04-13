@@ -35,15 +35,15 @@ public interface Getters {
 
   byte getByte(int ordinal);
 
-  short getShort(int ordinal);
+  short getInt16(int ordinal);
 
-  int getInt(int ordinal);
+  int getInt32(int ordinal);
 
-  long getLong(int ordinal);
+  long getInt64(int ordinal);
 
-  float getFloat(int ordinal);
+  float getFloat32(int ordinal);
 
-  double getDouble(int ordinal);
+  double getFloat64(int ordinal);
 
   BigDecimal getDecimal(int ordinal);
 
