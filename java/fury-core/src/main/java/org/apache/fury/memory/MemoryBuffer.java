@@ -1783,6 +1783,22 @@ public final class MemoryBuffer {
   }
 
   /**
+   * Fast path for read a unsigned varint which is mostly a smaller value in 7 bits value in [0, 127). When the
+   * value is equal or greater than 127, the read will be a little slower.
+   */
+  public int readVarUint32Small7() {
+    int readIdx = readerIndex;
+    if (size - readIdx > 0) {
+      byte v = UNSAFE.getByte(heapMemory, address + readIdx++);
+      if ((v & 0x80) == 0) {
+        readerIndex = readIdx;
+        return v;
+      }
+    }
+    return readVarUint32Small14();
+  }
+
+  /**
    * Fast path for read a unsigned varint which is mostly a smaller value in 14 bits value in [0, 16384). When the
    * value is equal or greater than 16384, the read will be a little slower.
    */

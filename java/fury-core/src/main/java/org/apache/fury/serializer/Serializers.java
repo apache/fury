@@ -327,7 +327,7 @@ public class Serializers {
 
     @Override
     public Enum read(MemoryBuffer buffer) {
-      return enumConstants[buffer.readVarUint32Small14()];
+      return enumConstants[buffer.readVarUint32Small7()];
     }
   }
 

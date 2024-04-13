@@ -71,7 +71,7 @@ public class CollectionSerializers {
 
     @Override
     public ArrayList newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32Small14();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       ArrayList arrayList = new ArrayList(numElements);
       fury.getRefResolver().reference(arrayList);
@@ -126,7 +126,7 @@ public class CollectionSerializers {
 
     @Override
     public List<?> xread(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       Object[] arr = new Object[numElements];
       for (int i = 0; i < numElements; i++) {
         Object elem = fury.xreadRef(buffer);
@@ -148,7 +148,7 @@ public class CollectionSerializers {
 
     @Override
     public HashSet newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       HashSet hashSet = new HashSet(numElements);
       fury.getRefResolver().reference(hashSet);
@@ -168,7 +168,7 @@ public class CollectionSerializers {
 
     @Override
     public LinkedHashSet newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       LinkedHashSet hashSet = new LinkedHashSet(numElements);
       fury.getRefResolver().reference(hashSet);
@@ -200,7 +200,7 @@ public class CollectionSerializers {
     @SuppressWarnings("unchecked")
     @Override
     public T newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       T collection;
       Comparator comparator = (Comparator) fury.readRef(buffer);
@@ -250,7 +250,7 @@ public class CollectionSerializers {
 
     @Override
     public List<?> xread(MemoryBuffer buffer) {
-      buffer.readVarUint32();
+      buffer.readVarUint32Small7();
       return Collections.EMPTY_LIST;
     }
   }
@@ -282,7 +282,7 @@ public class CollectionSerializers {
 
     @Override
     public Set<?> xread(MemoryBuffer buffer) {
-      buffer.readVarUint32();
+      buffer.readVarUint32Small7();
       return Collections.EMPTY_SET;
     }
   }
@@ -332,7 +332,7 @@ public class CollectionSerializers {
 
     @Override
     public List<?> xread(MemoryBuffer buffer) {
-      buffer.readVarUint32();
+      buffer.readVarUint32Small7();
       return Collections.singletonList(fury.xreadRef(buffer));
     }
   }
@@ -366,7 +366,7 @@ public class CollectionSerializers {
 
     @Override
     public Set<?> xread(MemoryBuffer buffer) {
-      buffer.readVarUint32();
+      buffer.readVarUint32Small7();
       return Collections.singleton(fury.xreadRef(buffer));
     }
   }
@@ -380,7 +380,7 @@ public class CollectionSerializers {
 
     @Override
     public ConcurrentSkipListSet newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);
       ConcurrentSkipListSet skipListSet = new ConcurrentSkipListSet(comparator);
@@ -397,7 +397,7 @@ public class CollectionSerializers {
 
     @Override
     public Vector newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       Vector<Object> vector = new Vector<>(numElements);
       fury.getRefResolver().reference(vector);
@@ -413,7 +413,7 @@ public class CollectionSerializers {
 
     @Override
     public ArrayDeque newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       ArrayDeque deque = new ArrayDeque(numElements);
       fury.getRefResolver().reference(deque);
@@ -453,7 +453,7 @@ public class CollectionSerializers {
       Class elemClass = fury.getClassResolver().readClassInfo(buffer).getCls();
       EnumSet object = EnumSet.noneOf(elemClass);
       Serializer elemSerializer = fury.getClassResolver().getSerializer(elemClass);
-      int length = buffer.readVarUint32();
+      int length = buffer.readVarUint32Small7();
       for (int i = 0; i < length; i++) {
         object.add(elemSerializer.read(buffer));
       }
@@ -475,7 +475,7 @@ public class CollectionSerializers {
 
     @Override
     public BitSet read(MemoryBuffer buffer) {
-      long[] values = buffer.readLongs(buffer.readVarUint32());
+      long[] values = buffer.readLongs(buffer.readVarUint32Small7());
       return BitSet.valueOf(values);
     }
   }
@@ -493,7 +493,7 @@ public class CollectionSerializers {
 
     @Override
     public PriorityQueue newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);
       PriorityQueue queue = new PriorityQueue(comparator);

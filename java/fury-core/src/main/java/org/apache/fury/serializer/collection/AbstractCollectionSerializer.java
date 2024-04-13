@@ -493,7 +493,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
    * will raise NPE.
    */
   public Collection newCollection(MemoryBuffer buffer) {
-    numElements = buffer.readVarUint32Small14();
+    numElements = buffer.readVarUint32Small7();
     if (constructor == null) {
       constructor = ReflectionUtils.getCtrHandle(type, true);
     }
