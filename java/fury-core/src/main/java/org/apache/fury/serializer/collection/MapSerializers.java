@@ -63,7 +63,7 @@ public class MapSerializers {
 
     @Override
     public HashMap newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       HashMap hashMap = new HashMap(numElements);
       fury.getRefResolver().reference(hashMap);
@@ -83,7 +83,7 @@ public class MapSerializers {
 
     @Override
     public LinkedHashMap newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       LinkedHashMap hashMap = new LinkedHashMap(numElements);
       fury.getRefResolver().reference(hashMap);
@@ -103,7 +103,7 @@ public class MapSerializers {
 
     @Override
     public LazyMap newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       LazyMap map = new LazyMap(numElements);
       fury.getRefResolver().reference(map);
@@ -130,7 +130,7 @@ public class MapSerializers {
     @SuppressWarnings("unchecked")
     @Override
     public Map newMap(MemoryBuffer buffer) {
-      setNumElements(buffer.readVarUint32());
+      setNumElements(buffer.readVarUint32Small7());
       T map;
       Comparator comparator = (Comparator) fury.readRef(buffer);
       if (type == TreeMap.class) {
@@ -174,7 +174,7 @@ public class MapSerializers {
 
     @Override
     public Map<?, ?> xread(MemoryBuffer buffer) {
-      buffer.readVarUint32();
+      buffer.readVarUint32Small7();
       return Collections.EMPTY_MAP;
     }
   }
@@ -228,7 +228,7 @@ public class MapSerializers {
 
     @Override
     public Map<?, ?> xread(MemoryBuffer buffer) {
-      buffer.readVarUint32();
+      buffer.readVarUint32Small7();
       Object key = fury.xreadRef(buffer);
       Object value = fury.xreadRef(buffer);
       return Collections.singletonMap(key, value);
@@ -243,7 +243,7 @@ public class MapSerializers {
 
     @Override
     public ConcurrentHashMap newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       ConcurrentHashMap map = new ConcurrentHashMap(numElements);
       fury.getRefResolver().reference(map);
@@ -265,7 +265,7 @@ public class MapSerializers {
 
     @Override
     public ConcurrentSkipListMap newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);
       ConcurrentSkipListMap map = new ConcurrentSkipListMap(comparator);
@@ -307,7 +307,7 @@ public class MapSerializers {
 
     @Override
     public EnumMap newMap(MemoryBuffer buffer) {
-      setNumElements(buffer.readVarUint32());
+      setNumElements(buffer.readVarUint32Small7());
       Class<?> keyType = fury.getClassResolver().readClassInfo(buffer).getCls();
       return new EnumMap(keyType);
     }

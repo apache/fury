@@ -347,9 +347,9 @@ public class Serializers {
 
     @Override
     public BigDecimal read(MemoryBuffer buffer) {
-      int scale = buffer.readVarUint32();
-      int precision = buffer.readVarUint32();
-      int len = buffer.readVarUint32();
+      int scale = buffer.readVarUint32Small7();
+      int precision = buffer.readVarUint32Small7();
+      int len = buffer.readVarUint32Small7();
       byte[] bytes = buffer.readBytes(len);
       final BigInteger bigInteger = new BigInteger(bytes);
       return new BigDecimal(bigInteger, scale, new MathContext(precision));
@@ -370,7 +370,7 @@ public class Serializers {
 
     @Override
     public BigInteger read(MemoryBuffer buffer) {
-      int len = buffer.readVarUint32();
+      int len = buffer.readVarUint32Small7();
       byte[] bytes = buffer.readBytes(len);
       return new BigInteger(bytes);
     }

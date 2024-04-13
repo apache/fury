@@ -212,13 +212,13 @@ public class ClassDef implements Serializable {
     List<String> strings = new ArrayList<>();
     String className = readSharedString(buffer, strings);
     List<FieldInfo> fieldInfos = new ArrayList<>();
-    int numFields = buffer.readVarUint32();
+    int numFields = buffer.readVarUint32Small7();
     for (int i = 0; i < numFields; i++) {
       String definedClass = readSharedString(buffer, strings);
       String fieldName = new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8);
       fieldInfos.add(new FieldInfo(definedClass, fieldName, FieldType.read(buffer)));
     }
-    int extMetaSize = buffer.readVarUint32();
+    int extMetaSize = buffer.readVarUint32Small7();
     Map<String, String> extMeta = new HashMap<>();
     for (int i = 0; i < extMetaSize; i++) {
       extMeta.put(

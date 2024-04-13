@@ -160,7 +160,7 @@ public class ArraySerializers {
 
     @Override
     public T[] xread(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       Object[] value = newArray(numElements);
       for (int i = 0; i < numElements; i++) {
         value[i] = fury.xreadRef(buffer);
@@ -268,7 +268,7 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readVarUint32();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         boolean[] values = new boolean[numElements];
         buffer.readToUnsafe(values, offset, size);
@@ -303,7 +303,7 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readVarUint32();
+        int size = buffer.readVarUint32Small7();
         byte[] values = new byte[size];
         buffer.readToUnsafe(values, offset, size);
         return values;
@@ -338,7 +338,7 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readVarUint32();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         char[] values = new char[numElements];
         buffer.readToUnsafe(values, offset, size);
@@ -389,7 +389,7 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readVarUint32();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         short[] values = new short[numElements];
         buffer.readToUnsafe(values, offset, size);
@@ -425,7 +425,7 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readVarUint32();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         int[] values = new int[numElements];
         buffer.readToUnsafe(values, offset, size);
@@ -461,7 +461,7 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readVarUint32();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         long[] values = new long[numElements];
         buffer.readToUnsafe(values, offset, size);
@@ -497,7 +497,7 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readVarUint32();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         float[] values = new float[numElements];
         buffer.readToUnsafe(values, offset, size);
@@ -533,7 +533,7 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readVarUint32();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         double[] values = new double[numElements];
         buffer.readToUnsafe(values, offset, size);
@@ -628,7 +628,7 @@ public class ArraySerializers {
 
     @Override
     public String[] xread(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32();
+      int numElements = buffer.readVarUint32Small7();
       String[] value = new String[numElements];
       for (int i = 0; i < numElements; i++) {
         if (buffer.readByte() == Fury.REF_VALUE_FLAG) {

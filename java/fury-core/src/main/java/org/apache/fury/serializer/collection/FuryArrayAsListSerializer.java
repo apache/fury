@@ -39,7 +39,7 @@ public final class FuryArrayAsListSerializer extends CollectionSerializer<ArrayA
   }
 
   public Collection newCollection(MemoryBuffer buffer) {
-    int numElements = buffer.readVarUint32();
+    int numElements = buffer.readVarUint32Small7();
     setNumElements(numElements);
     return new ArrayAsList(numElements);
   }
