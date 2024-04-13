@@ -94,6 +94,7 @@ public final class Fury implements BaseFury {
   private static final byte isCrossLanguageFlag = 1 << 2;
   private static final byte isOutOfBandFlag = 1 << 3;
   private static final boolean isLittleEndian = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
+  private static final byte BITMAP = isLittleEndian ? isLittleEndianFlag : 0;
   private static final int BUFFER_SIZE_LIMIT = 128 * 1024;
 
   private final Config config;
@@ -225,15 +226,11 @@ public final class Fury implements BaseFury {
     // 1byte used for bit mask
     buffer.ensure(maskIndex + 1);
     buffer.writerIndex(maskIndex + 1);
-    byte bitmap = 0;
+    byte bitmap = BITMAP;
     if (obj == null) {
       bitmap |= isNilFlag;
       buffer.putByte(maskIndex, bitmap);
       return buffer;
-    }
-    // set endian.
-    if (isLittleEndian) {
-      bitmap |= isLittleEndianFlag;
     }
     if (language != Language.JAVA) {
       // set reader as x_lang.
