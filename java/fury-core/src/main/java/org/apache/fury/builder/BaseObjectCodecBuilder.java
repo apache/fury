@@ -34,6 +34,7 @@ import static org.apache.fury.collection.Collections.ofHashSet;
 import static org.apache.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
 import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.COLLECTION_TYPE;
+import static org.apache.fury.type.TypeUtils.LIST_TYPE;
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
@@ -369,16 +370,16 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (clz == char.class || clz == Character.class) {
         return new Invoke(buffer, "writeChar", inputObject);
       } else if (clz == short.class || clz == Short.class) {
-        return new Invoke(buffer, "writeShort", inputObject);
+        return new Invoke(buffer, "writeInt16", inputObject);
       } else if (clz == int.class || clz == Integer.class) {
-        String func = fury.compressInt() ? "writeVarInt" : "writeInt";
+        String func = fury.compressInt() ? "writeVarInt32" : "writeInt32";
         return new Invoke(buffer, func, inputObject);
       } else if (clz == long.class || clz == Long.class) {
-        return LongSerializer.writeLong(buffer, inputObject, fury.longEncoding(), true);
+        return LongSerializer.writeInt64(buffer, inputObject, fury.longEncoding(), true);
       } else if (clz == float.class || clz == Float.class) {
-        return new Invoke(buffer, "writeFloat", inputObject);
+        return new Invoke(buffer, "writeFloat32", inputObject);
       } else if (clz == double.class || clz == Double.class) {
-        return new Invoke(buffer, "writeDouble", inputObject);
+        return new Invoke(buffer, "writeFloat64", inputObject);
       } else {
         throw new IllegalStateException("impossible");
       }
@@ -711,7 +712,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             TypeUtils.collectionOf(elementType),
             buffer,
             collection);
-    collection = onCollectionWrite;
+    boolean isList = List.class.isAssignableFrom(getRawType(collection.type()));
+    collection =
+        isList ? new Cast(onCollectionWrite.inline(), LIST_TYPE, "list") : onCollectionWrite;
     Expression size = new Invoke(collection, "size", PRIMITIVE_INT_TYPE);
     walkPath.add(elementType.toString());
     ListExpression builder = new ListExpression();
@@ -1132,15 +1135,15 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (cls == char.class || cls == Character.class) {
         return readChar(buffer);
       } else if (cls == short.class || cls == Short.class) {
-        return readShort(buffer);
+        return readInt16(buffer);
       } else if (cls == int.class || cls == Integer.class) {
-        return fury.compressInt() ? readVarInt(buffer) : readInt(buffer);
+        return fury.compressInt() ? readVarInt32(buffer) : readInt32(buffer);
       } else if (cls == long.class || cls == Long.class) {
-        return LongSerializer.readLong(buffer, fury.longEncoding());
+        return LongSerializer.readInt64(buffer, fury.longEncoding());
       } else if (cls == float.class || cls == Float.class) {
-        return readFloat(buffer);
+        return readFloat32(buffer);
       } else if (cls == double.class || cls == Double.class) {
-        return readDouble(buffer);
+        return readFloat64(buffer);
       } else {
         throw new IllegalStateException("impossible");
       }

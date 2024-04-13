@@ -25,10 +25,13 @@ import org.slf4j.spi.LocationAwareLogger;
 public class Slf4jLogger implements Logger {
   private static final String FQCN = Slf4jLogger.class.getName();
 
+  private final boolean isLocationAwareLogger;
+
   private final org.slf4j.Logger logger;
 
   public Slf4jLogger(Class<?> cls) {
     this.logger = org.slf4j.LoggerFactory.getLogger(cls);
+    this.isLocationAwareLogger = logger instanceof LocationAwareLogger;
   }
 
   @Override
@@ -48,7 +51,7 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void info(String msg, Object... args) {
-    if (logger instanceof LocationAwareLogger) {
+    if (isLocationAwareLogger) {
       ((LocationAwareLogger) logger).log(null, FQCN, LocationAwareLogger.INFO_INT, msg, args, null);
     } else {
       logger.info(msg, args);
@@ -72,7 +75,7 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void warn(String msg, Object... args) {
-    if (logger instanceof LocationAwareLogger) {
+    if (isLocationAwareLogger) {
       ((LocationAwareLogger) logger).log(null, FQCN, LocationAwareLogger.WARN_INT, msg, args, null);
     } else {
       logger.warn(msg, args);
@@ -81,7 +84,7 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void warn(String msg, Throwable t) {
-    if (logger instanceof LocationAwareLogger) {
+    if (isLocationAwareLogger) {
       ((LocationAwareLogger) logger).log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, t);
     } else {
       logger.warn(msg, t);
@@ -105,7 +108,7 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void error(String msg, Object... args) {
-    if (logger instanceof LocationAwareLogger) {
+    if (isLocationAwareLogger) {
       ((LocationAwareLogger) logger)
           .log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, args, null);
     } else {
@@ -115,7 +118,7 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void error(String msg, Throwable t) {
-    if (logger instanceof LocationAwareLogger) {
+    if (isLocationAwareLogger) {
       ((LocationAwareLogger) logger).log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, t);
     } else {
       logger.error(msg, t);

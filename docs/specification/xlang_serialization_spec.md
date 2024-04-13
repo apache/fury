@@ -29,11 +29,9 @@ also introduce more complexities compared to static serialization frameworks. So
 - int16: a 16-bit signed integer.
 - int32: a 32-bit signed integer.
 - var_int32: a 32-bit signed integer which use fury var_int32 encoding.
-- fixed_int32: a 32-bit signed integer which use two's complement encoding.
 - int64: a 64-bit signed integer.
 - var_int64: a 64-bit signed integer which use fury PVL encoding.
 - sli_int64: a 64-bit signed integer which use fury SLI encoding.
-- fixed_int64: a 64-bit signed integer which use two's complement encoding.
 - float16: a 16-bit floating point number.
 - float32: a 32-bit floating point number.
 - float64: a 64-bit floating point number including NaN and Infinity.
@@ -53,6 +51,7 @@ also introduce more complexities compared to static serialization frameworks. So
   interoperability between array and list.
     - array: multidimensional array which every sub-array can have different sizes but all have same type.
     - bool_array: one dimensional int16 array.
+    - int8_array: one dimensional int8 array.
     - int16_array: one dimensional int16 array.
     - int32_array: one dimensional int32 array.
     - int64_array: one dimensional int64 array.

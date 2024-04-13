@@ -63,9 +63,9 @@ cdef extern from "fury/util/buffer.h" namespace "fury" nogil:
 
         inline double GetDouble(uint32_t offset)
 
-        inline uint32_t PutPositiveVarInt32(uint32_t offset, int32_t value)
+        inline uint32_t PutVarUint32(uint32_t offset, int32_t value)
 
-        inline int32_t GetPositiveVarInt32(uint32_t offset, uint32_t *readBytesLength)
+        inline int32_t GetVarUint32(uint32_t offset, uint32_t *readBytesLength)
 
         void Copy(uint32_t start, uint32_t nbytes,
                   uint8_t* out, uint32_t offset) const

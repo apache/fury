@@ -136,7 +136,7 @@ public class ChildContainerSerializers {
 
     @Override
     public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
-      buffer.writePositiveVarInt(value.size());
+      buffer.writeVarUint32Small7(value.size());
       for (Serializer slotsSerializer : slotsSerializers) {
         slotsSerializer.write(buffer, value);
       }
@@ -185,7 +185,7 @@ public class ChildContainerSerializers {
 
     @Override
     public Map onMapWrite(MemoryBuffer buffer, T value) {
-      buffer.writePositiveVarInt(value.size());
+      buffer.writeVarUint32Small7(value.size());
       for (Serializer slotsSerializer : slotsSerializers) {
         slotsSerializer.write(buffer, value);
       }

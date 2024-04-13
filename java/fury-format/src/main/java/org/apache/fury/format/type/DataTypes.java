@@ -503,7 +503,7 @@ public class DataTypes {
     Type typeID = getTypeId(field.getType());
     while (true) {
       try {
-        hash = Math.addExact(Math.multiplyExact(hash, 31), typeID.getId());
+        hash = Math.addExact(Math.multiplyExact(hash, 31), (long) typeID.getId());
         break;
       } catch (ArithmeticException e) {
         hash = hash >> 2;

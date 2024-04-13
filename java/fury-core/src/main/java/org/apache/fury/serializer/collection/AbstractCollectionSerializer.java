@@ -439,7 +439,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   public void xwrite(MemoryBuffer buffer, T value) {
     Collection collection = (Collection) value;
     int len = collection.size();
-    buffer.writePositiveVarInt(len);
+    buffer.writeVarUint32Small7(len);
     xwriteElements(fury, buffer, collection);
   }
 
@@ -493,7 +493,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
    * will raise NPE.
    */
   public Collection newCollection(MemoryBuffer buffer) {
-    numElements = buffer.readVarUintSmall();
+    numElements = buffer.readVarUint32Small7();
     if (constructor == null) {
       constructor = ReflectionUtils.getCtrHandle(type, true);
     }

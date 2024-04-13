@@ -29,7 +29,6 @@ import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
-import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.util.Platform;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -42,7 +41,7 @@ public class JDKCompatibilityTest {
 
   Object createObject() {
     // test non latin1 string
-    return Arrays.asList("Hello", "Hello，你好", BeanA.createBeanA(2));
+    return Arrays.asList("Hello", "Hello，你好");
   }
 
   @Test

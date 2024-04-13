@@ -17,30 +17,11 @@
  * under the License.
  */
 
-package org.apache.fury.serializer.collection;
+package org.apache.fury.memory;
 
-import java.util.Collection;
-import org.apache.fury.Fury;
-import org.apache.fury.annotation.Internal;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.type.Type;
-
-/** Serializer for {@link ArrayAsList}. Helper for serialization of other classes. */
-@Internal
-@SuppressWarnings("rawtypes")
-public final class FuryArrayAsListSerializer extends CollectionSerializer<ArrayAsList> {
-  public FuryArrayAsListSerializer(Fury fury) {
-    super(fury, ArrayAsList.class, true);
-  }
-
-  @Override
-  public short getXtypeId() {
-    return (short) -Type.LIST.getId();
-  }
-
-  public Collection newCollection(MemoryBuffer buffer) {
-    int numElements = buffer.readVarUint32Small7();
-    setNumElements(numElements);
-    return new ArrayAsList(numElements);
+public class BigEndian {
+  /** Get short in big endian order from provided buffer. */
+  public static short getShortB(byte[] b, int off) {
+    return (short) ((b[off + 1] & 0xFF) + (b[off] << 8));
   }
 }

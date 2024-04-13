@@ -443,8 +443,8 @@ public class CrossLanguageTest {
     Path outOfBandDataFile =
         Files.createTempFile("test_serialize_arrow_out_of_band", "out_of_band.data");
     MemoryBuffer outOfBandBuffer = MemoryUtils.buffer(32);
-    outOfBandBuffer.writeInt(bufferObjects.get(0).totalBytes());
-    outOfBandBuffer.writeInt(bufferObjects.get(1).totalBytes());
+    outOfBandBuffer.writeInt32(bufferObjects.get(0).totalBytes());
+    outOfBandBuffer.writeInt32(bufferObjects.get(1).totalBytes());
     bufferObjects.get(0).writeTo(outOfBandBuffer);
     bufferObjects.get(1).writeTo(outOfBandBuffer);
     Files.write(outOfBandDataFile, outOfBandBuffer.getBytes(0, outOfBandBuffer.writerIndex()));
@@ -460,8 +460,8 @@ public class CrossLanguageTest {
 
     MemoryBuffer intBandBuffer = MemoryUtils.wrap(Files.readAllBytes(intBandDataFile));
     outOfBandBuffer = MemoryUtils.wrap(Files.readAllBytes(outOfBandDataFile));
-    int len1 = outOfBandBuffer.readInt();
-    int len2 = outOfBandBuffer.readInt();
+    int len1 = outOfBandBuffer.readInt32();
+    int len2 = outOfBandBuffer.readInt32();
     buffers = Arrays.asList(outOfBandBuffer.slice(8, len1), outOfBandBuffer.slice(8 + len1, len2));
     objects = (List<?>) fury.deserialize(intBandBuffer, buffers);
     Assert.assertNotNull(objects);

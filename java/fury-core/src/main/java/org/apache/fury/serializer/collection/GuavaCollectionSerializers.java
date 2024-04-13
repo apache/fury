@@ -53,7 +53,7 @@ public class GuavaCollectionSerializers {
 
     @Override
     public T xread(MemoryBuffer buffer) {
-      int size = buffer.readPositiveVarInt();
+      int size = buffer.readVarUint32Small7();
       List list = new ArrayList<>();
       xreadElements(fury, buffer, list, size);
       return xnewInstance(list);
@@ -71,7 +71,7 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       return new CollectionContainer<>(numElements);
     }
@@ -122,7 +122,7 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       return new CollectionContainer(numElements);
     }
@@ -153,7 +153,7 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       return new CollectionContainer<>(numElements);
     }
@@ -184,14 +184,14 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
-      buffer.writePositiveVarInt(value.size());
+      buffer.writeVarUint32Small7(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
     }
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);
       return new SortedCollectionContainer(comparator, numElements);
@@ -216,7 +216,7 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Map newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       return new MapContainer(numElements);
     }
@@ -241,7 +241,7 @@ public class GuavaCollectionSerializers {
 
     @Override
     public T xread(MemoryBuffer buffer) {
-      int size = buffer.readPositiveVarInt();
+      int size = buffer.readVarUint32Small7();
       Map map = new HashMap();
       xreadElements(fury, buffer, map, size);
       return xnewInstance(map);
@@ -319,14 +319,14 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Map onMapWrite(MemoryBuffer buffer, T value) {
-      buffer.writePositiveVarInt(value.size());
+      buffer.writeVarUint32Small7(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
     }
 
     @Override
     public Map newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);
       return new SortedMapContainer<>(comparator, numElements);
