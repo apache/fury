@@ -1466,7 +1466,7 @@ public class ClassResolver {
 
   // Note: Thread safe fot jit thread to call.
   public Expression skipRegisteredClassExpr(Expression buffer) {
-    return new Invoke(buffer, "readVarUintSmall");
+    return new Invoke(buffer, "readVarUintSmall14");
   }
 
   /**
