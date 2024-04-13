@@ -19,7 +19,6 @@
 
 import { Meta } from "./meta";
 
-
 export enum InternalSerializerType {
   // primitive type
   BOOL,

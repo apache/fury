@@ -22,7 +22,6 @@ import {
 } from "./type";
 import { BinaryReader } from "./reader";
 
-
 export class ReferenceResolver {
   private readObjects: any[] = [];
   private writeObjects: any[] = [];
@@ -30,6 +29,7 @@ export class ReferenceResolver {
   constructor(private binaryReader: BinaryReader) {
 
   }
+
   reset() {
     this.readObjects = [];
     this.writeObjects = [];

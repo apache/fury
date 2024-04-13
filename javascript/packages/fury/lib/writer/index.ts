@@ -26,7 +26,7 @@ const MAX_POOL_SIZE = 1024 * 1024 * 3; // 3MB
 
 export class BinaryWriter {
   private cursor = 0;
-  private byteLength: number = 0;
+  private byteLength = 0;
   private platformBuffer!: PlatformBuffer;
   private dataView!: DataView;
   private reserved = 0;
@@ -45,7 +45,6 @@ export class BinaryWriter {
     this.platformBuffer = alloc(this.byteLength);
     this.dataView = new DataView(this.platformBuffer.buffer, this.platformBuffer.byteOffset);
   }
-
 
   reserve(len: number) {
     this.reserved += len;

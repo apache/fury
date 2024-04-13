@@ -24,7 +24,6 @@ import { RefFlags } from "../type";
 import { Scope } from "./scope";
 import { TypeDescription, ObjectTypeDescription } from "../description";
 
-
 export const makeHead = (flag: RefFlags, type: InternalSerializerType) => {
   return (((SerializerResolver.getTypeIdByInternalSerializerType(type) << 16) >>> 16) << 8) | ((flag << 24) >>> 24);
 };

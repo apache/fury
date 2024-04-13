@@ -27,8 +27,8 @@ export class BinaryReader {
   private cursor = 0;
   private dataView!: DataView;
   private platformBuffer!: PlatformBuffer;
-  private bigString: string = '';
-  private byteLength: number = 0;
+  private bigString = "";
+  private byteLength = 0;
 
   constructor(config: Config) {
     this.sliceStringEnable = isNodeEnv && config.useSliceString;
@@ -335,6 +335,7 @@ export class BinaryReader {
       return (sign === 0 ? 1 : -1) * (1 + mantissa * 2 ** -10) * 2 ** (exponent - 15);
     }
   }
+
   getCursor() {
     return this.cursor;
   }
@@ -343,4 +344,3 @@ export class BinaryReader {
     this.cursor = v;
   }
 }
-
