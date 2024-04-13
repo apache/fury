@@ -71,7 +71,7 @@ public class CollectionSerializers {
 
     @Override
     public ArrayList newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUintSmall();
+      int numElements = buffer.readVarUint32Small();
       setNumElements(numElements);
       ArrayList arrayList = new ArrayList(numElements);
       fury.getRefResolver().reference(arrayList);

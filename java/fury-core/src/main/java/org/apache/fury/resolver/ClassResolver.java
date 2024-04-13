@@ -1290,7 +1290,7 @@ public class ClassResolver {
         metaContext,
         "Meta context must be set before serialization,"
             + " please set meta context by SerializationContext.setMetaContext");
-    int id = buffer.readVarUintSmall();
+    int id = buffer.readVarUint32Small();
     List<ClassInfo> readClassInfos = metaContext.readClassInfos;
     ClassInfo classInfo = readClassInfos.get(id);
     if (classInfo == null) {
@@ -1313,7 +1313,7 @@ public class ClassResolver {
         metaContext,
         "Meta context must be set before serialization,"
             + " please set meta context by SerializationContext.setMetaContext");
-    int id = buffer.readVarUintSmall();
+    int id = buffer.readVarUint32Small();
     List<ClassInfo> readClassInfos = metaContext.readClassInfos;
     ClassInfo classInfo = readClassInfos.get(id);
     if (classInfo == null) {
@@ -1397,7 +1397,7 @@ public class ClassResolver {
     int classDefOffset = buffer.readInt32();
     int readerIndex = buffer.readerIndex();
     buffer.readerIndex(classDefOffset);
-    int numClassDefs = buffer.readVarUintSmall();
+    int numClassDefs = buffer.readVarUint32Small();
     for (int i = 0; i < numClassDefs; i++) {
       ClassDef readClassDef = ClassDef.readClassDef(buffer);
       // Share same class def to reduce memory footprint, since there may be many meta context.
@@ -1580,7 +1580,7 @@ public class ClassResolver {
     // use classId
     if ((flag & 0x80) != 0) { // class id is written using multiple bytes.
       buffer.increaseReaderIndex(-1);
-      classId = (short) buffer.readVarUintSmall();
+      classId = (short) buffer.readVarUint32Small();
     } else {
       classId = (short) (flag & 0x7F);
     }

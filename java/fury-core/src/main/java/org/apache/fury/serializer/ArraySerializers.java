@@ -591,7 +591,7 @@ public class ArraySerializers {
 
     @Override
     public String[] read(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUintSmall();
+      int numElements = buffer.readVarUint32Small();
       String[] value = new String[numElements];
       if (numElements == 0) {
         return value;

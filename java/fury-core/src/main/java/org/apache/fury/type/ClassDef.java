@@ -234,7 +234,7 @@ public class ClassDef implements Serializable {
   private static String readSharedString(MemoryBuffer buffer, List<String> strings) {
     String str;
     if (buffer.readBoolean()) {
-      return strings.get(buffer.readVarUintSmall());
+      return strings.get(buffer.readVarUint32Small());
     } else {
       str = new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8);
       strings.add(str);

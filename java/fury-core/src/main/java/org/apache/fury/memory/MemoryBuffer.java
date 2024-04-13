@@ -1601,7 +1601,7 @@ public final class MemoryBuffer {
     int readIdx = readerIndex;
     int result;
     if (size - readIdx < 5) {
-      result = readVarUint32Slow();
+      result = (int) readVarUint36Slow();
     } else {
       long address = this.address;
       // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
@@ -1644,7 +1644,7 @@ public final class MemoryBuffer {
     int readIdx = readerIndex;
     int result;
     if (size - readIdx < 5) {
-      result = readVarUint32Slow();
+      result = (int) readVarUint36Slow();
     } else {
       long address = this.address;
       int fourByteValue = Integer.reverseBytes(UNSAFE.getInt(heapMemory, address + readIdx));
@@ -1750,7 +1750,7 @@ public final class MemoryBuffer {
   public int readVarUint32() {
     int readIdx = readerIndex;
     if (size - readIdx < 5) {
-      return readVarUint32Slow();
+      return (int) readVarUint36Slow();
     }
     // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
     int fourByteValue = _unsafeGetInt32(readIdx);
@@ -1786,7 +1786,7 @@ public final class MemoryBuffer {
    * Fast path for read a unsigned varint which is mostly a smaller value in [0, 16384). When the
    * value is equal or greater than 16384, the read will be a little slower.
    */
-  public int readVarUintSmall() {
+  public int readVarUint32Small() {
     int readIdx = readerIndex;
     if (size - readIdx >= 5) {
       int fourByteValue = _unsafeGetInt32(readIdx++);
@@ -1805,33 +1805,8 @@ public final class MemoryBuffer {
       readerIndex = readIdx;
       return binarySize;
     } else {
-      return readVarUint32Slow();
+      return (int) readVarUint36Slow();
     }
-  }
-
-  private int readVarUint32Slow() {
-    // Note:
-    //  Loop are not used here to improve performance,
-    //  we manually unroll the loop for better performance.
-    int b = readByte();
-    int result = b & 0x7F;
-    if ((b & 0x80) != 0) {
-      b = readByte();
-      result |= (b & 0x7F) << 7;
-      if ((b & 0x80) != 0) {
-        b = readByte();
-        result |= (b & 0x7F) << 14;
-        if ((b & 0x80) != 0) {
-          b = readByte();
-          result |= (b & 0x7F) << 21;
-          if ((b & 0x80) != 0) {
-            b = readByte();
-            result |= (b & 0x7F) << 28;
-          }
-        }
-      }
-    }
-    return result;
   }
 
   /** Reads the 1-9 byte int part of a var long. */
@@ -2188,7 +2163,7 @@ public final class MemoryBuffer {
       }
       readerIndex = readIdx;
     } else {
-      binarySize = readVarUint32Slow();
+      binarySize = (int) readVarUint36Slow();
       readIdx = readerIndex;
     }
     int diff = size - readIdx;
