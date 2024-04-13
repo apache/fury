@@ -221,7 +221,6 @@ public final class Fury implements BaseFury {
 
   @Override
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj, BufferCallback callback) {
-    this.bufferCallback = callback;
     byte bitmap = BITMAP;
     if (language != Language.JAVA) {
       bitmap |= isCrossLanguageFlag;
@@ -231,8 +230,9 @@ public final class Fury implements BaseFury {
       buffer.writeByte(bitmap);
       return buffer;
     }
-    if (bufferCallback != null) {
+    if (callback != null) {
       bitmap |= isOutOfBandFlag;
+      bufferCallback = callback;
     }
     buffer.writeByte(bitmap);
     try {
