@@ -431,15 +431,14 @@ public class ClassResolver {
     Preconditions.checkArgument(classId >= 0 && classId < Short.MAX_VALUE);
     Preconditions.checkArgument(
         !extRegistry.registeredClassIdMap.containsKey(cls),
-        String.format(
-            "Class %s already registered with id %s.",
-            cls, extRegistry.registeredClassIdMap.get(cls)));
+        "Class %s already registered with id %s.",
+        cls,
+        extRegistry.registeredClassIdMap.get(cls));
     Preconditions.checkArgument(
         !extRegistry.registeredClasses.containsKey(cls.getName()),
-        String.format(
-            "Class %s with name %s has been registered, registering class with same name are not allowed.",
-            extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
-
+        "Class %s with name %s has been registered, registering class with same name are not allowed.",
+        extRegistry.registeredClasses.get(cls.getName()),
+        cls.getName());
     short id = (short) classId;
     if (id < registeredId2ClassInfo.length && registeredId2ClassInfo[id] != null) {
       throw new IllegalArgumentException(
@@ -1136,23 +1135,15 @@ public class ClassResolver {
 
   private Serializer createSerializer(Class<?> cls) {
     DisallowedList.checkNotInDisallowedList(cls.getName());
-    String msg =
-        String.format(
-            "%s is not registered, please check whether it's the type you want to serialize or "
-                + "a **vulnerability**. If safe, you should invoke `Fury#register` to register class, "
-                + " which will have better performance by skipping classname serialization. "
-                + "If your env is 100%% secure, you can also avoid this exception by disabling class "
-                + "registration check using `FuryBuilder#requireClassRegistration(false)`",
-            cls);
     if (!isSecure(cls)) {
-      throw new InsecureException(msg);
+      throw new InsecureException(generateSecurityMsg(cls));
     } else {
       if (!fury.getConfig().suppressClassRegistrationWarnings()
           && !Functions.isLambda(cls)
           && !ReflectionUtils.isJdkProxy(cls)
           && !extRegistry.registeredClassIdMap.containsKey(cls)
           && !shimDispatcher.contains(cls)) {
-        LOG.warn(msg);
+        LOG.warn(generateSecurityMsg(cls));
       }
     }
 
@@ -1170,6 +1161,16 @@ public class ClassResolver {
 
     Class<? extends Serializer> serializerClass = getSerializerClass(cls);
     return Serializers.newSerializer(fury, cls, serializerClass);
+  }
+
+  private String generateSecurityMsg(Class<?> cls) {
+    String tpl =
+        "%s is not registered, please check whether it's the type you want to serialize or "
+            + "a **vulnerability**. If safe, you should invoke `Fury#register` to register class, "
+            + " which will have better performance by skipping classname serialization. "
+            + "If your env is 100%% secure, you can also avoid this exception by disabling class "
+            + "registration check using `FuryBuilder#requireClassRegistration(false)`";
+    return String.format(tpl, cls);
   }
 
   private boolean isSecure(Class<?> cls) {
