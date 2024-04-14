@@ -171,7 +171,7 @@ export class BinaryReader {
       if ((fourByteValue & 0x80) != 0) {
         this.cursor++;
         // 0x3f80: 0b1111111 << 7
-        result |=  (fourByteValue >>> 1) & 0x3f80;
+        result |= (fourByteValue >>> 1) & 0x3f80;
         if ((fourByteValue & 0x8000) != 0) {
           this.cursor++;
           // 0x1fc000: 0b1111111 << 14
