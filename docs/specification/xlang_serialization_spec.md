@@ -346,14 +346,14 @@ String binary encoding algorithm:
 
 Encoding flags:
 
-| Encoding Flag             | Pattern                                                  | Encoding Algorithm                                                                                                                  |
-|---------------------------|----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| LOWER_SPECIAL             | every char is in `a-z._\|`                               | `LOWER_SPECIAL`                                                                                                                     |
-| REP_FIRST_LOWER_SPECIAL   | every char is in `a-z._` except first char is upper case | replace first upper case char to lower case, then use `LOWER_SPECIAL`                                                               |
-| REP_MUL_LOWER_SPECIAL     | every char is in `a-zA-Z._`                              | replace every upper case char by `\|` + `lower case`, then use `LOWER_SPECIAL`, use this encoding if it's smaller than Encoding `3` |
-| LOWER_UPPER_DIGIT_SPECIAL | every char is in `a-zA-Z._`                              | use `LOWER_UPPER_DIGIT_SPECIAL` encoding if it's smaller than Encoding `2`                                                          |
-| UTF8                      | any utf-8 char                                           | use `UTF-8` encoding                                                                                                                |
-| Compression               | any utf-8 char                                           | lossless compression                                                                                                                |
+| Encoding Flag             | Pattern                                                  | Encoding Algorithm                                                                                                                                          |
+|---------------------------|----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| LOWER_SPECIAL             | every char is in `a-z._\|`                               | `LOWER_SPECIAL`                                                                                                                                             |
+| REP_FIRST_LOWER_SPECIAL   | every char is in `a-z._` except first char is upper case | replace first upper case char to lower case, then use `LOWER_SPECIAL`                                                                                       |
+| REP_MUL_LOWER_SPECIAL     | every char is in `a-zA-Z._`                              | replace every upper case char by `\|` + `lower case`, then use `LOWER_SPECIAL`, use this encoding if it's smaller than Encoding `LOWER_UPPER_DIGIT_SPECIAL` |
+| LOWER_UPPER_DIGIT_SPECIAL | every char is in `a-zA-Z._`                              | use `LOWER_UPPER_DIGIT_SPECIAL` encoding if it's smaller than Encoding `REP_FIRST_LOWER_SPECIAL`                                                            |
+| UTF8                      | any utf-8 char                                           | use `UTF-8` encoding                                                                                                                                        |
+| Compression               | any utf-8 char                                           | lossless compression                                                                                                                                        |
 
 Notes:
 
