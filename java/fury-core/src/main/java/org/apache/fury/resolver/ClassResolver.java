@@ -363,8 +363,8 @@ public class ClassResolver {
   }
 
   private void registerDefaultClasses() {
-    register(ByteBuffer.allocate(1).getClass());
-    register(ByteBuffer.allocateDirect(1).getClass());
+    register(Platform.HEAP_BYTE_BUFFER_CLASS);
+    register(Platform.DIRECT_BYTE_BUFFER_CLASS);
     register(Comparator.naturalOrder().getClass());
     register(Comparator.reverseOrder().getClass());
     register(ConcurrentHashMap.class);
