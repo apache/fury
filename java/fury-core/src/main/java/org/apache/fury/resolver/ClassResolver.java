@@ -195,10 +195,10 @@ public class ClassResolver {
   public static final short HASHSET_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 5);
   public static final short CLASS_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 6);
   public static final short EMPTY_OBJECT_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 7);
-  private static final int initialCapacity = 128;
   // use a lower load factor to minimize hash collision
   private static final float loadFactor = 0.25f;
   private static final float furyMapLoadFactor = 0.25f;
+  private static final int estimatedNumRegistered = 150;
   private static final String META_SHARE_FIELDS_INFO_KEY = "shareFieldsInfo";
   private static final ClassInfo NIL_CLASS_INFO =
       new ClassInfo(null, null, null, null, false, null, null, ClassResolver.NO_CLASS_ID);
@@ -208,17 +208,15 @@ public class ClassResolver {
 
   // IdentityMap has better lookup performance, when loadFactor is 0.05f, performance is better
   private final IdentityMap<Class<?>, ClassInfo> classInfoMap =
-      new IdentityMap<>(initialCapacity, furyMapLoadFactor);
+      new IdentityMap<>(estimatedNumRegistered, furyMapLoadFactor);
   private ClassInfo classInfoCache;
   private final ObjectMap<EnumStringBytes, Class<?>> classNameBytes2Class =
-      new ObjectMap<>(initialCapacity, furyMapLoadFactor);
+      new ObjectMap<>(16, furyMapLoadFactor);
   // Every deserialization for unregistered class will query it, performance is important.
   private final ObjectMap<ClassNameBytes, Class<?>> compositeClassNameBytes2Class =
-      new ObjectMap<>(initialCapacity, furyMapLoadFactor);
-  private final HashMap<Short, Class<?>> typeIdToClassXLangMap =
-      new HashMap<>(initialCapacity, loadFactor);
-  private final HashMap<String, Class<?>> typeTagToClassXLangMap =
-      new HashMap<>(initialCapacity, loadFactor);
+      new ObjectMap<>(16, furyMapLoadFactor);
+  private final HashMap<Short, Class<?>> typeIdToClassXLangMap = new HashMap<>(8, loadFactor);
+  private final HashMap<String, Class<?>> typeTagToClassXLangMap = new HashMap<>(8, loadFactor);
   private final EnumStringResolver enumStringResolver;
   private final boolean metaContextShareEnabled;
   private final Map<Class<?>, ClassDef> classDefMap = new HashMap<>();
@@ -234,8 +232,8 @@ public class ClassResolver {
     private short classIdGenerator = 1;
     private SerializerFactory serializerFactory;
     private final IdentityMap<Class<?>, Short> registeredClassIdMap =
-        new IdentityMap<>(initialCapacity);
-    private final Map<String, Class<?>> registeredClasses = new HashMap<>(initialCapacity);
+        new IdentityMap<>(estimatedNumRegistered);
+    private final Map<String, Class<?>> registeredClasses = new HashMap<>(estimatedNumRegistered);
     // avoid potential recursive call for seq codec generation.
     // ex. A->field1: B, B.field1: A
     private final Set<Class<?>> getClassCtx = new HashSet<>();
@@ -365,8 +363,8 @@ public class ClassResolver {
   }
 
   private void registerDefaultClasses() {
-    register(ByteBuffer.allocate(1).getClass());
-    register(ByteBuffer.allocateDirect(1).getClass());
+    register(Platform.HEAP_BYTE_BUFFER_CLASS);
+    register(Platform.DIRECT_BYTE_BUFFER_CLASS);
     register(Comparator.naturalOrder().getClass());
     register(Comparator.reverseOrder().getClass());
     register(ConcurrentHashMap.class);
@@ -429,17 +427,18 @@ public class ClassResolver {
   public void register(Class<?> cls, int classId) {
     // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
     Preconditions.checkArgument(classId >= 0 && classId < Short.MAX_VALUE);
-    Preconditions.checkArgument(
-        !extRegistry.registeredClassIdMap.containsKey(cls),
-        String.format(
-            "Class %s already registered with id %s.",
-            cls, extRegistry.registeredClassIdMap.get(cls)));
-    Preconditions.checkArgument(
-        !extRegistry.registeredClasses.containsKey(cls.getName()),
-        String.format(
-            "Class %s with name %s has been registered, registering class with same name are not allowed.",
-            extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
-
+    if (extRegistry.registeredClassIdMap.containsKey(cls)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s already registered with id %s.",
+              cls, extRegistry.registeredClassIdMap.get(cls)));
+    }
+    if (extRegistry.registeredClasses.containsKey(cls.getName())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s with name %s has been registered, registering class with same name are not allowed.",
+              extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
+    }
     short id = (short) classId;
     if (id < registeredId2ClassInfo.length && registeredId2ClassInfo[id] != null) {
       throw new IllegalArgumentException(
@@ -1136,23 +1135,15 @@ public class ClassResolver {
 
   private Serializer createSerializer(Class<?> cls) {
     DisallowedList.checkNotInDisallowedList(cls.getName());
-    String msg =
-        String.format(
-            "%s is not registered, please check whether it's the type you want to serialize or "
-                + "a **vulnerability**. If safe, you should invoke `Fury#register` to register class, "
-                + " which will have better performance by skipping classname serialization. "
-                + "If your env is 100%% secure, you can also avoid this exception by disabling class "
-                + "registration check using `FuryBuilder#requireClassRegistration(false)`",
-            cls);
     if (!isSecure(cls)) {
-      throw new InsecureException(msg);
+      throw new InsecureException(generateSecurityMsg(cls));
     } else {
       if (!fury.getConfig().suppressClassRegistrationWarnings()
           && !Functions.isLambda(cls)
           && !ReflectionUtils.isJdkProxy(cls)
           && !extRegistry.registeredClassIdMap.containsKey(cls)
           && !shimDispatcher.contains(cls)) {
-        LOG.warn(msg);
+        LOG.warn(generateSecurityMsg(cls));
       }
     }
 
@@ -1170,6 +1161,16 @@ public class ClassResolver {
 
     Class<? extends Serializer> serializerClass = getSerializerClass(cls);
     return Serializers.newSerializer(fury, cls, serializerClass);
+  }
+
+  private String generateSecurityMsg(Class<?> cls) {
+    String tpl =
+        "%s is not registered, please check whether it's the type you want to serialize or "
+            + "a **vulnerability**. If safe, you should invoke `Fury#register` to register class, "
+            + " which will have better performance by skipping classname serialization. "
+            + "If your env is 100%% secure, you can also avoid this exception by disabling class "
+            + "registration check using `FuryBuilder#requireClassRegistration(false)`";
+    return String.format(tpl, cls);
   }
 
   private boolean isSecure(Class<?> cls) {
