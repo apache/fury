@@ -19,7 +19,7 @@
 
 package org.apache.fury.logging;
 
-/** Defines a series of log levels */
+/** Defines a series of log levels. */
 public class LogLevel {
   public static final int ERROR_LEVEL = 0;
 
