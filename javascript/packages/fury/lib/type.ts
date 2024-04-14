@@ -17,12 +17,7 @@
  * under the License.
  */
 
-import type { BinaryWriter } from "./writer";
-import type { BinaryReader } from "./reader";
 import { Meta } from "./meta";
-
-export type BinaryWriter = ReturnType<typeof BinaryWriter>;
-export type BinaryReader = ReturnType<typeof BinaryReader>;
 
 export enum InternalSerializerType {
   // primitive type

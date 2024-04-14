@@ -24,86 +24,92 @@ import { toFloat16 } from "./number";
 
 const MAX_POOL_SIZE = 1024 * 1024 * 3; // 3MB
 
-export const BinaryWriter = (config: Config) => {
-  let cursor = 0;
-  let byteLength: number;
-  let arrayBuffer: PlatformBuffer;
-  let dataView: DataView;
-  let reserved = 0;
-  let locked = false;
+export class BinaryWriter {
+  private cursor = 0;
+  private byteLength = 0;
+  private platformBuffer!: PlatformBuffer;
+  private dataView!: DataView;
+  private reserved = 0;
+  private locked = false;
+  private config: Config;
+  private hpsEnable = false;
 
-  function initPoll() {
-    byteLength = 1024 * 100;
-    arrayBuffer = alloc(byteLength);
-    dataView = new DataView(arrayBuffer.buffer, arrayBuffer.byteOffset);
+  constructor(config: Config) {
+    this.initPoll();
+    this.config = config;
+    this.hpsEnable = Boolean(config?.hps);
   }
 
-  initPoll();
+  private initPoll() {
+    this.byteLength = 1024 * 100;
+    this.platformBuffer = alloc(this.byteLength);
+    this.dataView = new DataView(this.platformBuffer.buffer, this.platformBuffer.byteOffset);
+  }
 
-  function reserve(len: number) {
-    reserved += len;
-    if (byteLength - cursor <= reserved) {
-      const newAb = alloc(byteLength * 2 + len);
-      arrayBuffer.copy(newAb, 0);
-      arrayBuffer = newAb;
-      byteLength = arrayBuffer.byteLength;
-      dataView = new DataView(arrayBuffer.buffer, arrayBuffer.byteOffset);
+  reserve(len: number) {
+    this.reserved += len;
+    if (this.byteLength - this.cursor <= this.reserved) {
+      const newAb = alloc(this.byteLength * 2 + len);
+      this.platformBuffer.copy(newAb, 0);
+      this.platformBuffer = newAb;
+      this.byteLength = this.platformBuffer.byteLength;
+      this.dataView = new DataView(this.platformBuffer.buffer, this.platformBuffer.byteOffset);
     }
   }
 
-  function reset() {
-    if (locked) {
+  reset() {
+    if (this.locked) {
       throw new OwnershipError("Ownership of writer was held by dumpAndOwn, but not released");
     }
-    cursor = 0;
-    reserved = 0;
+    this.cursor = 0;
+    this.reserved = 0;
   }
 
-  function uint8(v: number) {
-    dataView.setUint8(cursor, v);
-    cursor++;
+  uint8(v: number) {
+    this.dataView.setUint8(this.cursor, v);
+    this.cursor++;
   }
 
-  function int8(v: number) {
-    dataView.setInt8(cursor, v);
-    cursor++;
+  int8(v: number) {
+    this.dataView.setInt8(this.cursor, v);
+    this.cursor++;
   }
 
-  function int24(v: number) {
-    dataView.setUint32(cursor, v, true);
-    cursor += 3;
+  int24(v: number) {
+    this.dataView.setUint32(this.cursor, v, true);
+    this.cursor += 3;
   }
 
-  function uint16(v: number) {
-    dataView.setUint16(cursor, v, true);
-    cursor += 2;
+  uint16(v: number) {
+    this.dataView.setUint16(this.cursor, v, true);
+    this.cursor += 2;
   }
 
-  function int16(v: number) {
-    dataView.setInt16(cursor, v, true);
-    cursor += 2;
+  int16(v: number) {
+    this.dataView.setInt16(this.cursor, v, true);
+    this.cursor += 2;
   }
 
-  function skip(len: number) {
-    cursor += len;
+  skip(len: number) {
+    this.cursor += len;
   }
 
-  function int32(v: number) {
-    dataView.setInt32(cursor, v, true);
-    cursor += 4;
+  int32(v: number) {
+    this.dataView.setInt32(this.cursor, v, true);
+    this.cursor += 4;
   }
 
-  function uint32(v: number) {
-    dataView.setUint32(cursor, v, true);
-    cursor += 4;
+  uint32(v: number) {
+    this.dataView.setUint32(this.cursor, v, true);
+    this.cursor += 4;
   }
 
-  function int64(v: bigint) {
-    dataView.setBigInt64(cursor, v, true);
-    cursor += 8;
+  int64(v: bigint) {
+    this.dataView.setBigInt64(this.cursor, v, true);
+    this.cursor += 8;
   }
 
-  function sliInt64(v: bigint | number) {
+  sliInt64(v: bigint | number) {
     if (v <= HalfMaxInt32 && v >= HalfMinInt32) {
       // write:
       // 00xxx -> 0xxx
@@ -111,43 +117,43 @@ export const BinaryWriter = (config: Config) => {
       // read:
       // 0xxx -> 00xxx
       // 1xxx -> 11xxx
-      dataView.setUint32(cursor, Number(v) << 1, true);
-      cursor += 4;
+      this.dataView.setUint32(this.cursor, Number(v) << 1, true);
+      this.cursor += 4;
     } else {
       const BIG_LONG_FLAG = 0b1; // bit 0 set, means big long.
-      dataView.setUint8(cursor, BIG_LONG_FLAG);
-      cursor += 1;
-      varInt64(BigInt(v));
+      this.dataView.setUint8(this.cursor, BIG_LONG_FLAG);
+      this.cursor += 1;
+      this.varInt64(BigInt(v));
     }
   }
 
-  function float32(v: number) {
-    dataView.setFloat32(cursor, v, true);
-    cursor += 4;
+  float32(v: number) {
+    this.dataView.setFloat32(this.cursor, v, true);
+    this.cursor += 4;
   }
 
-  function float64(v: number) {
-    dataView.setFloat64(cursor, v, true);
-    cursor += 8;
+  float64(v: number) {
+    this.dataView.setFloat64(this.cursor, v, true);
+    this.cursor += 8;
   }
 
-  function buffer(v: Uint8Array) {
-    reserve(v.byteLength);
-    arrayBuffer.set(v, cursor);
-    cursor += v.byteLength;
+  buffer(v: Uint8Array) {
+    this.reserve(v.byteLength);
+    this.platformBuffer.set(v, this.cursor);
+    this.cursor += v.byteLength;
   }
 
-  function uint64(v: bigint) {
-    dataView.setBigUint64(cursor, v, true);
-    cursor += 8;
+  uint64(v: bigint) {
+    this.dataView.setBigUint64(this.cursor, v, true);
+    this.cursor += 8;
   }
 
-  function bufferWithoutMemCheck(bf: PlatformBuffer, byteLen: number) {
-    bf.copy(arrayBuffer, cursor);
-    cursor += byteLen;
+  bufferWithoutMemCheck(bf: PlatformBuffer, byteLen: number) {
+    bf.copy(this.platformBuffer, this.cursor);
+    this.cursor += byteLen;
   }
 
-  function fastWriteStringUtf8(string: string, buffer: Uint8Array, offset: number) {
+  fastWriteStringUtf8(string: string, buffer: Uint8Array, offset: number) {
     let c1: number;
     let c2: number;
     for (let i = 0; i < string.length; ++i) {
@@ -157,7 +163,7 @@ export const BinaryWriter = (config: Config) => {
       } else if (c1 < 2048) {
         const u1 = (c1 >> 6) | 192;
         const u2 = (c1 & 63) | 128;
-        dataView.setUint16(offset, (u1 << 8) | u2);
+        this.dataView.setUint16(offset, (u1 << 8) | u2);
         offset += 2;
       } else if (
         (c1 & 0xfc00) === 0xd800
@@ -169,190 +175,160 @@ export const BinaryWriter = (config: Config) => {
         const u2 = ((c1 >> 12) & 63) | 128;
         const u3 = ((c1 >> 6) & 63) | 128;
         const u4 = (c1 & 63) | 128;
-        dataView.setUint32(offset, (u1 << 24) | (u2 << 16) | (u3 << 8) | u4);
+        this.dataView.setUint32(offset, (u1 << 24) | (u2 << 16) | (u3 << 8) | u4);
         offset += 4;
       } else {
         const u1 = (c1 >> 12) | 224;
         const u2 = ((c1 >> 6) & 63) | 128;
-        dataView.setUint16(offset, (u1 << 8) | u2);
+        this.dataView.setUint16(offset, (u1 << 8) | u2);
         offset += 2;
         buffer[offset++] = (c1 & 63) | 128;
       }
     }
   }
 
-  function stringOfVarUInt32Fast() {
-    const { isLatin1: detectIsLatin1, stringCopy } = config!.hps!;
-    return function (v: string) {
-      const isLatin1 = detectIsLatin1(v);
-      const len = isLatin1 ? v.length : strByteLength(v);
-      dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
-      varUInt32(len);
-      reserve(len);
-      if (isLatin1) {
-        stringCopy(v, arrayBuffer, cursor);
+  stringOfVarUInt32Fast(v: string) {
+    const { isLatin1: detectIsLatin1, stringCopy } = this.config.hps!;
+    const isLatin1 = detectIsLatin1(v);
+    const len = isLatin1 ? v.length : strByteLength(v);
+    this.dataView.setUint8(this.cursor++, isLatin1 ? LATIN1 : UTF8);
+    this.varUInt32(len);
+    this.reserve(len);
+    if (isLatin1) {
+      stringCopy(v, this.platformBuffer, this.cursor);
+    } else {
+      if (len < 40) {
+        this.fastWriteStringUtf8(v, this.platformBuffer, this.cursor);
       } else {
-        if (len < 40) {
-          fastWriteStringUtf8(v, arrayBuffer, cursor);
-        } else {
-          arrayBuffer.write(v, cursor, "utf8");
-        }
+        this.platformBuffer.write(v, this.cursor, "utf8");
       }
-      cursor += len;
-    };
+    }
+    this.cursor += len;
   }
 
-  function stringOfVarUInt32Slow(v: string) {
+  stringOfVarUInt32Slow(v: string) {
     const len = strByteLength(v);
     const isLatin1 = len === v.length;
-    dataView.setUint8(cursor++, isLatin1 ? LATIN1 : UTF8);
-    varUInt32(len);
-    reserve(len);
+    this.dataView.setUint8(this.cursor++, isLatin1 ? LATIN1 : UTF8);
+    this.varUInt32(len);
+    this.reserve(len);
     if (isLatin1) {
       if (len < 40) {
         for (let index = 0; index < v.length; index++) {
-          arrayBuffer[cursor + index] = v.charCodeAt(index);
+          this.platformBuffer[this.cursor + index] = v.charCodeAt(index);
         }
       } else {
-        arrayBuffer.write(v, cursor, "latin1");
+        this.platformBuffer.write(v, this.cursor, "latin1");
       }
     } else {
       if (len < 40) {
-        fastWriteStringUtf8(v, arrayBuffer, cursor);
+        this.fastWriteStringUtf8(v, this.platformBuffer, this.cursor);
       } else {
-        arrayBuffer.write(v, cursor, "utf8");
+        this.platformBuffer.write(v, this.cursor, "utf8");
       }
     }
-    cursor += len;
+    this.cursor += len;
   }
 
-  function varInt32(v: number) {
-    return varUInt32((v << 1) ^ (v >> 31));
+  varInt32(v: number) {
+    return this.varUInt32((v << 1) ^ (v >> 31));
   }
 
-  function varUInt32(value: number) {
+  varUInt32(value: number) {
     value = (value >>> 0) & 0xFFFFFFFF; // keep only the lower 32 bits
 
     if (value >> 7 == 0) {
-      arrayBuffer[cursor++] = value;
+      this.platformBuffer[this.cursor++] = value;
       return;
     }
-    const rawCursor = cursor;
+    const rawCursor = this.cursor;
     let u32 = 0;
     if (value >> 14 == 0) {
       u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7) << 16);
-      cursor += 2;
+      this.cursor += 2;
     } else if (value >> 21 == 0) {
       u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7 & 0x7f | 0x80) << 16) | ((value >> 14) << 8);
-      cursor += 3;
+      this.cursor += 3;
     } else if (value >> 28 == 0) {
       u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7 & 0x7f | 0x80) << 16) | ((value >> 14 & 0x7f | 0x80) << 8) | (value >> 21);
-      cursor += 4;
+      this.cursor += 4;
     } else {
       u32 = ((value & 0x7f | 0x80) << 24) | ((value >> 7 & 0x7f | 0x80) << 16) | ((value >> 14 & 0x7f | 0x80) << 8) | (value >> 21 & 0x7f | 0x80);
-      arrayBuffer[rawCursor + 4] = value >> 28;
-      cursor += 5;
+      this.platformBuffer[rawCursor + 4] = value >> 28;
+      this.cursor += 5;
     }
-    dataView.setUint32(rawCursor, u32);
+    this.dataView.setUint32(rawCursor, u32);
   }
 
-  function varInt64(v: bigint) {
+  varInt64(v: bigint) {
     if (typeof v !== "bigint") {
       v = BigInt(v);
     }
-    return varUInt64((v << 1n) ^ (v >> 63n));
+    return this.varUInt64((v << 1n) ^ (v >> 63n));
   }
 
-  function varUInt64(val: bigint | number) {
+  varUInt64(val: bigint | number) {
     if (typeof val !== "bigint") {
       val = BigInt(val);
     }
     val = val & 0xFFFFFFFFFFFFFFFFn; // keep only the lower 64 bits
 
     while (val > 127) {
-      arrayBuffer[cursor++] = Number(val & 127n | 128n);
+      this.platformBuffer[this.cursor++] = Number(val & 127n | 128n);
       val >>= 7n;
     }
-    arrayBuffer[cursor++] = Number(val);
+    this.platformBuffer[this.cursor++] = Number(val);
     return;
   }
 
-  function tryFreePool() {
-    if (byteLength > MAX_POOL_SIZE) {
-      initPoll();
+  tryFreePool() {
+    if (this.byteLength > MAX_POOL_SIZE) {
+      this.initPoll();
     }
   }
 
-  function dump() {
-    const result = alloc(cursor);
-    arrayBuffer.copy(result, 0, 0, cursor);
-    tryFreePool();
+  dump() {
+    const result = alloc(this.cursor);
+    this.platformBuffer.copy(result, 0, 0, this.cursor);
+    this.tryFreePool();
     return result;
   }
 
-  function dumpAndOwn() {
-    locked = true;
+  dumpAndOwn() {
+    this.locked = true;
     return {
-      get() {
-        return arrayBuffer.subarray(0, cursor);
+      get: () => {
+        return this.platformBuffer.subarray(0, this.cursor);
       },
-      dispose() {
-        locked = false;
+      dispose: () => {
+        this.locked = false;
       },
     };
   }
 
-  function float16(value: number) {
-    uint16(toFloat16(value));
+  float16(value: number) {
+    this.uint16(toFloat16(value));
   }
 
-  function getCursor() {
-    return cursor;
+  getCursor() {
+    return this.cursor;
   }
 
-  function setUint32Position(offset: number, v: number) {
-    dataView.setUint32(offset, v, true);
+  setUint32Position(offset: number, v: number) {
+    this.dataView.setUint32(offset, v, true);
   }
 
-  function getByteLen() {
-    return byteLength;
+  getByteLen() {
+    return this.byteLength;
   }
 
-  function getReserved() {
-    return reserved;
+  getReserved() {
+    return this.reserved;
   }
 
-  return {
-    skip,
-    getByteLen,
-    getReserved,
-    reset,
-    reserve,
-    uint16,
-    int8,
-    int24,
-    dump,
-    uint8,
-    int16,
-    varInt32,
-    varUInt32,
-    varUInt64,
-    varInt64,
-    stringOfVarUInt32: config && config.hps
-      ? stringOfVarUInt32Fast()
-      : stringOfVarUInt32Slow,
-    bufferWithoutMemCheck,
-    uint64,
-    buffer,
-    float16,
-    float64,
-    float32,
-    int64,
-    sliInt64,
-    uint32,
-    int32,
-    getCursor,
-    setUint32Position,
-    dumpAndOwn,
-  };
-};
+  stringOfVarUInt32(v: string) {
+    return this.hpsEnable
+      ? this.stringOfVarUInt32Fast(v)
+      : this.stringOfVarUInt32Slow(v);
+  }
+}

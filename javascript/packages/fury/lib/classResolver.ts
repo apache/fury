@@ -17,13 +17,14 @@
  * under the License.
  */
 
-import { InternalSerializerType, Serializer, BinaryReader, BinaryWriter as TBinaryWriter } from "./type";
+import { InternalSerializerType, Serializer } from "./type";
 import { fromString } from "./platformBuffer";
 import { x64hash128 } from "./murmurHash3";
 import { BinaryWriter } from "./writer";
 import { generateSerializer } from "./gen";
 import { Type, TypeDescription } from "./description";
 import Fury from "./fury";
+import { BinaryReader } from "./reader";
 
 const USESTRINGVALUE = 0;
 const USESTRINGID = 1;
@@ -157,7 +158,7 @@ export default class SerializerResolver {
   static tagBuffer(tag: string) {
     const tagBuffer = fromString(tag);
     const bufferLen = tagBuffer.byteLength;
-    const writer = BinaryWriter({});
+    const writer = new BinaryWriter({});
 
     let tagHash = x64hash128(tagBuffer, 47).getBigUint64(0);
     if (tagHash === 0n) {
@@ -177,7 +178,7 @@ export default class SerializerResolver {
     const fullBuffer = SerializerResolver.tagBuffer(tag);
 
     return {
-      write: (binaryWriter: TBinaryWriter) => {
+      write: (binaryWriter: BinaryWriter) => {
         const tagIndex = this.writeStringIndex[idx];
         if (tagIndex > -1) {
           // equivalent of: `uint8(USESTRINGID); int16(tagIndex)`
