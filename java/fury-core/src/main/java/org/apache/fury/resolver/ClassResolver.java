@@ -195,10 +195,10 @@ public class ClassResolver {
   public static final short HASHSET_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 5);
   public static final short CLASS_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 6);
   public static final short EMPTY_OBJECT_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 7);
-  private static final int initialCapacity = 128;
   // use a lower load factor to minimize hash collision
   private static final float loadFactor = 0.25f;
   private static final float furyMapLoadFactor = 0.25f;
+  private static final int estimatedNumRegistered = 150;
   private static final String META_SHARE_FIELDS_INFO_KEY = "shareFieldsInfo";
   private static final ClassInfo NIL_CLASS_INFO =
       new ClassInfo(null, null, null, null, false, null, null, ClassResolver.NO_CLASS_ID);
@@ -208,17 +208,15 @@ public class ClassResolver {
 
   // IdentityMap has better lookup performance, when loadFactor is 0.05f, performance is better
   private final IdentityMap<Class<?>, ClassInfo> classInfoMap =
-      new IdentityMap<>(initialCapacity, furyMapLoadFactor);
+      new IdentityMap<>(estimatedNumRegistered, furyMapLoadFactor);
   private ClassInfo classInfoCache;
   private final ObjectMap<EnumStringBytes, Class<?>> classNameBytes2Class =
-      new ObjectMap<>(initialCapacity, furyMapLoadFactor);
+      new ObjectMap<>(16, furyMapLoadFactor);
   // Every deserialization for unregistered class will query it, performance is important.
   private final ObjectMap<ClassNameBytes, Class<?>> compositeClassNameBytes2Class =
-      new ObjectMap<>(initialCapacity, furyMapLoadFactor);
-  private final HashMap<Short, Class<?>> typeIdToClassXLangMap =
-      new HashMap<>(initialCapacity, loadFactor);
-  private final HashMap<String, Class<?>> typeTagToClassXLangMap =
-      new HashMap<>(initialCapacity, loadFactor);
+      new ObjectMap<>(16, furyMapLoadFactor);
+  private final HashMap<Short, Class<?>> typeIdToClassXLangMap = new HashMap<>(8, loadFactor);
+  private final HashMap<String, Class<?>> typeTagToClassXLangMap = new HashMap<>(8, loadFactor);
   private final EnumStringResolver enumStringResolver;
   private final boolean metaContextShareEnabled;
   private final Map<Class<?>, ClassDef> classDefMap = new HashMap<>();
@@ -234,8 +232,8 @@ public class ClassResolver {
     private short classIdGenerator = 1;
     private SerializerFactory serializerFactory;
     private final IdentityMap<Class<?>, Short> registeredClassIdMap =
-        new IdentityMap<>(initialCapacity);
-    private final Map<String, Class<?>> registeredClasses = new HashMap<>(initialCapacity);
+        new IdentityMap<>(estimatedNumRegistered);
+    private final Map<String, Class<?>> registeredClasses = new HashMap<>(estimatedNumRegistered);
     // avoid potential recursive call for seq codec generation.
     // ex. A->field1: B, B.field1: A
     private final Set<Class<?>> getClassCtx = new HashSet<>();
