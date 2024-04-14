@@ -427,16 +427,18 @@ public class ClassResolver {
   public void register(Class<?> cls, int classId) {
     // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
     Preconditions.checkArgument(classId >= 0 && classId < Short.MAX_VALUE);
-    Preconditions.checkArgument(
-        !extRegistry.registeredClassIdMap.containsKey(cls),
-        "Class %s already registered with id %s.",
-        cls,
-        extRegistry.registeredClassIdMap.get(cls));
-    Preconditions.checkArgument(
-        !extRegistry.registeredClasses.containsKey(cls.getName()),
-        "Class %s with name %s has been registered, registering class with same name are not allowed.",
-        extRegistry.registeredClasses.get(cls.getName()),
-        cls.getName());
+    if (extRegistry.registeredClassIdMap.containsKey(cls)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s already registered with id %s.",
+              cls, extRegistry.registeredClassIdMap.get(cls)));
+    }
+    if (extRegistry.registeredClasses.containsKey(cls.getName())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s with name %s has been registered, registering class with same name are not allowed.",
+              extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
+    }
     short id = (short) classId;
     if (id < registeredId2ClassInfo.length && registeredId2ClassInfo[id] != null) {
       throw new IllegalArgumentException(
