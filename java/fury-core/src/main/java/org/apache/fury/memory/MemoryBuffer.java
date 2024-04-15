@@ -397,12 +397,6 @@ public final class MemoryBuffer {
     UNSAFE.putByte(heapMemory, pos, b);
   }
 
-  // CHECKSTYLE.OFF:MethodName
-  public void _unsafePutByte(int index, byte b) {
-    // CHECKSTYLE.ON:MethodName
-    UNSAFE.putByte(heapMemory, address + index, b);
-  }
-
   public boolean getBoolean(int index) {
     final long pos = address + index;
     checkPosition(index, pos, 1);
@@ -443,15 +437,6 @@ public final class MemoryBuffer {
       value = Short.reverseBytes(value);
     }
     UNSAFE.putShort(heapMemory, pos, value);
-  }
-
-  // CHECKSTYLE.OFF:MethodName
-  public void _unsafePutInt16(int index, short value) {
-    // CHECKSTYLE.ON:MethodName
-    if (!LITTLE_ENDIAN) {
-      value = Short.reverseBytes(value);
-    }
-    UNSAFE.putShort(heapMemory, address + index, value);
   }
 
   public int getInt32(int index) {
@@ -510,7 +495,7 @@ public final class MemoryBuffer {
   }
 
   // CHECKSTYLE.OFF:MethodName
-  public void _unsafePutInt64(int index, long value) {
+  private void _unsafePutInt64(int index, long value) {
     // CHECKSTYLE.ON:MethodName
     if (!LITTLE_ENDIAN) {
       value = Long.reverseBytes(value);

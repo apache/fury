@@ -80,73 +80,70 @@ public final class MetaStringResolver {
 
   public void writeMetaStringBytes(MemoryBuffer buffer, MetaStringBytes byteString) {
     short id = byteString.dynamicWriteStringId;
-    int writerIndex = buffer.writerIndex();
     if (id == MetaStringBytes.DEFAULT_DYNAMIC_WRITE_STRING_ID) {
       id = dynamicWriteStringId++;
       byteString.dynamicWriteStringId = id;
       MetaStringBytes[] dynamicWrittenMetaString = this.dynamicWrittenString;
       if (dynamicWrittenMetaString.length <= id) {
-        MetaStringBytes[] tmp = new MetaStringBytes[id * 2];
-        System.arraycopy(dynamicWrittenMetaString, 0, tmp, 0, dynamicWrittenMetaString.length);
-        dynamicWrittenMetaString = tmp;
-        this.dynamicWrittenString = tmp;
+        dynamicWrittenMetaString = growWrite(id);
       }
       dynamicWrittenMetaString[id] = byteString;
-      int bytesLen = byteString.bytes.length;
-      buffer.increaseWriterIndex(11 + bytesLen);
-      buffer._unsafePutByte(writerIndex, USE_STRING_VALUE);
-      // Since duplicate enum string writing are avoided by dynamic id,
-      // use 8-byte hash won't increase too much space.
-      buffer._unsafePutInt64(writerIndex + 1, byteString.hashCode);
-      buffer._unsafePutInt16(writerIndex + 9, (short) bytesLen);
-      buffer.put(writerIndex + 11, byteString.bytes, 0, bytesLen);
+      buffer.writeVarUint32Small7(byteString.bytes.length << 1);
+      buffer.writeInt64(byteString.hashCode);
+      buffer.writeBytes(byteString.bytes);
     } else {
-      buffer.increaseWriterIndex(3);
-      buffer._unsafePutByte(writerIndex, USE_STRING_ID);
-      buffer._unsafePutInt16(writerIndex + 1, id);
+      buffer.writeVarUint32Small7(((id + 1) << 1) | 1);
     }
   }
 
+  private MetaStringBytes[] growWrite(int id) {
+    MetaStringBytes[] tmp = new MetaStringBytes[id * 2];
+    System.arraycopy(dynamicWrittenString, 0, tmp, 0, dynamicWrittenString.length);
+    return this.dynamicWrittenString = tmp;
+  }
+
   MetaStringBytes readMetaStringBytes(MemoryBuffer buffer) {
-    if (buffer.readByte() == USE_STRING_VALUE) {
+    int header = buffer.readVarUint32Small7();
+    int len = header >>> 1;
+    if ((header & 0b1) == 0) {
       long hashCode = buffer.readInt64();
-      MetaStringBytes byteString = trySkipMetaStringBytes(buffer, hashCode);
+      MetaStringBytes byteString = trySkipMetaStringBytes(buffer, len, hashCode);
       updateDynamicString(byteString);
       return byteString;
     } else {
-      return dynamicReadStringIds[buffer.readInt16()];
+      return dynamicReadStringIds[len - 1];
     }
   }
 
   MetaStringBytes readMetaStringBytes(MemoryBuffer buffer, MetaStringBytes cache) {
-    if (buffer.readByte() == USE_STRING_VALUE) {
+    int header = buffer.readVarUint32Small7();
+    int len = header >>> 1;
+    if ((header & 0b1) == 0) {
       long hashCode = buffer.readInt64();
       if (cache.hashCode == hashCode) {
         // skip byteString data
-        buffer.increaseReaderIndex(2 + cache.bytes.length);
+        buffer.increaseReaderIndex(len);
         updateDynamicString(cache);
         return cache;
       } else {
-        MetaStringBytes byteString = trySkipMetaStringBytes(buffer, hashCode);
+        MetaStringBytes byteString = trySkipMetaStringBytes(buffer, len, hashCode);
         updateDynamicString(byteString);
         return byteString;
       }
     } else {
-      return dynamicReadStringIds[buffer.readInt16()];
+      return dynamicReadStringIds[len - 1];
     }
   }
 
   /** Read enum string by try to reuse previous read {@link MetaStringBytes} object. */
-  private MetaStringBytes trySkipMetaStringBytes(MemoryBuffer buffer, long hashCode) {
+  private MetaStringBytes trySkipMetaStringBytes(MemoryBuffer buffer, int len, long hashCode) {
     MetaStringBytes byteString = hash2MetaStringBytesMap.get(hashCode);
     if (byteString == null) {
-      int strBytesLength = buffer.readInt16();
-      byte[] strBytes = buffer.readBytes(strBytesLength);
-      byteString = new MetaStringBytes(strBytes, hashCode);
+      byteString = new MetaStringBytes(buffer.readBytes(len), hashCode);
       hash2MetaStringBytesMap.put(hashCode, byteString);
     } else {
       // skip byteString data
-      buffer.increaseReaderIndex(2 + byteString.bytes.length);
+      buffer.increaseReaderIndex(len);
     }
     return byteString;
   }
@@ -155,12 +152,15 @@ public final class MetaStringResolver {
     short currentDynamicReadId = dynamicReadStringId++;
     MetaStringBytes[] dynamicReadStringIds = this.dynamicReadStringIds;
     if (dynamicReadStringIds.length <= currentDynamicReadId) {
-      MetaStringBytes[] tmp = new MetaStringBytes[currentDynamicReadId * 2];
-      System.arraycopy(dynamicReadStringIds, 0, tmp, 0, dynamicReadStringIds.length);
-      dynamicReadStringIds = tmp;
-      this.dynamicReadStringIds = tmp;
+      dynamicReadStringIds = growRead(currentDynamicReadId);
     }
     dynamicReadStringIds[currentDynamicReadId] = byteString;
+  }
+
+  private MetaStringBytes[] growRead(int id) {
+    MetaStringBytes[] tmp = new MetaStringBytes[id * 2];
+    System.arraycopy(dynamicReadStringIds, 0, tmp, 0, dynamicReadStringIds.length);
+    return this.dynamicReadStringIds = tmp;
   }
 
   public void reset() {
