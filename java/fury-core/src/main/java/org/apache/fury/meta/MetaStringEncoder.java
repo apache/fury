@@ -40,6 +40,9 @@ public class MetaStringEncoder {
   }
 
   public MetaString encode(String input, Encoding encoding) {
+    if (input.isEmpty()) {
+      return new MetaString(Encoding.LOWER_SPECIAL, new byte[0], 0);
+    }
     int length = input.length();
     switch (encoding) {
       case LOWER_SPECIAL:
@@ -160,7 +163,7 @@ public class MetaStringEncoder {
 
   public byte[] encodeFirstToLowerSpecial(char[] chars) {
     chars[0] = Character.toLowerCase(chars[0]);
-    return encodeGeneric(chars, 6, false);
+    return encodeGeneric(chars, 5, false);
   }
 
   public byte[] encodeAllToLowerSpecial(char[] chars) {

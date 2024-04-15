@@ -110,4 +110,85 @@ public class MetaStringTest {
       }
     }
   }
+
+  @DataProvider(name = "emptyStringProvider")
+  public Object[][] emptyStringProvider() {
+    return new Object[][] {
+      {MetaString.Encoding.LOWER_SPECIAL},
+      {MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL},
+      {MetaString.Encoding.FIRST_TO_LOWER_SPECIAL},
+      {MetaString.Encoding.ALL_TO_LOWER_SPECIAL},
+      {MetaString.Encoding.UTF_8}
+    };
+  }
+
+  @Test(dataProvider = "emptyStringProvider")
+  public void testEncodeEmptyString(MetaString.Encoding encoding) {
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    MetaString metaString = encoder.encode("", encoding);
+    Assert.assertEquals(metaString.getBytes().length, 0);
+    MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
+    String decoded =
+        decoder.decode(metaString.getBytes(), metaString.getEncoding(), metaString.getNumBits());
+    Assert.assertEquals(decoded, "");
+  }
+
+  @Test
+  public void testEncodeCharactersOutsideOfLowerSpecial() {
+    String testString = "abcdefABCDEF1234!@#"; // Contains characters outside LOWER_SPECIAL
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    MetaString encodedMetaString = encoder.encode(testString);
+
+    Assert.assertNotEquals(encodedMetaString.getEncoding(), MetaString.Encoding.LOWER_SPECIAL);
+  }
+
+  @Test
+  public void testAllToUpperSpecialEncoding() {
+    String testString = "ABC_DEF";
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    MetaString encodedMetaString = encoder.encode(testString);
+    Assert.assertEquals(
+        encodedMetaString.getEncoding(), MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL);
+
+    MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
+    String decodedString =
+        decoder.decode(
+            encodedMetaString.getBytes(),
+            encodedMetaString.getEncoding(),
+            encodedMetaString.getNumBits());
+    Assert.assertEquals(decodedString, testString);
+  }
+
+  @Test
+  public void testFirstToLowerSpecialEncoding() {
+    String testString = "Aabcdef";
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    MetaString encodedMetaString = encoder.encode(testString);
+    Assert.assertEquals(
+        encodedMetaString.getEncoding(), MetaString.Encoding.FIRST_TO_LOWER_SPECIAL);
+
+    MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
+    String decodedString =
+        decoder.decode(
+            encodedMetaString.getBytes(),
+            encodedMetaString.getEncoding(),
+            encodedMetaString.getNumBits());
+    Assert.assertEquals(decodedString, testString);
+  }
+
+  @Test
+  public void testUtf8Encoding() {
+    String testString = "你好，世界"; // Non-Latin characters
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    MetaString encodedMetaString = encoder.encode(testString);
+    Assert.assertEquals(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
+
+    MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
+    String decodedString =
+        decoder.decode(
+            encodedMetaString.getBytes(),
+            encodedMetaString.getEncoding(),
+            encodedMetaString.getNumBits());
+    Assert.assertEquals(decodedString, testString);
+  }
 }
