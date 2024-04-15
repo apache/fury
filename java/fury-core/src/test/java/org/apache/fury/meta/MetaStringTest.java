@@ -21,6 +21,7 @@ package org.apache.fury.meta;
 
 import org.apache.fury.util.StringUtils;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class MetaStringTest {
@@ -87,17 +88,26 @@ public class MetaStringTest {
     return builder.toString();
   }
 
-  @Test
-  public void testMetaString() {
-    char specialChar1 = '.';
-    char specialChar2 = '_';
+  @DataProvider
+  public static Object[][] specialChars() {
+    return new Object[][] {{'.', '_'}, {'.', '$'}, {'_', '$'}};
+  }
+
+  @Test(dataProvider = "specialChars")
+  public void testMetaString(char specialChar1, char specialChar2) {
     MetaStringEncoder encoder = new MetaStringEncoder(specialChar1, specialChar2);
     for (int i = 0; i < 128; i++) {
-      String str = createString(i, specialChar1, specialChar2);
-      MetaString metaString = encoder.encode(str);
-      MetaStringDecoder decoder = new MetaStringDecoder(specialChar1, specialChar2);
-      String newStr = decoder.decode(metaString.getBytes(), metaString.getEncoding(), metaString.getNumBits());
-      Assert.assertEquals(newStr, str);
+      try {
+        String str = createString(i, specialChar1, specialChar2);
+        MetaString metaString = encoder.encode(str);
+        MetaStringDecoder decoder = new MetaStringDecoder(specialChar1, specialChar2);
+        String newStr =
+            decoder.decode(
+                metaString.getBytes(), metaString.getEncoding(), metaString.getNumBits());
+        Assert.assertEquals(newStr, str);
+      } catch (Throwable e) {
+        throw new RuntimeException("Failed at " + i, e);
+      }
     }
   }
 }

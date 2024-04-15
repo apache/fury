@@ -52,7 +52,7 @@ public class MetaStringEncoder {
         char[] chars = input.toCharArray();
         int upperCount = countUppers(chars);
         return new MetaString(
-            encoding, encodeRepAllToLowerSpecial(chars), (upperCount + length) * 5);
+            encoding, encodeRepAllToLowerSpecial(chars, upperCount), (upperCount + length) * 5);
       default:
         byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
         return new MetaString(Encoding.UTF_8, bytes, bytes.length * 8);
@@ -152,8 +152,21 @@ public class MetaStringEncoder {
   }
 
   public byte[] encodeRepAllToLowerSpecial(char[] chars) {
-    chars[0] = Character.toLowerCase(chars[0]);
-    return encodeGeneric(chars, 6, false);
+    return encodeRepAllToLowerSpecial(chars, countUppers(chars));
+  }
+
+  public byte[] encodeRepAllToLowerSpecial(char[] chars, int upperCount) {
+    char[] newChars = new char[chars.length + upperCount];
+    int newIdx = 0;
+    for (char aChar : chars) {
+      if (Character.isUpperCase(aChar)) {
+        newChars[newIdx++] = '|';
+        newChars[newIdx++] = Character.toLowerCase(aChar);
+      } else {
+        newChars[newIdx++] = aChar;
+      }
+    }
+    return encodeGeneric(newChars, 5, true);
   }
 
   private byte[] encodeGeneric(String input, int bitsPerChar, boolean lowerSpecial) {

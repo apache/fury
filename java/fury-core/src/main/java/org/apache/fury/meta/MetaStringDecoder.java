@@ -21,6 +21,7 @@ package org.apache.fury.meta;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import org.apache.fury.util.StringUtils;
 
 public class MetaStringDecoder {
   private static final int FLAG_OFFSET = 8;
@@ -53,7 +54,7 @@ public class MetaStringDecoder {
       case REP_FIRST_TO_LOWER_SPECIAL:
         return decodeRepFirstLowerSpecial(encodedData, numBits);
       case REP_ALL_TO_LOWER_SPECIAL:
-        return decodeRepMulLowerSpecial(encodedData);
+        return decodeRepAllToLowerSpecial(encodedData, numBits);
       case UTF_8:
         return new String(encodedData, StandardCharsets.UTF_8);
       default:
@@ -145,40 +146,23 @@ public class MetaStringDecoder {
     }
   }
 
-  // Placeholder function for REP_FIRST_LOWER_SPECIAL decoding
-  private String decodeRepFirstLowerSpecial(byte[] data, int len) {
-    // Assuming first byte (after the flag) is the count of repetition and the second is the
-    // repeated character
-    int count = data[0] & 0xFF;
-    char repeatedChar = (char) data[1];
-
-    StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < count; i++) {
-      builder.append(repeatedChar);
-    }
-
-    // Append the rest of the decoded string starting from the third byte
-    String restOfString = decodeLowerSpecial(Arrays.copyOfRange(data, 2, data.length), false, len);
-    return builder.append(restOfString).toString();
+  private String decodeRepFirstLowerSpecial(byte[] data, int numBits) {
+    String str = decodeLowerSpecial(data, false, numBits);
+    return StringUtils.capitalize(str);
   }
 
-  // Placeholder function for REP_MUL_LOWER_SPECIAL decoding
-  private String decodeRepMulLowerSpecial(byte[] data) {
-    // Assuming some kind of run-length encoding for duplicate characters.
-    // Example implementation; real implementation depends on the encoding details
+  private String decodeRepAllToLowerSpecial(byte[] data, int numBits) {
+    String str = decodeLowerSpecial(data, false, numBits);
     StringBuilder builder = new StringBuilder();
-
-    for (int i = 0; i < data.length; i++) {
-      // Let's assume each run is encoded in two bytes: one for the character and
-      // one for the run count (which needs to be a small number for simplicity)
-      char character = (char) data[i];
-      i++;
-      int runLength = data[i] & 0xFF;
-      for (int run = 0; run < runLength; run++) {
-        builder.append(character);
+    char[] chars = str.toCharArray();
+    for (int i = 0; i < chars.length; i++) {
+      if (chars[i] == '|') {
+        char c = chars[++i];
+        builder.append(Character.toUpperCase(c));
+      } else {
+        builder.append(chars[i]);
       }
     }
-
     return builder.toString();
   }
 }
