@@ -178,6 +178,13 @@ public class ClassResolverTest extends FuryTestBase {
 
   interface Interface2 {}
 
+  @Test
+  public void testSerializeClassesShared() {
+    Fury fury = builder().build();
+    serDeCheck(fury, Foo.class);
+    serDeCheck(fury, Arrays.asList(Foo.class, Foo.class));
+  }
+
   @Test(dataProvider = "referenceTrackingConfig")
   public void testSerializeClasses(boolean referenceTracking) {
     Fury fury =

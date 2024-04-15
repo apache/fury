@@ -80,7 +80,6 @@ public final class MetaStringResolver {
 
   public void writeMetaStringBytes(MemoryBuffer buffer, MetaStringBytes byteString) {
     short id = byteString.dynamicWriteStringId;
-    int writerIndex = buffer.writerIndex();
     if (id == MetaStringBytes.DEFAULT_DYNAMIC_WRITE_STRING_ID) {
       id = dynamicWriteStringId++;
       byteString.dynamicWriteStringId = id;
@@ -93,7 +92,7 @@ public final class MetaStringResolver {
       buffer.writeInt64(byteString.hashCode);
       buffer.writeBytes(byteString.bytes);
     } else {
-      buffer.writeVarUint32Small7(((writerIndex + 1) << 1) | 1);
+      buffer.writeVarUint32Small7(((id + 1) << 1) | 1);
     }
   }
 
