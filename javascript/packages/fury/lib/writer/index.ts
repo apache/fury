@@ -318,6 +318,10 @@ export class BinaryWriter {
     this.dataView.setUint32(offset, v, true);
   }
 
+  setUint8Position(offset: number, v: number) {
+    this.dataView.setUint8(offset, v);
+  }
+
   getByteLen() {
     return this.byteLength;
   }

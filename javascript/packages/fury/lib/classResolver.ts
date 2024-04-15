@@ -212,44 +212,44 @@ export default class SerializerResolver {
     }
   }
 
-  getSerializerByData(v: any) {
-    if (v === null || v === undefined) {
-      return null;
-    }
-
+  getTypeIdByData(v: any): number {
     if (typeof v === "number") {
-      return this.getSerializerByType(InternalSerializerType.FLOAT64);
+      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.FLOAT64);
     }
 
     if (typeof v === "bigint") {
-      return this.getSerializerByType(InternalSerializerType.INT64);
+      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.INT64);
     }
 
     if (typeof v === "boolean") {
-      return this.getSerializerByType(InternalSerializerType.BOOL);
+      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.BOOL);
     }
 
     if (v instanceof Date) {
-      return this.getSerializerByType(InternalSerializerType.TIMESTAMP);
+      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.TIMESTAMP);
     }
 
     if (typeof v === "string") {
-      return this.getSerializerByType(InternalSerializerType.STRING);
+      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.STRING);
     }
 
     if (v instanceof Map) {
-      return this.getSerializerByType(InternalSerializerType.MAP);
+      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.MAP);
     }
 
     if (v instanceof Set) {
-      return this.getSerializerByType(InternalSerializerType.SET);
+      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.SET);
     }
 
     if (Array.isArray(v)) {
-      return this.getSerializerByType(InternalSerializerType.ARRAY);
+      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.ARRAY);
     }
 
     throw new Error(`Failed to detect the Fury type from JavaScript type: ${typeof v}`);
+  }
+
+  getSerializerByData(v: any) {
+    return this.getSerializerById(this.getTypeIdByData(v));
   }
 
   static getTypeIdByInternalSerializerType(type: InternalSerializerType) {
