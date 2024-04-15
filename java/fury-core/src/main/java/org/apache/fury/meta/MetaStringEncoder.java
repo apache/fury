@@ -109,13 +109,14 @@ public class MetaStringEncoder {
       return Encoding.LOWER_SPECIAL;
     }
     char[] chars = input.toCharArray();
-    if (canBeLowerSpecialEncoded(chars)) {
+    StringStatistics statistics = computeStatistics(chars);
+    if (statistics.canLowerSpecialEncoded) {
       return Encoding.LOWER_SPECIAL;
-    } else if (canBeLowerUpperDigitSpecialEncoded(chars)) {
-      if (countDigits(chars) != 0) {
+    } else if (statistics.canLowerUpperDigitSpecialEncoded) {
+      if (statistics.digitCount != 0) {
         return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
       } else {
-        int upperCount = countUppers(chars);
+        int upperCount = statistics.upperCount;
         if (upperCount == 1 && Character.isUpperCase(chars[0])) {
           return Encoding.FIRST_TO_LOWER_SPECIAL;
         }
@@ -129,28 +130,54 @@ public class MetaStringEncoder {
     return Encoding.UTF_8;
   }
 
-  private boolean canBeLowerSpecialEncoded(char[] chars) {
-    for (char c : chars) {
-      if (c >= 'a' && c <= 'z') {
-        continue;
-      }
-      if (c == '.' || c == '_' || c == '$' || c == '|') {
-        continue;
-      }
-      // Character outside of LOWER_SPECIAL set
-      return false;
+  private static class StringStatistics {
+    final int digitCount;
+    final int upperCount;
+    final boolean canLowerUpperDigitSpecialEncoded;
+    final boolean canLowerSpecialEncoded;
+
+    public StringStatistics(
+        int digitCount,
+        int upperCount,
+        boolean canLowerSpecialEncoded,
+        boolean canLowerUpperDigitSpecialEncoded) {
+      this.digitCount = digitCount;
+      this.upperCount = upperCount;
+      this.canLowerSpecialEncoded = canLowerSpecialEncoded;
+      this.canLowerUpperDigitSpecialEncoded = canLowerUpperDigitSpecialEncoded;
     }
-    return true;
   }
 
-  private int countDigits(char[] chars) {
-    int count = 0;
+  private StringStatistics computeStatistics(char[] chars) {
+    boolean canLowerUpperDigitSpecialEncoded = true;
+    boolean canLowerSpecialEncoded = true;
+    int digitCount = 0;
+    int upperCount = 0;
     for (char c : chars) {
+      if (canLowerUpperDigitSpecialEncoded) {
+        if (!((c >= 'a' && c <= 'z')
+            || (c >= 'A' && c <= 'Z')
+            || (c >= '0' && c <= '9')
+            || (c == specialChar1 || c == specialChar2))) {
+          // Character outside of LOWER_UPPER_DIGIT_SPECIAL set
+          canLowerUpperDigitSpecialEncoded = false;
+        }
+      }
+      if (canLowerSpecialEncoded) {
+        if (!((c >= 'a' && c <= 'z') || (c == '.' || c == '_' || c == '$' || c == '|'))) {
+          // Character outside of LOWER_SPECIAL set
+          canLowerSpecialEncoded = false;
+        }
+      }
       if (Character.isDigit(c)) {
-        count++;
+        digitCount++;
+      }
+      if (Character.isUpperCase(c)) {
+        upperCount++;
       }
     }
-    return count;
+    return new StringStatistics(
+        digitCount, upperCount, canLowerSpecialEncoded, canLowerUpperDigitSpecialEncoded);
   }
 
   private int countUppers(char[] chars) {
@@ -161,26 +188,6 @@ public class MetaStringEncoder {
       }
     }
     return upperCount;
-  }
-
-  private boolean canBeLowerUpperDigitSpecialEncoded(char[] chars) {
-    for (char c : chars) {
-      if (c >= 'a' && c <= 'z') {
-        continue;
-      }
-      if (c >= 'A' && c <= 'Z') {
-        continue;
-      }
-      if (c >= '0' && c <= '9') {
-        continue;
-      }
-      if (c == specialChar1 || c == specialChar2) {
-        continue;
-      }
-      // Character outside of LOWER_UPPER_DIGIT_SPECIAL set
-      return false;
-    }
-    return true;
   }
 
   public byte[] encodeLowerSpecial(String input) {
