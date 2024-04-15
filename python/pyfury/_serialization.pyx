@@ -947,19 +947,19 @@ cdef class Fury:
             self, Buffer buffer, obj, ClassInfo classinfo=None):
         cls = type(obj)
         if cls is str:
-            buffer.write_varint32(NOT_NULL_STRING_FLAG << 1)
+            buffer.write_int16(NOT_NULL_STRING_FLAG)
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_varint32(NOT_NULL_PYINT_FLAG << 1)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_varint32(NOT_NULL_PYBOOL_FLAG << 1)
+            buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
             buffer.write_bool(obj)
             return
         elif cls is float:
-            buffer.write_varint32(NOT_NULL_PYFLOAT_FLAG << 1)
+            buffer.write_int16(NOT_NULL_PYFLOAT_FLAG)
             buffer.write_double(obj)
             return
         if self.ref_resolver.write_ref_or_null(buffer, obj):
