@@ -19,14 +19,13 @@
 
 package org.apache.fury.meta;
 
-import org.apache.fury.util.StringUtils;
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotSame;
-import static org.testng.Assert.assertTrue;
+import static org.testng.AssertJUnit.assertSame;
+
+import org.apache.fury.util.StringUtils;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 public class MetaStringTest {
 
@@ -147,11 +146,11 @@ public class MetaStringTest {
 
   @Test
   public void testEncodeCharactersOutsideOfLowerSpecial() {
-    String testString = "abcdefABCDEF1234!@#"; // Contains characters outside LOWER_SPECIAL
+    // Contains characters outside LOWER_SPECIAL
+    String testString = "abcdefABCDEF1234!@#";
     MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
     MetaString encodedMetaString = encoder.encode(testString);
-    assertNotSame(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
-    Assert.assertNotEquals(encodedMetaString.getEncoding(), MetaString.Encoding.LOWER_SPECIAL);
+    assertSame(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
   }
 
   @Test
@@ -159,8 +158,7 @@ public class MetaStringTest {
     String testString = "ABC_DEF";
     MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
     MetaString encodedMetaString = encoder.encode(testString);
-    assertEquals(
-        encodedMetaString.getEncoding(), MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL);
+    assertEquals(encodedMetaString.getEncoding(), MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL);
 
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
     String decodedString =
@@ -176,8 +174,7 @@ public class MetaStringTest {
     String testString = "Aabcdef";
     MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
     MetaString encodedMetaString = encoder.encode(testString);
-    assertEquals(
-        encodedMetaString.getEncoding(), MetaString.Encoding.FIRST_TO_LOWER_SPECIAL);
+    assertEquals(encodedMetaString.getEncoding(), MetaString.Encoding.FIRST_TO_LOWER_SPECIAL);
 
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
     String decodedString =
