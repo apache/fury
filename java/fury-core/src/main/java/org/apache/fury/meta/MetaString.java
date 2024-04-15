@@ -22,7 +22,13 @@ package org.apache.fury.meta;
 import java.util.Arrays;
 import java.util.Objects;
 
+/**
+ * Represents a string with metadata that describes its encoding. It supports different encodings
+ * including special mechanisms for lower-case alphabets with special characters, and upper-case and
+ * digit encoding.
+ */
 public class MetaString {
+  /** Defines the types of supported encodings for MetaStrings. */
   public enum Encoding {
     LOWER_SPECIAL(0x00),
     LOWER_UPPER_DIGIT_SPECIAL(0x01),
@@ -56,6 +62,13 @@ public class MetaString {
   private final byte[] bytes;
   private final int numBits;
 
+  /**
+   * Constructs a MetaString with the specified encoding and data.
+   *
+   * @param encoding The type of encoding used for the string data.
+   * @param bytes The encoded string data as a byte array.
+   * @param numBits The number of bits used for encoding.
+   */
   public MetaString(Encoding encoding, byte[] bytes, int numBits) {
     this(encoding, '_', '$', bytes, numBits);
   }

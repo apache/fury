@@ -21,36 +21,59 @@ package org.apache.fury.meta;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.util.StringUtils;
 
+/** Decodes MetaString objects back into their original plain text form. */
 public class MetaStringDecoder {
-  private static final int FLAG_OFFSET = 8;
-
   private final char specialChar1;
   private final char specialChar2;
 
+  /**
+   * Creates a MetaStringDecoder with specified special characters used for decoding.
+   *
+   * @param specialChar1 The first special character used in custom decoding.
+   * @param specialChar2 The second special character used in custom decoding.
+   */
   public MetaStringDecoder(char specialChar1, char specialChar2) {
     this.specialChar1 = specialChar1;
     this.specialChar2 = specialChar2;
   }
 
+  /**
+   * Decodes the encoded data back into a string based on the provided number of bits and encoding
+   * type.
+   *
+   * @param encodedData The encoded string data as a byte array.
+   * @param numBits The number of bits used for encoding.
+   * @return The decoded original string.
+   */
   public String decode(byte[] encodedData, int numBits) {
     if (encodedData.length == 0) {
       return "";
     }
     // The very first byte signifies the encoding used
-    MetaString.Encoding chosenEncoding = MetaString.Encoding.fromInt(encodedData[0] & 0xFF);
+    Encoding chosenEncoding = Encoding.fromInt(encodedData[0] & 0xFF);
     // Extract actual data, skipping the first byte (encoding flag)
     encodedData = Arrays.copyOfRange(encodedData, 1, encodedData.length);
     return decode(encodedData, chosenEncoding, numBits);
   }
 
-  public String decode(byte[] encodedData, MetaString.Encoding chosenEncoding, int numBits) {
-    switch (chosenEncoding) {
+  /**
+   * Decode data based on passed <code>encoding</code>. The data must be encoded using passed
+   * encoding.
+   *
+   * @param encodedData encoded data using passed <code>encoding</code>.
+   * @param encoding encoding the passed data.
+   * @param numBits total bits for encoded data.
+   * @return Decoded string.
+   */
+  public String decode(byte[] encodedData, Encoding encoding, int numBits) {
+    switch (encoding) {
       case LOWER_SPECIAL:
-        return decodeLowerSpecial(encodedData, false, numBits);
+        return decodeLowerSpecial(encodedData, numBits);
       case LOWER_UPPER_DIGIT_SPECIAL:
-        return decodeLowerUpperDigitSpecial(encodedData, false, numBits);
+        return decodeLowerUpperDigitSpecial(encodedData, numBits);
       case FIRST_TO_LOWER_SPECIAL:
         return decodeRepFirstLowerSpecial(encodedData, numBits);
       case ALL_TO_LOWER_SPECIAL:
@@ -58,30 +81,23 @@ public class MetaStringDecoder {
       case UTF_8:
         return new String(encodedData, StandardCharsets.UTF_8);
       default:
-        throw new IllegalStateException("Unexpected encoding flag: " + chosenEncoding);
+        throw new IllegalStateException("Unexpected encoding flag: " + encoding);
     }
   }
 
-  // Function to adjust indices by removing flag position if present
-  private byte getValueWithFlagOffset(byte encodedValue, boolean hasFlag) {
-    return hasFlag ? (byte) (encodedValue & ~(1 << FLAG_OFFSET)) : encodedValue;
-  }
-
-  // Decoding method for LOWER_SPECIAL
-  private String decodeLowerSpecial(byte[] data, boolean hasFlag, int numBits) {
+  /** Decoding method for {@link Encoding#LOWER_SPECIAL}. */
+  private String decodeLowerSpecial(byte[] data, int numBits) {
     StringBuilder decoded = new StringBuilder();
     int bitIndex = 0;
     int bitMask = 0b11111; // 5 bits for mask
     while (bitIndex + 5 <= numBits) {
       int byteIndex = bitIndex / 8;
       int intraByteIndex = bitIndex % 8;
-
       // Extract the 5-bit character value across byte boundaries if needed
       int charValue =
           ((data[byteIndex] & 0xFF) << 8)
               | (byteIndex + 1 < data.length ? (data[byteIndex + 1] & 0xFF) : 0);
-      charValue =
-          getValueWithFlagOffset((byte) ((charValue >> (11 - intraByteIndex)) & bitMask), hasFlag);
+      charValue = ((byte) ((charValue >> (11 - intraByteIndex)) & bitMask));
       bitIndex += 5;
       decoded.append(decodeLowerSpecialChar(charValue));
     }
@@ -89,8 +105,8 @@ public class MetaStringDecoder {
     return decoded.toString();
   }
 
-  // Decoding method for LOWER_UPPER_DIGIT_SPECIAL
-  private String decodeLowerUpperDigitSpecial(byte[] data, boolean hasFlag, int numBits) {
+  /** Decoding method for {@link Encoding#LOWER_UPPER_DIGIT_SPECIAL}. */
+  private String decodeLowerUpperDigitSpecial(byte[] data, int numBits) {
     StringBuilder decoded = new StringBuilder();
     int bitIndex = 0;
     int bitMask = 0b111111; // 6 bits for mask
@@ -102,16 +118,14 @@ public class MetaStringDecoder {
       int charValue =
           ((data[byteIndex] & 0xFF) << 8)
               | (byteIndex + 1 < data.length ? (data[byteIndex + 1] & 0xFF) : 0);
-      charValue =
-          getValueWithFlagOffset((byte) ((charValue >> (10 - intraByteIndex)) & bitMask), hasFlag);
+      charValue = ((byte) ((charValue >> (10 - intraByteIndex)) & bitMask));
       bitIndex += 6;
       decoded.append(decodeLowerUpperDigitSpecialChar(charValue));
     }
-
     return decoded.toString();
   }
 
-  // Decoding special char for LOWER_SPECIAL based on your custom mapping
+  /** Decoding special char for LOWER_SPECIAL based on encoding mapping. */
   private char decodeLowerSpecialChar(int charValue) {
     if (charValue >= 0 && charValue <= 25) {
       return (char) ('a' + charValue);
@@ -128,7 +142,7 @@ public class MetaStringDecoder {
     }
   }
 
-  // Decoding special char for LOWER_UPPER_DIGIT_SPECIAL based on your custom mapping
+  /** Decoding special char for LOWER_UPPER_DIGIT_SPECIAL based on encoding mapping. */
   private char decodeLowerUpperDigitSpecialChar(int charValue) {
     if (charValue >= 0 && charValue <= 25) {
       return (char) ('a' + charValue);
@@ -147,12 +161,12 @@ public class MetaStringDecoder {
   }
 
   private String decodeRepFirstLowerSpecial(byte[] data, int numBits) {
-    String str = decodeLowerSpecial(data, false, numBits);
+    String str = decodeLowerSpecial(data, numBits);
     return StringUtils.capitalize(str);
   }
 
   private String decodeRepAllToLowerSpecial(byte[] data, int numBits) {
-    String str = decodeLowerSpecial(data, false, numBits);
+    String str = decodeLowerSpecial(data, numBits);
     StringBuilder builder = new StringBuilder();
     char[] chars = str.toCharArray();
     for (int i = 0; i < chars.length; i++) {

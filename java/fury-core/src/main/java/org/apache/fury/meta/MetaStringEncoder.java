@@ -22,15 +22,29 @@ package org.apache.fury.meta;
 import java.nio.charset.StandardCharsets;
 import org.apache.fury.meta.MetaString.Encoding;
 
+/** Encodes plain text strings into MetaString objects with specified encoding mechanisms. */
 public class MetaStringEncoder {
   private final char specialChar1;
   private final char specialChar2;
 
+  /**
+   * Creates a MetaStringEncoder with specified special characters used for encoding.
+   *
+   * @param specialChar1 The first special character used in custom encoding.
+   * @param specialChar2 The second special character used in custom encoding.
+   */
   public MetaStringEncoder(char specialChar1, char specialChar2) {
     this.specialChar1 = specialChar1;
     this.specialChar2 = specialChar2;
   }
 
+  /**
+   * Encodes the input string to MetaString using adaptive encoding, which intelligently chooses the
+   * best encoding based on the string's content.
+   *
+   * @param input The string to encode.
+   * @return A MetaString object representing the encoded string.
+   */
   public MetaString encode(String input) {
     if (input.isEmpty()) {
       return new MetaString(Encoding.LOWER_SPECIAL, new byte[0], 0);
@@ -39,6 +53,13 @@ public class MetaStringEncoder {
     return encode(input, encoding);
   }
 
+  /**
+   * Encodes the input string to MetaString using specified encoding.
+   *
+   * @param input The string to encode.
+   * @param encoding The encoding to use.
+   * @return A MetaString object representing the encoded string.
+   */
   public MetaString encode(String input, Encoding encoding) {
     if (input.isEmpty()) {
       return new MetaString(Encoding.LOWER_SPECIAL, new byte[0], 0);
