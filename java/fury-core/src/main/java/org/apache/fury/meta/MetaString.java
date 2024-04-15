@@ -91,8 +91,12 @@ public class MetaString {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     MetaString that = (MetaString) o;
     return specialChar1 == that.specialChar1
         && specialChar2 == that.specialChar2

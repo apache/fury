@@ -90,16 +90,16 @@ public class MetaStringEncoder {
 
   private boolean canBeLowerSpecialEncoded(char[] chars) {
     for (char c : chars) {
-      if (c >= 'a' && c <= 'z') continue;
-      if (c == specialChar1 || c == specialChar2 || c == '|') continue;
+      if (c >= 'a' && c <= 'z') {
+        continue;
+      }
+      if (c == specialChar1 || c == specialChar2 || c == '|') {
+        continue;
+      }
       // Character outside of LOWER_SPECIAL set
       return false;
     }
     return true;
-  }
-
-  private boolean canBeLowerUpperDigitSpecialEncoded(String input) {
-    return canBeLowerUpperDigitSpecialEncoded(input.toCharArray());
   }
 
   private int countDigits(char[] chars) {
@@ -122,12 +122,24 @@ public class MetaStringEncoder {
     return upperCount;
   }
 
+  private boolean canBeLowerUpperDigitSpecialEncoded(String input) {
+    return canBeLowerUpperDigitSpecialEncoded(input.toCharArray());
+  }
+
   private boolean canBeLowerUpperDigitSpecialEncoded(char[] chars) {
     for (char c : chars) {
-      if (c >= 'a' && c <= 'z') continue;
-      if (c >= 'A' && c <= 'Z') continue;
-      if (c >= '0' && c <= '9') continue;
-      if (c == specialChar1 || c == specialChar2) continue;
+      if (c >= 'a' && c <= 'z') {
+        continue;
+      }
+      if (c >= 'A' && c <= 'Z') {
+        continue;
+      }
+      if (c >= '0' && c <= '9') {
+        continue;
+      }
+      if (c == specialChar1 || c == specialChar2) {
+        continue;
+      }
       // Character outside of LOWER_UPPER_DIGIT_SPECIAL set
       return false;
     }
@@ -158,12 +170,12 @@ public class MetaStringEncoder {
   public byte[] encodeRepAllToLowerSpecial(char[] chars, int upperCount) {
     char[] newChars = new char[chars.length + upperCount];
     int newIdx = 0;
-    for (char aChar : chars) {
-      if (Character.isUpperCase(aChar)) {
+    for (char c : chars) {
+      if (Character.isUpperCase(c)) {
         newChars[newIdx++] = '|';
-        newChars[newIdx++] = Character.toLowerCase(aChar);
+        newChars[newIdx++] = Character.toLowerCase(c);
       } else {
-        newChars[newIdx++] = aChar;
+        newChars[newIdx++] = c;
       }
     }
     return encodeGeneric(newChars, 5, true);
