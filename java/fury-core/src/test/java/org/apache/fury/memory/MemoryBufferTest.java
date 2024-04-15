@@ -115,7 +115,7 @@ public class MemoryBufferTest {
       index += 2;
       buffer.putInt32(index, Integer.MIN_VALUE);
       index += 4;
-      buffer._unsafePutInt64(index, Long.MAX_VALUE);
+      buffer.putInt64(index, Long.MAX_VALUE);
       index += 8;
       buffer.putFloat64(index, -1);
       index += 8;
