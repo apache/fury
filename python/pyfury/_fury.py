@@ -466,30 +466,30 @@ class ClassResolver:
     def write_classinfo(self, buffer: Buffer, classinfo: ClassInfo):
         class_id = classinfo.class_id
         if class_id != NO_CLASS_ID:
-            buffer.write_int16(class_id)
+            buffer.write_varint32(class_id << 1)
             return
-        buffer.write_int16(NO_CLASS_ID)
+        buffer.write_varint32(1)
         self.write_enum_string_bytes(buffer, classinfo.class_name_bytes)
 
     def read_classinfo(self, buffer):
-        class_id = buffer.read_int16()
-        if (
-            class_id > NO_CLASS_ID
-        ):  # registered class id are greater than `NO_CLASS_ID`.
+        header = buffer.read_varint32()
+        if header & 0b1 == 0:
+            class_id = header >> 1
             classinfo = self._registered_id2_class_info[class_id]
             if classinfo.serializer is None:
                 classinfo.serializer = self._create_serializer(classinfo.cls)
             return classinfo
-        if buffer.read_int8() == USE_CLASS_ID:
-            return self._dynamic_id_to_classinfo_list[buffer.read_int16()]
+        meta_str_header = buffer.read_varint32()
+        length = meta_str_header >> 1
+        if meta_str_header & 0b1 != 0:
+            return self._dynamic_id_to_classinfo_list[length - 1]
         class_name_bytes_hash = buffer.read_int64()
-        class_name_bytes_length = buffer.read_int16()
         reader_index = buffer.reader_index
-        buffer.check_bound(reader_index, class_name_bytes_length)
-        buffer.reader_index = reader_index + class_name_bytes_length
+        buffer.check_bound(reader_index, length)
+        buffer.reader_index = reader_index + length
         classinfo = self._hash_to_classinfo.get(class_name_bytes_hash)
         if classinfo is None:
-            classname_bytes = buffer.get_bytes(reader_index, class_name_bytes_length)
+            classname_bytes = buffer.get_bytes(reader_index, length)
             full_class_name = classname_bytes.decode(encoding="utf-8")
             cls = load_class(full_class_name)
             classinfo = self.get_or_create_classinfo(cls)

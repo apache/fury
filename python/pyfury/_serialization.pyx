@@ -611,19 +611,21 @@ cdef class ClassResolver:
         return serializer
 
     cpdef inline write_classinfo(self, Buffer buffer, ClassInfo classinfo):
-        cdef int16_t class_id = classinfo.class_id
+        cdef int32_t class_id = classinfo.class_id
         if class_id != NO_CLASS_ID:
-            buffer.write_int16(class_id)
+            buffer.write_varint32((class_id << 1))
             return
-        buffer.write_int16(NO_CLASS_ID)
+        buffer.write_varint32(1)
         self._write_enum_string_bytes(buffer, classinfo.class_name_bytes)
 
     cpdef inline ClassInfo read_classinfo(self, Buffer buffer):
-        cdef int16_t class_id = buffer.read_int16()
+        cdef int32_t h1 = buffer.read_varint32()
+        cdef int32_t class_id = h1 >> 1
         cdef ClassInfo classinfo
         cdef PyObject* classinfo_ptr
         # registered class id are greater than `NO_CLASS_ID`.
-        if class_id > NO_CLASS_ID:
+        if h1 & 0b1 == 0:
+            assert class_id >= 0, class_id
             classinfo_ptr = self._c_registered_id2_class_info[class_id]
             if classinfo_ptr == NULL:
                 raise ValueError(f"Unexpected class_id {class_id} "
@@ -632,19 +634,19 @@ cdef class ClassResolver:
             if classinfo.serializer is None:
                 classinfo.serializer = self._create_serializer(classinfo.cls)
             return classinfo
-        if buffer.read_int8() == USE_CLASS_ID:
-            return <ClassInfo>self._c_dynamic_id_to_classinfo_vec[buffer.read_int16()]
+        cdef int32_t header = buffer.read_varint32()
+        cdef int32_t length = header >> 1
+        if header & 0b1 != 0:
+            return <ClassInfo>self._c_dynamic_id_to_classinfo_vec[length - 1]
         cdef int64_t class_name_bytes_hash = buffer.read_int64()
-        cdef int16_t class_name_bytes_length = buffer.read_int16()
         cdef int32_t reader_index = buffer.reader_index
-        buffer.check_bound(reader_index, class_name_bytes_length)
-        buffer.reader_index = reader_index + class_name_bytes_length
+        buffer.check_bound(reader_index, length)
+        buffer.reader_index = reader_index + length
         classinfo_ptr = self._c_hash_to_classinfo[class_name_bytes_hash]
         if classinfo_ptr != NULL:
             self._c_dynamic_id_to_classinfo_vec.push_back(classinfo_ptr)
             return <ClassInfo>classinfo_ptr
-        cdef bytes classname_bytes = buffer.get_bytes(
-            reader_index, class_name_bytes_length)
+        cdef bytes classname_bytes = buffer.get_bytes(reader_index, length)
         cdef str full_class_name = classname_bytes.decode(encoding="utf-8")
         cls = load_class(full_class_name)
         classinfo = self.get_or_create_classinfo(cls)
