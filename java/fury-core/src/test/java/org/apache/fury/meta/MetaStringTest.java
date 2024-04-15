@@ -100,6 +100,9 @@ public class MetaStringTest {
       try {
         String str = createString(i, specialChar1, specialChar2);
         MetaString metaString = encoder.encode(str);
+        Assert.assertEquals(metaString.getString(), str);
+        Assert.assertEquals(metaString.getSpecialChar1(), specialChar1);
+        Assert.assertEquals(metaString.getSpecialChar2(), specialChar2);
         MetaStringDecoder decoder = new MetaStringDecoder(specialChar1, specialChar2);
         String newStr =
             decoder.decode(

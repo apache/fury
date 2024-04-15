@@ -56,6 +56,7 @@ public class MetaString {
     }
   }
 
+  private final String string;
   private final Encoding encoding;
   private final char specialChar1;
   private final char specialChar2;
@@ -69,17 +70,23 @@ public class MetaString {
    * @param bytes The encoded string data as a byte array.
    * @param numBits The number of bits used for encoding.
    */
-  public MetaString(Encoding encoding, byte[] bytes, int numBits) {
-    this(encoding, '_', '$', bytes, numBits);
-  }
-
   public MetaString(
-      Encoding encoding, char specialChar1, char specialChar2, byte[] bytes, int numBits) {
+      String string,
+      Encoding encoding,
+      char specialChar1,
+      char specialChar2,
+      byte[] bytes,
+      int numBits) {
+    this.string = string;
     this.encoding = encoding;
     this.specialChar1 = specialChar1;
     this.specialChar2 = specialChar2;
     this.bytes = bytes;
     this.numBits = numBits;
+  }
+
+  public String getString() {
+    return string;
   }
 
   public Encoding getEncoding() {
@@ -128,7 +135,9 @@ public class MetaString {
   @Override
   public String toString() {
     return "MetaString{"
-        + "encoding="
+        + "str="
+        + string
+        + ", encoding="
         + encoding
         + ", specialChar1="
         + specialChar1

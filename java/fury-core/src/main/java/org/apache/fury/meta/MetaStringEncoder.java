@@ -47,7 +47,8 @@ public class MetaStringEncoder {
    */
   public MetaString encode(String input) {
     if (input.isEmpty()) {
-      return new MetaString(Encoding.LOWER_SPECIAL, new byte[0], 0);
+      return new MetaString(
+          input, Encoding.LOWER_SPECIAL, specialChar1, specialChar2, new byte[0], 0);
     }
     Encoding encoding = computeEncoding(input);
     return encode(input, encoding);
@@ -62,24 +63,44 @@ public class MetaStringEncoder {
    */
   public MetaString encode(String input, Encoding encoding) {
     if (input.isEmpty()) {
-      return new MetaString(Encoding.LOWER_SPECIAL, new byte[0], 0);
+      return new MetaString(
+          input, Encoding.LOWER_SPECIAL, specialChar1, specialChar2, new byte[0], 0);
     }
     int length = input.length();
     switch (encoding) {
       case LOWER_SPECIAL:
-        return new MetaString(encoding, encodeLowerSpecial(input), length * 5);
+        return new MetaString(
+            input, encoding, specialChar1, specialChar2, encodeLowerSpecial(input), length * 5);
       case LOWER_UPPER_DIGIT_SPECIAL:
-        return new MetaString(encoding, encodeLowerUpperDigitSpecial(input), length * 6);
+        return new MetaString(
+            input,
+            encoding,
+            specialChar1,
+            specialChar2,
+            encodeLowerUpperDigitSpecial(input),
+            length * 6);
       case FIRST_TO_LOWER_SPECIAL:
-        return new MetaString(encoding, encodeFirstToLowerSpecial(input), length * 5);
+        return new MetaString(
+            input,
+            encoding,
+            specialChar1,
+            specialChar2,
+            encodeFirstToLowerSpecial(input),
+            length * 5);
       case ALL_TO_LOWER_SPECIAL:
         char[] chars = input.toCharArray();
         int upperCount = countUppers(chars);
         return new MetaString(
-            encoding, encodeAllToLowerSpecial(chars, upperCount), (upperCount + length) * 5);
+            input,
+            encoding,
+            specialChar1,
+            specialChar2,
+            encodeAllToLowerSpecial(chars, upperCount),
+            (upperCount + length) * 5);
       default:
         byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
-        return new MetaString(Encoding.UTF_8, bytes, bytes.length * 8);
+        return new MetaString(
+            input, Encoding.UTF_8, specialChar1, specialChar2, bytes, bytes.length * 8);
     }
   }
 
