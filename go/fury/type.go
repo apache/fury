@@ -403,7 +403,7 @@ func (r *typeResolver) writeType(buffer *ByteBuffer, type_ reflect.Type) error {
 			r.typeToTypeInfo[type_] = encodeType
 		}
 	}
-	if err := r.writeEnumString(buffer, typeInfo); err != nil {
+	if err := r.writeMetaString(buffer, typeInfo); err != nil {
 		return err
 	} else {
 		return nil
@@ -411,7 +411,7 @@ func (r *typeResolver) writeType(buffer *ByteBuffer, type_ reflect.Type) error {
 }
 
 func (r *typeResolver) readType(buffer *ByteBuffer) (reflect.Type, error) {
-	enumString, err := r.readEnumString(buffer)
+	enumString, err := r.readMetaString(buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -519,7 +519,7 @@ func (r *typeResolver) decodeType(typeStr string) (reflect.Type, string, error) 
 }
 
 func (r *typeResolver) writeTypeTag(buffer *ByteBuffer, typeTag string) error {
-	if err := r.writeEnumString(buffer, typeTag); err != nil {
+	if err := r.writeMetaString(buffer, typeTag); err != nil {
 		return err
 	} else {
 		return nil
@@ -527,7 +527,7 @@ func (r *typeResolver) writeTypeTag(buffer *ByteBuffer, typeTag string) error {
 }
 
 func (r *typeResolver) readTypeByReadTag(buffer *ByteBuffer) (reflect.Type, error) {
-	enumString, err := r.readEnumString(buffer)
+	enumString, err := r.readMetaString(buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -535,7 +535,7 @@ func (r *typeResolver) readTypeByReadTag(buffer *ByteBuffer) (reflect.Type, erro
 }
 
 func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (string, error) {
-	return r.readEnumString(buffer)
+	return r.readMetaString(buffer)
 }
 
 func (r *typeResolver) getTypeById(id int16) (reflect.Type, error) {
@@ -546,7 +546,7 @@ func (r *typeResolver) getTypeById(id int16) (reflect.Type, error) {
 	return type_, nil
 }
 
-func (r *typeResolver) writeEnumString(buffer *ByteBuffer, str string) error {
+func (r *typeResolver) writeMetaString(buffer *ByteBuffer, str string) error {
 	if id, ok := r.dynamicStringToId[str]; !ok {
 		dynamicStringId := r.dynamicStringId
 		r.dynamicStringId += 1
@@ -571,7 +571,7 @@ func (r *typeResolver) writeEnumString(buffer *ByteBuffer, str string) error {
 	return nil
 }
 
-func (r *typeResolver) readEnumString(buffer *ByteBuffer) (string, error) {
+func (r *typeResolver) readMetaString(buffer *ByteBuffer) (string, error) {
 	if buffer.ReadByte_() == useStringValue {
 		// TODO support use computed hash
 		buffer.ReadInt64()

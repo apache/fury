@@ -304,11 +304,11 @@ cdef class ClassResolver:
         flat_hash_map[uint64_t, PyObject*] _c_classes_info
         # hash -> ClassInfo
         flat_hash_map[int64_t, PyObject*] _c_hash_to_classinfo
-        # hash -> EnumStringBytes
+        # hash -> MetaStringBytes
         flat_hash_map[int64_t, PyObject*] _c_hash_to_enum_string_bytes
-        # classname EnumStringBytes address -> class
+        # classname MetaStringBytes address -> class
         flat_hash_map[uint64_t, PyObject*] _c_str_bytes_to_class
-        # classname EnumStringBytes address -> str
+        # classname MetaStringBytes address -> str
         flat_hash_map[uint64_t, PyObject*] _c_enum_str_to_str
 
         int16_t dynamic_write_string_id
@@ -449,7 +449,7 @@ cdef class ClassResolver:
             type_tag = serializer.get_xtype_tag()
             assert type(type_tag) is str
             assert type_tag not in self._type_tag_to_class_x_lang_map
-            classinfo.type_tag_bytes = EnumStringBytes(type_tag.encode("utf-8"))
+            classinfo.type_tag_bytes = MetaStringBytes(type_tag.encode("utf-8"))
             self._type_tag_to_class_x_lang_map[type_tag] = cls
         else:
             self._type_id_to_serializer[type_id] = serializer
@@ -654,7 +654,7 @@ cdef class ClassResolver:
         return classinfo
 
     cdef inline _write_enum_string_bytes(
-            self, Buffer buffer, EnumStringBytes enum_string_bytes):
+            self, Buffer buffer, MetaStringBytes enum_string_bytes):
         cdef int16_t dynamic_class_id = enum_string_bytes.dynamic_write_string_id
         if dynamic_class_id == DEFAULT_DYNAMIC_WRITE_STRING_ID:
             dynamic_class_id = self.dynamic_write_string_id
@@ -669,9 +669,9 @@ cdef class ClassResolver:
             buffer.write_int8(USE_CLASS_ID)
             buffer.write_int16(dynamic_class_id)
 
-    cdef inline EnumStringBytes _read_enum_string_bytes(self, Buffer buffer):
+    cdef inline MetaStringBytes _read_enum_string_bytes(self, Buffer buffer):
         if buffer.read_int8() != USE_CLASSNAME:
-            return <EnumStringBytes>self._c_dynamic_id_to_enum_string_vec[
+            return <MetaStringBytes>self._c_dynamic_id_to_enum_string_vec[
                 buffer.read_int16()]
         cdef int64_t hashcode = buffer.read_int64()
         cdef int16_t length = buffer.read_int16()
@@ -681,9 +681,9 @@ cdef class ClassResolver:
         cdef PyObject* enum_str_ptr = self._c_hash_to_enum_string_bytes[hashcode]
         if enum_str_ptr != NULL:
             self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
-            return <EnumStringBytes>enum_str_ptr
+            return <MetaStringBytes>enum_str_ptr
         cdef bytes str_bytes = buffer.get_bytes(reader_index, length)
-        cdef EnumStringBytes enum_str = EnumStringBytes(str_bytes, hashcode=hashcode)
+        cdef MetaStringBytes enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
         self._enum_str_set.add(enum_str)
         enum_str_ptr = <PyObject*>enum_str
         self._c_hash_to_enum_string_bytes[hashcode] = enum_str_ptr
@@ -693,13 +693,13 @@ cdef class ClassResolver:
     cpdef inline xwrite_class(self, Buffer buffer, cls):
         cdef PyObject* classinfo_ptr = self._c_classes_info[<uintptr_t><PyObject*>cls]
         assert classinfo_ptr != NULL
-        cdef EnumStringBytes class_name_bytes = (<object>classinfo_ptr).class_name_bytes
+        cdef MetaStringBytes class_name_bytes = (<object>classinfo_ptr).class_name_bytes
         self._write_enum_string_bytes(buffer, class_name_bytes)
 
     cpdef inline xwrite_type_tag(self, Buffer buffer, cls):
         cdef PyObject* classinfo_ptr = self._c_classes_info[<uintptr_t><PyObject*>cls]
         assert classinfo_ptr != NULL
-        cdef EnumStringBytes type_tag_bytes = (<object>classinfo_ptr).type_tag_bytes
+        cdef MetaStringBytes type_tag_bytes = (<object>classinfo_ptr).type_tag_bytes
         self._write_enum_string_bytes(buffer, type_tag_bytes)
 
     cpdef inline read_class_by_type_tag(self, Buffer buffer):
@@ -707,7 +707,7 @@ cdef class ClassResolver:
         return self._type_tag_to_class_x_lang_map[tag]
 
     cpdef inline xread_class(self, Buffer buffer):
-        cdef EnumStringBytes str_bytes = self._read_enum_string_bytes(buffer)
+        cdef MetaStringBytes str_bytes = self._read_enum_string_bytes(buffer)
         cdef uint64_t object_id = <uintptr_t><PyObject*>str_bytes
         cdef PyObject* cls_ptr = self._c_str_bytes_to_class[object_id]
         if cls_ptr != NULL:
@@ -719,7 +719,7 @@ cdef class ClassResolver:
         return cls
 
     cpdef inline str xread_classname(self, Buffer buffer):
-        cdef EnumStringBytes str_bytes = self._read_enum_string_bytes(buffer)
+        cdef MetaStringBytes str_bytes = self._read_enum_string_bytes(buffer)
         cdef uint64_t object_id = <uintptr_t><PyObject*>str_bytes
         cdef PyObject* classname_ptr = self._c_enum_str_to_str[object_id]
         if classname_ptr != NULL:
@@ -744,13 +744,13 @@ cdef class ClassResolver:
         if self.dynamic_write_string_id != 0:
             self.dynamic_write_string_id = 0
             for ptr in self._c_dynamic_written_enum_string:
-                (<EnumStringBytes>ptr).dynamic_write_string_id = \
+                (<MetaStringBytes>ptr).dynamic_write_string_id = \
                     DEFAULT_DYNAMIC_WRITE_STRING_ID
             self._c_dynamic_written_enum_string.clear()
 
 
 @cython.final
-cdef class EnumStringBytes:
+cdef class MetaStringBytes:
     cdef bytes data
     cdef int16_t length
     cdef int64_t hashcode
@@ -763,7 +763,7 @@ cdef class EnumStringBytes:
         self.dynamic_write_string_id = DEFAULT_DYNAMIC_WRITE_STRING_ID
 
     def __eq__(self, other):
-        return type(other) is EnumStringBytes and other.hashcode == self.hashcode
+        return type(other) is MetaStringBytes and other.hashcode == self.hashcode
 
     def __hash__(self):
         return self.hashcode
@@ -774,8 +774,8 @@ cdef class ClassInfo:
     cdef public object cls
     cdef public int16_t class_id
     cdef public Serializer serializer
-    cdef public EnumStringBytes class_name_bytes
-    cdef public EnumStringBytes type_tag_bytes
+    cdef public MetaStringBytes class_name_bytes
+    cdef public MetaStringBytes type_tag_bytes
 
     def __init__(
             self,
@@ -788,11 +788,11 @@ cdef class ClassInfo:
         self.cls = cls
         self.class_id = class_id
         self.serializer = serializer
-        self.class_name_bytes = EnumStringBytes(class_name_bytes)
+        self.class_name_bytes = MetaStringBytes(class_name_bytes)
         if type_tag_bytes is None:
             self.type_tag_bytes = None
         else:
-            self.type_tag_bytes = EnumStringBytes(type_tag_bytes)
+            self.type_tag_bytes = MetaStringBytes(type_tag_bytes)
 
     def __repr__(self):
         return f"ClassInfo(cls={self.cls}, class_id={self.class_id}, " \

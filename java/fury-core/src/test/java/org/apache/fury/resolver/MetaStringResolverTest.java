@@ -27,18 +27,18 @@ import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.util.StringUtils;
 import org.testng.annotations.Test;
 
-public class EnumStringResolverTest {
+public class MetaStringResolverTest {
 
   @Test
-  public void testWriteEnumString() {
+  public void testWriteMetaString() {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     String str = StringUtils.random(128, 0);
-    EnumStringResolver stringResolver = new EnumStringResolver();
+    MetaStringResolver stringResolver = new MetaStringResolver();
     for (int i = 0; i < 128; i++) {
-      stringResolver.writeEnumString(buffer, str);
+      stringResolver.writeMetaString(buffer, str);
     }
     for (int i = 0; i < 128; i++) {
-      String enumString = stringResolver.readEnumString(buffer);
+      String enumString = stringResolver.readMetaString(buffer);
       assertEquals(enumString.hashCode(), str.hashCode());
       assertEquals(enumString.getBytes(), str.getBytes());
     }

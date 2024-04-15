@@ -30,7 +30,7 @@ import org.apache.fury.memory.MemoryBuffer;
  * resolver to reduce string cost. TODO add common inner package names and classnames here. TODO
  * share common immutable datastructure globally across multiple fury.
  */
-public final class EnumStringResolver {
+public final class MetaStringResolver {
   public static final byte USE_STRING_VALUE = 0;
   public static final byte USE_STRING_ID = 1;
   private static final int initialCapacity = 8;
@@ -38,38 +38,38 @@ public final class EnumStringResolver {
   private static final float furyMapLoadFactor = 0.25f;
 
   // Every deserialization for unregistered string will query it, performance is important.
-  private final ObjectMap<EnumStringBytes, String> enumStringBytes2StringMap =
+  private final ObjectMap<MetaStringBytes, String> enumStringBytes2StringMap =
       new ObjectMap<>(initialCapacity, furyMapLoadFactor);
-  private final LongMap<EnumStringBytes> hash2EnumStringBytesMap =
+  private final LongMap<MetaStringBytes> hash2MetaStringBytesMap =
       new LongMap<>(initialCapacity, furyMapLoadFactor);
   // Every enum bytes should be singleton at every fury, since we keep state in it.
-  private final ObjectMap<String, EnumStringBytes> enumString2BytesMap =
+  private final ObjectMap<String, MetaStringBytes> enumString2BytesMap =
       new ObjectMap<>(initialCapacity, furyMapLoadFactor);
-  private EnumStringBytes[] dynamicWrittenString = new EnumStringBytes[32];
-  private EnumStringBytes[] dynamicReadStringIds = new EnumStringBytes[32];
+  private MetaStringBytes[] dynamicWrittenString = new MetaStringBytes[32];
+  private MetaStringBytes[] dynamicReadStringIds = new MetaStringBytes[32];
   private short dynamicWriteStringId;
   private short dynamicReadStringId;
 
-  public EnumStringResolver() {
+  public MetaStringResolver() {
     dynamicWriteStringId = 0;
     dynamicReadStringId = 0;
   }
 
-  EnumStringBytes getOrCreateEnumStringBytes(String str) {
-    EnumStringBytes enumStringBytes = enumString2BytesMap.get(str);
-    if (enumStringBytes == null) {
-      enumStringBytes = new EnumStringBytes(str);
-      enumString2BytesMap.put(str, enumStringBytes);
+  MetaStringBytes getOrCreateMetaStringBytes(String str) {
+    MetaStringBytes metaStringBytes = enumString2BytesMap.get(str);
+    if (metaStringBytes == null) {
+      metaStringBytes = new MetaStringBytes(str);
+      enumString2BytesMap.put(str, metaStringBytes);
     }
-    return enumStringBytes;
+    return metaStringBytes;
   }
 
-  public void writeEnumString(MemoryBuffer buffer, String str) {
-    writeEnumStringBytes(buffer, getOrCreateEnumStringBytes(str));
+  public void writeMetaString(MemoryBuffer buffer, String str) {
+    writeMetaStringBytes(buffer, getOrCreateMetaStringBytes(str));
   }
 
-  public String readEnumString(MemoryBuffer buffer) {
-    EnumStringBytes byteString = readEnumStringBytes(buffer);
+  public String readMetaString(MemoryBuffer buffer) {
+    MetaStringBytes byteString = readMetaStringBytes(buffer);
     String str = enumStringBytes2StringMap.get(byteString);
     if (str == null) { // TODO use org.apache.fury.resolver.ObjectMap
       str = new String(byteString.bytes, StandardCharsets.UTF_8);
@@ -78,20 +78,20 @@ public final class EnumStringResolver {
     return str;
   }
 
-  public void writeEnumStringBytes(MemoryBuffer buffer, EnumStringBytes byteString) {
+  public void writeMetaStringBytes(MemoryBuffer buffer, MetaStringBytes byteString) {
     short id = byteString.dynamicWriteStringId;
     int writerIndex = buffer.writerIndex();
-    if (id == EnumStringBytes.DEFAULT_DYNAMIC_WRITE_STRING_ID) {
+    if (id == MetaStringBytes.DEFAULT_DYNAMIC_WRITE_STRING_ID) {
       id = dynamicWriteStringId++;
       byteString.dynamicWriteStringId = id;
-      EnumStringBytes[] dynamicWrittenEnumString = this.dynamicWrittenString;
-      if (dynamicWrittenEnumString.length <= id) {
-        EnumStringBytes[] tmp = new EnumStringBytes[id * 2];
-        System.arraycopy(dynamicWrittenEnumString, 0, tmp, 0, dynamicWrittenEnumString.length);
-        dynamicWrittenEnumString = tmp;
+      MetaStringBytes[] dynamicWrittenMetaString = this.dynamicWrittenString;
+      if (dynamicWrittenMetaString.length <= id) {
+        MetaStringBytes[] tmp = new MetaStringBytes[id * 2];
+        System.arraycopy(dynamicWrittenMetaString, 0, tmp, 0, dynamicWrittenMetaString.length);
+        dynamicWrittenMetaString = tmp;
         this.dynamicWrittenString = tmp;
       }
-      dynamicWrittenEnumString[id] = byteString;
+      dynamicWrittenMetaString[id] = byteString;
       int bytesLen = byteString.bytes.length;
       buffer.increaseWriterIndex(11 + bytesLen);
       buffer._unsafePutByte(writerIndex, USE_STRING_VALUE);
@@ -107,10 +107,10 @@ public final class EnumStringResolver {
     }
   }
 
-  EnumStringBytes readEnumStringBytes(MemoryBuffer buffer) {
+  MetaStringBytes readMetaStringBytes(MemoryBuffer buffer) {
     if (buffer.readByte() == USE_STRING_VALUE) {
       long hashCode = buffer.readInt64();
-      EnumStringBytes byteString = trySkipEnumStringBytes(buffer, hashCode);
+      MetaStringBytes byteString = trySkipMetaStringBytes(buffer, hashCode);
       updateDynamicString(byteString);
       return byteString;
     } else {
@@ -118,7 +118,7 @@ public final class EnumStringResolver {
     }
   }
 
-  EnumStringBytes readEnumStringBytes(MemoryBuffer buffer, EnumStringBytes cache) {
+  MetaStringBytes readMetaStringBytes(MemoryBuffer buffer, MetaStringBytes cache) {
     if (buffer.readByte() == USE_STRING_VALUE) {
       long hashCode = buffer.readInt64();
       if (cache.hashCode == hashCode) {
@@ -127,7 +127,7 @@ public final class EnumStringResolver {
         updateDynamicString(cache);
         return cache;
       } else {
-        EnumStringBytes byteString = trySkipEnumStringBytes(buffer, hashCode);
+        MetaStringBytes byteString = trySkipMetaStringBytes(buffer, hashCode);
         updateDynamicString(byteString);
         return byteString;
       }
@@ -136,14 +136,14 @@ public final class EnumStringResolver {
     }
   }
 
-  /** Read enum string by try to reuse previous read {@link EnumStringBytes} object. */
-  private EnumStringBytes trySkipEnumStringBytes(MemoryBuffer buffer, long hashCode) {
-    EnumStringBytes byteString = hash2EnumStringBytesMap.get(hashCode);
+  /** Read enum string by try to reuse previous read {@link MetaStringBytes} object. */
+  private MetaStringBytes trySkipMetaStringBytes(MemoryBuffer buffer, long hashCode) {
+    MetaStringBytes byteString = hash2MetaStringBytesMap.get(hashCode);
     if (byteString == null) {
       int strBytesLength = buffer.readInt16();
       byte[] strBytes = buffer.readBytes(strBytesLength);
-      byteString = new EnumStringBytes(strBytes, hashCode);
-      hash2EnumStringBytesMap.put(hashCode, byteString);
+      byteString = new MetaStringBytes(strBytes, hashCode);
+      hash2MetaStringBytesMap.put(hashCode, byteString);
     } else {
       // skip byteString data
       buffer.increaseReaderIndex(2 + byteString.bytes.length);
@@ -151,11 +151,11 @@ public final class EnumStringResolver {
     return byteString;
   }
 
-  private void updateDynamicString(EnumStringBytes byteString) {
+  private void updateDynamicString(MetaStringBytes byteString) {
     short currentDynamicReadId = dynamicReadStringId++;
-    EnumStringBytes[] dynamicReadStringIds = this.dynamicReadStringIds;
+    MetaStringBytes[] dynamicReadStringIds = this.dynamicReadStringIds;
     if (dynamicReadStringIds.length <= currentDynamicReadId) {
-      EnumStringBytes[] tmp = new EnumStringBytes[currentDynamicReadId * 2];
+      MetaStringBytes[] tmp = new MetaStringBytes[currentDynamicReadId * 2];
       System.arraycopy(dynamicReadStringIds, 0, tmp, 0, dynamicReadStringIds.length);
       dynamicReadStringIds = tmp;
       this.dynamicReadStringIds = tmp;
@@ -183,7 +183,7 @@ public final class EnumStringResolver {
     if (dynamicWriteStringId != 0) {
       for (int i = 0; i < dynamicWriteStringId; i++) {
         dynamicWrittenString[i].dynamicWriteStringId =
-            EnumStringBytes.DEFAULT_DYNAMIC_WRITE_STRING_ID;
+            MetaStringBytes.DEFAULT_DYNAMIC_WRITE_STRING_ID;
         dynamicWrittenString[i] = null;
       }
       this.dynamicWriteStringId = 0;
