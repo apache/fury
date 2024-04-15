@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.fury.type;
+package org.apache.fury.meta;
 
 import static org.apache.fury.type.TypeUtils.COLLECTION_TYPE;
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
@@ -48,6 +48,10 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
+import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.DescriptorGrouper;
+import org.apache.fury.type.FinalObjectTypeStub;
+import org.apache.fury.type.GenericType;
 import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
@@ -634,7 +638,7 @@ public class ClassDef implements Serializable {
   static FieldType buildFieldType(ClassResolver classResolver, Field field) {
     Preconditions.checkNotNull(field);
     Class<?> rawType = field.getType();
-    boolean isFinal = GenericType.defaultFinalPredicate.test(rawType);
+    boolean isFinal = GenericType.isFinalByDefault(rawType);
     if (Collection.class.isAssignableFrom(rawType)) {
       GenericType genericType = GenericType.build(field.getGenericType());
       return new CollectionFieldType(
@@ -672,7 +676,7 @@ public class ClassDef implements Serializable {
   private static FieldType buildFieldType(ClassResolver classResolver, GenericType genericType) {
     Preconditions.checkNotNull(genericType);
     boolean isFinal = genericType.isMonomorphic();
-    if (COLLECTION_TYPE.isSupertypeOf(genericType.typeToken)) {
+    if (COLLECTION_TYPE.isSupertypeOf(genericType.getTypeToken())) {
       return new CollectionFieldType(
           isFinal,
           buildFieldType(
@@ -680,7 +684,7 @@ public class ClassDef implements Serializable {
               genericType.getTypeParameter0() == null
                   ? GenericType.build(Object.class)
                   : genericType.getTypeParameter0()));
-    } else if (MAP_TYPE.isSupertypeOf(genericType.typeToken)) {
+    } else if (MAP_TYPE.isSupertypeOf(genericType.getTypeToken())) {
       return new MapFieldType(
           isFinal,
           buildFieldType(
@@ -694,7 +698,7 @@ public class ClassDef implements Serializable {
                   ? GenericType.build(Object.class)
                   : genericType.getTypeParameter1()));
     } else {
-      Short classId = classResolver.getRegisteredClassId(genericType.cls);
+      Short classId = classResolver.getRegisteredClassId(genericType.getCls());
       if (classId != null && classId != ClassResolver.NO_CLASS_ID) {
         return new RegisteredFieldType(isFinal, classId);
       } else {
