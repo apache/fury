@@ -26,7 +26,7 @@ import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Preconditions;
 
 @Internal
-public final class EnumStringBytes {
+final class MetaStringBytes {
   static final short DEFAULT_DYNAMIC_WRITE_STRING_ID = -1;
 
   final byte[] bytes;
@@ -34,19 +34,19 @@ public final class EnumStringBytes {
   short dynamicWriteStringId = DEFAULT_DYNAMIC_WRITE_STRING_ID;
 
   /**
-   * Create a binary EnumString.
+   * Create a binary MetaString.
    *
    * @param bytes String encoded bytes.
    * @param hashCode String hash code. This should be unique and has no hash collision, and be
    *     deterministic, so we can use cache to reduce hash loop up for read.
    */
-  public EnumStringBytes(byte[] bytes, long hashCode) {
+  public MetaStringBytes(byte[] bytes, long hashCode) {
     assert hashCode != 0;
     this.bytes = bytes;
     this.hashCode = hashCode;
   }
 
-  public EnumStringBytes(String string) {
+  public MetaStringBytes(String string) {
     byte[] classNameBytes = string.getBytes(StandardCharsets.UTF_8);
     Preconditions.checkArgument(classNameBytes.length <= Short.MAX_VALUE);
     // Set seed to ensure hash is deterministic.
@@ -62,14 +62,14 @@ public final class EnumStringBytes {
 
   @Override
   public boolean equals(Object o) {
-    // EnumStringBytes is used internally, skip unnecessary parameter check.
+    // MetaStringBytes is used internally, skip unnecessary parameter check.
     // if (this == o) {
     //   return true;
     // }
     // if (o == null || getClass() != o.getClass()) {
     //   return false;
     // }
-    EnumStringBytes that = (EnumStringBytes) o;
+    MetaStringBytes that = (MetaStringBytes) o;
     // Skip compare data for equality for performance.
     // Enum string such as classname are very common, compare hashcode only will have better
     // performance.

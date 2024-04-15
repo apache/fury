@@ -91,7 +91,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_DYNAMIC_WRITE_STRING_ID = -1
 
 
-class EnumStringBytes:
+class MetaStringBytes:
     __slots__ = (
         "data",
         "length",
@@ -106,7 +106,7 @@ class EnumStringBytes:
         self.dynamic_write_string_id = DEFAULT_DYNAMIC_WRITE_STRING_ID
 
     def __eq__(self, other):
-        return type(other) is EnumStringBytes and other.hashcode == self.hashcode
+        return type(other) is MetaStringBytes and other.hashcode == self.hashcode
 
     def __hash__(self):
         return self.hashcode
@@ -132,9 +132,9 @@ class ClassInfo:
         self.cls = cls
         self.class_id = class_id
         self.serializer = serializer
-        self.class_name_bytes = EnumStringBytes(class_name_bytes)
+        self.class_name_bytes = MetaStringBytes(class_name_bytes)
         self.type_tag_bytes = (
-            EnumStringBytes(type_tag_bytes) if type_tag_bytes else None
+            MetaStringBytes(type_tag_bytes) if type_tag_bytes else None
         )
 
     def __repr__(self):
@@ -299,7 +299,7 @@ class ClassResolver:
             type_tag = serializer.get_xtype_tag()
             assert type(type_tag) is str
             assert type_tag not in self._type_tag_to_class_x_lang_map
-            classinfo.type_tag_bytes = EnumStringBytes(type_tag.encode("utf-8"))
+            classinfo.type_tag_bytes = MetaStringBytes(type_tag.encode("utf-8"))
             self._type_tag_to_class_x_lang_map[type_tag] = cls
         else:
             self._type_id_to_serializer[type_id] = serializer
@@ -498,7 +498,7 @@ class ClassResolver:
         return classinfo
 
     def write_enum_string_bytes(
-        self, buffer: Buffer, enum_string_bytes: EnumStringBytes
+        self, buffer: Buffer, enum_string_bytes: MetaStringBytes
     ):
         dynamic_write_string_id = enum_string_bytes.dynamic_write_string_id
         if dynamic_write_string_id == DEFAULT_DYNAMIC_WRITE_STRING_ID:
@@ -514,7 +514,7 @@ class ClassResolver:
             buffer.write_int8(USE_CLASS_ID)
             buffer.write_int16(dynamic_write_string_id)
 
-    def read_enum_string_bytes(self, buffer: Buffer) -> EnumStringBytes:
+    def read_enum_string_bytes(self, buffer: Buffer) -> MetaStringBytes:
         if buffer.read_int8() != USE_CLASSNAME:
             return self._dynamic_id_to_enum_str_list[buffer.read_int16()]
         hashcode = buffer.read_int64()
@@ -525,7 +525,7 @@ class ClassResolver:
         enum_str = self._hash_to_enum_string.get(hashcode)
         if enum_str is None:
             str_bytes = buffer.get_bytes(reader_index, length)
-            enum_str = EnumStringBytes(str_bytes, hashcode=hashcode)
+            enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
             self._hash_to_enum_string[hashcode] = enum_str
         self._dynamic_id_to_enum_str_list.append(enum_str)
         return enum_str

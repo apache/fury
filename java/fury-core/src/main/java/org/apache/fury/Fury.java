@@ -46,8 +46,8 @@ import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.resolver.EnumStringResolver;
 import org.apache.fury.resolver.MapRefResolver;
+import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.resolver.NoRefResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.resolver.SerializationContext;
@@ -101,7 +101,7 @@ public final class Fury implements BaseFury {
   private final boolean refTracking;
   private final RefResolver refResolver;
   private final ClassResolver classResolver;
-  private final EnumStringResolver enumStringResolver;
+  private final MetaStringResolver metaStringResolver;
   private final SerializationContext serializationContext;
   private final ClassLoader classLoader;
   private final JITContext jitContext;
@@ -132,7 +132,7 @@ public final class Fury implements BaseFury {
       this.refResolver = new NoRefResolver();
     }
     jitContext = new JITContext(this);
-    enumStringResolver = new EnumStringResolver();
+    metaStringResolver = new MetaStringResolver();
     classResolver = new ClassResolver(this);
     classResolver.initialize();
     serializationContext = new SerializationContext();
@@ -325,7 +325,7 @@ public final class Fury implements BaseFury {
     refResolver.resetWrite();
     // fury write opaque object classname which cause later write of classname only write an id.
     classResolver.resetWrite();
-    enumStringResolver.resetWrite();
+    metaStringResolver.resetWrite();
     for (Object nativeObject : nativeObjects) {
       writeRef(buffer, nativeObject);
     }
@@ -807,7 +807,7 @@ public final class Fury implements BaseFury {
       buffer.readerIndex(readerIndex);
       refResolver.resetRead();
       classResolver.resetRead();
-      enumStringResolver.resetRead();
+      metaStringResolver.resetRead();
     }
     obj = xreadRef(buffer);
     buffer.readerIndex(endReaderIndex);
@@ -1241,7 +1241,7 @@ public final class Fury implements BaseFury {
   public void reset() {
     refResolver.reset();
     classResolver.reset();
-    enumStringResolver.reset();
+    metaStringResolver.reset();
     serializationContext.reset();
     nativeObjects.clear();
     peerOutOfBandEnabled = false;
@@ -1252,7 +1252,7 @@ public final class Fury implements BaseFury {
   public void resetWrite() {
     refResolver.resetWrite();
     classResolver.resetWrite();
-    enumStringResolver.resetWrite();
+    metaStringResolver.resetWrite();
     serializationContext.reset();
     nativeObjects.clear();
     bufferCallback = null;
@@ -1262,7 +1262,7 @@ public final class Fury implements BaseFury {
   public void resetRead() {
     refResolver.resetRead();
     classResolver.resetRead();
-    enumStringResolver.resetRead();
+    metaStringResolver.resetRead();
     serializationContext.reset();
     nativeObjects.clear();
     peerOutOfBandEnabled = false;
@@ -1305,8 +1305,8 @@ public final class Fury implements BaseFury {
     return classResolver;
   }
 
-  public EnumStringResolver getEnumStringResolver() {
-    return enumStringResolver;
+  public MetaStringResolver getMetaStringResolver() {
+    return metaStringResolver;
   }
 
   public SerializationContext getSerializationContext() {

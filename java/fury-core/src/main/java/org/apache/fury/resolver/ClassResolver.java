@@ -210,14 +210,14 @@ public class ClassResolver {
   private final IdentityMap<Class<?>, ClassInfo> classInfoMap =
       new IdentityMap<>(estimatedNumRegistered, furyMapLoadFactor);
   private ClassInfo classInfoCache;
-  private final ObjectMap<EnumStringBytes, Class<?>> classNameBytes2Class =
+  private final ObjectMap<MetaStringBytes, Class<?>> classNameBytes2Class =
       new ObjectMap<>(16, furyMapLoadFactor);
   // Every deserialization for unregistered class will query it, performance is important.
   private final ObjectMap<ClassNameBytes, Class<?>> compositeClassNameBytes2Class =
       new ObjectMap<>(16, furyMapLoadFactor);
   private final HashMap<Short, Class<?>> typeIdToClassXLangMap = new HashMap<>(8, loadFactor);
   private final HashMap<String, Class<?>> typeTagToClassXLangMap = new HashMap<>(8, loadFactor);
-  private final EnumStringResolver enumStringResolver;
+  private final MetaStringResolver metaStringResolver;
   private final boolean metaContextShareEnabled;
   private final Map<Class<?>, ClassDef> classDefMap = new HashMap<>();
   private Class<?> currentReadClass;
@@ -249,7 +249,7 @@ public class ClassResolver {
 
   public ClassResolver(Fury fury) {
     this.fury = fury;
-    enumStringResolver = fury.getEnumStringResolver();
+    metaStringResolver = fury.getMetaStringResolver();
     classInfoCache = NIL_CLASS_INFO;
     metaContextShareEnabled = fury.getConfig().shareMetaContext();
     extRegistry = new ExtRegistry();
@@ -1235,9 +1235,9 @@ public class ClassResolver {
       } else {
         // if it's null, it's a bug.
         assert classInfo.packageNameBytes != null;
-        enumStringResolver.writeEnumStringBytes(buffer, classInfo.packageNameBytes);
+        metaStringResolver.writeMetaStringBytes(buffer, classInfo.packageNameBytes);
         assert classInfo.classNameBytes != null;
-        enumStringResolver.writeEnumStringBytes(buffer, classInfo.classNameBytes);
+        metaStringResolver.writeMetaStringBytes(buffer, classInfo.classNameBytes);
       }
     } else {
       // use classId
@@ -1434,14 +1434,14 @@ public class ClassResolver {
       writeUnregistered.add(
           new Invoke(
               classResolverRef,
-              "writeEnumStringBytes",
+              "writeMetaStringBytes",
               buffer,
-              inlineInvoke(classInfo, "getPackageNameBytes", TypeToken.of(EnumStringBytes.class))),
+              inlineInvoke(classInfo, "getPackageNameBytes", TypeToken.of(MetaStringBytes.class))),
           new Invoke(
               classResolverRef,
-              "writeEnumStringBytes",
+              "writeMetaStringBytes",
               buffer,
-              inlineInvoke(classInfo, "getClassNameBytes", TypeToken.of(EnumStringBytes.class))));
+              inlineInvoke(classInfo, "getClassNameBytes", TypeToken.of(MetaStringBytes.class))));
     }
     return new Expression.If(
         eq(classId, Literal.ofShort(NO_CLASS_ID)),
@@ -1461,8 +1461,8 @@ public class ClassResolver {
   }
 
   // Invoked by Fury JIT.
-  public void writeEnumStringBytes(MemoryBuffer buffer, EnumStringBytes byteString) {
-    enumStringResolver.writeEnumStringBytes(buffer, byteString);
+  public void writeMetaStringBytes(MemoryBuffer buffer, MetaStringBytes byteString) {
+    metaStringResolver.writeMetaStringBytes(buffer, byteString);
   }
 
   // Note: Thread safe fot jit thread to call.
@@ -1505,8 +1505,8 @@ public class ClassResolver {
       if (metaContextShareEnabled) {
         return readClassWithMetaShare(buffer);
       }
-      EnumStringBytes packageBytes = enumStringResolver.readEnumStringBytes(buffer);
-      EnumStringBytes simpleClassNameBytes = enumStringResolver.readEnumStringBytes(buffer);
+      MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytes(buffer);
+      MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
       final Class<?> cls = loadBytesToClass(packageBytes, simpleClassNameBytes);
       currentReadClass = cls;
       return cls;
@@ -1596,14 +1596,14 @@ public class ClassResolver {
   }
 
   private ClassInfo readClassInfoFromBytes(MemoryBuffer buffer, ClassInfo classInfoCache) {
-    EnumStringBytes simpleClassNameBytesCache = classInfoCache.classNameBytes;
+    MetaStringBytes simpleClassNameBytesCache = classInfoCache.classNameBytes;
     if (simpleClassNameBytesCache != null) {
-      EnumStringBytes packageNameBytesCache = classInfoCache.packageNameBytes;
-      EnumStringBytes packageBytes =
-          enumStringResolver.readEnumStringBytes(buffer, packageNameBytesCache);
+      MetaStringBytes packageNameBytesCache = classInfoCache.packageNameBytes;
+      MetaStringBytes packageBytes =
+          metaStringResolver.readMetaStringBytes(buffer, packageNameBytesCache);
       assert packageNameBytesCache != null;
-      EnumStringBytes simpleClassNameBytes =
-          enumStringResolver.readEnumStringBytes(buffer, simpleClassNameBytesCache);
+      MetaStringBytes simpleClassNameBytes =
+          metaStringResolver.readMetaStringBytes(buffer, simpleClassNameBytesCache);
       if (simpleClassNameBytesCache.hashCode == simpleClassNameBytes.hashCode
           && packageNameBytesCache.hashCode == packageBytes.hashCode) {
         return classInfoCache;
@@ -1612,15 +1612,15 @@ public class ClassResolver {
         return getClassInfo(cls);
       }
     } else {
-      EnumStringBytes packageBytes = enumStringResolver.readEnumStringBytes(buffer);
-      EnumStringBytes simpleClassNameBytes = enumStringResolver.readEnumStringBytes(buffer);
+      MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytes(buffer);
+      MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
       Class<?> cls = loadBytesToClass(packageBytes, simpleClassNameBytes);
       return getClassInfo(cls);
     }
   }
 
   private Class<?> loadBytesToClass(
-      EnumStringBytes packageBytes, EnumStringBytes simpleClassNameBytes) {
+      MetaStringBytes packageBytes, MetaStringBytes simpleClassNameBytes) {
     ClassNameBytes classNameBytes =
         new ClassNameBytes(packageBytes.hashCode, simpleClassNameBytes.hashCode);
     Class<?> cls = compositeClassNameBytes2Class.get(classNameBytes);
@@ -1640,15 +1640,15 @@ public class ClassResolver {
   }
 
   public void xwriteClass(MemoryBuffer buffer, Class<?> cls) {
-    enumStringResolver.writeEnumStringBytes(buffer, getOrUpdateClassInfo(cls).fullClassNameBytes);
+    metaStringResolver.writeMetaStringBytes(buffer, getOrUpdateClassInfo(cls).fullClassNameBytes);
   }
 
   public void xwriteTypeTag(MemoryBuffer buffer, Class<?> cls) {
-    enumStringResolver.writeEnumStringBytes(buffer, getOrUpdateClassInfo(cls).typeTagBytes);
+    metaStringResolver.writeMetaStringBytes(buffer, getOrUpdateClassInfo(cls).typeTagBytes);
   }
 
   public Class<?> xreadClass(MemoryBuffer buffer) {
-    EnumStringBytes byteString = enumStringResolver.readEnumStringBytes(buffer);
+    MetaStringBytes byteString = metaStringResolver.readMetaStringBytes(buffer);
     Class<?> cls = classNameBytes2Class.get(byteString);
     if (cls == null) {
       Preconditions.checkNotNull(byteString);
@@ -1661,7 +1661,7 @@ public class ClassResolver {
   }
 
   public String xreadClassName(MemoryBuffer buffer) {
-    return enumStringResolver.readEnumString(buffer);
+    return metaStringResolver.readMetaString(buffer);
   }
 
   public Class<?> getCurrentReadClass() {
@@ -1704,7 +1704,7 @@ public class ClassResolver {
   }
 
   public Class<?> readClassByTypeTag(MemoryBuffer buffer) {
-    String tag = enumStringResolver.readEnumString(buffer);
+    String tag = metaStringResolver.readMetaString(buffer);
     return typeTagToClassXLangMap.get(tag);
   }
 
@@ -1777,8 +1777,8 @@ public class ClassResolver {
     return classId >= PRIMITIVE_VOID_CLASS_ID && classId <= PRIMITIVE_DOUBLE_CLASS_ID;
   }
 
-  public EnumStringResolver getEnumStringResolver() {
-    return enumStringResolver;
+  public MetaStringResolver getMetaStringResolver() {
+    return metaStringResolver;
   }
 
   public CodeGenerator getCodeGenerator(ClassLoader... loaders) {
