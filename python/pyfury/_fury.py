@@ -506,19 +506,18 @@ class ClassResolver:
             enum_string_bytes.dynamic_write_string_id = dynamic_write_string_id
             self._dynamic_write_string_id += 1
             self._dynamic_written_enum_string.append(enum_string_bytes)
-            buffer.write_int8(USE_CLASSNAME)
+            buffer.write_varint32(enum_string_bytes.length << 1)
             buffer.write_int64(enum_string_bytes.hashcode)
-            buffer.write_int16(enum_string_bytes.length)
             buffer.write_bytes(enum_string_bytes.data)
         else:
-            buffer.write_int8(USE_CLASS_ID)
-            buffer.write_int16(dynamic_write_string_id)
+            buffer.write_varint32(((dynamic_write_string_id + 1) << 1) | 1)
 
     def read_enum_string_bytes(self, buffer: Buffer) -> MetaStringBytes:
-        if buffer.read_int8() != USE_CLASSNAME:
-            return self._dynamic_id_to_enum_str_list[buffer.read_int16()]
+        header = buffer.read_varint32()
+        length = header >> 1
+        if header & 0b1 != 0:
+            return self._dynamic_id_to_enum_str_list[length - 1]
         hashcode = buffer.read_int64()
-        length = buffer.read_int16()
         reader_index = buffer.reader_index
         buffer.check_bound(reader_index, length)
         buffer.reader_index = reader_index + length

@@ -661,20 +661,18 @@ cdef class ClassResolver:
             enum_string_bytes.dynamic_write_string_id = dynamic_class_id
             self.dynamic_write_string_id += 1
             self._c_dynamic_written_enum_string.push_back(<PyObject*>enum_string_bytes)
-            buffer.write_int8(USE_CLASSNAME)
+            buffer.write_varint32(enum_string_bytes.length << 1)
             buffer.write_int64(enum_string_bytes.hashcode)
-            buffer.write_int16(enum_string_bytes.length)
             buffer.write_bytes(enum_string_bytes.data)
         else:
-            buffer.write_int8(USE_CLASS_ID)
-            buffer.write_int16(dynamic_class_id)
+            buffer.write_varint32(((dynamic_class_id + 1) << 1) | 1)
 
     cdef inline MetaStringBytes _read_enum_string_bytes(self, Buffer buffer):
-        if buffer.read_int8() != USE_CLASSNAME:
-            return <MetaStringBytes>self._c_dynamic_id_to_enum_string_vec[
-                buffer.read_int16()]
+        cdef int32_t header = buffer.read_varint32()
+        cdef int32_t length = header >> 1
+        if header & 0b1 != 0:
+            return <MetaStringBytes>self._c_dynamic_id_to_enum_string_vec[length - 1]
         cdef int64_t hashcode = buffer.read_int64()
-        cdef int16_t length = buffer.read_int16()
         cdef int32_t reader_index = buffer.reader_index
         buffer.check_bound(reader_index, length)
         buffer.reader_index = reader_index + length
