@@ -191,11 +191,11 @@ public class MetaStringEncoder {
   }
 
   public byte[] encodeLowerSpecial(String input) {
-    return encodeGeneric(input, 5, true);
+    return encodeGeneric(input, 5);
   }
 
   public byte[] encodeLowerUpperDigitSpecial(String input) {
-    return encodeGeneric(input, 6, false);
+    return encodeGeneric(input, 6);
   }
 
   public byte[] encodeFirstToLowerSpecial(String input) {
@@ -204,7 +204,7 @@ public class MetaStringEncoder {
 
   public byte[] encodeFirstToLowerSpecial(char[] chars) {
     chars[0] = Character.toLowerCase(chars[0]);
-    return encodeGeneric(chars, 5, false);
+    return encodeGeneric(chars, 5);
   }
 
   public byte[] encodeAllToLowerSpecial(char[] chars, int upperCount) {
@@ -218,21 +218,21 @@ public class MetaStringEncoder {
         newChars[newIdx++] = c;
       }
     }
-    return encodeGeneric(newChars, 5, true);
+    return encodeGeneric(newChars, 5);
   }
 
-  private byte[] encodeGeneric(String input, int bitsPerChar, boolean lowerSpecial) {
-    return encodeGeneric(input.toCharArray(), bitsPerChar, lowerSpecial);
+  private byte[] encodeGeneric(String input, int bitsPerChar) {
+    return encodeGeneric(input.toCharArray(), bitsPerChar);
   }
 
-  private byte[] encodeGeneric(char[] chars, int bitsPerChar, boolean lowerSpecial) {
+  private byte[] encodeGeneric(char[] chars, int bitsPerChar) {
     int totalBits = chars.length * bitsPerChar;
     int byteLength = (totalBits + 7) / 8; // Calculate number of needed bytes
     byte[] bytes = new byte[byteLength];
     int currentBit = 0;
     for (char c : chars) {
       int value =
-          (lowerSpecial) ? charToValueLowerSpecial(c) : charToValueLowerUpperDigitSpecial(c);
+          (bitsPerChar == 5) ? charToValueLowerSpecial(c) : charToValueLowerUpperDigitSpecial(c);
       // Encode the value in bitsPerChar bits
       for (int i = bitsPerChar - 1; i >= 0; i--) {
         if ((value & (1 << i)) != 0) {
