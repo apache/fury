@@ -138,7 +138,7 @@ public class MetaStringEncoder {
       if (c >= 'a' && c <= 'z') {
         continue;
       }
-      if (c == specialChar1 || c == specialChar2 || c == '|') {
+      if (c == '.' || c == '_' || c == '$' || c == '|') {
         continue;
       }
       // Character outside of LOWER_SPECIAL set

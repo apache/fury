@@ -24,6 +24,10 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertTrue;
+
 public class MetaStringTest {
 
   @Test
@@ -31,10 +35,14 @@ public class MetaStringTest {
     // special chars not matter for encodeLowerSpecial
     MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
     byte[] encoded = encoder.encodeLowerSpecial("abc_def");
-    Assert.assertEquals(encoded.length, 5);
+    assertEquals(encoded.length, 5);
+    // utf8 use 30 bytes, we use only 19 bytes
+    assertEquals(encoder.encode("org.apache.fury.benchmark.data").getBytes().length, 19);
+    // utf8 use 12 bytes, we use only 9 bytes.
+    assertEquals(encoder.encode("MediaContent").getBytes().length, 9);
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
     String decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_SPECIAL, 7 * 5);
-    Assert.assertEquals(decoded, "abc_def");
+    assertEquals(decoded, "abc_def");
     for (int i = 0; i < 128; i++) {
       StringBuilder builder = new StringBuilder();
       for (int j = 0; j < i; j++) {
@@ -43,7 +51,7 @@ public class MetaStringTest {
       String str = builder.toString();
       encoded = encoder.encodeLowerSpecial(str);
       decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_SPECIAL, i * 5);
-      Assert.assertEquals(decoded, str);
+      assertEquals(decoded, str);
     }
   }
 
@@ -53,16 +61,16 @@ public class MetaStringTest {
     char specialChar2 = '_';
     MetaStringEncoder encoder = new MetaStringEncoder(specialChar1, specialChar2);
     byte[] encoded = encoder.encodeLowerUpperDigitSpecial("ExampleInput123");
-    Assert.assertEquals(encoded.length, 12);
+    assertEquals(encoded.length, 12);
     MetaStringDecoder decoder = new MetaStringDecoder(specialChar1, specialChar2);
     String decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL, 15 * 6);
-    Assert.assertEquals(decoded, "ExampleInput123");
+    assertEquals(decoded, "ExampleInput123");
 
     for (int i = 1; i < 128; i++) {
       String str = createString(i, specialChar1, specialChar2);
       encoded = encoder.encodeLowerUpperDigitSpecial(str);
       decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL, i * 6);
-      Assert.assertEquals(decoded, str, "Failed at " + i);
+      assertEquals(decoded, str, "Failed at " + i);
     }
   }
 
@@ -100,14 +108,15 @@ public class MetaStringTest {
       try {
         String str = createString(i, specialChar1, specialChar2);
         MetaString metaString = encoder.encode(str);
-        Assert.assertEquals(metaString.getString(), str);
-        Assert.assertEquals(metaString.getSpecialChar1(), specialChar1);
-        Assert.assertEquals(metaString.getSpecialChar2(), specialChar2);
+        assertNotSame(metaString.getEncoding(), MetaString.Encoding.UTF_8);
+        assertEquals(metaString.getString(), str);
+        assertEquals(metaString.getSpecialChar1(), specialChar1);
+        assertEquals(metaString.getSpecialChar2(), specialChar2);
         MetaStringDecoder decoder = new MetaStringDecoder(specialChar1, specialChar2);
         String newStr =
             decoder.decode(
                 metaString.getBytes(), metaString.getEncoding(), metaString.getNumBits());
-        Assert.assertEquals(newStr, str);
+        assertEquals(newStr, str);
       } catch (Throwable e) {
         throw new RuntimeException("Failed at " + i, e);
       }
@@ -129,11 +138,11 @@ public class MetaStringTest {
   public void testEncodeEmptyString(MetaString.Encoding encoding) {
     MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
     MetaString metaString = encoder.encode("", encoding);
-    Assert.assertEquals(metaString.getBytes().length, 0);
+    assertEquals(metaString.getBytes().length, 0);
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
     String decoded =
         decoder.decode(metaString.getBytes(), metaString.getEncoding(), metaString.getNumBits());
-    Assert.assertEquals(decoded, "");
+    assertEquals(decoded, "");
   }
 
   @Test
@@ -141,7 +150,7 @@ public class MetaStringTest {
     String testString = "abcdefABCDEF1234!@#"; // Contains characters outside LOWER_SPECIAL
     MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
     MetaString encodedMetaString = encoder.encode(testString);
-
+    assertNotSame(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
     Assert.assertNotEquals(encodedMetaString.getEncoding(), MetaString.Encoding.LOWER_SPECIAL);
   }
 
@@ -150,7 +159,7 @@ public class MetaStringTest {
     String testString = "ABC_DEF";
     MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
     MetaString encodedMetaString = encoder.encode(testString);
-    Assert.assertEquals(
+    assertEquals(
         encodedMetaString.getEncoding(), MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL);
 
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
@@ -159,7 +168,7 @@ public class MetaStringTest {
             encodedMetaString.getBytes(),
             encodedMetaString.getEncoding(),
             encodedMetaString.getNumBits());
-    Assert.assertEquals(decodedString, testString);
+    assertEquals(decodedString, testString);
   }
 
   @Test
@@ -167,7 +176,7 @@ public class MetaStringTest {
     String testString = "Aabcdef";
     MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
     MetaString encodedMetaString = encoder.encode(testString);
-    Assert.assertEquals(
+    assertEquals(
         encodedMetaString.getEncoding(), MetaString.Encoding.FIRST_TO_LOWER_SPECIAL);
 
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
@@ -176,7 +185,7 @@ public class MetaStringTest {
             encodedMetaString.getBytes(),
             encodedMetaString.getEncoding(),
             encodedMetaString.getNumBits());
-    Assert.assertEquals(decodedString, testString);
+    assertEquals(decodedString, testString);
   }
 
   @Test
@@ -184,7 +193,7 @@ public class MetaStringTest {
     String testString = "你好，世界"; // Non-Latin characters
     MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
     MetaString encodedMetaString = encoder.encode(testString);
-    Assert.assertEquals(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
+    assertEquals(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
 
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
     String decodedString =
@@ -192,6 +201,6 @@ public class MetaStringTest {
             encodedMetaString.getBytes(),
             encodedMetaString.getEncoding(),
             encodedMetaString.getNumBits());
-    Assert.assertEquals(decodedString, testString);
+    assertEquals(decodedString, testString);
   }
 }
