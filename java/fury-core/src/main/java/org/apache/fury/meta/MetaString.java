@@ -26,8 +26,8 @@ public class MetaString {
   public enum Encoding {
     LOWER_SPECIAL(0x00),
     LOWER_UPPER_DIGIT_SPECIAL(0x01),
-    REP_FIRST_TO_LOWER_SPECIAL(0x02),
-    REP_ALL_TO_LOWER_SPECIAL(0x03),
+    FIRST_TO_LOWER_SPECIAL(0x02),
+    ALL_TO_LOWER_SPECIAL(0x03),
     UTF_8(0x04); // Using UTF-8 as the fallback
 
     private final int value;

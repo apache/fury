@@ -46,13 +46,13 @@ public class MetaStringEncoder {
         return new MetaString(encoding, encodeLowerSpecial(input), length * 5);
       case LOWER_UPPER_DIGIT_SPECIAL:
         return new MetaString(encoding, encodeLowerUpperDigitSpecial(input), length * 6);
-      case REP_FIRST_TO_LOWER_SPECIAL:
-        return new MetaString(encoding, encodeRepFirstToLowerSpecial(input), length * 5);
-      case REP_ALL_TO_LOWER_SPECIAL:
+      case FIRST_TO_LOWER_SPECIAL:
+        return new MetaString(encoding, encodeFirstToLowerSpecial(input), length * 5);
+      case ALL_TO_LOWER_SPECIAL:
         char[] chars = input.toCharArray();
         int upperCount = countUppers(chars);
         return new MetaString(
-            encoding, encodeRepAllToLowerSpecial(chars, upperCount), (upperCount + length) * 5);
+            encoding, encodeAllToLowerSpecial(chars, upperCount), (upperCount + length) * 5);
       default:
         byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
         return new MetaString(Encoding.UTF_8, bytes, bytes.length * 8);
@@ -72,10 +72,10 @@ public class MetaStringEncoder {
       } else {
         int upperCount = countUppers(chars);
         if (upperCount == 1 && Character.isUpperCase(chars[0])) {
-          return Encoding.REP_FIRST_TO_LOWER_SPECIAL;
+          return Encoding.FIRST_TO_LOWER_SPECIAL;
         }
         if ((chars.length + upperCount) * 5 < (chars.length * 6)) {
-          return Encoding.REP_ALL_TO_LOWER_SPECIAL;
+          return Encoding.ALL_TO_LOWER_SPECIAL;
         } else {
           return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
         }
@@ -154,20 +154,20 @@ public class MetaStringEncoder {
     return encodeGeneric(input, 6, false);
   }
 
-  public byte[] encodeRepFirstToLowerSpecial(String input) {
-    return encodeRepFirstToLowerSpecial(input.toCharArray());
+  public byte[] encodeFirstToLowerSpecial(String input) {
+    return encodeFirstToLowerSpecial(input.toCharArray());
   }
 
-  public byte[] encodeRepFirstToLowerSpecial(char[] chars) {
+  public byte[] encodeFirstToLowerSpecial(char[] chars) {
     chars[0] = Character.toLowerCase(chars[0]);
     return encodeGeneric(chars, 6, false);
   }
 
-  public byte[] encodeRepAllToLowerSpecial(char[] chars) {
-    return encodeRepAllToLowerSpecial(chars, countUppers(chars));
+  public byte[] encodeAllToLowerSpecial(char[] chars) {
+    return encodeAllToLowerSpecial(chars, countUppers(chars));
   }
 
-  public byte[] encodeRepAllToLowerSpecial(char[] chars, int upperCount) {
+  public byte[] encodeAllToLowerSpecial(char[] chars, int upperCount) {
     char[] newChars = new char[chars.length + upperCount];
     int newIdx = 0;
     for (char c : chars) {

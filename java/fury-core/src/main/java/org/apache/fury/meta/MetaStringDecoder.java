@@ -51,9 +51,9 @@ public class MetaStringDecoder {
         return decodeLowerSpecial(encodedData, false, numBits);
       case LOWER_UPPER_DIGIT_SPECIAL:
         return decodeLowerUpperDigitSpecial(encodedData, false, numBits);
-      case REP_FIRST_TO_LOWER_SPECIAL:
+      case FIRST_TO_LOWER_SPECIAL:
         return decodeRepFirstLowerSpecial(encodedData, numBits);
-      case REP_ALL_TO_LOWER_SPECIAL:
+      case ALL_TO_LOWER_SPECIAL:
         return decodeRepAllToLowerSpecial(encodedData, numBits);
       case UTF_8:
         return new String(encodedData, StandardCharsets.UTF_8);
