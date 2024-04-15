@@ -48,8 +48,6 @@ from pyfury._serializer import (
     PYBOOL_CLASS_ID,
     STRING_CLASS_ID,
     PICKLE_CLASS_ID,
-    USE_CLASSNAME,
-    USE_CLASS_ID,
     NOT_NULL_STRING_FLAG,
     NOT_NULL_PYINT_FLAG,
     NOT_NULL_PYBOOL_FLAG,
@@ -747,15 +745,15 @@ class Fury:
     def serialize_ref(self, buffer, obj, classinfo=None):
         cls = type(obj)
         if cls is str:
-            buffer.write_int24(NOT_NULL_STRING_FLAG)
+            buffer.write_int16(NOT_NULL_STRING_FLAG)
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+            buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
             buffer.write_bool(obj)
             return
         if self.ref_resolver.write_ref_or_null(buffer, obj):

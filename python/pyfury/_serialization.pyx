@@ -223,15 +223,15 @@ cdef int8_t STRING_CLASS_ID = 4
 cdef int8_t PICKLE_CLASS_ID = 5
 cdef int8_t PICKLE_STRONG_CACHE_CLASS_ID = 6
 cdef int8_t PICKLE_CACHE_CLASS_ID = 7
-# `NOT_NULL_VALUE_FLAG` + `CLASS_ID` in little-endian order
+# `NOT_NULL_VALUE_FLAG` + `CLASS_ID<<1` in little-endian order
 cdef int32_t NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
-                                   (PYINT_CLASS_ID << 8)
+                                   (PYINT_CLASS_ID << 9)
 cdef int32_t NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
-                                     (PYFLOAT_CLASS_ID << 8)
+                                     (PYFLOAT_CLASS_ID << 9)
 cdef int32_t NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
-                                    (PYBOOL_CLASS_ID << 8)
+                                    (PYBOOL_CLASS_ID << 9)
 cdef int32_t NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
-                                    (STRING_CLASS_ID << 8)
+                                    (STRING_CLASS_ID << 9)
 
 
 cdef class BufferObject:
@@ -947,19 +947,19 @@ cdef class Fury:
             self, Buffer buffer, obj, ClassInfo classinfo=None):
         cls = type(obj)
         if cls is str:
-            buffer.write_int24(NOT_NULL_STRING_FLAG)
+            buffer.write_int16(NOT_NULL_STRING_FLAG)
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+            buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
             buffer.write_bool(obj)
             return
         elif cls is float:
-            buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+            buffer.write_int16(NOT_NULL_PYFLOAT_FLAG)
             buffer.write_double(obj)
             return
         if self.ref_resolver.write_ref_or_null(buffer, obj):
@@ -1606,16 +1606,16 @@ cdef class CollectionSerializer(Serializer):
         for s in value:
             cls = type(s)
             if cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int8(NOT_NULL_STRING_FLAG)
                 buffer.write_string(s)
             elif cls is int:
-                buffer.write_int24(NOT_NULL_PYINT_FLAG)
+                buffer.write_int8(NOT_NULL_PYINT_FLAG)
                 buffer.write_varint64(s)
             elif cls is bool:
-                buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_int8(NOT_NULL_PYBOOL_FLAG)
                 buffer.write_bool(s)
             elif cls is float:
-                buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+                buffer.write_int8(NOT_NULL_PYFLOAT_FLAG)
                 buffer.write_double(s)
             else:
                 if not ref_resolver.write_ref_or_null(buffer, s):
@@ -1793,7 +1793,7 @@ cdef class MapSerializer(Serializer):
         for k, v in value.items():
             key_cls = type(k)
             if key_cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int8(NOT_NULL_STRING_FLAG)
                 buffer.write_string(k)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, k):
@@ -1802,16 +1802,16 @@ cdef class MapSerializer(Serializer):
                     key_classinfo.serializer.write(buffer, k)
             value_cls = type(v)
             if value_cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int8(NOT_NULL_STRING_FLAG)
                 buffer.write_string(v)
             elif value_cls is int:
-                buffer.write_int24(NOT_NULL_PYINT_FLAG)
+                buffer.write_int8(NOT_NULL_PYINT_FLAG)
                 buffer.write_varint64(v)
             elif value_cls is bool:
-                buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
                 buffer.write_bool(v)
             elif value_cls is float:
-                buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+                buffer.write_int16(NOT_NULL_PYFLOAT_FLAG)
                 buffer.write_double(v)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, v):
@@ -1907,7 +1907,7 @@ cdef class SubMapSerializer(Serializer):
         for k, v in value.items():
             key_cls = type(k)
             if key_cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(k)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, k):
@@ -1916,16 +1916,16 @@ cdef class SubMapSerializer(Serializer):
                     key_classinfo.serializer.write(buffer, k)
             value_cls = type(v)
             if value_cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(v)
             elif value_cls is int:
-                buffer.write_int24(NOT_NULL_PYINT_FLAG)
+                buffer.write_int16(NOT_NULL_PYINT_FLAG)
                 buffer.write_varint64(v)
             elif value_cls is bool:
-                buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
                 buffer.write_bool(v)
             elif value_cls is float:
-                buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+                buffer.write_int16(NOT_NULL_PYFLOAT_FLAG)
                 buffer.write_double(v)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, v):
@@ -2214,7 +2214,7 @@ cdef class SliceSerializer(Serializer):
         start, stop, step = value.start, value.stop, value.step
         if type(start) is int:
             # TODO support varint128
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(start)
         else:
             if start is None:
@@ -2224,7 +2224,7 @@ cdef class SliceSerializer(Serializer):
                 self.fury.serialize_nonref(buffer, start)
         if type(stop) is int:
             # TODO support varint128
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(stop)
         else:
             if stop is None:
@@ -2234,7 +2234,7 @@ cdef class SliceSerializer(Serializer):
                 self.fury.serialize_nonref(buffer, stop)
         if type(step) is int:
             # TODO support varint128
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(step)
         else:
             if step is None:
