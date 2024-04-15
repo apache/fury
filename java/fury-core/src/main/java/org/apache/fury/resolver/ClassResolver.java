@@ -1620,7 +1620,7 @@ public class ClassResolver {
   }
 
   private Class<?> loadBytesToClass(
-    MetaStringBytes packageBytes, MetaStringBytes simpleClassNameBytes) {
+      MetaStringBytes packageBytes, MetaStringBytes simpleClassNameBytes) {
     ClassNameBytes classNameBytes =
         new ClassNameBytes(packageBytes.hashCode, simpleClassNameBytes.hashCode);
     Class<?> cls = compositeClassNameBytes2Class.get(classNameBytes);
