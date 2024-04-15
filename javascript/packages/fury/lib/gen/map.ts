@@ -25,7 +25,7 @@ import { InternalSerializerType, RefFlags, Serializer } from "../type";
 import { Scope } from "./scope";
 import Fury from "../fury";
 
-export const CollectionFlags = {
+const MapFlags = {
   /** Whether track elements ref. */
   TRACKING_REF: 0b1,
 
@@ -36,128 +36,102 @@ export const CollectionFlags = {
   NOT_DECL_ELEMENT_TYPE: 0b100,
 
   /** Whether collection elements type different. */
-  NOT_SAME_TYPE: 0b1000,
+  NOT_SAME_TYPE: 0b1000
 };
 
-interface ValueFlagInfo {
-  needToWriteRef: boolean
-  isNull: boolean
-  typeId: number
-}
-
-
 class MapChunkWriter {
-  private preKeyTypeId: number | null = null;
-  private preKeyHeader: number | null = null;
-  private preValueTypeId: number | null = null;
-  private preValueHeader: number | null = null;
+  private kFlag: number = 0;
+  private vFlag: number = 0;
+
   private chunkSize: number = 0;
   private chunkOffset: number = 0;
+  private header = 0;
 
   constructor(private fury: Fury) {
 
   }
 
-  private getHead(flagInfo: ValueFlagInfo) {
-    const { needToWriteRef, isNull } = flagInfo;
-
+  private getHead(keyFlag: number, valueFlag: number) {
     let flag = 0;
-
-    if (isNull) {
-      flag |= CollectionFlags.HAS_NULL;
+    if (keyFlag & 0b10) {
+      flag |= MapFlags.HAS_NULL;
     }
-    if (needToWriteRef) {
-      flag |= CollectionFlags.TRACKING_REF;
+    if (keyFlag & 0b01) {
+      flag |= MapFlags.TRACKING_REF;
+    }
+    flag <<= 4;
+    if (valueFlag & 0b10) {
+      flag |= MapFlags.HAS_NULL;
+    }
+    if (valueFlag & 0b01) {
+      flag |= MapFlags.TRACKING_REF;
     }
     return flag;
   }
 
-  private writeHead(keyHeader: number, valueHeader: number) {
-    this.endChunk();
-    this.chunkOffset = this.fury.binaryWriter.getCursor();
-    // chunkSize, max 255
-    this.fury.binaryWriter.uint8(0);
+  private writeHead(kFlag: number, vFlag: number) {
     // KV header
-    this.fury.binaryWriter.uint8((keyHeader << 4) | valueHeader);
-    return {
-      keyHeader,
-      valueHeader
-    };
+    const header = this.getHead(kFlag, vFlag);
+    this.fury.binaryWriter.uint8(header);
+    // chunkSize, max 255
+    this.chunkOffset = this.fury.binaryWriter.getCursor();
+    this.fury.binaryWriter.uint8(0);
+    this.fury.binaryWriter.uint32((kFlag & 0xFFFF0000 )| (vFlag >> 16));
+    return header;
   }
 
-  tryWriteHead(keyFlag: ValueFlagInfo, valueFlag: ValueFlagInfo) {
-    let shouldNewChunk = false;
-    let keyHeader = this.preKeyHeader;
-    let valueHeader = this.preValueHeader;
-    
+  makeFlag(typeId: number, isNull: 0 | 1, trackRef: 0 | 1) {
+    return typeId << 16 | isNull << 1 | trackRef
+  }
+
+  next(kFlag: number, vFlag: number) {
     // max size of chunk is 255
-    if (this.chunkSize == 255) {
-      shouldNewChunk = true;
-      keyHeader = this.getHead(keyFlag);
-      valueHeader = this.getHead(valueFlag);
-    }
-
-    if (
-      this.preKeyTypeId === null ||
-      this.preKeyTypeId !== keyFlag.typeId
+    if (this.chunkSize == 255 ||
+      this.chunkOffset == 0 ||
+      this.kFlag !== kFlag ||
+      this.vFlag !== vFlag
     ) {
-      shouldNewChunk = true;
-      keyHeader = this.getHead(keyFlag);
-    } else {
-      let currentHead = this.getHead(keyFlag);
-      if (currentHead !== this.preKeyHeader) {
-        shouldNewChunk = true;
-        keyHeader = currentHead;
-      }
-    }
-
-    if (
-      this.preValueTypeId === null ||
-      this.preValueTypeId !== valueFlag.typeId
-    ) {
-      shouldNewChunk = true;
-      valueHeader = this.getHead(valueFlag);
-    } else {
-      let currentHead = this.getHead(valueFlag);
-      if (currentHead !== this.preValueHeader) {
-        shouldNewChunk = true;
-        valueHeader = currentHead;
-      }
-    }
-
-    if (shouldNewChunk) {
+      // new chunk
       this.endChunk();
-      this.preKeyHeader = keyHeader;
-      this.preValueHeader = valueHeader;
-      return this.writeHead(keyHeader!, valueHeader!)
-    } else {
       this.chunkSize++;
-      return {
-        keyHeader: this.preKeyHeader!,
-        valueHeader: this.preValueHeader!,
-      };
+      this.kFlag = kFlag;
+      this.vFlag = vFlag;
+      return this.header = this.writeHead(kFlag, vFlag);
     }
+    this.chunkSize++;
+    return this.header;
   }
 
   endChunk() {
-    this.fury.binaryWriter.setUint8Position(this.chunkOffset, this.chunkSize);
-    this.chunkSize = 1;
+    if (this.chunkOffset > 0) {
+      this.fury.binaryWriter.setUint8Position(this.chunkOffset, this.chunkSize);
+      this.chunkSize = 0;
+    }
   }
 }
 
 
 class MapAnySerializer {
-  constructor(private fury: Fury) {
+  private keySerializer: Serializer | null = null;
+  private valueSerializer: Serializer | null = null;
+
+  constructor(private fury: Fury, keySerializerId: null | number, valueSerializerId: null | number) {
+    if (keySerializerId !== null) {
+      fury.classResolver.getSerializerById(keySerializerId);
+    }
+    if (valueSerializerId !== null) {
+      fury.classResolver.getSerializerById(valueSerializerId);
+    }
   }
 
-  private writeHead(v: any, header: number) {
+  private writeHead(header: number, v: any) {
     if (header !== 0) {
-      if (header & CollectionFlags.HAS_NULL) {
+      if (header & MapFlags.HAS_NULL) {
         if (v === null || v === undefined) {
           this.fury.binaryWriter.uint8(RefFlags.NullFlag);
         }
       }
-      if (header & CollectionFlags.TRACKING_REF) {
+      if (header & MapFlags.TRACKING_REF) {
         const keyRef = this.fury.referenceResolver.existsWriteObject(v);
         if (keyRef !== undefined) {
           this.fury.binaryWriter.uint8(RefFlags.RefFlag);
@@ -171,57 +145,81 @@ class MapAnySerializer {
     }
   }
 
-  write(value: Map<any, any>, size: number) {
+  write(value: Map<any, any>) {
     const mapChunkWriter = new MapChunkWriter(this.fury);
-    this.fury.binaryWriter.varUInt32(size);
+    this.fury.binaryWriter.varInt32(value.size);
     for (const [k, v] of value.entries()) {
-      const keySerializer = this.fury.classResolver.getSerializerByData(k);
-      const valueSerializer = this.fury.classResolver.getSerializerByData(v);
+      const keySerializer = this.keySerializer !== null ? this.keySerializer : this.fury.classResolver.getSerializerByData(k);
+      const valueSerializer = this.valueSerializer !== null ? this.valueSerializer : this.fury.classResolver.getSerializerByData(v);
 
-      const { keyHeader, valueHeader } = mapChunkWriter.tryWriteHead({
-        needToWriteRef: keySerializer!.meta.needToWriteRef,
-        isNull: k == null,
-        typeId: keySerializer!.meta.typeId
-      }, {
-        needToWriteRef: valueSerializer!.meta.needToWriteRef,
-        isNull: v == null,
-        typeId: valueSerializer!.meta.typeId
-      });
+      const header = mapChunkWriter.next(
+        mapChunkWriter.makeFlag(keySerializer!.meta.typeId!, k == null ? 1 : 0, keySerializer!.meta.needToWriteRef ? 1 : 0),
+        mapChunkWriter.makeFlag(valueSerializer!.meta.typeId!, v == null ? 1 : 0, valueSerializer!.meta.needToWriteRef ? 1 : 0)
+      );
 
-      this.writeHead(keyHeader, k);
-      keySerializer!.write(k);
-      this.writeHead(valueHeader, v);
-      valueSerializer!.write(v);
+      this.writeHead(header >> 4, k);
+      keySerializer!.writeInner(k);
+      this.writeHead(header & 0b00001111, v);
+      valueSerializer!.writeInner(v);
+    }
+    mapChunkWriter.endChunk();
+  }
+
+  private readElement(header: number, serializer: Serializer | null) {
+    if (header === 0) {
+      return serializer?.readInner(false);
+    }
+    const isSame = !(header & MapFlags.NOT_SAME_TYPE);
+    const includeNone = header & MapFlags.HAS_NULL;
+    const trackingRef = header & MapFlags.TRACKING_REF;
+
+    let flag = 0;
+    if (trackingRef || includeNone) {
+      flag = this.fury.binaryReader.uint8();
+    }
+    if (!isSame) {
+      serializer = this.fury.classResolver.getSerializerByType(this.fury.binaryReader.int16());
+    }
+    switch (flag) {
+      case RefFlags.RefValueFlag:
+        return serializer!.readInner(true);
+      case RefFlags.RefFlag:
+        return this.fury.referenceResolver.getReadObject(this.fury.binaryReader.varUInt32());
+      case RefFlags.NullFlag:
+        return null;
+      case RefFlags.NotNullValueFlag:
+        return serializer!.readInner(false);
     }
   }
 
   read(fromRef: boolean): any {
-    const flags = this.fury.binaryReader.uint8();
-    const isSame = !(flags & CollectionFlags.NOT_SAME_TYPE);
-    const includeNone = flags & CollectionFlags.HAS_NULL;
-
-    let serializer: Serializer;
-    if (isSame) {
-      serializer = this.fury.classResolver.getSerializerByType(this.fury.binaryReader.int16());
-    }
-    const len = this.fury.binaryReader.varUInt32();
+    let count = this.fury.binaryReader.varInt32();
     const result = new Map();
     if (fromRef) {
       this.fury.referenceResolver.reference(result);
     }
-    for (let index = 0; index < len; index++) {
-      if (includeNone) {
-        const refFlag = this.fury.binaryReader.uint8();
-        if (RefFlags.NullFlag === refFlag) {
-          result.set()
-          accessor(result, index, null);
-          continue;
-        }
+    while (count > 0) {
+      const header = this.fury.binaryReader.uint16();
+      const chunkSize = header >> 8;
+      const keyHeader = header >> 12;
+      const valueHeader = header & 0b00001111;
+
+      let keySerializer = null;
+      let valueSerializer = null;
+
+      if (!(keyHeader & MapFlags.NOT_SAME_TYPE)) {
+        keySerializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.uint16());
       }
-      if (!isSame) {
-        serializer = this.fury.classResolver.getSerializerByType(this.fury.binaryReader.int16());
+      if (!(valueHeader & MapFlags.NOT_SAME_TYPE)) {
+        valueSerializer = this.fury.classResolver.getSerializerById(this.fury.binaryReader.uint16());
       }
-      accessor(result, index, serializer!.read());
+      for (let index = 0; index < chunkSize; index++) {
+        result.set(
+          this.readElement(keyHeader, keySerializer),
+          this.readElement(valueHeader, valueSerializer)
+        )
+        count--;
+      }
     }
     return result;
   }
@@ -236,163 +234,24 @@ export class MapSerializerGenerator extends BaseSerializerGenerator {
     this.description = <MapTypeDescription>description;
   }
 
-  private isAny() {
-    return this.description.type === InternalSerializerType.ANY;
-  }
-
   private innerMeta() {
     const inner = this.description;
-    return this.builder.meta(inner);
-  }
-
-  private innerGenerator() {
-    const inner = this.description;
-    const InnerGeneratorClass = CodegenRegistry.get(inner.type);
-    if (!InnerGeneratorClass) {
-      throw new Error(`${inner.type} generator not exists`);
-    }
-    return new InnerGeneratorClass(inner, this.builder, this.scope);
-  }
-
-
-  protected writeElementsHeader(accessor: string, flagAccessor: string) {
-    const meta = this.innerMeta();
-    const item = this.scope.uniqueName("item");
-    const stmts = [
-    ];
-    if (meta.needToWriteRef) {
-      stmts.push(`${flagAccessor} |= ${CollectionFlags.TRACKING_REF}`);
-    }
-    stmts.push(`
-        for (const ${item} of ${accessor}) {
-            if (${item} === null || ${item} === undefined) {
-                ${flagAccessor} |= ${CollectionFlags.HAS_NULL};
-                break;
-            }
-        }
-    `);
-    stmts.push(`${this.builder.writer.uint8(flagAccessor)}`);
-    return stmts.join("\n");
-  }
-
-  writeStmtSpecificType(accessor: string): string {
-    const innerMeta = this.innerMeta();
-    const innerGenerator = this.innerGenerator();
-    const item = this.scope.uniqueName("item");
-    const flags = this.scope.uniqueName("flags");
-    const existsId = this.scope.uniqueName("existsId");
-
-    return `
-            let ${flags} = 0;
-            ${this.writeElementsHeader(accessor, flags)}
-            ${this.builder.writer.int16(this.description.type)}
-            ${this.builder.writer.varUInt32(`${accessor}.size`)}
-            ${this.builder.writer.reserve(`${innerMeta.fixedSize} * ${accessor}.size`)};
-            if (${flags} & ${CollectionFlags.TRACKING_REF}) {
-                
-                for (const ${item} of ${accessor}) {
-                    if (${accessor} !== null && ${accessor} !== undefined) {
-                        const ${existsId} = ${this.builder.referenceResolver.existsWriteObject(item)};
-                        if (typeof ${existsId} === "number") {
-                            ${this.builder.writer.int8(RefFlags.RefFlag)}
-                            ${this.builder.writer.varUInt32(existsId)}
-                        } else {
-                            ${this.builder.referenceResolver.writeRef(accessor)}
-                            ${this.builder.writer.int8(RefFlags.RefValueFlag)};
-                            ${innerGenerator.toWriteEmbed(item, true)}
-                        }
-                    } else {
-                        ${this.builder.writer.int8(RefFlags.NullFlag)};
-                    }
-                }
-            } else {
-                if (${flags} & ${CollectionFlags.HAS_NULL}) {
-                    for (const ${item} of ${accessor}) {
-                        if (${accessor} !== null && ${accessor} !== undefined) {
-                            ${this.builder.writer.int8(RefFlags.NotNullValueFlag)};
-                            ${innerGenerator.toWriteEmbed(item, true)}
-                        } else {
-                            ${this.builder.writer.int8(RefFlags.NullFlag)};
-                        }
-                    }
-                } else {
-                    for (const ${item} of ${accessor}) {
-                        ${innerGenerator.toWriteEmbed(item, true)}
-                    }
-                }
-            }
-        `;
-  }
-
-  readStmtSpecificType(accessor: (expr: string) => string, refState: RefState): string {
-    const innerGenerator = this.innerGenerator();
-    const result = this.scope.uniqueName("result");
-    const len = this.scope.uniqueName("len");
-    const flags = this.scope.uniqueName("flags");
-    const idx = this.scope.uniqueName("idx");
-    const refFlag = this.scope.uniqueName("refFlag");
-
-    // If track elements ref, use first bit 0b1 of header to flag it.
-    // If collection has null, use second bit 0b10 of header to flag it. If ref tracking is enabled for this element type, this flag is invalid.
-    // If collection element types is not declared type, use 3rd bit 0b100 of header to flag it.
-    // If collection element types different, use 4rd bit 0b1000 of header to flag it.
-    return `
-            const ${flags} = ${this.builder.reader.uint8()};
-            ${this.builder.reader.skip(2)};
-            const ${len} = ${this.builder.reader.varUInt32()};
-            const ${result} = new Map();
-            ${this.maybeReference(result, refState)}
-            if (${flags} & ${CollectionFlags.TRACKING_REF}) {
-                for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
-                    const ${refFlag} = ${this.builder.reader.int8()};
-                    switch (${refFlag}) {
-                        case ${RefFlags.NotNullValueFlag}:
-                        case ${RefFlags.RefValueFlag}:
-                            ${innerGenerator.toReadEmbed(x => `${this.putAccessor(result, x, idx)}`, true, RefState.fromCondition(`${refFlag} === ${RefFlags.RefValueFlag}`))}
-                            break;
-                        case ${RefFlags.RefFlag}:
-                            ${this.putAccessor(result, this.builder.referenceResolver.getReadObject(this.builder.reader.varUInt32()), idx)}
-                            break;
-                        case ${RefFlags.NullFlag}:
-                            ${this.putAccessor(result, "null", idx)}
-                            break;
-                    }
-                }
-            } else {
-                if (!(${flags} & ${CollectionFlags.HAS_NULL})) {
-                    for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
-                        ${innerGenerator.toReadEmbed(x => `${this.putAccessor(result, x, idx)}`, true, RefState.fromFalse())}
-                    }
-                } else {
-                    for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
-                        if (${this.builder.reader.uint8()} == ${RefFlags.NullFlag}) {
-                            ${this.putAccessor(result, "null", idx)}
-                        } else {
-                            ${innerGenerator.toReadEmbed(x => `${this.putAccessor(result, x, idx)}`, true, RefState.fromFalse())}
-                        }
-                    }
-                }
-            }
-            ${accessor(result)}
-        `;
+    return [this.builder.meta(inner.options.key), this.builder.meta(inner.options.value)];
   }
 
   writeStmt(accessor: string): string {
-    if (this.isAny()) {
-      return `
-                new (${this.builder.getExternal(MapAnySerializer.name)})(${this.builder.furyName()}).write(${accessor})
-            `;
-    }
-    return this.writeStmtSpecificType(accessor);
+    const [keyMeta, valueMeta] = this.innerMeta();
+    const anySerializer = this.builder.getExternal(MapAnySerializer.name);
+    return `
+        new (${anySerializer})(${this.builder.furyName()}, ${keyMeta.typeId}, ${valueMeta.typeId}).write(${accessor})
+    `;
   }
 
   readStmt(accessor: (expr: string) => string, refState: RefState): string {
-    if (this.isAny()) {
-      return accessor(`new (${this.builder.getExternal(MapAnySerializer.name)})(${this.builder.furyName()}).read()};
-          }}, ${refState.toConditionExpr()});
+    const anySerializer = this.builder.getExternal(MapAnySerializer.name);
+    const [keyMeta, valueMeta] = this.innerMeta();
+    return accessor(`new (${anySerializer})(${this.builder.furyName()}, ${keyMeta.typeId}, ${valueMeta.typeId}).read(${refState.toConditionExpr()})
       `);
-    }
-    return this.readStmtSpecificType(accessor, refState);
   }
 }
 

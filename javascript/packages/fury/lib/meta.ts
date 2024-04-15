@@ -26,7 +26,7 @@ export type Meta = {
   fixedSize: number;
   needToWriteRef: boolean;
   type: InternalSerializerType;
-  typeId: number
+  typeId: number | null
 };
 
 export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
@@ -159,7 +159,7 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         fixedSize: 11,
         needToWriteRef: Boolean(fury.config.refTracking),
         type,
-        typeId: ClassResolver.getTypeIdByInternalSerializerType(type)
+        typeId: null
       };
     case InternalSerializerType.ENUM:
       return {

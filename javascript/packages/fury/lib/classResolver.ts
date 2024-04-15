@@ -72,6 +72,7 @@ const uninitSerialize = {
     fixedSize: 0,
     type: InternalSerializerType.ANY,
     needToWriteRef: false,
+    typeId: null,
   },
 };
 
@@ -114,7 +115,26 @@ export default class SerializerResolver {
     this.registerSerializer(fury, Type.float16Array());
     this.registerSerializer(fury, Type.float32Array());
     this.registerSerializer(fury, Type.float64Array());
+
+    this.numberSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.FLOAT64));
+    this.bigintSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.INT64));
+    this.boolSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.BOOL));
+    this.dateSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.TIMESTAMP));
+    this.stringSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.STRING));
+    this.setSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.SET));
+    this.arraySerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.ARRAY));
+    this.mapSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.MAP));
   }
+
+  private numberSerializer: null | Serializer = null;
+  private bigintSerializer: null | Serializer = null;
+  private boolSerializer: null | Serializer = null;
+  private dateSerializer: null | Serializer = null;
+  private stringSerializer: null | Serializer = null;
+  private setSerializer: null | Serializer = null;
+  private arraySerializer: null | Serializer = null;
+  private mapSerializer: null | Serializer = null;
+
 
   init(fury: Fury) {
     this.initInternalSerializer(fury);
@@ -212,45 +232,42 @@ export default class SerializerResolver {
     }
   }
 
-  getTypeIdByData(v: any): number {
+
+  getSerializerByData(v: any) {
     if (typeof v === "number") {
-      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.FLOAT64);
-    }
-
-    if (typeof v === "bigint") {
-      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.INT64);
-    }
-
-    if (typeof v === "boolean") {
-      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.BOOL);
-    }
-
-    if (v instanceof Date) {
-      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.TIMESTAMP);
+      return this.numberSerializer;
     }
 
     if (typeof v === "string") {
-      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.STRING);
-    }
-
-    if (v instanceof Map) {
-      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.MAP);
-    }
-
-    if (v instanceof Set) {
-      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.SET);
+      return this.stringSerializer;
     }
 
     if (Array.isArray(v)) {
-      return SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.ARRAY);
+      return this.arraySerializer;
     }
 
+    if (typeof v === "boolean") {
+      return this.boolSerializer;
+    }
+
+    if (typeof v === "bigint") {
+      return this.bigintSerializer;
+    }
+
+    if (v instanceof Date) {
+      return this.dateSerializer;
+    }
+
+    if (v instanceof Map) {
+      return this.mapSerializer;
+    }
+
+    if (v instanceof Set) {
+      return this.setSerializer;
+    }
     throw new Error(`Failed to detect the Fury type from JavaScript type: ${typeof v}`);
   }
 
-  getSerializerByData(v: any) {
-    return this.getSerializerById(this.getTypeIdByData(v));
-  }
 
   static getTypeIdByInternalSerializerType(type: InternalSerializerType) {
     switch (type) {
