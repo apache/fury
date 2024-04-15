@@ -411,17 +411,17 @@ func (r *typeResolver) writeType(buffer *ByteBuffer, type_ reflect.Type) error {
 }
 
 func (r *typeResolver) readType(buffer *ByteBuffer) (reflect.Type, error) {
-	enumString, err := r.readMetaString(buffer)
+	metaString, err := r.readMetaString(buffer)
 	if err != nil {
 		return nil, err
 	}
-	type_, ok := r.typeInfoToType[enumString]
+	type_, ok := r.typeInfoToType[metaString]
 	if !ok {
-		type_, _, err = r.decodeType(enumString)
+		type_, _, err = r.decodeType(metaString)
 		if err != nil {
 			return nil, err
 		} else {
-			r.typeInfoToType[enumString] = type_
+			r.typeInfoToType[metaString] = type_
 		}
 	}
 	return type_, nil
@@ -527,11 +527,11 @@ func (r *typeResolver) writeTypeTag(buffer *ByteBuffer, typeTag string) error {
 }
 
 func (r *typeResolver) readTypeByReadTag(buffer *ByteBuffer) (reflect.Type, error) {
-	enumString, err := r.readMetaString(buffer)
+	metaString, err := r.readMetaString(buffer)
 	if err != nil {
 		return nil, err
 	}
-	return r.typeTagToSerializers[enumString].(*ptrToStructSerializer).type_, err
+	return r.typeTagToSerializers[metaString].(*ptrToStructSerializer).type_, err
 }
 
 func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (string, error) {

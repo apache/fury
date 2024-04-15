@@ -38,9 +38,9 @@ public class MetaStringResolverTest {
       stringResolver.writeMetaString(buffer, str);
     }
     for (int i = 0; i < 128; i++) {
-      String enumString = stringResolver.readMetaString(buffer);
-      assertEquals(enumString.hashCode(), str.hashCode());
-      assertEquals(enumString.getBytes(), str.getBytes());
+      String metaString = stringResolver.readMetaString(buffer);
+      assertEquals(metaString.hashCode(), str.hashCode());
+      assertEquals(metaString.getBytes(), str.getBytes());
     }
     assertTrue(buffer.writerIndex() < str.getBytes().length + 128 * 4);
   }

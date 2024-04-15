@@ -38,12 +38,12 @@ public final class MetaStringResolver {
   private static final float furyMapLoadFactor = 0.25f;
 
   // Every deserialization for unregistered string will query it, performance is important.
-  private final ObjectMap<MetaStringBytes, String> enumStringBytes2StringMap =
+  private final ObjectMap<MetaStringBytes, String> metaStringBytes2StringMap =
       new ObjectMap<>(initialCapacity, furyMapLoadFactor);
   private final LongMap<MetaStringBytes> hash2MetaStringBytesMap =
       new LongMap<>(initialCapacity, furyMapLoadFactor);
   // Every enum bytes should be singleton at every fury, since we keep state in it.
-  private final ObjectMap<String, MetaStringBytes> enumString2BytesMap =
+  private final ObjectMap<String, MetaStringBytes> metaString2BytesMap =
       new ObjectMap<>(initialCapacity, furyMapLoadFactor);
   private MetaStringBytes[] dynamicWrittenString = new MetaStringBytes[32];
   private MetaStringBytes[] dynamicReadStringIds = new MetaStringBytes[32];
@@ -56,10 +56,10 @@ public final class MetaStringResolver {
   }
 
   MetaStringBytes getOrCreateMetaStringBytes(String str) {
-    MetaStringBytes metaStringBytes = enumString2BytesMap.get(str);
+    MetaStringBytes metaStringBytes = metaString2BytesMap.get(str);
     if (metaStringBytes == null) {
       metaStringBytes = new MetaStringBytes(str);
-      enumString2BytesMap.put(str, metaStringBytes);
+      metaString2BytesMap.put(str, metaStringBytes);
     }
     return metaStringBytes;
   }
@@ -70,10 +70,10 @@ public final class MetaStringResolver {
 
   public String readMetaString(MemoryBuffer buffer) {
     MetaStringBytes byteString = readMetaStringBytes(buffer);
-    String str = enumStringBytes2StringMap.get(byteString);
+    String str = metaStringBytes2StringMap.get(byteString);
     if (str == null) { // TODO use org.apache.fury.resolver.ObjectMap
       str = new String(byteString.bytes, StandardCharsets.UTF_8);
-      enumStringBytes2StringMap.put(byteString, str);
+      metaStringBytes2StringMap.put(byteString, str);
     }
     return str;
   }
