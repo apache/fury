@@ -42,7 +42,7 @@ public class MetaStringTest {
       }
       String str = builder.toString();
       encoded = encoder.encodeLowerSpecial(str);
-      decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_SPECIAL, i);
+      decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_SPECIAL, i * 5);
       Assert.assertEquals(decoded, str);
     }
   }
@@ -58,11 +58,11 @@ public class MetaStringTest {
     String decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL, 15 * 6);
     Assert.assertEquals(decoded, "ExampleInput123");
 
-    for (int i = 0; i < 128; i++) {
+    for (int i = 1; i < 128; i++) {
       String str = createString(i, specialChar1, specialChar2);
       encoded = encoder.encodeLowerUpperDigitSpecial(str);
-      decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL, i);
-      Assert.assertEquals(decoded, str);
+      decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL, i * 6);
+      Assert.assertEquals(decoded, str, "Failed at " + i);
     }
   }
 
