@@ -2240,7 +2240,7 @@ cdef class SliceSerializer(Serializer):
             if step is None:
                 buffer.write_int8(NULL_FLAG)
             else:
-                buffer.write_int16(NOT_NULL_VALUE_FLAG)
+                buffer.write_int8(NOT_NULL_VALUE_FLAG)
                 self.fury.serialize_nonref(buffer, step)
 
     cpdef inline read(self, Buffer buffer):
