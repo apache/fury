@@ -3,6 +3,7 @@ title: Fury Java Serialization Format
 sidebar_position: 1
 id: fury_java_serialization_spec
 ---
+
 # Fury Java Serialization Specification
 
 ## Spec overview
@@ -222,25 +223,29 @@ Meta string is mainly used to encode meta strings such as class name and field n
 
 String binary encoding algorithm:
 
-| Algorithm                 | Pattern        | Description                                                                                                                                      |
-|---------------------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| LOWER_SPECIAL             | `a-z._$\|`     | every char is written using 5 bits, `a-z`: `0b00000~0b11001`, `._$\|`: `0b11010~0b11101`                                                         |
-| LOWER_UPPER_DIGIT_SPECIAL | `a-zA-Z0~9._$` | every char is written using 6 bits, `a-z`: `0b00000~0b11110`, `A-Z`: `0b11010~0b110011`, `0~9`: `0b110100~0b111101`, `._$`: `0b111110~0b1000000` |
-| UTF-8                     | any chars      | UTF-8 encoding                                                                                                                                   |
+| Algorithm                 | Pattern            | Description                                                                                                                                                                       |
+|---------------------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| LOWER_SPECIAL             | `a-z._$\|`         | every char is written using 5 bits, `a-z`: `0b00000~0b11001`, `._$\|`: `0b11010~0b11101`                                                                                          |
+| LOWER_UPPER_DIGIT_SPECIAL | `a-zA-Z0~9[c1,c2]` | every char is written using 6 bits, `a-z`: `0b00000~0b11001`, `A-Z`: `0b11010~0b110011`, `0~9`: `0b110100~0b111101`, `c1,c2`: `0b111110~0b111111`, `c1,c2` should be two of `._$` |
+| UTF-8                     | any chars          | UTF-8 encoding                                                                                                                                                                    |
 
 Encoding flags:
 
-| Encoding Flag             | Pattern                                                   | Encoding Algorithm                                                                                                                  |
-|---------------------------|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| LOWER_SPECIAL             | every char is in `a-z._$\|`                               | `LOWER_SPECIAL`                                                                                                                     |
-| REP_FIRST_LOWER_SPECIAL   | every char is in `a-z._$` except first char is upper case | replace first upper case char to lower case, then use `LOWER_SPECIAL`                                                               |
-| REP_MUL_LOWER_SPECIAL     | every char is in `a-zA-Z._$`                              | replace every upper case char by `\|` + `lower case`, then use `LOWER_SPECIAL`, use this encoding if it's smaller than Encoding `3` |
-| LOWER_UPPER_DIGIT_SPECIAL | every char is in `a-zA-Z._$`                              | use `LOWER_UPPER_DIGIT_SPECIAL` encoding if it's smaller than Encoding `2`                                                          |
-| UTF8                      | any utf-8 char                                            | use `UTF-8` encoding                                                                                                                |
-| Compression               | any utf-8 char                                            | lossless compression                                                                                                                |
+| Encoding Flag             | Pattern                                                       | Encoding Algorithm                                                                                                                                          |
+|---------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| LOWER_SPECIAL             | every char is in `a-z._$\|`                                   | `LOWER_SPECIAL`                                                                                                                                             |
+| FIRST_TO_LOWER_SPECIAL    | every char is in `a-z[c1,c2]` except first char is upper case | replace first upper case char to lower case, then use `LOWER_SPECIAL`                                                                                       |
+| ALL_TO_LOWER_SPECIAL      | every char is in `a-zA-Z[c1,c2]`                              | replace every upper case char by `\|` + `lower case`, then use `LOWER_SPECIAL`, use this encoding if it's smaller than Encoding `LOWER_UPPER_DIGIT_SPECIAL` |
+| LOWER_UPPER_DIGIT_SPECIAL | every char is in `a-zA-Z[c1,c2]`                              | use `LOWER_UPPER_DIGIT_SPECIAL` encoding if it's smaller than Encoding `FIRST_TO_LOWER_SPECIAL`                                                             |
+| UTF8                      | any utf-8 char                                                | use `UTF-8` encoding                                                                                                                                        |
+| Compression               | any utf-8 char                                                | lossless compression                                                                                                                                        |
 
-Depending on cases, one can choose encoding `flags + data` jointly, uses 3 bits of first byte for flags and other bytes
-for data.
+Notes:
+
+- For package name encoding, `c1,c2` should be `._`; For field/type name encoding, `c1,c2` should be `_$`;
+- Depending on cases, one can choose encoding `flags + data` jointly, uses 3 bits of first byte for flags and other
+  bytes
+  for data.
 
 ### Shared meta string
 

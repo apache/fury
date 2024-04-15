@@ -338,25 +338,28 @@ Meta string is mainly used to encode meta strings such as field names.
 
 String binary encoding algorithm:
 
-| Algorithm                 | Pattern        | Description                                                                                                                                      |
-|---------------------------|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| LOWER_SPECIAL             | `a-z._$\|`     | every char is written using 5 bits, `a-z`: `0b00000~0b11001`, `._$\|`: `0b11010~0b11101`                                                         |
-| LOWER_UPPER_DIGIT_SPECIAL | `a-zA-Z0~9._$` | every char is written using 6 bits, `a-z`: `0b00000~0b11110`, `A-Z`: `0b11010~0b110011`, `0~9`: `0b110100~0b111101`, `._$`: `0b111110~0b1000000` |
-| UTF-8                     | any chars      | UTF-8 encoding                                                                                                                                   |
+| Algorithm                 | Pattern       | Description                                                                                                                                    |
+|---------------------------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| LOWER_SPECIAL             | `a-z._$\|`    | every char is written using 5 bits, `a-z`: `0b00000~0b11001`, `._$\|`: `0b11010~0b11101`                                                       |
+| LOWER_UPPER_DIGIT_SPECIAL | `a-zA-Z0~9._` | every char is written using 6 bits, `a-z`: `0b00000~0b11001`, `A-Z`: `0b11010~0b110011`, `0~9`: `0b110100~0b111101`, `._`: `0b111110~0b111111` |
+| UTF-8                     | any chars     | UTF-8 encoding                                                                                                                                 |
 
 Encoding flags:
 
-| Encoding Flag             | Pattern                                                   | Encoding Algorithm                                                                                                                  |
-|---------------------------|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| LOWER_SPECIAL             | every char is in `a-z._$\|`                               | `LOWER_SPECIAL`                                                                                                                     |
-| REP_FIRST_LOWER_SPECIAL   | every char is in `a-z._$` except first char is upper case | replace first upper case char to lower case, then use `LOWER_SPECIAL`                                                               |
-| REP_MUL_LOWER_SPECIAL     | every char is in `a-zA-Z._$`                              | replace every upper case char by `\|` + `lower case`, then use `LOWER_SPECIAL`, use this encoding if it's smaller than Encoding `3` |
-| LOWER_UPPER_DIGIT_SPECIAL | every char is in `a-zA-Z._$`                              | use `LOWER_UPPER_DIGIT_SPECIAL` encoding if it's smaller than Encoding `2`                                                          |
-| UTF8                      | any utf-8 char                                            | use `UTF-8` encoding                                                                                                                |
-| Compression               | any utf-8 char                                            | lossless compression                                                                                                                |
+| Encoding Flag             | Pattern                                                  | Encoding Algorithm                                                                                                                                          |
+|---------------------------|----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| LOWER_SPECIAL             | every char is in `a-z._\|`                               | `LOWER_SPECIAL`                                                                                                                                             |
+| FIRST_TO_LOWER_SPECIAL    | every char is in `a-z._` except first char is upper case | replace first upper case char to lower case, then use `LOWER_SPECIAL`                                                                                       |
+| ALL_TO_LOWER_SPECIAL      | every char is in `a-zA-Z._`                              | replace every upper case char by `\|` + `lower case`, then use `LOWER_SPECIAL`, use this encoding if it's smaller than Encoding `LOWER_UPPER_DIGIT_SPECIAL` |
+| LOWER_UPPER_DIGIT_SPECIAL | every char is in `a-zA-Z._`                              | use `LOWER_UPPER_DIGIT_SPECIAL` encoding if it's smaller than Encoding `FIRST_TO_LOWER_SPECIAL`                                                             |
+| UTF8                      | any utf-8 char                                           | use `UTF-8` encoding                                                                                                                                        |
+| Compression               | any utf-8 char                                           | lossless compression                                                                                                                                        |
 
-Depending on cases, one can choose encoding `flags + data` jointly, uses 3 bits of first byte for flags and other bytes
-for data.
+Notes:
+
+- Depending on cases, one can choose encoding `flags + data` jointly, uses 3 bits of first byte for flags and other
+  bytes
+  for data.
 
 ## Value Format
 
