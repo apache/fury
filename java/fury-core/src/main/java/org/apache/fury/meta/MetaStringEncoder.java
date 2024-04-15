@@ -129,10 +129,6 @@ public class MetaStringEncoder {
     return Encoding.UTF_8;
   }
 
-  private boolean canBeLowerSpecialEncoded(String input) {
-    return canBeLowerSpecialEncoded(input.toCharArray());
-  }
-
   private boolean canBeLowerSpecialEncoded(char[] chars) {
     for (char c : chars) {
       if (c >= 'a' && c <= 'z') {
@@ -165,10 +161,6 @@ public class MetaStringEncoder {
       }
     }
     return upperCount;
-  }
-
-  private boolean canBeLowerUpperDigitSpecialEncoded(String input) {
-    return canBeLowerUpperDigitSpecialEncoded(input.toCharArray());
   }
 
   private boolean canBeLowerUpperDigitSpecialEncoded(char[] chars) {
@@ -206,10 +198,6 @@ public class MetaStringEncoder {
   public byte[] encodeFirstToLowerSpecial(char[] chars) {
     chars[0] = Character.toLowerCase(chars[0]);
     return encodeGeneric(chars, 5, false);
-  }
-
-  public byte[] encodeAllToLowerSpecial(char[] chars) {
-    return encodeAllToLowerSpecial(chars, countUppers(chars));
   }
 
   public byte[] encodeAllToLowerSpecial(char[] chars, int upperCount) {
