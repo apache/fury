@@ -559,7 +559,7 @@ Map iteration is too expensive, Fury won't compute the header like for list sinc
 Users can use `MapFieldInfo` annotation to provide the header in advance. Otherwise Fury will use first key-value pair
 to predict header optimistically, and update the chunk header if the prediction failed at some pair.
 
-Fury will serialize the map chunk by chunk, every chunk has 127 pairs at most.
+Fury will serialize the map chunk by chunk, every chunk has 255 pairs at most.
 
 ```
 |    1 byte      |     1 byte     | variable bytes  |
@@ -591,6 +591,21 @@ format will be:
 
 `KV header` will be a header marked by `MapFieldInfo` in java. For languages such as golang, this can be computed in
 advance for non-interface types most times.
+
+#### Why serialize chunk by chunk?
+
+When fury will use first key-value pair to predict header optimistically, it can't know how many pairs have same
+meta(tracking kef ref, key has null and so on). If we don't write chunk by chunk with max chunk size, we must write at
+least `X` bytes to take up a place for later to update the number which has same elements, `X` is the num_bytes for
+encoding varint encoding of map size.
+
+And most map size are smaller than 255, if all pairs have same data, the chunk will be 1. This is common in golang/rust,
+which object are not reference by default.
+
+Also, if only one or two keys have different meta, we can make it into a different chunk, so that most pairs can share
+meta.
+
+The implementation can accumulate read count with map size to decide whether to read more chunks.
 
 ### enum
 
