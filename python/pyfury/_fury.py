@@ -766,15 +766,15 @@ class Fury:
     def serialize_nonref(self, buffer, obj):
         cls = type(obj)
         if cls is str:
-            buffer.write_int16(STRING_CLASS_ID)
+            buffer.write_varint32(STRING_CLASS_ID << 1)
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_int16(PYINT_CLASS_ID)
+            buffer.write_varint32(PYINT_CLASS_ID << 1)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_int16(PYBOOL_CLASS_ID)
+            buffer.write_varint32(PYBOOL_CLASS_ID << 1)
             buffer.write_bool(obj)
             return
         else:
