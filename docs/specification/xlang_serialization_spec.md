@@ -341,7 +341,7 @@ String binary encoding algorithm:
 | Algorithm                 | Pattern       | Description                                                                                                                                    |
 |---------------------------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------|
 | LOWER_SPECIAL             | `a-z._$\|`    | every char is written using 5 bits, `a-z`: `0b00000~0b11001`, `._$\|`: `0b11010~0b11101`                                                       |
-| LOWER_UPPER_DIGIT_SPECIAL | `a-zA-Z0~9._` | every char is written using 6 bits, `a-z`: `0b00000~0b11110`, `A-Z`: `0b11010~0b110011`, `0~9`: `0b110100~0b111101`, `._`: `0b111110~0b111111` |
+| LOWER_UPPER_DIGIT_SPECIAL | `a-zA-Z0~9._` | every char is written using 6 bits, `a-z`: `0b00000~0b11001`, `A-Z`: `0b11010~0b110011`, `0~9`: `0b110100~0b111101`, `._`: `0b111110~0b111111` |
 | UTF-8                     | any chars     | UTF-8 encoding                                                                                                                                 |
 
 Encoding flags:
