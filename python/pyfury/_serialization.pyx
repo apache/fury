@@ -1606,16 +1606,16 @@ cdef class CollectionSerializer(Serializer):
         for s in value:
             cls = type(s)
             if cls is str:
-                buffer.write_int8(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(s)
             elif cls is int:
-                buffer.write_int8(NOT_NULL_PYINT_FLAG)
+                buffer.write_int16(NOT_NULL_PYINT_FLAG)
                 buffer.write_varint64(s)
             elif cls is bool:
-                buffer.write_int8(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
                 buffer.write_bool(s)
             elif cls is float:
-                buffer.write_int8(NOT_NULL_PYFLOAT_FLAG)
+                buffer.write_int16(NOT_NULL_PYFLOAT_FLAG)
                 buffer.write_double(s)
             else:
                 if not ref_resolver.write_ref_or_null(buffer, s):
@@ -1793,7 +1793,7 @@ cdef class MapSerializer(Serializer):
         for k, v in value.items():
             key_cls = type(k)
             if key_cls is str:
-                buffer.write_int8(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(k)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, k):
@@ -1802,10 +1802,10 @@ cdef class MapSerializer(Serializer):
                     key_classinfo.serializer.write(buffer, k)
             value_cls = type(v)
             if value_cls is str:
-                buffer.write_int8(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(v)
             elif value_cls is int:
-                buffer.write_int8(NOT_NULL_PYINT_FLAG)
+                buffer.write_int16(NOT_NULL_PYINT_FLAG)
                 buffer.write_varint64(v)
             elif value_cls is bool:
                 buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
@@ -2240,7 +2240,7 @@ cdef class SliceSerializer(Serializer):
             if step is None:
                 buffer.write_int8(NULL_FLAG)
             else:
-                buffer.write_int8(NOT_NULL_VALUE_FLAG)
+                buffer.write_int16(NOT_NULL_VALUE_FLAG)
                 self.fury.serialize_nonref(buffer, step)
 
     cpdef inline read(self, Buffer buffer):
