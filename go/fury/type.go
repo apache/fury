@@ -551,7 +551,7 @@ func (r *typeResolver) writeMetaString(buffer *ByteBuffer, str string) error {
 		dynamicStringId := r.dynamicStringId
 		r.dynamicStringId += 1
 		r.dynamicStringToId[str] = dynamicStringId
-		buffer.WriteByte_(useStringValue)
+		buffer.WriteVarInt32(int32(len(str) << 1))
 		// TODO this hash should be unique, since we don't compare data equality for performance
 		h := fnv.New64a()
 		if _, err := h.Write([]byte(str)); err != nil {
@@ -562,27 +562,26 @@ func (r *typeResolver) writeMetaString(buffer *ByteBuffer, str string) error {
 		if len(str) > MaxInt16 {
 			return fmt.Errorf("too long string: %s", str)
 		}
-		buffer.WriteInt16(int16(len(str)))
 		buffer.WriteBinary(unsafeGetBytes(str))
 	} else {
-		buffer.WriteByte_(useStringId)
-		buffer.WriteInt16(id)
+		buffer.WriteVarInt32(int32(((id + 1) << 1) | 1))
 	}
 	return nil
 }
 
 func (r *typeResolver) readMetaString(buffer *ByteBuffer) (string, error) {
-	if buffer.ReadByte_() == useStringValue {
+	header := buffer.ReadVarInt32()
+	var length = int(header >> 1)
+	if header&0b1 == 0 {
 		// TODO support use computed hash
 		buffer.ReadInt64()
-		bytesLength := buffer.ReadInt16()
-		str := string(buffer.ReadBinary(int(bytesLength)))
+		str := string(buffer.ReadBinary(length))
 		dynamicStringId := r.dynamicStringId
 		r.dynamicStringId += 1
 		r.dynamicIdToString[dynamicStringId] = str
 		return str, nil
 	} else {
-		return r.dynamicIdToString[buffer.ReadInt16()], nil
+		return r.dynamicIdToString[int16(length-1)], nil
 	}
 }
 
