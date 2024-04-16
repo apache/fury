@@ -20,7 +20,6 @@
 package org.apache.fury.meta;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.util.StringUtils;
 
@@ -38,25 +37,6 @@ public class MetaStringDecoder {
   public MetaStringDecoder(char specialChar1, char specialChar2) {
     this.specialChar1 = specialChar1;
     this.specialChar2 = specialChar2;
-  }
-
-  /**
-   * Decodes the encoded data back into a string based on the provided number of bits and encoding
-   * type.
-   *
-   * @param encodedData The encoded string data as a byte array.
-   * @param numBits The number of bits used for encoding.
-   * @return The decoded original string.
-   */
-  public String decode(byte[] encodedData, int numBits) {
-    if (encodedData.length == 0) {
-      return "";
-    }
-    // The very first byte signifies the encoding used
-    Encoding chosenEncoding = Encoding.fromInt(encodedData[0] & 0xFF);
-    // Extract actual data, skipping the first byte (encoding flag)
-    encodedData = Arrays.copyOfRange(encodedData, 1, encodedData.length);
-    return decode(encodedData, chosenEncoding, numBits);
   }
 
   /**

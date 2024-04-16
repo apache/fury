@@ -20,6 +20,7 @@
 package org.apache.fury.resolver;
 
 import org.apache.fury.config.Language;
+import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
@@ -73,7 +74,9 @@ public class ClassInfo {
     this.serializer = serializer;
     MetaStringResolver metaStringResolver = classResolver.getMetaStringResolver();
     if (cls != null && classResolver.getFury().getLanguage() != Language.JAVA) {
-      this.fullClassNameBytes = metaStringResolver.getOrCreateMetaStringBytes(cls.getName());
+      this.fullClassNameBytes =
+          metaStringResolver.getOrCreateMetaStringBytes(
+              new MetaStringEncoder('.', '_').encode(cls.getName()));
     } else {
       this.fullClassNameBytes = null;
     }
@@ -81,16 +84,21 @@ public class ClassInfo {
         && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       String packageName = ReflectionUtils.getPackage(cls);
-      this.packageNameBytes = metaStringResolver.getOrCreateMetaStringBytes(packageName);
+      this.packageNameBytes =
+          metaStringResolver.getOrCreateMetaStringBytes(
+              new MetaStringEncoder('.', '_').encode(packageName));
       this.classNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
-              ReflectionUtils.getClassNameWithoutPackage(cls));
+              new MetaStringEncoder('_', '$')
+                  .encode(ReflectionUtils.getClassNameWithoutPackage(cls)));
     } else {
       this.packageNameBytes = null;
       this.classNameBytes = null;
     }
     if (tag != null) {
-      this.typeTagBytes = metaStringResolver.getOrCreateMetaStringBytes(tag);
+      this.typeTagBytes =
+          metaStringResolver.getOrCreateMetaStringBytes(
+              new MetaStringEncoder('.', '_').encode(tag));
     } else {
       this.typeTagBytes = null;
     }

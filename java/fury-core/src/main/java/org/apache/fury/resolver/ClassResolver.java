@@ -36,7 +36,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -1585,8 +1584,8 @@ public class ClassResolver {
         new ClassNameBytes(packageBytes.hashCode, simpleClassNameBytes.hashCode);
     Class<?> cls = compositeClassNameBytes2Class.get(classNameBytes);
     if (cls == null) {
-      String packageName = new String(packageBytes.bytes, StandardCharsets.UTF_8);
-      String className = new String(simpleClassNameBytes.bytes, StandardCharsets.UTF_8);
+      String packageName = packageBytes.decode('.', '_');
+      String className = simpleClassNameBytes.decode('.', '$');
       String entireClassName;
       if (StringUtils.isBlank(packageName)) {
         entireClassName = className;
@@ -1612,7 +1611,7 @@ public class ClassResolver {
     Class<?> cls = classNameBytes2Class.get(byteString);
     if (cls == null) {
       Preconditions.checkNotNull(byteString);
-      String className = new String(byteString.bytes, StandardCharsets.UTF_8);
+      String className = byteString.decode('.', '_');
       cls = loadClass(className);
       classNameBytes2Class.put(byteString, cls);
     }
