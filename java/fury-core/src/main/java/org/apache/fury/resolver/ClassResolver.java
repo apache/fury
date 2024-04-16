@@ -1525,14 +1525,6 @@ public class ClassResolver {
     }
   }
 
-  private ClassInfo readClassInfoByCache(
-      MemoryBuffer buffer, ClassInfo classInfoCache, int header) {
-    if (metaContextShareEnabled) {
-      return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
-    }
-    return readClassInfoFromBytes(buffer, classInfoCache, header);
-  }
-
   /** Read class info, update classInfoHolder if cache not hit. */
   @CodegenInvoke
   public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
@@ -1542,6 +1534,14 @@ public class ClassResolver {
     } else {
       return getClassInfo((short) (header >> 1));
     }
+  }
+
+  private ClassInfo readClassInfoByCache(
+      MemoryBuffer buffer, ClassInfo classInfoCache, int header) {
+    if (metaContextShareEnabled) {
+      return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
+    }
+    return readClassInfoFromBytes(buffer, classInfoCache, header);
   }
 
   private ClassInfo readClassInfoFromBytes(
