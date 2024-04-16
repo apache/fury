@@ -221,7 +221,7 @@ public class ClassResolverTest extends FuryTestBase {
       classResolver.writeClassInternal(buffer, getClass());
       int writerIndex = buffer.writerIndex();
       classResolver.writeClassInternal(buffer, getClass());
-      Assert.assertEquals(buffer.writerIndex(), writerIndex + 3);
+      Assert.assertEquals(buffer.writerIndex(), writerIndex + 2);
       buffer.writerIndex(0);
     }
     {

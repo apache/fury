@@ -78,6 +78,24 @@ public final class MetaStringResolver {
     return str;
   }
 
+  public void writeMetaStringBytesWithFlag(MemoryBuffer buffer, MetaStringBytes byteString) {
+    short id = byteString.dynamicWriteStringId;
+    if (id == MetaStringBytes.DEFAULT_DYNAMIC_WRITE_STRING_ID) {
+      id = dynamicWriteStringId++;
+      byteString.dynamicWriteStringId = id;
+      MetaStringBytes[] dynamicWrittenMetaString = this.dynamicWrittenString;
+      if (dynamicWrittenMetaString.length <= id) {
+        dynamicWrittenMetaString = growWrite(id);
+      }
+      dynamicWrittenMetaString[id] = byteString;
+      buffer.writeVarUint32Small7(byteString.bytes.length << 2 | 0b1);
+      buffer.writeInt64(byteString.hashCode);
+      buffer.writeBytes(byteString.bytes);
+    } else {
+      buffer.writeVarUint32Small7(((id + 1) << 2) | 0b11);
+    }
+  }
+
   public void writeMetaStringBytes(MemoryBuffer buffer, MetaStringBytes byteString) {
     short id = byteString.dynamicWriteStringId;
     if (id == MetaStringBytes.DEFAULT_DYNAMIC_WRITE_STRING_ID) {
@@ -100,6 +118,37 @@ public final class MetaStringResolver {
     MetaStringBytes[] tmp = new MetaStringBytes[id * 2];
     System.arraycopy(dynamicWrittenString, 0, tmp, 0, dynamicWrittenString.length);
     return this.dynamicWrittenString = tmp;
+  }
+
+  public MetaStringBytes readMetaStringBytesWithFlag(MemoryBuffer buffer, int header) {
+    int len = header >>> 2;
+    if ((header & 0b10) == 0) {
+      long hashCode = buffer.readInt64();
+      MetaStringBytes byteString = trySkipMetaStringBytes(buffer, len, hashCode);
+      updateDynamicString(byteString);
+      return byteString;
+    } else {
+      return dynamicReadStringIds[len - 1];
+    }
+  }
+
+  public MetaStringBytes readMetaStringBytesWithFlag(
+      MemoryBuffer buffer, MetaStringBytes cache, int header) {
+    int len = header >>> 2;
+    if ((header & 0b10) == 0) {
+      long hashCode = buffer.readInt64();
+      if (cache.hashCode == hashCode) {
+        // skip byteString data
+        buffer.increaseReaderIndex(len);
+        updateDynamicString(cache);
+        return cache;
+      }
+      MetaStringBytes byteString = trySkipMetaStringBytes(buffer, len, hashCode);
+      updateDynamicString(byteString);
+      return byteString;
+    } else {
+      return dynamicReadStringIds[len - 1];
+    }
   }
 
   MetaStringBytes readMetaStringBytes(MemoryBuffer buffer) {
