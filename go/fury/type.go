@@ -557,7 +557,7 @@ func (r *typeResolver) writeMetaString(buffer *ByteBuffer, str string) error {
 		if _, err := h.Write([]byte(str)); err != nil {
 			return err
 		}
-		hash := int64(h.Sum64())
+		hash := int64(h.Sum64() & 0xffffffffffffff00)
 		buffer.WriteInt64(hash)
 		if len(str) > MaxInt16 {
 			return fmt.Errorf("too long string: %s", str)

@@ -100,7 +100,9 @@ class MetaStringBytes:
     def __init__(self, data, hashcode=None):
         self.data = data
         self.length = len(data)
-        self.hashcode = hashcode or mmh3.hash_buffer(data, 47)[0]
+        if hashcode is None:
+            hashcode = mmh3.hash_buffer(data, 47)[0] & 0xffffffffffffff00
+        self.hashcode = hashcode
         self.dynamic_write_string_id = DEFAULT_DYNAMIC_WRITE_STRING_ID
 
     def __eq__(self, other):

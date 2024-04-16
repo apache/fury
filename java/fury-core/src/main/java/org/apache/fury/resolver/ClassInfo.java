@@ -20,6 +20,7 @@
 package org.apache.fury.resolver;
 
 import org.apache.fury.config.Language;
+import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.Preconditions;
@@ -76,7 +77,7 @@ public class ClassInfo {
     if (cls != null && classResolver.getFury().getLanguage() != Language.JAVA) {
       this.fullClassNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
-              new MetaStringEncoder('.', '_').encode(cls.getName()));
+              new MetaStringEncoder('.', '_').encode(cls.getName(), Encoding.UTF_8));
     } else {
       this.fullClassNameBytes = null;
     }
@@ -98,7 +99,7 @@ public class ClassInfo {
     if (tag != null) {
       this.typeTagBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
-              new MetaStringEncoder('.', '_').encode(tag));
+              new MetaStringEncoder('.', '_').encode(tag, Encoding.UTF_8));
     } else {
       this.typeTagBytes = null;
     }
