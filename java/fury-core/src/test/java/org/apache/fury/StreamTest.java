@@ -32,12 +32,77 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
+import org.apache.fury.io.FuryStreamReader;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.util.ReflectionUtils;
 import org.testng.annotations.Test;
 
 public class StreamTest {
+  @Test
+  public void testBufferStream() {
+    MemoryBuffer buffer0 = MemoryBuffer.newHeapBuffer(10);
+    for (int i = 0; i < 10; i++) {
+      buffer0.writeByte(i);
+      buffer0.writeChar((char) i);
+      buffer0.writeInt16((short) i);
+      buffer0.writeInt32(i);
+      buffer0.writeInt64(i);
+      buffer0.writeFloat32(i);
+      buffer0.writeFloat64(i);
+      buffer0.writeVarInt32(i);
+      buffer0.writeVarInt32(Integer.MIN_VALUE);
+      buffer0.writeVarInt32(Integer.MAX_VALUE);
+      buffer0.writeVarUint32(i);
+      buffer0.writeVarUint32(Integer.MIN_VALUE);
+      buffer0.writeVarUint32(Integer.MAX_VALUE);
+      buffer0.writeVarInt64(i);
+      buffer0.writeVarInt64(Long.MIN_VALUE);
+      buffer0.writeVarInt64(Long.MAX_VALUE);
+      buffer0.writeVarUint64(i);
+      buffer0.writeVarUint64(Long.MIN_VALUE);
+      buffer0.writeVarUint64(Long.MAX_VALUE);
+      buffer0.writeSliInt64(i);
+      buffer0.writeSliInt64(Long.MIN_VALUE);
+      buffer0.writeSliInt64(Long.MAX_VALUE);
+    }
+    byte[] bytes = buffer0.getBytes(0, buffer0.writerIndex());
+    FuryInputStream stream =
+        FuryStreamReader.of(
+            new ByteArrayInputStream(bytes) {
+              @Override
+              public synchronized int read(byte[] b, int off, int len) {
+                buffer0.readBytes(b, off, 1);
+                return 1;
+              }
+            });
+    MemoryBuffer buffer = MemoryBuffer.fromByteArray(bytes, 0, 0, stream);
+    for (int i = 0; i < 10; i++) {
+      assertEquals(buffer.readByte(), i);
+      assertEquals(buffer.readChar(), i);
+      assertEquals(buffer.readInt16(), i);
+      assertEquals(buffer.readInt32(), i);
+      assertEquals(buffer.readInt64(), i);
+      assertEquals(buffer.readFloat32(), i);
+      assertEquals(buffer.readFloat64(), i);
+      assertEquals(buffer.readVarInt32(), i);
+      assertEquals(buffer.readVarInt32(), Integer.MIN_VALUE);
+      assertEquals(buffer.readVarInt32(), Integer.MAX_VALUE);
+      assertEquals(buffer.readVarUint32(), i);
+      assertEquals(buffer.readVarUint32(), Integer.MIN_VALUE);
+      assertEquals(buffer.readVarUint32(), Integer.MAX_VALUE);
+      assertEquals(buffer.readVarInt64(), i);
+      assertEquals(buffer.readVarInt64(), Long.MIN_VALUE);
+      assertEquals(buffer.readVarInt64(), Long.MAX_VALUE);
+      assertEquals(buffer.readVarUint64(), i);
+      assertEquals(buffer.readVarUint64(), Long.MIN_VALUE);
+      assertEquals(buffer.readVarUint64(), Long.MAX_VALUE);
+      assertEquals(buffer.readSliInt64(), i);
+      assertEquals(buffer.readSliInt64(), Long.MIN_VALUE);
+      assertEquals(buffer.readSliInt64(), Long.MAX_VALUE);
+    }
+  }
+
   @Test
   public void testBufferReset() {
     Fury fury = Fury.builder().withRefTracking(true).requireClassRegistration(false).build();
