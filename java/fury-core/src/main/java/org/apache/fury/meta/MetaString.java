@@ -30,11 +30,11 @@ import java.util.Objects;
 public class MetaString {
   /** Defines the types of supported encodings for MetaStrings. */
   public enum Encoding {
-    LOWER_SPECIAL(0x00),
-    LOWER_UPPER_DIGIT_SPECIAL(0x01),
-    FIRST_TO_LOWER_SPECIAL(0x02),
-    ALL_TO_LOWER_SPECIAL(0x03),
-    UTF_8(0x04); // Using UTF-8 as the fallback
+    UTF_8(0x00), // Using UTF-8 as the fallback
+    LOWER_SPECIAL(0x01),
+    LOWER_UPPER_DIGIT_SPECIAL(0x02),
+    FIRST_TO_LOWER_SPECIAL(0x03),
+    ALL_TO_LOWER_SPECIAL(0x04);
 
     private final int value;
 
@@ -61,6 +61,7 @@ public class MetaString {
   private final char specialChar1;
   private final char specialChar2;
   private final byte[] bytes;
+  private final int numChars;
   private final int numBits;
 
   /**
@@ -76,12 +77,14 @@ public class MetaString {
       char specialChar1,
       char specialChar2,
       byte[] bytes,
+      int numChars,
       int numBits) {
     this.string = string;
     this.encoding = encoding;
     this.specialChar1 = specialChar1;
     this.specialChar2 = specialChar2;
     this.bytes = bytes;
+    this.numChars = numChars;
     this.numBits = numBits;
   }
 
@@ -105,6 +108,10 @@ public class MetaString {
     return bytes;
   }
 
+  public int getNumChars() {
+    return numChars;
+  }
+
   public int getNumBits() {
     return numBits;
   }
@@ -120,6 +127,7 @@ public class MetaString {
     MetaString that = (MetaString) o;
     return specialChar1 == that.specialChar1
         && specialChar2 == that.specialChar2
+        && numChars == that.numChars
         && numBits == that.numBits
         && encoding == that.encoding
         && Arrays.equals(bytes, that.bytes);
@@ -127,7 +135,7 @@ public class MetaString {
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(encoding, specialChar1, specialChar2, numBits);
+    int result = Objects.hash(encoding, specialChar1, specialChar2, numChars, numBits);
     result = 31 * result + Arrays.hashCode(bytes);
     return result;
   }
@@ -145,6 +153,8 @@ public class MetaString {
         + specialChar2
         + ", bytes="
         + Arrays.toString(bytes)
+        + ", numChars="
+        + numChars
         + ", numBits="
         + numBits
         + '}';

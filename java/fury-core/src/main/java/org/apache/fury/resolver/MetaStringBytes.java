@@ -19,14 +19,15 @@
 
 package org.apache.fury.resolver;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.apache.fury.annotation.Internal;
+import org.apache.fury.meta.MetaString;
+import org.apache.fury.meta.MetaStringDecoder;
 import org.apache.fury.util.MurmurHash3;
-import org.apache.fury.util.Preconditions;
 
 @Internal
 final class MetaStringBytes {
+  static final int STRIP_LAST_CHAR = 0b1000;
   static final short DEFAULT_DYNAMIC_WRITE_STRING_ID = -1;
 
   final byte[] bytes;
@@ -46,18 +47,35 @@ final class MetaStringBytes {
     this.hashCode = hashCode;
   }
 
-  public MetaStringBytes(String string) {
-    byte[] classNameBytes = string.getBytes(StandardCharsets.UTF_8);
-    Preconditions.checkArgument(classNameBytes.length <= Short.MAX_VALUE);
+  public MetaStringBytes(MetaString metaString) {
+    this.bytes = metaString.getBytes();
     // Set seed to ensure hash is deterministic.
-    long hashCode =
-        MurmurHash3.murmurhash3_x64_128(classNameBytes, 0, classNameBytes.length, 47)[0];
+    long hashCode = MurmurHash3.murmurhash3_x64_128(bytes, 0, bytes.length, 47)[0];
     if (hashCode == 0) {
       // Ensure hashcode is not 0, so we can do some optimization to avoid boxing.
-      hashCode += 1;
+      hashCode += 256; // last byte is reserved for header.
     }
-    this.bytes = classNameBytes;
-    this.hashCode = hashCode;
+    hashCode &= 0xffffffffffffff00L;
+    int header = metaString.getEncoding().getValue();
+    String decoded =
+        new MetaStringDecoder(metaString.getSpecialChar1(), metaString.getSpecialChar2())
+            .decode(bytes, metaString.getEncoding(), bytes.length * 8);
+    if (decoded.length() > metaString.getString().length()) {
+      header |= STRIP_LAST_CHAR;
+    }
+    this.hashCode = hashCode | header;
+  }
+
+  public String decode(char specialChar1, char specialChar2) {
+    int header = (int) (hashCode & 0xff);
+    int encodingFlags = header & 0b111;
+    MetaString.Encoding encoding = MetaString.Encoding.values()[encodingFlags];
+    String str =
+        new MetaStringDecoder(specialChar1, specialChar2).decode(bytes, encoding, bytes.length * 8);
+    if ((header & STRIP_LAST_CHAR) != 0) {
+      str = str.substring(0, str.length() - 1);
+    }
+    return str;
   }
 
   @Override
@@ -77,14 +95,10 @@ final class MetaStringBytes {
     return hashCode == that.hashCode;
   }
 
-  public byte[] getBytes() {
-    return bytes;
-  }
-
   @Override
   public int hashCode() {
     // equals will compare 8 byte hash code.
-    return (int) hashCode;
+    return (int) (hashCode >> 1);
   }
 
   @Override

@@ -21,6 +21,7 @@ package org.apache.fury.meta;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.fury.meta.MetaString.Encoding;
+import org.apache.fury.util.Preconditions;
 
 /** Encodes plain text strings into MetaString objects with specified encoding mechanisms. */
 public class MetaStringEncoder {
@@ -48,7 +49,7 @@ public class MetaStringEncoder {
   public MetaString encode(String input) {
     if (input.isEmpty()) {
       return new MetaString(
-          input, Encoding.LOWER_SPECIAL, specialChar1, specialChar2, new byte[0], 0);
+          input, Encoding.LOWER_SPECIAL, specialChar1, specialChar2, new byte[0], 0, 0);
     }
     Encoding encoding = computeEncoding(input);
     return encode(input, encoding);
@@ -62,15 +63,23 @@ public class MetaStringEncoder {
    * @return A MetaString object representing the encoded string.
    */
   public MetaString encode(String input, Encoding encoding) {
+    Preconditions.checkArgument(
+        input.length() < Short.MAX_VALUE, "Long meta string than 32767 is not allowed");
     if (input.isEmpty()) {
       return new MetaString(
-          input, Encoding.LOWER_SPECIAL, specialChar1, specialChar2, new byte[0], 0);
+          input, Encoding.LOWER_SPECIAL, specialChar1, specialChar2, new byte[0], 0, 0);
     }
     int length = input.length();
     switch (encoding) {
       case LOWER_SPECIAL:
         return new MetaString(
-            input, encoding, specialChar1, specialChar2, encodeLowerSpecial(input), length * 5);
+            input,
+            encoding,
+            specialChar1,
+            specialChar2,
+            encodeLowerSpecial(input),
+            length,
+            length * 5);
       case LOWER_UPPER_DIGIT_SPECIAL:
         return new MetaString(
             input,
@@ -78,6 +87,7 @@ public class MetaStringEncoder {
             specialChar1,
             specialChar2,
             encodeLowerUpperDigitSpecial(input),
+            length,
             length * 6);
       case FIRST_TO_LOWER_SPECIAL:
         return new MetaString(
@@ -86,6 +96,7 @@ public class MetaStringEncoder {
             specialChar1,
             specialChar2,
             encodeFirstToLowerSpecial(input),
+            length,
             length * 5);
       case ALL_TO_LOWER_SPECIAL:
         char[] chars = input.toCharArray();
@@ -96,11 +107,12 @@ public class MetaStringEncoder {
             specialChar1,
             specialChar2,
             encodeAllToLowerSpecial(chars, upperCount),
+            length,
             (upperCount + length) * 5);
       default:
         byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
         return new MetaString(
-            input, Encoding.UTF_8, specialChar1, specialChar2, bytes, bytes.length * 8);
+            input, Encoding.UTF_8, specialChar1, specialChar2, bytes, bytes.length * 8, 0);
     }
   }
 

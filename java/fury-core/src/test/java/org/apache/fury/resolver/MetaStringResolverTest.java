@@ -24,6 +24,8 @@ import static org.testng.Assert.assertTrue;
 
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.meta.MetaString;
+import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.util.StringUtils;
 import org.testng.annotations.Test;
 
@@ -35,7 +37,9 @@ public class MetaStringResolverTest {
     String str = StringUtils.random(128, 0);
     MetaStringResolver stringResolver = new MetaStringResolver();
     for (int i = 0; i < 128; i++) {
-      stringResolver.writeMetaString(buffer, str);
+      MetaString metaString = new MetaStringEncoder('.', '_').encode(str);
+      stringResolver.writeMetaStringBytes(
+          buffer, stringResolver.getOrCreateMetaStringBytes(metaString));
     }
     for (int i = 0; i < 128; i++) {
       String metaString = stringResolver.readMetaString(buffer);

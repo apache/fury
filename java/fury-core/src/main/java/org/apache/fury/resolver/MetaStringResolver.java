@@ -19,10 +19,10 @@
 
 package org.apache.fury.resolver;
 
-import java.nio.charset.StandardCharsets;
 import org.apache.fury.collection.LongMap;
 import org.apache.fury.collection.ObjectMap;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.meta.MetaString;
 
 /**
  * A resolver for limited string value writing. Currently, we only support classname dynamic
@@ -43,7 +43,7 @@ public final class MetaStringResolver {
   private final LongMap<MetaStringBytes> hash2MetaStringBytesMap =
       new LongMap<>(initialCapacity, furyMapLoadFactor);
   // Every enum bytes should be singleton at every fury, since we keep state in it.
-  private final ObjectMap<String, MetaStringBytes> metaString2BytesMap =
+  private final ObjectMap<MetaString, MetaStringBytes> metaString2BytesMap =
       new ObjectMap<>(initialCapacity, furyMapLoadFactor);
   private MetaStringBytes[] dynamicWrittenString = new MetaStringBytes[32];
   private MetaStringBytes[] dynamicReadStringIds = new MetaStringBytes[32];
@@ -55,27 +55,13 @@ public final class MetaStringResolver {
     dynamicReadStringId = 0;
   }
 
-  MetaStringBytes getOrCreateMetaStringBytes(String str) {
+  MetaStringBytes getOrCreateMetaStringBytes(MetaString str) {
     MetaStringBytes metaStringBytes = metaString2BytesMap.get(str);
     if (metaStringBytes == null) {
       metaStringBytes = new MetaStringBytes(str);
       metaString2BytesMap.put(str, metaStringBytes);
     }
     return metaStringBytes;
-  }
-
-  public void writeMetaString(MemoryBuffer buffer, String str) {
-    writeMetaStringBytes(buffer, getOrCreateMetaStringBytes(str));
-  }
-
-  public String readMetaString(MemoryBuffer buffer) {
-    MetaStringBytes byteString = readMetaStringBytes(buffer);
-    String str = metaStringBytes2StringMap.get(byteString);
-    if (str == null) { // TODO use org.apache.fury.resolver.ObjectMap
-      str = new String(byteString.bytes, StandardCharsets.UTF_8);
-      metaStringBytes2StringMap.put(byteString, str);
-    }
-    return str;
   }
 
   public void writeMetaStringBytesWithFlag(MemoryBuffer buffer, MetaStringBytes byteString) {
@@ -118,6 +104,17 @@ public final class MetaStringResolver {
     MetaStringBytes[] tmp = new MetaStringBytes[id * 2];
     System.arraycopy(dynamicWrittenString, 0, tmp, 0, dynamicWrittenString.length);
     return this.dynamicWrittenString = tmp;
+  }
+
+  public String readMetaString(MemoryBuffer buffer) {
+    MetaStringBytes byteString = readMetaStringBytes(buffer);
+    String str = metaStringBytes2StringMap.get(byteString);
+    if (str == null) {
+      // TODO support meta string in other languages.
+      str = byteString.decode('.', '_');
+      metaStringBytes2StringMap.put(byteString, str);
+    }
+    return str;
   }
 
   public MetaStringBytes readMetaStringBytesWithFlag(MemoryBuffer buffer, int header) {

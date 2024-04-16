@@ -1471,6 +1471,7 @@ public final class MemoryBuffer {
       readerIndex = readIdx + 4;
       return i >> 1;
     }
+    diff = size - readIdx;
     if (diff < 9) {
       streamReader.fillBuffer(9 - diff);
     }
@@ -1493,6 +1494,7 @@ public final class MemoryBuffer {
       readerIndex = readIdx + 4;
       return i >> 1;
     }
+    diff = size - readIdx;
     if (diff < 9) {
       streamReader.fillBuffer(9 - diff);
     }
@@ -2511,8 +2513,6 @@ public final class MemoryBuffer {
         + writerIndex
         + ", heapMemory="
         + (heapMemory == null ? null : "len(" + heapMemory.length + ")")
-        + ", heapData="
-        + Arrays.toString(heapMemory)
         + ", heapOffset="
         + heapOffset
         + ", offHeapBuffer="
