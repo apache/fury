@@ -25,10 +25,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.annotation.Internal;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 
 /**
  * An util to bind {@link Fury} with {@link ClassLoader}. If {@link ClassLoader} are changed, the
@@ -37,6 +41,7 @@ import org.apache.fury.annotation.Internal;
  */
 @Internal
 public final class LoaderBinding {
+  private static final Logger LOG = LoggerFactory.getLogger(LoaderBinding.class);
   private final Function<ClassLoader, Fury> furyFactory;
   // `WeakHashMap` won't work here too, since `Fury` hold classes which reference `ClassLoader`,
   // which cause
@@ -46,6 +51,7 @@ public final class LoaderBinding {
   private Consumer<Fury> bindingCallback = f -> {};
   private ClassLoader loader;
   private Fury fury;
+  private final Lock lock = new ReentrantLock();
 
   public LoaderBinding(Function<ClassLoader, Fury> furyFactory) {
     this.furyFactory = furyFactory;
@@ -56,29 +62,37 @@ public final class LoaderBinding {
   }
 
   public void visitAllFury(Consumer<Fury> consumer) {
-    if (furySoftMap.isEmpty()) {
-      for (Fury f : furyMap.values()) {
-        consumer.accept(f);
-      }
-    } else if (furyMap.isEmpty()) {
-      for (SoftReference<Fury> ref : furySoftMap.values()) {
-        Fury f = ref.get();
-        if (f != null) {
+    try {
+      lock.lock();
+      if (furySoftMap.isEmpty()) {
+        for (Fury f : furyMap.values()) {
+          consumer.accept(f);
+        }
+      } else if (furyMap.isEmpty()) {
+        for (SoftReference<Fury> ref : furySoftMap.values()) {
+          Fury f = ref.get();
+          if (f != null) {
+            consumer.accept(f);
+          }
+        }
+      } else {
+        Set<Fury> furySet = new HashSet<>(furyMap.size());
+        Collections.addAll(furyMap.values());
+        for (SoftReference<Fury> ref : furySoftMap.values()) {
+          Fury f = ref.get();
+          if (f != null) {
+            furySet.add(f);
+          }
+        }
+        for (Fury f : furySet) {
           consumer.accept(f);
         }
       }
-    } else {
-      Set<Fury> furySet = new HashSet<>(furyMap.size());
-      Collections.addAll(furyMap.values());
-      for (SoftReference<Fury> ref : furySoftMap.values()) {
-        Fury f = ref.get();
-        if (f != null) {
-          furySet.add(f);
-        }
-      }
-      for (Fury f : furySet) {
-        consumer.accept(f);
-      }
+    } catch (Exception e) {
+      LOG.error(e.getMessage(), e);
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
     }
   }
 
@@ -114,36 +128,44 @@ public final class LoaderBinding {
         classLoader = Fury.class.getClassLoader();
       }
       this.loader = classLoader;
-      switch (stagingType) {
-        case NO_STAGING:
-          fury = furyFactory.apply(classLoader);
-          bindingCallback.accept(fury);
-          break;
-        case SOFT_STAGING:
-          {
-            SoftReference<Fury> furySoftReference = furySoftMap.get(classLoader);
-            Fury fury = furySoftReference == null ? null : furySoftReference.get();
-            if (fury == null) {
-              fury = furyFactory.apply(classLoader);
-              bindingCallback.accept(fury);
-              furySoftMap.put(classLoader, new SoftReference<>(fury));
-              this.fury = fury;
-            }
+      try {
+        lock.lock();
+        switch (stagingType) {
+          case NO_STAGING:
+            fury = furyFactory.apply(classLoader);
+            bindingCallback.accept(fury);
             break;
-          }
-        case STRONG_STAGING:
-          {
-            Fury fury = furyMap.get(classLoader);
-            if (fury == null) {
-              fury = furyFactory.apply(classLoader);
-              bindingCallback.accept(fury);
-              furyMap.put(classLoader, fury);
-              this.fury = fury;
+          case SOFT_STAGING:
+            {
+              SoftReference<Fury> furySoftReference = furySoftMap.get(classLoader);
+              Fury fury = furySoftReference == null ? null : furySoftReference.get();
+              if (fury == null) {
+                fury = furyFactory.apply(classLoader);
+                bindingCallback.accept(fury);
+                furySoftMap.put(classLoader, new SoftReference<>(fury));
+                this.fury = fury;
+              }
+              break;
             }
-            break;
-          }
-        default:
-          throw new IllegalArgumentException();
+          case STRONG_STAGING:
+            {
+              Fury fury = furyMap.get(classLoader);
+              if (fury == null) {
+                fury = furyFactory.apply(classLoader);
+                bindingCallback.accept(fury);
+                furyMap.put(classLoader, fury);
+                this.fury = fury;
+              }
+              break;
+            }
+          default:
+            throw new IllegalArgumentException();
+        }
+      } catch (Exception e) {
+        LOG.error(e.getMessage(), e);
+        throw new RuntimeException(e);
+      } finally {
+        lock.unlock();
       }
     }
   }
@@ -155,8 +177,10 @@ public final class LoaderBinding {
    * referenced by other objects.
    */
   public void clearClassLoader(ClassLoader classLoader) {
+    lock.lock();
     furyMap.remove(classLoader);
     SoftReference<Fury> softReference = furySoftMap.remove(classLoader);
+    lock.unlock();
     if (softReference != null) {
       softReference.clear();
     }
@@ -167,18 +191,36 @@ public final class LoaderBinding {
   }
 
   public void register(Class<?> clz) {
-    furyMap.values().forEach(fury -> fury.register(clz));
-    bindingCallback = bindingCallback.andThen(fury -> fury.register(clz));
+    try {
+      lock.lock();
+      furyMap.values().forEach(fury -> fury.register(clz));
+      bindingCallback = bindingCallback.andThen(fury -> fury.register(clz));
+    } catch (Exception e) {
+      LOG.error(e.getMessage(), e);
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
   }
 
   public void register(Class<?> clz, int id) {
     Preconditions.checkArgument(id < Short.MAX_VALUE);
-    furyMap.values().forEach(fury -> fury.register(clz, (short) id));
-    bindingCallback = bindingCallback.andThen(fury -> fury.register(clz, (short) id));
+    try {
+      lock.lock();
+      furyMap.values().forEach(fury -> fury.register(clz, (short) id));
+      bindingCallback = bindingCallback.andThen(fury -> fury.register(clz, (short) id));
+    } catch (Exception e) {
+      LOG.error(e.getMessage(), e);
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
   }
 
   public void setBindingCallback(Consumer<Fury> bindingCallback) {
+    lock.lock();
     this.bindingCallback = bindingCallback;
+    lock.unlock();
   }
 
   public enum StagingType {

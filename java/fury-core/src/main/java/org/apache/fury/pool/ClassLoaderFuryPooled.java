@@ -29,11 +29,13 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import javax.annotation.concurrent.ThreadSafe;
 import org.apache.fury.Fury;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 
 /** A thread-safe object pool of {@link Fury}. */
+@ThreadSafe
 public class ClassLoaderFuryPooled {
 
   private static final Logger LOG = LoggerFactory.getLogger(ClassLoaderFuryPooled.class);
@@ -122,6 +124,20 @@ public class ClassLoaderFuryPooled {
   }
 
   void setFactoryCallback(Consumer<Fury> factoryCallback) {
+    lock.lock();
     this.factoryCallback = factoryCallback;
+    lock.unlock();
+  }
+
+  void traversalAllFury(Consumer<Fury> callback) {
+    try {
+      lock.lock();
+      allFury.keySet().forEach(callback);
+    } catch (Exception e) {
+      LOG.error(e.getMessage(), e);
+      throw new RuntimeException(e);
+    } finally {
+      lock.unlock();
+    }
   }
 }

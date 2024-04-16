@@ -55,7 +55,7 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
     factoryCallback = factoryCallback.andThen(callback);
     for (ClassLoaderFuryPooled furyPooled :
         furyPooledObjectFactory.classLoaderFuryPooledCache.asMap().values()) {
-      furyPooled.allFury.keySet().forEach(callback);
+      furyPooled.traversalAllFury(callback);
       furyPooled.setFactoryCallback(factoryCallback);
     }
   }
