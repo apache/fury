@@ -742,8 +742,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       builder.add(sameElementClass);
       //  if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE)
       Literal notDeclTypeFlag = Literal.ofInt(CollectionFlags.NOT_DECL_ELEMENT_TYPE);
-      Expression isDeclType =
-          neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
+      Expression isDeclType = neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag);
       Expression elemSerializer; // make it in scope of `if(sameElementClass)`
       boolean maybeDecl = visitFury(f -> f.getClassResolver().isSerializable(elemClass));
       TypeToken<?> serializerType = getSerializerType(elementType);
@@ -1256,8 +1255,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           neq(new BitAnd(flags, notSameTypeFlag), notSameTypeFlag, "sameElementClass");
       //  if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE)
       Literal notDeclTypeFlag = Literal.ofInt(CollectionFlags.NOT_DECL_ELEMENT_TYPE);
-      Expression isDeclType =
-          neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
+      Expression isDeclType = neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag);
       Invoke serializer =
           inlineInvoke(readClassInfo(elemClass, buffer), "getSerializer", SERIALIZER_TYPE);
       TypeToken<?> serializerType = getSerializerType(elementType);
