@@ -42,6 +42,7 @@ import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryBufferManager;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
@@ -95,7 +96,6 @@ public final class Fury implements BaseFury {
   private static final byte isOutOfBandFlag = 1 << 3;
   private static final boolean isLittleEndian = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
   private static final byte BITMAP = isLittleEndian ? isLittleEndianFlag : 0;
-  private static final int BUFFER_SIZE_LIMIT = 128 * 1024;
 
   private final Config config;
   private final boolean refTracking;
@@ -105,7 +105,6 @@ public final class Fury implements BaseFury {
   private final SerializationContext serializationContext;
   private final ClassLoader classLoader;
   private final JITContext jitContext;
-  private MemoryBuffer buffer;
   private final List<Object> nativeObjects;
   private final StringSerializer stringSerializer;
   private final Language language;
@@ -117,6 +116,7 @@ public final class Fury implements BaseFury {
   private Iterator<MemoryBuffer> outOfBandBuffers;
   private boolean peerOutOfBandEnabled;
   private int depth;
+  private final MemoryBufferManager bufferManager;
 
   public Fury(FuryBuilder builder, ClassLoader classLoader) {
     // Avoid set classLoader in `FuryBuilder`, which won't be clear when
@@ -140,6 +140,7 @@ public final class Fury implements BaseFury {
     nativeObjects = new ArrayList<>();
     generics = new Generics(this);
     stringSerializer = new StringSerializer(this);
+    bufferManager = new MemoryBufferManager();
     LOG.info("Created new fury {}", this);
   }
 
@@ -196,22 +197,20 @@ public final class Fury implements BaseFury {
 
   @Override
   public byte[] serialize(Object obj) {
-    MemoryBuffer buf = getBuffer();
-    buf.writerIndex(0);
-    serialize(buf, obj, null);
-    byte[] bytes = buf.getBytes(0, buf.writerIndex());
-    resetBuffer();
-    return bytes;
+    return bufferManager.execute(
+        buf -> {
+          serialize(buf, obj, null);
+          return buf.getBytes(0, buf.writerIndex());
+        });
   }
 
   @Override
   public byte[] serialize(Object obj, BufferCallback callback) {
-    MemoryBuffer buf = getBuffer();
-    buf.writerIndex(0);
-    serialize(buf, obj, callback);
-    byte[] bytes = buf.getBytes(0, buf.writerIndex());
-    resetBuffer();
-    return bytes;
+    return bufferManager.execute(
+        buf -> {
+          serialize(buf, obj, callback);
+          return buf.getBytes(0, buf.writerIndex());
+        });
   }
 
   @Override
@@ -280,21 +279,6 @@ public final class Fury implements BaseFury {
       }
     }
     throw e;
-  }
-
-  private MemoryBuffer getBuffer() {
-    MemoryBuffer buf = buffer;
-    if (buf == null) {
-      buf = buffer = MemoryBuffer.newHeapBuffer(64);
-    }
-    return buf;
-  }
-
-  private void resetBuffer() {
-    MemoryBuffer buf = buffer;
-    if (buf != null && buf.size() > BUFFER_SIZE_LIMIT) {
-      buffer = MemoryBuffer.newHeapBuffer(BUFFER_SIZE_LIMIT);
-    }
   }
 
   private void write(MemoryBuffer buffer, Object obj) {
@@ -1008,12 +992,11 @@ public final class Fury implements BaseFury {
 
   @Override
   public byte[] serializeJavaObject(Object obj) {
-    MemoryBuffer buf = getBuffer();
-    buf.writerIndex(0);
-    serializeJavaObject(buf, obj);
-    byte[] bytes = buf.getBytes(0, buf.writerIndex());
-    resetBuffer();
-    return bytes;
+    return bufferManager.execute(
+        buf -> {
+          serializeJavaObject(buf, obj);
+          return buf.getBytes(0, buf.writerIndex());
+        });
   }
 
   @Override
@@ -1117,12 +1100,11 @@ public final class Fury implements BaseFury {
    */
   @Override
   public byte[] serializeJavaObjectAndClass(Object obj) {
-    MemoryBuffer buf = getBuffer();
-    buf.writerIndex(0);
-    serializeJavaObjectAndClass(buf, obj);
-    byte[] bytes = buf.getBytes(0, buf.writerIndex());
-    resetBuffer();
-    return bytes;
+    return bufferManager.execute(
+        buf -> {
+          serializeJavaObjectAndClass(buf, obj);
+          return buf.getBytes(0, buf.writerIndex());
+        });
   }
 
   /**
@@ -1211,31 +1193,30 @@ public final class Fury implements BaseFury {
   }
 
   private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {
-    MemoryBuffer buf = getBuffer();
-    if (outputStream.getClass() == ByteArrayOutputStream.class) {
-      byte[] oldBytes = buf.getHeapMemory(); // Note: This should not be null.
-      assert oldBytes != null;
-      MemoryUtils.wrap((ByteArrayOutputStream) outputStream, buf);
-      function.accept(buf);
-      MemoryUtils.wrap(buf, (ByteArrayOutputStream) outputStream);
-      buf.pointTo(oldBytes, 0, oldBytes.length);
-    } else {
-      buf.writerIndex(0);
-      function.accept(buf);
-      try {
-        byte[] bytes = buf.getHeapMemory();
-        if (bytes != null) {
-          outputStream.write(bytes, 0, buf.writerIndex());
-        } else {
-          outputStream.write(buf.getBytes(0, buf.writerIndex()));
-        }
-        outputStream.flush();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      } finally {
-        resetBuffer();
-      }
-    }
+    bufferManager.execute(
+        buf -> {
+          if (outputStream.getClass() == ByteArrayOutputStream.class) {
+            byte[] oldBytes = buf.getHeapMemory(); // Note: This should not be null.
+            assert oldBytes != null;
+            MemoryUtils.wrap((ByteArrayOutputStream) outputStream, buf);
+            function.accept(buf);
+            MemoryUtils.wrap(buf, (ByteArrayOutputStream) outputStream);
+            buf.pointTo(oldBytes, 0, oldBytes.length);
+          } else {
+            function.accept(buf);
+            try {
+              if (!buf.isOffHeap()) {
+                outputStream.write(buf.getHeapMemory(), 0, buf.writerIndex());
+              } else {
+                outputStream.write(buf.getBytes(0, buf.writerIndex()));
+              }
+              outputStream.flush();
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+          }
+          return null;
+        });
   }
 
   public void reset() {

@@ -34,6 +34,7 @@ import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.io.FuryStreamReader;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryBufferManager;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.util.ReflectionUtils;
 import org.testng.annotations.Test;
@@ -140,7 +141,10 @@ public class StreamTest {
   }
 
   private void checkBuffer(Fury fury) {
-    Object buf = ReflectionUtils.getObjectFieldValue(fury, "buffer");
+    Object bufManager = ReflectionUtils.getObjectFieldValue(fury, "bufferManager");
+    MemoryBufferManager bufferManager = (MemoryBufferManager) bufManager;
+    assert bufferManager != null;
+    Object buf = ReflectionUtils.getObjectFieldValue(bufferManager, "buffer");
     MemoryBuffer buffer = (MemoryBuffer) buf;
     assert buffer != null;
     assertTrue(buffer.size() < 1000 * 1000);
