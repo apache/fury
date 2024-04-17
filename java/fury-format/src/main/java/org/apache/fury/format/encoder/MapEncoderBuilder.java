@@ -34,10 +34,10 @@ import org.apache.fury.format.row.binary.BinaryArray;
 import org.apache.fury.format.row.binary.BinaryMap;
 import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.type.TypeInference;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.StringUtils;
-import org.slf4j.Logger;
 
 /** Expression builder for building jit map encoder class. */
 @SuppressWarnings("UnstableApiUsage")
@@ -140,7 +140,7 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
     long startTime = System.nanoTime();
     String code = ctx.genCode();
     long durationMs = (System.nanoTime() - startTime) / 1000_000;
-    LOG.debug("Generate map codec for class {} take {} us", beanClass, durationMs);
+    LOG.info("Generate map codec for class {} take {} us", beanClass, durationMs);
     return code;
   }
 

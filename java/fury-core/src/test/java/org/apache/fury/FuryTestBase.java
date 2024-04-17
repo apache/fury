@@ -32,6 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.io.ClassLoaderObjectInputStream;
 import org.apache.fury.memory.MemoryBuffer;
@@ -51,6 +52,10 @@ public abstract class FuryTestBase {
 
   public static Fury getJavaFury() {
     return javaFuryLocal.get();
+  }
+
+  public static FuryBuilder builder() {
+    return Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
   }
 
   @DataProvider
@@ -93,6 +98,11 @@ public abstract class FuryTestBase {
   @DataProvider
   public static Object[][] compressNumber() {
     return new Object[][] {{false}, {true}};
+  }
+
+  @DataProvider
+  public static Object[][] compressNumberAndCodeGen() {
+    return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
   }
 
   @DataProvider

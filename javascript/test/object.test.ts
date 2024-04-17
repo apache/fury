@@ -23,11 +23,11 @@ import { describe, expect, test } from '@jest/globals';
 describe('object', () => {
   test('should object work', () => {
     const description = {
-      type: InternalSerializerType.FURY_TYPE_TAG as const,
+      type: InternalSerializerType.OBJECT as const,
       options: {
         props: {
           a: {
-            type: InternalSerializerType.FURY_TYPE_TAG as const,
+            type: InternalSerializerType.OBJECT as const,
             options: {
               tag: "example.bar",
               props: {
@@ -54,11 +54,11 @@ describe('object', () => {
 
   test('should null value work', () => {
     const description = {
-      type: InternalSerializerType.FURY_TYPE_TAG as const,
+      type: InternalSerializerType.OBJECT as const,
       options: {
         props: {
           a: {
-            type: InternalSerializerType.FURY_TYPE_TAG as const,
+            type: InternalSerializerType.OBJECT as const,
             options: {
               tag: "example.bar",
               props: {
@@ -87,8 +87,8 @@ describe('object', () => {
       a: Type.array(Type.object('example.bar', {
         b: Type.string(),
         c: Type.bool(),
-        d: Type.uint32(),
-        e: Type.uint64(),
+        d: Type.int32(),
+        e: Type.int64(),
         f: Type.binary(),
       }))
     })
@@ -105,11 +105,11 @@ describe('object', () => {
 
   test('should write tag and read tag work', () => {
     const description = {
-      type: InternalSerializerType.FURY_TYPE_TAG,
+      type: InternalSerializerType.OBJECT,
       options: {
         props: {
           a: {
-            type: InternalSerializerType.FURY_TYPE_TAG as const,
+            type: InternalSerializerType.OBJECT as const,
             options: {
               tag: "example.bar",
               props: {
@@ -120,7 +120,7 @@ describe('object', () => {
             }
           },
           a2: {
-            type: InternalSerializerType.FURY_TYPE_TAG as const,
+            type: InternalSerializerType.OBJECT as const,
             options: {
               tag: "example.bar",
             }
@@ -141,11 +141,11 @@ describe('object', () => {
 
   test('should ciycle ref work', () => {
     const description = {
-      type: InternalSerializerType.FURY_TYPE_TAG,
+      type: InternalSerializerType.OBJECT,
       options: {
         props: {
           a: {
-            type: InternalSerializerType.FURY_TYPE_TAG as const,
+            type: InternalSerializerType.OBJECT as const,
             options: {
               tag: "example.bar",
               props: {
@@ -156,7 +156,7 @@ describe('object', () => {
             }
           },
           a2: {
-            type: InternalSerializerType.FURY_TYPE_TAG as const,
+            type: InternalSerializerType.OBJECT as const,
             options: {
               tag: "example.foo",
             }

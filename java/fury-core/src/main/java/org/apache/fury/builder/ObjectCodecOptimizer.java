@@ -96,7 +96,7 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
     List<Descriptor> primitiveDescriptorsList =
         new ArrayList<>(descriptorGrouper.getPrimitiveDescriptors());
     while (!primitiveDescriptorsList.isEmpty()) {
-      int endIndex = Math.min(20, primitiveDescriptorsList.size());
+      int endIndex = Math.min(18, primitiveDescriptorsList.size());
       primitiveGroups.add(primitiveDescriptorsList.subList(0, endIndex));
       primitiveDescriptorsList =
           primitiveDescriptorsList.subList(endIndex, primitiveDescriptorsList.size());
@@ -125,7 +125,7 @@ public class ObjectCodecOptimizer extends ExpressionOptimizer {
             MutableTuple3.of(
                 new ArrayList<>(descriptorGrouper.getOtherDescriptors()), 9, otherWriteGroups));
     for (MutableTuple3<List<Descriptor>, Integer, List<List<Descriptor>>> decs : groups) {
-      while (decs.f0.size() > 0) {
+      while (!decs.f0.isEmpty()) {
         int endIndex = Math.min(decs.f1, decs.f0.size());
         decs.f2.add(decs.f0.subList(0, endIndex));
         decs.f0 = decs.f0.subList(endIndex, decs.f0.size());

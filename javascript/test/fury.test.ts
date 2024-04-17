@@ -82,7 +82,7 @@ describe('fury', () => {
             // const description5 = Type.float()
             // testDescription(description5, 123.456)
 
-            const description6 = Type.double()
+            const description6 = Type.float64()
             testDescription(description6, 123.456789)
 
             const description7 = Type.binary()

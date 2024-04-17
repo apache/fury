@@ -22,175 +22,185 @@ import { isNodeEnv } from "../util";
 import { PlatformBuffer, alloc, fromUint8Array } from "../platformBuffer";
 import { readLatin1String } from "./string";
 
-export const BinaryReader = (config: Config) => {
-  const sliceStringEnable = isNodeEnv && config.useSliceString;
-  let cursor = 0;
-  let dataView!: DataView;
-  let buffer!: PlatformBuffer;
-  let bigString: string;
-  let byteLength: number;
+export class BinaryReader {
+  private sliceStringEnable;
+  private cursor = 0;
+  private dataView!: DataView;
+  private platformBuffer!: PlatformBuffer;
+  private bigString = "";
+  private byteLength = 0;
 
-  const stringLatin1 = sliceStringEnable ? stringLatin1Fast : stringLatin1Slow;
+  constructor(config: Config) {
+    this.sliceStringEnable = isNodeEnv && config.useSliceString;
+  }
 
-  function reset(ab: Uint8Array) {
-    buffer = fromUint8Array(ab);
-    byteLength = buffer.byteLength;
-    dataView = new DataView(buffer.buffer, buffer.byteOffset, byteLength);
-    if (sliceStringEnable) {
-      bigString = buffer.toString("latin1", 0, byteLength);
+  reset(ab: Uint8Array) {
+    this.platformBuffer = fromUint8Array(ab);
+    this.byteLength = this.platformBuffer.byteLength;
+    this.dataView = new DataView(this.platformBuffer.buffer, this.platformBuffer.byteOffset, this.byteLength);
+    if (this.sliceStringEnable) {
+      this.bigString = this.platformBuffer.toString("latin1", 0, this.byteLength);
     }
-    cursor = 0;
+    this.cursor = 0;
   }
 
-  function uint8() {
-    return dataView.getUint8(cursor++);
+  uint8() {
+    return this.dataView.getUint8(this.cursor++);
   }
 
-  function int8() {
-    return dataView.getInt8(cursor++);
+  int8() {
+    return this.dataView.getInt8(this.cursor++);
   }
 
-  function uint16() {
-    const result = dataView.getUint16(cursor, true);
-    cursor += 2;
+  uint16() {
+    const result = this.dataView.getUint16(this.cursor, true);
+    this.cursor += 2;
     return result;
   }
 
-  function int16() {
-    const result = dataView.getInt16(cursor, true);
-    cursor += 2;
+  int16() {
+    const result = this.dataView.getInt16(this.cursor, true);
+    this.cursor += 2;
     return result;
   }
 
-  function skip(len: number) {
-    cursor += len;
+  skip(len: number) {
+    this.cursor += len;
   }
 
-  function int32() {
-    const result = dataView.getInt32(cursor, true);
-    cursor += 4;
+  int32() {
+    const result = this.dataView.getInt32(this.cursor, true);
+    this.cursor += 4;
     return result;
   }
 
-  function uint32() {
-    const result = dataView.getUint32(cursor, true);
-    cursor += 4;
+  uint32() {
+    const result = this.dataView.getUint32(this.cursor, true);
+    this.cursor += 4;
     return result;
   }
 
-  function int64() {
-    const result = dataView.getBigInt64(cursor, true);
-    cursor += 8;
+  int64() {
+    const result = this.dataView.getBigInt64(this.cursor, true);
+    this.cursor += 8;
     return result;
   }
 
-  function uint64() {
-    const result = dataView.getBigUint64(cursor, true);
-    cursor += 8;
+  uint64() {
+    const result = this.dataView.getBigUint64(this.cursor, true);
+    this.cursor += 8;
     return result;
   }
 
-  function sliLong() {
-    const i = dataView.getUint32(cursor, true);
+  sliInt64() {
+    const i = this.dataView.getUint32(this.cursor, true);
     if ((i & 0b1) != 0b1) {
-      cursor += 4;
+      this.cursor += 4;
       return BigInt(i >> 1);
     }
-    cursor += 1;
-    return varInt64();
+    this.cursor += 1;
+    return this.varInt64();
   }
 
-  function float() {
-    const result = dataView.getFloat32(cursor, true);
-    cursor += 4;
+  float32() {
+    const result = this.dataView.getFloat32(this.cursor, true);
+    this.cursor += 4;
     return result;
   }
 
-  function double() {
-    const result = dataView.getFloat64(cursor, true);
-    cursor += 8;
+  float64() {
+    const result = this.dataView.getFloat64(this.cursor, true);
+    this.cursor += 8;
     return result;
   }
 
-  function stringUtf8At(start: number, len: number) {
-    return buffer.toString("utf8", start, start + len);
+  stringUtf8At(start: number, len: number) {
+    return this.platformBuffer.toString("utf8", start, start + len);
   }
 
-  function stringUtf8(len: number) {
-    const result = buffer.toString("utf8", cursor, cursor + len);
-    cursor += len;
+  stringUtf8(len: number) {
+    const result = this.platformBuffer.toString("utf8", this.cursor, this.cursor + len);
+    this.cursor += len;
     return result;
   }
 
-  function stringOfVarUInt32() {
-    const isLatin1 = uint8() === LATIN1;
-    const len = varUInt32();
-    return isLatin1 ? stringLatin1(len) : stringUtf8(len);
+  stringOfVarUInt32() {
+    const isLatin1 = this.uint8() === LATIN1;
+    const len = this.varUInt32();
+    return isLatin1 ? this.stringLatin1(len) : this.stringUtf8(len);
   }
 
-  function stringLatin1Fast(len: number) {
-    const result = bigString.substring(cursor, cursor + len);
-    cursor += len;
+  stringLatin1(len: number) {
+    if (this.sliceStringEnable) {
+      return this.stringLatin1Fast(len);
+    }
+    return this.stringLatin1Slow(len);
+  }
+
+  private stringLatin1Fast(len: number) {
+    const result = this.bigString.substring(this.cursor, this.cursor + len);
+    this.cursor += len;
     return result;
   }
 
-  function stringLatin1Slow(len: number) {
-    const rawCursor = cursor;
-    cursor += len;
-    return readLatin1String(buffer, len, rawCursor);
+  private stringLatin1Slow(len: number) {
+    const rawCursor = this.cursor;
+    this.cursor += len;
+    return readLatin1String(this.platformBuffer, len, rawCursor);
   }
 
-  function binary(len: number) {
+  buffer(len: number) {
     const result = alloc(len);
-    buffer.copy(result, 0, cursor, cursor + len);
-    cursor += len;
+    this.platformBuffer.copy(result, 0, this.cursor, this.cursor + len);
+    this.cursor += len;
     return result;
   }
 
-  function bufferRef(len: number) {
-    const result = buffer.subarray(cursor, cursor + len);
-    cursor += len;
+  bufferRef(len: number) {
+    const result = this.platformBuffer.subarray(this.cursor, this.cursor + len);
+    this.cursor += len;
     return result;
   }
 
-  function varUInt32() {
+  varUInt32() {
     // Reduce memory reads as much as possible. Reading a uint32 at once is far faster than reading four uint8s separately.
-    if (byteLength - cursor >= 5) {
-      const u32 = dataView.getUint32(cursor++, true);
-      let result = u32 & 0x7f;
-      if ((u32 & 0x80) != 0) {
-        cursor++;
-        const b2 = u32 >> 8;
-        result |= (b2 & 0x7f) << 7;
-        if ((b2 & 0x80) != 0) {
-          cursor++;
-          const b3 = u32 >> 16;
-          result |= (b3 & 0x7f) << 14;
-          if ((b3 & 0x80) != 0) {
-            cursor++;
-            const b4 = u32 >> 24;
-            result |= (b4 & 0x7f) << 21;
-            if ((b4 & 0x80) != 0) {
-              result |= (uint8()) << 28;
+    if (this.byteLength - this.cursor >= 5) {
+      const fourByteValue = this.dataView.getUint32(this.cursor++, true);
+      // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
+      let result = fourByteValue & 0x7f;
+      if ((fourByteValue & 0x80) != 0) {
+        this.cursor++;
+        // 0x3f80: 0b1111111 << 7
+        result |= (fourByteValue >>> 1) & 0x3f80;
+        if ((fourByteValue & 0x8000) != 0) {
+          this.cursor++;
+          // 0x1fc000: 0b1111111 << 14
+          result |= (fourByteValue >>> 2) & 0x1fc000;
+          if ((fourByteValue & 0x800000) != 0) {
+            this.cursor++;
+            // 0xfe00000: 0b1111111 << 21
+            result |= (fourByteValue >>> 3) & 0xfe00000;
+            if ((fourByteValue & 0x80000000) != 0) {
+              result |= (this.uint8()) << 28;
             }
           }
         }
       }
       return result;
     }
-    let byte = uint8();
+    let byte = this.uint8();
     let result = byte & 0x7f;
     if ((byte & 0x80) != 0) {
-      byte = uint8();
+      byte = this.uint8();
       result |= (byte & 0x7f) << 7;
       if ((byte & 0x80) != 0) {
-        byte = uint8();
+        byte = this.uint8();
         result |= (byte & 0x7f) << 14;
         if ((byte & 0x80) != 0) {
-          byte = uint8();
+          byte = this.uint8();
           result |= (byte & 0x7f) << 21;
           if ((byte & 0x80) != 0) {
-            byte = uint8();
+            byte = this.uint8();
             result |= (byte) << 28;
           }
         }
@@ -199,43 +209,43 @@ export const BinaryReader = (config: Config) => {
     return result;
   }
 
-  function varInt32() {
-    const v = varUInt32();
+  varInt32() {
+    const v = this.varUInt32();
     return (v >> 1) ^ -(v & 1); // zigZag decode
   }
 
-  function bigUInt8() {
-    return BigInt(uint8() >>> 0);
+  bigUInt8() {
+    return BigInt(this.uint8() >>> 0);
   }
 
-  function varUInt64() {
+  varUInt64() {
     // Creating BigInts is too performance-intensive; we'll use uint32 instead.
-    if (byteLength - cursor < 8) {
-      let byte = bigUInt8();
+    if (this.byteLength - this.cursor < 8) {
+      let byte = this.bigUInt8();
       let result = byte & 0x7fn;
       if ((byte & 0x80n) != 0n) {
-        byte = bigUInt8();
+        byte = this.bigUInt8();
         result |= (byte & 0x7fn) << 7n;
         if ((byte & 0x80n) != 0n) {
-          byte = bigUInt8();
+          byte = this.bigUInt8();
           result |= (byte & 0x7fn) << 14n;
           if ((byte & 0x80n) != 0n) {
-            byte = bigUInt8();
+            byte = this.bigUInt8();
             result |= (byte & 0x7fn) << 21n;
             if ((byte & 0x80n) != 0n) {
-              byte = bigUInt8();
+              byte = this.bigUInt8();
               result |= (byte & 0x7fn) << 28n;
               if ((byte & 0x80n) != 0n) {
-                byte = bigUInt8();
+                byte = this.bigUInt8();
                 result |= (byte & 0x7fn) << 35n;
                 if ((byte & 0x80n) != 0n) {
-                  byte = bigUInt8();
+                  byte = this.bigUInt8();
                   result |= (byte & 0x7fn) << 42n;
                   if ((byte & 0x80n) != 0n) {
-                    byte = bigUInt8();
+                    byte = this.bigUInt8();
                     result |= (byte & 0x7fn) << 49n;
                     if ((byte & 0x80n) != 0n) {
-                      byte = bigUInt8();
+                      byte = this.bigUInt8();
                       result |= (byte) << 56n;
                     }
                   }
@@ -247,40 +257,40 @@ export const BinaryReader = (config: Config) => {
       }
       return result;
     }
-    const l32 = dataView.getUint32(cursor++, true);
+    const l32 = this.dataView.getUint32(this.cursor++, true);
     let byte = l32 & 0xff;
     let rl28 = byte & 0x7f;
     let rh28 = 0;
     if ((byte & 0x80) != 0) {
       byte = l32 & 0xff00 >> 8;
-      cursor++;
+      this.cursor++;
       rl28 |= (byte & 0x7f) << 7;
       if ((byte & 0x80) != 0) {
         byte = l32 & 0xff0000 >> 16;
-        cursor++;
+        this.cursor++;
         rl28 |= (byte & 0x7f) << 14;
         if ((byte & 0x80) != 0) {
           byte = l32 & 0xff000000 >> 24;
-          cursor++;
+          this.cursor++;
           rl28 |= (byte & 0x7f) << 21;
           if ((byte & 0x80) != 0) {
-            const h32 = dataView.getUint32(cursor++, true);
+            const h32 = this.dataView.getUint32(this.cursor++, true);
             byte = h32 & 0xff;
             rh28 |= (byte & 0x7f);
             if ((byte & 0x80) != 0) {
               byte = h32 & 0xff00 >> 8;
-              cursor++;
+              this.cursor++;
               rh28 |= (byte & 0x7f) << 7;
               if ((byte & 0x80) != 0) {
                 byte = h32 & 0xff0000 >> 16;
-                cursor++;
+                this.cursor++;
                 rh28 |= (byte & 0x7f) << 14;
                 if ((byte & 0x80) != 0) {
                   byte = h32 & 0xff000000 >> 24;
-                  cursor++;
+                  this.cursor++;
                   rh28 |= (byte & 0x7f) << 21;
                   if ((byte & 0x80) != 0) {
-                    return (BigInt(uint8()) << 56n) | BigInt(rh28) << 28n | BigInt(rl28);
+                    return (BigInt(this.uint8()) << 56n) | BigInt(rh28) << 28n | BigInt(rl28);
                   }
                 }
               }
@@ -293,36 +303,45 @@ export const BinaryReader = (config: Config) => {
     return BigInt(rh28) << 28n | BigInt(rl28);
   }
 
-  function varInt64() {
-    const v = varUInt64();
+  varInt64() {
+    const v = this.varUInt64();
     return (v >> 1n) ^ -(v & 1n); // zigZag decode
   }
 
-  return {
-    getCursor: () => cursor,
-    setCursor: (v: number) => (cursor = v),
-    varInt32,
-    varInt64,
-    varUInt32,
-    varUInt64,
-    int8,
-    buffer: binary,
-    bufferRef,
-    uint8,
-    reset,
-    stringUtf8At,
-    stringUtf8,
-    stringLatin1,
-    stringOfVarUInt32,
-    double,
-    float,
-    uint16,
-    int16,
-    uint64,
-    skip,
-    int64,
-    sliLong,
-    uint32,
-    int32,
-  };
-};
+  float16() {
+    const asUint16 = this.uint16();
+    const sign = asUint16 >> 15;
+    const exponent = (asUint16 >> 10) & 0x1F;
+    const mantissa = asUint16 & 0x3FF;
+
+    // IEEE 754-2008
+    if (exponent === 0) {
+      if (mantissa === 0) {
+        // +-0
+        return sign === 0 ? 0 : -0;
+      } else {
+        // Denormalized number
+        return (sign === 0 ? 1 : -1) * mantissa * 2 ** (1 - 15 - 10);
+      }
+    } else if (exponent === 31) {
+      if (mantissa === 0) {
+        // Infinity
+        return sign === 0 ? Infinity : -Infinity;
+      } else {
+        // NaN
+        return NaN;
+      }
+    } else {
+      // Normalized number
+      return (sign === 0 ? 1 : -1) * (1 + mantissa * 2 ** -10) * 2 ** (exponent - 15);
+    }
+  }
+
+  getCursor() {
+    return this.cursor;
+  }
+
+  setCursor(v: number) {
+    this.cursor = v;
+  }
+}

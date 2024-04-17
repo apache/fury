@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.function.Supplier;
 import org.apache.fury.util.FieldAccessor;
 import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.unsafe._JDKAccess;
+import org.testng.SkipException;
 
 /** Test utils. */
 public class TestUtils {
@@ -47,6 +49,9 @@ public class TestUtils {
    * @param predicate whether stop Trigger OOM.
    */
   public static void triggerOOMForSoftGC(Supplier<Boolean> predicate) {
+    if (_JDKAccess.IS_OPEN_J9) {
+      throw new SkipException("OpenJ9 unsupported");
+    }
     System.gc();
     while (predicate.get()) {
       triggerOOM();

@@ -107,8 +107,9 @@ public class SerializersTest extends FuryTestBase {
     assertEquals(BigDecimal.valueOf(100, 2), serDe(fury1, fury2, BigDecimal.valueOf(100, 2)));
     BigInteger bigInteger = new BigInteger("999999999999999999999999999999999999999999999999");
     BigDecimal bigDecimal = new BigDecimal(bigInteger, 200, MathContext.DECIMAL128);
-    BigDecimal bigDecimal1 = serDe(fury1, bigDecimal);
-    assertEquals(bigDecimal1, bigDecimal);
+    serDeCheck(fury1, bigDecimal);
+    serDeCheck(
+        fury1, new BigInteger("11111111110101010000283895380202208220050200000000111111111"));
   }
 
   @Test(dataProvider = "javaFury")

@@ -24,6 +24,7 @@ import { ObjectTypeDescription, TypeDescription } from "../description";
 import { fromString } from "../platformBuffer";
 import { CodegenRegistry } from "./router";
 import { BaseSerializerGenerator, RefState } from "./serializer";
+import SerializerResolver from "../classResolver";
 
 function computeFieldHash(hash: number, id: number): number {
   let newHash = (hash) * 31 + (id);
@@ -48,10 +49,8 @@ const computeStringHash = (str: string) => {
 const computeStructHash = (description: TypeDescription) => {
   let hash = 17;
   for (const [, value] of Object.entries((<ObjectTypeDescription>description).options.props).sort()) {
-    let id = value.type;
-    if (value.type === InternalSerializerType.ARRAY || value.type === InternalSerializerType.TUPLE || value.type === InternalSerializerType.MAP) {
-      id = Math.floor(value.type); // TODO add map key&value type into schema hash
-    } else if (value.type === InternalSerializerType.FURY_TYPE_TAG) {
+    let id = SerializerResolver.getTypeIdByInternalSerializerType(value.type);
+    if (value.type === InternalSerializerType.OBJECT) {
       id = computeStringHash((<ObjectTypeDescription>value).options.tag);
     }
     hash = computeFieldHash(hash, id);
@@ -139,4 +138,4 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   }
 }
 
-CodegenRegistry.register(InternalSerializerType.FURY_TYPE_TAG, ObjectSerializerGenerator);
+CodegenRegistry.register(InternalSerializerType.OBJECT, ObjectSerializerGenerator);

@@ -6,63 +6,24 @@ The Apache Software Foundation (http://www.apache.org/).
 
 ================================================================
 
-This product includes a number of Dependencies with separate copyright notices
+This product includes a number of Dependencies/Code with separate copyright notices
 and license terms. Your use of these submodules is subject to the terms and
 conditions of the following licenses.
 
 ================================================================
 
-================================================================
-Apache-2.0 licenses
-================================================================
-The following components are provided under the Apache-2.0 License. See project link for details.
-The text of each license is the standard Apache 2.0 license.
+Apache Spark (https://github.com/apache/spark)
+Copyright 2014 and onwards The Apache Software Foundation.
 
-* guava (https://github.com/google/guava)
-    Files:
-      java/fury-core/src/main/java/org/apache/fury/util/Preconditions.java
-
-* spark (https://github.com/apache/spark)
-    Files:
-      java/fury-core/src/main/java/org/apache/fury/codegen/Code.java
-      java/fury-core/src/main/java/org/apache/fury/util/Platform.java
-
-* flink (https://github.com/apache/flink)
-    Files:
-      java/fury-core/src/main/java/org/apache/fury/memory/MemoryBuffer.java
-
-* commons-io (https://github.com/apache/commons-io)
-    Files:
-      java/fury-core/src/main/java/org/apache/fury/io/ClassLoaderObjectInputStream.java
-
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
 
 ================================================================
-BSD-3-Clause licenses
-================================================================
-The following components are provided under the BSD-3-Clause License. See project link for details.
-The text of each license is also included in licenses/LICENSE-[project].txt.
 
-* kryo (https://github.com/EsotericSoftware/kryo)
-    Files:
-      java/fury-core/src/main/java/org/apache/fury/collection/FuryObjectMap.java
-      java/fury-core/src/main/java/org/apache/fury/collection/IdentityMap.java
-      java/fury-core/src/main/java/org/apache/fury/collection/IdentityObjectIntMap.java
-      java/fury-core/src/main/java/org/apache/fury/collection/LongMap.java
-      java/fury-core/src/main/java/org/apache/fury/collection/ObjectIntMap.java
-      java/fury-core/src/main/java/org/apache/fury/type/Generics.java
+Apache Commons IO (https://github.com/apache/commons-io)
+Copyright 2002-2024 The Apache Software Foundation
 
-* janino (https://github.com/janino-compiler/janino)
-    Files:
-      Shaded classes under org/apache/fury/shaded/org/codehaus/janino/*
-
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
 
 ================================================================
-Public Domain
-================================================================
-The following components are placed in the public domain.
-The author hereby disclaims copyright to this source code.
-See project link for details.
-
-* java_util (https://github.com/yonik/java_util)
-    Files:
-      java/fury-core/src/main/java/org/apache/fury/util/MurmurHash3.java

@@ -94,22 +94,22 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   @Override
   public void write(MemoryBuffer buffer, T value) {
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypes4Fields()) {
-      buffer.writeInt((int) fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt32((int) fieldInfo.getEncodedFieldInfo());
       readAndWriteFieldValue(buffer, fieldInfo, value);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypes9Fields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       readAndWriteFieldValue(buffer, fieldInfo, value);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypesHashFields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       readAndWriteFieldValue(buffer, fieldInfo, value);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getSeparateTypesHashFields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       readAndWriteFieldValue(buffer, fieldInfo, value);
     }
-    buffer.writeLong(fieldResolver.getEndTag());
+    buffer.writeInt64(fieldResolver.getEndTag());
   }
 
   public void writeFieldsValues(MemoryBuffer buffer, Object[] vals) {
@@ -117,19 +117,19 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     Fury fury = this.fury;
     int index = 0;
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypes4Fields()) {
-      buffer.writeInt((int) fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt32((int) fieldInfo.getEncodedFieldInfo());
       writeFieldValue(fieldInfo, buffer, vals[index++]);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypes9Fields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       writeFieldValue(fieldInfo, buffer, vals[index++]);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getEmbedTypesHashFields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       writeFieldValue(fieldInfo, buffer, vals[index++]);
     }
     for (FieldResolver.FieldInfo fieldInfo : fieldResolver.getSeparateTypesHashFields()) {
-      buffer.writeLong(fieldInfo.getEncodedFieldInfo());
+      buffer.writeInt64(fieldInfo.getEncodedFieldInfo());
       Object value = vals[index++];
       if (!fury.getRefResolver().writeRefOrNull(buffer, value)) {
         byte fieldType = fieldInfo.getFieldType();
@@ -139,7 +139,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         fury.writeNonRef(buffer, value, classInfo);
       }
     }
-    buffer.writeLong(fieldResolver.getEndTag());
+    buffer.writeInt64(fieldResolver.getEndTag());
   }
 
   private void readAndWriteFieldValue(
@@ -177,23 +177,23 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         buffer.writeChar((Character) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
-        buffer.writeShort((Short) fieldValue);
+        buffer.writeInt16((Short) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          buffer.writeVarInt((Integer) fieldValue);
+          buffer.writeVarInt32((Integer) fieldValue);
         } else {
-          buffer.writeInt((Integer) fieldValue);
+          buffer.writeInt32((Integer) fieldValue);
         }
         return;
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-        buffer.writeFloat((Float) fieldValue);
+        buffer.writeFloat32((Float) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        fury.writeLong(buffer, (Long) fieldValue);
+        fury.writeInt64(buffer, (Long) fieldValue);
         return;
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-        buffer.writeDouble((Double) fieldValue);
+        buffer.writeFloat64((Double) fieldValue);
         return;
       case ClassResolver.STRING_CLASS_ID:
         fury.writeJavaStringRef(buffer, (String) fieldValue);
@@ -313,7 +313,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     if (partFieldInfo == endTag) {
       return obj;
     }
-    long tmp = buffer.readInt();
+    long tmp = buffer.readInt32();
     partFieldInfo = tmp << 32 | (partFieldInfo & 0x00000000ffffffffL);
     partFieldInfo =
         readEmbedTypes9Fields(buffer, partFieldInfo, obj, null, INDEX_FOR_SKIP_FILL_VALUES);
@@ -337,7 +337,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       return;
     }
     startIndex += fieldResolver.getEmbedTypes4Fields().length;
-    long tmp = buffer.readInt();
+    long tmp = buffer.readInt32();
     partFieldInfo = tmp << 32 | (partFieldInfo & 0x00000000ffffffffL);
     partFieldInfo = readEmbedTypes9Fields(buffer, partFieldInfo, null, vals, startIndex);
     if (partFieldInfo == endTag) {
@@ -354,7 +354,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
 
   private long readEmbedTypes4Fields(
       MemoryBuffer buffer, Object obj, Object[] vals, int startIndex) {
-    long partFieldInfo = buffer.readInt();
+    long partFieldInfo = buffer.readInt32();
     FieldResolver.FieldInfo[] embedTypes4Fields = fieldResolver.getEmbedTypes4Fields();
     if (embedTypes4Fields.length > 0) {
       long minFieldInfo = embedTypes4Fields[0].getEncodedFieldInfo();
@@ -364,7 +364,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         if (part != partFieldInfo) {
           return part;
         }
-        partFieldInfo = buffer.readInt();
+        partFieldInfo = buffer.readInt32();
       }
       for (int i = 0; i < embedTypes4Fields.length; i++) {
         FieldResolver.FieldInfo fieldInfo = embedTypes4Fields[i];
@@ -375,7 +375,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
           } else {
             vals[startIndex + i] = readFieldValue(fieldInfo, buffer);
           }
-          partFieldInfo = buffer.readInt();
+          partFieldInfo = buffer.readInt32();
         } else {
           if ((partFieldInfo & 0b11) == FieldResolver.EMBED_TYPES_4_FLAG) {
             if (partFieldInfo < encodedFieldInfo) {
@@ -383,7 +383,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
               if (part != partFieldInfo) {
                 return part;
               }
-              partFieldInfo = buffer.readInt();
+              partFieldInfo = buffer.readInt32();
               i--;
             }
           } else {
@@ -397,7 +397,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       if (part != partFieldInfo) {
         return part;
       }
-      partFieldInfo = buffer.readInt();
+      partFieldInfo = buffer.readInt32();
     }
     return partFieldInfo;
   }
@@ -413,7 +413,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         if (part != partFieldInfo) {
           return part;
         }
-        partFieldInfo = buffer.readLong();
+        partFieldInfo = buffer.readInt64();
       }
 
       for (int i = 0; i < embedTypes9Fields.length; i++) {
@@ -425,7 +425,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
           } else {
             vals[startIndex + i] = readFieldValue(fieldInfo, buffer);
           }
-          partFieldInfo = buffer.readLong();
+          partFieldInfo = buffer.readInt64();
         } else {
           if ((partFieldInfo & 0b111) == FieldResolver.EMBED_TYPES_9_FLAG) {
             if (partFieldInfo < encodedFieldInfo) {
@@ -433,7 +433,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
               if (part != partFieldInfo) {
                 return part;
               }
-              partFieldInfo = buffer.readLong();
+              partFieldInfo = buffer.readInt64();
               i--;
             }
           } else {
@@ -447,7 +447,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       if (part != partFieldInfo) {
         return part;
       }
-      partFieldInfo = buffer.readLong();
+      partFieldInfo = buffer.readInt64();
     }
     return partFieldInfo;
   }
@@ -463,7 +463,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         if (part != partFieldInfo) {
           return part;
         }
-        partFieldInfo = buffer.readLong();
+        partFieldInfo = buffer.readInt64();
       }
 
       for (int i = 0; i < embedTypesHashFields.length; i++) {
@@ -475,7 +475,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
           } else {
             vals[startIndex + i] = readFieldValue(fieldInfo, buffer);
           }
-          partFieldInfo = buffer.readLong();
+          partFieldInfo = buffer.readInt64();
         } else {
           if ((partFieldInfo & 0b111) == FieldResolver.EMBED_TYPES_HASH_FLAG) {
             if (partFieldInfo < encodedFieldInfo) {
@@ -483,7 +483,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
               if (part != partFieldInfo) {
                 return part;
               }
-              partFieldInfo = buffer.readLong();
+              partFieldInfo = buffer.readInt64();
               i--;
             }
           } else {
@@ -497,7 +497,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       if (part != partFieldInfo) {
         return part;
       }
-      partFieldInfo = buffer.readLong();
+      partFieldInfo = buffer.readInt64();
     }
     return partFieldInfo;
   }
@@ -513,7 +513,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         if (part != partFieldInfo) {
           return;
         }
-        partFieldInfo = buffer.readLong();
+        partFieldInfo = buffer.readInt64();
       }
       for (int i = 0; i < separateTypesHashFields.length; i++) {
         FieldResolver.FieldInfo fieldInfo = separateTypesHashFields[i];
@@ -524,7 +524,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
           } else {
             vals[startIndex + i] = readFieldValue(fieldInfo, buffer);
           }
-          partFieldInfo = buffer.readLong();
+          partFieldInfo = buffer.readInt64();
         } else {
           if ((partFieldInfo & 0b11) == FieldResolver.SEPARATE_TYPES_HASH_FLAG) {
             if (partFieldInfo < encodedFieldInfo) {
@@ -532,7 +532,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
               if (part != partFieldInfo) {
                 return;
               }
-              partFieldInfo = buffer.readLong();
+              partFieldInfo = buffer.readInt64();
               i--;
             }
           } else {
@@ -575,19 +575,19 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
         return buffer.readChar();
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
-        return buffer.readShort();
+        return buffer.readInt16();
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          return buffer.readVarInt();
+          return buffer.readVarInt32();
         } else {
-          return buffer.readInt();
+          return buffer.readInt32();
         }
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-        return buffer.readFloat();
+        return buffer.readFloat32();
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        return fury.readLong(buffer);
+        return fury.readInt64(buffer);
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-        return buffer.readDouble();
+        return buffer.readFloat64();
       case ClassResolver.STRING_CLASS_ID:
         return fury.readJavaStringRef(buffer);
       case ClassResolver.NO_CLASS_ID:

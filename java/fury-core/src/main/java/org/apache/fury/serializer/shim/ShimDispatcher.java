@@ -22,13 +22,13 @@ package org.apache.fury.serializer.shim;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.FuryObjectMap;
 import org.apache.fury.collection.ObjectMap;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.collection.CollectionSerializer;
 import org.apache.fury.serializer.collection.MapSerializers;
 import org.apache.fury.util.Preconditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** A shim serializer dispatcher to resolve compatibility problems for common used classes. */
 @SuppressWarnings("rawtypes")

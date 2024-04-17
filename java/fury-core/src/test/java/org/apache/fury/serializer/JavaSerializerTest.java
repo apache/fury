@@ -29,7 +29,7 @@ import lombok.Data;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
-import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.BigEndian;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -70,7 +70,7 @@ public class JavaSerializerTest extends FuryTestBase {
       objectOutputStream.flush();
     }
     byte[] bytes = bas.toByteArray();
-    Assert.assertEquals(MemoryBuffer.getShortB(bytes, 0), ObjectStreamConstants.STREAM_MAGIC);
+    Assert.assertEquals(BigEndian.getShortB(bytes, 0), ObjectStreamConstants.STREAM_MAGIC);
     Assert.assertTrue(JavaSerializer.serializedByJDK(bytes));
     Assert.assertTrue(JavaSerializer.serializedByJDK(ByteBuffer.wrap(bytes), 0));
     Fury fury = Fury.builder().build();

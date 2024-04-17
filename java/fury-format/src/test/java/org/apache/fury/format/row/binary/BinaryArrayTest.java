@@ -22,8 +22,8 @@ package org.apache.fury.format.row.binary;
 import java.util.Random;
 import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.type.DataTypes;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -67,26 +67,22 @@ public class BinaryArrayTest {
       }
     }
     long duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info("access array take " + duration + "ns, " + duration / 1000_000 + " ms\n");
-    }
+    LOG.info("access array take " + duration + "ns, " + duration / 1000_000 + " ms\n");
 
     for (int i = 0; i < iterNums; i++) {
       for (int j = 0; j < length; j++) {
-        elem = binaryArray.getInt(j);
+        elem = binaryArray.getInt32(j);
       }
     }
     // test binary array
     startTime = System.nanoTime();
     for (int i = 0; i < iterNums; i++) {
       for (int j = 0; j < length; j++) {
-        elem = binaryArray.getInt(j);
+        elem = binaryArray.getInt32(j);
       }
     }
     duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info("access BinaryArray take " + duration + "ns, " + duration / 1000_000 + " ms\n");
-    }
+    LOG.info("access BinaryArray take " + duration + "ns, " + duration / 1000_000 + " ms\n");
   }
 
   @Test

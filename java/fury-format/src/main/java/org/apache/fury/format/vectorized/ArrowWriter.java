@@ -289,7 +289,7 @@ class ShortWriter extends ArrowArrayWriter {
 
   @Override
   void appendValue(Getters getters, int fieldIndex) {
-    valueVector.setSafe(rowCount, getters.getShort(fieldIndex));
+    valueVector.setSafe(rowCount, getters.getInt16(fieldIndex));
   }
 
   @Override
@@ -312,7 +312,7 @@ class IntWriter extends ArrowArrayWriter {
 
   @Override
   void appendValue(Getters getters, int fieldIndex) {
-    valueVector.setSafe(rowCount, getters.getInt(fieldIndex));
+    valueVector.setSafe(rowCount, getters.getInt32(fieldIndex));
   }
 
   @Override
@@ -335,7 +335,7 @@ class LongWriter extends ArrowArrayWriter {
 
   @Override
   void appendValue(Getters getters, int fieldIndex) {
-    valueVector.setSafe(rowCount, getters.getLong(fieldIndex));
+    valueVector.setSafe(rowCount, getters.getInt64(fieldIndex));
   }
 
   @Override
@@ -358,7 +358,7 @@ class FloatWriter extends ArrowArrayWriter {
 
   @Override
   void appendValue(Getters getters, int fieldIndex) {
-    valueVector.setSafe(rowCount, getters.getFloat(fieldIndex));
+    valueVector.setSafe(rowCount, getters.getFloat32(fieldIndex));
   }
 
   @Override
@@ -381,7 +381,7 @@ class DoubleWriter extends ArrowArrayWriter {
 
   @Override
   void appendValue(Getters getters, int fieldIndex) {
-    valueVector.setSafe(rowCount, getters.getDouble(fieldIndex));
+    valueVector.setSafe(rowCount, getters.getFloat64(fieldIndex));
   }
 
   @Override
@@ -479,7 +479,7 @@ class DateWriter extends ArrowArrayWriter {
 
   @Override
   void appendValue(Getters getters, int fieldIndex) {
-    valueVector.setSafe(rowCount, getters.getInt(fieldIndex));
+    valueVector.setSafe(rowCount, getters.getInt32(fieldIndex));
   }
 
   @Override
@@ -502,7 +502,7 @@ class TimestampWriter extends ArrowArrayWriter {
 
   @Override
   void appendValue(Getters getters, int fieldIndex) {
-    valueVector.setSafe(rowCount, getters.getLong(fieldIndex));
+    valueVector.setSafe(rowCount, getters.getInt64(fieldIndex));
   }
 
   @Override

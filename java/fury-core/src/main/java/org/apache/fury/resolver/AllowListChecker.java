@@ -28,10 +28,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.annotation.concurrent.ThreadSafe;
 import org.apache.fury.Fury;
 import org.apache.fury.exception.InsecureException;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.serializer.Serializer;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
 
 /** White/black list based class checker. */
 @ThreadSafe

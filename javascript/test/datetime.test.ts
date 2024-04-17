@@ -34,7 +34,7 @@ describe('datetime', () => {
   test('should datetime work', () => {
     const description = Type.object("example.foo", {
       a: Type.timestamp(),
-      b: Type.date(),
+      b: Type.duration(),
     })
     const fury = new Fury({ refTracking: true });    
     const serializer = fury.registerSerializer(description).serializer;

@@ -704,7 +704,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
    * will raise NPE.
    */
   public Map newMap(MemoryBuffer buffer) {
-    numElements = buffer.readPositiveVarInt();
+    numElements = buffer.readVarUint32Small7();
     if (constructor == null) {
       constructor = ReflectionUtils.getCtrHandle(type, true);
     }

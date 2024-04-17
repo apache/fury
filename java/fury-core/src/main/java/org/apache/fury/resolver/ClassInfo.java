@@ -20,6 +20,8 @@
 package org.apache.fury.resolver;
 
 import org.apache.fury.config.Language;
+import org.apache.fury.meta.MetaString.Encoding;
+import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
@@ -31,11 +33,11 @@ import org.apache.fury.util.function.Functions;
  */
 public class ClassInfo {
   final Class<?> cls;
-  final EnumStringBytes fullClassNameBytes;
-  final EnumStringBytes packageNameBytes;
-  final EnumStringBytes classNameBytes;
+  final MetaStringBytes fullClassNameBytes;
+  final MetaStringBytes packageNameBytes;
+  final MetaStringBytes classNameBytes;
   final boolean isDynamicGeneratedClass;
-  final EnumStringBytes typeTagBytes;
+  final MetaStringBytes typeTagBytes;
   Serializer<?> serializer;
   // use primitive to avoid boxing
   // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
@@ -43,11 +45,11 @@ public class ClassInfo {
 
   ClassInfo(
       Class<?> cls,
-      EnumStringBytes fullClassNameBytes,
-      EnumStringBytes packageNameBytes,
-      EnumStringBytes classNameBytes,
+      MetaStringBytes fullClassNameBytes,
+      MetaStringBytes packageNameBytes,
+      MetaStringBytes classNameBytes,
       boolean isDynamicGeneratedClass,
-      EnumStringBytes typeTagBytes,
+      MetaStringBytes typeTagBytes,
       Serializer<?> serializer,
       short classId) {
     this.cls = cls;
@@ -71,9 +73,11 @@ public class ClassInfo {
       short classId) {
     this.cls = cls;
     this.serializer = serializer;
-    EnumStringResolver enumStringResolver = classResolver.getEnumStringResolver();
+    MetaStringResolver metaStringResolver = classResolver.getMetaStringResolver();
     if (cls != null && classResolver.getFury().getLanguage() != Language.JAVA) {
-      this.fullClassNameBytes = enumStringResolver.getOrCreateEnumStringBytes(cls.getName());
+      this.fullClassNameBytes =
+          metaStringResolver.getOrCreateMetaStringBytes(
+              new MetaStringEncoder('.', '_').encode(cls.getName(), Encoding.UTF_8));
     } else {
       this.fullClassNameBytes = null;
     }
@@ -81,16 +85,21 @@ public class ClassInfo {
         && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       String packageName = ReflectionUtils.getPackage(cls);
-      this.packageNameBytes = enumStringResolver.getOrCreateEnumStringBytes(packageName);
+      this.packageNameBytes =
+          metaStringResolver.getOrCreateMetaStringBytes(
+              new MetaStringEncoder('.', '_').encode(packageName));
       this.classNameBytes =
-          enumStringResolver.getOrCreateEnumStringBytes(
-              ReflectionUtils.getClassNameWithoutPackage(cls));
+          metaStringResolver.getOrCreateMetaStringBytes(
+              new MetaStringEncoder('_', '$')
+                  .encode(ReflectionUtils.getClassNameWithoutPackage(cls)));
     } else {
       this.packageNameBytes = null;
       this.classNameBytes = null;
     }
     if (tag != null) {
-      this.typeTagBytes = enumStringResolver.getOrCreateEnumStringBytes(tag);
+      this.typeTagBytes =
+          metaStringResolver.getOrCreateMetaStringBytes(
+              new MetaStringEncoder('.', '_').encode(tag, Encoding.UTF_8));
     } else {
       this.typeTagBytes = null;
     }
@@ -118,11 +127,11 @@ public class ClassInfo {
     return classId;
   }
 
-  public EnumStringBytes getPackageNameBytes() {
+  public MetaStringBytes getPackageNameBytes() {
     return packageNameBytes;
   }
 
-  public EnumStringBytes getClassNameBytes() {
+  public MetaStringBytes getClassNameBytes() {
     return classNameBytes;
   }
 

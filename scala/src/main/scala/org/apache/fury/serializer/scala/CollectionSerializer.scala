@@ -55,7 +55,7 @@ abstract class AbstractScalaCollectionSerializer[A, T <: Iterable[A]](fury: Fury
   }
 
   override def newCollection(buffer: MemoryBuffer): util.Collection[_] = {
-    val numElements = buffer.readPositiveVarInt()
+    val numElements = buffer.readVarUint32()
     setNumElements(numElements)
     val factory = fury.readRef(buffer).asInstanceOf[Factory[A, T]]
     val builder = factory.newBuilder
@@ -149,7 +149,7 @@ class ScalaCollectionSerializer[A, T <: Iterable[A]] (fury: Fury, cls: Class[T])
   override def onCollectionWrite(buffer: MemoryBuffer, value: T): util.Collection[_] = {
     val factory: Factory[A, Any] = value.iterableFactory.iterableFactory
     val adapter = new CollectionAdapter[A, T](value)
-    buffer.writePositiveVarInt(adapter.size)
+    buffer.writeVarUint32Small7(adapter.size)
     fury.writeRef(buffer, factory)
     adapter
   }
@@ -163,7 +163,7 @@ class ScalaCollectionSerializer[A, T <: Iterable[A]] (fury: Fury, cls: Class[T])
 class ScalaSortedSetSerializer[A, T <: scala.collection.SortedSet[A]](fury: Fury, cls: Class[T])
   extends AbstractScalaCollectionSerializer[A, T](fury, cls) {
   override def onCollectionWrite(buffer: MemoryBuffer, value: T): util.Collection[_] = {
-    buffer.writePositiveVarInt(value.size)
+    buffer.writeVarUint32Small7(value.size)
     val factory = value.sortedIterableFactory.evidenceIterableFactory[Any](
       value.ordering.asInstanceOf[Ordering[Any]])
     fury.writeRef(buffer, factory)
@@ -179,7 +179,7 @@ class ScalaSortedSetSerializer[A, T <: scala.collection.SortedSet[A]](fury: Fury
 class ScalaSeqSerializer[A, T <: scala.collection.Seq[A]](fury: Fury, cls: Class[T])
   extends AbstractScalaCollectionSerializer[A, T](fury, cls)  {
   override def onCollectionWrite(buffer: MemoryBuffer, value: T): util.Collection[_] = {
-    buffer.writePositiveVarInt(value.size)
+    buffer.writeVarUint32Small7(value.size)
     val factory: Factory[A, Any] = value.iterableFactory.iterableFactory
     fury.writeRef(buffer, factory)
     new ListAdapter[Any](value)

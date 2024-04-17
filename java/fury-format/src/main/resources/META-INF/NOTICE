@@ -6,18 +6,16 @@ The Apache Software Foundation (http://www.apache.org/).
 
 ================================================================
 
-This product includes a number of Dependencies with separate copyright notices
+This product includes a number of Dependencies/Code with separate copyright notices
 and license terms. Your use of these submodules is subject to the terms and
 conditions of the following licenses.
 
 ================================================================
 
-================================================================
-Apache-2.0 licenses
-================================================================
-The following components are provided under the Apache-2.0 License. See project link for details.
-The text of each license is the standard Apache 2.0 license.
+Apache Spark (https://github.com/apache/spark)
+Copyright 2014 and onwards The Apache Software Foundation.
 
-* spark (https://github.com/apache/spark)
-    Files:
-      java/fury-format/src/main/java/org/apache/fury/format/vectorized/ArrowWriter.java
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+================================================================

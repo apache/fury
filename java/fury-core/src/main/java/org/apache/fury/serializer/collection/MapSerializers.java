@@ -63,7 +63,7 @@ public class MapSerializers {
 
     @Override
     public HashMap newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       HashMap hashMap = new HashMap(numElements);
       fury.getRefResolver().reference(hashMap);
@@ -83,7 +83,7 @@ public class MapSerializers {
 
     @Override
     public LinkedHashMap newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       LinkedHashMap hashMap = new LinkedHashMap(numElements);
       fury.getRefResolver().reference(hashMap);
@@ -103,7 +103,7 @@ public class MapSerializers {
 
     @Override
     public LazyMap newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       LazyMap map = new LazyMap(numElements);
       fury.getRefResolver().reference(map);
@@ -122,7 +122,7 @@ public class MapSerializers {
 
     @Override
     public Map onMapWrite(MemoryBuffer buffer, T value) {
-      buffer.writePositiveVarInt(value.size());
+      buffer.writeVarUint32Small7(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
     }
@@ -130,7 +130,7 @@ public class MapSerializers {
     @SuppressWarnings("unchecked")
     @Override
     public Map newMap(MemoryBuffer buffer) {
-      setNumElements(buffer.readPositiveVarInt());
+      setNumElements(buffer.readVarUint32Small7());
       T map;
       Comparator comparator = (Comparator) fury.readRef(buffer);
       if (type == TreeMap.class) {
@@ -164,7 +164,7 @@ public class MapSerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
       // write length
-      buffer.writePositiveVarInt(0);
+      buffer.writeVarUint32Small7(0);
     }
 
     @Override
@@ -174,7 +174,7 @@ public class MapSerializers {
 
     @Override
     public Map<?, ?> xread(MemoryBuffer buffer) {
-      buffer.readPositiveVarInt();
+      buffer.readVarUint32Small7();
       return Collections.EMPTY_MAP;
     }
   }
@@ -213,7 +213,7 @@ public class MapSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
-      buffer.writePositiveVarInt(1);
+      buffer.writeVarUint32Small7(1);
       Map.Entry entry = value.entrySet().iterator().next();
       fury.xwriteRef(buffer, entry.getKey());
       fury.xwriteRef(buffer, entry.getValue());
@@ -228,7 +228,7 @@ public class MapSerializers {
 
     @Override
     public Map<?, ?> xread(MemoryBuffer buffer) {
-      buffer.readPositiveVarInt();
+      buffer.readVarUint32Small7();
       Object key = fury.xreadRef(buffer);
       Object value = fury.xreadRef(buffer);
       return Collections.singletonMap(key, value);
@@ -243,7 +243,7 @@ public class MapSerializers {
 
     @Override
     public ConcurrentHashMap newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       ConcurrentHashMap map = new ConcurrentHashMap(numElements);
       fury.getRefResolver().reference(map);
@@ -265,7 +265,7 @@ public class MapSerializers {
 
     @Override
     public ConcurrentSkipListMap newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);
       ConcurrentSkipListMap map = new ConcurrentSkipListMap(comparator);
@@ -299,7 +299,7 @@ public class MapSerializers {
 
     @Override
     public Map onMapWrite(MemoryBuffer buffer, EnumMap value) {
-      buffer.writePositiveVarInt(value.size());
+      buffer.writeVarUint32Small7(value.size());
       Class keyType = (Class) Platform.getObject(value, keyTypeFieldOffset);
       fury.getClassResolver().writeClassAndUpdateCache(buffer, keyType);
       return value;
@@ -307,7 +307,7 @@ public class MapSerializers {
 
     @Override
     public EnumMap newMap(MemoryBuffer buffer) {
-      setNumElements(buffer.readPositiveVarInt());
+      setNumElements(buffer.readVarUint32Small7());
       Class<?> keyType = fury.getClassResolver().readClassInfo(buffer).getCls();
       return new EnumMap(keyType);
     }
@@ -322,7 +322,7 @@ public class MapSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Map<String, T> value) {
-      buffer.writePositiveVarInt(value.size());
+      buffer.writeVarUint32Small7(value.size());
       for (Map.Entry<String, T> e : value.entrySet()) {
         fury.writeJavaStringRef(buffer, e.getKey());
         // If value is a collection, the `newCollection` method will record itself to

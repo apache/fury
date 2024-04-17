@@ -36,10 +36,10 @@ import org.apache.fury.collection.Tuple3;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.meta.ClassDef;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
-import org.apache.fury.type.ClassDef;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.Generics;
@@ -267,7 +267,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         return false;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          buffer.readVarInt();
+          buffer.readVarInt32();
         } else {
           buffer.increaseReaderIndex(4);
         }
@@ -276,7 +276,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         buffer.increaseReaderIndex(4);
         return false;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        fury.readLong(buffer);
+        fury.readInt64(buffer);
         return false;
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
         buffer.increaseReaderIndex(8);
