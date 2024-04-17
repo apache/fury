@@ -21,16 +21,16 @@ import ClassResolver from "./classResolver";
 import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
-import { ConfigFlags, Serializer, Config, Language, BinaryReader as BinaryReaderType, BinaryWriter as BinaryWriterType } from "./type";
+import { ConfigFlags, Serializer, Config, Language } from "./type";
 import { OwnershipError } from "./error";
 import { InputType, ResultType, TypeDescription } from "./description";
 import { generateSerializer, AnySerializer } from "./gen";
 
 export default class {
-  binaryReader: BinaryReaderType;
-  binaryWriter: BinaryWriterType;
+  binaryReader: BinaryReader;
+  binaryWriter: BinaryWriter;
   classResolver = new ClassResolver();
-  referenceResolver: ReturnType<typeof ReferenceResolver>;
+  referenceResolver: ReferenceResolver;
   anySerializer: AnySerializer;
 
   constructor(public config: Config = {
@@ -39,9 +39,9 @@ export default class {
     hooks: {
     },
   }) {
-    this.binaryReader = BinaryReader(config);
-    this.binaryWriter = BinaryWriter(config);
-    this.referenceResolver = ReferenceResolver(config, this.binaryWriter, this.binaryReader);
+    this.binaryReader = new BinaryReader(config);
+    this.binaryWriter = new BinaryWriter(config);
+    this.referenceResolver = new ReferenceResolver(this.binaryReader);
     this.classResolver.init(this);
     this.anySerializer = new AnySerializer(this);
   }

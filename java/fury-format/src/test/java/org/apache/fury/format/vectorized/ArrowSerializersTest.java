@@ -19,21 +19,25 @@
 
 package org.apache.fury.format.vectorized;
 
+import static org.apache.fury.format.vectorized.ArrowUtilsTest.createVectorSchemaRoot;
 import static org.testng.Assert.assertEquals;
 
 import java.io.IOException;
+import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.VectorUnloader;
+import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
-import org.apache.fury.io.FuryWritableByteChannel;
+import org.apache.fury.io.MemoryBufferReadableChannel;
+import org.apache.fury.io.MemoryBufferWritableChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassResolver;
@@ -54,6 +58,29 @@ public class ArrowSerializersTest {
   }
 
   @Test
+  public void testArrowTableBufferObject() throws IOException {
+    int size = 200;
+    VectorSchemaRoot root = createVectorSchemaRoot(size);
+    Schema schema = root.getSchema();
+    List<ArrowRecordBatch> recordBatches = new ArrayList<>();
+    for (int i = 0; i < 2; i++) {
+      VectorUnloader unloader = new VectorUnloader(root);
+      recordBatches.add(unloader.getRecordBatch());
+    }
+    ArrowTable table = new ArrowTable(schema, recordBatches);
+    ArrowSerializers.ArrowTableBufferObject o = new ArrowSerializers.ArrowTableBufferObject(table);
+    MemoryBuffer buf = o.toBuffer();
+    ReadableByteChannel channel = new MemoryBufferReadableChannel(buf);
+    ArrowStreamReader reader = new ArrowStreamReader(channel, ArrowUtils.allocator);
+    VectorSchemaRoot newRoot = reader.getVectorSchemaRoot();
+    while (reader.loadNextBatch()) {
+      recordBatches.add(new VectorUnloader(root).getRecordBatch());
+    }
+    ArrowTable newTable = new ArrowTable(root.getSchema(), recordBatches, ArrowUtils.allocator);
+    assertTableEqual(newTable, table);
+  }
+
+  @Test
   public void testWriteVectorSchemaRoot() throws IOException {
     Collection<BufferObject> bufferObjects = new ArrayList<>();
     Fury fury = Fury.builder().requireClassRegistration(false).build();
@@ -71,7 +98,7 @@ public class ArrowSerializersTest {
 
     MemoryBuffer buffer2 = MemoryUtils.buffer(32);
     try (ArrowStreamWriter writer =
-        new ArrowStreamWriter(root, null, new FuryWritableByteChannel(buffer2))) {
+        new ArrowStreamWriter(root, null, new MemoryBufferWritableChannel(buffer2))) {
       // this will make root empty.
       writer.writeBatch();
     }

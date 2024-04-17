@@ -50,7 +50,7 @@ public class BitUtilsTest {
   public void getNullCount() {
     int valueCount = 14;
     MemoryBuffer buffer = MemoryUtils.buffer(valueCount);
-    buffer.put(0, (byte) 0b11000000);
+    buffer.putByte(0, (byte) 0b11000000);
     assertEquals(BitUtils.getNullCount(buffer, 0, 8), 6);
   }
 

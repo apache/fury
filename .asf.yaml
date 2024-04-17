@@ -19,7 +19,7 @@
 
 github:
   description: >-
-    A blazing fast multi-language serialization framework powered by JIT and zero-copy.
+    A blazingly fast multi-language serialization framework powered by JIT and zero-copy.
   homepage: https://fury.apache.org/
   labels:
     - javascript
@@ -61,7 +61,7 @@ github:
     releases-0.2.1: {}
     releases-0.2.0: {}
     releases-0.1.2: {}
-  
+
 notifications:
   commits:      commits@fury.apache.org
   issues:       commits@fury.apache.org

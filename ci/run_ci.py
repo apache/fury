@@ -24,13 +24,11 @@ import os
 import logging
 import importlib
 
-
 BAZEL_VERSION = "6.3.2"
 
 PYARROW_VERSION = "14.0.0"
 
 PROJECT_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
-
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"

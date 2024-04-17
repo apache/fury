@@ -144,7 +144,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     Expression bean = tryCastIfPublic(inputObject, beanType, ctx.newName(beanClass));
     expressions.add(bean);
     if (fury.checkClassVersion()) {
-      expressions.add(new Invoke(buffer, "writeInt", classVersionHash));
+      expressions.add(new Invoke(buffer, "writeInt32", classVersionHash));
     }
     expressions.addAll(serializePrimitives(bean, buffer, objectCodecOptimizer.primitiveGroups));
     int numGroups = getNumGroups(objectCodecOptimizer);
@@ -229,7 +229,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     // Must grow first, otherwise may get invalid address.
     Expression base = new Invoke(buffer, "getHeapMemory", "base", PRIMITIVE_BYTE_ARRAY_TYPE);
     Expression writerAddr =
-        new Invoke(buffer, "getUnsafeWriterAddress", "writerAddr", PRIMITIVE_LONG_TYPE);
+        new Invoke(buffer, "_unsafeWriterAddress", "writerAddr", PRIMITIVE_LONG_TYPE);
     expressions.add(base);
     expressions.add(writerAddr);
     int acc = 0;
@@ -282,7 +282,9 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     }
     Expression increaseWriterIndex =
         new Invoke(
-            buffer, "increaseWriterIndexUnsafe", new Literal(totalSizeLiteral, PRIMITIVE_INT_TYPE));
+            buffer,
+            "_increaseWriterIndexUnsafe",
+            new Literal(totalSizeLiteral, PRIMITIVE_INT_TYPE));
     expressions.add(increaseWriterIndex);
     return expressions;
   }
@@ -312,7 +314,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     for (List<Descriptor> group : primitiveGroups) {
       ListExpression groupExpressions = new ListExpression();
       Expression writerAddr =
-          new Invoke(buffer, "getUnsafeWriterAddress", "writerAddr", PRIMITIVE_LONG_TYPE);
+          new Invoke(buffer, "_unsafeWriterAddress", "writerAddr", PRIMITIVE_LONG_TYPE);
       // use Reference to cut-off expr dependency.
       int acc = 0;
       boolean compressStarted = false;
@@ -352,7 +354,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               addIncWriterIndexExpr(groupExpressions, buffer, acc);
               compressStarted = true;
             }
-            groupExpressions.add(new Invoke(buffer, "unsafeWriteVarInt", fieldValue));
+            groupExpressions.add(new Invoke(buffer, "_unsafeWriteVarInt32", fieldValue));
             acc += 0;
           }
         } else if (clz == long.class) {
@@ -366,7 +368,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               compressStarted = true;
             }
             groupExpressions.add(
-                LongSerializer.writeLong(buffer, fieldValue, fury.longEncoding(), false));
+                LongSerializer.writeInt64(buffer, fieldValue, fury.longEncoding(), false));
           }
         } else {
           throw new IllegalStateException("impossible");
@@ -389,7 +391,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
 
   private void addIncWriterIndexExpr(ListExpression expressions, Expression buffer, int diff) {
     if (diff != 0) {
-      expressions.add(new Invoke(buffer, "increaseWriterIndexUnsafe", Literal.ofInt(diff)));
+      expressions.add(new Invoke(buffer, "_increaseWriterIndexUnsafe", Literal.ofInt(diff)));
     }
   }
 
@@ -560,7 +562,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
         PRIMITIVE_VOID_TYPE,
         false,
         furyRef,
-        inlineInvoke(buffer, "readInt", PRIMITIVE_INT_TYPE),
+        inlineInvoke(buffer, readIntFunc(), PRIMITIVE_INT_TYPE),
         Objects.requireNonNull(classVersionHash));
   }
 
@@ -642,7 +644,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     }
     Expression increaseReaderIndex =
         new Invoke(
-            buffer, "increaseReaderIndexUnsafe", new Literal(totalSizeLiteral, PRIMITIVE_INT_TYPE));
+            buffer, "increaseReaderIndex", new Literal(totalSizeLiteral, PRIMITIVE_INT_TYPE));
     expressions.add(increaseReaderIndex);
     return expressions;
   }
@@ -695,7 +697,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               compressStarted = true;
               addIncReaderIndexExpr(groupExpressions, buffer, acc);
             }
-            fieldValue = new Invoke(buffer, "readVarInt", PRIMITIVE_INT_TYPE);
+            fieldValue = readVarInt32(buffer);
           }
         } else if (clz == long.class) {
           if (!fury.compressLong()) {
@@ -706,7 +708,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
               compressStarted = true;
               addIncReaderIndexExpr(groupExpressions, buffer, acc);
             }
-            fieldValue = LongSerializer.readLong(buffer, fury.longEncoding());
+            fieldValue = LongSerializer.readInt64(buffer, fury.longEncoding());
           }
         } else {
           throw new IllegalStateException("impossible");
@@ -734,7 +736,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
 
   private void addIncReaderIndexExpr(ListExpression expressions, Expression buffer, int diff) {
     if (diff != 0) {
-      expressions.add(new Invoke(buffer, "increaseReaderIndexUnsafe", Literal.ofInt(diff)));
+      expressions.add(new Invoke(buffer, "increaseReaderIndex", Literal.ofInt(diff)));
     }
   }
 

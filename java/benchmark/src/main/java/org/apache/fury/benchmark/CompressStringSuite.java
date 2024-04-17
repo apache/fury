@@ -53,7 +53,7 @@ public class CompressStringSuite {
     MemoryBuffer directBuffer = CompressStringSuite.directBuffer;
     char[] latinStrChars = CompressStringSuite.latinStrChars;
     for (int i = 0; i < latinStrChars.length; i++) {
-      directBuffer.put(i, (byte) (latinStrChars[i]));
+      directBuffer.putByte(i, (byte) (latinStrChars[i]));
     }
     return directBuffer;
   }
@@ -81,8 +81,8 @@ public class CompressStringSuite {
     for (int i = 0; i < utf16StrChars.length; i++) {
       int index = i << 1;
       char c = utf16StrChars[i];
-      directBuffer.put(index++, (byte) (c));
-      directBuffer.put(index, (byte) (c >> 8));
+      directBuffer.putByte(index++, (byte) (c));
+      directBuffer.putByte(index, (byte) (c >> 8));
     }
     return directBuffer;
   }
@@ -110,7 +110,7 @@ public class CompressStringSuite {
     System.out.printf("latinStrChars length %s\n", latinStrChars.length);
     if (args.length == 0) {
       String commandLine =
-          "io.*CompressStringSuite.latin* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+          "org.apache.fury.*CompressStringSuite.latin* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

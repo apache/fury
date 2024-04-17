@@ -22,10 +22,10 @@ package org.apache.fury.benchmark;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.fury.Fury;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Test suite for collection. */
 public class CollectionSuite {
@@ -33,7 +33,8 @@ public class CollectionSuite {
 
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
-      String commandLine = "io.*CollectionSuite.* -f 3 -wi 5 -i 5 -t 1 -w 2s -r 2s -rf csv";
+      String commandLine =
+          "org.apache.fury.*CollectionSuite.* -f 3 -wi 5 -i 5 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

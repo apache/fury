@@ -130,7 +130,7 @@ public class ArraySuite {
     for (int i = 0; i < size; i++) {
       Integer o = list.get(i);
       if (o != null) {
-        buffer.writeVarInt(o);
+        buffer.writeVarInt32(o);
       }
     }
     return buffer;
@@ -233,7 +233,7 @@ public class ArraySuite {
   // ops/s
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
-      String commandLine = "io.*ArraySuite.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+      String commandLine = "org.apache.fury.*ArraySuite.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

@@ -36,7 +36,8 @@ public final class Platform {
 
   public static final int JAVA_VERSION = _JDKAccess.JAVA_VERSION;
   public static final boolean IS_LITTLE_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
-
+  public static final Class<?> HEAP_BYTE_BUFFER_CLASS = ByteBuffer.allocate(1).getClass();
+  public static final Class<?> DIRECT_BYTE_BUFFER_CLASS = ByteBuffer.allocateDirect(1).getClass();
   public static final int BOOLEAN_ARRAY_OFFSET;
 
   public static final int BYTE_ARRAY_OFFSET;
@@ -120,14 +121,6 @@ public final class Platform {
       Preconditions.checkArgument(BUFFER_CAPACITY_FIELD_OFFSET != 0);
     } catch (NoSuchFieldException e) {
       throw new IllegalStateException(e);
-    }
-  }
-
-  private static Class<?> getClassByName(@SuppressWarnings("SameParameterValue") String className) {
-    try {
-      return Class.forName(className);
-    } catch (ClassNotFoundException e) {
-      throw new RuntimeException(e);
     }
   }
 

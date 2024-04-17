@@ -54,7 +54,7 @@ import sun.misc.Unsafe;
 public class _JDKAccess {
   // CHECKSTYLE.ON:TypeName
   public static final int JAVA_VERSION;
-  public static final boolean OPEN_J9;
+  public static final boolean IS_OPEN_J9;
   public static final Unsafe UNSAFE;
   public static final Class<?> _INNER_UNSAFE_CLASS;
   public static final Object _INNER_UNSAFE;
@@ -65,7 +65,7 @@ public class _JDKAccess {
       property = property.substring(2);
     }
     String jmvName = System.getProperty("java.vm.name", "");
-    OPEN_J9 = jmvName.contains("OpenJ9");
+    IS_OPEN_J9 = jmvName.contains("OpenJ9");
     JAVA_VERSION = Integer.parseInt(property);
     Unsafe unsafe;
     try {

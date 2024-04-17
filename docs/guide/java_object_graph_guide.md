@@ -203,13 +203,13 @@ class FooSerializer extends Serializer<Foo> {
 
   @Override
   public void write(MemoryBuffer buffer, Foo value) {
-    buffer.writeLong(value.f1);
+    buffer.writeInt64(value.f1);
   }
 
   @Override
   public Foo read(MemoryBuffer buffer) {
     Foo foo = new Foo();
-    foo.f1 = buffer.readLong();
+    foo.f1 = buffer.readInt64();
     return foo;
   }
 }
@@ -262,7 +262,7 @@ ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
 checker.allowClass("org.example.*");
 ```
 
-Fury also provided a `org.apache.fury.resolver.AllowListChecker` which is white/blacklist based checker to simplify
+Fury also provided a `org.apache.fury.resolver.AllowListChecker` which is allowed/disallowed list based checker to simplify
 the customization of class check mechanism. You can use this checker or implement more sophisticated checker by yourself.
 
 ### Serializer Registration
@@ -381,13 +381,13 @@ But if you do want to upgrade fury for better performance and smaller size, you 
 using code like following to keep binary compatibility:
 ```java
 MemoryBuffer buffer = xxx;
-buffer.writeVarInt(2);
+buffer.writeVarInt32(2);
 fury.serialize(buffer, obj);
 ```
 Then for deserialization, you need:
 ```java
 MemoryBuffer buffer = xxx;
-int furyVersion = buffer.readVarInt()
+int furyVersion = buffer.readVarInt32()
 Fury fury = getFury(furyVersion);
 fury.deserialize(buffer);
 ```

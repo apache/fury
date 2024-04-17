@@ -27,11 +27,11 @@ import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
 import org.apache.fury.format.type.DataTypes;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
-import org.slf4j.Logger;
 import org.testng.annotations.Test;
 
 public class BinaryRowTest {
@@ -41,34 +41,34 @@ public class BinaryRowTest {
   @Test(enabled = false)
   public void testAlign() {
     MemoryBuffer buf = MemoryUtils.buffer(64);
-    buf.putLong(6, 100L);
-    buf.putLong(14, 100L);
+    buf.putInt64(6, 100L);
+    buf.putInt64(14, 100L);
     long nums = 1000_000_000;
     // warm
     for (int i = 0; i < nums; i++) {
-      buf.getLong(6);
-      buf.getLong(14);
+      buf.getInt64(6);
+      buf.getInt64(14);
     }
     long t = System.nanoTime();
     for (int i = 0; i < nums; i++) {
-      buf.getLong(6);
-      buf.getLong(14);
+      buf.getInt64(6);
+      buf.getInt64(14);
     }
     long duration = System.nanoTime() - t;
     System.out.format("non-aligned cost:\ttotal %sns %sms\n", duration, duration / 1000_000);
 
     MemoryBuffer buf2 = MemoryUtils.buffer(64);
-    buf2.putLong(8, 100L);
-    buf2.putLong(16, 100L);
+    buf2.putInt64(8, 100L);
+    buf2.putInt64(16, 100L);
     // warm
     for (int i = 0; i < nums; i++) {
-      buf2.getLong(8);
-      buf2.getLong(16);
+      buf2.getInt64(8);
+      buf2.getInt64(16);
     }
     t = System.nanoTime();
     for (int i = 0; i < nums; i++) {
-      buf2.getLong(8);
-      buf2.getLong(16);
+      buf2.getInt64(8);
+      buf2.getInt64(16);
     }
     duration = System.nanoTime() - t;
     System.out.format("aligned cost:\ttotal %sns %sms\n", duration, duration / 1000_000);
@@ -104,9 +104,7 @@ public class BinaryRowTest {
       }
     }
     long duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info("Array access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
-    }
+    LOG.info("Array access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
 
     int headerInBytes = 64;
     // warm
@@ -125,9 +123,7 @@ public class BinaryRowTest {
       }
     }
     duration = System.nanoTime() - startTime;
-    if (LOG.isInfoEnabled()) {
-      LOG.info("Compute access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
-    }
+    LOG.info("Compute access offset take " + duration + "ns, " + duration / 1000_000 + " ms\n");
   }
 
   @Test

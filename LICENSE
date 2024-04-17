@@ -199,3 +199,107 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+================================================================
+
+This product includes a number of Dependencies with separate copyright notices
+and license terms. Your use of these submodules is subject to the terms and
+conditions of the following licenses.
+
+================================================================
+
+================================================================
+Apache-2.0 licenses
+================================================================
+The following components are provided under the Apache-2.0 License. See project link for details.
+The text of each license is the standard Apache 2.0 license.
+
+* guava (https://github.com/google/guava)
+    Files:
+      java/fury-core/src/main/java/org/apache/fury/util/Preconditions.java
+
+* spark (https://github.com/apache/spark)
+    Files:
+      java/fury-core/src/main/java/org/apache/fury/codegen/Code.java
+      java/fury-core/src/main/java/org/apache/fury/util/Platform.java
+      java/fury-format/src/main/java/org/apache/fury/format/vectorized/ArrowWriter.java
+
+* commons-io (https://github.com/apache/commons-io)
+    Files:
+      java/fury-core/src/main/java/org/apache/fury/io/ClassLoaderObjectInputStream.java
+
+
+* fast-serialization (https://github.com/RuedigerMoeller/fast-serialization)
+    Files:
+      java/benchmark/src/main/java/org/apache/fury/benchmark/Identity2IdMap.java
+
+* ray (https://github.com/ray-project/ray)
+    Files:
+      ci/format.sh
+      bazel/fury_deps_setup.bzl
+      bazel/grpc-cython-copts.patch
+      bazel/grpc-python.patch
+
+* tensorflow (https://github.com/tensorflow/tensorflow)
+    Files:
+      bazel/arrow/pyarrow_configure.bzl
+
+
+================================================================
+BSD-3-Clause licenses
+================================================================
+The following components are provided under the BSD-3-Clause License. See project link for details.
+The text of each license is also included in licenses/LICENSE-[project].txt.
+
+* kryo (https://github.com/EsotericSoftware/kryo)
+    Files:
+      java/benchmark/src/main/java/org/apache/fury/benchmark/data/Data.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/data/Image.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/data/Media.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/data/MediaContent.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/data/Sample.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/state/BufferType.java
+      java/benchmark/src/main/java/org/apache/fury/benchmark/state/KryoState.java
+      java/fury-core/src/main/java/org/apache/fury/collection/FuryObjectMap.java
+      java/fury-core/src/main/java/org/apache/fury/collection/IdentityMap.java
+      java/fury-core/src/main/java/org/apache/fury/collection/IdentityObjectIntMap.java
+      java/fury-core/src/main/java/org/apache/fury/collection/LongMap.java
+      java/fury-core/src/main/java/org/apache/fury/collection/ObjectIntMap.java
+      java/fury-core/src/main/java/org/apache/fury/type/Generics.java
+      java/fury-core/src/test/java/org/apache/fury/type/GenericsTest.java
+
+* v8 (https://chromium.googlesource.com/v8/v8.git)
+    Files:
+      javascript/packages/hps/src/v8-fast-api-calls.h
+
+
+================================================================
+MIT licenses
+================================================================
+The following components are provided under the MIT License. See project link for details.
+The text of each license is also included in licenses/LICENSE-[project].txt
+
+* murmurHash3.js (https://github.com/karanlyons/murmurHash3.js)
+    Files:
+      javascript/packages/fury/lib/murmurHash3.ts
+
+* cython-abseil-sample (https://github.com/messense/cython-abseil-sample)
+    Files:
+      python/pyfury/includes/libabsl.pxd
+
+
+================================================================
+Public Domain
+================================================================
+The following components are placed in the public domain.
+The author hereby disclaims copyright to this source code.
+See project link for details.
+
+* smhasher (https://github.com/aappleby/smhasher)
+    Files:
+      src/fury/thirdparty/MurmurHash3.cc
+      src/fury/thirdparty/MurmurHash3.h
+
+* java_util (https://github.com/yonik/java_util)
+    Files:
+      java/fury-core/src/main/java/org/apache/fury/util/MurmurHash3.java

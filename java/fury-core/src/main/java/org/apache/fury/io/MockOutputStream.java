@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
  * to be allocated for actual writing.
  *
  * <p>Note that {@link OutputStream} doesn't support {@link ByteBuffer}, which may incur extra copy.
- * See also {@link MockWritableByteChannel}.
+ * See also {@link MockWritableChannel}.
  */
 public class MockOutputStream extends OutputStream {
   private int totalBytes;

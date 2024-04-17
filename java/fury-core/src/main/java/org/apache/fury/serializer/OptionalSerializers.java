@@ -59,14 +59,14 @@ public final class OptionalSerializers {
       boolean present = value.isPresent();
       buffer.writeBoolean(present);
       if (present) {
-        buffer.writeInt(value.getAsInt());
+        buffer.writeInt32(value.getAsInt());
       }
     }
 
     @Override
     public OptionalInt read(MemoryBuffer buffer) {
       if (buffer.readBoolean()) {
-        return OptionalInt.of(buffer.readInt());
+        return OptionalInt.of(buffer.readInt32());
       } else {
         return OptionalInt.empty();
       }
@@ -83,14 +83,14 @@ public final class OptionalSerializers {
       boolean present = value.isPresent();
       buffer.writeBoolean(present);
       if (present) {
-        buffer.writeLong(value.getAsLong());
+        buffer.writeInt64(value.getAsLong());
       }
     }
 
     @Override
     public OptionalLong read(MemoryBuffer buffer) {
       if (buffer.readBoolean()) {
-        return OptionalLong.of(buffer.readLong());
+        return OptionalLong.of(buffer.readInt64());
       } else {
         return OptionalLong.empty();
       }
@@ -107,14 +107,14 @@ public final class OptionalSerializers {
       boolean present = value.isPresent();
       buffer.writeBoolean(present);
       if (present) {
-        buffer.writeDouble(value.getAsDouble());
+        buffer.writeFloat64(value.getAsDouble());
       }
     }
 
     @Override
     public OptionalDouble read(MemoryBuffer buffer) {
       if (buffer.readBoolean()) {
-        return OptionalDouble.of(buffer.readDouble());
+        return OptionalDouble.of(buffer.readFloat64());
       } else {
         return OptionalDouble.empty();
       }

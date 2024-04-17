@@ -36,10 +36,10 @@ import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.fury.format.encoder.Encoder;
 import org.apache.fury.format.encoder.Encoders;
-import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
-import org.slf4j.Logger;
 
 public class RowSuite {
   private static final Logger LOG = LoggerFactory.getLogger(RowSuite.class);
@@ -141,7 +141,7 @@ public class RowSuite {
 
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
-      String commandLine = "io.*RowSuite.* -f 3 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+      String commandLine = "org.apache.fury.*RowSuite.* -f 3 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       args = commandLine.split(" ");
     }
     LOG.info("command line: {}", Arrays.toString(args));

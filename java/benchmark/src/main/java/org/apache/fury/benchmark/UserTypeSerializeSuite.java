@@ -59,7 +59,7 @@ public class UserTypeSerializeSuite {
     return state.output;
   }
 
-  // @Benchmark
+  @Benchmark
   public Object fury_serialize(FuryState.FuryUserTypeState state) {
     state.buffer.writerIndex(0);
     state.fury.writeRef(state.buffer, state.object);
@@ -144,7 +144,8 @@ public class UserTypeSerializeSuite {
   public static void main(String[] args) throws IOException {
     if (args.length == 0) {
       String commandLine =
-          "io.*UserTypeSerializeSuite.fury_serialize -f 3 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+          "org.apache.fury.*UserTypeSerializeSuite.fury -f 3 -wi 5 -i 10 -t 1 -w 2s -r 2s -rf csv "
+              + "-p objectType=MEDIA_CONTENT -p bufferType=array -p references=false";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

@@ -56,7 +56,7 @@ abstract class AbstractScalaMapSerializer[K, V, T](fury: Fury, cls: Class[T])
   }
 
   override def newMap(buffer: MemoryBuffer): util.Map[_, _] = {
-    val numElements = buffer.readPositiveVarInt()
+    val numElements = buffer.readVarUint32()
     setNumElements(numElements)
     val factory = fury.readRef(buffer).asInstanceOf[Factory[(K, V), T]]
     val builder = factory.newBuilder
@@ -116,7 +116,7 @@ class ScalaMapSerializer[K, V, T <: scala.collection.Map[K, V]](fury: Fury, cls:
   extends AbstractScalaMapSerializer[K, V, T](fury, cls) {
 
   override def onMapWrite(buffer: MemoryBuffer, value: T): util.Map[_, _] = {
-    buffer.writePositiveVarInt(value.size)
+    buffer.writeVarUint32Small7(value.size)
     val factory = value.mapFactory.mapFactory[Any, Any].asInstanceOf[Factory[Any, Any]]
     fury.writeRef(buffer, factory)
     new MapAdapter[K, V](value)
@@ -131,7 +131,7 @@ class ScalaMapSerializer[K, V, T <: scala.collection.Map[K, V]](fury: Fury, cls:
 class ScalaSortedMapSerializer[K, V, T <: scala.collection.SortedMap[K, V]](fury: Fury, cls: Class[T])
   extends AbstractScalaMapSerializer[K, V, T](fury, cls) {
   override def onMapWrite(buffer: MemoryBuffer, value: T): util.Map[_, _] = {
-    buffer.writePositiveVarInt(value.size)
+    buffer.writeVarUint32Small7(value.size)
     val factory = value.sortedMapFactory.sortedMapFactory[Any, Any](
       value.ordering.asInstanceOf[Ordering[Any]]).asInstanceOf[Factory[Any, Any]]
     fury.writeRef(buffer, factory)

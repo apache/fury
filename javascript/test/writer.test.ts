@@ -23,7 +23,7 @@ import { describe, expect, test } from '@jest/globals';
 
 describe('writer', () => {
     test('should dumpOwn dispose work', () => {
-        const writer = BinaryWriter({});
+        const writer = new BinaryWriter({});
         {
             writer.uint8(256);
             const { get, dispose } = writer.dumpAndOwn();
@@ -46,7 +46,7 @@ describe('writer', () => {
     });
 
     test('should dumpOwn work', () => {
-        const writer = BinaryWriter({});
+        const writer = new BinaryWriter({});
         {
             writer.uint8(256);
             const { get } = writer.dumpAndOwn();

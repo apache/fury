@@ -29,7 +29,7 @@ cd ../java && mvn install -DskipTests -Dcheckstyle.skip -Dlicense.skip -Dmaven.j
 mvn package -Pjmh
 # run benchmark
 nohup java -jar target/benchmarks.jar -f 5 -wi 3 -i 5 -t 1 -w 3s -r 5s -rf csv >bench.log 2>&1 &
-java -jar target/benchmarks.jar "io.*\.deserialize$" -f 1 -wi 1 -i 3 -t 1 -w 2s -r 2s -rf csv
+java -jar target/benchmarks.jar "org.apache.fury.*\.deserialize$" -f 1 -wi 1 -i 3 -t 1 -w 2s -r 2s -rf csv -p objectType=MEDIA_CONTENT -p bufferType=array -p references=false
 ```
 
 Generate Protobuf/Flatbuffers code manually:
@@ -75,7 +75,7 @@ Using `async-profiler` to generate flame graph.
 
 ```bash
 export pic=s1.html
-nohup java -jar target/benchmarks.jar 'io.*Fury.*deserialize*' -f 1 -wi 1 -i 1 -t 1 -w 1s -r 35s -rf csv &
+nohup java -jar target/benchmarks.jar 'org.apache.fury.*Fury.*deserialize*' -f 1 -wi 1 -i 1 -t 1 -w 1s -r 35s -rf csv &
 profiler.sh  -d 30 -f $pic `jps | grep ForkedMain | awk '{print $1}'`
 ```
 

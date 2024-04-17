@@ -101,7 +101,7 @@ public class MemorySuite {
   // @Benchmark
   public Object charsCopyAligned(MemoryState state) {
     state.heapBuffer.writerIndex(0);
-    state.heapBuffer.writePrimitiveArrayWithSizeEmbedded(
+    state.heapBuffer.writePrimitiveArrayWithSize(
         state.chars, Platform.CHAR_ARRAY_OFFSET, state.chars.length * 2);
     return state.heapBuffer;
   }
@@ -110,7 +110,7 @@ public class MemorySuite {
   public Object charsCopyUnaligned(MemoryState state) {
     state.heapBuffer.writerIndex(0);
     state.heapBuffer.writeBoolean(false);
-    state.heapBuffer.writePrimitiveArrayWithSizeEmbedded(
+    state.heapBuffer.writePrimitiveArrayWithSize(
         state.chars, Platform.CHAR_ARRAY_OFFSET, state.chars.length * 2);
     return state.heapBuffer;
   }
@@ -118,7 +118,7 @@ public class MemorySuite {
   // @Benchmark
   public Object longsCopyAligned(MemoryState state) {
     state.heapBuffer.writerIndex(0);
-    state.heapBuffer.writePrimitiveArrayWithSizeEmbedded(
+    state.heapBuffer.writePrimitiveArrayWithSize(
         state.longs, Platform.LONG_ARRAY_OFFSET, state.longs.length * 8);
     return state.heapBuffer;
   }
@@ -127,7 +127,7 @@ public class MemorySuite {
   public Object longsCopyUnaligned(MemoryState state) {
     state.heapBuffer.writerIndex(0);
     state.heapBuffer.writeBoolean(false);
-    state.heapBuffer.writePrimitiveArrayWithSizeEmbedded(
+    state.heapBuffer.writePrimitiveArrayWithSize(
         state.longs, Platform.LONG_ARRAY_OFFSET, state.longs.length * 8);
     return state.heapBuffer;
   }
@@ -211,7 +211,7 @@ public class MemorySuite {
     buffer1.readerIndex(0);
     int size = buffer1.size();
     for (int i = 0; i < size / 2; i++) {
-      x += buffer1.readShort();
+      x += buffer1.readInt16();
     }
     return x;
   }
@@ -233,14 +233,15 @@ public class MemorySuite {
     buffer1.readerIndex(0);
     int size = buffer1.size();
     for (int i = 0; i < size / 4; i++) {
-      x += buffer1.readInt();
+      x += buffer1.readInt32();
     }
     return x;
   }
 
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
-      String commandLine = "io.*MemorySuite.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+      String commandLine =
+          "org.apache.fury.*MemorySuite.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

@@ -40,7 +40,7 @@ function build(inner: TypeDescription) {
     private innerGenerator() {
       const InnerGeneratorClass = CodegenRegistry.get(inner.type);
       if (!InnerGeneratorClass) {
-        throw new Error(`${inner.type} generator not exists`);
+        throw new Error(`${InternalSerializerType[inner.type]} generator not exists`);
       }
       return new InnerGeneratorClass(inner, this.builder, this.scope);
     }
@@ -77,10 +77,11 @@ function build(inner: TypeDescription) {
   };
 }
 
-CodegenRegistry.register(InternalSerializerType.FURY_STRING_ARRAY, build(Type.string()));
-CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_BOOL_ARRAY, build(Type.bool()));
-CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_LONG_ARRAY, build(Type.int64()));
-CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_INT_ARRAY, build(Type.int32()));
-CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_FLOAT_ARRAY, build(Type.float()));
-CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_DOUBLE_ARRAY, build(Type.double()));
-CodegenRegistry.register(InternalSerializerType.FURY_PRIMITIVE_SHORT_ARRAY, build(Type.int16()));
+CodegenRegistry.register(InternalSerializerType.BOOL_ARRAY, build(Type.bool()));
+CodegenRegistry.register(InternalSerializerType.INT8_ARRAY, build(Type.int8()));
+CodegenRegistry.register(InternalSerializerType.INT16_ARRAY, build(Type.int16()));
+CodegenRegistry.register(InternalSerializerType.INT32_ARRAY, build(Type.int32()));
+CodegenRegistry.register(InternalSerializerType.INT64_ARRAY, build(Type.int64()));
+CodegenRegistry.register(InternalSerializerType.FLOAT16_ARRAY, build(Type.float16()));
+CodegenRegistry.register(InternalSerializerType.FLOAT32_ARRAY, build(Type.float32()));
+CodegenRegistry.register(InternalSerializerType.FLOAT64_ARRAY, build(Type.float64()));

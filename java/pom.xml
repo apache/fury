@@ -36,7 +36,7 @@
   <version>0.5.0.rc1</version>
   <name>Fury Project Parent POM</name>
   <description>
-    Apache Fury™ is a blazing fast multi-language serialization framework powered by jit and zero-copy.
+    Apache Fury™ is a blazingly fast multi-language serialization framework powered by jit and zero-copy.
 
     Apache Fury (incubating) is an effort undergoing incubation at the Apache
     Software Foundation (ASF), sponsored by the Apache Incubator PMC.
@@ -91,7 +91,8 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.30</version>
+        <version>2.0.12</version>
+        <optional>true</optional>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
