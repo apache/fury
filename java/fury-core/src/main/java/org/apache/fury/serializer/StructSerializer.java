@@ -31,6 +31,8 @@ import java.util.Map;
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.ClassNotCompatibleException;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.GenericType;
@@ -38,11 +40,9 @@ import org.apache.fury.type.Generics;
 import org.apache.fury.type.Type;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.FieldAccessor;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.Utils;
-import org.slf4j.Logger;
 
 /**
  * A serializer used for cross-language serialization for custom objects.
@@ -122,7 +122,7 @@ public class StructSerializer<T> extends Serializer<T> {
       typeHash = computeStructHash();
       this.typeHash = typeHash;
     }
-    buffer.writeInt(typeHash);
+    buffer.writeInt32(typeHash);
     Generics generics = fury.getGenerics();
     GenericType[] fieldGenerics = getGenericTypes(generics);
     for (int i = 0; i < fieldAccessors.length; i++) {
@@ -167,7 +167,7 @@ public class StructSerializer<T> extends Serializer<T> {
       typeHash = computeStructHash();
       this.typeHash = typeHash;
     }
-    int newHash = buffer.readInt();
+    int newHash = buffer.readInt32();
     if (newHash != typeHash) {
       throw new ClassNotCompatibleException(
           String.format(

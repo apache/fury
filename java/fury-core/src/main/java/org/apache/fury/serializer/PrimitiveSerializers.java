@@ -27,6 +27,7 @@ import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.config.LongEncoding;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.type.Type;
+import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 
 /** Serializers for java primitive types. */
@@ -148,12 +149,12 @@ public class PrimitiveSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Short value) {
-      buffer.writeShort(value);
+      buffer.writeInt16(value);
     }
 
     @Override
     public Short read(MemoryBuffer buffer) {
-      return buffer.readShort();
+      return buffer.readInt16();
     }
   }
 
@@ -173,30 +174,30 @@ public class PrimitiveSerializers {
     @Override
     public void write(MemoryBuffer buffer, Integer value) {
       if (compressNumber) {
-        buffer.writeVarInt(value);
+        buffer.writeVarInt32(value);
       } else {
-        buffer.writeInt(value);
+        buffer.writeInt32(value);
       }
     }
 
     @Override
     public Integer read(MemoryBuffer buffer) {
       if (compressNumber) {
-        return buffer.readVarInt();
+        return buffer.readVarInt32();
       } else {
-        return buffer.readInt();
+        return buffer.readInt32();
       }
     }
 
     @Override
     public void xwrite(MemoryBuffer buffer, Integer value) {
       // TODO support varint in cross-language serialization
-      buffer.writeInt(value);
+      buffer.writeInt32(value);
     }
 
     @Override
     public Integer xread(MemoryBuffer buffer) {
-      return buffer.readInt();
+      return buffer.readInt32();
     }
   }
 
@@ -215,64 +216,60 @@ public class PrimitiveSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Long value) {
-      writeLong(buffer, value, longEncoding);
+      writeInt64(buffer, value, longEncoding);
     }
 
     @Override
     public Long read(MemoryBuffer buffer) {
-      return readLong(buffer, longEncoding);
+      return readInt64(buffer, longEncoding);
     }
 
-    public static String writeLongFunc(LongEncoding longEncoding, boolean ensureBounds) {
+    public static Expression writeInt64(
+        Expression buffer, Expression v, LongEncoding longEncoding, boolean ensureBounds) {
       switch (longEncoding) {
         case LE_RAW_BYTES:
-          return ensureBounds ? "writeLong" : "unsafeWriteVarLong";
+          return new Invoke(buffer, "writeInt64", v);
         case SLI:
-          return ensureBounds ? "writeSliLong" : "unsafeWriteSliLong";
+          return new Invoke(buffer, ensureBounds ? "writeSliInt64" : "_unsafeWriteSliInt64", v);
         case PVL:
-          return ensureBounds ? "writeVarLong" : "unsafeWriteVarLong";
+          return new Invoke(buffer, ensureBounds ? "writeVarInt64" : "_unsafeWriteVarInt64", v);
         default:
           throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
       }
     }
 
-    public static Expression writeLong(
-        Expression buffer, Expression v, LongEncoding longEncoding, boolean ensureBounds) {
-      return new Invoke(buffer, writeLongFunc(longEncoding, ensureBounds), v);
-    }
-
-    public static void writeLong(MemoryBuffer buffer, long value, LongEncoding longEncoding) {
+    public static void writeInt64(MemoryBuffer buffer, long value, LongEncoding longEncoding) {
       if (longEncoding == LongEncoding.SLI) {
-        buffer.writeSliLong(value);
+        buffer.writeSliInt64(value);
       } else if (longEncoding == LongEncoding.LE_RAW_BYTES) {
-        buffer.writeLong(value);
+        buffer.writeInt64(value);
       } else {
-        buffer.writeVarLong(value);
+        buffer.writeVarInt64(value);
       }
     }
 
-    public static long readLong(MemoryBuffer buffer, LongEncoding longEncoding) {
+    public static long readInt64(MemoryBuffer buffer, LongEncoding longEncoding) {
       if (longEncoding == LongEncoding.SLI) {
-        return buffer.readSliLong();
+        return buffer.readSliInt64();
       } else if (longEncoding == LongEncoding.LE_RAW_BYTES) {
-        return buffer.readLong();
+        return buffer.readInt64();
       } else {
-        return buffer.readVarLong();
+        return buffer.readVarInt64();
       }
     }
 
-    public static Expression readLong(Expression buffer, LongEncoding longEncoding) {
+    public static Expression readInt64(Expression buffer, LongEncoding longEncoding) {
       return new Invoke(buffer, readLongFunc(longEncoding), PRIMITIVE_LONG_TYPE);
     }
 
     public static String readLongFunc(LongEncoding longEncoding) {
       switch (longEncoding) {
         case LE_RAW_BYTES:
-          return "readLong";
+          return Platform.IS_LITTLE_ENDIAN ? "_readInt64OnLE" : "_readInt64OnBE";
         case SLI:
-          return "readSliLong";
+          return Platform.IS_LITTLE_ENDIAN ? "_readSliInt64OnLE" : "_readSliInt64OnBE";
         case PVL:
-          return "readVarLong";
+          return Platform.IS_LITTLE_ENDIAN ? "_readVarInt64OnLE" : "_readVarInt64OnBE";
         default:
           throw new UnsupportedOperationException("Unsupported long encoding " + longEncoding);
       }
@@ -281,12 +278,12 @@ public class PrimitiveSerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, Long value) {
       // TODO support var long in cross-language serialization
-      buffer.writeLong(value);
+      buffer.writeInt64(value);
     }
 
     @Override
     public Long xread(MemoryBuffer buffer) {
-      return buffer.readLong();
+      return buffer.readInt64();
     }
   }
 
@@ -302,12 +299,12 @@ public class PrimitiveSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Float value) {
-      buffer.writeFloat(value);
+      buffer.writeFloat32(value);
     }
 
     @Override
     public Float read(MemoryBuffer buffer) {
-      return buffer.readFloat();
+      return buffer.readFloat32();
     }
   }
 
@@ -323,12 +320,12 @@ public class PrimitiveSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Double value) {
-      buffer.writeDouble(value);
+      buffer.writeFloat64(value);
     }
 
     @Override
     public Double read(MemoryBuffer buffer) {
-      return buffer.readDouble();
+      return buffer.readFloat64();
     }
   }
 

@@ -50,13 +50,13 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Data;
 import org.apache.fury.config.Language;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.serializer.Serializer;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.MurmurHash3;
-import org.slf4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -117,14 +117,14 @@ public class CrossLanguageTest {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     buffer.writeBoolean(true);
     buffer.writeByte(Byte.MAX_VALUE);
-    buffer.writeShort(Short.MAX_VALUE);
-    buffer.writeInt(Integer.MAX_VALUE);
-    buffer.writeLong(Long.MAX_VALUE);
-    buffer.writeFloat(-1.1f);
-    buffer.writeDouble(-1.1);
-    buffer.writePositiveVarInt(100);
+    buffer.writeInt16(Short.MAX_VALUE);
+    buffer.writeInt32(Integer.MAX_VALUE);
+    buffer.writeInt64(Long.MAX_VALUE);
+    buffer.writeFloat32(-1.1f);
+    buffer.writeFloat64(-1.1);
+    buffer.writeVarUint32(100);
     byte[] bytes = {'a', 'b'};
-    buffer.writeInt(bytes.length);
+    buffer.writeInt32(bytes.length);
     buffer.writeBytes(bytes);
     Path dataFile = Files.createTempFile("test_buffer", "data");
     Files.write(dataFile, buffer.getBytes(0, buffer.writerIndex()));
@@ -139,13 +139,13 @@ public class CrossLanguageTest {
     buffer = MemoryUtils.wrap(Files.readAllBytes(dataFile));
     Assert.assertTrue(buffer.readBoolean());
     Assert.assertEquals(buffer.readByte(), Byte.MAX_VALUE);
-    Assert.assertEquals(buffer.readShort(), Short.MAX_VALUE);
-    Assert.assertEquals(buffer.readInt(), Integer.MAX_VALUE);
-    Assert.assertEquals(buffer.readLong(), Long.MAX_VALUE);
-    Assert.assertEquals(buffer.readFloat(), -1.1f, 0.0001);
-    Assert.assertEquals(buffer.readDouble(), -1.1, 0.0001);
-    Assert.assertEquals(buffer.readPositiveVarInt(), 100);
-    Assert.assertTrue(Arrays.equals(buffer.readBytes(buffer.readInt()), bytes));
+    Assert.assertEquals(buffer.readInt16(), Short.MAX_VALUE);
+    Assert.assertEquals(buffer.readInt32(), Integer.MAX_VALUE);
+    Assert.assertEquals(buffer.readInt64(), Long.MAX_VALUE);
+    Assert.assertEquals(buffer.readFloat32(), -1.1f, 0.0001);
+    Assert.assertEquals(buffer.readFloat64(), -1.1, 0.0001);
+    Assert.assertEquals(buffer.readVarUint32(), 100);
+    Assert.assertTrue(Arrays.equals(buffer.readBytes(buffer.readInt32()), bytes));
   }
 
   @Test
@@ -170,8 +170,8 @@ public class CrossLanguageTest {
     Assert.assertTrue(executeCommand(command, 30));
     long[] longs = MurmurHash3.murmurhash3_x64_128(new byte[] {1, 2, 8}, 0, 3, 47);
     buffer.writerIndex(0);
-    buffer.writeLong(longs[0]);
-    buffer.writeLong(longs[1]);
+    buffer.writeInt64(longs[0]);
+    buffer.writeInt64(longs[1]);
     Files.write(
         dataFile, buffer.getBytes(0, buffer.writerIndex()), StandardOpenOption.TRUNCATE_EXISTING);
     Assert.assertTrue(executeCommand(command, 30));
@@ -681,9 +681,9 @@ public class CrossLanguageTest {
     Files.deleteIfExists(outOfBandDataFile);
     Files.createFile(outOfBandDataFile);
     MemoryBuffer outOfBandBuffer = MemoryBuffer.newHeapBuffer(32);
-    outOfBandBuffer.writeInt(buffers.size());
+    outOfBandBuffer.writeInt32(buffers.size());
     for (int i = 0; i < buffers.size(); i++) {
-      outOfBandBuffer.writeInt(bufferObjects.get(i).totalBytes());
+      outOfBandBuffer.writeInt32(bufferObjects.get(i).totalBytes());
       bufferObjects.get(i).writeTo(outOfBandBuffer);
     }
     Files.write(outOfBandDataFile, outOfBandBuffer.getBytes(0, outOfBandBuffer.writerIndex()));
@@ -699,10 +699,10 @@ public class CrossLanguageTest {
 
     MemoryBuffer inBandBuffer = MemoryUtils.wrap(Files.readAllBytes(intBandDataFile));
     outOfBandBuffer = MemoryUtils.wrap(Files.readAllBytes(outOfBandDataFile));
-    int numBuffers = outOfBandBuffer.readInt();
+    int numBuffers = outOfBandBuffer.readInt32();
     buffers = new ArrayList<>();
     for (int i = 0; i < numBuffers; i++) {
-      int len = outOfBandBuffer.readInt();
+      int len = outOfBandBuffer.readInt32();
       int readerIndex = outOfBandBuffer.readerIndex();
       buffers.add(outOfBandBuffer.slice(readerIndex, len));
       outOfBandBuffer.readerIndex(readerIndex + len);

@@ -35,7 +35,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.fury.collection.Tuple2;
-import org.apache.fury.util.LoggerFactory;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 import org.codehaus.commons.compiler.util.reflect.ByteArrayClassLoader;
@@ -45,7 +46,6 @@ import org.codehaus.commons.compiler.util.resource.Resource;
 import org.codehaus.janino.ClassLoaderIClassLoader;
 import org.codehaus.janino.Compiler;
 import org.codehaus.janino.util.ClassFile;
-import org.slf4j.Logger;
 
 /** A util to compile code to bytecode and create classloader to load generated class. */
 public class JaninoUtils {
@@ -104,13 +104,11 @@ public class JaninoUtils {
     try {
       compiler.compile(sourceFinder.resources().toArray(new Resource[0]));
       long durationMs = (System.nanoTime() - startTime) / 1000_000;
-      if (LOG.isInfoEnabled()) {
-        String classNames =
-            Arrays.stream(compileUnits)
-                .map(unit -> unit.mainClassName)
-                .collect(Collectors.joining(", ", "[", "]"));
-        LOG.info("Compile {} take {} ms", classNames, durationMs);
-      }
+      String classNames =
+          Arrays.stream(compileUnits)
+              .map(unit -> unit.mainClassName)
+              .collect(Collectors.joining(", ", "[", "]"));
+      LOG.info("Compile {} take {} ms", classNames, durationMs);
     } catch (Exception e) {
       StringBuilder msgBuilder = new StringBuilder("Compile error: \n");
       for (int i = 0; i < compileUnits.length; i++) {
@@ -185,14 +183,14 @@ public class JaninoUtils {
                                     classFile.getThisClassName(),
                                     m.getName(),
                                     length);
-                              } else if (length > CodeGenerator.DEFAULT_JVM_INLINE_METHOD_LIMIT
-                                  && !"<init>".equals(m.getName())) {
-                                LOG.debug(
-                                    "Generated method too long to be JIT inlined:"
-                                        + " class {} method {} size {}",
-                                    classFile.getThisClassName(),
-                                    m.getName(),
-                                    length);
+                                // } else if (length > CodeGenerator.DEFAULT_JVM_INLINE_METHOD_LIMIT
+                                //     && !"<init>".equals(m.getName())) {
+                                //   LOG.info(
+                                //       "Generated method too long to be JIT inlined:"
+                                //           + " class {} method {} size {}",
+                                //       classFile.getThisClassName(),
+                                //       m.getName(),
+                                //       length);
                               }
                               return Tuple2.of(m.getName(), length);
                             } catch (IllegalAccessException e) {

@@ -41,26 +41,23 @@ describe('array', () => {
   });
   test('should typedarray work', () => {
     const description = {
-      type: InternalSerializerType.FURY_TYPE_TAG,
+      type: InternalSerializerType.OBJECT,
       options: {
         props: {
           a: {
-            type: InternalSerializerType.FURY_PRIMITIVE_BOOL_ARRAY,
+            type: InternalSerializerType.BOOL_ARRAY,
           },
           a2: {
-            type: InternalSerializerType.FURY_PRIMITIVE_SHORT_ARRAY,
+            type: InternalSerializerType.INT16_ARRAY,
           },
           a3: {
-            type: InternalSerializerType.FURY_PRIMITIVE_INT_ARRAY,
+            type: InternalSerializerType.INT32_ARRAY,
           },
           a4: {
-            type: InternalSerializerType.FURY_PRIMITIVE_LONG_ARRAY,
+            type: InternalSerializerType.INT64_ARRAY,
           },
           a6: {
-            type: InternalSerializerType.FURY_PRIMITIVE_DOUBLE_ARRAY,
-          },
-          a7: {
-            type: InternalSerializerType.FURY_STRING_ARRAY
+            type: InternalSerializerType.FLOAT64_ARRAY,
           },
         },
         tag: "example.foo"
@@ -74,7 +71,6 @@ describe('array', () => {
       a3: [3, 5, 76],
       a4: [634, 564, 76],
       a6: [234243.555, 55654.6786],
-      a7: ["hello", "world", "!"]
     }, serializer);
     const result = fury.deserialize(
       input
@@ -86,66 +82,17 @@ describe('array', () => {
       a3: [3, 5, 76],
       a4: [634, 564, 76],
       a6: [234243.555, 55654.6786],
-      a7: ["hello", "world", "!"]
     })
   });
-  test('should string array work', () => {
-    const description = {
-      type: InternalSerializerType.FURY_TYPE_TAG,
-      options: {
-        props: {
-          a7: {
-            type: InternalSerializerType.FURY_STRING_ARRAY
-          },
-        },
-        tag: "example.foo"
-      }
-    };
-    
-    const fury = new Fury({ refTracking: true }); 
-    const serializer = fury.registerSerializer(description).serializer;
-    const input = fury.serialize({
-      a7: ["hello", "world", "!"]
-    }, serializer);
-    const result = fury.deserialize(
-      input
-    );
-    expect(result).toEqual({
-      a7: ["hello", "world", "!"]
-    })
-  });
-  test('should string array work when latin1 enable', () => {
-    const description = {
-      type: InternalSerializerType.FURY_TYPE_TAG,
-      options: {
-        props: {
-          a7: {
-            type: InternalSerializerType.FURY_STRING_ARRAY
-          },
-        },
-        tag: "example.foo"
-      }
-    };
-    
-    const fury = new Fury({ refTracking: true }); 
-    const serializer = fury.registerSerializer(description).serializer;
-    const input = fury.serialize({
-      a7: ["hello", "world", "!"]
-    }, serializer);
-    const result = fury.deserialize(
-      input
-    );
-    expect(result).toEqual({
-      a7: ["hello", "world", "!"]
-    })
-  });
+
+
   test('should floatarray work', () => {
     const description: ObjectTypeDescription = {
-      type: InternalSerializerType.FURY_TYPE_TAG,
+      type: InternalSerializerType.OBJECT,
       options: {
         props: {
           a5: {
-            type: InternalSerializerType.FURY_PRIMITIVE_FLOAT_ARRAY,
+            type: InternalSerializerType.FLOAT32_ARRAY,
           },
         },
         tag: "example.foo"

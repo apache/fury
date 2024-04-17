@@ -82,7 +82,7 @@ public class ArraySerializers {
     @Override
     public void write(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
-      buffer.writeInt(len);
+      buffer.writeVarUint32Small7(len);
       RefResolver refResolver = fury.getRefResolver();
       Serializer componentSerializer = this.componentTypeSerializer;
       if (componentSerializer != null) {
@@ -112,7 +112,7 @@ public class ArraySerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
-      buffer.writePositiveVarInt(len);
+      buffer.writeVarUint32Small7(len);
       // TODO(chaokunyang) use generics by creating component serializers to multi-dimension array.
       for (T t : arr) {
         fury.xwriteRef(buffer, t);
@@ -122,7 +122,7 @@ public class ArraySerializers {
     @Override
     public T[] read(MemoryBuffer buffer) {
       // Some jdk8 will crash if use varint, why?
-      int numElements = buffer.readInt();
+      int numElements = buffer.readVarUint32Small7();
       Object[] value = newArray(numElements);
       RefResolver refResolver = fury.getRefResolver();
       refResolver.reference(value);
@@ -160,7 +160,7 @@ public class ArraySerializers {
 
     @Override
     public T[] xread(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       Object[] value = newArray(numElements);
       for (int i = 0; i < numElements; i++) {
         value[i] = fury.xreadRef(buffer);
@@ -251,7 +251,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, boolean[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -268,12 +268,10 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readPositiveVarInt();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         boolean[] values = new boolean[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -288,11 +286,11 @@ public class ArraySerializers {
     @Override
     public void write(MemoryBuffer buffer, byte[] value) {
       if (fury.getBufferCallback() == null) {
-        int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        int size = Math.multiplyExact(value.length, 1);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
-            buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
+            buffer, new PrimitiveArrayBufferObject(value, offset, 1, value.length));
       }
     }
 
@@ -301,17 +299,13 @@ public class ArraySerializers {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
         int size = buf.remaining();
-        int numElements = size / elemSize;
-        byte[] values = new byte[numElements];
+        byte[] values = new byte[size];
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readPositiveVarInt();
-        int numElements = size / elemSize;
-        byte[] values = new byte[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        int size = buffer.readVarUint32Small7();
+        byte[] values = new byte[size];
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -327,7 +321,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, char[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -344,12 +338,10 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readPositiveVarInt();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         char[] values = new char[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -380,7 +372,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, short[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -397,12 +389,10 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readPositiveVarInt();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         short[] values = new short[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -418,7 +408,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, int[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -435,12 +425,10 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readPositiveVarInt();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         int[] values = new int[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -456,7 +444,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, long[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -473,12 +461,10 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readPositiveVarInt();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         long[] values = new long[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -494,7 +480,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, float[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -511,12 +497,10 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readPositiveVarInt();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         float[] values = new float[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -532,7 +516,7 @@ public class ArraySerializers {
     public void write(MemoryBuffer buffer, double[] value) {
       if (fury.getBufferCallback() == null) {
         int size = Math.multiplyExact(value.length, elemSize);
-        buffer.writePrimitiveArrayWithSizeEmbedded(value, offset, size);
+        buffer.writePrimitiveArrayWithSize(value, offset, size);
       } else {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
@@ -549,12 +533,10 @@ public class ArraySerializers {
         buf.copyToUnsafe(0, values, offset, size);
         return values;
       } else {
-        int size = buffer.readPositiveVarInt();
+        int size = buffer.readVarUint32Small7();
         int numElements = size / elemSize;
         double[] values = new double[numElements];
-        int readerIndex = buffer.readerIndex();
-        buffer.copyToUnsafe(readerIndex, values, offset, size);
-        buffer.readerIndex(readerIndex + size);
+        buffer.readToUnsafe(values, offset, size);
         return values;
       }
     }
@@ -581,7 +563,7 @@ public class ArraySerializers {
     @Override
     public void write(MemoryBuffer buffer, String[] value) {
       int len = value.length;
-      buffer.writePositiveVarInt(len);
+      buffer.writeVarUint32Small7(len);
       if (len == 0) {
         return;
       }
@@ -609,7 +591,7 @@ public class ArraySerializers {
 
     @Override
     public String[] read(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       String[] value = new String[numElements];
       if (numElements == 0) {
         return value;
@@ -633,7 +615,7 @@ public class ArraySerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, String[] value) {
       int len = value.length;
-      buffer.writePositiveVarInt(len);
+      buffer.writeVarUint32Small7(len);
       for (String elem : value) {
         if (elem != null) {
           buffer.writeByte(Fury.REF_VALUE_FLAG);
@@ -646,7 +628,7 @@ public class ArraySerializers {
 
     @Override
     public String[] xread(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       String[] value = new String[numElements];
       for (int i = 0; i < numElements; i++) {
         if (buffer.readByte() == Fury.REF_VALUE_FLAG) {
@@ -678,7 +660,7 @@ public class ArraySerializers {
   static void writePrimitiveArray(
       MemoryBuffer buffer, Object arr, int offset, int numElements, int elemSize) {
     int size = Math.multiplyExact(numElements, elemSize);
-    buffer.writePositiveVarInt(size);
+    buffer.writeVarUint32Small7(size);
     int writerIndex = buffer.writerIndex();
     int end = writerIndex + size;
     buffer.ensure(end);

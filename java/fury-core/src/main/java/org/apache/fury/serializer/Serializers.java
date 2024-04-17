@@ -30,6 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Currency;
@@ -156,19 +157,19 @@ public class Serializers {
       case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
         return buffer.readChar();
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
-        return buffer.readShort();
+        return buffer.readInt16();
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          return buffer.readVarInt();
+          return buffer.readVarInt32();
         } else {
-          return buffer.readInt();
+          return buffer.readInt32();
         }
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-        return buffer.readFloat();
+        return buffer.readFloat32();
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        return fury.readLong(buffer);
+        return fury.readInt64(buffer);
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-        return buffer.readDouble();
+        return buffer.readFloat64();
       default:
         {
           throw new IllegalStateException("unreachable");
@@ -245,16 +246,16 @@ public class Serializers {
       if (GET_CODER != null) {
         int coder = GET_CODER.applyAsInt(value);
         byte[] v = (byte[]) GET_VALUE.apply(value);
-        buffer.writeByte(coder);
-        if (coder == 0) {
-          buffer.writePrimitiveArrayWithSizeEmbedded(v, Platform.BYTE_ARRAY_OFFSET, value.length());
-        } else {
+        int bytesLen = value.length();
+        if (coder != 0) {
           if (coder != 1) {
             throw new UnsupportedOperationException("Unsupported coder " + coder);
           }
-          buffer.writePrimitiveArrayWithSizeEmbedded(
-              v, Platform.BYTE_ARRAY_OFFSET, value.length() << 1);
+          bytesLen <<= 1;
         }
+        long header = ((long) bytesLen << 2) | coder;
+        buffer.writeVarUint64(header);
+        buffer.writeBytes(v, 0, bytesLen);
       } else {
         char[] v = (char[]) GET_VALUE.apply(value);
         if (StringSerializer.isLatin(v)) {
@@ -321,12 +322,12 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, Enum value) {
-      buffer.writePositiveVarInt(value.ordinal());
+      buffer.writeVarUint32Small7(value.ordinal());
     }
 
     @Override
     public Enum read(MemoryBuffer buffer) {
-      return enumConstants[buffer.readPositiveVarInt()];
+      return enumConstants[buffer.readVarUint32Small7()];
     }
   }
 
@@ -338,19 +339,20 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigDecimal value) {
       final byte[] bytes = value.unscaledValue().toByteArray();
-      Preconditions.checkArgument(bytes.length <= 16);
-      buffer.writeByte((byte) value.scale());
-      buffer.writeByte((byte) bytes.length);
+      buffer.writeVarUint32Small7(value.scale());
+      buffer.writeVarUint32Small7(value.precision());
+      buffer.writeVarUint32Small7(bytes.length);
       buffer.writeBytes(bytes);
     }
 
     @Override
     public BigDecimal read(MemoryBuffer buffer) {
-      int scale = buffer.readByte();
-      int len = buffer.readByte();
+      int scale = buffer.readVarUint32Small7();
+      int precision = buffer.readVarUint32Small7();
+      int len = buffer.readVarUint32Small7();
       byte[] bytes = buffer.readBytes(len);
       final BigInteger bigInteger = new BigInteger(bytes);
-      return new BigDecimal(bigInteger, scale);
+      return new BigDecimal(bigInteger, scale, new MathContext(precision));
     }
   }
 
@@ -362,14 +364,13 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, BigInteger value) {
       final byte[] bytes = value.toByteArray();
-      Preconditions.checkArgument(bytes.length <= 16);
-      buffer.writeByte((byte) bytes.length);
+      buffer.writeVarUint32Small7(bytes.length);
       buffer.writeBytes(bytes);
     }
 
     @Override
     public BigInteger read(MemoryBuffer buffer) {
-      int len = buffer.readByte();
+      int len = buffer.readVarUint32Small7();
       byte[] bytes = buffer.readBytes(len);
       return new BigInteger(bytes);
     }
@@ -400,12 +401,12 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, AtomicInteger value) {
-      buffer.writeInt(value.get());
+      buffer.writeInt32(value.get());
     }
 
     @Override
     public AtomicInteger read(MemoryBuffer buffer) {
-      return new AtomicInteger(buffer.readInt());
+      return new AtomicInteger(buffer.readInt32());
     }
   }
 
@@ -417,12 +418,12 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, AtomicLong value) {
-      buffer.writeLong(value.get());
+      buffer.writeInt64(value.get());
     }
 
     @Override
     public AtomicLong read(MemoryBuffer buffer) {
-      return new AtomicLong(buffer.readLong());
+      return new AtomicLong(buffer.readInt64());
     }
   }
 
@@ -500,13 +501,13 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, Pattern pattern) {
       fury.writeJavaString(buffer, pattern.pattern());
-      buffer.writeInt(pattern.flags());
+      buffer.writeInt32(pattern.flags());
     }
 
     @Override
     public Pattern read(MemoryBuffer buffer) {
       String regex = fury.readJavaString(buffer);
-      int flags = buffer.readInt();
+      int flags = buffer.readInt32();
       return Pattern.compile(regex, flags);
     }
   }
@@ -519,13 +520,13 @@ public class Serializers {
 
     @Override
     public void write(MemoryBuffer buffer, final UUID uuid) {
-      buffer.writeLong(uuid.getMostSignificantBits());
-      buffer.writeLong(uuid.getLeastSignificantBits());
+      buffer.writeInt64(uuid.getMostSignificantBits());
+      buffer.writeInt64(uuid.getLeastSignificantBits());
     }
 
     @Override
     public UUID read(MemoryBuffer buffer) {
-      return new UUID(buffer.readLong(), buffer.readLong());
+      return new UUID(buffer.readInt64(), buffer.readInt64());
     }
   }
 

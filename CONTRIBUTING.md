@@ -18,6 +18,10 @@ For example, here are good PR titles:
 - fix(c++): blablabla
 - chore(python): remove useless yyy file
 
+If the submitted PR affects the performance of Fury, we strongly recommend using the perf type,
+and need to provide benchmark data in the PR description. For how to run the benchmark,
+please check [Fury Java Benchmark](https://github.com/apache/incubator-fury/blob/main/java/benchmark/README.md).
+
 For more details, please check [pr-lint.yml](./.github/workflows/pr-lint.yml).
 
 ## Testing

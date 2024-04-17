@@ -36,7 +36,7 @@ public class MapSerializer<T extends Map> extends AbstractMapSerializer<T> {
 
   @Override
   public Map onMapWrite(MemoryBuffer buffer, T value) {
-    buffer.writePositiveVarInt(value.size());
+    buffer.writeVarUint32Small7(value.size());
     return value;
   }
 

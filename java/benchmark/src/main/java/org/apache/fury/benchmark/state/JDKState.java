@@ -29,9 +29,6 @@ import org.apache.fury.benchmark.LongStringSerializationSuite;
 import org.apache.fury.benchmark.LongsSerializationSuite;
 import org.apache.fury.benchmark.StringSerializationSuite;
 import org.apache.fury.benchmark.data.Data;
-import org.apache.fury.benchmark.data.MediaContent;
-import org.apache.fury.benchmark.data.Sample;
-import org.apache.fury.benchmark.data.Struct;
 import org.apache.fury.io.ClassLoaderObjectInputStream;
 import org.apache.fury.util.Preconditions;
 import org.openjdk.jmh.annotations.Level;
@@ -61,21 +58,7 @@ public class JDKState {
     @Override
     public void setup() {
       super.setup();
-      switch (objectType) {
-        case SAMPLE:
-          object = new Sample().populate(references);
-          break;
-        case MEDIA_CONTENT:
-          object = new MediaContent().populate(references);
-          break;
-        case STRUCT:
-          object = Struct.create(false);
-          break;
-        case STRUCT2:
-          object = Struct.create(true);
-          break;
-      }
-
+      object = ObjectType.createObject(objectType, references);
       bos.reset();
       serialize(bos, object);
       serializedLength = bos.size();

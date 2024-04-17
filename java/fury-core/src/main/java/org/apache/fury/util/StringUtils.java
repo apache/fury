@@ -170,4 +170,18 @@ public class StringUtils {
   public static boolean isNotBlank(final CharSequence cs) {
     return !isBlank(cs);
   }
+
+  public static void shuffle(StringBuilder sb) {
+    shuffle(sb, 7);
+  }
+
+  public static void shuffle(StringBuilder sb, int seed) {
+    Random rand = new Random(seed);
+    for (int i = sb.length() - 1; i > 1; i--) {
+      int swapWith = rand.nextInt(i);
+      char tmp = sb.charAt(swapWith);
+      sb.setCharAt(swapWith, sb.charAt(i));
+      sb.setCharAt(i, tmp);
+    }
+  }
 }

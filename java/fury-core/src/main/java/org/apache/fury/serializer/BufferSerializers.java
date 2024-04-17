@@ -50,7 +50,7 @@ public class BufferSerializers {
       int readerIndex = newBuffer.readerIndex();
       int size = newBuffer.remaining();
       ByteBuffer originalBuffer = newBuffer.sliceAsByteBuffer(readerIndex, size - 1);
-      byte isBigEndian = newBuffer.get(readerIndex + size - 1);
+      byte isBigEndian = newBuffer.getByte(readerIndex + size - 1);
       originalBuffer.order(
           isBigEndian == (byte) 1 ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
       return originalBuffer;

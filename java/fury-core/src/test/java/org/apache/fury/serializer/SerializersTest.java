@@ -25,6 +25,7 @@ import static org.testng.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -104,6 +105,11 @@ public class SerializersTest extends FuryTestBase {
     Fury fury2 = builder.build();
     assertEquals(BigInteger.valueOf(100), serDe(fury1, fury2, BigInteger.valueOf(100)));
     assertEquals(BigDecimal.valueOf(100, 2), serDe(fury1, fury2, BigDecimal.valueOf(100, 2)));
+    BigInteger bigInteger = new BigInteger("999999999999999999999999999999999999999999999999");
+    BigDecimal bigDecimal = new BigDecimal(bigInteger, 200, MathContext.DECIMAL128);
+    serDeCheck(fury1, bigDecimal);
+    serDeCheck(
+        fury1, new BigInteger("11111111110101010000283895380202208220050200000000111111111"));
   }
 
   @Test(dataProvider = "javaFury")

@@ -19,10 +19,14 @@
 
 import { InternalSerializerType } from "../type";
 import { CodecBuilder } from "./builder";
-import { makeHead } from "../referenceResolver";
+import SerializerResolver from "../classResolver";
 import { RefFlags } from "../type";
 import { Scope } from "./scope";
 import { TypeDescription, ObjectTypeDescription } from "../description";
+
+export const makeHead = (flag: RefFlags, type: InternalSerializerType) => {
+  return (((SerializerResolver.getTypeIdByInternalSerializerType(type) << 16) >>> 16) << 8) | ((flag << 24) >>> 24);
+};
 
 export interface SerializerGenerator {
   toSerializer(): string;
@@ -126,7 +130,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     const meta = this.builder.meta(this.description);
 
     const maybeTag = () => {
-      if (this.description.type !== InternalSerializerType.FURY_TYPE_TAG) {
+      if (this.description.type !== InternalSerializerType.OBJECT) {
         return "";
       }
       const safeTag = CodecBuilder.replaceBackslashAndQuote((<ObjectTypeDescription> this.description).options.tag);
@@ -174,7 +178,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
       switch (${refFlag}) {
           case ${RefFlags.NotNullValueFlag}:
           case ${RefFlags.RefValueFlag}:
-              if (${this.builder.reader.int16()} === ${InternalSerializerType.FURY_TYPE_TAG}) {
+              if (${this.builder.reader.int16()} === ${SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.OBJECT)}) {
                   ${this.builder.classResolver.readTag(this.builder.reader.ownName())};
               }
               ${stmt(accessor, RefState.fromCondition(`${refFlag} === ${RefFlags.RefValueFlag}`))}

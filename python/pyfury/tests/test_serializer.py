@@ -432,6 +432,9 @@ def test_unsupported_callback():
 
 def test_slice():
     fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    assert fury.deserialize(fury.serialize(slice(1, None, "10"))) == slice(
+        1, None, "10"
+    )
     assert fury.deserialize(fury.serialize(slice(1, 100, 10))) == slice(1, 100, 10)
     assert fury.deserialize(fury.serialize(slice(1, None, 10))) == slice(1, None, 10)
     assert fury.deserialize(fury.serialize(slice(10, 10, None))) == slice(10, 10, None)

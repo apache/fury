@@ -99,7 +99,7 @@ graalvm_test() {
   mvn -T10 -B --no-transfer-progress clean install -DskipTests
   echo "Start to build graalvm native image"
   cd "$ROOT"/integration_tests/graalvm_tests
-  mvn -DskipTests=true -Pnative package
+  mvn -DskipTests=true --no-transfer-progress -Pnative package
   echo "Built graalvm native image"
   echo "Start to run graalvm native image"
   ./target/main

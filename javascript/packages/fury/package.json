@@ -1,7 +1,7 @@
 {
   "name": "@furyjs/fury",
-  "version": "0.5.9-beta",
-  "description": "Apache Fury™(incubating) is a blazing fast multi-language serialization framework powered by jit and zero-copy",
+  "version": "0.5.0",
+  "description": "Apache Fury™(incubating) is a blazingly fast multi-language serialization framework powered by jit and zero-copy",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

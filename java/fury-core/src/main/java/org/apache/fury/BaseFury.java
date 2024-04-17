@@ -19,8 +19,13 @@
 
 package org.apache.fury;
 
+import java.io.OutputStream;
+import org.apache.fury.io.FuryInputStream;
+import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.serializer.Serializers;
 
 /** All Fury’s basic interface, including Fury’s basic methods. */
@@ -64,8 +69,15 @@ public interface BaseFury {
    */
   <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass);
 
+  void registerSerializer(Class<?> type, Serializer<?> serializer);
+
+  void setSerializerFactory(SerializerFactory serializerFactory);
+
   /** Return serialized <code>obj</code> as a byte array. */
   byte[] serialize(Object obj);
+
+  /** Return serialized <code>obj</code> as a byte array. */
+  byte[] serialize(Object obj, BufferCallback callback);
 
   /**
    * Serialize <code>obj</code> to a off-heap buffer specified by <code>address</code> and <code>
@@ -76,8 +88,17 @@ public interface BaseFury {
   /** Serialize data into buffer. */
   MemoryBuffer serialize(MemoryBuffer buffer, Object obj);
 
+  /** Serialize <code>obj</code> to a <code>buffer</code>. */
+  MemoryBuffer serialize(MemoryBuffer buffer, Object obj, BufferCallback callback);
+
+  void serialize(OutputStream outputStream, Object obj);
+
+  void serialize(OutputStream outputStream, Object obj, BufferCallback callback);
+
   /** Deserialize <code>obj</code> from a byte array. */
   Object deserialize(byte[] bytes);
+
+  Object deserialize(byte[] bytes, Iterable<MemoryBuffer> outOfBandBuffers);
 
   /**
    * Deserialize <code>obj</code> from a off-heap buffer specified by <code>address</code> and
@@ -87,6 +108,16 @@ public interface BaseFury {
 
   /** Deserialize <code>obj</code> from a <code>buffer</code>. */
   Object deserialize(MemoryBuffer buffer);
+
+  Object deserialize(MemoryBuffer buffer, Iterable<MemoryBuffer> outOfBandBuffers);
+
+  Object deserialize(FuryInputStream inputStream);
+
+  Object deserialize(FuryInputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers);
+
+  Object deserialize(FuryReadableChannel channel);
+
+  Object deserialize(FuryReadableChannel channel, Iterable<MemoryBuffer> outOfBandBuffers);
 
   /**
    * Serialize java object without class info, deserialization should use {@link
@@ -100,6 +131,8 @@ public interface BaseFury {
    */
   void serializeJavaObject(MemoryBuffer buffer, Object obj);
 
+  void serializeJavaObject(OutputStream outputStream, Object obj);
+
   /**
    * Deserialize java object from binary without class info, serialization should use {@link
    * #serializeJavaObject}.
@@ -111,4 +144,36 @@ public interface BaseFury {
    * #serializeJavaObject}.
    */
   <T> T deserializeJavaObject(MemoryBuffer buffer, Class<T> cls);
+
+  <T> T deserializeJavaObject(FuryInputStream inputStream, Class<T> cls);
+
+  <T> T deserializeJavaObject(FuryReadableChannel channel, Class<T> cls);
+
+  /** This method is deprecated, please use {@link #serialize} instead. */
+  @Deprecated
+  byte[] serializeJavaObjectAndClass(Object obj);
+
+  /** This method is deprecated, please use {@link #serialize} instead. */
+  @Deprecated
+  void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj);
+
+  /** This method is deprecated, please use {@link #serialize} instead. */
+  @Deprecated
+  void serializeJavaObjectAndClass(OutputStream outputStream, Object obj);
+
+  /** This method is deprecated, please use {@link #deserialize} instead. */
+  @Deprecated
+  Object deserializeJavaObjectAndClass(byte[] data);
+
+  /** This method is deprecated, please use {@link #deserialize} instead. */
+  @Deprecated
+  Object deserializeJavaObjectAndClass(MemoryBuffer buffer);
+
+  /** This method is deprecated, please use {@link #deserialize} instead. */
+  @Deprecated
+  Object deserializeJavaObjectAndClass(FuryInputStream inputStream);
+
+  /** This method is deprecated, please use {@link #deserialize} instead. */
+  @Deprecated
+  Object deserializeJavaObjectAndClass(FuryReadableChannel channel);
 }

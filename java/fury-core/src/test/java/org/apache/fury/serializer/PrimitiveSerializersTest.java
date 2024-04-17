@@ -21,12 +21,17 @@ package org.apache.fury.serializer;
 
 import static org.testng.Assert.*;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
+import org.apache.fury.config.LongEncoding;
 import org.apache.fury.memory.MemoryBuffer;
 import org.testng.annotations.Test;
 
-public class PrimitiveSerializersTest {
+public class PrimitiveSerializersTest extends FuryTestBase {
   @Test
   public void testUint8Serializer() {
     Fury fury = Fury.builder().withLanguage(Language.XLANG).requireClassRegistration(false).build();
@@ -53,5 +58,65 @@ public class PrimitiveSerializersTest {
     assertEquals(serializer.xread(buffer), Integer.valueOf(65535));
     assertThrows(IllegalArgumentException.class, () -> serializer.xwrite(buffer, -1));
     assertThrows(IllegalArgumentException.class, () -> serializer.xwrite(buffer, 65536));
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class PrimitiveStruct {
+    byte byte1;
+    byte byte2;
+    char char1;
+    char char2;
+    short short1;
+    short short2;
+    int int1;
+    int int2;
+    long long1;
+    long long2;
+    long long3;
+    float float1;
+    float float2;
+    double double1;
+    double double2;
+  }
+
+  @Test(dataProvider = "compressNumberAndCodeGen")
+  public void testPrimitiveStruct(boolean compressNumber, boolean codegen) {
+    PrimitiveStruct struct =
+        new PrimitiveStruct(
+            Byte.MIN_VALUE,
+            Byte.MIN_VALUE,
+            Character.MIN_VALUE,
+            Character.MIN_VALUE,
+            Short.MIN_VALUE,
+            Short.MIN_VALUE,
+            Integer.MIN_VALUE,
+            Integer.MIN_VALUE,
+            Long.MIN_VALUE,
+            Long.MIN_VALUE,
+            -3763915443215605988L, // test Long.reverseBytes in _readVarInt64OnBE
+            Float.MIN_VALUE,
+            Float.MIN_VALUE,
+            Double.MIN_VALUE,
+            Double.MIN_VALUE);
+    if (compressNumber) {
+      FuryBuilder builder =
+          Fury.builder()
+              .withLanguage(Language.JAVA)
+              .withCodegen(codegen)
+              .requireClassRegistration(false);
+      serDeCheck(
+          builder.withNumberCompressed(true).withLongCompressed(LongEncoding.PVL).build(), struct);
+      serDeCheck(
+          builder.withNumberCompressed(true).withLongCompressed(LongEncoding.SLI).build(), struct);
+    } else {
+      Fury fury =
+          Fury.builder()
+              .withLanguage(Language.JAVA)
+              .withCodegen(codegen)
+              .requireClassRegistration(false)
+              .build();
+      serDeCheck(fury, struct);
+    }
   }
 }

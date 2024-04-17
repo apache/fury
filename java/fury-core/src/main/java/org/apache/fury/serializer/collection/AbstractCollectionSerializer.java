@@ -439,7 +439,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   public void xwrite(MemoryBuffer buffer, T value) {
     Collection collection = (Collection) value;
     int len = collection.size();
-    buffer.writePositiveVarInt(len);
+    buffer.writeVarUint32Small7(len);
     xwriteElements(fury, buffer, collection);
   }
 
@@ -493,7 +493,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
    * will raise NPE.
    */
   public Collection newCollection(MemoryBuffer buffer) {
-    numElements = buffer.readPositiveVarInt();
+    numElements = buffer.readVarUint32Small7();
     if (constructor == null) {
       constructor = ReflectionUtils.getCtrHandle(type, true);
     }
@@ -502,9 +502,14 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       fury.getRefResolver().reference(instance);
       return (Collection) instance;
     } catch (Throwable e) {
-      throw new IllegalArgumentException(
-          "Please provide public no arguments constructor for class " + type, e);
+      // reduce code size of critical path.
+      throw buildException(e);
     }
+  }
+
+  private RuntimeException buildException(Throwable e) {
+    return new IllegalArgumentException(
+        "Please provide public no arguments constructor for class " + type, e);
   }
 
   /**

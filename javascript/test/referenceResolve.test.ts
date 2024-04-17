@@ -20,10 +20,11 @@
 import { fromUint8Array, alloc, BrowserBuffer } from '../packages/fury/lib/platformBuffer';
 import { describe, expect, test } from '@jest/globals';
 import Fury, { TypeDescription, InternalSerializerType } from '../packages/fury/index';
-import { makeHead } from '../packages/fury/lib/referenceResolver';
 import { RefFlags } from '../packages/fury/lib/type';
 import { BinaryWriter } from '../packages/fury/lib/writer';
 import { BinaryReader } from '../packages/fury/lib/reader';
+import SerializerResolver from '../packages/fury/lib/classResolver';
+import { makeHead } from '../packages/fury/lib/gen/serializer';
 
 describe('referenceResolve', () => {
     test('should write head work', () => {
@@ -34,24 +35,24 @@ describe('referenceResolve', () => {
 
     test('should make head work when flag positive', () => {
         const head = makeHead(RefFlags.NotNullValueFlag, InternalSerializerType.STRING);
-        const writer = BinaryWriter({});
+        const writer = new BinaryWriter({});
         writer.int24(head);
         const ab = writer.dump();
-        const reader = BinaryReader({});
+        const reader = new BinaryReader({});
         reader.reset(ab);
         expect(reader.int8()).toBe(RefFlags.NotNullValueFlag);
-        expect(reader.int16()).toBe(InternalSerializerType.STRING);
+        expect(reader.int16()).toBe(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.STRING));
     });
 
     test('should make head work when flag is zero', () => {
         const head = makeHead(RefFlags.RefValueFlag, InternalSerializerType.STRING);
-        const writer = BinaryWriter({});
+        const writer = new BinaryWriter({});
         writer.int24(head);
         const ab = writer.dump();
-        const reader = BinaryReader({});
+        const reader = new BinaryReader({});
         reader.reset(ab);
         expect(reader.int8()).toBe(RefFlags.RefValueFlag);
-        expect(reader.int16()).toBe(InternalSerializerType.STRING);
+        expect(reader.int16()).toBe(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.STRING));
     });
 });
 

@@ -38,15 +38,15 @@ import org.apache.fury.builder.AccessorHelper;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.collection.Collections;
 import org.apache.fury.collection.MultiKeyWeakMap;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.util.ClassLoaderUtils;
 import org.apache.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
 import org.apache.fury.util.DelayedRef;
 import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
-import org.slf4j.Logger;
 
 /**
  * Code generator will take a list of {@link CompileUnit} and compile it into a list of classes.
@@ -151,9 +151,6 @@ public class CodeGenerator {
       for (Map.Entry<String, byte[]> e : classes.entrySet()) {
         String key = e.getKey();
         byte[] value = e.getValue();
-        if (LOG.isDebugEnabled()) {
-          LOG.debug("Code stats for class {} is {}", key, JaninoUtils.getClassStats(value));
-        }
       }
     }
     return defineClasses(classes);
@@ -344,10 +341,12 @@ public class CodeGenerator {
     }
     // classLoader will be null for jdk classes.
     ClassLoader classLoader = cls.getClassLoader();
+    // Hashcode may be negative in open-j9 jdk. While using `abs` to remove sign works fine too.
+    // it's still possible that hashCodes of two objects only differ in sign.
     if (classLoader == null) {
-      return String.valueOf(cls.hashCode());
+      return String.valueOf(cls.hashCode()).replace("-", "_");
     } else {
-      return String.format("%s_%s", classLoader.hashCode(), cls.hashCode());
+      return String.format("%s_%s", classLoader.hashCode(), cls.hashCode()).replace("-", "_");
     }
   }
 

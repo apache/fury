@@ -29,7 +29,8 @@ public class Benchmark {
   // the compile process.
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
-      String commandLine = "io.*_deserialize$ -f 3 -wi 5 -i 3 -t 1 -w 3s -r 3s -rf csv";
+      String commandLine =
+          "org.apache.fury.*_deserialize$ -f 3 -wi 5 -i 3 -t 1 -w 3s -r 3s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

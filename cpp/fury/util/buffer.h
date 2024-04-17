@@ -133,7 +133,7 @@ public:
 
   inline double GetDouble(uint32_t offset) { return Get<double>(offset); }
 
-  inline uint32_t PutPositiveVarInt32(uint32_t offset, int32_t value) {
+  inline uint32_t PutVarUint32(uint32_t offset, int32_t value) {
     if (value >> 7 == 0) {
       data_[offset] = (int8_t)value;
       return 1;
@@ -164,8 +164,7 @@ public:
     return 5;
   }
 
-  inline int32_t GetPositiveVarInt32(uint32_t offset,
-                                     uint32_t *readBytesLength) {
+  inline int32_t GetVarUint32(uint32_t offset, uint32_t *readBytesLength) {
     uint32_t position = offset;
     int b = data_[position++];
     int result = b & 0x7F;

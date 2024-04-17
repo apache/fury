@@ -32,12 +32,12 @@ import org.apache.fury.collection.Tuple3;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Config;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.meta.ClassDef;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.resolver.RefResolver;
-import org.apache.fury.type.ClassDef;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.Generics;
@@ -115,9 +115,9 @@ public final class UnexistedClassSerializers {
       // class not exist, use class def id for identity.
       int id = classMap.putOrGet(value.classDef.getId(), newId);
       if (id >= 0) {
-        buffer.writePositiveVarInt(id);
+        buffer.writeVarUint32(id);
       } else {
-        buffer.writePositiveVarInt(newId);
+        buffer.writeVarUint32(newId);
         metaContext.writingClassDefs.add(value.classDef);
       }
     }
@@ -132,7 +132,7 @@ public final class UnexistedClassSerializers {
       RefResolver refResolver = fury.getRefResolver();
       ClassResolver classResolver = fury.getClassResolver();
       if (fury.checkClassVersion()) {
-        buffer.writeInt(fieldsInfo.classVersionHash);
+        buffer.writeInt32(fieldsInfo.classVersionHash);
       }
       // write order: primitive,boxed,final,other,collection,map
       ObjectSerializer.FinalTypeField[] finalFields = fieldsInfo.finalFields;
