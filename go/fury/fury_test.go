@@ -243,6 +243,18 @@ func TestSerializeStructSimple(t *testing.T) {
 	}
 }
 
+func TestSerializeBeginWithMagicNumber(t *testing.T) {
+	strSlice := []string{"str1", "str1", "", "", "str2"}
+	fury := NewFury(true)
+	bytes, err := fury.Marshal(strSlice)
+	require.Nil(t, err, fmt.Sprintf("serialize value %s with type %s failed: %s",
+		reflect.ValueOf(strSlice), reflect.TypeOf(strSlice), err))
+	// Contains at least two bytes.
+	require.True(t, len(bytes) > 2)
+	magicNumber := int16(bytes[0]) | (int16(bytes[1]) << 8)
+	require.Equal(t, magicNumber, MAGIC_NUMBER)
+}
+
 type Foo struct {
 	F1 int32
 	F2 string
