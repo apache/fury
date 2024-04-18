@@ -1,5 +1,5 @@
 ---
-title: Java Object Graph Guide
+title: Java Serialization Guide
 sidebar_position: 0
 id: java_object_graph_guide
 ---
