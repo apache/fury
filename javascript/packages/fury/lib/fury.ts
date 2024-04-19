@@ -21,7 +21,7 @@ import ClassResolver from "./classResolver";
 import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
-import { ConfigFlags, Serializer, Config, Language } from "./type";
+import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER } from "./type";
 import { OwnershipError } from "./error";
 import { InputType, ResultType, TypeDescription } from "./description";
 import { generateSerializer, AnySerializer } from "./gen";
@@ -66,6 +66,9 @@ export default class {
     this.referenceResolver.reset();
     this.classResolver.reset();
     this.binaryReader.reset(bytes);
+    if (this.binaryReader.int16() !== MAGIC_NUMBER) {
+      throw new Error("the fury xlang serialization must start with magic number 0x%x. Please check whether the serialization is based on the xlang protocol and the data didn't corrupt");
+    }
     const bitmap = this.binaryReader.uint8();
     if ((bitmap & ConfigFlags.isNullFlag) === ConfigFlags.isNullFlag) {
       return null;
@@ -106,6 +109,7 @@ export default class {
     }
     bitmap |= ConfigFlags.isLittleEndianFlag;
     bitmap |= ConfigFlags.isCrossLanguageFlag;
+    this.binaryWriter.int16(MAGIC_NUMBER);
     this.binaryWriter.uint8(bitmap);
     this.binaryWriter.uint8(Language.XLANG);
     const cursor = this.binaryWriter.getCursor();

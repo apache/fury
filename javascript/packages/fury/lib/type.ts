@@ -116,3 +116,5 @@ export enum Language {
   CPP = 3,
   GO = 4,
 }
+
+export const MAGIC_NUMBER = 0x62D4;
