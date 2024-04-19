@@ -149,17 +149,31 @@ public interface BaseFury {
 
   <T> T deserializeJavaObject(FuryReadableChannel channel, Class<T> cls);
 
+  /** This method is deprecated, please use {@link #serialize} instead. */
+  @Deprecated
   byte[] serializeJavaObjectAndClass(Object obj);
 
+  /** This method is deprecated, please use {@link #serialize} instead. */
+  @Deprecated
   void serializeJavaObjectAndClass(MemoryBuffer buffer, Object obj);
 
+  /** This method is deprecated, please use {@link #serialize} instead. */
+  @Deprecated
   void serializeJavaObjectAndClass(OutputStream outputStream, Object obj);
 
+  /** This method is deprecated, please use {@link #deserialize} instead. */
+  @Deprecated
   Object deserializeJavaObjectAndClass(byte[] data);
 
+  /** This method is deprecated, please use {@link #deserialize} instead. */
+  @Deprecated
   Object deserializeJavaObjectAndClass(MemoryBuffer buffer);
 
+  /** This method is deprecated, please use {@link #deserialize} instead. */
+  @Deprecated
   Object deserializeJavaObjectAndClass(FuryInputStream inputStream);
 
+  /** This method is deprecated, please use {@link #deserialize} instead. */
+  @Deprecated
   Object deserializeJavaObjectAndClass(FuryReadableChannel channel);
 }

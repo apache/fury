@@ -403,7 +403,7 @@ func (r *typeResolver) writeType(buffer *ByteBuffer, type_ reflect.Type) error {
 			r.typeToTypeInfo[type_] = encodeType
 		}
 	}
-	if err := r.writeEnumString(buffer, typeInfo); err != nil {
+	if err := r.writeMetaString(buffer, typeInfo); err != nil {
 		return err
 	} else {
 		return nil
@@ -411,17 +411,17 @@ func (r *typeResolver) writeType(buffer *ByteBuffer, type_ reflect.Type) error {
 }
 
 func (r *typeResolver) readType(buffer *ByteBuffer) (reflect.Type, error) {
-	enumString, err := r.readEnumString(buffer)
+	metaString, err := r.readMetaString(buffer)
 	if err != nil {
 		return nil, err
 	}
-	type_, ok := r.typeInfoToType[enumString]
+	type_, ok := r.typeInfoToType[metaString]
 	if !ok {
-		type_, _, err = r.decodeType(enumString)
+		type_, _, err = r.decodeType(metaString)
 		if err != nil {
 			return nil, err
 		} else {
-			r.typeInfoToType[enumString] = type_
+			r.typeInfoToType[metaString] = type_
 		}
 	}
 	return type_, nil
@@ -519,7 +519,7 @@ func (r *typeResolver) decodeType(typeStr string) (reflect.Type, string, error) 
 }
 
 func (r *typeResolver) writeTypeTag(buffer *ByteBuffer, typeTag string) error {
-	if err := r.writeEnumString(buffer, typeTag); err != nil {
+	if err := r.writeMetaString(buffer, typeTag); err != nil {
 		return err
 	} else {
 		return nil
@@ -527,15 +527,15 @@ func (r *typeResolver) writeTypeTag(buffer *ByteBuffer, typeTag string) error {
 }
 
 func (r *typeResolver) readTypeByReadTag(buffer *ByteBuffer) (reflect.Type, error) {
-	enumString, err := r.readEnumString(buffer)
+	metaString, err := r.readMetaString(buffer)
 	if err != nil {
 		return nil, err
 	}
-	return r.typeTagToSerializers[enumString].(*ptrToStructSerializer).type_, err
+	return r.typeTagToSerializers[metaString].(*ptrToStructSerializer).type_, err
 }
 
 func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (string, error) {
-	return r.readEnumString(buffer)
+	return r.readMetaString(buffer)
 }
 
 func (r *typeResolver) getTypeById(id int16) (reflect.Type, error) {
@@ -546,43 +546,42 @@ func (r *typeResolver) getTypeById(id int16) (reflect.Type, error) {
 	return type_, nil
 }
 
-func (r *typeResolver) writeEnumString(buffer *ByteBuffer, str string) error {
+func (r *typeResolver) writeMetaString(buffer *ByteBuffer, str string) error {
 	if id, ok := r.dynamicStringToId[str]; !ok {
 		dynamicStringId := r.dynamicStringId
 		r.dynamicStringId += 1
 		r.dynamicStringToId[str] = dynamicStringId
-		buffer.WriteByte_(useStringValue)
+		buffer.WriteVarInt32(int32(len(str) << 1))
 		// TODO this hash should be unique, since we don't compare data equality for performance
 		h := fnv.New64a()
 		if _, err := h.Write([]byte(str)); err != nil {
 			return err
 		}
-		hash := int64(h.Sum64())
+		hash := int64(h.Sum64() & 0xffffffffffffff00)
 		buffer.WriteInt64(hash)
 		if len(str) > MaxInt16 {
 			return fmt.Errorf("too long string: %s", str)
 		}
-		buffer.WriteInt16(int16(len(str)))
 		buffer.WriteBinary(unsafeGetBytes(str))
 	} else {
-		buffer.WriteByte_(useStringId)
-		buffer.WriteInt16(id)
+		buffer.WriteVarInt32(int32(((id + 1) << 1) | 1))
 	}
 	return nil
 }
 
-func (r *typeResolver) readEnumString(buffer *ByteBuffer) (string, error) {
-	if buffer.ReadByte_() == useStringValue {
+func (r *typeResolver) readMetaString(buffer *ByteBuffer) (string, error) {
+	header := buffer.ReadVarInt32()
+	var length = int(header >> 1)
+	if header&0b1 == 0 {
 		// TODO support use computed hash
 		buffer.ReadInt64()
-		bytesLength := buffer.ReadInt16()
-		str := string(buffer.ReadBinary(int(bytesLength)))
+		str := string(buffer.ReadBinary(length))
 		dynamicStringId := r.dynamicStringId
 		r.dynamicStringId += 1
 		r.dynamicIdToString[dynamicStringId] = str
 		return str, nil
 	} else {
-		return r.dynamicIdToString[buffer.ReadInt16()], nil
+		return r.dynamicIdToString[int16(length-1)], nil
 	}
 }
 

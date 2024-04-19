@@ -223,15 +223,15 @@ cdef int8_t STRING_CLASS_ID = 4
 cdef int8_t PICKLE_CLASS_ID = 5
 cdef int8_t PICKLE_STRONG_CACHE_CLASS_ID = 6
 cdef int8_t PICKLE_CACHE_CLASS_ID = 7
-# `NOT_NULL_VALUE_FLAG` + `CLASS_ID` in little-endian order
+# `NOT_NULL_VALUE_FLAG` + `CLASS_ID<<1` in little-endian order
 cdef int32_t NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
-                                   (PYINT_CLASS_ID << 8)
+                                   (PYINT_CLASS_ID << 9)
 cdef int32_t NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
-                                     (PYFLOAT_CLASS_ID << 8)
+                                     (PYFLOAT_CLASS_ID << 9)
 cdef int32_t NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
-                                    (PYBOOL_CLASS_ID << 8)
+                                    (PYBOOL_CLASS_ID << 9)
 cdef int32_t NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
-                                    (STRING_CLASS_ID << 8)
+                                    (STRING_CLASS_ID << 9)
 
 
 cdef class BufferObject:
@@ -304,11 +304,11 @@ cdef class ClassResolver:
         flat_hash_map[uint64_t, PyObject*] _c_classes_info
         # hash -> ClassInfo
         flat_hash_map[int64_t, PyObject*] _c_hash_to_classinfo
-        # hash -> EnumStringBytes
+        # hash -> MetaStringBytes
         flat_hash_map[int64_t, PyObject*] _c_hash_to_enum_string_bytes
-        # classname EnumStringBytes address -> class
+        # classname MetaStringBytes address -> class
         flat_hash_map[uint64_t, PyObject*] _c_str_bytes_to_class
-        # classname EnumStringBytes address -> str
+        # classname MetaStringBytes address -> str
         flat_hash_map[uint64_t, PyObject*] _c_enum_str_to_str
 
         int16_t dynamic_write_string_id
@@ -449,7 +449,7 @@ cdef class ClassResolver:
             type_tag = serializer.get_xtype_tag()
             assert type(type_tag) is str
             assert type_tag not in self._type_tag_to_class_x_lang_map
-            classinfo.type_tag_bytes = EnumStringBytes(type_tag.encode("utf-8"))
+            classinfo.type_tag_bytes = MetaStringBytes(type_tag.encode("utf-8"))
             self._type_tag_to_class_x_lang_map[type_tag] = cls
         else:
             self._type_id_to_serializer[type_id] = serializer
@@ -611,19 +611,21 @@ cdef class ClassResolver:
         return serializer
 
     cpdef inline write_classinfo(self, Buffer buffer, ClassInfo classinfo):
-        cdef int16_t class_id = classinfo.class_id
+        cdef int32_t class_id = classinfo.class_id
         if class_id != NO_CLASS_ID:
-            buffer.write_int16(class_id)
+            buffer.write_varint32((class_id << 1))
             return
-        buffer.write_int16(NO_CLASS_ID)
+        buffer.write_varint32(1)
         self._write_enum_string_bytes(buffer, classinfo.class_name_bytes)
 
     cpdef inline ClassInfo read_classinfo(self, Buffer buffer):
-        cdef int16_t class_id = buffer.read_int16()
+        cdef int32_t h1 = buffer.read_varint32()
+        cdef int32_t class_id = h1 >> 1
         cdef ClassInfo classinfo
         cdef PyObject* classinfo_ptr
         # registered class id are greater than `NO_CLASS_ID`.
-        if class_id > NO_CLASS_ID:
+        if h1 & 0b1 == 0:
+            assert class_id >= 0, class_id
             classinfo_ptr = self._c_registered_id2_class_info[class_id]
             if classinfo_ptr == NULL:
                 raise ValueError(f"Unexpected class_id {class_id} "
@@ -632,19 +634,19 @@ cdef class ClassResolver:
             if classinfo.serializer is None:
                 classinfo.serializer = self._create_serializer(classinfo.cls)
             return classinfo
-        if buffer.read_int8() == USE_CLASS_ID:
-            return <ClassInfo>self._c_dynamic_id_to_classinfo_vec[buffer.read_int16()]
+        cdef int32_t header = buffer.read_varint32()
+        cdef int32_t length = header >> 1
+        if header & 0b1 != 0:
+            return <ClassInfo>self._c_dynamic_id_to_classinfo_vec[length - 1]
         cdef int64_t class_name_bytes_hash = buffer.read_int64()
-        cdef int16_t class_name_bytes_length = buffer.read_int16()
         cdef int32_t reader_index = buffer.reader_index
-        buffer.check_bound(reader_index, class_name_bytes_length)
-        buffer.reader_index = reader_index + class_name_bytes_length
+        buffer.check_bound(reader_index, length)
+        buffer.reader_index = reader_index + length
         classinfo_ptr = self._c_hash_to_classinfo[class_name_bytes_hash]
         if classinfo_ptr != NULL:
             self._c_dynamic_id_to_classinfo_vec.push_back(classinfo_ptr)
             return <ClassInfo>classinfo_ptr
-        cdef bytes classname_bytes = buffer.get_bytes(
-            reader_index, class_name_bytes_length)
+        cdef bytes classname_bytes = buffer.get_bytes(reader_index, length)
         cdef str full_class_name = classname_bytes.decode(encoding="utf-8")
         cls = load_class(full_class_name)
         classinfo = self.get_or_create_classinfo(cls)
@@ -654,36 +656,34 @@ cdef class ClassResolver:
         return classinfo
 
     cdef inline _write_enum_string_bytes(
-            self, Buffer buffer, EnumStringBytes enum_string_bytes):
+            self, Buffer buffer, MetaStringBytes enum_string_bytes):
         cdef int16_t dynamic_class_id = enum_string_bytes.dynamic_write_string_id
         if dynamic_class_id == DEFAULT_DYNAMIC_WRITE_STRING_ID:
             dynamic_class_id = self.dynamic_write_string_id
             enum_string_bytes.dynamic_write_string_id = dynamic_class_id
             self.dynamic_write_string_id += 1
             self._c_dynamic_written_enum_string.push_back(<PyObject*>enum_string_bytes)
-            buffer.write_int8(USE_CLASSNAME)
+            buffer.write_varint32(enum_string_bytes.length << 1)
             buffer.write_int64(enum_string_bytes.hashcode)
-            buffer.write_int16(enum_string_bytes.length)
             buffer.write_bytes(enum_string_bytes.data)
         else:
-            buffer.write_int8(USE_CLASS_ID)
-            buffer.write_int16(dynamic_class_id)
+            buffer.write_varint32(((dynamic_class_id + 1) << 1) | 1)
 
-    cdef inline EnumStringBytes _read_enum_string_bytes(self, Buffer buffer):
-        if buffer.read_int8() != USE_CLASSNAME:
-            return <EnumStringBytes>self._c_dynamic_id_to_enum_string_vec[
-                buffer.read_int16()]
+    cdef inline MetaStringBytes _read_enum_string_bytes(self, Buffer buffer):
+        cdef int32_t header = buffer.read_varint32()
+        cdef int32_t length = header >> 1
+        if header & 0b1 != 0:
+            return <MetaStringBytes>self._c_dynamic_id_to_enum_string_vec[length - 1]
         cdef int64_t hashcode = buffer.read_int64()
-        cdef int16_t length = buffer.read_int16()
         cdef int32_t reader_index = buffer.reader_index
         buffer.check_bound(reader_index, length)
         buffer.reader_index = reader_index + length
         cdef PyObject* enum_str_ptr = self._c_hash_to_enum_string_bytes[hashcode]
         if enum_str_ptr != NULL:
             self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
-            return <EnumStringBytes>enum_str_ptr
+            return <MetaStringBytes>enum_str_ptr
         cdef bytes str_bytes = buffer.get_bytes(reader_index, length)
-        cdef EnumStringBytes enum_str = EnumStringBytes(str_bytes, hashcode=hashcode)
+        cdef MetaStringBytes enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
         self._enum_str_set.add(enum_str)
         enum_str_ptr = <PyObject*>enum_str
         self._c_hash_to_enum_string_bytes[hashcode] = enum_str_ptr
@@ -693,13 +693,13 @@ cdef class ClassResolver:
     cpdef inline xwrite_class(self, Buffer buffer, cls):
         cdef PyObject* classinfo_ptr = self._c_classes_info[<uintptr_t><PyObject*>cls]
         assert classinfo_ptr != NULL
-        cdef EnumStringBytes class_name_bytes = (<object>classinfo_ptr).class_name_bytes
+        cdef MetaStringBytes class_name_bytes = (<object>classinfo_ptr).class_name_bytes
         self._write_enum_string_bytes(buffer, class_name_bytes)
 
     cpdef inline xwrite_type_tag(self, Buffer buffer, cls):
         cdef PyObject* classinfo_ptr = self._c_classes_info[<uintptr_t><PyObject*>cls]
         assert classinfo_ptr != NULL
-        cdef EnumStringBytes type_tag_bytes = (<object>classinfo_ptr).type_tag_bytes
+        cdef MetaStringBytes type_tag_bytes = (<object>classinfo_ptr).type_tag_bytes
         self._write_enum_string_bytes(buffer, type_tag_bytes)
 
     cpdef inline read_class_by_type_tag(self, Buffer buffer):
@@ -707,7 +707,7 @@ cdef class ClassResolver:
         return self._type_tag_to_class_x_lang_map[tag]
 
     cpdef inline xread_class(self, Buffer buffer):
-        cdef EnumStringBytes str_bytes = self._read_enum_string_bytes(buffer)
+        cdef MetaStringBytes str_bytes = self._read_enum_string_bytes(buffer)
         cdef uint64_t object_id = <uintptr_t><PyObject*>str_bytes
         cdef PyObject* cls_ptr = self._c_str_bytes_to_class[object_id]
         if cls_ptr != NULL:
@@ -719,7 +719,7 @@ cdef class ClassResolver:
         return cls
 
     cpdef inline str xread_classname(self, Buffer buffer):
-        cdef EnumStringBytes str_bytes = self._read_enum_string_bytes(buffer)
+        cdef MetaStringBytes str_bytes = self._read_enum_string_bytes(buffer)
         cdef uint64_t object_id = <uintptr_t><PyObject*>str_bytes
         cdef PyObject* classname_ptr = self._c_enum_str_to_str[object_id]
         if classname_ptr != NULL:
@@ -744,13 +744,13 @@ cdef class ClassResolver:
         if self.dynamic_write_string_id != 0:
             self.dynamic_write_string_id = 0
             for ptr in self._c_dynamic_written_enum_string:
-                (<EnumStringBytes>ptr).dynamic_write_string_id = \
+                (<MetaStringBytes>ptr).dynamic_write_string_id = \
                     DEFAULT_DYNAMIC_WRITE_STRING_ID
             self._c_dynamic_written_enum_string.clear()
 
 
 @cython.final
-cdef class EnumStringBytes:
+cdef class MetaStringBytes:
     cdef bytes data
     cdef int16_t length
     cdef int64_t hashcode
@@ -759,11 +759,17 @@ cdef class EnumStringBytes:
     def __init__(self, data, hashcode=None):
         self.data = data
         self.length = len(data)
-        self.hashcode = hashcode or mmh3.hash_buffer(data, 47)[0]
+        if hashcode is None:
+            hashcodes = mmh3.hash_buffer(data, 47)
+            hashcode = hashcodes[0]
+            assert isinstance(hashcode, int)
+            # FIXME: why using & 0xffffffffffffff00 overflow in cython
+            hashcode = (hashcode >> 8) << 8
+        self.hashcode = hashcode
         self.dynamic_write_string_id = DEFAULT_DYNAMIC_WRITE_STRING_ID
 
     def __eq__(self, other):
-        return type(other) is EnumStringBytes and other.hashcode == self.hashcode
+        return type(other) is MetaStringBytes and other.hashcode == self.hashcode
 
     def __hash__(self):
         return self.hashcode
@@ -774,8 +780,8 @@ cdef class ClassInfo:
     cdef public object cls
     cdef public int16_t class_id
     cdef public Serializer serializer
-    cdef public EnumStringBytes class_name_bytes
-    cdef public EnumStringBytes type_tag_bytes
+    cdef public MetaStringBytes class_name_bytes
+    cdef public MetaStringBytes type_tag_bytes
 
     def __init__(
             self,
@@ -788,11 +794,11 @@ cdef class ClassInfo:
         self.cls = cls
         self.class_id = class_id
         self.serializer = serializer
-        self.class_name_bytes = EnumStringBytes(class_name_bytes)
+        self.class_name_bytes = MetaStringBytes(class_name_bytes)
         if type_tag_bytes is None:
             self.type_tag_bytes = None
         else:
-            self.type_tag_bytes = EnumStringBytes(type_tag_bytes)
+            self.type_tag_bytes = MetaStringBytes(type_tag_bytes)
 
     def __repr__(self):
         return f"ClassInfo(cls={self.cls}, class_id={self.class_id}, " \
@@ -947,19 +953,19 @@ cdef class Fury:
             self, Buffer buffer, obj, ClassInfo classinfo=None):
         cls = type(obj)
         if cls is str:
-            buffer.write_int24(NOT_NULL_STRING_FLAG)
+            buffer.write_int16(NOT_NULL_STRING_FLAG)
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+            buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
             buffer.write_bool(obj)
             return
         elif cls is float:
-            buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+            buffer.write_int16(NOT_NULL_PYFLOAT_FLAG)
             buffer.write_double(obj)
             return
         if self.ref_resolver.write_ref_or_null(buffer, obj):
@@ -972,19 +978,19 @@ cdef class Fury:
     cpdef inline serialize_nonref(self, Buffer buffer, obj):
         cls = type(obj)
         if cls is str:
-            buffer.write_int16(STRING_CLASS_ID)
+            buffer.write_varint32(STRING_CLASS_ID << 1)
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_int16(PYINT_CLASS_ID)
+            buffer.write_varint32(PYINT_CLASS_ID << 1)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_int16(PYBOOL_CLASS_ID)
+            buffer.write_varint32(PYBOOL_CLASS_ID << 1)
             buffer.write_bool(obj)
             return
         elif cls is float:
-            buffer.write_int16(PYFLOAT_CLASS_ID)
+            buffer.write_varint32(PYFLOAT_CLASS_ID << 1)
             buffer.write_double(obj)
             return
         cdef ClassInfo classinfo = self.class_resolver.get_or_create_classinfo(cls)
@@ -1606,16 +1612,16 @@ cdef class CollectionSerializer(Serializer):
         for s in value:
             cls = type(s)
             if cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(s)
             elif cls is int:
-                buffer.write_int24(NOT_NULL_PYINT_FLAG)
+                buffer.write_int16(NOT_NULL_PYINT_FLAG)
                 buffer.write_varint64(s)
             elif cls is bool:
-                buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
                 buffer.write_bool(s)
             elif cls is float:
-                buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+                buffer.write_int16(NOT_NULL_PYFLOAT_FLAG)
                 buffer.write_double(s)
             else:
                 if not ref_resolver.write_ref_or_null(buffer, s):
@@ -1793,7 +1799,7 @@ cdef class MapSerializer(Serializer):
         for k, v in value.items():
             key_cls = type(k)
             if key_cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(k)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, k):
@@ -1802,16 +1808,16 @@ cdef class MapSerializer(Serializer):
                     key_classinfo.serializer.write(buffer, k)
             value_cls = type(v)
             if value_cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(v)
             elif value_cls is int:
-                buffer.write_int24(NOT_NULL_PYINT_FLAG)
+                buffer.write_int16(NOT_NULL_PYINT_FLAG)
                 buffer.write_varint64(v)
             elif value_cls is bool:
-                buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
                 buffer.write_bool(v)
             elif value_cls is float:
-                buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+                buffer.write_int16(NOT_NULL_PYFLOAT_FLAG)
                 buffer.write_double(v)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, v):
@@ -1907,7 +1913,7 @@ cdef class SubMapSerializer(Serializer):
         for k, v in value.items():
             key_cls = type(k)
             if key_cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(k)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, k):
@@ -1916,16 +1922,16 @@ cdef class SubMapSerializer(Serializer):
                     key_classinfo.serializer.write(buffer, k)
             value_cls = type(v)
             if value_cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(v)
             elif value_cls is int:
-                buffer.write_int24(NOT_NULL_PYINT_FLAG)
+                buffer.write_int16(NOT_NULL_PYINT_FLAG)
                 buffer.write_varint64(v)
             elif value_cls is bool:
-                buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
                 buffer.write_bool(v)
             elif value_cls is float:
-                buffer.write_int24(NOT_NULL_PYFLOAT_FLAG)
+                buffer.write_int16(NOT_NULL_PYFLOAT_FLAG)
                 buffer.write_double(v)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, v):
@@ -2214,7 +2220,7 @@ cdef class SliceSerializer(Serializer):
         start, stop, step = value.start, value.stop, value.step
         if type(start) is int:
             # TODO support varint128
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(start)
         else:
             if start is None:
@@ -2224,7 +2230,7 @@ cdef class SliceSerializer(Serializer):
                 self.fury.serialize_nonref(buffer, start)
         if type(stop) is int:
             # TODO support varint128
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(stop)
         else:
             if stop is None:
@@ -2234,7 +2240,7 @@ cdef class SliceSerializer(Serializer):
                 self.fury.serialize_nonref(buffer, stop)
         if type(step) is int:
             # TODO support varint128
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(step)
         else:
             if step is None:

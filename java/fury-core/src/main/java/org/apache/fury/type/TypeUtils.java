@@ -188,8 +188,8 @@ public class TypeUtils {
           Long.class,
           Double.class);
   private static final int[] sortedSizes = new int[] {0, 1, 1, 2, 2, 4, 4, 8, 8};
-  private static final IdentityMap<Class<?>, Class<?>> primToWrap = new IdentityMap<>(9);
-  private static final IdentityMap<Class<?>, Class<?>> wrapToPrim = new IdentityMap<>(9);
+  private static final IdentityMap<Class<?>, Class<?>> primToWrap = new IdentityMap<>(18);
+  private static final IdentityMap<Class<?>, Class<?>> wrapToPrim = new IdentityMap<>(18);
 
   static {
     add(primToWrap, wrapToPrim, boolean.class, Boolean.class);

@@ -54,11 +54,11 @@ STRING_CLASS_ID = 4
 PICKLE_CLASS_ID = 5
 PICKLE_STRONG_CACHE_CLASS_ID = 6
 PICKLE_CACHE_CLASS_ID = 7
-# `NOT_NULL_VALUE_FLAG` + `CLASS_ID` in little-endian order
-NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYINT_CLASS_ID << 8)
-NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYFLOAT_CLASS_ID << 8)
-NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYBOOL_CLASS_ID << 8)
-NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (STRING_CLASS_ID << 8)
+# `NOT_NULL_VALUE_FLAG` + `CLASS_ID << 1` in little-endian order
+NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYINT_CLASS_ID << 9)
+NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYFLOAT_CLASS_ID << 9)
+NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYBOOL_CLASS_ID << 9)
+NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (STRING_CLASS_ID << 9)
 
 
 class _PickleStub:
@@ -460,13 +460,13 @@ class CollectionSerializer(Serializer):
         for s in value:
             cls = type(s)
             if cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(s)
             elif cls is int:
-                buffer.write_int24(NOT_NULL_PYINT_FLAG)
+                buffer.write_int16(NOT_NULL_PYINT_FLAG)
                 buffer.write_varint64(s)
             elif cls is bool:
-                buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
                 buffer.write_bool(s)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, s):
@@ -578,7 +578,7 @@ class MapSerializer(Serializer):
         for k, v in value.items():
             key_cls = type(k)
             if key_cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(k)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, k):
@@ -587,10 +587,10 @@ class MapSerializer(Serializer):
                     classinfo.serializer.write(buffer, k)
             value_cls = type(v)
             if value_cls is str:
-                buffer.write_int24(NOT_NULL_STRING_FLAG)
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(v)
             elif value_cls is int:
-                buffer.write_int24(NOT_NULL_PYINT_FLAG)
+                buffer.write_int16(NOT_NULL_PYINT_FLAG)
                 buffer.write_varint64(v)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, v):
@@ -652,7 +652,7 @@ class SliceSerializer(Serializer):
         start, stop, step = value.start, value.stop, value.step
         if type(start) is int:
             # TODO support varint128
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(start)
         else:
             if start is None:
@@ -662,7 +662,7 @@ class SliceSerializer(Serializer):
                 self.fury.serialize_nonref(buffer, start)
         if type(stop) is int:
             # TODO support varint128
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(stop)
         else:
             if stop is None:
@@ -672,7 +672,7 @@ class SliceSerializer(Serializer):
                 self.fury.serialize_nonref(buffer, stop)
         if type(step) is int:
             # TODO support varint128
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(step)
         else:
             if step is None:

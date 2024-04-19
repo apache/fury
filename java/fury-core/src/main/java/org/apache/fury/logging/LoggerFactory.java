@@ -71,7 +71,7 @@ public class LoggerFactory {
    */
   public static Logger getLogger(Class<?> clazz) {
     if (disableLogging) {
-      return new FuryLogger(clazz, logLevel);
+      return new NilLogger();
     } else {
       if (GraalvmSupport.IN_GRAALVM_NATIVE_IMAGE || !useSlf4jLogger) {
         return new FuryLogger(clazz, logLevel);

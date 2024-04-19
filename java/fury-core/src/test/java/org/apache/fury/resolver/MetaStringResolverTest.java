@@ -24,23 +24,27 @@ import static org.testng.Assert.assertTrue;
 
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.meta.MetaString;
+import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.util.StringUtils;
 import org.testng.annotations.Test;
 
-public class EnumStringResolverTest {
+public class MetaStringResolverTest {
 
   @Test
-  public void testWriteEnumString() {
+  public void testWriteMetaString() {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     String str = StringUtils.random(128, 0);
-    EnumStringResolver stringResolver = new EnumStringResolver();
+    MetaStringResolver stringResolver = new MetaStringResolver();
     for (int i = 0; i < 128; i++) {
-      stringResolver.writeEnumString(buffer, str);
+      MetaString metaString = new MetaStringEncoder('.', '_').encode(str);
+      stringResolver.writeMetaStringBytes(
+          buffer, stringResolver.getOrCreateMetaStringBytes(metaString));
     }
     for (int i = 0; i < 128; i++) {
-      String enumString = stringResolver.readEnumString(buffer);
-      assertEquals(enumString.hashCode(), str.hashCode());
-      assertEquals(enumString.getBytes(), str.getBytes());
+      String metaString = stringResolver.readMetaString(buffer);
+      assertEquals(metaString.hashCode(), str.hashCode());
+      assertEquals(metaString.getBytes(), str.getBytes());
     }
     assertTrue(buffer.writerIndex() < str.getBytes().length + 128 * 4);
   }

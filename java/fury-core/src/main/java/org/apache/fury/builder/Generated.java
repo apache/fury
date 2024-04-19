@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.meta.ClassDef;
 import org.apache.fury.serializer.CompatibleSerializerBase;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.Preconditions;
@@ -99,7 +100,7 @@ public interface Generated {
     }
   }
 
-  /** Base class for all serializers with meta shared by {@link org.apache.fury.type.ClassDef}. */
+  /** Base class for all serializers with meta shared by {@link ClassDef}. */
   abstract class GeneratedMetaSharedSerializer extends GeneratedSerializer implements Generated {
     public static final String SERIALIZER_FIELD_NAME = "serializer";
 
