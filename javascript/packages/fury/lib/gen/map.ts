@@ -36,15 +36,15 @@ const MapFlags = {
   NOT_DECL_ELEMENT_TYPE: 0b100,
 
   /** Whether collection elements type different. */
-  NOT_SAME_TYPE: 0b1000
+  NOT_SAME_TYPE: 0b1000,
 };
 
 class MapChunkWriter {
-  private kFlag: number = 0;
-  private vFlag: number = 0;
+  private kFlag = 0;
+  private vFlag = 0;
 
-  private chunkSize: number = 0;
-  private chunkOffset: number = 0;
+  private chunkSize = 0;
+  private chunkOffset = 0;
   private header = 0;
 
   constructor(private fury: Fury) {
@@ -81,15 +81,15 @@ class MapChunkWriter {
   }
 
   makeFlag(typeId: number, isNull: 0 | 1, trackRef: 0 | 1) {
-    return typeId << 16 | isNull << 1 | trackRef
+    return typeId << 16 | isNull << 1 | trackRef;
   }
 
   next(kFlag: number, vFlag: number) {
     // max size of chunk is 255
-    if (this.chunkSize == 255 ||
-      this.chunkOffset == 0 ||
-      this.kFlag !== kFlag ||
-      this.vFlag !== vFlag
+    if (this.chunkSize == 255
+      || this.chunkOffset == 0
+      || this.kFlag !== kFlag
+      || this.vFlag !== vFlag
     ) {
       // new chunk
       this.endChunk();
@@ -109,7 +109,6 @@ class MapChunkWriter {
     }
   }
 }
-
 
 class MapAnySerializer {
   private keySerializer: Serializer | null = null;
@@ -217,7 +216,7 @@ class MapAnySerializer {
         result.set(
           this.readElement(keyHeader, keySerializer),
           this.readElement(valueHeader, valueSerializer)
-        )
+        );
         count--;
       }
     }
@@ -227,7 +226,6 @@ class MapAnySerializer {
 
 export class MapSerializerGenerator extends BaseSerializerGenerator {
   description: MapTypeDescription;
-
 
   constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
     super(description, builder, scope);

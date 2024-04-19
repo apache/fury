@@ -135,7 +135,6 @@ export default class SerializerResolver {
   private arraySerializer: null | Serializer = null;
   private mapSerializer: null | Serializer = null;
 
-
   init(fury: Fury) {
     this.initInternalSerializer(fury);
   }
@@ -232,7 +231,6 @@ export default class SerializerResolver {
     }
   }
 
-
   getSerializerByData(v: any) {
     if (typeof v === "number") {
       return this.numberSerializer;
@@ -267,7 +265,6 @@ export default class SerializerResolver {
     }
     throw new Error(`Failed to detect the Fury type from JavaScript type: ${typeof v}`);
   }
-
 
   static getTypeIdByInternalSerializerType(type: InternalSerializerType) {
     switch (type) {
