@@ -718,8 +718,10 @@ public final class Fury implements BaseFury {
       if (language == Language.XLANG) {
         short magicNumber = buffer.readInt16();
         assert magicNumber == MAGIC_NUMBER
-            : "The XLANG cross-language protocol is not currently used. For details, "
-                + "see https://github.com/apache/incubator-fury/blob/main/docs/specification/xlang_serialization_spec.md.";
+            : String.format(
+                "The fury xlang serialization must start with magic number 0x%x. Please "
+                    + "check whether the serialization is based on the xlang protocol and the data didn't corrupt.",
+                MAGIC_NUMBER);
       }
       byte bitmap = buffer.readByte();
       if ((bitmap & isNilFlag) == isNilFlag) {

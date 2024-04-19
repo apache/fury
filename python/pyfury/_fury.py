@@ -851,8 +851,8 @@ class Fury:
         if self.language == Language.XLANG:
             magic_numer = buffer.read_int16()
             assert magic_numer == MAGIC_NUMBER, (
-                "The XLANG cross-language protocol is not currently used. For details,"
-                "see https://github.com/apache/incubator-fury/blob/main/docs/specification/xlang_serialization_spec.md"
+                f"The fury xlang serialization must start with magic number {hex(MAGIC_NUMBER)}. "
+                "Please check whether the serialization is based on the xlang protocol and the data didn't corrupt."
             )
         reader_index = buffer.reader_index
         buffer.reader_index = reader_index + 1

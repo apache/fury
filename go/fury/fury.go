@@ -320,8 +320,10 @@ func (f *Fury) Deserialize(buf *ByteBuffer, v interface{}, buffers []*ByteBuffer
 	if f.language == XLANG {
 		magicNumber := buf.ReadInt16()
 		if magicNumber != MAGIC_NUMBER {
-			return fmt.Errorf("the XLANG cross-language protocol is not currently used. For details," +
-				"see https://github.com/apache/incubator-fury/blob/main/docs/specification/xlang_serialization_spec.md")
+			return fmt.Errorf(
+				"the fury xlang serialization must start with magic number 0x%x. "+
+					"Please check whether the serialization is based on the xlang protocol and the data didn't corrupt",
+				MAGIC_NUMBER)
 		}
 	} else {
 		return fmt.Errorf("%d language is not supported", f.language)
