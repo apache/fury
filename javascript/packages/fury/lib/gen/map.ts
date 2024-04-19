@@ -76,7 +76,7 @@ class MapChunkWriter {
     // chunkSize, max 255
     this.chunkOffset = this.fury.binaryWriter.getCursor();
     this.fury.binaryWriter.uint8(0);
-    this.fury.binaryWriter.uint32((kFlag & 0xFFFF0000 )| (vFlag >> 16));
+    this.fury.binaryWriter.uint32((kFlag >> 16) | (vFlag & 0xFFFF0000));
     return header;
   }
 
@@ -167,7 +167,7 @@ class MapAnySerializer {
 
   private readElement(header: number, serializer: Serializer | null) {
     if (header === 0) {
-      return serializer?.readInner(false);
+      return serializer!.readInner(false);
     }
     const isSame = !(header & MapFlags.NOT_SAME_TYPE);
     const includeNone = header & MapFlags.HAS_NULL;
