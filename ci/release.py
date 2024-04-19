@@ -17,11 +17,54 @@
 
 
 import argparse
+import logging
 import os
 import re
+import shutil
 import subprocess
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 PROJECT_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
+
+
+def build(v: str):
+    """version format: 0.5.0"""
+    assert v
+    logger.info("Start to prepare release artifacts for version %s", v)
+    if "rc" in v:
+        raise ValueError(
+            "RC should only be contained in tag and svn directory, not in code"
+        )
+    os.chdir(PROJECT_ROOT_DIR)
+    if os.path.exists("dist"):
+        shutil.rmtree("dist")
+    os.mkdir("dist")
+    subprocess.check_call(f"git checkout releases-{v}", shell=True)
+    branch = f"releases-{v}"
+    src_tar = f"apache-fury-incubating-{v}-src.tar.gz"
+    subprocess.check_call(
+        f"git archive --format=tar.gz "
+        f"--output=dist/{src_tar} "
+        f"--prefix=apache-fury-incubating-{v}-src/ {branch}",
+        shell=True,
+    )
+    os.chdir("dist")
+    logger.info("Start to generate signature")
+    subprocess.check_call(
+        f"gpg --armor --output {src_tar}.asc --detach-sig {src_tar}", shell=True
+    )
+    subprocess.check_call(f"sha512sum {src_tar} >{src_tar}.sha512", shell=True)
+    verify(v)
+
+
+def verify(v):
+    src_tar = f"apache-fury-incubating-{v}-src.tar.gz"
+    subprocess.check_call(f"gpg --verify {src_tar}.asc {src_tar}", shell=True)
+    logger.info("Verified signature")
+    subprocess.check_call(f"sha512sum --check {src_tar}.sha512", shell=True)
+    logger.info("Verified checksum successfully")
 
 
 def bump_version(**kwargs):
@@ -157,9 +200,24 @@ def _parse_args():
     bump_version_parser.add_argument("-l", type=str, help="language")
     bump_version_parser.set_defaults(func=bump_version)
 
+    release_parser = subparsers.add_parser(
+        "build",
+        description="Build release artifacts",
+    )
+    release_parser.add_argument("-v", type=str, help="new version")
+    release_parser.set_defaults(func=build)
+
+    verify_parser = subparsers.add_parser(
+        "verify",
+        description="Verify release artifacts",
+    )
+    verify_parser.add_argument("-v", type=str, help="new version")
+    verify_parser.set_defaults(func=verify)
+
     args = parser.parse_args()
     arg_dict = dict(vars(args))
     del arg_dict["func"]
+    print(arg_dict)
     args.func(**arg_dict)
 
 
