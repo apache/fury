@@ -53,24 +53,15 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     MemoryBuffer buffer = this.buffer;
     byte[] heapMemory = buffer.getHeapMemory();
     int offset = buffer.size();
-    int targetSize = offset + minFillSize;
-    if (targetSize > heapMemory.length) {
-      int newSize;
-      if (targetSize < BUFFER_GROW_STEP_THRESHOLD) {
-        newSize = targetSize << 2;
-      } else {
-        newSize = (int) (targetSize * 1.5);
-      }
-      byte[] newBuffer = new byte[newSize];
-      System.arraycopy(heapMemory, 0, newBuffer, 0, buffer.size());
-      buffer.initHeapBuffer(newBuffer, 0, buffer.size());
-      heapMemory = newBuffer;
+    if (offset + minFillSize > heapMemory.length) {
+      heapMemory = growBuffer(minFillSize, buffer);
     }
     try {
       int read;
-      read = stream.read(heapMemory, offset, Math.min(stream.available(), heapMemory.length));
+      int len = heapMemory.length - offset;
+      read = stream.read(heapMemory, offset, len);
       while (read < minFillSize) {
-        int newRead = stream.read(heapMemory, offset + read, minFillSize - read);
+        int newRead = stream.read(heapMemory, offset + read, len - read);
         if (newRead < 0) {
           throw new IndexOutOfBoundsException("No enough data in the stream " + stream);
         }
@@ -81,6 +72,22 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private static byte[] growBuffer(int minFillSize, MemoryBuffer buffer) {
+    int newSize;
+    int targetSize = buffer.size() + minFillSize;
+    if (targetSize < BUFFER_GROW_STEP_THRESHOLD) {
+      newSize = targetSize << 2;
+    } else {
+      newSize = (int) (targetSize * 1.5);
+    }
+    byte[] newBuffer = new byte[newSize];
+    byte[] heapMemory = buffer.getHeapMemory();
+    System.arraycopy(heapMemory, 0, newBuffer, 0, buffer.size());
+    buffer.initHeapBuffer(newBuffer, 0, buffer.size());
+    heapMemory = newBuffer;
+    return heapMemory;
   }
 
   @Override
