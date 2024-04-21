@@ -150,18 +150,26 @@ Meta header is a 64 bits number value encoded in little endian order.
       fields info of those fields which aren't annotated by tag id for deserializing schema consistent fields, then use
       fields info in meta for deserializing compatible fields.
 - Package name encoding(omitted when class is registered):
+    - encoding algorithm: `UTF8/LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
     - Header:
-        - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 128, then header will be
-          `7 bits size + flag(set)`.
-          Otherwise, header will be `4 bits unset + 3 bits encoding flags + flag(unset)`
-    - Package name:
-        - If bit flag is set, then package name will be encoded meta string binary.
-        - Otherwise, it will be `| unsigned varint length | encoded meta string binary |`
-- Class name encoding(omitted when class is registered)::
+        - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 63, then header will be
+          `6 bits size | strip last char flag < 1 | 0b1`.
+        - If meta string encoding is `LOWER_UPPER_DIGIT_SPECIAL` and the length of encoded string `<=` 31, then header
+          will be
+          `5 bits size | strip last char flag < 2 | 0b11`.
+        - Encode string using `UTF8`, header: `size << 3 | strip last char flag < 2 | 0b01` as an unsigned varint.
+- Class name encoding(omitted when class is registered):
+    - encoding algorithm: `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
     - header:
-        - If meta string encoding is in `LOWER_SPECIAL~LOWER_UPPER_DIGIT_SPECIAL (0~3)`, and the length of encoded
-          string `<=` 32， then the header will be `5 bits size + 2 bits encoding flags + flag(set)`.
-        - Otherwise, header will be `| unsigned varint length | encoded meta string binary |`
+        - If meta string encoding is `LOWER_UPPER_DIGIT_SPECIAL/ALL_TO_LOWER_SPECIAL` and the length of encoded string
+          `<=` 31, then header will be `5 bits size | strip last char flag < 1 | encoding flag | 0b1`.
+            - encoding flag 0: LOWER_UPPER_DIGIT_SPECIAL
+            - encoding flag 1: ALL_TO_LOWER_SPECIAL
+        - Otherwise, use `FIRST_TO_LOWER_SPECIAL/UTF8` encoding only, header:
+          `size << 3 | strip last char flag | encoding flag | 0b0` as an unsigned varint.
+            - encoding flag 0: FIRST_TO_LOWER_SPECIAL. If use this encoding, only first char is upper case, the size
+              won't exceed 16 mostly, thus the header can be written in one byte.
+            - encoding flag 1: UTF8
 - Field info:
     - header(8
       bits): `reserved 1 bit + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag + tag id flag`.
