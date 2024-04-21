@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.reflect.TypeToken;
@@ -53,9 +54,19 @@ public class TypeUtilsTest {
   }
 
   @Test
-  public void getElementTypeTest() throws NoSuchMethodException {
+  public void getElementTypeTest() throws NoSuchMethodException, NoSuchFieldException {
     TypeToken typeToken =
         Descriptor.getDescriptorsMap(BeanA.class).get("doubleList").getTypeToken();
+
+    assertEquals(
+        new TypeToken<Optional<String>>() {}.resolveType(
+            Optional.class.getDeclaredField("value").getGenericType()),
+        TypeToken.of(String.class));
+    assertEquals(
+        new TypeToken<List<String>>() {}.resolveType(
+                List.class.getMethod("size").getGenericReturnType())
+            .getRawType(),
+        int.class);
 
     @SuppressWarnings("unchecked")
     TypeToken<?> supertype =
