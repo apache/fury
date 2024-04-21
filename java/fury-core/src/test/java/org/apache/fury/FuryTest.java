@@ -56,6 +56,7 @@ import org.apache.fury.annotation.Ignore;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
+import org.apache.fury.exception.FuryException;
 import org.apache.fury.exception.InsecureException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
@@ -175,10 +176,10 @@ public class FuryTest extends FuryTestBase {
     Fury fury1 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
     Fury fury2 = Fury.builder().withLanguage(language).requireClassRegistration(false).build();
     MemoryBuffer buffer0 = MemoryUtils.buffer(64);
-    buffer0.writeLong(-1);
-    buffer0.writeLong(-1);
-    buffer0.readLong();
-    buffer0.readLong();
+    buffer0.writeInt64(-1);
+    buffer0.writeInt64(-1);
+    buffer0.readInt64();
+    buffer0.readInt64();
     MemoryBuffer buffer = buffer0.slice(8);
     assertSerializationToBuffer(fury1, fury2, buffer);
   }
@@ -479,95 +480,6 @@ public class FuryTest extends FuryTestBase {
         beanA);
   }
 
-  @Test
-  public void testOutputStream() throws IOException {
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
-    ByteArrayOutputStream bas = new ByteArrayOutputStream();
-    BeanA beanA = BeanA.createBeanA(2);
-    fury.serialize(bas, beanA);
-    fury.serialize(bas, beanA);
-    bas.flush();
-    ByteArrayInputStream bis = new ByteArrayInputStream(bas.toByteArray());
-    Object newObj = fury.deserialize(bis);
-    assertEquals(newObj, beanA);
-    newObj = fury.deserialize(bis);
-    assertEquals(newObj, beanA);
-
-    fury = Fury.builder().requireClassRegistration(false).build();
-    // test reader buffer grow
-    bis = new ByteArrayInputStream(bas.toByteArray());
-    newObj = fury.deserialize(bis);
-    assertEquals(newObj, beanA);
-    newObj = fury.deserialize(bis);
-    assertEquals(newObj, beanA);
-  }
-
-  @Test
-  public void testBufferedStream() throws IOException {
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
-    ByteArrayOutputStream bas = new ByteArrayOutputStream();
-    BeanA beanA = BeanA.createBeanA(2);
-    fury.serialize(bas, beanA);
-    fury.serialize(bas, beanA);
-    bas.flush();
-    InputStream bis =
-        new BufferedInputStream(new ByteArrayInputStream(bas.toByteArray())) {
-          @Override
-          public synchronized int read(byte[] b, int off, int len) throws IOException {
-            return in.read(b, off, Math.min(len, 100));
-          }
-        };
-    bis.mark(10);
-    Object newObj = fury.deserialize(bis);
-    assertEquals(newObj, beanA);
-    newObj = fury.deserialize(bis);
-    assertEquals(newObj, beanA);
-
-    fury = Fury.builder().requireClassRegistration(false).build();
-    // test reader buffer grow
-    bis = new ByteArrayInputStream(bas.toByteArray());
-    newObj = fury.deserialize(bis);
-    assertEquals(newObj, beanA);
-    newObj = fury.deserialize(bis);
-    assertEquals(newObj, beanA);
-  }
-
-  @Test
-  public void testJavaOutputStream() throws IOException {
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
-    BeanA beanA = BeanA.createBeanA(2);
-    {
-      ByteArrayOutputStream bas = new ByteArrayOutputStream();
-      fury.serializeJavaObject(bas, beanA);
-      fury.serializeJavaObject(bas, beanA);
-      bas.flush();
-      ByteArrayInputStream bis = new ByteArrayInputStream(bas.toByteArray());
-      Object newObj = fury.deserializeJavaObject(bis, BeanA.class);
-      assertEquals(newObj, beanA);
-      newObj = fury.deserializeJavaObject(bis, BeanA.class);
-      assertEquals(newObj, beanA);
-    }
-    {
-      ByteArrayOutputStream bas = new ByteArrayOutputStream();
-      fury.serializeJavaObjectAndClass(bas, beanA);
-      fury.serializeJavaObjectAndClass(bas, beanA);
-      bas.flush();
-      ByteArrayInputStream bis = new ByteArrayInputStream(bas.toByteArray());
-      Object newObj = fury.deserializeJavaObjectAndClass(bis);
-      assertEquals(newObj, beanA);
-      newObj = fury.deserializeJavaObjectAndClass(bis);
-      assertEquals(newObj, beanA);
-
-      fury = Fury.builder().requireClassRegistration(false).build();
-      // test reader buffer grow
-      bis = new ByteArrayInputStream(bas.toByteArray());
-      newObj = fury.deserializeJavaObjectAndClass(bis);
-      assertEquals(newObj, beanA);
-      newObj = fury.deserializeJavaObjectAndClass(bis);
-      assertEquals(newObj, beanA);
-    }
-  }
-
   @Data
   static class DomainObject {
     UUID id;
@@ -580,13 +492,13 @@ public class FuryTest extends FuryTestBase {
 
     @Override
     public UUID read(MemoryBuffer buffer) {
-      return new UUID(buffer.readLong(), buffer.readLong());
+      return new UUID(buffer.readInt64(), buffer.readInt64());
     }
 
     @Override
     public void write(MemoryBuffer buffer, UUID value) {
-      buffer.writeLong(value.getMostSignificantBits());
-      buffer.writeLong(value.getLeastSignificantBits());
+      buffer.writeInt64(value.getMostSignificantBits());
+      buffer.writeInt64(value.getLeastSignificantBits());
     }
   }
 
@@ -621,5 +533,31 @@ public class FuryTest extends FuryTestBase {
     HashBasedTable<Object, Object, Object> table = HashBasedTable.create(2, 4);
     table.put("r", "c", 100);
     serDeCheckSerializer(fury, table, "Codec");
+  }
+
+  @Data
+  static class PrintReadObject {
+    public PrintReadObject() {
+      throw new RuntimeException();
+    }
+
+    public PrintReadObject(boolean b) {}
+  }
+
+  @Test
+  public void testPrintReadObjectsWhenFailed() {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(true)
+            .withCodegen(false)
+            .requireClassRegistration(false)
+            .build();
+    PrintReadObject o = new PrintReadObject(true);
+    try {
+      serDe(fury, ImmutableList.of(ImmutableList.of("a", "b"), o));
+      Assert.fail();
+    } catch (FuryException e) {
+      Assert.assertTrue(e.getMessage().contains("[a, b]"));
+    }
   }
 }

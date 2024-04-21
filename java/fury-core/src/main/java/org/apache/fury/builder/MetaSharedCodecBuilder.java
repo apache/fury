@@ -21,6 +21,7 @@ package org.apache.fury.builder;
 
 import static org.apache.fury.builder.Generated.GeneratedMetaSharedSerializer.SERIALIZER_FIELD_NAME;
 
+import com.google.common.reflect.TypeToken;
 import java.util.Collection;
 import java.util.SortedMap;
 import org.apache.fury.Fury;
@@ -31,13 +32,12 @@ import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.meta.ClassDef;
 import org.apache.fury.serializer.CodegenSerializer;
 import org.apache.fury.serializer.MetaSharedSerializer;
 import org.apache.fury.serializer.ObjectSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
-import org.apache.fury.type.ClassDef;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.Preconditions;

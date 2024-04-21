@@ -19,16 +19,14 @@
 
 package org.apache.fury.resolver;
 
-import static org.apache.fury.codegen.Expression.Invoke.inlineInvoke;
-import static org.apache.fury.codegen.ExpressionUtils.eq;
 import static org.apache.fury.serializer.CodegenSerializer.loadCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.loadCompatibleCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.supportCodegenForJavaSerialization;
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.reflect.TypeToken;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
@@ -38,7 +36,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -82,19 +79,21 @@ import org.apache.fury.annotation.Internal;
 import org.apache.fury.builder.CodecUtils;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.builder.JITContext;
+import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.Expression;
 import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.IdentityObjectIntMap;
-import org.apache.fury.collection.LongMap;
 import org.apache.fury.collection.ObjectMap;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.InsecureException;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.meta.ClassDef;
 import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.BufferSerializers;
 import org.apache.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
@@ -131,19 +130,16 @@ import org.apache.fury.serializer.scala.SingletonCollectionSerializer;
 import org.apache.fury.serializer.scala.SingletonMapSerializer;
 import org.apache.fury.serializer.scala.SingletonObjectSerializer;
 import org.apache.fury.serializer.shim.ShimDispatcher;
-import org.apache.fury.type.ClassDef;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.ScalaTypes;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
-import org.slf4j.Logger;
 
 /**
  * Class registry for types of serializing objects, responsible for reading/writing types, setting
@@ -195,10 +191,10 @@ public class ClassResolver {
   public static final short HASHSET_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 5);
   public static final short CLASS_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 6);
   public static final short EMPTY_OBJECT_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 7);
-  private static final int initialCapacity = 128;
   // use a lower load factor to minimize hash collision
   private static final float loadFactor = 0.25f;
   private static final float furyMapLoadFactor = 0.25f;
+  private static final int estimatedNumRegistered = 150;
   private static final String META_SHARE_FIELDS_INFO_KEY = "shareFieldsInfo";
   private static final ClassInfo NIL_CLASS_INFO =
       new ClassInfo(null, null, null, null, false, null, null, ClassResolver.NO_CLASS_ID);
@@ -208,18 +204,16 @@ public class ClassResolver {
 
   // IdentityMap has better lookup performance, when loadFactor is 0.05f, performance is better
   private final IdentityMap<Class<?>, ClassInfo> classInfoMap =
-      new IdentityMap<>(initialCapacity, furyMapLoadFactor);
+      new IdentityMap<>(estimatedNumRegistered, furyMapLoadFactor);
   private ClassInfo classInfoCache;
-  private final ObjectMap<EnumStringBytes, Class<?>> classNameBytes2Class =
-      new ObjectMap<>(initialCapacity, furyMapLoadFactor);
+  private final ObjectMap<MetaStringBytes, Class<?>> classNameBytes2Class =
+      new ObjectMap<>(16, furyMapLoadFactor);
   // Every deserialization for unregistered class will query it, performance is important.
   private final ObjectMap<ClassNameBytes, Class<?>> compositeClassNameBytes2Class =
-      new ObjectMap<>(initialCapacity, furyMapLoadFactor);
-  private final HashMap<Short, Class<?>> typeIdToClassXLangMap =
-      new HashMap<>(initialCapacity, loadFactor);
-  private final HashMap<String, Class<?>> typeTagToClassXLangMap =
-      new HashMap<>(initialCapacity, loadFactor);
-  private final EnumStringResolver enumStringResolver;
+      new ObjectMap<>(16, furyMapLoadFactor);
+  private final HashMap<Short, Class<?>> typeIdToClassXLangMap = new HashMap<>(8, loadFactor);
+  private final HashMap<String, Class<?>> typeTagToClassXLangMap = new HashMap<>(8, loadFactor);
+  private final MetaStringResolver metaStringResolver;
   private final boolean metaContextShareEnabled;
   private final Map<Class<?>, ClassDef> classDefMap = new HashMap<>();
   private Class<?> currentReadClass;
@@ -229,12 +223,13 @@ public class ClassResolver {
   private final ShimDispatcher shimDispatcher;
 
   private static class ExtRegistry {
-    private short registeredClassIdCounter = 0;
-    private final LongMap<Class<?>> registeredId2Classes = new LongMap<>(initialCapacity);
+    // Here we set it to 1 because `NO_CLASS_ID` is 0 to avoid calculating it again in
+    // `register(Class<?> cls)`.
+    private short classIdGenerator = 1;
     private SerializerFactory serializerFactory;
     private final IdentityMap<Class<?>, Short> registeredClassIdMap =
-        new IdentityMap<>(initialCapacity);
-    private final Map<String, Class<?>> registeredClasses = new HashMap<>(initialCapacity);
+        new IdentityMap<>(estimatedNumRegistered);
+    private final Map<String, Class<?>> registeredClasses = new HashMap<>(estimatedNumRegistered);
     // avoid potential recursive call for seq codec generation.
     // ex. A->field1: B, B.field1: A
     private final Set<Class<?>> getClassCtx = new HashSet<>();
@@ -245,11 +240,12 @@ public class ClassResolver {
         descriptorsCache = new ConcurrentHashMap<>();
     private ClassChecker classChecker = (classResolver, className) -> true;
     private GenericType objectGenericType;
+    private Map<List<ClassLoader>, CodeGenerator> codeGeneratorMap = new HashMap<>();
   }
 
   public ClassResolver(Fury fury) {
     this.fury = fury;
-    enumStringResolver = fury.getEnumStringResolver();
+    metaStringResolver = fury.getMetaStringResolver();
     classInfoCache = NIL_CLASS_INFO;
     metaContextShareEnabled = fury.getConfig().shareMetaContext();
     extRegistry = new ExtRegistry();
@@ -261,54 +257,53 @@ public class ClassResolver {
     register(LambdaSerializer.ReplaceStub.class, LAMBDA_STUB_ID);
     register(JdkProxySerializer.ReplaceStub.class, JDK_PROXY_STUB_ID);
     register(ReplaceResolveSerializer.ReplaceStub.class, REPLACE_STUB_ID);
-    registerWithCheck(void.class, PRIMITIVE_VOID_CLASS_ID);
-    registerWithCheck(boolean.class, PRIMITIVE_BOOLEAN_CLASS_ID);
-    registerWithCheck(byte.class, PRIMITIVE_BYTE_CLASS_ID);
-    registerWithCheck(char.class, PRIMITIVE_CHAR_CLASS_ID);
-    registerWithCheck(short.class, PRIMITIVE_SHORT_CLASS_ID);
-    registerWithCheck(int.class, PRIMITIVE_INT_CLASS_ID);
-    registerWithCheck(float.class, PRIMITIVE_FLOAT_CLASS_ID);
-    registerWithCheck(long.class, PRIMITIVE_LONG_CLASS_ID);
-    registerWithCheck(double.class, PRIMITIVE_DOUBLE_CLASS_ID);
-    registerWithCheck(Void.class, VOID_CLASS_ID);
-    registerWithCheck(Boolean.class, BOOLEAN_CLASS_ID);
-    registerWithCheck(Byte.class, BYTE_CLASS_ID);
-    registerWithCheck(Character.class, CHAR_CLASS_ID);
-    registerWithCheck(Short.class, SHORT_CLASS_ID);
-    registerWithCheck(Integer.class, INTEGER_CLASS_ID);
-    registerWithCheck(Float.class, FLOAT_CLASS_ID);
-    registerWithCheck(Long.class, LONG_CLASS_ID);
-    registerWithCheck(Double.class, DOUBLE_CLASS_ID);
-    registerWithCheck(String.class, STRING_CLASS_ID);
-    registerWithCheck(boolean[].class, PRIMITIVE_BOOLEAN_ARRAY_CLASS_ID);
-    registerWithCheck(byte[].class, PRIMITIVE_BYTE_ARRAY_CLASS_ID);
-    registerWithCheck(char[].class, PRIMITIVE_CHAR_ARRAY_CLASS_ID);
-    registerWithCheck(short[].class, PRIMITIVE_SHORT_ARRAY_CLASS_ID);
-    registerWithCheck(int[].class, PRIMITIVE_INT_ARRAY_CLASS_ID);
-    registerWithCheck(float[].class, PRIMITIVE_FLOAT_ARRAY_CLASS_ID);
-    registerWithCheck(long[].class, PRIMITIVE_LONG_ARRAY_CLASS_ID);
-    registerWithCheck(double[].class, PRIMITIVE_DOUBLE_ARRAY_CLASS_ID);
-    registerWithCheck(String[].class, STRING_ARRAY_CLASS_ID);
-    registerWithCheck(Object[].class, OBJECT_ARRAY_CLASS_ID);
-    registerWithCheck(ArrayList.class, ARRAYLIST_CLASS_ID);
-    registerWithCheck(HashMap.class, HASHMAP_CLASS_ID);
-    registerWithCheck(HashSet.class, HASHSET_CLASS_ID);
-    registerWithCheck(Class.class, CLASS_CLASS_ID);
-    registerWithCheck(Object.class, EMPTY_OBJECT_ID);
-    // Register common class ahead to get smaller class id for serialization.
+    register(void.class, PRIMITIVE_VOID_CLASS_ID);
+    register(boolean.class, PRIMITIVE_BOOLEAN_CLASS_ID);
+    register(byte.class, PRIMITIVE_BYTE_CLASS_ID);
+    register(char.class, PRIMITIVE_CHAR_CLASS_ID);
+    register(short.class, PRIMITIVE_SHORT_CLASS_ID);
+    register(int.class, PRIMITIVE_INT_CLASS_ID);
+    register(float.class, PRIMITIVE_FLOAT_CLASS_ID);
+    register(long.class, PRIMITIVE_LONG_CLASS_ID);
+    register(double.class, PRIMITIVE_DOUBLE_CLASS_ID);
+    register(Void.class, VOID_CLASS_ID);
+    register(Boolean.class, BOOLEAN_CLASS_ID);
+    register(Byte.class, BYTE_CLASS_ID);
+    register(Character.class, CHAR_CLASS_ID);
+    register(Short.class, SHORT_CLASS_ID);
+    register(Integer.class, INTEGER_CLASS_ID);
+    register(Float.class, FLOAT_CLASS_ID);
+    register(Long.class, LONG_CLASS_ID);
+    register(Double.class, DOUBLE_CLASS_ID);
+    register(String.class, STRING_CLASS_ID);
+    register(boolean[].class, PRIMITIVE_BOOLEAN_ARRAY_CLASS_ID);
+    register(byte[].class, PRIMITIVE_BYTE_ARRAY_CLASS_ID);
+    register(char[].class, PRIMITIVE_CHAR_ARRAY_CLASS_ID);
+    register(short[].class, PRIMITIVE_SHORT_ARRAY_CLASS_ID);
+    register(int[].class, PRIMITIVE_INT_ARRAY_CLASS_ID);
+    register(float[].class, PRIMITIVE_FLOAT_ARRAY_CLASS_ID);
+    register(long[].class, PRIMITIVE_LONG_ARRAY_CLASS_ID);
+    register(double[].class, PRIMITIVE_DOUBLE_ARRAY_CLASS_ID);
+    register(String[].class, STRING_ARRAY_CLASS_ID);
+    register(Object[].class, OBJECT_ARRAY_CLASS_ID);
+    register(ArrayList.class, ARRAYLIST_CLASS_ID);
+    register(HashMap.class, HASHMAP_CLASS_ID);
+    register(HashSet.class, HASHSET_CLASS_ID);
+    register(Class.class, CLASS_CLASS_ID);
+    register(Object.class, EMPTY_OBJECT_ID);
     registerCommonUsedClasses();
-    addDefaultSerializers();
     registerDefaultClasses();
+    addDefaultSerializers();
     shimDispatcher.initialize();
-    innerEndClassId = extRegistry.registeredClassIdCounter;
+    innerEndClassId = extRegistry.classIdGenerator;
   }
 
   private void addDefaultSerializers() {
     // primitive types will be boxed.
     addDefaultSerializer(String.class, new StringSerializer(fury));
     PrimitiveSerializers.registerDefaultSerializers(fury);
-    ArraySerializers.registerDefaultSerializers(fury);
     Serializers.registerDefaultSerializers(fury);
+    ArraySerializers.registerDefaultSerializers(fury);
     TimeSerializers.registerDefaultSerializers(fury);
     OptionalSerializers.registerDefaultSerializers(fury);
     CollectionSerializers.registerDefaultSerializers(fury);
@@ -354,27 +349,23 @@ public class ClassResolver {
 
   /** Register common class ahead to get smaller class id for serialization. */
   private void registerCommonUsedClasses() {
-    register(Class.class);
-    register(ArrayList.class, LinkedList.class, HashSet.class, TreeSet.class);
-    register(HashMap.class, LinkedHashMap.class, TreeMap.class);
-    register(ByteBuffer.allocate(1).getClass());
-    register(Integer[].class, Long[].class);
+    register(LinkedList.class, TreeSet.class);
+    register(LinkedHashMap.class, TreeMap.class);
     register(Date.class, Timestamp.class, LocalDateTime.class, Instant.class);
     register(BigInteger.class, BigDecimal.class);
     register(Optional.class, OptionalInt.class);
+    register(Boolean[].class, Byte[].class, Short[].class, Character[].class);
+    register(Integer[].class, Float[].class, Long[].class, Double[].class);
   }
 
   private void registerDefaultClasses() {
-    register(Object.class, Object[].class, Void.class);
-    register(ByteBuffer.allocate(1).getClass());
-    register(ByteBuffer.allocateDirect(1).getClass());
+    register(Platform.HEAP_BYTE_BUFFER_CLASS);
+    register(Platform.DIRECT_BYTE_BUFFER_CLASS);
     register(Comparator.naturalOrder().getClass());
     register(Comparator.reverseOrder().getClass());
     register(ConcurrentHashMap.class);
     register(ArrayBlockingQueue.class);
     register(LinkedBlockingQueue.class);
-    register(Boolean[].class, Byte[].class, Short[].class, Character[].class);
-    register(Integer[].class, Float[].class, Long[].class, Double[].class);
     register(AtomicBoolean.class);
     register(AtomicInteger.class);
     register(AtomicLong.class);
@@ -392,10 +383,11 @@ public class ClassResolver {
   /** register class. */
   public void register(Class<?> cls) {
     if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
-      while (extRegistry.registeredId2Classes.containsKey(extRegistry.registeredClassIdCounter)) {
-        extRegistry.registeredClassIdCounter++;
+      while (extRegistry.classIdGenerator < registeredId2ClassInfo.length
+          && registeredId2ClassInfo[extRegistry.classIdGenerator] != null) {
+        extRegistry.classIdGenerator++;
       }
-      register(cls, extRegistry.registeredClassIdCounter);
+      register(cls, extRegistry.classIdGenerator);
     }
   }
 
@@ -431,42 +423,44 @@ public class ClassResolver {
   public void register(Class<?> cls, int classId) {
     // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
     Preconditions.checkArgument(classId >= 0 && classId < Short.MAX_VALUE);
-    short id = (short) classId;
-    if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
-      if (extRegistry.registeredClasses.containsKey(cls.getName())) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Class %s with name %s has been registered, registering class with same name are not allowed.",
-                extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
-      }
-      Class<?> idToClass = extRegistry.registeredId2Classes.get(id);
-      if (idToClass != null) {
-        throw new IllegalArgumentException(
-            String.format(
-                "Class %s with id %s has been registered, registering class %s with same id are not allowed.",
-                idToClass, id, cls.getName()));
-      }
-      extRegistry.registeredClassIdMap.put(cls, id);
-      if (registeredId2ClassInfo.length <= id) {
-        ClassInfo[] tmp = new ClassInfo[(id + 1) * 2];
-        System.arraycopy(registeredId2ClassInfo, 0, tmp, 0, registeredId2ClassInfo.length);
-        registeredId2ClassInfo = tmp;
-      }
-      ClassInfo classInfo = classInfoMap.get(cls);
-      if (classInfo != null) {
-        classInfo.classId = id;
-      } else {
-        classInfo = new ClassInfo(this, cls, null, null, id);
-        // make `extRegistry.registeredClassIdMap` and `classInfoMap` share same classInfo
-        // instances.
-        classInfoMap.put(cls, classInfo);
-      }
-      // serializer will be set lazily in `addSerializer` method if it's null.
-      registeredId2ClassInfo[id] = classInfo;
-      extRegistry.registeredClasses.put(cls.getName(), cls);
-      extRegistry.registeredClassIdCounter++;
-      extRegistry.registeredId2Classes.put(id, cls);
+    if (extRegistry.registeredClassIdMap.containsKey(cls)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s already registered with id %s.",
+              cls, extRegistry.registeredClassIdMap.get(cls)));
     }
+    if (extRegistry.registeredClasses.containsKey(cls.getName())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s with name %s has been registered, registering class with same name are not allowed.",
+              extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
+    }
+    short id = (short) classId;
+    if (id < registeredId2ClassInfo.length && registeredId2ClassInfo[id] != null) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s with id %s has been registered, registering class %s with same id are not allowed.",
+              registeredId2ClassInfo[id].getCls(), id, cls.getName()));
+    }
+    extRegistry.registeredClassIdMap.put(cls, id);
+    if (registeredId2ClassInfo.length <= id) {
+      ClassInfo[] tmp = new ClassInfo[(id + 1) * 2];
+      System.arraycopy(registeredId2ClassInfo, 0, tmp, 0, registeredId2ClassInfo.length);
+      registeredId2ClassInfo = tmp;
+    }
+    ClassInfo classInfo = classInfoMap.get(cls);
+    if (classInfo != null) {
+      classInfo.classId = id;
+    } else {
+      classInfo = new ClassInfo(this, cls, null, null, id);
+      // make `extRegistry.registeredClassIdMap` and `classInfoMap` share same classInfo
+      // instances.
+      classInfoMap.put(cls, classInfo);
+    }
+    // serializer will be set lazily in `addSerializer` method if it's null.
+    registeredId2ClassInfo[id] = classInfo;
+    extRegistry.registeredClasses.put(cls.getName(), cls);
+    extRegistry.classIdGenerator++;
   }
 
   public void register(Class<?> cls, Short id, boolean createSerializer) {
@@ -474,17 +468,6 @@ public class ClassResolver {
     if (createSerializer) {
       getSerializer(cls);
     }
-  }
-
-  /** register class with given id. */
-  public void registerWithCheck(Class<?> cls, short id) {
-    if (extRegistry.registeredClassIdMap.containsKey(cls)) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Class %s already registered with id %s.",
-              cls, extRegistry.registeredClassIdMap.get(cls)));
-    }
-    register(cls, id);
   }
 
   public Short getRegisteredClassId(Class<?> cls) {
@@ -652,7 +635,6 @@ public class ClassResolver {
       Class<?> cls = entry.getKey();
       String className = cls.getName();
       if (extRegistry.registeredClasses.containsKey(className)) {
-        LOG.debug("Skip clear serializer for registered class {}", className);
         continue;
       }
       if (className.startsWith(classNamePrefix)) {
@@ -714,12 +696,15 @@ public class ClassResolver {
         typeTagToClassXLangMap.put(typeTag, type);
       }
     }
+
+    // 1. Try to get ClassInfo from `registeredId2ClassInfo` and
+    // `classInfoMap` or create a new `ClassInfo`.
     ClassInfo classInfo;
     Short classId = extRegistry.registeredClassIdMap.get(type);
+    boolean registered = classId != null;
     // set serializer for class if it's registered by now.
-    if (classId != null) {
+    if (registered) {
       classInfo = registeredId2ClassInfo[classId];
-      classInfo.serializer = serializer;
     } else {
       if (serializer instanceof ReplaceResolveSerializer) {
         classId = REPLACE_STUB_ID;
@@ -728,13 +713,17 @@ public class ClassResolver {
       }
       classInfo = classInfoMap.get(type);
     }
+
     if (classInfo == null || typeTag != null || classId != classInfo.classId) {
-      classInfo = new ClassInfo(this, type, typeTag, serializer, classId);
-    } else {
-      classInfo.serializer = serializer;
+      classInfo = new ClassInfo(this, type, typeTag, null, classId);
+      classInfoMap.put(type, classInfo);
+      if (registered) {
+        registeredId2ClassInfo[classId] = classInfo;
+      }
     }
-    // make `extRegistry.registeredClassIdMap` and `classInfoMap` share same classInfo instances.
-    classInfoMap.put(type, classInfo);
+
+    // 2. Set `Serializer` for `ClassInfo`.
+    classInfo.serializer = serializer;
   }
 
   @SuppressWarnings("unchecked")
@@ -778,7 +767,6 @@ public class ClassResolver {
   }
 
   public Class<? extends Serializer> getSerializerClass(Class<?> cls) {
-
     boolean codegen =
         supportCodegenForJavaSerialization(cls) && fury.getConfig().isCodeGenEnabled();
     return getSerializerClass(cls, codegen);
@@ -978,7 +966,7 @@ public class ClassResolver {
         }
       }
     } else {
-      LOG.debug("Object of type {} can't be serialized by jit", cls);
+      LOG.info("Object of type {} can't be serialized by jit", cls);
       switch (fury.getCompatibleMode()) {
         case SCHEMA_CONSISTENT:
           return ObjectSerializer.class;
@@ -1142,26 +1130,19 @@ public class ClassResolver {
   }
 
   private Serializer createSerializer(Class<?> cls) {
-    if (!extRegistry.registeredClassIdMap.containsKey(cls) && !shimDispatcher.contains(cls)) {
-      String msg =
-          String.format(
-              "%s is not registered, please check whether it's the type you want to serialize or "
-                  + "a **vulnerability**. If safe, you should invoke `Fury#register` to register class, "
-                  + " which will have better performance by skipping classname serialization. "
-                  + "If your env is 100%% secure, you can also avoid this exception by disabling class "
-                  + "registration check using `FuryBuilder#requireClassRegistration(false)`",
-              cls);
-      boolean forbidden = BlackList.getDefaultBlackList().contains(cls.getName());
-      if (forbidden || !isSecure(extRegistry.registeredClassIdMap, cls)) {
-        throw new InsecureException(msg);
-      } else {
-        if (!fury.getConfig().suppressClassRegistrationWarnings()
-            && !Functions.isLambda(cls)
-            && !ReflectionUtils.isJdkProxy(cls)) {
-          LOG.warn(msg);
-        }
+    DisallowedList.checkNotInDisallowedList(cls.getName());
+    if (!isSecure(cls)) {
+      throw new InsecureException(generateSecurityMsg(cls));
+    } else {
+      if (!fury.getConfig().suppressClassRegistrationWarnings()
+          && !Functions.isLambda(cls)
+          && !ReflectionUtils.isJdkProxy(cls)
+          && !extRegistry.registeredClassIdMap.containsKey(cls)
+          && !shimDispatcher.contains(cls)) {
+        LOG.warn(generateSecurityMsg(cls));
       }
     }
+
     if (extRegistry.serializerFactory != null) {
       Serializer serializer = extRegistry.serializerFactory.createSerializer(fury, cls);
       if (serializer != null) {
@@ -1178,18 +1159,28 @@ public class ClassResolver {
     return Serializers.newSerializer(fury, cls, serializerClass);
   }
 
-  private boolean isSecure(IdentityMap<Class<?>, Short> registeredClasses, Class<?> cls) {
-    if (BlackList.getDefaultBlackList().contains(cls.getName())) {
-      return false;
-    }
-    if (registeredClasses.containsKey(cls)) {
+  private String generateSecurityMsg(Class<?> cls) {
+    String tpl =
+        "%s is not registered, please check whether it's the type you want to serialize or "
+            + "a **vulnerability**. If safe, you should invoke `Fury#register` to register class, "
+            + " which will have better performance by skipping classname serialization. "
+            + "If your env is 100%% secure, you can also avoid this exception by disabling class "
+            + "registration check using `FuryBuilder#requireClassRegistration(false)`";
+    return String.format(tpl, cls);
+  }
+
+  private boolean isSecure(Class<?> cls) {
+    if (extRegistry.registeredClassIdMap.containsKey(cls) || shimDispatcher.contains(cls)) {
       return true;
     }
     if (cls.isArray()) {
-      return isSecure(registeredClasses, TypeUtils.getArrayComponent(cls));
+      return isSecure(TypeUtils.getArrayComponent(cls));
     }
     if (fury.getConfig().requireClassRegistration()) {
-      return Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls);
+      return Functions.isLambda(cls)
+          || ReflectionUtils.isJdkProxy(cls)
+          || extRegistry.registeredClassIdMap.containsKey(cls)
+          || shimDispatcher.contains(cls);
     } else {
       return extRegistry.classChecker.checkClass(this, cls.getName());
     }
@@ -1210,9 +1201,9 @@ public class ClassResolver {
   public void writeClassAndUpdateCache(MemoryBuffer buffer, Class<?> cls) {
     // fast path for common type
     if (cls == Integer.class) {
-      buffer.writePositiveVarInt(INTEGER_CLASS_ID << 1);
+      buffer.writeVarUint32Small7(INTEGER_CLASS_ID << 1);
     } else if (cls == Long.class) {
-      buffer.writePositiveVarInt(LONG_CLASS_ID << 1);
+      buffer.writeVarUint32Small7(LONG_CLASS_ID << 1);
     } else {
       writeClass(buffer, getOrUpdateClassInfo(cls));
     }
@@ -1232,21 +1223,21 @@ public class ClassResolver {
   public void writeClass(MemoryBuffer buffer, ClassInfo classInfo) {
     if (classInfo.classId == NO_CLASS_ID) { // no class id provided.
       // use classname
-      buffer.writeByte(USE_CLASS_VALUE_FLAG);
       if (metaContextShareEnabled) {
+        buffer.writeByte(USE_CLASS_VALUE_FLAG);
         // FIXME(chaokunyang) Register class but not register serializer can't be used with
         //  meta share mode, because no class def are sent to peer.
         writeClassWithMetaShare(buffer, classInfo);
       } else {
         // if it's null, it's a bug.
         assert classInfo.packageNameBytes != null;
-        enumStringResolver.writeEnumStringBytes(buffer, classInfo.packageNameBytes);
+        metaStringResolver.writeMetaStringBytesWithFlag(buffer, classInfo.packageNameBytes);
         assert classInfo.classNameBytes != null;
-        enumStringResolver.writeEnumStringBytes(buffer, classInfo.classNameBytes);
+        metaStringResolver.writeMetaStringBytes(buffer, classInfo.classNameBytes);
       }
     } else {
       // use classId
-      buffer.writePositiveVarInt(classInfo.classId << 1);
+      buffer.writeVarUint32(classInfo.classId << 1);
     }
   }
 
@@ -1260,9 +1251,9 @@ public class ClassResolver {
     int newId = classMap.size;
     int id = classMap.putOrGet(classInfo.cls, newId);
     if (id >= 0) {
-      buffer.writePositiveVarInt(id);
+      buffer.writeVarUint32(id);
     } else {
-      buffer.writePositiveVarInt(newId);
+      buffer.writeVarUint32(newId);
       ClassDef classDef;
       Serializer<?> serializer = classInfo.serializer;
       Preconditions.checkArgument(serializer.getClass() != UnexistedClassSerializer.class);
@@ -1296,7 +1287,7 @@ public class ClassResolver {
         metaContext,
         "Meta context must be set before serialization,"
             + " please set meta context by SerializationContext.setMetaContext");
-    int id = buffer.readPositiveVarInt();
+    int id = buffer.readVarUint32Small14();
     List<ClassInfo> readClassInfos = metaContext.readClassInfos;
     ClassInfo classInfo = readClassInfos.get(id);
     if (classInfo == null) {
@@ -1319,7 +1310,7 @@ public class ClassResolver {
         metaContext,
         "Meta context must be set before serialization,"
             + " please set meta context by SerializationContext.setMetaContext");
-    int id = buffer.readPositiveVarInt();
+    int id = buffer.readVarUint32Small14();
     List<ClassInfo> readClassInfos = metaContext.readClassInfos;
     ClassInfo classInfo = readClassInfos.get(id);
     if (classInfo == null) {
@@ -1386,7 +1377,7 @@ public class ClassResolver {
    */
   public void writeClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    buffer.writePositiveVarInt(metaContext.writingClassDefs.size());
+    buffer.writeVarUint32Small7(metaContext.writingClassDefs.size());
     for (ClassDef classDef : metaContext.writingClassDefs) {
       classDef.writeClassDef(buffer);
     }
@@ -1400,10 +1391,10 @@ public class ClassResolver {
    */
   public void readClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    int classDefOffset = buffer.readInt();
+    int classDefOffset = buffer.readInt32();
     int readerIndex = buffer.readerIndex();
     buffer.readerIndex(classDefOffset);
-    int numClassDefs = buffer.readPositiveVarInt();
+    int numClassDefs = buffer.readVarUint32Small14();
     for (int i = 0; i < numClassDefs; i++) {
       ClassDef readClassDef = ClassDef.readClassDef(buffer);
       // Share same class def to reduce memory footprint, since there may be many meta context.
@@ -1428,30 +1419,7 @@ public class ClassResolver {
   // Note: Thread safe fot jit thread to call.
   public Expression writeClassExpr(
       Expression classResolverRef, Expression buffer, Expression classInfo) {
-    Expression classId = new Invoke(classInfo, "getClassId", PRIMITIVE_SHORT_TYPE);
-    Expression.ListExpression writeUnregistered =
-        new Expression.ListExpression(
-            new Invoke(buffer, "writeByte", Literal.ofByte(USE_CLASS_VALUE_FLAG)));
-    if (metaContextShareEnabled) {
-      writeUnregistered.add(
-          new Invoke(classResolverRef, "writeClassWithMetaShare", buffer, classInfo));
-    } else {
-      writeUnregistered.add(
-          new Invoke(
-              classResolverRef,
-              "writeEnumStringBytes",
-              buffer,
-              inlineInvoke(classInfo, "getPackageNameBytes", TypeToken.of(EnumStringBytes.class))),
-          new Invoke(
-              classResolverRef,
-              "writeEnumStringBytes",
-              buffer,
-              inlineInvoke(classInfo, "getClassNameBytes", TypeToken.of(EnumStringBytes.class))));
-    }
-    return new Expression.If(
-        eq(classId, Literal.ofShort(NO_CLASS_ID)),
-        writeUnregistered,
-        writeClassExpr(buffer, classId));
+    return new Invoke(classResolverRef, "writeClass", buffer, classInfo);
   }
 
   // Note: Thread safe fot jit thread to call.
@@ -1462,17 +1430,12 @@ public class ClassResolver {
 
   // Note: Thread safe fot jit thread to call.
   public Expression writeClassExpr(Expression buffer, Expression classId) {
-    return new Invoke(buffer, "writePositiveVarInt", new Expression.BitShift("<<", classId, 1));
-  }
-
-  // Invoked by Fury JIT.
-  public void writeEnumStringBytes(MemoryBuffer buffer, EnumStringBytes byteString) {
-    enumStringResolver.writeEnumStringBytes(buffer, byteString);
+    return new Invoke(buffer, "writeVarUint32", new Expression.BitShift("<<", classId, 1));
   }
 
   // Note: Thread safe fot jit thread to call.
   public Expression skipRegisteredClassExpr(Expression buffer) {
-    return new Invoke(buffer, "readPositiveVarInt");
+    return new Invoke(buffer, "readVarUint32Small14");
   }
 
   /**
@@ -1505,19 +1468,18 @@ public class ClassResolver {
    * #readClassInfo(MemoryBuffer, ClassInfoHolder)} should be invoked.
    */
   public Class<?> readClassInternal(MemoryBuffer buffer) {
-    byte flag = buffer.readByte();
-    if (flag == USE_CLASS_VALUE_FLAG) {
+    int header = buffer.readVarUint32Small14();
+    if ((header & 0b1) != 0) {
       if (metaContextShareEnabled) {
         return readClassWithMetaShare(buffer);
       }
-      EnumStringBytes packageBytes = enumStringResolver.readEnumStringBytes(buffer);
-      EnumStringBytes simpleClassNameBytes = enumStringResolver.readEnumStringBytes(buffer);
+      MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytesWithFlag(buffer, header);
+      MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
       final Class<?> cls = loadBytesToClass(packageBytes, simpleClassNameBytes);
       currentReadClass = cls;
       return cls;
     } else {
-      short classId = readClassId(buffer, flag);
-      ClassInfo classInfo = registeredId2ClassInfo[classId];
+      ClassInfo classInfo = registeredId2ClassInfo[(short) (header >> 1)];
       final Class<?> cls = classInfo.cls;
       currentReadClass = cls;
       return cls;
@@ -1529,21 +1491,20 @@ public class ClassResolver {
    * ClassInfo)} is faster since it use a non-global class info cache.
    */
   public ClassInfo readClassInfo(MemoryBuffer buffer) {
-    byte flag = buffer.readByte();
-    if (flag == USE_CLASS_VALUE_FLAG) {
+    int header = buffer.readVarUint32Small14();
+    if ((header & 0b1) != 0) {
       ClassInfo classInfo;
       if (metaContextShareEnabled) {
         classInfo =
             readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
       } else {
-        classInfo = readClassInfoFromBytes(buffer, classInfoCache);
+        classInfo = readClassInfoFromBytes(buffer, classInfoCache, header);
       }
       classInfoCache = classInfo;
       currentReadClass = classInfo.cls;
       return classInfo;
     } else {
-      short classId = readClassId(buffer, flag);
-      ClassInfo classInfo = getOrUpdateClassInfo(classId);
+      ClassInfo classInfo = getOrUpdateClassInfo((short) (header >> 1));
       currentReadClass = classInfo.cls;
       return classInfo;
     }
@@ -1555,61 +1516,53 @@ public class ClassResolver {
    */
   @CodegenInvoke
   public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache) {
-    byte flag = buffer.readByte();
-    if (flag == USE_CLASS_VALUE_FLAG) {
-      if (metaContextShareEnabled) {
-        return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
-      }
-      return readClassInfoFromBytes(buffer, classInfoCache);
+    int header = buffer.readVarUint32Small14();
+    if ((header & 0b1) != 0) {
+      return readClassInfoByCache(buffer, classInfoCache, header);
     } else {
-      short classId = readClassId(buffer, flag);
-      return getClassInfo(classId);
+      return getClassInfo((short) (header >> 1));
     }
   }
 
   /** Read class info, update classInfoHolder if cache not hit. */
   @CodegenInvoke
   public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
-    byte flag = buffer.readByte();
-    if (flag == USE_CLASS_VALUE_FLAG) {
-      if (metaContextShareEnabled) {
-        return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
-      }
-      return readClassInfoFromBytes(buffer, classInfoHolder);
+    int header = buffer.readVarUint32Small14();
+    if ((header & 0b1) != 0) {
+      return readClassInfoFromBytes(buffer, classInfoHolder, header);
     } else {
-      short classId = readClassId(buffer, flag);
-      return getClassInfo(classId);
+      return getClassInfo((short) (header >> 1));
     }
   }
 
-  private static short readClassId(MemoryBuffer buffer, byte flag) {
-    short classId;
-    // use classId
-    if ((flag & 0x80) != 0) { // class id is written using multiple bytes.
-      buffer.increaseReaderIndexUnsafe(-1);
-      classId = (short) buffer.readPositiveVarInt();
-    } else {
-      classId = (short) (flag & 0x7F);
+  private ClassInfo readClassInfoByCache(
+      MemoryBuffer buffer, ClassInfo classInfoCache, int header) {
+    if (metaContextShareEnabled) {
+      return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
     }
-    classId >>= 1;
-    return classId;
+    return readClassInfoFromBytes(buffer, classInfoCache, header);
   }
 
-  private ClassInfo readClassInfoFromBytes(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
-    ClassInfo classInfo = readClassInfoFromBytes(buffer, classInfoHolder.classInfo);
+  private ClassInfo readClassInfoFromBytes(
+      MemoryBuffer buffer, ClassInfoHolder classInfoHolder, int header) {
+    if (metaContextShareEnabled) {
+      return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
+    }
+    ClassInfo classInfo = readClassInfoFromBytes(buffer, classInfoHolder.classInfo, header);
     classInfoHolder.classInfo = classInfo;
     return classInfo;
   }
 
-  private ClassInfo readClassInfoFromBytes(MemoryBuffer buffer, ClassInfo classInfoCache) {
-    EnumStringBytes simpleClassNameBytesCache = classInfoCache.classNameBytes;
+  private ClassInfo readClassInfoFromBytes(
+      MemoryBuffer buffer, ClassInfo classInfoCache, int header) {
+    MetaStringBytes simpleClassNameBytesCache = classInfoCache.classNameBytes;
     if (simpleClassNameBytesCache != null) {
-      EnumStringBytes packageNameBytesCache = classInfoCache.packageNameBytes;
-      EnumStringBytes packageBytes =
-          enumStringResolver.readEnumStringBytes(buffer, packageNameBytesCache);
+      MetaStringBytes packageNameBytesCache = classInfoCache.packageNameBytes;
+      MetaStringBytes packageBytes =
+          metaStringResolver.readMetaStringBytesWithFlag(buffer, packageNameBytesCache, header);
       assert packageNameBytesCache != null;
-      EnumStringBytes simpleClassNameBytes =
-          enumStringResolver.readEnumStringBytes(buffer, simpleClassNameBytesCache);
+      MetaStringBytes simpleClassNameBytes =
+          metaStringResolver.readMetaStringBytes(buffer, simpleClassNameBytesCache);
       if (simpleClassNameBytesCache.hashCode == simpleClassNameBytes.hashCode
           && packageNameBytesCache.hashCode == packageBytes.hashCode) {
         return classInfoCache;
@@ -1618,21 +1571,21 @@ public class ClassResolver {
         return getClassInfo(cls);
       }
     } else {
-      EnumStringBytes packageBytes = enumStringResolver.readEnumStringBytes(buffer);
-      EnumStringBytes simpleClassNameBytes = enumStringResolver.readEnumStringBytes(buffer);
+      MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytesWithFlag(buffer, header);
+      MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
       Class<?> cls = loadBytesToClass(packageBytes, simpleClassNameBytes);
       return getClassInfo(cls);
     }
   }
 
   private Class<?> loadBytesToClass(
-      EnumStringBytes packageBytes, EnumStringBytes simpleClassNameBytes) {
+      MetaStringBytes packageBytes, MetaStringBytes simpleClassNameBytes) {
     ClassNameBytes classNameBytes =
         new ClassNameBytes(packageBytes.hashCode, simpleClassNameBytes.hashCode);
     Class<?> cls = compositeClassNameBytes2Class.get(classNameBytes);
     if (cls == null) {
-      String packageName = new String(packageBytes.bytes, StandardCharsets.UTF_8);
-      String className = new String(simpleClassNameBytes.bytes, StandardCharsets.UTF_8);
+      String packageName = packageBytes.decode('.', '_');
+      String className = simpleClassNameBytes.decode('.', '$');
       String entireClassName;
       if (StringUtils.isBlank(packageName)) {
         entireClassName = className;
@@ -1646,19 +1599,19 @@ public class ClassResolver {
   }
 
   public void xwriteClass(MemoryBuffer buffer, Class<?> cls) {
-    enumStringResolver.writeEnumStringBytes(buffer, getOrUpdateClassInfo(cls).fullClassNameBytes);
+    metaStringResolver.writeMetaStringBytes(buffer, getOrUpdateClassInfo(cls).fullClassNameBytes);
   }
 
   public void xwriteTypeTag(MemoryBuffer buffer, Class<?> cls) {
-    enumStringResolver.writeEnumStringBytes(buffer, getOrUpdateClassInfo(cls).typeTagBytes);
+    metaStringResolver.writeMetaStringBytes(buffer, getOrUpdateClassInfo(cls).typeTagBytes);
   }
 
   public Class<?> xreadClass(MemoryBuffer buffer) {
-    EnumStringBytes byteString = enumStringResolver.readEnumStringBytes(buffer);
+    MetaStringBytes byteString = metaStringResolver.readMetaStringBytes(buffer);
     Class<?> cls = classNameBytes2Class.get(byteString);
     if (cls == null) {
       Preconditions.checkNotNull(byteString);
-      String className = new String(byteString.bytes, StandardCharsets.UTF_8);
+      String className = byteString.decode('.', '_');
       cls = loadClass(className);
       classNameBytes2Class.put(byteString, cls);
     }
@@ -1667,7 +1620,7 @@ public class ClassResolver {
   }
 
   public String xreadClassName(MemoryBuffer buffer) {
-    return enumStringResolver.readEnumString(buffer);
+    return metaStringResolver.readMetaString(buffer);
   }
 
   public Class<?> getCurrentReadClass() {
@@ -1687,8 +1640,7 @@ public class ClassResolver {
                 "Class %s not found from classloaders [%s, %s]",
                 className, fury.getClassLoader(), Thread.currentThread().getContextClassLoader());
         if (fury.getConfig().deserializeUnexistedClass()) {
-          // ex.printStackTrace();
-          LOG.error(msg, e);
+          LOG.warn(msg);
           // FIXME create a subclass dynamically may be better?
           return UnexistedSkipClass.class;
         }
@@ -1711,7 +1663,7 @@ public class ClassResolver {
   }
 
   public Class<?> readClassByTypeTag(MemoryBuffer buffer) {
-    String tag = enumStringResolver.readEnumString(buffer);
+    String tag = metaStringResolver.readMetaString(buffer);
     return typeTagToClassXLangMap.get(tag);
   }
 
@@ -1784,8 +1736,22 @@ public class ClassResolver {
     return classId >= PRIMITIVE_VOID_CLASS_ID && classId <= PRIMITIVE_DOUBLE_CLASS_ID;
   }
 
-  public EnumStringResolver getEnumStringResolver() {
-    return enumStringResolver;
+  public MetaStringResolver getMetaStringResolver() {
+    return metaStringResolver;
+  }
+
+  public CodeGenerator getCodeGenerator(ClassLoader... loaders) {
+    List<ClassLoader> loaderList = new ArrayList<>(loaders.length);
+    Collections.addAll(loaderList, loaders);
+    return extRegistry.codeGeneratorMap.get(loaderList);
+  }
+
+  public void setCodeGenerator(ClassLoader loader, CodeGenerator codeGenerator) {
+    setCodeGenerator(new ClassLoader[] {loader}, codeGenerator);
+  }
+
+  public void setCodeGenerator(ClassLoader[] loaders, CodeGenerator codeGenerator) {
+    extRegistry.codeGeneratorMap.put(Arrays.asList(loaders), codeGenerator);
   }
 
   public Fury getFury() {
@@ -1820,6 +1786,9 @@ public class ClassResolver {
       }
     }
     if (GraalvmSupport.isGraalRuntime()) {
+      if (Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls)) {
+        return null;
+      }
       throw new RuntimeException(String.format("Class %s is not registered", cls));
     }
     return null;

@@ -36,7 +36,7 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
 
   @Override
   public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
-    buffer.writePositiveVarInt(value.size());
+    buffer.writeVarUint32Small7(value.size());
     return value;
   }
 

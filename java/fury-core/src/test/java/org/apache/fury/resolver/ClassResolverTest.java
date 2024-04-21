@@ -48,6 +48,8 @@ import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.config.Language;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.longlongpkg.C1;
@@ -62,8 +64,6 @@ import org.apache.fury.serializer.collection.CollectionSerializers;
 import org.apache.fury.serializer.collection.MapSerializers;
 import org.apache.fury.test.bean.BeanB;
 import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -95,6 +95,9 @@ public class ClassResolverTest extends FuryTestBase {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     ClassResolver classResolver = fury.getClassResolver();
     classResolver.register(org.apache.fury.test.bean.Foo.class);
+    Assert.assertThrows(
+        IllegalArgumentException.class,
+        () -> classResolver.register(org.apache.fury.test.bean.Foo.class, 100));
     Assert.assertThrows(
         IllegalArgumentException.class,
         () -> classResolver.register(org.apache.fury.test.bean.Foo.createCompatibleClass1()));
@@ -175,6 +178,13 @@ public class ClassResolverTest extends FuryTestBase {
 
   interface Interface2 {}
 
+  @Test
+  public void testSerializeClassesShared() {
+    Fury fury = builder().build();
+    serDeCheck(fury, Foo.class);
+    serDeCheck(fury, Arrays.asList(Foo.class, Foo.class));
+  }
+
   @Test(dataProvider = "referenceTrackingConfig")
   public void testSerializeClasses(boolean referenceTracking) {
     Fury fury =
@@ -211,7 +221,7 @@ public class ClassResolverTest extends FuryTestBase {
       classResolver.writeClassInternal(buffer, getClass());
       int writerIndex = buffer.writerIndex();
       classResolver.writeClassInternal(buffer, getClass());
-      Assert.assertEquals(buffer.writerIndex(), writerIndex + 7);
+      Assert.assertEquals(buffer.writerIndex(), writerIndex + 2);
       buffer.writerIndex(0);
     }
     {

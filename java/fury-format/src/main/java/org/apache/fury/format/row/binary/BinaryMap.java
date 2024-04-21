@@ -57,8 +57,8 @@ public class BinaryMap implements MapData {
     this.sizeInBytes = keys.getSizeInBytes() + values.getSizeInBytes() + 8;
 
     MemoryBuffer copyBuf = MemoryUtils.buffer(sizeInBytes);
-    copyBuf.putInt(0, keys.getSizeInBytes());
-    copyBuf.putInt(4, 0);
+    copyBuf.putInt32(0, keys.getSizeInBytes());
+    copyBuf.putInt32(4, 0);
     keys.getBuffer().copyTo(baseOffset, copyBuf, 8, keys.getSizeInBytes());
     values
         .getBuffer()
@@ -71,7 +71,7 @@ public class BinaryMap implements MapData {
     this.baseOffset = offset;
     this.sizeInBytes = sizeInBytes;
     // Read the numBytes of key array from the aligned first 8 bytes as int.
-    final int keyArrayBytes = buf.getInt(offset);
+    final int keyArrayBytes = buf.getInt32(offset);
     assert keyArrayBytes >= 0 : "keyArrayBytes (" + keyArrayBytes + ") should >= 0";
     final int valueArrayBytes = sizeInBytes - keyArrayBytes - 8;
     assert valueArrayBytes >= 0 : "valueArraySize (" + valueArrayBytes + ") should >= 0";

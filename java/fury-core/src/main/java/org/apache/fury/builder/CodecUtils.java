@@ -19,14 +19,15 @@
 
 package org.apache.fury.builder;
 
+import com.google.common.reflect.TypeToken;
 import java.util.Collections;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CompileUnit;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.meta.ClassDef;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
 import org.apache.fury.serializer.Serializer;
-import org.apache.fury.type.ClassDef;
 import org.apache.fury.util.Preconditions;
 
 /** Codec util to create and load jit serializer class. */
@@ -81,14 +82,29 @@ public class CodecUtils {
     if (beanClassClassLoader == null) {
       beanClassClassLoader = fury.getClass().getClassLoader();
     }
+    ClassResolver classResolver = fury.getClassResolver();
     try {
       // generated code imported fury classes.
       beanClassClassLoader.loadClass(Fury.class.getName());
-      codeGenerator = CodeGenerator.getSharedCodeGenerator(beanClassClassLoader);
+      codeGenerator = classResolver.getCodeGenerator(beanClassClassLoader);
+      if (codeGenerator == null) {
+        codeGenerator = CodeGenerator.getSharedCodeGenerator(beanClassClassLoader);
+        // Hold strong reference of {@link CodeGenerator}, so the referent of `DelayedRef`
+        // won't be null.
+        classResolver.setCodeGenerator(beanClassClassLoader, codeGenerator);
+      }
     } catch (ClassNotFoundException e) {
       codeGenerator =
-          CodeGenerator.getSharedCodeGenerator(
-              beanClassClassLoader, fury.getClass().getClassLoader());
+          classResolver.getCodeGenerator(beanClassClassLoader, fury.getClass().getClassLoader());
+      ClassLoader[] loaders = {beanClassClassLoader, fury.getClass().getClassLoader()};
+      if (codeGenerator == null) {
+        codeGenerator =
+            CodeGenerator.getSharedCodeGenerator(
+                beanClassClassLoader, fury.getClass().getClassLoader());
+        // Hold strong reference of {@link CodeGenerator}, so the referent of `DelayedRef`
+        // won't be null.
+        classResolver.setCodeGenerator(loaders, codeGenerator);
+      }
     }
     ClassLoader classLoader =
         codeGenerator.compile(

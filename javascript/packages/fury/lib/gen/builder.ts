@@ -87,12 +87,16 @@ class BinaryReaderBuilder {
     return `${this.holder}.stringOfVarUInt32()`;
   }
 
-  double() {
-    return `${this.holder}.double()`;
+  float64() {
+    return `${this.holder}.float64()`;
   }
 
-  float() {
-    return `${this.holder}.float()`;
+  float32() {
+    return `${this.holder}.float32()`;
+  }
+
+  float16() {
+    return `${this.holder}.float16()`;
   }
 
   uint16() {
@@ -115,8 +119,8 @@ class BinaryReaderBuilder {
     return `${this.holder}.int64()`;
   }
 
-  sliLong() {
-    return `${this.holder}.sliLong()`;
+  sliInt64() {
+    return `${this.holder}.sliInt64()`;
   }
 
   uint32() {
@@ -205,20 +209,20 @@ class BinaryWriterBuilder {
     return `${this.holder}.buffer(${v})`;
   }
 
-  double(v: number | string) {
-    return `${this.holder}.double(${v})`;
+  float64(v: number | string) {
+    return `${this.holder}.float64(${v})`;
   }
 
-  float(v: number | string) {
-    return `${this.holder}.float(${v})`;
+  float32(v: number | string) {
+    return `${this.holder}.float32(${v})`;
   }
 
   int64(v: number | string) {
     return `${this.holder}.int64(${v})`;
   }
 
-  sliLong(v: number | string) {
-    return `${this.holder}.sliLong(${v})`;
+  sliInt64(v: number | string) {
+    return `${this.holder}.sliInt64(${v})`;
   }
 
   uint32(v: number | string) {

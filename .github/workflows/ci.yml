@@ -48,9 +48,9 @@ jobs:
       matrix:
         java-version: ["8", "11", "17", "21"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'temurin'
@@ -62,12 +62,35 @@ jobs:
         run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
-
+  openj9:
+    name: Openj9 Java CI
+    runs-on: ubuntu-latest
+    env:
+      MY_VAR: "PATH"
+    strategy:
+      matrix:
+        # String in openj9 1.8 share byte array by offset, fury doesn't allow it.
+        java-version: ["21"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'adopt-openj9'
+      - name: Install bazel
+        run: ./ci/run_ci.sh install_bazel
+      - name: Install python
+        run: ./ci/run_ci.sh install_python
+      - name: Install pyfury
+        run: ./ci/run_ci.sh install_pyfury
+      - name: Run CI with Maven
+        run: ./ci/run_ci.sh java${{ matrix.java-version }}
   graalvm:
     name: GraalVM CI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: graalvm/setup-graalvm@v1
         with:
           java-version: '21'
@@ -81,14 +104,14 @@ jobs:
     name: Scala CI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: 8
           distribution: 'temurin'
       - name: Install fury java
-        run: cd java && mvn -T10 clean install -DskipTests && cd -
+        run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
       - name: Test
         run: |
           # Avoid sbt download jackson-databind error
@@ -99,9 +122,9 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: 8
           distribution: 'temurin'
@@ -116,9 +139,9 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - name: Upgrade npm
@@ -129,7 +152,7 @@ jobs:
       # OS (such as macos -latest) uses python3.12 by default, so python 3.8
       # is used here to avoid this problem.
       - name: Set up Python3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: 3.8
       - name: Run CI with NodeJS
@@ -139,11 +162,15 @@ jobs:
     name: Rust CI
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-2022]
+        os: [ubuntu-latest, macos-12, macos-14] # macos-12: x86, macos-14: arm64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
       - uses: dtolnay/rust-toolchain@nightly
       - name: Run Rust CI
         run: python ./ci/run_ci.py rust
@@ -152,14 +179,14 @@ jobs:
     name: C++ CI
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-12, macos-14] # macos-12: x86, macos-14: arm64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.11
       - name: Run C++ CI with Bazel
         run: python ./ci/run_ci.py cpp
   python:
@@ -171,9 +198,9 @@ jobs:
       matrix:
         python-version: [3.7, 3.12]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install bazel
@@ -208,16 +235,16 @@ jobs:
     name: Code Style Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: 21
           distribution: 'oracle'
       - name: Check License Header
         uses: korandoru/hawkeye@v3
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: 3.8
       - name: Check code style

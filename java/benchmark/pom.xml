@@ -72,7 +72,7 @@
     <dependency>
       <groupId>com.esotericsoftware</groupId>
       <artifactId>kryo</artifactId>
-      <version>4.0.0</version>
+      <version>5.5.0</version>
     </dependency>
     <dependency>
       <groupId>de.javakaffee</groupId>

@@ -25,7 +25,7 @@ describe('number', () => {
     
     const fury = new Fury({ refTracking: true });    
     const serialize = fury.registerSerializer({
-      type: InternalSerializerType.FURY_TYPE_TAG,
+      type: InternalSerializerType.OBJECT,
       options: {
         tag: "example.foo",
         props: {
@@ -45,7 +45,7 @@ describe('number', () => {
     
     const fury = new Fury({ refTracking: true });    
     const serialize = fury.registerSerializer({
-      type: InternalSerializerType.FURY_TYPE_TAG,
+      type: InternalSerializerType.OBJECT,
       options: {
         tag: "example.foo",
         props: {
@@ -65,7 +65,7 @@ describe('number', () => {
     
     const fury = new Fury({ refTracking: true });    
     const serializer = fury.registerSerializer({
-      type: InternalSerializerType.FURY_TYPE_TAG,
+      type: InternalSerializerType.OBJECT,
       options: {
         tag: "example.foo",
         props: {
@@ -85,7 +85,7 @@ describe('number', () => {
     
     const fury = new Fury({ refTracking: true });    
     const serializer = fury.registerSerializer({
-      type: InternalSerializerType.FURY_TYPE_TAG,
+      type: InternalSerializerType.OBJECT,
       options: {
         tag: "example.foo",
         props: {
@@ -102,83 +102,17 @@ describe('number', () => {
     result.a = Number(result.a)
     expect(result).toEqual({ a: 1 })
   });
-  test('should u8 work', () => {
-    
-    const fury = new Fury({ refTracking: true });   
-    const description = Type.object("example.foo", {
-      a: Type.uint8()
-    }) 
-    const serializer = fury.registerSerializer(description).serializer;
-    const input = fury.serialize({ a: 1 }, serializer);
-    const result = fury.deserialize(
-      input
-    );
-    expect(result).toEqual({ a: 1 })
-  });
-  test('should u16 work', () => {
-    
-    const fury = new Fury({ refTracking: true });    
-    const description = Type.object("example.foo", {
-      a: Type.uint16(),
-    })
-    const serializer = fury.registerSerializer(description).serializer;
-    const input = fury.serialize({ a: 1 }, serializer);
-    const result = fury.deserialize(
-      input
-    );
-    expect(result).toEqual({ a: 1 })
-  });
-  test('should u32 work', () => {
-    
-    const fury = new Fury({ refTracking: true });    
-    const serializer = fury.registerSerializer({
-      type: InternalSerializerType.FURY_TYPE_TAG,
-      options: {
-        tag: "example.foo",
-        props: {
-          a: {
-            type: InternalSerializerType.UINT32
-          }
-        }
-      }
-    }).serializer;
-    const input = fury.serialize({ a: 1 }, serializer);
-    const result = fury.deserialize(
-      input
-    );
-    expect(result).toEqual({ a: 1 })
-  });
-  test('should u64 work', () => {
-    
-    const fury = new Fury({ refTracking: true });    
-    const serializer = fury.registerSerializer({
-      type: InternalSerializerType.FURY_TYPE_TAG,
-      options: {
-        tag: "example.foo",
-        props: {
-          a: {
-            type: InternalSerializerType.UINT64
-          }
-        }
-      }
-    }).serializer;
-    const input = fury.serialize({ a: 1 }, serializer);
-    const result = fury.deserialize(
-      input
-    );
-    result.a = Number(result.a)
-    expect(result).toEqual({ a: 1 })
-  });
+
   test('should float work', () => {
     
     const fury = new Fury({ refTracking: true });    
     const serializer = fury.registerSerializer({
-      type: InternalSerializerType.FURY_TYPE_TAG,
+      type: InternalSerializerType.OBJECT,
       options: {
         tag: "example.foo",
         props: {
           a: {
-            type: InternalSerializerType.FLOAT
+            type: InternalSerializerType.FLOAT32
           }
         }
       }
@@ -189,16 +123,16 @@ describe('number', () => {
     );
     expect(result.a).toBeCloseTo(1.2)
   });
-  test('should double work', () => {
+  test('should float64 work', () => {
     
     const fury = new Fury({ refTracking: true });    
     const serializer = fury.registerSerializer({
-      type: InternalSerializerType.FURY_TYPE_TAG,
+      type: InternalSerializerType.OBJECT,
       options: {
         tag: "example.foo",
         props: {
           a: {
-            type: InternalSerializerType.DOUBLE
+            type: InternalSerializerType.FLOAT64
           }
         }
       }

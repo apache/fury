@@ -28,8 +28,8 @@ import com.alibaba.fastjson2.JSONWriter;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.io.UnsafeMemoryInput;
-import com.esotericsoftware.kryo.io.UnsafeMemoryOutput;
+import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferInput;
+import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -88,7 +88,8 @@ public class ZeroCopySuite {
     jsonBState.setup();
 
     if (args.length == 0) {
-      String commandLine = "io.*ZeroCopy.*_deserialize$ -f 1 -wi 0 -i 1 -t 1 -w 1s -r 1s -rf csv";
+      String commandLine =
+          "org.apache.fury.*ZeroCopy.*_deserialize$ -f 1 -wi 0 -i 1 -t 1 -w 1s -r 1s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }
@@ -218,8 +219,8 @@ public class ZeroCopySuite {
           input = new Input(output.getBuffer());
           break;
         case directBuffer:
-          output = new UnsafeMemoryOutput(1024 * 512);
-          input = new UnsafeMemoryInput(((UnsafeMemoryOutput) output).getByteBuffer());
+          output = new UnsafeByteBufferOutput(1024 * 512);
+          input = new UnsafeByteBufferInput(((UnsafeByteBufferOutput) output).getByteBuffer());
           break;
       }
       kryo.setReferences(references);

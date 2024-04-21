@@ -68,12 +68,12 @@ public class TimeSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, T value) {
-      buffer.writeLong(value.getTime());
+      buffer.writeInt64(value.getTime());
     }
 
     @Override
     public T read(MemoryBuffer buffer) {
-      return newInstance(buffer.readLong());
+      return newInstance(buffer.readInt64());
     }
 
     protected abstract T newInstance(long time);
@@ -141,12 +141,12 @@ public class TimeSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, Timestamp value) {
-      buffer.writeLong(DateTimeUtils.fromJavaTimestamp(value));
+      buffer.writeInt64(DateTimeUtils.fromJavaTimestamp(value));
     }
 
     @Override
     public Timestamp xread(MemoryBuffer buffer) {
-      return DateTimeUtils.toJavaTimestamp(buffer.readLong());
+      return DateTimeUtils.toJavaTimestamp(buffer.readInt64());
     }
 
     @Override
@@ -157,14 +157,14 @@ public class TimeSerializers {
     @Override
     public void write(MemoryBuffer buffer, Timestamp value) {
       long time = value.getTime() - (value.getNanos() / 1_000_000);
-      buffer.writeLong(time);
-      buffer.writeInt(value.getNanos());
+      buffer.writeInt64(time);
+      buffer.writeInt32(value.getNanos());
     }
 
     @Override
     public Timestamp read(MemoryBuffer buffer) {
-      Timestamp t = new Timestamp(buffer.readLong());
-      t.setNanos(buffer.readInt());
+      Timestamp t = new Timestamp(buffer.readInt64());
+      t.setNanos(buffer.readInt32());
       return t;
     }
   }
@@ -186,12 +186,12 @@ public class TimeSerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, LocalDate value) {
       // TODO use java encoding to support larger range.
-      buffer.writeInt(DateTimeUtils.localDateToDays(value));
+      buffer.writeInt32(DateTimeUtils.localDateToDays(value));
     }
 
     @Override
     public LocalDate xread(MemoryBuffer buffer) {
-      return DateTimeUtils.daysToLocalDate(buffer.readInt());
+      return DateTimeUtils.daysToLocalDate(buffer.readInt32());
     }
 
     @Override
@@ -200,7 +200,7 @@ public class TimeSerializers {
     }
 
     public static void writeLocalDate(MemoryBuffer buffer, LocalDate value) {
-      buffer.writeInt(value.getYear());
+      buffer.writeInt32(value.getYear());
       buffer.writeByte(value.getMonthValue());
       buffer.writeByte(value.getDayOfMonth());
     }
@@ -211,7 +211,7 @@ public class TimeSerializers {
     }
 
     public static LocalDate readLocalDate(MemoryBuffer buffer) {
-      int year = buffer.readInt();
+      int year = buffer.readInt32();
       int month = buffer.readByte();
       int dayOfMonth = buffer.readByte();
       return LocalDate.of(year, month, dayOfMonth);
@@ -235,24 +235,24 @@ public class TimeSerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, Instant value) {
       // FIXME JDK17 may have higher precision than millisecond
-      buffer.writeLong(DateTimeUtils.instantToMicros(value));
+      buffer.writeInt64(DateTimeUtils.instantToMicros(value));
     }
 
     @Override
     public Instant xread(MemoryBuffer buffer) {
-      return DateTimeUtils.microsToInstant(buffer.readLong());
+      return DateTimeUtils.microsToInstant(buffer.readInt64());
     }
 
     @Override
     public void write(MemoryBuffer buffer, Instant value) {
-      buffer.writeLong(value.getEpochSecond());
-      buffer.writeInt(value.getNano());
+      buffer.writeInt64(value.getEpochSecond());
+      buffer.writeInt32(value.getNano());
     }
 
     @Override
     public Instant read(MemoryBuffer buffer) {
-      long seconds = buffer.readLong();
-      int nanos = buffer.readInt();
+      long seconds = buffer.readInt64();
+      int nanos = buffer.readInt32();
       return Instant.ofEpochSecond(seconds, nanos);
     }
   }
@@ -268,14 +268,14 @@ public class TimeSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Duration value) {
-      buffer.writeLong(value.getSeconds());
-      buffer.writeInt(value.getNano());
+      buffer.writeInt64(value.getSeconds());
+      buffer.writeInt32(value.getNano());
     }
 
     @Override
     public Duration read(MemoryBuffer buffer) {
-      long seconds = buffer.readLong();
-      int nanos = buffer.readInt();
+      long seconds = buffer.readInt64();
+      int nanos = buffer.readInt32();
       return Duration.ofSeconds(seconds, nanos);
     }
   }
@@ -335,7 +335,7 @@ public class TimeSerializers {
         buffer.writeByte(time.getHour());
         buffer.writeByte(time.getMinute());
         buffer.writeByte(time.getSecond());
-        buffer.writeInt(time.getNano());
+        buffer.writeInt32(time.getNano());
       }
     }
 
@@ -360,7 +360,7 @@ public class TimeSerializers {
           if (second < 0) {
             second = ~second;
           } else {
-            nano = buffer.readInt();
+            nano = buffer.readInt32();
           }
         }
       }
@@ -402,24 +402,24 @@ public class TimeSerializers {
 
     public void write(MemoryBuffer buffer, Calendar object) {
       timeZoneSerializer.write(buffer, object.getTimeZone()); // can't be null
-      buffer.writeLong(object.getTimeInMillis());
+      buffer.writeInt64(object.getTimeInMillis());
       buffer.writeBoolean(object.isLenient());
       buffer.writeByte(object.getFirstDayOfWeek());
       buffer.writeByte(object.getMinimalDaysInFirstWeek());
       if (object instanceof GregorianCalendar) {
-        buffer.writeLong(((GregorianCalendar) object).getGregorianChange().getTime());
+        buffer.writeInt64(((GregorianCalendar) object).getGregorianChange().getTime());
       } else {
-        buffer.writeLong(DEFAULT_GREGORIAN_CUTOVER);
+        buffer.writeInt64(DEFAULT_GREGORIAN_CUTOVER);
       }
     }
 
     public Calendar read(MemoryBuffer buffer) {
       Calendar result = Calendar.getInstance(timeZoneSerializer.read(buffer));
-      result.setTimeInMillis(buffer.readLong());
+      result.setTimeInMillis(buffer.readInt64());
       result.setLenient(buffer.readBoolean());
       result.setFirstDayOfWeek(buffer.readByte());
       result.setMinimalDaysInFirstWeek(buffer.readByte());
-      long gregorianChange = buffer.readLong();
+      long gregorianChange = buffer.readInt64();
       if (gregorianChange != DEFAULT_GREGORIAN_CUTOVER) {
         if (result instanceof GregorianCalendar) {
           ((GregorianCalendar) result).setGregorianChange(new Date(gregorianChange));
@@ -467,7 +467,7 @@ public class TimeSerializers {
       int offsetByte = offsetSecs % 900 == 0 ? offsetSecs / 900 : 127; // compress to -72 to +72
       buffer.writeByte(offsetByte);
       if (offsetByte == 127) {
-        buffer.writeInt(offsetSecs);
+        buffer.writeInt32(offsetSecs);
       }
     }
 
@@ -478,7 +478,7 @@ public class TimeSerializers {
     public static ZoneOffset readZoneOffset(MemoryBuffer buffer) {
       int offsetByte = buffer.readByte();
       return (offsetByte == 127
-          ? ZoneOffset.ofTotalSeconds(buffer.readInt())
+          ? ZoneOffset.ofTotalSeconds(buffer.readInt32())
           : ZoneOffset.ofTotalSeconds(offsetByte * 900));
     }
   }
@@ -518,12 +518,12 @@ public class TimeSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Year obj) {
-      buffer.writeInt(obj.getValue());
+      buffer.writeInt32(obj.getValue());
     }
 
     @Override
     public Year read(MemoryBuffer buffer) {
-      return Year.of(buffer.readInt());
+      return Year.of(buffer.readInt32());
     }
   }
 
@@ -538,13 +538,13 @@ public class TimeSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, YearMonth obj) {
-      buffer.writeInt(obj.getYear());
+      buffer.writeInt32(obj.getYear());
       buffer.writeByte(obj.getMonthValue());
     }
 
     @Override
     public YearMonth read(MemoryBuffer buffer) {
-      int year = buffer.readInt();
+      int year = buffer.readInt32();
       byte month = buffer.readByte();
       return YearMonth.of(year, month);
     }
@@ -581,15 +581,15 @@ public class TimeSerializers {
     }
 
     public void write(MemoryBuffer buffer, Period obj) {
-      buffer.writeInt(obj.getYears());
-      buffer.writeInt(obj.getMonths());
-      buffer.writeInt(obj.getDays());
+      buffer.writeInt32(obj.getYears());
+      buffer.writeInt32(obj.getMonths());
+      buffer.writeInt32(obj.getDays());
     }
 
     public Period read(MemoryBuffer buffer) {
-      int years = buffer.readInt();
-      int months = buffer.readInt();
-      int days = buffer.readInt();
+      int years = buffer.readInt32();
+      int months = buffer.readInt32();
+      int days = buffer.readInt32();
       return Period.of(years, months, days);
     }
   }

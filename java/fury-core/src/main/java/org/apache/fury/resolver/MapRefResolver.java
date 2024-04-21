@@ -66,7 +66,7 @@ public final class MapRefResolver implements RefResolver {
   public boolean writeRefOrNull(MemoryBuffer buffer, Object obj) {
     buffer.grow(10);
     if (obj == null) {
-      buffer.unsafeWriteByte(Fury.NULL_FLAG);
+      buffer._unsafeWriteByte(Fury.NULL_FLAG);
       return true;
     } else {
       // The id should be consistent with `#nextReadRefId`
@@ -80,12 +80,12 @@ public final class MapRefResolver implements RefResolver {
       }
       if (writtenRefId >= 0) {
         // The obj has been written previously.
-        buffer.unsafeWriteByte(Fury.REF_FLAG);
-        buffer.unsafeWritePositiveVarInt(writtenRefId);
+        buffer._unsafeWriteByte(Fury.REF_FLAG);
+        buffer._unsafeWriteVarUint32(writtenRefId);
         return true;
       } else {
         // The object is being written for the first time.
-        buffer.unsafeWriteByte(Fury.REF_VALUE_FLAG);
+        buffer._unsafeWriteByte(Fury.REF_VALUE_FLAG);
         return false;
       }
     }
@@ -106,12 +106,12 @@ public final class MapRefResolver implements RefResolver {
     }
     if (writtenRefId >= 0) {
       // The obj has been written previously.
-      buffer.unsafeWriteByte(Fury.REF_FLAG);
-      buffer.unsafeWritePositiveVarInt(writtenRefId);
+      buffer._unsafeWriteByte(Fury.REF_FLAG);
+      buffer._unsafeWriteVarUint32(writtenRefId);
       return false;
     } else {
       // The object is being written for the first time.
-      buffer.unsafeWriteByte(Fury.REF_VALUE_FLAG);
+      buffer._unsafeWriteByte(Fury.REF_VALUE_FLAG);
       return true;
     }
   }
@@ -119,7 +119,7 @@ public final class MapRefResolver implements RefResolver {
   @Override
   public boolean writeNullFlag(MemoryBuffer buffer, Object obj) {
     if (obj == null) {
-      buffer.unsafeWriteByte(Fury.NULL_FLAG);
+      buffer._unsafeWriteByte(Fury.NULL_FLAG);
       return true;
     }
     return false;
@@ -149,7 +149,7 @@ public final class MapRefResolver implements RefResolver {
     byte headFlag = buffer.readByte();
     if (headFlag == Fury.REF_FLAG) {
       // read reference id and get object from reference resolver
-      int referenceId = buffer.readPositiveVarInt();
+      int referenceId = buffer.readVarUint32Small14();
       readObject = getReadObject(referenceId);
     } else {
       readObject = null;
@@ -170,8 +170,7 @@ public final class MapRefResolver implements RefResolver {
     byte headFlag = buffer.readByte();
     if (headFlag == Fury.REF_FLAG) {
       // read reference id and get object from reference resolver
-      int referenceId = buffer.readPositiveVarInt();
-      readObject = getReadObject(referenceId);
+      readObject = getReadObject(buffer.readVarUint32Small14());
     } else {
       readObject = null;
       if (headFlag == Fury.REF_VALUE_FLAG) {
@@ -209,6 +208,10 @@ public final class MapRefResolver implements RefResolver {
     if (id >= 0) {
       readObjects.set(id, object);
     }
+  }
+
+  public ObjectArray getReadObjects() {
+    return readObjects;
   }
 
   @Override

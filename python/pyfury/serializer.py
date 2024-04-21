@@ -216,7 +216,7 @@ class PandasRangeIndexSerializer(Serializer):
         stop = value.stop
         step = value.step
         if type(start) is int:
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(start)
         else:
             if start is None:
@@ -225,7 +225,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
                 fury.serialize_nonref(buffer, start)
         if type(stop) is int:
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(stop)
         else:
             if stop is None:
@@ -234,7 +234,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
                 fury.serialize_nonref(buffer, stop)
         if type(step) is int:
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(step)
         else:
             if step is None:

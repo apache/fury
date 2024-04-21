@@ -47,7 +47,7 @@ public class BinaryMapTest {
         keyArrayWriter.getStartIndex(),
         keyArrayWriter.size());
     writerIndex += keyArrayWriter.size();
-    buffer.putLong(0, keyArrayWriter.size());
+    buffer.putInt64(0, keyArrayWriter.size());
     BinaryArrayWriter valueArrayWriter =
         new BinaryArrayWriter(DataTypes.arrayField(DataTypes.utf8()));
     valueArrayWriter.reset(2);

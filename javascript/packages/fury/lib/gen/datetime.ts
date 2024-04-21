@@ -44,7 +44,7 @@ class TimestampSerializerGenerator extends BaseSerializerGenerator {
   }
 }
 
-class DateSerializerGenerator extends BaseSerializerGenerator {
+class DurationSerializerGenerator extends BaseSerializerGenerator {
   description: TypeDescription;
 
   constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
@@ -72,5 +72,5 @@ class DateSerializerGenerator extends BaseSerializerGenerator {
   }
 }
 
-CodegenRegistry.register(InternalSerializerType.DATE, DateSerializerGenerator);
+CodegenRegistry.register(InternalSerializerType.DURATION, DurationSerializerGenerator);
 CodegenRegistry.register(InternalSerializerType.TIMESTAMP, TimestampSerializerGenerator);

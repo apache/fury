@@ -48,8 +48,6 @@ from pyfury._serializer import (
     PYBOOL_CLASS_ID,
     STRING_CLASS_ID,
     PICKLE_CLASS_ID,
-    USE_CLASSNAME,
-    USE_CLASS_ID,
     NOT_NULL_STRING_FLAG,
     NOT_NULL_PYINT_FLAG,
     NOT_NULL_PYBOOL_FLAG,
@@ -91,7 +89,10 @@ logger = logging.getLogger(__name__)
 DEFAULT_DYNAMIC_WRITE_STRING_ID = -1
 
 
-class EnumStringBytes:
+MAGIC_NUMBER = 0x62D4
+
+
+class MetaStringBytes:
     __slots__ = (
         "data",
         "length",
@@ -102,11 +103,13 @@ class EnumStringBytes:
     def __init__(self, data, hashcode=None):
         self.data = data
         self.length = len(data)
-        self.hashcode = hashcode or mmh3.hash_buffer(data, 47)[0]
+        if hashcode is None:
+            hashcode = mmh3.hash_buffer(data, 47)[0] & 0xFFFFFFFFFFFFFF00
+        self.hashcode = hashcode
         self.dynamic_write_string_id = DEFAULT_DYNAMIC_WRITE_STRING_ID
 
     def __eq__(self, other):
-        return type(other) is EnumStringBytes and other.hashcode == self.hashcode
+        return type(other) is MetaStringBytes and other.hashcode == self.hashcode
 
     def __hash__(self):
         return self.hashcode
@@ -132,9 +135,9 @@ class ClassInfo:
         self.cls = cls
         self.class_id = class_id
         self.serializer = serializer
-        self.class_name_bytes = EnumStringBytes(class_name_bytes)
+        self.class_name_bytes = MetaStringBytes(class_name_bytes)
         self.type_tag_bytes = (
-            EnumStringBytes(type_tag_bytes) if type_tag_bytes else None
+            MetaStringBytes(type_tag_bytes) if type_tag_bytes else None
         )
 
     def __repr__(self):
@@ -299,7 +302,7 @@ class ClassResolver:
             type_tag = serializer.get_xtype_tag()
             assert type(type_tag) is str
             assert type_tag not in self._type_tag_to_class_x_lang_map
-            classinfo.type_tag_bytes = EnumStringBytes(type_tag.encode("utf-8"))
+            classinfo.type_tag_bytes = MetaStringBytes(type_tag.encode("utf-8"))
             self._type_tag_to_class_x_lang_map[type_tag] = cls
         else:
             self._type_id_to_serializer[type_id] = serializer
@@ -466,30 +469,30 @@ class ClassResolver:
     def write_classinfo(self, buffer: Buffer, classinfo: ClassInfo):
         class_id = classinfo.class_id
         if class_id != NO_CLASS_ID:
-            buffer.write_int16(class_id)
+            buffer.write_varint32(class_id << 1)
             return
-        buffer.write_int16(NO_CLASS_ID)
+        buffer.write_varint32(1)
         self.write_enum_string_bytes(buffer, classinfo.class_name_bytes)
 
     def read_classinfo(self, buffer):
-        class_id = buffer.read_int16()
-        if (
-            class_id > NO_CLASS_ID
-        ):  # registered class id are greater than `NO_CLASS_ID`.
+        header = buffer.read_varint32()
+        if header & 0b1 == 0:
+            class_id = header >> 1
             classinfo = self._registered_id2_class_info[class_id]
             if classinfo.serializer is None:
                 classinfo.serializer = self._create_serializer(classinfo.cls)
             return classinfo
-        if buffer.read_int8() == USE_CLASS_ID:
-            return self._dynamic_id_to_classinfo_list[buffer.read_int16()]
+        meta_str_header = buffer.read_varint32()
+        length = meta_str_header >> 1
+        if meta_str_header & 0b1 != 0:
+            return self._dynamic_id_to_classinfo_list[length - 1]
         class_name_bytes_hash = buffer.read_int64()
-        class_name_bytes_length = buffer.read_int16()
         reader_index = buffer.reader_index
-        buffer.check_bound(reader_index, class_name_bytes_length)
-        buffer.reader_index = reader_index + class_name_bytes_length
+        buffer.check_bound(reader_index, length)
+        buffer.reader_index = reader_index + length
         classinfo = self._hash_to_classinfo.get(class_name_bytes_hash)
         if classinfo is None:
-            classname_bytes = buffer.get_bytes(reader_index, class_name_bytes_length)
+            classname_bytes = buffer.get_bytes(reader_index, length)
             full_class_name = classname_bytes.decode(encoding="utf-8")
             cls = load_class(full_class_name)
             classinfo = self.get_or_create_classinfo(cls)
@@ -498,7 +501,7 @@ class ClassResolver:
         return classinfo
 
     def write_enum_string_bytes(
-        self, buffer: Buffer, enum_string_bytes: EnumStringBytes
+        self, buffer: Buffer, enum_string_bytes: MetaStringBytes
     ):
         dynamic_write_string_id = enum_string_bytes.dynamic_write_string_id
         if dynamic_write_string_id == DEFAULT_DYNAMIC_WRITE_STRING_ID:
@@ -506,26 +509,25 @@ class ClassResolver:
             enum_string_bytes.dynamic_write_string_id = dynamic_write_string_id
             self._dynamic_write_string_id += 1
             self._dynamic_written_enum_string.append(enum_string_bytes)
-            buffer.write_int8(USE_CLASSNAME)
+            buffer.write_varint32(enum_string_bytes.length << 1)
             buffer.write_int64(enum_string_bytes.hashcode)
-            buffer.write_int16(enum_string_bytes.length)
             buffer.write_bytes(enum_string_bytes.data)
         else:
-            buffer.write_int8(USE_CLASS_ID)
-            buffer.write_int16(dynamic_write_string_id)
+            buffer.write_varint32(((dynamic_write_string_id + 1) << 1) | 1)
 
-    def read_enum_string_bytes(self, buffer: Buffer) -> EnumStringBytes:
-        if buffer.read_int8() != USE_CLASSNAME:
-            return self._dynamic_id_to_enum_str_list[buffer.read_int16()]
+    def read_enum_string_bytes(self, buffer: Buffer) -> MetaStringBytes:
+        header = buffer.read_varint32()
+        length = header >> 1
+        if header & 0b1 != 0:
+            return self._dynamic_id_to_enum_str_list[length - 1]
         hashcode = buffer.read_int64()
-        length = buffer.read_int16()
         reader_index = buffer.reader_index
         buffer.check_bound(reader_index, length)
         buffer.reader_index = reader_index + length
         enum_str = self._hash_to_enum_string.get(hashcode)
         if enum_str is None:
             str_bytes = buffer.get_bytes(reader_index, length)
-            enum_str = EnumStringBytes(str_bytes, hashcode=hashcode)
+            enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
             self._hash_to_enum_string[hashcode] = enum_str
         self._dynamic_id_to_enum_str_list.append(enum_str)
         return enum_str
@@ -698,6 +700,8 @@ class Fury:
         else:
             self.buffer.writer_index = 0
             buffer = self.buffer
+        if self.language == Language.XLANG:
+            buffer.write_int16(MAGIC_NUMBER)
         mask_index = buffer.writer_index
         # 1byte used for bit mask
         buffer.grow(1)
@@ -748,15 +752,15 @@ class Fury:
     def serialize_ref(self, buffer, obj, classinfo=None):
         cls = type(obj)
         if cls is str:
-            buffer.write_int24(NOT_NULL_STRING_FLAG)
+            buffer.write_int16(NOT_NULL_STRING_FLAG)
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_int24(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_int24(NOT_NULL_PYBOOL_FLAG)
+            buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
             buffer.write_bool(obj)
             return
         if self.ref_resolver.write_ref_or_null(buffer, obj):
@@ -769,15 +773,15 @@ class Fury:
     def serialize_nonref(self, buffer, obj):
         cls = type(obj)
         if cls is str:
-            buffer.write_int16(STRING_CLASS_ID)
+            buffer.write_varint32(STRING_CLASS_ID << 1)
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_int16(PYINT_CLASS_ID)
+            buffer.write_varint32(PYINT_CLASS_ID << 1)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_int16(PYBOOL_CLASS_ID)
+            buffer.write_varint32(PYBOOL_CLASS_ID << 1)
             buffer.write_bool(obj)
             return
         else:
@@ -844,6 +848,12 @@ class Fury:
             self.unpickler = Unpickler(buffer)
         if unsupported_objects is not None:
             self._unsupported_objects = iter(unsupported_objects)
+        if self.language == Language.XLANG:
+            magic_numer = buffer.read_int16()
+            assert magic_numer == MAGIC_NUMBER, (
+                f"The fury xlang serialization must start with magic number {hex(MAGIC_NUMBER)}. "
+                "Please check whether the serialization is based on the xlang protocol and the data didn't corrupt."
+            )
         reader_index = buffer.reader_index
         buffer.reader_index = reader_index + 1
         if get_bit(buffer, reader_index, 0):

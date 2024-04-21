@@ -427,7 +427,7 @@ public class FieldResolver {
         // bit `1 1 1`: class id embedding + field name > 9 byte. (64 - 3 - 7) bits of MurmurHash3
         // for field name.
         classId = (byte) ((partFieldInfo & 0b1111111111) >>> 3);
-        buffer.increaseReaderIndexUnsafe(4);
+        buffer.increaseReaderIndex(4);
       }
       ClassInfo classInfo = classResolver.getClassInfo(classId);
       if (classId >= minPrimitiveClassId && classId <= maxPrimitiveClassId) {
@@ -436,7 +436,7 @@ public class FieldResolver {
         fury.readRef(buffer, classInfo.getSerializer());
       }
     } else {
-      long encodedFieldInfo = buffer.readInt();
+      long encodedFieldInfo = buffer.readInt32();
       encodedFieldInfo = encodedFieldInfo << 32 | (partFieldInfo & 0x00000000ffffffffL);
       if ((encodedFieldInfo & 0b11) == SEPARATE_TYPES_HASH_FLAG) {
         // bit `0 0` + field name(62 bits MurmurHash3 hash) + field type + ref + n-bytes class
@@ -469,7 +469,7 @@ public class FieldResolver {
       if ((partFieldInfo & 0b11)
           == EMBED_TYPES_4_FLAG) { // class id embedding + field name <= 4 byte.
         classId = (byte) ((partFieldInfo & 0xff) >> 2);
-        buffer.increaseReaderIndexUnsafe(-4);
+        buffer.increaseReaderIndex(-4);
       } else {
         // bit `1 1 0`: class id embedding + field name <= 9 byte.
         // bit `1 1 1`: class id embedding + field name > 9 byte. (64 - 3 - 7) bits of MurmurHash3
@@ -527,7 +527,7 @@ public class FieldResolver {
       if (skipDataBy8(buffer, partFieldInfo) != partFieldInfo) {
         return;
       }
-      partFieldInfo = buffer.readLong();
+      partFieldInfo = buffer.readInt64();
     }
     if (partFieldInfo != endTag) {
       throw new IllegalStateException(

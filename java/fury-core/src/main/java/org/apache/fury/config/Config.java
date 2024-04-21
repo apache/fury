@@ -152,8 +152,8 @@ public class Config implements Serializable {
   }
 
   /**
-   * Whether suppress class registration warnings when class registration is disabled. The warnings
-   * can be used for security audit, but may be annoying.
+   * Whether suppress class registration warnings. The warnings can be used for security audit, but
+   * may be annoying.
    */
   public boolean suppressClassRegistrationWarnings() {
     return suppressClassRegistrationWarnings;

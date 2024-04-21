@@ -25,7 +25,7 @@ import { describe, expect, test } from '@jest/globals';
 
 describe('writer', () => {
     test('should uint8 work', () => {
-        const writer = BinaryWriter({});
+        const writer = new BinaryWriter({});
         {
             writer.uint8(10);
             var ab = writer.dump();
@@ -50,12 +50,12 @@ describe('reader', () => {
 
     test('should bufferRef work', () => {
         const bb = alloc(100);
-        bb.latin1Write("hello", 0);
+        bb.write("hello", 0, 'latin1');
         const target = new Uint8Array(5);
         bb.copy(target, 0, 0, 5);
         expect([...target]).toEqual([ 104, 101, 108, 108, 111 ])
 
-        const reader = BinaryReader({});
+        const reader = new BinaryReader({});
 
         reader.reset(bb);
         const ref = reader.bufferRef(5);

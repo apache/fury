@@ -19,6 +19,7 @@
 
 package org.apache.fury.pool;
 
+import java.util.Objects;
 import java.util.Queue;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -29,8 +30,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.fury.Fury;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 
 /** A thread-safe object pool of {@link Fury}. */
 public class ClassLoaderFuryPooled {
@@ -67,6 +68,7 @@ public class ClassLoaderFuryPooled {
       Function<ClassLoader, Fury> furyFactory,
       int minPoolSize,
       int maxPoolSize) {
+    Objects.requireNonNull(furyFactory);
     this.maxPoolSize = maxPoolSize;
     this.furyFactory = furyFactory;
     this.classLoader = classLoader;
@@ -87,10 +89,6 @@ public class ClassLoaderFuryPooled {
           furyCondition.await();
         }
         fury = idleCacheQueue.poll();
-        if (fury == null) {
-          continue;
-        }
-        break;
       }
       activeCacheNumber.incrementAndGet();
       return fury;
@@ -103,6 +101,7 @@ public class ClassLoaderFuryPooled {
   }
 
   public void returnFury(Fury fury) {
+    Objects.requireNonNull(fury);
     try {
       lock.lock();
       idleCacheQueue.add(fury);

@@ -36,9 +36,8 @@ import org.apache.fury.util.ReflectionUtils;
 
 /** GenericType for building java generics as a tree and binding with fury serializers. */
 // TODO(chaokunyang) refine generics which can be inspired by spring ResolvableType.
-@SuppressWarnings("UnstableApiUsage")
 public class GenericType {
-  static final Predicate<Type> defaultFinalPredicate =
+  private static final Predicate<Type> defaultFinalPredicate =
       type -> {
         if (type.getClass() == Class.class) {
           return ReflectionUtils.isMonomorphic(((Class<?>) type));
@@ -214,5 +213,9 @@ public class GenericType {
   @Override
   public String toString() {
     return "GenericType{" + typeToken.toString() + '}';
+  }
+
+  public static boolean isFinalByDefault(Class<?> cls) {
+    return defaultFinalPredicate.test(cls);
   }
 }

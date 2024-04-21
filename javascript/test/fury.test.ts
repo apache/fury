@@ -20,17 +20,22 @@
 import Fury, { TypeDescription, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 import { fromUint8Array } from '../packages/fury/lib/platformBuffer';
+import { MAGIC_NUMBER } from '../packages/fury/lib/type';
+
+const hight = MAGIC_NUMBER >> 8;
+const low = MAGIC_NUMBER & 0xff;
 
 describe('fury', () => {
     test('should deserialize null work', () => {
         const fury = new Fury();
-        expect(fury.deserialize(new Uint8Array([1]))).toBe(null)
+
+        expect(fury.deserialize(new Uint8Array([low, hight, 1]))).toBe(null)
     });
 
     test('should deserialize big endian work', () => {
         const fury = new Fury();
         try {
-            fury.deserialize(new Uint8Array([0]))
+            fury.deserialize(new Uint8Array([low, hight, 0]))
             throw new Error('unreachable code')
         } catch (error) {
             expect(error.message).toBe('big endian is not supported now');
@@ -40,7 +45,7 @@ describe('fury', () => {
     test('should deserialize xlang disable work', () => {
         const fury = new Fury();
         try {
-            fury.deserialize(new Uint8Array([2]))
+            fury.deserialize(new Uint8Array([low, hight, 2]))
             throw new Error('unreachable code')
         } catch (error) {
             expect(error.message).toBe('support crosslanguage mode only');
@@ -50,7 +55,7 @@ describe('fury', () => {
     test('should deserialize xlang disable work', () => {
         const fury = new Fury();
         try {
-            fury.deserialize(new Uint8Array([14]))
+            fury.deserialize(new Uint8Array([low, hight, 14]))
             throw new Error('unreachable code')
         } catch (error) {
             expect(error.message).toBe('outofband mode is not supported now');
@@ -82,7 +87,7 @@ describe('fury', () => {
             // const description5 = Type.float()
             // testDescription(description5, 123.456)
 
-            const description6 = Type.double()
+            const description6 = Type.float64()
             testDescription(description6, 123.456789)
 
             const description7 = Type.binary()

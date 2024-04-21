@@ -28,7 +28,7 @@ import org.apache.arrow.vector.VectorUnloader;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.fury.Fury;
-import org.apache.fury.io.FuryReadableByteChannel;
+import org.apache.fury.io.MemoryBufferReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.type.Type;
@@ -60,7 +60,7 @@ public class ArrowTableSerializer
     MemoryBuffer buf = fury.readBufferObject(buffer);
     List<ArrowRecordBatch> recordBatches = new ArrayList<>();
     try {
-      ReadableByteChannel channel = new FuryReadableByteChannel(buf);
+      ReadableByteChannel channel = new MemoryBufferReadableChannel(buf);
       ArrowStreamReader reader = new ArrowStreamReader(channel, allocator);
       VectorSchemaRoot root = reader.getVectorSchemaRoot();
       while (reader.loadNextBatch()) {

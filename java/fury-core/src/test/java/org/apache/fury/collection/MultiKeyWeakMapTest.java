@@ -22,8 +22,10 @@ package org.apache.fury.collection;
 import java.lang.ref.Reference;
 import java.lang.reflect.Field;
 import java.util.Set;
-import org.apache.fury.util.LoggerFactory;
-import org.slf4j.Logger;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
+import org.apache.fury.util.unsafe._JDKAccess;
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 public class MultiKeyWeakMapTest {
@@ -32,6 +34,9 @@ public class MultiKeyWeakMapTest {
   @SuppressWarnings("unchecked")
   @Test(timeOut = 60000)
   public void testMap() throws Exception {
+    if (_JDKAccess.IS_OPEN_J9) {
+      throw new SkipException("OpenJ9 unsupported");
+    }
     MultiKeyWeakMap<Object> map = new MultiKeyWeakMap<>();
     Field referencesField = MultiKeyWeakMap.class.getDeclaredField("REFERENCES");
     referencesField.setAccessible(true);

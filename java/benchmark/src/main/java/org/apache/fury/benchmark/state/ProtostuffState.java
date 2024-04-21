@@ -28,9 +28,6 @@ import org.apache.fury.benchmark.LongStringSerializationSuite;
 import org.apache.fury.benchmark.LongsSerializationSuite;
 import org.apache.fury.benchmark.StringSerializationSuite;
 import org.apache.fury.benchmark.data.Data;
-import org.apache.fury.benchmark.data.MediaContent;
-import org.apache.fury.benchmark.data.Sample;
-import org.apache.fury.benchmark.data.Struct;
 import org.apache.fury.util.Preconditions;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
@@ -95,21 +92,7 @@ public class ProtostuffState {
     @Override
     public void setup() {
       super.setup();
-
-      switch (objectType) {
-        case SAMPLE:
-          object = new Sample().populate(references);
-          break;
-        case MEDIA_CONTENT:
-          object = new MediaContent().populate(references);
-          break;
-        case STRUCT:
-          object = Struct.create(false);
-          break;
-        case STRUCT2:
-          object = Struct.create(true);
-          break;
-      }
+      object = ObjectType.createObject(objectType, references);
       schema = RuntimeSchema.getSchema(object.getClass());
       protoStuff = serialize(object, schema, buffer);
       Preconditions.checkArgument(object.equals(deserialize(schema, protoStuff)));

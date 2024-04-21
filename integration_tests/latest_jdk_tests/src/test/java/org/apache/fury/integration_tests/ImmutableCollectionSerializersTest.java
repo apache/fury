@@ -24,9 +24,14 @@ import static org.apache.fury.integration_tests.TestUtils.serDeCheck;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.apache.fury.Fury;
+import org.apache.fury.ThreadSafeFury;
+import org.apache.fury.config.Language;
 import org.apache.fury.test.bean.CollectionFields;
 import org.apache.fury.test.bean.MapFields;
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -87,5 +92,32 @@ public class ImmutableCollectionSerializersTest {
     collectionFields.map = Map.of("1", "2");
     collectionFields.map2 = Map.of("1", "2", "3", "4");
     serDeCheck(fury, collectionFields);
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class Pojo {
+    List<List<Object>> data;
+  }
+
+  @DataProvider
+  public static Object[][] refTrackingAndCodegen() {
+    return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
+  }
+
+  @Test(dataProvider = "refTrackingAndCodegen")
+  void testNestedRefTracking(boolean trackingRef, boolean codegen) {
+    Pojo pojo = new Pojo(List.of(List.of(1, 2), List.of(2, 2)));
+    ThreadSafeFury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .withCodegen(codegen)
+            .withRefTracking(trackingRef)
+            .buildThreadSafeFury();
+
+    byte[] bytes = fury.serialize(pojo);
+    Pojo deserializedPojo = (Pojo) fury.deserialize(bytes);
+    Assert.assertEquals(deserializedPojo, pojo);
   }
 }

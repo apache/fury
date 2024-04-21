@@ -76,10 +76,10 @@ public class BinaryRowWriter extends BinaryWriter {
   public void reset() {
     super.startIndex = buffer.writerIndex();
     grow(fixedSize);
-    buffer.increaseWriterIndexUnsafe(fixedSize);
+    buffer._increaseWriterIndexUnsafe(fixedSize);
     int end = startIndex + headerInBytes;
     for (int i = startIndex; i < end; i += 8) {
-      buffer.putLong(i, 0L);
+      buffer.putInt64(i, 0L);
     }
   }
 
@@ -91,36 +91,36 @@ public class BinaryRowWriter extends BinaryWriter {
   @Override
   public void write(int ordinal, byte value) {
     final int offset = getOffset(ordinal);
-    buffer.putLong(offset, 0L);
-    buffer.put(offset, value);
+    buffer.putInt64(offset, 0L);
+    buffer.putByte(offset, value);
   }
 
   @Override
   public void write(int ordinal, boolean value) {
     final int offset = getOffset(ordinal);
-    buffer.putLong(offset, 0L);
+    buffer.putInt64(offset, 0L);
     buffer.putBoolean(offset, value);
   }
 
   @Override
   public void write(int ordinal, short value) {
     final int offset = getOffset(ordinal);
-    buffer.putLong(offset, 0L);
-    buffer.putShort(offset, value);
+    buffer.putInt64(offset, 0L);
+    buffer.putInt16(offset, value);
   }
 
   @Override
   public void write(int ordinal, int value) {
     final int offset = getOffset(ordinal);
-    buffer.putLong(offset, 0L);
-    buffer.putInt(offset, value);
+    buffer.putInt64(offset, 0L);
+    buffer.putInt32(offset, value);
   }
 
   @Override
   public void write(int ordinal, float value) {
     final int offset = getOffset(ordinal);
-    buffer.putLong(offset, 0L);
-    buffer.putFloat(offset, value);
+    buffer.putInt64(offset, 0L);
+    buffer.putFloat32(offset, value);
   }
 
   @Override

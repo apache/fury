@@ -26,6 +26,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +40,7 @@ import java.util.function.ToLongFunction;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
+import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.Utils;
 import org.apache.fury.util.function.ToByteFunction;
@@ -52,7 +54,7 @@ import sun.misc.Unsafe;
 public class _JDKAccess {
   // CHECKSTYLE.ON:TypeName
   public static final int JAVA_VERSION;
-  public static final boolean OPEN_J9;
+  public static final boolean IS_OPEN_J9;
   public static final Unsafe UNSAFE;
   public static final Class<?> _INNER_UNSAFE_CLASS;
   public static final Object _INNER_UNSAFE;
@@ -63,7 +65,7 @@ public class _JDKAccess {
       property = property.substring(2);
     }
     String jmvName = System.getProperty("java.vm.name", "");
-    OPEN_J9 = jmvName.contains("OpenJ9");
+    IS_OPEN_J9 = jmvName.contains("OpenJ9");
     JAVA_VERSION = Integer.parseInt(property);
     Unsafe unsafe;
     try {
@@ -301,6 +303,41 @@ public class _JDKAccess {
     } catch (Throwable e) {
       UNSAFE.throwException(e);
       throw new IllegalStateException(e);
+    }
+  }
+
+  private static volatile Method getModuleMethod;
+
+  public static Object getModule(Class<?> cls) {
+    Preconditions.checkArgument(Platform.JAVA_VERSION >= 9);
+    if (getModuleMethod == null) {
+      try {
+        getModuleMethod = Class.class.getDeclaredMethod("getModule");
+      } catch (NoSuchMethodException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    try {
+      return getModuleMethod.invoke(cls);
+    } catch (IllegalAccessException | InvocationTargetException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  // caller sensitive, must use MethodHandle to walk around the check.
+  private static volatile MethodHandle addReadsHandle;
+
+  public static Object addReads(Object thisModule, Object otherModule) {
+    Preconditions.checkArgument(Platform.JAVA_VERSION >= 9);
+    try {
+      if (addReadsHandle == null) {
+        Class<?> cls = Class.forName("java.lang.Module");
+        MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(cls);
+        addReadsHandle = lookup.findVirtual(cls, "addReads", MethodType.methodType(cls, cls));
+      }
+      return addReadsHandle.invoke(thisModule, otherModule);
+    } catch (Throwable e) {
+      throw new RuntimeException(e);
     }
   }
 }

@@ -17,44 +17,45 @@
  * under the License.
  */
 
-import type { BinaryWriter } from "./writer";
-import type { BinaryReader } from "./reader";
 import { Meta } from "./meta";
 
-export type BinaryWriter = ReturnType<typeof BinaryWriter>;
-export type BinaryReader = ReturnType<typeof BinaryReader>;
-
 export enum InternalSerializerType {
-  STRING = 13,
-  ARRAY = 25,
-  TUPLE = 25.1,
-  MAP = 30,
-  BOOL = 1,
-  UINT8 = 2,
-  INT8 = 3,
-  UINT16 = 4,
-  INT16 = 5,
-  UINT32 = 6,
-  INT32 = 7,
-  UINT64 = 8,
-  INT64 = 9,
-  FLOAT = 11,
-  DOUBLE = 12,
-  BINARY = 14,
-  DATE = 16,
-  TIMESTAMP = 18,
-  ENUM = 19, // The cross-language enum has not yet been determined, this is not the final value, it will change later
-  FURY_TYPE_TAG = 256,
-  FURY_SET = 257,
-  FURY_PRIMITIVE_BOOL_ARRAY = 258,
-  FURY_PRIMITIVE_SHORT_ARRAY = 259,
-  FURY_PRIMITIVE_INT_ARRAY = 260,
-  FURY_PRIMITIVE_LONG_ARRAY = 261,
-  FURY_PRIMITIVE_FLOAT_ARRAY = 262,
-  FURY_PRIMITIVE_DOUBLE_ARRAY = 263,
-  FURY_STRING_ARRAY = 264,
-  ANY = -1,
-  ONEOF = -2,
+  // primitive type
+  BOOL,
+  INT8,
+  INT16,
+  INT32,
+  VAR_INT32,
+  INT64,
+  VAR_INT64,
+  SLI_INT64,
+  FLOAT16,
+  FLOAT32,
+  FLOAT64,
+  STRING,
+  ENUM,
+  LIST,
+  SET,
+  MAP,
+  DURATION,
+  TIMESTAMP,
+  DECIMAL,
+  BINARY,
+  ARRAY,
+  BOOL_ARRAY,
+  INT8_ARRAY,
+  INT16_ARRAY,
+  INT32_ARRAY,
+  INT64_ARRAY,
+  FLOAT16_ARRAY,
+  FLOAT32_ARRAY,
+  FLOAT64_ARRAY,
+  OBJECT,
+
+  // alias type, only use by javascript
+  ANY,
+  ONEOF,
+  TUPLE,
 }
 
 export enum ConfigFlags {
@@ -115,3 +116,5 @@ export enum Language {
   CPP = 3,
   GO = 4,
 }
+
+export const MAGIC_NUMBER = 0x62D4;

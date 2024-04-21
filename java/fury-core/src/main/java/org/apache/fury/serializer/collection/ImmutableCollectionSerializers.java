@@ -109,7 +109,7 @@ public class ImmutableCollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       if (Platform.JAVA_VERSION > 8) {
         return new CollectionContainer<>(numElements);
@@ -130,7 +130,6 @@ public class ImmutableCollectionSerializers {
       } else {
         collection = Collections.unmodifiableList((List) collection);
       }
-      fury.getRefResolver().reference(collection);
       return collection;
     }
   }
@@ -142,7 +141,7 @@ public class ImmutableCollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       if (Platform.JAVA_VERSION > 8) {
         return new CollectionContainer<>(numElements);
@@ -163,7 +162,6 @@ public class ImmutableCollectionSerializers {
       } else {
         collection = Collections.unmodifiableSet((HashSet) collection);
       }
-      fury.getRefResolver().reference(collection);
       return collection;
     }
   }
@@ -175,7 +173,7 @@ public class ImmutableCollectionSerializers {
 
     @Override
     public Map newMap(MemoryBuffer buffer) {
-      int numElements = buffer.readPositiveVarInt();
+      int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       if (Platform.JAVA_VERSION > 8) {
         return new JDKImmutableMapContainer(numElements);
@@ -200,7 +198,6 @@ public class ImmutableCollectionSerializers {
       } else {
         map = Collections.unmodifiableMap(map);
       }
-      fury.getRefResolver().reference(map);
       return map;
     }
   }

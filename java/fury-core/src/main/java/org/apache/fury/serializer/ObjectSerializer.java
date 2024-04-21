@@ -200,7 +200,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     RefResolver refResolver = this.refResolver;
     ClassResolver classResolver = this.classResolver;
     if (fury.checkClassVersion()) {
-      buffer.writeInt(classVersionHash);
+      buffer.writeInt32(classVersionHash);
     }
     // write order: primitive,boxed,final,other,collection,map
     writeFinalFields(buffer, value, fury, refResolver, classResolver);
@@ -321,7 +321,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     RefResolver refResolver = this.refResolver;
     ClassResolver classResolver = this.classResolver;
     if (fury.checkClassVersion()) {
-      int hash = buffer.readInt();
+      int hash = buffer.readInt32();
       checkClassVersion(fury, hash, classVersionHash);
     }
     Object[] fieldValues =
@@ -360,7 +360,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     RefResolver refResolver = this.refResolver;
     ClassResolver classResolver = this.classResolver;
     if (fury.checkClassVersion()) {
-      int hash = buffer.readInt();
+      int hash = buffer.readInt32();
       checkClassVersion(fury, hash, classVersionHash);
     }
     // read order: primitive,boxed,final,other,collection,map
@@ -488,29 +488,29 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         buffer.writeChar((Character) fieldAccessor.get(targetObject));
         return false;
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
-        buffer.writeShort((Short) fieldAccessor.get(targetObject));
+        buffer.writeInt16((Short) fieldAccessor.get(targetObject));
         return false;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         {
           int fieldValue = (Integer) fieldAccessor.get(targetObject);
           if (fury.compressInt()) {
-            buffer.writeVarInt(fieldValue);
+            buffer.writeVarInt32(fieldValue);
           } else {
-            buffer.writeInt(fieldValue);
+            buffer.writeInt32(fieldValue);
           }
           return false;
         }
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-        buffer.writeFloat((Float) fieldAccessor.get(targetObject));
+        buffer.writeFloat32((Float) fieldAccessor.get(targetObject));
         return false;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
         {
           long fieldValue = (long) fieldAccessor.get(targetObject);
-          fury.writeLong(buffer, fieldValue);
+          fury.writeInt64(buffer, fieldValue);
           return false;
         }
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-        buffer.writeDouble((Double) fieldAccessor.get(targetObject));
+        buffer.writeFloat64((Double) fieldAccessor.get(targetObject));
         return false;
       default:
         return true;
@@ -530,29 +530,29 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         buffer.writeChar(Platform.getChar(targetObject, fieldOffset));
         return false;
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
-        buffer.writeShort(Platform.getShort(targetObject, fieldOffset));
+        buffer.writeInt16(Platform.getShort(targetObject, fieldOffset));
         return false;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         {
           int fieldValue = Platform.getInt(targetObject, fieldOffset);
           if (fury.compressInt()) {
-            buffer.writeVarInt(fieldValue);
+            buffer.writeVarInt32(fieldValue);
           } else {
-            buffer.writeInt(fieldValue);
+            buffer.writeInt32(fieldValue);
           }
           return false;
         }
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-        buffer.writeFloat(Platform.getFloat(targetObject, fieldOffset));
+        buffer.writeFloat32(Platform.getFloat(targetObject, fieldOffset));
         return false;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
         {
           long fieldValue = Platform.getLong(targetObject, fieldOffset);
-          fury.writeLong(buffer, fieldValue);
+          fury.writeInt64(buffer, fieldValue);
           return false;
         }
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-        buffer.writeDouble(Platform.getDouble(targetObject, fieldOffset));
+        buffer.writeFloat64(Platform.getDouble(targetObject, fieldOffset));
         return false;
       default:
         return true;
@@ -610,7 +610,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            buffer.writeShort((Short) (fieldValue));
+            buffer.writeInt16((Short) (fieldValue));
           }
           return false;
         }
@@ -621,9 +621,9 @@ public final class ObjectSerializer<T> extends Serializer<T> {
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
             if (fury.compressInt()) {
-              buffer.writeVarInt((Integer) (fieldValue));
+              buffer.writeVarInt32((Integer) (fieldValue));
             } else {
-              buffer.writeInt((Integer) (fieldValue));
+              buffer.writeInt32((Integer) (fieldValue));
             }
           }
           return false;
@@ -634,7 +634,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            buffer.writeFloat((Float) (fieldValue));
+            buffer.writeFloat32((Float) (fieldValue));
           }
           return false;
         }
@@ -644,7 +644,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            fury.writeLong(buffer, (Long) fieldValue);
+            fury.writeInt64(buffer, (Long) fieldValue);
           }
           return false;
         }
@@ -654,7 +654,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            buffer.writeDouble((Double) (fieldValue));
+            buffer.writeFloat64((Double) (fieldValue));
           }
           return false;
         }
@@ -690,23 +690,23 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         fieldAccessor.set(targetObject, buffer.readChar());
         return false;
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
-        fieldAccessor.set(targetObject, buffer.readShort());
+        fieldAccessor.set(targetObject, buffer.readInt16());
         return false;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          fieldAccessor.set(targetObject, buffer.readVarInt());
+          fieldAccessor.set(targetObject, buffer.readVarInt32());
         } else {
-          fieldAccessor.set(targetObject, buffer.readInt());
+          fieldAccessor.set(targetObject, buffer.readInt32());
         }
         return false;
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-        fieldAccessor.set(targetObject, buffer.readFloat());
+        fieldAccessor.set(targetObject, buffer.readFloat32());
         return false;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        fieldAccessor.set(targetObject, fury.readLong(buffer));
+        fieldAccessor.set(targetObject, fury.readInt64(buffer));
         return false;
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-        fieldAccessor.set(targetObject, buffer.readDouble());
+        fieldAccessor.set(targetObject, buffer.readFloat64());
         return false;
       case ClassResolver.STRING_CLASS_ID:
         fieldAccessor.putObject(targetObject, fury.readJavaStringRef(buffer));
@@ -731,23 +731,23 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         Platform.putChar(targetObject, fieldOffset, buffer.readChar());
         return false;
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
-        Platform.putShort(targetObject, fieldOffset, buffer.readShort());
+        Platform.putShort(targetObject, fieldOffset, buffer.readInt16());
         return false;
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
         if (fury.compressInt()) {
-          Platform.putInt(targetObject, fieldOffset, buffer.readVarInt());
+          Platform.putInt(targetObject, fieldOffset, buffer.readVarInt32());
         } else {
-          Platform.putInt(targetObject, fieldOffset, buffer.readInt());
+          Platform.putInt(targetObject, fieldOffset, buffer.readInt32());
         }
         return false;
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-        Platform.putFloat(targetObject, fieldOffset, buffer.readFloat());
+        Platform.putFloat(targetObject, fieldOffset, buffer.readFloat32());
         return false;
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        Platform.putLong(targetObject, fieldOffset, fury.readLong(buffer));
+        Platform.putLong(targetObject, fieldOffset, fury.readInt64(buffer));
         return false;
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-        Platform.putDouble(targetObject, fieldOffset, buffer.readDouble());
+        Platform.putDouble(targetObject, fieldOffset, buffer.readFloat64());
         return false;
       case ClassResolver.STRING_CLASS_ID:
         Platform.putObject(targetObject, fieldOffset, fury.readJavaStringRef(buffer));
@@ -805,7 +805,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
           if (buffer.readByte() == Fury.NULL_FLAG) {
             fieldAccessor.putObject(targetObject, null);
           } else {
-            fieldAccessor.putObject(targetObject, buffer.readShort());
+            fieldAccessor.putObject(targetObject, buffer.readInt16());
           }
           return false;
         }
@@ -815,9 +815,9 @@ public final class ObjectSerializer<T> extends Serializer<T> {
             fieldAccessor.putObject(targetObject, null);
           } else {
             if (fury.compressInt()) {
-              fieldAccessor.putObject(targetObject, buffer.readVarInt());
+              fieldAccessor.putObject(targetObject, buffer.readVarInt32());
             } else {
-              fieldAccessor.putObject(targetObject, buffer.readInt());
+              fieldAccessor.putObject(targetObject, buffer.readInt32());
             }
           }
           return false;
@@ -827,7 +827,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
           if (buffer.readByte() == Fury.NULL_FLAG) {
             fieldAccessor.putObject(targetObject, null);
           } else {
-            fieldAccessor.putObject(targetObject, buffer.readFloat());
+            fieldAccessor.putObject(targetObject, buffer.readFloat32());
           }
           return false;
         }
@@ -836,7 +836,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
           if (buffer.readByte() == Fury.NULL_FLAG) {
             fieldAccessor.putObject(targetObject, null);
           } else {
-            fieldAccessor.putObject(targetObject, fury.readLong(buffer));
+            fieldAccessor.putObject(targetObject, fury.readInt64(buffer));
           }
           return false;
         }
@@ -845,7 +845,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
           if (buffer.readByte() == Fury.NULL_FLAG) {
             fieldAccessor.putObject(targetObject, null);
           } else {
-            fieldAccessor.putObject(targetObject, buffer.readDouble());
+            fieldAccessor.putObject(targetObject, buffer.readFloat64());
           }
           return false;
         }

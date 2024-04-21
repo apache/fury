@@ -35,7 +35,6 @@ import "./tuple";
 import "./typedArray";
 import Fury from "../fury";
 import "./enum";
-import "./oneof";
 
 export { AnySerializer } from "./any";
 
@@ -61,7 +60,7 @@ export const generate = (fury: Fury, description: TypeDescription) => {
 };
 
 function regDependencies(fury: Fury, description: TypeDescription) {
-  if (description.type === InternalSerializerType.FURY_TYPE_TAG) {
+  if (description.type === InternalSerializerType.OBJECT) {
     const options = (<ObjectTypeDescription>description).options;
     if (options.props) {
       fury.classResolver.registerSerializerByTag(options.tag);
@@ -75,7 +74,7 @@ function regDependencies(fury: Fury, description: TypeDescription) {
   if (description.type === InternalSerializerType.ARRAY) {
     regDependencies(fury, (<ArrayTypeDescription>description).options.inner);
   }
-  if (description.type === InternalSerializerType.FURY_SET) {
+  if (description.type === InternalSerializerType.SET) {
     regDependencies(fury, (<SetTypeDescription>description).options.key);
   }
   if (description.type === InternalSerializerType.MAP) {
@@ -99,7 +98,7 @@ function regDependencies(fury: Fury, description: TypeDescription) {
 
 export const generateSerializer = (fury: Fury, description: TypeDescription) => {
   regDependencies(fury, description);
-  if (description.type === InternalSerializerType.FURY_TYPE_TAG) {
+  if (description.type === InternalSerializerType.OBJECT) {
     return fury.classResolver.getSerializerByTag((<ObjectTypeDescription>description).options.tag);
   }
   const func = generate(fury, description);

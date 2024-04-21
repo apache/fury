@@ -1,7 +1,7 @@
 {
   "name": "@furyjs/fury",
-  "version": "0.5.6-beta",
-  "description": "A blazing fast multi-language serialization framework powered by jit and zero-copy",
+  "version": "0.5.9-beta",
+  "description": "Apache Fury™(incubating) is a blazingly fast multi-language serialization framework powered by jit and zero-copy",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -10,14 +10,14 @@
   "files": [
     "dist"
   ],
-  "license": "Apache",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@types/node": "^18.7.21",
     "@typescript-eslint/eslint-plugin": "^5.40.0",
     "@typescript-eslint/parser": "^5.40.0",
     "benchmark": "^2.1.4",
     "eslint": "^8.25.0",
-    "protobufjs": "^7.2.4"  
+    "protobufjs": "^7.2.4"
   },
   "dependencies": {
     "node-gyp": "^9.4.0",

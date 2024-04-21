@@ -249,7 +249,7 @@ func (b *ByteBuffer) PutInt32(index int, value int32) {
 	binary.LittleEndian.PutUint32(b.data[index:], uint32(value))
 }
 
-// WriteVarInt32 WritePositiveVarInt writes a 1-5 byte int, returns the number of bytes written.
+// WriteVarInt32 WriteVarUint writes a 1-5 byte int, returns the number of bytes written.
 func (b *ByteBuffer) WriteVarInt32(value int32) int8 {
 	if value>>7 == 0 {
 		b.grow(1)

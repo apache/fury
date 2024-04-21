@@ -21,16 +21,16 @@ import ClassResolver from "./classResolver";
 import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
-import { ConfigFlags, Serializer, Config, Language, BinaryReader as BinaryReaderType, BinaryWriter as BinaryWriterType } from "./type";
+import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER } from "./type";
 import { OwnershipError } from "./error";
 import { InputType, ResultType, TypeDescription } from "./description";
 import { generateSerializer, AnySerializer } from "./gen";
 
 export default class {
-  binaryReader: BinaryReaderType;
-  binaryWriter: BinaryWriterType;
+  binaryReader: BinaryReader;
+  binaryWriter: BinaryWriter;
   classResolver = new ClassResolver();
-  referenceResolver: ReturnType<typeof ReferenceResolver>;
+  referenceResolver: ReferenceResolver;
   anySerializer: AnySerializer;
 
   constructor(public config: Config = {
@@ -39,9 +39,9 @@ export default class {
     hooks: {
     },
   }) {
-    this.binaryReader = BinaryReader(config);
-    this.binaryWriter = BinaryWriter(config);
-    this.referenceResolver = ReferenceResolver(config, this.binaryWriter, this.binaryReader);
+    this.binaryReader = new BinaryReader(config);
+    this.binaryWriter = new BinaryWriter(config);
+    this.referenceResolver = new ReferenceResolver(this.binaryReader);
     this.classResolver.init(this);
     this.anySerializer = new AnySerializer(this);
   }
@@ -66,6 +66,9 @@ export default class {
     this.referenceResolver.reset();
     this.classResolver.reset();
     this.binaryReader.reset(bytes);
+    if (this.binaryReader.int16() !== MAGIC_NUMBER) {
+      throw new Error("the fury xlang serialization must start with magic number 0x%x. Please check whether the serialization is based on the xlang protocol and the data didn't corrupt");
+    }
     const bitmap = this.binaryReader.uint8();
     if ((bitmap & ConfigFlags.isNullFlag) === ConfigFlags.isNullFlag) {
       return null;
@@ -78,11 +81,12 @@ export default class {
     if (!isCrossLanguage) {
       throw new Error("support crosslanguage mode only");
     }
-    this.binaryReader.uint8(); // skip language
     const isOutOfBandEnabled = (bitmap & ConfigFlags.isOutOfBandFlag) === ConfigFlags.isOutOfBandFlag;
     if (isOutOfBandEnabled) {
       throw new Error("outofband mode is not supported now");
     }
+
+    this.binaryReader.uint8(); // skip language
     this.binaryReader.int32(); // native object offset. should skip.  javascript support cross mode only
     this.binaryReader.int32(); // native object size. should skip.
     return serializer.read();
@@ -105,6 +109,7 @@ export default class {
     }
     bitmap |= ConfigFlags.isLittleEndianFlag;
     bitmap |= ConfigFlags.isCrossLanguageFlag;
+    this.binaryWriter.int16(MAGIC_NUMBER);
     this.binaryWriter.uint8(bitmap);
     this.binaryWriter.uint8(Language.XLANG);
     const cursor = this.binaryWriter.getCursor();

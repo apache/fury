@@ -38,30 +38,30 @@ TEST(Buffer, ToString) {
   EXPECT_EQ(buffer->Get<float>(0), f);
 }
 
-void checkPositiveVarInt(int32_t startOffset, std::shared_ptr<Buffer> buffer,
-                         int32_t value, uint32_t bytesWritten) {
-  uint32_t actualBytesWritten = buffer->PutPositiveVarInt32(startOffset, value);
+void checkVarUint32(int32_t startOffset, std::shared_ptr<Buffer> buffer,
+                    int32_t value, uint32_t bytesWritten) {
+  uint32_t actualBytesWritten = buffer->PutVarUint32(startOffset, value);
   EXPECT_EQ(actualBytesWritten, bytesWritten);
   uint32_t readBytesLength;
-  int32_t varInt = buffer->GetPositiveVarInt32(startOffset, &readBytesLength);
+  int32_t varInt = buffer->GetVarUint32(startOffset, &readBytesLength);
   EXPECT_EQ(value, varInt);
   EXPECT_EQ(readBytesLength, bytesWritten);
 }
 
-TEST(Buffer, TestPositiveVarInt) {
+TEST(Buffer, TestVarUint) {
   std::shared_ptr<Buffer> buffer;
   AllocateBuffer(64, &buffer);
   for (int i = 0; i < 32; ++i) {
-    checkPositiveVarInt(i, buffer, 1, 1);
-    checkPositiveVarInt(i, buffer, 1 << 6, 1);
-    checkPositiveVarInt(i, buffer, 1 << 7, 2);
-    checkPositiveVarInt(i, buffer, 1 << 13, 2);
-    checkPositiveVarInt(i, buffer, 1 << 14, 3);
-    checkPositiveVarInt(i, buffer, 1 << 20, 3);
-    checkPositiveVarInt(i, buffer, 1 << 21, 4);
-    checkPositiveVarInt(i, buffer, 1 << 27, 4);
-    checkPositiveVarInt(i, buffer, 1 << 28, 5);
-    checkPositiveVarInt(i, buffer, 1 << 30, 5);
+    checkVarUint32(i, buffer, 1, 1);
+    checkVarUint32(i, buffer, 1 << 6, 1);
+    checkVarUint32(i, buffer, 1 << 7, 2);
+    checkVarUint32(i, buffer, 1 << 13, 2);
+    checkVarUint32(i, buffer, 1 << 14, 3);
+    checkVarUint32(i, buffer, 1 << 20, 3);
+    checkVarUint32(i, buffer, 1 << 21, 4);
+    checkVarUint32(i, buffer, 1 << 27, 4);
+    checkVarUint32(i, buffer, 1 << 28, 5);
+    checkVarUint32(i, buffer, 1 << 30, 5);
   }
 }
 

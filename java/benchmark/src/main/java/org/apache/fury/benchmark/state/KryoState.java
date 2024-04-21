@@ -22,9 +22,9 @@ package org.apache.fury.benchmark.state;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.io.UnsafeMemoryInput;
-import com.esotericsoftware.kryo.io.UnsafeMemoryOutput;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
+import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferInput;
+import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferOutput;
 import java.util.ArrayList;
 import org.apache.fury.benchmark.IntsSerializationSuite;
 import org.apache.fury.benchmark.LongStringSerializationSuite;
@@ -34,6 +34,8 @@ import org.apache.fury.benchmark.data.Data;
 import org.apache.fury.benchmark.data.Image;
 import org.apache.fury.benchmark.data.Media;
 import org.apache.fury.benchmark.data.MediaContent;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.util.Preconditions;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
@@ -44,8 +46,6 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Warmup(iterations = 3)
 @Measurement(iterations = 3)
@@ -76,8 +76,8 @@ public class KryoState {
           input = new Input(output.getBuffer());
           break;
         case directBuffer:
-          output = new UnsafeMemoryOutput(1024 * 512);
-          input = new UnsafeMemoryInput(((UnsafeMemoryOutput) output).getByteBuffer());
+          output = new UnsafeByteBufferOutput(1024 * 512);
+          input = new UnsafeByteBufferInput(((UnsafeByteBufferOutput) output).getByteBuffer());
           break;
       }
 

@@ -61,7 +61,9 @@ public class ForwardSerializerTest {
               @Override
               protected Kryo newSerializer() {
                 // We can register custom serializers here.
-                return new Kryo();
+                Kryo kryo = new Kryo();
+                kryo.setRegistrationRequired(false);
+                return kryo;
               }
 
               @Override
@@ -72,7 +74,7 @@ public class ForwardSerializerTest {
               @Override
               protected byte[] serialize(Kryo serializer, Object obj) {
                 Output output = outputLocal.get();
-                output.clear();
+                output.reset();
                 serializer.writeClassAndObject(output, obj);
                 return output.toBytes();
               }

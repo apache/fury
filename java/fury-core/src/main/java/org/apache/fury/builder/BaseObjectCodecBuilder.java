@@ -25,6 +25,7 @@ import static org.apache.fury.codegen.Expression.Reference.fieldRef;
 import static org.apache.fury.codegen.ExpressionOptimizer.invokeGenerated;
 import static org.apache.fury.codegen.ExpressionUtils.eq;
 import static org.apache.fury.codegen.ExpressionUtils.gt;
+import static org.apache.fury.codegen.ExpressionUtils.inline;
 import static org.apache.fury.codegen.ExpressionUtils.neq;
 import static org.apache.fury.codegen.ExpressionUtils.not;
 import static org.apache.fury.codegen.ExpressionUtils.nullValue;
@@ -33,14 +34,12 @@ import static org.apache.fury.collection.Collections.ofHashSet;
 import static org.apache.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
 import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.COLLECTION_TYPE;
+import static org.apache.fury.type.TypeUtils.LIST_TYPE;
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_BOOLEAN_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_BYTE_TYPE;
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_DOUBLE_TYPE;
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_FLOAT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static org.apache.fury.type.TypeUtils.SET_TYPE;
 import static org.apache.fury.type.TypeUtils.getElementType;
@@ -96,6 +95,7 @@ import org.apache.fury.serializer.collection.AbstractMapSerializer;
 import org.apache.fury.serializer.collection.CollectionFlags;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
+import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
@@ -277,8 +277,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    * @see CodeGenerator#getClassUniqueId
    */
   protected void addCommonImports() {
-    ctx.addImports(List.class, Map.class, Set.class);
-    ctx.addImports(Fury.class, MemoryBuffer.class, fury.getRefResolver().getClass());
+    ctx.addImports(
+        Fury.class, MemoryBuffer.class, fury.getRefResolver().getClass(), Platform.class);
     ctx.addImports(ClassInfo.class, ClassInfoHolder.class, ClassResolver.class);
     ctx.addImport(Generated.class);
     ctx.addImports(LazyInitBeanSerializer.class, Serializers.EnumSerializer.class);
@@ -370,16 +370,16 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (clz == char.class || clz == Character.class) {
         return new Invoke(buffer, "writeChar", inputObject);
       } else if (clz == short.class || clz == Short.class) {
-        return new Invoke(buffer, "writeShort", inputObject);
+        return new Invoke(buffer, "writeInt16", inputObject);
       } else if (clz == int.class || clz == Integer.class) {
-        String func = fury.compressInt() ? "writeVarInt" : "writeInt";
+        String func = fury.compressInt() ? "writeVarInt32" : "writeInt32";
         return new Invoke(buffer, func, inputObject);
       } else if (clz == long.class || clz == Long.class) {
-        return LongSerializer.writeLong(buffer, inputObject, fury.longEncoding(), true);
+        return LongSerializer.writeInt64(buffer, inputObject, fury.longEncoding(), true);
       } else if (clz == float.class || clz == Float.class) {
-        return new Invoke(buffer, "writeFloat", inputObject);
+        return new Invoke(buffer, "writeFloat32", inputObject);
       } else if (clz == double.class || clz == Double.class) {
-        return new Invoke(buffer, "writeDouble", inputObject);
+        return new Invoke(buffer, "writeFloat64", inputObject);
       } else {
         throw new IllegalStateException("impossible");
       }
@@ -712,7 +712,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             TypeUtils.collectionOf(elementType),
             buffer,
             collection);
-    collection = onCollectionWrite;
+    boolean isList = List.class.isAssignableFrom(getRawType(collection.type()));
+    collection =
+        isList ? new Cast(onCollectionWrite.inline(), LIST_TYPE, "list") : onCollectionWrite;
     Expression size = new Invoke(collection, "size", PRIMITIVE_INT_TYPE);
     walkPath.add(elementType.toString());
     ListExpression builder = new ListExpression();
@@ -740,8 +742,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       builder.add(sameElementClass);
       //  if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE)
       Literal notDeclTypeFlag = Literal.ofInt(CollectionFlags.NOT_DECL_ELEMENT_TYPE);
-      Expression isDeclType =
-          neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
+      Expression isDeclType = neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag);
       Expression elemSerializer; // make it in scope of `if(sameElementClass)`
       boolean maybeDecl = visitFury(f -> f.getClassResolver().isSerializable(elemClass));
       TypeToken<?> serializerType = getSerializerType(elementType);
@@ -1131,18 +1132,17 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (cls == boolean.class || cls == Boolean.class) {
         return new Invoke(buffer, "readBoolean", PRIMITIVE_BOOLEAN_TYPE);
       } else if (cls == char.class || cls == Character.class) {
-        return new Invoke(buffer, "readChar", TypeToken.of(char.class));
+        return readChar(buffer);
       } else if (cls == short.class || cls == Short.class) {
-        return new Invoke(buffer, "readShort", PRIMITIVE_SHORT_TYPE);
+        return readInt16(buffer);
       } else if (cls == int.class || cls == Integer.class) {
-        String func = fury.compressInt() ? "readVarInt" : "readInt";
-        return new Invoke(buffer, func, PRIMITIVE_INT_TYPE);
+        return fury.compressInt() ? readVarInt32(buffer) : readInt32(buffer);
       } else if (cls == long.class || cls == Long.class) {
-        return LongSerializer.readLong(buffer, fury.longEncoding());
+        return LongSerializer.readInt64(buffer, fury.longEncoding());
       } else if (cls == float.class || cls == Float.class) {
-        return new Invoke(buffer, "readFloat", PRIMITIVE_FLOAT_TYPE);
+        return readFloat32(buffer);
       } else if (cls == double.class || cls == Double.class) {
-        return new Invoke(buffer, "readDouble", PRIMITIVE_DOUBLE_TYPE);
+        return readFloat64(buffer);
       } else {
         throw new IllegalStateException("impossible");
       }
@@ -1244,7 +1244,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         builder.add(readContainerElements(elementType, true, null, null, buffer, collection, size));
       } else {
         Literal hasNullFlag = Literal.ofInt(CollectionFlags.HAS_NULL);
-        Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
+        Expression hasNull = eq(new BitAnd(flags.inline(), hasNullFlag), hasNullFlag, "hasNull");
         builder.add(
             hasNull,
             readContainerElements(elementType, false, null, hasNull, buffer, collection, size));
@@ -1255,8 +1255,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           neq(new BitAnd(flags, notSameTypeFlag), notSameTypeFlag, "sameElementClass");
       //  if ((flags & Flags.NOT_DECL_ELEMENT_TYPE) == Flags.NOT_DECL_ELEMENT_TYPE)
       Literal notDeclTypeFlag = Literal.ofInt(CollectionFlags.NOT_DECL_ELEMENT_TYPE);
-      Expression isDeclType =
-          neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag, "isDeclType");
+      Expression isDeclType = neq(new BitAnd(flags, notDeclTypeFlag), notDeclTypeFlag);
       Invoke serializer =
           inlineInvoke(readClassInfo(elemClass, buffer), "getSerializer", SERIALIZER_TYPE);
       TypeToken<?> serializerType = getSerializerType(elementType);
@@ -1355,7 +1354,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                 trackingRef,
                 exprHolder.get("hasNull"),
                 exprHolder.get("serializer"),
-                v -> new Invoke(exprHolder.get("collection"), "add", v)));
+                v -> new Invoke(exprHolder.get("collection"), "add", inline(v))));
   }
 
   private Expression readContainerElement(

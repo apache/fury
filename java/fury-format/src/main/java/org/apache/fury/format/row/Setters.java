@@ -31,15 +31,15 @@ public interface Setters {
 
   void setByte(int ordinal, byte value);
 
-  void setShort(int ordinal, short value);
+  void setInt16(int ordinal, short value);
 
-  void setInt(int ordinal, int value);
+  void setInt32(int ordinal, int value);
 
-  void setLong(int ordinal, long value);
+  void setInt64(int ordinal, long value);
 
-  void setFloat(int ordinal, float value);
+  void setFloat32(int ordinal, float value);
 
-  void setDouble(int ordinal, double value);
+  void setFloat64(int ordinal, double value);
 
   void setDate(int ordinal, int value);
 

@@ -22,6 +22,7 @@ package org.apache.fury.format.encoder;
 import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
+import com.google.common.reflect.TypeToken;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CodeGenerator;
@@ -31,11 +32,10 @@ import org.apache.fury.codegen.ExpressionUtils;
 import org.apache.fury.format.row.binary.BinaryArray;
 import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.type.TypeInference;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.LoggerFactory;
 import org.apache.fury.util.StringUtils;
-import org.slf4j.Logger;
 
 /** Expression builder for building jit array encoder class. */
 public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
@@ -106,7 +106,7 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
     long startTime = System.nanoTime();
     String code = ctx.genCode();
     long durationMs = (System.nanoTime() - startTime) / 1000_000;
-    LOG.debug("Generate array codec for class {} take {} us", beanClass, durationMs);
+    LOG.info("Generate array codec for class {} take {} us", beanClass, durationMs);
     return code;
   }
 

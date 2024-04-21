@@ -73,46 +73,19 @@ rename_mac_wheels() {
 }
 
 bump_version() {
-  version=$1
-  bump_java_version "$version"
-  bump_py_version "$version"
-  bump_javascript_version "$version"
+  python "$ROOT/ci/release.py" bump_version -l all -version "$1"
 }
 
 bump_java_version() {
-  version=$1
-  cd "$ROOT/java"
-  echo "Set fury java version to $version"
-  mvn versions:set -DnewVersion="$version"
-  cd "$ROOT/java/benchmark"
-  mvn versions:set -DnewVersion="$version"
-  echo "Set fury integration_tests version to $version"
-  cd "$ROOT/integration_tests/jdk_compatibility_tests"
-  mvn versions:set -DnewVersion="$version"
-  cd "$ROOT/integration_tests/latest_jdk_tests"
-  mvn versions:set -DnewVersion="$version"
+  python "$ROOT/ci/release.py" bump_version -l java -version "$1"
 }
 
 bump_py_version() {
-  version=$1
-  echo "Set fury python version to $version"
-  cd "$ROOT/python/pyfury"
-  pyversion=${version/-alpha./.a}  # version will override
-  pyversion=${pyversion/-beta./.b}
-  echo "Bump fury python version to $pyversion"
-  sed -i -E "s/__version__ = .*/__version__ = \"$pyversion\"/" __init__.py
+  python "$ROOT/ci/release.py" bump_version -l python -version "$1"
 }
 
 bump_javascript_version() {
-  version=$1
-  cd "$ROOT/javascript"
-  echo "Set fury javascript version to $version"
-  pushd packages/fury
-  sed -i -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
-  popd
-  pushd packages/hps
-  sed -i -E "s/\"version\": .*,/\"version\": \"$version\",/" package.json
-  popd
+  python "$ROOT/ci/release.py" bump_version -l javascript -version "$1"
 }
 
 deploy_jars() {

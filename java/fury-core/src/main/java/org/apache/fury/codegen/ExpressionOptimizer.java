@@ -113,7 +113,8 @@ public class ExpressionOptimizer {
             });
     // copy variable names so that to avoid new variable name conflict with generated class
     // instance field name.
-    CodegenContext codegenContext = new CodegenContext(ctx.getValNames(), ctx.getImports());
+    CodegenContext codegenContext =
+        new CodegenContext(ctx.getPackage(), ctx.getValNames(), ctx.getImports());
     for (Reference reference : cutExprMap.values()) {
       Preconditions.checkArgument(codegenContext.containName(reference.name()));
     }

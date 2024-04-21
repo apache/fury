@@ -118,6 +118,15 @@ _pkg_files = [
 ]
 
 
+long_description = io.open(
+    os.path.join(setup_dir, os.path.pardir, "README.md"), "r", encoding="utf-8"
+).read()
+disclaimer = io.open(
+    os.path.join(setup_dir, os.path.pardir, "DISCLAIMER"), "r", encoding="utf-8"
+).read()
+long_description += "\n" + disclaimer
+
+
 setup(
     name="pyfury",
     version=parse_version(),
@@ -132,16 +141,21 @@ setup(
     },
     include_package_data=True,
     packages=find_packages(),
-    description="Fury is a blazing fast multi-language serialization "
-    + "framework powered by jit, vectorization and zero-copy",
-    long_description=io.open(
-        os.path.join(setup_dir, os.path.pardir, "README.md"), "r", encoding="utf-8"
-    ).read(),
+    description="Apache Fury™(incubating) is a blazingly fast multi-language serialization "
+    + "framework powered by jit and zero-copy",
+    long_description=long_description,
     long_description_content_type="text/markdown",
     keywords="fury serialization multi-language arrow row-format jit "
-    + "vectorization zero-copy",
+    + "codegen polymorphic zero-copy",
     classfiers=[
+        "License :: OSI Approved :: Apache Software License",
         "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: Implementation :: CPython",
     ],
     zip_safe=False,
     install_requires=[
@@ -161,6 +175,7 @@ setup(
     ],
     distclass=BinaryDistribution,
     ext_modules=ext_modules,
+    license="https://www.apache.org/licenses/LICENSE-2.0",
 )
 
 if os.path.exists(pjoin(setup_dir, "pyfury", "_fury.cpp")):

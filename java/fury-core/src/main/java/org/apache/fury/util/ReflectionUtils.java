@@ -281,6 +281,44 @@ public class ReflectionUtils {
     return field;
   }
 
+  /**
+   * Gets the only field in the class matching the required type.
+   *
+   * @param clazz the class in which the field should be declared
+   * @param fieldType the required type of the field
+   * @return the field with specified type
+   * @throws IllegalStateException if there are multiple fields of the required type
+   * @throws IllegalArgumentException if there are no fields of the required type
+   */
+  public static Field getField(Class<?> clazz, Class<?> fieldType) {
+    Field f = null;
+    Class<?> cls = clazz;
+    while (cls != null) {
+      for (Field fi : cls.getDeclaredFields()) {
+        if (fieldType.equals(fi.getType())) {
+          if (f != null) {
+            throw new IllegalStateException(
+                "Found multiple field s matching "
+                    + fieldType
+                    + " in "
+                    + cls
+                    + ": "
+                    + f
+                    + " and "
+                    + fi);
+          }
+          f = fi;
+        }
+      }
+      cls = cls.getSuperclass();
+    }
+    if (f == null) {
+      throw new IllegalArgumentException(
+          "Found no field matching " + fieldType.getName() + " in " + clazz + "!");
+    }
+    return f;
+  }
+
   public static Field getFieldNullable(Class<?> cls, String fieldName) {
     Class<?> clazz = cls;
     do {

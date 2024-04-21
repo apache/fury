@@ -33,15 +33,15 @@ public class BinaryUtils {
         || TypeUtils.BOOLEAN_TYPE.equals(type)) {
       return "getBoolean";
     } else if (TypeUtils.PRIMITIVE_SHORT_TYPE.equals(type) || TypeUtils.SHORT_TYPE.equals(type)) {
-      return "getShort";
+      return "getInt16";
     } else if (TypeUtils.PRIMITIVE_INT_TYPE.equals(type) || TypeUtils.INT_TYPE.equals(type)) {
-      return "getInt";
+      return "getInt32";
     } else if (TypeUtils.PRIMITIVE_LONG_TYPE.equals(type) || TypeUtils.LONG_TYPE.equals(type)) {
-      return "getLong";
+      return "getInt64";
     } else if (TypeUtils.PRIMITIVE_FLOAT_TYPE.equals(type) || TypeUtils.FLOAT_TYPE.equals(type)) {
-      return "getFloat";
+      return "getFloat32";
     } else if (TypeUtils.PRIMITIVE_DOUBLE_TYPE.equals(type) || TypeUtils.DOUBLE_TYPE.equals(type)) {
-      return "getDouble";
+      return "getFloat64";
     } else if (TypeUtils.BIG_DECIMAL_TYPE.equals(type)) {
       return "getDecimal";
     } else if (TypeUtils.DATE_TYPE.equals(type)) {
