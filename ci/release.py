@@ -43,11 +43,11 @@ def build(v: str):
     os.mkdir("dist")
     subprocess.check_call(f"git checkout releases-{v}", shell=True)
     branch = f"releases-{v}"
-    src_tar = f"apache-fury-incubating-{v}-src.tar.gz"
+    src_tar = f"apache-fury-{v}-incubating-src.tar.gz"
     subprocess.check_call(
         f"git archive --format=tar.gz "
         f"--output=dist/{src_tar} "
-        f"--prefix=apache-fury-incubating-{v}-src/ {branch}",
+        f"--prefix=apache-fury-{v}-incubating-src/ {branch}",
         shell=True,
     )
     os.chdir("dist")
@@ -60,7 +60,7 @@ def build(v: str):
 
 
 def verify(v):
-    src_tar = f"apache-fury-incubating-{v}-src.tar.gz"
+    src_tar = f"apache-fury-{v}-incubating-src.tar.gz"
     subprocess.check_call(f"gpg --verify {src_tar}.asc {src_tar}", shell=True)
     logger.info("Verified signature")
     subprocess.check_call(f"sha512sum --check {src_tar}.sha512", shell=True)
