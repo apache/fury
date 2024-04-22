@@ -26,6 +26,7 @@ export type Meta = {
   fixedSize: number;
   needToWriteRef: boolean;
   type: InternalSerializerType;
+  typeId: number | null;
 };
 
 export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
@@ -36,24 +37,28 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         fixedSize: 8,
         needToWriteRef: false,
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.ARRAY:
       return {
         fixedSize: 7,
         needToWriteRef: Boolean(fury.config.refTracking),
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.TUPLE:
       return {
         fixedSize: 7,
         needToWriteRef: Boolean(fury.config.refTracking),
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.MAP:
       return {
         fixedSize: 7,
         needToWriteRef: Boolean(fury.config.refTracking),
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.BOOL:
     case InternalSerializerType.INT8:
@@ -61,6 +66,7 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         fixedSize: 4,
         needToWriteRef: false,
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.INT16:
     case InternalSerializerType.FLOAT16:
@@ -68,6 +74,7 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         fixedSize: 5,
         needToWriteRef: false,
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.VAR_INT32:
     case InternalSerializerType.INT32:
@@ -76,6 +83,7 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         fixedSize: 7,
         needToWriteRef: false,
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.SLI_INT64:
     case InternalSerializerType.INT64:
@@ -84,24 +92,28 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         fixedSize: 11,
         needToWriteRef: false,
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.BINARY:
       return {
         fixedSize: 8,
         needToWriteRef: Boolean(fury.config.refTracking),
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.DURATION:
       return {
         fixedSize: 7,
         needToWriteRef: false,
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.TIMESTAMP:
       return {
         fixedSize: 11,
         needToWriteRef: false,
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.OBJECT:
     {
@@ -116,6 +128,7 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         fixedSize,
         needToWriteRef: Boolean(fury.config.refTracking),
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     }
 
@@ -124,6 +137,7 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         fixedSize: 7,
         needToWriteRef: Boolean(fury.config.refTracking),
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.BOOL_ARRAY:
     case InternalSerializerType.INT8_ARRAY:
@@ -137,6 +151,7 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         fixedSize: 7,
         needToWriteRef: Boolean(fury.config.refTracking),
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     case InternalSerializerType.ONEOF:
     case InternalSerializerType.ANY:
@@ -144,12 +159,14 @@ export const getMeta = (description: TypeDescription, fury: Fury): Meta => {
         fixedSize: 11,
         needToWriteRef: Boolean(fury.config.refTracking),
         type,
+        typeId: null,
       };
     case InternalSerializerType.ENUM:
       return {
         fixedSize: 7,
         needToWriteRef: false,
         type,
+        typeId: ClassResolver.getTypeIdByInternalSerializerType(type),
       };
     default:
       throw new Error(`Meta of ${description.type} not exists`);
