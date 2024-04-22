@@ -39,9 +39,25 @@ const MapFlags = {
   NOT_SAME_TYPE: 0b1000,
 };
 
+class TypeInfo {
+  private static IS_NULL = 0b10;
+  private static TRACKING_REF = 0b01;
+  static elementInfo(typeId: number, isNull: 0 | 1, trackRef: 0 | 1) {
+    return typeId << 16 | isNull << 1 | trackRef;
+  }
+
+  static isNull(info: number) {
+    return info & this.IS_NULL;
+  }
+
+  static trackingRef(info: number) {
+    return info & this.TRACKING_REF;
+  }
+}
+
 class MapChunkWriter {
-  private kFlag = 0;
-  private vFlag = 0;
+  private preKeyInfo = 0;
+  private preValueInfo = 0;
 
   private chunkSize = 0;
   private chunkOffset = 0;
@@ -51,52 +67,48 @@ class MapChunkWriter {
 
   }
 
-  private getHead(keyFlag: number, valueFlag: number) {
+  private getHead(keyInfo: number, valueInfo: number) {
     let flag = 0;
-    if (keyFlag & 0b10) {
+    if (TypeInfo.isNull(keyInfo)) {
       flag |= MapFlags.HAS_NULL;
     }
-    if (keyFlag & 0b01) {
+    if (TypeInfo.trackingRef(keyInfo)) {
       flag |= MapFlags.TRACKING_REF;
     }
     flag <<= 4;
-    if (valueFlag & 0b10) {
+    if (TypeInfo.isNull(valueInfo)) {
       flag |= MapFlags.HAS_NULL;
     }
-    if (valueFlag & 0b01) {
+    if (TypeInfo.trackingRef(valueInfo)) {
       flag |= MapFlags.TRACKING_REF;
     }
     return flag;
   }
 
-  private writeHead(kFlag: number, vFlag: number) {
+  private writeHead(keyInfo: number, valueInfo: number) {
     // KV header
-    const header = this.getHead(kFlag, vFlag);
+    const header = this.getHead(keyInfo, valueInfo);
     this.fury.binaryWriter.uint8(header);
     // chunkSize, max 255
     this.chunkOffset = this.fury.binaryWriter.getCursor();
     this.fury.binaryWriter.uint8(0);
-    this.fury.binaryWriter.uint32((kFlag >> 16) | (vFlag & 0xFFFF0000));
+    this.fury.binaryWriter.uint32((keyInfo >> 16) | (valueInfo & 0xFFFF0000));
     return header;
   }
 
-  makeFlag(typeId: number, isNull: 0 | 1, trackRef: 0 | 1) {
-    return typeId << 16 | isNull << 1 | trackRef;
-  }
-
-  next(kFlag: number, vFlag: number) {
+  next(keyInfo: number, valueInfo: number) {
     // max size of chunk is 255
     if (this.chunkSize == 255
       || this.chunkOffset == 0
-      || this.kFlag !== kFlag
-      || this.vFlag !== vFlag
+      || this.preKeyInfo !== keyInfo
+      || this.preValueInfo !== valueInfo
     ) {
       // new chunk
       this.endChunk();
       this.chunkSize++;
-      this.kFlag = kFlag;
-      this.vFlag = vFlag;
-      return this.header = this.writeHead(kFlag, vFlag);
+      this.preKeyInfo = keyInfo;
+      this.preValueInfo = valueInfo;
+      return this.header = this.writeHead(keyInfo, valueInfo);
     }
     this.chunkSize++;
     return this.header;
@@ -152,8 +164,8 @@ class MapAnySerializer {
       const valueSerializer = this.valueSerializer !== null ? this.valueSerializer : this.fury.classResolver.getSerializerByData(v);
 
       const header = mapChunkWriter.next(
-        mapChunkWriter.makeFlag(keySerializer!.meta.typeId!, k == null ? 1 : 0, keySerializer!.meta.needToWriteRef ? 1 : 0),
-        mapChunkWriter.makeFlag(valueSerializer!.meta.typeId!, v == null ? 1 : 0, valueSerializer!.meta.needToWriteRef ? 1 : 0)
+        TypeInfo.elementInfo(keySerializer!.meta.typeId!, k == null ? 1 : 0, keySerializer!.meta.needToWriteRef ? 1 : 0),
+        TypeInfo.elementInfo(valueSerializer!.meta.typeId!, v == null ? 1 : 0, valueSerializer!.meta.needToWriteRef ? 1 : 0)
       );
 
       this.writeHead(header >> 4, k);

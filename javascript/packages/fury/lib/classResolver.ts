@@ -117,7 +117,7 @@ export default class SerializerResolver {
     this.registerSerializer(fury, Type.float64Array());
 
     this.numberSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.FLOAT64));
-    this.bigintSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.INT64));
+    this.int64Serializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.INT64));
     this.boolSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.BOOL));
     this.dateSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.TIMESTAMP));
     this.stringSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.STRING));
@@ -127,7 +127,7 @@ export default class SerializerResolver {
   }
 
   private numberSerializer: null | Serializer = null;
-  private bigintSerializer: null | Serializer = null;
+  private int64Serializer: null | Serializer = null;
   private boolSerializer: null | Serializer = null;
   private dateSerializer: null | Serializer = null;
   private stringSerializer: null | Serializer = null;
@@ -249,7 +249,7 @@ export default class SerializerResolver {
     }
 
     if (typeof v === "bigint") {
-      return this.bigintSerializer;
+      return this.int64Serializer;
     }
 
     if (v instanceof Date) {
