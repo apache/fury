@@ -25,7 +25,6 @@ import static org.apache.fury.serializer.CodegenSerializer.supportCodegenForJava
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
 import java.io.Externalizable;
 import java.io.IOException;
@@ -468,6 +467,10 @@ public class ClassResolver {
     if (createSerializer) {
       getSerializer(cls);
     }
+  }
+
+  public boolean isRegistered(Class<?> cls) {
+    return extRegistry.registeredClassIdMap.get(cls) != null;
   }
 
   public Short getRegisteredClassId(Class<?> cls) {
@@ -1269,13 +1272,7 @@ public class ClassResolver {
       } else {
         classDef =
             classDefMap.computeIfAbsent(
-                classInfo.cls,
-                cls ->
-                    ClassDef.buildClassDef(
-                        this,
-                        cls,
-                        new ArrayList<>(),
-                        ImmutableMap.of(META_SHARE_FIELDS_INFO_KEY, "false")));
+                classInfo.cls, cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>()));
       }
       metaContext.writingClassDefs.add(classDef);
     }

@@ -213,6 +213,25 @@ public class ReflectionUtils {
     }
   }
 
+  /** Get all classes from leaf to {@link Object}. */
+  public static List<Class<?>> getAllClasses(Class<?> cls) {
+    List<Class<?>> classes = new ArrayList<>();
+    Class<?> clz = cls;
+    while (clz != null) {
+      classes.add(clz);
+      clz = clz.getSuperclass();
+    }
+    return classes;
+  }
+
+  public static List<Class<?>> getAllClasses(Class<?> cls, boolean topToLeaf) {
+    List<Class<?>> classes = getAllClasses(cls);
+    if (topToLeaf) {
+      Collections.reverse(classes);
+    }
+    return classes;
+  }
+
   /** Returns true if any method named {@code methodName} has exception. */
   public static boolean hasException(Class<?> cls, String methodName) {
     List<Method> methods = findMethods(cls, methodName);
@@ -496,16 +515,20 @@ public class ReflectionUtils {
     // Janino generated class's package might be null
     if (cls.getPackage() == null) {
       String className = cls.getName();
-      int index = className.lastIndexOf(".");
-      if (index != -1) {
-        pkg = className.substring(0, index);
-      } else {
-        pkg = "";
-      }
+      return getPackage(className);
     } else {
       pkg = cls.getPackage().getName();
     }
     return pkg;
+  }
+
+  public static String getPackage(String className) {
+    int index = className.lastIndexOf(".");
+    if (index != -1) {
+      return className.substring(0, index);
+    } else {
+      return "";
+    }
   }
 
   /**
@@ -521,6 +544,15 @@ public class ReflectionUtils {
     org.apache.fury.util.Preconditions.checkArgument(
         canonicalName != null, "Class %s doesn't have canonical name", cls);
     return canonicalName;
+  }
+
+  public static String getSimpleClassName(String className) {
+    int index = className.lastIndexOf(".");
+    if (index != -1) {
+      return className.substring(index);
+    } else {
+      return className;
+    }
   }
 
   @CodegenInvoke

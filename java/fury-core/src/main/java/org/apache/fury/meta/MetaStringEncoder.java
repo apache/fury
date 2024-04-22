@@ -20,11 +20,17 @@
 package org.apache.fury.meta;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import org.apache.fury.collection.Collections;
 import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.util.Preconditions;
 
 /** Encodes plain text strings into MetaString objects with specified encoding mechanisms. */
 public class MetaStringEncoder {
+  public static final MetaStringEncoder PACKAGE_ENCODER = new MetaStringEncoder('.', '_');
+  public static final MetaStringEncoder TYPE_NAME_ENCODER = new MetaStringEncoder('$', '_');
+  public static final MetaStringEncoder FIELD_NAME_ENCODER = new MetaStringEncoder('$', '_');
+
   private final char specialChar1;
   private final char specialChar2;
 
@@ -47,11 +53,15 @@ public class MetaStringEncoder {
    * @return A MetaString object representing the encoded string.
    */
   public MetaString encode(String input) {
+    return encode(input, Encoding.values());
+  }
+
+  public MetaString encode(String input, Encoding[] encodings) {
     if (input.isEmpty()) {
       return new MetaString(
           input, Encoding.LOWER_SPECIAL, specialChar1, specialChar2, new byte[0], 0, 0);
     }
-    Encoding encoding = computeEncoding(input);
+    Encoding encoding = computeEncoding(input, encodings);
     return encode(input, encoding);
   }
 
@@ -117,25 +127,42 @@ public class MetaStringEncoder {
   }
 
   public Encoding computeEncoding(String input) {
+    return computeEncoding(input, Encoding.values());
+  }
+
+  public Encoding computeEncoding(String input, Encoding[] encodings) {
+    HashSet<Encoding> encodingSet = Collections.ofHashSet(encodings);
     if (input.isEmpty()) {
-      return Encoding.LOWER_SPECIAL;
+      if (encodingSet.contains(Encoding.LOWER_SPECIAL)) {
+        return Encoding.LOWER_SPECIAL;
+      }
     }
     char[] chars = input.toCharArray();
     StringStatistics statistics = computeStatistics(chars);
     if (statistics.canLowerSpecialEncoded) {
-      return Encoding.LOWER_SPECIAL;
+      if (encodingSet.contains(Encoding.LOWER_SPECIAL)) {
+        return Encoding.LOWER_SPECIAL;
+      }
     } else if (statistics.canLowerUpperDigitSpecialEncoded) {
       if (statistics.digitCount != 0) {
-        return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
+        if (encodingSet.contains(Encoding.LOWER_UPPER_DIGIT_SPECIAL)) {
+          return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
+        }
       } else {
         int upperCount = statistics.upperCount;
         if (upperCount == 1 && Character.isUpperCase(chars[0])) {
-          return Encoding.FIRST_TO_LOWER_SPECIAL;
+          if (encodingSet.contains(Encoding.LOWER_UPPER_DIGIT_SPECIAL)) {
+            return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
+          }
         }
         if ((chars.length + upperCount) * 5 < (chars.length * 6)) {
-          return Encoding.ALL_TO_LOWER_SPECIAL;
+          if (encodingSet.contains(Encoding.ALL_TO_LOWER_SPECIAL)) {
+            return Encoding.ALL_TO_LOWER_SPECIAL;
+          }
         } else {
-          return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
+          if (encodingSet.contains(Encoding.LOWER_UPPER_DIGIT_SPECIAL)) {
+            return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
+          }
         }
       }
     }
