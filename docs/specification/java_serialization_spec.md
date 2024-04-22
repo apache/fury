@@ -153,18 +153,19 @@ Meta header is a 64 bits number value encoded in little endian order.
     - encoding algorithm: `UTF8/LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
     - Header:
         - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 63, then header will be
-          `6 bits size | strip last char flag < 1 | 0b1`.
+          `6 bits size | strip last char flag << 1 | 0b1`.
         - If meta string encoding is `LOWER_UPPER_DIGIT_SPECIAL` and the length of encoded string `<=` 31, then header
           will be
-          `5 bits size | strip last char flag < 2 | 0b11`.
-        - Encode string using `UTF8`, header: `size << 3 | strip last char flag < 2 | 0b01` as an unsigned varint.
+          `5 bits size | strip last char flag << 2 | 0b11`.
+        - Otherwise, encode string using `UTF8`, header: `size << 3 | strip last char flag << 2 | 0b01` as an unsigned
+          varint.
 - Class name encoding(omitted when class is registered):
     - encoding algorithm: `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
     - header:
         - If meta string encoding is `LOWER_UPPER_DIGIT_SPECIAL/ALL_TO_LOWER_SPECIAL` and the length of encoded string
-          `<=` 31, then header will be `5 bits size | strip last char flag < 1 | encoding flag | 0b1`.
+          `<=` 31, then header will be `5 bits size | strip last char flag << 1 | encoding flag | 0b1`.
             - encoding flag 0: LOWER_UPPER_DIGIT_SPECIAL
-            - encoding flag 1: ALL_TO_LOWER_SPECIAL
+            - encoding flag 1: ALL_TO_LOWER_SPECIAL/LOWER_SPECIAL
         - Otherwise, use `FIRST_TO_LOWER_SPECIAL/UTF8` encoding only, header:
           `size << 3 | strip last char flag | encoding flag | 0b0` as an unsigned varint.
             - encoding flag 0: FIRST_TO_LOWER_SPECIAL. If use this encoding, only first char is upper case, the size
@@ -172,9 +173,13 @@ Meta header is a 64 bits number value encoded in little endian order.
             - encoding flag 1: UTF8
 - Field info:
     - header(8
-      bits): `reserved 1 bit + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag + tag id flag`.
+      bits): `reserved 1 bit + strip last char flag + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag`.
       Users can use annotation to provide those info.
-        - tag id: when set to 1, field name will be written by an unsigned varint tag id.
+        - 3 bits field name encoding:
+            - 3 bits
+              encoding: `UTF8/LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
+            - If tag id is used, i.e. field name is written by an unsigned varint tag id. 3 bits encoding will be `111`
+              to flag it.
         - ref tracking: when set to 0, ref tracking will be disabled for this field.
         - nullability: when set to 0, this field won't be null.
         - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
