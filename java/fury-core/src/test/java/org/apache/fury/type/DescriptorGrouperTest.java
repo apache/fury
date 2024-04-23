@@ -141,8 +141,7 @@ public class DescriptorGrouperTest {
     descriptors.add(new Descriptor(TypeRef.of(Date.class), "c" + index++, -1, "TestClass"));
     descriptors.add(new Descriptor(TypeRef.of(Instant.class), "c" + index++, -1, "TestClass"));
     descriptors.add(new Descriptor(TypeRef.of(Instant.class), "c" + index++, -1, "TestClass"));
-    descriptors.add(
-        new Descriptor(new TypeRef<List<String>>() {}, "c" + index++, -1, "TestClass"));
+    descriptors.add(new Descriptor(new TypeRef<List<String>>() {}, "c" + index++, -1, "TestClass"));
     descriptors.add(
         new Descriptor(new TypeRef<List<Integer>>() {}, "c" + index++, -1, "TestClass"));
     descriptors.add(

@@ -135,7 +135,7 @@ public class TypeInference {
    * @return DataType of a typeToken
    */
   private static Field inferField(
-          String name, TypeRef<?> typeRef, LinkedHashSet<Class<?>> seenTypeSet) {
+      String name, TypeRef<?> typeRef, LinkedHashSet<Class<?>> seenTypeSet) {
     Class<?> rawType = getRawType(typeRef);
     if (rawType == boolean.class) {
       return field(name, DataTypes.notNullFieldType(ArrowType.Bool.INSTANCE));
@@ -236,8 +236,7 @@ public class TypeInference {
     } else {
       throw new UnsupportedOperationException(
           String.format(
-              "Unsupported type %s for field %s, seen type set is %s",
-                  typeRef, name, seenTypeSet));
+              "Unsupported type %s for field %s, seen type set is %s", typeRef, name, seenTypeSet));
     }
   }
 

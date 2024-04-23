@@ -101,8 +101,7 @@ public class MapEncoderTest {
 
     MapEncoder<Map<String, List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>>> encoder =
         Encoders.mapEncoder(
-            new TypeRef<
-                            Map<String, List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>>>() {});
+            new TypeRef<Map<String, List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>>>() {});
     BinaryMap array = encoder.toMap(lmap);
     Map<String, List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>> newLmap =
         encoder.fromMap(array);

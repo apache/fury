@@ -742,8 +742,7 @@ public class FieldResolver {
             NO_CLASS_ID);
       }
       if (Collection.class.isAssignableFrom(field.getType())) {
-        TypeRef<?> elementTypeRef =
-            TypeUtils.getElementType(TypeRef.of(field.getGenericType()));
+        TypeRef<?> elementTypeRef = TypeUtils.getElementType(TypeRef.of(field.getGenericType()));
         byte fieldType =
             ReflectionUtils.isMonomorphic(getRawType(elementTypeRef))
                 ? FieldTypes.COLLECTION_ELEMENT_FINAL
@@ -772,8 +771,8 @@ public class FieldResolver {
             fieldType,
             fieldInfoEncodingType,
             encodedFieldInfo,
-                keyTypeRef,
-                valueTypeRef);
+            keyTypeRef,
+            valueTypeRef);
       } else {
         return new FieldInfo(
             fury,

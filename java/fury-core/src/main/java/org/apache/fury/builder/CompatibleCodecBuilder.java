@@ -91,10 +91,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
   private final Map<String, Expression> methodCache;
 
   public CompatibleCodecBuilder(
-      TypeRef<?> beanType,
-      Fury fury,
-      FieldResolver fieldResolver,
-      Class<?> superSerializerClass) {
+      TypeRef<?> beanType, Fury fury, FieldResolver fieldResolver, Class<?> superSerializerClass) {
     // if not resolveParent, there won't be necessary to implement
     // `CompatibleSerializerBase.readAndSetFields`.
     super(beanType, fury, superSerializerClass);
@@ -114,7 +111,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
         inlineInvoke(
             classResolverRef,
             "getFieldResolver",
-                fieldResolverTypeRef,
+            fieldResolverTypeRef,
             getClassExpr(getRawType(beanType)));
     ctx.addField(ctx.type(fieldResolverTypeRef), FIELD_RESOLVER_NAME, fieldResolverExpr);
     if (isRecord) {
@@ -862,7 +859,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
                       descriptor,
                       tryInlineCast(
                           new Invoke(refResolverRef, "getReadObject", OBJECT_TYPE, false),
-                              typeRef)),
+                          typeRef)),
                   false,
                   PRIMITIVE_VOID_TYPE);
             },

@@ -838,7 +838,7 @@ public interface Expression {
     }
 
     public Invoke(
-            Expression targetObject, String functionName, TypeRef<?> type, Expression... arguments) {
+        Expression targetObject, String functionName, TypeRef<?> type, Expression... arguments) {
       this(targetObject, functionName, "", type, false, arguments);
     }
 
@@ -881,7 +881,7 @@ public interface Expression {
     }
 
     public static Invoke inlineInvoke(
-            Expression targetObject, String functionName, TypeRef<?> type, Expression... arguments) {
+        Expression targetObject, String functionName, TypeRef<?> type, Expression... arguments) {
       Invoke invoke = new Invoke(targetObject, functionName, type, false, arguments);
       invoke.inlineCall = true;
       return invoke;
@@ -1011,7 +1011,7 @@ public interface Expression {
     }
 
     public StaticInvoke(
-            Class<?> staticObject, String functionName, TypeRef<?> type, Expression... arguments) {
+        Class<?> staticObject, String functionName, TypeRef<?> type, Expression... arguments) {
       this(staticObject, functionName, "", type, false, arguments);
     }
 
@@ -1181,8 +1181,7 @@ public interface Expression {
      *     unknownClassName}
      * @param unknownClassName unknownClassName that's unknown in compile-time
      */
-    public NewInstance(
-            TypeRef<?> interfaceType, String unknownClassName, Expression... arguments) {
+    public NewInstance(TypeRef<?> interfaceType, String unknownClassName, Expression... arguments) {
       this(interfaceType, Arrays.asList(arguments), null);
       this.unknownClassName = unknownClassName;
       check();

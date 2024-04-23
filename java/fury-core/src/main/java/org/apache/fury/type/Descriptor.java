@@ -127,8 +127,7 @@ public class Descriptor {
   }
 
   public Descriptor copy(TypeRef<?> typeRef, Method readMethod, Method writeMethod) {
-    return new Descriptor(
-            typeRef, name, modifier, declaringClass, field, readMethod, writeMethod);
+    return new Descriptor(typeRef, name, modifier, declaringClass, field, readMethod, writeMethod);
   }
 
   public Field getField() {

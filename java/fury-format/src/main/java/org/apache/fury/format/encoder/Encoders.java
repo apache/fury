@@ -378,7 +378,7 @@ public class Encoders {
    * java bean.
    */
   public static <T extends Map, K, V> MapEncoder<T> mapEncoder(
-          TypeRef<? extends Map> mapToken, TypeRef<K> keyToken, TypeRef<V> valToken, Fury fury) {
+      TypeRef<? extends Map> mapToken, TypeRef<K> keyToken, TypeRef<V> valToken, Fury fury) {
     Preconditions.checkNotNull(mapToken);
     Preconditions.checkNotNull(keyToken);
     Preconditions.checkNotNull(valToken);
@@ -542,7 +542,7 @@ public class Encoders {
   }
 
   private static <B> Class<?> loadOrGenArrayCodecClass(
-          TypeRef<? extends Collection> arrayCls, TypeRef<B> elementType) {
+      TypeRef<? extends Collection> arrayCls, TypeRef<B> elementType) {
     LOG.info("Create ArrayCodec for classes {}", elementType);
     Class<?> cls = getRawType(elementType);
     // class name prefix
@@ -559,7 +559,7 @@ public class Encoders {
   }
 
   private static <K, V> Class<?> loadOrGenMapCodecClass(
-          TypeRef<? extends Map> mapCls, TypeRef<K> keyToken, TypeRef<V> valueToken) {
+      TypeRef<? extends Map> mapCls, TypeRef<K> keyToken, TypeRef<V> valueToken) {
     LOG.info("Create MapCodec for classes {}, {}", keyToken, valueToken);
     boolean keyIsBean = TypeUtils.isBean(keyToken);
     boolean valIsBean = TypeUtils.isBean(valueToken);

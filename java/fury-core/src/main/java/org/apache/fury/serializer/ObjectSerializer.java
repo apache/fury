@@ -921,7 +921,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     }
 
     private GenericTypeField(
-            TypeRef<?> typeRef, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
+        TypeRef<?> typeRef, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
       super(getRegisteredClassId(fury, getRawType(typeRef)), qualifiedFieldName, accessor);
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
       genericType = fury.getClassResolver().buildGenericType(typeRef);

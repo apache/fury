@@ -135,7 +135,7 @@ public abstract class CodecBuilder {
   }
 
   protected Expression tryCastIfPublic(
-          Expression expression, TypeRef<?> targetType, boolean inline) {
+      Expression expression, TypeRef<?> targetType, boolean inline) {
     Class<?> rawType = getRawType(targetType);
     if (rawType == FinalObjectTypeStub.class) {
       // final field doesn't exist in this class, skip cast.
@@ -152,7 +152,7 @@ public abstract class CodecBuilder {
   }
 
   protected Expression tryCastIfPublic(
-          Expression expression, TypeRef<?> targetType, String valuePrefix) {
+      Expression expression, TypeRef<?> targetType, String valuePrefix) {
     Class<?> rawType = getRawType(targetType);
     if (sourcePublicAccessible(rawType)
         && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
@@ -431,7 +431,7 @@ public abstract class CodecBuilder {
                 new StaticInvoke(
                     ReflectionUtils.class,
                     "getField",
-                        fieldTypeRef,
+                    fieldTypeRef,
                     classExpr,
                     Literal.ofString(fieldName));
           }

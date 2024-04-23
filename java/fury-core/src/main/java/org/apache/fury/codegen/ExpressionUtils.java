@@ -160,7 +160,7 @@ public class ExpressionUtils {
   }
 
   public static StaticInvoke invokeStaticInline(
-          Class<?> staticObject, String functionName, TypeRef<?> type, Expression... arguments) {
+      Class<?> staticObject, String functionName, TypeRef<?> type, Expression... arguments) {
     return new StaticInvoke(staticObject, functionName, "", type, false, true, arguments);
   }
 

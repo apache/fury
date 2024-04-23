@@ -87,7 +87,7 @@ public class StructSerializer<T> extends Serializer<T> {
   }
 
   private static <T> GenericType[] buildFieldGenerics(
-          TypeRef<T> type, FieldAccessor[] fieldAccessors) {
+      TypeRef<T> type, FieldAccessor[] fieldAccessors) {
     return Arrays.stream(fieldAccessors)
         .map(fieldAccessor -> GenericType.build(type, fieldAccessor.getField().getGenericType()))
         .toArray(GenericType[]::new);

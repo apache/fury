@@ -26,12 +26,12 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Stream;
 import org.apache.fury.type.TypeUtils;
 
 public class TypeRef<T> {
@@ -102,32 +102,32 @@ public class TypeRef<T> {
    * </ul>
    */
   public Class<? super T> getRawType() {
-    // For wildcard or type variable, the first bound determines the runtime type.
-    Class<?> rawType = getRawTypes(type).iterator().next();
-    @SuppressWarnings("unchecked") // raw type is |T|
-    Class<? super T> result = (Class<? super T>) rawType;
+    @SuppressWarnings("unchecked")
+    Class<? super T> result = (Class<? super T>) TypeUtils.getRawType(type);
     return result;
   }
 
-  private static Set<Class<?>> getRawTypes(Type... types) {
-    Set<Class<?>> set = new HashSet<>();
-    for (Type type : types) {
-      if (type instanceof TypeVariable) {
-        return getRawTypes(((TypeVariable<?>) type).getBounds());
-      } else if (type instanceof WildcardType) {
-        return getRawTypes(((WildcardType) type).getUpperBounds());
-      } else if (type instanceof ParameterizedType) {
-        set.add((Class<?>) ((ParameterizedType) type).getRawType());
-      } else if (type instanceof Class) {
-        set.add((Class<?>) type);
-      } else if (type instanceof GenericArrayType) {
-        set.add(
-            getArrayClass(of(((GenericArrayType) type).getGenericComponentType()).getRawType()));
-      } else {
-        throw new AssertionError("Unknown type: " + type);
-      }
-    }
-    return Collections.unmodifiableSet(set);
+  private static Stream<Class<?>> getRawTypes(Type... types) {
+    return Arrays.stream(types)
+        .flatMap(
+            type -> {
+              if (type instanceof TypeVariable) {
+                return getRawTypes(((TypeVariable<?>) type).getBounds());
+              } else if (type instanceof WildcardType) {
+                return getRawTypes(((WildcardType) type).getUpperBounds());
+              } else if (type instanceof ParameterizedType) {
+                return Stream.of((Class<?>) ((ParameterizedType) type).getRawType());
+              } else if (type instanceof Class) {
+                return Stream.of((Class<?>) type);
+              } else if (type instanceof GenericArrayType) {
+                Class<?> rawType =
+                    getArrayClass(
+                        of(((GenericArrayType) type).getGenericComponentType()).getRawType());
+                return Stream.of(rawType);
+              } else {
+                throw new AssertionError("Unknown type: " + type);
+              }
+            });
   }
 
   /** Returns true if this type is one of the primitive types (including {@code void}). */
@@ -329,8 +329,7 @@ public class TypeRef<T> {
       TypeRef componentTypeRef = of(componentType);
 
       @SuppressWarnings("unchecked")
-      TypeRef<?> componentSupertype =
-          componentTypeRef.getSupertype(superclass.getComponentType());
+      TypeRef<?> componentSupertype = componentTypeRef.getSupertype(superclass.getComponentType());
 
       return of(newArrayType(componentSupertype.type));
     }
@@ -735,12 +734,7 @@ public class TypeRef<T> {
   }
 
   private boolean anyRawTypeIsSubclassOf(Class<?> supertype) {
-    for (Class<?> rawType : getRawTypes(type)) {
-      if (supertype.isAssignableFrom(rawType)) {
-        return true;
-      }
-    }
-    return false;
+    return getRawTypes(type).anyMatch(supertype::isAssignableFrom);
   }
 
   /** Returns true if this type is a supertype of the given {@code type}. */

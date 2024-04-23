@@ -55,8 +55,7 @@ public class TypeUtilsTest {
 
   @Test
   public void getElementTypeTest() throws NoSuchMethodException, NoSuchFieldException {
-    TypeRef typeRef =
-        Descriptor.getDescriptorsMap(BeanA.class).get("doubleList").getTypeToken();
+    TypeRef typeRef = Descriptor.getDescriptorsMap(BeanA.class).get("doubleList").getTypeToken();
 
     assertEquals(
         new TypeRef<Optional<String>>() {}.resolveType(
@@ -69,8 +68,7 @@ public class TypeUtilsTest {
         int.class);
 
     @SuppressWarnings("unchecked")
-    TypeRef<?> supertype =
-        ((TypeRef<? extends Iterable<?>>) typeRef).getSupertype(Iterable.class);
+    TypeRef<?> supertype = ((TypeRef<? extends Iterable<?>>) typeRef).getSupertype(Iterable.class);
     final Type iteratorReturnType = Iterable.class.getMethod("iterator").getGenericReturnType();
     final Type nextReturnType = Iterator.class.getMethod("next").getGenericReturnType();
     assertEquals(supertype.resolveType(iteratorReturnType), new TypeRef<Iterator<Double>>() {});

@@ -433,15 +433,13 @@ public class TypeUtils {
     if (typeRef.getType().getTypeName().startsWith("scala.collection")) {
       return ScalaTypes.getElementType(typeRef);
     }
-    TypeRef<?> supertype =
-        ((TypeRef<? extends Iterable<?>>) typeRef).getSupertype(Iterable.class);
+    TypeRef<?> supertype = ((TypeRef<? extends Iterable<?>>) typeRef).getSupertype(Iterable.class);
     return supertype.resolveType(ITERATOR_RETURN_TYPE).resolveType(NEXT_RETURN_TYPE);
   }
 
   public static TypeRef<?> getCollectionType(TypeRef<?> typeRef) {
     @SuppressWarnings("unchecked")
-    TypeRef<?> supertype =
-        ((TypeRef<? extends Iterable<?>>) typeRef).getSupertype(Iterable.class);
+    TypeRef<?> supertype = ((TypeRef<? extends Iterable<?>>) typeRef).getSupertype(Iterable.class);
     return supertype.getSubtype(Collection.class);
   }
 
@@ -456,8 +454,7 @@ public class TypeUtils {
         if (actualTypeArguments[0].getClass() == Class.class
             && actualTypeArguments[1].getClass() == Class.class) {
           // if actualTypeArguments are wild type, upper should be parsed.
-          return Tuple2.of(
-              TypeRef.of(actualTypeArguments[0]), TypeRef.of(actualTypeArguments[1]));
+          return Tuple2.of(TypeRef.of(actualTypeArguments[0]), TypeRef.of(actualTypeArguments[1]));
         }
       }
     }
@@ -497,7 +494,7 @@ public class TypeUtils {
   }
 
   public static <K, V> TypeRef<? extends Map<K, V>> mapOf(
-          Class<?> mapType, TypeRef<K> keyType, TypeRef<V> valueType) {
+      Class<?> mapType, TypeRef<K> keyType, TypeRef<V> valueType) {
     TypeRef<Map<K, V>> mapTypeRef = mapOf(keyType, valueType);
     return mapTypeRef.getSubtype(mapType);
   }
@@ -585,8 +582,7 @@ public class TypeUtils {
     return isSupported(typeRef, new LinkedHashSet<>());
   }
 
-  private static boolean isSupported(
-          TypeRef<?> typeRef, LinkedHashSet<TypeRef> walkedTypePath) {
+  private static boolean isSupported(TypeRef<?> typeRef, LinkedHashSet<TypeRef> walkedTypePath) {
     Class<?> cls = getRawType(typeRef);
     if (!Modifier.isPublic(cls.getModifiers())) {
       return false;

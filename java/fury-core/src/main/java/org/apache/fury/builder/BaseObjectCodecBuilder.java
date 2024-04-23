@@ -113,8 +113,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   public static final String POJO_CLASS_TYPE_NAME = "classType";
   public static final String STRING_SERIALIZER_NAME = "strSerializer";
   private static final TypeRef<?> CLASS_RESOLVER_TYPE_TOKEN = TypeRef.of(ClassResolver.class);
-  private static final TypeRef<?> STRING_SERIALIZER_TYPE_TOKEN =
-      TypeRef.of(StringSerializer.class);
+  private static final TypeRef<?> STRING_SERIALIZER_TYPE_TOKEN = TypeRef.of(StringSerializer.class);
   private static final TypeRef<?> SERIALIZER_TYPE = TypeRef.of(Serializer.class);
   private static final TypeRef<?> COLLECTION_SERIALIZER_TYPE =
       TypeRef.of(AbstractCollectionSerializer.class);
@@ -287,8 +286,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     ctx.addImports(AbstractCollectionSerializer.class, AbstractMapSerializer.class);
   }
 
-  protected Expression serializeFor(
-      Expression inputObject, Expression buffer, TypeRef<?> typeRef) {
+  protected Expression serializeFor(Expression inputObject, Expression buffer, TypeRef<?> typeRef) {
     return serializeFor(inputObject, buffer, typeRef, false);
   }
 
@@ -297,10 +295,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    * </code>.
    */
   protected Expression serializeFor(
-      Expression inputObject,
-      Expression buffer,
-      TypeRef<?> typeRef,
-      boolean generateNewMethod) {
+      Expression inputObject, Expression buffer, TypeRef<?> typeRef, boolean generateNewMethod) {
     return serializeFor(inputObject, buffer, typeRef, null, generateNewMethod);
   }
 
@@ -347,10 +342,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    * </code>.
    */
   private Expression serializeForNotNull(
-      Expression inputObject,
-      Expression buffer,
-      TypeRef<?> typeRef,
-      boolean generateNewMethod) {
+      Expression inputObject, Expression buffer, TypeRef<?> typeRef, boolean generateNewMethod) {
     return serializeForNotNull(inputObject, buffer, typeRef, null, generateNewMethod);
   }
 
@@ -420,7 +412,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   protected abstract boolean isMonomorphic(Class<?> clz);
 
   protected Expression serializeForNotNullObject(
-          Expression inputObject, Expression buffer, TypeRef<?> typeRef, Expression serializer) {
+      Expression inputObject, Expression buffer, TypeRef<?> typeRef, Expression serializer) {
     Class<?> clz = getRawType(typeRef);
     if (serializer != null) {
       return new Invoke(serializer, "write", buffer, inputObject);
@@ -523,10 +515,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         serializerRef = new Reference(name, SERIALIZER_TYPE, false);
       } else {
         ctx.addField(
-            true,
-            ctx.type(serializerClass),
-            name,
-            new Cast(newSerializerExpr, serializerTypeRef));
+            true, ctx.type(serializerClass), name, new Cast(newSerializerExpr, serializerTypeRef));
         serializerRef = fieldRef(name, serializerTypeRef);
       }
       serializerMap.put(cls, serializerRef);
@@ -1047,7 +1036,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected Expression deserializeFor(
-          Expression buffer, TypeRef<?> typeRef, Function<Expression, Expression> callback) {
+      Expression buffer, TypeRef<?> typeRef, Function<Expression, Expression> callback) {
     return deserializeFor(buffer, typeRef, callback, null);
   }
 
@@ -1112,7 +1101,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected Expression deserializeForNotNull(
-          Expression buffer, TypeRef<?> typeRef, CutPoint cutPoint) {
+      Expression buffer, TypeRef<?> typeRef, CutPoint cutPoint) {
     return deserializeForNotNull(buffer, typeRef, null, cutPoint);
   }
 
@@ -1123,7 +1112,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    * @param cutPoint for generate new method to cut off dependencies.
    */
   protected Expression deserializeForNotNull(
-          Expression buffer, TypeRef<?> typeRef, Expression serializer, CutPoint cutPoint) {
+      Expression buffer, TypeRef<?> typeRef, Expression serializer, CutPoint cutPoint) {
     Class<?> cls = getRawType(typeRef);
     if (isPrimitive(cls) || isBoxed(cls)) {
       // for primitive, inline call here to avoid java boxing, rather call corresponding serializer.
@@ -1171,7 +1160,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected Expression readForNotNullNonFinal(
-          Expression buffer, TypeRef<?> typeRef, Expression serializer) {
+      Expression buffer, TypeRef<?> typeRef, Expression serializer) {
     if (serializer == null) {
       Expression classInfo = readClassInfo(getRawType(typeRef), buffer);
       serializer = inlineInvoke(classInfo, "getSerializer", SERIALIZER_TYPE);
@@ -1184,7 +1173,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    * with {@link BaseObjectCodecBuilder#serializeForCollection}
    */
   protected Expression deserializeForCollection(
-          Expression buffer, TypeRef<?> typeRef, Expression serializer, CutPoint cutPoint) {
+      Expression buffer, TypeRef<?> typeRef, Expression serializer, CutPoint cutPoint) {
     TypeRef<?> elementType = getElementType(typeRef);
     if (serializer == null) {
       Class<?> cls = getRawType(typeRef);
@@ -1195,9 +1184,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         serializer = new Invoke(classInfo, "getSerializer", "serializer", SERIALIZER_TYPE, false);
         serializer =
             new Cast(
-                serializer,
-                TypeRef.of(AbstractCollectionSerializer.class),
-                "collectionSerializer");
+                serializer, TypeRef.of(AbstractCollectionSerializer.class), "collectionSerializer");
       }
     } else {
       checkArgument(
@@ -1412,7 +1399,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
    * {@link BaseObjectCodecBuilder#serializeForMap}
    */
   protected Expression deserializeForMap(
-          Expression buffer, TypeRef<?> typeRef, Expression serializer, CutPoint cutPoint) {
+      Expression buffer, TypeRef<?> typeRef, Expression serializer, CutPoint cutPoint) {
     Tuple2<TypeRef<?>, TypeRef<?>> keyValueType = TypeUtils.getMapKeyValueType(typeRef);
     TypeRef<?> keyType = keyValueType.f0;
     TypeRef<?> valueType = keyValueType.f1;
@@ -1423,8 +1410,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else {
         Expression classInfo = readClassInfo(cls, buffer);
         serializer = new Invoke(classInfo, "getSerializer", SERIALIZER_TYPE);
-        serializer =
-            new Cast(serializer, TypeRef.of(AbstractMapSerializer.class), "mapSerializer");
+        serializer = new Cast(serializer, TypeRef.of(AbstractMapSerializer.class), "mapSerializer");
       }
     } else {
       checkArgument(

@@ -77,8 +77,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
   protected static final TypeRef<Field> ARROW_FIELD_TYPE = TypeRef.of(Field.class);
   protected static TypeRef<Schema> schemaTypeToken = TypeRef.of(Schema.class);
   protected static TypeRef<BinaryWriter> writerTypeToken = TypeRef.of(BinaryWriter.class);
-  protected static TypeRef<BinaryRowWriter> rowWriterTypeToken =
-      TypeRef.of(BinaryRowWriter.class);
+  protected static TypeRef<BinaryRowWriter> rowWriterTypeToken = TypeRef.of(BinaryRowWriter.class);
   protected static TypeRef<BinaryArrayWriter> arrayWriterTypeToken =
       TypeRef.of(BinaryArrayWriter.class);
   protected static TypeRef<Row> rowTypeToken = TypeRef.of(Row.class);
@@ -228,7 +227,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
    * as {@link BinaryArray} using given <code>writer</code>.
    */
   protected Expression serializeForArray(
-          Expression inputObject, Expression writer, TypeRef<?> typeRef, Expression arrowField) {
+      Expression inputObject, Expression writer, TypeRef<?> typeRef, Expression arrowField) {
     return serializeForArray(inputObject, writer, typeRef, arrowField, false);
   }
 
@@ -271,11 +270,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
               listFromIterable,
               (i, value) ->
                   serializeFor(
-                      i,
-                      value,
-                      arrayWriter,
-                      TypeUtils.getElementType(typeRef),
-                      arrayElementField));
+                      i, value, arrayWriter, TypeUtils.getElementType(typeRef), arrayElementField));
       return new ListExpression(reset, forEach, arrayWriter);
     } else { // collection
       Invoke size = new Invoke(inputObject, "size", TypeUtils.PRIMITIVE_INT_TYPE);
@@ -285,11 +280,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
               inputObject,
               (i, value) ->
                   serializeFor(
-                      i,
-                      value,
-                      arrayWriter,
-                      TypeUtils.getElementType(typeRef),
-                      arrayElementField));
+                      i, value, arrayWriter, TypeUtils.getElementType(typeRef), arrayElementField));
       return new ListExpression(reset, forEach, arrayWriter);
     }
   }
@@ -299,18 +290,18 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
    * writer.
    */
   protected Reference getOrCreateArrayWriter(
-          TypeRef<?> typeRef, Expression arrayDataType, Expression writer) {
+      TypeRef<?> typeRef, Expression arrayDataType, Expression writer) {
     return getOrCreateArrayWriter(typeRef, arrayDataType, writer, false);
   }
 
   protected Reference getOrCreateArrayWriter(
-          TypeRef<?> typeRef, Expression arrayDataType, Expression writer, boolean reuse) {
+      TypeRef<?> typeRef, Expression arrayDataType, Expression writer, boolean reuse) {
     if (reuse) {
       return (Reference) writer;
     }
 
     return arrayWriterMap.computeIfAbsent(
-            typeRef,
+        typeRef,
         t -> {
           String name = ctx.newName("arrayWriter");
           ctx.addField(
@@ -417,7 +408,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
       TypeRef<?> codecTypeRef = TypeRef.of(GeneratedRowEncoder.class);
       NewInstance newEncoder =
           new NewInstance(
-                  codecTypeRef,
+              codecTypeRef,
               encoderClass,
               ExpressionUtils.newObjectArray(schema, newRowWriter, furyRef));
       ctx.addField(encoderClass, encoderName, newEncoder);
