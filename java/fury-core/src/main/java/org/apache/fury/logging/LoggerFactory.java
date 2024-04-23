@@ -25,13 +25,12 @@ import org.apache.fury.util.GraalvmSupport;
  * A logger factory which can be used to disable fury logging more easily than configure logging.
  */
 public class LoggerFactory {
-  private static volatile boolean disableLogging;
   private static volatile boolean useSlf4jLogger;
   private static volatile int logLevel = LogLevel.INFO_LEVEL;
 
   /** Disable Logger, there will be no log output. */
   public static void disableLogging() {
-    disableLogging = true;
+    logLevel = LogLevel.ERROR_LEVEL - 1;
   }
 
   /**
@@ -39,7 +38,11 @@ public class LoggerFactory {
    * Slf4jLogger} through {@link LoggerFactory#createSlf4jLogger(Class)}.
    */
   public static void enableLogging() {
-    disableLogging = false;
+    logLevel = LogLevel.INFO_LEVEL;
+  }
+
+  public static boolean isLoggingDisabled() {
+    return logLevel < LogLevel.ERROR_LEVEL;
   }
 
   /**
@@ -50,6 +53,10 @@ public class LoggerFactory {
    */
   public static void setLogLevel(int level) {
     logLevel = level;
+  }
+
+  public static int getLogLevel() {
+    return logLevel;
   }
 
   /**
@@ -66,18 +73,14 @@ public class LoggerFactory {
    * Get a Logger for log output.
    *
    * @param clazz Class of output Log.
-   * @return If the logger is disabled, {@link NilLogger} will be returned, otherwise {@link
-   *     FuryLogger} or {@link Slf4jLogger} will be returned.
+   * @return Return {@link FuryLogger} if sf4j is not enabled, otherwise {@link Slf4jLogger} will be
+   *     returned.
    */
   public static Logger getLogger(Class<?> clazz) {
-    if (disableLogging) {
-      return new NilLogger();
+    if (GraalvmSupport.IN_GRAALVM_NATIVE_IMAGE || !useSlf4jLogger) {
+      return new FuryLogger(clazz);
     } else {
-      if (GraalvmSupport.IN_GRAALVM_NATIVE_IMAGE || !useSlf4jLogger) {
-        return new FuryLogger(clazz, logLevel);
-      } else {
-        return createSlf4jLogger(clazz);
-      }
+      return createSlf4jLogger(clazz);
     }
   }
 
