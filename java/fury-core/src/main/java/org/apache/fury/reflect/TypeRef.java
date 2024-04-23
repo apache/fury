@@ -19,7 +19,9 @@
 
 package org.apache.fury.reflect;
 
-import org.apache.fury.type.TypeUtils;
+import static org.apache.fury.reflect.Types.asTypeVariableKeyOrNull;
+import static org.apache.fury.reflect.Types.newArrayType;
+import static org.apache.fury.reflect.Types.typeVariablesEquals;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
@@ -35,10 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
-import static org.apache.fury.reflect.Types.asTypeVariableKeyOrNull;
-import static org.apache.fury.reflect.Types.newArrayType;
-import static org.apache.fury.reflect.Types.typeVariablesEquals;
+import org.apache.fury.type.TypeUtils;
 
 public class TypeRef<T> {
 
