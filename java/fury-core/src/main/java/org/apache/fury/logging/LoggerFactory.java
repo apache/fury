@@ -73,7 +73,8 @@ public class LoggerFactory {
    * Get a Logger for log output.
    *
    * @param clazz Class of output Log.
-   * @return Return {@link FuryLogger} if sf4j is not enabled, otherwise {@link Slf4jLogger} will be returned.
+   * @return Return {@link FuryLogger} if sf4j is not enabled, otherwise {@link Slf4jLogger} will be
+   *     returned.
    */
   public static Logger getLogger(Class<?> clazz) {
     if (GraalvmSupport.IN_GRAALVM_NATIVE_IMAGE || !useSlf4jLogger) {
