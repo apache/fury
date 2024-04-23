@@ -557,7 +557,8 @@ public class TypeRef<T> {
       }
 
       return collectTypes(this)
-              .anyMatch(type -> {
+          .anyMatch(
+              type -> {
                 if (type.type instanceof ParameterizedType) {
                   return of(((ParameterizedType) type.type).getOwnerType()).isSubtypeOf(supertype);
                 } else if (type.type instanceof Class<?>) {
@@ -588,11 +589,14 @@ public class TypeRef<T> {
 
   private Stream<TypeRef<?>> collectTypes(TypeRef<?> type) {
     return Stream.of(type)
-            .flatMap(t -> {
-              Stream<TypeRef<?>> genericInterfacesTypeRefs = t.getGenericInterfaces().flatMap(this::collectTypes);
+        .flatMap(
+            t -> {
+              Stream<TypeRef<?>> genericInterfacesTypeRefs =
+                  t.getGenericInterfaces().flatMap(this::collectTypes);
               TypeRef<?> superclass = t.getGenericSuperclass();
-              return superclass == null ? genericInterfacesTypeRefs
-                      : Stream.concat(genericInterfacesTypeRefs, collectTypes(superclass));
+              return superclass == null
+                  ? genericInterfacesTypeRefs
+                  : Stream.concat(genericInterfacesTypeRefs, collectTypes(superclass));
             });
   }
 
@@ -605,10 +609,11 @@ public class TypeRef<T> {
     }
     Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings(type);
     return Arrays.stream(getRawType().getGenericInterfaces())
-            .map(interfaceType -> {
+        .map(
+            interfaceType -> {
               @SuppressWarnings("unchecked") // interface of T
               TypeRef<? super T> resolvedInterface =
-                      (TypeRef<? super T>) resolveType0(interfaceType, mappings);
+                  (TypeRef<? super T>) resolveType0(interfaceType, mappings);
               return resolvedInterface;
             });
   }
@@ -645,8 +650,8 @@ public class TypeRef<T> {
 
   private Stream<? extends TypeRef<?>> boundsAsInterfaces(Type[] bounds) {
     return Arrays.stream(bounds)
-            .map(TypeRef::of)
-            .filter(boundType -> boundType.getRawType().isInterface());
+        .map(TypeRef::of)
+        .filter(boundType -> boundType.getRawType().isInterface());
   }
 
   private boolean is(Type formalType, TypeVariable<?> declaration) {
