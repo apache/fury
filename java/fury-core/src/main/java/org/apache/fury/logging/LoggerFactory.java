@@ -32,6 +32,7 @@ public class LoggerFactory {
   /** Disable Logger, there will be no log output. */
   public static void disableLogging() {
     disableLogging = true;
+    logLevel = -1;
   }
 
   /**
@@ -40,6 +41,7 @@ public class LoggerFactory {
    */
   public static void enableLogging() {
     disableLogging = false;
+    logLevel = LogLevel.INFO_LEVEL;
   }
 
   public static boolean isLoggingDisabled() {
