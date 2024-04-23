@@ -128,7 +128,7 @@ integration_tests() {
      export JAVA_HOME="$ROOT/$jdk"
      export PATH=$JAVA_HOME/bin:$PATH
      echo "First round for generate data: ${jdk}"
-     mvn -T10 --no-transfer-progress clean test -Dtest=org.apache.fury.integration_tests.JDKCompatibilityTest
+     mvn -T10 --no-transfer-progress clean test -Dtest=org.apache.fury.integration_tests.KCompatibilityTestJDKCompatibilityTest
   done
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$ROOT/$jdk"
