@@ -61,6 +61,10 @@ public class LoggerFactory {
     }
   }
 
+  public static int getLogLevel() {
+    return logLevel;
+  }
+
   /**
    * Set whether to use Slf4jLogging.
    *
@@ -83,7 +87,7 @@ public class LoggerFactory {
       return new NilLogger();
     } else {
       if (GraalvmSupport.IN_GRAALVM_NATIVE_IMAGE || !useSlf4jLogger) {
-        return new FuryLogger(clazz, logLevel);
+        return new FuryLogger(clazz);
       } else {
         return createSlf4jLogger(clazz);
       }

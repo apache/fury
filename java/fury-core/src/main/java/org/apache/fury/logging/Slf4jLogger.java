@@ -19,6 +19,10 @@
 
 package org.apache.fury.logging;
 
+import static org.apache.fury.logging.LogLevel.ERROR_LEVEL;
+import static org.apache.fury.logging.LogLevel.INFO_LEVEL;
+import static org.apache.fury.logging.LogLevel.WARN_LEVEL;
+
 import org.slf4j.spi.LocationAwareLogger;
 
 /** A logger to forward logging to slf4j. */
@@ -51,7 +55,7 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void info(String msg, Object... args) {
-    if (LoggerFactory.isLoggingDisabled()) {
+    if (LoggerFactory.getLogLevel() < INFO_LEVEL) {
       return;
     }
     if (isLocationAwareLogger) {
@@ -78,7 +82,7 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void warn(String msg, Object... args) {
-    if (LoggerFactory.isLoggingDisabled()) {
+    if (LoggerFactory.getLogLevel() < WARN_LEVEL) {
       return;
     }
     if (isLocationAwareLogger) {
@@ -90,7 +94,7 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void warn(String msg, Throwable t) {
-    if (LoggerFactory.isLoggingDisabled()) {
+    if (LoggerFactory.getLogLevel() < WARN_LEVEL) {
       return;
     }
     if (isLocationAwareLogger) {
@@ -117,7 +121,7 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void error(String msg, Object... args) {
-    if (LoggerFactory.isLoggingDisabled()) {
+    if (LoggerFactory.getLogLevel() < ERROR_LEVEL) {
       return;
     }
     if (isLocationAwareLogger) {
@@ -130,7 +134,7 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void error(String msg, Throwable t) {
-    if (LoggerFactory.isLoggingDisabled()) {
+    if (LoggerFactory.getLogLevel() < ERROR_LEVEL) {
       return;
     }
     if (isLocationAwareLogger) {
