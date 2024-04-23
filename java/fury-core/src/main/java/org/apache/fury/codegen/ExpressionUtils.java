@@ -35,7 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.fury.codegen.Expression.Cast;
 import org.apache.fury.codegen.Expression.Null;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
@@ -45,10 +45,10 @@ import org.apache.fury.util.function.Functions;
 public class ExpressionUtils {
 
   public static Expression newObjectArray(Expression... expressions) {
-    return new NewArray(TypeToken.of(Object[].class), expressions);
+    return new NewArray(TypeRef.of(Object[].class), expressions);
   }
 
-  public static Expression valueOf(TypeToken<?> type, Expression value) {
+  public static Expression valueOf(TypeRef<?> type, Expression value) {
     return new StaticInvoke(getRawType(type), "valueOf", type, false, value);
   }
 
@@ -69,7 +69,7 @@ public class ExpressionUtils {
     return new Not(target);
   }
 
-  public static Literal nullValue(TypeToken<?> type) {
+  public static Literal nullValue(TypeRef<?> type) {
     return new Literal(null, type);
   }
 
@@ -140,8 +140,8 @@ public class ExpressionUtils {
     return arithmetic;
   }
 
-  public static Cast cast(Expression value, TypeToken<?> typeToken) {
-    return new Cast(value, typeToken);
+  public static Cast cast(Expression value, TypeRef<?> typeRef) {
+    return new Cast(value, typeRef);
   }
 
   public static Expression inline(Expression expression) {
@@ -160,7 +160,7 @@ public class ExpressionUtils {
   }
 
   public static StaticInvoke invokeStaticInline(
-      Class<?> staticObject, String functionName, TypeToken<?> type, Expression... arguments) {
+          Class<?> staticObject, String functionName, TypeRef<?> type, Expression... arguments) {
     return new StaticInvoke(staticObject, functionName, "", type, false, true, arguments);
   }
 

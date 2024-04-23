@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.fury.annotation.Ignore;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.collection.Tuple2;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
@@ -70,7 +70,7 @@ public class Descriptor {
     descCache = CacheBuilder.newBuilder().weakKeys().softValues().concurrencyLevel(64).build();
   }
 
-  private TypeToken<?> typeToken;
+  private TypeRef<?> typeToken;
   private Class<?> type;
   private final String name;
   private final int modifier;
@@ -79,22 +79,22 @@ public class Descriptor {
   private final Method readMethod;
   private final Method writeMethod;
 
-  public Descriptor(Field field, TypeToken<?> typeToken, Method readMethod, Method writeMethod) {
+  public Descriptor(Field field, TypeRef<?> typeRef, Method readMethod, Method writeMethod) {
     this.field = field;
     this.name = field.getName();
     this.modifier = field.getModifiers();
     this.declaringClass = field.getDeclaringClass().getName();
     this.readMethod = readMethod;
     this.writeMethod = writeMethod;
-    this.typeToken = typeToken;
+    this.typeToken = typeRef;
   }
 
-  public Descriptor(TypeToken<?> typeToken, String name, int modifier, String declaringClass) {
+  public Descriptor(TypeRef<?> typeRef, String name, int modifier, String declaringClass) {
     this.field = null;
     this.name = name;
     this.modifier = modifier;
     this.declaringClass = declaringClass;
-    this.typeToken = typeToken;
+    this.typeToken = typeRef;
     this.readMethod = null;
     this.writeMethod = null;
   }
@@ -110,14 +110,14 @@ public class Descriptor {
   }
 
   private Descriptor(
-      TypeToken<?> typeToken,
+      TypeRef<?> typeRef,
       String name,
       int modifier,
       String declaringClass,
       Field field,
       Method readMethod,
       Method writeMethod) {
-    this.typeToken = typeToken;
+    this.typeToken = typeRef;
     this.name = name;
     this.modifier = modifier;
     this.declaringClass = declaringClass;
@@ -126,9 +126,9 @@ public class Descriptor {
     this.writeMethod = writeMethod;
   }
 
-  public Descriptor copy(TypeToken<?> typeToken, Method readMethod, Method writeMethod) {
+  public Descriptor copy(TypeRef<?> typeRef, Method readMethod, Method writeMethod) {
     return new Descriptor(
-        typeToken, name, modifier, declaringClass, field, readMethod, writeMethod);
+            typeRef, name, modifier, declaringClass, field, readMethod, writeMethod);
   }
 
   public Field getField() {
@@ -159,7 +159,7 @@ public class Descriptor {
     return writeMethod;
   }
 
-  /** Try not use {@link TypeToken#getRawType()} since it's expensive. */
+  /** Try not use {@link TypeRef#getRawType()} since it's expensive. */
   public Class<?> getRawType() {
     Class<?> type = this.type;
     if (type == null) {
@@ -172,12 +172,12 @@ public class Descriptor {
     return Objects.requireNonNull(type);
   }
 
-  public TypeToken<?> getTypeToken() {
-    TypeToken<?> typeToken = this.typeToken;
-    if (typeToken == null && field != null) {
-      this.typeToken = typeToken = TypeToken.of(field.getGenericType());
+  public TypeRef<?> getTypeToken() {
+    TypeRef<?> typeRef = this.typeToken;
+    if (typeRef == null && field != null) {
+      this.typeToken = typeRef = TypeRef.of(field.getGenericType());
     }
-    return typeToken;
+    return typeRef;
   }
 
   @Override
@@ -393,18 +393,18 @@ public class Descriptor {
     } else if (TypeUtils.isCollection(fieldRawType) || TypeUtils.isMap(fieldRawType)) {
       // warm up generic type, sun.reflect.generics.repository.FieldRepository
       // is expensive.
-      compilationService.submit(() -> warmGenericTask(TypeToken.of(field.getGenericType())));
+      compilationService.submit(() -> warmGenericTask(TypeRef.of(field.getGenericType())));
     } else if (fieldRawType.isArray()) {
       Class<?> componentType = fieldRawType.getComponentType();
       if (!componentType.isPrimitive()) {
-        compilationService.submit(() -> warmGenericTask(TypeToken.of(field.getGenericType())));
+        compilationService.submit(() -> warmGenericTask(TypeRef.of(field.getGenericType())));
       }
     }
   }
 
   // this method should b executed in background thread pool.
-  static void warmGenericTask(TypeToken<?> typeToken) {
-    Class<?> rawType = TypeUtils.getRawType(typeToken);
+  static void warmGenericTask(TypeRef<?> typeRef) {
+    Class<?> rawType = TypeUtils.getRawType(typeRef);
     if (rawType.isPrimitive() || rawType == String.class || rawType == Object.class) {
       return;
     }
@@ -414,14 +414,14 @@ public class Descriptor {
     if (!rawType.getName().startsWith("java")) {
       getAllDescriptorsMap(rawType);
     } else if (TypeUtils.isCollection(rawType)) {
-      TypeToken<?> elementType = TypeUtils.getElementType(typeToken);
+      TypeRef<?> elementType = TypeUtils.getElementType(typeRef);
       warmGenericTask(elementType);
     } else if (TypeUtils.isMap(rawType)) {
-      Tuple2<TypeToken<?>, TypeToken<?>> mapKeyValueType = TypeUtils.getMapKeyValueType(typeToken);
+      Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType = TypeUtils.getMapKeyValueType(typeRef);
       warmGenericTask(mapKeyValueType.f0);
       warmGenericTask(mapKeyValueType.f1);
     } else if (rawType.isArray()) {
-      warmGenericTask(typeToken.getComponentType());
+      warmGenericTask(typeRef.getComponentType());
     }
   }
 
@@ -488,7 +488,7 @@ public class Descriptor {
           setter = null;
         }
       }
-      TypeToken fieldType = TypeToken.of(field.getGenericType());
+      TypeRef fieldType = TypeRef.of(field.getGenericType());
       descriptorMap.put(field, new Descriptor(field, fieldType, getter, setter));
     }
     // Don't cache descriptors using a static `WeakHashMap<Class<?>, SortedMap<Field, Descriptor>>`，

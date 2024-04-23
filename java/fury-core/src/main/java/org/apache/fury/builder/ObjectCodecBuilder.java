@@ -55,7 +55,7 @@ import org.apache.fury.codegen.Expression.Reference;
 import org.apache.fury.codegen.Expression.ReplaceStub;
 import org.apache.fury.codegen.Expression.StaticInvoke;
 import org.apache.fury.codegen.ExpressionVisitor;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.ObjectSerializer;
 import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
 import org.apache.fury.type.Descriptor;
@@ -86,7 +86,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   protected Map<String, Integer> recordReversedMapping;
 
   public ObjectCodecBuilder(Class<?> beanClass, Fury fury) {
-    super(TypeToken.of(beanClass), fury, Generated.GeneratedObjectSerializer.class);
+    super(TypeRef.of(beanClass), fury, Generated.GeneratedObjectSerializer.class);
     Collection<Descriptor> descriptors =
         classResolver.getAllDescriptorsMap(beanClass, true).values();
     classVersionHash =
@@ -104,7 +104,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     }
   }
 
-  protected ObjectCodecBuilder(TypeToken<?> beanType, Fury fury, Class<?> superSerializerClass) {
+  protected ObjectCodecBuilder(TypeRef<?> beanType, Fury fury, Class<?> superSerializerClass) {
     super(beanType, fury, superSerializerClass);
     this.classVersionHash = null;
     if (isRecord) {
@@ -481,7 +481,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     private final TreeMap<Integer, Expression> recordValuesMap = new TreeMap<>();
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return beanType;
     }
 
@@ -600,7 +600,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     for (List<Descriptor> group : primitiveGroups) {
       ListExpression groupExpressions = new ListExpression();
       for (Descriptor descriptor : group) {
-        TypeToken<?> type = descriptor.getTypeToken();
+        TypeRef<?> type = descriptor.getTypeToken();
         Class<?> clz = getRawType(type);
         Preconditions.checkArgument(isPrimitive(clz));
         Expression fieldValue;
@@ -666,7 +666,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       int acc = 0;
       boolean compressStarted = false;
       for (Descriptor descriptor : group) {
-        TypeToken<?> type = descriptor.getTypeToken();
+        TypeRef<?> type = descriptor.getTypeToken();
         Class<?> clz = getRawType(type);
         Preconditions.checkArgument(isPrimitive(clz));
         Expression fieldValue;

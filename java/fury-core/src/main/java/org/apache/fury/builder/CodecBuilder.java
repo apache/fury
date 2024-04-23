@@ -54,7 +54,7 @@ import org.apache.fury.codegen.Expression.Reference;
 import org.apache.fury.codegen.Expression.StaticInvoke;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.type.Descriptor;
@@ -84,23 +84,23 @@ public abstract class CodecBuilder {
   protected static final String ROOT_OBJECT_NAME = "obj";
   // avoid user class has field with name fury.
   protected static final String FURY_NAME = "fury";
-  static TypeToken<Object[]> objectArrayTypeToken = TypeToken.of(Object[].class);
-  static TypeToken<MemoryBuffer> bufferTypeToken = TypeToken.of(MemoryBuffer.class);
-  static TypeToken<ClassInfo> classInfoTypeToken = TypeToken.of(ClassInfo.class);
-  static TypeToken<ClassInfoHolder> classInfoHolderTypeToken = TypeToken.of(ClassInfoHolder.class);
+  static TypeRef<Object[]> objectArrayTypeToken = TypeRef.of(Object[].class);
+  static TypeRef<MemoryBuffer> bufferTypeToken = TypeRef.of(MemoryBuffer.class);
+  static TypeRef<ClassInfo> classInfoTypeToken = TypeRef.of(ClassInfo.class);
+  static TypeRef<ClassInfoHolder> classInfoHolderTypeToken = TypeRef.of(ClassInfoHolder.class);
 
   protected final CodegenContext ctx;
-  protected final TypeToken<?> beanType;
+  protected final TypeRef<?> beanType;
   protected final Class<?> beanClass;
   protected final boolean isRecord;
   private final Set<String> duplicatedFields;
-  protected Reference furyRef = new Reference(FURY_NAME, TypeToken.of(Fury.class));
+  protected Reference furyRef = new Reference(FURY_NAME, TypeRef.of(Fury.class));
   public static final Reference recordComponentDefaultValues =
       new Reference("recordComponentDefaultValues", OBJECT_ARRAY_TYPE);
   protected final Map<String, Reference> fieldMap = new HashMap<>();
   protected boolean recordCtrAccessible;
 
-  public CodecBuilder(CodegenContext ctx, TypeToken<?> beanType) {
+  public CodecBuilder(CodegenContext ctx, TypeRef<?> beanType) {
     this.ctx = ctx;
     this.beanType = beanType;
     this.beanClass = getRawType(beanType);
@@ -126,16 +126,16 @@ public abstract class CodecBuilder {
     return ctx.sourcePublicAccessible(cls);
   }
 
-  protected Expression tryInlineCast(Expression expression, TypeToken<?> targetType) {
+  protected Expression tryInlineCast(Expression expression, TypeRef<?> targetType) {
     return tryCastIfPublic(expression, targetType, true);
   }
 
-  protected Expression tryCastIfPublic(Expression expression, TypeToken<?> targetType) {
+  protected Expression tryCastIfPublic(Expression expression, TypeRef<?> targetType) {
     return tryCastIfPublic(expression, targetType, false);
   }
 
   protected Expression tryCastIfPublic(
-      Expression expression, TypeToken<?> targetType, boolean inline) {
+          Expression expression, TypeRef<?> targetType, boolean inline) {
     Class<?> rawType = getRawType(targetType);
     if (rawType == FinalObjectTypeStub.class) {
       // final field doesn't exist in this class, skip cast.
@@ -145,14 +145,14 @@ public abstract class CodecBuilder {
       if (sourcePublicAccessible(rawType)) {
         return new Cast(expression, targetType);
       } else {
-        return new Cast(expression, ReflectionUtils.getPublicSuperType(TypeToken.of(rawType)));
+        return new Cast(expression, ReflectionUtils.getPublicSuperType(TypeRef.of(rawType)));
       }
     }
     return tryCastIfPublic(expression, targetType, "castedValue");
   }
 
   protected Expression tryCastIfPublic(
-      Expression expression, TypeToken<?> targetType, String valuePrefix) {
+          Expression expression, TypeRef<?> targetType, String valuePrefix) {
     Class<?> rawType = getRawType(targetType);
     if (sourcePublicAccessible(rawType)
         && !expression.type().wrap().isSubtypeOf(targetType.wrap())) {
@@ -172,10 +172,10 @@ public abstract class CodecBuilder {
           new StaticInvoke(
               RecordUtils.class,
               "getRecordCtrHandle",
-              TypeToken.of(MethodHandle.class),
+              TypeRef.of(MethodHandle.class),
               beanClassExpr());
       ctx.addField(ctx.type(MethodHandle.class), fieldName, getRecordCtrHandle);
-      fieldRef = new Reference(fieldName, TypeToken.of(MethodHandle.class));
+      fieldRef = new Reference(fieldName, TypeRef.of(MethodHandle.class));
       fieldMap.put(fieldName, fieldRef);
     }
     return fieldRef;
@@ -188,7 +188,7 @@ public abstract class CodecBuilder {
 
   /** Returns an expression that get field value from <code>bean</code>. */
   protected Expression getFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
-    TypeToken<?> fieldType = descriptor.getTypeToken();
+    TypeRef<?> fieldType = descriptor.getTypeToken();
     Class<?> rawType = descriptor.getRawType();
     String fieldName = descriptor.getName();
     if (isRecord) {
@@ -234,7 +234,7 @@ public abstract class CodecBuilder {
   }
 
   private Expression getRecordFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
-    TypeToken<?> fieldType = descriptor.getTypeToken();
+    TypeRef<?> fieldType = descriptor.getTypeToken();
     if (!sourcePublicAccessible(descriptor.getRawType())) {
       fieldType = OBJECT_TYPE;
     }
@@ -249,7 +249,7 @@ public abstract class CodecBuilder {
       Tuple2<Class<?>, String> methodInfo = Functions.getterMethodInfo(descriptor.getRawType());
       if (ref == null) {
         Class<?> funcInterface = methodInfo.f0;
-        TypeToken<?> getterType = TypeToken.of(funcInterface);
+        TypeRef<?> getterType = TypeRef.of(funcInterface);
         Expression getter =
             new StaticInvoke(
                 Functions.class,
@@ -288,7 +288,7 @@ public abstract class CodecBuilder {
     if (descriptor.getTypeToken().isPrimitive()) {
       // ex: Platform.UNSAFE.getFloat(obj, fieldOffset)
       Preconditions.checkArgument(!fieldNullable);
-      TypeToken<?> returnType = descriptor.getTypeToken();
+      TypeRef<?> returnType = descriptor.getTypeToken();
       String funcName = "get" + StringUtils.capitalize(descriptor.getRawType().toString());
       return new StaticInvoke(
           Platform.class, funcName, returnType, false, inputObject, fieldOffsetExpr);
@@ -317,7 +317,7 @@ public abstract class CodecBuilder {
           fieldName + "_offset_",
           () -> {
             Expression classExpr = beanClassExpr(field.getDeclaringClass());
-            new Invoke(classExpr, "getDeclaredField", TypeToken.of(Field.class));
+            new Invoke(classExpr, "getDeclaredField", TypeRef.of(Field.class));
             Expression reflectFieldRef = getReflectField(cls, field, false);
             return new StaticInvoke(
                     Platform.class, "objectFieldOffset", PRIMITIVE_LONG_TYPE, reflectFieldRef)
@@ -390,7 +390,7 @@ public abstract class CodecBuilder {
    * Unsafe}.
    */
   private Expression unsafeSetField(Expression bean, Descriptor descriptor, Expression value) {
-    TypeToken<?> fieldType = descriptor.getTypeToken();
+    TypeRef<?> fieldType = descriptor.getTypeToken();
     // Use Field in case the class has duplicate field name as `fieldName`.
     Expression fieldOffsetExpr = getFieldOffset(beanClass, descriptor);
     if (descriptor.getTypeToken().isPrimitive()) {
@@ -419,19 +419,19 @@ public abstract class CodecBuilder {
         Field.class,
         fieldRefName,
         () -> {
-          TypeToken<Field> fieldTypeToken = TypeToken.of(Field.class);
+          TypeRef<Field> fieldTypeRef = TypeRef.of(Field.class);
           Expression classExpr = beanClassExpr(field.getDeclaringClass());
           Expression fieldExpr;
           if (GraalvmSupport.isGraalBuildtime()) {
             fieldExpr =
                 inlineInvoke(
-                    classExpr, "getDeclaredField", fieldTypeToken, Literal.ofString(fieldName));
+                    classExpr, "getDeclaredField", fieldTypeRef, Literal.ofString(fieldName));
           } else {
             fieldExpr =
                 new StaticInvoke(
                     ReflectionUtils.class,
                     "getField",
-                    fieldTypeToken,
+                        fieldTypeRef,
                     classExpr,
                     Literal.ofString(fieldName));
           }
@@ -448,7 +448,7 @@ public abstract class CodecBuilder {
     Reference fieldRef = fieldMap.get(fieldName);
     if (fieldRef == null) {
       ctx.addField(isStatic, true, ctx.type(type), fieldName, value.get());
-      fieldRef = new Reference(fieldName, TypeToken.of(type));
+      fieldRef = new Reference(fieldName, TypeRef.of(type));
       fieldMap.put(fieldName, fieldRef);
     }
     return fieldRef;

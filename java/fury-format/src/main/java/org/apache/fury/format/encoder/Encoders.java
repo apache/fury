@@ -44,7 +44,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.TypeUtils;
 
 /**
@@ -191,27 +191,27 @@ public class Encoders {
    * @param <T> T is a array type, can be a nested list type.
    * @return
    */
-  public static <T extends Collection> ArrayEncoder<T> arrayEncoder(TypeToken<T> token) {
+  public static <T extends Collection> ArrayEncoder<T> arrayEncoder(TypeRef<T> token) {
     return arrayEncoder(token, (Fury) null);
   }
 
-  public static <T extends Collection> ArrayEncoder<T> arrayEncoder(TypeToken<T> token, Fury fury) {
+  public static <T extends Collection> ArrayEncoder<T> arrayEncoder(TypeRef<T> token, Fury fury) {
     Schema schema = TypeInference.inferSchema(token, false);
     Field field = DataTypes.fieldOfSchema(schema, 0);
     BinaryArrayWriter writer = new BinaryArrayWriter(field);
 
-    Set<TypeToken<?>> set = new HashSet<>();
+    Set<TypeRef<?>> set = new HashSet<>();
     findBeanToken(token, set);
     if (set.isEmpty()) {
       throw new IllegalArgumentException("can not find bean class.");
     }
 
-    TypeToken<?> typeToken = null;
-    for (TypeToken<?> tt : set) {
-      typeToken = set.iterator().next();
+    TypeRef<?> typeRef = null;
+    for (TypeRef<?> tt : set) {
+      typeRef = set.iterator().next();
       Encoders.loadOrGenRowCodecClass(getRawType(tt));
     }
-    ArrayEncoder<T> encoder = arrayEncoder(token, typeToken, writer, fury);
+    ArrayEncoder<T> encoder = arrayEncoder(token, typeRef, writer, fury);
     return new ArrayEncoder<T>() {
 
       @Override
@@ -266,8 +266,8 @@ public class Encoders {
    * java bean.
    */
   public static <T extends Collection, B> ArrayEncoder<T> arrayEncoder(
-      TypeToken<? extends Collection> arrayToken,
-      TypeToken<B> elementType,
+      TypeRef<? extends Collection> arrayToken,
+      TypeRef<B> elementType,
       BinaryArrayWriter writer,
       Fury fury) {
     Field field = writer.getField();
@@ -328,7 +328,7 @@ public class Encoders {
    * @param <T> T is a array type, can be a nested list type.
    * @return
    */
-  public static <T extends Map> MapEncoder<T> mapEncoder(TypeToken<T> token) {
+  public static <T extends Map> MapEncoder<T> mapEncoder(TypeRef<T> token) {
     return mapEncoder(token, (Fury) null);
   }
 
@@ -346,21 +346,21 @@ public class Encoders {
     return (MapEncoder<T>) mapEncoder(TypeUtils.mapOf(keyType, valueType), null);
   }
 
-  public static <T extends Map> MapEncoder<T> mapEncoder(TypeToken<T> token, Fury fury) {
+  public static <T extends Map> MapEncoder<T> mapEncoder(TypeRef<T> token, Fury fury) {
     Preconditions.checkNotNull(token);
 
-    Tuple2<TypeToken<?>, TypeToken<?>> tuple2 = TypeUtils.getMapKeyValueType(token);
+    Tuple2<TypeRef<?>, TypeRef<?>> tuple2 = TypeUtils.getMapKeyValueType(token);
 
-    Set<TypeToken<?>> set1 = beanSet(tuple2.f0);
-    Set<TypeToken<?>> set2 = beanSet(tuple2.f1);
+    Set<TypeRef<?>> set1 = beanSet(tuple2.f0);
+    Set<TypeRef<?>> set2 = beanSet(tuple2.f1);
     LOG.info("Find beans to load: {}, {}", set1, set2);
 
     if (set1.isEmpty() && set2.isEmpty()) {
       throw new IllegalArgumentException("can not find bean class.");
     }
 
-    TypeToken<?> keyToken = token4BeanLoad(set1, tuple2.f0);
-    TypeToken<?> valToken = token4BeanLoad(set2, tuple2.f1);
+    TypeRef<?> keyToken = token4BeanLoad(set1, tuple2.f0);
+    TypeRef<?> valToken = token4BeanLoad(set2, tuple2.f1);
 
     MapEncoder<T> encoder = mapEncoder(token, keyToken, valToken, fury);
     return createMapEncoder(encoder);
@@ -378,7 +378,7 @@ public class Encoders {
    * java bean.
    */
   public static <T extends Map, K, V> MapEncoder<T> mapEncoder(
-      TypeToken<? extends Map> mapToken, TypeToken<K> keyToken, TypeToken<V> valToken, Fury fury) {
+          TypeRef<? extends Map> mapToken, TypeRef<K> keyToken, TypeRef<V> valToken, Fury fury) {
     Preconditions.checkNotNull(mapToken);
     Preconditions.checkNotNull(keyToken);
     Preconditions.checkNotNull(valToken);
@@ -441,8 +441,8 @@ public class Encoders {
     }
   }
 
-  private static Set<TypeToken<?>> beanSet(TypeToken<?> token) {
-    Set<TypeToken<?>> set = new HashSet<>();
+  private static Set<TypeRef<?>> beanSet(TypeRef<?> token) {
+    Set<TypeRef<?>> set = new HashSet<>();
     if (TypeUtils.isBean(token)) {
       set.add(token);
       return set;
@@ -451,9 +451,9 @@ public class Encoders {
     return set;
   }
 
-  private static TypeToken<?> token4BeanLoad(Set<TypeToken<?>> set, TypeToken<?> init) {
-    TypeToken<?> keyToken = init;
-    for (TypeToken<?> tt : set) {
+  private static TypeRef<?> token4BeanLoad(Set<TypeRef<?>> set, TypeRef<?> init) {
+    TypeRef<?> keyToken = init;
+    for (TypeRef<?> tt : set) {
       keyToken = tt;
       Encoders.loadOrGenRowCodecClass(getRawType(tt));
       LOG.info("bean {} load finished", getRawType(tt));
@@ -496,27 +496,27 @@ public class Encoders {
     };
   }
 
-  private static void findBeanToken(TypeToken<?> typeToken, java.util.Set<TypeToken<?>> set) {
-    while (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeToken)
-        || TypeUtils.MAP_TYPE.isSupertypeOf(typeToken)) {
-      if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeToken)) {
-        typeToken = TypeUtils.getElementType(typeToken);
-        if (TypeUtils.isBean(typeToken)) {
-          set.add(typeToken);
+  private static void findBeanToken(TypeRef<?> typeRef, java.util.Set<TypeRef<?>> set) {
+    while (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)
+        || TypeUtils.MAP_TYPE.isSupertypeOf(typeRef)) {
+      if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)) {
+        typeRef = TypeUtils.getElementType(typeRef);
+        if (TypeUtils.isBean(typeRef)) {
+          set.add(typeRef);
         }
       } else {
-        Tuple2<TypeToken<?>, TypeToken<?>> tuple2 = TypeUtils.getMapKeyValueType(typeToken);
+        Tuple2<TypeRef<?>, TypeRef<?>> tuple2 = TypeUtils.getMapKeyValueType(typeRef);
         if (TypeUtils.isBean(tuple2.f0)) {
           set.add(tuple2.f0);
         } else {
-          typeToken = tuple2.f0;
+          typeRef = tuple2.f0;
           findBeanToken(tuple2.f0, set);
         }
 
         if (TypeUtils.isBean(tuple2.f1)) {
           set.add(tuple2.f1);
         } else {
-          typeToken = tuple2.f1;
+          typeRef = tuple2.f1;
           findBeanToken(tuple2.f1, set);
         }
       }
@@ -542,7 +542,7 @@ public class Encoders {
   }
 
   private static <B> Class<?> loadOrGenArrayCodecClass(
-      TypeToken<? extends Collection> arrayCls, TypeToken<B> elementType) {
+          TypeRef<? extends Collection> arrayCls, TypeRef<B> elementType) {
     LOG.info("Create ArrayCodec for classes {}", elementType);
     Class<?> cls = getRawType(elementType);
     // class name prefix
@@ -559,11 +559,11 @@ public class Encoders {
   }
 
   private static <K, V> Class<?> loadOrGenMapCodecClass(
-      TypeToken<? extends Map> mapCls, TypeToken<K> keyToken, TypeToken<V> valueToken) {
+          TypeRef<? extends Map> mapCls, TypeRef<K> keyToken, TypeRef<V> valueToken) {
     LOG.info("Create MapCodec for classes {}, {}", keyToken, valueToken);
     boolean keyIsBean = TypeUtils.isBean(keyToken);
     boolean valIsBean = TypeUtils.isBean(valueToken);
-    TypeToken<?> beanToken;
+    TypeRef<?> beanToken;
     Class<?> cls;
     if (keyIsBean) {
       cls = getRawType(keyToken);

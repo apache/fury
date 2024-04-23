@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.fury.type.TypeUtils;
 
-public class TypeToken<T> {
+public class TypeRef<T> {
 
   private final Type type;
 
@@ -50,26 +50,26 @@ public class TypeToken<T> {
    * TypeToken<List<String>> t = new TypeToken<List<String>>() {};
    * }</pre>
    */
-  protected TypeToken() {
+  protected TypeRef() {
     this.type = capture();
   }
 
-  private TypeToken(Class<T> declaringClass) {
+  private TypeRef(Class<T> declaringClass) {
     this.type = declaringClass;
   }
 
-  private TypeToken(Type type) {
+  private TypeRef(Type type) {
     this.type = type;
   }
 
   /** Returns an instance of type token that wraps {@code type}. */
-  public static <T> TypeToken<T> of(Class<T> clazz) {
-    return new TypeToken<>(clazz);
+  public static <T> TypeRef<T> of(Class<T> clazz) {
+    return new TypeRef<>(clazz);
   }
 
   /** Returns an instance of type token that wraps {@code type}. */
-  public static <T> TypeToken<T> of(Type type) {
-    return new TypeToken<>(type);
+  public static <T> TypeRef<T> of(Type type) {
+    return new TypeRef<>(type);
   }
 
   /** Returns the captured type. */
@@ -147,7 +147,7 @@ public class TypeToken<T> {
    * Returns the array component type if this type represents an array ({@code int[]}, {@code T[]},
    * {@code <? extends Map<String, Integer>[]>} etc.), or else {@code null} is returned.
    */
-  public TypeToken<?> getComponentType() {
+  public TypeRef<?> getComponentType() {
     return of(getComponentType(type));
   }
 
@@ -202,7 +202,7 @@ public class TypeToken<T> {
    * => String.class
    * }</pre>
    */
-  public TypeToken<?> resolveType(Type iteratorReturnType) {
+  public TypeRef<?> resolveType(Type iteratorReturnType) {
     if (iteratorReturnType instanceof WildcardType) { // fast path
       return of(iteratorReturnType);
     }
@@ -211,7 +211,7 @@ public class TypeToken<T> {
     return resolveType0(iteratorReturnType, mappings);
   }
 
-  private TypeToken<?> resolveType0(
+  private TypeRef<?> resolveType0(
       Type iteratorReturnType, Map<Types.TypeVariableKey, Type> mappings) {
     if (iteratorReturnType instanceof TypeVariable) {
       TypeVariable<?> typeVariable = (TypeVariable<?>) iteratorReturnType;
@@ -305,7 +305,7 @@ public class TypeToken<T> {
    * ArrayList<String>}, {@code Iterable<String>} is returned given the input {@code
    * Iterable.class}.
    */
-  public TypeToken<? super T> getSupertype(Class<? super T> superclass) {
+  public TypeRef<? super T> getSupertype(Class<? super T> superclass) {
     if (type instanceof TypeVariable) {
       return getSupertypeFromBounds(superclass, ((TypeVariable<?>) type).getBounds());
     }
@@ -326,19 +326,19 @@ public class TypeToken<T> {
       }
 
       @SuppressWarnings("rawtypes")
-      TypeToken componentTypeToken = of(componentType);
+      TypeRef componentTypeRef = of(componentType);
 
       @SuppressWarnings("unchecked")
-      TypeToken<?> componentSupertype =
-          componentTypeToken.getSupertype(superclass.getComponentType());
+      TypeRef<?> componentSupertype =
+          componentTypeRef.getSupertype(superclass.getComponentType());
 
       return of(newArrayType(componentSupertype.type));
     }
 
     Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings(type);
     @SuppressWarnings("unchecked") // resolved supertype
-    TypeToken<? super T> supertype =
-        (TypeToken<? super T>) resolveType0(toGenericType(superclass), mappings);
+    TypeRef<? super T> supertype =
+        (TypeRef<? super T>) resolveType0(toGenericType(superclass), mappings);
     return supertype;
   }
 
@@ -360,12 +360,12 @@ public class TypeToken<T> {
     }
   }
 
-  private TypeToken<? super T> getSupertypeFromBounds(Class<? super T> superclass, Type[] bounds) {
+  private TypeRef<? super T> getSupertypeFromBounds(Class<? super T> superclass, Type[] bounds) {
     for (Type upperBound : bounds) {
-      TypeToken<? extends T> bound = of(upperBound);
+      TypeRef<? extends T> bound = of(upperBound);
       if (bound.isSubtypeOf(superclass)) {
         @SuppressWarnings({"unchecked"}) // guarded by the isSubtypeOf check.
-        TypeToken<? super T> result = (TypeToken<? super T>) bound.getSupertype(superclass);
+        TypeRef<? super T> result = (TypeRef<? super T>) bound.getSupertype(superclass);
         return result;
       }
     }
@@ -377,11 +377,11 @@ public class TypeToken<T> {
    * {@code Iterable<String>} and {@code subclass} is {@code List}, {@code List<String>} is
    * returned.
    */
-  public final TypeToken<? extends T> getSubtype(Class<?> subclass) {
+  public final TypeRef<? extends T> getSubtype(Class<?> subclass) {
     if (type instanceof WildcardType) {
       Type[] lowerBounds = ((WildcardType) type).getLowerBounds();
       if (lowerBounds.length > 0) {
-        TypeToken<? extends T> bound = of(lowerBounds[0]);
+        TypeRef<? extends T> bound = of(lowerBounds[0]);
         // Java supports only one lowerbound anyway.
         return bound.getSubtype(subclass);
       }
@@ -396,7 +396,7 @@ public class TypeToken<T> {
       }
       // array is covariant. component type is subtype, so is the array type.
       // requireNonNull is safe because we call getArraySubtype only when isArray().
-      TypeToken<?> componentSubtype = of(componentType).getSubtype(subclassComponentType);
+      TypeRef<?> componentSubtype = of(componentType).getSubtype(subclassComponentType);
       // If we are passed with int[].class, don't turn it to GenericArrayType
       return of(Types.newArrayType(componentSubtype.type));
     }
@@ -415,7 +415,7 @@ public class TypeToken<T> {
             || (rawType.getTypeParameters().length != 0))) {
       // no resolution needed
       @SuppressWarnings({"unchecked"}) // subclass isn't <? extends T>
-      TypeToken<? extends T> result = (TypeToken<? extends T>) of(subclass);
+      TypeRef<? extends T> result = (TypeRef<? extends T>) of(subclass);
       return result;
     }
     // class Base<A, B> {}
@@ -425,20 +425,20 @@ public class TypeToken<T> {
     // Sub<X, Y>.getSupertype(Base.class) => Base<X, Y>
     // => X=String, Y=Integer
     // => Sub<X, Y>=Sub<String, Integer>
-    TypeToken<?> genericSubtype = of(toGenericType(subclass));
+    TypeRef<?> genericSubtype = of(toGenericType(subclass));
     @SuppressWarnings({"rawtypes", "unchecked"}) // subclass isn't <? extends T>
     Type supertypeWithArgsFromSubtype = genericSubtype.getSupertype((Class) rawType).type;
 
     if (genericSubtype.type instanceof WildcardType) {
       @SuppressWarnings({"unchecked"}) // subclass isn't <? extends T>
-      TypeToken<? extends T> result = (TypeToken<? extends T>) genericSubtype;
+      TypeRef<? extends T> result = (TypeRef<? extends T>) genericSubtype;
       return result;
     }
 
     Map<Types.TypeVariableKey, Type> mappings = new HashMap<>();
     populateTypeMappings(mappings, supertypeWithArgsFromSubtype, type);
 
-    return (TypeToken<? extends T>) resolveType0(genericSubtype.type, mappings);
+    return (TypeRef<? extends T>) resolveType0(genericSubtype.type, mappings);
   }
 
   private void populateTypeMappings(
@@ -502,7 +502,7 @@ public class TypeToken<T> {
   }
 
   /** Returns true if this type is a subtype of the given {@code type}. */
-  public boolean isSubtypeOf(TypeToken<?> type) {
+  public boolean isSubtypeOf(TypeRef<?> type) {
     return isSubtypeOf(type.getType());
   }
 
@@ -544,7 +544,7 @@ public class TypeToken<T> {
         TypeVariable<?> typeParameter = typeParameters[i];
 
         Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings(type);
-        TypeToken<?> subtypeParam = resolveType0(typeParameter, mappings);
+        TypeRef<?> subtypeParam = resolveType0(typeParameter, mappings);
 
         if (!subtypeParam.is(supertypeArgs[i], typeParameter)) {
           return false;
@@ -556,9 +556,9 @@ public class TypeToken<T> {
         return true;
       }
 
-      List<TypeToken<?>> typeTokens = new ArrayList<>();
-      collectTypes(this, typeTokens);
-      for (TypeToken<?> type : typeTokens) {
+      List<TypeRef<?>> typeRefs = new ArrayList<>();
+      collectTypes(this, typeRefs);
+      for (TypeRef<?> type : typeRefs) {
         if (type.type instanceof ParameterizedType) {
           if (of(((ParameterizedType) type.type).getOwnerType()).isSubtypeOf(supertype)) {
             return true;
@@ -591,36 +591,36 @@ public class TypeToken<T> {
     return false;
   }
 
-  private void collectTypes(TypeToken<?> type, List<TypeToken<?>> resultList) {
-    for (TypeToken<?> genericInterface : type.getGenericInterfaces()) {
+  private void collectTypes(TypeRef<?> type, List<TypeRef<?>> resultList) {
+    for (TypeRef<?> genericInterface : type.getGenericInterfaces()) {
       collectTypes(genericInterface, resultList);
     }
-    TypeToken<?> superclass = type.getGenericSuperclass();
+    TypeRef<?> superclass = type.getGenericSuperclass();
     if (superclass != null) {
       collectTypes(superclass, resultList);
     }
     resultList.add(type);
   }
 
-  private List<TypeToken<? super T>> getGenericInterfaces() {
+  private List<TypeRef<? super T>> getGenericInterfaces() {
     if (type instanceof TypeVariable) {
       return boundsAsInterfaces(((TypeVariable<?>) type).getBounds());
     }
     if (type instanceof WildcardType) {
       return boundsAsInterfaces(((WildcardType) type).getUpperBounds());
     }
-    List<TypeToken<? super T>> result = new ArrayList<>();
+    List<TypeRef<? super T>> result = new ArrayList<>();
     Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings(type);
     for (Type interfaceType : getRawType().getGenericInterfaces()) {
       @SuppressWarnings("unchecked") // interface of T
-      TypeToken<? super T> resolvedInterface =
-          (TypeToken<? super T>) resolveType0(interfaceType, mappings);
+      TypeRef<? super T> resolvedInterface =
+          (TypeRef<? super T>) resolveType0(interfaceType, mappings);
       result.add(resolvedInterface);
     }
     return result;
   }
 
-  private TypeToken<? super T> getGenericSuperclass() {
+  private TypeRef<? super T> getGenericSuperclass() {
     if (type instanceof TypeVariable) {
       // First bound is always the super class, if one exists.
       return boundAsSuperclass(((TypeVariable<?>) type).getBounds()[0]);
@@ -636,24 +636,24 @@ public class TypeToken<T> {
 
     Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings(type);
     @SuppressWarnings("unchecked") // interface of T
-    TypeToken<? super T> superToken = (TypeToken<? super T>) resolveType0(superclass, mappings);
+    TypeRef<? super T> superToken = (TypeRef<? super T>) resolveType0(superclass, mappings);
     return superToken;
   }
 
-  private TypeToken<? super T> boundAsSuperclass(Type bound) {
-    TypeToken<?> token = of(bound);
+  private TypeRef<? super T> boundAsSuperclass(Type bound) {
+    TypeRef<?> token = of(bound);
     if (token.getRawType().isInterface()) {
       return null;
     }
     @SuppressWarnings("unchecked") // only upper bound of T is passed in.
-    TypeToken<? super T> superclass = (TypeToken<? super T>) token;
+    TypeRef<? super T> superclass = (TypeRef<? super T>) token;
     return superclass;
   }
 
-  private List<TypeToken<? super T>> boundsAsInterfaces(Type[] bounds) {
-    List<TypeToken<? super T>> result = new ArrayList<>();
+  private List<TypeRef<? super T>> boundsAsInterfaces(Type[] bounds) {
+    List<TypeRef<? super T>> result = new ArrayList<>();
     for (Type bound : bounds) {
-      TypeToken<? super T> boundType = of(bound);
+      TypeRef<? super T> boundType = of(bound);
       if (boundType.getRawType().isInterface()) {
         result.add(boundType);
       }
@@ -749,7 +749,7 @@ public class TypeToken<T> {
   }
 
   /** Returns true if this type is a supertype of the given {@code type}. */
-  public final boolean isSupertypeOf(TypeToken<?> type) {
+  public final boolean isSupertypeOf(TypeRef<?> type) {
     return type.isSubtypeOf(getType());
   }
 
@@ -757,7 +757,7 @@ public class TypeToken<T> {
    * Returns the corresponding wrapper type if this is a primitive type; otherwise returns {@code
    * this} itself.
    */
-  public final TypeToken<T> wrap() {
+  public final TypeRef<T> wrap() {
     if (isPrimitive()) {
       @SuppressWarnings("unchecked")
       final Class<T> clazz = (Class<T>) type;
@@ -773,7 +773,7 @@ public class TypeToken<T> {
    * Returns the corresponding primitive type if this is a wrapper type; otherwise returns {@code
    * this} itself.
    */
-  public final TypeToken<T> unwrap() {
+  public final TypeRef<T> unwrap() {
     if (isWrapper()) {
       @SuppressWarnings("unchecked") // this is a wrapper class
       final Class<T> clazz = (Class<T>) type;
@@ -785,18 +785,18 @@ public class TypeToken<T> {
     return this;
   }
 
-  public <X> TypeToken<T> where(TypeParameter<X> typeParam, Class<X> typeArg) {
+  public <X> TypeRef<T> where(TypeParameter<X> typeParam, Class<X> typeArg) {
     return where(typeParam, of(typeArg));
   }
 
-  public final <X> TypeToken<T> where(TypeParameter<X> typeParam, TypeToken<X> typeArg) {
+  public final <X> TypeRef<T> where(TypeParameter<X> typeParam, TypeRef<X> typeArg) {
     if (type instanceof WildcardType) { // fast path
       return of(type);
     }
     Types.TypeVariableKey typeVariableKey = new Types.TypeVariableKey(typeParam.typeVariable);
     @SuppressWarnings("unchecked")
-    TypeToken<T> result =
-        (TypeToken<T>) resolveType0(type, Collections.singletonMap(typeVariableKey, typeArg.type));
+    TypeRef<T> result =
+        (TypeRef<T>) resolveType0(type, Collections.singletonMap(typeVariableKey, typeArg.type));
     return result;
   }
 
@@ -812,8 +812,8 @@ public class TypeToken<T> {
    */
   @Override
   public boolean equals(Object o) {
-    if (o instanceof TypeToken) {
-      final TypeToken<?> that = (TypeToken<?>) o;
+    if (o instanceof TypeRef) {
+      final TypeRef<?> that = (TypeRef<?>) o;
       return type.equals(that.type);
     }
     return false;

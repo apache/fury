@@ -38,7 +38,7 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.collection.Tuple2;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.DecimalUtils;
@@ -49,25 +49,25 @@ import org.apache.fury.util.Preconditions;
 public class TypeInference {
 
   public static Schema inferSchema(java.lang.reflect.Type type) {
-    return inferSchema(TypeToken.of(type));
+    return inferSchema(TypeRef.of(type));
   }
 
   public static Schema inferSchema(Class<?> clz) {
-    return inferSchema(TypeToken.of(clz));
+    return inferSchema(TypeRef.of(clz));
   }
 
   /**
    * Infer the schema for class.
    *
-   * @param typeToken bean class type
+   * @param typeRef bean class type
    * @return schema of a class
    */
-  public static Schema inferSchema(TypeToken<?> typeToken) {
-    return inferSchema(typeToken, true);
+  public static Schema inferSchema(TypeRef<?> typeRef) {
+    return inferSchema(typeRef, true);
   }
 
-  public static Schema inferSchema(TypeToken<?> typeToken, boolean forStruct) {
-    Field field = inferField(typeToken);
+  public static Schema inferSchema(TypeRef<?> typeRef, boolean forStruct) {
+    Field field = inferField(typeRef);
     if (forStruct) {
       Preconditions.checkArgument(field.getType().getTypeID() == ArrowType.ArrowTypeID.Struct);
       return new Schema(field.getChildren());
@@ -77,54 +77,54 @@ public class TypeInference {
   }
 
   public static Optional<ArrowType> getDataType(Class<?> cls) {
-    return getDataType(TypeToken.of(cls));
+    return getDataType(TypeRef.of(cls));
   }
 
-  public static Optional<ArrowType> getDataType(TypeToken<?> typeToken) {
+  public static Optional<ArrowType> getDataType(TypeRef<?> typeRef) {
     try {
-      return Optional.of(inferDataType(typeToken));
+      return Optional.of(inferDataType(typeRef));
     } catch (UnsupportedOperationException e) {
       return Optional.empty();
     }
   }
 
-  public static ArrowType inferDataType(TypeToken<?> typeToken) {
-    return inferField(typeToken).getType();
+  public static ArrowType inferDataType(TypeRef<?> typeRef) {
+    return inferField(typeRef).getType();
   }
 
   public static Field arrayInferField(
       java.lang.reflect.Type arrayType, java.lang.reflect.Type type) {
-    return arrayInferField(TypeToken.of(arrayType), TypeToken.of(type));
+    return arrayInferField(TypeRef.of(arrayType), TypeRef.of(type));
   }
 
   public static Field arrayInferField(Class<?> arrayClz, Class<?> clz) {
-    return arrayInferField(TypeToken.of(arrayClz), TypeToken.of(clz));
+    return arrayInferField(TypeRef.of(arrayClz), TypeRef.of(clz));
   }
 
   /**
    * Infer the field of the list.
    *
-   * @param typeToken bean class type
+   * @param typeRef bean class type
    * @return field of the list
    */
-  public static Field arrayInferField(TypeToken<?> arrayTypeToken, TypeToken<?> typeToken) {
-    Field field = inferField(arrayTypeToken, typeToken);
+  public static Field arrayInferField(TypeRef<?> arrayTypeRef, TypeRef<?> typeRef) {
+    Field field = inferField(arrayTypeRef, typeRef);
     Preconditions.checkArgument(field.getType().getTypeID() == ArrowType.ArrowTypeID.List);
     return field;
   }
 
-  private static Field inferField(TypeToken<?> typeToken) {
-    return inferField(null, typeToken);
+  private static Field inferField(TypeRef<?> typeRef) {
+    return inferField(null, typeRef);
   }
 
-  private static Field inferField(TypeToken<?> arrayTypeToken, TypeToken<?> typeToken) {
+  private static Field inferField(TypeRef<?> arrayTypeRef, TypeRef<?> typeRef) {
     LinkedHashSet<Class<?>> seenTypeSet = new LinkedHashSet<>();
     String name = "";
-    if (arrayTypeToken != null) {
-      Field f = inferField(DataTypes.ARRAY_ITEM_NAME, typeToken, seenTypeSet);
+    if (arrayTypeRef != null) {
+      Field f = inferField(DataTypes.ARRAY_ITEM_NAME, typeRef, seenTypeSet);
       return DataTypes.arrayField(name, f);
     } else {
-      return inferField("", typeToken, seenTypeSet);
+      return inferField("", typeRef, seenTypeSet);
     }
   }
 
@@ -135,8 +135,8 @@ public class TypeInference {
    * @return DataType of a typeToken
    */
   private static Field inferField(
-      String name, TypeToken<?> typeToken, LinkedHashSet<Class<?>> seenTypeSet) {
-    Class<?> rawType = getRawType(typeToken);
+          String name, TypeRef<?> typeRef, LinkedHashSet<Class<?>> seenTypeSet) {
+    Class<?> rawType = getRawType(typeRef);
     if (rawType == boolean.class) {
       return field(name, DataTypes.notNullFieldType(ArrowType.Bool.INSTANCE));
     } else if (rawType == byte.class) {
@@ -194,16 +194,16 @@ public class TypeInference {
       Field f =
           inferField(
               DataTypes.ARRAY_ITEM_NAME,
-              Objects.requireNonNull(typeToken.getComponentType()),
+              Objects.requireNonNull(typeRef.getComponentType()),
               seenTypeSet);
       return DataTypes.arrayField(name, f);
-    } else if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeToken)) { // iterable
+    } else if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)) { // iterable
       // when type is both iterable and bean, we take it as iterable in row-format
       Field f =
-          inferField(DataTypes.ARRAY_ITEM_NAME, TypeUtils.getElementType(typeToken), seenTypeSet);
+          inferField(DataTypes.ARRAY_ITEM_NAME, TypeUtils.getElementType(typeRef), seenTypeSet);
       return DataTypes.arrayField(name, f);
-    } else if (TypeUtils.MAP_TYPE.isSupertypeOf(typeToken)) {
-      Tuple2<TypeToken<?>, TypeToken<?>> kvType = TypeUtils.getMapKeyValueType(typeToken);
+    } else if (TypeUtils.MAP_TYPE.isSupertypeOf(typeRef)) {
+      Tuple2<TypeRef<?>, TypeRef<?>> kvType = TypeUtils.getMapKeyValueType(typeRef);
       Field keyField = inferField(MapVector.KEY_NAME, kvType.f0, seenTypeSet);
       // Map's keys must be non-nullable
       FieldType keyFieldType =
@@ -237,20 +237,20 @@ public class TypeInference {
       throw new UnsupportedOperationException(
           String.format(
               "Unsupported type %s for field %s, seen type set is %s",
-              typeToken, name, seenTypeSet));
+                  typeRef, name, seenTypeSet));
     }
   }
 
-  public static String inferTypeName(TypeToken<?> token) {
+  public static String inferTypeName(TypeRef<?> token) {
     StringBuilder sb = new StringBuilder();
-    TypeToken<?> arrayToken = token;
+    TypeRef<?> arrayToken = token;
     while (TypeUtils.ITERABLE_TYPE.isSupertypeOf(arrayToken)
         || TypeUtils.MAP_TYPE.isSupertypeOf(arrayToken)) {
       if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(arrayToken)) {
         sb.append(getRawType(arrayToken).getSimpleName());
         arrayToken = TypeUtils.getElementType(arrayToken);
       } else {
-        Tuple2<TypeToken<?>, TypeToken<?>> tuple2 = TypeUtils.getMapKeyValueType(arrayToken);
+        Tuple2<TypeRef<?>, TypeRef<?>> tuple2 = TypeUtils.getMapKeyValueType(arrayToken);
         sb.append("Map");
 
         if (!TypeUtils.isBean(tuple2.f0)) {

@@ -33,7 +33,7 @@ import org.apache.fury.exception.ClassNotCompatibleException;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
@@ -81,13 +81,13 @@ public class StructSerializer<T> extends Serializer<T> {
             .sorted(Comparator.comparing(Field::getName))
             .map(FieldAccessor::createAccessor)
             .toArray(FieldAccessor[]::new);
-    fieldGenerics = buildFieldGenerics(TypeToken.of(cls), fieldAccessors);
+    fieldGenerics = buildFieldGenerics(TypeRef.of(cls), fieldAccessors);
     genericTypesCache = new IdentityHashMap<>();
     genericTypesCache.put(null, fieldGenerics);
   }
 
   private static <T> GenericType[] buildFieldGenerics(
-      TypeToken<T> type, FieldAccessor[] fieldAccessors) {
+          TypeRef<T> type, FieldAccessor[] fieldAccessors) {
     return Arrays.stream(fieldAccessors)
         .map(fieldAccessor -> GenericType.build(type, fieldAccessor.getField().getGenericType()))
         .toArray(GenericType[]::new);

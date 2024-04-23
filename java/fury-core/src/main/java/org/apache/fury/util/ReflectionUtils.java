@@ -47,7 +47,7 @@ import java.util.stream.Stream;
 import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.collection.Tuple3;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.function.Functions;
 import org.apache.fury.util.unsafe._JDKAccess;
 
@@ -436,7 +436,7 @@ public class ReflectionUtils {
     }
   }
 
-  public static boolean isPublic(TypeToken<?> targetType) {
+  public static boolean isPublic(TypeRef<?> targetType) {
     return Modifier.isPublic(getRawType(targetType).getModifiers());
   }
 
@@ -444,7 +444,7 @@ public class ReflectionUtils {
     return Modifier.isPublic(type.getModifiers());
   }
 
-  public static boolean isPrivate(TypeToken<?> targetType) {
+  public static boolean isPrivate(TypeRef<?> targetType) {
     return Modifier.isPrivate(getRawType(targetType).getModifiers());
   }
 
@@ -468,9 +468,9 @@ public class ReflectionUtils {
     return Modifier.isFinal(targetType.getModifiers());
   }
 
-  public static TypeToken getPublicSuperType(TypeToken typeToken) {
-    if (!isPublic(typeToken)) {
-      Class<?> rawType = Objects.requireNonNull(getRawType(typeToken));
+  public static TypeRef getPublicSuperType(TypeRef typeRef) {
+    if (!isPublic(typeRef)) {
+      Class<?> rawType = Objects.requireNonNull(getRawType(typeRef));
       Class<?> cls = rawType;
       while (cls != null && !isPublic(cls)) {
         cls = cls.getSuperclass();
@@ -478,15 +478,15 @@ public class ReflectionUtils {
       if (cls == null) {
         for (Class<?> typeInterface : rawType.getInterfaces()) {
           if (isPublic(typeInterface)) {
-            return TypeToken.of(typeInterface);
+            return TypeRef.of(typeInterface);
           }
         }
         return OBJECT_TYPE;
       } else {
-        return TypeToken.of(cls);
+        return TypeRef.of(cls);
       }
     } else {
-      return typeToken;
+      return typeRef;
     }
   }
 

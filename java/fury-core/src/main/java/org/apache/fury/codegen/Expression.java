@@ -55,7 +55,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
@@ -86,7 +86,7 @@ public interface Expression {
    * Returns the Class<?> of the result of evaluating this expression. It is invalid to query the
    * type of unresolved expression (i.e., when `resolved` == false).
    */
-  TypeToken<?> type();
+  TypeRef<?> type();
 
   /**
    * If expression is already generated in this context, returned exprCode won't contains code, so
@@ -165,7 +165,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       Preconditions.checkNotNull(last);
       return last.type();
     }
@@ -235,14 +235,14 @@ public interface Expression {
     public static final Literal False = new Literal(false, PRIMITIVE_BOOLEAN_TYPE);
 
     private final Object value;
-    private final TypeToken<?> type;
+    private final TypeRef<?> type;
 
     public Literal(String value) {
       this.value = value;
       this.type = STRING_TYPE;
     }
 
-    public Literal(Object value, TypeToken<?> type) {
+    public Literal(Object value, TypeRef<?> type) {
       this.value = value;
       this.type = type;
     }
@@ -272,7 +272,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -354,20 +354,20 @@ public interface Expression {
   }
 
   class Null implements Expression {
-    private TypeToken<?> type;
+    private TypeRef<?> type;
     private final boolean typedNull;
 
-    public Null(TypeToken<?> type) {
+    public Null(TypeRef<?> type) {
       this(type, false);
     }
 
-    public Null(TypeToken<?> type, boolean typedNull) {
+    public Null(TypeRef<?> type, boolean typedNull) {
       this.type = type;
       this.typedNull = typedNull;
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -388,7 +388,7 @@ public interface Expression {
   /** A Reference is a variable/field that can be accessed in the expression's CodegenContext. */
   class Reference implements Expression {
     private final String name;
-    private final TypeToken<?> type;
+    private final TypeRef<?> type;
     private final boolean nullable;
     private final boolean fieldRef;
 
@@ -396,27 +396,27 @@ public interface Expression {
       this(name, OBJECT_TYPE);
     }
 
-    public Reference(String name, TypeToken<?> type) {
+    public Reference(String name, TypeRef<?> type) {
       this(name, type, false);
     }
 
-    public Reference(String name, TypeToken<?> type, boolean nullable) {
+    public Reference(String name, TypeRef<?> type, boolean nullable) {
       this(name, type, nullable, false);
     }
 
-    public Reference(String name, TypeToken<?> type, boolean nullable, boolean fieldRef) {
+    public Reference(String name, TypeRef<?> type, boolean nullable, boolean fieldRef) {
       this.name = name;
       this.type = type;
       this.nullable = nullable;
       this.fieldRef = fieldRef;
     }
 
-    public static Reference fieldRef(String name, TypeToken<?> type) {
+    public static Reference fieldRef(String name, TypeRef<?> type) {
       return new Reference(name, type, false, true);
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -456,7 +456,7 @@ public interface Expression {
   class Empty implements Expression {
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return PRIMITIVE_VOID_TYPE;
     }
 
@@ -474,7 +474,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return PRIMITIVE_VOID_TYPE;
     }
 
@@ -492,7 +492,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return expression.type();
     }
 
@@ -515,17 +515,17 @@ public interface Expression {
   class FieldValue extends Inlineable {
     private Expression targetObject;
     private final String fieldName;
-    private final TypeToken<?> type;
+    private final TypeRef<?> type;
     private final boolean fieldNullable;
 
-    public FieldValue(Expression targetObject, String fieldName, TypeToken<?> type) {
+    public FieldValue(Expression targetObject, String fieldName, TypeRef<?> type) {
       this(targetObject, fieldName, type, !type.isPrimitive(), false);
     }
 
     public FieldValue(
         Expression targetObject,
         String fieldName,
-        TypeToken<?> type,
+        TypeRef<?> type,
         boolean fieldNullable,
         boolean inline) {
       Preconditions.checkArgument(type != null);
@@ -540,7 +540,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -631,7 +631,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return PRIMITIVE_VOID_TYPE;
     }
 
@@ -680,7 +680,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return targetObject != null ? targetObject.type() : PRIMITIVE_VOID_TYPE;
     }
 
@@ -702,20 +702,20 @@ public interface Expression {
   class Cast extends Inlineable {
     private Expression targetObject;
     private final String castedValueNamePrefix;
-    private final TypeToken<?> type;
+    private final TypeRef<?> type;
     private final boolean ignoreUpcast;
 
-    public Cast(Expression targetObject, TypeToken<?> type) {
+    public Cast(Expression targetObject, TypeRef<?> type) {
       this(targetObject, type, "castedValue", true, true);
     }
 
-    public Cast(Expression targetObject, TypeToken<?> type, String castedValueNamePrefix) {
+    public Cast(Expression targetObject, TypeRef<?> type, String castedValueNamePrefix) {
       this(targetObject, type, castedValueNamePrefix, false, true);
     }
 
     public Cast(
         Expression targetObject,
-        TypeToken<?> type,
+        TypeRef<?> type,
         String castedValueNamePrefix,
         boolean inline,
         boolean ignoreUpcast) {
@@ -732,7 +732,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -794,7 +794,7 @@ public interface Expression {
 
   abstract class BaseInvoke extends Inlineable {
     final String functionName;
-    final TypeToken<?> type;
+    final TypeRef<?> type;
     Expression[] arguments;
     String returnNamePrefix;
     final boolean returnNullable;
@@ -802,7 +802,7 @@ public interface Expression {
 
     public BaseInvoke(
         String functionName,
-        TypeToken<?> type,
+        TypeRef<?> type,
         Expression[] arguments,
         String returnNamePrefix,
         boolean returnNullable,
@@ -827,25 +827,25 @@ public interface Expression {
     }
 
     /** Invoke don't accept arguments. */
-    public Invoke(Expression targetObject, String functionName, TypeToken<?> type) {
+    public Invoke(Expression targetObject, String functionName, TypeRef<?> type) {
       this(targetObject, functionName, type, false);
     }
 
     /** Invoke don't accept arguments. */
     public Invoke(
-        Expression targetObject, String functionName, String returnNamePrefix, TypeToken<?> type) {
+        Expression targetObject, String functionName, String returnNamePrefix, TypeRef<?> type) {
       this(targetObject, functionName, returnNamePrefix, type, false);
     }
 
     public Invoke(
-        Expression targetObject, String functionName, TypeToken<?> type, Expression... arguments) {
+            Expression targetObject, String functionName, TypeRef<?> type, Expression... arguments) {
       this(targetObject, functionName, "", type, false, arguments);
     }
 
     public Invoke(
         Expression targetObject,
         String functionName,
-        TypeToken<?> type,
+        TypeRef<?> type,
         boolean returnNullable,
         Expression... arguments) {
       this(targetObject, functionName, "", type, returnNullable, arguments);
@@ -855,7 +855,7 @@ public interface Expression {
         Expression targetObject,
         String functionName,
         String returnNamePrefix,
-        TypeToken<?> type,
+        TypeRef<?> type,
         boolean returnNullable,
         Expression... arguments) {
       this(
@@ -872,7 +872,7 @@ public interface Expression {
         Expression targetObject,
         String functionName,
         String returnNamePrefix,
-        TypeToken<?> type,
+        TypeRef<?> type,
         boolean returnNullable,
         boolean needTryCatch,
         Expression... arguments) {
@@ -881,7 +881,7 @@ public interface Expression {
     }
 
     public static Invoke inlineInvoke(
-        Expression targetObject, String functionName, TypeToken<?> type, Expression... arguments) {
+            Expression targetObject, String functionName, TypeRef<?> type, Expression... arguments) {
       Invoke invoke = new Invoke(targetObject, functionName, type, false, arguments);
       invoke.inlineCall = true;
       return invoke;
@@ -890,7 +890,7 @@ public interface Expression {
     public static Invoke inlineInvoke(
         Expression targetObject,
         String functionName,
-        TypeToken<?> type,
+        TypeRef<?> type,
         boolean needTryCatch,
         Expression... arguments) {
       Invoke invoke =
@@ -900,7 +900,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -1002,7 +1002,7 @@ public interface Expression {
   class StaticInvoke extends BaseInvoke {
     private final Class<?> staticObject;
 
-    public StaticInvoke(Class<?> staticObject, String functionName, TypeToken<?> type) {
+    public StaticInvoke(Class<?> staticObject, String functionName, TypeRef<?> type) {
       this(staticObject, functionName, type, false);
     }
 
@@ -1011,14 +1011,14 @@ public interface Expression {
     }
 
     public StaticInvoke(
-        Class<?> staticObject, String functionName, TypeToken<?> type, Expression... arguments) {
+            Class<?> staticObject, String functionName, TypeRef<?> type, Expression... arguments) {
       this(staticObject, functionName, "", type, false, arguments);
     }
 
     public StaticInvoke(
         Class<?> staticObject,
         String functionName,
-        TypeToken<?> type,
+        TypeRef<?> type,
         boolean returnNullable,
         Expression... arguments) {
       this(staticObject, functionName, "", type, returnNullable, arguments);
@@ -1028,7 +1028,7 @@ public interface Expression {
         Class<?> staticObject,
         String functionName,
         String returnNamePrefix,
-        TypeToken<?> type,
+        TypeRef<?> type,
         boolean returnNullable,
         Expression... arguments) {
       this(staticObject, functionName, returnNamePrefix, type, returnNullable, false, arguments);
@@ -1049,7 +1049,7 @@ public interface Expression {
         Class<?> staticObject,
         String functionName,
         String returnNamePrefix,
-        TypeToken<?> type,
+        TypeRef<?> type,
         boolean returnNullable,
         boolean inline,
         Expression... arguments) {
@@ -1071,7 +1071,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -1167,7 +1167,7 @@ public interface Expression {
   }
 
   class NewInstance implements Expression {
-    private TypeToken<?> type;
+    private TypeRef<?> type;
     private final Class<?> rawType;
     private String unknownClassName;
     private List<Expression> arguments;
@@ -1182,18 +1182,18 @@ public interface Expression {
      * @param unknownClassName unknownClassName that's unknown in compile-time
      */
     public NewInstance(
-        TypeToken<?> interfaceType, String unknownClassName, Expression... arguments) {
+            TypeRef<?> interfaceType, String unknownClassName, Expression... arguments) {
       this(interfaceType, Arrays.asList(arguments), null);
       this.unknownClassName = unknownClassName;
       check();
     }
 
-    public NewInstance(TypeToken<?> type, Expression... arguments) {
+    public NewInstance(TypeRef<?> type, Expression... arguments) {
       this(type, Arrays.asList(arguments), null);
       check();
     }
 
-    private NewInstance(TypeToken<?> type, List<Expression> arguments, Expression outerPointer) {
+    private NewInstance(TypeRef<?> type, List<Expression> arguments, Expression outerPointer) {
       this.type = type;
       rawType = getRawType(type);
       this.outerPointer = outerPointer;
@@ -1231,7 +1231,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -1316,7 +1316,7 @@ public interface Expression {
   }
 
   class NewArray implements Expression {
-    private TypeToken<?> type;
+    private TypeRef<?> type;
     private Expression[] elements;
 
     private int numDimensions;
@@ -1330,7 +1330,7 @@ public interface Expression {
       this.numDimensions = 1;
       this.elemType = elemType;
       this.dim = dim;
-      type = TypeToken.of(Array.newInstance(elemType, 1).getClass());
+      type = TypeRef.of(Array.newInstance(elemType, 1).getClass());
     }
 
     /**
@@ -1349,10 +1349,10 @@ public interface Expression {
       for (int i = 0; i < numDimensions; i++) {
         stubSizes[i] = 1;
       }
-      type = TypeToken.of(Array.newInstance(elemType, stubSizes).getClass());
+      type = TypeRef.of(Array.newInstance(elemType, stubSizes).getClass());
     }
 
-    public NewArray(TypeToken<?> type, Expression... elements) {
+    public NewArray(TypeRef<?> type, Expression... elements) {
       this.type = type;
       this.elements = elements;
       this.numDimensions = 1;
@@ -1367,7 +1367,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -1476,7 +1476,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return PRIMITIVE_VOID_TYPE;
     }
 
@@ -1515,7 +1515,7 @@ public interface Expression {
     private Expression predicate;
     private Expression trueExpr;
     private Expression falseExpr;
-    private TypeToken<?> type;
+    private TypeRef<?> type;
     private boolean nullable;
 
     public If(Expression predicate, Expression trueExpr) {
@@ -1530,7 +1530,7 @@ public interface Expression {
         Expression trueExpr,
         Expression falseExpr,
         boolean nullable,
-        TypeToken<?> type) {
+        TypeRef<?> type) {
       this.predicate = predicate;
       this.trueExpr = trueExpr;
       this.falseExpr = falseExpr;
@@ -1581,7 +1581,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -1607,7 +1607,7 @@ public interface Expression {
       } else {
         cond = StringUtils.format("${condEvalValue}", "condEvalValue", condEval.value());
       }
-      TypeToken<?> type = this.type;
+      TypeRef<?> type = this.type;
       if (!PRIMITIVE_VOID_TYPE.equals(type.unwrap())) {
         if (trueExpr instanceof Return && falseExpr instanceof Return) {
           type = PRIMITIVE_VOID_TYPE;
@@ -1749,7 +1749,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return PRIMITIVE_BOOLEAN_TYPE;
     }
 
@@ -1781,7 +1781,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return target.type();
     }
 
@@ -1808,7 +1808,7 @@ public interface Expression {
   class BinaryOperator extends ValueExpression {
     private final boolean inline;
     private final String operator;
-    private final TypeToken<?> type;
+    private final TypeRef<?> type;
     private Expression left;
     private Expression right;
 
@@ -1821,7 +1821,7 @@ public interface Expression {
     }
 
     protected BinaryOperator(
-        boolean inline, String operator, Expression left, Expression right, TypeToken<?> t) {
+        boolean inline, String operator, Expression left, Expression right, TypeRef<?> t) {
       this.inline = inline;
       this.operator = operator;
       this.left = left;
@@ -1849,7 +1849,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -2030,7 +2030,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return PRIMITIVE_VOID_TYPE;
     }
 
@@ -2073,7 +2073,7 @@ public interface Expression {
     @ClosureVisitable
     private final SerializableBiFunction<Expression, Expression, Expression> action;
 
-    private final TypeToken<?> elementType;
+    private final TypeRef<?> elementType;
 
     /**
      * inputObject.type() must be multi-dimension array or Collection, not allowed to be primitive
@@ -2083,7 +2083,7 @@ public interface Expression {
         Expression inputObject, SerializableBiFunction<Expression, Expression, Expression> action) {
       this.inputObject = inputObject;
       this.action = action;
-      TypeToken elementType;
+      TypeRef elementType;
       if (inputObject.type().isArray()) {
         elementType = inputObject.type().getComponentType();
       } else {
@@ -2094,7 +2094,7 @@ public interface Expression {
 
     public ForEach(
         Expression inputObject,
-        TypeToken<?> beanType,
+        TypeRef<?> beanType,
         SerializableBiFunction<Expression, Expression, Expression> action) {
       this.inputObject = inputObject;
       this.action = action;
@@ -2102,7 +2102,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return PRIMITIVE_VOID_TYPE;
     }
 
@@ -2206,9 +2206,9 @@ public interface Expression {
       this.right = right;
       this.action = action;
       Preconditions.checkArgument(
-          left.type().isArray() || TypeToken.of(Collection.class).isSupertypeOf(left.type()));
+          left.type().isArray() || TypeRef.of(Collection.class).isSupertypeOf(left.type()));
       Preconditions.checkArgument(
-          right.type().isArray() || TypeToken.of(Collection.class).isSupertypeOf(right.type()));
+          right.type().isArray() || TypeRef.of(Collection.class).isSupertypeOf(right.type()));
       if (left.type().isArray()) {
         Preconditions.checkArgument(
             right.type().isArray(), "Should both be array or neither be array");
@@ -2216,7 +2216,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return PRIMITIVE_VOID_TYPE;
     }
 
@@ -2235,14 +2235,14 @@ public interface Expression {
       String i = ctx.newName("i");
       String leftElemValue = ctx.newName("leftElemValue");
       String rightElemValue = ctx.newName("rightElemValue");
-      TypeToken<?> leftElemType;
+      TypeRef<?> leftElemType;
       if (left.type().isArray()) {
         leftElemType = left.type().getComponentType();
       } else {
         leftElemType = getElementType(left.type());
       }
       leftElemType = ReflectionUtils.getPublicSuperType(leftElemType);
-      TypeToken<?> rightElemType;
+      TypeRef<?> rightElemType;
       if (right.type().isArray()) {
         rightElemType = right.type().getComponentType();
       } else {
@@ -2350,7 +2350,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return PRIMITIVE_VOID_TYPE;
     }
 
@@ -2360,7 +2360,7 @@ public interface Expression {
       Preconditions.checkArgument(maxType.isPrimitive());
       StringBuilder codeBuilder = new StringBuilder();
       String i = ctx.newName("i");
-      Reference iref = new Reference(i, TypeToken.of(maxType));
+      Reference iref = new Reference(i, TypeRef.of(maxType));
       Expression loopAction = action.apply(iref);
       ExprCode startExprCode = start.genCode(ctx);
       ExprCode endExprCode = end.genCode(ctx);
@@ -2404,9 +2404,9 @@ public interface Expression {
    * that need List
    */
   class ListFromIterable implements Expression {
-    private final TypeToken elementType;
+    private final TypeRef elementType;
     private Expression inputObject;
-    private final TypeToken<?> type;
+    private final TypeRef<?> type;
 
     public ListFromIterable(Expression inputObject) {
       this.inputObject = inputObject;
@@ -2419,7 +2419,7 @@ public interface Expression {
 
     /** Returns inputObject.type(), not {@code List<elementType>}. */
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return type;
     }
 
@@ -2473,7 +2473,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return expression.type();
     }
 
@@ -2504,7 +2504,7 @@ public interface Expression {
     }
 
     @Override
-    public TypeToken<?> type() {
+    public TypeRef<?> type() {
       return PRIMITIVE_VOID_TYPE;
     }
 

@@ -33,7 +33,7 @@ import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.type.TypeInference;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.StringUtils;
 
@@ -44,14 +44,14 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
   private static final String ROOT_ARRAY_NAME = "array";
   private static final String ROOT_ARRAY_WRITER_NAME = "arrayWriter";
 
-  private static final TypeToken<Field> ARROW_FIELD_TYPE = TypeToken.of(Field.class);
-  private final TypeToken<?> arrayToken;
+  private static final TypeRef<Field> ARROW_FIELD_TYPE = TypeRef.of(Field.class);
+  private final TypeRef<?> arrayToken;
 
   public ArrayEncoderBuilder(Class<?> arrayCls, Class<?> beanClass) {
-    this(TypeToken.of(arrayCls), TypeToken.of(beanClass));
+    this(TypeRef.of(arrayCls), TypeRef.of(beanClass));
   }
 
-  public ArrayEncoderBuilder(TypeToken<?> clsType, TypeToken<?> beanType) {
+  public ArrayEncoderBuilder(TypeRef<?> clsType, TypeRef<?> beanType) {
     super(new CodegenContext(), beanType);
     arrayToken = clsType;
     ctx.reserveName(ROOT_ARRAY_WRITER_NAME);
@@ -133,7 +133,7 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
 
     expressions.add(
         new Expression.Return(
-            new Expression.Invoke(arrayWriter, "toArray", TypeToken.of(BinaryArray.class))));
+            new Expression.Invoke(arrayWriter, "toArray", TypeRef.of(BinaryArray.class))));
     return expressions;
   }
 
@@ -155,7 +155,7 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
   }
 
   private Expression deserializeForCollection(
-      Expression arrayData, Expression collection, TypeToken<?> elemType) {
+      Expression arrayData, Expression collection, TypeRef<?> elemType) {
     ArrayDataForEach addElemsOp =
         new ArrayDataForEach(
             arrayData,

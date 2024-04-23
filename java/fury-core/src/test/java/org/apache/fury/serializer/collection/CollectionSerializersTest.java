@@ -61,7 +61,7 @@ import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.collection.CollectionSerializers.JDKCompatibleCollectionSerializer;
 import org.apache.fury.type.GenericType;
 import org.testng.Assert;
@@ -137,7 +137,7 @@ public class CollectionSerializersTest extends FuryTestBase {
             .build();
     List<String> data = new ArrayList<>(ImmutableList.of("a", "b", "c"));
     byte[] bytes1 = fury.serialize(data);
-    fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<List<String>>() {}));
+    fury.getGenerics().pushGenericType(GenericType.build(new TypeRef<List<String>>() {}));
     byte[] bytes2 = fury.serialize(data);
     Assert.assertTrue(bytes1.length > bytes2.length);
     assertEquals(fury.deserialize(bytes2), data);
@@ -171,7 +171,7 @@ public class CollectionSerializersTest extends FuryTestBase {
     TreeSet<String> data = new TreeSet<>(ImmutableSet.of("a", "b", "c"));
     serDeCheckSerializer(fury, data, "SortedSet");
     byte[] bytes1 = fury.serialize(data);
-    fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<List<String>>() {}));
+    fury.getGenerics().pushGenericType(GenericType.build(new TypeRef<List<String>>() {}));
     byte[] bytes2 = fury.serialize(data);
     Assert.assertTrue(bytes1.length > bytes2.length);
     fury.getGenerics().popGenericType();

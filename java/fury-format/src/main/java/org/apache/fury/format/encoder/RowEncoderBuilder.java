@@ -47,7 +47,7 @@ import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.format.type.TypeInference;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
@@ -68,10 +68,10 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
   protected Reference beanClassRef = new Reference(BEAN_CLASS_NAME, CLASS_TYPE);
 
   public RowEncoderBuilder(Class<?> beanClass) {
-    this(TypeToken.of(beanClass));
+    this(TypeRef.of(beanClass));
   }
 
-  public RowEncoderBuilder(TypeToken<?> beanType) {
+  public RowEncoderBuilder(TypeRef<?> beanType) {
     super(new CodegenContext(), beanType);
     Preconditions.checkArgument(TypeUtils.isBean(beanType));
     this.schema = TypeInference.inferSchema(getRawType(beanType));
@@ -164,7 +164,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     for (int i = 0; i < numFields; i++) {
       Descriptor d = getDescriptorByFieldName(schema.getFields().get(i).getName());
       Preconditions.checkNotNull(d);
-      TypeToken<?> fieldType = d.getTypeToken();
+      TypeRef<?> fieldType = d.getTypeToken();
       Expression fieldValue = getFieldValue(bean, d);
       Literal ordinal = Literal.ofInt(i);
       Expression.StaticInvoke field =
@@ -175,7 +175,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     }
     expressions.add(
         new Expression.Return(
-            new Expression.Invoke(writer, "getRow", TypeToken.of(BinaryRow.class))));
+            new Expression.Invoke(writer, "getRow", TypeRef.of(BinaryRow.class))));
     return expressions;
   }
 
@@ -194,11 +194,11 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     for (int i = 0; i < numFields; i++) {
       Literal ordinal = Literal.ofInt(i);
       Descriptor d = getDescriptorByFieldName(schema.getFields().get(i).getName());
-      TypeToken<?> fieldType = d.getTypeToken();
+      TypeRef<?> fieldType = d.getTypeToken();
       Expression.Invoke isNullAt =
           new Expression.Invoke(row, "isNullAt", TypeUtils.PRIMITIVE_BOOLEAN_TYPE, ordinal);
       String columnAccessMethodName = BinaryUtils.getElemAccessMethodName(fieldType);
-      TypeToken<?> colType = BinaryUtils.getElemReturnType(fieldType);
+      TypeRef<?> colType = BinaryUtils.getElemReturnType(fieldType);
       Expression.Invoke columnValue =
           new Expression.Invoke(
               row,

@@ -33,7 +33,7 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.collection.Tuple3;
 import org.apache.fury.exception.FuryException;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -921,12 +921,12 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     }
 
     private GenericTypeField(
-        TypeToken<?> typeToken, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
-      super(getRegisteredClassId(fury, getRawType(typeToken)), qualifiedFieldName, accessor);
+            TypeRef<?> typeRef, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
+      super(getRegisteredClassId(fury, getRawType(typeRef)), qualifiedFieldName, accessor);
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
-      genericType = fury.getClassResolver().buildGenericType(typeToken);
+      genericType = fury.getClassResolver().buildGenericType(typeRef);
       classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
-      trackingRef = fury.getClassResolver().needToWriteRef(getRawType(typeToken));
+      trackingRef = fury.getClassResolver().needToWriteRef(getRawType(typeRef));
     }
 
     @Override

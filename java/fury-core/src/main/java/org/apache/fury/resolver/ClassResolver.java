@@ -93,7 +93,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.BufferSerializers;
 import org.apache.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
@@ -1691,9 +1691,9 @@ public class ClassResolver {
     }
   }
 
-  public GenericType buildGenericType(TypeToken<?> typeToken) {
+  public GenericType buildGenericType(TypeRef<?> typeRef) {
     return GenericType.build(
-        typeToken.getType(),
+        typeRef.getType(),
         t -> {
           if (t.getClass() == Class.class) {
             return isMonomorphic((Class<?>) t);

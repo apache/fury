@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.fury.collection.Tuple2;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.BeanB;
 import org.testng.Assert;
@@ -48,60 +48,60 @@ public class TypeUtilsTest {
   public void getArrayTypeTest() {
     assertEquals("int[][][][][]", TypeUtils.getArrayType(int[][][][][].class));
     assertEquals("java.lang.Object[][][][][]", TypeUtils.getArrayType(Object[][][][][].class));
-    assertEquals("int[][][][][]", TypeUtils.getArrayType(TypeToken.of(int[][][][][].class)));
+    assertEquals("int[][][][][]", TypeUtils.getArrayType(TypeRef.of(int[][][][][].class)));
     assertEquals(
-        "java.lang.Object[][][][][]", TypeUtils.getArrayType(TypeToken.of(Object[][][][][].class)));
+        "java.lang.Object[][][][][]", TypeUtils.getArrayType(TypeRef.of(Object[][][][][].class)));
   }
 
   @Test
   public void getElementTypeTest() throws NoSuchMethodException, NoSuchFieldException {
-    TypeToken typeToken =
+    TypeRef typeRef =
         Descriptor.getDescriptorsMap(BeanA.class).get("doubleList").getTypeToken();
 
     assertEquals(
-        new TypeToken<Optional<String>>() {}.resolveType(
+        new TypeRef<Optional<String>>() {}.resolveType(
             Optional.class.getDeclaredField("value").getGenericType()),
-        TypeToken.of(String.class));
+        TypeRef.of(String.class));
     assertEquals(
-        new TypeToken<List<String>>() {}.resolveType(
+        new TypeRef<List<String>>() {}.resolveType(
                 List.class.getMethod("size").getGenericReturnType())
             .getRawType(),
         int.class);
 
     @SuppressWarnings("unchecked")
-    TypeToken<?> supertype =
-        ((TypeToken<? extends Iterable<?>>) typeToken).getSupertype(Iterable.class);
+    TypeRef<?> supertype =
+        ((TypeRef<? extends Iterable<?>>) typeRef).getSupertype(Iterable.class);
     final Type iteratorReturnType = Iterable.class.getMethod("iterator").getGenericReturnType();
     final Type nextReturnType = Iterator.class.getMethod("next").getGenericReturnType();
-    assertEquals(supertype.resolveType(iteratorReturnType), new TypeToken<Iterator<Double>>() {});
+    assertEquals(supertype.resolveType(iteratorReturnType), new TypeRef<Iterator<Double>>() {});
     assertEquals(
         supertype.resolveType(iteratorReturnType).resolveType(nextReturnType),
-        new TypeToken<Double>() {});
+        new TypeRef<Double>() {});
   }
 
   @Test
   public void getSubclassElementTypeTest() {
     abstract class A implements Collection<List<String>> {}
     Assert.assertEquals(
-        TypeUtils.getElementType(TypeToken.of(A.class)), new TypeToken<List<String>>() {});
+        TypeUtils.getElementType(TypeRef.of(A.class)), new TypeRef<List<String>>() {});
   }
 
   @Test
   public void getMapKeyValueTypeTest() throws NoSuchMethodException {
-    TypeToken typeToken =
+    TypeRef typeRef =
         Descriptor.getDescriptorsMap(BeanA.class).get("stringBeanBMap").getTypeToken();
 
     @SuppressWarnings("unchecked")
-    TypeToken<?> supertype = ((TypeToken<? extends Map<?, ?>>) typeToken).getSupertype(Map.class);
+    TypeRef<?> supertype = ((TypeRef<? extends Map<?, ?>>) typeRef).getSupertype(Map.class);
 
     final Type keySetReturnType = Map.class.getMethod("keySet").getGenericReturnType();
     final Type valuesReturnType = Map.class.getMethod("values").getGenericReturnType();
-    TypeToken<?> keyType = TypeUtils.getElementType(supertype.resolveType(keySetReturnType));
-    assertEquals(TypeToken.of(String.class), keyType);
-    TypeToken<?> valueType = TypeUtils.getElementType(supertype.resolveType(valuesReturnType));
-    assertEquals(TypeToken.of(BeanB.class), valueType);
-    Tuple2<TypeToken<?>, TypeToken<?>> mapKeyValueType =
-        TypeUtils.getMapKeyValueType(TypeToken.of(Map.class));
+    TypeRef<?> keyType = TypeUtils.getElementType(supertype.resolveType(keySetReturnType));
+    assertEquals(TypeRef.of(String.class), keyType);
+    TypeRef<?> valueType = TypeUtils.getElementType(supertype.resolveType(valuesReturnType));
+    assertEquals(TypeRef.of(BeanB.class), valueType);
+    Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType =
+        TypeUtils.getMapKeyValueType(TypeRef.of(Map.class));
     System.out.println(mapKeyValueType);
   }
 
@@ -144,7 +144,7 @@ public class TypeUtilsTest {
 
   @Test
   public void isSupported() {
-    TypeUtils.isSupported(TypeToken.of(AbstractList.class));
+    TypeUtils.isSupported(TypeRef.of(AbstractList.class));
   }
 
   public static class A {
@@ -162,28 +162,28 @@ public class TypeUtilsTest {
 
   @Test
   public void testTypeConstruct() {
-    assertEquals(TypeUtils.arrayListOf(Integer.class), new TypeToken<ArrayList<Integer>>() {});
-    assertEquals(TypeUtils.listOf(Integer.class), new TypeToken<List<Integer>>() {});
+    assertEquals(TypeUtils.arrayListOf(Integer.class), new TypeRef<ArrayList<Integer>>() {});
+    assertEquals(TypeUtils.listOf(Integer.class), new TypeRef<List<Integer>>() {});
     assertEquals(
-        TypeUtils.mapOf(String.class, Integer.class), new TypeToken<Map<String, Integer>>() {});
+        TypeUtils.mapOf(String.class, Integer.class), new TypeRef<Map<String, Integer>>() {});
     assertEquals(
         TypeUtils.hashMapOf(String.class, Integer.class),
-        new TypeToken<HashMap<String, Integer>>() {});
+        new TypeRef<HashMap<String, Integer>>() {});
   }
 
   @Test
   public void testMapOf() {
-    TypeToken<Map<String, Integer>> mapTypeToken = TypeUtils.mapOf(String.class, Integer.class);
-    Assert.assertEquals(mapTypeToken, new TypeToken<Map<String, Integer>>() {});
+    TypeRef<Map<String, Integer>> mapTypeRef = TypeUtils.mapOf(String.class, Integer.class);
+    Assert.assertEquals(mapTypeRef, new TypeRef<Map<String, Integer>>() {});
     Assert.assertEquals(
         TypeUtils.mapOf(HashMap.class, String.class, Integer.class),
-        new TypeToken<HashMap<String, Integer>>() {});
+        new TypeRef<HashMap<String, Integer>>() {});
     Assert.assertEquals(
         TypeUtils.hashMapOf(String.class, Integer.class),
-        new TypeToken<HashMap<String, Integer>>() {});
+        new TypeRef<HashMap<String, Integer>>() {});
     Assert.assertEquals(
         TypeUtils.mapOf(LinkedHashMap.class, String.class, Integer.class),
-        new TypeToken<LinkedHashMap<String, Integer>>() {});
+        new TypeRef<LinkedHashMap<String, Integer>>() {});
   }
 
   @Test
@@ -258,16 +258,16 @@ public class TypeUtilsTest {
 
   @Test
   public void getTypeArguments() {
-    TypeToken<Tuple2<String, Map<String, Integer>>> typeToken =
-        new TypeToken<Tuple2<String, Map<String, Integer>>>() {};
-    assertEquals(TypeUtils.getTypeArguments(typeToken).size(), 2);
+    TypeRef<Tuple2<String, Map<String, Integer>>> typeRef =
+        new TypeRef<Tuple2<String, Map<String, Integer>>>() {};
+    assertEquals(TypeUtils.getTypeArguments(typeRef).size(), 2);
   }
 
   @Test
   public void getAllTypeArguments() {
-    TypeToken<Tuple2<String, Map<String, BeanA>>> typeToken =
-        new TypeToken<Tuple2<String, Map<String, BeanA>>>() {};
-    List<TypeToken<?>> allTypeArguments = TypeUtils.getAllTypeArguments(typeToken);
+    TypeRef<Tuple2<String, Map<String, BeanA>>> typeRef =
+        new TypeRef<Tuple2<String, Map<String, BeanA>>>() {};
+    List<TypeRef<?>> allTypeArguments = TypeUtils.getAllTypeArguments(typeRef);
     assertEquals(allTypeArguments.size(), 3);
     assertEquals(allTypeArguments.get(2).getRawType(), BeanA.class);
   }

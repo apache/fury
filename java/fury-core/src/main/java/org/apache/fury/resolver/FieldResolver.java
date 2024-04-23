@@ -46,7 +46,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.exception.ClassNotCompatibleException;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.PrimitiveSerializers;
 import org.apache.fury.serializer.collection.CollectionSerializer;
 import org.apache.fury.serializer.collection.MapSerializer;
@@ -742,26 +742,26 @@ public class FieldResolver {
             NO_CLASS_ID);
       }
       if (Collection.class.isAssignableFrom(field.getType())) {
-        TypeToken<?> elementTypeToken =
-            TypeUtils.getElementType(TypeToken.of(field.getGenericType()));
+        TypeRef<?> elementTypeRef =
+            TypeUtils.getElementType(TypeRef.of(field.getGenericType()));
         byte fieldType =
-            ReflectionUtils.isMonomorphic(getRawType(elementTypeToken))
+            ReflectionUtils.isMonomorphic(getRawType(elementTypeRef))
                 ? FieldTypes.COLLECTION_ELEMENT_FINAL
                 : FieldTypes.OBJECT;
         return new CollectionFieldInfo(
-            fury, field, fieldType, fieldInfoEncodingType, encodedFieldInfo, elementTypeToken);
+            fury, field, fieldType, fieldInfoEncodingType, encodedFieldInfo, elementTypeRef);
       } else if (Map.class.isAssignableFrom(field.getType())) {
-        Tuple2<TypeToken<?>, TypeToken<?>> kvType =
-            TypeUtils.getMapKeyValueType(TypeToken.of(field.getGenericType()));
-        TypeToken<?> keyTypeToken = kvType.f0;
-        TypeToken<?> valueTypeToken = kvType.f1;
+        Tuple2<TypeRef<?>, TypeRef<?>> kvType =
+            TypeUtils.getMapKeyValueType(TypeRef.of(field.getGenericType()));
+        TypeRef<?> keyTypeRef = kvType.f0;
+        TypeRef<?> valueTypeRef = kvType.f1;
         byte fieldType;
-        if (ReflectionUtils.isMonomorphic(getRawType(keyTypeToken))
-            && ReflectionUtils.isMonomorphic(getRawType(valueTypeToken))) {
+        if (ReflectionUtils.isMonomorphic(getRawType(keyTypeRef))
+            && ReflectionUtils.isMonomorphic(getRawType(valueTypeRef))) {
           fieldType = FieldTypes.MAP_KV_FINAL;
-        } else if (ReflectionUtils.isMonomorphic(getRawType(keyTypeToken))) {
+        } else if (ReflectionUtils.isMonomorphic(getRawType(keyTypeRef))) {
           fieldType = FieldTypes.MAP_KEY_FINAL;
-        } else if (ReflectionUtils.isMonomorphic(getRawType(valueTypeToken))) {
+        } else if (ReflectionUtils.isMonomorphic(getRawType(valueTypeRef))) {
           fieldType = FieldTypes.MAP_VALUE_FINAL;
         } else {
           fieldType = FieldTypes.OBJECT;
@@ -772,8 +772,8 @@ public class FieldResolver {
             fieldType,
             fieldInfoEncodingType,
             encodedFieldInfo,
-            keyTypeToken,
-            valueTypeToken);
+                keyTypeRef,
+                valueTypeRef);
       } else {
         return new FieldInfo(
             fury,
@@ -856,7 +856,7 @@ public class FieldResolver {
 
   public static class CollectionFieldInfo extends FieldInfo {
     // TODO support nested generics.
-    private final TypeToken<?> elementTypeToken;
+    private final TypeRef<?> elementTypeToken;
     private final Class<?> elementType;
     private final ClassInfoHolder elementClassInfoHolder;
 
@@ -866,7 +866,7 @@ public class FieldResolver {
         byte fieldType,
         FieldInfoEncodingType fieldInfoEncodingType,
         long encodedFieldInfo,
-        TypeToken<?> elementTypeToken) {
+        TypeRef<?> elementTypeRef) {
       super(
           fury,
           field.getName(),
@@ -877,8 +877,8 @@ public class FieldResolver {
           encodedFieldInfo,
           NO_CLASS_ID);
       Preconditions.checkArgument(field != STUB_FIELD);
-      this.elementTypeToken = elementTypeToken;
-      this.elementType = getRawType(elementTypeToken);
+      this.elementTypeToken = elementTypeRef;
+      this.elementType = getRawType(elementTypeRef);
       elementClassInfoHolder = classResolver.nilClassInfoHolder();
     }
 
@@ -890,7 +890,7 @@ public class FieldResolver {
       return classResolver.getClassInfo(elementType, elementClassInfoHolder);
     }
 
-    public TypeToken<?> getElementTypeToken() {
+    public TypeRef<?> getElementTypeToken() {
       return elementTypeToken;
     }
 
@@ -903,8 +903,8 @@ public class FieldResolver {
     private final Class<?> keyType;
     private final boolean isKeyTypeFinal;
     // TODO support nested generics.
-    private final TypeToken<?> keyTypeToken;
-    private final TypeToken<?> valueTypeToken;
+    private final TypeRef<?> keyTypeToken;
+    private final TypeRef<?> valueTypeToken;
     private final ClassInfoHolder keyClassInfoHolder;
     private final Class<?> valueType;
     private final boolean isValueTypeFinal;
@@ -916,8 +916,8 @@ public class FieldResolver {
         byte fieldType,
         FieldInfoEncodingType separateTypesHash,
         long encodedFieldInfo,
-        TypeToken<?> keyTypeToken,
-        TypeToken<?> valueTypeToken) {
+        TypeRef<?> keyTypeRef,
+        TypeRef<?> valueTypeRef) {
       super(
           fury,
           field.getName(),
@@ -928,12 +928,12 @@ public class FieldResolver {
           encodedFieldInfo,
           NO_CLASS_ID);
       Preconditions.checkArgument(field != STUB_FIELD);
-      this.keyTypeToken = keyTypeToken;
-      this.valueTypeToken = valueTypeToken;
-      keyType = getRawType(keyTypeToken);
+      this.keyTypeToken = keyTypeRef;
+      this.valueTypeToken = valueTypeRef;
+      keyType = getRawType(keyTypeRef);
       isKeyTypeFinal = ReflectionUtils.isMonomorphic(keyType);
       keyClassInfoHolder = classResolver.nilClassInfoHolder();
-      valueType = getRawType(valueTypeToken);
+      valueType = getRawType(valueTypeRef);
       isValueTypeFinal = ReflectionUtils.isMonomorphic(valueType);
       valueClassInfoHolder = classResolver.nilClassInfoHolder();
     }

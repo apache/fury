@@ -26,7 +26,7 @@ import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.BeanB;
@@ -66,7 +66,7 @@ public class FuryInitPerf {
   interface Collection1 extends Collection<String> {}
 
   public void testGenericsInit() {
-    TypeToken<?> elementType = TypeUtils.getElementType(TypeToken.of(Collection1.class));
+    TypeRef<?> elementType = TypeUtils.getElementType(TypeRef.of(Collection1.class));
     System.out.println(elementType);
   }
 

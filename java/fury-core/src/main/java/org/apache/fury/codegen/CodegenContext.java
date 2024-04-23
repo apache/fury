@@ -42,7 +42,7 @@ import org.apache.fury.codegen.Expression.BaseInvoke;
 import org.apache.fury.codegen.Expression.Reference;
 import org.apache.fury.collection.Collections;
 import org.apache.fury.collection.Tuple2;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
@@ -328,8 +328,8 @@ public class CodegenContext {
   }
 
   /** return type name. since janino doesn't generics, we ignore type parameters in typeToken. */
-  public String type(TypeToken<?> typeToken) {
-    return type(getRawType(typeToken));
+  public String type(TypeRef<?> typeRef) {
+    return type(getRawType(typeRef));
   }
 
   /**

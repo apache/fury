@@ -32,7 +32,7 @@ import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.CodegenSerializer;
 import org.apache.fury.serializer.MetaSharedSerializer;
 import org.apache.fury.serializer.ObjectSerializer;
@@ -65,7 +65,7 @@ import org.apache.fury.util.record.RecordUtils;
 public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
   private final ClassDef classDef;
 
-  public MetaSharedCodecBuilder(TypeToken<?> beanType, Fury fury, ClassDef classDef) {
+  public MetaSharedCodecBuilder(TypeRef<?> beanType, Fury fury, ClassDef classDef) {
     super(beanType, fury, GeneratedMetaSharedSerializer.class);
     Preconditions.checkArgument(
         !fury.getConfig().checkClassVersion(),
@@ -160,7 +160,7 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
         Object defaultValue = defaultValues[i];
         assert components != null;
         RecordComponent component = components[i];
-        recordComponents.put(i, new Literal(defaultValue, TypeToken.of(component.getType())));
+        recordComponents.put(i, new Literal(defaultValue, TypeRef.of(component.getType())));
       }
     }
     Expression[] params = recordComponents.values().toArray(new Expression[0]);

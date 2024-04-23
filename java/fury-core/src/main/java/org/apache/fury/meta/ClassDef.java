@@ -45,7 +45,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.reflect.TypeToken;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.type.Descriptor;
@@ -337,10 +337,10 @@ public class ClassDef implements Serializable {
      * reflection should be used to get the descriptor.
      */
     public Descriptor toDescriptor(ClassResolver classResolver) {
-      TypeToken<?> typeToken = fieldType.toTypeToken(classResolver);
+      TypeRef<?> typeRef = fieldType.toTypeToken(classResolver);
       // This field doesn't exist in peer class, so any legal modifier will be OK.
       int stubModifiers = ReflectionUtils.getField(getClass(), "fieldName").getModifiers();
-      return new Descriptor(typeToken, fieldName, stubModifiers, definedClass);
+      return new Descriptor(typeRef, fieldName, stubModifiers, definedClass);
     }
 
     @Override
@@ -386,7 +386,7 @@ public class ClassDef implements Serializable {
      *
      * @see FinalObjectTypeStub
      */
-    public abstract TypeToken<?> toTypeToken(ClassResolver classResolver);
+    public abstract TypeRef<?> toTypeToken(ClassResolver classResolver);
 
     @Override
     public boolean equals(Object o) {
@@ -456,8 +456,8 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeToken<?> toTypeToken(ClassResolver classResolver) {
-      return TypeToken.of(classResolver.getRegisteredClass(classId));
+    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+      return TypeRef.of(classResolver.getRegisteredClass(classId));
     }
 
     @Override
@@ -512,7 +512,7 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeToken<?> toTypeToken(ClassResolver classResolver) {
+    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
       return collectionOf(elementType.toTypeToken(classResolver));
     }
 
@@ -574,7 +574,7 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeToken<?> toTypeToken(ClassResolver classResolver) {
+    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
       return mapOf(keyType.toTypeToken(classResolver), valueType.toTypeToken(classResolver));
     }
 
@@ -619,8 +619,8 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeToken<?> toTypeToken(ClassResolver classResolver) {
-      return isMonomorphic() ? TypeToken.of(FinalObjectTypeStub.class) : TypeToken.of(Object.class);
+    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+      return isMonomorphic() ? TypeRef.of(FinalObjectTypeStub.class) : TypeRef.of(Object.class);
     }
 
     @Override
