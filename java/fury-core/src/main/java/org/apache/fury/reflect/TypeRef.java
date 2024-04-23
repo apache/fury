@@ -14,9 +14,7 @@
 
 package org.apache.fury.reflect;
 
-import static org.apache.fury.reflect.Types.asTypeVariableKeyOrNull;
-import static org.apache.fury.reflect.Types.newArrayType;
-import static org.apache.fury.reflect.Types.typeVariablesEquals;
+import org.apache.fury.type.TypeUtils;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
@@ -32,7 +30,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import org.apache.fury.type.TypeUtils;
+
+import static org.apache.fury.reflect.Types.asTypeVariableKeyOrNull;
+import static org.apache.fury.reflect.Types.newArrayType;
+import static org.apache.fury.reflect.Types.typeVariablesEquals;
 
 public class TypeRef<T> {
 
@@ -555,20 +556,15 @@ public class TypeRef<T> {
         return true;
       }
 
-      List<TypeRef<?>> typeRefs = new ArrayList<>();
-      collectTypes(this, typeRefs);
-      for (TypeRef<?> type : typeRefs) {
-        if (type.type instanceof ParameterizedType) {
-          if (of(((ParameterizedType) type.type).getOwnerType()).isSubtypeOf(supertype)) {
-            return true;
-          }
-        } else if (type.type instanceof Class<?>) {
-          if (of(((Class<?>) type.type).getEnclosingClass()).isSubtypeOf(supertype)) {
-            return true;
-          }
-        }
-      }
-      return false;
+      return collectTypes(this)
+              .anyMatch(type -> {
+                if (type.type instanceof ParameterizedType) {
+                  return of(((ParameterizedType) type.type).getOwnerType()).isSubtypeOf(supertype);
+                } else if (type.type instanceof Class<?>) {
+                  return of(((Class<?>) type.type).getEnclosingClass()).isSubtypeOf(supertype);
+                }
+                return false;
+              });
     }
 
     if (supertype instanceof GenericArrayType) {
@@ -590,33 +586,31 @@ public class TypeRef<T> {
     return false;
   }
 
-  private void collectTypes(TypeRef<?> type, List<TypeRef<?>> resultList) {
-    for (TypeRef<?> genericInterface : type.getGenericInterfaces()) {
-      collectTypes(genericInterface, resultList);
-    }
-    TypeRef<?> superclass = type.getGenericSuperclass();
-    if (superclass != null) {
-      collectTypes(superclass, resultList);
-    }
-    resultList.add(type);
+  private Stream<TypeRef<?>> collectTypes(TypeRef<?> type) {
+    return Stream.of(type)
+            .flatMap(t -> {
+              Stream<TypeRef<?>> genericInterfacesTypeRefs = t.getGenericInterfaces().flatMap(this::collectTypes);
+              TypeRef<?> superclass = t.getGenericSuperclass();
+              return superclass == null ? genericInterfacesTypeRefs
+                      : Stream.concat(genericInterfacesTypeRefs, collectTypes(superclass));
+            });
   }
 
-  private List<TypeRef<? super T>> getGenericInterfaces() {
+  private Stream<? extends TypeRef<?>> getGenericInterfaces() {
     if (type instanceof TypeVariable) {
       return boundsAsInterfaces(((TypeVariable<?>) type).getBounds());
     }
     if (type instanceof WildcardType) {
       return boundsAsInterfaces(((WildcardType) type).getUpperBounds());
     }
-    List<TypeRef<? super T>> result = new ArrayList<>();
     Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings(type);
-    for (Type interfaceType : getRawType().getGenericInterfaces()) {
-      @SuppressWarnings("unchecked") // interface of T
-      TypeRef<? super T> resolvedInterface =
-          (TypeRef<? super T>) resolveType0(interfaceType, mappings);
-      result.add(resolvedInterface);
-    }
-    return result;
+    return Arrays.stream(getRawType().getGenericInterfaces())
+            .map(interfaceType -> {
+              @SuppressWarnings("unchecked") // interface of T
+              TypeRef<? super T> resolvedInterface =
+                      (TypeRef<? super T>) resolveType0(interfaceType, mappings);
+              return resolvedInterface;
+            });
   }
 
   private TypeRef<? super T> getGenericSuperclass() {
@@ -649,15 +643,10 @@ public class TypeRef<T> {
     return superclass;
   }
 
-  private List<TypeRef<? super T>> boundsAsInterfaces(Type[] bounds) {
-    List<TypeRef<? super T>> result = new ArrayList<>();
-    for (Type bound : bounds) {
-      TypeRef<? super T> boundType = of(bound);
-      if (boundType.getRawType().isInterface()) {
-        result.add(boundType);
-      }
-    }
-    return result;
+  private Stream<? extends TypeRef<?>> boundsAsInterfaces(Type[] bounds) {
+    return Arrays.stream(bounds)
+            .map(TypeRef::of)
+            .filter(boundType -> boundType.getRawType().isInterface());
   }
 
   private boolean is(Type formalType, TypeVariable<?> declaration) {
