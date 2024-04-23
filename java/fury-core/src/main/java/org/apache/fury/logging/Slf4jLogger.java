@@ -51,6 +51,9 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void info(String msg, Object... args) {
+    if (LoggerFactory.isLoggingDisabled()) {
+      return;
+    }
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) logger).log(null, FQCN, LocationAwareLogger.INFO_INT, msg, args, null);
     } else {
@@ -75,6 +78,9 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void warn(String msg, Object... args) {
+    if (LoggerFactory.isLoggingDisabled()) {
+      return;
+    }
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) logger).log(null, FQCN, LocationAwareLogger.WARN_INT, msg, args, null);
     } else {
@@ -84,6 +90,9 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void warn(String msg, Throwable t) {
+    if (LoggerFactory.isLoggingDisabled()) {
+      return;
+    }
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) logger).log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, t);
     } else {
@@ -108,6 +117,9 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void error(String msg, Object... args) {
+    if (LoggerFactory.isLoggingDisabled()) {
+      return;
+    }
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) logger)
           .log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, args, null);
@@ -118,6 +130,9 @@ public class Slf4jLogger implements Logger {
 
   @Override
   public void error(String msg, Throwable t) {
+    if (LoggerFactory.isLoggingDisabled()) {
+      return;
+    }
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) logger).log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, t);
     } else {

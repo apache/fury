@@ -42,6 +42,10 @@ public class LoggerFactory {
     disableLogging = false;
   }
 
+  public static boolean isLoggingDisabled() {
+    return disableLogging;
+  }
+
   /**
    * Set the {@link FuryLogger} log output control level, the default is {@link
    * LogLevel#INFO_LEVEL}.
@@ -50,6 +54,9 @@ public class LoggerFactory {
    */
   public static void setLogLevel(int level) {
     logLevel = level;
+    if (level < LogLevel.ERROR_LEVEL) {
+      disableLogging();
+    }
   }
 
   /**

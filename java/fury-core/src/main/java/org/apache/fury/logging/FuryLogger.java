@@ -141,6 +141,9 @@ public class FuryLogger implements Logger {
   }
 
   private void log(int level, String msg, Object[] args, boolean mayPrintTrace) {
+    if (LoggerFactory.isLoggingDisabled()) {
+      return;
+    }
     StringBuilder builder = new StringBuilder(dateTimeFormatter.format(LocalDateTime.now()));
     builder.append(" ").append(LogLevel.level2String(level));
     builder.append("  ").append(name);
