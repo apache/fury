@@ -1,6 +1,7 @@
 package meta
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -16,8 +17,10 @@ func NewDecoder(specialCh1 byte, specialCh2 byte) *Decoder {
 	}
 }
 
-// 接受一个编码后的 byte 数组, 以及编码方式, 解码
-// 还需要接受 numBits, 因为不知道 byte 数组里究竟包含了多少个字符, numBits 是实际有效的比特位
+// Decode
+// Accept an encoded byte array, and the encoding method
+// We also need to accept numBits, because we don't know how many characters are in the byte array,
+// and numBits are the actual valid bits
 func (d *Decoder) Decode(data []byte, encoding Encoding, numBits int) string {
 	switch encoding {
 	case LOWER_SPECIAL:
@@ -35,14 +38,16 @@ func (d *Decoder) Decode(data []byte, encoding Encoding, numBits int) string {
 	}
 }
 
+// DecodeGeneric
+// algorithm is LowerSpecial or LowerUpperDigit
 func (d *Decoder) decodeGeneric(data []byte, algorithm Encoding, numBits int) string {
 	bitsPerChar := 5
 	if algorithm == LOWER_UPPER_DIGIT_SPECIAL {
 		bitsPerChar = 6
 	}
-	// 从 data 中每次取出 5 个 bit, 转换成字符, 然后存到 chars 中
-	// abc 编码后为 [00000] [000,01] [00010] [0, 对应到三个字节, 为 0, 68, 0 (68 = 64 + 4)
-	// 按照顺序, 先取最高位, 再取最低位
+	// Retrieve 5 bits every iteration from data, convert them to characters, and save them to chars
+	// "abc" encoded as [00000] [000,01] [00010] [0, corresponding to three bytes, which are 0, 68, 0 (68 = 64 + 4)
+	// In order, take the highest digit first, then the lower
 	chars := make([]byte, 0)
 	bitPos, bitCount := 7, 0
 	for bitCount+bitsPerChar <= numBits {
@@ -61,7 +66,7 @@ func (d *Decoder) decodeGeneric(data []byte, algorithm Encoding, numBits int) st
 }
 
 func (d *Decoder) decodeRepAllToLowerSpecial(data []byte, algorithm Encoding, numBits int) string {
-	// 先按照小写字母解码, 再做转换
+	// Decode the data the lowercase letters, then convert
 	str := d.decodeGeneric(data, algorithm, numBits)
 	chars := make([]byte, 0)
 	for i := 0; i < len(str); i++ {
@@ -99,7 +104,7 @@ func (d *Decoder) decodeLowerSpecialChar(charValue byte) byte {
 	} else if charValue == 29 {
 		return '|'
 	} else {
-		panic("Invalid character value for LOWER_SPECIAL: {charValue}")
+		panic(fmt.Sprintf("Invalid character value for LOWER_SPECIAL: %v\n", charValue))
 	}
 }
 
@@ -116,6 +121,6 @@ func (d *Decoder) decodeLowerUpperDigitSpecialChar(charValue byte) byte {
 	} else if charValue == 63 {
 		return d.specialChar2
 	} else {
-		panic("Invalid character value for LOWER_UPPER_DIGIT_SPECIAL: {charValue}")
+		panic(fmt.Sprintf("Invalid character value for LOWER_UPPER_DIGIT_SPECIAL: %v", charValue))
 	}
 }

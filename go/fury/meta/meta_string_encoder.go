@@ -1,6 +1,26 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package meta
 
-import "unicode"
+import (
+	"fmt"
+	"unicode"
+)
 
 type Encoder struct {
 	specialChar1 byte
@@ -20,12 +40,12 @@ func (e *Encoder) Encode(input string) MetaString {
 	return e.EncodeWithEncoding(input, encoding)
 }
 
-// Encodes the input string to MetaString using specified encoding.
+// EncodeWithEncoding Encodes the input string to MetaString using specified encoding.
 func (e *Encoder) EncodeWithEncoding(input string, encoding Encoding) MetaString {
 	if len(input) > 32767 {
 		panic("Long meta string than 32767 is not allowed")
 	}
-	// 根据编码方式执行对应的编码算法
+	// execute encoding algorithm according to the encoding mode
 	length := len(input)
 	switch encoding {
 	case LOWER_SPECIAL:
@@ -121,9 +141,9 @@ func (e *Encoder) EncodeGeneric(chars []byte, bitsPerChar int) []byte {
 		} else if bitsPerChar == 6 {
 			value = e.charToValueLowerUpperDigitSpecial(c)
 		}
-		// 根据 currentBit 算出应该填入到 result 的哪个位置
-		// abc 编码后为 [00000] [000,01] [00010] [0, 对应到三个字节, 为 0, 68, 0 (68 = 64 + 4)
-		// 按照顺序, 先放最高位, 再放最低位
+		// Use currentBit to figure out where the result should be filled
+		// abc encoded as [00000] [000,01] [00010] [0, corresponding to three bytes, which are 0, 68, 0 (68 = 64 + 4)
+		// In order, put the highest bit first, then the lower
 		for i := bitsPerChar - 1; i >= 0; i-- {
 			if (value & (1 << i)) > 0 {
 				bytePos := currentBit / 8
@@ -142,7 +162,7 @@ func (e *Encoder) ComputeEncoding(input string) Encoding {
 		return LOWER_SPECIAL
 	}
 	if statistics.canLowerUpperDigitSpecialEncoded {
-		// 字符串中均为字母, 数字, 和两个特殊符号
+		// Here, the string contains only letters, numbers, and two special symbols
 		if statistics.digitCount != 0 {
 			return LOWER_UPPER_DIGIT_SPECIAL
 		}
@@ -172,7 +192,8 @@ func (e *Encoder) computeStringStatistics(input string) *stringStatistics {
 	canLowerUpperDigitSpecialEncoded := true
 	for _, c := range []byte(input) {
 		if canLowerUpperDigitSpecialEncoded {
-			if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == e.specialChar1 || c == e.specialChar2) {
+			if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' ||
+				c >= '0' && c <= '9' || c == e.specialChar1 || c == e.specialChar2) {
 				canLowerUpperDigitSpecialEncoded = false
 			}
 		}
@@ -220,9 +241,8 @@ func (e *Encoder) charToValueLowerSpecial(c byte) byte {
 		return 28
 	} else if c == '|' {
 		return 29
-	} else {
-		panic("Unsupported character for LOWER_SPECIAL encoding: {c}")
 	}
+	panic(fmt.Sprintf("Unsupported character for LOWER_SPECIAL encoding: %v\n", c))
 }
 
 func (e *Encoder) charToValueLowerUpperDigitSpecial(c byte) byte {
@@ -236,7 +256,6 @@ func (e *Encoder) charToValueLowerUpperDigitSpecial(c byte) byte {
 		return 62
 	} else if c == e.specialChar2 {
 		return 63
-	} else {
-		panic("Unsupported character for LOWER_UPPER_DIGIT_SPECIAL encoding: {c}")
 	}
+	panic(fmt.Sprintf("Unsupported character for LOWER_UPPER_DIGIT_SPECIAL encoding: %v\n", c))
 }

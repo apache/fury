@@ -1,6 +1,23 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package meta
 
-// 首先定义几种编码格式, 枚举类型
+/* Encoding Algorithms Flags*/
 type Encoding uint8
 
 const (
@@ -11,18 +28,16 @@ const (
 	ALL_TO_LOWER_SPECIAL      Encoding = 0x04
 )
 
-// 定义 MetaString 类, 用于存储对元信息序列化的结果
+// MetaString saves the serialized data
 type MetaString struct {
-	inputString  string   // 输入字符串
-	encoding     Encoding // 编码方式
+	inputString  string
+	encoding     Encoding // encoding flag
 	specialChar1 byte
 	specialChar2 byte
-	outputBytes  []byte // 序列化结果
+	outputBytes  []byte // serialized data
 	numChars     int
 	numBits      int
 }
-
-// 定义 Getter, Setter, to_string 方法
 
 func (ms *MetaString) GetInputString() string { return ms.inputString }
 
