@@ -68,7 +68,7 @@ def build(v: str):
         f"--prefix=apache-fury-{v}-incubating-src/ {branch}",
         shell=True,
     )
-    subprocess.check_call("git reset --hard HEAD~")
+    subprocess.check_call("git reset --hard HEAD~", shell=True)
     os.chdir("dist")
     logger.info("Start to generate signature")
     subprocess.check_call(
