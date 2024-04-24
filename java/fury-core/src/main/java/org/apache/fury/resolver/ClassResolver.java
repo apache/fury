@@ -116,7 +116,13 @@ import org.apache.fury.serializer.StructSerializer;
 import org.apache.fury.serializer.TimeSerializers;
 import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedClassSerializer;
 import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedMetaSharedClass;
+import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipArrayClass;
+import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipArrayClassSerializer;
 import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipClass;
+import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipEnumArrayClass;
+import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipEnumArrayClassSerializer;
+import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipEnumClass;
+import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipEnumClassSerializer;
 import org.apache.fury.serializer.collection.ChildContainerSerializers;
 import org.apache.fury.serializer.collection.CollectionSerializer;
 import org.apache.fury.serializer.collection.CollectionSerializers;
@@ -812,6 +818,12 @@ public class ClassResolver {
         return TimeSerializers.TimeZoneSerializer.class;
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {
         return BufferSerializers.ByteBufferSerializer.class;
+      } else if (cls == UnexistedSkipArrayClass.class) {
+        return UnexistedSkipArrayClassSerializer.class;
+      } else if (cls == UnexistedSkipEnumArrayClass.class) {
+        return UnexistedSkipEnumArrayClassSerializer.class;
+      } else if (cls == UnexistedSkipEnumClass.class) {
+        return UnexistedSkipEnumClassSerializer.class;
       }
       if (fury.getConfig().checkJdkClassSerializable()) {
         if (cls.getName().startsWith("java") && !(Serializable.class.isAssignableFrom(cls))) {
@@ -1586,13 +1598,22 @@ public class ClassResolver {
     if (cls == null) {
       String packageName = packageBytes.decode('.', '_');
       String className = simpleClassNameBytes.decode('.', '$');
+      boolean isArray = className.startsWith(ClassInfo.ARRAY_PREFIX);
+      if (isArray) {
+        packageName = "[L" + packageName;
+        className = className.substring(1);
+      }
+      boolean isEnum = className.startsWith(ClassInfo.ENUM_PREFIX);
+      if (isEnum) {
+        className = className.substring(1);
+      }
       String entireClassName;
       if (StringUtils.isBlank(packageName)) {
         entireClassName = className;
       } else {
         entireClassName = packageName + "." + className;
       }
-      cls = loadClass(entireClassName);
+      cls = loadClass(entireClassName, isArray, isEnum);
       compositeClassNameBytes2Class.put(classNameBytes, cls);
     }
     return cls;
@@ -1628,6 +1649,10 @@ public class ClassResolver {
   }
 
   private Class<?> loadClass(String className) {
+    return loadClass(className, false, false);
+  }
+
+  private Class<?> loadClass(String className, boolean isArray, boolean isEnum) {
     extRegistry.classChecker.checkClass(this, className);
     try {
       return Class.forName(className, false, fury.getClassLoader());
@@ -1641,8 +1666,18 @@ public class ClassResolver {
                 className, fury.getClassLoader(), Thread.currentThread().getContextClassLoader());
         if (fury.getConfig().deserializeUnexistedClass()) {
           LOG.warn(msg);
-          // FIXME create a subclass dynamically may be better?
-          return UnexistedSkipClass.class;
+          if (isArray) {
+            if (isEnum) {
+              return UnexistedSkipEnumArrayClass.class;
+            } else {
+              return UnexistedSkipArrayClass.class;
+            }
+          } else if (isEnum) {
+            return UnexistedSkipEnumClass.class;
+          } else {
+            // FIXME create a subclass dynamically may be better?
+            return UnexistedSkipClass.class;
+          }
         }
         throw new IllegalStateException(msg, ex);
       }

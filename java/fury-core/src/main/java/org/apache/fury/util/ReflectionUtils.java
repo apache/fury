@@ -426,11 +426,28 @@ public class ReflectionUtils {
     return null;
   }
 
+  /**
+   * Get classname with package name stripped. Note that this is different from {@link
+   * Class#getSimpleName()} since it return className without enclosing classname for inner classes.
+   */
   public static String getClassNameWithoutPackage(Class<?> clz) {
     String className = clz.getName();
     int index = className.lastIndexOf(".");
     if (index != -1) {
       return className.substring(index + 1);
+    } else {
+      return className;
+    }
+  }
+
+  /**
+   * Get classname with package name stripped. Note that this is different from {@link
+   * Class#getSimpleName()} since it return className without enclosing classname for inner classes.
+   */
+  public static String getClassNameWithoutPackage(String className) {
+    int index = className.lastIndexOf(".");
+    if (index != -1) {
+      return className.substring(index);
     } else {
       return className;
     }
@@ -506,6 +523,15 @@ public class ReflectionUtils {
       pkg = cls.getPackage().getName();
     }
     return pkg;
+  }
+
+  public static String getPackage(String className) {
+    int index = className.lastIndexOf(".");
+    if (index != -1) {
+      return className.substring(0, index);
+    } else {
+      return "";
+    }
   }
 
   /**

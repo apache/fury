@@ -56,6 +56,12 @@ public final class UnexistedClassSerializers {
   /** Ensure no fields here to avoid conflicts with peer class fields. */
   public static class UnexistedSkipClass implements UnexistedClass {}
 
+  public static class UnexistedSkipArrayClass implements UnexistedClass {}
+
+  public static class UnexistedSkipEnumArrayClass implements UnexistedClass {}
+
+  public static class UnexistedSkipEnumClass implements UnexistedClass {}
+
   public static class UnexistedMetaSharedClass extends LazyMap implements UnexistedClass {
     private final ClassDef classDef;
 
@@ -237,6 +243,77 @@ public final class UnexistedClassSerializers {
       }
       obj.setEntries(entries);
       return obj;
+    }
+  }
+
+  public static final class UnexistedSkipArrayClassSerializer extends Serializer {
+
+    private final CompatibleSerializer<UnexistedSkipClass> componentSerializer;
+
+    public UnexistedSkipArrayClassSerializer(Fury fury, Class type) {
+      super(fury, type);
+      // TODO(chaokunyang) meta share mode not supported currently.
+      componentSerializer = new CompatibleSerializer<>(fury, UnexistedSkipClass.class);
+    }
+
+    @Override
+    public Object[] read(MemoryBuffer buffer) {
+      // Some jdk8 will crash if use varint, why?
+      int numElements = buffer.readVarUint32Small7();
+      Object[] value = new Object[numElements];
+      RefResolver refResolver = fury.getRefResolver();
+      refResolver.reference(value);
+      for (int i = 0; i < numElements; i++) {
+        Object elem;
+        int nextReadRefId = refResolver.tryPreserveRefId(buffer);
+        if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
+          elem = componentSerializer.read(buffer);
+        } else {
+          elem = refResolver.getReadObject();
+        }
+        value[i] = elem;
+      }
+      return value;
+    }
+  }
+
+  public static final class UnexistedSkipEnumArrayClassSerializer extends Serializer {
+
+    public UnexistedSkipEnumArrayClassSerializer(Fury fury, Class type) {
+      super(fury, type);
+    }
+
+    @Override
+    public Object[] read(MemoryBuffer buffer) {
+      // Some jdk8 will crash if use varint, why?
+      int numElements = buffer.readVarUint32Small7();
+      Object[] value = new Object[numElements];
+      RefResolver refResolver = fury.getRefResolver();
+      refResolver.reference(value);
+      for (int i = 0; i < numElements; i++) {
+        Object elem;
+        int nextReadRefId = refResolver.tryPreserveRefId(buffer);
+        if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
+          elem = buffer.readVarUint32Small7();
+          refResolver.setReadObject(nextReadRefId, elem);
+        } else {
+          elem = refResolver.getReadObject();
+        }
+        value[i] = elem;
+      }
+      return value;
+    }
+  }
+
+  public static final class UnexistedSkipEnumClassSerializer extends Serializer {
+
+    public UnexistedSkipEnumClassSerializer(Fury fury, Class type) {
+      super(fury, type);
+    }
+
+    @Override
+    public Object read(MemoryBuffer buffer) {
+      return buffer.readVarUint32Small7();
     }
   }
 }

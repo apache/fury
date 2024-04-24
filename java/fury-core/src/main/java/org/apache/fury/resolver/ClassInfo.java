@@ -32,6 +32,9 @@ import org.apache.fury.util.function.Functions;
  * serialization.
  */
 public class ClassInfo {
+  static final String ARRAY_PREFIX = "1";
+  static final String ENUM_PREFIX = "2";
+
   final Class<?> cls;
   final MetaStringBytes fullClassNameBytes;
   final MetaStringBytes packageNameBytes;
@@ -85,13 +88,27 @@ public class ClassInfo {
         && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       String packageName = ReflectionUtils.getPackage(cls);
+      String className = ReflectionUtils.getClassNameWithoutPackage(cls);
+      if (cls.isArray()) {
+        String componentName = cls.getName().substring(2);
+        packageName = ReflectionUtils.getPackage(componentName);
+        Class<?> ctype = cls.getComponentType();
+        if (ctype.isEnum()) {
+          className =
+              ARRAY_PREFIX + ENUM_PREFIX + ReflectionUtils.getClassNameWithoutPackage(ctype);
+        } else {
+          className = ARRAY_PREFIX + ReflectionUtils.getClassNameWithoutPackage(componentName);
+        }
+      } else if (cls.isEnum()) {
+        packageName = ReflectionUtils.getPackage(cls);
+        className = ENUM_PREFIX + ReflectionUtils.getClassNameWithoutPackage(cls);
+      }
       this.packageNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
               new MetaStringEncoder('.', '_').encode(packageName));
       this.classNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
-              new MetaStringEncoder('_', '$')
-                  .encode(ReflectionUtils.getClassNameWithoutPackage(cls)));
+              new MetaStringEncoder('_', '$').encode(className));
     } else {
       this.packageNameBytes = null;
       this.classNameBytes = null;
