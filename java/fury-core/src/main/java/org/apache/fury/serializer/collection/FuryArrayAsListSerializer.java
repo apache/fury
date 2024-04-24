@@ -49,20 +49,19 @@ public final class FuryArrayAsListSerializer
   }
 
   /**
-   * A List which wrap a Java array like `java.util.Arrays.ArrayList`, but allow to replace wrapped
-   * array. Used for serialization only, do not use it in other scenarios.
+   * A List which wrap a Java array into a list, used for serialization only, do not use it in other
+   * scenarios.
    */
   @Internal
-  public static class ArrayAsList<E> extends AbstractList<E>
+  public static class ArrayAsList extends AbstractList<Object>
       implements RandomAccess, java.io.Serializable {
     private static final Object[] EMPTY = new Object[0];
 
-    private E[] array;
+    private Object[] array;
     private int size;
 
-    @SuppressWarnings("unchecked")
     public ArrayAsList(int size) {
-      array = (E[]) new Object[size];
+      array = new Object[size];
     }
 
     @Override
@@ -71,33 +70,32 @@ public final class FuryArrayAsListSerializer
     }
 
     @Override
-    public boolean add(E e) {
+    public boolean add(Object e) {
       array[size++] = e;
       return true;
     }
 
     @Override
-    public E get(int index) {
+    public Object get(int index) {
       return array[index];
     }
 
-    @SuppressWarnings("unchecked")
     public void clearArray() {
       size = 0;
-      array = (E[]) EMPTY;
+      array = EMPTY;
     }
 
-    public void setArray(E[] a) {
+    public void setArray(Object[] a) {
       array = a;
       size = a.length;
     }
 
-    public E[] getArray() {
+    public Object[] getArray() {
       return array;
     }
 
     @Override
-    public E set(int index, E element) {
+    public Object set(int index, Object element) {
       throw new UnsupportedOperationException();
     }
 
@@ -118,8 +116,8 @@ public final class FuryArrayAsListSerializer
     }
 
     @Override
-    public Iterator<E> iterator() {
-      return new Iterator<E>() {
+    public Iterator<Object> iterator() {
+      return new Iterator<Object>() {
         private int index;
 
         @Override
@@ -128,7 +126,7 @@ public final class FuryArrayAsListSerializer
         }
 
         @Override
-        public E next() {
+        public Object next() {
           return array[index++];
         }
       };

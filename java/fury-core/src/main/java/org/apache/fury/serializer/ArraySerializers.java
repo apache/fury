@@ -544,14 +544,14 @@ public class ArraySerializers {
   public static final class StringArraySerializer extends Serializer<String[]> {
     private final StringSerializer stringSerializer;
     private final FuryArrayAsListSerializer collectionSerializer;
-    private final FuryArrayAsListSerializer.ArrayAsList<String> list;
+    private final FuryArrayAsListSerializer.ArrayAsList list;
 
     public StringArraySerializer(Fury fury) {
       super(fury, String[].class);
       stringSerializer = new StringSerializer(fury);
       collectionSerializer = new FuryArrayAsListSerializer(fury);
       collectionSerializer.setElementSerializer(stringSerializer);
-      list = new FuryArrayAsListSerializer.ArrayAsList<>(0);
+      list = new FuryArrayAsListSerializer.ArrayAsList(0);
     }
 
     @Override
