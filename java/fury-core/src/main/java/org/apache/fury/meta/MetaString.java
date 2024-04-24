@@ -69,7 +69,6 @@ public class MetaString {
    *
    * @param encoding The type of encoding used for the string data.
    * @param bytes The encoded string data as a byte array.
-   * @param numBits The number of bits used for encoding.
    */
   public MetaString(
       String string, Encoding encoding, char specialChar1, char specialChar2, byte[] bytes) {
