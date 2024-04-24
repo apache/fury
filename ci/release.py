@@ -38,7 +38,7 @@ def prepare(v: str):
     try:
         subprocess.check_call(f"git checkout -b {branch}", shell=True)
         bump_version(version=v, l="all")
-        subprocess.check_call(f"git add -u", shell=True)
+        subprocess.check_call("git add -u", shell=True)
         subprocess.check_call(f"git commit -m 'prepare release for {v}'", shell=True)
     except BaseException:
         logger.exception("Prepare branch failed")
@@ -258,7 +258,7 @@ def _parse_args():
 
     prepare_parser = subparsers.add_parser(
         "prepare",
-        description=f"Prepare release branch",
+        description="Prepare release branch",
     )
     prepare_parser.add_argument("-v", type=str, help="new version")
     prepare_parser.set_defaults(func=prepare)
