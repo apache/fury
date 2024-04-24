@@ -1601,7 +1601,7 @@ public class ClassResolver {
       boolean isArray = className.startsWith(ClassInfo.ARRAY_PREFIX);
       if (isArray) {
         packageName = "[L" + packageName;
-        className = className.substring(1);
+        className = className.substring(1) + ";";
       }
       boolean isEnum = className.startsWith(ClassInfo.ENUM_PREFIX);
       if (isEnum) {

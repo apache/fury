@@ -90,14 +90,14 @@ public class ClassInfo {
       String packageName = ReflectionUtils.getPackage(cls);
       String className = ReflectionUtils.getClassNameWithoutPackage(cls);
       if (cls.isArray()) {
-        String componentName = cls.getName().substring(2);
-        packageName = ReflectionUtils.getPackage(componentName);
         Class<?> ctype = cls.getComponentType();
+        String componentName = ctype.getName();
+        packageName = ReflectionUtils.getPackage(componentName);
+        String componentSimpleName = ReflectionUtils.getClassNameWithoutPackage(componentName);
         if (ctype.isEnum()) {
-          className =
-              ARRAY_PREFIX + ENUM_PREFIX + ReflectionUtils.getClassNameWithoutPackage(ctype);
+          className = ARRAY_PREFIX + ENUM_PREFIX + componentSimpleName;
         } else {
-          className = ARRAY_PREFIX + ReflectionUtils.getClassNameWithoutPackage(componentName);
+          className = ARRAY_PREFIX + componentSimpleName;
         }
       } else if (cls.isEnum()) {
         packageName = ReflectionUtils.getPackage(cls);

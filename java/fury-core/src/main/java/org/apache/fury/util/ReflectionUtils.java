@@ -447,7 +447,7 @@ public class ReflectionUtils {
   public static String getClassNameWithoutPackage(String className) {
     int index = className.lastIndexOf(".");
     if (index != -1) {
-      return className.substring(index);
+      return className.substring(index + 1);
     } else {
       return className;
     }
