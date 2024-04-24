@@ -75,10 +75,15 @@ public class MetaStringDecoder {
       int byteIndex = bitIndex / 8;
       int intraByteIndex = bitIndex % 8;
       // Extract the 5-bit character value across byte boundaries if needed
-      int charValue =
-          ((data[byteIndex] & 0xFF) << 8)
-              | (byteIndex + 1 < data.length ? (data[byteIndex + 1] & 0xFF) : 0);
-      charValue = (byte) ((charValue >> (11 - intraByteIndex)) & bitMask);
+      int charValue;
+      if (intraByteIndex > 3) {
+        charValue =
+            ((data[byteIndex] & 0xFF) << 8)
+                | (byteIndex + 1 < data.length ? (data[byteIndex + 1] & 0xFF) : 0);
+        charValue = (byte) ((charValue >> (11 - intraByteIndex)) & bitMask);
+      } else {
+        charValue = data[byteIndex] >> (3 - intraByteIndex) & bitMask;
+      }
       bitIndex += 5;
       decoded.append(decodeLowerSpecialChar(charValue));
     }
@@ -100,10 +105,15 @@ public class MetaStringDecoder {
       int intraByteIndex = bitIndex % 8;
 
       // Extract the 6-bit character value across byte boundaries if needed
-      int charValue =
-          ((data[byteIndex] & 0xFF) << 8)
-              | (byteIndex + 1 < data.length ? (data[byteIndex + 1] & 0xFF) : 0);
-      charValue = ((byte) ((charValue >> (10 - intraByteIndex)) & bitMask));
+      int charValue;
+      if (intraByteIndex > 2) {
+        charValue =
+            ((data[byteIndex] & 0xFF) << 8)
+                | (byteIndex + 1 < data.length ? (data[byteIndex + 1] & 0xFF) : 0);
+        charValue = ((byte) ((charValue >> (10 - intraByteIndex)) & bitMask));
+      } else {
+        charValue = data[byteIndex] >> (2 - intraByteIndex) & bitMask;
+      }
       bitIndex += 6;
       decoded.append(decodeLowerUpperDigitSpecialChar(charValue));
     }
