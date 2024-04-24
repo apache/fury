@@ -57,7 +57,7 @@ def build(v: str):
     subprocess.check_call(f"git checkout releases-{v}", shell=True)
     branch = f"releases-{v}"
     src_tar = f"apache-fury-{v}-incubating-src.tar.gz"
-    # _check_all_committed()
+    _check_all_committed()
     _strip_unnecessary_license()
     subprocess.check_call(
         "git add LICENSE && git commit -m 'remove benchmark from license'", shell=True
