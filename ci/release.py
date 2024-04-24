@@ -44,12 +44,7 @@ def build(v: str):
     subprocess.check_call(f"git checkout releases-{v}", shell=True)
     branch = f"releases-{v}"
     src_tar = f"apache-fury-{v}-incubating-src.tar.gz"
-    subprocess.check_call(
-        f"git archive --format=tar.gz "
-        f"--output=dist/{src_tar} "
-        f"--prefix=apache-fury-{v}-incubating-src/ {branch}",
-        shell=True,
-    )
+    _create_source_archive(src_tar, v, branch)
     os.chdir("dist")
     logger.info("Start to generate signature")
     subprocess.check_call(
@@ -57,6 +52,38 @@ def build(v: str):
     )
     subprocess.check_call(f"sha512sum {src_tar} >{src_tar}.sha512", shell=True)
     verify(v)
+
+
+def _create_source_archive(src_tar, v, branch):
+    _strip_unnecessary_license()
+    subprocess.check_call(
+        f"git archive --format=tar.gz "
+        f"--output=dist/{src_tar} "
+        f"--prefix=apache-fury-{v}-incubating-src/ {branch}",
+        shell=True,
+    )
+
+
+def _strip_unnecessary_license():
+    with open("LICENSE", "r") as f:
+        lines = f.readlines()
+    new_lines = []
+    line_number = 0
+    while line_number < len(lines):
+        line = lines[line_number]
+        if "fast-serialization" in line:
+            line_number += 4
+        elif "benchmark" in line:  # strip license in benchmark
+            line_number += 1
+        else:
+            new_lines.append(line)
+            line_number += 1
+    text = "".join(new_lines)
+    if lines != new_lines:
+        with open("LICENSE", "w") as f:
+            f.write(text)
+        subprocess.check_call(f"git add LICENSE", shell=True)
+        subprocess.check_call(f"git commit -m 'remove benchmark license'", shell=True)
 
 
 def verify(v):
@@ -222,4 +249,4 @@ def _parse_args():
 
 
 if __name__ == "__main__":
-    _parse_args()
+    build("0.4.4")
