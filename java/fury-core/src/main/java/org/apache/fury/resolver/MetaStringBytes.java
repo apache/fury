@@ -27,7 +27,6 @@ import org.apache.fury.util.MurmurHash3;
 
 @Internal
 final class MetaStringBytes {
-  static final int STRIP_LAST_CHAR = 0b1000;
   static final short DEFAULT_DYNAMIC_WRITE_STRING_ID = -1;
 
   final byte[] bytes;
@@ -57,12 +56,6 @@ final class MetaStringBytes {
     }
     hashCode &= 0xffffffffffffff00L;
     int header = metaString.getEncoding().getValue();
-    String decoded =
-        new MetaStringDecoder(metaString.getSpecialChar1(), metaString.getSpecialChar2())
-            .decode(bytes, metaString.getEncoding(), bytes.length * 8);
-    if (decoded.length() > metaString.getString().length()) {
-      header |= STRIP_LAST_CHAR;
-    }
     this.hashCode = hashCode | header;
   }
 
@@ -70,12 +63,7 @@ final class MetaStringBytes {
     int header = (int) (hashCode & 0xff);
     int encodingFlags = header & 0b111;
     MetaString.Encoding encoding = MetaString.Encoding.values()[encodingFlags];
-    String str =
-        new MetaStringDecoder(specialChar1, specialChar2).decode(bytes, encoding, bytes.length * 8);
-    if ((header & STRIP_LAST_CHAR) != 0) {
-      str = str.substring(0, str.length() - 1);
-    }
-    return str;
+    return new MetaStringDecoder(specialChar1, specialChar2).decode(bytes, encoding);
   }
 
   @Override

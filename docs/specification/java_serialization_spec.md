@@ -223,11 +223,11 @@ Meta string is mainly used to encode meta strings such as class name and field n
 
 String binary encoding algorithm:
 
-| Algorithm                 | Pattern            | Description                                                                                                                                                                       |
-|---------------------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| LOWER_SPECIAL             | `a-z._$\|`         | every char is written using 5 bits, `a-z`: `0b00000~0b11001`, `._$\|`: `0b11010~0b11101`                                                                                          |
-| LOWER_UPPER_DIGIT_SPECIAL | `a-zA-Z0~9[c1,c2]` | every char is written using 6 bits, `a-z`: `0b00000~0b11001`, `A-Z`: `0b11010~0b110011`, `0~9`: `0b110100~0b111101`, `c1,c2`: `0b111110~0b111111`, `c1,c2` should be two of `._$` |
-| UTF-8                     | any chars          | UTF-8 encoding                                                                                                                                                                    |
+| Algorithm                 | Pattern       | Description                                                                                                                                                                                                                                                                              |
+|---------------------------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| LOWER_SPECIAL             | `a-z._$\|`    | every char is written using 5 bits, `a-z`: `0b00000~0b11001`, `._$\|`: `0b11010~0b11101`, prepend one bit at the start to indicate whether strip last char since last byte may have 7 redundant bits(1 indicates strip last char)                                                        |
+| LOWER_UPPER_DIGIT_SPECIAL | `a-zA-Z0~9._` | every char is written using 6 bits, `a-z`: `0b00000~0b11001`, `A-Z`: `0b11010~0b110011`, `0~9`: `0b110100~0b111101`, `._`: `0b111110~0b111111`,  prepend one bit at the start to indicate whether strip last char since last byte may have 7 redundant bits(1 indicates strip last char) |
+| UTF-8                     | any chars     | UTF-8 encoding                                                                                                                                                                                                                                                                           |
 
 Encoding flags:
 

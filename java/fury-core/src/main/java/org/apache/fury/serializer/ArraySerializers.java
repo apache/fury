@@ -27,7 +27,6 @@ import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
-import org.apache.fury.serializer.collection.ArrayAsList;
 import org.apache.fury.serializer.collection.CollectionFlags;
 import org.apache.fury.serializer.collection.FuryArrayAsListSerializer;
 import org.apache.fury.type.Type;
@@ -545,14 +544,14 @@ public class ArraySerializers {
   public static final class StringArraySerializer extends Serializer<String[]> {
     private final StringSerializer stringSerializer;
     private final FuryArrayAsListSerializer collectionSerializer;
-    private final ArrayAsList<String> list;
+    private final FuryArrayAsListSerializer.ArrayAsList list;
 
     public StringArraySerializer(Fury fury) {
       super(fury, String[].class);
       stringSerializer = new StringSerializer(fury);
       collectionSerializer = new FuryArrayAsListSerializer(fury);
       collectionSerializer.setElementSerializer(stringSerializer);
-      list = new ArrayAsList<>(0);
+      list = new FuryArrayAsListSerializer.ArrayAsList(0);
     }
 
     @Override
@@ -571,7 +570,7 @@ public class ArraySerializers {
       // TODO reference support
       // this method won't throw exception.
       int flags = collectionSerializer.writeNullabilityHeader(buffer, list);
-      list.setArray(null); // clear for gc
+      list.clearArray(); // clear for gc
       StringSerializer stringSerializer = this.stringSerializer;
       if ((flags & CollectionFlags.HAS_NULL) != CollectionFlags.HAS_NULL) {
         for (String elem : value) {

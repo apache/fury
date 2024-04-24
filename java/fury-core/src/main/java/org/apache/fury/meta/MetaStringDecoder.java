@@ -45,19 +45,18 @@ public class MetaStringDecoder {
    *
    * @param encodedData encoded data using passed <code>encoding</code>.
    * @param encoding encoding the passed data.
-   * @param numBits total bits for encoded data.
    * @return Decoded string.
    */
-  public String decode(byte[] encodedData, Encoding encoding, int numBits) {
+  public String decode(byte[] encodedData, Encoding encoding) {
     switch (encoding) {
       case LOWER_SPECIAL:
-        return decodeLowerSpecial(encodedData, numBits);
+        return decodeLowerSpecial(encodedData);
       case LOWER_UPPER_DIGIT_SPECIAL:
-        return decodeLowerUpperDigitSpecial(encodedData, numBits);
+        return decodeLowerUpperDigitSpecial(encodedData);
       case FIRST_TO_LOWER_SPECIAL:
-        return decodeRepFirstLowerSpecial(encodedData, numBits);
+        return decodeRepFirstLowerSpecial(encodedData);
       case ALL_TO_LOWER_SPECIAL:
-        return decodeRepAllToLowerSpecial(encodedData, numBits);
+        return decodeRepAllToLowerSpecial(encodedData);
       case UTF_8:
         return new String(encodedData, StandardCharsets.UTF_8);
       default:
@@ -66,41 +65,60 @@ public class MetaStringDecoder {
   }
 
   /** Decoding method for {@link Encoding#LOWER_SPECIAL}. */
-  private String decodeLowerSpecial(byte[] data, int numBits) {
+  private String decodeLowerSpecial(byte[] data) {
     StringBuilder decoded = new StringBuilder();
-    int bitIndex = 0;
-    int bitMask = 0b11111; // 5 bits for mask
-    while (bitIndex + 5 <= numBits) {
+    int totalBits = data.length * 8; // Total number of bits in the data
+    boolean stripLastChar = (data[0] & 0x80) != 0; // Check the first bit of the first byte
+    int bitMask = 0b11111; // 5 bits for the mask
+    int bitIndex = 1; // Start from the second bit
+    while (bitIndex + 5 <= totalBits) {
       int byteIndex = bitIndex / 8;
       int intraByteIndex = bitIndex % 8;
       // Extract the 5-bit character value across byte boundaries if needed
-      int charValue =
-          ((data[byteIndex] & 0xFF) << 8)
-              | (byteIndex + 1 < data.length ? (data[byteIndex + 1] & 0xFF) : 0);
-      charValue = ((byte) ((charValue >> (11 - intraByteIndex)) & bitMask));
+      int charValue;
+      if (intraByteIndex > 3) {
+        charValue =
+            ((data[byteIndex] & 0xFF) << 8)
+                | (byteIndex + 1 < data.length ? (data[byteIndex + 1] & 0xFF) : 0);
+        charValue = (byte) ((charValue >> (11 - intraByteIndex)) & bitMask);
+      } else {
+        charValue = data[byteIndex] >> (3 - intraByteIndex) & bitMask;
+      }
       bitIndex += 5;
       decoded.append(decodeLowerSpecialChar(charValue));
     }
-
+    if (stripLastChar) {
+      decoded.deleteCharAt(decoded.length() - 1);
+    }
     return decoded.toString();
   }
 
   /** Decoding method for {@link Encoding#LOWER_UPPER_DIGIT_SPECIAL}. */
-  private String decodeLowerUpperDigitSpecial(byte[] data, int numBits) {
+  private String decodeLowerUpperDigitSpecial(byte[] data) {
     StringBuilder decoded = new StringBuilder();
-    int bitIndex = 0;
+    int bitIndex = 1;
+    boolean stripLastChar = (data[0] & 0x80) != 0; // Check the first bit of the first byte
     int bitMask = 0b111111; // 6 bits for mask
+    int numBits = data.length * 8;
     while (bitIndex + 6 <= numBits) {
       int byteIndex = bitIndex / 8;
       int intraByteIndex = bitIndex % 8;
 
       // Extract the 6-bit character value across byte boundaries if needed
-      int charValue =
-          ((data[byteIndex] & 0xFF) << 8)
-              | (byteIndex + 1 < data.length ? (data[byteIndex + 1] & 0xFF) : 0);
-      charValue = ((byte) ((charValue >> (10 - intraByteIndex)) & bitMask));
+      int charValue;
+      if (intraByteIndex > 2) {
+        charValue =
+            ((data[byteIndex] & 0xFF) << 8)
+                | (byteIndex + 1 < data.length ? (data[byteIndex + 1] & 0xFF) : 0);
+        charValue = ((byte) ((charValue >> (10 - intraByteIndex)) & bitMask));
+      } else {
+        charValue = data[byteIndex] >> (2 - intraByteIndex) & bitMask;
+      }
       bitIndex += 6;
       decoded.append(decodeLowerUpperDigitSpecialChar(charValue));
+    }
+    if (stripLastChar) {
+      decoded.deleteCharAt(decoded.length() - 1);
     }
     return decoded.toString();
   }
@@ -140,13 +158,13 @@ public class MetaStringDecoder {
     }
   }
 
-  private String decodeRepFirstLowerSpecial(byte[] data, int numBits) {
-    String str = decodeLowerSpecial(data, numBits);
+  private String decodeRepFirstLowerSpecial(byte[] data) {
+    String str = decodeLowerSpecial(data);
     return StringUtils.capitalize(str);
   }
 
-  private String decodeRepAllToLowerSpecial(byte[] data, int numBits) {
-    String str = decodeLowerSpecial(data, numBits);
+  private String decodeRepAllToLowerSpecial(byte[] data) {
+    String str = decodeLowerSpecial(data);
     StringBuilder builder = new StringBuilder();
     char[] chars = str.toCharArray();
     for (int i = 0; i < chars.length; i++) {
