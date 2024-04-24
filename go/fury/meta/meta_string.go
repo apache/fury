@@ -15,10 +15,10 @@ const (
 type MetaString struct {
 	inputString  string   // 输入字符串
 	encoding     Encoding // 编码方式
-	specialChar1 rune
-	specialChar2 rune
+	specialChar1 byte
+	specialChar2 byte
 	outputBytes  []byte // 序列化结果
-	numBytes     int
+	numChars     int
 	numBits      int
 }
 
@@ -28,12 +28,12 @@ func (ms *MetaString) GetInputString() string { return ms.inputString }
 
 func (ms *MetaString) GetEncoding() Encoding { return ms.encoding }
 
-func (ms *MetaString) GetSpecialChar1() rune { return ms.specialChar1 }
+func (ms *MetaString) GetSpecialChar1() byte { return ms.specialChar1 }
 
-func (ms *MetaString) GetSpecialChar2() rune { return ms.specialChar2 }
+func (ms *MetaString) GetSpecialChar2() byte { return ms.specialChar2 }
 
 func (ms *MetaString) GetOutputBytes() []byte { return ms.outputBytes }
 
-func (ms *MetaString) GetNumBytes() int { return ms.numBytes }
+func (ms *MetaString) GetNumChars() int { return ms.numChars }
 
 func (ms *MetaString) GetNumBits() int { return ms.numBits }

@@ -49,7 +49,9 @@ func (d *Decoder) decodeGeneric(data []byte, algorithm Encoding, numBits int) st
 		var val byte = 0
 		for i := 0; i < bitsPerChar; i++ {
 			val <<= 1
-			val += data[bitCount/8] & (1 << bitPos)
+			if data[bitCount/8]&(1<<bitPos) > 0 {
+				val += 1
+			}
 			bitPos = (bitPos - 1 + 8) % 8
 			bitCount++
 		}
@@ -63,10 +65,11 @@ func (d *Decoder) decodeRepAllToLowerSpecial(data []byte, algorithm Encoding, nu
 	str := d.decodeGeneric(data, algorithm, numBits)
 	chars := make([]byte, 0)
 	for i := 0; i < len(str); i++ {
-		if data[i] == '|' {
-			chars = append(chars, data[i+1]-'a'+'A')
+		if str[i] == '|' {
+			chars = append(chars, str[i+1]-'a'+'A')
+			i++
 		} else {
-			chars = append(chars, data[i])
+			chars = append(chars, str[i])
 		}
 	}
 	return string(chars)
