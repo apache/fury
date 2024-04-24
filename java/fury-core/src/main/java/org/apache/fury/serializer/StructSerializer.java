@@ -152,7 +152,7 @@ public class StructSerializer<T> extends Serializer<T> {
       this.genericType = genericType;
       fieldGenerics = genericTypesCache.get(genericType);
       if (fieldGenerics == null) {
-        fieldGenerics = buildFieldGenerics(genericType.getTypeToken(), fieldAccessors);
+        fieldGenerics = buildFieldGenerics(genericType.getTypeRef(), fieldAccessors);
         genericTypesCache.put(genericType, fieldGenerics);
       }
       this.fieldGenerics = fieldGenerics;
@@ -217,10 +217,10 @@ public class StructSerializer<T> extends Serializer<T> {
 
   int computeFieldHash(int hash, GenericType fieldGeneric) {
     int id;
-    if (fieldGeneric.getTypeToken().isSubtypeOf(List.class)) {
+    if (fieldGeneric.getTypeRef().isSubtypeOf(List.class)) {
       // TODO(chaokunyang) add list element type into schema hash
       id = Type.LIST.getId();
-    } else if (fieldGeneric.getTypeToken().isSubtypeOf(Map.class)) {
+    } else if (fieldGeneric.getTypeRef().isSubtypeOf(Map.class)) {
       // TODO(chaokunyang) add map key&value type into schema hash
       id = Type.MAP.getId();
     } else {

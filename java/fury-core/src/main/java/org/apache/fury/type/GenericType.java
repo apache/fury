@@ -46,7 +46,7 @@ public class GenericType {
         }
       };
 
-  final TypeRef<?> typeToken;
+  final TypeRef<?> typeRef;
   final Class<?> cls;
   final GenericType[] typeParameters;
   final int typeParametersCount;
@@ -59,7 +59,7 @@ public class GenericType {
   private Boolean trackingRef;
 
   public GenericType(TypeRef<?> typeRef, boolean isMonomorphic, GenericType... typeParameters) {
-    this.typeToken = typeRef;
+    this.typeRef = typeRef;
     this.cls = getRawType(typeRef);
     this.typeParameters = typeParameters;
     typeParametersCount = typeParameters.length;
@@ -153,8 +153,8 @@ public class GenericType {
     }
   }
 
-  public TypeRef<?> getTypeToken() {
-    return typeToken;
+  public TypeRef<?> getTypeRef() {
+    return typeRef;
   }
 
   public Class<?> getCls() {
@@ -212,7 +212,7 @@ public class GenericType {
 
   @Override
   public String toString() {
-    return "GenericType{" + typeToken.toString() + '}';
+    return "GenericType{" + typeRef.toString() + '}';
   }
 
   public static boolean isFinalByDefault(Class<?> cls) {

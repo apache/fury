@@ -215,7 +215,7 @@ public class DescriptorGrouper {
     if (readMethod == null && d.getWriteMethod() == null) {
       return d;
     }
-    return d.copy(d.getTypeToken(), readMethod, null);
+    return d.copy(d.getTypeRef(), readMethod, null);
   }
 
   public static DescriptorGrouper createDescriptorGrouper(

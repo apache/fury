@@ -676,7 +676,7 @@ public class ClassDef implements Serializable {
   private static FieldType buildFieldType(ClassResolver classResolver, GenericType genericType) {
     Preconditions.checkNotNull(genericType);
     boolean isFinal = genericType.isMonomorphic();
-    if (COLLECTION_TYPE.isSupertypeOf(genericType.getTypeToken())) {
+    if (COLLECTION_TYPE.isSupertypeOf(genericType.getTypeRef())) {
       return new CollectionFieldType(
           isFinal,
           buildFieldType(
@@ -684,7 +684,7 @@ public class ClassDef implements Serializable {
               genericType.getTypeParameter0() == null
                   ? GenericType.build(Object.class)
                   : genericType.getTypeParameter0()));
-    } else if (MAP_TYPE.isSupertypeOf(genericType.getTypeToken())) {
+    } else if (MAP_TYPE.isSupertypeOf(genericType.getTypeRef())) {
       return new MapFieldType(
           isFinal,
           buildFieldType(

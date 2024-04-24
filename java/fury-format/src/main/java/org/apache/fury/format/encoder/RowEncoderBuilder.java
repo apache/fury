@@ -164,7 +164,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     for (int i = 0; i < numFields; i++) {
       Descriptor d = getDescriptorByFieldName(schema.getFields().get(i).getName());
       Preconditions.checkNotNull(d);
-      TypeRef<?> fieldType = d.getTypeToken();
+      TypeRef<?> fieldType = d.getTypeRef();
       Expression fieldValue = getFieldValue(bean, d);
       Literal ordinal = Literal.ofInt(i);
       Expression.StaticInvoke field =
@@ -194,7 +194,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     for (int i = 0; i < numFields; i++) {
       Literal ordinal = Literal.ofInt(i);
       Descriptor d = getDescriptorByFieldName(schema.getFields().get(i).getName());
-      TypeRef<?> fieldType = d.getTypeToken();
+      TypeRef<?> fieldType = d.getTypeRef();
       Expression.Invoke isNullAt =
           new Expression.Invoke(row, "isNullAt", TypeUtils.PRIMITIVE_BOOLEAN_TYPE, ordinal);
       String columnAccessMethodName = BinaryUtils.getElemAccessMethodName(fieldType);

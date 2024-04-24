@@ -382,7 +382,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   private Tuple2<GenericType, GenericType> getKVGenericType(GenericType genericType) {
     Tuple2<GenericType, GenericType> genericTypes = partialGenericKVTypeMap.get(genericType);
     if (genericTypes == null) {
-      TypeRef<?> typeRef = genericType.getTypeToken();
+      TypeRef<?> typeRef = genericType.getTypeRef();
       if (!MAP_TYPE.isSupertypeOf(typeRef)) {
         Tuple2<GenericType, GenericType> typeTuple = Tuple2.of(objType, objType);
         partialGenericKVTypeMap.put(genericType, typeTuple);

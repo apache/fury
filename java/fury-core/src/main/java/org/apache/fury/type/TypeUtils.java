@@ -563,7 +563,7 @@ public class TypeUtils {
         return Descriptor.getDescriptors(cls).stream()
             .allMatch(
                 d -> {
-                  TypeRef<?> t = d.getTypeToken();
+                  TypeRef<?> t = d.getTypeRef();
                   // do field modifiers and getter/setter validation here, not in getDescriptors.
                   // If Modifier.isFinal(d.getModifiers()), use reflection
                   // private field that doesn't have getter/setter will be handled by reflection.
@@ -643,8 +643,8 @@ public class TypeUtils {
     LinkedHashSet<TypeRef<?>> typeRefs = new LinkedHashSet<>();
     List<Descriptor> descriptors = Descriptor.getDescriptors(beanClass);
     for (Descriptor descriptor : descriptors) {
-      TypeRef<?> typeRef = descriptor.getTypeToken();
-      typeRefs.add(descriptor.getTypeToken());
+      TypeRef<?> typeRef = descriptor.getTypeRef();
+      typeRefs.add(descriptor.getTypeRef());
       typeRefs.addAll(getAllTypeArguments(typeRef));
     }
 

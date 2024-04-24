@@ -138,7 +138,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   @Override
   public Expression buildEncodeExpression() {
     Reference inputObject = new Reference(ROOT_OBJECT_NAME, OBJECT_TYPE, false);
-    Reference buffer = new Reference(BUFFER_NAME, bufferTypeToken, false);
+    Reference buffer = new Reference(BUFFER_NAME, bufferTypeRef, false);
 
     ListExpression expressions = new ListExpression();
     Expression bean = tryCastIfPublic(inputObject, beanType, ctx.newName(beanClass));
@@ -186,7 +186,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
             // `bean` will be replaced by `Reference` to cut-off expr dependency.
             Expression fieldValue = getFieldValue(bean, d);
             walkPath.add(d.getDeclaringClass() + d.getName());
-            Expression fieldExpr = serializeFor(fieldValue, buffer, d.getTypeToken());
+            Expression fieldExpr = serializeFor(fieldValue, buffer, d.getTypeRef());
             walkPath.removeLast();
             groupExpressions.add(fieldExpr);
           }
@@ -410,7 +410,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   }
 
   public Expression buildDecodeExpression() {
-    Reference buffer = new Reference(BUFFER_NAME, bufferTypeToken, false);
+    Reference buffer = new Reference(BUFFER_NAME, bufferTypeRef, false);
     ListExpression expressions = new ListExpression();
     if (fury.checkClassVersion()) {
       expressions.add(checkClassVersion(buffer));
@@ -525,12 +525,12 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
             Expression action =
                 deserializeFor(
                     buffer,
-                    d.getTypeToken(),
+                    d.getTypeRef(),
                     // `bean` will be replaced by `Reference` to cut-off expr
                     // dependency.
                     expr ->
                         setFieldValue(
-                            exprHolder.get("bean"), d, tryInlineCast(expr, d.getTypeToken())));
+                            exprHolder.get("bean"), d, tryInlineCast(expr, d.getTypeRef())));
             walkPath.removeLast();
             groupExpressions.add(action);
           }
@@ -548,8 +548,8 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     ListExpression groupExpressions = new ListExpression();
     // use Reference to cut-off expr dependency.
     for (Descriptor d : group) {
-      Expression v = deserializeFor(buffer, d.getTypeToken(), expr -> expr);
-      Expression action = setFieldValue(bean, d, tryInlineCast(v, d.getTypeToken()));
+      Expression v = deserializeFor(buffer, d.getTypeRef(), expr -> expr);
+      Expression action = setFieldValue(bean, d, tryInlineCast(v, d.getTypeRef()));
       groupExpressions.add(action);
     }
     return groupExpressions;
@@ -600,7 +600,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     for (List<Descriptor> group : primitiveGroups) {
       ListExpression groupExpressions = new ListExpression();
       for (Descriptor descriptor : group) {
-        TypeRef<?> type = descriptor.getTypeToken();
+        TypeRef<?> type = descriptor.getTypeRef();
         Class<?> clz = getRawType(type);
         Preconditions.checkArgument(isPrimitive(clz));
         Expression fieldValue;
@@ -666,7 +666,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       int acc = 0;
       boolean compressStarted = false;
       for (Descriptor descriptor : group) {
-        TypeRef<?> type = descriptor.getTypeToken();
+        TypeRef<?> type = descriptor.getTypeRef();
         Class<?> clz = getRawType(type);
         Preconditions.checkArgument(isPrimitive(clz));
         Expression fieldValue;

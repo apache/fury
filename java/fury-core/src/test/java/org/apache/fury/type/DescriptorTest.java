@@ -49,7 +49,7 @@ public class DescriptorTest {
     SortedMap<Field, Descriptor> map = Descriptor.buildBeanedDescriptorsMap(BeanA.class, true);
     Assert.assertTrue(map.containsKey(BeanA.class.getDeclaredField("f1")));
     Assert.assertEquals(
-        map.get(BeanA.class.getDeclaredField("doubleList")).getTypeToken(),
+        map.get(BeanA.class.getDeclaredField("doubleList")).getTypeRef(),
         new TypeRef<List<Double>>() {});
     Assert.assertNotNull(map.get(BeanA.class.getDeclaredField("longStringField")).getReadMethod());
     Assert.assertEquals(

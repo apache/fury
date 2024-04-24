@@ -189,7 +189,7 @@ public class DescriptorGrouperTest {
     {
       List<TypeRef<?>> types =
           grouper.getCollectionDescriptors().stream()
-              .map(Descriptor::getTypeToken)
+              .map(Descriptor::getTypeRef)
               .collect(Collectors.toList());
       List<TypeRef<?>> expected =
           Arrays.asList(new TypeRef<List<String>>() {}, new TypeRef<List<Integer>>() {});
@@ -198,7 +198,7 @@ public class DescriptorGrouperTest {
     {
       List<TypeRef<?>> types =
           grouper.getMapDescriptors().stream()
-              .map(Descriptor::getTypeToken)
+              .map(Descriptor::getTypeRef)
               .collect(Collectors.toList());
       List<TypeRef<?>> expected =
           Arrays.asList(

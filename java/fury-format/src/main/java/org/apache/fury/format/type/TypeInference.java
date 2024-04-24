@@ -229,7 +229,7 @@ public class TypeInference {
                     String n =
                         CaseFormat.LOWER_CAMEL.to(
                             CaseFormat.LOWER_UNDERSCORE, descriptor.getName());
-                    return inferField(n, descriptor.getTypeToken(), newSeenTypeSet);
+                    return inferField(n, descriptor.getTypeRef(), newSeenTypeSet);
                   })
               .collect(Collectors.toList());
       return DataTypes.structField(name, true, fields);

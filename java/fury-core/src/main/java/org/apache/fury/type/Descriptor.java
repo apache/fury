@@ -70,7 +70,7 @@ public class Descriptor {
     descCache = CacheBuilder.newBuilder().weakKeys().softValues().concurrencyLevel(64).build();
   }
 
-  private TypeRef<?> typeToken;
+  private TypeRef<?> typeRef;
   private Class<?> type;
   private final String name;
   private final int modifier;
@@ -86,7 +86,7 @@ public class Descriptor {
     this.declaringClass = field.getDeclaringClass().getName();
     this.readMethod = readMethod;
     this.writeMethod = writeMethod;
-    this.typeToken = typeRef;
+    this.typeRef = typeRef;
   }
 
   public Descriptor(TypeRef<?> typeRef, String name, int modifier, String declaringClass) {
@@ -94,7 +94,7 @@ public class Descriptor {
     this.name = name;
     this.modifier = modifier;
     this.declaringClass = declaringClass;
-    this.typeToken = typeRef;
+    this.typeRef = typeRef;
     this.readMethod = null;
     this.writeMethod = null;
   }
@@ -106,7 +106,7 @@ public class Descriptor {
     this.declaringClass = field.getDeclaringClass().getName();
     this.readMethod = readMethod;
     this.writeMethod = null;
-    this.typeToken = null;
+    this.typeRef = null;
   }
 
   private Descriptor(
@@ -117,7 +117,7 @@ public class Descriptor {
       Field field,
       Method readMethod,
       Method writeMethod) {
-    this.typeToken = typeRef;
+    this.typeRef = typeRef;
     this.name = name;
     this.modifier = modifier;
     this.declaringClass = declaringClass;
@@ -165,16 +165,16 @@ public class Descriptor {
       if (field != null) {
         return this.type = field.getType();
       } else {
-        return this.type = TypeUtils.getRawType(getTypeToken());
+        return this.type = TypeUtils.getRawType(getTypeRef());
       }
     }
     return Objects.requireNonNull(type);
   }
 
-  public TypeRef<?> getTypeToken() {
-    TypeRef<?> typeRef = this.typeToken;
+  public TypeRef<?> getTypeRef() {
+    TypeRef<?> typeRef = this.typeRef;
     if (typeRef == null && field != null) {
-      this.typeToken = typeRef = TypeRef.of(field.getGenericType());
+      this.typeRef = typeRef = TypeRef.of(field.getGenericType());
     }
     return typeRef;
   }
@@ -186,7 +186,7 @@ public class Descriptor {
     sb.append(", field=").append(field);
     sb.append(", readMethod=").append(readMethod);
     sb.append(", writeMethod=").append(writeMethod);
-    sb.append(", typeToken=").append(typeToken);
+    sb.append(", typeToken=").append(typeRef);
     sb.append('}');
     return sb.toString();
   }

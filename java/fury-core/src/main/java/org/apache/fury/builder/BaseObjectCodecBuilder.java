@@ -439,7 +439,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               neq(new Invoke(classInfo, "getCls", CLASS_TYPE), clsExpr),
               new Assign(
                   classInfo,
-                  inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeToken, clsExpr))));
+                  inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr))));
     }
     writeClassAndObject.add(
         fury.getClassResolver().writeClassExpr(classResolverRef, buffer, classInfo));
@@ -556,17 +556,17 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     }
     if (!needUpdate) {
       Expression clsExpr = getClassExpr(cls);
-      classInfoExpr = inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeToken, clsExpr);
+      classInfoExpr = inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr);
       // Use `ctx.freshName(cls)` to avoid wrong name for arr type.
       String name = ctx.newName(ctx.newName(cls) + "ClassInfo");
       ctx.addField(true, ctx.type(ClassInfo.class), name, classInfoExpr);
-      classInfoRef = Tuple2.of(fieldRef(name, classInfoTypeToken), false);
+      classInfoRef = Tuple2.of(fieldRef(name, classInfoTypeRef), false);
     } else {
-      classInfoExpr = inlineInvoke(classResolverRef, "nilClassInfo", classInfoTypeToken);
+      classInfoExpr = inlineInvoke(classResolverRef, "nilClassInfo", classInfoTypeRef);
       String name = ctx.newName(cls, "ClassInfo");
       ctx.addField(false, ctx.type(ClassInfo.class), name, classInfoExpr);
       // Can't use fieldRef, since the field is not final.
-      classInfoRef = Tuple2.of(new Reference(name, classInfoTypeToken), true);
+      classInfoRef = Tuple2.of(new Reference(name, classInfoTypeRef), true);
     }
     sharedFieldMap.put(key, classInfoRef);
     return classInfoRef;
@@ -585,11 +585,11 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       return reference;
     }
     Expression classInfoHolderExpr =
-        inlineInvoke(classResolverRef, "nilClassInfoHolder", classInfoHolderTypeToken);
+        inlineInvoke(classResolverRef, "nilClassInfoHolder", classInfoHolderTypeRef);
     String name = ctx.newName(cls, "ClassInfoHolder");
     ctx.addField(true, ctx.type(ClassInfoHolder.class), name, classInfoHolderExpr);
     // The class info field read only once, no need to shallow.
-    reference = new Reference(name, classInfoHolderTypeToken);
+    reference = new Reference(name, classInfoHolderTypeRef);
     sharedFieldMap.put(key, reference);
     return reference;
   }
@@ -603,19 +603,19 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Reference classInfoRef = addClassInfoField(cls).f0;
       if (inlineReadClassInfo) {
         return inlineInvoke(
-            classResolverRef, "readClassInfo", classInfoTypeToken, buffer, classInfoRef);
+            classResolverRef, "readClassInfo", classInfoTypeRef, buffer, classInfoRef);
       } else {
         return new Invoke(
-            classResolverRef, "readClassInfo", classInfoTypeToken, buffer, classInfoRef);
+            classResolverRef, "readClassInfo", classInfoTypeRef, buffer, classInfoRef);
       }
     }
     Reference classInfoHolderRef = addClassInfoHolderField(cls);
     if (inlineReadClassInfo) {
       return inlineInvoke(
-          classResolverRef, "readClassInfo", classInfoTypeToken, buffer, classInfoHolderRef);
+          classResolverRef, "readClassInfo", classInfoTypeRef, buffer, classInfoHolderRef);
     } else {
       return new Invoke(
-          classResolverRef, "readClassInfo", classInfoTypeToken, buffer, classInfoHolderRef);
+          classResolverRef, "readClassInfo", classInfoTypeRef, buffer, classInfoHolderRef);
     }
   }
 
@@ -658,7 +658,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                 neq(new Invoke(classInfo, "getCls", CLASS_TYPE), clsExpr),
                 new Assign(
                     classInfo,
-                    inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeToken, clsExpr))));
+                    inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr))));
         writeClassAction.add(
             fury.getClassResolver().writeClassExpr(classResolverRef, buffer, classInfo));
         serializer = new Invoke(classInfo, "getSerializer", "serializer", SERIALIZER_TYPE, false);
@@ -963,7 +963,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                 neq(new Invoke(classInfo, "getCls", CLASS_TYPE), clsExpr),
                 new Assign(
                     classInfo,
-                    inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeToken, clsExpr))));
+                    inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr))));
         // Note: writeClassExpr is thread safe.
         writeClassAction.add(
             fury.getClassResolver().writeClassExpr(classResolverRef, buffer, classInfo));

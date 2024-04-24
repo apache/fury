@@ -55,7 +55,7 @@ public class TypeUtilsTest {
 
   @Test
   public void getElementTypeTest() throws NoSuchMethodException, NoSuchFieldException {
-    TypeRef typeRef = Descriptor.getDescriptorsMap(BeanA.class).get("doubleList").getTypeToken();
+    TypeRef typeRef = Descriptor.getDescriptorsMap(BeanA.class).get("doubleList").getTypeRef();
 
     assertEquals(
         new TypeRef<Optional<String>>() {}.resolveType(
@@ -86,8 +86,7 @@ public class TypeUtilsTest {
 
   @Test
   public void getMapKeyValueTypeTest() throws NoSuchMethodException {
-    TypeRef typeRef =
-        Descriptor.getDescriptorsMap(BeanA.class).get("stringBeanBMap").getTypeToken();
+    TypeRef typeRef = Descriptor.getDescriptorsMap(BeanA.class).get("stringBeanBMap").getTypeRef();
 
     @SuppressWarnings("unchecked")
     TypeRef<?> supertype = ((TypeRef<? extends Map<?, ?>>) typeRef).getSupertype(Map.class);

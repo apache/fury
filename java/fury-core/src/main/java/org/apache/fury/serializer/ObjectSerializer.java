@@ -188,7 +188,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
 
   private static GenericTypeField buildContainerField(Fury fury, Descriptor d) {
     return new GenericTypeField(
-        d.getTypeToken(),
+        d.getTypeRef(),
         d.getDeclaringClass() + "." + d.getName(),
         d.getField() != null ? FieldAccessor.createAccessor(d.getField()) : null,
         fury);

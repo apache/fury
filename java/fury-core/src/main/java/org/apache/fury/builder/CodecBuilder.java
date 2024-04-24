@@ -84,10 +84,10 @@ public abstract class CodecBuilder {
   protected static final String ROOT_OBJECT_NAME = "obj";
   // avoid user class has field with name fury.
   protected static final String FURY_NAME = "fury";
-  static TypeRef<Object[]> objectArrayTypeToken = TypeRef.of(Object[].class);
-  static TypeRef<MemoryBuffer> bufferTypeToken = TypeRef.of(MemoryBuffer.class);
-  static TypeRef<ClassInfo> classInfoTypeToken = TypeRef.of(ClassInfo.class);
-  static TypeRef<ClassInfoHolder> classInfoHolderTypeToken = TypeRef.of(ClassInfoHolder.class);
+  static TypeRef<Object[]> objectArrayTypeRef = TypeRef.of(Object[].class);
+  static TypeRef<MemoryBuffer> bufferTypeRef = TypeRef.of(MemoryBuffer.class);
+  static TypeRef<ClassInfo> classInfoTypeRef = TypeRef.of(ClassInfo.class);
+  static TypeRef<ClassInfoHolder> classInfoHolderTypeRef = TypeRef.of(ClassInfoHolder.class);
 
   protected final CodegenContext ctx;
   protected final TypeRef<?> beanType;
@@ -188,7 +188,7 @@ public abstract class CodecBuilder {
 
   /** Returns an expression that get field value from <code>bean</code>. */
   protected Expression getFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
-    TypeRef<?> fieldType = descriptor.getTypeToken();
+    TypeRef<?> fieldType = descriptor.getTypeRef();
     Class<?> rawType = descriptor.getRawType();
     String fieldName = descriptor.getName();
     if (isRecord) {
@@ -234,7 +234,7 @@ public abstract class CodecBuilder {
   }
 
   private Expression getRecordFieldValue(Expression inputBeanExpr, Descriptor descriptor) {
-    TypeRef<?> fieldType = descriptor.getTypeToken();
+    TypeRef<?> fieldType = descriptor.getTypeRef();
     if (!sourcePublicAccessible(descriptor.getRawType())) {
       fieldType = OBJECT_TYPE;
     }
@@ -264,7 +264,7 @@ public abstract class CodecBuilder {
       }
       if (!fieldType.isPrimitive()) {
         Expression v = inlineInvoke(ref, methodInfo.f1, OBJECT_TYPE, fieldNullable, inputBeanExpr);
-        return tryCastIfPublic(v, descriptor.getTypeToken(), fieldName);
+        return tryCastIfPublic(v, descriptor.getTypeRef(), fieldName);
       } else {
         return new Invoke(ref, methodInfo.f1, fieldType, fieldNullable, inputBeanExpr);
       }
@@ -277,7 +277,7 @@ public abstract class CodecBuilder {
     Reference fieldRef = getReflectField(cls, descriptor.getField());
     // boolean fieldNullable = !descriptor.getTypeToken().isPrimitive();
     Invoke getObj = new Invoke(fieldRef, "get", OBJECT_TYPE, fieldNullable, inputObject);
-    return new Cast(getObj, descriptor.getTypeToken(), descriptor.getName());
+    return new Cast(getObj, descriptor.getTypeRef(), descriptor.getName());
   }
 
   /** Returns an expression that get field value> from <code>bean</code> using {@link Unsafe}. */
@@ -285,10 +285,10 @@ public abstract class CodecBuilder {
       Expression inputObject, Class<?> cls, Descriptor descriptor) {
     String fieldName = descriptor.getName();
     Expression fieldOffsetExpr = getFieldOffset(cls, descriptor);
-    if (descriptor.getTypeToken().isPrimitive()) {
+    if (descriptor.getTypeRef().isPrimitive()) {
       // ex: Platform.UNSAFE.getFloat(obj, fieldOffset)
       Preconditions.checkArgument(!fieldNullable);
-      TypeRef<?> returnType = descriptor.getTypeToken();
+      TypeRef<?> returnType = descriptor.getTypeRef();
       String funcName = "get" + StringUtils.capitalize(descriptor.getRawType().toString());
       return new StaticInvoke(
           Platform.class, funcName, returnType, false, inputObject, fieldOffsetExpr);
@@ -302,7 +302,7 @@ public abstract class CodecBuilder {
               fieldNullable,
               inputObject,
               fieldOffsetExpr);
-      return tryCastIfPublic(getObj, descriptor.getTypeToken(), fieldName);
+      return tryCastIfPublic(getObj, descriptor.getTypeRef(), fieldName);
     }
   }
 
@@ -353,8 +353,8 @@ public abstract class CodecBuilder {
       if (!d.isFinalField() && !Modifier.isPrivate(d.getModifiers())) {
         if (AccessorHelper.defineSetter(d.getField())) {
           Class<?> accessorClass = AccessorHelper.getAccessorClass(d.getField());
-          if (!value.type().equals(d.getTypeToken())) {
-            value = new Cast(value, d.getTypeToken());
+          if (!value.type().equals(d.getTypeRef())) {
+            value = new Cast(value, d.getTypeRef());
           }
           return new StaticInvoke(
               accessorClass, d.getName(), PRIMITIVE_VOID_TYPE, false, bean, value);
@@ -363,8 +363,8 @@ public abstract class CodecBuilder {
       if (d.getWriteMethod() != null && !Modifier.isPrivate(d.getWriteMethod().getModifiers())) {
         if (AccessorHelper.defineSetter(d.getWriteMethod())) {
           Class<?> accessorClass = AccessorHelper.getAccessorClass(d.getWriteMethod());
-          if (!value.type().equals(d.getTypeToken())) {
-            value = new Cast(value, d.getTypeToken());
+          if (!value.type().equals(d.getTypeRef())) {
+            value = new Cast(value, d.getTypeRef());
           }
           return new StaticInvoke(
               accessorClass, d.getWriteMethod().getName(), PRIMITIVE_VOID_TYPE, false, bean, value);
@@ -390,10 +390,10 @@ public abstract class CodecBuilder {
    * Unsafe}.
    */
   private Expression unsafeSetField(Expression bean, Descriptor descriptor, Expression value) {
-    TypeRef<?> fieldType = descriptor.getTypeToken();
+    TypeRef<?> fieldType = descriptor.getTypeRef();
     // Use Field in case the class has duplicate field name as `fieldName`.
     Expression fieldOffsetExpr = getFieldOffset(beanClass, descriptor);
-    if (descriptor.getTypeToken().isPrimitive()) {
+    if (descriptor.getTypeRef().isPrimitive()) {
       Preconditions.checkArgument(value.type().equals(fieldType));
       String funcName = "put" + StringUtils.capitalize(getRawType(fieldType).toString());
       return new StaticInvoke(Platform.class, funcName, bean, fieldOffsetExpr, value);
