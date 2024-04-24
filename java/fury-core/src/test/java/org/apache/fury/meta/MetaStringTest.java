@@ -40,7 +40,7 @@ public class MetaStringTest {
     // utf8 use 12 bytes, we use only 9 bytes.
     assertEquals(encoder.encode("MediaContent").getBytes().length, 9);
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
-    String decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_SPECIAL, 7 * 5);
+    String decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_SPECIAL);
     assertEquals(decoded, "abc_def");
     for (int i = 0; i < 128; i++) {
       StringBuilder builder = new StringBuilder();
@@ -49,7 +49,7 @@ public class MetaStringTest {
       }
       String str = builder.toString();
       encoded = encoder.encodeLowerSpecial(str);
-      decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_SPECIAL, i * 5);
+      decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_SPECIAL);
       assertEquals(decoded, str);
     }
   }
@@ -62,13 +62,13 @@ public class MetaStringTest {
     byte[] encoded = encoder.encodeLowerUpperDigitSpecial("ExampleInput123");
     assertEquals(encoded.length, 12);
     MetaStringDecoder decoder = new MetaStringDecoder(specialChar1, specialChar2);
-    String decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL, 15 * 6);
+    String decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL);
     assertEquals(decoded, "ExampleInput123");
 
     for (int i = 1; i < 128; i++) {
       String str = createString(i, specialChar1, specialChar2);
       encoded = encoder.encodeLowerUpperDigitSpecial(str);
-      decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL, i * 6);
+      decoded = decoder.decode(encoded, MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL);
       assertEquals(decoded, str, "Failed at " + i);
     }
   }
@@ -103,7 +103,7 @@ public class MetaStringTest {
   @Test(dataProvider = "specialChars")
   public void testMetaString(char specialChar1, char specialChar2) {
     MetaStringEncoder encoder = new MetaStringEncoder(specialChar1, specialChar2);
-    for (int i = 0; i < 128; i++) {
+    for (int i = 1; i < 128; i++) {
       try {
         String str = createString(i, specialChar1, specialChar2);
         MetaString metaString = encoder.encode(str);
@@ -112,9 +112,7 @@ public class MetaStringTest {
         assertEquals(metaString.getSpecialChar1(), specialChar1);
         assertEquals(metaString.getSpecialChar2(), specialChar2);
         MetaStringDecoder decoder = new MetaStringDecoder(specialChar1, specialChar2);
-        String newStr =
-            decoder.decode(
-                metaString.getBytes(), metaString.getEncoding(), metaString.getNumBits());
+        String newStr = decoder.decode(metaString.getBytes(), metaString.getEncoding());
         assertEquals(newStr, str);
       } catch (Throwable e) {
         throw new RuntimeException("Failed at " + i, e);
@@ -139,8 +137,7 @@ public class MetaStringTest {
     MetaString metaString = encoder.encode("", encoding);
     assertEquals(metaString.getBytes().length, 0);
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
-    String decoded =
-        decoder.decode(metaString.getBytes(), metaString.getEncoding(), metaString.getNumBits());
+    String decoded = decoder.decode(metaString.getBytes(), metaString.getEncoding());
     assertEquals(decoded, "");
   }
 
@@ -162,10 +159,7 @@ public class MetaStringTest {
 
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
     String decodedString =
-        decoder.decode(
-            encodedMetaString.getBytes(),
-            encodedMetaString.getEncoding(),
-            encodedMetaString.getNumBits());
+        decoder.decode(encodedMetaString.getBytes(), encodedMetaString.getEncoding());
     assertEquals(decodedString, testString);
   }
 
@@ -178,10 +172,7 @@ public class MetaStringTest {
 
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
     String decodedString =
-        decoder.decode(
-            encodedMetaString.getBytes(),
-            encodedMetaString.getEncoding(),
-            encodedMetaString.getNumBits());
+        decoder.decode(encodedMetaString.getBytes(), encodedMetaString.getEncoding());
     assertEquals(decodedString, testString);
   }
 
@@ -194,10 +185,7 @@ public class MetaStringTest {
 
     MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
     String decodedString =
-        decoder.decode(
-            encodedMetaString.getBytes(),
-            encodedMetaString.getEncoding(),
-            encodedMetaString.getNumBits());
+        decoder.decode(encodedMetaString.getBytes(), encodedMetaString.getEncoding());
     assertEquals(decodedString, testString);
   }
 }

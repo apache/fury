@@ -21,6 +21,7 @@ package org.apache.fury.meta;
 
 import java.util.Arrays;
 import java.util.Objects;
+import org.apache.fury.util.Preconditions;
 
 /**
  * Represents a string with metadata that describes its encoding. It supports different encodings
@@ -61,31 +62,27 @@ public class MetaString {
   private final char specialChar1;
   private final char specialChar2;
   private final byte[] bytes;
-  private final int numChars;
-  private final int numBits;
+  private final boolean stripLastChar;
 
   /**
    * Constructs a MetaString with the specified encoding and data.
    *
    * @param encoding The type of encoding used for the string data.
    * @param bytes The encoded string data as a byte array.
-   * @param numBits The number of bits used for encoding.
    */
   public MetaString(
-      String string,
-      Encoding encoding,
-      char specialChar1,
-      char specialChar2,
-      byte[] bytes,
-      int numChars,
-      int numBits) {
+      String string, Encoding encoding, char specialChar1, char specialChar2, byte[] bytes) {
     this.string = string;
     this.encoding = encoding;
     this.specialChar1 = specialChar1;
     this.specialChar2 = specialChar2;
     this.bytes = bytes;
-    this.numChars = numChars;
-    this.numBits = numBits;
+    if (encoding != Encoding.UTF_8) {
+      Preconditions.checkArgument(bytes.length > 0);
+      this.stripLastChar = (bytes[0] & 0b1) != 0;
+    } else {
+      this.stripLastChar = false;
+    }
   }
 
   public String getString() {
@@ -108,12 +105,8 @@ public class MetaString {
     return bytes;
   }
 
-  public int getNumChars() {
-    return numChars;
-  }
-
-  public int getNumBits() {
-    return numBits;
+  public boolean stripLastChar() {
+    return stripLastChar;
   }
 
   @Override
@@ -127,15 +120,14 @@ public class MetaString {
     MetaString that = (MetaString) o;
     return specialChar1 == that.specialChar1
         && specialChar2 == that.specialChar2
-        && numChars == that.numChars
-        && numBits == that.numBits
+        && stripLastChar == that.stripLastChar
         && encoding == that.encoding
         && Arrays.equals(bytes, that.bytes);
   }
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(encoding, specialChar1, specialChar2, numChars, numBits);
+    int result = Objects.hash(encoding, specialChar1, specialChar2, stripLastChar);
     result = 31 * result + Arrays.hashCode(bytes);
     return result;
   }
@@ -153,10 +145,8 @@ public class MetaString {
         + specialChar2
         + ", bytes="
         + Arrays.toString(bytes)
-        + ", numChars="
-        + numChars
-        + ", numBits="
-        + numBits
+        + ", stripLastChar="
+        + stripLastChar
         + '}';
   }
 }
