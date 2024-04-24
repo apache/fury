@@ -20,8 +20,10 @@ package fury
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"reflect"
 	"time"
+	"unicode/utf16"
 	"unsafe"
 )
 
@@ -125,4 +127,21 @@ func GetUnixMicro(t time.Time) int64 {
 // usec microseconds since January 1, 1970 UTC.
 func CreateTimeFromUnixMicro(usec int64) time.Time {
 	return time.Unix(usec/1e6, (usec%1e6)*1e3)
+}
+
+// UTF16LEToString Convert UTF16 encoded data to string.
+func UTF16LEToString(utf16Data []byte) (string, error) {
+	dataLen := len(utf16Data)
+	if dataLen%2 != 0 {
+		return "", fmt.Errorf("%v is not UTF 16 encoded data, "+
+			"or the data(len: %d) is truncated", utf16Data, dataLen)
+	}
+
+	runes := make([]uint16, dataLen/2)
+	for i := 0; i < len(utf16Data); i += 2 {
+		uint16Val := uint16(utf16Data[i]) | uint16(utf16Data[i+1])<<8
+		runes[i/2] = uint16Val
+	}
+
+	return string(utf16.Decode(runes)), nil
 }
