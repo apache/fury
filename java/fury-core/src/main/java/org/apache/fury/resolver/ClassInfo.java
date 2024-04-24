@@ -23,8 +23,10 @@ import org.apache.fury.config.Language;
 import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.serializer.Serializer;
+import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 
 /**
@@ -89,15 +91,16 @@ public class ClassInfo {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       String packageName = ReflectionUtils.getPackage(cls);
       String className = ReflectionUtils.getClassNameWithoutPackage(cls);
-      if (cls.isArray()) {
+      if (cls.isArray() && !cls.getComponentType().isPrimitive()) {
         Class<?> ctype = cls.getComponentType();
         String componentName = ctype.getName();
         packageName = ReflectionUtils.getPackage(componentName);
         String componentSimpleName = ReflectionUtils.getClassNameWithoutPackage(componentName);
+        String prefix = StringUtils.repeat(ARRAY_PREFIX, TypeUtils.getArrayDimensions(cls));
         if (ctype.isEnum()) {
-          className = ARRAY_PREFIX + ENUM_PREFIX + componentSimpleName;
+          className = prefix + ENUM_PREFIX + componentSimpleName;
         } else {
-          className = ARRAY_PREFIX + componentSimpleName;
+          className = prefix + componentSimpleName;
         }
       } else if (cls.isEnum()) {
         packageName = ReflectionUtils.getPackage(cls);

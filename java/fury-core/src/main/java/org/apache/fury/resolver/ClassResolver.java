@@ -1597,10 +1597,15 @@ public class ClassResolver {
     Class<?> cls = compositeClassNameBytes2Class.get(classNameBytes);
     if (cls == null) {
       String packageName = packageBytes.decode('.', '_');
+      String rawPkg = packageName;
       String className = simpleClassNameBytes.decode('.', '$');
       boolean isArray = className.startsWith(ClassInfo.ARRAY_PREFIX);
       if (isArray) {
-        packageName = "[L" + packageName;
+        int dimension = 0;
+        while (className.charAt(dimension) == ClassInfo.ARRAY_PREFIX.charAt(0)) {
+          dimension++;
+        }
+        packageName = StringUtils.repeat("[", dimension) + "L" + packageName;
         className = className.substring(1) + ";";
       }
       boolean isEnum = className.startsWith(ClassInfo.ENUM_PREFIX);
@@ -1608,8 +1613,12 @@ public class ClassResolver {
         className = className.substring(1);
       }
       String entireClassName;
-      if (StringUtils.isBlank(packageName)) {
-        entireClassName = className;
+      if (StringUtils.isBlank(rawPkg)) {
+        if (isArray) {
+          entireClassName = packageName + className;
+        } else {
+          entireClassName = className;
+        }
       } else {
         entireClassName = packageName + "." + className;
       }

@@ -397,6 +397,8 @@ public class ReflectionUtils {
   }
 
   public static void setObjectFieldValue(Object obj, Field field, Object value) {
+    Preconditions.checkArgument(
+        !field.getType().isPrimitive(), "Field %s is primitive type", field);
     Platform.putObject(obj, Platform.objectFieldOffset(field), value);
   }
 
@@ -560,7 +562,7 @@ public class ReflectionUtils {
         // jdk class are loaded by bootstrap class loader, which will return null.
         classLoader = Thread.currentThread().getContextClassLoader();
       }
-      return classLoader.loadClass(className);
+      return Class.forName(className, false, classLoader);
     } catch (ClassNotFoundException e) {
       throw new RuntimeException(e);
     }

@@ -23,11 +23,6 @@ import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,8 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -261,7 +254,7 @@ public final class Struct implements Serializable {
                     IntStream.range(i * numFields, i * numFields + numFields).boxed().toArray()));
           }
           classCode.append("}");
-          return compile(classname, classCode.toString());
+          return TestUtils.compile(classname, classCode.toString());
         });
   }
 
@@ -315,46 +308,15 @@ public final class Struct implements Serializable {
                     IntStream.range(i * numFields, i * numFields + numFields).boxed().toArray()));
           }
           classCode.append("}");
-          return compile(classname, classCode.toString());
+          return TestUtils.compile(classname, classCode.toString());
         });
   }
 
   /** Create class. */
   public static Class<?> createStructClass(String classname, String classCode, Object cache) {
     if (cache == null) {
-      return compile(classname, classCode);
+      return TestUtils.compile(classname, classCode);
     }
-    return loadClass(cache, () -> compile(classname, classCode));
-  }
-
-  /** Create class. */
-  private static Class<?> compile(String classname, String classCode) {
-    Path path = Paths.get(classname + ".java");
-    try {
-      Files.deleteIfExists(path);
-      Files.write(path, classCode.toString().getBytes());
-      // Use JavaCompiler because janino doesn't support generics.
-      JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-      int result =
-          compiler.run(
-              null,
-              System.out, // ignore output
-              System.err, // ignore output
-              "-classpath",
-              System.getProperty("java.class.path"),
-              path.toString());
-      if (result != 0) {
-        throw new RuntimeException(String.format("Couldn't compile code:\n %s.", classCode));
-      }
-      Class<?> clz =
-          new URLClassLoader(
-                  new URL[] {Paths.get(".").toUri().toURL()}, Struct.class.getClassLoader())
-              .loadClass(classname);
-      Files.delete(path);
-      Files.delete(Paths.get(classname + ".class"));
-      return clz;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    return loadClass(cache, () -> TestUtils.compile(classname, classCode));
   }
 }
