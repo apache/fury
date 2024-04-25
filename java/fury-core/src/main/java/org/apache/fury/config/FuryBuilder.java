@@ -293,6 +293,7 @@ public final class FuryBuilder {
     }
     if (compatibleMode == CompatibleMode.COMPATIBLE) {
       checkClassVersion = false;
+      deserializeUnexistedClass = true;
     }
     if (!requireClassRegistration) {
       LOG.warn(
