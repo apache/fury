@@ -341,9 +341,9 @@ Object newObj = fury.execute(
 );
 ```
 
-### Deserialize un-exited classes.
+### Deserialize non-existent classes
 
-Fury support deserializing unexisted classes, this feature can be enabled
+Fury support deserializing non-existent classes, this feature can be enabled
 by `FuryBuilder#deserializeUnexistedClass(true)`. When enabled, and metadata sharing enabled, Fury will store
 the deserialized data of this type in a lazy subclass of Map. By using the lazy map implemented by Fury, the rebalance
 cost of filling map during deserialization can be avoided, which further improves performance. If this data is sent to
