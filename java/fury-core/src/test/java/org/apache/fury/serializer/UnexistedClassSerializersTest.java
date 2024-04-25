@@ -128,7 +128,9 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
             + "  public TestEnum[] f3;\n"
             + "  public TestEnum[][] f4;\n"
             + "}");
-    Class<?> cls1 = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnumStruct", enumStructCode1);
+    Class<?> cls1 =
+        JaninoUtils.compileClass(
+            getClass().getClassLoader(), "", "TestEnumStruct", enumStructCode1);
     Class<?> enumClass = cls1.getDeclaredClasses()[0];
     Object o = cls1.newInstance();
     ReflectionUtils.setObjectFieldValue(o, "f1", "str");

@@ -51,9 +51,9 @@ import org.codehaus.janino.util.ClassFile;
 public class JaninoUtils {
   private static final Logger LOG = LoggerFactory.getLogger(JaninoUtils.class);
 
-  public static Class<?> compileClass(ClassLoader loader, String pkg, String className, String code) {
-    ByteArrayClassLoader classLoader =
-        compile(loader, new CompileUnit(pkg, className, code));
+  public static Class<?> compileClass(
+      ClassLoader loader, String pkg, String className, String code) {
+    ByteArrayClassLoader classLoader = compile(loader, new CompileUnit(pkg, className, code));
     try {
       return classLoader.loadClass(StringUtils.isBlank(pkg) ? className : pkg + "." + className);
     } catch (ClassNotFoundException e) {
