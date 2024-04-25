@@ -106,7 +106,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     Fury fury1 = furyBuilder().withDeserializeUnexistedClass(true).build();
     String enumCode = ("enum TestEnum {" + " A, B" + "}");
 
-    Class<?> cls = JaninoUtils.compileClass("", "TestEnum", enumCode);
+    Class<?> cls = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum", enumCode);
     Object c = cls.getEnumConstants()[1];
     assertEquals(c.toString(), "B");
     byte[] bytes = fury1.serialize(c);
@@ -128,7 +128,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
             + "  public TestEnum[] f3;\n"
             + "  public TestEnum[][] f4;\n"
             + "}");
-    Class<?> cls1 = JaninoUtils.compileClass("", "TestEnumStruct", enumStructCode1);
+    Class<?> cls1 = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnumStruct", enumStructCode1);
     Class<?> enumClass = cls1.getDeclaredClasses()[0];
     Object o = cls1.newInstance();
     ReflectionUtils.setObjectFieldValue(o, "f1", "str");
@@ -152,7 +152,6 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f2"), enumClass.getEnumConstants()[1]);
       assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f3"), enumArray);
     }
-    Thread.currentThread().setContextClassLoader(null);
     ByteArrayClassLoader classLoader =
         JaninoUtils.compile(
             getClass().getClassLoader(),
@@ -212,7 +211,6 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f2").getClass(), testClass);
       assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f3").getClass(), arr.getClass());
     }
-    Thread.currentThread().setContextClassLoader(null);
     ByteArrayClassLoader classLoader =
         JaninoUtils.compile(
             getClass().getClassLoader(),
