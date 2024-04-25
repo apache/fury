@@ -34,7 +34,6 @@ import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.test.bean.Struct;
-import org.apache.fury.test.bean.TestUtils;
 import org.apache.fury.util.ReflectionUtils;
 import org.codehaus.commons.compiler.util.reflect.ByteArrayClassLoader;
 import org.testng.Assert;
@@ -107,7 +106,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     Fury fury1 = furyBuilder().withDeserializeUnexistedClass(true).build();
     String enumCode = ("enum TestEnum {" + " A, B" + "}");
 
-    Class<?> cls = TestUtils.compile("TestEnum", enumCode);
+    Class<?> cls = JaninoUtils.compileClass("", "TestEnum", enumCode);
     Object c = cls.getEnumConstants()[1];
     assertEquals(c.toString(), "B");
     byte[] bytes = fury1.serialize(c);
@@ -129,7 +128,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
             + "  public TestEnum[] f3;\n"
             + "  public TestEnum[][] f4;\n"
             + "}");
-    Class<?> cls1 = TestUtils.compile("TestEnumStruct", enumStructCode1);
+    Class<?> cls1 = JaninoUtils.compileClass("", "TestEnumStruct", enumStructCode1);
     Class<?> enumClass = cls1.getDeclaredClasses()[0];
     Object o = cls1.newInstance();
     ReflectionUtils.setObjectFieldValue(o, "f1", "str");

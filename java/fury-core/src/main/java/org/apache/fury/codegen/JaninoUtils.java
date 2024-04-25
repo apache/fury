@@ -51,6 +51,17 @@ import org.codehaus.janino.util.ClassFile;
 public class JaninoUtils {
   private static final Logger LOG = LoggerFactory.getLogger(JaninoUtils.class);
 
+  public static Class<?> compileClass(String pkg, String className, String code) {
+    ByteArrayClassLoader classLoader =
+        compile(
+            Thread.currentThread().getContextClassLoader(), new CompileUnit(pkg, className, code));
+    try {
+      return classLoader.loadClass(StringUtils.isBlank(pkg) ? className : pkg + "." + className);
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static ByteArrayClassLoader compile(
       ClassLoader parentClassLoader, CompileUnit... compileUnits) {
     final Map<String, byte[]> classes = toBytecode(parentClassLoader, compileUnits);

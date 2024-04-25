@@ -19,14 +19,7 @@
 
 package org.apache.fury.test.bean;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Random;
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
 
 public class TestUtils {
   public static String random(int size, int rand) {
@@ -42,40 +35,5 @@ public class TestUtils {
       chars[i] = (char) (start + random.nextInt(gap));
     }
     return new String(chars);
-  }
-
-  /** Create class. */
-  public static Class<?> compile(String classname, String classCode) {
-    try {
-      Path dir = Files.createTempDirectory("compile");
-      Path path = dir.resolve(classname + ".java");
-      try {
-        Files.deleteIfExists(path);
-        Files.write(path, classCode.toString().getBytes());
-        // Use JavaCompiler because janino doesn't support generics.
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        int result =
-            compiler.run(
-                null,
-                System.out, // ignore output
-                System.err, // ignore output
-                "-classpath",
-                System.getProperty("java.class.path"),
-                path.toString());
-        if (result != 0) {
-          throw new RuntimeException(String.format("Couldn't compile code:\n %s.", classCode));
-        }
-        Class<?> clz =
-            new URLClassLoader(new URL[] {dir.toUri().toURL()}, Struct.class.getClassLoader())
-                .loadClass(classname);
-        Files.delete(path);
-        Files.delete(dir.resolve(classname + ".class"));
-        return clz;
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 }
