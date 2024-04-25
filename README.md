@@ -2,15 +2,28 @@
   <img width="65%" alt="" src="docs/images/logo/fury_github_banner.png"><br>
 </div>
 
+[![DISCLAIMER](https://img.shields.io/badge/INCUBATING-blue?style=for-the-badge)](DISCLAIMER)
+
 [![Build Status](https://img.shields.io/github/actions/workflow/status/apache/incubator-fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/incubator-fury/actions/workflows/ci.yml)
 [![Slack Channel](https://img.shields.io/badge/slack-join-3f0e40?logo=slack&style=for-the-badge)](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
 [![Twitter](https://img.shields.io/badge/@ApacheFury-follow-blue?logo=twitter&style=for-the-badge)](https://twitter.com/ApacheFury)
 [![Maven Version](https://img.shields.io/maven-central/v/org.furyio/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.furyio"%20AND%20a:"fury-core")
 
-
 **Apache Fury (incubating)** is a blazingly-fast multi-language serialization framework powered by **JIT** (just-in-time compilation) and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
 https://fury.apache.org
+
+> [!IMPORTANT]
+> Apache Fury (incubating) is an effort undergoing incubation at the Apache
+> Software Foundation (ASF), sponsored by the Apache Incubator PMC.
+> 
+> Incubation is required of all newly accepted projects until a further review
+> indicates that the infrastructure, communications, and decision making process
+> have stabilized in a manner consistent with other successful ASF projects.
+>
+> While incubation status is not necessarily a reflection of the completeness
+> or stability of the code, it does indicate that the project has yet to be
+> fully endorsed by the ASF.
 
 ## Features
 - **Multiple languages**: Java/Python/C++/Golang/JavaScript/Rust/Scala/TypeScript.
