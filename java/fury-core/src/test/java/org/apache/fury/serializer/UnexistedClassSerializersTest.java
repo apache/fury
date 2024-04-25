@@ -167,11 +167,18 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     Assert.assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f1"), "str");
   }
 
-  @Test
-  public void testSkipUnexistedObjectArrayField() throws Exception {
+  @DataProvider
+  public Object[][] componentFinal() {
+    return new Object[][] {{false}, {true}};
+  }
+
+  @Test(dataProvider = "componentFinal")
+  public void testSkipUnexistedObjectArrayField(boolean componentFinal) throws Exception {
     String enumStructCode1 =
         ("public class TestArrayStruct {\n"
-            + "  public static class TestClass {\n"
+            + "  public static "
+            + (componentFinal ? " final " : "")
+            + "class TestClass {\n"
             + "  }\n"
             + "  public String f1;\n"
             + "  public TestClass f2;\n"
