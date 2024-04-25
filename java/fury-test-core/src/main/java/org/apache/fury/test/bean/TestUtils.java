@@ -66,11 +66,10 @@ public class TestUtils {
           throw new RuntimeException(String.format("Couldn't compile code:\n %s.", classCode));
         }
         Class<?> clz =
-            new URLClassLoader(
-                    new URL[] {dir.toUri().toURL()}, Struct.class.getClassLoader())
+            new URLClassLoader(new URL[] {dir.toUri().toURL()}, Struct.class.getClassLoader())
                 .loadClass(classname);
         Files.delete(path);
-        Files.delete( dir.resolve(classname + ".class"));
+        Files.delete(dir.resolve(classname + ".class"));
         return clz;
       } catch (Exception e) {
         throw new RuntimeException(e);
