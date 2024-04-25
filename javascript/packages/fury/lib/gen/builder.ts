@@ -236,6 +236,18 @@ class BinaryWriterBuilder {
   getCursor() {
     return `${this.holder}.getCursor()`;
   }
+
+  setUint32Position(offset: number | string, v: number | string) {
+    return `${this.holder}.setUint32Position(${offset}, ${v})`;
+  }
+
+  setUint8Position(offset: number | string, v: number | string) {
+    return `${this.holder}.setUint8Position(${offset}, ${v})`;
+  }
+
+  setUint16Position(offset: number | string, v: number | string) {
+    return `${this.holder}.setUint16Position(${offset}, ${v})`;
+  }
 }
 
 class ReferenceResolverBuilder {
