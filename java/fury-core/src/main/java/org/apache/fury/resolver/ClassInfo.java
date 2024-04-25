@@ -19,6 +19,7 @@
 
 package org.apache.fury.resolver;
 
+import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
 import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.meta.MetaStringEncoder;
@@ -92,11 +93,12 @@ public class ClassInfo {
       String packageName = ReflectionUtils.getPackage(cls);
       String className = ReflectionUtils.getClassNameWithoutPackage(cls);
       if (cls.isArray() && !cls.getComponentType().isPrimitive()) {
-        Class<?> ctype = cls.getComponentType();
+        Tuple2<Class<?>, Integer> componentInfo = TypeUtils.getArrayComponentInfo(cls);
+        Class<?> ctype = componentInfo.f0;
         String componentName = ctype.getName();
         packageName = ReflectionUtils.getPackage(componentName);
         String componentSimpleName = ReflectionUtils.getClassNameWithoutPackage(componentName);
-        String prefix = StringUtils.repeat(ARRAY_PREFIX, TypeUtils.getArrayDimensions(cls));
+        String prefix = StringUtils.repeat(ARRAY_PREFIX, componentInfo.f1);
         if (ctype.isEnum()) {
           className = prefix + ENUM_PREFIX + componentSimpleName;
         } else {

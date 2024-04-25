@@ -368,6 +368,14 @@ public class TypeUtils {
     return getArrayComponentInfo(type).f0;
   }
 
+  public static int getArrayDimensions(String className) {
+    int dimension = 0;
+    while (className.charAt(dimension) == '[') {
+      dimension++;
+    }
+    return dimension;
+  }
+
   public static Tuple2<Class<?>, Integer> getArrayComponentInfo(Class<?> type) {
     Preconditions.checkArgument(type.isArray());
     Class<?> t = type;

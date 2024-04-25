@@ -94,7 +94,11 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
+import org.apache.fury.meta.MetaString;
+import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.serializer.ArraySerializers;
+import org.apache.fury.serializer.ArraySerializers.UnexistedArrayClassSerializer;
+import org.apache.fury.serializer.ArraySerializers.UnexistedEnumArrayClassSerializer;
 import org.apache.fury.serializer.BufferSerializers;
 import org.apache.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
 import org.apache.fury.serializer.CompatibleSerializer;
@@ -114,15 +118,13 @@ import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.serializer.StructSerializer;
 import org.apache.fury.serializer.TimeSerializers;
+import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedArrayClass;
 import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedClassSerializer;
+import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedEnumArrayClass;
+import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedEnumClassSerializer;
 import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedMetaSharedClass;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipArrayClass;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipArrayClassSerializer;
 import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipClass;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipEnumArrayClass;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipEnumArrayClassSerializer;
 import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipEnumClass;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipEnumClassSerializer;
 import org.apache.fury.serializer.collection.ChildContainerSerializers;
 import org.apache.fury.serializer.collection.CollectionSerializer;
 import org.apache.fury.serializer.collection.CollectionSerializers;
@@ -215,7 +217,7 @@ public class ClassResolver {
   private final ObjectMap<MetaStringBytes, Class<?>> classNameBytes2Class =
       new ObjectMap<>(16, furyMapLoadFactor);
   // Every deserialization for unregistered class will query it, performance is important.
-  private final ObjectMap<ClassNameBytes, Class<?>> compositeClassNameBytes2Class =
+  private final ObjectMap<ClassNameBytes, ClassInfo> compositeClassNameBytes2ClassInfo =
       new ObjectMap<>(16, furyMapLoadFactor);
   private final HashMap<Short, Class<?>> typeIdToClassXLangMap = new HashMap<>(8, loadFactor);
   private final HashMap<String, Class<?>> typeTagToClassXLangMap = new HashMap<>(8, loadFactor);
@@ -818,12 +820,6 @@ public class ClassResolver {
         return TimeSerializers.TimeZoneSerializer.class;
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {
         return BufferSerializers.ByteBufferSerializer.class;
-      } else if (cls == UnexistedSkipArrayClass.class) {
-        return UnexistedSkipArrayClassSerializer.class;
-      } else if (cls == UnexistedSkipEnumArrayClass.class) {
-        return UnexistedSkipEnumArrayClassSerializer.class;
-      } else if (cls == UnexistedSkipEnumClass.class) {
-        return UnexistedSkipEnumClassSerializer.class;
       }
       if (fury.getConfig().checkJdkClassSerializable()) {
         if (cls.getName().startsWith("java") && !(Serializable.class.isAssignableFrom(cls))) {
@@ -1481,21 +1477,21 @@ public class ClassResolver {
    */
   public Class<?> readClassInternal(MemoryBuffer buffer) {
     int header = buffer.readVarUint32Small14();
+    final ClassInfo classInfo;
     if ((header & 0b1) != 0) {
       if (metaContextShareEnabled) {
         return readClassWithMetaShare(buffer);
       }
       MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytesWithFlag(buffer, header);
       MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
-      final Class<?> cls = loadBytesToClass(packageBytes, simpleClassNameBytes);
-      currentReadClass = cls;
-      return cls;
+      classInfo = loadBytesToClassInfo(packageBytes, simpleClassNameBytes);
+
     } else {
-      ClassInfo classInfo = registeredId2ClassInfo[(short) (header >> 1)];
-      final Class<?> cls = classInfo.cls;
-      currentReadClass = cls;
-      return cls;
+      classInfo = registeredId2ClassInfo[(short) (header >> 1)];
     }
+    final Class<?> cls = classInfo.cls;
+    currentReadClass = cls;
+    return cls;
   }
 
   /**
@@ -1568,64 +1564,100 @@ public class ClassResolver {
   private ClassInfo readClassInfoFromBytes(
       MemoryBuffer buffer, ClassInfo classInfoCache, int header) {
     MetaStringBytes simpleClassNameBytesCache = classInfoCache.classNameBytes;
+    MetaStringBytes packageBytes;
+    MetaStringBytes simpleClassNameBytes;
     if (simpleClassNameBytesCache != null) {
       MetaStringBytes packageNameBytesCache = classInfoCache.packageNameBytes;
-      MetaStringBytes packageBytes =
+      packageBytes =
           metaStringResolver.readMetaStringBytesWithFlag(buffer, packageNameBytesCache, header);
       assert packageNameBytesCache != null;
-      MetaStringBytes simpleClassNameBytes =
+      simpleClassNameBytes =
           metaStringResolver.readMetaStringBytes(buffer, simpleClassNameBytesCache);
       if (simpleClassNameBytesCache.hashCode == simpleClassNameBytes.hashCode
           && packageNameBytesCache.hashCode == packageBytes.hashCode) {
         return classInfoCache;
-      } else {
-        Class<?> cls = loadBytesToClass(packageBytes, simpleClassNameBytes);
-        return getClassInfo(cls);
       }
     } else {
-      MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytesWithFlag(buffer, header);
-      MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
-      Class<?> cls = loadBytesToClass(packageBytes, simpleClassNameBytes);
-      return getClassInfo(cls);
+      packageBytes = metaStringResolver.readMetaStringBytesWithFlag(buffer, header);
+      simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
     }
+    ClassInfo classInfo = loadBytesToClassInfo(packageBytes, simpleClassNameBytes);
+    if (classInfo.serializer == null) {
+      return getClassInfo(classInfo.cls);
+    }
+    return classInfo;
   }
 
-  private Class<?> loadBytesToClass(
+  private ClassInfo loadBytesToClassInfo(
       MetaStringBytes packageBytes, MetaStringBytes simpleClassNameBytes) {
     ClassNameBytes classNameBytes =
         new ClassNameBytes(packageBytes.hashCode, simpleClassNameBytes.hashCode);
-    Class<?> cls = compositeClassNameBytes2Class.get(classNameBytes);
-    if (cls == null) {
-      String packageName = packageBytes.decode('.', '_');
-      String rawPkg = packageName;
-      String className = simpleClassNameBytes.decode('.', '$');
-      boolean isArray = className.startsWith(ClassInfo.ARRAY_PREFIX);
-      if (isArray) {
-        int dimension = 0;
-        while (className.charAt(dimension) == ClassInfo.ARRAY_PREFIX.charAt(0)) {
-          dimension++;
-        }
-        packageName = StringUtils.repeat("[", dimension) + "L" + packageName;
-        className = className.substring(1) + ";";
-      }
-      boolean isEnum = className.startsWith(ClassInfo.ENUM_PREFIX);
-      if (isEnum) {
-        className = className.substring(1);
-      }
-      String entireClassName;
-      if (StringUtils.isBlank(rawPkg)) {
-        if (isArray) {
-          entireClassName = packageName + className;
-        } else {
-          entireClassName = className;
-        }
-      } else {
-        entireClassName = packageName + "." + className;
-      }
-      cls = loadClass(entireClassName, isArray, isEnum);
-      compositeClassNameBytes2Class.put(classNameBytes, cls);
+    ClassInfo classInfo = compositeClassNameBytes2ClassInfo.get(classNameBytes);
+    if (classInfo == null) {
+      classInfo = populateBytesToClassInfo(classNameBytes, packageBytes, simpleClassNameBytes);
     }
-    return cls;
+    return classInfo;
+  }
+
+  private ClassInfo populateBytesToClassInfo(
+      ClassNameBytes classNameBytes,
+      MetaStringBytes packageBytes,
+      MetaStringBytes simpleClassNameBytes) {
+    String packageName = packageBytes.decode('.', '_');
+    String rawPkg = packageName;
+    String className = simpleClassNameBytes.decode('.', '$');
+    boolean isArray = className.startsWith(ClassInfo.ARRAY_PREFIX);
+    if (isArray) {
+      int dimension = 0;
+      while (className.charAt(dimension) == ClassInfo.ARRAY_PREFIX.charAt(0)) {
+        dimension++;
+      }
+      packageName = StringUtils.repeat("[", dimension) + "L" + packageName;
+      className = className.substring(dimension) + ";";
+    }
+    boolean isEnum = className.startsWith(ClassInfo.ENUM_PREFIX);
+    if (isEnum) {
+      className = className.substring(1);
+    }
+    String entireClassName;
+    if (StringUtils.isBlank(rawPkg)) {
+      if (isArray) {
+        entireClassName = packageName + className;
+      } else {
+        entireClassName = className;
+      }
+    } else {
+      entireClassName = packageName + "." + className;
+    }
+    MetaStringBytes fullClassNameBytes =
+        metaStringResolver.getOrCreateMetaStringBytes(
+            new MetaStringEncoder('.', '_').encode(entireClassName, MetaString.Encoding.UTF_8));
+    Class<?> cls = loadClass(entireClassName, isArray, isEnum);
+    ClassInfo classInfo =
+        new ClassInfo(
+            cls,
+            fullClassNameBytes,
+            packageBytes,
+            simpleClassNameBytes,
+            false,
+            null,
+            null,
+            NO_CLASS_ID);
+    if (cls == UnexistedSkipEnumClass.class) {
+      classInfo.serializer = new UnexistedEnumClassSerializer(fury);
+    } else if (cls == UnexistedArrayClass.class) {
+      classInfo.serializer = new UnexistedArrayClassSerializer(fury, entireClassName);
+    } else if (cls == UnexistedEnumArrayClass.class) {
+      classInfo.serializer = new UnexistedEnumArrayClassSerializer(fury, entireClassName);
+    } else {
+      // don't create serializer here, if the class is an interface,
+      // there won't be serializer since interface has no instance.
+      if (!classInfoMap.containsKey(cls)) {
+        classInfoMap.put(cls, classInfo);
+      }
+    }
+    compositeClassNameBytes2ClassInfo.put(classNameBytes, classInfo);
+    return classInfo;
   }
 
   public void xwriteClass(MemoryBuffer buffer, Class<?> cls) {
@@ -1676,11 +1708,7 @@ public class ClassResolver {
         if (fury.getConfig().deserializeUnexistedClass()) {
           LOG.warn(msg);
           if (isArray) {
-            if (isEnum) {
-              return UnexistedSkipEnumArrayClass.class;
-            } else {
-              return UnexistedSkipArrayClass.class;
-            }
+            return isEnum ? UnexistedEnumArrayClass.class : UnexistedArrayClass.class;
           } else if (isEnum) {
             return UnexistedSkipEnumClass.class;
           } else {
