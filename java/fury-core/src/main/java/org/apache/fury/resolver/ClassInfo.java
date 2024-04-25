@@ -92,17 +92,19 @@ public class ClassInfo {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       String packageName = ReflectionUtils.getPackage(cls);
       String className = ReflectionUtils.getClassNameWithoutPackage(cls);
-      if (cls.isArray() && !cls.getComponentType().isPrimitive()) {
+      if (cls.isArray()) {
         Tuple2<Class<?>, Integer> componentInfo = TypeUtils.getArrayComponentInfo(cls);
         Class<?> ctype = componentInfo.f0;
-        String componentName = ctype.getName();
-        packageName = ReflectionUtils.getPackage(componentName);
-        String componentSimpleName = ReflectionUtils.getClassNameWithoutPackage(componentName);
-        String prefix = StringUtils.repeat(ARRAY_PREFIX, componentInfo.f1);
-        if (ctype.isEnum()) {
-          className = prefix + ENUM_PREFIX + componentSimpleName;
-        } else {
-          className = prefix + componentSimpleName;
+        if (!ctype.isPrimitive()) { // primitive array has special format like [[[III.
+          String componentName = ctype.getName();
+          packageName = ReflectionUtils.getPackage(componentName);
+          String componentSimpleName = ReflectionUtils.getClassNameWithoutPackage(componentName);
+          String prefix = StringUtils.repeat(ARRAY_PREFIX, componentInfo.f1);
+          if (ctype.isEnum()) {
+            className = prefix + ENUM_PREFIX + componentSimpleName;
+          } else {
+            className = prefix + componentSimpleName;
+          }
         }
       } else if (cls.isEnum()) {
         packageName = ReflectionUtils.getPackage(cls);
