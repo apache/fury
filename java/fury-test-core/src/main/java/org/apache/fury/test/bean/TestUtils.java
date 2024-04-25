@@ -24,7 +24,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Random;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
@@ -68,10 +67,10 @@ public class TestUtils {
         }
         Class<?> clz =
             new URLClassLoader(
-                    new URL[] {Paths.get(".").toUri().toURL()}, Struct.class.getClassLoader())
+                    new URL[] {dir.toUri().toURL()}, Struct.class.getClassLoader())
                 .loadClass(classname);
         Files.delete(path);
-        Files.delete(Paths.get(classname + ".class"));
+        Files.delete( dir.resolve(classname + ".class"));
         return clz;
       } catch (Exception e) {
         throw new RuntimeException(e);
