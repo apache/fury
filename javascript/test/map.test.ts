@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType } from '../packages/fury/index';
+import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages/fury/index';
 import {describe, expect, test} from '@jest/globals';
 
 describe('map', () => {
@@ -29,6 +29,19 @@ describe('map', () => {
         input
     );
     expect(result).toEqual(new Map([["foo", "bar"],["foo2", "bar2"]]))
+  });
+  
+  test('should map specific type work', () => {
+    
+    const fury = new Fury({ refTracking: true });  
+    const { serialize, deserialize } = fury.registerSerializer(Type.object("class.foo", {
+      f1: Type.map(Type.string(), Type.varInt32())
+    }))  
+    const bin = serialize({
+      f1: new Map([["hello", 123], ["world", 456]]),
+    })
+    const result = deserialize(bin);
+    expect(result).toEqual({ f1: new Map([["hello", 123],["world", 456]])})
   });
 });
 
