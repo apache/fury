@@ -35,7 +35,7 @@ func NewDecoder(specialCh1 byte, specialCh2 byte) *Decoder {
 }
 
 // Decode
-// Accept an encoded byte array, and the encoding method
+// Accept an encodedBytes byte array, and the encoding method
 // We also need to accept numBits, because we don't know how many characters are in the byte array,
 // and numBits are the actual valid bits
 func (d *Decoder) Decode(data []byte, encoding Encoding, numBits int) string {
@@ -63,7 +63,7 @@ func (d *Decoder) decodeGeneric(data []byte, algorithm Encoding, numBits int) st
 		bitsPerChar = 6
 	}
 	// Retrieve 5 bits every iteration from data, convert them to characters, and save them to chars
-	// "abc" encoded as [00000] [000,01] [00010] [0, corresponding to three bytes, which are 0, 68, 0 (68 = 64 + 4)
+	// "abc" encodedBytes as [00000] [000,01] [00010] [0, corresponding to three bytes, which are 0, 68, 0 (68 = 64 + 4)
 	// In order, take the highest digit first, then the lower
 	chars := make([]byte, 0)
 	bitPos, bitCount := 7, 0

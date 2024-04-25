@@ -17,7 +17,7 @@
 
 package meta
 
-/* Encoding Algorithms Flags*/
+// Encoding Algorithms Flags
 type Encoding uint8
 
 const (
@@ -34,9 +34,7 @@ type MetaString struct {
 	encoding     Encoding // encoding flag
 	specialChar1 byte
 	specialChar2 byte
-	outputBytes  []byte // serialized data
-	numChars     int
-	numBits      int
+	encodedBytes []byte // serialized data
 }
 
 func (ms *MetaString) GetInputString() string { return ms.inputString }
@@ -47,8 +45,12 @@ func (ms *MetaString) GetSpecialChar1() byte { return ms.specialChar1 }
 
 func (ms *MetaString) GetSpecialChar2() byte { return ms.specialChar2 }
 
-func (ms *MetaString) GetOutputBytes() []byte { return ms.outputBytes }
+func (ms *MetaString) GetEncodedBytes() []byte { return ms.encodedBytes }
 
-func (ms *MetaString) GetNumChars() int { return ms.numChars }
-
-func (ms *MetaString) GetNumBits() int { return ms.numBits }
+// StripLastChar return true if last char should be stripped
+func (ms *MetaString) StripLastChar() bool {
+	if ms.encoding == UTF_8 || ms.encodedBytes == nil {
+		return false
+	}
+	return (ms.encodedBytes[0] & 1) > 0
+}
