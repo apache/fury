@@ -364,16 +364,16 @@ public class TypeUtils {
     return getArrayComponentInfo(type).f1;
   }
 
-  public static Class<?> getArrayComponent(Class<?> type) {
-    return getArrayComponentInfo(type).f0;
-  }
-
   public static int getArrayDimensions(String className) {
     int dimension = 0;
     while (className.charAt(dimension) == '[') {
       dimension++;
     }
     return dimension;
+  }
+
+  public static Class<?> getArrayComponent(Class<?> type) {
+    return getArrayComponentInfo(type).f0;
   }
 
   public static Tuple2<Class<?>, Integer> getArrayComponentInfo(Class<?> type) {
