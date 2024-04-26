@@ -329,7 +329,7 @@ public final class MemoryBuffer {
     }
     final int targetPos = target.position();
     if (target.isDirect()) {
-      final long targetAddr = Platform.getAddress(target) + targetPos;
+      final long targetAddr = ByteBufferUtil.getAddress(target) + targetPos;
       final long sourceAddr = address + offset;
       if (sourceAddr <= addressLimit - numBytes) {
         Platform.copyMemory(heapMemory, sourceAddr, null, targetAddr, numBytes);
@@ -350,7 +350,7 @@ public final class MemoryBuffer {
     }
     final int sourcePos = source.position();
     if (source.isDirect()) {
-      final long sourceAddr = Platform.getAddress(source) + sourcePos;
+      final long sourceAddr = ByteBufferUtil.getAddress(source) + sourcePos;
       final long targetAddr = address + offset;
       if (targetAddr <= addressLimit - numBytes) {
         Platform.copyMemory(null, sourceAddr, heapMemory, targetAddr, numBytes);
@@ -2465,12 +2465,12 @@ public final class MemoryBuffer {
       ByteBuffer offHeapBuffer = this.offHeapBuffer;
       if (offHeapBuffer != null) {
         ByteBuffer duplicate = offHeapBuffer.duplicate();
-        int start = (int) (address - Platform.getAddress(duplicate));
+        int start = (int) (address - ByteBufferUtil.getAddress(duplicate));
         duplicate.position(start + offset);
         duplicate.limit(start + offset + length);
         return duplicate.slice();
       } else {
-        return Platform.createDirectByteBufferFromNativeAddress(address + offset, length);
+        return ByteBufferUtil.createDirectByteBufferFromNativeAddress(address + offset, length);
       }
     }
   }
@@ -2553,7 +2553,7 @@ public final class MemoryBuffer {
   public static MemoryBuffer fromByteBuffer(ByteBuffer buffer) {
     if (buffer.isDirect()) {
       return new MemoryBuffer(
-          Platform.getAddress(buffer) + buffer.position(), buffer.remaining(), buffer);
+          ByteBufferUtil.getAddress(buffer) + buffer.position(), buffer.remaining(), buffer);
     } else {
       int offset = buffer.arrayOffset() + buffer.position();
       return new MemoryBuffer(buffer.array(), offset, buffer.remaining());
@@ -2562,7 +2562,7 @@ public final class MemoryBuffer {
 
   public static MemoryBuffer fromDirectByteBuffer(
       ByteBuffer buffer, int size, FuryStreamReader streamReader) {
-    long offHeapAddress = Platform.getAddress(buffer) + buffer.position();
+    long offHeapAddress = ByteBufferUtil.getAddress(buffer) + buffer.position();
     return new MemoryBuffer(offHeapAddress, size, buffer, streamReader);
   }
 

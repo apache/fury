@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.exception.DeserializationException;
+import org.apache.fury.memory.ByteBufferUtil;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.util.Preconditions;
@@ -60,7 +61,7 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
         byteBuf.position(0);
         newByteBuf.put(byteBuf);
         byteBuf = byteBuffer = newByteBuf;
-        memoryBuf.initDirectBuffer(Platform.getAddress(byteBuf), position, byteBuf);
+        memoryBuf.initDirectBuffer(ByteBufferUtil.getAddress(byteBuf), position, byteBuf);
       }
       byteBuf.limit(newLimit);
       int readCount = channel.read(byteBuf);

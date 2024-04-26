@@ -29,7 +29,7 @@ import org.apache.fury.benchmark.data.Data;
 import org.apache.fury.benchmark.data.Image;
 import org.apache.fury.benchmark.data.Media;
 import org.apache.fury.benchmark.data.MediaContent;
-import org.apache.fury.memory.Platform;
+import org.apache.fury.memory.ByteBufferUtil;
 import org.apache.fury.util.Preconditions;
 import org.nustaq.serialization.FSTConfiguration;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -93,7 +93,7 @@ public class FstState {
         Blackhole blackhole) {
       byte[] bytes = fst.asSharedByteArray(value, out);
       if (bufferType == BufferType.directBuffer) {
-        Platform.clearBuffer(directBuffer);
+        ByteBufferUtil.clearBuffer(directBuffer);
         directBuffer.put(bytes, 0, out[0]);
       }
       if (blackhole != null) {
@@ -116,7 +116,7 @@ public class FstState {
         ByteBuffer directBuffer,
         Blackhole blackhole) {
       if (bufferType == BufferType.directBuffer) {
-        Platform.rewind(directBuffer);
+        ByteBufferUtil.rewind(directBuffer);
         byte[] bytes = new byte[out[0]];
         directBuffer.get(bytes);
         Object newObj = fst.asObject(bytes);
