@@ -26,6 +26,7 @@ import org.apache.fury.ThreadLocalFury;
 import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.pool.ThreadPoolFury;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.JavaSerializer;
@@ -34,7 +35,6 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.TimeSerializers;
 import org.apache.fury.serializer.collection.GuavaCollectionSerializers;
 import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.Platform;
 
 /** Builder class to config and create {@link Fury}. */
 // Method naming style for this builder:

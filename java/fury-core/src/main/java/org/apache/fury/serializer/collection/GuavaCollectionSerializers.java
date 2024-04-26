@@ -37,8 +37,8 @@ import java.util.Map;
 import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.type.Type;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.unsafe._JDKAccess;
 
 /** Serializers for common guava types. */

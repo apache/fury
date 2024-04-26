@@ -39,8 +39,8 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.Serializer;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Utils;
 
 /** Serializer for synchronized Collections and Maps created via Collections. */
