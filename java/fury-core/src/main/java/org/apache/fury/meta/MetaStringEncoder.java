@@ -26,7 +26,9 @@ import org.apache.fury.util.Preconditions;
 /** Encodes plain text strings into MetaString objects with specified encoding mechanisms. */
 public class MetaStringEncoder {
   public static final MetaStringEncoder PACKAGE_ENCODER = new MetaStringEncoder('.', '_');
+  public static final MetaStringDecoder PACKAGE_DECODER = new MetaStringDecoder('.', '_');
   public static final MetaStringEncoder TYPE_NAME_ENCODER = new MetaStringEncoder('$', '_');
+  public static final MetaStringDecoder TYPE_NAME_DECODER = new MetaStringDecoder('$', '_');
 
   private final char specialChar1;
   private final char specialChar2;

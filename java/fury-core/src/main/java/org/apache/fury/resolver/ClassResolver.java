@@ -19,7 +19,9 @@
 
 package org.apache.fury.resolver;
 
+import static org.apache.fury.meta.MetaStringEncoder.PACKAGE_DECODER;
 import static org.apache.fury.meta.MetaStringEncoder.PACKAGE_ENCODER;
+import static org.apache.fury.meta.MetaStringEncoder.TYPE_NAME_DECODER;
 import static org.apache.fury.serializer.CodegenSerializer.loadCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.loadCompatibleCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.supportCodegenForJavaSerialization;
@@ -1603,9 +1605,9 @@ public class ClassResolver {
       ClassNameBytes classNameBytes,
       MetaStringBytes packageBytes,
       MetaStringBytes simpleClassNameBytes) {
-    String packageName = packageBytes.decode('.', '_');
+    String packageName = packageBytes.decode(PACKAGE_DECODER);
     String rawPkg = packageName;
-    String className = simpleClassNameBytes.decode('.', '$');
+    String className = simpleClassNameBytes.decode(TYPE_NAME_DECODER);
     boolean isArray = className.startsWith(ClassInfo.ARRAY_PREFIX);
     if (isArray) {
       int dimension = 0;
