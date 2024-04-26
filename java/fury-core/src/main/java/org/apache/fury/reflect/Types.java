@@ -27,6 +27,8 @@ import java.util.Arrays;
 import java.util.Objects;
 import javax.annotation.CheckForNull;
 
+// Derived from Guava 32.1.2 com.google.common.reflect.Types
+// https://github.com/google/guava/blob/master/guava/src/com/google/common/reflect/Types.java
 class Types {
   public static Type newArrayType(Type componentType) {
     if (componentType instanceof WildcardType) {
