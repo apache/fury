@@ -60,6 +60,14 @@ func TestEncodeAndDecodeMetaString(t *testing.T) {
 	// error situation
 	dst, err = decoder.Decode([]byte{0xFF, 0x31}, LOWER_SPECIAL)
 	require.NotEqual(t, nil, err)
+
+	// empty string
+	data, err = encoder.Encode("")
+	require.Equal(t, nil, err)
+	require.Equal(t, 0, len(data.GetEncodedBytes()))
+	dst, err = decoder.Decode(data.GetEncodedBytes(), data.GetEncoding())
+	require.Equal(t, nil, err)
+	require.Equal(t, "", dst)
 }
 
 func calcTotalBytes(src string, bitsPerChar int, encoding Encoding) int {

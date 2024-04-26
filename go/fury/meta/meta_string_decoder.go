@@ -36,6 +36,11 @@ func NewDecoder(specialCh1 byte, specialCh2 byte) *Decoder {
 // Decode
 // Accept an encodedBytes byte array, and the encoding method
 func (d *Decoder) Decode(data []byte, encoding Encoding) (result string, err error) {
+	// we prepend one bit at the start to indicate whether strip last char
+	// so checking empty here will be convenient for decoding procedure
+	if data == nil {
+		return "", err
+	}
 	var chars []byte
 	switch encoding {
 	case LOWER_SPECIAL:
@@ -55,7 +60,7 @@ func (d *Decoder) Decode(data []byte, encoding Encoding) (result string, err err
 		err = fmt.Errorf("Unexpected encoding flag: %v\n", encoding)
 	}
 	if err != nil {
-		return string(""), err
+		return "", err
 	}
 	return string(chars), err
 }

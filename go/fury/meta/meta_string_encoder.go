@@ -69,8 +69,8 @@ func (e *Encoder) EncodeWithEncoding(input string, encoding Encoding) (MetaStrin
 	case ALL_TO_LOWER_SPECIAL:
 		encodedBytes, err = e.EncodeAllToLowerSpecial(input)
 	default:
-		// UTF-8 Encoding, Stay the same
-		encodedBytes, err = []byte(input), nil
+		// UTF-8 Encoding, stay the same
+		encodedBytes = []byte(input)
 	}
 	return MetaString{
 		inputString:  input,
