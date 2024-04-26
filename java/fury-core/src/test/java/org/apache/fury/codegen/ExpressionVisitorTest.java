@@ -21,7 +21,6 @@ package org.apache.fury.codegen;
 
 import static org.testng.Assert.assertEquals;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -29,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.fury.codegen.Expression.Literal;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.testng.annotations.Test;
@@ -38,7 +38,7 @@ public class ExpressionVisitorTest {
   @Test
   public void testTraverseExpression() throws InvocationTargetException, IllegalAccessException {
     Expression.Reference ref =
-        new Expression.Reference("a", TypeToken.of(ExpressionVisitorTest.class));
+        new Expression.Reference("a", TypeRef.of(ExpressionVisitorTest.class));
     Expression e1 = new Expression.Invoke(ref, "testTraverseExpression");
     Literal start = Literal.ofInt(0);
     Literal end = Literal.ofInt(10);

@@ -22,7 +22,6 @@ package org.apache.fury.type;
 import static org.testng.Assert.*;
 
 import com.google.common.primitives.Primitives;
-import com.google.common.reflect.TypeToken;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
+import org.apache.fury.reflect.TypeRef;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -41,13 +41,13 @@ public class DescriptorGrouperTest {
     List<Descriptor> descriptors = new ArrayList<>();
     int index = 0;
     for (Class<?> aClass : Primitives.allPrimitiveTypes()) {
-      descriptors.add(new Descriptor(TypeToken.of(aClass), "f" + index++, -1, "TestClass"));
+      descriptors.add(new Descriptor(TypeRef.of(aClass), "f" + index++, -1, "TestClass"));
     }
     for (Class<?> t : Primitives.allWrapperTypes()) {
-      descriptors.add(new Descriptor(TypeToken.of(t), "f" + index++, -1, "TestClass"));
+      descriptors.add(new Descriptor(TypeRef.of(t), "f" + index++, -1, "TestClass"));
     }
-    descriptors.add(new Descriptor(TypeToken.of(String.class), "f" + index++, -1, "TestClass"));
-    descriptors.add(new Descriptor(TypeToken.of(Object.class), "f" + index++, -1, "TestClass"));
+    descriptors.add(new Descriptor(TypeRef.of(String.class), "f" + index++, -1, "TestClass"));
+    descriptors.add(new Descriptor(TypeRef.of(Object.class), "f" + index++, -1, "TestClass"));
     Collections.shuffle(descriptors, new Random(17));
     return descriptors;
   }
@@ -88,7 +88,7 @@ public class DescriptorGrouperTest {
     List<Descriptor> descriptors = new ArrayList<>();
     int index = 0;
     for (Class<?> aClass : Primitives.allPrimitiveTypes()) {
-      descriptors.add(new Descriptor(TypeToken.of(aClass), "f" + index++, -1, "TestClass"));
+      descriptors.add(new Descriptor(TypeRef.of(aClass), "f" + index++, -1, "TestClass"));
     }
     Collections.shuffle(descriptors, new Random(7));
     descriptors.sort(DescriptorGrouper.getPrimitiveComparator(false, false));
@@ -113,7 +113,7 @@ public class DescriptorGrouperTest {
     List<Descriptor> descriptors = new ArrayList<>();
     int index = 0;
     for (Class<?> aClass : Primitives.allPrimitiveTypes()) {
-      descriptors.add(new Descriptor(TypeToken.of(aClass), "f" + index++, -1, "TestClass"));
+      descriptors.add(new Descriptor(TypeRef.of(aClass), "f" + index++, -1, "TestClass"));
     }
     Collections.shuffle(descriptors, new Random(7));
     descriptors.sort(DescriptorGrouper.getPrimitiveComparator(true, true));
@@ -137,18 +137,17 @@ public class DescriptorGrouperTest {
   public void testGrouper() {
     List<Descriptor> descriptors = createDescriptors();
     int index = 0;
-    descriptors.add(new Descriptor(TypeToken.of(Object.class), "c" + index++, -1, "TestClass"));
-    descriptors.add(new Descriptor(TypeToken.of(Date.class), "c" + index++, -1, "TestClass"));
-    descriptors.add(new Descriptor(TypeToken.of(Instant.class), "c" + index++, -1, "TestClass"));
-    descriptors.add(new Descriptor(TypeToken.of(Instant.class), "c" + index++, -1, "TestClass"));
+    descriptors.add(new Descriptor(TypeRef.of(Object.class), "c" + index++, -1, "TestClass"));
+    descriptors.add(new Descriptor(TypeRef.of(Date.class), "c" + index++, -1, "TestClass"));
+    descriptors.add(new Descriptor(TypeRef.of(Instant.class), "c" + index++, -1, "TestClass"));
+    descriptors.add(new Descriptor(TypeRef.of(Instant.class), "c" + index++, -1, "TestClass"));
+    descriptors.add(new Descriptor(new TypeRef<List<String>>() {}, "c" + index++, -1, "TestClass"));
     descriptors.add(
-        new Descriptor(new TypeToken<List<String>>() {}, "c" + index++, -1, "TestClass"));
+        new Descriptor(new TypeRef<List<Integer>>() {}, "c" + index++, -1, "TestClass"));
     descriptors.add(
-        new Descriptor(new TypeToken<List<Integer>>() {}, "c" + index++, -1, "TestClass"));
+        new Descriptor(new TypeRef<Map<String, Integer>>() {}, "c" + index++, -1, "TestClass"));
     descriptors.add(
-        new Descriptor(new TypeToken<Map<String, Integer>>() {}, "c" + index++, -1, "TestClass"));
-    descriptors.add(
-        new Descriptor(new TypeToken<Map<String, String>>() {}, "c" + index++, -1, "TestClass"));
+        new Descriptor(new TypeRef<Map<String, String>>() {}, "c" + index++, -1, "TestClass"));
     DescriptorGrouper grouper =
         DescriptorGrouper.createDescriptorGrouper(descriptors, false, false, false);
     {
@@ -188,22 +187,22 @@ public class DescriptorGrouperTest {
       assertEquals(classes, expected);
     }
     {
-      List<TypeToken<?>> types =
+      List<TypeRef<?>> types =
           grouper.getCollectionDescriptors().stream()
-              .map(Descriptor::getTypeToken)
+              .map(Descriptor::getTypeRef)
               .collect(Collectors.toList());
-      List<TypeToken<?>> expected =
-          Arrays.asList(new TypeToken<List<String>>() {}, new TypeToken<List<Integer>>() {});
+      List<TypeRef<?>> expected =
+          Arrays.asList(new TypeRef<List<String>>() {}, new TypeRef<List<Integer>>() {});
       assertEquals(types, expected);
     }
     {
-      List<TypeToken<?>> types =
+      List<TypeRef<?>> types =
           grouper.getMapDescriptors().stream()
-              .map(Descriptor::getTypeToken)
+              .map(Descriptor::getTypeRef)
               .collect(Collectors.toList());
-      List<TypeToken<?>> expected =
+      List<TypeRef<?>> expected =
           Arrays.asList(
-              new TypeToken<Map<String, Integer>>() {}, new TypeToken<Map<String, String>>() {});
+              new TypeRef<Map<String, Integer>>() {}, new TypeRef<Map<String, String>>() {});
       assertEquals(types, expected);
     }
     {

@@ -21,7 +21,6 @@ package org.apache.fury.format.encoder;
 
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.reflect.TypeToken;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.codegen.ClosureVisitable;
 import org.apache.fury.codegen.Code;
@@ -30,6 +29,7 @@ import org.apache.fury.codegen.CodegenContext;
 import org.apache.fury.codegen.Expression;
 import org.apache.fury.format.row.binary.BinaryArray;
 import org.apache.fury.format.row.binary.BinaryUtils;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
@@ -44,7 +44,7 @@ import org.apache.fury.util.function.SerializableFunction;
 public class ArrayDataForEach implements Expression {
   private final Expression inputArrayData;
   private final String accessMethod;
-  private final TypeToken<?> elemType;
+  private final TypeRef<?> elemType;
 
   @ClosureVisitable
   private final SerializableBiFunction<Expression, Expression, Expression> notNullAction;
@@ -57,7 +57,7 @@ public class ArrayDataForEach implements Expression {
    */
   public ArrayDataForEach(
       Expression inputArrayData,
-      TypeToken<?> elemType,
+      TypeRef<?> elemType,
       SerializableBiFunction<Expression, Expression, Expression> notNullAction) {
     this(inputArrayData, elemType, notNullAction, null);
   }
@@ -68,7 +68,7 @@ public class ArrayDataForEach implements Expression {
    */
   public ArrayDataForEach(
       Expression inputArrayData,
-      TypeToken<?> elemType,
+      TypeRef<?> elemType,
       SerializableBiFunction<Expression, Expression, Expression> notNullAction,
       SerializableFunction<Expression, Expression> nullAction) {
     Preconditions.checkArgument(getRawType(inputArrayData.type()) == BinaryArray.class);
@@ -80,7 +80,7 @@ public class ArrayDataForEach implements Expression {
   }
 
   @Override
-  public TypeToken<?> type() {
+  public TypeRef<?> type() {
     return TypeUtils.PRIMITIVE_VOID_TYPE;
   }
 

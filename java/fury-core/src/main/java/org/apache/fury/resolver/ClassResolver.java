@@ -29,7 +29,6 @@ import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.reflect.TypeToken;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
@@ -99,6 +98,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.ClassDef;
 import org.apache.fury.meta.MetaString;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.ArraySerializers.UnexistedArrayClassSerializer;
 import org.apache.fury.serializer.ArraySerializers.UnexistedEnumArrayClassSerializer;
@@ -1765,9 +1765,9 @@ public class ClassResolver {
     }
   }
 
-  public GenericType buildGenericType(TypeToken<?> typeToken) {
+  public GenericType buildGenericType(TypeRef<?> typeRef) {
     return GenericType.build(
-        typeToken.getType(),
+        typeRef.getType(),
         t -> {
           if (t.getClass() == Class.class) {
             return isMonomorphic((Class<?>) t);
