@@ -42,7 +42,8 @@ import org.apache.fury.type.TypeUtils;
 public class TypeRef<T> {
 
   private final Type type;
-  private Class<? super T> rawType;
+  private transient Class<? super T> rawType;
+  private transient Map<Types.TypeVariableKey, Type> typeMappings;
 
   /**
    * Constructs a new type token of {@code T}.
@@ -253,6 +254,16 @@ public class TypeRef<T> {
     return of(iteratorReturnType);
   }
 
+  private Map<Types.TypeVariableKey, Type> resolveTypeMappings() {
+    Map<Types.TypeVariableKey, Type> cachedMappings = this.typeMappings;
+    if (cachedMappings != null) {
+      return cachedMappings;
+    }
+    Map<Types.TypeVariableKey, Type> typeMappings = resolveTypeMappings(type);
+    this.typeMappings = typeMappings;
+    return typeMappings;
+  }
+
   private static Map<Types.TypeVariableKey, Type> resolveTypeMappings(Type contextType) {
     Map<Types.TypeVariableKey, Type> result = new HashMap<>();
     populateTypeMapping(result, contextType);
@@ -345,7 +356,7 @@ public class TypeRef<T> {
       return of(newArrayType(componentSupertype.type));
     }
 
-    Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings(type);
+    Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings();
     @SuppressWarnings("unchecked") // resolved supertype
     TypeRef<? super T> supertype =
         (TypeRef<? super T>) resolveType0(toGenericType(superclass), mappings);
@@ -553,7 +564,7 @@ public class TypeRef<T> {
       for (int i = 0; i < typeParameters.length; i++) {
         TypeVariable<?> typeParameter = typeParameters[i];
 
-        Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings(type);
+        Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings();
         TypeRef<?> subtypeParam = resolveType0(typeParameter, mappings);
 
         if (!subtypeParam.is(supertypeArgs[i], typeParameter)) {
@@ -617,7 +628,7 @@ public class TypeRef<T> {
     if (type instanceof WildcardType) {
       return boundsAsInterfaces(((WildcardType) type).getUpperBounds());
     }
-    Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings(type);
+    Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings();
     return Arrays.stream(getRawType().getGenericInterfaces())
         .map(
             interfaceType -> {
@@ -642,7 +653,7 @@ public class TypeRef<T> {
       return null;
     }
 
-    Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings(type);
+    Map<Types.TypeVariableKey, Type> mappings = resolveTypeMappings();
     @SuppressWarnings("unchecked") // interface of T
     TypeRef<? super T> superToken = (TypeRef<? super T>) resolveType0(superclass, mappings);
     return superToken;
