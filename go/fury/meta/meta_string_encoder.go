@@ -101,8 +101,8 @@ func (e *Encoder) EncodeAllToLowerSpecial(input string) ([]byte, error) {
 	idx := 0
 	for i := 0; i < len(input); i++ {
 		if input[i] >= 'A' && input[i] <= 'Z' {
-			chars[idx] = input[i]
-			chars[idx] = input[i+1]
+			chars[idx] = '|'
+			chars[idx+1] = input[i] - 'A' + 'a'
 			idx += 2
 		} else {
 			chars[idx] = input[i]

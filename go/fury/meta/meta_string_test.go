@@ -22,30 +22,53 @@ import (
 	"testing"
 )
 
-func TestEncodeMetaStringLowerSpecial(t *testing.T) {
-	// "abc_def"
+func TestEncodeAndDecodeMetaString(t *testing.T) {
+	var data MetaString
+	var dst string
+	var err error
+
+	str2bits := map[string]int{
+		// "abc_def" should be encoded as 0|00000|00, 001|00010|, 11011|000, 11|00100|0, 0101
+		"abc_def":                        5,
+		"org.apache.fury.benchmark.data": 5,
+		"HelloWorld__123.2024":           6,
+		"MediaContent":                   5,
+		"Apple_banana":                   5,
+		"欲海回狂":                           0, // not used
+	}
+	str2encoding := map[string]Encoding{
+		"abc_def":                        LOWER_SPECIAL,
+		"org.apache.fury.benchmark.data": LOWER_SPECIAL,
+		"MediaContent":                   ALL_TO_LOWER_SPECIAL,
+		"HelloWorld__123.2024":           LOWER_UPPER_DIGIT_SPECIAL,
+		"Apple_banana":                   FIRST_TO_LOWER_SPECIAL,
+		"欲海回狂":                           UTF_8,
+	}
 	encoder := NewEncoder('.', '_')
-	data := encoder.Encode("abc_def")
 	decoder := NewDecoder('.', '_')
-	str := decoder.Decode(data.GetEncodedBytes(), LOWER_SPECIAL, 7*5)
-	require.Equal(t, len(data.GetEncodedBytes()), 5)
-	require.Equal(t, str, "abc_def")
 
-	// "org.apache.fury.benchmark.data"
-	data = encoder.Encode("org.apache.fury.benchmark.data")
-	str = decoder.Decode(data.GetEncodedBytes(), LOWER_SPECIAL, data.GetNumBits())
-	require.Equal(t, "org.apache.fury.benchmark.data", str)
+	for src, bitsPerChar := range str2bits {
+		data, err = encoder.Encode(src)
+		require.Equal(t, nil, err)
+		require.Equal(t, str2encoding[src], data.GetEncoding())
+		require.Equal(t, calcTotalBytes(src, bitsPerChar, data.GetEncoding()), len(data.GetEncodedBytes()))
+		dst, err = decoder.Decode(data.GetEncodedBytes(), data.GetEncoding())
+		require.Equal(t, nil, err)
+		require.Equal(t, src, dst)
+	}
 
-	// "MediaContent"
-	data = encoder.Encode("MediaContent")
-	str = decoder.Decode(data.GetEncodedBytes(), data.GetEncoding(), data.GetNumBits())
-	require.Equal(t, "MediaContent", str)
-	require.Equal(t, data.GetNumBits(), 70)
+	// error situation
+	dst, err = decoder.Decode([]byte{0xFF, 0x31}, LOWER_SPECIAL)
+	require.NotEqual(t, nil, err)
+}
 
-	// "HelloWorld__123.2024"
-	data = encoder.Encode("HelloWorld__123.2024")
-	str = decoder.Decode(data.GetEncodedBytes(), data.GetEncoding(), data.GetNumBits())
-	require.Equal(t, "HelloWorld__123.2024", str)
-	require.Equal(t, data.GetNumBits(), data.GetNumChars()*6)
-
+func calcTotalBytes(src string, bitsPerChar int, encoding Encoding) int {
+	if encoding == UTF_8 {
+		return len(src)
+	}
+	ret := len(src)*bitsPerChar + 1
+	if encoding == ALL_TO_LOWER_SPECIAL {
+		ret += countUppers(src) * bitsPerChar
+	}
+	return (ret + 7) / 8
 }

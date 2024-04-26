@@ -52,5 +52,5 @@ func (ms *MetaString) StripLastChar() bool {
 	if ms.encoding == UTF_8 || ms.encodedBytes == nil {
 		return false
 	}
-	return (ms.encodedBytes[0] & 1) > 0
+	return (ms.encodedBytes[0] & 0x80) > 0
 }

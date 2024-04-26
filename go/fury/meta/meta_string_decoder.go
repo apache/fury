@@ -19,7 +19,6 @@ package meta
 
 import (
 	"fmt"
-	"strings"
 )
 
 type Decoder struct {
@@ -36,108 +35,130 @@ func NewDecoder(specialCh1 byte, specialCh2 byte) *Decoder {
 
 // Decode
 // Accept an encodedBytes byte array, and the encoding method
-// We also need to accept numBits, because we don't know how many characters are in the byte array,
-// and numBits are the actual valid bits
-func (d *Decoder) Decode(data []byte, encoding Encoding, numBits int) string {
+func (d *Decoder) Decode(data []byte, encoding Encoding) (result string, err error) {
+	var chars []byte
 	switch encoding {
 	case LOWER_SPECIAL:
-		return d.decodeGeneric(data, encoding, numBits)
+		chars, err = d.decodeGeneric(data, encoding)
 	case LOWER_UPPER_DIGIT_SPECIAL:
-		return d.decodeGeneric(data, encoding, numBits)
+		chars, err = d.decodeGeneric(data, encoding)
 	case FIRST_TO_LOWER_SPECIAL:
-		return strings.ToTitle(d.decodeGeneric(data, LOWER_SPECIAL, numBits))
+		chars, err = d.decodeGeneric(data, LOWER_SPECIAL)
+		if err == nil {
+			chars[0] = chars[0] - 'a' + 'A'
+		}
 	case ALL_TO_LOWER_SPECIAL:
-		return d.decodeRepAllToLowerSpecial(data, LOWER_SPECIAL, numBits)
+		chars, err = d.decodeRepAllToLowerSpecial(data, LOWER_SPECIAL)
 	case UTF_8:
-		return string(data)
+		chars = data
 	default:
-		panic("Unexpected encoding flag: {encoding}")
+		err = fmt.Errorf("Unexpected encoding flag: %v\n", encoding)
 	}
+	if err != nil {
+		return string(""), err
+	}
+	return string(chars), err
 }
 
 // DecodeGeneric
 // algorithm is LowerSpecial or LowerUpperDigit
-func (d *Decoder) decodeGeneric(data []byte, algorithm Encoding, numBits int) string {
+func (d *Decoder) decodeGeneric(data []byte, algorithm Encoding) ([]byte, error) {
 	bitsPerChar := 5
 	if algorithm == LOWER_UPPER_DIGIT_SPECIAL {
 		bitsPerChar = 6
 	}
 	// Retrieve 5 bits every iteration from data, convert them to characters, and save them to chars
-	// "abc" encodedBytes as [00000] [000,01] [00010] [0, corresponding to three bytes, which are 0, 68, 0 (68 = 64 + 4)
-	// In order, take the highest digit first, then the lower
-	chars := make([]byte, 0)
-	bitPos, bitCount := 7, 0
-	for bitCount+bitsPerChar <= numBits {
+	// "abc" encodedBytes as [00000] [000,01] [00010] [0, corresponding to three bytes, which are 0, 68, 0
+	// Take the highest digit first, then the lower, in order
+
+	// here access data[0] before entering the loop, so we had to deal with empty data in Decode method
+	// totChars * bitsPerChar <= totBits < (totChars + 1) * bitsPerChar
+	stripLastChar := (data[0] & 0x80) >> 7
+	totBits := len(data)*8 - 1 - int(stripLastChar)*bitsPerChar
+	totChars := totBits / bitsPerChar
+	chars := make([]byte, totChars)
+	bitPos, bitCount := 6, 1 // first highest bit indicates whether strip last char
+	for i := 0; i < totChars; i++ {
 		var val byte = 0
 		for i := 0; i < bitsPerChar; i++ {
-			val <<= 1
 			if data[bitCount/8]&(1<<bitPos) > 0 {
-				val += 1
+				val |= 1 << (bitsPerChar - i - 1)
 			}
 			bitPos = (bitPos - 1 + 8) % 8
 			bitCount++
 		}
-		chars = append(chars, d.decodeChar(val, algorithm))
+		ch, err := d.decodeChar(val, algorithm)
+		if err != nil {
+			return nil, err
+		}
+		chars[i] = ch
 	}
-	return string(chars)
+	return chars, nil
 }
 
-func (d *Decoder) decodeRepAllToLowerSpecial(data []byte, algorithm Encoding, numBits int) string {
-	// Decode the data the lowercase letters, then convert
-	str := d.decodeGeneric(data, algorithm, numBits)
-	chars := make([]byte, 0)
+func (d *Decoder) decodeRepAllToLowerSpecial(data []byte, algorithm Encoding) ([]byte, error) {
+	// Decode the data to the lowercase letters, then convert
+	str, err := d.decodeGeneric(data, algorithm)
+	if err != nil {
+		return nil, err
+	}
+	chars := make([]byte, len(str))
+	j := 0
 	for i := 0; i < len(str); i++ {
 		if str[i] == '|' {
-			chars = append(chars, str[i+1]-'a'+'A')
+			chars[j] = str[i+1] - 'a' + 'A'
 			i++
 		} else {
-			chars = append(chars, str[i])
+			chars[j] = str[i]
 		}
+		j++
 	}
-	return string(chars)
+	return chars[0:j], nil
 }
 
 /** Decoding char for two encoding algorithms */
-func (d *Decoder) decodeChar(val byte, encoding Encoding) byte {
+func (d *Decoder) decodeChar(val byte, encoding Encoding) (byte, error) {
 	switch encoding {
 	case LOWER_SPECIAL:
 		return d.decodeLowerSpecialChar(val)
 	case LOWER_UPPER_DIGIT_SPECIAL:
 		return d.decodeLowerUpperDigitSpecialChar(val)
 	}
-	panic("Illegal encoding flag")
+	return 0, fmt.Errorf("Illegal encoding flag: %v\n", encoding)
 }
 
 /** Decoding char for LOWER_SPECIAL Encoding Algorithm */
-func (d *Decoder) decodeLowerSpecialChar(charValue byte) byte {
+func (d *Decoder) decodeLowerSpecialChar(charValue byte) (val byte, err error) {
 	if charValue <= 25 {
-		return 'a' + charValue
+		val = 'a' + charValue
 	} else if charValue == 26 {
-		return '.'
+		val = '.'
 	} else if charValue == 27 {
-		return '_'
+		val = '_'
 	} else if charValue == 28 {
-		return '$'
+		val = '$'
 	} else if charValue == 29 {
-		return '|'
+		val = '|'
 	} else {
-		panic(fmt.Sprintf("Invalid character value for LOWER_SPECIAL: %v\n", charValue))
+		err = fmt.Errorf("Invalid character value for LOWER_SPECIAL: %v\n", charValue)
 	}
+	return
 }
 
 /** Decoding char for LOWER_UPPER_DIGIT_SPECIAL Encoding Algorithm. */
-func (d *Decoder) decodeLowerUpperDigitSpecialChar(charValue byte) byte {
+func (d *Decoder) decodeLowerUpperDigitSpecialChar(charValue byte) (val byte, err error) {
 	if charValue <= 25 {
-		return 'a' + charValue
+		val = 'a' + charValue
 	} else if charValue >= 26 && charValue <= 51 {
-		return 'A' + (charValue - 26)
+		val = 'A' + (charValue - 26)
 	} else if charValue >= 52 && charValue <= 61 {
-		return '0' + (charValue - 52)
+		val = '0' + (charValue - 52)
 	} else if charValue == 62 {
-		return d.specialChar1
+		val = d.specialChar1
 	} else if charValue == 63 {
-		return d.specialChar2
+		val = d.specialChar2
 	} else {
-		panic(fmt.Sprintf("Invalid character value for LOWER_UPPER_DIGIT_SPECIAL: %v", charValue))
+		err = fmt.Errorf("invalid character value for LOWER_UPPER_DIGIT_SPECIAL: %v", charValue)
 	}
+	return
 }
