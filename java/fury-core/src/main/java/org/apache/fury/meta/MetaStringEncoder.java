@@ -59,8 +59,7 @@ public class MetaStringEncoder {
 
   public MetaString encode(String input, Encoding[] encodings) {
     if (input.isEmpty()) {
-      return new MetaString(
-        input, Encoding.UTF_8, specialChar1, specialChar2, new byte[0]);
+      return new MetaString(input, Encoding.UTF_8, specialChar1, specialChar2, new byte[0]);
     }
     Encoding encoding = computeEncoding(input, encodings);
     return encode(input, encoding);

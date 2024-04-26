@@ -28,7 +28,6 @@ import static org.apache.fury.serializer.CodegenSerializer.supportCodegenForJava
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.collect.ImmutableMap;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
