@@ -19,6 +19,7 @@
 
 package org.apache.fury.resolver;
 
+import static org.apache.fury.meta.MetaStringEncoder.PACKAGE_ENCODER;
 import static org.apache.fury.serializer.CodegenSerializer.loadCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.loadCompatibleCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.supportCodegenForJavaSerialization;
@@ -95,7 +96,6 @@ import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
 import org.apache.fury.meta.MetaString;
-import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.ArraySerializers.UnexistedArrayClassSerializer;
 import org.apache.fury.serializer.ArraySerializers.UnexistedEnumArrayClassSerializer;
@@ -1631,7 +1631,7 @@ public class ClassResolver {
     }
     MetaStringBytes fullClassNameBytes =
         metaStringResolver.getOrCreateMetaStringBytes(
-            new MetaStringEncoder('.', '_').encode(entireClassName, MetaString.Encoding.UTF_8));
+            PACKAGE_ENCODER.encode(entireClassName, MetaString.Encoding.UTF_8));
     Class<?> cls = loadClass(entireClassName, isArray, isEnum);
     ClassInfo classInfo =
         new ClassInfo(

@@ -19,10 +19,12 @@
 
 package org.apache.fury.resolver;
 
+import static org.apache.fury.meta.MetaStringEncoder.PACKAGE_ENCODER;
+import static org.apache.fury.meta.MetaStringEncoder.TYPE_NAME_ENCODER;
+
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
 import org.apache.fury.meta.MetaString.Encoding;
-import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
@@ -83,7 +85,7 @@ public class ClassInfo {
     if (cls != null && classResolver.getFury().getLanguage() != Language.JAVA) {
       this.fullClassNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
-              new MetaStringEncoder('.', '_').encode(cls.getName(), Encoding.UTF_8));
+              PACKAGE_ENCODER.encode(cls.getName(), Encoding.UTF_8));
     } else {
       this.fullClassNameBytes = null;
     }
@@ -110,11 +112,9 @@ public class ClassInfo {
         className = ENUM_PREFIX + className;
       }
       this.packageNameBytes =
-          metaStringResolver.getOrCreateMetaStringBytes(
-              new MetaStringEncoder('.', '_').encode(packageName));
+          metaStringResolver.getOrCreateMetaStringBytes(PACKAGE_ENCODER.encode(packageName));
       this.classNameBytes =
-          metaStringResolver.getOrCreateMetaStringBytes(
-              new MetaStringEncoder('_', '$').encode(className));
+          metaStringResolver.getOrCreateMetaStringBytes(TYPE_NAME_ENCODER.encode(className));
     } else {
       this.packageNameBytes = null;
       this.classNameBytes = null;
@@ -122,7 +122,7 @@ public class ClassInfo {
     if (tag != null) {
       this.typeTagBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
-              new MetaStringEncoder('.', '_').encode(tag, Encoding.UTF_8));
+              PACKAGE_ENCODER.encode(tag, Encoding.UTF_8));
     } else {
       this.typeTagBytes = null;
     }
