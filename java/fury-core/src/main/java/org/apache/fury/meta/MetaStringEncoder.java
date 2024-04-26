@@ -28,8 +28,9 @@ import org.apache.fury.util.Preconditions;
 /** Encodes plain text strings into MetaString objects with specified encoding mechanisms. */
 public class MetaStringEncoder {
   public static final MetaStringEncoder PACKAGE_ENCODER = new MetaStringEncoder('.', '_');
+  public static final MetaStringDecoder PACKAGE_DECODER = new MetaStringDecoder('.', '_');
   public static final MetaStringEncoder TYPE_NAME_ENCODER = new MetaStringEncoder('$', '_');
-  public static final MetaStringEncoder FIELD_NAME_ENCODER = new MetaStringEncoder('$', '_');
+  public static final MetaStringDecoder TYPE_NAME_DECODER = new MetaStringDecoder('$', '_');
 
   private final char specialChar1;
   private final char specialChar2;
@@ -59,7 +60,7 @@ public class MetaStringEncoder {
   public MetaString encode(String input, Encoding[] encodings) {
     if (input.isEmpty()) {
       return new MetaString(
-          input, Encoding.LOWER_SPECIAL, specialChar1, specialChar2, new byte[0], 0, 0);
+        input, Encoding.UTF_8, specialChar1, specialChar2, new byte[0]);
     }
     Encoding encoding = computeEncoding(input, encodings);
     return encode(input, encoding);
@@ -76,53 +77,27 @@ public class MetaStringEncoder {
     Preconditions.checkArgument(
         input.length() < Short.MAX_VALUE, "Long meta string than 32767 is not allowed");
     if (input.isEmpty()) {
-      return new MetaString(
-          input, Encoding.LOWER_SPECIAL, specialChar1, specialChar2, new byte[0], 0, 0);
+      return new MetaString(input, Encoding.UTF_8, specialChar1, specialChar2, new byte[0]);
     }
-    int length = input.length();
+    byte[] bytes;
     switch (encoding) {
       case LOWER_SPECIAL:
-        return new MetaString(
-            input,
-            encoding,
-            specialChar1,
-            specialChar2,
-            encodeLowerSpecial(input),
-            length,
-            length * 5);
+        bytes = encodeLowerSpecial(input);
+        return new MetaString(input, encoding, specialChar1, specialChar2, bytes);
       case LOWER_UPPER_DIGIT_SPECIAL:
-        return new MetaString(
-            input,
-            encoding,
-            specialChar1,
-            specialChar2,
-            encodeLowerUpperDigitSpecial(input),
-            length,
-            length * 6);
+        bytes = encodeLowerUpperDigitSpecial(input);
+        return new MetaString(input, encoding, specialChar1, specialChar2, bytes);
       case FIRST_TO_LOWER_SPECIAL:
-        return new MetaString(
-            input,
-            encoding,
-            specialChar1,
-            specialChar2,
-            encodeFirstToLowerSpecial(input),
-            length,
-            length * 5);
+        bytes = encodeFirstToLowerSpecial(input);
+        return new MetaString(input, encoding, specialChar1, specialChar2, bytes);
       case ALL_TO_LOWER_SPECIAL:
         char[] chars = input.toCharArray();
         int upperCount = countUppers(chars);
-        return new MetaString(
-            input,
-            encoding,
-            specialChar1,
-            specialChar2,
-            encodeAllToLowerSpecial(chars, upperCount),
-            length,
-            (upperCount + length) * 5);
+        bytes = encodeAllToLowerSpecial(chars, upperCount);
+        return new MetaString(input, encoding, specialChar1, specialChar2, bytes);
       default:
-        byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
-        return new MetaString(
-            input, Encoding.UTF_8, specialChar1, specialChar2, bytes, bytes.length * 8, 0);
+        bytes = input.getBytes(StandardCharsets.UTF_8);
+        return new MetaString(input, Encoding.UTF_8, specialChar1, specialChar2, bytes);
     }
   }
 
@@ -265,10 +240,10 @@ public class MetaStringEncoder {
   }
 
   private byte[] encodeGeneric(char[] chars, int bitsPerChar) {
-    int totalBits = chars.length * bitsPerChar;
+    int totalBits = chars.length * bitsPerChar + 1;
     int byteLength = (totalBits + 7) / 8; // Calculate number of needed bytes
     byte[] bytes = new byte[byteLength];
-    int currentBit = 0;
+    int currentBit = 1;
     for (char c : chars) {
       int value =
           (bitsPerChar == 5) ? charToValueLowerSpecial(c) : charToValueLowerUpperDigitSpecial(c);
@@ -283,7 +258,10 @@ public class MetaStringEncoder {
         currentBit++;
       }
     }
-
+    boolean stripLastChar = bytes.length * 8 >= totalBits + bitsPerChar;
+    if (stripLastChar) {
+      bytes[0] = (byte) (bytes[0] | 0x80);
+    }
     return bytes;
   }
 

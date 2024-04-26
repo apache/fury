@@ -30,112 +30,106 @@ public class FuryLogger implements Logger {
   private static final DateTimeFormatter dateTimeFormatter =
       DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
   private final String name;
-  private final int level;
 
   public FuryLogger(Class<?> targetClass) {
-    this(targetClass, INFO_LEVEL);
-  }
-
-  public FuryLogger(Class<?> targetClass, int level) {
     this.name = targetClass.getSimpleName();
-    this.level = level;
   }
 
   // The implementation should not forward to other method, otherwise the fileNumber won't be right.
   @Override
   public void info(String msg) {
-    if (level >= INFO_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= INFO_LEVEL) {
       log(INFO_LEVEL, msg, new Object[0], false);
     }
   }
 
   @Override
   public void info(String msg, Object arg) {
-    if (level >= INFO_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= INFO_LEVEL) {
       log(INFO_LEVEL, msg, new Object[] {arg}, false);
     }
   }
 
   @Override
   public void info(String msg, Object arg1, Object arg2) {
-    if (level >= INFO_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= INFO_LEVEL) {
       log(INFO_LEVEL, msg, new Object[] {arg1, arg2}, false);
     }
   }
 
   @Override
   public void info(String msg, Object... args) {
-    if (level >= INFO_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= INFO_LEVEL) {
       log(INFO_LEVEL, msg, args, false);
     }
   }
 
   @Override
   public void warn(String msg) {
-    if (level >= WARN_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= WARN_LEVEL) {
       log(WARN_LEVEL, msg, new Object[0], false);
     }
   }
 
   @Override
   public void warn(String msg, Object arg) {
-    if (level >= WARN_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= WARN_LEVEL) {
       log(WARN_LEVEL, msg, new Object[] {arg}, true);
     }
   }
 
   @Override
   public void warn(String msg, Object arg1, Object arg2) {
-    if (level >= WARN_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= WARN_LEVEL) {
       log(WARN_LEVEL, msg, new Object[] {arg1, arg2}, true);
     }
   }
 
   @Override
   public void warn(String msg, Object... args) {
-    if (level >= WARN_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= WARN_LEVEL) {
       log(WARN_LEVEL, msg, args, true);
     }
   }
 
   @Override
   public void warn(String msg, Throwable t) {
-    if (level >= WARN_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= WARN_LEVEL) {
       log(WARN_LEVEL, msg, new Object[] {t}, true);
     }
   }
 
   @Override
   public void error(String msg) {
-    if (level >= ERROR_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= ERROR_LEVEL) {
       log(WARN_LEVEL, msg, new Object[0], false);
     }
   }
 
   @Override
   public void error(String msg, Object arg) {
-    if (level >= ERROR_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= ERROR_LEVEL) {
       log(ERROR_LEVEL, msg, new Object[] {arg}, true);
     }
   }
 
   @Override
   public void error(String msg, Object arg1, Object arg2) {
-    if (level >= ERROR_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= ERROR_LEVEL) {
       log(ERROR_LEVEL, msg, new Object[] {arg1, arg2}, true);
     }
   }
 
   @Override
   public void error(String msg, Object... args) {
-    if (level >= ERROR_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= ERROR_LEVEL) {
       log(ERROR_LEVEL, msg, args, true);
     }
   }
 
   @Override
   public void error(String msg, Throwable t) {
-    if (level >= ERROR_LEVEL) {
+    if (LoggerFactory.getLogLevel() >= ERROR_LEVEL) {
       log(ERROR_LEVEL, msg, new Object[] {t}, true);
     }
   }

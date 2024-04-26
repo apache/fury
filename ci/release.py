@@ -29,14 +29,27 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
 
 
+def prepare(v: str):
+    """Create a new release branch"""
+    logger.info("Start to prepare release branch for version %s", v)
+    _check_release_version(v)
+    os.chdir(PROJECT_ROOT_DIR)
+    branch = f"releases-{v}"
+    try:
+        subprocess.check_call(f"git checkout -b {branch}", shell=True)
+        bump_version(version=v, l="all")
+        subprocess.check_call("git add -u", shell=True)
+        subprocess.check_call(f"git commit -m 'prepare release for {v}'", shell=True)
+    except BaseException:
+        logger.exception("Prepare branch failed")
+        subprocess.check_call(f"git checkout - && git branch -D {branch}", shell=True)
+        raise
+
+
 def build(v: str):
     """version format: 0.5.0"""
-    assert v
     logger.info("Start to prepare release artifacts for version %s", v)
-    if "rc" in v:
-        raise ValueError(
-            "RC should only be contained in tag and svn directory, not in code"
-        )
+    _check_release_version(v)
     os.chdir(PROJECT_ROOT_DIR)
     if os.path.exists("dist"):
         shutil.rmtree("dist")
@@ -44,12 +57,18 @@ def build(v: str):
     subprocess.check_call(f"git checkout releases-{v}", shell=True)
     branch = f"releases-{v}"
     src_tar = f"apache-fury-{v}-incubating-src.tar.gz"
+    _check_all_committed()
+    _strip_unnecessary_license()
+    subprocess.check_call(
+        "git add LICENSE && git commit -m 'remove benchmark from license'", shell=True
+    )
     subprocess.check_call(
         f"git archive --format=tar.gz "
         f"--output=dist/{src_tar} "
         f"--prefix=apache-fury-{v}-incubating-src/ {branch}",
         shell=True,
     )
+    subprocess.check_call("git reset --hard HEAD~", shell=True)
     os.chdir("dist")
     logger.info("Start to generate signature")
     subprocess.check_call(
@@ -57,6 +76,43 @@ def build(v: str):
     )
     subprocess.check_call(f"sha512sum {src_tar} >{src_tar}.sha512", shell=True)
     verify(v)
+
+
+def _check_release_version(v: str):
+    assert v
+    if "rc" in v:
+        raise ValueError(
+            "RC should only be contained in tag and svn directory, not in code"
+        )
+
+
+def _check_all_committed():
+    proc = subprocess.run("git diff --quiet", capture_output=True, shell=True)
+    result = proc.returncode
+    if result != 0:
+        raise Exception(
+            f"There are some uncommitted files: {proc.stdout}, please commit it."
+        )
+
+
+def _strip_unnecessary_license():
+    with open("LICENSE", "r") as f:
+        lines = f.readlines()
+    new_lines = []
+    line_number = 0
+    while line_number < len(lines):
+        line = lines[line_number]
+        if "fast-serialization" in line:
+            line_number += 4
+        elif "benchmark" in line:  # strip license in benchmark
+            line_number += 1
+        else:
+            new_lines.append(line)
+            line_number += 1
+    text = "".join(new_lines)
+    if lines != new_lines:
+        with open("LICENSE", "w") as f:
+            f.write(text)
 
 
 def verify(v):
@@ -199,6 +255,13 @@ def _parse_args():
     bump_version_parser.add_argument("-version", type=str, help="new version")
     bump_version_parser.add_argument("-l", type=str, help="language")
     bump_version_parser.set_defaults(func=bump_version)
+
+    prepare_parser = subparsers.add_parser(
+        "prepare",
+        description="Prepare release branch",
+    )
+    prepare_parser.add_argument("-v", type=str, help="new version")
+    prepare_parser.set_defaults(func=prepare)
 
     release_parser = subparsers.add_parser(
         "build",

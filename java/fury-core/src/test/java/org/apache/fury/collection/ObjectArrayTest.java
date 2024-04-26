@@ -55,6 +55,16 @@ public class ObjectArrayTest {
           throw new IllegalStateException(String.format("numObj: %d, index: %d", numObj, i));
         }
       }
+      for (int i = 0; i < numObj; i++) {
+        array[i] = o;
+      }
+      ObjectArray.clearObjectArray(array, 1, array.length - 1);
+      for (int i = 1; i < array.length; i++) {
+        Object value = array[i];
+        if (value != null) {
+          throw new IllegalStateException(String.format("numObj: %d, index: %d", numObj, i));
+        }
+      }
     }
   }
 }

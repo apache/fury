@@ -56,10 +56,9 @@ class CollectionAnySerializer {
       }
       if (isSame) {
         const current = this.fury.classResolver.getSerializerByData(item);
-        if (serializer !== null && current !== null && current !== serializer) {
+        if (serializer !== null && current !== serializer) {
           isSame = false;
-        }
-        if (current !== null) {
+        } else {
           serializer = current;
         }
       }
@@ -71,16 +70,12 @@ class CollectionAnySerializer {
     if (includeNone) {
       flag |= CollectionFlags.HAS_NULL;
     }
-    if (serializer !== null && serializer.meta.needToWriteRef) {
+    if (serializer!.meta.needToWriteRef) {
       flag |= CollectionFlags.TRACKING_REF;
     }
     this.fury.binaryWriter.uint8(flag);
     if (isSame) {
-      if (serializer) {
-        this.fury.binaryWriter.int16(serializer.meta.type);
-      } else {
-        this.fury.binaryWriter.skip(2);
-      }
+      this.fury.binaryWriter.int16(serializer!.meta.type);
     }
     return {
       serializer,

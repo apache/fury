@@ -26,7 +26,6 @@ import java.util.Arrays;
 import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.io.AbstractStreamReader;
 import org.apache.fury.io.FuryStreamReader;
-import org.apache.fury.util.Platform;
 import sun.misc.Unsafe;
 
 /**

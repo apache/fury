@@ -22,7 +22,6 @@ package org.apache.fury.format.encoder;
 import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.reflect.TypeToken;
 import java.util.Map;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.fury.Fury;
@@ -36,6 +35,7 @@ import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.type.TypeInference;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.StringUtils;
 
@@ -52,14 +52,14 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
   private static final String ROOT_KEY_WRITER_NAME = "keyArrayWriter";
   private static final String ROOT_VALUE_WRITER_NAME = "valueArrayWriter";
 
-  private static final TypeToken<Field> ARROW_FIELD_TYPE = TypeToken.of(Field.class);
-  private final TypeToken<?> mapToken;
+  private static final TypeRef<Field> ARROW_FIELD_TYPE = TypeRef.of(Field.class);
+  private final TypeRef<?> mapToken;
 
   public MapEncoderBuilder(Class<?> mapCls, Class<?> keyClass) {
-    this(TypeToken.of(mapCls), TypeToken.of(keyClass));
+    this(TypeRef.of(mapCls), TypeRef.of(keyClass));
   }
 
-  public MapEncoderBuilder(TypeToken<?> clsType, TypeToken<?> beanType) {
+  public MapEncoderBuilder(TypeRef<?> clsType, TypeRef<?> beanType) {
     super(new CodegenContext(), beanType);
     mapToken = clsType;
     ctx.reserveName(ROOT_KEY_WRITER_NAME);
@@ -172,9 +172,9 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
         directlySerializeMap(map, keyArrayWriter, valArrayWriter, keyFieldExpr, valFieldExpr);
 
     Expression.Invoke keyArray =
-        new Expression.Invoke(keyArrayWriter, "toArray", TypeToken.of(BinaryArray.class));
+        new Expression.Invoke(keyArrayWriter, "toArray", TypeRef.of(BinaryArray.class));
     Expression.Invoke valArray =
-        new Expression.Invoke(valArrayWriter, "toArray", TypeToken.of(BinaryArray.class));
+        new Expression.Invoke(valArrayWriter, "toArray", TypeRef.of(BinaryArray.class));
 
     expressions.add(map);
     expressions.add(listExpression);
@@ -183,7 +183,7 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
     expressions.add(
         new Expression.Return(
             new Expression.NewInstance(
-                TypeToken.of(BinaryMap.class), keyArray, valArray, fieldExpr)));
+                TypeRef.of(BinaryMap.class), keyArray, valArray, fieldExpr)));
     return expressions;
   }
 
@@ -213,9 +213,9 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
       Expression keyFieldExpr,
       Expression valFieldExpr) {
     @SuppressWarnings("unchecked")
-    TypeToken<?> supertype = ((TypeToken<? extends Map<?, ?>>) mapToken).getSupertype(Map.class);
-    TypeToken<?> keySetType = supertype.resolveType(TypeUtils.KEY_SET_RETURN_TYPE);
-    TypeToken<?> valuesType = supertype.resolveType(TypeUtils.VALUES_RETURN_TYPE);
+    TypeRef<?> supertype = ((TypeRef<? extends Map<?, ?>>) mapToken).getSupertype(Map.class);
+    TypeRef<?> keySetType = supertype.resolveType(TypeUtils.KEY_SET_RETURN_TYPE);
+    TypeRef<?> valuesType = supertype.resolveType(TypeUtils.VALUES_RETURN_TYPE);
 
     Expression.Invoke keySet = new Expression.Invoke(map, "keySet", keySetType);
     Expression keySerializationExpr =
@@ -231,10 +231,10 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
   private Expression directlyDeserializeMap(
       Expression map, Expression keyArrayRef, Expression valArrayRef) {
     @SuppressWarnings("unchecked")
-    TypeToken<?> supertype = ((TypeToken<? extends Map<?, ?>>) mapToken).getSupertype(Map.class);
-    TypeToken<?> keySetType = supertype.resolveType(TypeUtils.KEY_SET_RETURN_TYPE);
-    TypeToken<?> keysType = TypeUtils.getCollectionType(keySetType);
-    TypeToken<?> valuesType = supertype.resolveType(TypeUtils.VALUES_RETURN_TYPE);
+    TypeRef<?> supertype = ((TypeRef<? extends Map<?, ?>>) mapToken).getSupertype(Map.class);
+    TypeRef<?> keySetType = supertype.resolveType(TypeUtils.KEY_SET_RETURN_TYPE);
+    TypeRef<?> keysType = TypeUtils.getCollectionType(keySetType);
+    TypeRef<?> valuesType = supertype.resolveType(TypeUtils.VALUES_RETURN_TYPE);
     Expression keyJavaArray;
     Expression valueJavaArray;
     if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(keysType)) {

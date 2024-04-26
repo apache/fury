@@ -34,7 +34,7 @@ import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.memory.BitUtils;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.util.Preconditions;
 
 /**

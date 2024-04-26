@@ -19,9 +19,6 @@
 
 package org.apache.fury.type;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.reflect.TypeParameter;
-import com.google.common.reflect.TypeToken;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
@@ -50,6 +47,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.reflect.TypeParameter;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 
@@ -63,58 +62,58 @@ public class TypeUtils {
   public static final String JAVA_LONG = "long";
   public static final String JAVA_FLOAT = "float";
   public static final String JAVA_DOUBLE = "double";
-  public static final TypeToken<?> PRIMITIVE_VOID_TYPE = TypeToken.of(void.class);
-  public static final TypeToken<?> VOID_TYPE = TypeToken.of(Void.class);
-  public static final TypeToken<?> PRIMITIVE_BYTE_TYPE = TypeToken.of(byte.class);
-  public static final TypeToken<?> PRIMITIVE_BOOLEAN_TYPE = TypeToken.of(boolean.class);
-  public static final TypeToken<?> PRIMITIVE_CHAR_TYPE = TypeToken.of(char.class);
-  public static final TypeToken<?> PRIMITIVE_SHORT_TYPE = TypeToken.of(short.class);
-  public static final TypeToken<?> PRIMITIVE_INT_TYPE = TypeToken.of(int.class);
-  public static final TypeToken<?> PRIMITIVE_LONG_TYPE = TypeToken.of(long.class);
-  public static final TypeToken<?> PRIMITIVE_FLOAT_TYPE = TypeToken.of(float.class);
-  public static final TypeToken<?> PRIMITIVE_DOUBLE_TYPE = TypeToken.of(double.class);
-  public static final TypeToken<?> BYTE_TYPE = TypeToken.of(Byte.class);
-  public static final TypeToken<?> BOOLEAN_TYPE = TypeToken.of(Boolean.class);
-  public static final TypeToken<?> CHAR_TYPE = TypeToken.of(Character.class);
-  public static final TypeToken<?> SHORT_TYPE = TypeToken.of(Short.class);
-  public static final TypeToken<?> INT_TYPE = TypeToken.of(Integer.class);
-  public static final TypeToken<?> LONG_TYPE = TypeToken.of(Long.class);
-  public static final TypeToken<?> FLOAT_TYPE = TypeToken.of(Float.class);
-  public static final TypeToken<?> DOUBLE_TYPE = TypeToken.of(Double.class);
-  public static final TypeToken<?> STRING_TYPE = TypeToken.of(String.class);
-  public static final TypeToken<?> BIG_DECIMAL_TYPE = TypeToken.of(BigDecimal.class);
-  public static final TypeToken<?> BIG_INTEGER_TYPE = TypeToken.of(BigInteger.class);
-  public static final TypeToken<?> DATE_TYPE = TypeToken.of(Date.class);
-  public static final TypeToken<?> LOCAL_DATE_TYPE = TypeToken.of(LocalDate.class);
-  public static final TypeToken<?> TIMESTAMP_TYPE = TypeToken.of(Timestamp.class);
-  public static final TypeToken<?> INSTANT_TYPE = TypeToken.of(Instant.class);
-  public static final TypeToken<?> BINARY_TYPE = TypeToken.of(byte[].class);
-  public static final TypeToken<?> ITERABLE_TYPE = TypeToken.of(Iterable.class);
-  public static final TypeToken<?> COLLECTION_TYPE = TypeToken.of(Collection.class);
-  public static final TypeToken<?> LIST_TYPE = TypeToken.of(List.class);
-  public static final TypeToken<?> ARRAYLIST_TYPE = TypeToken.of(ArrayList.class);
-  public static final TypeToken<?> SET_TYPE = TypeToken.of(Set.class);
-  public static final TypeToken<?> HASHSET_TYPE = TypeToken.of(HashSet.class);
-  public static final TypeToken<?> MAP_TYPE = TypeToken.of(Map.class);
-  public static final TypeToken<?> HASHMAP_TYPE = TypeToken.of(HashMap.class);
-  public static final TypeToken<?> OBJECT_TYPE = TypeToken.of(Object.class);
+  public static final TypeRef<?> PRIMITIVE_VOID_TYPE = TypeRef.of(void.class);
+  public static final TypeRef<?> VOID_TYPE = TypeRef.of(Void.class);
+  public static final TypeRef<?> PRIMITIVE_BYTE_TYPE = TypeRef.of(byte.class);
+  public static final TypeRef<?> PRIMITIVE_BOOLEAN_TYPE = TypeRef.of(boolean.class);
+  public static final TypeRef<?> PRIMITIVE_CHAR_TYPE = TypeRef.of(char.class);
+  public static final TypeRef<?> PRIMITIVE_SHORT_TYPE = TypeRef.of(short.class);
+  public static final TypeRef<?> PRIMITIVE_INT_TYPE = TypeRef.of(int.class);
+  public static final TypeRef<?> PRIMITIVE_LONG_TYPE = TypeRef.of(long.class);
+  public static final TypeRef<?> PRIMITIVE_FLOAT_TYPE = TypeRef.of(float.class);
+  public static final TypeRef<?> PRIMITIVE_DOUBLE_TYPE = TypeRef.of(double.class);
+  public static final TypeRef<?> BYTE_TYPE = TypeRef.of(Byte.class);
+  public static final TypeRef<?> BOOLEAN_TYPE = TypeRef.of(Boolean.class);
+  public static final TypeRef<?> CHAR_TYPE = TypeRef.of(Character.class);
+  public static final TypeRef<?> SHORT_TYPE = TypeRef.of(Short.class);
+  public static final TypeRef<?> INT_TYPE = TypeRef.of(Integer.class);
+  public static final TypeRef<?> LONG_TYPE = TypeRef.of(Long.class);
+  public static final TypeRef<?> FLOAT_TYPE = TypeRef.of(Float.class);
+  public static final TypeRef<?> DOUBLE_TYPE = TypeRef.of(Double.class);
+  public static final TypeRef<?> STRING_TYPE = TypeRef.of(String.class);
+  public static final TypeRef<?> BIG_DECIMAL_TYPE = TypeRef.of(BigDecimal.class);
+  public static final TypeRef<?> BIG_INTEGER_TYPE = TypeRef.of(BigInteger.class);
+  public static final TypeRef<?> DATE_TYPE = TypeRef.of(Date.class);
+  public static final TypeRef<?> LOCAL_DATE_TYPE = TypeRef.of(LocalDate.class);
+  public static final TypeRef<?> TIMESTAMP_TYPE = TypeRef.of(Timestamp.class);
+  public static final TypeRef<?> INSTANT_TYPE = TypeRef.of(Instant.class);
+  public static final TypeRef<?> BINARY_TYPE = TypeRef.of(byte[].class);
+  public static final TypeRef<?> ITERABLE_TYPE = TypeRef.of(Iterable.class);
+  public static final TypeRef<?> COLLECTION_TYPE = TypeRef.of(Collection.class);
+  public static final TypeRef<?> LIST_TYPE = TypeRef.of(List.class);
+  public static final TypeRef<?> ARRAYLIST_TYPE = TypeRef.of(ArrayList.class);
+  public static final TypeRef<?> SET_TYPE = TypeRef.of(Set.class);
+  public static final TypeRef<?> HASHSET_TYPE = TypeRef.of(HashSet.class);
+  public static final TypeRef<?> MAP_TYPE = TypeRef.of(Map.class);
+  public static final TypeRef<?> HASHMAP_TYPE = TypeRef.of(HashMap.class);
+  public static final TypeRef<?> OBJECT_TYPE = TypeRef.of(Object.class);
 
   public static Type ITERATOR_RETURN_TYPE;
   public static Type NEXT_RETURN_TYPE;
   public static Type KEY_SET_RETURN_TYPE;
   public static Type VALUES_RETURN_TYPE;
 
-  public static final TypeToken<?> PRIMITIVE_BYTE_ARRAY_TYPE = TypeToken.of(byte[].class);
-  public static final TypeToken<?> PRIMITIVE_BOOLEAN_ARRAY_TYPE = TypeToken.of(boolean[].class);
-  public static final TypeToken<?> PRIMITIVE_SHORT_ARRAY_TYPE = TypeToken.of(short[].class);
-  public static final TypeToken<?> PRIMITIVE_CHAR_ARRAY_TYPE = TypeToken.of(char[].class);
-  public static final TypeToken<?> PRIMITIVE_INT_ARRAY_TYPE = TypeToken.of(int[].class);
-  public static final TypeToken<?> PRIMITIVE_LONG_ARRAY_TYPE = TypeToken.of(long[].class);
-  public static final TypeToken<?> PRIMITIVE_FLOAT_ARRAY_TYPE = TypeToken.of(float[].class);
-  public static final TypeToken<?> PRIMITIVE_DOUBLE_ARRAY_TYPE = TypeToken.of(double[].class);
-  public static final TypeToken<?> OBJECT_ARRAY_TYPE = TypeToken.of(Object[].class);
+  public static final TypeRef<?> PRIMITIVE_BYTE_ARRAY_TYPE = TypeRef.of(byte[].class);
+  public static final TypeRef<?> PRIMITIVE_BOOLEAN_ARRAY_TYPE = TypeRef.of(boolean[].class);
+  public static final TypeRef<?> PRIMITIVE_SHORT_ARRAY_TYPE = TypeRef.of(short[].class);
+  public static final TypeRef<?> PRIMITIVE_CHAR_ARRAY_TYPE = TypeRef.of(char[].class);
+  public static final TypeRef<?> PRIMITIVE_INT_ARRAY_TYPE = TypeRef.of(int[].class);
+  public static final TypeRef<?> PRIMITIVE_LONG_ARRAY_TYPE = TypeRef.of(long[].class);
+  public static final TypeRef<?> PRIMITIVE_FLOAT_ARRAY_TYPE = TypeRef.of(float[].class);
+  public static final TypeRef<?> PRIMITIVE_DOUBLE_ARRAY_TYPE = TypeRef.of(double[].class);
+  public static final TypeRef<?> OBJECT_ARRAY_TYPE = TypeRef.of(Object[].class);
 
-  public static final TypeToken<?> CLASS_TYPE = TypeToken.of(Class.class);
+  public static final TypeRef<?> CLASS_TYPE = TypeRef.of(Class.class);
 
   /**
    * bean fields should all be in SUPPORTED_TYPES, enum, array/ITERABLE_TYPE/MAP_TYPE type, bean
@@ -123,7 +122,7 @@ public class TypeUtils {
    * <p>If bean fields is ITERABLE_TYPE/MAP_TYPE, the type should be super class(inclusive) of
    * List/Set/Map, or else should be a no arg constructor.
    */
-  public static Set<TypeToken<?>> SUPPORTED_TYPES = new HashSet<>();
+  public static Set<TypeRef<?>> SUPPORTED_TYPES = new HashSet<>();
 
   static {
     SUPPORTED_TYPES.add(PRIMITIVE_BYTE_TYPE);
@@ -166,7 +165,7 @@ public class TypeUtils {
 
   // sorted by size
   private static final List<Class<?>> sortedPrimitiveClasses =
-      ImmutableList.of(
+      Arrays.asList(
           void.class,
           boolean.class,
           byte.class,
@@ -177,7 +176,7 @@ public class TypeUtils {
           long.class,
           double.class);
   private static final List<Class<?>> sortedBoxedClasses =
-      ImmutableList.of(
+      Arrays.asList(
           Void.class,
           Boolean.class,
           Byte.class,
@@ -271,7 +270,7 @@ public class TypeUtils {
   }
 
   /** Returns size of primitive type. */
-  public static int getSizeOfPrimitiveType(TypeToken<?> numericType) {
+  public static int getSizeOfPrimitiveType(TypeRef<?> numericType) {
     return getSizeOfPrimitiveType(getRawType(numericType));
   }
 
@@ -326,17 +325,17 @@ public class TypeUtils {
     }
   }
 
-  /** Faster method to get raw type from {@link TypeToken} than {@link TypeToken#getRawType}. */
-  public static Class<?> getRawType(TypeToken<?> typeToken) {
-    Type type = typeToken.getType();
+  /** Faster method to get raw type from {@link TypeRef} than {@link TypeRef#getRawType}. */
+  public static Class<?> getRawType(TypeRef<?> typeRef) {
+    Type type = typeRef.getType();
     if (type.getClass() == Class.class) {
       return (Class<?>) type;
     } else {
-      return getRawType(typeToken.getType());
+      return getRawType(typeRef.getType());
     }
   }
 
-  /** Faster method to get raw type from {@link TypeToken} than {@link TypeToken#getRawType}. */
+  /** Faster method to get raw type from {@link TypeRef} than {@link TypeRef#getRawType}. */
   public static Class<?> getRawType(Type type) {
     if (type instanceof TypeVariable) {
       return getRawType(((TypeVariable<?>) type).getBounds()[0]);
@@ -348,20 +347,28 @@ public class TypeUtils {
       return ((Class<?>) type);
     } else if (type instanceof GenericArrayType) {
       Type componentType = ((GenericArrayType) type).getGenericComponentType();
-      return Array.newInstance(getRawType(TypeToken.of(componentType)), 0).getClass();
+      return Array.newInstance(getRawType(TypeRef.of(componentType)), 0).getClass();
     } else {
       throw new AssertionError("Unknown type: " + type);
     }
   }
 
   /** Returns dimensions of multi-dimension array. */
-  public static int getArrayDimensions(TypeToken<?> type) {
+  public static int getArrayDimensions(TypeRef<?> type) {
     return getArrayDimensions(getRawType(type));
   }
 
   /** Returns dimensions of multi-dimension array. */
   public static int getArrayDimensions(Class<?> type) {
     return getArrayComponentInfo(type).f1;
+  }
+
+  public static int getArrayDimensions(String className) {
+    int dimension = 0;
+    while (className.charAt(dimension) == '[') {
+      dimension++;
+    }
+    return dimension;
   }
 
   public static Class<?> getArrayComponent(Class<?> type) {
@@ -380,7 +387,7 @@ public class TypeUtils {
   }
 
   /** Returns s string that represents array type declaration of type. */
-  public static String getArrayType(TypeToken<?> type) {
+  public static String getArrayType(TypeRef<?> type) {
     return getArrayType(getRawType(type));
   }
 
@@ -409,8 +416,8 @@ public class TypeUtils {
    * @param type array type
    * @return element type of multi-dimension array
    */
-  public static TypeToken<?> getMultiDimensionArrayElementType(TypeToken<?> type) {
-    TypeToken<?> t = type;
+  public static TypeRef<?> getMultiDimensionArrayElementType(TypeRef<?> type) {
+    TypeRef<?> t = type;
     while (t != null && t.isArray()) {
       t = t.getComponentType();
     }
@@ -418,8 +425,8 @@ public class TypeUtils {
   }
 
   /** Returns element type of iterable. */
-  public static TypeToken<?> getElementType(TypeToken<?> typeToken) {
-    Type type = typeToken.getType();
+  public static TypeRef<?> getElementType(TypeRef<?> typeRef) {
+    Type type = typeRef.getType();
     if (type instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) type;
       if (parameterizedType.getRawType() == List.class) { // fastpath
@@ -427,28 +434,26 @@ public class TypeUtils {
         Preconditions.checkState(actualTypeArguments.length == 1);
         Type t = actualTypeArguments[0];
         if (t.getClass() == Class.class) { // if t is wild type, upper should be parsed.
-          return TypeToken.of(t);
+          return TypeRef.of(t);
         }
       }
     }
-    if (typeToken.getType().getTypeName().startsWith("scala.collection")) {
-      return ScalaTypes.getElementType(typeToken);
+    if (typeRef.getType().getTypeName().startsWith("scala.collection")) {
+      return ScalaTypes.getElementType(typeRef);
     }
-    TypeToken<?> supertype =
-        ((TypeToken<? extends Iterable<?>>) typeToken).getSupertype(Iterable.class);
+    TypeRef<?> supertype = ((TypeRef<? extends Iterable<?>>) typeRef).getSupertype(Iterable.class);
     return supertype.resolveType(ITERATOR_RETURN_TYPE).resolveType(NEXT_RETURN_TYPE);
   }
 
-  public static TypeToken<?> getCollectionType(TypeToken<?> typeToken) {
+  public static TypeRef<?> getCollectionType(TypeRef<?> typeRef) {
     @SuppressWarnings("unchecked")
-    TypeToken<?> supertype =
-        ((TypeToken<? extends Iterable<?>>) typeToken).getSupertype(Iterable.class);
+    TypeRef<?> supertype = ((TypeRef<? extends Iterable<?>>) typeRef).getSupertype(Iterable.class);
     return supertype.getSubtype(Collection.class);
   }
 
   /** Returns key/value type of map. */
-  public static Tuple2<TypeToken<?>, TypeToken<?>> getMapKeyValueType(TypeToken<?> typeToken) {
-    Type type = typeToken.getType();
+  public static Tuple2<TypeRef<?>, TypeRef<?>> getMapKeyValueType(TypeRef<?> typeRef) {
+    Type type = typeRef.getType();
     if (type instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) type;
       if (parameterizedType.getRawType() == Map.class) { // fastpath
@@ -457,60 +462,59 @@ public class TypeUtils {
         if (actualTypeArguments[0].getClass() == Class.class
             && actualTypeArguments[1].getClass() == Class.class) {
           // if actualTypeArguments are wild type, upper should be parsed.
-          return Tuple2.of(
-              TypeToken.of(actualTypeArguments[0]), TypeToken.of(actualTypeArguments[1]));
+          return Tuple2.of(TypeRef.of(actualTypeArguments[0]), TypeRef.of(actualTypeArguments[1]));
         }
       }
     }
-    if (typeToken.getType().getTypeName().startsWith("scala.collection")) {
-      return ScalaTypes.getMapKeyValueType(typeToken);
+    if (typeRef.getType().getTypeName().startsWith("scala.collection")) {
+      return ScalaTypes.getMapKeyValueType(typeRef);
     }
     @SuppressWarnings("unchecked")
-    TypeToken<?> supertype = ((TypeToken<? extends Map<?, ?>>) typeToken).getSupertype(Map.class);
-    TypeToken<?> keyType = getElementType(supertype.resolveType(KEY_SET_RETURN_TYPE));
-    TypeToken<?> valueType = getElementType(supertype.resolveType(VALUES_RETURN_TYPE));
+    TypeRef<?> supertype = ((TypeRef<? extends Map<?, ?>>) typeRef).getSupertype(Map.class);
+    TypeRef<?> keyType = getElementType(supertype.resolveType(KEY_SET_RETURN_TYPE));
+    TypeRef<?> valueType = getElementType(supertype.resolveType(VALUES_RETURN_TYPE));
     return Tuple2.of(keyType, valueType);
   }
 
-  public static <E> TypeToken<ArrayList<E>> arrayListOf(Class<E> elemType) {
-    return new TypeToken<ArrayList<E>>() {}.where(new TypeParameter<E>() {}, elemType);
+  public static <E> TypeRef<ArrayList<E>> arrayListOf(Class<E> elemType) {
+    return new TypeRef<ArrayList<E>>() {}.where(new TypeParameter<E>() {}, elemType);
   }
 
-  public static <E> TypeToken<List<E>> listOf(Class<E> elemType) {
-    return new TypeToken<List<E>>() {}.where(new TypeParameter<E>() {}, elemType);
+  public static <E> TypeRef<List<E>> listOf(Class<E> elemType) {
+    return new TypeRef<List<E>>() {}.where(new TypeParameter<E>() {}, elemType);
   }
 
-  public static <E> TypeToken<Collection<E>> collectionOf(Class<E> elemType) {
-    return collectionOf(TypeToken.of(elemType));
+  public static <E> TypeRef<Collection<E>> collectionOf(Class<E> elemType) {
+    return collectionOf(TypeRef.of(elemType));
   }
 
-  public static <E> TypeToken<Collection<E>> collectionOf(TypeToken<E> elemType) {
-    return new TypeToken<Collection<E>>() {}.where(new TypeParameter<E>() {}, elemType);
+  public static <E> TypeRef<Collection<E>> collectionOf(TypeRef<E> elemType) {
+    return new TypeRef<Collection<E>>() {}.where(new TypeParameter<E>() {}, elemType);
   }
 
-  public static <K, V> TypeToken<Map<K, V>> mapOf(Class<K> keyType, Class<V> valueType) {
-    return mapOf(TypeToken.of(keyType), TypeToken.of(valueType));
+  public static <K, V> TypeRef<Map<K, V>> mapOf(Class<K> keyType, Class<V> valueType) {
+    return mapOf(TypeRef.of(keyType), TypeRef.of(valueType));
   }
 
-  public static <K, V> TypeToken<Map<K, V>> mapOf(TypeToken<K> keyType, TypeToken<V> valueType) {
-    return new TypeToken<Map<K, V>>() {}.where(new TypeParameter<K>() {}, keyType)
+  public static <K, V> TypeRef<Map<K, V>> mapOf(TypeRef<K> keyType, TypeRef<V> valueType) {
+    return new TypeRef<Map<K, V>>() {}.where(new TypeParameter<K>() {}, keyType)
         .where(new TypeParameter<V>() {}, valueType);
   }
 
-  public static <K, V> TypeToken<? extends Map<K, V>> mapOf(
-      Class<?> mapType, TypeToken<K> keyType, TypeToken<V> valueType) {
-    TypeToken<Map<K, V>> mapTypeToken = mapOf(keyType, valueType);
-    return mapTypeToken.getSubtype(mapType);
+  public static <K, V> TypeRef<? extends Map<K, V>> mapOf(
+      Class<?> mapType, TypeRef<K> keyType, TypeRef<V> valueType) {
+    TypeRef<Map<K, V>> mapTypeRef = mapOf(keyType, valueType);
+    return mapTypeRef.getSubtype(mapType);
   }
 
-  public static <K, V> TypeToken<? extends Map<K, V>> mapOf(
+  public static <K, V> TypeRef<? extends Map<K, V>> mapOf(
       Class<?> mapType, Class<K> keyType, Class<V> valueType) {
-    TypeToken<Map<K, V>> mapTypeToken = mapOf(keyType, valueType);
-    return mapTypeToken.getSubtype(mapType);
+    TypeRef<Map<K, V>> mapTypeRef = mapOf(keyType, valueType);
+    return mapTypeRef.getSubtype(mapType);
   }
 
-  public static <K, V> TypeToken<HashMap<K, V>> hashMapOf(Class<K> keyType, Class<V> valueType) {
-    return new TypeToken<HashMap<K, V>>() {}.where(new TypeParameter<K>() {}, keyType)
+  public static <K, V> TypeRef<HashMap<K, V>> hashMapOf(Class<K> keyType, Class<V> valueType) {
+    return new TypeRef<HashMap<K, V>>() {}.where(new TypeParameter<K>() {}, keyType)
         .where(new TypeParameter<V>() {}, valueType);
   }
 
@@ -523,24 +527,24 @@ public class TypeUtils {
   }
 
   public static boolean isBean(Type type) {
-    return isBean(TypeToken.of(type));
+    return isBean(TypeRef.of(type));
   }
 
   public static boolean isBean(Class<?> clz) {
-    return isBean(TypeToken.of(clz));
+    return isBean(TypeRef.of(clz));
   }
 
   /**
    * Returns true if class is not array/iterable/map, and all fields is {@link
-   * TypeUtils#isSupported(TypeToken)}. Bean class can't be a non-static inner class. Public static
+   * TypeUtils#isSupported(TypeRef)}. Bean class can't be a non-static inner class. Public static
    * nested class is ok.
    */
-  public static boolean isBean(TypeToken<?> typeToken) {
-    return isBean(typeToken, new LinkedHashSet<>());
+  public static boolean isBean(TypeRef<?> typeRef) {
+    return isBean(typeRef, new LinkedHashSet<>());
   }
 
-  private static boolean isBean(TypeToken<?> typeToken, LinkedHashSet<TypeToken> walkedTypePath) {
-    Class<?> cls = getRawType(typeToken);
+  private static boolean isBean(TypeRef<?> typeRef, LinkedHashSet<TypeRef> walkedTypePath) {
+    Class<?> cls = getRawType(typeRef);
     if (Modifier.isAbstract(cls.getModifiers()) || Modifier.isInterface(cls.getModifiers())) {
       return false;
     }
@@ -551,23 +555,23 @@ public class TypeUtils {
       if (cls.getEnclosingClass() != null && !Modifier.isStatic(cls.getModifiers())) {
         return false;
       }
-      LinkedHashSet<TypeToken> newTypePath = new LinkedHashSet<>(walkedTypePath);
-      newTypePath.add(typeToken);
+      LinkedHashSet<TypeRef> newTypePath = new LinkedHashSet<>(walkedTypePath);
+      newTypePath.add(typeRef);
       if (cls == Object.class) {
         // return false for typeToken that point to un-specialized generic type.
         return false;
       }
       boolean maybe =
-          !SUPPORTED_TYPES.contains(typeToken)
-              && !typeToken.isArray()
+          !SUPPORTED_TYPES.contains(typeRef)
+              && !typeRef.isArray()
               && !cls.isEnum()
-              && !ITERABLE_TYPE.isSupertypeOf(typeToken)
-              && !MAP_TYPE.isSupertypeOf(typeToken);
+              && !ITERABLE_TYPE.isSupertypeOf(typeRef)
+              && !MAP_TYPE.isSupertypeOf(typeRef);
       if (maybe) {
         return Descriptor.getDescriptors(cls).stream()
             .allMatch(
                 d -> {
-                  TypeToken<?> t = d.getTypeToken();
+                  TypeRef<?> t = d.getTypeRef();
                   // do field modifiers and getter/setter validation here, not in getDescriptors.
                   // If Modifier.isFinal(d.getModifiers()), use reflection
                   // private field that doesn't have getter/setter will be handled by reflection.
@@ -582,13 +586,12 @@ public class TypeUtils {
   }
 
   /** Check if <code>typeToken</code> is supported by row-format. */
-  public static boolean isSupported(TypeToken<?> typeToken) {
-    return isSupported(typeToken, new LinkedHashSet<>());
+  public static boolean isSupported(TypeRef<?> typeRef) {
+    return isSupported(typeRef, new LinkedHashSet<>());
   }
 
-  private static boolean isSupported(
-      TypeToken<?> typeToken, LinkedHashSet<TypeToken> walkedTypePath) {
-    Class<?> cls = getRawType(typeToken);
+  private static boolean isSupported(TypeRef<?> typeRef, LinkedHashSet<TypeRef> walkedTypePath) {
+    Class<?> cls = getRawType(typeRef);
     if (!Modifier.isPublic(cls.getModifiers())) {
       return false;
     }
@@ -597,33 +600,33 @@ public class TypeUtils {
       // box.
       return true;
     }
-    if (SUPPORTED_TYPES.contains(typeToken)) {
+    if (SUPPORTED_TYPES.contains(typeRef)) {
       return true;
-    } else if (typeToken.isArray()) {
-      return isSupported(Objects.requireNonNull(typeToken.getComponentType()));
-    } else if (ITERABLE_TYPE.isSupertypeOf(typeToken)) {
+    } else if (typeRef.isArray()) {
+      return isSupported(Objects.requireNonNull(typeRef.getComponentType()));
+    } else if (ITERABLE_TYPE.isSupertypeOf(typeRef)) {
       boolean isSuperOfArrayList = cls.isAssignableFrom(ArrayList.class);
       boolean isSuperOfHashSet = cls.isAssignableFrom(HashSet.class);
       if ((!isSuperOfArrayList && !isSuperOfHashSet)
           && (cls.isInterface() || Modifier.isAbstract(cls.getModifiers()))) {
         return false;
       }
-      return isSupported(getElementType(typeToken));
-    } else if (MAP_TYPE.isSupertypeOf(typeToken)) {
+      return isSupported(getElementType(typeRef));
+    } else if (MAP_TYPE.isSupertypeOf(typeRef)) {
       boolean isSuperOfHashMap = cls.isAssignableFrom(HashMap.class);
       if (!isSuperOfHashMap && (cls.isInterface() || Modifier.isAbstract(cls.getModifiers()))) {
         return false;
       }
-      Tuple2<TypeToken<?>, TypeToken<?>> mapKeyValueType = getMapKeyValueType(typeToken);
+      Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType = getMapKeyValueType(typeRef);
       return isSupported(mapKeyValueType.f0) && isSupported(mapKeyValueType.f1);
     } else {
-      if (walkedTypePath.contains(typeToken)) {
+      if (walkedTypePath.contains(typeRef)) {
         throw new UnsupportedOperationException(
             "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
       } else {
-        LinkedHashSet<TypeToken> newTypePath = new LinkedHashSet<>(walkedTypePath);
-        newTypePath.add(typeToken);
-        return isBean(typeToken, newTypePath);
+        LinkedHashSet<TypeRef> newTypePath = new LinkedHashSet<>(walkedTypePath);
+        newTypePath.add(typeRef);
+        return isBean(typeRef, newTypePath);
       }
     }
   }
@@ -640,20 +643,20 @@ public class TypeUtils {
   }
 
   private static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(
-      Class<?> beanClass, LinkedHashSet<TypeToken<?>> walkedTypePath) {
+      Class<?> beanClass, LinkedHashSet<TypeRef<?>> walkedTypePath) {
     LinkedHashSet<Class<?>> beans = new LinkedHashSet<>();
     if (isBean(beanClass)) {
       beans.add(beanClass);
     }
-    LinkedHashSet<TypeToken<?>> typeTokens = new LinkedHashSet<>();
+    LinkedHashSet<TypeRef<?>> typeRefs = new LinkedHashSet<>();
     List<Descriptor> descriptors = Descriptor.getDescriptors(beanClass);
     for (Descriptor descriptor : descriptors) {
-      TypeToken<?> typeToken = descriptor.getTypeToken();
-      typeTokens.add(descriptor.getTypeToken());
-      typeTokens.addAll(getAllTypeArguments(typeToken));
+      TypeRef<?> typeRef = descriptor.getTypeRef();
+      typeRefs.add(descriptor.getTypeRef());
+      typeRefs.addAll(getAllTypeArguments(typeRef));
     }
 
-    typeTokens.stream()
+    typeRefs.stream()
         .filter(typeToken -> isBean(getRawType(typeToken)))
         .forEach(
             typeToken -> {
@@ -663,7 +666,7 @@ public class TypeUtils {
                 throw new UnsupportedOperationException(
                     "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
               } else {
-                LinkedHashSet<TypeToken<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+                LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
                 newPath.add(typeToken);
                 beans.addAll(listBeansRecursiveInclusive(cls, newPath));
               }
@@ -684,11 +687,11 @@ public class TypeUtils {
   }
 
   /** Returns generic type arguments of <code>typeToken</code>. */
-  public static List<TypeToken<?>> getTypeArguments(TypeToken typeToken) {
-    if (typeToken.getType() instanceof ParameterizedType) {
-      ParameterizedType parameterizedType = (ParameterizedType) typeToken.getType();
+  public static List<TypeRef<?>> getTypeArguments(TypeRef typeRef) {
+    if (typeRef.getType() instanceof ParameterizedType) {
+      ParameterizedType parameterizedType = (ParameterizedType) typeRef.getType();
       return Arrays.stream(parameterizedType.getActualTypeArguments())
-          .map(TypeToken::of)
+          .map(TypeRef::of)
           .collect(Collectors.toList());
     } else {
       return new ArrayList<>();
@@ -699,10 +702,10 @@ public class TypeUtils {
    * Returns generic type arguments of <code>typeToken</code>, includes generic type arguments of
    * generic type arguments recursively.
    */
-  public static List<TypeToken<?>> getAllTypeArguments(TypeToken typeToken) {
-    List<TypeToken<?>> types = getTypeArguments(typeToken);
-    LinkedHashSet<TypeToken<?>> allTypeArguments = new LinkedHashSet<>(types);
-    for (TypeToken<?> type : types) {
+  public static List<TypeRef<?>> getAllTypeArguments(TypeRef typeRef) {
+    List<TypeRef<?>> types = getTypeArguments(typeRef);
+    LinkedHashSet<TypeRef<?>> allTypeArguments = new LinkedHashSet<>(types);
+    for (TypeRef<?> type : types) {
       allTypeArguments.addAll(getAllTypeArguments(type));
     }
 

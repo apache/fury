@@ -19,8 +19,6 @@ package org.apache.fury.memory;
  * under the License.
  */
 
-import org.apache.fury.util.Platform;
-
 public class LittleEndian {
   public static int putVarUint36Small(byte[] arr, int index, long v) {
     if (v >>> 7 == 0) {

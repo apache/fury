@@ -217,11 +217,14 @@ The text of each license is the standard Apache 2.0 license.
 * guava (https://github.com/google/guava)
     Files:
       java/fury-core/src/main/java/org/apache/fury/util/Preconditions.java
+      java/fury-core/src/main/java/org/apache/fury/reflect/TypeParameter.java
+      java/fury-core/src/main/java/org/apache/fury/reflect/Types.java
+      java/fury-core/src/main/java/org/apache/fury/reflect/TypeRef.java
 
 * spark (https://github.com/apache/spark)
     Files:
       java/fury-core/src/main/java/org/apache/fury/codegen/Code.java
-      java/fury-core/src/main/java/org/apache/fury/util/Platform.java
+      java/fury-core/src/main/java/org/apache/fury/memory/Platform.java
 
 * commons-io (https://github.com/apache/commons-io)
     Files:

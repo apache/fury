@@ -19,7 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -34,13 +33,14 @@ import org.apache.fury.exception.ClassNotCompatibleException;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.Type;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.FieldAccessor;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.Utils;
 
@@ -81,13 +81,13 @@ public class StructSerializer<T> extends Serializer<T> {
             .sorted(Comparator.comparing(Field::getName))
             .map(FieldAccessor::createAccessor)
             .toArray(FieldAccessor[]::new);
-    fieldGenerics = buildFieldGenerics(TypeToken.of(cls), fieldAccessors);
+    fieldGenerics = buildFieldGenerics(TypeRef.of(cls), fieldAccessors);
     genericTypesCache = new IdentityHashMap<>();
     genericTypesCache.put(null, fieldGenerics);
   }
 
   private static <T> GenericType[] buildFieldGenerics(
-      TypeToken<T> type, FieldAccessor[] fieldAccessors) {
+      TypeRef<T> type, FieldAccessor[] fieldAccessors) {
     return Arrays.stream(fieldAccessors)
         .map(fieldAccessor -> GenericType.build(type, fieldAccessor.getField().getGenericType()))
         .toArray(GenericType[]::new);
@@ -152,7 +152,7 @@ public class StructSerializer<T> extends Serializer<T> {
       this.genericType = genericType;
       fieldGenerics = genericTypesCache.get(genericType);
       if (fieldGenerics == null) {
-        fieldGenerics = buildFieldGenerics(genericType.getTypeToken(), fieldAccessors);
+        fieldGenerics = buildFieldGenerics(genericType.getTypeRef(), fieldAccessors);
         genericTypesCache.put(genericType, fieldGenerics);
       }
       this.fieldGenerics = fieldGenerics;
@@ -217,10 +217,10 @@ public class StructSerializer<T> extends Serializer<T> {
 
   int computeFieldHash(int hash, GenericType fieldGeneric) {
     int id;
-    if (fieldGeneric.getTypeToken().isSubtypeOf(List.class)) {
+    if (fieldGeneric.getTypeRef().isSubtypeOf(List.class)) {
       // TODO(chaokunyang) add list element type into schema hash
       id = Type.LIST.getId();
-    } else if (fieldGeneric.getTypeToken().isSubtypeOf(Map.class)) {
+    } else if (fieldGeneric.getTypeRef().isSubtypeOf(Map.class)) {
       // TODO(chaokunyang) add map key&value type into schema hash
       id = Type.MAP.getId();
     } else {

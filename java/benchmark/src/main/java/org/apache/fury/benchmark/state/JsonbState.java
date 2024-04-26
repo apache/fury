@@ -38,7 +38,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.benchmark.data.CustomJDKSerialization;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.util.Preconditions;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;

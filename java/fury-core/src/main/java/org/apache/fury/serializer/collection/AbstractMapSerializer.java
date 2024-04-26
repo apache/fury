@@ -21,13 +21,13 @@ package org.apache.fury.serializer.collection;
 
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -382,13 +382,13 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   private Tuple2<GenericType, GenericType> getKVGenericType(GenericType genericType) {
     Tuple2<GenericType, GenericType> genericTypes = partialGenericKVTypeMap.get(genericType);
     if (genericTypes == null) {
-      TypeToken<?> typeToken = genericType.getTypeToken();
-      if (!MAP_TYPE.isSupertypeOf(typeToken)) {
+      TypeRef<?> typeRef = genericType.getTypeRef();
+      if (!MAP_TYPE.isSupertypeOf(typeRef)) {
         Tuple2<GenericType, GenericType> typeTuple = Tuple2.of(objType, objType);
         partialGenericKVTypeMap.put(genericType, typeTuple);
         return typeTuple;
       }
-      Tuple2<TypeToken<?>, TypeToken<?>> mapKeyValueType = TypeUtils.getMapKeyValueType(typeToken);
+      Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType = TypeUtils.getMapKeyValueType(typeRef);
       genericTypes =
           Tuple2.of(
               fury.getClassResolver().buildGenericType(mapKeyValueType.f0.getType()),

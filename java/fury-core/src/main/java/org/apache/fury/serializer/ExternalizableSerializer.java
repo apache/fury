@@ -26,7 +26,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.io.MemoryBufferObjectInput;
 import org.apache.fury.io.MemoryBufferObjectOutput;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.util.ReflectionUtils;
 
 /** Serializer for class implements {@link Externalizable}. */

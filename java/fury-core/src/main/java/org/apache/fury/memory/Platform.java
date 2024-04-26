@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.fury.util;
+package org.apache.fury.memory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.unsafe._JDKAccess;
 import sun.misc.Unsafe;
 
@@ -77,7 +78,7 @@ public final class Platform {
   static {
     boolean unalign;
     String arch = System.getProperty("os.arch", "");
-    if (arch.equals("ppc64le") || arch.equals("ppc64") || arch.equals("s390x")) {
+    if ("ppc64le".equals(arch) || "ppc64".equals(arch) || "s390x".equals(arch)) {
       // Since java.nio.Bits.unaligned() doesn't return true on ppc (See JDK-8165231), but
       // ppc64 and ppc64le support it
       unalign = true;

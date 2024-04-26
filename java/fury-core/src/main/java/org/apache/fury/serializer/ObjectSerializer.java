@@ -21,7 +21,6 @@ package org.apache.fury.serializer;
 
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,6 +33,8 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.collection.Tuple3;
 import org.apache.fury.exception.FuryException;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -44,7 +45,6 @@ import org.apache.fury.type.FinalObjectTypeStub;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
 import org.apache.fury.util.FieldAccessor;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.record.RecordInfo;
 import org.apache.fury.util.record.RecordUtils;
@@ -188,7 +188,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
 
   private static GenericTypeField buildContainerField(Fury fury, Descriptor d) {
     return new GenericTypeField(
-        d.getTypeToken(),
+        d.getTypeRef(),
         d.getDeclaringClass() + "." + d.getName(),
         d.getField() != null ? FieldAccessor.createAccessor(d.getField()) : null,
         fury);
@@ -921,12 +921,12 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     }
 
     private GenericTypeField(
-        TypeToken<?> typeToken, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
-      super(getRegisteredClassId(fury, getRawType(typeToken)), qualifiedFieldName, accessor);
+        TypeRef<?> typeRef, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
+      super(getRegisteredClassId(fury, getRawType(typeRef)), qualifiedFieldName, accessor);
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
-      genericType = fury.getClassResolver().buildGenericType(typeToken);
+      genericType = fury.getClassResolver().buildGenericType(typeRef);
       classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
-      trackingRef = fury.getClassResolver().needToWriteRef(getRawType(typeToken));
+      trackingRef = fury.getClassResolver().needToWriteRef(getRawType(typeRef));
     }
 
     @Override

@@ -19,7 +19,6 @@
 
 package org.apache.fury.codegen;
 
-import com.google.common.reflect.TypeToken;
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Field;
@@ -34,8 +33,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.fury.codegen.Expression.ListExpression;
 import org.apache.fury.codegen.Expression.Reference;
+import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 
@@ -167,8 +167,8 @@ public class ExpressionVisitor {
               traverseClosure(expr, field, func);
             } else {
               if (Iterable.class.isAssignableFrom(field.getType())) {
-                TypeToken<?> fieldType = TypeToken.of(field.getGenericType());
-                if (TypeUtils.getElementType(fieldType).equals(TypeToken.of(Expression.class))) {
+                TypeRef<?> fieldType = TypeRef.of(field.getGenericType());
+                if (TypeUtils.getElementType(fieldType).equals(TypeRef.of(Expression.class))) {
                   List<Expression> expressions = ReflectionUtils.getObjectFieldValue(expr, field);
                   traverseList(expr, expressions, func);
                 }
