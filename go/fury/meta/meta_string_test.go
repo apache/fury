@@ -42,7 +42,7 @@ func TestEncodeAndDecodeMetaString(t *testing.T) {
 		"MediaContent":                   ALL_TO_LOWER_SPECIAL,
 		"HelloWorld__123.2024":           LOWER_UPPER_DIGIT_SPECIAL,
 		"Apple_banana":                   FIRST_TO_LOWER_SPECIAL,
-		"欲海回狂":                           UTF_8,
+		"你好，世界":                           UTF_8,
 	}
 	encoder := NewEncoder('.', '_')
 	decoder := NewDecoder('.', '_')
