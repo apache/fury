@@ -1,10 +1,9 @@
 package org.apache.fury.memory;
 
-import org.apache.fury.util.Preconditions;
-
 import java.lang.reflect.Field;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import org.apache.fury.util.Preconditions;
 
 public class ByteBufferUtil {
   private static final long BUFFER_ADDRESS_FIELD_OFFSET;
@@ -82,5 +81,9 @@ public class ByteBufferUtil {
 
   public static void rewind(Buffer buffer) {
     buffer.rewind();
+  }
+
+  public static void position(Buffer buffer, int pos) {
+    buffer.position(pos);
   }
 }

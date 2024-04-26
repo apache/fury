@@ -340,7 +340,7 @@ public final class MemoryBuffer {
       assert target.hasArray();
       get(offset, target.array(), targetPos + target.arrayOffset(), numBytes);
     }
-    target.position(targetPos + numBytes);
+    ByteBufferUtil.position(target, targetPos + numBytes);
   }
 
   public void put(int offset, ByteBuffer source, int numBytes) {
@@ -361,7 +361,7 @@ public final class MemoryBuffer {
       assert source.hasArray();
       put(offset, source.array(), sourcePos + source.arrayOffset(), numBytes);
     }
-    source.position(sourcePos + numBytes);
+    ByteBufferUtil.position(source, sourcePos + numBytes);
   }
 
   public void put(int index, byte[] src) {
@@ -2466,7 +2466,7 @@ public final class MemoryBuffer {
       if (offHeapBuffer != null) {
         ByteBuffer duplicate = offHeapBuffer.duplicate();
         int start = (int) (address - ByteBufferUtil.getAddress(duplicate));
-        duplicate.position(start + offset);
+        ByteBufferUtil.position(duplicate, start + offset);
         duplicate.limit(start + offset + length);
         return duplicate.slice();
       } else {

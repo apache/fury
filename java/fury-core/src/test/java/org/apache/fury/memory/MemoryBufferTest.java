@@ -174,7 +174,8 @@ public class MemoryBufferTest {
       MemoryBuffer buffer = MemoryUtils.wrap(direct);
       assertEquals(buffer.sliceAsByteBuffer(), direct);
       Assert.assertEquals(
-          ByteBufferUtil.getAddress(buffer.sliceAsByteBuffer()), ByteBufferUtil.getAddress(direct) + 5);
+          ByteBufferUtil.getAddress(buffer.sliceAsByteBuffer()),
+          ByteBufferUtil.getAddress(direct) + 5);
     }
     {
       long address = 0;
