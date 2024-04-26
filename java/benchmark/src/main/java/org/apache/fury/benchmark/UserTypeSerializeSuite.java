@@ -33,7 +33,7 @@ import org.apache.fury.benchmark.state.KryoState;
 import org.apache.fury.benchmark.state.ObjectType;
 import org.apache.fury.benchmark.state.ProtoBuffersState;
 import org.apache.fury.benchmark.state.ProtostuffState;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;

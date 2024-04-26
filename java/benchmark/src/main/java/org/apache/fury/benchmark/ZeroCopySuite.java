@@ -45,7 +45,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.test.bean.ArraysData;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.util.Preconditions;
 import org.nustaq.serialization.FSTConfiguration;
 import org.openjdk.jmh.Main;

@@ -25,7 +25,7 @@ import org.apache.fury.format.row.MapData;
 import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 
 /**
  * An BinaryMap implementation of Map which is backed by two BinaryArray./FuryObjectOutput
