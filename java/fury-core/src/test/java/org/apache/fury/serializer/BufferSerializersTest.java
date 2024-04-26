@@ -22,6 +22,7 @@ package org.apache.fury.serializer;
 import java.nio.ByteBuffer;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
+import org.apache.fury.memory.ByteBufferUtil;
 import org.testng.annotations.Test;
 
 public class BufferSerializersTest extends FuryTestBase {
@@ -31,11 +32,11 @@ public class BufferSerializersTest extends FuryTestBase {
     Fury fury = Fury.builder().build();
     ByteBuffer buffer1 = ByteBuffer.allocate(32);
     buffer1.putLong(1000L);
-    buffer1.rewind();
+    ByteBufferUtil.rewind(buffer1);
     serDeCheck(fury, buffer1);
     ByteBuffer buffer2 = ByteBuffer.allocateDirect(32);
     buffer2.putDouble(1.0 / 3);
-    buffer2.rewind();
+    ByteBufferUtil.rewind(buffer2);
     serDeCheck(fury, buffer2);
   }
 }
