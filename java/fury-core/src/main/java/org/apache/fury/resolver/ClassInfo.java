@@ -107,8 +107,7 @@ public class ClassInfo {
           }
         }
       } else if (cls.isEnum()) {
-        packageName = ReflectionUtils.getPackage(cls);
-        className = ENUM_PREFIX + ReflectionUtils.getClassNameWithoutPackage(cls);
+        className = ENUM_PREFIX + className;
       }
       this.packageNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
