@@ -60,10 +60,14 @@ final class MetaStringBytes {
   }
 
   public String decode(char specialChar1, char specialChar2) {
+    return decode(new MetaStringDecoder(specialChar1, specialChar2));
+  }
+
+  public String decode(MetaStringDecoder decoder) {
     int header = (int) (hashCode & 0xff);
     int encodingFlags = header & 0b111;
     MetaString.Encoding encoding = MetaString.Encoding.values()[encodingFlags];
-    return new MetaStringDecoder(specialChar1, specialChar2).decode(bytes, encoding);
+    return decoder.decode(bytes, encoding);
   }
 
   @Override

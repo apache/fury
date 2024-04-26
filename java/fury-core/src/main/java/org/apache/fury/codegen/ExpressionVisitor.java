@@ -33,9 +33,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.fury.codegen.Expression.ListExpression;
 import org.apache.fury.codegen.Expression.Reference;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 

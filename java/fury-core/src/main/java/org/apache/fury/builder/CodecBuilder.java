@@ -54,13 +54,13 @@ import org.apache.fury.codegen.Expression.Reference;
 import org.apache.fury.codegen.Expression.StaticInvoke;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.FinalObjectTypeStub;
 import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
@@ -345,7 +345,9 @@ public abstract class CodecBuilder {
     if (duplicatedFields.contains(fieldName) || !sourcePublicAccessible(beanClass)) {
       return unsafeSetField(bean, d, value);
     }
-    if (!d.isFinalField() && Modifier.isPublic(d.getModifiers())) {
+    if (!d.isFinalField()
+        && Modifier.isPublic(d.getModifiers())
+        && Modifier.isPublic(d.getRawType().getModifiers())) {
       return new Expression.SetField(bean, fieldName, value);
     } else if (d.getWriteMethod() != null && Modifier.isPublic(d.getWriteMethod().getModifiers())) {
       return new Invoke(bean, d.getWriteMethod().getName(), value);

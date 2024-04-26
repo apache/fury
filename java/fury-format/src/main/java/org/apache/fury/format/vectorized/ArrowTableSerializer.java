@@ -30,9 +30,9 @@ import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.fury.Fury;
 import org.apache.fury.io.MemoryBufferReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.type.Type;
-import org.apache.fury.util.Platform;
 
 /** Serializers for {@link ArrowTable}. */
 public class ArrowTableSerializer

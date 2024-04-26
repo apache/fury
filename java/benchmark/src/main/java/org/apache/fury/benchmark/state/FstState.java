@@ -29,7 +29,7 @@ import org.apache.fury.benchmark.data.Data;
 import org.apache.fury.benchmark.data.Image;
 import org.apache.fury.benchmark.data.Media;
 import org.apache.fury.benchmark.data.MediaContent;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.util.Preconditions;
 import org.nustaq.serialization.FSTConfiguration;
 import org.openjdk.jmh.annotations.CompilerControl;

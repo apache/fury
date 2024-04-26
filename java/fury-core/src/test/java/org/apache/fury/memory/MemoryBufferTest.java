@@ -24,7 +24,6 @@ import static org.testng.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
-import org.apache.fury.util.Platform;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

@@ -25,7 +25,7 @@ import java.lang.invoke.MethodType;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.Test;

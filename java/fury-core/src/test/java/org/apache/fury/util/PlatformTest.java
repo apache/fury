@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
+import org.apache.fury.memory.Platform;
 import org.testng.annotations.Test;
 
 public class PlatformTest {

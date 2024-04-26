@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.fury.io.FuryInputStream;
@@ -39,6 +40,33 @@ import org.apache.fury.util.ReflectionUtils;
 import org.testng.annotations.Test;
 
 public class StreamTest {
+  // Note that Fury instances should be reused between
+  // multiple serializations of different objects.
+  private static final ThreadSafeFury fury =
+      new ThreadLocalFury(
+          classLoader -> {
+            Fury f =
+                Fury.builder().withClassLoader(classLoader).requireClassRegistration(false).build();
+            return f;
+          });
+
+  public static byte[] encoder(Object object) {
+    return fury.serialize(object);
+  }
+
+  public static <T> T decoder(byte[] bytes) {
+    return (T) fury.deserialize(bytes);
+  }
+
+  public static void main(String[] args) {
+    byte len = 10;
+    ByteBuffer byteBuffer = ByteBuffer.allocate(len);
+    for (int i = 0; i < len; i++) {
+      byteBuffer.put((byte) i);
+    }
+    System.out.println(encoder(byteBuffer).length);
+  }
+
   @Test
   public void testBufferStream() {
     MemoryBuffer buffer0 = MemoryBuffer.newHeapBuffer(10);
