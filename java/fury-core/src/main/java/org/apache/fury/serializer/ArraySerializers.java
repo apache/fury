@@ -44,7 +44,6 @@ public class ArraySerializers {
     private final Class<T> innerType;
     private final Serializer componentTypeSerializer;
     private final ClassInfoHolder classInfoHolder;
-    private final int dimension;
     private final int[] stubDims;
 
     public ObjectArraySerializer(Fury fury, Class<T[]> cls) {
@@ -60,7 +59,6 @@ public class ArraySerializers {
           innerType = t;
         }
       }
-      this.dimension = dimension;
       this.innerType = (Class<T>) innerType;
       Class<?> componentType = cls.getComponentType();
       if (ReflectionUtils.isMonomorphic(componentType)) {
@@ -81,9 +79,10 @@ public class ArraySerializers {
     @Override
     public void write(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
-      buffer.writeVarUint32Small7(len);
       RefResolver refResolver = fury.getRefResolver();
       Serializer componentSerializer = this.componentTypeSerializer;
+      int header = componentSerializer != null ? 0b1 : 0b0;
+      buffer.writeVarUint32Small7(len << 1 | header);
       if (componentSerializer != null) {
         for (T t : arr) {
           if (!refResolver.writeRefOrNull(buffer, t)) {
@@ -122,11 +121,13 @@ public class ArraySerializers {
     public T[] read(MemoryBuffer buffer) {
       // Some jdk8 will crash if use varint, why?
       int numElements = buffer.readVarUint32Small7();
+      boolean isFinal = (numElements & 0b1) != 0;
+      numElements >>>= 1;
       Object[] value = newArray(numElements);
       RefResolver refResolver = fury.getRefResolver();
       refResolver.reference(value);
-      final Serializer componentTypeSerializer = this.componentTypeSerializer;
-      if (componentTypeSerializer != null) {
+      if (isFinal) {
+        final Serializer componentTypeSerializer = this.componentTypeSerializer;
         for (int i = 0; i < numElements; i++) {
           Object elem;
           int nextReadRefId = refResolver.tryPreserveRefId(buffer);
@@ -694,5 +695,146 @@ public class ArraySerializers {
     primitiveInfo.put(
         double.class,
         new int[] {Platform.DOUBLE_ARRAY_OFFSET, 8, Type.FURY_PRIMITIVE_DOUBLE_ARRAY.getId()});
+  }
+
+  public abstract static class AbstractedUnexistedArrayClassSerializer extends Serializer {
+    private final String className;
+    private final int dims;
+
+    public AbstractedUnexistedArrayClassSerializer(
+        Fury fury, String className, Class<?> stubClass) {
+      super(fury, stubClass);
+      this.className = className;
+      this.dims = TypeUtils.getArrayDimensions(className);
+    }
+
+    @Override
+    public Object[] read(MemoryBuffer buffer) {
+      switch (dims) {
+        case 1:
+          return read1DArray(buffer);
+        case 2:
+          return read2DArray(buffer);
+        case 3:
+          return read3DArray(buffer);
+        default:
+          throw new UnsupportedOperationException(
+              String.format("Unsupported array dimension %s for class %s", dims, className));
+      }
+    }
+
+    protected abstract Object readInnerElement(MemoryBuffer buffer);
+
+    private Object[] read1DArray(MemoryBuffer buffer) {
+      int numElements = buffer.readVarUint32Small7();
+      boolean isFinal = (numElements & 0b1) != 0;
+      numElements >>>= 1;
+      RefResolver refResolver = fury.getRefResolver();
+      Object[] value = new Object[numElements];
+      refResolver.reference(value);
+      if (isFinal) {
+        for (int i = 0; i < numElements; i++) {
+          Object elem;
+          int nextReadRefId = refResolver.tryPreserveRefId(buffer);
+          if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
+            elem = readInnerElement(buffer);
+            refResolver.setReadObject(nextReadRefId, elem);
+          } else {
+            elem = refResolver.getReadObject();
+          }
+          value[i] = elem;
+        }
+      } else {
+        for (int i = 0; i < numElements; i++) {
+          value[i] = fury.readRef(buffer);
+        }
+      }
+      return value;
+    }
+
+    private Object[][] read2DArray(MemoryBuffer buffer) {
+      int numElements = buffer.readVarUint32Small7();
+      boolean isFinal = (numElements & 0b1) != 0;
+      numElements >>>= 1;
+      RefResolver refResolver = fury.getRefResolver();
+      Object[][] value = new Object[numElements][];
+      refResolver.reference(value);
+      if (isFinal) {
+        for (int i = 0; i < numElements; i++) {
+          Object[] elem;
+          int nextReadRefId = refResolver.tryPreserveRefId(buffer);
+          if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
+            elem = read1DArray(buffer);
+            refResolver.setReadObject(nextReadRefId, elem);
+          } else {
+            elem = (Object[]) refResolver.getReadObject();
+          }
+          value[i] = elem;
+        }
+      } else {
+        for (int i = 0; i < numElements; i++) {
+          value[i] = (Object[]) fury.readRef(buffer);
+        }
+      }
+      return value;
+    }
+
+    private Object[] read3DArray(MemoryBuffer buffer) {
+      int numElements = buffer.readVarUint32Small7();
+      boolean isFinal = (numElements & 0b1) != 0;
+      numElements >>>= 1;
+      RefResolver refResolver = fury.getRefResolver();
+      Object[][][] value = new Object[numElements][][];
+      refResolver.reference(value);
+      if (isFinal) {
+        for (int i = 0; i < numElements; i++) {
+          Object[][] elem;
+          int nextReadRefId = refResolver.tryPreserveRefId(buffer);
+          if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
+            elem = read2DArray(buffer);
+            refResolver.setReadObject(nextReadRefId, elem);
+          } else {
+            elem = (Object[][]) refResolver.getReadObject();
+          }
+          value[i] = elem;
+        }
+      } else {
+        for (int i = 0; i < numElements; i++) {
+          value[i] = (Object[][]) fury.readRef(buffer);
+        }
+      }
+      return value;
+    }
+  }
+
+  public static final class UnexistedEnumArrayClassSerializer
+      extends AbstractedUnexistedArrayClassSerializer {
+    public UnexistedEnumArrayClassSerializer(Fury fury, String className) {
+      super(fury, className, UnexistedClassSerializers.UnexistedEnumArrayClass.class);
+    }
+
+    @Override
+    protected Object readInnerElement(MemoryBuffer buffer) {
+      return buffer.readVarUint32Small7();
+    }
+  }
+
+  public static final class UnexistedArrayClassSerializer
+      extends AbstractedUnexistedArrayClassSerializer {
+
+    private final CompatibleSerializer<UnexistedClassSerializers.UnexistedSkipClass>
+        componentSerializer;
+
+    public UnexistedArrayClassSerializer(Fury fury, String className) {
+      super(fury, className, UnexistedClassSerializers.UnexistedArrayClass.class);
+      // TODO(chaokunyang) meta share mode not supported currently.
+      componentSerializer =
+          new CompatibleSerializer<>(fury, UnexistedClassSerializers.UnexistedSkipClass.class);
+    }
+
+    @Override
+    protected Object readInnerElement(MemoryBuffer buffer) {
+      return componentSerializer.read(buffer);
+    }
   }
 }

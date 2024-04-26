@@ -397,6 +397,8 @@ public class ReflectionUtils {
   }
 
   public static void setObjectFieldValue(Object obj, Field field, Object value) {
+    Preconditions.checkArgument(
+        !field.getType().isPrimitive(), "Field %s is primitive type", field);
     Platform.putObject(obj, Platform.objectFieldOffset(field), value);
   }
 
@@ -426,8 +428,25 @@ public class ReflectionUtils {
     return null;
   }
 
+  /**
+   * Get classname with package name stripped. Note that this is different from {@link
+   * Class#getSimpleName()} since it return className without enclosing classname for inner classes.
+   */
   public static String getClassNameWithoutPackage(Class<?> clz) {
     String className = clz.getName();
+    int index = className.lastIndexOf(".");
+    if (index != -1) {
+      return className.substring(index + 1);
+    } else {
+      return className;
+    }
+  }
+
+  /**
+   * Get classname with package name stripped. Note that this is different from {@link
+   * Class#getSimpleName()} since it return className without enclosing classname for inner classes.
+   */
+  public static String getClassNameWithoutPackage(String className) {
     int index = className.lastIndexOf(".");
     if (index != -1) {
       return className.substring(index + 1);
@@ -508,6 +527,15 @@ public class ReflectionUtils {
     return pkg;
   }
 
+  public static String getPackage(String className) {
+    int index = className.lastIndexOf(".");
+    if (index != -1) {
+      return className.substring(0, index);
+    } else {
+      return "";
+    }
+  }
+
   /**
    * Returns the canonical name of the underlying class as defined by <cite>The Java Language
    * Specification</cite>. Throw {@link IllegalArgumentException} if the underlying class does not
@@ -534,7 +562,7 @@ public class ReflectionUtils {
         // jdk class are loaded by bootstrap class loader, which will return null.
         classLoader = Thread.currentThread().getContextClassLoader();
       }
-      return classLoader.loadClass(className);
+      return Class.forName(className, false, classLoader);
     } catch (ClassNotFoundException e) {
       throw new RuntimeException(e);
     }

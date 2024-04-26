@@ -19,12 +19,17 @@
 
 package org.apache.fury.resolver;
 
+import static org.apache.fury.meta.MetaStringEncoder.PACKAGE_ENCODER;
+import static org.apache.fury.meta.MetaStringEncoder.TYPE_NAME_ENCODER;
+
+import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
 import org.apache.fury.meta.MetaString.Encoding;
-import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.serializer.Serializer;
+import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 
 /**
@@ -32,6 +37,9 @@ import org.apache.fury.util.function.Functions;
  * serialization.
  */
 public class ClassInfo {
+  static final String ARRAY_PREFIX = "1";
+  static final String ENUM_PREFIX = "2";
+
   final Class<?> cls;
   final MetaStringBytes fullClassNameBytes;
   final MetaStringBytes packageNameBytes;
@@ -77,7 +85,7 @@ public class ClassInfo {
     if (cls != null && classResolver.getFury().getLanguage() != Language.JAVA) {
       this.fullClassNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
-              new MetaStringEncoder('.', '_').encode(cls.getName(), Encoding.UTF_8));
+              PACKAGE_ENCODER.encode(cls.getName(), Encoding.UTF_8));
     } else {
       this.fullClassNameBytes = null;
     }
@@ -85,13 +93,28 @@ public class ClassInfo {
         && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       String packageName = ReflectionUtils.getPackage(cls);
+      String className = ReflectionUtils.getClassNameWithoutPackage(cls);
+      if (cls.isArray()) {
+        Tuple2<Class<?>, Integer> componentInfo = TypeUtils.getArrayComponentInfo(cls);
+        Class<?> ctype = componentInfo.f0;
+        if (!ctype.isPrimitive()) { // primitive array has special format like [[[III.
+          String componentName = ctype.getName();
+          packageName = ReflectionUtils.getPackage(componentName);
+          String componentSimpleName = ReflectionUtils.getClassNameWithoutPackage(componentName);
+          String prefix = StringUtils.repeat(ARRAY_PREFIX, componentInfo.f1);
+          if (ctype.isEnum()) {
+            className = prefix + ENUM_PREFIX + componentSimpleName;
+          } else {
+            className = prefix + componentSimpleName;
+          }
+        }
+      } else if (cls.isEnum()) {
+        className = ENUM_PREFIX + className;
+      }
       this.packageNameBytes =
-          metaStringResolver.getOrCreateMetaStringBytes(
-              new MetaStringEncoder('.', '_').encode(packageName));
+          metaStringResolver.getOrCreateMetaStringBytes(PACKAGE_ENCODER.encode(packageName));
       this.classNameBytes =
-          metaStringResolver.getOrCreateMetaStringBytes(
-              new MetaStringEncoder('_', '$')
-                  .encode(ReflectionUtils.getClassNameWithoutPackage(cls)));
+          metaStringResolver.getOrCreateMetaStringBytes(TYPE_NAME_ENCODER.encode(className));
     } else {
       this.packageNameBytes = null;
       this.classNameBytes = null;
@@ -99,7 +122,7 @@ public class ClassInfo {
     if (tag != null) {
       this.typeTagBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
-              new MetaStringEncoder('.', '_').encode(tag, Encoding.UTF_8));
+              PACKAGE_ENCODER.encode(tag, Encoding.UTF_8));
     } else {
       this.typeTagBytes = null;
     }
