@@ -34,13 +34,13 @@ import org.apache.fury.exception.ClassNotCompatibleException;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.Type;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.FieldAccessor;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.Utils;
 

@@ -40,9 +40,9 @@ import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.test.bean.CollectionFields;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.ReflectionUtils;
 import org.testng.annotations.Test;
 

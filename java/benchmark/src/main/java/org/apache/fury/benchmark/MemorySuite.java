@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.util.StringUtils;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.BenchmarkMode;

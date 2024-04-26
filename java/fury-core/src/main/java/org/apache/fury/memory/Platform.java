@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.fury.util;
+package org.apache.fury.memory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.unsafe._JDKAccess;
 import sun.misc.Unsafe;
 

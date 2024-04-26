@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.collection.Tuple3;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.util.function.Functions;
 import org.apache.fury.util.unsafe._JDKAccess;
 

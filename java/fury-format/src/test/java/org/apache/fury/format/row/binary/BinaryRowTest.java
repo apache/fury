@@ -31,7 +31,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.testng.annotations.Test;
 
 public class BinaryRowTest {

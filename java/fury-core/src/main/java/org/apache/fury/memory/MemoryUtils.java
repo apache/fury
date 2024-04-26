@@ -22,7 +22,6 @@ package org.apache.fury.memory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 
 /** Memory utils for fury. */

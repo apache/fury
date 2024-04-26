@@ -39,7 +39,7 @@ import org.apache.fury.benchmark.state.generated.FBSImage;
 import org.apache.fury.benchmark.state.generated.FBSMedia;
 import org.apache.fury.benchmark.state.generated.FBSMediaContent;
 import org.apache.fury.benchmark.state.generated.FBSSample;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;

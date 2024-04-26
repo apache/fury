@@ -24,7 +24,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.InsecureException;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

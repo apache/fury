@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.util.unsafe._JDKAccess;
 
 /** Serializers for jdk9+ java.util.ImmutableCollections. */

@@ -25,7 +25,7 @@ import java.nio.channels.ReadableByteChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.util.Preconditions;
 
 @NotThreadSafe
