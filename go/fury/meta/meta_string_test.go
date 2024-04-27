@@ -34,7 +34,7 @@ func TestEncodeAndDecodeMetaString(t *testing.T) {
 		"HelloWorld__123.2024":           6,
 		"MediaContent":                   5,
 		"Apple_banana":                   5,
-		"你好，世界":                           0, // not used
+		"你好，世界":                          0, // not used
 	}
 	str2encoding := map[string]Encoding{
 		"abc_def":                        LOWER_SPECIAL,
@@ -42,7 +42,7 @@ func TestEncodeAndDecodeMetaString(t *testing.T) {
 		"MediaContent":                   ALL_TO_LOWER_SPECIAL,
 		"HelloWorld__123.2024":           LOWER_UPPER_DIGIT_SPECIAL,
 		"Apple_banana":                   FIRST_TO_LOWER_SPECIAL,
-		"你好，世界":                           UTF_8,
+		"你好，世界":                          UTF_8,
 	}
 	encoder := NewEncoder('.', '_')
 	decoder := NewDecoder('.', '_')
