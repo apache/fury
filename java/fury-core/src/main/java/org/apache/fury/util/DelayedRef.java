@@ -43,7 +43,7 @@ public class DelayedRef<T> {
 
   public T get() {
     T t = weakRef.get();
-    if (t != null){
+    if (t != null) {
       if (softRef.get() == null) {
         // may be null when a full gc happened.
         softRef = new SoftReference<>(t);
