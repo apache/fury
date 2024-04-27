@@ -22,9 +22,9 @@ package org.apache.fury.benchmark;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 import org.openjdk.jmh.Main;
 
