@@ -20,7 +20,9 @@
 package org.apache.fury.meta;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertTrue;
 import static org.testng.AssertJUnit.assertSame;
 
 import org.apache.fury.util.StringUtils;
@@ -187,5 +189,29 @@ public class MetaStringTest {
     String decodedString =
         decoder.decode(encodedMetaString.getBytes(), encodedMetaString.getEncoding());
     assertEquals(decodedString, testString);
+  }
+
+  @Test
+  public void testStripLastChar() {
+    String testString = "abc"; // encoded as 1|00000|00, 001|00010, exactly two bytes
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    MetaString encodedMetaString = encoder.encode(testString);
+    assertFalse(encodedMetaString.stripLastChar());
+
+    testString =
+        "abcde"; // encoded as 1|00000|00, 001|00010, 00011|001, 00xxxxxx, stripped last char
+    encodedMetaString = encoder.encode(testString);
+    assertTrue(encodedMetaString.stripLastChar());
+  }
+
+  @Test
+  public void testEmptyString() {
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    MetaString metaString = encoder.encode("");
+    assertEquals(metaString.getBytes(), new byte[0]);
+
+    MetaStringDecoder decoder = new MetaStringDecoder('_', '$');
+    String decoded = decoder.decode(metaString.getBytes(), metaString.getEncoding());
+    assertEquals(decoded, "");
   }
 }
