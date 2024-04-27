@@ -78,7 +78,7 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     int newSize;
     int targetSize = buffer.size() + minFillSize;
     newSize =
-        targetSize < BUFFER_GROW_STEP_THRESHOLD
+        targetSize < MemoryBuffer.BUFFER_GROW_STEP_THRESHOLD
             ? targetSize << 2
             : (int) Math.min(targetSize * 1.5d, Integer.MAX_VALUE);
     byte[] newBuffer = new byte[newSize];
