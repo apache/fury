@@ -1219,7 +1219,7 @@ public final class MemoryBuffer {
 
   private void growBuffer(int length) {
     int newSize =
-      length < 104857600 ? length << 2 : (int) Math.min(length * 1.5d, Integer.MAX_VALUE);
+        length < 104857600 ? length << 2 : (int) Math.min(length * 1.5d, Integer.MAX_VALUE);
     byte[] data = new byte[newSize];
     copyToUnsafe(0, data, Platform.BYTE_ARRAY_OFFSET, size());
     initHeapBuffer(data, 0, data.length);
