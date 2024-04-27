@@ -34,8 +34,8 @@ import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.io.FuryStreamReader;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.test.bean.BeanA;
-import org.apache.fury.util.ReflectionUtils;
 import org.testng.annotations.Test;
 
 public class StreamTest {

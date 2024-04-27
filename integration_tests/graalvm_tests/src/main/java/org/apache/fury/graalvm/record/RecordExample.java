@@ -35,12 +35,17 @@ public class RecordExample {
     fury.register(Record.class, true);
   }
 
-  public static void main(String[] args) {
+  static void test(Fury fury) {
     Record record = new Record(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
     System.out.println(record);
     byte[] bytes = fury.serialize(record);
     Object o = fury.deserialize(bytes);
     System.out.println(o);
     Preconditions.checkArgument(record.equals(o));
+  }
+
+  public static void main(String[] args) {
+    test(fury);
+    System.out.println("RecordExample succeed");
   }
 }

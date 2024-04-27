@@ -36,8 +36,8 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.BigEndian;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.util.Platform;
 
 /**
  * Serializes objects using Java's built in serialization to be compatible with java serialization.

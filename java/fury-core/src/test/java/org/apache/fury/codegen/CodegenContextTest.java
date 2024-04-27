@@ -19,10 +19,10 @@
 
 package org.apache.fury.codegen;
 
-import com.google.common.reflect.TypeToken;
 import java.util.List;
 import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.codegen.Expression.Literal;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.TypeUtils;
 import org.testng.Assert;
@@ -36,14 +36,14 @@ public class CodegenContextTest {
 
   @Test
   public void type() {
-    TypeToken<List<List<String>>> typeToken = new TypeToken<List<List<String>>>() {};
+    TypeRef<List<List<String>>> typeRef = new TypeRef<List<List<String>>>() {};
     {
       CodegenContext ctx = new CodegenContext();
       ctx.addImport(List.class);
       Assert.assertEquals("List", ctx.type(List.class));
     }
     CodegenContext ctx = new CodegenContext();
-    String type = ctx.type(typeToken);
+    String type = ctx.type(typeRef);
     Assert.assertEquals("java.util.List", type);
     Assert.assertEquals("int[][]", ctx.type(int[][].class));
   }

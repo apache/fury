@@ -223,6 +223,7 @@ cdef int8_t STRING_CLASS_ID = 4
 cdef int8_t PICKLE_CLASS_ID = 5
 cdef int8_t PICKLE_STRONG_CACHE_CLASS_ID = 6
 cdef int8_t PICKLE_CACHE_CLASS_ID = 7
+cdef int16_t MAGIC_NUMBER = 0x62D4
 # `NOT_NULL_VALUE_FLAG` + `CLASS_ID<<1` in little-endian order
 cdef int32_t NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
                                    (PYINT_CLASS_ID << 9)
@@ -899,6 +900,8 @@ cdef class Fury:
         else:
             self.buffer.writer_index = 0
             buffer = self.buffer
+        if self.language == Language.XLANG:
+            buffer.write_int16(MAGIC_NUMBER)
         cdef int32_t mask_index = buffer.writer_index
         # 1byte used for bit mask
         buffer.grow(1)
@@ -1058,6 +1061,13 @@ cdef class Fury:
             self.unpickler = Unpickler(buffer)
         if unsupported_objects is not None:
             self._unsupported_objects = iter(unsupported_objects)
+        if self.language == Language.XLANG:
+            magic_numer = buffer.read_int16()
+            assert magic_numer == MAGIC_NUMBER, (
+                f"The fury xlang serialization must start with magic number {hex(MAGIC_NUMBER)}. "
+                "Please check whether the serialization is based on the xlang protocol and the "
+                "data didn't corrupt."
+            )
         cdef int32_t reader_index = buffer.reader_index
         buffer.reader_index = reader_index + 1
         if get_bit(buffer, reader_index, 0):

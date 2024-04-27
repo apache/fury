@@ -36,10 +36,10 @@ import org.apache.fury.io.MemoryBufferWritableChannel;
 import org.apache.fury.io.MockWritableChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.serializer.Serializers.CrossLanguageCompatibleSerializer;
 import org.apache.fury.type.Type;
-import org.apache.fury.util.Platform;
 
 /** Serializers for apache arrow. */
 public class ArrowSerializers {

@@ -31,8 +31,6 @@ import org.apache.fury.meta.MetaString;
  * share common immutable datastructure globally across multiple fury.
  */
 public final class MetaStringResolver {
-  public static final byte USE_STRING_VALUE = 0;
-  public static final byte USE_STRING_ID = 1;
   private static final int initialCapacity = 8;
   // use a lower load factor to minimize hash collision
   private static final float furyMapLoadFactor = 0.25f;

@@ -19,9 +19,9 @@
 
 package org.apache.fury.benchmark;
 
+import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.serializer.StringSerializer;
-import org.apache.fury.util.Platform;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 import org.openjdk.jmh.Main;
 

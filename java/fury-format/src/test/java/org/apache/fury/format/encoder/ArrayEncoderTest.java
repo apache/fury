@@ -19,13 +19,13 @@
 
 package org.apache.fury.format.encoder;
 
-import com.google.common.reflect.TypeToken;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.fury.format.row.binary.BinaryArray;
+import org.apache.fury.reflect.TypeRef;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -74,7 +74,7 @@ public class ArrayEncoderTest {
     }
 
     ArrayEncoder<List<List<List<RowEncoderTest.Bar>>>> encoder =
-        Encoders.arrayEncoder(new TypeToken<List<List<List<RowEncoderTest.Bar>>>>() {});
+        Encoders.arrayEncoder(new TypeRef<List<List<List<RowEncoderTest.Bar>>>>() {});
     BinaryArray array = encoder.toArray(bars);
     List<List<List<RowEncoderTest.Bar>>> newBars = encoder.fromArray(array);
 
@@ -105,7 +105,7 @@ public class ArrayEncoderTest {
 
     ArrayEncoder<List<List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>>> encoder =
         Encoders.arrayEncoder(
-            new TypeToken<List<List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>>>() {});
+            new TypeRef<List<List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>>>() {});
     BinaryArray array = encoder.toArray(lmap);
     List<List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>> newLmap =
         encoder.fromArray(array);

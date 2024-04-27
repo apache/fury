@@ -38,11 +38,11 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.Utils;
 import org.apache.fury.util.function.ToByteFunction;
 import org.apache.fury.util.function.ToCharFunction;
 import org.apache.fury.util.function.ToFloatFunction;
@@ -116,7 +116,7 @@ public class _JDKAccess {
     try {
       return makeFunction(lookup, handle, functionInterface);
     } catch (Throwable e) {
-      Utils.ignore(e);
+      ExceptionUtils.ignore(e);
       throw new IllegalStateException();
     }
   }

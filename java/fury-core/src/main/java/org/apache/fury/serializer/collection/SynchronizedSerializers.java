@@ -39,9 +39,9 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.Serializer;
-import org.apache.fury.util.Platform;
-import org.apache.fury.util.Utils;
+import org.apache.fury.util.ExceptionUtils;
 
 /** Serializer for synchronized Collections and Maps created via Collections. */
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -203,7 +203,7 @@ public class SynchronizedSerializers {
         fury.registerSerializer(factory.f0, createSerializer(fury, factory));
       }
     } catch (Throwable e) {
-      Utils.ignore(e);
+      ExceptionUtils.ignore(e);
     }
   }
 }

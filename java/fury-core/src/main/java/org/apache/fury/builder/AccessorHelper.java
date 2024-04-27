@@ -33,18 +33,16 @@ import org.apache.fury.codegen.CompileUnit;
 import org.apache.fury.codegen.JaninoUtils;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.util.ClassLoaderUtils;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.record.RecordUtils;
 
 /**
  * Define accessor helper methods in beanClass's classloader and same package to avoid reflective
  * call overhead. {@link sun.misc.Unsafe} is another method to avoid reflection cost.
- *
- * @see org.apache.fury.util.UnsafeFieldAccessor
  */
 public class AccessorHelper {
   private static final Logger LOG = LoggerFactory.getLogger(AccessorHelper.class);

@@ -39,7 +39,7 @@ import org.apache.fury.benchmark.state.generated.FBSImage;
 import org.apache.fury.benchmark.state.generated.FBSMedia;
 import org.apache.fury.benchmark.state.generated.FBSMediaContent;
 import org.apache.fury.benchmark.state.generated.FBSSample;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.ByteBufferUtil;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
@@ -439,7 +439,7 @@ public class FlatBuffersState {
       } else {
         deserializedData = ByteBuffer.wrap(data);
       }
-      Platform.clearBuffer(deserializedData);
+      ByteBufferUtil.clearBuffer(deserializedData);
       Object newObj = deserializeFunc.apply(deserializedData);
       Preconditions.checkArgument(object.equals(newObj));
     }

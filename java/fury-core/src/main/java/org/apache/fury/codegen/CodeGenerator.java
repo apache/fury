@@ -40,12 +40,12 @@ import org.apache.fury.collection.Collections;
 import org.apache.fury.collection.MultiKeyWeakMap;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.util.ClassLoaderUtils;
 import org.apache.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
 import org.apache.fury.util.DelayedRef;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 
 /**

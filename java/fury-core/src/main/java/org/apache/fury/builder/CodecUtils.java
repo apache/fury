@@ -19,12 +19,12 @@
 
 package org.apache.fury.builder;
 
-import com.google.common.reflect.TypeToken;
 import java.util.Collections;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CompileUnit;
 import org.apache.fury.meta.ClassDef;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
 import org.apache.fury.serializer.Serializer;
@@ -47,7 +47,7 @@ public class CodecUtils {
       Fury fury, Class<T> cls, ClassDef classDef) {
     Preconditions.checkNotNull(fury);
     MetaSharedCodecBuilder codecBuilder =
-        new MetaSharedCodecBuilder(TypeToken.of(cls), fury, classDef);
+        new MetaSharedCodecBuilder(TypeRef.of(cls), fury, classDef);
     return loadOrGenCodecClass(cls, fury, codecBuilder);
   }
 
@@ -61,7 +61,7 @@ public class CodecUtils {
       Class<T> cls, Fury fury, FieldResolver fieldResolver, Class<?> parentSerializerClass) {
     Preconditions.checkNotNull(fury);
     BaseObjectCodecBuilder codecBuilder =
-        new CompatibleCodecBuilder(TypeToken.of(cls), fury, fieldResolver, parentSerializerClass);
+        new CompatibleCodecBuilder(TypeRef.of(cls), fury, fieldResolver, parentSerializerClass);
     return loadOrGenCodecClass(cls, fury, codecBuilder);
   }
 

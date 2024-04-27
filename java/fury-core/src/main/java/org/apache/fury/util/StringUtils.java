@@ -184,4 +184,12 @@ public class StringUtils {
       sb.setCharAt(i, tmp);
     }
   }
+
+  public static String repeat(String str, int numRepeat) {
+    StringBuilder builder = new StringBuilder(numRepeat * str.length());
+    for (int i = 0; i < numRepeat; i++) {
+      builder.append(str);
+    }
+    return builder.toString();
+  }
 }

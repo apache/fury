@@ -56,6 +56,12 @@ public final class UnexistedClassSerializers {
   /** Ensure no fields here to avoid conflicts with peer class fields. */
   public static class UnexistedSkipClass implements UnexistedClass {}
 
+  public static class UnexistedArrayClass implements UnexistedClass {}
+
+  public static class UnexistedEnumArrayClass implements UnexistedClass {}
+
+  public static class UnexistedSkipEnumClass implements UnexistedClass {}
+
   public static class UnexistedMetaSharedClass extends LazyMap implements UnexistedClass {
     private final ClassDef classDef;
 
@@ -237,6 +243,18 @@ public final class UnexistedClassSerializers {
       }
       obj.setEntries(entries);
       return obj;
+    }
+  }
+
+  public static final class UnexistedEnumClassSerializer extends Serializer {
+
+    public UnexistedEnumClassSerializer(Fury fury) {
+      super(fury, UnexistedSkipEnumClass.class);
+    }
+
+    @Override
+    public Object read(MemoryBuffer buffer) {
+      return buffer.readVarUint32Small7();
     }
   }
 }

@@ -95,7 +95,7 @@ public final class ObjectArray {
    */
   public static void clearObjectArray(Object[] objects, int start, int size) {
     if (size < COPY_THRESHOLD) {
-      Arrays.fill(objects, start, size, null);
+      Arrays.fill(objects, start, start + size, null);
     } else {
       if (size < NIL_ARRAY_SIZE) {
         System.arraycopy(NIL_ARRAY, 0, objects, start, size);

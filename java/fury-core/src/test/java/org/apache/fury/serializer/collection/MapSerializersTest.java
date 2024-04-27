@@ -26,7 +26,6 @@ import static org.apache.fury.collection.Collections.ofHashMap;
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.reflect.TypeToken;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -49,6 +48,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.collection.MapEntry;
 import org.apache.fury.config.Language;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.collection.CollectionSerializersTest.TestEnum;
 import org.apache.fury.test.bean.MapFields;
 import org.apache.fury.type.GenericType;
@@ -94,7 +94,7 @@ public class MapSerializersTest extends FuryTestBase {
             .build();
     Map<String, Integer> data = new HashMap<>(ImmutableMap.of("a", 1, "b", 2));
     byte[] bytes1 = fury.serialize(data);
-    fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<Map<String, Integer>>() {}));
+    fury.getGenerics().pushGenericType(GenericType.build(new TypeRef<Map<String, Integer>>() {}));
     byte[] bytes2 = fury.serialize(data);
     Assert.assertTrue(bytes1.length > bytes2.length);
     fury.getGenerics().popGenericType();
@@ -112,7 +112,7 @@ public class MapSerializersTest extends FuryTestBase {
     Map<String, Integer> data = new TreeMap<>(ImmutableMap.of("a", 1, "b", 2));
     serDeCheckSerializer(fury, data, "SortedMap");
     byte[] bytes1 = fury.serialize(data);
-    fury.getGenerics().pushGenericType(GenericType.build(new TypeToken<Map<String, Integer>>() {}));
+    fury.getGenerics().pushGenericType(GenericType.build(new TypeRef<Map<String, Integer>>() {}));
     byte[] bytes2 = fury.serialize(data);
     Assert.assertTrue(bytes1.length > bytes2.length);
     fury.getGenerics().popGenericType();

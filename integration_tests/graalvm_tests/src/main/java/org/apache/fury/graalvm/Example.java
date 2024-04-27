@@ -33,7 +33,7 @@ public class Example {
     fury.register(Foo.class, true);
   }
 
-  public static void main(String[] args) {
+  static void test(Fury fury) {
     Preconditions.checkArgument("abc".equals(fury.deserialize(fury.serialize("abc"))));
     Preconditions.checkArgument(
         List.of(1, 2, 3).equals(fury.deserialize(fury.serialize(List.of(1, 2, 3)))));
@@ -46,5 +46,10 @@ public class Example {
     System.out.println(foo);
     System.out.println(o);
     Preconditions.checkArgument(foo.equals(o));
+  }
+
+  public static void main(String[] args) {
+    test(fury);
+    System.out.println("Example succeed");
   }
 }

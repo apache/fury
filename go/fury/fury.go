@@ -90,6 +90,8 @@ const (
 	isOutOfBandFlag
 )
 
+const MAGIC_NUMBER int16 = 0x62D4
+
 type Fury struct {
 	typeResolver      *typeResolver
 	refResolver       *RefResolver
@@ -120,6 +122,11 @@ func (f *Fury) Serialize(buf *ByteBuffer, v interface{}, callback BufferCallback
 	if buffer == nil {
 		buffer = f.buffer
 		buffer.writerIndex = 0
+	}
+	if f.language == XLANG {
+		buffer.WriteInt16(MAGIC_NUMBER)
+	} else {
+		return fmt.Errorf("%d language is not supported", f.language)
 	}
 	var bitmap byte = 0
 	if isNil(reflect.ValueOf(v)) {
@@ -310,6 +317,17 @@ func (f *Fury) Unmarshal(data []byte, v interface{}) error {
 
 func (f *Fury) Deserialize(buf *ByteBuffer, v interface{}, buffers []*ByteBuffer) error {
 	defer f.resetRead()
+	if f.language == XLANG {
+		magicNumber := buf.ReadInt16()
+		if magicNumber != MAGIC_NUMBER {
+			return fmt.Errorf(
+				"the fury xlang serialization must start with magic number 0x%x. "+
+					"Please check whether the serialization is based on the xlang protocol and the data didn't corrupt",
+				MAGIC_NUMBER)
+		}
+	} else {
+		return fmt.Errorf("%d language is not supported", f.language)
+	}
 	var bitmap = buf.ReadByte_()
 	if bitmap&isNilFlag == isNilFlag {
 		return nil
