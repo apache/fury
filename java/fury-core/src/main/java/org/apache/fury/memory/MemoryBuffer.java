@@ -60,6 +60,7 @@ import sun.misc.Unsafe;
  * DesiredMethodLimit,MaxRecursiveInlineLevel,FreqInlineSize,MaxInlineSize
  */
 public final class MemoryBuffer {
+  public static final int BUFFER_GROW_STEP_THRESHOLD = 100 * 1024 * 1024;
   private static final Unsafe UNSAFE = Platform.UNSAFE;
   private static final boolean LITTLE_ENDIAN = (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN);
 
@@ -1204,16 +1205,27 @@ public final class MemoryBuffer {
 
   /** For off-heap buffer, this will make a heap buffer internally. */
   public void grow(int neededSize) {
-    ensure(writerIndex + neededSize);
+    int length = writerIndex + neededSize;
+    if (length > size) {
+      growBuffer(length);
+    }
   }
 
   /** For off-heap buffer, this will make a heap buffer internally. */
   public void ensure(int length) {
     if (length > size) {
-      byte[] data = new byte[length * 2];
-      copyToUnsafe(0, data, Platform.BYTE_ARRAY_OFFSET, size());
-      initHeapBuffer(data, 0, data.length);
+      growBuffer(length);
     }
+  }
+
+  private void growBuffer(int length) {
+    int newSize =
+        length < BUFFER_GROW_STEP_THRESHOLD
+            ? length << 2
+            : (int) Math.min(length * 1.5d, Integer.MAX_VALUE);
+    byte[] data = new byte[newSize];
+    copyToUnsafe(0, data, Platform.BYTE_ARRAY_OFFSET, size());
+    initHeapBuffer(data, 0, data.length);
   }
 
   // -------------------------------------------------------------------------
