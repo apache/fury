@@ -1210,7 +1210,8 @@ public final class MemoryBuffer {
   /** For off-heap buffer, this will make a heap buffer internally. */
   public void ensure(int length) {
     if (length > size) {
-      byte[] data = new byte[length * 2];
+      int newSize = length < 104857600 ? length << 2 : (int) Math.min(length * 1.5d, Integer.MAX_VALUE);
+      byte[] data = new byte[newSize];
       copyToUnsafe(0, data, Platform.BYTE_ARRAY_OFFSET, size());
       initHeapBuffer(data, 0, data.length);
     }
