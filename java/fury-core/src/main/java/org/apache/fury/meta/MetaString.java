@@ -79,7 +79,7 @@ public class MetaString {
     this.bytes = bytes;
     if (encoding != Encoding.UTF_8) {
       Preconditions.checkArgument(bytes.length > 0);
-      this.stripLastChar = (bytes[0] & 0b1) != 0;
+      this.stripLastChar = (bytes[0] & 0x80) != 0;
     } else {
       this.stripLastChar = false;
     }
