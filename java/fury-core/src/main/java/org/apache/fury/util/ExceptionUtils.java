@@ -20,6 +20,7 @@
 package org.apache.fury.util;
 
 import java.lang.reflect.Field;
+import org.apache.fury.reflect.ReflectionUtils;
 
 /** Util for java exceptions. */
 public class ExceptionUtils {

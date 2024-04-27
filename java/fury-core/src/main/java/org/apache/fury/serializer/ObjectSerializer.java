@@ -34,6 +34,8 @@ import org.apache.fury.collection.Tuple3;
 import org.apache.fury.exception.FuryException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.FieldAccessor;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
@@ -44,8 +46,6 @@ import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.FinalObjectTypeStub;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
-import org.apache.fury.util.FieldAccessor;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.record.RecordInfo;
 import org.apache.fury.util.record.RecordUtils;
 

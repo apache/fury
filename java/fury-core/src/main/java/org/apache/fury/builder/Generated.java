@@ -26,10 +26,10 @@ import java.util.Objects;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.serializer.CompatibleSerializerBase;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Since janino doesn't support generics, we use {@link Object} to represent object type rather

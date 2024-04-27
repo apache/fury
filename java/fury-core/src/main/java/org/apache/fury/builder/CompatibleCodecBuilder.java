@@ -65,6 +65,7 @@ import org.apache.fury.codegen.ExpressionOptimizer;
 import org.apache.fury.codegen.ExpressionUtils;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
@@ -77,7 +78,6 @@ import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.function.SerializableSupplier;
 import org.apache.fury.util.record.RecordUtils;
 

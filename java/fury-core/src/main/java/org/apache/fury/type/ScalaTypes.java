@@ -22,8 +22,8 @@ package org.apache.fury.type;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
-import org.apache.fury.util.ReflectionUtils;
 
 /** Scala types utils using reflection without dependency on scala library. */
 @SuppressWarnings({"unchecked", "rawtypes"})
