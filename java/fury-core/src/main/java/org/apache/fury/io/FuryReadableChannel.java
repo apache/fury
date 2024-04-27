@@ -55,8 +55,10 @@ public class FuryReadableChannel implements FuryStreamReader, ReadableByteChanne
       int position = byteBuf.position();
       int newLimit = position + minFillSize;
       if (newLimit > byteBuf.capacity()) {
-        int newSize = newLimit < BUFFER_GROW_STEP_THRESHOLD ? newLimit << 2 :
-          (int) Math.min(newLimit * 1.5d, Integer.MAX_VALUE);
+        int newSize =
+            newLimit < BUFFER_GROW_STEP_THRESHOLD
+                ? newLimit << 2
+                : (int) Math.min(newLimit * 1.5d, Integer.MAX_VALUE);
         ByteBuffer newByteBuf = ByteBuffer.allocateDirect(newSize);
         byteBuf.position(0);
         newByteBuf.put(byteBuf);
