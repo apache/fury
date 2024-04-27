@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
-import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 import org.codehaus.commons.compiler.util.reflect.ByteArrayClassLoader;
 import org.codehaus.commons.compiler.util.resource.MapResourceCreator;
@@ -50,6 +50,16 @@ import org.codehaus.janino.util.ClassFile;
 /** A util to compile code to bytecode and create classloader to load generated class. */
 public class JaninoUtils {
   private static final Logger LOG = LoggerFactory.getLogger(JaninoUtils.class);
+
+  public static Class<?> compileClass(
+      ClassLoader loader, String pkg, String className, String code) {
+    ByteArrayClassLoader classLoader = compile(loader, new CompileUnit(pkg, className, code));
+    try {
+      return classLoader.loadClass(StringUtils.isBlank(pkg) ? className : pkg + "." + className);
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   public static ByteArrayClassLoader compile(
       ClassLoader parentClassLoader, CompileUnit... compileUnits) {

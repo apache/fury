@@ -19,13 +19,13 @@
 
 package org.apache.fury.format.encoder;
 
-import com.google.common.reflect.TypeToken;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.fury.format.row.binary.BinaryMap;
+import org.apache.fury.reflect.TypeRef;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -72,7 +72,7 @@ public class MapEncoderTest {
     }
 
     MapEncoder<Map<String, List<List<RowEncoderTest.Bar>>>> encoder =
-        Encoders.mapEncoder(new TypeToken<Map<String, List<List<RowEncoderTest.Bar>>>>() {});
+        Encoders.mapEncoder(new TypeRef<Map<String, List<List<RowEncoderTest.Bar>>>>() {});
     BinaryMap array = encoder.toMap(bars);
     Map<String, List<List<RowEncoderTest.Bar>>> newBars = encoder.fromMap(array);
 
@@ -101,8 +101,7 @@ public class MapEncoderTest {
 
     MapEncoder<Map<String, List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>>> encoder =
         Encoders.mapEncoder(
-            new TypeToken<
-                Map<String, List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>>>() {});
+            new TypeRef<Map<String, List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>>>() {});
     BinaryMap array = encoder.toMap(lmap);
     Map<String, List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>> newLmap =
         encoder.fromMap(array);

@@ -36,3 +36,5 @@ javascript/**/node_modules/
 javascript/**/build
 MODULE.bazel
 MODULE.bazel.lock
+.DS_Store
+**/.DS_Store

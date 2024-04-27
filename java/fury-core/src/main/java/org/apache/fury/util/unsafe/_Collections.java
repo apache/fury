@@ -20,7 +20,7 @@
 package org.apache.fury.util.unsafe;
 
 import java.util.ArrayList;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 
 /** Unsafe collection utils. */
 // CHECKSTYLE.OFF:TypeName

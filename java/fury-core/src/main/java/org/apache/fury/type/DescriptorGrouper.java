@@ -28,7 +28,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.function.Function;
-import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.util.record.RecordUtils;
 
 /**
@@ -215,7 +215,7 @@ public class DescriptorGrouper {
     if (readMethod == null && d.getWriteMethod() == null) {
       return d;
     }
-    return d.copy(d.getTypeToken(), readMethod, null);
+    return d.copy(d.getTypeRef(), readMethod, null);
   }
 
   public static DescriptorGrouper createDescriptorGrouper(

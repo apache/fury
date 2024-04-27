@@ -34,15 +34,15 @@ import org.apache.fury.Fury;
 import org.apache.fury.collection.LazyMap;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.ReplaceResolveSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.type.Type;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Serializers for classes implements {@link Collection}. All map serializers must extends {@link

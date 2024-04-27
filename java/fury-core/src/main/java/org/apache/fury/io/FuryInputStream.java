@@ -24,7 +24,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.Platform;
 
 /**
  * A buffered stream by fury. Do not use original {@link InputStream} when this stream object
@@ -53,24 +53,15 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     MemoryBuffer buffer = this.buffer;
     byte[] heapMemory = buffer.getHeapMemory();
     int offset = buffer.size();
-    int targetSize = offset + minFillSize;
-    if (targetSize > heapMemory.length) {
-      int newSize;
-      if (targetSize < BUFFER_GROW_STEP_THRESHOLD) {
-        newSize = targetSize << 2;
-      } else {
-        newSize = (int) (targetSize * 1.5);
-      }
-      byte[] newBuffer = new byte[newSize];
-      System.arraycopy(heapMemory, 0, newBuffer, 0, buffer.size());
-      buffer.initHeapBuffer(newBuffer, 0, buffer.size());
-      heapMemory = newBuffer;
+    if (offset + minFillSize > heapMemory.length) {
+      heapMemory = growBuffer(minFillSize, buffer);
     }
     try {
       int read;
-      read = stream.read(heapMemory, offset, Math.min(stream.available(), heapMemory.length));
+      int len = heapMemory.length - offset;
+      read = stream.read(heapMemory, offset, len);
       while (read < minFillSize) {
-        int newRead = stream.read(heapMemory, offset + read, minFillSize - read);
+        int newRead = stream.read(heapMemory, offset + read, len - read);
         if (newRead < 0) {
           throw new IndexOutOfBoundsException("No enough data in the stream " + stream);
         }
@@ -81,6 +72,21 @@ public class FuryInputStream extends InputStream implements FuryStreamReader {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private static byte[] growBuffer(int minFillSize, MemoryBuffer buffer) {
+    int newSize;
+    int targetSize = buffer.size() + minFillSize;
+    newSize =
+        targetSize < MemoryBuffer.BUFFER_GROW_STEP_THRESHOLD
+            ? targetSize << 2
+            : (int) Math.min(targetSize * 1.5d, Integer.MAX_VALUE);
+    byte[] newBuffer = new byte[newSize];
+    byte[] heapMemory = buffer.getHeapMemory();
+    System.arraycopy(heapMemory, 0, newBuffer, 0, buffer.size());
+    buffer.initHeapBuffer(newBuffer, 0, buffer.size());
+    heapMemory = newBuffer;
+    return heapMemory;
   }
 
   @Override

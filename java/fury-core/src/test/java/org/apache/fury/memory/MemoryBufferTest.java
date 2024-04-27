@@ -24,7 +24,6 @@ import static org.testng.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
-import org.apache.fury.util.Platform;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -175,19 +174,20 @@ public class MemoryBufferTest {
       MemoryBuffer buffer = MemoryUtils.wrap(direct);
       assertEquals(buffer.sliceAsByteBuffer(), direct);
       Assert.assertEquals(
-          Platform.getAddress(buffer.sliceAsByteBuffer()), Platform.getAddress(direct) + 5);
+          ByteBufferUtil.getAddress(buffer.sliceAsByteBuffer()),
+          ByteBufferUtil.getAddress(direct) + 5);
     }
     {
       long address = 0;
       try {
         address = Platform.allocateMemory(10);
-        ByteBuffer direct = Platform.wrapDirectBuffer(address, 10);
+        ByteBuffer direct = ByteBufferUtil.wrapDirectBuffer(address, 10);
         direct.put(data);
         direct.flip();
         direct.position(5);
         MemoryBuffer buffer = MemoryUtils.wrap(direct);
         assertEquals(buffer.sliceAsByteBuffer(), direct);
-        assertEquals(Platform.getAddress(buffer.sliceAsByteBuffer()), address + 5);
+        assertEquals(ByteBufferUtil.getAddress(buffer.sliceAsByteBuffer()), address + 5);
       } finally {
         Platform.freeMemory(address);
       }

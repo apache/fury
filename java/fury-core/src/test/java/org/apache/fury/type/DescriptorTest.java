@@ -19,7 +19,6 @@
 
 package org.apache.fury.type;
 
-import com.google.common.reflect.TypeToken;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.lang.reflect.Field;
@@ -28,6 +27,7 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.stream.Collectors;
 import org.apache.fury.codegen.CodeGenerator;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.test.bean.BeanA;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -49,8 +49,8 @@ public class DescriptorTest {
     SortedMap<Field, Descriptor> map = Descriptor.buildBeanedDescriptorsMap(BeanA.class, true);
     Assert.assertTrue(map.containsKey(BeanA.class.getDeclaredField("f1")));
     Assert.assertEquals(
-        map.get(BeanA.class.getDeclaredField("doubleList")).getTypeToken(),
-        new TypeToken<List<Double>>() {});
+        map.get(BeanA.class.getDeclaredField("doubleList")).getTypeRef(),
+        new TypeRef<List<Double>>() {});
     Assert.assertNotNull(map.get(BeanA.class.getDeclaredField("longStringField")).getReadMethod());
     Assert.assertEquals(
         map.get(BeanA.class.getDeclaredField("longStringField")).getWriteMethod(),
@@ -63,7 +63,7 @@ public class DescriptorTest {
   @Test
   public void getDescriptorsTest() throws IntrospectionException {
     Class<?> clz = BeanA.class;
-    TypeToken<?> typeToken = TypeToken.of(clz);
+    TypeRef<?> typeRef = TypeRef.of(clz);
     // sort to fix field order
     List<?> descriptors =
         Arrays.stream(Introspector.getBeanInfo(clz).getPropertyDescriptors())
@@ -72,8 +72,8 @@ public class DescriptorTest {
             .filter(d -> d.getReadMethod() != null && d.getWriteMethod() != null)
             .map(
                 p -> {
-                  TypeToken<?> returnType = typeToken.method(p.getReadMethod()).getReturnType();
-                  return Arrays.<Object>asList(
+                  TypeRef<?> returnType = TypeRef.of(p.getReadMethod().getReturnType());
+                  return Arrays.asList(
                       p.getName(),
                       returnType,
                       p.getReadMethod().getName(),

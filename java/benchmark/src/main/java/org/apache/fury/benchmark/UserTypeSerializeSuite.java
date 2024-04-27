@@ -33,7 +33,7 @@ import org.apache.fury.benchmark.state.KryoState;
 import org.apache.fury.benchmark.state.ObjectType;
 import org.apache.fury.benchmark.state.ProtoBuffersState;
 import org.apache.fury.benchmark.state.ProtostuffState;
-import org.apache.fury.util.Platform;
+import org.apache.fury.memory.ByteBufferUtil;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -133,7 +133,7 @@ public class UserTypeSerializeSuite {
 
   @Benchmark
   public Object flatbuffers_serialize(FlatBuffersState.FlatBuffersUserTypeState state) {
-    Platform.clearBuffer(state.directBuffer);
+    ByteBufferUtil.clearBuffer(state.directBuffer);
     if (state.objectType == ObjectType.SAMPLE) {
       return FlatBuffersState.serializeSample((Sample) state.object, state.directBuffer);
     } else {

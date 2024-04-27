@@ -1,5 +1,5 @@
 ---
-title: Xlang Object Graph Guide
+title: Xlang Serialization Guide
 sidebar_position: 2
 id: xlang_object_graph_guide
 ---

@@ -89,6 +89,9 @@ logger = logging.getLogger(__name__)
 DEFAULT_DYNAMIC_WRITE_STRING_ID = -1
 
 
+MAGIC_NUMBER = 0x62D4
+
+
 class MetaStringBytes:
     __slots__ = (
         "data",
@@ -697,6 +700,8 @@ class Fury:
         else:
             self.buffer.writer_index = 0
             buffer = self.buffer
+        if self.language == Language.XLANG:
+            buffer.write_int16(MAGIC_NUMBER)
         mask_index = buffer.writer_index
         # 1byte used for bit mask
         buffer.grow(1)
@@ -843,6 +848,12 @@ class Fury:
             self.unpickler = Unpickler(buffer)
         if unsupported_objects is not None:
             self._unsupported_objects = iter(unsupported_objects)
+        if self.language == Language.XLANG:
+            magic_numer = buffer.read_int16()
+            assert magic_numer == MAGIC_NUMBER, (
+                f"The fury xlang serialization must start with magic number {hex(MAGIC_NUMBER)}. "
+                "Please check whether the serialization is based on the xlang protocol and the data didn't corrupt."
+            )
         reader_index = buffer.reader_index
         buffer.reader_index = reader_index + 1
         if get_bit(buffer, reader_index, 0):

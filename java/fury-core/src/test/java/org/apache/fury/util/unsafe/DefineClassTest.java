@@ -22,8 +22,8 @@ package org.apache.fury.util.unsafe;
 import java.util.Collections;
 import org.apache.fury.codegen.CompileUnit;
 import org.apache.fury.codegen.JaninoUtils;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.util.ClassLoaderUtils;
-import org.apache.fury.util.Platform;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

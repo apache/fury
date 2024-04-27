@@ -19,11 +19,11 @@
 
 package org.apache.fury.type;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import org.apache.fury.collection.Tuple2;
-import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.reflect.TypeRef;
 
 /** Scala types utils using reflection without dependency on scala library. */
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -60,16 +60,16 @@ public class ScalaTypes {
     return SCALA_ITERABLE_TYPE;
   }
 
-  public static TypeToken<?> getElementType(TypeToken typeToken) {
-    TypeToken<?> supertype = typeToken.getSupertype(getScalaIterableType());
+  public static TypeRef<?> getElementType(TypeRef typeRef) {
+    TypeRef<?> supertype = typeRef.getSupertype(getScalaIterableType());
     return supertype.resolveType(SCALA_ITERATOR_RETURN_TYPE).resolveType(SCALA_NEXT_RETURN_TYPE);
   }
 
   /** Returns key/value type of scala map. */
-  public static Tuple2<TypeToken<?>, TypeToken<?>> getMapKeyValueType(TypeToken typeToken) {
-    TypeToken<?> kvTupleType = getElementType(typeToken);
+  public static Tuple2<TypeRef<?>, TypeRef<?>> getMapKeyValueType(TypeRef typeRef) {
+    TypeRef<?> kvTupleType = getElementType(typeRef);
     ParameterizedType type = (ParameterizedType) kvTupleType.getType();
     Type[] types = type.getActualTypeArguments();
-    return Tuple2.of(TypeToken.of(types[0]), TypeToken.of(types[1]));
+    return Tuple2.of(TypeRef.of(types[0]), TypeRef.of(types[1]));
   }
 }

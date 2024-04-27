@@ -144,7 +144,7 @@ go get github.com/apache/incubator-fury/go/fury
 ```
 
 ## Quickstart
-Here we give a quick start about how to use Fury, see [user guide](https://github.com/apache/incubator-fury/blob/main/docs/README.md) for more details about [java](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md), [cross language](https://github.com/apache/incubator-fury/blob/main/docs/guide/xlang_object_graph_guide.md), and [row format](https://github.com/apache/incubator-fury/blob/main/docs/guide/row_format_guide.md).
+Here we give a quick start about how to use Fury, see [user guide](docs/README.md) for more details about [java](docs/guide/java_serialization_guide.md), [cross language](docs/guide/xlang_serialization_guide.md), and [row format](docs/guide/row_format_guide.md).
 
 ### Fury java object graph serialization
 If you don't have cross-language requirements, using this mode will

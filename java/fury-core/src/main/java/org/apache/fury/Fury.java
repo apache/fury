@@ -43,6 +43,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -62,7 +63,6 @@ import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.ExceptionUtils;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 
@@ -96,6 +96,7 @@ public final class Fury implements BaseFury {
   private static final boolean isLittleEndian = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
   private static final byte BITMAP = isLittleEndian ? isLittleEndianFlag : 0;
   private static final int BUFFER_SIZE_LIMIT = 128 * 1024;
+  private static final short MAGIC_NUMBER = 0x62D4;
 
   private final Config config;
   private final boolean refTracking;
@@ -221,6 +222,9 @@ public final class Fury implements BaseFury {
 
   @Override
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj, BufferCallback callback) {
+    if (language == Language.XLANG) {
+      buffer.writeInt16(MAGIC_NUMBER);
+    }
     byte bitmap = BITMAP;
     if (language != Language.JAVA) {
       bitmap |= isCrossLanguageFlag;
@@ -710,6 +714,14 @@ public final class Fury implements BaseFury {
       jitContext.lock();
       if (depth != 0) {
         throwDepthDeserializationException();
+      }
+      if (language == Language.XLANG) {
+        short magicNumber = buffer.readInt16();
+        assert magicNumber == MAGIC_NUMBER
+            : String.format(
+                "The fury xlang serialization must start with magic number 0x%x. Please "
+                    + "check whether the serialization is based on the xlang protocol and the data didn't corrupt.",
+                MAGIC_NUMBER);
       }
       byte bitmap = buffer.readByte();
       if ((bitmap & isNilFlag) == isNilFlag) {

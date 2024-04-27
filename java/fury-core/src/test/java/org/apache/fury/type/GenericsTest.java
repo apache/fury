@@ -247,7 +247,7 @@ public class GenericsTest extends FuryTestBase {
         GenericType genericType =
             GenericType.build(Test4.class, Test2.class.getField(fieldName).getGenericType());
         GenericType genericType1 = generics.nextGenericType();
-        Assert.assertEquals(genericType1.typeToken, genericType.typeToken);
+        Assert.assertEquals(genericType1.typeRef, genericType.typeRef);
         increaseFuryDepth(fury, -1);
         generics.popGenericType();
       }

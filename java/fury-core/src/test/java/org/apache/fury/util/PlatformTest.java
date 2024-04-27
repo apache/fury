@@ -27,6 +27,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
+import org.apache.fury.memory.ByteBufferUtil;
+import org.apache.fury.memory.Platform;
 import org.testng.annotations.Test;
 
 public class PlatformTest {
@@ -103,7 +105,7 @@ public class PlatformTest {
     try {
       int size = 16;
       address = Platform.allocateMemory(size);
-      ByteBuffer buffer = Platform.wrapDirectBuffer(address, size);
+      ByteBuffer buffer = ByteBufferUtil.wrapDirectBuffer(address, size);
       buffer.putLong(0, 1);
       assertEquals(1, buffer.getLong(0));
     } finally {
@@ -121,11 +123,11 @@ public class PlatformTest {
       ByteBuffer buffer = null;
       {
         for (int i = 0; i < nums; i++) {
-          buffer = Platform.wrapDirectBuffer(address, size);
+          buffer = ByteBufferUtil.wrapDirectBuffer(address, size);
         }
         long startTime = System.nanoTime();
         for (int i = 0; i < nums; i++) {
-          buffer = Platform.wrapDirectBuffer(address, size);
+          buffer = ByteBufferUtil.wrapDirectBuffer(address, size);
         }
         long duration = System.nanoTime() - startTime;
         buffer.putLong(0, 1);
@@ -133,11 +135,11 @@ public class PlatformTest {
       }
       {
         for (int i = 0; i < nums; i++) {
-          Platform.wrapDirectBuffer(buffer, address, size);
+          ByteBufferUtil.wrapDirectBuffer(buffer, address, size);
         }
         long startTime = System.nanoTime();
         for (int i = 0; i < nums; i++) {
-          Platform.wrapDirectBuffer(buffer, address, size);
+          ByteBufferUtil.wrapDirectBuffer(buffer, address, size);
         }
         long duration = System.nanoTime() - startTime;
         buffer.putLong(0, 1);

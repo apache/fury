@@ -36,10 +36,10 @@ import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.io.ClassLoaderObjectInputStream;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.serializer.BufferObject;
-import org.apache.fury.util.Platform;
-import org.apache.fury.util.ReflectionUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 

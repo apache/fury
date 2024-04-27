@@ -26,8 +26,8 @@ import org.apache.fury.codegen.Expression;
 import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.config.LongEncoding;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.type.Type;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 
 /** Serializers for java primitive types. */

@@ -21,7 +21,6 @@ package org.apache.fury.type;
 
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.reflect.TypeToken;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -30,9 +29,10 @@ import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.Serializer;
-import org.apache.fury.util.ReflectionUtils;
 
 /** GenericType for building java generics as a tree and binding with fury serializers. */
 // TODO(chaokunyang) refine generics which can be inspired by spring ResolvableType.
@@ -46,7 +46,7 @@ public class GenericType {
         }
       };
 
-  final TypeToken<?> typeToken;
+  final TypeRef<?> typeRef;
   final Class<?> cls;
   final GenericType[] typeParameters;
   final int typeParametersCount;
@@ -58,9 +58,9 @@ public class GenericType {
   Serializer<?> serializer;
   private Boolean trackingRef;
 
-  public GenericType(TypeToken<?> typeToken, boolean isMonomorphic, GenericType... typeParameters) {
-    this.typeToken = typeToken;
-    this.cls = getRawType(typeToken);
+  public GenericType(TypeRef<?> typeRef, boolean isMonomorphic, GenericType... typeParameters) {
+    this.typeRef = typeRef;
+    this.cls = getRawType(typeRef);
     this.typeParameters = typeParameters;
     typeParametersCount = typeParameters.length;
     hasGenericParameters = typeParameters.length > 0;
@@ -77,7 +77,7 @@ public class GenericType {
     }
   }
 
-  public static GenericType build(TypeToken<?> type) {
+  public static GenericType build(TypeRef<?> type) {
     return build(type.getType());
   }
 
@@ -102,7 +102,7 @@ public class GenericType {
    * class B extends A<Long> {}
    * }</pre>
    */
-  public static GenericType build(TypeToken<?> context, Type type) {
+  public static GenericType build(TypeRef<?> context, Type type) {
     return build(context, type, defaultFinalPredicate);
   }
 
@@ -111,10 +111,10 @@ public class GenericType {
   }
 
   public static GenericType build(Class<?> context, Type type, Predicate<Type> finalPredicate) {
-    return build(TypeToken.of(context), type, finalPredicate);
+    return build(TypeRef.of(context), type, finalPredicate);
   }
 
-  public static GenericType build(TypeToken<?> context, Type type, Predicate<Type> finalPredicate) {
+  public static GenericType build(TypeRef<?> context, Type type, Predicate<Type> finalPredicate) {
     return build(context.resolveType(type).getType(), finalPredicate);
   }
 
@@ -129,15 +129,15 @@ public class GenericType {
         list.add(build);
       }
       GenericType[] genericTypes = list.toArray(new GenericType[0]);
-      return new GenericType(TypeToken.of(type), finalPredicate.test(type), genericTypes);
+      return new GenericType(TypeRef.of(type), finalPredicate.test(type), genericTypes);
     } else if (type instanceof GenericArrayType) { // List<String>[] or T[]
       Type componentType = ((GenericArrayType) type).getGenericComponentType();
-      return new GenericType(TypeToken.of(type), finalPredicate.test(type), build(componentType));
+      return new GenericType(TypeRef.of(type), finalPredicate.test(type), build(componentType));
     } else if (type instanceof TypeVariable) { // T
       TypeVariable typeVariable = (TypeVariable) type;
       Type typeVariableBound =
           typeVariable.getBounds()[0]; // Bound 0 are a class, other bounds are interface.
-      return new GenericType(TypeToken.of(typeVariableBound), finalPredicate.test(type));
+      return new GenericType(TypeRef.of(typeVariableBound), finalPredicate.test(type));
     } else if (type instanceof WildcardType) {
       // WildcardType: `T extends Number`, not a type, just an expression.
       // `? extends java.util.Collection<? extends java.util.Collection<java.lang.Integer>>`
@@ -145,16 +145,16 @@ public class GenericType {
       if (upperBound instanceof ParameterizedType) {
         return build(upperBound);
       } else {
-        return new GenericType(TypeToken.of(upperBound), finalPredicate.test(type));
+        return new GenericType(TypeRef.of(upperBound), finalPredicate.test(type));
       }
     } else {
       // Class type: String, Integer
-      return new GenericType(TypeToken.of(type), finalPredicate.test(type));
+      return new GenericType(TypeRef.of(type), finalPredicate.test(type));
     }
   }
 
-  public TypeToken<?> getTypeToken() {
-    return typeToken;
+  public TypeRef<?> getTypeRef() {
+    return typeRef;
   }
 
   public Class<?> getCls() {
@@ -212,7 +212,7 @@ public class GenericType {
 
   @Override
   public String toString() {
-    return "GenericType{" + typeToken.toString() + '}';
+    return "GenericType{" + typeRef.toString() + '}';
   }
 
   public static boolean isFinalByDefault(Class<?> cls) {

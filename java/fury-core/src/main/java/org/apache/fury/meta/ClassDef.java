@@ -24,7 +24,6 @@ import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 import static org.apache.fury.type.TypeUtils.collectionOf;
 import static org.apache.fury.type.TypeUtils.mapOf;
 
-import com.google.common.reflect.TypeToken;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -46,6 +45,9 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.type.Descriptor;
@@ -53,9 +55,7 @@ import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.FinalObjectTypeStub;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.util.MurmurHash3;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Serializable class definition to be sent to other process. So if sender peer and receiver peer
@@ -337,10 +337,10 @@ public class ClassDef implements Serializable {
      * reflection should be used to get the descriptor.
      */
     public Descriptor toDescriptor(ClassResolver classResolver) {
-      TypeToken<?> typeToken = fieldType.toTypeToken(classResolver);
+      TypeRef<?> typeRef = fieldType.toTypeToken(classResolver);
       // This field doesn't exist in peer class, so any legal modifier will be OK.
       int stubModifiers = ReflectionUtils.getField(getClass(), "fieldName").getModifiers();
-      return new Descriptor(typeToken, fieldName, stubModifiers, definedClass);
+      return new Descriptor(typeRef, fieldName, stubModifiers, definedClass);
     }
 
     @Override
@@ -386,7 +386,7 @@ public class ClassDef implements Serializable {
      *
      * @see FinalObjectTypeStub
      */
-    public abstract TypeToken<?> toTypeToken(ClassResolver classResolver);
+    public abstract TypeRef<?> toTypeToken(ClassResolver classResolver);
 
     @Override
     public boolean equals(Object o) {
@@ -456,8 +456,8 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeToken<?> toTypeToken(ClassResolver classResolver) {
-      return TypeToken.of(classResolver.getRegisteredClass(classId));
+    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+      return TypeRef.of(classResolver.getRegisteredClass(classId));
     }
 
     @Override
@@ -512,7 +512,7 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeToken<?> toTypeToken(ClassResolver classResolver) {
+    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
       return collectionOf(elementType.toTypeToken(classResolver));
     }
 
@@ -574,7 +574,7 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeToken<?> toTypeToken(ClassResolver classResolver) {
+    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
       return mapOf(keyType.toTypeToken(classResolver), valueType.toTypeToken(classResolver));
     }
 
@@ -619,8 +619,8 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeToken<?> toTypeToken(ClassResolver classResolver) {
-      return isMonomorphic() ? TypeToken.of(FinalObjectTypeStub.class) : TypeToken.of(Object.class);
+    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+      return isMonomorphic() ? TypeRef.of(FinalObjectTypeStub.class) : TypeRef.of(Object.class);
     }
 
     @Override
@@ -676,7 +676,7 @@ public class ClassDef implements Serializable {
   private static FieldType buildFieldType(ClassResolver classResolver, GenericType genericType) {
     Preconditions.checkNotNull(genericType);
     boolean isFinal = genericType.isMonomorphic();
-    if (COLLECTION_TYPE.isSupertypeOf(genericType.getTypeToken())) {
+    if (COLLECTION_TYPE.isSupertypeOf(genericType.getTypeRef())) {
       return new CollectionFieldType(
           isFinal,
           buildFieldType(
@@ -684,7 +684,7 @@ public class ClassDef implements Serializable {
               genericType.getTypeParameter0() == null
                   ? GenericType.build(Object.class)
                   : genericType.getTypeParameter0()));
-    } else if (MAP_TYPE.isSupertypeOf(genericType.getTypeToken())) {
+    } else if (MAP_TYPE.isSupertypeOf(genericType.getTypeRef())) {
       return new MapFieldType(
           isFinal,
           buildFieldType(

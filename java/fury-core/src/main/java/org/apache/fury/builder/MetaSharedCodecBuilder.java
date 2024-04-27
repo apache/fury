@@ -21,7 +21,6 @@ package org.apache.fury.builder;
 
 import static org.apache.fury.builder.Generated.GeneratedMetaSharedSerializer.SERIALIZER_FIELD_NAME;
 
-import com.google.common.reflect.TypeToken;
 import java.util.Collection;
 import java.util.SortedMap;
 import org.apache.fury.Fury;
@@ -33,6 +32,7 @@ import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.CodegenSerializer;
 import org.apache.fury.serializer.MetaSharedSerializer;
 import org.apache.fury.serializer.ObjectSerializer;
@@ -40,9 +40,9 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
+import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
-import org.apache.fury.util.Utils;
 import org.apache.fury.util.record.RecordComponent;
 import org.apache.fury.util.record.RecordUtils;
 
@@ -65,7 +65,7 @@ import org.apache.fury.util.record.RecordUtils;
 public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
   private final ClassDef classDef;
 
-  public MetaSharedCodecBuilder(TypeToken<?> beanType, Fury fury, ClassDef classDef) {
+  public MetaSharedCodecBuilder(TypeRef<?> beanType, Fury fury, ClassDef classDef) {
     super(beanType, fury, GeneratedMetaSharedSerializer.class);
     Preconditions.checkArgument(
         !fury.getConfig().checkClassVersion(),
@@ -160,7 +160,7 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
         Object defaultValue = defaultValues[i];
         assert components != null;
         RecordComponent component = components[i];
-        recordComponents.put(i, new Literal(defaultValue, TypeToken.of(component.getType())));
+        recordComponents.put(i, new Literal(defaultValue, TypeRef.of(component.getType())));
       }
     }
     Expression[] params = recordComponents.values().toArray(new Expression[0]);
@@ -174,7 +174,7 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
       // Note that the field value shouldn't be an inlined value, otherwise field value read may
       // be ignored.
       // Add an ignored call here to make expression type to void.
-      return new Expression.StaticInvoke(Utils.class, "ignore", value);
+      return new Expression.StaticInvoke(ExceptionUtils.class, "ignore", value);
     }
     return super.setFieldValue(bean, descriptor, value);
   }

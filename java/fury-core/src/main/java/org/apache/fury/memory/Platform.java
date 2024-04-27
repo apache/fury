@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.fury.util;
+package org.apache.fury.memory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.apache.fury.util.unsafe._JDKAccess;
@@ -77,7 +76,7 @@ public final class Platform {
   static {
     boolean unalign;
     String arch = System.getProperty("os.arch", "");
-    if (arch.equals("ppc64le") || arch.equals("ppc64") || arch.equals("s390x")) {
+    if ("ppc64le".equals(arch) || "ppc64".equals(arch) || "s390x".equals(arch)) {
       // Since java.nio.Bits.unaligned() doesn't return true on ppc (See JDK-8165231), but
       // ppc64 and ppc64le support it
       unalign = true;
@@ -104,24 +103,6 @@ public final class Platform {
       }
     }
     unaligned = unalign;
-  }
-
-  // Access fields and constructors once and store them, for performance:
-
-  private static final long BUFFER_ADDRESS_FIELD_OFFSET;
-  private static final long BUFFER_CAPACITY_FIELD_OFFSET;
-
-  static {
-    try {
-      Field addressField = Buffer.class.getDeclaredField("address");
-      BUFFER_ADDRESS_FIELD_OFFSET = UNSAFE.objectFieldOffset(addressField);
-      Preconditions.checkArgument(BUFFER_ADDRESS_FIELD_OFFSET != 0);
-      Field capacityField = Buffer.class.getDeclaredField("capacity");
-      BUFFER_CAPACITY_FIELD_OFFSET = UNSAFE.objectFieldOffset(capacityField);
-      Preconditions.checkArgument(BUFFER_CAPACITY_FIELD_OFFSET != 0);
-    } catch (NoSuchFieldException e) {
-      throw new IllegalStateException(e);
-    }
   }
 
   /**
@@ -314,66 +295,5 @@ public final class Platform {
       throwException(e);
     }
     throw new IllegalStateException("unreachable");
-  }
-
-  public static long getAddress(ByteBuffer buffer) {
-    Preconditions.checkNotNull(buffer, "buffer is null");
-    Preconditions.checkArgument(buffer.isDirect(), "Can't get address of a non-direct ByteBuffer.");
-    long offHeapAddress;
-    try {
-      offHeapAddress = UNSAFE.getLong(buffer, BUFFER_ADDRESS_FIELD_OFFSET);
-    } catch (Throwable t) {
-      throw new Error("Could not access direct byte buffer address field.", t);
-    }
-    return offHeapAddress;
-  }
-
-  private static final ByteBuffer localBuffer = ByteBuffer.allocateDirect(0);
-
-  /** Create a direct buffer from native memory represented by address [address, address + size). */
-  public static ByteBuffer createDirectByteBufferFromNativeAddress(long address, int size) {
-    try {
-      // ByteBuffer.allocateDirect(0) is about 30x slower than `localBuffer.duplicate()`.
-      ByteBuffer buffer = localBuffer.duplicate();
-      UNSAFE.putLong(buffer, BUFFER_ADDRESS_FIELD_OFFSET, address);
-      UNSAFE.putInt(buffer, BUFFER_CAPACITY_FIELD_OFFSET, size);
-      buffer.clear();
-      return buffer;
-    } catch (Throwable t) {
-      throw new Error("Failed to wrap unsafe off-heap memory with ByteBuffer", t);
-    }
-  }
-
-  /** Wrap a buffer [address, address + size) into provided <code>buffer</code>. */
-  public static void wrapDirectByteBufferFromNativeAddress(
-      ByteBuffer buffer, long address, int size) {
-    Preconditions.checkArgument(
-        buffer.isDirect(), "Can't wrap native memory into a non-direct ByteBuffer.");
-    UNSAFE.putLong(buffer, BUFFER_ADDRESS_FIELD_OFFSET, address);
-    UNSAFE.putInt(buffer, BUFFER_CAPACITY_FIELD_OFFSET, size);
-    buffer.clear();
-  }
-
-  public static ByteBuffer wrapDirectBuffer(long address, int size) {
-    return createDirectByteBufferFromNativeAddress(address, size);
-  }
-
-  /** Wrap a buffer [address, address + size) into provided <code>buffer</code>. */
-  public static void wrapDirectBuffer(ByteBuffer buffer, long address, int size) {
-    UNSAFE.putLong(buffer, BUFFER_ADDRESS_FIELD_OFFSET, address);
-    UNSAFE.putInt(buffer, BUFFER_CAPACITY_FIELD_OFFSET, size);
-    buffer.clear();
-  }
-
-  public static void clearBuffer(Buffer buffer) {
-    buffer.clear();
-  }
-
-  public static void flipBuffer(Buffer buffer) {
-    buffer.flip();
-  }
-
-  public static void rewind(Buffer buffer) {
-    buffer.rewind();
   }
 }

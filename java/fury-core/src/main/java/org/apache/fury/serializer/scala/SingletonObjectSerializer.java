@@ -22,9 +22,9 @@ package org.apache.fury.serializer.scala;
 import java.lang.reflect.Field;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
 
 /**
