@@ -41,8 +41,8 @@ import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.Type;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.Utils;
 
 /**
  * A serializer used for cross-language serialization for custom objects.
@@ -73,7 +73,7 @@ public class StructSerializer<T> extends Serializer<T> {
         ctr.setAccessible(true);
       }
     } catch (Exception e) {
-      Utils.ignore(e);
+      ExceptionUtils.ignore(e);
     }
     this.constructor = ctr;
     fieldAccessors =
