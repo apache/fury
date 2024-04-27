@@ -19,33 +19,24 @@
 
 package org.apache.fury.graalvm.record;
 
-import java.util.List;
-import java.util.Map;
 import org.apache.fury.Fury;
-import org.apache.fury.util.Preconditions;
+import org.apache.fury.config.CompatibleMode;
 
-public class RecordExample {
-  public record Record(int f1, String f2, List<String> f3, Map<String, Long> f4) {}
-
+public class CompatibleRecordExample {
   static Fury fury;
 
   static {
-    fury = Fury.builder().requireClassRegistration(true).build();
+    fury =
+        Fury.builder()
+            .requireClassRegistration(true)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .build();
     // register and generate serializer code.
-    fury.register(Record.class, true);
-  }
-
-  static void test(Fury fury) {
-    Record record = new Record(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
-    System.out.println(record);
-    byte[] bytes = fury.serialize(record);
-    Object o = fury.deserialize(bytes);
-    System.out.println(o);
-    Preconditions.checkArgument(record.equals(o));
+    fury.register(RecordExample.Record.class, true);
   }
 
   public static void main(String[] args) {
-    test(fury);
-    System.out.println("RecordExample succeed");
+    RecordExample.test(fury);
+    System.out.println("CompatibleRecordExample succeed");
   }
 }

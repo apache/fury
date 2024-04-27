@@ -44,5 +44,6 @@ public class RecordExample2 {
     Foo foo = new Foo(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
     Object o2 = fury.deserialize(fury.serialize(foo));
     Preconditions.checkArgument(foo.equals(o2));
+    System.out.println("RecordExample2 succeed");
   }
 }

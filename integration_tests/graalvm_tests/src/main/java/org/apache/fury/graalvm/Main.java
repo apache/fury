@@ -19,15 +19,19 @@
 
 package org.apache.fury.graalvm;
 
+import org.apache.fury.graalvm.record.CompatibleRecordExample;
 import org.apache.fury.graalvm.record.RecordExample;
 import org.apache.fury.graalvm.record.RecordExample2;
 
 public class Main {
   public static void main(String[] args) throws Throwable {
     Example.main(args);
+    CompatibleExample.main(args);
     RecordExample.main(args);
+    CompatibleRecordExample.main(args);
     RecordExample2.main(args);
     ThreadSafeExample.main(args);
+    CompatibleThreadSafeExample.main(args);
     ProxyExample.main(args);
     Benchmark.main(args);
   }

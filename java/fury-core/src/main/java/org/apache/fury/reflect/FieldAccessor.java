@@ -19,6 +19,8 @@
 
 package org.apache.fury.reflect;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.function.Function;
@@ -28,12 +30,15 @@ import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.function.Functions;
 import org.apache.fury.util.function.ToByteFunction;
 import org.apache.fury.util.function.ToCharFunction;
 import org.apache.fury.util.function.ToFloatFunction;
 import org.apache.fury.util.function.ToShortFunction;
+import org.apache.fury.util.record.RecordUtils;
+import org.apache.fury.util.unsafe._JDKAccess;
 
 /**
  * Field accessor for primitive types and object types.
@@ -104,7 +109,7 @@ public abstract class FieldAccessor {
     private final Object getter;
 
     protected FieldGetter(Field field, Object getter) {
-      super(field);
+      super(field, -1);
       this.getter = getter;
     }
 
@@ -114,11 +119,8 @@ public abstract class FieldAccessor {
   }
 
   public static FieldAccessor createAccessor(Field field) {
-    Object getter;
-    try {
-      // record class fields are not allowed by JDK
-      ReflectionUtils.getFieldOffset(field);
-    } catch (UnsupportedOperationException e) {
+    if (RecordUtils.isRecord(field.getDeclaringClass())) {
+      Object getter;
       try {
         Method getterMethod = field.getDeclaringClass().getDeclaredMethod(field.getName());
         getter = Functions.makeGetterFunction(getterMethod);
@@ -144,6 +146,9 @@ public abstract class FieldAccessor {
       } else {
         return new ObjectGetter(field, (Function) getter);
       }
+    }
+    if (GraalvmSupport.isGraalBuildtime()) {
+      return new GeneratedAccessor(field);
     }
     if (field.getType() == boolean.class) {
       return new BooleanAccessor(field);
@@ -480,6 +485,42 @@ public abstract class FieldAccessor {
     @Override
     public Object get(Object obj) {
       return getter.apply(obj);
+    }
+  }
+
+  static class GeneratedAccessor extends FieldAccessor {
+    private final MethodHandle getter;
+    private final MethodHandle setter;
+
+    protected GeneratedAccessor(Field field) {
+      super(field, -1);
+      MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(field.getDeclaringClass());
+      try {
+        this.getter =
+            lookup.findGetter(field.getDeclaringClass(), field.getName(), field.getType());
+        this.setter =
+            lookup.findSetter(field.getDeclaringClass(), field.getName(), field.getType());
+      } catch (IllegalAccessException | NoSuchFieldException ex) {
+        throw new RuntimeException(ex);
+      }
+    }
+
+    @Override
+    public Object get(Object obj) {
+      try {
+        return getter.invoke(obj);
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    public void set(Object obj, Object value) {
+      try {
+        setter.invoke(obj, value);
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 }

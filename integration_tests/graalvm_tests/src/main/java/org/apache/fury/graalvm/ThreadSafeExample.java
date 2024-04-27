@@ -46,6 +46,11 @@ public class ThreadSafeExample {
   }
 
   public static void main(String[] args) throws Throwable {
+    test(fury);
+    System.out.println("ThreadSafeExample succeed");
+  }
+
+  static void test(ThreadSafeFury fury) throws Throwable {
     ThreadSafeExample threadSafeExample = new ThreadSafeExample();
     threadSafeExample.test();
     System.out.println("single thread works");
@@ -61,7 +66,7 @@ public class ThreadSafeExample {
             }
           });
     }
-    Thread.sleep(3000);
+    Thread.sleep(1000);
     service.shutdown();
     service.awaitTermination(10, TimeUnit.SECONDS);
     System.out.println("tasks finished");
