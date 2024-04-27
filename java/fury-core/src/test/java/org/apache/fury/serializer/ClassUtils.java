@@ -26,12 +26,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.CollectionFields;
 import org.apache.fury.test.bean.MapFields;
 import org.apache.fury.test.bean.Struct;
 import org.apache.fury.util.ClassLoaderUtils;
-import org.apache.fury.util.ReflectionUtils;
 import org.testng.Assert;
 
 public class ClassUtils {

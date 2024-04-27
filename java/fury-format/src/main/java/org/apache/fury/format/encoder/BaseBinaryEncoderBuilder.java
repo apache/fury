@@ -62,11 +62,11 @@ import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
 import org.apache.fury.format.row.binary.writer.BinaryWriter;
 import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.DateTimeUtils;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 
 /** Base encoder builder for {@link Row}, {@link ArrayData} and {@link MapData}. */

@@ -46,12 +46,12 @@ import org.apache.fury.Fury;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.type.Type;
+import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
-import org.apache.fury.util.Utils;
 import org.apache.fury.util.unsafe._JDKAccess;
 
 /** Serialization utils and common serializers. */
@@ -128,14 +128,14 @@ public class Serializers {
       CTR_MAP.put(serializerClass, Tuple2.of(SIG1, ctr));
       return (Serializer<T>) ctr.invoke(fury, type);
     } catch (NoSuchMethodException e) {
-      Utils.ignore(e);
+      ExceptionUtils.ignore(e);
     }
     try {
       MethodHandle ctr = lookup.findConstructor(serializerClass, SIG2);
       CTR_MAP.put(serializerClass, Tuple2.of(SIG2, ctr));
       return (Serializer<T>) ctr.invoke(fury);
     } catch (NoSuchMethodException e) {
-      Utils.ignore(e);
+      ExceptionUtils.ignore(e);
     }
     try {
       MethodHandle ctr = lookup.findConstructor(serializerClass, SIG3);

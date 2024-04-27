@@ -17,35 +17,34 @@
  * under the License.
  */
 
-package org.apache.fury.graalvm.record;
+package org.apache.fury.graalvm;
 
-import java.util.List;
-import java.util.Map;
 import org.apache.fury.Fury;
-import org.apache.fury.util.Preconditions;
+import org.apache.fury.ThreadLocalFury;
+import org.apache.fury.ThreadSafeFury;
+import org.apache.fury.config.CompatibleMode;
 
-public class RecordExample {
-  public record Record(int f1, String f2, List<String> f3, Map<String, Long> f4) {}
-
-  static Fury fury;
+public class CompatibleThreadSafeExample {
+  static ThreadSafeFury fury;
 
   static {
-    fury = Fury.builder().requireClassRegistration(true).build();
-    // register and generate serializer code.
-    fury.register(Record.class, true);
+    fury =
+        new ThreadLocalFury(
+            classLoader -> {
+              Fury f =
+                  Fury.builder()
+                      .requireClassRegistration(true)
+                      .withCompatibleMode(CompatibleMode.COMPATIBLE)
+                      .build();
+              // register and generate serializer code.
+              f.register(Foo.class, true);
+              return f;
+            });
+    System.out.println("Init fury at build time");
   }
 
-  static void test(Fury fury) {
-    Record record = new Record(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
-    System.out.println(record);
-    byte[] bytes = fury.serialize(record);
-    Object o = fury.deserialize(bytes);
-    System.out.println(o);
-    Preconditions.checkArgument(record.equals(o));
-  }
-
-  public static void main(String[] args) {
-    test(fury);
-    System.out.println("RecordExample succeed");
+  public static void main(String[] args) throws Throwable {
+    ThreadSafeExample.test(fury);
+    System.out.println("CompatibleThreadSafeExample succeed");
   }
 }

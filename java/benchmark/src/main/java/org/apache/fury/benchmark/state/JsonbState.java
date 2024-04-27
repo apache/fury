@@ -38,7 +38,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.benchmark.data.CustomJDKSerialization;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
-import org.apache.fury.memory.Platform;
+import org.apache.fury.memory.ByteBufferUtil;
 import org.apache.fury.util.Preconditions;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
@@ -90,7 +90,7 @@ public class JsonbState {
           "======> Jsonb | {} | {} | {} | {} |", objectType, references, bufferType, buffer.length);
       if (bufferType == BufferType.directBuffer) {
         directBuffer.put(buffer);
-        Platform.clearBuffer(directBuffer);
+        ByteBufferUtil.clearBuffer(directBuffer);
       }
       Preconditions.checkArgument(object.equals(deserialize(null, this)));
     }
@@ -127,7 +127,7 @@ public class JsonbState {
   public static byte[] serialize(Blackhole blackhole, JsonbBenchmarkState state, Object value) {
     byte[] bytes = JSONB.toBytes(value, state.jsonbWriteFeatures);
     if (state.bufferType == BufferType.directBuffer) {
-      Platform.clearBuffer(state.directBuffer);
+      ByteBufferUtil.clearBuffer(state.directBuffer);
       state.directBuffer.put(bytes);
     }
     if (blackhole != null) {
@@ -139,7 +139,7 @@ public class JsonbState {
 
   public static Object deserialize(Blackhole blackhole, JsonbBenchmarkState state) {
     if (state.bufferType == BufferType.directBuffer) {
-      Platform.rewind(state.directBuffer);
+      ByteBufferUtil.rewind(state.directBuffer);
       byte[] bytes = new byte[state.buffer.length];
       state.directBuffer.get(bytes);
       Object newObj = JSONB.parseObject(bytes, Object.class, state.jsonbReaderFeatures);

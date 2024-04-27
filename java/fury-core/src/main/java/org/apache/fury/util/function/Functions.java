@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.unsafe._JDKAccess;
 
 /** Utility for lambda functions. */
@@ -89,9 +89,6 @@ public class Functions {
   public static Object makeGetterFunction(Method method, Class<?> returnType) {
     MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(method.getDeclaringClass());
     try {
-      // Why `lookup.findGetter` doesn't work?
-      // MethodHandle handle = lookup.findGetter(field.getDeclaringClass(), field.getName(),
-      // field.getType());
       MethodHandle handle = lookup.unreflect(method);
       return _JDKAccess.makeGetterFunction(lookup, handle, returnType);
     } catch (IllegalAccessException ex) {

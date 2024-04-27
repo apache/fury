@@ -41,9 +41,9 @@ import org.apache.fury.benchmark.data.ComparableByteArray;
 import org.apache.fury.benchmark.data.SerializableByteBuffer;
 import org.apache.fury.benchmark.state.BufferType;
 import org.apache.fury.config.Language;
+import org.apache.fury.memory.ByteBufferUtil;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.test.bean.ArraysData;
 import org.apache.fury.util.Preconditions;
@@ -314,7 +314,7 @@ public class ZeroCopySuite {
   public static Object jsonbSerialize(JsonBState state, Blackhole bh) {
     byte[] bytes = JSONB.toBytes(state.data, state.jsonbWriteFeatures);
     if (state.bufferType == BufferType.directBuffer) {
-      Platform.clearBuffer(state.directBuffer);
+      ByteBufferUtil.clearBuffer(state.directBuffer);
       state.directBuffer.put(bytes);
     }
     if (bh != null) {
@@ -331,7 +331,7 @@ public class ZeroCopySuite {
 
   public static Object jsonbDeserialize(JsonBState state, Blackhole bh) {
     if (state.bufferType == BufferType.directBuffer) {
-      Platform.rewind(state.directBuffer);
+      ByteBufferUtil.rewind(state.directBuffer);
       byte[] bytes = new byte[state.buffer.length];
       state.directBuffer.get(bytes);
       Object newObj = JSONB.parseObject(bytes, Object.class, state.jsonbReaderFeatures);

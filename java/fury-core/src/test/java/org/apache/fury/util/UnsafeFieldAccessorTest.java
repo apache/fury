@@ -21,6 +21,7 @@ package org.apache.fury.util;
 
 import static org.testng.Assert.assertEquals;
 
+import org.apache.fury.reflect.UnsafeFieldAccessor;
 import org.testng.annotations.Test;
 
 public class UnsafeFieldAccessorTest {

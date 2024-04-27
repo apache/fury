@@ -26,7 +26,6 @@ import org.apache.fury.memory.MemoryBuffer;
 
 /** A streaming reader to make {@link MemoryBuffer} to support streaming reading. */
 public interface FuryStreamReader {
-  int BUFFER_GROW_STEP_THRESHOLD = 100 * 1024 * 1024;
 
   /**
    * Read stream and fill the data to underlying {@link MemoryBuffer}, which is also the buffer

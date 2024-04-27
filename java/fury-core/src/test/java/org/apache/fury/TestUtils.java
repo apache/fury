@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.function.Supplier;
-import org.apache.fury.util.FieldAccessor;
-import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.reflect.FieldAccessor;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.util.unsafe._JDKAccess;
 import org.testng.SkipException;
 

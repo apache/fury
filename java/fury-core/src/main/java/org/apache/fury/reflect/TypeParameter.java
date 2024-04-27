@@ -19,6 +19,8 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Objects;
 
+// Derived from Guava 32.1.2 com.google.common.reflect.TypeParameter
+// https://github.com/google/guava/blob/9f6a3840/guava/src/com/google/common/reflect/TypeParameter.java
 public abstract class TypeParameter<X> {
   final TypeVariable<?> typeVariable;
 

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.fury.util;
+package org.apache.fury.reflect;
 
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
@@ -48,7 +48,8 @@ import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.collection.Tuple3;
 import org.apache.fury.memory.Platform;
-import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.util.GraalvmSupport;
+import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.function.Functions;
 import org.apache.fury.util.unsafe._JDKAccess;
 

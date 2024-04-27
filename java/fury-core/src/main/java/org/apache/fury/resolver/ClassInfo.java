@@ -25,10 +25,10 @@ import static org.apache.fury.meta.MetaStringEncoder.TYPE_NAME_ENCODER;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
 import org.apache.fury.meta.MetaString.Encoding;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 
