@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 import org.apache.fury.type.TypeUtils;
 
 // Mostly derived from Guava 32.1.2 com.google.common.reflect.TypeToken
-// https://github.com/google/guava/blob/master/guava/src/com/google/common/reflect/TypeToken.java
+// https://github.com/google/guava/blob/9f6a3840/guava/src/com/google/common/reflect/TypeToken.java
 public class TypeRef<T> {
 
   private final Type type;
