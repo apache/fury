@@ -20,7 +20,7 @@ name: Publish Fury
 on:
   push:
     tags:
-      - 'v*'
+      - 'disabled*'
 
 jobs:
   release-python:
@@ -43,7 +43,7 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Update version in setup.py
         run: |
-          echo "GITHUB_REF: $GITHUB_REF" 
+          echo "GITHUB_REF: $GITHUB_REF"
           tag=$(echo $GITHUB_REF | cut -d / -f 3)
           echo "tag: $tag"
           version=${tag:1}
