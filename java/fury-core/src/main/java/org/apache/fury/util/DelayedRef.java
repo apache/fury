@@ -34,7 +34,7 @@ public class DelayedRef<T> {
   // If other components doesn't strong hold the referent, this is used
   // to cache and get the referent. But the reference will be set to null
   // when there is a memory pressure.
-  private final SoftReference<T> softRef;
+  private SoftReference<T> softRef;
 
   public DelayedRef(T o) {
     weakRef = new WeakReference<>(o);
@@ -43,6 +43,13 @@ public class DelayedRef<T> {
 
   public T get() {
     T t = weakRef.get();
-    return t != null ? t : softRef.get();
+    if (t != null){
+      if (softRef.get() == null) {
+        // may be null when a full gc happened.
+        softRef = new SoftReference<>(t);
+      }
+      return t;
+    }
+    return softRef.get();
   }
 }
