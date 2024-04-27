@@ -24,6 +24,7 @@ import java.util.IdentityHashMap;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -33,7 +34,6 @@ import org.apache.fury.serializer.collection.FuryArrayAsListSerializer;
 import org.apache.fury.type.Type;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 
 /** Serializers for array types. */
 public class ArraySerializers {

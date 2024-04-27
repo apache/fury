@@ -28,9 +28,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.fury.codegen.Expression.Literal;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.testng.annotations.Test;
 
 public class ExpressionVisitorTest {

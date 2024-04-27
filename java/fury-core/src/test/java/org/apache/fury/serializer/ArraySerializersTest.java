@@ -34,9 +34,9 @@ import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.test.bean.ArraysData;
 import org.apache.fury.type.Descriptor;
-import org.apache.fury.util.ReflectionUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

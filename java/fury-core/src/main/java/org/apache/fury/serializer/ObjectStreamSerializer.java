@@ -54,12 +54,12 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
 import org.apache.fury.resolver.FieldResolver.ClassField;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.Utils;
 import org.apache.fury.util.unsafe._JDKAccess;
 

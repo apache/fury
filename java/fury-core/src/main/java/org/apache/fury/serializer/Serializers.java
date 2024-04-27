@@ -46,11 +46,11 @@ import org.apache.fury.Fury;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.Utils;
 import org.apache.fury.util.unsafe._JDKAccess;
 

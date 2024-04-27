@@ -38,15 +38,15 @@ import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.ClassDef;
+import org.apache.fury.reflect.FieldAccessor;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.Generics;
-import org.apache.fury.util.FieldAccessor;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.record.RecordInfo;
 import org.apache.fury.util.record.RecordUtils;
 

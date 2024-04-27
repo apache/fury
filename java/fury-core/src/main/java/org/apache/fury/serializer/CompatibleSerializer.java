@@ -28,15 +28,15 @@ import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.FieldAccessor;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.collection.CollectionSerializer;
 import org.apache.fury.serializer.collection.MapSerializer;
-import org.apache.fury.util.FieldAccessor;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.record.RecordInfo;
 import org.apache.fury.util.record.RecordUtils;
 

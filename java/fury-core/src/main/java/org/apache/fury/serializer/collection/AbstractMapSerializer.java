@@ -27,6 +27,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -35,7 +36,6 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.ReflectionUtils;
 
 /** Serializer for all map-like objects. */
 @SuppressWarnings({"unchecked", "rawtypes"})

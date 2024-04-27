@@ -26,8 +26,8 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Serializer for java serializable lambda. Use fury to serialize java lambda instead of JDK

@@ -24,6 +24,7 @@ import java.util.Collection;
 import org.apache.fury.Fury;
 import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -32,7 +33,6 @@ import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Serializer for all collection like object. All collection serializer should extend this class.

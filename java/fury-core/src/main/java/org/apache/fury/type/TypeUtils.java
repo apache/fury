@@ -47,10 +47,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeParameter;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 
 /** Type utils for common type inference and extraction. */
 @SuppressWarnings({"UnstableApiUsage", "unchecked"})

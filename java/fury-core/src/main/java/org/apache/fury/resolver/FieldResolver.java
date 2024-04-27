@@ -46,16 +46,16 @@ import org.apache.fury.Fury;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.exception.ClassNotCompatibleException;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.FieldAccessor;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.PrimitiveSerializers;
 import org.apache.fury.serializer.collection.CollectionSerializer;
 import org.apache.fury.serializer.collection.MapSerializer;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.TypeUtils;
-import org.apache.fury.util.FieldAccessor;
 import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 
 /**
  * A class field resolver for class compatibility.

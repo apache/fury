@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
-import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.util.StringUtils;
 import org.codehaus.commons.compiler.util.reflect.ByteArrayClassLoader;
 import org.codehaus.commons.compiler.util.resource.MapResourceCreator;

@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 import org.apache.fury.util.unsafe._JDKAccess;
 
 /** Utility for lambda functions. */

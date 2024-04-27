@@ -46,6 +46,7 @@ import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
@@ -55,7 +56,6 @@ import org.apache.fury.type.FinalObjectTypeStub;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 
 /**
  * Serializable class definition to be sent to other process. So if sender peer and receiver peer

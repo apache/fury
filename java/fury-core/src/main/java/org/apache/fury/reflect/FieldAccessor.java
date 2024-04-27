@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.fury.util;
+package org.apache.fury.reflect;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -28,6 +28,7 @@ import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.function.Functions;
 import org.apache.fury.util.function.ToByteFunction;
 import org.apache.fury.util.function.ToCharFunction;

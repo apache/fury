@@ -33,7 +33,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
-import org.apache.fury.util.ReflectionUtils;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.testng.annotations.Test;
 
 public class ClassDefTest extends FuryTestBase {
