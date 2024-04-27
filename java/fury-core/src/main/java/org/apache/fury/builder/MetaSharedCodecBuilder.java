@@ -40,9 +40,9 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
+import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
-import org.apache.fury.util.Utils;
 import org.apache.fury.util.record.RecordComponent;
 import org.apache.fury.util.record.RecordUtils;
 
@@ -174,7 +174,7 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
       // Note that the field value shouldn't be an inlined value, otherwise field value read may
       // be ignored.
       // Add an ignored call here to make expression type to void.
-      return new Expression.StaticInvoke(Utils.class, "ignore", value);
+      return new Expression.StaticInvoke(ExceptionUtils.class, "ignore", value);
     }
     return super.setFieldValue(bean, descriptor, value);
   }

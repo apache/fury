@@ -47,4 +47,6 @@ public class ExceptionUtils {
       return null;
     }
   }
+
+  public static void ignore(Object... args) {}
 }
