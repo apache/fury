@@ -218,8 +218,4 @@ public class GenericType {
   public static boolean isFinalByDefault(Class<?> cls) {
     return defaultFinalPredicate.test(cls);
   }
-
-  public static boolean isFinalByDefault(Class<?> cls) {
-    return defaultFinalPredicate.test(cls);
-  }
 }
