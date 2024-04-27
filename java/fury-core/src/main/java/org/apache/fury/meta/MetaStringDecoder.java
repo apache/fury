@@ -48,6 +48,9 @@ public class MetaStringDecoder {
    * @return Decoded string.
    */
   public String decode(byte[] encodedData, Encoding encoding) {
+    if (encodedData.length == 0) {
+      return "";
+    }
     switch (encoding) {
       case LOWER_SPECIAL:
         return decodeLowerSpecial(encodedData);
