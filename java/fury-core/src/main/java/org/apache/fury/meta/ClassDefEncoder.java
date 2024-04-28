@@ -1,9 +1,11 @@
 package org.apache.fury.meta;
 
+import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
+import static org.apache.fury.meta.Encoders.typeNameEncodingsList;
+
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -16,18 +18,12 @@ import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
-import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Preconditions;
-
-import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
-import static org.apache.fury.meta.Encoders.pkgEncodingsList;
-import static org.apache.fury.meta.Encoders.typeNameEncodings;
-import static org.apache.fury.meta.Encoders.typeNameEncodingsList;
 
 class ClassDefEncoder {
   private static final ConcurrentMap<String, MetaString> metaStringCache =
@@ -95,21 +91,20 @@ class ClassDefEncoder {
       List<ClassDef.FieldInfo> fieldsInfo,
       Map<String, String> extMeta) {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
-    buffer.writeInt64(0);
+    buffer.writeInt64(-1);
     long header;
     Map<String, List<ClassDef.FieldInfo>> classFields = getClassFields(type, fieldsInfo);
-    int size = classFields.size();
-    if (size > 0b1110) {
+    int encodedSize = classFields.size() - 1; // num class must be greater than 0
+    if (encodedSize > 0b1110) {
       header = 0b1111;
-      buffer.writeVarUint32Small7(size - 0b1110);
+      buffer.writeVarUint32Small7(encodedSize - 0b1110);
     } else {
-      header = size;
+      header = encodedSize;
     }
     header |= 0b10000;
     if (!extMeta.isEmpty()) {
       header |= 0b100000;
     }
-    buffer.putInt64(0, header);
     for (Map.Entry<String, List<ClassDef.FieldInfo>> entry : classFields.entrySet()) {
       String className = entry.getKey();
       List<ClassDef.FieldInfo> fields = entry.getValue();
@@ -119,6 +114,7 @@ class ClassDefEncoder {
       if (classResolver.isRegistered(type)) {
         currentClassHeader |= 1;
         buffer.writeVarUint32Small7(currentClassHeader);
+        buffer.writeVarUint32Small7(classResolver.getRegisteredClassId(type));
       } else {
         buffer.writeVarUint32Small7(currentClassHeader);
         String pkg = ReflectionUtils.getPackage(className);
@@ -177,10 +173,14 @@ class ClassDefEncoder {
       // Encoding `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
       MetaString metaString = Encoders.encodeFieldName(fieldInfo.getFieldName());
       int encodingFlags = fieldNameEncodingsList.indexOf(metaString.getEncoding());
-      header |= (byte) (encodingFlags << 3);
       byte[] encoded = metaString.getBytes();
-      int size = fieldInfo.hasTypeTag() ? fieldInfo.getTypeTag() : encoded.length;
-      boolean bigSize = size > 7;
+      int size = (encoded.length - 1);
+      if (fieldInfo.hasTypeTag()) {
+        size = fieldInfo.getTypeTag();
+        encodingFlags = 3;
+      }
+      header |= (byte) (encodingFlags << 3);
+      boolean bigSize = size >= 7;
       if (bigSize) {
         header |= 0b11100000;
         buffer.writeVarUint32Small7(header);
@@ -193,34 +193,21 @@ class ClassDefEncoder {
       }
       if (fieldType instanceof ClassDef.RegisteredFieldType) {
         short classId = ((ClassDef.RegisteredFieldType) fieldType).getClassId();
-        buffer.writeVarUint32(((3 + classId) << 1));
+        buffer.writeVarUint32Small7(3 + classId);
       } else if (fieldType instanceof ClassDef.CollectionFieldType) {
-        buffer.writeByte((2 << 1));
+        buffer.writeVarUint32Small7(2);
         // TODO remove it when new collection deserialization jit finished.
         ((ClassDef.CollectionFieldType) fieldType).getElementType().write(buffer);
       } else if (fieldType instanceof ClassDef.MapFieldType) {
-        buffer.writeByte((1 << 1));
+        buffer.writeVarUint32Small7(1);
         // TODO remove it when new map deserialization jit finished.
         ClassDef.MapFieldType mapFieldType = (ClassDef.MapFieldType) fieldType;
         mapFieldType.getKeyType().write(buffer);
         mapFieldType.getValueType().write(buffer);
       } else {
         Preconditions.checkArgument(fieldType instanceof ClassDef.ObjectFieldType);
-        buffer.writeByte(header);
+        buffer.writeVarUint32Small7(0);
       }
-    }
-  }
-
-  private static int getFieldNameEncodingFlags(Encoding encoding) {
-    switch (encoding) {
-      case UTF_8:
-        return 0;
-      case FIRST_TO_LOWER_SPECIAL:
-        return 0b1;
-      case LOWER_UPPER_DIGIT_SPECIAL:
-        return 0b10;
-      default:
-        throw new IllegalStateException("Unexpected encoding " + encoding);
     }
   }
 
@@ -233,7 +220,8 @@ class ClassDefEncoder {
     // a varint next.
     MetaString pkgMetaString = Encoders.encodePackage(pkg);
     byte[] encoded = pkgMetaString.getBytes();
-    int pkgHeader = (encoded.length << 2) | typeNameEncodingsList.indexOf(pkgMetaString.getEncoding());
+    int pkgHeader =
+        (encoded.length << 2) | typeNameEncodingsList.indexOf(pkgMetaString.getEncoding());
     writeName(buffer, encoded, pkgHeader, 62);
   }
 
@@ -262,5 +250,4 @@ class ClassDefEncoder {
     }
     buffer.writeBytes(encoded);
   }
-
 }

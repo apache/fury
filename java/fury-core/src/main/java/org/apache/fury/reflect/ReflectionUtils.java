@@ -50,6 +50,7 @@ import org.apache.fury.collection.Tuple3;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 import org.apache.fury.util.unsafe._JDKAccess;
 
@@ -574,6 +575,13 @@ public class ReflectionUtils {
     } else {
       return className;
     }
+  }
+
+  public static String getFullClassName(String pkg, String className) {
+    if (StringUtils.isBlank(pkg)) {
+      return className;
+    }
+    return pkg + "." + className;
   }
 
   @CodegenInvoke

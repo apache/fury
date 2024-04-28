@@ -323,35 +323,36 @@ public class ClassDef implements Serializable {
       byte header = (byte) (isMonomorphic ? 1 : 0);
       if (this instanceof RegisteredFieldType) {
         short classId = ((RegisteredFieldType) this).getClassId();
-        buffer.writeVarUint32(((3 + classId) << 1) | header);
+        buffer.writeVarUint32Small7(((3 + classId) << 1) | header);
       } else if (this instanceof CollectionFieldType) {
-        buffer.writeByte((2 << 1) | header);
+        buffer.writeVarUint32Small7((2 << 1) | header);
         ((CollectionFieldType) this).elementType.write(buffer);
       } else if (this instanceof MapFieldType) {
-        buffer.writeByte((1 << 1) | header);
+        buffer.writeVarUint32Small7((1 << 1) | header);
         MapFieldType mapFieldType = (MapFieldType) this;
         mapFieldType.keyType.write(buffer);
         mapFieldType.valueType.write(buffer);
       } else {
         Preconditions.checkArgument(this instanceof ObjectFieldType);
-        buffer.writeByte(header);
+        buffer.writeVarUint32Small7(header);
       }
     }
 
     public static FieldType read(MemoryBuffer buffer) {
-      boolean isFinal = buffer.readBoolean();
-      byte typecode = buffer.readByte();
-      switch (typecode) {
-        case 0:
-          return new RegisteredFieldType(isFinal, buffer.readInt16());
-        case 1:
-          return new CollectionFieldType(isFinal, read(buffer));
-        case 2:
-          return new MapFieldType(isFinal, read(buffer), read(buffer));
-        case 3:
-          return new ObjectFieldType(isFinal);
-        default:
-          throw new IllegalStateException(String.format("Unsupported type code %s", typecode));
+      int header = buffer.readVarUint32Small7();
+      boolean isMonomorphic = (header & 0b100) != 0;
+      return read(buffer, isMonomorphic, header >>> 1);
+    }
+
+    public static FieldType read(MemoryBuffer buffer, boolean isFinal, int typeId) {
+      if (typeId == 0) {
+        return new ObjectFieldType(isFinal);
+      } else if (typeId == 1) {
+        return new CollectionFieldType(isFinal, read(buffer));
+      } else if (typeId == 2) {
+        return new MapFieldType(isFinal, read(buffer), read(buffer));
+      } else {
+        return new RegisteredFieldType(isFinal, (short) (typeId - 3));
       }
     }
   }

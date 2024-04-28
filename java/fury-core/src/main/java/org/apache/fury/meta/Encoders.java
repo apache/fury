@@ -13,8 +13,8 @@ public class Encoders {
   public static final MetaStringDecoder PACKAGE_DECODER = new MetaStringDecoder('.', '_');
   public static final MetaStringEncoder TYPE_NAME_ENCODER = new MetaStringEncoder('$', '_');
   public static final MetaStringDecoder TYPE_NAME_DECODER = new MetaStringDecoder('$', '_');
-  private static final MetaStringEncoder FIELD_NAME_ENCODER = new MetaStringEncoder('$', '_');
-  private static final MetaStringDecoder FIELD_NAME_DECODER = new MetaStringDecoder('$', '_');
+  static final MetaStringEncoder FIELD_NAME_ENCODER = new MetaStringEncoder('$', '_');
+  static final MetaStringDecoder FIELD_NAME_DECODER = new MetaStringDecoder('$', '_');
   private static final ConcurrentMap<String, MetaString> pgkMetaStringCache =
       new ConcurrentHashMap<>();
   private static final ConcurrentMap<String, MetaString> fieldMetaStringCache =
@@ -29,7 +29,7 @@ public class Encoders {
       };
   static final List<Encoding> typeNameEncodingsList = Arrays.asList(typeNameEncodings);
 
-  private static final Encoding[] fieldNameEncodings =
+  static final Encoding[] fieldNameEncodings =
       new Encoding[] {UTF_8, LOWER_UPPER_DIGIT_SPECIAL, ALL_TO_LOWER_SPECIAL};
   static final List<Encoding> fieldNameEncodingsList = Arrays.asList(fieldNameEncodings);
 
