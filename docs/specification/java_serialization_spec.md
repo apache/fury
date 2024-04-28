@@ -112,9 +112,9 @@ For Schema consistent mode, class will be encoded as an enumerated string by ful
 the meta layout for schema evolution mode:
 
 ```
-|      8 bytes meta header      |   variable bytes   |  variable bytes   | variable bytes |
-+-------------------------------+--------------------+-------------------+----------------+
-| 7 bytes hash + 1 bytes header | current class meta | parent class meta |      ...       |
+|      8 bytes meta header      | meta size |   variable bytes   |  variable bytes   | variable bytes |
++-------------------------------+-----------|--------------------+-------------------+----------------+
+| 7 bytes hash + 1 bytes header | 1~2 bytes | current class meta | parent class meta |      ...       |
 ```
 
 Class meta are encoded from parent class to leaf class, only class with serializable fields will be encoded.
@@ -128,7 +128,13 @@ Meta header is a 64 bits number value encoded in little endian order.
   class doesn't have fields to serialize, or we're in a context which serialize fields of current class
   only( `ObjectStreamSerializer#SlotInfo` is an example), num classes will be 1.
 - 5rd bit is used to indicate whether this class needs schema evolution.
+- 6rd bit is used to indicate whether the size sum of all layers meta is less than 256.
 - Other 56 bits is used to store the unique hash of `flags + all layers class meta`.
+
+### Meta size
+
+- If the size sum of all layers meta is less than 256, then one byte is written next to indicate the length of meta.
+- Otherwise, write size as two bytes in little endian.
 
 ### Single layer class meta
 
