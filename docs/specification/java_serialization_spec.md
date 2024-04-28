@@ -178,25 +178,8 @@ Meta header is a 64 bits number value encoded in little endian order.
           meta
           for such types is written separately instead of inlining here is to reduce meta space cost if object of this
           type is serialized in current object graph multiple times, and the field value may be null too.
-    - Collection Type Info: collection type will have an extra byte for elements info.
-      Users can use annotation to provide those info.
-        - elements type same
-        - elements tracking ref
-        - elements nullability
-        - elements declared type
-    - Map Type Info: map type will have an extra byte for kv items info.
-      Users can use annotation to provide those info.
-        - keys type same
-        - keys tracking ref
-        - keys nullability
-        - keys declared type
-        - values type same
-        - values tracking ref
-        - values nullability
-        - values declared type
     - Field name: If type id is set, type id will be used instead. Otherwise meta string encoding length and data will
-      be
-      written instead.
+      be written instead.
 
 Field order are left as implementation details, which is not exposed to specification, the deserialization need to
 resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
@@ -394,6 +377,9 @@ which will be encoded by elements header, each use one bit:
 By default, all bits are unset, which means all elements won't track ref, all elements are same type, not null and
 the actual element is the declared type in the custom class field.
 
+The implementation can generate different deserialization code based read header, and look up the generated code from a
+linear map/list.
+
 #### Elements data
 
 Based on the elements header, the serialization of elements data may skip `ref flag`/`null flag`/`element class info`.
@@ -469,8 +455,8 @@ format will be:
 |    KV header   |   N*2 objects   |
 ```
 
-`KV header` will be a header marked by `MapFieldInfo` in java. For languages such as golang, this can be computed in
-advance for non-interface types in most times.
+`KV header` will be a header marked by `MapFieldInfo` in java. The implementation can generate different deserialization
+code based read header, and look up the generated code from a linear map/list.
 
 ### Enum
 
