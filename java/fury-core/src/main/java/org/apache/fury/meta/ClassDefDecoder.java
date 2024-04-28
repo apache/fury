@@ -19,6 +19,7 @@
 
 package org.apache.fury.meta;
 
+import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.fieldNameEncodings;
 import static org.apache.fury.meta.Encoders.pkgEncodings;
 import static org.apache.fury.meta.Encoders.typeNameEncodings;
@@ -40,13 +41,22 @@ import org.apache.fury.util.Preconditions;
  * href="https://fury.apache.org/docs/specification/fury_java_serialization_spec">...</a>
  */
 class ClassDefDecoder {
-  public static ClassDef decodeClassDef(ClassResolver classResolver, MemoryBuffer buffer) {
-    int idx = buffer.readerIndex();
-    long id = buffer.readInt64();
-    byte[] encoded = buffer.getBytes(idx, buffer.readerIndex() - idx);
+  public static ClassDef decodeClassDef(ClassResolver classResolver, MemoryBuffer buffer, long id) {
+    boolean sizeTwoBytes = (id & SIZE_TWO_BYTES_FLAG) != 0;
+    MemoryBuffer encoded = MemoryBuffer.newHeapBuffer(32);
+    encoded.writeInt64(id);
+    int size;
+    if (sizeTwoBytes) {
+      size = buffer.readInt16() & 0xffff;
+      encoded.writeInt16((short) size);
+    } else {
+      size = buffer.readByte() & 0xff;
+      encoded.writeByte(size);
+    }
+    buffer.checkReadableBytes(size);
+    encoded.writeBytes(buffer.getBytes(buffer.readerIndex(), size));
     long bulkValue = buffer.readInt64();
     long header = bulkValue & 0xff;
-    long hash = bulkValue >>> 8;
     int numClasses = (int) (header & 0b1111);
     if (numClasses == 0b1111) {
       numClasses += buffer.readVarUint32Small7();
@@ -73,7 +83,7 @@ class ClassDefDecoder {
       List<ClassDef.FieldInfo> fieldInfos = readFieldsInfo(buffer, fullClassName, numFields);
       classFields.addAll(fieldInfos);
     }
-    boolean hasExtMeta = (header & 0b100000) != 0;
+    boolean hasExtMeta = (header & 0b1000000) != 0;
     Map<String, String> extMeta = new HashMap<>();
     if (hasExtMeta) {
       int extMetaSize = buffer.readVarUint32Small7();
@@ -83,14 +93,15 @@ class ClassDefDecoder {
             new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8));
       }
     }
-    return new ClassDef(className, classFields, extMeta, id, encoded);
+    return new ClassDef(
+        className, classFields, extMeta, id, encoded.getBytes(0, encoded.writerIndex()));
   }
 
   private static List<ClassDef.FieldInfo> readFieldsInfo(
       MemoryBuffer buffer, String className, int numFields) {
     List<ClassDef.FieldInfo> fieldInfos = new ArrayList<>(numFields);
     for (int i = 0; i < numFields; i++) {
-      byte header = buffer.readByte();
+      int header = buffer.readByte() & 0xff;
       //  `3 bits size + 2 bits field name encoding + polymorphism flag + nullability flag + ref
       // tracking flag`
       // TODO(chaokunyang) read type tag
@@ -119,7 +130,7 @@ class ClassDefDecoder {
     //      The `6 bits size: 0~63`  will be used to indicate size `0~62`,
     //      the value `63` the size need more byte to read, the encoding will encode `size - 62` as
     // a varint next.
-    byte header = buffer.readByte();
+    int header = buffer.readByte() & 0xff;
     int encodingFlags = header & 0b11;
     Encoding encoding = pkgEncodings[encodingFlags];
     return readName(Encoders.PACKAGE_DECODER, buffer, header, encoding, 62);
@@ -133,14 +144,14 @@ class ClassDefDecoder {
     //       The `6 bits size: 0~63`  will be used to indicate size `1~64`,
     //       the value `63` the size need more byte to read, the encoding will encode `size - 63` as
     // a varint next.
-    byte header = buffer.readByte();
+    int header = buffer.readByte() & 0xff;
     int encodingFlags = header & 0b11;
     Encoding encoding = typeNameEncodings[encodingFlags];
     return readName(Encoders.TYPE_NAME_DECODER, buffer, header, encoding, 63);
   }
 
   private static String readName(
-      MetaStringDecoder decoder, MemoryBuffer buffer, byte header, Encoding encoding, int max) {
+      MetaStringDecoder decoder, MemoryBuffer buffer, int header, Encoding encoding, int max) {
     int size = header >> 2;
     if (size == max) {
       size = buffer.readVarUint32Small7() + max;

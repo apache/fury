@@ -27,8 +27,6 @@ import static org.apache.fury.type.TypeUtils.mapOf;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -72,6 +70,9 @@ import org.apache.fury.util.Preconditions;
 public class ClassDef implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(ClassDef.class);
 
+  static final int SCHEMA_COMPATIBLE_FLAG = 0b10000;
+  public static final int SIZE_TWO_BYTES_FLAG = 0b100000;
+  static final int EXT_FLAG = 0b1000000;
   // TODO use field offset to sort field, which will hit l1-cache more. Since
   // `objectFieldOffset` is not part of jvm-specification, it may change between different jdk
   // vendor. But the deserialization peer use the class definition to create deserializer, it's OK
@@ -169,38 +170,14 @@ public class ClassDef implements Serializable {
   }
 
   /** Read class definition from buffer. */
-  public static ClassDef readClassDef(MemoryBuffer buffer) {
-    int idx = buffer.readerIndex();
-    List<String> strings = new ArrayList<>();
-    String className = readSharedString(buffer, strings);
-    List<FieldInfo> fieldInfos = new ArrayList<>();
-    int numFields = buffer.readVarUint32Small7();
-    for (int i = 0; i < numFields; i++) {
-      String definedClass = readSharedString(buffer, strings);
-      String fieldName = new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8);
-      fieldInfos.add(new FieldInfo(definedClass, fieldName, FieldType.read(buffer)));
-    }
-    int extMetaSize = buffer.readVarUint32Small7();
-    Map<String, String> extMeta = new HashMap<>();
-    for (int i = 0; i < extMetaSize; i++) {
-      extMeta.put(
-          new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8),
-          new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8));
-    }
-    long id = buffer.readInt64();
-    byte[] encoded = buffer.getBytes(idx, buffer.readerIndex() - idx);
-    return new ClassDef(className, fieldInfos, extMeta, id, encoded);
+  public static ClassDef readClassDef(ClassResolver classResolver, MemoryBuffer buffer) {
+    return ClassDefDecoder.decodeClassDef(classResolver, buffer, buffer.readInt64());
   }
 
-  private static String readSharedString(MemoryBuffer buffer, List<String> strings) {
-    String str;
-    if (buffer.readBoolean()) {
-      return strings.get(buffer.readVarUint32Small7());
-    } else {
-      str = new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8);
-      strings.add(str);
-      return str;
-    }
+  /** Read class definition from buffer. */
+  public static ClassDef readClassDef(
+      ClassResolver classResolver, MemoryBuffer buffer, long header) {
+    return ClassDefDecoder.decodeClassDef(classResolver, buffer, header);
   }
 
   /**

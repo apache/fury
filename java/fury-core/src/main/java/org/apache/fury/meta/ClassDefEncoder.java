@@ -19,6 +19,9 @@
 
 package org.apache.fury.meta;
 
+import static org.apache.fury.meta.ClassDef.EXT_FLAG;
+import static org.apache.fury.meta.ClassDef.SCHEMA_COMPATIBLE_FLAG;
+import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
 import static org.apache.fury.meta.Encoders.typeNameEncodingsList;
 
@@ -30,8 +33,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
@@ -45,9 +46,6 @@ import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Preconditions;
 
 class ClassDefEncoder {
-  private static final ConcurrentMap<String, MetaString> metaStringCache =
-      new ConcurrentHashMap<>();
-
   public static ClassDef buildClassDef(Class<?> cls, Fury fury) {
     Comparator<Descriptor> comparator =
         DescriptorGrouper.getPrimitiveComparator(fury.compressInt(), fury.compressLong());
@@ -85,7 +83,7 @@ class ClassDefEncoder {
     return buildClassDef(classResolver, type, fields, new HashMap<>());
   }
 
-  public static ClassDef buildClassDef(
+  static ClassDef buildClassDef(
       ClassResolver classResolver, Class<?> type, List<Field> fields, Map<String, String> extMeta) {
     List<ClassDef.FieldInfo> fieldInfos = new ArrayList<>();
     for (Field field : fields) {
@@ -110,7 +108,6 @@ class ClassDefEncoder {
       List<ClassDef.FieldInfo> fieldsInfo,
       Map<String, String> extMeta) {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
-    buffer.writeInt64(-1);
     long header;
     Map<String, List<ClassDef.FieldInfo>> classFields = getClassFields(type, fieldsInfo);
     int encodedSize = classFields.size() - 1; // num class must be greater than 0
@@ -120,9 +117,9 @@ class ClassDefEncoder {
     } else {
       header = encodedSize;
     }
-    header |= 0b10000;
+    header |= SCHEMA_COMPATIBLE_FLAG;
     if (!extMeta.isEmpty()) {
-      header |= 0b100000;
+      header |= EXT_FLAG;
     }
     for (Map.Entry<String, List<ClassDef.FieldInfo>> entry : classFields.entrySet()) {
       String className = entry.getKey();
@@ -161,7 +158,17 @@ class ClassDefEncoder {
     hash <<= 8;
     header |= hash;
     header = Math.abs(header);
-    buffer.putInt64(0, header);
+    MemoryBuffer newBuf = MemoryBuffer.newHeapBuffer(buffer.writerIndex() + 2);
+    if (buffer.writerIndex() > 255) {
+      header |= SIZE_TWO_BYTES_FLAG;
+    }
+    newBuf.writeInt64(header);
+    if (buffer.writerIndex() > 255) {
+      newBuf.writeInt16((short) buffer.writerIndex());
+    } else {
+      newBuf.writeByte(buffer.writerIndex());
+    }
+    newBuf.writeBytes(buffer.getHeapMemory(), 0, buffer.writerIndex());
     return buffer;
   }
 

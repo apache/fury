@@ -19,6 +19,7 @@
 
 package org.apache.fury.resolver;
 
+import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
 import static org.apache.fury.meta.Encoders.TYPE_NAME_DECODER;
@@ -1403,18 +1404,30 @@ public class ClassResolver {
     buffer.readerIndex(classDefOffset);
     int numClassDefs = buffer.readVarUint32Small14();
     for (int i = 0; i < numClassDefs; i++) {
-      ClassDef readClassDef = ClassDef.readClassDef(buffer);
-      // Share same class def to reduce memory footprint, since there may be many meta context.
-      ClassDef classDef =
-          extRegistry.classIdToDef.computeIfAbsent(
-                  readClassDef.getId(), key -> Tuple2.of(readClassDef, null))
-              .f0;
-      metaContext.readClassDefs.add(classDef);
+      long id = buffer.readInt64();
+      long hash = id >>> 8;
+      Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(hash);
+      if (tuple2 != null) {
+        int size = buffer.readByte() & 0xff;
+        if ((id & SIZE_TWO_BYTES_FLAG) != 0) {
+          size = size << 8 | (buffer.readByte() & 0xff);
+        }
+        buffer.increaseReaderIndex(size);
+      } else {
+        tuple2 = readClassDef(buffer, id);
+      }
+      metaContext.readClassDefs.add(tuple2.f0);
       // Will be set lazily, so even some classes doesn't exist, remaining classinfo
       // can be created still.
       metaContext.readClassInfos.add(null);
     }
     buffer.readerIndex(readerIndex);
+  }
+
+  private Tuple2<ClassDef, ClassInfo> readClassDef(MemoryBuffer buffer, long header) {
+    ClassDef readClassDef = ClassDef.readClassDef(this, buffer, header);
+    return extRegistry.classIdToDef.computeIfAbsent(
+        readClassDef.getId(), key -> Tuple2.of(readClassDef, null));
   }
 
   /**
