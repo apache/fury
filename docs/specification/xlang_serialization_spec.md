@@ -303,22 +303,6 @@ Meta header is a 64 bits number value encoded in little endian order.
         - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
           meta for such types is written separately instead of inlining here is to reduce meta space cost if object of
           this type is serialized in the current object graph multiple times, and the field value may be null too.
-    - List Type Info: this type will have an extra byte for elements info.
-      Users can use annotation to provide that info.
-        - elements type same
-        - elements tracking ref
-        - elements nullability
-        - elements declared type
-    - Map Type Info: this type will have an extra byte for kv items info.
-      Users can use annotation to provide that info.
-        - keys type same
-        - keys tracking ref
-        - keys nullability
-        - keys declared type
-        - values type same
-        - values tracking ref
-        - values nullability
-        - values declared type
     - Field name: If tag id is set, tag id will be used instead. Otherwise meta string encoding length and data will
       be written instead.
 
@@ -489,6 +473,9 @@ which will be encoded by elements header, each use one bit:
 By default, all bits are unset, which means all elements won't track ref, all elements are same type, not null and
 the actual element is the declared type in the custom type field.
 
+The implementation can generate different deserialization code based read  header, and look up the generated code from
+a linear map/list.
+
 #### elements data
 
 Based on the elements header, the serialization of elements data may skip `ref flag`/`null flag`/`element type info`.
@@ -593,7 +580,8 @@ format will be:
 ```
 
 `KV header` will be a header marked by `MapFieldInfo` in java. For languages such as golang, this can be computed in
-advance for non-interface types most times.
+advance for non-interface types most times. The implementation can generate different deserialization code based read
+header, and look up the generated code from a linear map/list.
 
 #### Why serialize chunk by chunk?
 
