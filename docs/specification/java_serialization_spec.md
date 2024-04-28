@@ -150,47 +150,33 @@ Meta header is a 64 bits number value encoded in little endian order.
       fields info of those fields which aren't annotated by tag id for deserializing schema consistent fields, then use
       fields info in meta for deserializing compatible fields.
 - Package name encoding(omitted when class is registered):
-    - encoding algorithm: `UTF8/LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
-    - Header:
-        - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 63, then header will be
-          `6 bits size | strip last char flag << 1 | 0b1`.
-        - If meta string encoding is `LOWER_UPPER_DIGIT_SPECIAL` and the length of encoded string `<=` 31, then header
-          will be
-          `5 bits size | strip last char flag << 2 | 0b11`.
-        - Otherwise, encode string using `UTF8`, header: `size << 3 | strip last char flag << 2 | 0b01` as an unsigned
-          varint.
+    - encoding algorithm: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
+    - Header: `6 bits size | 2 bits encoding flags`.  The `6 bits size: 0~63`  will be used to indicate size `0~62`,
+      the value `63` the size need more byte to read, the encoding will encode `size - 62` as a varint next.
 - Class name encoding(omitted when class is registered):
     - encoding algorithm: `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
-    - header:
-        - If meta string encoding is `LOWER_UPPER_DIGIT_SPECIAL/ALL_TO_LOWER_SPECIAL` and the length of encoded string
-          `<=` 31, then header will be `5 bits size | strip last char flag << 1 | encoding flag | 0b1`.
-            - encoding flag 0: LOWER_UPPER_DIGIT_SPECIAL
-            - encoding flag 1: ALL_TO_LOWER_SPECIAL/LOWER_SPECIAL
-        - Otherwise, use `FIRST_TO_LOWER_SPECIAL/UTF8` encoding only, header:
-          `size << 3 | strip last char flag | encoding flag | 0b0` as an unsigned varint.
-            - encoding flag 0: FIRST_TO_LOWER_SPECIAL. If use this encoding, only first char is upper case, the size
-              won't exceed 16 mostly, thus the header can be written in one byte.
-            - encoding flag 1: UTF8
+    - header: `6 bits size | 2 bits encoding flags`.  The `6 bits size: 0~63`  will be used to indicate size `1~64`,
+      the value `63` the size need more byte to read, the encoding will encode `size - 63` as a varint next.
 - Field info:
     - header(8
-      bits): `reserved 1 bit + strip last char flag + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag`.
+      bits): `3 bits size + 2 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag`.
       Users can use annotation to provide those info.
-        - 3 bits field name encoding:
-            - 3 bits
-              encoding: `UTF8/LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
-            - If tag id is used, i.e. field name is written by an unsigned varint tag id. 3 bits encoding will be `111`
-              to flag it.
-        - ref tracking: when set to 0, ref tracking will be disabled for this field.
-        - nullability: when set to 0, this field won't be null.
+        - 2 bits field name encoding:
+            - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
+            - If tag id is used, i.e. field name is written by an unsigned varint tag id. 2 bits encoding will be `11`.
+        - size of field name:
+            - The `3 bits size: 0~7`  will be used to indicate length `1~7`, the value `6` the size read more bytes,
+              the encoding will encode `size - 7` as a varint next.
+            - If encoding is `TAG_ID`, then num_bytes of field name will be used to store tag id.
+        - ref tracking: when set to 1, ref tracking will be enabled for this field.
+        - nullability: when set to 1, this field can be null.
         - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
           not `final`.
-        - 3 bits field name encoding will be set to meta string encoding flags when tag id is not set.
     - type id:
         - For registered type-consistent classes, it will be the registered class id.
         - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
-          meta
-          for such types is written separately instead of inlining here is to reduce meta space cost if object of this
-          type is serialized in current object graph multiple times, and the field value may be null too.
+          meta for such types is written separately instead of inlining here is to reduce meta space cost if object of
+          this type is serialized in current object graph multiple times, and the field value may be null too.
     - Collection Type Info: collection type will have an extra byte for elements info.
       Users can use annotation to provide those info.
         - elements type same
