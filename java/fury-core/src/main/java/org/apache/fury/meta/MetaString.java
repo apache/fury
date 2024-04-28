@@ -109,20 +109,6 @@ public class MetaString {
     return stripLastChar;
   }
 
-  public boolean stripLastChar() {
-    switch (encoding) {
-      case LOWER_SPECIAL:
-      case FIRST_TO_LOWER_SPECIAL:
-      case ALL_TO_LOWER_SPECIAL:
-        return bytes.length * 8 - numBits >= 5;
-      case LOWER_UPPER_DIGIT_SPECIAL:
-        return bytes.length * 8 - numBits >= 6;
-      case UTF_8:
-      default:
-        return false;
-    }
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) {

@@ -14,14 +14,14 @@ import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.MetaString.Encoding;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.MurmurHash3;
-import org.apache.fury.util.Platform;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.ReflectionUtils;
 
 class ClassDefEncoder {
   private static final ConcurrentMap<String, MetaString> metaStringCache =
@@ -81,21 +81,7 @@ class ClassDefEncoder {
         type.getName(), fieldInfos, extMeta, encodeClassDef.getInt64(0), classDefBytes);
   }
 
-  // Overall spec:
-  // ```
-  // |      8 bytes meta header      |   variable bytes   |  variable bytes   | variable bytes |
-  // +-------------------------------+--------------------+-------------------+----------------+
-  // | 7 bytes hash + 1 bytes header | current class meta | parent class meta |      ...       |
-  // ```
-  // Single layer:
-  // ```
-  // |      unsigned varint       |      meta string      |     meta string     |  field info:
-  // variable bytes   | variable bytes  | ... |
-  // +----------------------------+-----------------------+---------------------+-------------------------------+-----------------+-----+
-  // | num fields + register flag | header + package name | header + class name | header + type id +
-  // field name | next field info | ... |
-  // ```
-  // For more details, see spec documentation:
+  // see spec documentation: docs/specification/java_serialization_spec.md
   // https://fury.apache.org/docs/specification/fury_java_serialization_spec
   private static MemoryBuffer encodeClassDef(
       ClassResolver classResolver,
@@ -178,29 +164,37 @@ class ClassDefEncoder {
 
   private static void writeFieldsInfo(MemoryBuffer buffer, List<ClassDef.FieldInfo> fields) {
     for (ClassDef.FieldInfo fieldInfo : fields) {
-      MetaString metaString =
-          metaStringCache.computeIfAbsent(
-              fieldInfo.getFieldName(),
-              k -> MetaStringEncoder.FIELD_NAME_ENCODER.encode(fieldInfo.getFieldName()));
       ClassDef.FieldType fieldType = fieldInfo.getFieldType();
-      byte header = (byte) (fieldType.isMonomorphic() ? 1 : 0);
-      header |= (byte) (metaString.getEncoding().getValue() << 3);
-      if (metaString.stripLastChar()) {
-        header |= 0b1000000;
+      // `3 bits size + 2 bits field name encoding + polymorphism flag + nullability flag + ref
+      // tracking flag`
+      int header = ((fieldType.isMonomorphic() ? 1 : 0) << 2);
+      // Encoding `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
+      MetaString metaString = Encoders.encodeFieldName(fieldInfo.getFieldName());
+      int encodingFlags = getFieldNameEncodingFlags(metaString.getEncoding());
+      header |= (byte) (encodingFlags << 3);
+      byte[] encoded = metaString.getBytes();
+      int size = fieldInfo.hasTypeTag() ? fieldInfo.getTypeTag() : encoded.length;
+      boolean bigSize = size > 7;
+      if (bigSize) {
+        header |= 0b11100000;
+        buffer.writeVarUint32Small7(header);
+        buffer.writeVarUint32Small7(size - 7);
+      } else {
+        buffer.writeVarUint32Small7(header);
       }
-      buffer.writeByte(header);
-      // TODO(chaokunyang) Only write field name when tag id not used
-      buffer.writePrimitiveArrayWithSize(
-          metaString.getBytes(), Platform.BYTE_ARRAY_OFFSET, metaString.getBytes().length);
-
+      if (!fieldInfo.hasTypeTag()) {
+        buffer.writeBytes(encoded);
+      }
       if (fieldType instanceof ClassDef.RegisteredFieldType) {
         short classId = ((ClassDef.RegisteredFieldType) fieldType).getClassId();
         buffer.writeVarUint32(((3 + classId) << 1));
       } else if (fieldType instanceof ClassDef.CollectionFieldType) {
         buffer.writeByte((2 << 1));
+        // TODO remove it when new collection deserialization jit finished.
         ((ClassDef.CollectionFieldType) fieldType).getElementType().write(buffer);
       } else if (fieldType instanceof ClassDef.MapFieldType) {
         buffer.writeByte((1 << 1));
+        // TODO remove it when new map deserialization jit finished.
         ClassDef.MapFieldType mapFieldType = (ClassDef.MapFieldType) fieldType;
         mapFieldType.getKeyType().write(buffer);
         mapFieldType.getValueType().write(buffer);
@@ -211,73 +205,74 @@ class ClassDefEncoder {
     }
   }
 
+  private static int getFieldNameEncodingFlags(Encoding encoding) {
+    switch (encoding) {
+      case UTF_8:
+        return 0;
+      case FIRST_TO_LOWER_SPECIAL:
+        return 0b1;
+      case LOWER_UPPER_DIGIT_SPECIAL:
+        return 0b10;
+      default:
+        throw new IllegalStateException("Unexpected encoding " + encoding);
+    }
+  }
+
   private static void writePkgName(MemoryBuffer buffer, String pkg) {
-    // Package name encoding algorithm: `UTF8/LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
-    // - Header:
-    //  - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 63, then
-    // header will be
-    //    `6 bits size | strip last char flag < 1 | 0b1`.
-    //  - If meta string encoding is `LOWER_UPPER_DIGIT_SPECIAL` and the length of encoded string
-    // `<=` 31, then
-    //    header will be `5 bits size | strip last char flag < 2 | 0b11`.
-    //  - Otherwise, encode string using `UTF8`, header: `size << 3 | strip last char flag < 2 |
-    // 0b01` as an
-    //    unsigned varint.
-    MetaString pkgMetaString =
-        metaStringCache.computeIfAbsent(pkg, MetaStringEncoder.PACKAGE_ENCODER::encode);
-    int stripLastChar = pkgMetaString.stripLastChar() ? 1 : 0;
+    // - Package name encoding(omitted when class is registered):
+    //    - encoding algorithm: `UTF8/LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
+    //    - Header: `6 bits size | 2 bits encoding flags`.
+    //      The `6 bits size: 0~63`  will be used to indicate size `0~62`,
+    //      the value `63` the size need more byte to read, the encoding will encode `size - 62` as
+    // a varint next.
+    MetaString pkgMetaString = Encoders.encodePackage(pkg);
     byte[] encoded = pkgMetaString.getBytes();
     Encoding encoding = pkgMetaString.getEncoding();
-    int pkgHeader = encoded.length;
-    if (encoding == Encoding.LOWER_SPECIAL && encoded.length <= 63) {
-      pkgHeader = (pkgHeader << 2) | (stripLastChar << 1) | 0b1;
-    } else if (encoding == Encoding.LOWER_UPPER_DIGIT_SPECIAL && encoded.length <= 31) {
-      pkgHeader = (pkgHeader << 3) | (stripLastChar << 2) | 0b11;
-    } else {
-      pkgHeader = (pkgHeader << 3) | (stripLastChar << 2) | 0b01;
-      if (encoding != Encoding.UTF_8) {
-        encoded = pkg.getBytes(StandardCharsets.UTF_8);
-      }
-    }
-    buffer.writeVarUint32Small7(pkgHeader);
-    buffer.writeBytes(encoded);
+    Preconditions.checkArgument(encoding.getValue() < 3);
+    int pkgHeader = (encoded.length << 2) | encoding.getValue();
+    writeName(buffer, encoded, pkgHeader);
   }
 
   private static void writeTypeName(MemoryBuffer buffer, String typeName) {
-    // - Encoding algorithm:
+    // - Class name encoding(omitted when class is registered):
+    //     - encoding algorithm:
     // `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
-    // - header:
-    //   - If meta string encoding is `LOWER_UPPER_DIGIT_SPECIAL/ALL_TO_LOWER_SPECIAL` and the
-    // length of encoded string
-    //       `<=` 31, then header will be `5 bits size | strip last char flag << 2 | encoding flag |
-    // 0b1`.
-    //     - encoding flag 0: LOWER_UPPER_DIGIT_SPECIAL
-    //     - encoding flag 1: ALL_TO_LOWER_SPECIAL
-    //   - Otherwise, use `FIRST_TO_LOWER_SPECIAL/UTF8` encoding only, header:
-    //       `size << 3 | strip last char flag | encoding flag | 0b0` as an unsigned varint.
-    //     - encoding flag 0: FIRST_TO_LOWER_SPECIAL. If use this encoding, only first char is upper
-    // case, the size
-    //       won't exceed 16 mostly, thus the header can be written in one byte.
-    //     - encoding flag 1: UTF8
-    MetaString clsMetaString =
-        metaStringCache.computeIfAbsent(typeName, MetaStringEncoder.TYPE_NAME_ENCODER::encode);
-    int stripLastChar = clsMetaString.stripLastChar() ? 1 : 0;
-    byte[] encoded = clsMetaString.getBytes();
-    Encoding encoding = clsMetaString.getEncoding();
-    int typeHeader = encoded.length;
-    if (encoded.length <= 31
-        && (encoding == Encoding.LOWER_UPPER_DIGIT_SPECIAL
-            || encoding == Encoding.ALL_TO_LOWER_SPECIAL)) {
-      int encodingFlag = encoding == Encoding.LOWER_UPPER_DIGIT_SPECIAL ? 0b00 : 0b10;
-      typeHeader = (typeHeader << 3) | stripLastChar << 2 | encodingFlag | 0b1;
+    //     - header: `6 bits size | 2 bits encoding flags`.
+    //       The `6 bits size: 0~63`  will be used to indicate size `1~64`,
+    //       the value `63` the size need more byte to read, the encoding will encode `size - 63` as
+    // a varint next.
+    MetaString metaString = Encoders.encodeTypeName(typeName);
+    byte[] encoded = metaString.getBytes();
+    int encodingFlags = getTypeEncodingFlags(metaString);
+    int header = (encoded.length << 2) | encodingFlags;
+    writeName(buffer, encoded, header);
+  }
+
+  private static void writeName(MemoryBuffer buffer, byte[] encoded, int header) {
+    boolean bigSize = encoded.length > 0b111110;
+    if (bigSize) {
+      header |= 0b11111111;
+      buffer.writeVarUint32Small7(header);
+      buffer.writeVarUint32Small7(encoded.length - 62);
     } else {
-      int encodingFlag = encoding == Encoding.FIRST_TO_LOWER_SPECIAL ? 0b00 : 0b10;
-      typeHeader = (typeHeader << 3) | stripLastChar << 2 | encodingFlag | 0b1;
-      if (encoding != Encoding.UTF_8) {
-        encoded = typeName.getBytes(StandardCharsets.UTF_8);
-      }
+      buffer.writeVarUint32Small7(header);
     }
-    buffer.writeVarUint32Small7(typeHeader);
     buffer.writeBytes(encoded);
+  }
+
+  private static int getTypeEncodingFlags(MetaString metaString) {
+    Encoding encoding = metaString.getEncoding();
+    switch (encoding) {
+      case UTF_8:
+        return 0;
+      case LOWER_UPPER_DIGIT_SPECIAL:
+        return 0b1;
+      case FIRST_TO_LOWER_SPECIAL:
+        return 0b10;
+      case ALL_TO_LOWER_SPECIAL:
+        return 0b11;
+      default:
+        throw new IllegalStateException("Unexpected encoding " + encoding);
+    }
   }
 }

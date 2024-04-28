@@ -232,6 +232,14 @@ public class ClassDef implements Serializable {
       return fieldName;
     }
 
+    public boolean hasTypeTag() {
+      return false;
+    }
+
+    public short getTypeTag() {
+      return -1;
+    }
+
     /** Returns type of current field. */
     public FieldType getFieldType() {
       return fieldType;

@@ -19,9 +19,9 @@
 
 package org.apache.fury.resolver;
 
-import static org.apache.fury.meta.MetaStringEncoder.PACKAGE_DECODER;
-import static org.apache.fury.meta.MetaStringEncoder.PACKAGE_ENCODER;
-import static org.apache.fury.meta.MetaStringEncoder.TYPE_NAME_DECODER;
+import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
+import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
+import static org.apache.fury.meta.Encoders.TYPE_NAME_DECODER;
 import static org.apache.fury.serializer.CodegenSerializer.loadCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.loadCompatibleCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.supportCodegenForJavaSerialization;
