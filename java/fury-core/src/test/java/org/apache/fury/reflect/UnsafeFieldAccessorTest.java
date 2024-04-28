@@ -17,11 +17,10 @@
  * under the License.
  */
 
-package org.apache.fury.util;
+package org.apache.fury.reflect;
 
 import static org.testng.Assert.assertEquals;
 
-import org.apache.fury.reflect.UnsafeFieldAccessor;
 import org.testng.annotations.Test;
 
 public class UnsafeFieldAccessorTest {

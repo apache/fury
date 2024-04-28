@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.fury.util;
+package org.apache.fury.reflect;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -25,7 +25,6 @@ import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.type.Descriptor;
 import org.testng.annotations.Test;

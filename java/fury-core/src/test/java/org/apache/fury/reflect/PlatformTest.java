@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.fury.util;
+package org.apache.fury.reflect;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
