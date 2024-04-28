@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.fury.type;
+package org.apache.fury.meta;
 
 import static org.testng.Assert.assertEquals;
 
@@ -32,7 +32,6 @@ import java.util.TreeSet;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.meta.ClassDef;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.testng.annotations.Test;
 
