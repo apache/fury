@@ -3,6 +3,7 @@ package org.apache.fury.meta;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -22,6 +23,11 @@ import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Preconditions;
+
+import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
+import static org.apache.fury.meta.Encoders.pkgEncodingsList;
+import static org.apache.fury.meta.Encoders.typeNameEncodings;
+import static org.apache.fury.meta.Encoders.typeNameEncodingsList;
 
 class ClassDefEncoder {
   private static final ConcurrentMap<String, MetaString> metaStringCache =
@@ -170,7 +176,7 @@ class ClassDefEncoder {
       int header = ((fieldType.isMonomorphic() ? 1 : 0) << 2);
       // Encoding `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
       MetaString metaString = Encoders.encodeFieldName(fieldInfo.getFieldName());
-      int encodingFlags = getFieldNameEncodingFlags(metaString.getEncoding());
+      int encodingFlags = fieldNameEncodingsList.indexOf(metaString.getEncoding());
       header |= (byte) (encodingFlags << 3);
       byte[] encoded = metaString.getBytes();
       int size = fieldInfo.hasTypeTag() ? fieldInfo.getTypeTag() : encoded.length;
@@ -220,17 +226,15 @@ class ClassDefEncoder {
 
   private static void writePkgName(MemoryBuffer buffer, String pkg) {
     // - Package name encoding(omitted when class is registered):
-    //    - encoding algorithm: `UTF8/LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
+    //    - encoding algorithm: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
     //    - Header: `6 bits size | 2 bits encoding flags`.
     //      The `6 bits size: 0~63`  will be used to indicate size `0~62`,
     //      the value `63` the size need more byte to read, the encoding will encode `size - 62` as
     // a varint next.
     MetaString pkgMetaString = Encoders.encodePackage(pkg);
     byte[] encoded = pkgMetaString.getBytes();
-    Encoding encoding = pkgMetaString.getEncoding();
-    Preconditions.checkArgument(encoding.getValue() < 3);
-    int pkgHeader = (encoded.length << 2) | encoding.getValue();
-    writeName(buffer, encoded, pkgHeader);
+    int pkgHeader = (encoded.length << 2) | typeNameEncodingsList.indexOf(pkgMetaString.getEncoding());
+    writeName(buffer, encoded, pkgHeader, 62);
   }
 
   private static void writeTypeName(MemoryBuffer buffer, String typeName) {
@@ -243,36 +247,20 @@ class ClassDefEncoder {
     // a varint next.
     MetaString metaString = Encoders.encodeTypeName(typeName);
     byte[] encoded = metaString.getBytes();
-    int encodingFlags = getTypeEncodingFlags(metaString);
-    int header = (encoded.length << 2) | encodingFlags;
-    writeName(buffer, encoded, header);
+    int header = (encoded.length << 2) | typeNameEncodingsList.indexOf(metaString.getEncoding());
+    writeName(buffer, encoded, header, 63);
   }
 
-  private static void writeName(MemoryBuffer buffer, byte[] encoded, int header) {
-    boolean bigSize = encoded.length > 0b111110;
+  private static void writeName(MemoryBuffer buffer, byte[] encoded, int header, int max) {
+    boolean bigSize = encoded.length > max;
     if (bigSize) {
       header |= 0b11111111;
       buffer.writeVarUint32Small7(header);
-      buffer.writeVarUint32Small7(encoded.length - 62);
+      buffer.writeVarUint32Small7(encoded.length - max);
     } else {
       buffer.writeVarUint32Small7(header);
     }
     buffer.writeBytes(encoded);
   }
 
-  private static int getTypeEncodingFlags(MetaString metaString) {
-    Encoding encoding = metaString.getEncoding();
-    switch (encoding) {
-      case UTF_8:
-        return 0;
-      case LOWER_UPPER_DIGIT_SPECIAL:
-        return 0b1;
-      case FIRST_TO_LOWER_SPECIAL:
-        return 0b10;
-      case ALL_TO_LOWER_SPECIAL:
-        return 0b11;
-      default:
-        throw new IllegalStateException("Unexpected encoding " + encoding);
-    }
-  }
 }

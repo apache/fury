@@ -2,6 +2,8 @@ package org.apache.fury.meta;
 
 import static org.apache.fury.meta.MetaString.Encoding.*;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.fury.meta.MetaString.Encoding;
@@ -17,16 +19,19 @@ public class Encoders {
       new ConcurrentHashMap<>();
   private static final ConcurrentMap<String, MetaString> fieldMetaStringCache =
       new ConcurrentHashMap<>();
-  private static final Encoding[] pkgEncodings =
+  static final Encoding[] pkgEncodings =
       new Encoding[] {UTF_8, ALL_TO_LOWER_SPECIAL, LOWER_UPPER_DIGIT_SPECIAL};
+  static final List<Encoding> pkgEncodingsList = Arrays.asList(pkgEncodings);
 
-  private static final Encoding[] typeNameEncodings =
+  static final Encoding[] typeNameEncodings =
       new Encoding[] {
         UTF_8, LOWER_UPPER_DIGIT_SPECIAL, FIRST_TO_LOWER_SPECIAL, ALL_TO_LOWER_SPECIAL
       };
+  static final List<Encoding> typeNameEncodingsList = Arrays.asList(typeNameEncodings);
 
   private static final Encoding[] fieldNameEncodings =
       new Encoding[] {UTF_8, LOWER_UPPER_DIGIT_SPECIAL, ALL_TO_LOWER_SPECIAL};
+  static final List<Encoding> fieldNameEncodingsList = Arrays.asList(fieldNameEncodings);
 
   public static MetaString encodePackage(String pkg) {
     return pgkMetaStringCache.computeIfAbsent(pkg, k -> PACKAGE_ENCODER.encode(pkg, pkgEncodings));
