@@ -74,7 +74,7 @@ public class MetaStringDecoder {
     boolean stripLastChar = (data[0] & 0x80) != 0; // Check the first bit of the first byte
     int bitMask = 0b11111; // 5 bits for the mask
     int bitIndex = 1; // Start from the second bit
-    while (bitIndex + 5 <= totalBits) {
+    while (bitIndex + 5 <= totalBits && !(stripLastChar && (bitIndex + 2 * 5 > totalBits))) {
       int byteIndex = bitIndex / 8;
       int intraByteIndex = bitIndex % 8;
       // Extract the 5-bit character value across byte boundaries if needed
@@ -90,9 +90,6 @@ public class MetaStringDecoder {
       bitIndex += 5;
       decoded.append(decodeLowerSpecialChar(charValue));
     }
-    if (stripLastChar) {
-      decoded.deleteCharAt(decoded.length() - 1);
-    }
     return decoded.toString();
   }
 
@@ -103,7 +100,7 @@ public class MetaStringDecoder {
     boolean stripLastChar = (data[0] & 0x80) != 0; // Check the first bit of the first byte
     int bitMask = 0b111111; // 6 bits for mask
     int numBits = data.length * 8;
-    while (bitIndex + 6 <= numBits) {
+    while (bitIndex + 6 <= numBits && !(stripLastChar && (bitIndex + 2 * 6 > numBits))) {
       int byteIndex = bitIndex / 8;
       int intraByteIndex = bitIndex % 8;
 
@@ -119,9 +116,6 @@ public class MetaStringDecoder {
       }
       bitIndex += 6;
       decoded.append(decodeLowerUpperDigitSpecialChar(charValue));
-    }
-    if (stripLastChar) {
-      decoded.deleteCharAt(decoded.length() - 1);
     }
     return decoded.toString();
   }
