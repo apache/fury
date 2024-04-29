@@ -156,21 +156,84 @@ public class ClassDefTest extends FuryTestBase {
   @Test
   public void testContainerClass() {
     Fury fury = Fury.builder().withMetaContextShare(true).build();
-    {
-      ClassDef classDef =
-          ClassDef.buildClassDef(
-              fury.getClassResolver(),
-              ContainerClass.class,
-              ReflectionUtils.getFields(ContainerClass.class, true));
-      assertEquals(classDef.getClassName(), ContainerClass.class.getName());
-      assertEquals(
-          classDef.getFieldsInfo().size(),
-          ReflectionUtils.getFields(ContainerClass.class, true).size());
-      MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-      classDef.writeClassDef(buffer);
-      ClassDef classDef1 = ClassDef.readClassDef(fury.getClassResolver(), buffer);
-      assertEquals(classDef1.getClassName(), classDef.getClassName());
-      assertEquals(classDef1, classDef);
-    }
+    List<Field> fields = ReflectionUtils.getFields(ContainerClass.class, true);
+    ClassDef classDef =
+        ClassDef.buildClassDef(fury.getClassResolver(), ContainerClass.class, fields);
+    assertEquals(classDef.getClassName(), ContainerClass.class.getName());
+    assertEquals(classDef.getFieldsInfo().size(), fields.size());
+    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
+    classDef.writeClassDef(buffer);
+    ClassDef classDef1 = ClassDef.readClassDef(fury.getClassResolver(), buffer);
+    assertEquals(classDef1.getClassName(), classDef.getClassName());
+    assertEquals(classDef1, classDef);
+  }
+
+  @Test
+  public void testContainerClass1() {
+    Fury fury = Fury.builder().withMetaContextShare(true).build();
+    List<Field> fields = ReflectionUtils.getFields(ContainerClass.class, true);
+    ClassDef classDef =
+        ClassDef.buildClassDef(fury.getClassResolver(), ContainerClass.class, fields);
+    assertEquals(classDef.getClassName(), ContainerClass.class.getName());
+    assertEquals(classDef.getFieldsInfo().size(), fields.size());
+    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
+    classDef.writeClassDef(buffer);
+    ClassDef classDef1 = ClassDef.readClassDef(fury.getClassResolver(), buffer);
+    assertEquals(classDef1.getClassName(), classDef.getClassName());
+    System.out.println(classDef1.toString());
+    System.out.println(classDef.toString());
+    assertEquals(classDef1.toString(), classDef.toString());
+    assertEquals(classDef1, classDef);
   }
 }
+// ClassDef{className='org.apache.fury.meta.ClassDefTest$ContainerClass',
+// fieldsInfo=[FieldInfo{fieldName='intField2', fieldType=RegisteredFieldType{isMonomorphic=true,
+// classId=9}}, FieldInfo{fieldName='booleanField',
+// fieldType=RegisteredFieldType{isMonomorphic=true, classId=5}}, FieldInfo{fieldName='objField',
+// fieldType=RegisteredFieldType{isMonomorphic=false, classId=37}}, FieldInfo{fieldName='longField',
+// fieldType=RegisteredFieldType{isMonomorphic=true, classId=11}}, FieldInfo{fieldName='intField1',
+// fieldType=RegisteredFieldType{isMonomorphic=true, classId=9}}, FieldInfo{fieldName='longField',
+// fieldType=RegisteredFieldType{isMonomorphic=true, classId=11}}, FieldInfo{fieldName='collection',
+// fieldType=CollectionFieldType{elementType=RegisteredFieldType{isMonomorphic=false, classId=22},
+// isFinal=false}}, FieldInfo{fieldName='list1',
+// fieldType=CollectionFieldType{elementType=RegisteredFieldType{isMonomorphic=false, classId=18},
+// isFinal=false}}, FieldInfo{fieldName='list2',
+// fieldType=CollectionFieldType{elementType=RegisteredFieldType{isMonomorphic=false, classId=37},
+// isFinal=false}}, FieldInfo{fieldName='list3',
+// fieldType=CollectionFieldType{elementType=RegisteredFieldType{isMonomorphic=false, classId=37},
+// isFinal=false}}, FieldInfo{fieldName='map1',
+// fieldType=MapFieldType{keyType=RegisteredFieldType{isMonomorphic=false, classId=22},
+// valueType=RegisteredFieldType{isMonomorphic=false, classId=37}, isFinal=false}},
+// FieldInfo{fieldName='map2',
+// fieldType=MapFieldType{keyType=RegisteredFieldType{isMonomorphic=false, classId=22},
+// valueType=RegisteredFieldType{isMonomorphic=false, classId=18}, isFinal=false}},
+// FieldInfo{fieldName='map3',
+// fieldType=MapFieldType{keyType=RegisteredFieldType{isMonomorphic=false, classId=37},
+// valueType=RegisteredFieldType{isMonomorphic=false, classId=37}, isFinal=false}}], extMeta={},
+// id=1050623130921503761}
+
+// ClassDef{className='org.apache.fury.meta.ClassDefTest$ContainerClass',
+// fieldsInfo=[FieldInfo{fieldName='intField2', fieldType=RegisteredFieldType{isMonomorphic=true,
+// classId=9}}, FieldInfo{fieldName='booleanField',
+// fieldType=RegisteredFieldType{isMonomorphic=true, classId=5}}, FieldInfo{fieldName='objField',
+// fieldType=RegisteredFieldType{isMonomorphic=false, classId=37}}, FieldInfo{fieldName='longField',
+// fieldType=RegisteredFieldType{isMonomorphic=true, classId=11}}, FieldInfo{fieldName='intField1',
+// fieldType=RegisteredFieldType{isMonomorphic=true, classId=9}}, FieldInfo{fieldName='longField',
+// fieldType=RegisteredFieldType{isMonomorphic=true, classId=11}}, FieldInfo{fieldName='collection',
+// fieldType=CollectionFieldType{elementType=RegisteredFieldType{isMonomorphic=true, classId=22},
+// isFinal=false}}, FieldInfo{fieldName='list1',
+// fieldType=CollectionFieldType{elementType=RegisteredFieldType{isMonomorphic=true, classId=18},
+// isFinal=false}}, FieldInfo{fieldName='list2',
+// fieldType=CollectionFieldType{elementType=RegisteredFieldType{isMonomorphic=false, classId=37},
+// isFinal=false}}, FieldInfo{fieldName='list3',
+// fieldType=CollectionFieldType{elementType=RegisteredFieldType{isMonomorphic=false, classId=37},
+// isFinal=false}}, FieldInfo{fieldName='map1',
+// fieldType=MapFieldType{keyType=RegisteredFieldType{isMonomorphic=true, classId=22},
+// valueType=RegisteredFieldType{isMonomorphic=false, classId=37}, isFinal=false}},
+// FieldInfo{fieldName='map2',
+// fieldType=MapFieldType{keyType=RegisteredFieldType{isMonomorphic=true, classId=22},
+// valueType=RegisteredFieldType{isMonomorphic=true, classId=18}, isFinal=false}},
+// FieldInfo{fieldName='map3',
+// fieldType=MapFieldType{keyType=RegisteredFieldType{isMonomorphic=false, classId=37},
+// valueType=RegisteredFieldType{isMonomorphic=false, classId=37}, isFinal=false}}], extMeta={},
+// id=1050623130921503761}

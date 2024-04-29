@@ -332,7 +332,7 @@ public class ClassDef implements Serializable {
 
     public static FieldType read(MemoryBuffer buffer) {
       int header = buffer.readVarUint32Small7();
-      boolean isMonomorphic = (header & 0b100) != 0;
+      boolean isMonomorphic = (header & 0b1) != 0;
       return read(buffer, isMonomorphic, header >>> 1);
     }
 
@@ -340,9 +340,9 @@ public class ClassDef implements Serializable {
       if (typeId == 0) {
         return new ObjectFieldType(isFinal);
       } else if (typeId == 1) {
-        return new CollectionFieldType(isFinal, read(buffer));
-      } else if (typeId == 2) {
         return new MapFieldType(isFinal, read(buffer), read(buffer));
+      } else if (typeId == 2) {
+        return new CollectionFieldType(isFinal, read(buffer));
       } else {
         return new RegisteredFieldType(isFinal, (short) (typeId - 3));
       }

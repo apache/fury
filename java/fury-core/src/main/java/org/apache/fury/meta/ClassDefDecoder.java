@@ -106,7 +106,8 @@ class ClassDefDecoder {
       // TODO(chaokunyang) read type tag
       int encodingFlags = (header >>> 3) & 0b11;
       boolean useTagID = encodingFlags == 3;
-      Preconditions.checkArgument(!useTagID, "Type tag not supported currently");
+      Preconditions.checkArgument(
+          !useTagID, "Type tag not supported currently, parsed fieldInfos %s", fieldInfos);
       int size = header >>> 5;
       if (size == 7) {
         size += buffer.readVarUint32Small7();
