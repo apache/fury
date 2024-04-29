@@ -28,7 +28,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.function.Function;
-import org.apache.fury.reflect.ReflectionUtils;
+import java.util.function.Predicate;
 import org.apache.fury.util.record.RecordUtils;
 
 /**
@@ -138,6 +138,7 @@ public class DescriptorGrouper {
    * @param comparator comparator for non-primitive fields.
    */
   public DescriptorGrouper(
+      Predicate<Class<?>> isMonomorphic,
       Collection<Descriptor> descriptors,
       boolean descriptorsGroupedOrdered,
       Function<Descriptor, Descriptor> descriptorUpdator,
@@ -163,7 +164,7 @@ public class DescriptorGrouper {
         collectionDescriptors.add(descriptorUpdator.apply(descriptor));
       } else if (TypeUtils.isMap(descriptor.getRawType())) {
         mapDescriptors.add(descriptorUpdator.apply(descriptor));
-      } else if (ReflectionUtils.isMonomorphic(descriptor.getRawType())) {
+      } else if (isMonomorphic.test(descriptor.getRawType())) {
         finalDescriptors.add(descriptorUpdator.apply(descriptor));
       } else {
         otherDescriptors.add(descriptorUpdator.apply(descriptor));
@@ -219,12 +220,14 @@ public class DescriptorGrouper {
   }
 
   public static DescriptorGrouper createDescriptorGrouper(
+      Predicate<Class<?>> isMonomorphic,
       Collection<Descriptor> descriptors,
       boolean descriptorsGroupedOrdered,
       boolean compressInt,
       boolean compressLong) {
     Comparator<Descriptor> comparator = getPrimitiveComparator(compressInt, compressLong);
     return new DescriptorGrouper(
+        isMonomorphic,
         descriptors,
         descriptorsGroupedOrdered,
         DescriptorGrouper::createDescriptor,

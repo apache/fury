@@ -214,8 +214,4 @@ public class GenericType {
   public String toString() {
     return "GenericType{" + typeRef.toString() + '}';
   }
-
-  public static boolean isFinalByDefault(Class<?> cls) {
-    return defaultFinalPredicate.test(cls);
-  }
 }

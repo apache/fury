@@ -183,10 +183,18 @@ public class Descriptor {
   public String toString() {
     final StringBuilder sb = new StringBuilder("Descriptor{");
     sb.append("name=").append(name);
-    sb.append(", field=").append(field);
-    sb.append(", readMethod=").append(readMethod);
-    sb.append(", writeMethod=").append(writeMethod);
-    sb.append(", typeToken=").append(typeRef);
+    if (field != null) {
+      sb.append(", field=").append(field);
+    }
+    if (readMethod != null) {
+      sb.append(", readMethod=").append(readMethod);
+    }
+    if (writeMethod != null) {
+      sb.append(", writeMethod=").append(writeMethod);
+    }
+    if (typeRef != null) {
+      sb.append(", typeRef=").append(typeRef);
+    }
     sb.append('}');
     return sb.toString();
   }

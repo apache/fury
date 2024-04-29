@@ -106,7 +106,12 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       descriptors = fury.getClassResolver().getAllDescriptorsMap(cls, resolveParent).values();
     }
     DescriptorGrouper descriptorGrouper =
-        createDescriptorGrouper(descriptors, false, fury.compressInt(), fury.compressLong());
+        createDescriptorGrouper(
+            fury.getClassResolver()::isMonomorphic,
+            descriptors,
+            false,
+            fury.compressInt(),
+            fury.compressLong());
     isRecord = RecordUtils.isRecord(cls);
     if (isRecord) {
       constructor = RecordUtils.getRecordConstructor(cls).f1;

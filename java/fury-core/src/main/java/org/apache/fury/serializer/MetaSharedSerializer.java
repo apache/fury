@@ -89,7 +89,11 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     Collection<Descriptor> descriptors = consolidateFields(fury.getClassResolver(), type, classDef);
     DescriptorGrouper descriptorGrouper =
         DescriptorGrouper.createDescriptorGrouper(
-            descriptors, false, fury.compressInt(), fury.getConfig().compressLong());
+            fury.getClassResolver()::isMonomorphic,
+            descriptors,
+            false,
+            fury.compressInt(),
+            fury.getConfig().compressLong());
     // d.getField() may be null if not exists in this class when meta share enabled.
     isRecord = RecordUtils.isRecord(type);
     if (isRecord) {

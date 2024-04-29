@@ -185,7 +185,11 @@ public final class UnexistedClassSerializers {
                 fury.getClassResolver(), UnexistedSkipClass.class, classDef);
         DescriptorGrouper descriptorGrouper =
             DescriptorGrouper.createDescriptorGrouper(
-                descriptors, true, fury.compressInt(), fury.compressLong());
+                fury.getClassResolver()::isMonomorphic,
+                descriptors,
+                true,
+                fury.compressInt(),
+                fury.compressLong());
         Tuple3<
                 Tuple2<ObjectSerializer.FinalTypeField[], boolean[]>,
                 ObjectSerializer.GenericTypeField[],

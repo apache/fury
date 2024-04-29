@@ -53,6 +53,7 @@ class ClassDefEncoder {
         DescriptorGrouper.getPrimitiveComparator(fury.compressInt(), fury.compressLong());
     DescriptorGrouper descriptorGrouper =
         new DescriptorGrouper(
+            fury.getClassResolver()::isMonomorphic,
             fury.getClassResolver().getAllDescriptorsMap(cls, resolveParent).values(),
             false,
             Function.identity(),

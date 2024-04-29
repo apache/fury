@@ -583,7 +583,7 @@ public class ClassDef implements Serializable {
   static FieldType buildFieldType(ClassResolver classResolver, Field field) {
     Preconditions.checkNotNull(field);
     Class<?> rawType = field.getType();
-    boolean isFinal = GenericType.isFinalByDefault(rawType);
+    boolean isFinal = classResolver.isMonomorphic(rawType);
     if (Collection.class.isAssignableFrom(rawType)) {
       GenericType genericType = GenericType.build(field.getGenericType());
       return new CollectionFieldType(
