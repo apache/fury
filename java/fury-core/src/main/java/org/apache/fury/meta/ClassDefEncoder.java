@@ -23,6 +23,7 @@ import static org.apache.fury.meta.ClassDef.EXT_FLAG;
 import static org.apache.fury.meta.ClassDef.SCHEMA_COMPATIBLE_FLAG;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
+import static org.apache.fury.meta.Encoders.pkgEncodingsList;
 import static org.apache.fury.meta.Encoders.typeNameEncodingsList;
 
 import java.lang.reflect.Field;
@@ -38,6 +39,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.meta.ClassDef.FieldInfo;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.type.Descriptor;
@@ -47,34 +49,54 @@ import org.apache.fury.util.Preconditions;
 
 class ClassDefEncoder {
   public static ClassDef buildClassDef(Class<?> cls, Fury fury) {
+    return buildClassDef(fury.getClassResolver(), cls, buildFields(fury, cls));
+  }
+
+  static List<Field> buildFields(Fury fury, Class<?> cls) {
     Comparator<Descriptor> comparator =
-        DescriptorGrouper.getPrimitiveComparator(fury.compressInt(), fury.compressLong());
+      DescriptorGrouper.getPrimitiveComparator(fury.compressInt(), fury.compressLong());
     DescriptorGrouper descriptorGrouper =
-        new DescriptorGrouper(
-            fury.getClassResolver().getAllDescriptorsMap(cls, true).values(),
-            false,
-            Function.identity(),
-            comparator,
-            DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
-    ClassResolver classResolver = fury.getClassResolver();
+      new DescriptorGrouper(
+        fury.getClassResolver().getAllDescriptorsMap(cls, true).values(),
+        false,
+        Function.identity(),
+        comparator,
+        DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
     List<Field> fields = new ArrayList<>();
     descriptorGrouper
-        .getPrimitiveDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
+      .getPrimitiveDescriptors()
+      .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-        .getBoxedDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
+      .getBoxedDescriptors()
+      .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-        .getFinalDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
+      .getFinalDescriptors()
+      .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-        .getOtherDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
+      .getOtherDescriptors()
+      .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-        .getCollectionDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
+      .getCollectionDescriptors()
+      .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper.getMapDescriptors().forEach(descriptor -> fields.add(descriptor.getField()));
-    return buildClassDef(classResolver, cls, fields);
+    return fields;
+  }
+
+  static List<FieldInfo> buildFieldsInfo(ClassResolver resolver, Class<?> cls) {
+    return buildFieldsInfo(resolver, buildFields(resolver.getFury(), cls));
+  }
+
+  static List<FieldInfo> buildFieldsInfo(ClassResolver resolver, List<Field> fields) {
+    List<FieldInfo> fieldInfos = new ArrayList<>();
+    for (Field field : fields) {
+      FieldInfo fieldInfo =
+        new FieldInfo(
+          field.getDeclaringClass().getName(),
+          field.getName(),
+          ClassDef.buildFieldType(resolver, field));
+      fieldInfos.add(fieldInfo);
+    }
+    return fieldInfos;
   }
 
   /** Build class definition from fields of class. */
@@ -85,15 +107,7 @@ class ClassDefEncoder {
 
   static ClassDef buildClassDef(
       ClassResolver classResolver, Class<?> type, List<Field> fields, Map<String, String> extMeta) {
-    List<ClassDef.FieldInfo> fieldInfos = new ArrayList<>();
-    for (Field field : fields) {
-      ClassDef.FieldInfo fieldInfo =
-          new ClassDef.FieldInfo(
-              field.getDeclaringClass().getName(),
-              field.getName(),
-              ClassDef.buildFieldType(classResolver, field));
-      fieldInfos.add(fieldInfo);
-    }
+    List<FieldInfo> fieldInfos = buildFieldsInfo(classResolver, fields);
     MemoryBuffer encodeClassDef = encodeClassDef(classResolver, type, fieldInfos, extMeta);
     byte[] classDefBytes = encodeClassDef.getBytes(0, encodeClassDef.writerIndex());
     return new ClassDef(
@@ -105,12 +119,12 @@ class ClassDefEncoder {
   static MemoryBuffer encodeClassDef(
       ClassResolver classResolver,
       Class<?> type,
-      List<ClassDef.FieldInfo> fieldsInfo,
+      List<FieldInfo> fieldsInfo,
       Map<String, String> extMeta) {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     long header;
-    Map<String, List<ClassDef.FieldInfo>> classFields = getClassFields(type, fieldsInfo);
-    int encodedSize = classFields.size() - 1; // num class must be greater than 0
+    Map<String, List<FieldInfo>> classLayers = getClassFields(type, fieldsInfo);
+    int encodedSize = classLayers.size() - 1; // num class must be greater than 0
     if (encodedSize > 0b1110) {
       header = 0b1111;
       buffer.writeVarUint32Small7(encodedSize - 0b1110);
@@ -121,9 +135,9 @@ class ClassDefEncoder {
     if (!extMeta.isEmpty()) {
       header |= EXT_FLAG;
     }
-    for (Map.Entry<String, List<ClassDef.FieldInfo>> entry : classFields.entrySet()) {
+    for (Map.Entry<String, List<FieldInfo>> entry : classLayers.entrySet()) {
       String className = entry.getKey();
-      List<ClassDef.FieldInfo> fields = entry.getValue();
+      List<FieldInfo> fields = entry.getValue();
       // | num fields + register flag | header + package name | header + class name
       // | header + type id + field name | next field info | ... |
       int currentClassHeader = (fields.size() << 1);
@@ -156,8 +170,7 @@ class ClassDefEncoder {
     long hash = MurmurHash3.murmurhash3_x64_128(encodedClassDef, 0, encodedClassDef.length, 47)[0];
     // this id will be part of generated codec, a negative number won't be allowed in class name.
     hash <<= 8;
-    header |= hash;
-    header = Math.abs(header);
+    header |= Math.abs(hash);
     MemoryBuffer newBuf = MemoryBuffer.newHeapBuffer(buffer.writerIndex() + 2);
     if (buffer.writerIndex() > 255) {
       header |= SIZE_TWO_BYTES_FLAG;
@@ -169,19 +182,19 @@ class ClassDefEncoder {
       newBuf.writeByte(buffer.writerIndex());
     }
     newBuf.writeBytes(buffer.getHeapMemory(), 0, buffer.writerIndex());
-    return buffer;
+    return newBuf;
   }
 
-  private static Map<String, List<ClassDef.FieldInfo>> getClassFields(
-      Class<?> type, List<ClassDef.FieldInfo> fieldsInfo) {
-    Map<String, List<ClassDef.FieldInfo>> classFields = new HashMap<>();
-    for (ClassDef.FieldInfo fieldInfo : fieldsInfo) {
+  private static Map<String, List<FieldInfo>> getClassFields(
+      Class<?> type, List<FieldInfo> fieldsInfo) {
+    Map<String, List<FieldInfo>> classFields = new HashMap<>();
+    for (FieldInfo fieldInfo : fieldsInfo) {
       String definedClass = fieldInfo.getDefinedClass();
       classFields.computeIfAbsent(definedClass, k -> new ArrayList<>()).add(fieldInfo);
     }
-    Map<String, List<ClassDef.FieldInfo>> sortedClassFields = new LinkedHashMap<>();
+    Map<String, List<FieldInfo>> sortedClassFields = new LinkedHashMap<>();
     for (Class<?> clz : ReflectionUtils.getAllClasses(type, true)) {
-      List<ClassDef.FieldInfo> fieldInfos = classFields.get(clz.getName());
+      List<FieldInfo> fieldInfos = classFields.get(clz.getName());
       if (fieldInfos != null) {
         sortedClassFields.put(clz.getName(), fieldInfos);
       }
@@ -190,8 +203,8 @@ class ClassDefEncoder {
     return classFields;
   }
 
-  private static void writeFieldsInfo(MemoryBuffer buffer, List<ClassDef.FieldInfo> fields) {
-    for (ClassDef.FieldInfo fieldInfo : fields) {
+  private static void writeFieldsInfo(MemoryBuffer buffer, List<FieldInfo> fields) {
+    for (FieldInfo fieldInfo : fields) {
       ClassDef.FieldType fieldType = fieldInfo.getFieldType();
       // `3 bits size + 2 bits field name encoding + polymorphism flag + nullability flag + ref
       // tracking flag`
@@ -209,10 +222,10 @@ class ClassDefEncoder {
       boolean bigSize = size >= 7;
       if (bigSize) {
         header |= 0b11100000;
-        buffer.writeVarUint32Small7(header);
+        buffer.writeByte(header);
         buffer.writeVarUint32Small7(size - 7);
       } else {
-        buffer.writeVarUint32Small7(header);
+        buffer.writeByte(header);
       }
       if (!fieldInfo.hasTypeTag()) {
         buffer.writeBytes(encoded);
@@ -247,7 +260,7 @@ class ClassDefEncoder {
     MetaString pkgMetaString = Encoders.encodePackage(pkg);
     byte[] encoded = pkgMetaString.getBytes();
     int pkgHeader =
-        (encoded.length << 2) | typeNameEncodingsList.indexOf(pkgMetaString.getEncoding());
+        (encoded.length << 2) | pkgEncodingsList.indexOf(pkgMetaString.getEncoding());
     writeName(buffer, encoded, pkgHeader, 62);
   }
 
@@ -268,7 +281,7 @@ class ClassDefEncoder {
   private static void writeName(MemoryBuffer buffer, byte[] encoded, int header, int max) {
     boolean bigSize = encoded.length > max;
     if (bigSize) {
-      header |= 0b11111111;
+      header |= 0b11111100;
       buffer.writeVarUint32Small7(header);
       buffer.writeVarUint32Small7(encoded.length - max);
     } else {

@@ -55,8 +55,7 @@ class ClassDefDecoder {
     }
     buffer.checkReadableBytes(size);
     encoded.writeBytes(buffer.getBytes(buffer.readerIndex(), size));
-    long bulkValue = buffer.readInt64();
-    long header = bulkValue & 0xff;
+    long header = id & 0xff;
     int numClasses = (int) (header & 0b1111);
     if (numClasses == 0b1111) {
       numClasses += buffer.readVarUint32Small7();
@@ -112,7 +111,7 @@ class ClassDefDecoder {
       if (size == 7) {
         size += buffer.readVarUint32Small7();
       }
-      size += 1; // not +1 when use tag id.
+      size += 1;
       Encoding encoding = fieldNameEncodings[encodingFlags];
       String fieldName = Encoders.FIELD_NAME_DECODER.decode(buffer.readBytes(size), encoding);
       boolean isMonomorphic = (header & 0b100) != 0;
