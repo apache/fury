@@ -20,14 +20,9 @@
 package org.apache.fury.serializer;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.MetaSharedCodecBuilder;
@@ -94,7 +89,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     Collection<Descriptor> descriptors = consolidateFields(fury.getClassResolver(), type, classDef);
     DescriptorGrouper descriptorGrouper =
         DescriptorGrouper.createDescriptorGrouper(
-            descriptors, true, fury.compressInt(), fury.getConfig().compressLong());
+            descriptors, false, fury.compressInt(), fury.getConfig().compressLong());
     // d.getField() may be null if not exists in this class when meta share enabled.
     isRecord = RecordUtils.isRecord(type);
     if (isRecord) {
@@ -299,25 +294,6 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
    */
   public static Collection<Descriptor> consolidateFields(
       ClassResolver classResolver, Class<?> cls, ClassDef classDef) {
-    SortedMap<Field, Descriptor> allDescriptorsMap = classResolver.getAllDescriptorsMap(cls, true);
-    Map<String, Descriptor> descriptorsMap = new HashMap<>();
-    for (Map.Entry<Field, Descriptor> e : allDescriptorsMap.entrySet()) {
-      if (descriptorsMap.put(
-              e.getKey().getDeclaringClass().getName() + "." + e.getKey().getName(), e.getValue())
-          != null) {
-        throw new IllegalStateException("Duplicate key");
-      }
-    }
-    List<Descriptor> descriptors = new ArrayList<>(classDef.getFieldsInfo().size());
-    for (ClassDef.FieldInfo fieldInfo : classDef.getFieldsInfo()) {
-      Descriptor descriptor =
-          descriptorsMap.get(fieldInfo.getDefinedClass() + "." + fieldInfo.getFieldName());
-      if (descriptor != null) {
-        descriptors.add(descriptor);
-      } else {
-        descriptors.add(fieldInfo.toDescriptor(classResolver));
-      }
-    }
-    return descriptors;
+    return classDef.getDescriptors(classResolver, cls);
   }
 }

@@ -245,6 +245,7 @@ public class ClassResolver {
     private final Set<Class<?>> getClassCtx = new HashSet<>();
     private final Map<Class<?>, FieldResolver> fieldResolverMap = new HashMap<>();
     private final Map<Long, Tuple2<ClassDef, ClassInfo>> classIdToDef = new HashMap<>();
+    private final Map<Class<?>, ClassDef> currentLayerClassDef = new HashMap<>();
     // TODO(chaokunyang) Better to  use soft reference, see ObjectStreamClass.
     private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Field, Descriptor>>
         descriptorsCache = new ConcurrentHashMap<>();
@@ -1337,7 +1338,7 @@ public class ClassResolver {
           classInfo = getMetaSharedClassInfo(classDef, cls);
           // Share serializer for same version class def to avoid too much different meta
           // context take up too much memory.
-          extRegistry.classIdToDef.put(classDef.getId(), Tuple2.of(classDef, classInfo));
+          putClassDef(classDef, classInfo);
         } else {
           classInfo = classDefTuple.f1;
         }
@@ -1426,8 +1427,29 @@ public class ClassResolver {
 
   private Tuple2<ClassDef, ClassInfo> readClassDef(MemoryBuffer buffer, long header) {
     ClassDef readClassDef = ClassDef.readClassDef(this, buffer, header);
-    return extRegistry.classIdToDef.computeIfAbsent(
-        readClassDef.getId(), key -> Tuple2.of(readClassDef, null));
+    Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(readClassDef.getId());
+    if (tuple2 == null) {
+      tuple2 = putClassDef(readClassDef, null);
+    }
+    return tuple2;
+  }
+
+  private Tuple2<ClassDef, ClassInfo> putClassDef(ClassDef classDef, ClassInfo classInfo) {
+    Tuple2<ClassDef, ClassInfo> tuple2 = Tuple2.of(classDef, classInfo);
+    extRegistry.classIdToDef.put(classDef.getId(), tuple2);
+    return tuple2;
+  }
+
+  public ClassDef getClassDef(Class<?> cls, boolean resolveParent) {
+    if (resolveParent) {
+      return classDefMap.computeIfAbsent(cls, k -> ClassDef.buildClassDef(fury, cls));
+    }
+    ClassDef classDef = extRegistry.currentLayerClassDef.get(cls);
+    if (classDef == null) {
+      classDef = ClassDef.buildClassDef(fury, cls, false);
+      extRegistry.currentLayerClassDef.put(cls, classDef);
+    }
+    return classDef;
   }
 
   /**

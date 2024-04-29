@@ -48,16 +48,12 @@ import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Preconditions;
 
 class ClassDefEncoder {
-  public static ClassDef buildClassDef(Class<?> cls, Fury fury) {
-    return buildClassDef(fury.getClassResolver(), cls, buildFields(fury, cls));
-  }
-
-  static List<Field> buildFields(Fury fury, Class<?> cls) {
+  static List<Field> buildFields(Fury fury, Class<?> cls, boolean resolveParent) {
     Comparator<Descriptor> comparator =
         DescriptorGrouper.getPrimitiveComparator(fury.compressInt(), fury.compressLong());
     DescriptorGrouper descriptorGrouper =
         new DescriptorGrouper(
-            fury.getClassResolver().getAllDescriptorsMap(cls, true).values(),
+            fury.getClassResolver().getAllDescriptorsMap(cls, resolveParent).values(),
             false,
             Function.identity(),
             comparator,
@@ -83,7 +79,7 @@ class ClassDefEncoder {
   }
 
   static List<FieldInfo> buildFieldsInfo(ClassResolver resolver, Class<?> cls) {
-    return buildFieldsInfo(resolver, buildFields(resolver.getFury(), cls));
+    return buildFieldsInfo(resolver, buildFields(resolver.getFury(), cls, true));
   }
 
   static List<FieldInfo> buildFieldsInfo(ClassResolver resolver, List<Field> fields) {
@@ -100,11 +96,6 @@ class ClassDefEncoder {
   }
 
   /** Build class definition from fields of class. */
-  public static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields) {
-    return buildClassDef(classResolver, type, fields, new HashMap<>());
-  }
-
   static ClassDef buildClassDef(
       ClassResolver classResolver, Class<?> type, List<Field> fields, Map<String, String> extMeta) {
     List<FieldInfo> fieldInfos = buildFieldsInfo(classResolver, fields);
@@ -191,11 +182,7 @@ class ClassDefEncoder {
   }
 
   static Map<String, List<FieldInfo>> getClassFields(Class<?> type, List<FieldInfo> fieldsInfo) {
-    Map<String, List<FieldInfo>> classFields = new HashMap<>();
-    for (FieldInfo fieldInfo : fieldsInfo) {
-      String definedClass = fieldInfo.getDefinedClass();
-      classFields.computeIfAbsent(definedClass, k -> new ArrayList<>()).add(fieldInfo);
-    }
+    Map<String, List<FieldInfo>> classFields = groupClassFields(fieldsInfo);
     Map<String, List<FieldInfo>> sortedClassFields = new LinkedHashMap<>();
     for (Class<?> clz : ReflectionUtils.getAllClasses(type, true)) {
       List<FieldInfo> fieldInfos = classFields.get(clz.getName());
@@ -204,6 +191,15 @@ class ClassDefEncoder {
       }
     }
     classFields = sortedClassFields;
+    return classFields;
+  }
+
+  static Map<String, List<FieldInfo>> groupClassFields(List<FieldInfo> fieldsInfo) {
+    Map<String, List<FieldInfo>> classFields = new HashMap<>();
+    for (FieldInfo fieldInfo : fieldsInfo) {
+      String definedClass = fieldInfo.getDefinedClass();
+      classFields.computeIfAbsent(definedClass, k -> new ArrayList<>()).add(fieldInfo);
+    }
     return classFields;
   }
 
@@ -289,7 +285,7 @@ class ClassDefEncoder {
       buffer.writeVarUint32Small7(header);
       buffer.writeVarUint32Small7(encoded.length - max);
     } else {
-      buffer.writeVarUint32Small7(header);
+      buffer.writeByte(header);
     }
     buffer.writeBytes(encoded);
   }

@@ -19,6 +19,7 @@
 
 package org.apache.fury.meta;
 
+import static org.apache.fury.meta.ClassDefEncoder.buildFields;
 import static org.apache.fury.type.TypeUtils.COLLECTION_TYPE;
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 import static org.apache.fury.type.TypeUtils.collectionOf;
@@ -27,12 +28,14 @@ import static org.apache.fury.type.TypeUtils.mapOf;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.SortedMap;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.MetaSharedCodecBuilder;
 import org.apache.fury.config.CompatibleMode;
@@ -104,6 +107,7 @@ public class ClassDef implements Serializable {
   // be same too.
   private final long id;
   private final byte[] encoded;
+  private transient List<Descriptor> descriptors;
 
   ClassDef(
       String className,
@@ -195,6 +199,31 @@ public class ClassDef implements Serializable {
     return ClassDefDecoder.decodeClassDef(classResolver, buffer, header);
   }
 
+  public List<Descriptor> getDescriptors(ClassResolver resolver, Class<?> cls) {
+    if (descriptors == null) {
+      SortedMap<Field, Descriptor> allDescriptorsMap = resolver.getAllDescriptorsMap(cls, true);
+      Map<String, Descriptor> descriptorsMap = new HashMap<>();
+      for (Map.Entry<Field, Descriptor> e : allDescriptorsMap.entrySet()) {
+        if (descriptorsMap.put(
+                e.getKey().getDeclaringClass().getName() + "." + e.getKey().getName(), e.getValue())
+            != null) {
+          throw new IllegalStateException("Duplicate key");
+        }
+      }
+      descriptors = new ArrayList<>(fieldsInfo.size());
+      for (ClassDef.FieldInfo fieldInfo : fieldsInfo) {
+        Descriptor descriptor =
+            descriptorsMap.get(fieldInfo.getDefinedClass() + "." + fieldInfo.getFieldName());
+        if (descriptor != null) {
+          descriptors.add(descriptor);
+        } else {
+          descriptors.add(fieldInfo.toDescriptor(resolver));
+        }
+      }
+    }
+    return descriptors;
+  }
+
   /**
    * FieldInfo contains all necessary info of a field to execute serialization/deserialization
    * logic.
@@ -270,7 +299,16 @@ public class ClassDef implements Serializable {
 
     @Override
     public String toString() {
-      return "FieldInfo{" + "fieldName='" + fieldName + '\'' + ", fieldType=" + fieldType + '}';
+      return "FieldInfo{"
+          + "definedClass='"
+          + definedClass
+          + '\''
+          + ", fieldName='"
+          + fieldName
+          + '\''
+          + ", fieldType="
+          + fieldType
+          + '}';
     }
   }
 
@@ -615,7 +653,12 @@ public class ClassDef implements Serializable {
   }
 
   public static ClassDef buildClassDef(Fury fury, Class<?> cls) {
-    return ClassDefEncoder.buildClassDef(cls, fury);
+    return buildClassDef(fury, cls, true);
+  }
+
+  public static ClassDef buildClassDef(Fury fury, Class<?> cls, boolean resolveParent) {
+    return ClassDefEncoder.buildClassDef(
+        fury.getClassResolver(), cls, buildFields(fury, cls, resolveParent), new HashMap<>());
   }
 
   /** Build class definition from fields of class. */
