@@ -20,6 +20,8 @@
 package org.apache.fury.resolver;
 
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.apache.fury.config.FuryBuilder;
 
 /**
@@ -30,6 +32,7 @@ import org.apache.fury.config.FuryBuilder;
 public final class SerializationContext {
   private final IdentityHashMap<Object, Object> objects = new IdentityHashMap<>();
   private MetaContext metaContext;
+  private final Map<String, UserContextResolver> userContextResolvers = new LinkedHashMap<>();
 
   /** Return the previous value associated with <tt>key</tt>, or <tt>null</tt>. */
   public Object add(Object key, Object value) {
@@ -58,10 +61,21 @@ public final class SerializationContext {
     this.metaContext = metaContext;
   }
 
+  public Map<String, UserContextResolver> getUserContextResolvers() {
+    return userContextResolvers;
+  }
+
+  public void registerUserContextResolver(String name, UserContextResolver userContextResolver) {
+    userContextResolvers.put(name, userContextResolver);
+  }
+
   public void reset() {
     if (objects.size() > 0) {
       objects.clear();
     }
     metaContext = null;
+    if (!userContextResolvers.isEmpty()) {
+      userContextResolvers.clear();
+    }
   }
 }

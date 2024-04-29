@@ -69,6 +69,7 @@ public final class FuryBuilder {
   Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
   boolean requireClassRegistration = true;
   boolean shareMetaContext = false;
+  boolean shareUserContext = false;
   boolean codeGenEnabled = true;
   Boolean deserializeUnexistedClass;
   boolean asyncCompilationEnabled = false;
@@ -235,6 +236,12 @@ public final class FuryBuilder {
   /** Whether to enable meta share mode. */
   public FuryBuilder withMetaContextShare(boolean shareMetaContext) {
     this.shareMetaContext = shareMetaContext;
+    return this;
+  }
+
+  /** Whether to enable user context share feature. */
+  public FuryBuilder withUserContextShare(boolean shareUserContext) {
+    this.shareUserContext = shareUserContext;
     return this;
   }
 

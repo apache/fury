@@ -1408,6 +1408,25 @@ public class ClassResolver {
     metaContext.writingClassDefs.clear();
   }
 
+  /** write user context by register order. */
+  public void writeUserContext(MemoryBuffer buffer) {
+    final Map<String, UserContextResolver> userContextResolvers =
+        fury.getSerializationContext().getUserContextResolvers();
+    for (UserContextResolver userContextResolver : userContextResolvers.values()) {
+      userContextResolver.write(buffer);
+    }
+  }
+
+  /** after all data, write share meta context and user context. */
+  public void writeGlobalContext(MemoryBuffer buffer) {
+    if (fury.getConfig().shareMetaContext()) {
+      writeClassDefs(buffer);
+    }
+    if (fury.getConfig().shareUserContext()) {
+      writeUserContext(buffer);
+    }
+  }
+
   /**
    * Ensure all class definition are read and populated, even there are deserialization exception
    * such as ClassNotFound. So next time a class def written previously identified by an id can be
@@ -1415,9 +1434,6 @@ public class ClassResolver {
    */
   public void readClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    int classDefOffset = buffer.readInt32();
-    int readerIndex = buffer.readerIndex();
-    buffer.readerIndex(classDefOffset);
     int numClassDefs = buffer.readVarUint32Small14();
     for (int i = 0; i < numClassDefs; i++) {
       long id = buffer.readInt64();
@@ -1436,6 +1452,28 @@ public class ClassResolver {
       // Will be set lazily, so even some classes doesn't exist, remaining classinfo
       // can be created still.
       metaContext.readClassInfos.add(null);
+    }
+  }
+
+  /** read user context by register order. */
+  public void readUserContext(MemoryBuffer buffer) {
+    final Map<String, UserContextResolver> userContextResolvers =
+        fury.getSerializationContext().getUserContextResolvers();
+    for (UserContextResolver userContextResolver : userContextResolvers.values()) {
+      userContextResolver.read(buffer);
+    }
+  }
+
+  /** read share meta context and user context before read data. */
+  public void readGlobalContext(MemoryBuffer buffer) {
+    int globalContextOffSet = buffer.readInt32();
+    int readerIndex = buffer.readerIndex();
+    buffer.readerIndex(globalContextOffSet);
+    if (fury.getConfig().shareMetaContext()) {
+      readClassDefs(buffer);
+    }
+    if (fury.getConfig().shareUserContext()) {
+      readUserContext(buffer);
     }
     buffer.readerIndex(readerIndex);
   }

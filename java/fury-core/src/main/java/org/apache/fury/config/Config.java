@@ -49,7 +49,9 @@ public class Config implements Serializable {
   private final boolean requireClassRegistration;
   private final boolean suppressClassRegistrationWarnings;
   private final boolean registerGuavaTypes;
+  private final boolean shareGlobalContext;
   private final boolean shareMetaContext;
+  private final boolean shareUserContext;
   private final boolean asyncCompilationEnabled;
   private final boolean deserializeUnexistedClass;
   private final boolean scalaOptimizationEnabled;
@@ -75,6 +77,8 @@ public class Config implements Serializable {
     checkJdkClassSerializable = builder.checkJdkClassSerializable;
     defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
     shareMetaContext = builder.shareMetaContext;
+    shareUserContext = builder.shareUserContext;
+    shareGlobalContext = shareMetaContext || shareUserContext;
     deserializeUnexistedClass = builder.deserializeUnexistedClass;
     if (deserializeUnexistedClass) {
       // Only in meta share mode or compatibleMode, fury knows how to deserialize
@@ -180,6 +184,14 @@ public class Config implements Serializable {
 
   public boolean shareMetaContext() {
     return shareMetaContext;
+  }
+
+  public boolean shareUserContext() {
+    return shareUserContext;
+  }
+
+  public boolean shareGlobalContext() {
+    return shareGlobalContext;
   }
 
   /**
