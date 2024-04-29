@@ -36,6 +36,8 @@ public class Encoders {
   static final MetaStringDecoder FIELD_NAME_DECODER = new MetaStringDecoder('$', '_');
   private static final ConcurrentMap<String, MetaString> pgkMetaStringCache =
       new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, MetaString> typeMetaStringCache =
+      new ConcurrentHashMap<>();
   private static final ConcurrentMap<String, MetaString> fieldMetaStringCache =
       new ConcurrentHashMap<>();
   static final Encoding[] pkgEncodings =
@@ -57,7 +59,7 @@ public class Encoders {
   }
 
   public static MetaString encodeTypeName(String typeName) {
-    return pgkMetaStringCache.computeIfAbsent(
+    return typeMetaStringCache.computeIfAbsent(
         typeName, k -> TYPE_NAME_ENCODER.encode(typeName, typeNameEncodings));
   }
 
