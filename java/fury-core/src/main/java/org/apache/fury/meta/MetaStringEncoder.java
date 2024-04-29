@@ -112,27 +112,26 @@ public class MetaStringEncoder {
       if (encodingSet.contains(Encoding.LOWER_SPECIAL)) {
         return Encoding.LOWER_SPECIAL;
       }
-    } else if (statistics.canLowerUpperDigitSpecialEncoded) {
+    }
+    if (statistics.canLowerUpperDigitSpecialEncoded) {
       if (statistics.digitCount != 0) {
         if (encodingSet.contains(Encoding.LOWER_UPPER_DIGIT_SPECIAL)) {
           return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
         }
-      } else {
-        int upperCount = statistics.upperCount;
-        if (upperCount == 1 && Character.isUpperCase(chars[0])) {
-          if (encodingSet.contains(Encoding.LOWER_UPPER_DIGIT_SPECIAL)) {
-            return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
-          }
+      }
+      int upperCount = statistics.upperCount;
+      if (upperCount == 1 && Character.isUpperCase(chars[0])) {
+        if (encodingSet.contains(Encoding.LOWER_UPPER_DIGIT_SPECIAL)) {
+          return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
         }
-        if ((chars.length + upperCount) * 5 < (chars.length * 6)) {
-          if (encodingSet.contains(Encoding.ALL_TO_LOWER_SPECIAL)) {
-            return Encoding.ALL_TO_LOWER_SPECIAL;
-          }
-        } else {
-          if (encodingSet.contains(Encoding.LOWER_UPPER_DIGIT_SPECIAL)) {
-            return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
-          }
+      }
+      if ((chars.length + upperCount) * 5 < (chars.length * 6)) {
+        if (encodingSet.contains(Encoding.ALL_TO_LOWER_SPECIAL)) {
+          return Encoding.ALL_TO_LOWER_SPECIAL;
         }
+      }
+      if (encodingSet.contains(Encoding.LOWER_UPPER_DIGIT_SPECIAL)) {
+        return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
       }
     }
     return Encoding.UTF_8;

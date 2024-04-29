@@ -599,7 +599,7 @@ public class ClassDef implements Serializable {
     }
   }
 
-  public static ClassDef buildClassDef(Class<?> cls, Fury fury) {
+  public static ClassDef buildClassDef(Fury fury, Class<?> cls) {
     return ClassDefEncoder.buildClassDef(cls, fury);
   }
 

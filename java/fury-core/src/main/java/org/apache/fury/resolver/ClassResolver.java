@@ -1279,7 +1279,7 @@ public class ClassResolver {
               || serializer instanceof ObjectSerializer
               || serializer instanceof MetaSharedSerializer)) {
         classDef =
-            classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(cls, fury));
+            classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(fury, cls));
       } else {
         classDef =
             classDefMap.computeIfAbsent(

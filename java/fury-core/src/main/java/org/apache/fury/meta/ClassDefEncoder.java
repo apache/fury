@@ -102,7 +102,7 @@ class ClassDefEncoder {
 
   // see spec documentation: docs/specification/java_serialization_spec.md
   // https://fury.apache.org/docs/specification/fury_java_serialization_spec
-  private static MemoryBuffer encodeClassDef(
+  static MemoryBuffer encodeClassDef(
       ClassResolver classResolver,
       Class<?> type,
       List<ClassDef.FieldInfo> fieldsInfo,
