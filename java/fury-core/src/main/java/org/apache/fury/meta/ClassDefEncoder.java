@@ -182,8 +182,12 @@ class ClassDefEncoder {
   }
 
   static Map<String, List<FieldInfo>> getClassFields(Class<?> type, List<FieldInfo> fieldsInfo) {
-    Map<String, List<FieldInfo>> classFields = groupClassFields(fieldsInfo);
     Map<String, List<FieldInfo>> sortedClassFields = new LinkedHashMap<>();
+    if (fieldsInfo.isEmpty()) {
+      sortedClassFields.put(type.getName(), new ArrayList<>());
+      return sortedClassFields;
+    }
+    Map<String, List<FieldInfo>> classFields = groupClassFields(fieldsInfo);
     for (Class<?> clz : ReflectionUtils.getAllClasses(type, true)) {
       List<FieldInfo> fieldInfos = classFields.get(clz.getName());
       if (fieldInfos != null) {
