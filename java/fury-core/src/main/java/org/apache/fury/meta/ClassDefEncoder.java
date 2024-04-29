@@ -54,30 +54,30 @@ class ClassDefEncoder {
 
   static List<Field> buildFields(Fury fury, Class<?> cls) {
     Comparator<Descriptor> comparator =
-      DescriptorGrouper.getPrimitiveComparator(fury.compressInt(), fury.compressLong());
+        DescriptorGrouper.getPrimitiveComparator(fury.compressInt(), fury.compressLong());
     DescriptorGrouper descriptorGrouper =
-      new DescriptorGrouper(
-        fury.getClassResolver().getAllDescriptorsMap(cls, true).values(),
-        false,
-        Function.identity(),
-        comparator,
-        DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
+        new DescriptorGrouper(
+            fury.getClassResolver().getAllDescriptorsMap(cls, true).values(),
+            false,
+            Function.identity(),
+            comparator,
+            DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
     List<Field> fields = new ArrayList<>();
     descriptorGrouper
-      .getPrimitiveDescriptors()
-      .forEach(descriptor -> fields.add(descriptor.getField()));
+        .getPrimitiveDescriptors()
+        .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-      .getBoxedDescriptors()
-      .forEach(descriptor -> fields.add(descriptor.getField()));
+        .getBoxedDescriptors()
+        .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-      .getFinalDescriptors()
-      .forEach(descriptor -> fields.add(descriptor.getField()));
+        .getFinalDescriptors()
+        .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-      .getOtherDescriptors()
-      .forEach(descriptor -> fields.add(descriptor.getField()));
+        .getOtherDescriptors()
+        .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper
-      .getCollectionDescriptors()
-      .forEach(descriptor -> fields.add(descriptor.getField()));
+        .getCollectionDescriptors()
+        .forEach(descriptor -> fields.add(descriptor.getField()));
     descriptorGrouper.getMapDescriptors().forEach(descriptor -> fields.add(descriptor.getField()));
     return fields;
   }
@@ -90,10 +90,10 @@ class ClassDefEncoder {
     List<FieldInfo> fieldInfos = new ArrayList<>();
     for (Field field : fields) {
       FieldInfo fieldInfo =
-        new FieldInfo(
-          field.getDeclaringClass().getName(),
-          field.getName(),
-          ClassDef.buildFieldType(resolver, field));
+          new FieldInfo(
+              field.getDeclaringClass().getName(),
+              field.getName(),
+              ClassDef.buildFieldType(resolver, field));
       fieldInfos.add(fieldInfo);
     }
     return fieldInfos;
@@ -108,7 +108,10 @@ class ClassDefEncoder {
   static ClassDef buildClassDef(
       ClassResolver classResolver, Class<?> type, List<Field> fields, Map<String, String> extMeta) {
     List<FieldInfo> fieldInfos = buildFieldsInfo(classResolver, fields);
-    MemoryBuffer encodeClassDef = encodeClassDef(classResolver, type, fieldInfos, extMeta);
+    Map<String, List<FieldInfo>> classLayers = getClassFields(type, fieldInfos);
+    fieldInfos = new ArrayList<>(fieldInfos.size());
+    classLayers.values().forEach(fieldInfos::addAll);
+    MemoryBuffer encodeClassDef = encodeClassDef(classResolver, type, classLayers, extMeta);
     byte[] classDefBytes = encodeClassDef.getBytes(0, encodeClassDef.writerIndex());
     return new ClassDef(
         type.getName(), fieldInfos, extMeta, encodeClassDef.getInt64(0), classDefBytes);
@@ -119,11 +122,11 @@ class ClassDefEncoder {
   static MemoryBuffer encodeClassDef(
       ClassResolver classResolver,
       Class<?> type,
-      List<FieldInfo> fieldsInfo,
+      Map<String, List<FieldInfo>> classLayers,
       Map<String, String> extMeta) {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
+    buffer.increaseWriterIndex(9); // header + one byte size
     long header;
-    Map<String, List<FieldInfo>> classLayers = getClassFields(type, fieldsInfo);
     int encodedSize = classLayers.size() - 1; // num class must be greater than 0
     if (encodedSize > 0b1110) {
       header = 0b1111;
@@ -156,37 +159,38 @@ class ClassDefEncoder {
     }
     if (!extMeta.isEmpty()) {
       buffer.writeVarUint32Small7(extMeta.size());
-      extMeta.forEach(
-          (k, v) -> {
-            byte[] keyBytes = k.getBytes(StandardCharsets.UTF_8);
-            byte[] valueBytes = v.getBytes(StandardCharsets.UTF_8);
-            buffer.writePrimitiveArrayWithSize(
-                keyBytes, Platform.BYTE_ARRAY_OFFSET, keyBytes.length);
-            buffer.writePrimitiveArrayWithSize(
-                valueBytes, Platform.BYTE_ARRAY_OFFSET, valueBytes.length);
-          });
+      for (Map.Entry<String, String> entry : extMeta.entrySet()) {
+        String k = entry.getKey();
+        String v = entry.getValue();
+        byte[] keyBytes = k.getBytes(StandardCharsets.UTF_8);
+        byte[] valueBytes = v.getBytes(StandardCharsets.UTF_8);
+        buffer.writePrimitiveArrayWithSize(keyBytes, Platform.BYTE_ARRAY_OFFSET, keyBytes.length);
+        buffer.writePrimitiveArrayWithSize(
+            valueBytes, Platform.BYTE_ARRAY_OFFSET, valueBytes.length);
+      }
     }
     byte[] encodedClassDef = buffer.getBytes(0, buffer.writerIndex());
     long hash = MurmurHash3.murmurhash3_x64_128(encodedClassDef, 0, encodedClassDef.length, 47)[0];
     // this id will be part of generated codec, a negative number won't be allowed in class name.
     hash <<= 8;
     header |= Math.abs(hash);
-    MemoryBuffer newBuf = MemoryBuffer.newHeapBuffer(buffer.writerIndex() + 2);
     if (buffer.writerIndex() > 255) {
       header |= SIZE_TWO_BYTES_FLAG;
     }
-    newBuf.writeInt64(header);
-    if (buffer.writerIndex() > 255) {
-      newBuf.writeInt16((short) buffer.writerIndex());
+    buffer.putInt64(0, header);
+    int len = buffer.writerIndex() - 9;
+    if (len > 255) {
+      MemoryBuffer buf = MemoryBuffer.newHeapBuffer(len + 10);
+      buf.writeInt64(header);
+      buf.writeInt16((short) len);
+      buffer = buf;
     } else {
-      newBuf.writeByte(buffer.writerIndex());
+      buffer.putByte(8, (byte) len);
     }
-    newBuf.writeBytes(buffer.getHeapMemory(), 0, buffer.writerIndex());
-    return newBuf;
+    return buffer;
   }
 
-  private static Map<String, List<FieldInfo>> getClassFields(
-      Class<?> type, List<FieldInfo> fieldsInfo) {
+  static Map<String, List<FieldInfo>> getClassFields(Class<?> type, List<FieldInfo> fieldsInfo) {
     Map<String, List<FieldInfo>> classFields = new HashMap<>();
     for (FieldInfo fieldInfo : fieldsInfo) {
       String definedClass = fieldInfo.getDefinedClass();
@@ -225,6 +229,7 @@ class ClassDefEncoder {
         buffer.writeByte(header);
         buffer.writeVarUint32Small7(size - 7);
       } else {
+        header |= (size << 5);
         buffer.writeByte(header);
       }
       if (!fieldInfo.hasTypeTag()) {
@@ -259,8 +264,7 @@ class ClassDefEncoder {
     // a varint next.
     MetaString pkgMetaString = Encoders.encodePackage(pkg);
     byte[] encoded = pkgMetaString.getBytes();
-    int pkgHeader =
-        (encoded.length << 2) | pkgEncodingsList.indexOf(pkgMetaString.getEncoding());
+    int pkgHeader = (encoded.length << 2) | pkgEncodingsList.indexOf(pkgMetaString.getEncoding());
     writeName(buffer, encoded, pkgHeader, 62);
   }
 

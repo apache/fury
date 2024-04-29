@@ -36,7 +36,7 @@ import org.apache.fury.reflect.ReflectionUtils;
 import org.testng.annotations.Test;
 
 public class ClassDefTest extends FuryTestBase {
-  private static class TestFieldsOrderClass1 {
+  static class TestFieldsOrderClass1 {
     private int intField2;
     private boolean booleanField;
     private Object objField;

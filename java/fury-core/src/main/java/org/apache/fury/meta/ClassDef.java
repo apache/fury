@@ -27,7 +27,6 @@ import static org.apache.fury.type.TypeUtils.mapOf;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -167,12 +166,17 @@ public class ClassDef implements Serializable {
 
   @Override
   public String toString() {
-    return "ClassDef{" +
-      "className='" + className + '\'' +
-      ", fieldsInfo=" + fieldsInfo +
-      ", extMeta=" + extMeta +
-      ", id=" + id +
-      '}';
+    return "ClassDef{"
+        + "className='"
+        + className
+        + '\''
+        + ", fieldsInfo="
+        + fieldsInfo
+        + ", extMeta="
+        + extMeta
+        + ", id="
+        + id
+        + '}';
   }
 
   /** Write class definition to buffer. */
