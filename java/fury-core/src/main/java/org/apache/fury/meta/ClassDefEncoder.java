@@ -166,15 +166,16 @@ class ClassDefEncoder {
     // this id will be part of generated codec, a negative number won't be allowed in class name.
     hash <<= 8;
     header |= Math.abs(hash);
-    if (buffer.writerIndex() > 255) {
+    int len = buffer.writerIndex() - 9;
+    if (len > 255) {
       header |= SIZE_TWO_BYTES_FLAG;
     }
     buffer.putInt64(0, header);
-    int len = buffer.writerIndex() - 9;
     if (len > 255) {
-      MemoryBuffer buf = MemoryBuffer.newHeapBuffer(len + 10);
+      MemoryBuffer buf = MemoryBuffer.newHeapBuffer(len + 1);
       buf.writeInt64(header);
       buf.writeInt16((short) len);
+      buf.writeBytes(buffer.getBytes(9, len));
       buffer = buf;
     } else {
       buffer.putByte(8, (byte) len);

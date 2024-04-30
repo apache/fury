@@ -19,11 +19,16 @@
 
 package org.apache.fury.meta;
 
+import static org.apache.fury.meta.ClassDefEncoder.buildFieldsInfo;
+import static org.apache.fury.meta.ClassDefEncoder.getClassFields;
+
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.MapFields;
+import org.apache.fury.test.bean.Struct;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -33,15 +38,28 @@ public class ClassDefEncoderTest {
   public void testBasicClassDef() throws Exception {
     Fury fury = Fury.builder().withMetaContextShare(true).build();
     Class<ClassDefTest.TestFieldsOrderClass1> type = ClassDefTest.TestFieldsOrderClass1.class;
-    List<ClassDef.FieldInfo> fieldsInfo =
-        ClassDefEncoder.buildFieldsInfo(fury.getClassResolver(), type);
-    Map<String, List<ClassDef.FieldInfo>> classLayers =
-        ClassDefEncoder.getClassFields(type, fieldsInfo);
+    List<ClassDef.FieldInfo> fieldsInfo = buildFieldsInfo(fury.getClassResolver(), type);
     MemoryBuffer buffer =
-        ClassDefEncoder.encodeClassDef(fury.getClassResolver(), type, classLayers, new HashMap<>());
+        ClassDefEncoder.encodeClassDef(
+            fury.getClassResolver(), type, getClassFields(type, fieldsInfo), new HashMap<>());
     ClassDef classDef = ClassDef.readClassDef(fury.getClassResolver(), buffer);
     Assert.assertEquals(classDef.getClassName(), type.getName());
     Assert.assertEquals(classDef.getFieldsInfo().size(), type.getDeclaredFields().length);
     Assert.assertEquals(classDef.getFieldsInfo(), fieldsInfo);
+  }
+
+  @Test
+  public void testBigMetaEncoding() {
+    for (Class<?> type :
+        new Class[] {
+          MapFields.class, BeanA.class, Struct.createStructClass("TestBigMetaEncoding", 5)
+        }) {
+      Fury fury = Fury.builder().withMetaContextShare(true).build();
+      ClassDef classDef = ClassDef.buildClassDef(fury, type);
+      ClassDef classDef1 =
+          ClassDef.readClassDef(
+              fury.getClassResolver(), MemoryBuffer.fromByteArray(classDef.getEncoded()));
+      Assert.assertEquals(classDef1, classDef);
+    }
   }
 }

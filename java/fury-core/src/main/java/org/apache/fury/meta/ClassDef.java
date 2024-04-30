@@ -149,6 +149,10 @@ public class ClassDef implements Serializable {
     return id;
   }
 
+  public byte[] getEncoded() {
+    return encoded;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
