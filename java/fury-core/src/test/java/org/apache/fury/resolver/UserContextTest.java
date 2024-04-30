@@ -47,17 +47,17 @@ public class UserContextTest extends FuryTestBase {
     }
 
     @Override
-    void write(MemoryBuffer buffer) {
+    public void write(MemoryBuffer buffer) {
       fury.writeJavaStringRef(buffer, data);
     }
 
     @Override
-    void read(MemoryBuffer buffer) {
+    public void read(MemoryBuffer buffer) {
       data = fury.readJavaStringRef(buffer);
     }
 
     @Override
-    void reset() {
+    public void reset() {
       data = null;
     }
   }
