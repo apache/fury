@@ -121,8 +121,8 @@ public class MetaStringEncoder {
       }
       int upperCount = statistics.upperCount;
       if (upperCount == 1 && Character.isUpperCase(chars[0])) {
-        if (encodingSet.contains(Encoding.LOWER_UPPER_DIGIT_SPECIAL)) {
-          return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
+        if (encodingSet.contains(Encoding.FIRST_TO_LOWER_SPECIAL)) {
+          return Encoding.FIRST_TO_LOWER_SPECIAL;
         }
       }
       if ((chars.length + upperCount) * 5 < (chars.length * 6)) {
