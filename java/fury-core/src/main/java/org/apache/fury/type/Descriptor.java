@@ -122,6 +122,7 @@ public class Descriptor {
       Method readMethod,
       Method writeMethod) {
     this.typeRef = typeRef;
+    this.typeName = field.getType().getName();
     this.name = name;
     this.modifier = modifier;
     this.declaringClass = declaringClass;
