@@ -23,6 +23,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.fury.config.FuryBuilder;
+import org.apache.fury.util.Preconditions;
 
 /**
  * A context is used to add some context-related information, so that the serializers can set up
@@ -66,6 +67,7 @@ public final class SerializationContext {
   }
 
   public void registerUserContextResolver(String name, UserContextResolver userContextResolver) {
+    Preconditions.checkState(!userContextResolvers.containsKey(name));
     userContextResolvers.put(name, userContextResolver);
   }
 

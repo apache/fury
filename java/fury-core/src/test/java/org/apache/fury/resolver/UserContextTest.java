@@ -111,8 +111,7 @@ public class UserContextTest extends FuryTestBase {
     List<StringUserContextResolver> resolvers = new ArrayList<>(NUM);
     for (int i = 0; i < NUM; i++) {
       final StringUserContextResolver userContextResolver = new StringUserContextResolver(fury);
-      fury.getSerializationContext()
-          .registerUserContextResolver(String.valueOf(i), userContextResolver);
+      fury.registerUserContext(String.valueOf(i), StringUserContextResolver::new);
       resolvers.add(userContextResolver);
     }
     final Foo o = Foo.create();
