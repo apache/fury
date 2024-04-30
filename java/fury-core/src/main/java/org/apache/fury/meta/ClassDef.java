@@ -214,10 +214,13 @@ public class ClassDef implements Serializable {
       for (ClassDef.FieldInfo fieldInfo : fieldsInfo) {
         Descriptor descriptor =
             descriptorsMap.get(fieldInfo.getDefinedClass() + "." + fieldInfo.getFieldName());
+        Descriptor newDesc = fieldInfo.toDescriptor(resolver);
         if (descriptor != null) {
+          // Make DescriptorGrouper have consistent order whether field exist or not
+          descriptor.setTypeName(newDesc.getTypeName());
           descriptors.add(descriptor);
         } else {
-          descriptors.add(fieldInfo.toDescriptor(resolver));
+          descriptors.add(newDesc);
         }
       }
     }
@@ -271,7 +274,7 @@ public class ClassDef implements Serializable {
      * null. Don't invoke this method if class does have <code>fieldName</code> field. In such case,
      * reflection should be used to get the descriptor.
      */
-    public Descriptor toDescriptor(ClassResolver classResolver) {
+    Descriptor toDescriptor(ClassResolver classResolver) {
       TypeRef<?> typeRef = fieldType.toTypeToken(classResolver);
       // This field doesn't exist in peer class, so any legal modifier will be OK.
       int stubModifiers = ReflectionUtils.getField(getClass(), "fieldName").getModifiers();

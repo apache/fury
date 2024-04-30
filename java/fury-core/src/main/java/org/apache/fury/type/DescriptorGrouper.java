@@ -104,12 +104,11 @@ public class DescriptorGrouper {
         // sort by field name to fix order if type is same.
         int c =
             d1
-                // Use raw type instead of generic type so that fields with type token
+                // Use type name instead of generic type so that fields with type ref
                 // constructed in ClassDef which take pojo as non-final Object type
                 // will have consistent order between processes if the fields doesn't exist in peer.
-                .getRawType()
-                .getName()
-                .compareTo(d2.getRawType().getName());
+                .getTypeName()
+                .compareTo(d2.getTypeName());
         if (c == 0) {
           c = d1.getName().compareTo(d2.getName());
           if (c == 0) {

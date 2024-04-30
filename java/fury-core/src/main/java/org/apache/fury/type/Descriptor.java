@@ -72,6 +72,7 @@ public class Descriptor {
 
   private TypeRef<?> typeRef;
   private Class<?> type;
+  private String typeName;
   private final String name;
   private final int modifier;
   private final String declaringClass;
@@ -81,6 +82,7 @@ public class Descriptor {
 
   public Descriptor(Field field, TypeRef<?> typeRef, Method readMethod, Method writeMethod) {
     this.field = field;
+    this.typeName = field.getType().getName();
     this.name = field.getName();
     this.modifier = field.getModifiers();
     this.declaringClass = field.getDeclaringClass().getName();
@@ -91,6 +93,7 @@ public class Descriptor {
 
   public Descriptor(TypeRef<?> typeRef, String name, int modifier, String declaringClass) {
     this.field = null;
+    this.typeName = typeRef.getRawType().getName();
     this.name = name;
     this.modifier = modifier;
     this.declaringClass = declaringClass;
@@ -101,6 +104,7 @@ public class Descriptor {
 
   private Descriptor(Field field, Method readMethod) {
     this.field = field;
+    this.typeName = field.getType().getName();
     this.name = field.getName();
     this.modifier = field.getModifiers();
     this.declaringClass = field.getDeclaringClass().getName();
@@ -156,6 +160,14 @@ public class Descriptor {
 
   public Method getWriteMethod() {
     return writeMethod;
+  }
+
+  public String getTypeName() {
+    return typeName;
+  }
+
+  public void setTypeName(String typeName) {
+    this.typeName = typeName;
   }
 
   /** Try not use {@link TypeRef#getRawType()} since it's expensive. */
