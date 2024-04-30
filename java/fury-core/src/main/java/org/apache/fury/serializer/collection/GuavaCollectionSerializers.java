@@ -256,11 +256,20 @@ public class GuavaCollectionSerializers {
         protected Function computeValue(Class<?> builderClass) {
           MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(builderClass);
           MethodHandle ctr = null;
+          boolean lowVersionGuava = false;
           try {
             ctr =
                 lookup.findConstructor(builderClass, MethodType.methodType(void.class, int.class));
           } catch (NoSuchMethodException | IllegalAccessException e) {
-            Platform.throwException(e);
+            try {
+              ctr = lookup.findConstructor(builderClass, MethodType.methodType(void.class));
+              lowVersionGuava = true;
+            } catch (NoSuchMethodException | IllegalAccessException e2) {
+              Platform.throwException(e);
+            }
+          }
+          if (lowVersionGuava) {
+            return _JDKAccess.makeJDKFunction(lookup, ctr, MethodType.methodType(Object.class));
           }
           return _JDKAccess.makeJDKFunction(lookup, ctr);
         }

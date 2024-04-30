@@ -126,13 +126,19 @@ public class _JDKAccess {
 
   @SuppressWarnings("unchecked")
   public static <T, R> Function<T, R> makeJDKFunction(Lookup lookup, MethodHandle handle) {
+    return makeJDKFunction(lookup, handle, jdkFunctionMethodType);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T, R> Function<T, R> makeJDKFunction(
+      Lookup lookup, MethodHandle handle, MethodType methodType) {
     try {
       CallSite callSite =
           LambdaMetafactory.metafactory(
               lookup,
               "apply",
               MethodType.methodType(Function.class),
-              jdkFunctionMethodType,
+              methodType,
               handle,
               boxedMethodType(handle.type()));
       return (Function<T, R>) callSite.getTarget().invokeExact();
