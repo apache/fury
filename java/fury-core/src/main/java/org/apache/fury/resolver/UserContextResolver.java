@@ -34,4 +34,7 @@ public abstract class UserContextResolver {
   abstract void write(MemoryBuffer buffer);
 
   abstract void read(MemoryBuffer buffer);
+
+  /** write/read end should clear user data. */
+  abstract void reset();
 }

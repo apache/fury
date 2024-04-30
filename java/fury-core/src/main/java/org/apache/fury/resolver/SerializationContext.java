@@ -74,8 +74,8 @@ public final class SerializationContext {
       objects.clear();
     }
     metaContext = null;
-    if (!userContextResolvers.isEmpty()) {
-      userContextResolvers.clear();
+    for (UserContextResolver userContextResolver : userContextResolvers.values()) {
+      userContextResolver.reset();
     }
   }
 }

@@ -19,18 +19,24 @@
 
 package org.apache.fury.resolver;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.ObjectSerializer;
+import org.apache.fury.serializer.Serializer;
 import org.apache.fury.test.bean.Foo;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class UserContextTest extends FuryTestBase {
+
+  private static final int NUM = 10;
 
   public static class StringUserContextResolver extends UserContextResolver {
 
@@ -49,6 +55,45 @@ public class UserContextTest extends FuryTestBase {
     void read(MemoryBuffer buffer) {
       data = fury.readJavaStringRef(buffer);
     }
+
+    @Override
+    void reset() {
+      data = null;
+    }
+  }
+
+  public static class FooSerializer extends Serializer<Foo> {
+
+    private final ObjectSerializer<Foo> serializer;
+
+    public FooSerializer(Fury fury, Class<Foo> type) {
+      super(fury, type);
+      serializer = new ObjectSerializer<>(fury, Foo.class);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Foo value) {
+      final Map<String, UserContextResolver> userContextResolvers =
+          fury.getSerializationContext().getUserContextResolvers();
+      for (int i = 0; i < NUM; i++) {
+        final StringUserContextResolver userContextResolver =
+            (StringUserContextResolver) userContextResolvers.get(String.valueOf(i));
+        userContextResolver.data = getData(i);
+      }
+      serializer.write(buffer, value);
+    }
+
+    @Override
+    public Foo read(MemoryBuffer buffer) {
+      final Map<String, UserContextResolver> userContextResolvers =
+          fury.getSerializationContext().getUserContextResolvers();
+      for (int i = 0; i < NUM; i++) {
+        final StringUserContextResolver userContextResolver =
+            (StringUserContextResolver) userContextResolvers.get(String.valueOf(i));
+        Assert.assertEquals(userContextResolver.data, getData(i));
+      }
+      return serializer.read(buffer);
+    }
   }
 
   private Fury buildFury() {
@@ -61,26 +106,23 @@ public class UserContextTest extends FuryTestBase {
 
   @Test
   public void checkShareUserContext() {
-    Fury writrfury = buildFury();
-    final List<StringUserContextResolver> resolvers = getResolver(writrfury, 4, false);
-    final int size = resolvers.size();
-    for (int i = 0; i < size; i++) {
-      writrfury
-          .getSerializationContext()
-          .registerUserContextResolver(String.valueOf(i), resolvers.get(i));
+    Fury fury = buildFury();
+    fury.registerSerializer(Foo.class, FooSerializer.class);
+    List<StringUserContextResolver> resolvers = new ArrayList<>(NUM);
+    for (int i = 0; i < NUM; i++) {
+      final StringUserContextResolver userContextResolver = new StringUserContextResolver(fury);
+      fury.getSerializationContext()
+          .registerUserContextResolver(String.valueOf(i), userContextResolver);
+      resolvers.add(userContextResolver);
     }
     final Foo o = Foo.create();
-    final byte[] bytes = writrfury.serialize(o);
-    Fury readFury = buildFury();
-    final List<StringUserContextResolver> readResolvers = getResolver(readFury, 4, true);
-    for (int i = 0; i < size; i++) {
-      readFury
-          .getSerializationContext()
-          .registerUserContextResolver(String.valueOf(i), readResolvers.get(i));
+    final byte[] bytes = fury.serialize(o);
+    for (int i = 0; i < NUM; i++) {
+      Assert.assertNull(resolvers.get(i).data);
     }
-    Assert.assertEquals(readFury.deserialize(bytes), o);
-    for (int i = 0; i < size; i++) {
-      Assert.assertEquals(resolvers.get(i).data, readResolvers.get(i).data);
+    Assert.assertEquals(fury.deserialize(bytes), o);
+    for (int i = 0; i < NUM; i++) {
+      Assert.assertNull(resolvers.get(i).data);
     }
   }
 
@@ -91,10 +133,14 @@ public class UserContextTest extends FuryTestBase {
               final StringUserContextResolver userContextResolver =
                   new StringUserContextResolver(fury);
               if (!empty) {
-                userContextResolver.data = "data" + idx;
+                userContextResolver.data = getData(idx);
               }
               return userContextResolver;
             })
         .collect(Collectors.toList());
+  }
+
+  private static String getData(int idx) {
+    return "data" + idx;
   }
 }
