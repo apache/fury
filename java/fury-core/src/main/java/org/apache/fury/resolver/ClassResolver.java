@@ -19,6 +19,7 @@
 
 package org.apache.fury.resolver;
 
+import static org.apache.fury.collection.Collections.ofHashMap;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
@@ -1285,7 +1286,13 @@ public class ClassResolver {
       } else {
         classDef =
             classDefMap.computeIfAbsent(
-                classInfo.cls, cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>()));
+                classInfo.cls,
+                cls ->
+                    ClassDef.buildClassDef(
+                        this,
+                        cls,
+                        new ArrayList<>(),
+                        ofHashMap(META_SHARE_FIELDS_INFO_KEY, "false")));
       }
       metaContext.writingClassDefs.add(classDef);
     }
