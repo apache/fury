@@ -1053,6 +1053,7 @@ public class ClassResolver {
 
   public ClassInfo getClassInfo(short classId) {
     ClassInfo classInfo = registeredId2ClassInfo[classId];
+    assert classInfo != null : classId;
     if (classInfo.serializer == null) {
       addSerializer(classInfo.cls, createSerializer(classInfo.cls));
       classInfo = classInfoMap.get(classInfo.cls);
@@ -1365,7 +1366,7 @@ public class ClassResolver {
       Preconditions.checkNotNull(classId);
       return classInfo;
     }
-    if (clz.isArray()) {
+    if (clz.isArray() || cls.isEnum()) {
       return getClassInfo(cls);
     }
     Class<? extends Serializer> sc =
