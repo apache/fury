@@ -31,10 +31,10 @@ public abstract class UserContextResolver {
     this.fury = fury;
   }
 
-  abstract void write(MemoryBuffer buffer);
+  public abstract void write(MemoryBuffer buffer);
 
-  abstract void read(MemoryBuffer buffer);
+  public abstract void read(MemoryBuffer buffer);
 
   /** write/read end should clear user data. */
-  abstract void reset();
+  public abstract void reset();
 }

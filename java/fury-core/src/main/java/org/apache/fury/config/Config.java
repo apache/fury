@@ -248,6 +248,8 @@ public class Config implements Serializable {
         && suppressClassRegistrationWarnings == config.suppressClassRegistrationWarnings
         && registerGuavaTypes == config.registerGuavaTypes
         && shareMetaContext == config.shareMetaContext
+        && shareUserContext == config.shareUserContext
+        && shareGlobalContext == config.shareGlobalContext
         && asyncCompilationEnabled == config.asyncCompilationEnabled
         && deserializeUnexistedClass == config.deserializeUnexistedClass
         && scalaOptimizationEnabled == config.scalaOptimizationEnabled
@@ -278,6 +280,8 @@ public class Config implements Serializable {
         suppressClassRegistrationWarnings,
         registerGuavaTypes,
         shareMetaContext,
+        shareUserContext,
+        shareGlobalContext,
         asyncCompilationEnabled,
         deserializeUnexistedClass,
         scalaOptimizationEnabled);
