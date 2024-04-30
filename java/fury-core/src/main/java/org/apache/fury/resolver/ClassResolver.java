@@ -1284,6 +1284,7 @@ public class ClassResolver {
         classDef =
             classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(fury, cls));
       } else {
+        // TODO(chaokunyang) support more types meta-share serialization
         classDef =
             classDefMap.computeIfAbsent(
                 classInfo.cls,
