@@ -1365,6 +1365,9 @@ public class ClassResolver {
       Preconditions.checkNotNull(classId);
       return classInfo;
     }
+    if (clz.isArray()) {
+      return getClassInfo(cls);
+    }
     Class<? extends Serializer> sc =
         fury.getJITContext()
             .registerSerializerJITCallback(
