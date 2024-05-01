@@ -19,7 +19,10 @@
 
 package org.apache.fury.meta;
 
-import static org.apache.fury.meta.MetaString.Encoding.*;
+import static org.apache.fury.meta.MetaString.Encoding.ALL_TO_LOWER_SPECIAL;
+import static org.apache.fury.meta.MetaString.Encoding.FIRST_TO_LOWER_SPECIAL;
+import static org.apache.fury.meta.MetaString.Encoding.LOWER_UPPER_DIGIT_SPECIAL;
+import static org.apache.fury.meta.MetaString.Encoding.UTF_8;
 
 import java.util.Arrays;
 import java.util.List;
@@ -27,9 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.fury.meta.MetaString.Encoding;
 
-/**
- * A class used to encode package/class/field name.
- */
+/** A class used to encode package/class/field name. */
 public class Encoders {
   public static final MetaStringEncoder PACKAGE_ENCODER = new MetaStringEncoder('.', '_');
   public static final MetaStringDecoder PACKAGE_DECODER = new MetaStringDecoder('.', '_');
