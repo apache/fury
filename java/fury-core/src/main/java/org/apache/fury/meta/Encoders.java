@@ -27,6 +27,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.fury.meta.MetaString.Encoding;
 
+/**
+ * A class used to encode package/class/field name.
+ */
 public class Encoders {
   public static final MetaStringEncoder PACKAGE_ENCODER = new MetaStringEncoder('.', '_');
   public static final MetaStringDecoder PACKAGE_DECODER = new MetaStringDecoder('.', '_');
