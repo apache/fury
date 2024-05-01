@@ -70,9 +70,13 @@ public class Descriptor {
     descCache = CacheBuilder.newBuilder().weakKeys().softValues().concurrencyLevel(64).build();
   }
 
+  // All fields should not be mutable except as lazy load,
+  // because Descriptor is cached in `descCache`.
+  // And mutable fields may make some serializer read wrong field
+  // value such as `typeName`.
   private TypeRef<?> typeRef;
   private Class<?> type;
-  private String typeName;
+  private final String typeName;
   private final String name;
   private final int modifier;
   private final String declaringClass;
@@ -115,6 +119,7 @@ public class Descriptor {
 
   private Descriptor(
       TypeRef<?> typeRef,
+      String typeName,
       String name,
       int modifier,
       String declaringClass,
@@ -122,7 +127,7 @@ public class Descriptor {
       Method readMethod,
       Method writeMethod) {
     this.typeRef = typeRef;
-    this.typeName = field.getType().getName();
+    this.typeName = typeName;
     this.name = name;
     this.modifier = modifier;
     this.declaringClass = declaringClass;
@@ -131,8 +136,14 @@ public class Descriptor {
     this.writeMethod = writeMethod;
   }
 
-  public Descriptor copy(TypeRef<?> typeRef, Method readMethod, Method writeMethod) {
-    return new Descriptor(typeRef, name, modifier, declaringClass, field, readMethod, writeMethod);
+  public Descriptor copy(Method readMethod, Method writeMethod) {
+    return new Descriptor(
+        typeRef, typeName, name, modifier, declaringClass, field, readMethod, writeMethod);
+  }
+
+  public Descriptor copyWithTypeName(String typeName) {
+    return new Descriptor(
+        typeRef, typeName, name, modifier, declaringClass, field, readMethod, writeMethod);
   }
 
   public Field getField() {
@@ -167,10 +178,6 @@ public class Descriptor {
     return typeName;
   }
 
-  public void setTypeName(String typeName) {
-    this.typeName = typeName;
-  }
-
   /** Try not use {@link TypeRef#getRawType()} since it's expensive. */
   public Class<?> getRawType() {
     Class<?> type = this.type;
@@ -195,18 +202,17 @@ public class Descriptor {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("Descriptor{");
+    sb.append("typeName=").append(typeName);
     sb.append("name=").append(name);
+    sb.append("modifier=").append(modifier);
     if (field != null) {
-      sb.append(", field=").append(field);
+      sb.append(", field=").append(field.getDeclaringClass().getSimpleName()).append('.');
     }
     if (readMethod != null) {
       sb.append(", readMethod=").append(readMethod);
     }
     if (writeMethod != null) {
       sb.append(", writeMethod=").append(writeMethod);
-    }
-    if (typeRef != null) {
-      sb.append(", typeRef=").append(typeRef);
     }
     sb.append('}');
     return sb.toString();

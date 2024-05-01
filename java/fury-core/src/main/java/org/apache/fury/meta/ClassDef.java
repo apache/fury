@@ -221,7 +221,7 @@ public class ClassDef implements Serializable {
         Descriptor newDesc = fieldInfo.toDescriptor(resolver);
         if (descriptor != null) {
           // Make DescriptorGrouper have consistent order whether field exist or not
-          descriptor.setTypeName(newDesc.getTypeName());
+          descriptor = descriptor.copyWithTypeName(newDesc.getTypeName());
           descriptors.add(descriptor);
         } else {
           descriptors.add(newDesc);

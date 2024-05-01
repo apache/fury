@@ -1421,10 +1421,10 @@ public class ClassResolver {
       long hash = id >>> 8;
       Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(hash);
       if (tuple2 != null) {
-        int size = buffer.readByte() & 0xff;
-        if ((id & SIZE_TWO_BYTES_FLAG) != 0) {
-          size = size << 8 | (buffer.readByte() & 0xff);
-        }
+        int size =
+            (id & SIZE_TWO_BYTES_FLAG) == 0
+                ? buffer.readByte() & 0xff
+                : buffer.readInt16() & 0xffff;
         buffer.increaseReaderIndex(size);
       } else {
         tuple2 = readClassDef(buffer, id);

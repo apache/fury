@@ -187,7 +187,7 @@ public final class UnexistedClassSerializers {
             DescriptorGrouper.createDescriptorGrouper(
                 fury.getClassResolver()::isMonomorphic,
                 descriptors,
-                true,
+                false,
                 fury.compressInt(),
                 fury.compressLong());
         Tuple3<

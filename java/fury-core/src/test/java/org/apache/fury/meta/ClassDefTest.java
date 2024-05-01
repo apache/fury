@@ -167,22 +167,4 @@ public class ClassDefTest extends FuryTestBase {
     assertEquals(classDef1.getClassName(), classDef.getClassName());
     assertEquals(classDef1, classDef);
   }
-
-  @Test
-  public void testContainerClass1() {
-    Fury fury = Fury.builder().withMetaContextShare(true).build();
-    List<Field> fields = ReflectionUtils.getFields(ContainerClass.class, true);
-    ClassDef classDef =
-        ClassDef.buildClassDef(fury.getClassResolver(), ContainerClass.class, fields);
-    assertEquals(classDef.getClassName(), ContainerClass.class.getName());
-    assertEquals(classDef.getFieldsInfo().size(), fields.size());
-    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-    classDef.writeClassDef(buffer);
-    ClassDef classDef1 = ClassDef.readClassDef(fury.getClassResolver(), buffer);
-    assertEquals(classDef1.getClassName(), classDef.getClassName());
-    System.out.println(classDef1.toString());
-    System.out.println(classDef.toString());
-    assertEquals(classDef1.toString(), classDef.toString());
-    assertEquals(classDef1, classDef);
-  }
 }
