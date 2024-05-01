@@ -37,7 +37,8 @@ import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.Preconditions;
 
 /**
- * See spec documentation: docs/specification/java_serialization_spec.md <a
+ * An decoder which decode binary into {@link ClassDef}. See spec documentation:
+ * docs/specification/java_serialization_spec.md <a
  * href="https://fury.apache.org/docs/specification/fury_java_serialization_spec">...</a>
  */
 class ClassDefDecoder {

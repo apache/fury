@@ -47,6 +47,11 @@ import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Preconditions;
 
+/**
+ * An encoder which encode {@link ClassDef} into binary. See spec documentation:
+ * docs/specification/java_serialization_spec.md <a
+ * href="https://fury.apache.org/docs/specification/fury_java_serialization_spec">...</a>
+ */
 class ClassDefEncoder {
   static List<Field> buildFields(Fury fury, Class<?> cls, boolean resolveParent) {
     Comparator<Descriptor> comparator =
