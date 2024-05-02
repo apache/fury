@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.testng.annotations.Test;
 
@@ -149,7 +150,8 @@ public class DescriptorGrouperTest {
     descriptors.add(
         new Descriptor(new TypeRef<Map<String, String>>() {}, "c" + index++, -1, "TestClass"));
     DescriptorGrouper grouper =
-        DescriptorGrouper.createDescriptorGrouper(descriptors, false, false, false);
+        DescriptorGrouper.createDescriptorGrouper(
+            ReflectionUtils::isMonomorphic, descriptors, false, false, false);
     {
       List<? extends Class<?>> classes =
           grouper.getPrimitiveDescriptors().stream()
@@ -224,7 +226,8 @@ public class DescriptorGrouperTest {
   @Test
   public void testCompressedPrimitiveGrouper() {
     DescriptorGrouper grouper =
-        DescriptorGrouper.createDescriptorGrouper(createDescriptors(), false, true, true);
+        DescriptorGrouper.createDescriptorGrouper(
+            ReflectionUtils::isMonomorphic, createDescriptors(), false, true, true);
     {
       List<? extends Class<?>> classes =
           grouper.getPrimitiveDescriptors().stream()

@@ -56,6 +56,7 @@ import org.apache.fury.codegen.Expression.ReplaceStub;
 import org.apache.fury.codegen.Expression.StaticInvoke;
 import org.apache.fury.codegen.ExpressionVisitor;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.meta.ClassDef;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.ObjectSerializer;
 import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
@@ -87,13 +88,23 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
 
   public ObjectCodecBuilder(Class<?> beanClass, Fury fury) {
     super(TypeRef.of(beanClass), fury, Generated.GeneratedObjectSerializer.class);
-    Collection<Descriptor> descriptors =
-        classResolver.getAllDescriptorsMap(beanClass, true).values();
+    Collection<Descriptor> descriptors;
+    boolean shareMeta = fury.getConfig().shareMetaContext();
+    if (shareMeta) {
+      ClassDef classDef = classResolver.getClassDef(beanClass, true);
+      descriptors = classDef.getDescriptors(classResolver, beanClass);
+    } else {
+      descriptors = fury.getClassResolver().getAllDescriptorsMap(beanClass, true).values();
+    }
     classVersionHash =
         new Literal(ObjectSerializer.computeVersionHash(descriptors), PRIMITIVE_INT_TYPE);
     DescriptorGrouper grouper =
         DescriptorGrouper.createDescriptorGrouper(
-            descriptors, false, fury.compressInt(), fury.compressLong());
+            fury.getClassResolver()::isMonomorphic,
+            descriptors,
+            false,
+            fury.compressInt(),
+            fury.compressLong());
     objectCodecOptimizer =
         new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
     if (isRecord) {

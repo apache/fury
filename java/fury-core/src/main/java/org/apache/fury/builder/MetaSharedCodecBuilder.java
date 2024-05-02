@@ -76,7 +76,11 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
             f -> MetaSharedSerializer.consolidateFields(f.getClassResolver(), beanClass, classDef));
     DescriptorGrouper grouper =
         DescriptorGrouper.createDescriptorGrouper(
-            descriptors, true, fury.compressInt(), fury.compressLong());
+            fury.getClassResolver()::isMonomorphic,
+            descriptors,
+            false,
+            fury.compressInt(),
+            fury.compressLong());
     objectCodecOptimizer =
         new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
   }

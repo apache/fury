@@ -50,6 +50,7 @@ import org.apache.fury.collection.Tuple3;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 import org.apache.fury.util.unsafe._JDKAccess;
 
@@ -213,6 +214,25 @@ public class ReflectionUtils {
 
       cls = cls.getSuperclass();
     }
+  }
+
+  /** Get all classes from leaf to {@link Object}. */
+  public static List<Class<?>> getAllClasses(Class<?> cls) {
+    List<Class<?>> classes = new ArrayList<>();
+    Class<?> clz = cls;
+    while (clz != null) {
+      classes.add(clz);
+      clz = clz.getSuperclass();
+    }
+    return classes;
+  }
+
+  public static List<Class<?>> getAllClasses(Class<?> cls, boolean topToLeaf) {
+    List<Class<?>> classes = getAllClasses(cls);
+    if (topToLeaf) {
+      Collections.reverse(classes);
+    }
+    return classes;
   }
 
   /** Returns true if any method named {@code methodName} has exception. */
@@ -517,12 +537,7 @@ public class ReflectionUtils {
     // Janino generated class's package might be null
     if (cls.getPackage() == null) {
       String className = cls.getName();
-      int index = className.lastIndexOf(".");
-      if (index != -1) {
-        pkg = className.substring(0, index);
-      } else {
-        pkg = "";
-      }
+      return getPackage(className);
     } else {
       pkg = cls.getPackage().getName();
     }
@@ -551,6 +566,22 @@ public class ReflectionUtils {
     org.apache.fury.util.Preconditions.checkArgument(
         canonicalName != null, "Class %s doesn't have canonical name", cls);
     return canonicalName;
+  }
+
+  public static String getSimpleClassName(String className) {
+    int index = className.lastIndexOf(".");
+    if (index != -1) {
+      return className.substring(index + 1);
+    } else {
+      return className;
+    }
+  }
+
+  public static String getFullClassName(String pkg, String className) {
+    if (StringUtils.isBlank(pkg)) {
+      return className;
+    }
+    return pkg + "." + className;
   }
 
   @CodegenInvoke

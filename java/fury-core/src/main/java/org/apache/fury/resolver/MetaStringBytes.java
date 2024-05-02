@@ -95,9 +95,13 @@ final class MetaStringBytes {
 
   @Override
   public String toString() {
-    // TODO support other str encoding.
-    String str = new String(bytes);
-    ;
-    return "string: " + str + " " + "size: " + bytes.length + " " + Arrays.toString(bytes);
+    return "MetaStringBytes{"
+        + "hashCode="
+        + hashCode
+        + ", size="
+        + bytes.length
+        + ", bytes="
+        + Arrays.toString(bytes)
+        + '}';
   }
 }

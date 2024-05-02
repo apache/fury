@@ -231,7 +231,7 @@ public final class StringSerializer extends Serializer<String> {
     byte[] heapMemory = buffer.getHeapMemory();
     if (heapMemory != null) {
       final int arrIndex = buffer._unsafeHeapReaderIndex();
-      buffer._increaseReaderIndexUnsafe(numBytes);
+      buffer.increaseReaderIndex(numBytes);
       bytes = new byte[numBytes];
       System.arraycopy(heapMemory, arrIndex, bytes, 0, numBytes);
     } else {

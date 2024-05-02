@@ -19,16 +19,17 @@
 
 package org.apache.fury.resolver;
 
-import static org.apache.fury.meta.MetaStringEncoder.PACKAGE_DECODER;
-import static org.apache.fury.meta.MetaStringEncoder.PACKAGE_ENCODER;
-import static org.apache.fury.meta.MetaStringEncoder.TYPE_NAME_DECODER;
+import static org.apache.fury.collection.Collections.ofHashMap;
+import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
+import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
+import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
+import static org.apache.fury.meta.Encoders.TYPE_NAME_DECODER;
 import static org.apache.fury.serializer.CodegenSerializer.loadCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.loadCompatibleCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.supportCodegenForJavaSerialization;
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.collect.ImmutableMap;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
@@ -245,6 +246,7 @@ public class ClassResolver {
     private final Set<Class<?>> getClassCtx = new HashSet<>();
     private final Map<Class<?>, FieldResolver> fieldResolverMap = new HashMap<>();
     private final Map<Long, Tuple2<ClassDef, ClassInfo>> classIdToDef = new HashMap<>();
+    private final Map<Class<?>, ClassDef> currentLayerClassDef = new HashMap<>();
     // TODO(chaokunyang) Better to  use soft reference, see ObjectStreamClass.
     private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Field, Descriptor>>
         descriptorsCache = new ConcurrentHashMap<>();
@@ -478,6 +480,10 @@ public class ClassResolver {
     if (createSerializer) {
       getSerializer(cls);
     }
+  }
+
+  public boolean isRegistered(Class<?> cls) {
+    return extRegistry.registeredClassIdMap.get(cls) != null;
   }
 
   public Short getRegisteredClassId(Class<?> cls) {
@@ -1048,6 +1054,7 @@ public class ClassResolver {
 
   public ClassInfo getClassInfo(short classId) {
     ClassInfo classInfo = registeredId2ClassInfo[classId];
+    assert classInfo != null : classId;
     if (classInfo.serializer == null) {
       addSerializer(classInfo.cls, createSerializer(classInfo.cls));
       classInfo = classInfoMap.get(classInfo.cls);
@@ -1275,8 +1282,9 @@ public class ClassResolver {
               || serializer instanceof ObjectSerializer
               || serializer instanceof MetaSharedSerializer)) {
         classDef =
-            classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(cls, fury));
+            classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(fury, cls));
       } else {
+        // TODO(chaokunyang) support more types meta-share serialization
         classDef =
             classDefMap.computeIfAbsent(
                 classInfo.cls,
@@ -1285,7 +1293,7 @@ public class ClassResolver {
                         this,
                         cls,
                         new ArrayList<>(),
-                        ImmutableMap.of(META_SHARE_FIELDS_INFO_KEY, "false")));
+                        ofHashMap(META_SHARE_FIELDS_INFO_KEY, "false")));
       }
       metaContext.writingClassDefs.add(classDef);
     }
@@ -1339,7 +1347,7 @@ public class ClassResolver {
           classInfo = getMetaSharedClassInfo(classDef, cls);
           // Share serializer for same version class def to avoid too much different meta
           // context take up too much memory.
-          extRegistry.classIdToDef.put(classDef.getId(), Tuple2.of(classDef, classInfo));
+          putClassDef(classDef, classInfo);
         } else {
           classInfo = classDefTuple.f1;
         }
@@ -1365,6 +1373,9 @@ public class ClassResolver {
       // so we can rewrite it in `UnexistedClassSerializer`.
       Preconditions.checkNotNull(classId);
       return classInfo;
+    }
+    if (clz.isArray() || cls.isEnum()) {
+      return getClassInfo(cls);
     }
     Class<? extends Serializer> sc =
         fury.getJITContext()
@@ -1406,18 +1417,51 @@ public class ClassResolver {
     buffer.readerIndex(classDefOffset);
     int numClassDefs = buffer.readVarUint32Small14();
     for (int i = 0; i < numClassDefs; i++) {
-      ClassDef readClassDef = ClassDef.readClassDef(buffer);
-      // Share same class def to reduce memory footprint, since there may be many meta context.
-      ClassDef classDef =
-          extRegistry.classIdToDef.computeIfAbsent(
-                  readClassDef.getId(), key -> Tuple2.of(readClassDef, null))
-              .f0;
-      metaContext.readClassDefs.add(classDef);
+      long id = buffer.readInt64();
+      long hash = id >>> 8;
+      Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(hash);
+      if (tuple2 != null) {
+        int size =
+            (id & SIZE_TWO_BYTES_FLAG) == 0
+                ? buffer.readByte() & 0xff
+                : buffer.readInt16() & 0xffff;
+        buffer.increaseReaderIndex(size);
+      } else {
+        tuple2 = readClassDef(buffer, id);
+      }
+      metaContext.readClassDefs.add(tuple2.f0);
       // Will be set lazily, so even some classes doesn't exist, remaining classinfo
       // can be created still.
       metaContext.readClassInfos.add(null);
     }
     buffer.readerIndex(readerIndex);
+  }
+
+  private Tuple2<ClassDef, ClassInfo> readClassDef(MemoryBuffer buffer, long header) {
+    ClassDef readClassDef = ClassDef.readClassDef(this, buffer, header);
+    Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(readClassDef.getId());
+    if (tuple2 == null) {
+      tuple2 = putClassDef(readClassDef, null);
+    }
+    return tuple2;
+  }
+
+  private Tuple2<ClassDef, ClassInfo> putClassDef(ClassDef classDef, ClassInfo classInfo) {
+    Tuple2<ClassDef, ClassInfo> tuple2 = Tuple2.of(classDef, classInfo);
+    extRegistry.classIdToDef.put(classDef.getId(), tuple2);
+    return tuple2;
+  }
+
+  public ClassDef getClassDef(Class<?> cls, boolean resolveParent) {
+    if (resolveParent) {
+      return classDefMap.computeIfAbsent(cls, k -> ClassDef.buildClassDef(fury, cls));
+    }
+    ClassDef classDef = extRegistry.currentLayerClassDef.get(cls);
+    if (classDef == null) {
+      classDef = ClassDef.buildClassDef(fury, cls, false);
+      extRegistry.currentLayerClassDef.put(cls, classDef);
+    }
+    return classDef;
   }
 
   /**
@@ -1487,7 +1531,6 @@ public class ClassResolver {
       MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytesWithFlag(buffer, header);
       MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
       classInfo = loadBytesToClassInfo(packageBytes, simpleClassNameBytes);
-
     } else {
       classInfo = registeredId2ClassInfo[(short) (header >> 1)];
     }

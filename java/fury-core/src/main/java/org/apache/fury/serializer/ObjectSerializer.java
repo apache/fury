@@ -19,6 +19,7 @@
 
 package org.apache.fury.serializer;
 
+import static org.apache.fury.type.DescriptorGrouper.createDescriptorGrouper;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.lang.invoke.MethodHandle;
@@ -34,6 +35,7 @@ import org.apache.fury.collection.Tuple3;
 import org.apache.fury.exception.FuryException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.meta.ClassDef;
 import org.apache.fury.reflect.FieldAccessor;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
@@ -95,11 +97,21 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     // Use `setSerializerIfAbsent` to avoid overwriting existing serializer for class when used
     // as data serializer.
     classResolver.setSerializerIfAbsent(cls, this);
-    Collection<Descriptor> descriptors =
-        fury.getClassResolver().getAllDescriptorsMap(cls, resolveParent).values();
+    Collection<Descriptor> descriptors;
+    boolean shareMeta = fury.getConfig().shareMetaContext();
+    if (shareMeta) {
+      ClassDef classDef = classResolver.getClassDef(cls, resolveParent);
+      descriptors = classDef.getDescriptors(classResolver, cls);
+    } else {
+      descriptors = fury.getClassResolver().getAllDescriptorsMap(cls, resolveParent).values();
+    }
     DescriptorGrouper descriptorGrouper =
-        DescriptorGrouper.createDescriptorGrouper(
-            descriptors, false, fury.compressInt(), fury.compressLong());
+        createDescriptorGrouper(
+            fury.getClassResolver()::isMonomorphic,
+            descriptors,
+            false,
+            fury.compressInt(),
+            fury.compressLong());
     isRecord = RecordUtils.isRecord(cls);
     if (isRecord) {
       constructor = RecordUtils.getRecordConstructor(cls).f1;

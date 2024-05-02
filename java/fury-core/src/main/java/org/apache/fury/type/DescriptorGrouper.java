@@ -28,7 +28,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.function.Function;
-import org.apache.fury.reflect.ReflectionUtils;
+import java.util.function.Predicate;
 import org.apache.fury.util.record.RecordUtils;
 
 /**
@@ -104,12 +104,11 @@ public class DescriptorGrouper {
         // sort by field name to fix order if type is same.
         int c =
             d1
-                // Use raw type instead of generic type so that fields with type token
+                // Use type name instead of generic type so that fields with type ref
                 // constructed in ClassDef which take pojo as non-final Object type
                 // will have consistent order between processes if the fields doesn't exist in peer.
-                .getRawType()
-                .getName()
-                .compareTo(d2.getRawType().getName());
+                .getTypeName()
+                .compareTo(d2.getTypeName());
         if (c == 0) {
           c = d1.getName().compareTo(d2.getName());
           if (c == 0) {
@@ -138,6 +137,7 @@ public class DescriptorGrouper {
    * @param comparator comparator for non-primitive fields.
    */
   public DescriptorGrouper(
+      Predicate<Class<?>> isMonomorphic,
       Collection<Descriptor> descriptors,
       boolean descriptorsGroupedOrdered,
       Function<Descriptor, Descriptor> descriptorUpdator,
@@ -163,7 +163,7 @@ public class DescriptorGrouper {
         collectionDescriptors.add(descriptorUpdator.apply(descriptor));
       } else if (TypeUtils.isMap(descriptor.getRawType())) {
         mapDescriptors.add(descriptorUpdator.apply(descriptor));
-      } else if (ReflectionUtils.isMonomorphic(descriptor.getRawType())) {
+      } else if (isMonomorphic.test(descriptor.getRawType())) {
         finalDescriptors.add(descriptorUpdator.apply(descriptor));
       } else {
         otherDescriptors.add(descriptorUpdator.apply(descriptor));
@@ -215,16 +215,18 @@ public class DescriptorGrouper {
     if (readMethod == null && d.getWriteMethod() == null) {
       return d;
     }
-    return d.copy(d.getTypeRef(), readMethod, null);
+    return d.copy(readMethod, null);
   }
 
   public static DescriptorGrouper createDescriptorGrouper(
+      Predicate<Class<?>> isMonomorphic,
       Collection<Descriptor> descriptors,
       boolean descriptorsGroupedOrdered,
       boolean compressInt,
       boolean compressLong) {
     Comparator<Descriptor> comparator = getPrimitiveComparator(compressInt, compressLong);
     return new DescriptorGrouper(
+        isMonomorphic,
         descriptors,
         descriptorsGroupedOrdered,
         DescriptorGrouper::createDescriptor,

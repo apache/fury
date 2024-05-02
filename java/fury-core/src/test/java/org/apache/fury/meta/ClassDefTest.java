@@ -36,7 +36,7 @@ import org.apache.fury.reflect.ReflectionUtils;
 import org.testng.annotations.Test;
 
 public class ClassDefTest extends FuryTestBase {
-  private static class TestFieldsOrderClass1 {
+  static class TestFieldsOrderClass1 {
     private int intField2;
     private boolean booleanField;
     private Object objField;
@@ -94,7 +94,7 @@ public class ClassDefTest extends FuryTestBase {
               ImmutableList.of(TestFieldsOrderClass1.class.getDeclaredField("longField")));
       MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
       classDef.writeClassDef(buffer);
-      ClassDef classDef1 = ClassDef.readClassDef(buffer);
+      ClassDef classDef1 = ClassDef.readClassDef(fury.getClassResolver(), buffer);
       assertEquals(classDef1.getClassName(), classDef.getClassName());
       assertEquals(classDef1, classDef);
     }
@@ -110,7 +110,7 @@ public class ClassDefTest extends FuryTestBase {
           ReflectionUtils.getFields(TestFieldsOrderClass1.class, true).size());
       MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
       classDef.writeClassDef(buffer);
-      ClassDef classDef1 = ClassDef.readClassDef(buffer);
+      ClassDef classDef1 = ClassDef.readClassDef(fury.getClassResolver(), buffer);
       assertEquals(classDef1.getClassName(), classDef.getClassName());
       assertEquals(classDef1, classDef);
     }
@@ -126,7 +126,7 @@ public class ClassDefTest extends FuryTestBase {
           ReflectionUtils.getFields(TestFieldsOrderClass2.class, true).size());
       MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
       classDef.writeClassDef(buffer);
-      ClassDef classDef1 = ClassDef.readClassDef(buffer);
+      ClassDef classDef1 = ClassDef.readClassDef(fury.getClassResolver(), buffer);
       assertEquals(classDef1.getClassName(), classDef.getClassName());
       assertEquals(classDef1, classDef);
     }
@@ -147,7 +147,7 @@ public class ClassDefTest extends FuryTestBase {
           ReflectionUtils.getFields(DuplicateFieldClass.class, true).size());
       MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
       classDef.writeClassDef(buffer);
-      ClassDef classDef1 = ClassDef.readClassDef(buffer);
+      ClassDef classDef1 = ClassDef.readClassDef(fury.getClassResolver(), buffer);
       assertEquals(classDef1.getClassName(), classDef.getClassName());
       assertEquals(classDef1, classDef);
     }
@@ -156,21 +156,15 @@ public class ClassDefTest extends FuryTestBase {
   @Test
   public void testContainerClass() {
     Fury fury = Fury.builder().withMetaContextShare(true).build();
-    {
-      ClassDef classDef =
-          ClassDef.buildClassDef(
-              fury.getClassResolver(),
-              ContainerClass.class,
-              ReflectionUtils.getFields(ContainerClass.class, true));
-      assertEquals(classDef.getClassName(), ContainerClass.class.getName());
-      assertEquals(
-          classDef.getFieldsInfo().size(),
-          ReflectionUtils.getFields(ContainerClass.class, true).size());
-      MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-      classDef.writeClassDef(buffer);
-      ClassDef classDef1 = ClassDef.readClassDef(buffer);
-      assertEquals(classDef1.getClassName(), classDef.getClassName());
-      assertEquals(classDef1, classDef);
-    }
+    List<Field> fields = ReflectionUtils.getFields(ContainerClass.class, true);
+    ClassDef classDef =
+        ClassDef.buildClassDef(fury.getClassResolver(), ContainerClass.class, fields);
+    assertEquals(classDef.getClassName(), ContainerClass.class.getName());
+    assertEquals(classDef.getFieldsInfo().size(), fields.size());
+    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
+    classDef.writeClassDef(buffer);
+    ClassDef classDef1 = ClassDef.readClassDef(fury.getClassResolver(), buffer);
+    assertEquals(classDef1.getClassName(), classDef.getClassName());
+    assertEquals(classDef1, classDef);
   }
 }

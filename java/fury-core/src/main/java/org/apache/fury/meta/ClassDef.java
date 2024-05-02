@@ -19,6 +19,7 @@
 
 package org.apache.fury.meta;
 
+import static org.apache.fury.meta.ClassDefEncoder.buildFields;
 import static org.apache.fury.type.TypeUtils.COLLECTION_TYPE;
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 import static org.apache.fury.type.TypeUtils.collectionOf;
@@ -27,7 +28,6 @@ import static org.apache.fury.type.TypeUtils.mapOf;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -35,26 +35,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.SortedMap;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.MetaSharedCodecBuilder;
-import org.apache.fury.collection.IdentityObjectIntMap;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.type.Descriptor;
-import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.FinalObjectTypeStub;
 import org.apache.fury.type.GenericType;
-import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Preconditions;
 
 /**
@@ -74,10 +70,12 @@ import org.apache.fury.util.Preconditions;
  * @see FuryBuilder#withMetaContextShare
  * @see ReflectionUtils#getFieldOffset
  */
-@SuppressWarnings("UnstableApiUsage")
 public class ClassDef implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(ClassDef.class);
 
+  static final int SCHEMA_COMPATIBLE_FLAG = 0b10000;
+  public static final int SIZE_TWO_BYTES_FLAG = 0b100000;
+  static final int EXT_FLAG = 0b1000000;
   // TODO use field offset to sort field, which will hit l1-cache more. Since
   // `objectFieldOffset` is not part of jvm-specification, it may change between different jdk
   // vendor. But the deserialization peer use the class definition to create deserializer, it's OK
@@ -107,15 +105,21 @@ public class ClassDef implements Serializable {
   private final Map<String, String> extMeta;
   // Unique id for class def. If class def are same between processes, then the id will
   // be same too.
-  private long id;
+  private final long id;
+  private final byte[] encoded;
+  private transient List<Descriptor> descriptors;
 
-  // cache for serialization.
-  private transient byte[] serialized;
-
-  private ClassDef(String className, List<FieldInfo> fieldsInfo, Map<String, String> extMeta) {
+  ClassDef(
+      String className,
+      List<FieldInfo> fieldsInfo,
+      Map<String, String> extMeta,
+      long id,
+      byte[] encoded) {
     this.className = className;
     this.fieldsInfo = fieldsInfo;
     this.extMeta = extMeta;
+    this.id = id;
+    this.encoded = encoded;
   }
 
   /**
@@ -145,6 +149,10 @@ public class ClassDef implements Serializable {
     return id;
   }
 
+  public byte[] getEncoded() {
+    return encoded;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -164,137 +172,63 @@ public class ClassDef implements Serializable {
     return Objects.hash(className, fieldsInfo, extMeta);
   }
 
-  /** Write class definition to buffer. */
-  public void writeClassDef(MemoryBuffer buffer) {
-    byte[] serialized = this.serialized;
-    if (serialized == null) {
-      MemoryBuffer buf = MemoryUtils.buffer(32);
-      IdentityObjectIntMap<String> map = new IdentityObjectIntMap<>(8, 0.5f);
-      writeSharedString(buf, map, className);
-      buf.writeVarUint32Small7(fieldsInfo.size());
-      for (FieldInfo fieldInfo : fieldsInfo) {
-        writeSharedString(buf, map, fieldInfo.definedClass);
-        byte[] bytes = fieldInfo.fieldName.getBytes(StandardCharsets.UTF_8);
-        buf.writePrimitiveArrayWithSize(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
-        fieldInfo.fieldType.write(buf);
-      }
-      buf.writeVarUint32Small7(extMeta.size());
-      extMeta.forEach(
-          (k, v) -> {
-            byte[] keyBytes = k.getBytes(StandardCharsets.UTF_8);
-            byte[] valueBytes = v.getBytes(StandardCharsets.UTF_8);
-            buf.writePrimitiveArrayWithSize(keyBytes, Platform.BYTE_ARRAY_OFFSET, keyBytes.length);
-            buf.writePrimitiveArrayWithSize(
-                valueBytes, Platform.BYTE_ARRAY_OFFSET, valueBytes.length);
-          });
-      serialized = this.serialized = buf.getBytes(0, buf.writerIndex());
-      id = MurmurHash3.murmurhash3_x64_128(serialized, 0, serialized.length, 47)[0];
-      // this id will be part of generated codec, a negative number won't be allowed in class name.
-      id = Math.abs(id);
-    }
-    buffer.writeBytes(serialized);
-    buffer.writeInt64(id);
+  @Override
+  public String toString() {
+    return "ClassDef{"
+        + "className='"
+        + className
+        + '\''
+        + ", fieldsInfo="
+        + fieldsInfo
+        + ", extMeta="
+        + extMeta
+        + ", id="
+        + id
+        + '}';
   }
 
-  private static void writeSharedString(
-      MemoryBuffer buffer, IdentityObjectIntMap<String> map, String str) {
-    int newId = map.size;
-    int id = map.putOrGet(str, newId);
-    if (id >= 0) {
-      // TODO use flagged varint.
-      buffer.writeBoolean(true);
-      buffer.writeVarUint32Small7(id);
-    } else {
-      buffer.writeBoolean(false);
-      byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
-      buffer.writePrimitiveArrayWithSize(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length);
-    }
+  /** Write class definition to buffer. */
+  public void writeClassDef(MemoryBuffer buffer) {
+    buffer.writeBytes(encoded);
   }
 
   /** Read class definition from buffer. */
-  public static ClassDef readClassDef(MemoryBuffer buffer) {
-    List<String> strings = new ArrayList<>();
-    String className = readSharedString(buffer, strings);
-    List<FieldInfo> fieldInfos = new ArrayList<>();
-    int numFields = buffer.readVarUint32Small7();
-    for (int i = 0; i < numFields; i++) {
-      String definedClass = readSharedString(buffer, strings);
-      String fieldName = new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8);
-      fieldInfos.add(new FieldInfo(definedClass, fieldName, FieldType.read(buffer)));
-    }
-    int extMetaSize = buffer.readVarUint32Small7();
-    Map<String, String> extMeta = new HashMap<>();
-    for (int i = 0; i < extMetaSize; i++) {
-      extMeta.put(
-          new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8),
-          new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8));
-    }
-    long id = buffer.readInt64();
-    ClassDef classDef = new ClassDef(className, fieldInfos, extMeta);
-    classDef.id = id;
-    return classDef;
+  public static ClassDef readClassDef(ClassResolver classResolver, MemoryBuffer buffer) {
+    return ClassDefDecoder.decodeClassDef(classResolver, buffer, buffer.readInt64());
   }
 
-  private static String readSharedString(MemoryBuffer buffer, List<String> strings) {
-    String str;
-    if (buffer.readBoolean()) {
-      return strings.get(buffer.readVarUint32Small7());
-    } else {
-      str = new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8);
-      strings.add(str);
-      return str;
+  /** Read class definition from buffer. */
+  public static ClassDef readClassDef(
+      ClassResolver classResolver, MemoryBuffer buffer, long header) {
+    return ClassDefDecoder.decodeClassDef(classResolver, buffer, header);
+  }
+
+  public List<Descriptor> getDescriptors(ClassResolver resolver, Class<?> cls) {
+    if (descriptors == null) {
+      SortedMap<Field, Descriptor> allDescriptorsMap = resolver.getAllDescriptorsMap(cls, true);
+      Map<String, Descriptor> descriptorsMap = new HashMap<>();
+      for (Map.Entry<Field, Descriptor> e : allDescriptorsMap.entrySet()) {
+        if (descriptorsMap.put(
+                e.getKey().getDeclaringClass().getName() + "." + e.getKey().getName(), e.getValue())
+            != null) {
+          throw new IllegalStateException("Duplicate key");
+        }
+      }
+      descriptors = new ArrayList<>(fieldsInfo.size());
+      for (ClassDef.FieldInfo fieldInfo : fieldsInfo) {
+        Descriptor descriptor =
+            descriptorsMap.get(fieldInfo.getDefinedClass() + "." + fieldInfo.getFieldName());
+        Descriptor newDesc = fieldInfo.toDescriptor(resolver);
+        if (descriptor != null) {
+          // Make DescriptorGrouper have consistent order whether field exist or not
+          descriptor = descriptor.copyWithTypeName(newDesc.getTypeName());
+          descriptors.add(descriptor);
+        } else {
+          descriptors.add(newDesc);
+        }
+      }
     }
-  }
-
-  public static ClassDef buildClassDef(Class<?> cls, Fury fury) {
-    Comparator<Descriptor> comparator =
-        DescriptorGrouper.getPrimitiveComparator(fury.compressInt(), fury.compressLong());
-    DescriptorGrouper descriptorGrouper =
-        new DescriptorGrouper(
-            fury.getClassResolver().getAllDescriptorsMap(cls, true).values(),
-            false,
-            Function.identity(),
-            comparator,
-            DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
-    ClassResolver classResolver = fury.getClassResolver();
-    List<Field> fields = new ArrayList<>();
-    descriptorGrouper
-        .getPrimitiveDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
-    descriptorGrouper
-        .getBoxedDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
-    descriptorGrouper
-        .getFinalDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
-    descriptorGrouper
-        .getOtherDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
-    descriptorGrouper
-        .getCollectionDescriptors()
-        .forEach(descriptor -> fields.add(descriptor.getField()));
-    descriptorGrouper.getMapDescriptors().forEach(descriptor -> fields.add(descriptor.getField()));
-    return buildClassDef(classResolver, cls, fields);
-  }
-
-  /** Build class definition from fields of class. */
-  public static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields) {
-    return buildClassDef(classResolver, type, fields, new HashMap<>());
-  }
-
-  public static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields, Map<String, String> extMeta) {
-    List<FieldInfo> fieldInfos = new ArrayList<>();
-    for (Field field : fields) {
-      FieldInfo fieldInfo =
-          new FieldInfo(
-              field.getDeclaringClass().getName(),
-              field.getName(),
-              buildFieldType(classResolver, field));
-      fieldInfos.add(fieldInfo);
-    }
-    return new ClassDef(type.getName(), fieldInfos, extMeta);
+    return descriptors;
   }
 
   /**
@@ -310,7 +244,7 @@ public class ClassDef implements Serializable {
 
     private final FieldType fieldType;
 
-    private FieldInfo(String definedClass, String fieldName, FieldType fieldType) {
+    FieldInfo(String definedClass, String fieldName, FieldType fieldType) {
       this.definedClass = definedClass;
       this.fieldName = fieldName;
       this.fieldType = fieldType;
@@ -326,6 +260,14 @@ public class ClassDef implements Serializable {
       return fieldName;
     }
 
+    public boolean hasTypeTag() {
+      return false;
+    }
+
+    public short getTypeTag() {
+      return -1;
+    }
+
     /** Returns type of current field. */
     public FieldType getFieldType() {
       return fieldType;
@@ -336,7 +278,7 @@ public class ClassDef implements Serializable {
      * null. Don't invoke this method if class does have <code>fieldName</code> field. In such case,
      * reflection should be used to get the descriptor.
      */
-    public Descriptor toDescriptor(ClassResolver classResolver) {
+    Descriptor toDescriptor(ClassResolver classResolver) {
       TypeRef<?> typeRef = fieldType.toTypeToken(classResolver);
       // This field doesn't exist in peer class, so any legal modifier will be OK.
       int stubModifiers = ReflectionUtils.getField(getClass(), "fieldName").getModifiers();
@@ -364,7 +306,16 @@ public class ClassDef implements Serializable {
 
     @Override
     public String toString() {
-      return "FieldInfo{" + "fieldName='" + fieldName + '\'' + ", fieldType=" + fieldType + '}';
+      return "FieldInfo{"
+          + "definedClass='"
+          + definedClass
+          + '\''
+          + ", fieldName='"
+          + fieldName
+          + '\''
+          + ", fieldType="
+          + fieldType
+          + '}';
     }
   }
 
@@ -406,38 +357,39 @@ public class ClassDef implements Serializable {
     }
 
     public void write(MemoryBuffer buffer) {
-      buffer.writeBoolean(isMonomorphic);
+      byte header = (byte) (isMonomorphic ? 1 : 0);
       if (this instanceof RegisteredFieldType) {
-        buffer.writeByte(0);
-        buffer.writeInt16(((RegisteredFieldType) this).getClassId());
+        short classId = ((RegisteredFieldType) this).getClassId();
+        buffer.writeVarUint32Small7(((3 + classId) << 1) | header);
       } else if (this instanceof CollectionFieldType) {
-        buffer.writeByte(1);
+        buffer.writeVarUint32Small7((2 << 1) | header);
         ((CollectionFieldType) this).elementType.write(buffer);
       } else if (this instanceof MapFieldType) {
-        buffer.writeByte(2);
+        buffer.writeVarUint32Small7((1 << 1) | header);
         MapFieldType mapFieldType = (MapFieldType) this;
         mapFieldType.keyType.write(buffer);
         mapFieldType.valueType.write(buffer);
       } else {
         Preconditions.checkArgument(this instanceof ObjectFieldType);
-        buffer.writeByte(3);
+        buffer.writeVarUint32Small7(header);
       }
     }
 
     public static FieldType read(MemoryBuffer buffer) {
-      boolean isFinal = buffer.readBoolean();
-      byte typecode = buffer.readByte();
-      switch (typecode) {
-        case 0:
-          return new RegisteredFieldType(isFinal, buffer.readInt16());
-        case 1:
-          return new CollectionFieldType(isFinal, read(buffer));
-        case 2:
-          return new MapFieldType(isFinal, read(buffer), read(buffer));
-        case 3:
-          return new ObjectFieldType(isFinal);
-        default:
-          throw new IllegalStateException(String.format("Unsupported type code %s", typecode));
+      int header = buffer.readVarUint32Small7();
+      boolean isMonomorphic = (header & 0b1) != 0;
+      return read(buffer, isMonomorphic, header >>> 1);
+    }
+
+    public static FieldType read(MemoryBuffer buffer, boolean isFinal, int typeId) {
+      if (typeId == 0) {
+        return new ObjectFieldType(isFinal);
+      } else if (typeId == 1) {
+        return new MapFieldType(isFinal, read(buffer), read(buffer));
+      } else if (typeId == 2) {
+        return new CollectionFieldType(isFinal, read(buffer));
+      } else {
+        return new RegisteredFieldType(isFinal, (short) (typeId - 3));
       }
     }
   }
@@ -638,7 +590,7 @@ public class ClassDef implements Serializable {
   static FieldType buildFieldType(ClassResolver classResolver, Field field) {
     Preconditions.checkNotNull(field);
     Class<?> rawType = field.getType();
-    boolean isFinal = GenericType.isFinalByDefault(rawType);
+    boolean isFinal = classResolver.isMonomorphic(rawType);
     if (Collection.class.isAssignableFrom(rawType)) {
       GenericType genericType = GenericType.build(field.getGenericType());
       return new CollectionFieldType(
@@ -705,5 +657,25 @@ public class ClassDef implements Serializable {
         return new ObjectFieldType(isFinal);
       }
     }
+  }
+
+  public static ClassDef buildClassDef(Fury fury, Class<?> cls) {
+    return buildClassDef(fury, cls, true);
+  }
+
+  public static ClassDef buildClassDef(Fury fury, Class<?> cls, boolean resolveParent) {
+    return ClassDefEncoder.buildClassDef(
+        fury.getClassResolver(), cls, buildFields(fury, cls, resolveParent), new HashMap<>());
+  }
+
+  /** Build class definition from fields of class. */
+  public static ClassDef buildClassDef(
+      ClassResolver classResolver, Class<?> type, List<Field> fields) {
+    return buildClassDef(classResolver, type, fields, new HashMap<>());
+  }
+
+  public static ClassDef buildClassDef(
+      ClassResolver classResolver, Class<?> type, List<Field> fields, Map<String, String> extMeta) {
+    return ClassDefEncoder.buildClassDef(classResolver, type, fields, extMeta);
   }
 }
