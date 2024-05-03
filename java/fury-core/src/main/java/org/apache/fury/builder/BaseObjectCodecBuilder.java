@@ -189,7 +189,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
 
   protected abstract String codecSuffix();
 
-  <T> T visitFury(Function<Fury, T> function) {
+  protected <T> T visitFury(Function<Fury, T> function) {
     return fury.getJITContext().asyncVisitFury(function);
   }
 
@@ -441,8 +441,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   classInfo,
                   inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr))));
     }
-    writeClassAndObject.add(
-        fury.getClassResolver().writeClassExpr(classResolverRef, buffer, classInfo));
+    writeClassAndObject.add(classResolver.writeClassExpr(classResolverRef, buffer, classInfo));
     writeClassAndObject.add(
         new Invoke(
             inlineInvoke(classInfo, "getSerializer", SERIALIZER_TYPE),
@@ -659,8 +658,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                 new Assign(
                     classInfo,
                     inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr))));
-        writeClassAction.add(
-            fury.getClassResolver().writeClassExpr(classResolverRef, buffer, classInfo));
+        writeClassAction.add(classResolver.writeClassExpr(classResolverRef, buffer, classInfo));
         serializer = new Invoke(classInfo, "getSerializer", "serializer", SERIALIZER_TYPE, false);
         serializer = new Cast(serializer, TypeRef.of(AbstractCollectionSerializer.class));
         writeClassAction.add(serializer, new Return(serializer));
@@ -965,8 +963,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                     classInfo,
                     inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr))));
         // Note: writeClassExpr is thread safe.
-        writeClassAction.add(
-            fury.getClassResolver().writeClassExpr(classResolverRef, buffer, classInfo));
+        writeClassAction.add(classResolver.writeClassExpr(classResolverRef, buffer, classInfo));
         serializer = new Invoke(classInfo, "getSerializer", "serializer", SERIALIZER_TYPE, false);
         serializer = new Cast(serializer, TypeRef.of(AbstractMapSerializer.class));
         writeClassAction.add(serializer, new Return(serializer));

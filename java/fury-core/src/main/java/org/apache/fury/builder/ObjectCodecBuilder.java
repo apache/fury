@@ -56,7 +56,6 @@ import org.apache.fury.codegen.Expression.ReplaceStub;
 import org.apache.fury.codegen.Expression.StaticInvoke;
 import org.apache.fury.codegen.ExpressionVisitor;
 import org.apache.fury.memory.Platform;
-import org.apache.fury.meta.ClassDef;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.ObjectSerializer;
 import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
@@ -91,8 +90,12 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     Collection<Descriptor> descriptors;
     boolean shareMeta = fury.getConfig().shareMetaContext();
     if (shareMeta) {
-      ClassDef classDef = classResolver.getClassDef(beanClass, true);
-      descriptors = classDef.getDescriptors(classResolver, beanClass);
+      descriptors =
+          visitFury(
+              f ->
+                  f.getClassResolver()
+                      .getClassDef(beanClass, true)
+                      .getDescriptors(classResolver, beanClass));
     } else {
       descriptors = fury.getClassResolver().getAllDescriptorsMap(beanClass, true).values();
     }

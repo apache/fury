@@ -510,7 +510,7 @@ public class ClassResolver {
   /**
    * Mark non-inner registered final types as non-final to write class def for those types. Note if
    * a class is registered but not an inner class with inner serializer, it will still be taken as
-   * non-final to write class def, so that it can be deserialized by the peer still..
+   * non-final to write class def, so that it can be deserialized by the peer still.
    */
   public boolean isMonomorphic(Class<?> clz) {
     if (fury.getConfig().shareMetaContext()) {
