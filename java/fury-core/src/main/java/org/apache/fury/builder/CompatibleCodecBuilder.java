@@ -41,7 +41,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.Generated.GeneratedCompatibleSerializer;
 import org.apache.fury.codegen.CodegenContext;
@@ -97,10 +96,6 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
     super(beanType, fury, superSerializerClass);
     this.fieldResolver = fieldResolver;
     if (isRecord) {
-      List<String> fieldNames =
-          fieldResolver.getAllFieldsList().stream()
-              .map(FieldResolver.FieldInfo::getName)
-              .collect(Collectors.toList());
       recordReversedMapping = RecordUtils.buildFieldToComponentMapping(beanClass);
     }
     ctx.reserveName(FIELD_RESOLVER_NAME);
@@ -879,7 +874,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
     Preconditions.checkArgument(ReflectionUtils.isMonomorphic(cls));
     ClassInfo classInfo = visitFury(f -> f.getClassResolver().getClassInfo(cls, false));
     if (classInfo != null && classInfo.getClassId() != ClassResolver.NO_CLASS_ID) {
-      return fury.getClassResolver().writeClassExpr(buffer, classInfo.getClassId());
+      return classResolver.writeClassExpr(buffer, classInfo.getClassId());
     }
     Expression classInfoExpr = getFinalClassInfo(cls);
     return new Invoke(classResolverRef, "writeClass", buffer, classInfoExpr);
@@ -889,7 +884,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
     Preconditions.checkArgument(ReflectionUtils.isMonomorphic(cls));
     ClassInfo classInfo = visitFury(f -> f.getClassResolver().getClassInfo(cls, false));
     if (classInfo != null && classInfo.getClassId() != ClassResolver.NO_CLASS_ID) {
-      return fury.getClassResolver().skipRegisteredClassExpr(buffer);
+      return classResolver.skipRegisteredClassExpr(buffer);
     }
     // read `ClassInfo` is not used, set `inlineReadClassInfo` false,
     // to avoid read doesn't happen in generated code.

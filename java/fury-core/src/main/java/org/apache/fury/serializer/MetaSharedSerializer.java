@@ -287,15 +287,6 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     }
   }
 
-  /**
-   * Consolidate fields of <code>classDef</code> with <code>cls</code>. If some field exists in
-   * <code>cls</code> but not in <code>classDef</code>, it won't be returned in final collection. If
-   * some field exists in <code>classDef</code> but not in <code> cls</code>, it will be added to
-   * final collection.
-   *
-   * @param cls class load in current process.
-   * @param classDef class definition sent from peer.
-   */
   public static Collection<Descriptor> consolidateFields(
       ClassResolver classResolver, Class<?> cls, ClassDef classDef) {
     return classDef.getDescriptors(classResolver, cls);

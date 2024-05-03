@@ -203,6 +203,14 @@ public class ClassDef implements Serializable {
     return ClassDefDecoder.decodeClassDef(classResolver, buffer, header);
   }
 
+  /**
+   * Consolidate fields of <code>classDef</code> with <code>cls</code>. If some field exists in
+   * <code>cls</code> but not in <code>classDef</code>, it won't be returned in final collection. If
+   * some field exists in <code>classDef</code> but not in <code> cls</code>, it will be added to
+   * final collection.
+   *
+   * @param cls class load in current process.
+   */
   public List<Descriptor> getDescriptors(ClassResolver resolver, Class<?> cls) {
     if (descriptors == null) {
       SortedMap<Field, Descriptor> allDescriptorsMap = resolver.getAllDescriptorsMap(cls, true);
