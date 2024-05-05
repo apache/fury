@@ -5,7 +5,7 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/apache/incubator-fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/incubator-fury/actions/workflows/ci.yml)
 [![Slack Channel](https://img.shields.io/badge/slack-join-3f0e40?logo=slack&style=for-the-badge)](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
 [![Twitter](https://img.shields.io/badge/@ApacheFury-follow-blue?logo=twitter&style=for-the-badge)](https://twitter.com/ApacheFury)
-[![Maven Version](https://img.shields.io/maven-central/v/org.furyio/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.furyio"%20AND%20a:"fury-core")
+[![Maven Version](https://img.shields.io/maven-central/v/org.apache.fury/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.apache.fury"%20AND%20a:"fury-core")
 
 
 **Apache Fury (incubating)** is a blazingly-fast multi-language serialization framework powered by **JIT** (just-in-time compilation) and **zero-copy**, providing up to 170x performance and ultimate ease of use.
@@ -96,28 +96,28 @@ Nightly snapshot:
 <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.5.0-SNAPSHOT</version>
+  <version>0.6.0-SNAPSHOT</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.5.0-SNAPSHOT</version>
+  <version>0.6.0-SNAPSHOT</version>
 </dependency> -->
 ```
 
 Release version:
 ```xml
 <dependency>
-  <groupId>org.furyio</groupId>
+  <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.4.1</version>
+  <version>0.5.0</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
-  <groupId>org.furyio</groupId>
+  <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.4.1</version>
+  <version>0.5.0</version>
 </dependency> -->
 ```
 
@@ -125,7 +125,7 @@ Maven groupId will be changed to `org.apache.fury` when next version is released
 
 ### Scala
 ```sbt
-libraryDependencies += "org.furyio" % "fury-core" % "0.4.1"
+libraryDependencies += "org.apache.fury" % "fury-core" % "0.5.0"
 ```
 
 ### Python
