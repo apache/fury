@@ -121,8 +121,6 @@ Release version:
 </dependency> -->
 ```
 
-Maven groupId will be changed to `org.apache.fury` when next version is released.
-
 ### Scala
 ```sbt
 libraryDependencies += "org.apache.fury" % "fury-core" % "0.5.0"
