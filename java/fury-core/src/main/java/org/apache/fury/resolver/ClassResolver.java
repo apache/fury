@@ -336,17 +336,19 @@ public class ClassResolver {
     if (fury.getConfig().registerGuavaTypes()) {
       GuavaCollectionSerializers.registerDefaultSerializers(fury);
     }
-    if (metaContextShareEnabled) {
-      addDefaultSerializer(
+    if (fury.getConfig().deserializeUnexistedClass()) {
+      if (metaContextShareEnabled) {
+        addDefaultSerializer(
           UnexistedMetaSharedClass.class, new UnexistedClassSerializer(fury, null));
-      // Those class id must be known in advance, here is two bytes, so
-      // `UnexistedClassSerializer.writeClassDef`
-      // can overwrite written classinfo and replace with real classinfo.
-      short classId =
+        // Those class id must be known in advance, here is two bytes, so
+        // `UnexistedClassSerializer.writeClassDef`
+        // can overwrite written classinfo and replace with real classinfo.
+        short classId =
           Objects.requireNonNull(classInfoMap.get(UnexistedMetaSharedClass.class)).classId;
-      Preconditions.checkArgument(classId > 63 && classId < 8192, classId);
-    } else {
-      register(UnexistedSkipClass.class);
+        Preconditions.checkArgument(classId > 63 && classId < 8192, classId);
+      } else {
+        register(UnexistedSkipClass.class);
+      }
     }
   }
 
