@@ -61,39 +61,6 @@ public class SerializersTest extends FuryTestBase {
     assertEquals("str", serDe(fury1, fury2, new StringBuffer("str")).toString());
   }
 
-  public enum EnumFoo {
-    A,
-    B
-  }
-
-  public enum EnumSubClass {
-    A {
-      @Override
-      void f() {}
-    },
-    B {
-      @Override
-      void f() {}
-    };
-
-    abstract void f();
-  }
-
-  @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
-  public void testEnumSerialization(boolean referenceTracking, Language language) {
-    FuryBuilder builder =
-        Fury.builder()
-            .withLanguage(language)
-            .withRefTracking(referenceTracking)
-            .requireClassRegistration(false);
-    Fury fury1 = builder.build();
-    Fury fury2 = builder.build();
-    assertEquals(EnumFoo.A, serDe(fury1, fury2, EnumFoo.A));
-    assertEquals(EnumFoo.B, serDe(fury1, fury2, EnumFoo.B));
-    assertEquals(EnumSubClass.A, serDe(fury1, fury2, EnumSubClass.A));
-    assertEquals(EnumSubClass.B, serDe(fury1, fury2, EnumSubClass.B));
-  }
-
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testBigInt(boolean referenceTracking, Language language) {
     FuryBuilder builder =

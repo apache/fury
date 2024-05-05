@@ -107,6 +107,7 @@ import org.apache.fury.serializer.ArraySerializers.UnexistedEnumArrayClassSerial
 import org.apache.fury.serializer.BufferSerializers;
 import org.apache.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
 import org.apache.fury.serializer.CompatibleSerializer;
+import org.apache.fury.serializer.EnumSerializer;
 import org.apache.fury.serializer.ExternalizableSerializer;
 import org.apache.fury.serializer.JavaSerializer;
 import org.apache.fury.serializer.JdkProxySerializer;
@@ -807,10 +808,10 @@ public class ClassResolver {
       return classInfo.serializer.getClass();
     } else {
       if (cls.isEnum()) {
-        return Serializers.EnumSerializer.class;
+        return EnumSerializer.class;
       } else if (Enum.class.isAssignableFrom(cls) && cls != Enum.class) {
         // handles an enum value that is an inner class. Eg: enum A {b{}};
-        return Serializers.EnumSerializer.class;
+        return EnumSerializer.class;
       } else if (EnumSet.class.isAssignableFrom(cls)) {
         return CollectionSerializers.EnumSetSerializer.class;
       } else if (Charset.class.isAssignableFrom(cls)) {

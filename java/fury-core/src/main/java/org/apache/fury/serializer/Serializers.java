@@ -51,7 +51,6 @@ import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.GraalvmSupport;
-import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.unsafe._JDKAccess;
 
 /** Serialization utils and common serializers. */
@@ -300,34 +299,6 @@ public class Serializers {
     @Override
     public StringBuffer xread(MemoryBuffer buffer) {
       return new StringBuffer(stringSerializer.readUTF8String(buffer));
-    }
-  }
-
-  public static final class EnumSerializer extends Serializer<Enum> {
-    private final Enum[] enumConstants;
-
-    public EnumSerializer(Fury fury, Class<Enum> cls) {
-      super(fury, cls, false);
-      if (cls.isEnum()) {
-        enumConstants = cls.getEnumConstants();
-      } else {
-        Preconditions.checkArgument(Enum.class.isAssignableFrom(cls) && cls != Enum.class);
-        @SuppressWarnings("unchecked")
-        Class<Enum> enclosingClass = (Class<Enum>) cls.getEnclosingClass();
-        Preconditions.checkNotNull(enclosingClass);
-        Preconditions.checkArgument(enclosingClass.isEnum());
-        enumConstants = enclosingClass.getEnumConstants();
-      }
-    }
-
-    @Override
-    public void write(MemoryBuffer buffer, Enum value) {
-      buffer.writeVarUint32Small7(value.ordinal());
-    }
-
-    @Override
-    public Enum read(MemoryBuffer buffer) {
-      return enumConstants[buffer.readVarUint32Small7()];
     }
   }
 

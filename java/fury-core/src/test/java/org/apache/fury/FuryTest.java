@@ -62,9 +62,9 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.ArraySerializersTest;
+import org.apache.fury.serializer.EnumSerializerTest;
 import org.apache.fury.serializer.ObjectSerializer;
 import org.apache.fury.serializer.Serializer;
-import org.apache.fury.serializer.SerializersTest;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.Struct;
 import org.apache.fury.type.Descriptor;
@@ -114,12 +114,12 @@ public class FuryTest extends FuryTestBase {
     assertEquals("str", serDe(fury1, fury2, "str"));
     assertEquals("str", serDe(fury1, fury2, new StringBuilder("str")).toString());
     assertEquals("str", serDe(fury1, fury2, new StringBuffer("str")).toString());
-    assertEquals(SerializersTest.EnumFoo.A, serDe(fury1, fury2, SerializersTest.EnumFoo.A));
-    assertEquals(SerializersTest.EnumFoo.B, serDe(fury1, fury2, SerializersTest.EnumFoo.B));
+    assertEquals(EnumSerializerTest.EnumFoo.A, serDe(fury1, fury2, EnumSerializerTest.EnumFoo.A));
+    assertEquals(EnumSerializerTest.EnumFoo.B, serDe(fury1, fury2, EnumSerializerTest.EnumFoo.B));
     assertEquals(
-        SerializersTest.EnumSubClass.A, serDe(fury1, fury2, SerializersTest.EnumSubClass.A));
+        EnumSerializerTest.EnumSubClass.A, serDe(fury1, fury2, EnumSerializerTest.EnumSubClass.A));
     assertEquals(
-        SerializersTest.EnumSubClass.B, serDe(fury1, fury2, SerializersTest.EnumSubClass.B));
+        EnumSerializerTest.EnumSubClass.B, serDe(fury1, fury2, EnumSerializerTest.EnumSubClass.B));
     assertEquals(BigInteger.valueOf(100), serDe(fury1, fury2, BigInteger.valueOf(100)));
     assertEquals(BigDecimal.valueOf(100, 2), serDe(fury1, fury2, BigDecimal.valueOf(100, 2)));
     java.sql.Date sqlDate = new java.sql.Date(System.currentTimeMillis());
@@ -191,11 +191,11 @@ public class FuryTest extends FuryTestBase {
     assertEquals("str", serDeCheckIndex(fury1, fury2, buffer, "str"));
     assertEquals("str", serDeCheckIndex(fury1, fury2, buffer, new StringBuilder("str")).toString());
     assertEquals(
-        SerializersTest.EnumFoo.A,
-        serDeCheckIndex(fury1, fury2, buffer, SerializersTest.EnumFoo.A));
+        EnumSerializerTest.EnumFoo.A,
+        serDeCheckIndex(fury1, fury2, buffer, EnumSerializerTest.EnumFoo.A));
     assertEquals(
-        SerializersTest.EnumSubClass.A,
-        serDeCheckIndex(fury1, fury2, buffer, SerializersTest.EnumSubClass.A));
+        EnumSerializerTest.EnumSubClass.A,
+        serDeCheckIndex(fury1, fury2, buffer, EnumSerializerTest.EnumSubClass.A));
     assertTrue(
         Arrays.equals(
             new boolean[] {false, true},
