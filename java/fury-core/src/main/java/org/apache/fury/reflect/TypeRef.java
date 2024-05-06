@@ -498,15 +498,6 @@ public class TypeRef<T> {
       for (int i = 0; i < fromArgs.length; i++) {
         populateTypeMappings(mappings, fromArgs[i], toArgs[i]);
       }
-    } else if (supertypeWithArgsFromSubtype instanceof Class) {
-      if (toType instanceof WildcardType) {
-        return; // Okay to say Foo is <?>
-      }
-      // Can't map from a raw class to anything other than itself or a wildcard.
-      // You can't say "assuming String is Integer".
-      // And we don't support "assuming String is T"; user has to say "assuming T is String".
-      throw new IllegalArgumentException(
-          "No type mapping from " + supertypeWithArgsFromSubtype + " to " + toType);
     } else if (supertypeWithArgsFromSubtype instanceof GenericArrayType) {
       if (toType instanceof WildcardType) {
         return; // Okay to say A[] is <?>
@@ -516,7 +507,9 @@ public class TypeRef<T> {
           ((GenericArrayType) supertypeWithArgsFromSubtype).getGenericComponentType();
       populateTypeMappings(mappings, fromComponentType, componentType);
     } else {
-      throw new AssertionError("Unknown type: " + toType);
+      if (!(supertypeWithArgsFromSubtype instanceof Class)) {
+        throw new AssertionError("Unknown type: " + toType);
+      }
     }
   }
 
