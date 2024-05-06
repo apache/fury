@@ -242,11 +242,14 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
     classResolver.writeClass(buffer, classInfo);
     CollectionSerializer collectionSerializer = (CollectionSerializer) classInfo.getSerializer();
-    collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
-    collectionSerializer.write(buffer, fieldValue);
-    // Some collectionSerializer may overwrite write/read method, then clear element serializer
-    // may not got invoked.
-    collectionSerializer.setElementSerializer(null);
+    try {
+      collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
+      collectionSerializer.write(buffer, fieldValue);
+    } finally {
+      // Some collectionSerializer may overwrite write/read method, then clear element serializer
+      // may not got invoked.
+      collectionSerializer.setElementSerializer(null);
+    }
   }
 
   private void writeMapKVFinal(
@@ -259,13 +262,16 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
     classResolver.writeClass(buffer, classInfo);
     MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
-    mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
-    mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
-    mapSerializer.write(buffer, fieldValue);
-    // Some mmapSerializer may overwrite write/read method, then clear serializer
-    // may not got invoked.
-    mapSerializer.setKeySerializer(null);
-    mapSerializer.setValueSerializer(null);
+    try {
+      mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
+      mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
+      mapSerializer.write(buffer, fieldValue);
+    } finally {
+      // Some mmapSerializer may overwrite write/read method, then clear serializer
+      // may not got invoked.
+      mapSerializer.setKeySerializer(null);
+      mapSerializer.setValueSerializer(null);
+    }
   }
 
   private void writeMapKeyFinal(
@@ -276,11 +282,14 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
     classResolver.writeClass(buffer, classInfo);
     MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
-    mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
-    mapSerializer.write(buffer, fieldValue);
-    // Some mmapSerializer may overwrite write/read method, then clear serializer
-    // may not got invoked.
-    mapSerializer.setKeySerializer(null);
+    try {
+      mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
+      mapSerializer.write(buffer, fieldValue);
+    } finally {
+      // Some mmapSerializer may overwrite write/read method, then clear serializer
+      // may not got invoked.
+      mapSerializer.setKeySerializer(null);
+    }
   }
 
   private void writeMapValueFinal(
@@ -291,11 +300,14 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
     classResolver.writeClass(buffer, classInfo);
     MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
-    mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
-    mapSerializer.write(buffer, fieldValue);
-    // Some mmapSerializer may overwrite write/read method, then clear serializer
-    // may not got invoked.
-    mapSerializer.setValueSerializer(null);
+    try {
+      mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
+      mapSerializer.write(buffer, fieldValue);
+    } finally {
+      // Some mmapSerializer may overwrite write/read method, then clear serializer
+      // may not got invoked.
+      mapSerializer.setValueSerializer(null);
+    }
   }
 
   @SuppressWarnings("unchecked")
