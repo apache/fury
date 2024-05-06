@@ -288,23 +288,27 @@ Meta header is a 64 bits number value encoded in little endian order.
       fields, then use fields info in meta for deserializing compatible fields.
 - type id: the registered id for the current type, which will be written as an unsigned varint.
 - field info:
-    - Header(8 bits):
-        - Format:
-            - `reserved 1 bit + 3 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag + tag id flag`.
-        - Users can use annotation to provide that info.
-            - tag id: when set to 1, the field name will be written by an unsigned varint tag id.
-            - ref tracking: when set to 0, ref tracking will be disabled for this field.
-            - nullability: when set to 0, this field won't be null.
-            - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
-              not `final`.
-            - 3 bits field name encoding will be set to meta string encoding flags when tag id is not set.
-    - Type id:
+    - header(8
+      bits): `3 bits size + 2 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag`.
+      Users can use annotation to provide those info.
+        - 2 bits field name encoding:
+            - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
+            - If tag id is used, i.e. field name is written by an unsigned varint tag id. 2 bits encoding will be `11`.
+        - size of field name:
+            - The `3 bits size: 0~7`  will be used to indicate length `1~7`, the value `7` indicates to read more bytes,
+              the encoding will encode `size - 7` as a varint next.
+            - If encoding is `TAG_ID`, then num_bytes of field name will be used to store tag id.
+        - ref tracking: when set to 1, ref tracking will be enabled for this field.
+        - nullability: when set to 1, this field can be null.
+        - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
+          not `final`.
+    - field name: If tag id is set, tag id will be used instead. Otherwise meta string encoding `[length]` and data will
+      be written instead.
+    - type id:
         - For registered type-consistent classes, it will be the registered type id.
         - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
           meta for such types is written separately instead of inlining here is to reduce meta space cost if object of
-          this type is serialized in the current object graph multiple times, and the field value may be null too.
-    - Field name: If tag id is set, tag id will be used instead. Otherwise meta string encoding length and data will
-      be written instead.
+          this type is serialized in current object graph multiple times, and the field value may be null too.
 
 Field order are left as implementation details, which is not exposed to specification, the deserialization need to
 resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
@@ -473,7 +477,7 @@ which will be encoded by elements header, each use one bit:
 By default, all bits are unset, which means all elements won't track ref, all elements are same type, not null and
 the actual element is the declared type in the custom type field.
 
-The implementation can generate different deserialization code based read  header, and look up the generated code from
+The implementation can generate different deserialization code based read header, and look up the generated code from
 a linear map/list.
 
 #### elements data
