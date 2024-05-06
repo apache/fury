@@ -568,29 +568,54 @@ public class FieldResolver {
       ClassInfo elementClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       CollectionSerializer collectionSerializer = (CollectionSerializer) classInfo.getSerializer();
-      collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
-      o = collectionSerializer.read(buffer);
+      try {
+        collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
+        o = collectionSerializer.read(buffer);
+      } finally {
+        // Some collectionSerializer may overwrite write/read method, then clear element serializer
+        // may not got invoked.
+        collectionSerializer.setElementSerializer(null);
+      }
     } else if (fieldType == FieldTypes.MAP_KV_FINAL) {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
-      mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
-      mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
-      o = mapSerializer.read(buffer);
+      try {
+        mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
+        mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
+        o = mapSerializer.read(buffer);
+      } finally {
+        // Some mmapSerializer may overwrite write/read method, then clear serializer
+        // may not got invoked.
+        mapSerializer.setKeySerializer(null);
+        mapSerializer.setValueSerializer(null);
+      }
     } else if (fieldType == FieldTypes.MAP_KEY_FINAL) {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
-      mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
-      o = mapSerializer.read(buffer);
+      try {
+        mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
+        o = mapSerializer.read(buffer);
+      } finally {
+        // Some mmapSerializer may overwrite write/read method, then clear serializer
+        // may not got invoked.
+        mapSerializer.setKeySerializer(null);
+      }
     } else {
       Preconditions.checkArgument(fieldType == FieldTypes.MAP_VALUE_FINAL);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
-      mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
-      o = mapSerializer.read(buffer);
+      try {
+        mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
+        o = mapSerializer.read(buffer);
+      } finally {
+        // Some mmapSerializer may overwrite write/read method, then clear serializer
+        // may not got invoked.
+        mapSerializer.setValueSerializer(null);
+      }
     }
     return o;
   }
@@ -601,29 +626,54 @@ public class FieldResolver {
       ClassInfo elementClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
       CollectionSerializer collectionSerializer = (CollectionSerializer) classInfo.getSerializer();
-      collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
-      o = collectionSerializer.read(buffer);
+      try {
+        collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
+        o = collectionSerializer.read(buffer);
+        // Some collectionSerializer may overwrite write/read method, then clear element serializer
+        // may not got invoked.
+      } finally {
+        collectionSerializer.setElementSerializer(null);
+      }
     } else if (fieldType == FieldTypes.MAP_KV_FINAL) {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
       MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
-      mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
-      mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
-      o = mapSerializer.read(buffer);
+      try {
+        mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
+        mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
+        o = mapSerializer.read(buffer);
+      } finally {
+        // Some mmapSerializer may overwrite write/read method, then clear serializer
+        // may not got invoked.
+        mapSerializer.setKeySerializer(null);
+        mapSerializer.setValueSerializer(null);
+      }
     } else if (fieldType == FieldTypes.MAP_KEY_FINAL) {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
       MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
-      mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
-      o = mapSerializer.read(buffer);
+      try {
+        mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
+        o = mapSerializer.read(buffer);
+        // Some mmapSerializer may overwrite write/read method, then clear serializer
+        // may not got invoked.
+      } finally {
+        mapSerializer.setKeySerializer(null);
+      }
     } else {
       Preconditions.checkArgument(fieldType == FieldTypes.MAP_VALUE_FINAL);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
       MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
-      mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
-      o = mapSerializer.read(buffer);
+      try {
+        mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
+        o = mapSerializer.read(buffer);
+        // Some mmapSerializer may overwrite write/read method, then clear serializer
+        // may not got invoked.
+      } finally {
+        mapSerializer.setValueSerializer(null);
+      }
     }
     return o;
   }
@@ -968,5 +1018,10 @@ public class FieldResolver {
     public Class<?> getValueType() {
       return valueType;
     }
+  }
+
+  public static void main(String[] args) {
+    System.out.println(computeStringHash("list0") << 2);
+    System.out.println(computeStringHash("serializeListLast") << 2);
   }
 }
