@@ -111,7 +111,7 @@ export default class {
     bitmap |= ConfigFlags.isCrossLanguageFlag;
     this.binaryWriter.int16(MAGIC_NUMBER);
     this.binaryWriter.uint8(bitmap);
-    this.binaryWriter.uint8(Language.XLANG);
+    this.binaryWriter.uint8(Language.JAVASCRIPT);
     const cursor = this.binaryWriter.getCursor();
     this.binaryWriter.skip(4); // preserve 4-byte for nativeObjects start offsets.
     this.binaryWriter.uint32(0); // nativeObjects length.

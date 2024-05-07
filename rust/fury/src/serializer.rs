@@ -347,7 +347,7 @@ impl<'de> SerializerState<'de> {
         bitmap |= config_flags::IS_LITTLE_ENDIAN_FLAG;
         bitmap |= config_flags::IS_CROSS_LANGUAGE_FLAG;
         self.writer.u8(bitmap);
-        self.writer.u8(Language::XLANG as u8);
+        self.writer.u8(Language::RUST as u8);
         self.writer.skip(4); // native offset
         self.writer.skip(4); // native size
         self
