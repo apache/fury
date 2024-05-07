@@ -19,13 +19,13 @@
 
 package org.apache.fury.codegen;
 
+import static java.util.Collections.unmodifiableSet;
 import static org.apache.fury.codegen.Code.ExprCode;
 import static org.apache.fury.codegen.CodeGenerator.alignIndent;
 import static org.apache.fury.codegen.CodeGenerator.indent;
 import static org.apache.fury.type.TypeUtils.getArrayType;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -114,7 +114,7 @@ public class CodegenContext {
             "true",
             "false",
             "null"));
-    JAVA_RESERVED_WORDS = ImmutableSet.copyOf(JAVA_RESERVED_WORDS);
+    JAVA_RESERVED_WORDS = unmodifiableSet(JAVA_RESERVED_WORDS);
   }
 
   private static Map<String, Map<String, Boolean>> nameConflicts = new ConcurrentHashMap<>();
