@@ -112,5 +112,5 @@ export const data2Description = (
     );
   }
 
-  throw `unkonw data type ${typeof data}`;
+  throw new Error(`unkonw data type ${typeof data}`);
 };
