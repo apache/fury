@@ -51,13 +51,13 @@ export const data2Description = (
   }
   if (data instanceof Date) {
     return {
-      type: InternalSerializerType.TIMESTAMP,
+      ...Type.timestamp(),
       label: "timestamp",
     };
   }
   if (typeof data === "string") {
     return {
-      type: InternalSerializerType.STRING,
+      ...Type.string(),
       label: "string",
     };
   }
@@ -78,41 +78,38 @@ export const data2Description = (
   }
   if (typeof data === "boolean") {
     return {
-      type: InternalSerializerType.BOOL,
+      ...Type.bool(),
       label: "boolean",
     };
   }
   if (typeof data === "number") {
     if (data > Number.MAX_SAFE_INTEGER || data < Number.MIN_SAFE_INTEGER) {
       return {
-        type: InternalSerializerType.INT64,
+        ...Type.int64(),
         label: "int64",
       };
     }
     return {
-      type: InternalSerializerType.INT32,
+      ...Type.int32(),
       label: "int32",
     };
   }
+
   if (typeof data === "object") {
     if (isUint8Array(data)) {
       return Type.binary();
     }
 
-    return {
-      type: InternalSerializerType.OBJECT,
-      label: "object",
-      options: {
-        props: Object.fromEntries(
-          Object.entries(data)
-            .map(([key, value]) => {
-              return [key, data2Description(value, `${tag}.${key}`)];
-            })
-            .filter(([k, v]) => Boolean(v)),
-        ),
-        tag,
-      },
-    } as ObjectTypeDescription;
+    return Type.object(
+      tag,
+      Object.fromEntries(
+        Object.entries(data)
+          .map(([key, value]) => {
+            return [key, data2Description(value, `${tag}.${key}`)];
+          })
+          .filter(([_, v]) => Boolean(v)),
+      ),
+    );
   }
 
   throw `unkonw data type ${typeof data}`;
