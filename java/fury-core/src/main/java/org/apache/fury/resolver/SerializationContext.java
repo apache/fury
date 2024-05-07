@@ -33,7 +33,7 @@ import org.apache.fury.util.Preconditions;
 public final class SerializationContext {
   private final IdentityHashMap<Object, Object> objects = new IdentityHashMap<>();
   private MetaContext metaContext;
-  private final Map<String, UserContextResolver> userContextResolvers = new LinkedHashMap<>();
+  private final Map<String, UserContext> userContextResolvers = new LinkedHashMap<>();
 
   /** Return the previous value associated with <tt>key</tt>, or <tt>null</tt>. */
   public Object add(Object key, Object value) {
@@ -62,13 +62,13 @@ public final class SerializationContext {
     this.metaContext = metaContext;
   }
 
-  public Map<String, UserContextResolver> getUserContextResolvers() {
+  public Map<String, UserContext> getUserContextResolvers() {
     return userContextResolvers;
   }
 
-  public void registerUserContextResolver(String name, UserContextResolver userContextResolver) {
+  public void registerUserContextResolver(String name, UserContext userContext) {
     Preconditions.checkState(!userContextResolvers.containsKey(name));
-    userContextResolvers.put(name, userContextResolver);
+    userContextResolvers.put(name, userContext);
   }
 
   public void reset() {
@@ -76,8 +76,8 @@ public final class SerializationContext {
       objects.clear();
     }
     metaContext = null;
-    for (UserContextResolver userContextResolver : userContextResolvers.values()) {
-      userContextResolver.reset();
+    for (UserContext userContext : userContextResolvers.values()) {
+      userContext.reset();
     }
   }
 }

@@ -49,7 +49,7 @@ import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.resolver.NoRefResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.resolver.SerializationContext;
-import org.apache.fury.resolver.UserContextResolver;
+import org.apache.fury.resolver.UserContext;
 import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.serializer.BufferObject;
@@ -188,8 +188,7 @@ public final class Fury implements BaseFury {
   }
 
   @Override
-  public void registerUserContext(
-      String name, Function<Fury, UserContextResolver> userContextResolverCtr) {
+  public void registerUserContext(String name, Function<Fury, UserContext> userContextResolverCtr) {
     serializationContext.registerUserContextResolver(name, userContextResolverCtr.apply(this));
   }
 

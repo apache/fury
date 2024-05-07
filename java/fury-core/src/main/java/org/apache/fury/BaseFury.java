@@ -24,7 +24,7 @@ import java.util.function.Function;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.resolver.UserContextResolver;
+import org.apache.fury.resolver.UserContext;
 import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
@@ -89,7 +89,7 @@ public interface BaseFury {
    * @param name user context name to register
    * @param userContextResolverCtr constructor for usr context
    */
-  void registerUserContext(String name, Function<Fury, UserContextResolver> userContextResolverCtr);
+  void registerUserContext(String name, Function<Fury, UserContext> userContextResolverCtr);
 
   /** Return serialized <code>obj</code> as a byte array. */
   byte[] serialize(Object obj);

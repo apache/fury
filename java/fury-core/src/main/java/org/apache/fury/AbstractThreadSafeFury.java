@@ -21,7 +21,7 @@ package org.apache.fury;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.apache.fury.resolver.UserContextResolver;
+import org.apache.fury.resolver.UserContext;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
 
@@ -67,8 +67,7 @@ public abstract class AbstractThreadSafeFury implements ThreadSafeFury {
   }
 
   @Override
-  public void registerUserContext(
-      String name, Function<Fury, UserContextResolver> userContextResolverCtr) {
+  public void registerUserContext(String name, Function<Fury, UserContext> userContextResolverCtr) {
     processCallback(fury -> fury.registerUserContext(name, userContextResolverCtr));
   }
 

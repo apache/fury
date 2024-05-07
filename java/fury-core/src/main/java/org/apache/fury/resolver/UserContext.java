@@ -23,11 +23,11 @@ import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 
 /** write/read user custom global data after metaContext data. */
-public abstract class UserContextResolver {
+public abstract class UserContext {
 
   protected final Fury fury;
 
-  public UserContextResolver(Fury fury) {
+  public UserContext(Fury fury) {
     this.fury = fury;
   }
 

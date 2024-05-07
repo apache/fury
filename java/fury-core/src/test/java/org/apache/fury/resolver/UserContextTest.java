@@ -38,11 +38,11 @@ public class UserContextTest extends FuryTestBase {
 
   private static final int NUM = 10;
 
-  public static class StringUserContextResolver extends UserContextResolver {
+  public static class StringUserContext extends UserContext {
 
     public String data;
 
-    public StringUserContextResolver(Fury fury) {
+    public StringUserContext(Fury fury) {
       super(fury);
     }
 
@@ -73,11 +73,11 @@ public class UserContextTest extends FuryTestBase {
 
     @Override
     public void write(MemoryBuffer buffer, Foo value) {
-      final Map<String, UserContextResolver> userContextResolvers =
+      final Map<String, UserContext> userContextResolvers =
           fury.getSerializationContext().getUserContextResolvers();
       for (int i = 0; i < NUM; i++) {
-        final StringUserContextResolver userContextResolver =
-            (StringUserContextResolver) userContextResolvers.get(String.valueOf(i));
+        final StringUserContext userContextResolver =
+            (StringUserContext) userContextResolvers.get(String.valueOf(i));
         userContextResolver.data = getData(i);
       }
       serializer.write(buffer, value);
@@ -85,11 +85,11 @@ public class UserContextTest extends FuryTestBase {
 
     @Override
     public Foo read(MemoryBuffer buffer) {
-      final Map<String, UserContextResolver> userContextResolvers =
+      final Map<String, UserContext> userContextResolvers =
           fury.getSerializationContext().getUserContextResolvers();
       for (int i = 0; i < NUM; i++) {
-        final StringUserContextResolver userContextResolver =
-            (StringUserContextResolver) userContextResolvers.get(String.valueOf(i));
+        final StringUserContext userContextResolver =
+            (StringUserContext) userContextResolvers.get(String.valueOf(i));
         Assert.assertEquals(userContextResolver.data, getData(i));
       }
       return serializer.read(buffer);
@@ -108,10 +108,10 @@ public class UserContextTest extends FuryTestBase {
   public void checkShareUserContext() {
     Fury fury = buildFury();
     fury.registerSerializer(Foo.class, FooSerializer.class);
-    List<StringUserContextResolver> resolvers = new ArrayList<>(NUM);
+    List<StringUserContext> resolvers = new ArrayList<>(NUM);
     for (int i = 0; i < NUM; i++) {
-      final StringUserContextResolver userContextResolver = new StringUserContextResolver(fury);
-      fury.registerUserContext(String.valueOf(i), StringUserContextResolver::new);
+      final StringUserContext userContextResolver = new StringUserContext(fury);
+      fury.registerUserContext(String.valueOf(i), StringUserContext::new);
       resolvers.add(userContextResolver);
     }
     final Foo o = Foo.create();
@@ -125,12 +125,11 @@ public class UserContextTest extends FuryTestBase {
     }
   }
 
-  private List<StringUserContextResolver> getResolver(Fury fury, int num, boolean empty) {
+  private List<StringUserContext> getResolver(Fury fury, int num, boolean empty) {
     return IntStream.range(0, num)
         .mapToObj(
             idx -> {
-              final StringUserContextResolver userContextResolver =
-                  new StringUserContextResolver(fury);
+              final StringUserContext userContextResolver = new StringUserContext(fury);
               if (!empty) {
                 userContextResolver.data = getData(idx);
               }

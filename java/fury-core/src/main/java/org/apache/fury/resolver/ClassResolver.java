@@ -1410,10 +1410,10 @@ public class ClassResolver {
 
   /** write user context by register order. */
   public void writeUserContext(MemoryBuffer buffer) {
-    final Map<String, UserContextResolver> userContextResolvers =
+    final Map<String, UserContext> userContextResolvers =
         fury.getSerializationContext().getUserContextResolvers();
-    for (UserContextResolver userContextResolver : userContextResolvers.values()) {
-      userContextResolver.write(buffer);
+    for (UserContext userContext : userContextResolvers.values()) {
+      userContext.write(buffer);
     }
   }
 
@@ -1457,10 +1457,10 @@ public class ClassResolver {
 
   /** read user context by register order. */
   public void readUserContext(MemoryBuffer buffer) {
-    final Map<String, UserContextResolver> userContextResolvers =
+    final Map<String, UserContext> userContextResolvers =
         fury.getSerializationContext().getUserContextResolvers();
-    for (UserContextResolver userContextResolver : userContextResolvers.values()) {
-      userContextResolver.read(buffer);
+    for (UserContext userContext : userContextResolvers.values()) {
+      userContext.read(buffer);
     }
   }
 
