@@ -51,7 +51,7 @@ export const data2Description = (
   }
   if (data instanceof Date) {
     return {
-      type: InternalSerializerType.DURATION,
+      type: InternalSerializerType.TIMESTAMP,
       label: "timestamp",
     };
   }
