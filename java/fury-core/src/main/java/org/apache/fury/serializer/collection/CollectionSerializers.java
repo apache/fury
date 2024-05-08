@@ -259,36 +259,21 @@ public class CollectionSerializers {
   public static class CopyOnWriteArrayListSerializer
       extends CollectionSerializer<CopyOnWriteArrayList> {
 
-    private static final long ARRAY_OFFSET;
-
-    static {
-      try {
-        final Field field = CopyOnWriteArrayList.class.getDeclaredField("array");
-        ARRAY_OFFSET = Platform.UNSAFE.objectFieldOffset(field);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    }
-
     public CopyOnWriteArrayListSerializer(Fury fury, Class<CopyOnWriteArrayList> type) {
-      super(fury, type, false);
+      super(fury, type);
     }
 
     @Override
-    public void write(MemoryBuffer buffer, CopyOnWriteArrayList value) {
-      try {
-        final Object[] array = (Object[]) Platform.getObject(value, ARRAY_OFFSET);
-        fury.writeRef(buffer, array);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
+    public Collection newCollection(MemoryBuffer buffer) {
+      int numElements = buffer.readVarUint32Small7();
+      setNumElements(numElements);
+      return new CollectionContainer<>(numElements);
     }
 
     @Override
-    public CopyOnWriteArrayList read(MemoryBuffer buffer) {
-      final Object[] array = (Object[]) fury.readRef(buffer);
-      Preconditions.checkNotNull(array);
-      return new CopyOnWriteArrayList(array);
+    public CopyOnWriteArrayList onCollectionRead(Collection collection) {
+      Object[] elements = ((CollectionContainer) collection).elements;
+      return new CopyOnWriteArrayList(elements);
     }
   }
 
