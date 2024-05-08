@@ -39,6 +39,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.FuryException;
@@ -252,6 +253,27 @@ public class CollectionSerializers {
     public List<?> xread(MemoryBuffer buffer) {
       buffer.readVarUint32Small7();
       return Collections.EMPTY_LIST;
+    }
+  }
+
+  public static class CopyOnWriteArrayListSerializer
+      extends CollectionSerializer<CopyOnWriteArrayList> {
+
+    public CopyOnWriteArrayListSerializer(Fury fury, Class<CopyOnWriteArrayList> type) {
+      super(fury, type);
+    }
+
+    @Override
+    public Collection newCollection(MemoryBuffer buffer) {
+      int numElements = buffer.readVarUint32Small7();
+      setNumElements(numElements);
+      return new CollectionContainer<>(numElements);
+    }
+
+    @Override
+    public CopyOnWriteArrayList onCollectionRead(Collection collection) {
+      Object[] elements = ((CollectionContainer) collection).elements;
+      return new CopyOnWriteArrayList(elements);
     }
   }
 
@@ -624,5 +646,8 @@ public class CollectionSerializers {
     fury.registerSerializer(BitSet.class, new BitSetSerializer(fury, BitSet.class));
     fury.registerSerializer(
         PriorityQueue.class, new PriorityQueueSerializer(fury, PriorityQueue.class));
+    fury.registerSerializer(
+        CopyOnWriteArrayList.class,
+        new CopyOnWriteArrayListSerializer(fury, CopyOnWriteArrayList.class));
   }
 }
