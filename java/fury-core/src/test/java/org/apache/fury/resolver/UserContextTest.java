@@ -73,24 +73,24 @@ public class UserContextTest extends FuryTestBase {
 
     @Override
     public void write(MemoryBuffer buffer, Foo value) {
-      final Map<String, UserContext> userContextResolvers =
-          fury.getSerializationContext().getUserContextResolvers();
+      final Map<String, UserContext> userContexts =
+          fury.getSerializationContext().getUserContexts();
       for (int i = 0; i < NUM; i++) {
-        final StringUserContext userContextResolver =
-            (StringUserContext) userContextResolvers.get(String.valueOf(i));
-        userContextResolver.data = getData(i);
+        final StringUserContext userContext =
+            (StringUserContext) userContexts.get(String.valueOf(i));
+        userContext.data = getData(i);
       }
       serializer.write(buffer, value);
     }
 
     @Override
     public Foo read(MemoryBuffer buffer) {
-      final Map<String, UserContext> userContextResolvers =
-          fury.getSerializationContext().getUserContextResolvers();
+      final Map<String, UserContext> userContexts =
+          fury.getSerializationContext().getUserContexts();
       for (int i = 0; i < NUM; i++) {
-        final StringUserContext userContextResolver =
-            (StringUserContext) userContextResolvers.get(String.valueOf(i));
-        Assert.assertEquals(userContextResolver.data, getData(i));
+        final StringUserContext userContext =
+            (StringUserContext) userContexts.get(String.valueOf(i));
+        Assert.assertEquals(userContext.data, getData(i));
       }
       return serializer.read(buffer);
     }
@@ -110,9 +110,9 @@ public class UserContextTest extends FuryTestBase {
     fury.registerSerializer(Foo.class, FooSerializer.class);
     List<StringUserContext> resolvers = new ArrayList<>(NUM);
     for (int i = 0; i < NUM; i++) {
-      final StringUserContext userContextResolver = new StringUserContext(fury);
+      final StringUserContext userContext = new StringUserContext(fury);
       fury.registerUserContext(String.valueOf(i), StringUserContext::new);
-      resolvers.add(userContextResolver);
+      resolvers.add(userContext);
     }
     final Foo o = Foo.create();
     final byte[] bytes = fury.serialize(o);
