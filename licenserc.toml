@@ -48,6 +48,7 @@ excludes = [
     "java/fury-core/src/main/java/org/apache/fury/reflect/Types.java",
     "java/fury-core/src/main/java/org/apache/fury/type/Generics.java",
     "java/fury-core/src/main/java/org/apache/fury/util/MurmurHash3.java",
+    "java/fury-core/src/main/java/org/apache/fury/util/concurrency/DirectExecutorService.java",
     "java/fury-core/src/main/java/org/apache/fury/memory/Platform.java",
     "java/fury-core/src/main/java/org/apache/fury/util/Preconditions.java",
     "java/fury-core/src/test/java/org/apache/fury/type/GenericsTest.java",

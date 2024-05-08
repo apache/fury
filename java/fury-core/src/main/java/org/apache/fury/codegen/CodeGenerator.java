@@ -19,10 +19,6 @@
 
 package org.apache.fury.codegen;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -30,7 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.WeakHashMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +45,8 @@ import org.apache.fury.util.DelayedRef;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
+import org.apache.fury.util.concurrency.DirectExecutorService;
+import org.apache.fury.util.concurrency.FuryJitCompilerThreadFactory;
 
 /**
  * Code generator will take a list of {@link CompileUnit} and compile it into a list of classes.
@@ -80,7 +80,7 @@ public class CodeGenerator {
   private static final String FALLBACK_PACKAGE = Generated.class.getPackage().getName();
   public static final boolean ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID;
   private static int maxPoolSize = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
-  private static ListeningExecutorService compilationExecutorService;
+  private static ExecutorService compilationExecutorService;
 
   static {
     boolean useUniqueId = StringUtils.isBlank(CodeGenerator.getCodeDir());
@@ -205,34 +205,35 @@ public class CodeGenerator {
     return resultClassLoader;
   }
 
-  public ListenableFuture<Class<?>[]> asyncCompile(CompileUnit... compileUnits) {
-    return getCompilationService()
-        .submit(
-            () -> {
-              ClassLoader loader = compile(compileUnits);
-              return Arrays.stream(compileUnits)
-                  .map(
-                      compileUnit -> {
-                        try {
-                          return (Class<?>) loader.loadClass(compileUnit.getQualifiedClassName());
-                        } catch (ClassNotFoundException e) {
-                          throw new IllegalStateException(
-                              "Impossible because we just compiled class", e);
-                        }
-                      })
-                  .toArray(Class<?>[]::new);
-            });
+  public CompletableFuture<Class<?>[]> asyncCompile(CompileUnit... compileUnits) {
+    ExecutorService executorService = getCompilationService();
+    return CompletableFuture.supplyAsync(
+        () -> {
+          ClassLoader loader = compile(compileUnits);
+          return Arrays.stream(compileUnits)
+              .map(
+                  compileUnit -> {
+                    try {
+                      return (Class<?>) loader.loadClass(compileUnit.getQualifiedClassName());
+                    } catch (ClassNotFoundException e) {
+                      throw new IllegalStateException(
+                          "Impossible because we just compiled class", e);
+                    }
+                  })
+              .toArray(Class<?>[]::new);
+        },
+        executorService);
   }
 
   public static void seMaxCompilationThreadPoolSize(int maxCompilationThreadPoolSize) {
     maxPoolSize = maxCompilationThreadPoolSize;
   }
 
-  public static synchronized ListeningExecutorService getCompilationService() {
+  public static synchronized ExecutorService getCompilationService() {
     if (compilationExecutorService == null) {
       if (GraalvmSupport.isGraalBuildtime()) {
         // GraalVM build time can't reachable thread.
-        return compilationExecutorService = MoreExecutors.newDirectExecutorService();
+        return compilationExecutorService = new DirectExecutorService();
       }
       ThreadPoolExecutor executor =
           new ThreadPoolExecutor(
@@ -241,13 +242,13 @@ public class CodeGenerator {
               5L,
               TimeUnit.SECONDS,
               new LinkedBlockingQueue<>(),
-              new ThreadFactoryBuilder().setNameFormat("fury-jit-compiler-%d").build(),
+              new FuryJitCompilerThreadFactory(),
               (r, e) -> LOG.warn("Task {} rejected from {}", r.toString(), e));
       // Normally task won't be rejected by executor, since we used an unbound queue.
       // But when we shut down executor for debug, it'll be rejected by executor,
       // in such cases we just ignore the reject exception by log it.
       executor.allowCoreThreadTimeOut(true);
-      compilationExecutorService = MoreExecutors.listeningDecorator(executor);
+      compilationExecutorService = executor;
     }
     return compilationExecutorService;
   }
