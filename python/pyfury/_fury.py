@@ -586,6 +586,8 @@ class Language(enum.Enum):
     PYTHON = 2
     CPP = 3
     GO = 4
+    JAVA_SCRIPT = 5
+    RUST = 6
 
 
 @dataclass

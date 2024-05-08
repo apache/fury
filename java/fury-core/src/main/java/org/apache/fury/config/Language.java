@@ -26,4 +26,6 @@ public enum Language {
   PYTHON,
   CPP,
   GO,
+  JAVASCRIPT,
+  RUST,
 }

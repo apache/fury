@@ -241,10 +241,7 @@ impl<'de, 'bf: 'de> DeserializerState<'de, 'bf> {
 
     fn head(&mut self) -> Result<(), Error> {
         let _bitmap = self.reader.u8();
-        let language: Language = self.reader.u8().try_into()?;
-        if Language::XLANG != language {
-            return Err(Error::UnsupportLanguage { language });
-        }
+        let _language: Language = self.reader.u8().try_into()?;
         self.reader.skip(8); // native offset and size
         Ok(())
     }

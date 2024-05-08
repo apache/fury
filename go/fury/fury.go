@@ -80,7 +80,10 @@ const (
 	XLANG Language = iota
 	JAVA
 	PYTHON
+	CPP
 	GO
+	JAVASCRIPT
+	RUST
 )
 
 const (

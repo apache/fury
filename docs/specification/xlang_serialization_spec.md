@@ -139,9 +139,9 @@ Fury will write the byte order for that object into the data instead of converti
 Fury header consists starts one byte:
 
 ```
-|    2 bytes   |     4 bits    | 1 bit | 1 bit | 1 bit  | 1 bit |          optional 4 bytes          |
-+--------------+---------------+-------+-------+--------+-------+------------------------------------+
-| magic number | reserved bits |  oob  | xlang | endian | null  | unsigned int for meta start offset |
+|    2 bytes   |     4 bits    | 1 bit | 1 bit | 1 bit  | 1 bit |   1 byte   |          optional 4 bytes          |
++--------------+---------------+-------+-------+--------+-------+------------+------------------------------------+
+| magic number | reserved bits |  oob  | xlang | endian | null  |  language  | unsigned int for meta start offset |
 ```
 
 - magic number: used to identify fury serialization protocol, current version use `0x62d4`.
@@ -149,6 +149,7 @@ Fury header consists starts one byte:
 - endian flag: 1 when data is encoded by little endian, 0 for big endian.
 - xlang flag: 1 when serialization uses xlang format, 0 when serialization uses Fury java format.
 - oob flag: 1 when passed `BufferCallback` is not null, 0 otherwise.
+- language: the language when serializing objects, such as JAVA, PYTHON, GO, etc. Fury can use this flag to determine whether spend more time on serialization to make the deserialization faster for dynamic languages.
 
 If meta share mode is enabled, an uncompressed unsigned int is appended to indicate the start offset of metadata.
 
