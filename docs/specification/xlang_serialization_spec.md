@@ -149,7 +149,7 @@ Fury header consists starts one byte:
 - endian flag: 1 when data is encoded by little endian, 0 for big endian.
 - xlang flag: 1 when serialization uses xlang format, 0 when serialization uses Fury java format.
 - oob flag: 1 when passed `BufferCallback` is not null, 0 otherwise.
-- language: the language when serializing objects, such as JAVA, PYTHON, GO, etc.
+- language: the language when serializing objects, such as JAVA, PYTHON, GO, etc. Fury can use this flag to determine whether spend more time on serialization to make the deserialization faster for dynamic languages.
 
 If meta share mode is enabled, an uncompressed unsigned int is appended to indicate the start offset of metadata.
 
