@@ -48,7 +48,6 @@ import static org.apache.fury.type.TypeUtils.isBoxed;
 import static org.apache.fury.type.TypeUtils.isPrimitive;
 import static org.apache.fury.util.Preconditions.checkArgument;
 
-import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -450,11 +449,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             buffer,
             inputObject));
     return invokeGenerated(
-        ctx,
-        ImmutableSet.of(buffer, inputObject),
-        writeClassAndObject,
-        "writeClassAndObject",
-        false);
+        ctx, ofHashSet(buffer, inputObject), writeClassAndObject, "writeClassAndObject", false);
   }
 
   /**
@@ -666,7 +661,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         serializer =
             invokeGenerated(
                 ctx,
-                ImmutableSet.of(buffer, collection),
+                ofHashSet(buffer, collection),
                 writeClassAction,
                 "writeCollectionClassInfo",
                 false);
@@ -685,7 +680,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     actions.add(write);
     if (generateNewMethod) {
       return invokeGenerated(
-          ctx, ImmutableSet.of(buffer, collection, serializer), actions, "writeCollection", false);
+          ctx, ofHashSet(buffer, collection, serializer), actions, "writeCollection", false);
     }
     return actions;
   }
@@ -970,7 +965,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         // Spit this into a separate method to avoid method too big to inline.
         serializer =
             invokeGenerated(
-                ctx, ImmutableSet.of(buffer, map), writeClassAction, "writeMapClassInfo", false);
+                ctx, ofHashSet(buffer, map), writeClassAction, "writeMapClassInfo", false);
       }
     } else if (!AbstractMapSerializer.class.isAssignableFrom(serializer.type().getRawType())) {
       serializer = new Cast(serializer, TypeRef.of(AbstractMapSerializer.class), "mapSerializer");
@@ -981,7 +976,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             jitWriteMap(buffer, map, serializer, typeRef),
             new Invoke(serializer, "write", buffer, map));
     if (generateNewMethod) {
-      return invokeGenerated(ctx, ImmutableSet.of(buffer, map), write, "writeMap", false);
+      return invokeGenerated(ctx, ofHashSet(buffer, map), write, "writeMap", false);
     }
     return write;
   }

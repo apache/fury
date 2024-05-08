@@ -19,7 +19,8 @@
 
 package org.apache.fury.serializer.collection;
 
-import com.google.common.collect.ImmutableSet;
+import static org.apache.fury.collection.Collections.ofHashSet;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -122,7 +123,7 @@ public class ChildContainerSerializers {
   public static class ChildCollectionSerializer<T extends Collection>
       extends CollectionSerializer<T> {
     public static Set<Class<?>> superClasses =
-        ImmutableSet.of(
+        ofHashSet(
             ArrayList.class, LinkedList.class, ArrayDeque.class, Vector.class, HashSet.class
             // PriorityQueue/TreeSet/ConcurrentSkipListSet need comparator as constructor argument
             );
@@ -172,7 +173,7 @@ public class ChildContainerSerializers {
    */
   public static class ChildMapSerializer<T extends Map> extends MapSerializer<T> {
     public static Set<Class<?>> superClasses =
-        ImmutableSet.of(
+        ofHashSet(
             HashMap.class, LinkedHashMap.class, ConcurrentHashMap.class
             // TreeMap/ConcurrentSkipListMap need comparator as constructor argument
             );

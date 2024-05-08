@@ -22,6 +22,7 @@ package org.apache.fury.builder;
 import static org.apache.fury.codegen.Code.LiteralValue.FalseLiteral;
 import static org.apache.fury.codegen.Expression.Invoke.inlineInvoke;
 import static org.apache.fury.codegen.ExpressionUtils.add;
+import static org.apache.fury.collection.Collections.ofHashSet;
 import static org.apache.fury.type.TypeUtils.OBJECT_ARRAY_TYPE;
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_BYTE_ARRAY_TYPE;
@@ -32,8 +33,6 @@ import static org.apache.fury.type.TypeUtils.getRawType;
 import static org.apache.fury.type.TypeUtils.getSizeOfPrimitiveType;
 import static org.apache.fury.type.TypeUtils.isPrimitive;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -162,17 +161,12 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     }
     expressions.addAll(serializePrimitives(bean, buffer, objectCodecOptimizer.primitiveGroups));
     int numGroups = getNumGroups(objectCodecOptimizer);
-    for (List<Descriptor> group :
-        Iterables.concat(
-            objectCodecOptimizer.boxedWriteGroups,
-            objectCodecOptimizer.finalWriteGroups,
-            objectCodecOptimizer.otherWriteGroups)) {
-      if (group.isEmpty()) {
-        continue;
-      }
-      boolean inline = group.size() == 1 && numGroups < 10;
-      expressions.add(serializeGroup(group, bean, buffer, inline));
-    }
+    addGroupExpressions(
+        objectCodecOptimizer.boxedWriteGroups, numGroups, expressions, bean, buffer);
+    addGroupExpressions(
+        objectCodecOptimizer.finalWriteGroups, numGroups, expressions, bean, buffer);
+    addGroupExpressions(
+        objectCodecOptimizer.otherWriteGroups, numGroups, expressions, bean, buffer);
     for (Descriptor descriptor :
         objectCodecOptimizer.descriptorGrouper.getCollectionDescriptors()) {
       expressions.add(serializeGroup(Collections.singletonList(descriptor), bean, buffer, false));
@@ -181,6 +175,21 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       expressions.add(serializeGroup(Collections.singletonList(d), bean, buffer, false));
     }
     return expressions;
+  }
+
+  private void addGroupExpressions(
+      List<List<Descriptor>> writeGroup,
+      int numGroups,
+      ListExpression expressions,
+      Expression bean,
+      Reference buffer) {
+    for (List<Descriptor> group : writeGroup) {
+      if (group.isEmpty()) {
+        continue;
+      }
+      boolean inline = group.size() == 1 && numGroups < 10;
+      expressions.add(serializeGroup(group, bean, buffer, inline));
+    }
   }
 
   private int getNumGroups(ObjectCodecOptimizer objectCodecOptimizer) {
@@ -291,7 +300,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       } else {
         expressions.add(
             objectCodecOptimizer.invokeGenerated(
-                ImmutableSet.of(bean, base, writerAddr), groupExpressions, "writeFields"));
+                ofHashSet(bean, base, writerAddr), groupExpressions, "writeFields"));
       }
     }
     Expression increaseWriterIndex =
@@ -397,7 +406,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       } else {
         expressions.add(
             objectCodecOptimizer.invokeGenerated(
-                ImmutableSet.of(bean, buffer, base), groupExpressions, "writeFields"));
+                ofHashSet(bean, buffer, base), groupExpressions, "writeFields"));
       }
     }
     return expressions;
@@ -445,17 +454,12 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     }
     expressions.addAll(deserializePrimitives(bean, buffer, objectCodecOptimizer.primitiveGroups));
     int numGroups = getNumGroups(objectCodecOptimizer);
-    for (List<Descriptor> group :
-        Iterables.concat(
-            objectCodecOptimizer.boxedReadGroups,
-            objectCodecOptimizer.finalReadGroups,
-            objectCodecOptimizer.otherReadGroups)) {
-      if (group.isEmpty()) {
-        continue;
-      }
-      boolean inline = group.size() == 1 && numGroups < 10;
-      expressions.add(deserializeGroup(group, bean, buffer, inline));
-    }
+    deserializeReadGroup(
+        objectCodecOptimizer.boxedReadGroups, numGroups, expressions, bean, buffer);
+    deserializeReadGroup(
+        objectCodecOptimizer.finalReadGroups, numGroups, expressions, bean, buffer);
+    deserializeReadGroup(
+        objectCodecOptimizer.otherReadGroups, numGroups, expressions, bean, buffer);
     for (Descriptor d : objectCodecOptimizer.descriptorGrouper.getCollectionDescriptors()) {
       expressions.add(deserializeGroup(Collections.singletonList(d), bean, buffer, false));
     }
@@ -479,6 +483,21 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     }
     expressions.add(new Expression.Return(bean));
     return expressions;
+  }
+
+  private void deserializeReadGroup(
+      List<List<Descriptor>> readGroups,
+      int numGroups,
+      ListExpression expressions,
+      Expression bean,
+      Reference buffer) {
+    for (List<Descriptor> group : readGroups) {
+      if (group.isEmpty()) {
+        continue;
+      }
+      boolean inline = group.size() == 1 && numGroups < 10;
+      expressions.add(deserializeGroup(group, bean, buffer, inline));
+    }
   }
 
   protected Expression buildComponentsArray() {
@@ -653,7 +672,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       } else {
         expressions.add(
             objectCodecOptimizer.invokeGenerated(
-                ImmutableSet.of(bean, heapBuffer, readerAddr), groupExpressions, "readFields"));
+                ofHashSet(bean, heapBuffer, readerAddr), groupExpressions, "readFields"));
       }
     }
     Expression increaseReaderIndex =
@@ -742,7 +761,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       } else {
         expressions.add(
             objectCodecOptimizer.invokeGenerated(
-                ImmutableSet.of(bean, buffer, heapBuffer), groupExpressions, "readFields"));
+                ofHashSet(bean, buffer, heapBuffer), groupExpressions, "readFields"));
       }
     }
     return expressions;
