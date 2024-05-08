@@ -19,15 +19,12 @@
 
 package org.apache.fury.builder;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import org.apache.fury.Fury;
@@ -85,16 +82,13 @@ public class JITContext {
         if (fury.getConfig().isAsyncCompilationEnabled() && !isAsyncVisitingFury()) {
           // TODO(chaokunyang) stash callbacks and submit jit task if the serialization speed
           // is really needed.
-          ListeningExecutorService compilationService = CodeGenerator.getCompilationService();
-          ListenableFuture<T> future;
+          ExecutorService compilationService = CodeGenerator.getCompilationService();
           hasJITResult.put(callback.id(), new ArrayList<>());
           numRunningTask++;
-          future = compilationService.submit(jitAction);
-          Futures.addCallback(
-              future,
-              new FutureCallback<T>() {
-                @Override
-                public void onSuccess(T result) {
+          compilationService.execute(
+              () -> {
+                try {
+                  T result = jitAction.call();
                   try {
                     lock();
                     callback.onSuccess(result);
@@ -108,10 +102,7 @@ public class JITContext {
                     }
                     unlock();
                   }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
+                } catch (Throwable t) {
                   try {
                     lock();
                     callback.onFailure(t);
@@ -124,8 +115,7 @@ public class JITContext {
                     unlock();
                   }
                 }
-              },
-              compilationService);
+              });
           return interpreterModeAction.call();
         } else {
           return jitAction.call();
