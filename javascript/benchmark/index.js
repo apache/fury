@@ -18,7 +18,7 @@
  */
 
 const Fury = require("@furyjs/fury");
-const utils = require("../test/util");
+const utils = require("@furyjs/fury/dist/lib/util");
 const hps = require('@furyjs/hps');
 const fury = new Fury.default({ hps, refTracking: false, useSliceString: true });
 const Benchmark = require("benchmark");
@@ -108,7 +108,7 @@ const sample = {
 };
 
 
-const description = utils.mockData2Description(sample, "fury.test.foo");
+const description = utils.data2Description(sample, "fury.test.foo");
 const { serialize, deserialize, serializeVolatile } = fury.registerSerializer(description);
 
 const furyAb = serialize(sample);
