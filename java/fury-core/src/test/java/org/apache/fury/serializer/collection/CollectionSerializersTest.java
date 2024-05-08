@@ -52,6 +52,7 @@ import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.LongStream;
 import lombok.AllArgsConstructor;
@@ -261,6 +262,16 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(PriorityQueue.class),
         CollectionSerializers.PriorityQueueSerializer.class);
+  }
+
+  @Test
+  public void testCopyOnWriteArrayList() {
+    final CopyOnWriteArrayList<String> list =
+        new CopyOnWriteArrayList<>(new String[] {"a", "b", "c"});
+    Assert.assertEquals(list, serDe(getJavaFury(), list));
+    Assert.assertEquals(
+        getJavaFury().getClassResolver().getSerializerClass(CopyOnWriteArrayList.class),
+        CollectionSerializers.CopyOnWriteArrayListSerializer.class);
   }
 
   @Test

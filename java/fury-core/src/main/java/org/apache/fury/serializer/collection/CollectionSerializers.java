@@ -39,6 +39,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.FuryException;
@@ -252,6 +253,42 @@ public class CollectionSerializers {
     public List<?> xread(MemoryBuffer buffer) {
       buffer.readVarUint32Small7();
       return Collections.EMPTY_LIST;
+    }
+  }
+
+  public static class CopyOnWriteArrayListSerializer
+      extends CollectionSerializer<CopyOnWriteArrayList> {
+
+    private static final long ARRAY_OFFSET;
+
+    static {
+      try {
+        final Field field = CopyOnWriteArrayList.class.getDeclaredField("array");
+        ARRAY_OFFSET = Platform.UNSAFE.objectFieldOffset(field);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    public CopyOnWriteArrayListSerializer(Fury fury, Class<CopyOnWriteArrayList> type) {
+      super(fury, type, false);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, CopyOnWriteArrayList value) {
+      try {
+        final Object[] array = (Object[]) Platform.getObject(value, ARRAY_OFFSET);
+        fury.writeRef(buffer, array);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    public CopyOnWriteArrayList read(MemoryBuffer buffer) {
+      final Object[] array = (Object[]) fury.readRef(buffer);
+      Preconditions.checkNotNull(array);
+      return new CopyOnWriteArrayList(array);
     }
   }
 
@@ -624,5 +661,8 @@ public class CollectionSerializers {
     fury.registerSerializer(BitSet.class, new BitSetSerializer(fury, BitSet.class));
     fury.registerSerializer(
         PriorityQueue.class, new PriorityQueueSerializer(fury, PriorityQueue.class));
+    fury.registerSerializer(
+        CopyOnWriteArrayList.class,
+        new CopyOnWriteArrayListSerializer(fury, CopyOnWriteArrayList.class));
   }
 }
