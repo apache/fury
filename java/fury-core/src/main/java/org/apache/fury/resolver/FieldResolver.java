@@ -50,8 +50,8 @@ import org.apache.fury.reflect.FieldAccessor;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.PrimitiveSerializers;
-import org.apache.fury.serializer.collection.CollectionSerializer;
-import org.apache.fury.serializer.collection.MapSerializer;
+import org.apache.fury.serializer.collection.AbstractCollectionSerializer;
+import org.apache.fury.serializer.collection.AbstractMapSerializer;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.MurmurHash3;
@@ -567,7 +567,8 @@ public class FieldResolver {
     if (fieldType == FieldTypes.COLLECTION_ELEMENT_FINAL) {
       ClassInfo elementClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      CollectionSerializer collectionSerializer = (CollectionSerializer) classInfo.getSerializer();
+      AbstractCollectionSerializer collectionSerializer =
+          (AbstractCollectionSerializer) classInfo.getSerializer();
       try {
         collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
         o = collectionSerializer.read(buffer);
@@ -580,7 +581,7 @@ public class FieldResolver {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
+      AbstractMapSerializer mapSerializer = (AbstractMapSerializer) classInfo.getSerializer();
       try {
         mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
         mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
@@ -594,7 +595,7 @@ public class FieldResolver {
     } else if (fieldType == FieldTypes.MAP_KEY_FINAL) {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
+      AbstractMapSerializer mapSerializer = (AbstractMapSerializer) classInfo.getSerializer();
       try {
         mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
         o = mapSerializer.read(buffer);
@@ -607,7 +608,7 @@ public class FieldResolver {
       Preconditions.checkArgument(fieldType == FieldTypes.MAP_VALUE_FINAL);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, classInfoHolder);
-      MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
+      AbstractMapSerializer mapSerializer = (AbstractMapSerializer) classInfo.getSerializer();
       try {
         mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
         o = mapSerializer.read(buffer);
@@ -625,7 +626,8 @@ public class FieldResolver {
     if (fieldType == FieldTypes.COLLECTION_ELEMENT_FINAL) {
       ClassInfo elementClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
-      CollectionSerializer collectionSerializer = (CollectionSerializer) classInfo.getSerializer();
+      AbstractCollectionSerializer collectionSerializer =
+          (AbstractCollectionSerializer) classInfo.getSerializer();
       try {
         collectionSerializer.setElementSerializer(elementClassInfo.getSerializer());
         o = collectionSerializer.read(buffer);
@@ -638,7 +640,7 @@ public class FieldResolver {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
-      MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
+      AbstractMapSerializer mapSerializer = (AbstractMapSerializer) classInfo.getSerializer();
       try {
         mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
         mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
@@ -652,7 +654,7 @@ public class FieldResolver {
     } else if (fieldType == FieldTypes.MAP_KEY_FINAL) {
       ClassInfo keyClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
-      MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
+      AbstractMapSerializer mapSerializer = (AbstractMapSerializer) classInfo.getSerializer();
       try {
         mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
         o = mapSerializer.read(buffer);
@@ -665,7 +667,7 @@ public class FieldResolver {
       Preconditions.checkArgument(fieldType == FieldTypes.MAP_VALUE_FINAL);
       ClassInfo valueClassInfo = classResolver.readClassInfo(buffer, classInfoHolder);
       ClassInfo classInfo = classResolver.readClassInfo(buffer, fieldInfo.getClassInfoHolder());
-      MapSerializer mapSerializer = (MapSerializer) classInfo.getSerializer();
+      AbstractMapSerializer mapSerializer = (AbstractMapSerializer) classInfo.getSerializer();
       try {
         mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
         o = mapSerializer.read(buffer);
