@@ -20,6 +20,7 @@
 package org.apache.fury.io;
 
 import org.apache.fury.Fury;
+import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferCallback;
@@ -31,6 +32,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -60,6 +64,55 @@ public class BlockedStreamUtils {
    */
   public static void serializeJavaObject(Fury fury, OutputStream outputStream, Object obj) {
     serializeToStream(fury, outputStream, buf -> fury.serializeJavaObject(buf, obj));
+  }
+
+  public static Object deserialize(Fury fury, InputStream inputStream) {
+    return deserialize(fury, inputStream, null);
+  }
+
+  public static Object deserialize(Fury fury, InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
+    return deserializeFromStream(fury, inputStream, buf -> fury.deserialize(buf, outOfBandBuffers));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T deserializeJavaObject(Fury fury, InputStream inputStream, Class<T> cls) {
+    return (T) deserializeFromStream(fury, inputStream, buf -> fury.deserializeJavaObject(buf, cls));
+  }
+
+  public static Object deserialize(Fury fury, ReadableByteChannel channel) {
+    return deserialize(fury, channel, null);
+  }
+
+  public static Object deserialize(Fury fury, ReadableByteChannel channel, Iterable<MemoryBuffer> outOfBandBuffers) {
+    try {
+      MemoryBuffer buf = fury.getBuffer();
+      ByteBuffer byteBuffer = ByteBuffer.allocate(4);
+      readByteBuffer(channel, byteBuffer, 4);
+      int size = byteBuffer.getInt();
+      buf.ensure(size);
+      readByteBuffer(channel, buf.sliceAsByteBuffer(), size);
+      return fury.deserialize(buf);
+    } finally {
+      fury.resetBuffer();
+    }
+  }
+
+  private static void readByteBuffer(ReadableByteChannel channel, ByteBuffer buffer, int size) {
+    int read;
+    buffer.limit(buffer.position() + size);
+    try {
+      read = channel.read(buffer);
+      while (read < size) {
+        int len = channel.read(buffer);
+        if (len == -1) {
+          throw new DeserializationException(
+            String.format("Channel only have %s, but need %s", read, size));
+        }
+        read += channel.read(buffer);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static void serializeToStream(Fury fury, OutputStream outputStream, Consumer<MemoryBuffer> function) {
@@ -92,19 +145,6 @@ public class BlockedStreamUtils {
         fury.resetBuffer();
       }
     }
-  }
-
-  public static Object deserialize(Fury fury, InputStream inputStream) {
-    return deserialize(fury, inputStream, null);
-  }
-
-  public static Object deserialize(Fury fury, InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
-    return deserializeFromStream(fury, inputStream, buf -> fury.deserialize(buf, outOfBandBuffers));
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <T> T deserializeJavaObject(Fury fury, InputStream inputStream, Class<T> cls) {
-    return (T) deserializeFromStream(fury, inputStream, buf -> fury.deserializeJavaObject(buf, cls));
   }
 
   private static Object deserializeFromStream(
