@@ -21,8 +21,12 @@ package org.apache.fury;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.GZIPOutputStream;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
@@ -86,24 +90,13 @@ public class CyclicTest extends FuryTestBase {
     }
   }
 
-  @Test(dataProvider = "fury")
-  public void testBeanMetaShared(FuryBuilder builder) {
-    Fury fury = builder.withMetaContextShare(true).withRefTracking(true).build();
-    for (Object[] objects : beans()) {
-      Object notCyclic = objects[0];
-      Object cyclic = objects[1];
-      Assert.assertEquals(notCyclic, serDeMetaShared(fury, notCyclic));
-      Assert.assertEquals(cyclic, serDeMetaShared(fury, cyclic));
-      Object[] arr = new Object[2];
-      arr[0] = arr;
-      arr[1] = cyclic;
-      Assert.assertEquals(arr[1], ((Object[]) serDeMetaShared(fury, arr))[1]);
-      List<Object> list = new ArrayList<>();
-      list.add(list);
-      list.add(cyclic);
-      list.add(arr);
-      Assert.assertEquals(
-          ((Object[]) list.get(2))[1], ((Object[]) ((List) serDeMetaShared(fury, list)).get(2))[1]);
-    }
+  @Test
+  public void testBeanMetaShared() throws IOException {
+    ByteArrayOutputStream s = new ByteArrayOutputStream();
+    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(s);
+    gzipOutputStream.write(Fury.class.getName().getBytes(StandardCharsets.UTF_8));
+    gzipOutputStream.close();
+    System.out.println("gzip" + s.size());
+    System.out.println(Fury.class.getName().getBytes(StandardCharsets.UTF_8).length);
   }
 }

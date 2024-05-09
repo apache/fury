@@ -24,26 +24,22 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.builder.JITContext;
-import org.apache.fury.collection.ObjectArray;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Config;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.config.LongEncoding;
-import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.memory.Platform;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -286,7 +282,7 @@ public final class Fury implements BaseFury {
     throw e;
   }
 
-  private MemoryBuffer getBuffer() {
+  public MemoryBuffer getBuffer() {
     MemoryBuffer buf = buffer;
     if (buf == null) {
       buf = buffer = MemoryBuffer.newHeapBuffer(64);
@@ -294,7 +290,7 @@ public final class Fury implements BaseFury {
     return buf;
   }
 
-  private void resetBuffer() {
+  public void resetBuffer() {
     MemoryBuffer buf = buffer;
     if (buf != null && buf.size() > BUFFER_SIZE_LIMIT) {
       buffer = MemoryBuffer.newHeapBuffer(BUFFER_SIZE_LIMIT);
@@ -759,7 +755,7 @@ public final class Fury implements BaseFury {
       }
       return obj;
     } catch (Throwable t) {
-      throw handleReadFailed(t);
+      throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
       resetRead();
       jitContext.unlock();
@@ -790,18 +786,6 @@ public final class Fury implements BaseFury {
   public Object deserialize(FuryReadableChannel channel, Iterable<MemoryBuffer> outOfBandBuffers) {
     MemoryBuffer buf = channel.getBuffer();
     return deserialize(buf, outOfBandBuffers);
-  }
-
-  private RuntimeException handleReadFailed(Throwable t) {
-    if (refResolver instanceof MapRefResolver) {
-      ObjectArray readObjects = ((MapRefResolver) refResolver).getReadObjects();
-      // carry with read objects for better trouble shooting.
-      List<Object> objects = Arrays.asList(readObjects.objects).subList(0, readObjects.size);
-      throw new DeserializationException(objects, t);
-    } else {
-      Platform.throwException(t);
-      throw new IllegalStateException("unreachable");
-    }
   }
 
   private Object xdeserializeInternal(MemoryBuffer buffer) {
@@ -1092,7 +1076,7 @@ public final class Fury implements BaseFury {
         return null;
       }
     } catch (Throwable t) {
-      throw handleReadFailed(t);
+      throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
       resetRead();
       jitContext.unlock();
@@ -1102,6 +1086,10 @@ public final class Fury implements BaseFury {
   /**
    * Deserialize java object from binary by passing class info, serialization should use {@link
    * #serializeJavaObject}.
+   *
+   * <p>Note that {@link FuryInputStream} will buffer and read more data, do not use the original
+   * passed stream when constructing {@link FuryInputStream}. If this is not possible, use {@link
+   * org.apache.fury.io.BlockedStreamUtils} instead for streaming serialization and deserialization.
    */
   @Override
   public <T> T deserializeJavaObject(FuryInputStream inputStream, Class<T> cls) {
@@ -1116,6 +1104,10 @@ public final class Fury implements BaseFury {
   /**
    * Deserialize java object from binary channel by passing class info, serialization should use
    * {@link #serializeJavaObject}.
+   *
+   * <p>Note that {@link FuryInputStream} will buffer and read more data, do not use the original
+   * passed stream when constructing {@link FuryInputStream}. If this is not possible, use {@link
+   * org.apache.fury.io.BlockedStreamUtils} instead for streaming serialization and deserialization.
    */
   @Override
   public <T> T deserializeJavaObject(FuryReadableChannel channel, Class<T> cls) {
@@ -1191,7 +1183,7 @@ public final class Fury implements BaseFury {
       }
       return readRef(buffer);
     } catch (Throwable t) {
-      throw handleReadFailed(t);
+      throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
       resetRead();
       jitContext.unlock();
