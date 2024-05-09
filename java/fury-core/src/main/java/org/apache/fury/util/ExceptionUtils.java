@@ -20,7 +20,15 @@
 package org.apache.fury.util;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.fury.Fury;
+import org.apache.fury.collection.ObjectArray;
+import org.apache.fury.exception.DeserializationException;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.resolver.MapRefResolver;
 
 /** Util for java exceptions. */
 public class ExceptionUtils {
@@ -45,6 +53,18 @@ public class ExceptionUtils {
       return e;
     } else {
       return null;
+    }
+  }
+
+  public static RuntimeException handleReadFailed(Fury fury, Throwable t) {
+    if (fury.getRefResolver() instanceof MapRefResolver) {
+      ObjectArray readObjects = ((MapRefResolver) fury.getRefResolver()).getReadObjects();
+      // carry with read objects for better trouble shooting.
+      List<Object> objects = Arrays.asList(readObjects.objects).subList(0, readObjects.size);
+      throw new DeserializationException(objects, t);
+    } else {
+      Platform.throwException(t);
+      throw new IllegalStateException("unreachable");
     }
   }
 
