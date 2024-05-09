@@ -72,12 +72,6 @@ public class BlockedStreamUtils {
     return deserializeFromStream(fury, inputStream, buf -> fury.deserialize(buf, outOfBandBuffers));
   }
 
-  @SuppressWarnings("unchecked")
-  public static <T> T deserializeJavaObject(Fury fury, InputStream inputStream, Class<T> type) {
-    return (T)
-        deserializeFromStream(fury, inputStream, buf -> fury.deserializeJavaObject(buf, type));
-  }
-
   public static Object deserialize(Fury fury, ReadableByteChannel channel) {
     return readFromChannel(fury, channel, b -> fury.deserialize(b, null));
   }
@@ -85,6 +79,12 @@ public class BlockedStreamUtils {
   public static Object deserialize(
       Fury fury, ReadableByteChannel channel, Iterable<MemoryBuffer> outOfBandBuffers) {
     return readFromChannel(fury, channel, b -> fury.deserialize(b, outOfBandBuffers));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T deserializeJavaObject(Fury fury, InputStream inputStream, Class<T> type) {
+    return (T)
+      deserializeFromStream(fury, inputStream, buf -> fury.deserializeJavaObject(buf, type));
   }
 
   public static Object deserializeJavaObject(
