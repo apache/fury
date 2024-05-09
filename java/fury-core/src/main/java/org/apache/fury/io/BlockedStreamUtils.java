@@ -84,7 +84,7 @@ public class BlockedStreamUtils {
   @SuppressWarnings("unchecked")
   public static <T> T deserializeJavaObject(Fury fury, InputStream inputStream, Class<T> type) {
     return (T)
-      deserializeFromStream(fury, inputStream, buf -> fury.deserializeJavaObject(buf, type));
+        deserializeFromStream(fury, inputStream, buf -> fury.deserializeJavaObject(buf, type));
   }
 
   public static Object deserializeJavaObject(
