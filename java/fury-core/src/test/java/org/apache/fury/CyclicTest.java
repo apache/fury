@@ -21,14 +21,12 @@ package org.apache.fury;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
-
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
@@ -98,7 +96,7 @@ public class CyclicTest extends FuryTestBase {
     GZIPOutputStream gzipOutputStream = new GZIPOutputStream(s);
     gzipOutputStream.write(Fury.class.getName().getBytes(StandardCharsets.UTF_8));
     gzipOutputStream.close();
-    System.out.println("gzip"+ s.size());
+    System.out.println("gzip" + s.size());
     System.out.println(Fury.class.getName().getBytes(StandardCharsets.UTF_8).length);
   }
 }

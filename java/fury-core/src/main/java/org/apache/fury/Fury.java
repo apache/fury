@@ -24,26 +24,22 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.builder.JITContext;
-import org.apache.fury.collection.ObjectArray;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Config;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.config.LongEncoding;
-import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.memory.Platform;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -1090,11 +1086,10 @@ public final class Fury implements BaseFury {
   /**
    * Deserialize java object from binary by passing class info, serialization should use {@link
    * #serializeJavaObject}.
-   * <p>
-   * Note that {@link FuryInputStream} will buffer and read more data, do not use the original
-   * passed stream when constructing {@link FuryInputStream}. If this is not possible, use
-   * {@link org.apache.fury.io.BlockedStreamUtils} instead for streaming serialization and
-   * deserialization.
+   *
+   * <p>Note that {@link FuryInputStream} will buffer and read more data, do not use the original
+   * passed stream when constructing {@link FuryInputStream}. If this is not possible, use {@link
+   * org.apache.fury.io.BlockedStreamUtils} instead for streaming serialization and deserialization.
    */
   @Override
   public <T> T deserializeJavaObject(FuryInputStream inputStream, Class<T> cls) {
@@ -1109,11 +1104,10 @@ public final class Fury implements BaseFury {
   /**
    * Deserialize java object from binary channel by passing class info, serialization should use
    * {@link #serializeJavaObject}.
-   * <p>
-   * Note that {@link FuryInputStream} will buffer and read more data, do not use the original
-   * passed stream when constructing {@link FuryInputStream}. If this is not possible, use
-   * {@link org.apache.fury.io.BlockedStreamUtils} instead for streaming serialization and
-   * deserialization.
+   *
+   * <p>Note that {@link FuryInputStream} will buffer and read more data, do not use the original
+   * passed stream when constructing {@link FuryInputStream}. If this is not possible, use {@link
+   * org.apache.fury.io.BlockedStreamUtils} instead for streaming serialization and deserialization.
    */
   @Override
   public <T> T deserializeJavaObject(FuryReadableChannel channel, Class<T> cls) {

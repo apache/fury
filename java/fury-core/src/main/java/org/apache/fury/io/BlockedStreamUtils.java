@@ -19,42 +19,39 @@
 
 package org.apache.fury.io;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.ReadableByteChannel;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.Preconditions;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
-import java.nio.channels.ReadableByteChannel;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
 /**
- * A serialization helper as the fallback of streaming serialization/deserialization in
- * {@link FuryInputStream}/{@link FuryReadableChannel}.
- * {@link FuryInputStream}/{@link FuryReadableChannel} will buffer and read more data, which makes
- * the original passed stream when constructing {@link FuryInputStream} not usable. If this is not possible, use
- * this {@link BlockedStreamUtils} instead for streaming serialization and deserialization.
- * <p>
- * Note that this mode will disable streaming in essence. It's just a helper for make the usage in streaming
- * interface more easily. The deserialization will read whole bytes before do the actual deserialization, which
- * don't have any streaming behaviour under the hood.
+ * A serialization helper as the fallback of streaming serialization/deserialization in {@link
+ * FuryInputStream}/{@link FuryReadableChannel}. {@link FuryInputStream}/{@link FuryReadableChannel}
+ * will buffer and read more data, which makes the original passed stream when constructing {@link
+ * FuryInputStream} not usable. If this is not possible, use this {@link BlockedStreamUtils} instead
+ * for streaming serialization and deserialization.
+ *
+ * <p>Note that this mode will disable streaming in essence. It's just a helper for make the usage
+ * in streaming interface more easily. The deserialization will read whole bytes before do the
+ * actual deserialization, which don't have any streaming behaviour under the hood.
  */
 public class BlockedStreamUtils {
   public static void serialize(Fury fury, OutputStream outputStream, Object obj) {
     serializeToStream(fury, outputStream, buf -> fury.serialize(buf, obj, null));
   }
 
-  public static void serialize(Fury fury, OutputStream outputStream, Object obj, BufferCallback callback) {
+  public static void serialize(
+      Fury fury, OutputStream outputStream, Object obj, BufferCallback callback) {
     serializeToStream(fury, outputStream, buf -> fury.serialize(buf, obj, callback));
   }
 
@@ -70,28 +67,42 @@ public class BlockedStreamUtils {
     return deserialize(fury, inputStream, null);
   }
 
-  public static Object deserialize(Fury fury, InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
+  public static Object deserialize(
+      Fury fury, InputStream inputStream, Iterable<MemoryBuffer> outOfBandBuffers) {
     return deserializeFromStream(fury, inputStream, buf -> fury.deserialize(buf, outOfBandBuffers));
   }
 
   @SuppressWarnings("unchecked")
-  public static <T> T deserializeJavaObject(Fury fury, InputStream inputStream, Class<T> cls) {
-    return (T) deserializeFromStream(fury, inputStream, buf -> fury.deserializeJavaObject(buf, cls));
+  public static <T> T deserializeJavaObject(Fury fury, InputStream inputStream, Class<T> type) {
+    return (T)
+        deserializeFromStream(fury, inputStream, buf -> fury.deserializeJavaObject(buf, type));
   }
 
   public static Object deserialize(Fury fury, ReadableByteChannel channel) {
-    return deserialize(fury, channel, null);
+    return readFromChannel(fury, channel, b -> fury.deserialize(b, null));
   }
 
-  public static Object deserialize(Fury fury, ReadableByteChannel channel, Iterable<MemoryBuffer> outOfBandBuffers) {
+  public static Object deserialize(
+      Fury fury, ReadableByteChannel channel, Iterable<MemoryBuffer> outOfBandBuffers) {
+    return readFromChannel(fury, channel, b -> fury.deserialize(b, outOfBandBuffers));
+  }
+
+  public static Object deserializeJavaObject(
+      Fury fury, ReadableByteChannel channel, Class<?> type) {
+    return readFromChannel(fury, channel, b -> fury.deserializeJavaObject(b, type));
+  }
+
+  private static Object readFromChannel(
+      Fury fury, ReadableByteChannel channel, Function<MemoryBuffer, Object> action) {
     try {
       MemoryBuffer buf = fury.getBuffer();
       ByteBuffer byteBuffer = ByteBuffer.allocate(4);
+      byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
       readByteBuffer(channel, byteBuffer, 4);
       int size = byteBuffer.getInt();
       buf.ensure(size);
       readByteBuffer(channel, buf.sliceAsByteBuffer(), size);
-      return fury.deserialize(buf);
+      return action.apply(buf);
     } finally {
       fury.resetBuffer();
     }
@@ -106,68 +117,44 @@ public class BlockedStreamUtils {
         int len = channel.read(buffer);
         if (len == -1) {
           throw new DeserializationException(
-            String.format("Channel only have %s, but need %s", read, size));
+              String.format("Channel only have %s, but need %s", read, size));
         }
         read += channel.read(buffer);
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+    buffer.rewind();
   }
 
-  private static void serializeToStream(Fury fury, OutputStream outputStream, Consumer<MemoryBuffer> function) {
+  private static void serializeToStream(
+      Fury fury, OutputStream outputStream, Consumer<MemoryBuffer> function) {
     MemoryBuffer buf = fury.getBuffer();
-    if (outputStream.getClass() == ByteArrayOutputStream.class) {
-      byte[] oldBytes = buf.getHeapMemory(); // Note: This should not be null.
-      MemoryUtils.wrap((ByteArrayOutputStream) outputStream, buf);
-      int writerIndex = buf.writerIndex();
-      buf.writeInt32(-1);
-      function.accept(buf);
-      buf.putInt32(writerIndex, buf.writerIndex() - writerIndex);
-      MemoryUtils.wrap(buf, (ByteArrayOutputStream) outputStream);
-      buf.pointTo(oldBytes, 0, oldBytes.length);
-    } else {
-      buf.writerIndex(0);
+    buf.writerIndex(0);
+    try {
       buf.writeInt32(-1);
       function.accept(buf);
       buf.putInt32(0, buf.writerIndex() - 4);
-      try {
-        byte[] bytes = buf.getHeapMemory();
-        if (bytes != null) {
-          outputStream.write(bytes, 0, buf.writerIndex());
-        } else {
-          outputStream.write(buf.getBytes(0, buf.writerIndex()));
-        }
-        outputStream.flush();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      } finally {
-        fury.resetBuffer();
+      byte[] bytes = buf.getHeapMemory();
+      if (bytes != null) {
+        outputStream.write(bytes, 0, buf.writerIndex());
+      } else {
+        outputStream.write(buf.getBytes(0, buf.writerIndex()));
       }
+      outputStream.flush();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } finally {
+      fury.resetBuffer();
     }
   }
 
   private static Object deserializeFromStream(
-    Fury fury, InputStream inputStream, Function<MemoryBuffer, Object> function) {
+      Fury fury, InputStream inputStream, Function<MemoryBuffer, Object> function) {
     MemoryBuffer buf = fury.getBuffer();
     try {
-      boolean isBis = inputStream.getClass() == ByteArrayInputStream.class;
-      byte[] oldBytes = null;
-      if (isBis) {
-        buf.readerIndex(0);
-        oldBytes = buf.getHeapMemory(); // Note: This should not be null.
-        MemoryUtils.wrap((ByteArrayInputStream) inputStream, buf);
-        buf.increaseReaderIndex(4); // skip size.
-      } else {
-        readToBufferFromStream(inputStream, buf);
-      }
-      Object o = function.apply(buf);
-      if (isBis) {
-        int i = buf.readerIndex();
-        Preconditions.checkArgument(inputStream.skip(i) == i);
-        buf.pointTo(oldBytes, 0, oldBytes.length);
-      }
-      return o;
+      readToBufferFromStream(inputStream, buf);
+      return function.apply(buf);
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(fury, t);
     } finally {
@@ -176,7 +163,7 @@ public class BlockedStreamUtils {
   }
 
   private static void readToBufferFromStream(InputStream inputStream, MemoryBuffer buffer)
-    throws IOException {
+      throws IOException {
     buffer.readerIndex(0);
     int read = readBytes(inputStream, buffer.getHeapMemory(), 0, 4);
     Preconditions.checkArgument(read == 4);
@@ -187,7 +174,7 @@ public class BlockedStreamUtils {
   }
 
   private static int readBytes(InputStream inputStream, byte[] buffer, int offset, int size)
-    throws IOException {
+      throws IOException {
     int read = 0;
     int count = 0;
     while (read < size) {

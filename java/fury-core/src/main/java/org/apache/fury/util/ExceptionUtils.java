@@ -22,7 +22,6 @@ package org.apache.fury.util;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
-
 import org.apache.fury.Fury;
 import org.apache.fury.collection.ObjectArray;
 import org.apache.fury.exception.DeserializationException;
