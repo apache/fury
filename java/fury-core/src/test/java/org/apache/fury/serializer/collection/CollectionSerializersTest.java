@@ -51,6 +51,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -67,6 +68,7 @@ import org.apache.fury.serializer.collection.CollectionSerializers.JDKCompatible
 import org.apache.fury.type.GenericType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import org.testng.collections.Maps;
 
 public class CollectionSerializersTest extends FuryTestBase {
 
@@ -272,6 +274,30 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(CopyOnWriteArrayList.class),
         CollectionSerializers.CopyOnWriteArrayListSerializer.class);
+  }
+
+  @Test
+  public void testSetFromMap() {
+    final Set<String> set = Collections.newSetFromMap(Maps.newConcurrentMap());
+    set.add("a");
+    set.add("b");
+    set.add("c");
+    Assert.assertEquals(set, serDe(getJavaFury(), set));
+    Assert.assertEquals(
+        getJavaFury().getClassResolver().getSerializerClass(set.getClass()),
+        CollectionSerializers.SetFromMapSerializer.class);
+  }
+
+  @Test
+  public void testConcurrentMapKeySetViewMap() {
+    final ConcurrentHashMap.KeySetView<Object, Boolean> set = ConcurrentHashMap.newKeySet();
+    set.add("a");
+    set.add("b");
+    set.add("c");
+    Assert.assertEquals(set, serDe(getJavaFury(), set));
+    Assert.assertEquals(
+        getJavaFury().getClassResolver().getSerializerClass(set.getClass()),
+        CollectionSerializers.ConcurrentHashMapKeySetView.class);
   }
 
   @Test
