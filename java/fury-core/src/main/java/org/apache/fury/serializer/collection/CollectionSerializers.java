@@ -419,14 +419,10 @@ public class CollectionSerializers {
 
     private static final long MAP_FIELD_OFFSET;
 
-    private static final long SET_FIELD_OFFSET;
-
     static {
       try {
         Field mapField = Class.forName("java.util.Collections$SetFromMap").getDeclaredField("m");
         MAP_FIELD_OFFSET = Platform.objectFieldOffset(mapField);
-        Field setField = Class.forName("java.util.Collections$SetFromMap").getDeclaredField("s");
-        SET_FIELD_OFFSET = Platform.objectFieldOffset(setField);
       } catch (final Exception e) {
         throw new RuntimeException(e);
       }
