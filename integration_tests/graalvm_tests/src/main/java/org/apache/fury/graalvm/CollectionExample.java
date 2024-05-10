@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.fury.Fury;
 import org.apache.fury.util.Preconditions;
 
-public class Collection {
+public class CollectionExample {
   static Fury fury;
 
   static {
