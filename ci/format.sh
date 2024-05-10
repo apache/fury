@@ -25,6 +25,8 @@ install_nodejs() {
   node -v
   npm -v
 }
+export python=/home/t5/weijiang/work/score/fury/1/Python-3.8.18/python3.8/bin/python3.8
+export pip=/home/t5/weijiang/work/score/fury/1/Python-3.8.18/python3.8/bin/pip3.8
 
 check_python_command_exist() {
     VERSION=""
@@ -180,7 +182,7 @@ format_all_scripts() {
 }
 
 format_java() {
-    if command -v mvn >/dev/null ; then
+    if command -v mvn ; then
       echo "Maven installed"
       cd "$ROOT/java"
       mvn -T10 --no-transfer-progress spotless:apply

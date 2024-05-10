@@ -54,6 +54,7 @@ public class Config implements Serializable {
   private final boolean deserializeUnexistedClass;
   private final boolean scalaOptimizationEnabled;
   private transient int configHash;
+  private final boolean deserializeUnexistentEnumValueAsNull;
 
   public Config(FuryBuilder builder) {
     language = builder.language;
@@ -82,6 +83,7 @@ public class Config implements Serializable {
     }
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
+    deserializeUnexistentEnumValueAsNull = builder.deserializeUnexistentEnumValueAsNull;
   }
 
   public Language getLanguage() {
@@ -98,6 +100,10 @@ public class Config implements Serializable {
 
   public boolean isStringRefIgnored() {
     return stringRefIgnored;
+  }
+
+  public boolean isDeserializeUnexistentEnumValueAsNull() {
+    return deserializeUnexistentEnumValueAsNull;
   }
 
   /**
