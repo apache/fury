@@ -49,9 +49,6 @@ public class MetaStringEncoder {
    * @return A MetaString object representing the encoded string.
    */
   public MetaString encode(String input) {
-    if (!isASCII(input)) {
-      throw new IllegalArgumentException("Non-ASCII characters in meta string are not allowed");
-    }
     return encode(input, Encoding.values());
   }
 
@@ -73,7 +70,7 @@ public class MetaStringEncoder {
   public MetaString encode(String input, Encoding encoding) {
     Preconditions.checkArgument(
         input.length() < Short.MAX_VALUE, "Long meta string than 32767 is not allowed");
-    if (!isASCII(input)) {
+    if (encoding != Encoding.UTF_8 && !isASCII(input)) {
       throw new IllegalArgumentException("Non-ASCII characters in meta string are not allowed");
     }
     if (input.isEmpty()) {
