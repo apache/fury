@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import org.apache.fury.collection.Collections;
 import org.apache.fury.meta.MetaString.Encoding;
+import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.util.Preconditions;
 
 /** Encodes plain text strings into MetaString objects with specified encoding mechanisms. */
@@ -70,6 +71,9 @@ public class MetaStringEncoder {
   public MetaString encode(String input, Encoding encoding) {
     Preconditions.checkArgument(
         input.length() < Short.MAX_VALUE, "Long meta string than 32767 is not allowed");
+    if (encoding != Encoding.UTF_8 && !StringSerializer.isLatin(input.toCharArray())) {
+      throw new IllegalArgumentException("Non-ASCII characters in meta string are not allowed");
+    }
     if (input.isEmpty()) {
       return new MetaString(input, Encoding.UTF_8, specialChar1, specialChar2, new byte[0]);
     }
