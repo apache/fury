@@ -49,6 +49,7 @@ import org.apache.fury.exception.FuryException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.ReplaceResolveSerializer;
 import org.apache.fury.serializer.Serializer;
@@ -436,18 +437,28 @@ public class CollectionSerializers {
     }
 
     @Override
-    public void write(MemoryBuffer buffer, Set value) {
-      final Map<?, Boolean> map = (Map<?, Boolean>) Platform.getObject(value, MAP_FIELD_OFFSET);
-      fury.writeRef(buffer, map);
+    public Collection newCollection(MemoryBuffer buffer) {
+      int numElements = buffer.readVarUint32Small7();
+      setNumElements(numElements);
+      final ClassInfo mapClassInfo = fury.getClassResolver().readClassInfo(buffer);
+      final MethodHandle methodHandle = ReflectionUtils.getCtrHandle(mapClassInfo.getCls(), true);
+      Map map;
+      try {
+        map = (Map) methodHandle.invoke();
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
+      }
+      final Set set = Collections.newSetFromMap(map);
+      fury.getRefResolver().reference(set);
+      return set;
     }
 
     @Override
-    public Set<?> read(MemoryBuffer buffer) {
-      final Map<?, Boolean> map = (Map<?, Boolean>) fury.readRef(buffer);
-      final Set<?> set = Collections.newSetFromMap(Collections.emptyMap());
-      Platform.putObject(set, MAP_FIELD_OFFSET, map);
-      Platform.putObject(set, SET_FIELD_OFFSET, map.keySet());
-      return set;
+    public Collection onCollectionWrite(MemoryBuffer buffer, Set<?> value) {
+      buffer.writeVarUint32Small7(value.size());
+      final Map<?, Boolean> map = (Map<?, Boolean>) Platform.getObject(value, MAP_FIELD_OFFSET);
+      fury.getClassResolver().writeClassAndUpdateCache(buffer, map.getClass());
+      return value;
     }
   }
 
