@@ -421,7 +421,7 @@ public class GuavaCollectionSerializers {
       class GuavaEmptyBiMap {}
 
       cls = GuavaEmptyBiMap.class;
-      fury.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
+      fury.registerSerializer(cls, new ImmutableMapSerializer(fury, cls));
     }
     if (checkClassExist(pkg + ".EmptyImmutableSortedSet")) {
       cls = loadClass(pkg + ".EmptyImmutableSortedSet", ImmutableSortedSet.of().getClass());
@@ -430,7 +430,7 @@ public class GuavaCollectionSerializers {
       class GuavaEmptySortedSet {}
 
       cls = GuavaEmptySortedSet.class;
-      fury.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
+      fury.registerSerializer(cls, new ImmutableSortedSetSerializer(fury, cls));
     }
     if (checkClassExist(pkg + ".EmptyImmutableSortedMap")) {
       cls = loadClass(pkg + ".EmptyImmutableSortedMap", ImmutableSortedMap.of().getClass());
@@ -439,7 +439,7 @@ public class GuavaCollectionSerializers {
       class GuavaEmptySortedMap {}
 
       cls = GuavaEmptySortedMap.class;
-      fury.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
+      fury.registerSerializer(cls, new ImmutableSortedMapSerializer(fury, cls));
     }
   }
 
