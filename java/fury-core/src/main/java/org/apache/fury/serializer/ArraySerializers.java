@@ -647,17 +647,20 @@ public class ArraySerializers {
     fury.registerSerializer(byte[].class, new ByteArraySerializer(fury));
     fury.registerSerializer(Byte[].class, new ObjectArraySerializer<>(fury, Byte[].class));
     fury.registerSerializer(char[].class, new CharArraySerializer(fury));
+    fury.registerSerializer(
+        Character[].class, new ObjectArraySerializer<>(fury, Character[].class));
     fury.registerSerializer(short[].class, new ShortArraySerializer(fury));
     fury.registerSerializer(Short[].class, new ObjectArraySerializer<>(fury, Short[].class));
     fury.registerSerializer(int[].class, new IntArraySerializer(fury));
     fury.registerSerializer(Integer[].class, new ObjectArraySerializer<>(fury, Integer[].class));
     fury.registerSerializer(long[].class, new LongArraySerializer(fury));
-    fury.registerSerializer(Float[].class, new ObjectArraySerializer<>(fury, Float[].class));
+    fury.registerSerializer(Long[].class, new ObjectArraySerializer<>(fury, Long[].class));
     fury.registerSerializer(float[].class, new FloatArraySerializer(fury));
-    fury.registerSerializer(Double[].class, new ObjectArraySerializer<>(fury, Double[].class));
+    fury.registerSerializer(Float[].class, new ObjectArraySerializer<>(fury, Float[].class));
     fury.registerSerializer(double[].class, new DoubleArraySerializer(fury));
-    fury.registerSerializer(Boolean[].class, new ObjectArraySerializer<>(fury, Boolean[].class));
+    fury.registerSerializer(Double[].class, new ObjectArraySerializer<>(fury, Double[].class));
     fury.registerSerializer(boolean[].class, new BooleanArraySerializer(fury));
+    fury.registerSerializer(Boolean[].class, new ObjectArraySerializer<>(fury, Boolean[].class));
     fury.registerSerializer(String[].class, new StringArraySerializer(fury));
   }
 
