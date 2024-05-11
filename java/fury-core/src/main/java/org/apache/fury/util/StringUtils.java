@@ -19,16 +19,22 @@
 
 package org.apache.fury.util;
 
-import com.google.common.io.BaseEncoding;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
 public class StringUtils {
+  private final static char[] BASE16_CHARS2 = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+          'a', 'b', 'c', 'd', 'e', 'f' };
 
   /** Converts a bytes array into a hexadecimal string. */
   public static String encodeHexString(final byte[] data) {
-    return BaseEncoding.base16().lowerCase().encode(data);
+    StringBuilder result = new StringBuilder(data.length * 2);
+    for (byte b : data) {
+      result.append(BASE16_CHARS2[(b >>> 4) & 0xF])
+              .append(BASE16_CHARS2[b & 0xF]);
+    }
+    return result.toString();
   }
 
   /** Format a string template by replacing all `${xxx}` into provided values. */
@@ -190,6 +196,59 @@ public class StringUtils {
     for (int i = 0; i < numRepeat; i++) {
       builder.append(str);
     }
+    return builder.toString();
+  }
+
+  // example: "variable_name" -> "variableName"
+  public static String lowerUnderscoreToLowerCamelCase(String lowerUnderscore) {
+    StringBuilder builder = new StringBuilder();
+    int length = lowerUnderscore.length();
+
+    int index;
+    int fromIndex = 0;
+    while ((index = lowerUnderscore.indexOf('_', fromIndex)) != -1) {
+      builder.append(lowerUnderscore, fromIndex, index);
+
+      if (length >= index + 1) {
+        char symbol = lowerUnderscore.charAt(index + 1);
+        if (symbol >= 'a' && symbol <= 'z') {
+          builder.append(Character.toUpperCase(symbol));
+          fromIndex = index + 2;
+          continue;
+        }
+      }
+
+      fromIndex = index + 1;
+    }
+
+    if (fromIndex < length) {
+      builder.append(lowerUnderscore, fromIndex, length);
+    }
+
+    return builder.toString();
+  }
+
+  // example: "variableName" -> "variable_name"
+  public static String lowerCamelToLowerUnderscore(String lowerCamel) {
+    StringBuilder builder = new StringBuilder();
+    int length = lowerCamel.length();
+
+    int fromIndex = 0;
+
+    for (int i = 0; i < length; i++) {
+      char symbol = lowerCamel.charAt(i);
+      if (symbol >= 'A' && symbol <= 'Z') {
+        builder.append(lowerCamel, fromIndex, i)
+                .append('_')
+                .append(Character.toLowerCase(symbol));
+        fromIndex = i + 1;
+      }
+    }
+
+    if (fromIndex < length) {
+      builder.append(lowerCamel, fromIndex, length);
+    }
+
     return builder.toString();
   }
 }

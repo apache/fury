@@ -62,4 +62,23 @@ public class StringUtilsTest {
     assertTrue(StringUtils.isBlank("   "));
     assertTrue(StringUtils.isBlank(null));
   }
+
+  @Test
+  public void testLowerUnderscoreToLowerCamelCase() {
+    assertEquals(StringUtils.lowerUnderscoreToLowerCamelCase("some_variable"), "someVariable");
+    assertEquals(StringUtils.lowerUnderscoreToLowerCamelCase("some_long_variable"), "someLongVariable");
+    assertEquals(StringUtils.lowerUnderscoreToLowerCamelCase("some_123variable"), "some123variable");
+    assertEquals(StringUtils.lowerUnderscoreToLowerCamelCase("some_variable123"), "someVariable123");
+    assertEquals(StringUtils.lowerUnderscoreToLowerCamelCase("some_variable123"), "someVariable123");
+    assertEquals(StringUtils.lowerUnderscoreToLowerCamelCase("some_123_variable"), "some123Variable");
+    assertEquals(StringUtils.lowerUnderscoreToLowerCamelCase("some_variable_123"), "someVariable123");
+  }
+
+  @Test
+  public void testLowerCamelToLowerUnderscore() {
+    assertEquals(StringUtils.lowerCamelToLowerUnderscore("someVariable"), "some_variable");
+    assertEquals(StringUtils.lowerCamelToLowerUnderscore("someLongVariable"), "some_long_variable");
+    assertEquals(StringUtils.lowerCamelToLowerUnderscore("some123variable"), "some123variable");
+    assertEquals(StringUtils.lowerCamelToLowerUnderscore("someVariable123"), "some_variable123");
+  }
 }
