@@ -276,13 +276,19 @@ public class CollectionSerializersTest extends FuryTestBase {
         CollectionSerializers.CopyOnWriteArrayListSerializer.class);
   }
 
-  @Test
-  public void testSetFromMap() {
+  @Test(dataProvider = "enableCodegen")
+  public void testSetFromMap(boolean enableCodegen) {
+    final Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .withCodegen(enableCodegen)
+            .build();
     final Set<String> set = Collections.newSetFromMap(Maps.newConcurrentMap());
     set.add("a");
     set.add("b");
     set.add("c");
-    Assert.assertEquals(set, serDe(getJavaFury(), set));
+    Assert.assertEquals(set, serDe(fury, set));
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(set.getClass()),
         CollectionSerializers.SetFromMapSerializer.class);
