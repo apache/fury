@@ -75,6 +75,7 @@ public final class FuryBuilder {
   boolean registerGuavaTypes = true;
   boolean scalaOptimizationEnabled = false;
   boolean suppressClassRegistrationWarnings = true;
+  boolean deserializeUnexistentEnumValueAsNull = false;
 
   public FuryBuilder() {}
 
@@ -102,6 +103,13 @@ public final class FuryBuilder {
   /** Whether ignore string shared reference. */
   public FuryBuilder ignoreStringRef(boolean ignoreStringRef) {
     this.stringRefIgnored = ignoreStringRef;
+    return this;
+  }
+
+  /** ignore Enum Deserialize array out of bounds. */
+  public FuryBuilder deserializeUnexistentEnumValueAsNull(
+      boolean deserializeUnexistentEnumValueAsNull) {
+    this.deserializeUnexistentEnumValueAsNull = deserializeUnexistentEnumValueAsNull;
     return this;
   }
 

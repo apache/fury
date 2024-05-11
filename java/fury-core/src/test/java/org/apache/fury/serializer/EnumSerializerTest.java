@@ -23,6 +23,7 @@ import static org.testng.Assert.*;
 
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
+import org.apache.fury.codegen.JaninoUtils;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.testng.annotations.Test;
@@ -65,5 +66,31 @@ public class EnumSerializerTest extends FuryTestBase {
         EnumSerializerTest.EnumSubClass.A, serDe(fury1, fury2, EnumSerializerTest.EnumSubClass.A));
     assertEquals(
         EnumSerializerTest.EnumSubClass.B, serDe(fury1, fury2, EnumSerializerTest.EnumSubClass.B));
+  }
+
+  @Test()
+  public void testEnumSerializationUnexistentEnumValueAsNull() {
+    String enumCode2 = "enum TestEnum2 {" + " A;" + "}";
+    String enumCode1 = "enum TestEnum2 {" + " A, B" + "}";
+    Class<?> cls1 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum2", enumCode1);
+    Class<?> cls2 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum2", enumCode2);
+    FuryBuilder builderSerialization =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(true)
+            .requireClassRegistration(false);
+    FuryBuilder builderDeserialize =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .deserializeUnexistentEnumValueAsNull(true)
+            .withClassLoader(cls2.getClassLoader());
+    Fury furyDeserialize = builderDeserialize.build();
+    Fury furySerialization = builderSerialization.build();
+    byte[] bytes = furySerialization.serialize(cls1.getEnumConstants()[1]);
+    Object data = furyDeserialize.deserialize(bytes);
   }
 }
