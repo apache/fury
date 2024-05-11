@@ -49,8 +49,7 @@ public final class EnumSerializer extends Serializer<Enum> {
   @Override
   public Enum read(MemoryBuffer buffer) {
     int value = buffer.readVarUint32Small7();
-    if (fury.getConfig().isDeserializeUnexistentEnumValueAsNull()
-        && value >= enumConstants.length) {
+    if (fury.getConfig().deserializeUnexistentEnumValueAsNull() && value >= enumConstants.length) {
       return null;
     }
     return enumConstants[value];

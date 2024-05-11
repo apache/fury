@@ -102,7 +102,8 @@ public class Config implements Serializable {
     return stringRefIgnored;
   }
 
-  public boolean isDeserializeUnexistentEnumValueAsNull() {
+  /** ignore Enum Deserialize array out of bounds return null. */
+  public boolean deserializeUnexistentEnumValueAsNull() {
     return deserializeUnexistentEnumValueAsNull;
   }
 
