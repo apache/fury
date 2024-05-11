@@ -34,5 +34,6 @@ public class Main {
     CompatibleThreadSafeExample.main(args);
     ProxyExample.main(args);
     Benchmark.main(args);
+    CollectionExample.main(args);
   }
 }

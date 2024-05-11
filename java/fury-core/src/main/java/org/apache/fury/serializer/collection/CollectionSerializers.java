@@ -29,15 +29,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.fury.Fury;
@@ -46,6 +49,7 @@ import org.apache.fury.exception.FuryException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.ReplaceResolveSerializer;
 import org.apache.fury.serializer.Serializer;
@@ -411,6 +415,64 @@ public class CollectionSerializers {
     }
   }
 
+  public static final class SetFromMapSerializer extends CollectionSerializer<Set<?>> {
+
+    private static final long MAP_FIELD_OFFSET;
+
+    static {
+      try {
+        Field mapField = Class.forName("java.util.Collections$SetFromMap").getDeclaredField("m");
+        MAP_FIELD_OFFSET = Platform.objectFieldOffset(mapField);
+      } catch (final Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    public SetFromMapSerializer(Fury fury, Class<Set<?>> type) {
+      super(fury, type, true);
+    }
+
+    @Override
+    public Collection newCollection(MemoryBuffer buffer) {
+      final ClassInfo mapClassInfo = fury.getClassResolver().readClassInfo(buffer);
+      final AbstractMapSerializer mapSerializer =
+          (AbstractMapSerializer) fury.getClassResolver().getSerializer(mapClassInfo.getCls());
+      Map map = mapSerializer.newMap(buffer);
+      final int numElements = mapSerializer.getAndClearNumElements();
+      setNumElements(numElements);
+      final Set set = Collections.newSetFromMap(map);
+      fury.getRefResolver().reference(set);
+      return set;
+    }
+
+    @Override
+    public Collection onCollectionWrite(MemoryBuffer buffer, Set<?> value) {
+      final Map<?, Boolean> map = (Map<?, Boolean>) Platform.getObject(value, MAP_FIELD_OFFSET);
+      final ClassInfo classInfo = fury.getClassResolver().getClassInfo(map.getClass());
+      fury.getClassResolver().writeClass(buffer, classInfo);
+      // newMap will read num size first.
+      buffer.writeVarUint32Small7(value.size());
+      return value;
+    }
+  }
+
+  public static final class ConcurrentHashMapKeySetView
+      extends CollectionSerializer<ConcurrentHashMap.KeySetView> {
+
+    public ConcurrentHashMapKeySetView(Fury fury, Class<ConcurrentHashMap.KeySetView> type) {
+      super(fury, type);
+    }
+
+    @Override
+    public ConcurrentHashMap.KeySetView newCollection(MemoryBuffer buffer) {
+      int numElements = buffer.readVarUint32Small7();
+      setNumElements(numElements);
+      ConcurrentHashMap.KeySetView keySetView = ConcurrentHashMap.newKeySet(numElements);
+      fury.getRefResolver().reference(keySetView);
+      return keySetView;
+    }
+  }
+
   public static final class VectorSerializer extends CollectionSerializer<Vector> {
 
     public VectorSerializer(Fury fury, Class<Vector> cls) {
@@ -649,5 +711,10 @@ public class CollectionSerializers {
     fury.registerSerializer(
         CopyOnWriteArrayList.class,
         new CopyOnWriteArrayListSerializer(fury, CopyOnWriteArrayList.class));
+    final Class setFromMapClass = Collections.newSetFromMap(new HashMap<>()).getClass();
+    fury.registerSerializer(setFromMapClass, new SetFromMapSerializer(fury, setFromMapClass));
+    fury.registerSerializer(
+        ConcurrentHashMap.KeySetView.class,
+        new ConcurrentHashMapKeySetView(fury, ConcurrentHashMap.KeySetView.class));
   }
 }
