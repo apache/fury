@@ -448,7 +448,8 @@ public class CollectionSerializers {
     @Override
     public Collection onCollectionWrite(MemoryBuffer buffer, Set<?> value) {
       final Map<?, Boolean> map = (Map<?, Boolean>) Platform.getObject(value, MAP_FIELD_OFFSET);
-      fury.getClassResolver().writeClassAndUpdateCache(buffer, map.getClass());
+      final ClassInfo classInfo = fury.getClassResolver().getClassInfo(map.getClass());
+      fury.getClassResolver().writeClass(buffer, classInfo);
       // newMap will read num size first.
       buffer.writeVarUint32Small7(value.size());
       return value;
