@@ -24,15 +24,15 @@ import java.util.Map;
 import java.util.Random;
 
 public class StringUtils {
-  private final static char[] BASE16_CHARS2 = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-          'a', 'b', 'c', 'd', 'e', 'f' };
+  private static final char[] BASE16_CHARS2 = {
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+  };
 
   /** Converts a bytes array into a hexadecimal string. */
   public static String encodeHexString(final byte[] data) {
     StringBuilder result = new StringBuilder(data.length * 2);
     for (byte b : data) {
-      result.append(BASE16_CHARS2[(b >>> 4) & 0xF])
-              .append(BASE16_CHARS2[b & 0xF]);
+      result.append(BASE16_CHARS2[(b >>> 4) & 0xF]).append(BASE16_CHARS2[b & 0xF]);
     }
     return result.toString();
   }
@@ -238,9 +238,7 @@ public class StringUtils {
     for (int i = 0; i < length; i++) {
       char symbol = lowerCamel.charAt(i);
       if (symbol >= 'A' && symbol <= 'Z') {
-        builder.append(lowerCamel, fromIndex, i)
-                .append('_')
-                .append(Character.toLowerCase(symbol));
+        builder.append(lowerCamel, fromIndex, i).append('_').append(Character.toLowerCase(symbol));
         fromIndex = i + 1;
       }
     }
