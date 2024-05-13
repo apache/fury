@@ -22,7 +22,6 @@ package org.apache.fury.format.encoder;
 import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.CaseFormat;
 import java.lang.reflect.Modifier;
 import java.util.SortedMap;
 import org.apache.arrow.vector.types.pojo.Field;
@@ -218,7 +217,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
   }
 
   private Descriptor getDescriptorByFieldName(String fieldName) {
-    String name = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, fieldName);
+    String name = StringUtils.lowerUnderscoreToLowerCamelCase(fieldName);
     return descriptorsMap.get(name);
   }
 
