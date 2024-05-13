@@ -704,11 +704,7 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Object o1 = cls1.newInstance();
     for (Field field : ReflectionUtils.getFields(cls1, true)) {
       field.setAccessible(true);
-      if (field.getDeclaringClass() == DuplicateFieldsClass1.class) {
-        field.setInt(o1, 10);
-      } else {
-        field.setInt(o1, 100);
-      }
+      field.setInt(o1, 10);
     }
     Object o = serDeMetaShared(fury, o1);
     Assert.assertEquals(o.getClass(), o1.getClass());
