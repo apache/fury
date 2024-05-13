@@ -24,8 +24,12 @@ import static org.apache.fury.meta.ClassDefEncoder.getClassFields;
 
 import java.util.HashMap;
 import java.util.List;
+import lombok.Data;
 import org.apache.fury.Fury;
+import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.MapFields;
 import org.apache.fury.test.bean.Struct;
@@ -61,5 +65,32 @@ public class ClassDefEncoderTest {
               fury.getClassResolver(), MemoryBuffer.fromByteArray(classDef.getEncoded()));
       Assert.assertEquals(classDef1, classDef);
     }
+  }
+
+  @Data
+  public static class Foo1 {
+    private int f1;
+  }
+
+  @Data
+  public static class Foo2 extends Foo1 {}
+
+  @Test
+  public void testEmptySubClassSerializer() {
+    final Foo2 foo2 = new Foo2();
+    foo2.setF1(100);
+
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withMetaContextShare(true)
+            .build();
+    fury.getSerializationContext().setMetaContext(new MetaContext());
+    final byte[] serialize = fury.serialize(foo2);
+    fury.getSerializationContext().setMetaContext(new MetaContext());
+
+    Assert.assertEquals(foo2, fury.deserialize(serialize));
   }
 }
