@@ -406,7 +406,7 @@ public class ClassResolverTest extends FuryTestBase {
         fury -> {
           Assert.assertEquals(
               fury.getClassResolver().getSerializer(foo.getClass()).getClass(),
-                  FooCustomSerializer.class);
+              FooCustomSerializer.class);
           return null;
         });
   }
