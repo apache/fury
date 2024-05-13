@@ -39,7 +39,6 @@ import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.BeanB;
 import org.apache.fury.test.bean.Foo;
 import org.apache.fury.test.bean.Struct;
-import org.apache.fury.util.ClassLoaderUtils;
 import org.apache.fury.util.LoaderBinding.StagingType;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -346,14 +345,19 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     }
   }
 
+  public static class CustomClassLoader extends ClassLoader {
+    public CustomClassLoader(ClassLoader parent) {
+      super(parent);
+    }
+  }
+
   @Test
   public void testSerializerRegister() {
     final ThreadSafeFury threadSafeFury =
         Fury.builder().requireClassRegistration(false).buildThreadSafeFuryPool(0, 2);
     threadSafeFury.registerSerializer(Foo.class, FooSerializer.class);
     // create a new classLoader
-    threadSafeFury.setClassLoader(
-        new ClassLoaderUtils.ParentClassLoader(ClassLoader.getSystemClassLoader()));
+    threadSafeFury.setClassLoader(new CustomClassLoader(ClassLoader.getSystemClassLoader()));
     threadSafeFury.execute(
         fury -> {
           Assert.assertEquals(
