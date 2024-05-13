@@ -70,7 +70,6 @@ public class ClassDefEncoderTest {
     private int f1;
   }
 
-  @Data
   public static class Foo2 extends Foo1 {}
 
   @Test
