@@ -20,6 +20,7 @@
 package org.apache.fury;
 
 import java.io.OutputStream;
+import java.util.function.Function;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
@@ -70,6 +71,14 @@ public interface BaseFury {
   <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass);
 
   void registerSerializer(Class<?> type, Serializer<?> serializer);
+
+  /**
+   * Register a Serializer created by serializerCreator when fury created.
+   *
+   * @param type class needed to be serialized/deserialized.
+   * @param serializerCreator serializer creator with param {@link Fury}
+   */
+  void registerSerializer(Class<?> type, Function<Fury, Serializer<?>> serializerCreator);
 
   void setSerializerFactory(SerializerFactory serializerFactory);
 

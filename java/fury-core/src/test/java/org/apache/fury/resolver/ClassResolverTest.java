@@ -46,6 +46,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
+import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.config.Language;
 import org.apache.fury.logging.Logger;
@@ -364,5 +365,49 @@ public class ClassResolverTest extends FuryTestBase {
     Assert.assertTrue(classResolver.isPrimitive(classResolver.getRegisteredClassId(double.class)));
     Assert.assertFalse(classResolver.isPrimitive(classResolver.getRegisteredClassId(String.class)));
     Assert.assertFalse(classResolver.isPrimitive(classResolver.getRegisteredClassId(Date.class)));
+  }
+
+  // without static for test
+  class FooCustomSerializer extends Serializer<Foo> {
+
+    public FooCustomSerializer(Fury fury, Class<Foo> type) {
+      super(fury, type);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Foo value) {
+      buffer.writeInt32(value.f1);
+    }
+
+    @Override
+    public Foo read(MemoryBuffer buffer) {
+      final Foo foo = new Foo();
+      foo.f1 = buffer.readInt32();
+      return foo;
+    }
+  }
+
+  @Test
+  public void testFooCustomSerializer() {
+    ThreadSafeFury threadSafeFury =
+        Fury.builder().withLanguage(Language.JAVA).buildThreadSafeFury();
+    Assert.assertThrows(
+        () -> threadSafeFury.registerSerializer(Foo.class, FooCustomSerializer.class));
+    threadSafeFury.registerSerializer(Foo.class, f -> new FooCustomSerializer(f, Foo.class));
+    final Foo foo = new Foo();
+    foo.setF1(100);
+
+    threadSafeFury.execute(
+        fury -> {
+          Assert.assertEquals(foo, serDe(fury, foo));
+          return null;
+        });
+    threadSafeFury.execute(
+        fury -> {
+          Assert.assertEquals(
+              fury.getClassResolver().getSerializer(foo.getClass()).getClass(),
+              FooCustomSerializer.class);
+          return null;
+        });
   }
 }

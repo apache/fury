@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.builder.JITContext;
 import org.apache.fury.config.CompatibleMode;
@@ -173,6 +174,11 @@ public final class Fury implements BaseFury {
   @Override
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
     classResolver.registerSerializer(type, serializer);
+  }
+
+  @Override
+  public void registerSerializer(Class<?> type, Function<Fury, Serializer<?>> serializerCreator) {
+    classResolver.registerSerializer(type, serializerCreator.apply(this));
   }
 
   @Override
