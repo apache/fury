@@ -93,7 +93,7 @@ func TestAsciiEncoding(t *testing.T) {
 func TestNonAsciiEncoding(t *testing.T) {
 	encoder := NewEncoder('.', '_')
 
-	data, err := encoder.Encode("こんにちは")
+	data, err := encoder.Encode("こんにちは") // Non-ASCII String
 	require.NoError(t, err)
 	require.Equal(t, UTF_8, data.GetEncoding(), "Encoding should be UTF-8 for non-ASCII strings")
 }
