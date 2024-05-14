@@ -18,8 +18,9 @@
 package meta
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestEncodeAndDecodeMetaString(t *testing.T) {
@@ -79,4 +80,28 @@ func calcTotalBytes(src string, bitsPerChar int, encoding Encoding) int {
 		ret += countUppers(src) * bitsPerChar
 	}
 	return (ret + 7) / 8
+}
+
+func TestAsciiEncoding(t *testing.T) {
+	encoder := NewEncoder('.', '_')
+
+	data, err := encoder.Encode("asciiOnly")
+	require.NoError(t, err)
+	require.NotEqual(t, UTF_8, data.GetEncoding(), "Encoding should not be UTF-8 for ASCII strings")
+}
+
+func TestNonAsciiEncoding(t *testing.T) {
+	encoder := NewEncoder('.', '_')
+
+	data, err := encoder.Encode("こんにちは") // Non-ASCII String
+	require.NoError(t, err)
+	require.Equal(t, UTF_8, data.GetEncoding(), "Encoding should be UTF-8 for non-ASCII strings")
+}
+
+func TestEncodeWithEncodingNonAscii(t *testing.T) {
+	encoder := NewEncoder('.', '_')
+
+	_, err := encoder.EncodeWithEncoding("こんにちは", LOWER_SPECIAL)
+	require.Error(t, err, "Expected error for non-ASCII characters in non-UTF-8 encoding")
+	require.Equal(t, "non-ASCII characters in meta string are not allowed", err.Error())
 }

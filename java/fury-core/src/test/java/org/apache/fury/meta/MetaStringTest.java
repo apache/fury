@@ -214,4 +214,33 @@ public class MetaStringTest {
     String decoded = decoder.decode(metaString.getBytes(), metaString.getEncoding());
     assertEquals(decoded, "");
   }
+
+  @Test
+  public void testAsciiEncoding() {
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    String testString = "asciiOnly";
+    MetaString encodedMetaString = encoder.encode(testString);
+    assertNotSame(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
+    assertEquals(encodedMetaString.getEncoding(), MetaString.Encoding.ALL_TO_LOWER_SPECIAL);
+  }
+
+  @Test
+  public void testNonAsciiEncoding() {
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    String testString = "こんにちは"; // Non-ASCII string
+    MetaString encodedMetaString = encoder.encode(testString);
+    assertEquals(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
+  }
+
+  @Test
+  public void testNonAsciiEncodingAndNonUTF8() {
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    String nonAsciiString = "こんにちは"; // Non-ASCII string
+
+    try {
+      encoder.encode(nonAsciiString, MetaString.Encoding.LOWER_SPECIAL);
+    } catch (IllegalArgumentException e) {
+      assertEquals(e.getMessage(), "Non-ASCII characters in meta string are not allowed");
+    }
+  }
 }

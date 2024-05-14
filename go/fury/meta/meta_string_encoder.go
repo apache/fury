@@ -36,6 +36,15 @@ func NewEncoder(specialCh1 byte, specialCh2 byte) *Encoder {
 
 // Encode the input string to MetaString using adaptive encoding
 func (e *Encoder) Encode(input string) (MetaString, error) {
+	if !isASCII(input) {
+		return MetaString{
+			inputString:  input,
+			encoding:     UTF_8,
+			specialChar1: e.specialChar1,
+			specialChar2: e.specialChar2,
+			encodedBytes: []byte(input),
+		}, nil
+	}
 	encoding := e.ComputeEncoding(input)
 	return e.EncodeWithEncoding(input, encoding)
 }
@@ -43,7 +52,7 @@ func (e *Encoder) Encode(input string) (MetaString, error) {
 // EncodeWithEncoding Encodes the input string to MetaString using specified encoding.
 func (e *Encoder) EncodeWithEncoding(input string, encoding Encoding) (MetaString, error) {
 	if encoding != UTF_8 && !isASCII(input) {
-	    return MetaString{}, errors.New("non-ASCII characters in meta string are not allowed")
+		return MetaString{}, errors.New("non-ASCII characters in meta string are not allowed")
 	}
 	if len(input) > 32767 {
 		return MetaString{}, errors.New("long meta string than 32767 is not allowed")
@@ -171,12 +180,12 @@ func (e *Encoder) ComputeEncoding(input string) Encoding {
 }
 
 func isASCII(input string) bool {
-    for _, r := range input {
-        if r > 127 {
+	for _, r := range input {
+		if r > 127 {
 			return false
-        }
-    }
-    return true
+		}
+	}
+	return true
 }
 
 type stringStatistics struct {
