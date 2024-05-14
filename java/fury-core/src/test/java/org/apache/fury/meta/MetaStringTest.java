@@ -217,19 +217,19 @@ public class MetaStringTest {
 
   @Test
   public void testAsciiEncoding() {
-      MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
-      String testString = "asciiOnly";
-      MetaString encodedMetaString = encoder.encode(testString);
-      assertNotSame(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
-      assertEquals(encodedMetaString.getEncoding(), MetaString.Encoding.ALL_TO_LOWER_SPECIAL);
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    String testString = "asciiOnly";
+    MetaString encodedMetaString = encoder.encode(testString);
+    assertNotSame(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
+    assertEquals(encodedMetaString.getEncoding(), MetaString.Encoding.ALL_TO_LOWER_SPECIAL);
   }
 
   @Test
   public void testNonAsciiEncoding() {
-      MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
-      String testString = "こんにちは"; // Non-ASCII string
-      MetaString encodedMetaString = encoder.encode(testString);
-      assertEquals(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
+    MetaStringEncoder encoder = new MetaStringEncoder('_', '$');
+    String testString = "こんにちは"; // Non-ASCII string
+    MetaString encodedMetaString = encoder.encode(testString);
+    assertEquals(encodedMetaString.getEncoding(), MetaString.Encoding.UTF_8);
   }
 
   @Test
