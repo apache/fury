@@ -90,7 +90,6 @@ func TestAsciiEncoding(t *testing.T) {
 	require.NotEqual(t, UTF_8, data.GetEncoding(), "Encoding should not be UTF-8 for ASCII strings")
 }
 
-// TestNonAsciiEncoding tests encoding of non-ASCII strings and ensures the encoding is UTF-8.
 func TestNonAsciiEncoding(t *testing.T) {
 	encoder := NewEncoder('.', '_')
 
@@ -99,7 +98,6 @@ func TestNonAsciiEncoding(t *testing.T) {
 	require.Equal(t, UTF_8, data.GetEncoding(), "Encoding should be UTF-8 for non-ASCII strings")
 }
 
-// TestEncodeWithEncodingNonAscii tests encoding non-ASCII characters with non-UTF-8 encoding.
 func TestEncodeWithEncodingNonAscii(t *testing.T) {
 	encoder := NewEncoder('.', '_')
 
