@@ -711,4 +711,11 @@ public class TypeUtils {
 
     return new ArrayList<>(allTypeArguments);
   }
+
+  public static boolean isEnumArray(Class<?> clz) {
+    if (!clz.isArray()) {
+      return false;
+    }
+    return getArrayComponent(clz).isEnum();
+  }
 }

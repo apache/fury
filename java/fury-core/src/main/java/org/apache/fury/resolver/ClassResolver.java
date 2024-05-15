@@ -520,7 +520,7 @@ public class ClassResolver {
       // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
       // TypeToken<V>)
       return ReflectionUtils.isMonomorphic(clz)
-          && isInnerClass(clz)
+          && (isInnerClass(clz) || clz.isEnum() || TypeUtils.isEnumArray(clz))
           && (!Map.class.isAssignableFrom(clz) && !Collection.class.isAssignableFrom(clz));
     }
     return ReflectionUtils.isMonomorphic(clz);
