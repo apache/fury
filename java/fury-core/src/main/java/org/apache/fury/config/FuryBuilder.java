@@ -75,7 +75,7 @@ public final class FuryBuilder {
   boolean registerGuavaTypes = true;
   boolean scalaOptimizationEnabled = false;
   boolean suppressClassRegistrationWarnings = true;
-  boolean deserializeUnexistentEnumValueAsNull = false;
+  boolean deserializeNonexistentEnumValueAsNull = false;
 
   public FuryBuilder() {}
 
@@ -107,9 +107,9 @@ public final class FuryBuilder {
   }
 
   /** ignore Enum Deserialize array out of bounds. */
-  public FuryBuilder deserializeUnexistentEnumValueAsNull(
-      boolean deserializeUnexistentEnumValueAsNull) {
-    this.deserializeUnexistentEnumValueAsNull = deserializeUnexistentEnumValueAsNull;
+  public FuryBuilder deserializeNonexistentEnumValueAsNull(
+      boolean deserializeNonexistentEnumValueAsNull) {
+    this.deserializeNonexistentEnumValueAsNull = deserializeNonexistentEnumValueAsNull;
     return this;
   }
 
