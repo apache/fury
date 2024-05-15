@@ -19,6 +19,7 @@
 
 package org.apache.fury.serializer;
 
+import java.util.Arrays;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Preconditions;
@@ -49,9 +50,18 @@ public final class EnumSerializer extends Serializer<Enum> {
   @Override
   public Enum read(MemoryBuffer buffer) {
     int value = buffer.readVarUint32Small7();
-    if (fury.getConfig().deserializeUnexistentEnumValueAsNull() && value >= enumConstants.length) {
-      return null;
+    if (value >= enumConstants.length) {
+      return handleNonexistentEnumValue(value);
     }
     return enumConstants[value];
+  }
+
+  private Enum handleNonexistentEnumValue(int value) {
+    if (fury.getConfig().deserializeNonexistentEnumValueAsNull()) {
+      return null;
+    } else {
+      throw new IllegalArgumentException(
+          String.format("Enum ordinal %s not in %s", value, Arrays.toString(enumConstants)));
+    }
   }
 }
