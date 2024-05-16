@@ -78,11 +78,7 @@ public class FuryPooledObjectFactory {
     this.furyFactory = furyFactory;
     this.factoryCallback = factoryCallback;
     classLoaderFuryPooledCache =
-        CacheBuilder.newBuilder()
-            .weakKeys()
-            .softValues()
-            .expireAfterAccess(expireTime, timeUnit)
-            .build();
+        CacheBuilder.newBuilder().expireAfterAccess(expireTime, timeUnit).build();
   }
 
   public Fury getFury() {
