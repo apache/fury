@@ -131,15 +131,21 @@ class Types {
 
     @Override
     public String toString() {
-      return "ParameterizedTypeImpl{"
-          + "actualTypeArguments="
-          + Arrays.toString(actualTypeArguments)
-          + ", rawType="
-          + rawType
-          + ", ownerType="
-          + ownerType
-          + '}';
+      StringBuilder builder = new StringBuilder();
+      builder.append(typeName(rawType)).append('<');
+      int i = 0;
+      for (Type typeArgument : actualTypeArguments) {
+        if (i++ != 0) {
+          builder.append(", ");
+        }
+        builder.append(typeName(typeArgument));
+      }
+      return builder.append('>').toString();
     }
+  }
+
+  static String typeName(Type type) {
+    return (type instanceof Class) ? ((Class<?>) type).getName() : type.toString();
   }
 
   public static class GenericArrayTypeImpl implements GenericArrayType {

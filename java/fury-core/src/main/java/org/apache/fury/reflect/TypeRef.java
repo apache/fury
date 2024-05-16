@@ -900,15 +900,29 @@ public class TypeRef<T> {
             for (; i < upperBoundsLength; i++) {
               combinedUpperBounds[i] = upperBounds[i];
             }
+            int skipCount = 0;
             rootFor:
             for (; i < combinedUpperBounds.length; i++) {
               Type typeParamBound = typeParamBounds[i - upperBoundsLength];
               for (Type upperBound : upperBounds) {
                 if (upperBound.equals(typeParamBound)) {
+                  skipCount++;
                   continue rootFor;
                 }
               }
               combinedUpperBounds[i] = typeParamBound;
+            }
+            if (skipCount > 0) {
+              i = upperBoundsLength;
+              while (combinedUpperBounds[i] == null) {
+                if (i == combinedUpperBounds.length - 1) {
+                  break;
+                } else {
+                  combinedUpperBounds[i] = combinedUpperBounds[i++];
+                }
+              }
+              combinedUpperBounds =
+                  Arrays.copyOf(combinedUpperBounds, combinedUpperBounds.length - skipCount);
             }
           }
           return super.captureAsTypeVariable(combinedUpperBounds);
