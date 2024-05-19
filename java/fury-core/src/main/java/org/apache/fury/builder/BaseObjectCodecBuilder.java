@@ -73,7 +73,6 @@ import org.apache.fury.codegen.Expression.ListExpression;
 import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.codegen.Expression.Reference;
 import org.apache.fury.codegen.Expression.Return;
-import org.apache.fury.codegen.Expression.StaticInvoke;
 import org.apache.fury.codegen.ExpressionUtils;
 import org.apache.fury.codegen.ExpressionVisitor.ExprHolder;
 import org.apache.fury.collection.Tuple2;
@@ -1259,6 +1258,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         if (maybeDecl) { // For `isDeclType`
           cutPoint.add(flags);
         }
+        cutPoint.add(elemSerializer);
         Expression sameElementClassRead =
             invokeGenerated(ctx, cutPoint, readBuilder, "sameElementClassRead", false);
         // Same element class read end
@@ -1280,6 +1280,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         if (maybeDecl) { // For `isDeclType`
           cutPoint.add(flags);
         }
+        cutPoint.add(elemSerializer);
         // Same element class read end
         Expression sameElementClassRead =
             invokeGenerated(ctx, cutPoint, readBuilder, "sameElementClassRead", false);
