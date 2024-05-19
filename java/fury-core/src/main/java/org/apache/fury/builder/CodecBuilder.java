@@ -519,16 +519,22 @@ public abstract class CodecBuilder {
   }
 
   protected Expression staticBeanClassExpr() {
+    return staticClassFieldExpr(beanClass, "__class__");
+  }
+
+  protected Expression staticClassFieldExpr(Class<?> cls, String fieldName) {
+    Preconditions.checkArgument(!Modifier.isPublic(cls.getModifiers()),
+      "Public class %s should use class literal instead", cls);
     return getOrCreateField(
         true,
         Class.class,
-        "__class__",
+        fieldName,
         () ->
             new StaticInvoke(
                     ReflectionUtils.class,
                     "loadClass",
                     CLASS_TYPE,
-                    Literal.ofString(beanClass.getName()))
+                    Literal.ofString(cls.getName()))
                 .inline());
   }
 

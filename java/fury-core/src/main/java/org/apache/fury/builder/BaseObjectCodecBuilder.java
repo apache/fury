@@ -521,12 +521,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     if (sourcePublicAccessible(cls)) {
       return Literal.ofClass(cls);
     } else {
-      return new StaticInvoke(
-          ReflectionUtils.class,
-          "loadClass",
-          CLASS_TYPE,
-          beanClassExpr(),
-          Literal.ofString(cls.getName()));
+      return staticClassFieldExpr(cls, "__class__" + cls.getName().replace(".", "_"));
     }
   }
 
