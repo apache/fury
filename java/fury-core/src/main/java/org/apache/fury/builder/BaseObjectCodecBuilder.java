@@ -1258,7 +1258,6 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         if (maybeDecl) { // For `isDeclType`
           cutPoint.add(flags);
         }
-        cutPoint.add(elemSerializer);
         Expression sameElementClassRead =
             invokeGenerated(ctx, cutPoint, readBuilder, "sameElementClassRead", false);
         // Same element class read end
@@ -1280,7 +1279,6 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         if (maybeDecl) { // For `isDeclType`
           cutPoint.add(flags);
         }
-        cutPoint.add(elemSerializer);
         // Same element class read end
         Expression sameElementClassRead =
             invokeGenerated(ctx, cutPoint, readBuilder, "sameElementClassRead", false);
