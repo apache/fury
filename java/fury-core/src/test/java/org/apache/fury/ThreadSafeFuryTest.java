@@ -279,18 +279,24 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   }
 
   private WeakHashMap<Class<?>, Boolean> generateClassForGC() {
-    ThreadSafeFury fury = Fury.builder().requireClassRegistration(false).buildThreadSafeFury();
+    ThreadSafeFury fury1 = Fury.builder().requireClassRegistration(false).buildThreadSafeFury();
+    ThreadSafeFury fury2 =
+        Fury.builder().requireClassRegistration(false).buildThreadSafeFuryPool(1, 2);
     String className = "DuplicateStruct";
     WeakHashMap<Class<?>, Boolean> map = new WeakHashMap<>();
     {
       Class<?> structClass1 = Struct.createStructClass(className, 1, false);
       Object struct1 = Struct.createPOJO(structClass1);
-      byte[] bytes = fury.serialize(struct1);
-      Assert.assertEquals(fury.deserialize(bytes), struct1);
-      map.put(structClass1, true);
-      System.out.printf(
-          "structClass1 %s %s\n",
-          structClass1.hashCode(), structClass1.getClassLoader().hashCode());
+      for (ThreadSafeFury fury : new ThreadSafeFury[] {fury1, fury2}) {
+        fury.setClassLoader(structClass1.getClassLoader());
+        byte[] bytes = fury.serialize(struct1);
+        Assert.assertEquals(fury.deserialize(bytes), struct1);
+        map.put(structClass1, true);
+        System.out.printf(
+            "structClass1 %s %s\n",
+            structClass1.hashCode(), structClass1.getClassLoader().hashCode());
+        fury.clearClassLoader(structClass1.getClassLoader());
+      }
     }
     {
       Class<?> structClass2 = Struct.createStructClass(className, 2, false);
@@ -298,11 +304,13 @@ public class ThreadSafeFuryTest extends FuryTestBase {
       System.out.printf(
           "structClass2 %s %s\n ",
           structClass2.hashCode(), structClass2.getClassLoader().hashCode());
-      fury.setClassLoader(structClass2.getClassLoader());
-      Object struct2 = Struct.createPOJO(structClass2);
-      byte[] bytes2 = fury.serialize(struct2);
-      Assert.assertEquals(fury.deserialize(bytes2), struct2);
-      fury.clearClassLoader(structClass2.getClassLoader());
+      for (ThreadSafeFury fury : new ThreadSafeFury[] {fury1, fury2}) {
+        fury.setClassLoader(structClass2.getClassLoader());
+        Object struct2 = Struct.createPOJO(structClass2);
+        byte[] bytes2 = fury.serialize(struct2);
+        Assert.assertEquals(fury.deserialize(bytes2), struct2);
+        fury.clearClassLoader(structClass2.getClassLoader());
+      }
     }
     return map;
   }
