@@ -519,14 +519,15 @@ public abstract class CodecBuilder {
   }
 
   protected Expression staticBeanClassExpr() {
+    if (sourcePublicAccessible(beanClass)) {
+      return Literal.ofClass(beanClass);
+    }
     return staticClassFieldExpr(beanClass, "__class__");
   }
 
   protected Expression staticClassFieldExpr(Class<?> cls, String fieldName) {
     Preconditions.checkArgument(
-        !sourcePublicAccessible(cls),
-        "Public class %s should use class literal instead",
-        cls);
+        !sourcePublicAccessible(cls), "Public class %s should use class literal instead", cls);
     return getOrCreateField(
         true,
         Class.class,
