@@ -73,7 +73,6 @@ import org.apache.fury.codegen.Expression.ListExpression;
 import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.codegen.Expression.Reference;
 import org.apache.fury.codegen.Expression.Return;
-import org.apache.fury.codegen.Expression.StaticInvoke;
 import org.apache.fury.codegen.ExpressionUtils;
 import org.apache.fury.codegen.ExpressionVisitor.ExprHolder;
 import org.apache.fury.collection.Tuple2;
@@ -521,12 +520,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     if (sourcePublicAccessible(cls)) {
       return Literal.ofClass(cls);
     } else {
-      return new StaticInvoke(
-          ReflectionUtils.class,
-          "loadClass",
-          CLASS_TYPE,
-          beanClassExpr(),
-          Literal.ofString(cls.getName()));
+      return staticClassFieldExpr(cls, "__class__" + cls.getName().replace(".", "_"));
     }
   }
 
