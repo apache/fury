@@ -199,6 +199,8 @@ class ClassDefEncoder {
       List<FieldInfo> fieldInfos = classFields.get(clz.getName());
       if (fieldInfos != null) {
         sortedClassFields.put(clz.getName(), fieldInfos);
+      } else if (type.getName().equals(clz.getName())) {
+        sortedClassFields.put(clz.getName(), new ArrayList<>());
       }
     }
     classFields = sortedClassFields;

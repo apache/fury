@@ -86,7 +86,7 @@ public class EnumSerializerTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .requireClassRegistration(false)
-            .deserializeUnexistentEnumValueAsNull(true)
+            .deserializeNonexistentEnumValueAsNull(true)
             .withClassLoader(cls2.getClassLoader());
     Fury furyDeserialize = builderDeserialize.build();
     Fury furySerialization = builderSerialization.build();

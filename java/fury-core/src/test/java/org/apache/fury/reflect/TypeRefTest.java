@@ -23,10 +23,17 @@ import static org.testng.Assert.*;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
+import org.apache.fury.collection.Tuple2;
 import org.apache.fury.type.TypeUtils;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class TypeRefTest {
+public class TypeRefTest extends FuryTestBase {
   static class MapObject extends LinkedHashMap<String, Object> {}
 
   @Test
@@ -38,5 +45,43 @@ public class TypeRefTest {
     assertEquals(
         TypeUtils.mapOf(Map.class, String.class, Object.class),
         new TypeRef<Map<String, Object>>() {});
+  }
+
+  @Data
+  static class MyInternalClass<T> {
+    public int c = 9;
+    public T t;
+  }
+
+  @EqualsAndHashCode(callSuper = true)
+  static class MyInternalBaseClass extends MyInternalClass<String> {
+    public int d = 19;
+  }
+
+  @Data
+  static class MyClass {
+    protected Map<String, MyInternalClass<?>> fields;
+    private transient int r = 13;
+
+    public MyClass() {
+      fields = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+      fields.put("test", new MyInternalBaseClass());
+    }
+  }
+
+  @Test
+  public void testWildcardType() {
+    Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType =
+        TypeUtils.getMapKeyValueType(new TypeRef<Map<String, MyInternalClass<?>>>() {});
+    Assert.assertEquals(mapKeyValueType.f0.getType(), String.class);
+    Assert.assertEquals(
+        mapKeyValueType.f1.getRawType(), new TypeRef<MyInternalClass<?>>() {}.getRawType());
+  }
+
+  @Test(dataProvider = "enableCodegen")
+  public void testWildcardTypeSerialization(boolean enableCodegen) {
+    // see issue https://github.com/apache/incubator-fury/issues/1633
+    Fury fury = builder().withCodegen(enableCodegen).build();
+    serDeCheck(fury, new MyClass());
   }
 }

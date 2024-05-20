@@ -673,4 +673,41 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
       }
     }
   }
+
+  @Test(dataProvider = "config1")
+  void testEmptySubClass(boolean referenceTracking, boolean compressNumber, boolean enableCodegen)
+      throws Exception {
+    String pkg = DuplicateFieldsClass1.class.getPackage().getName();
+    Class<?> cls1 =
+        loadClass(
+            pkg,
+            "DuplicateFieldsClass2",
+            ""
+                + "package "
+                + pkg
+                + ";\n"
+                + "import java.util.*;\n"
+                + "import java.math.*;\n"
+                + "public class DuplicateFieldsClass2 extends MetaSharedCompatibleTest.DuplicateFieldsClass1 {\n"
+                + "}");
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(referenceTracking)
+            .withNumberCompressed(compressNumber)
+            .withCodegen(enableCodegen)
+            .withMetaContextShare(true)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .requireClassRegistration(false)
+            .withClassLoader(cls1.getClassLoader())
+            .build();
+    Object o1 = cls1.newInstance();
+    for (Field field : ReflectionUtils.getFields(cls1, true)) {
+      field.setAccessible(true);
+      field.setInt(o1, 10);
+    }
+    Object o = serDeMetaShared(fury, o1);
+    Assert.assertEquals(o.getClass(), o1.getClass());
+    Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o, o1));
+  }
 }

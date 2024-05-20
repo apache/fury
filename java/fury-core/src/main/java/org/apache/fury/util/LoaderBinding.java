@@ -92,7 +92,7 @@ public final class LoaderBinding {
    * {@link #setClassLoader(ClassLoader, StagingType)} and {@link #clearClassLoader} should be used.
    */
   public void setClassLoader(ClassLoader classLoader) {
-    setClassLoader(classLoader, StagingType.SOFT_STAGING);
+    setClassLoader(classLoader, StagingType.STRONG_STAGING);
   }
 
   /**
@@ -127,8 +127,8 @@ public final class LoaderBinding {
               fury = furyFactory.apply(classLoader);
               bindingCallback.accept(fury);
               furySoftMap.put(classLoader, new SoftReference<>(fury));
-              this.fury = fury;
             }
+            this.fury = fury;
             break;
           }
         case STRONG_STAGING:
@@ -138,8 +138,8 @@ public final class LoaderBinding {
               fury = furyFactory.apply(classLoader);
               bindingCallback.accept(fury);
               furyMap.put(classLoader, fury);
-              this.fury = fury;
             }
+            this.fury = fury;
             break;
           }
         default:

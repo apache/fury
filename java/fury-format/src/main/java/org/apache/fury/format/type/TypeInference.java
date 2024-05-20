@@ -22,7 +22,6 @@ package org.apache.fury.format.type;
 import static org.apache.fury.format.type.DataTypes.field;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
-import com.google.common.base.CaseFormat;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -43,6 +42,7 @@ import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.DecimalUtils;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
 
 /** Arrow related type inference. */
 @SuppressWarnings("UnstableApiUsage")
@@ -226,9 +226,7 @@ public class TypeInference {
                   descriptor -> {
                     LinkedHashSet<Class<?>> newSeenTypeSet = new LinkedHashSet<>(seenTypeSet);
                     newSeenTypeSet.add(rawType);
-                    String n =
-                        CaseFormat.LOWER_CAMEL.to(
-                            CaseFormat.LOWER_UNDERSCORE, descriptor.getName());
+                    String n = StringUtils.lowerCamelToLowerUnderscore(descriptor.getName());
                     return inferField(n, descriptor.getTypeRef(), newSeenTypeSet);
                   })
               .collect(Collectors.toList());

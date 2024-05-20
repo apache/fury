@@ -102,6 +102,15 @@ public interface Expression {
     } else {
       ExprCode genCode = doGenCode(ctx);
       ctx.exprState.put(this, new ExprState(new ExprCode(genCode.isNull(), genCode.value())));
+      if (this instanceof Inlineable) {
+        if (!((Inlineable) this).inlineCall) {
+          Preconditions.checkArgument(
+              StringUtils.isNotBlank(genCode.code()),
+              "Expression %s has empty code %s",
+              this,
+              genCode);
+        }
+      }
       return genCode;
     }
   }
@@ -136,7 +145,7 @@ public interface Expression {
   }
 
   /** An expression that have a value as the result of the evaluation. */
-  abstract class ValueExpression implements Expression {
+  abstract class ValueExpression extends Inlineable {
     // set to others to get a more context-dependent variable name.
     public String valuePrefix = "value";
 
@@ -779,6 +788,16 @@ public interface Expression {
         return new ExprCode(
             codeBuilder.toString(), targetExprCode.isNull(), Code.variable(rawType, castedValue));
       }
+    }
+
+    @Override
+    public Inlineable inline(boolean inlineCall) {
+      if (!inlineCall) {
+        if (targetObject instanceof Inlineable) {
+          ((Inlineable) targetObject).inlineCall = false;
+        }
+      }
+      return super.inline(inlineCall);
     }
 
     @Override
@@ -1805,7 +1824,6 @@ public interface Expression {
   }
 
   class BinaryOperator extends ValueExpression {
-    private final boolean inline;
     private final String operator;
     private final TypeRef<?> type;
     private Expression left;
@@ -1821,7 +1839,7 @@ public interface Expression {
 
     protected BinaryOperator(
         boolean inline, String operator, Expression left, Expression right, TypeRef<?> t) {
-      this.inline = inline;
+      this.inlineCall = inline;
       this.operator = operator;
       this.left = left;
       this.right = right;
@@ -1871,7 +1889,7 @@ public interface Expression {
         }
       }
 
-      if (inline) {
+      if (inlineCall) {
         String value = String.format("(%s)", arith);
         String code = StringUtils.isBlank(codeBuilder) ? null : codeBuilder.toString();
         return new ExprCode(code, FalseLiteral, Code.variable(getRawType(type), value));
@@ -2025,7 +2043,7 @@ public interface Expression {
       this.predicate = predicate;
       this.action = action;
       this.cutPoints = cutPoints;
-      Preconditions.checkArgument(predicate.inline, predicate);
+      Preconditions.checkArgument(predicate.inlineCall, predicate);
     }
 
     @Override

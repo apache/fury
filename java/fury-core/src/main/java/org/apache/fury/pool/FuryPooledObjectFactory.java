@@ -22,6 +22,7 @@ package org.apache.fury.pool;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.logging.Logger;
@@ -62,21 +63,22 @@ public class FuryPooledObjectFactory {
    */
   private final int maxPoolSize;
 
+  /** factoryCallback will be set in every new classLoaderFuryPooled so that can deal every fury. */
+  private final Consumer<Fury> factoryCallback;
+
   public FuryPooledObjectFactory(
       Function<ClassLoader, Fury> furyFactory,
       int minPoolSize,
       int maxPoolSize,
       long expireTime,
-      TimeUnit timeUnit) {
+      TimeUnit timeUnit,
+      Consumer<Fury> factoryCallback) {
     this.minPoolSize = minPoolSize;
     this.maxPoolSize = maxPoolSize;
     this.furyFactory = furyFactory;
+    this.factoryCallback = factoryCallback;
     classLoaderFuryPooledCache =
-        CacheBuilder.newBuilder()
-            .weakKeys()
-            .softValues()
-            .expireAfterAccess(expireTime, timeUnit)
-            .build();
+        CacheBuilder.newBuilder().expireAfterAccess(expireTime, timeUnit).build();
   }
 
   public Fury getFury() {
@@ -138,6 +140,7 @@ public class FuryPooledObjectFactory {
     if (classLoaderFuryPooled == null) {
       classLoaderFuryPooled =
           new ClassLoaderFuryPooled(classLoader, furyFactory, minPoolSize, maxPoolSize);
+      classLoaderFuryPooled.setFactoryCallback(factoryCallback);
       classLoaderFuryPooledCache.put(classLoader, classLoaderFuryPooled);
     }
     return classLoaderFuryPooled;

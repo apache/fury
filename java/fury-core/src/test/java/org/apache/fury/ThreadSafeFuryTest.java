@@ -30,12 +30,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.Data;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.BeanB;
+import org.apache.fury.test.bean.Foo;
 import org.apache.fury.test.bean.Struct;
 import org.apache.fury.util.LoaderBinding.StagingType;
 import org.testng.Assert;
@@ -277,18 +279,24 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   }
 
   private WeakHashMap<Class<?>, Boolean> generateClassForGC() {
-    ThreadSafeFury fury = Fury.builder().requireClassRegistration(false).buildThreadSafeFury();
+    ThreadSafeFury fury1 = Fury.builder().requireClassRegistration(false).buildThreadSafeFury();
+    ThreadSafeFury fury2 =
+        Fury.builder().requireClassRegistration(false).buildThreadSafeFuryPool(1, 2);
     String className = "DuplicateStruct";
     WeakHashMap<Class<?>, Boolean> map = new WeakHashMap<>();
     {
       Class<?> structClass1 = Struct.createStructClass(className, 1, false);
       Object struct1 = Struct.createPOJO(structClass1);
-      byte[] bytes = fury.serialize(struct1);
-      Assert.assertEquals(fury.deserialize(bytes), struct1);
-      map.put(structClass1, true);
-      System.out.printf(
-          "structClass1 %s %s\n",
-          structClass1.hashCode(), structClass1.getClassLoader().hashCode());
+      for (ThreadSafeFury fury : new ThreadSafeFury[] {fury1, fury2}) {
+        fury.setClassLoader(structClass1.getClassLoader());
+        byte[] bytes = fury.serialize(struct1);
+        Assert.assertEquals(fury.deserialize(bytes), struct1);
+        map.put(structClass1, true);
+        System.out.printf(
+            "structClass1 %s %s\n",
+            structClass1.hashCode(), structClass1.getClassLoader().hashCode());
+        fury.clearClassLoader(structClass1.getClassLoader());
+      }
     }
     {
       Class<?> structClass2 = Struct.createStructClass(className, 2, false);
@@ -296,11 +304,13 @@ public class ThreadSafeFuryTest extends FuryTestBase {
       System.out.printf(
           "structClass2 %s %s\n ",
           structClass2.hashCode(), structClass2.getClassLoader().hashCode());
-      fury.setClassLoader(structClass2.getClassLoader());
-      Object struct2 = Struct.createPOJO(structClass2);
-      byte[] bytes2 = fury.serialize(struct2);
-      Assert.assertEquals(fury.deserialize(bytes2), struct2);
-      fury.clearClassLoader(structClass2.getClassLoader());
+      for (ThreadSafeFury fury : new ThreadSafeFury[] {fury1, fury2}) {
+        fury.setClassLoader(structClass2.getClassLoader());
+        Object struct2 = Struct.createPOJO(structClass2);
+        byte[] bytes2 = fury.serialize(struct2);
+        Assert.assertEquals(fury.deserialize(bytes2), struct2);
+        fury.clearClassLoader(structClass2.getClassLoader());
+      }
     }
     return map;
   }
@@ -318,5 +328,49 @@ public class ThreadSafeFuryTest extends FuryTestBase {
       fury.serializeJavaObject(buffer, "abc");
       Assert.assertEquals(fury.deserializeJavaObject(buffer, String.class), "abc");
     }
+  }
+
+  @Data
+  static class Foo {
+    int f1;
+  }
+
+  public static class FooSerializer extends Serializer<Foo> {
+    public FooSerializer(Fury fury, Class<Foo> type) {
+      super(fury, type);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, Foo value) {
+      buffer.writeInt32(value.f1);
+    }
+
+    @Override
+    public Foo read(MemoryBuffer buffer) {
+      final Foo foo = new Foo();
+      foo.f1 = buffer.readInt32();
+      return foo;
+    }
+  }
+
+  public static class CustomClassLoader extends ClassLoader {
+    public CustomClassLoader(ClassLoader parent) {
+      super(parent);
+    }
+  }
+
+  @Test
+  public void testSerializerRegister() {
+    final ThreadSafeFury threadSafeFury =
+        Fury.builder().requireClassRegistration(false).buildThreadSafeFuryPool(0, 2);
+    threadSafeFury.registerSerializer(Foo.class, FooSerializer.class);
+    // create a new classLoader
+    threadSafeFury.setClassLoader(new CustomClassLoader(ClassLoader.getSystemClassLoader()));
+    threadSafeFury.execute(
+        fury -> {
+          Assert.assertEquals(
+              fury.getClassResolver().getSerializer(Foo.class).getClass(), FooSerializer.class);
+          return null;
+        });
   }
 }

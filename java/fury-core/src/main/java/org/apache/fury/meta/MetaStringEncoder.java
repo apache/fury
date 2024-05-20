@@ -57,6 +57,14 @@ public class MetaStringEncoder {
     if (input.isEmpty()) {
       return new MetaString(input, Encoding.UTF_8, specialChar1, specialChar2, new byte[0]);
     }
+    if (!StringSerializer.isLatin(input.toCharArray())) {
+      return new MetaString(
+          input,
+          Encoding.UTF_8,
+          specialChar1,
+          specialChar2,
+          input.getBytes(StandardCharsets.UTF_8));
+    }
     Encoding encoding = computeEncoding(input, encodings);
     return encode(input, encoding);
   }

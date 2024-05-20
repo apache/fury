@@ -47,7 +47,13 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
       long expireTime,
       TimeUnit timeUnit) {
     this.furyPooledObjectFactory =
-        new FuryPooledObjectFactory(furyFactory, minPoolSize, maxPoolSize, expireTime, timeUnit);
+        new FuryPooledObjectFactory(
+            furyFactory,
+            minPoolSize,
+            maxPoolSize,
+            expireTime,
+            timeUnit,
+            fury -> factoryCallback.accept(fury));
   }
 
   @Override
@@ -56,7 +62,6 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
     for (ClassLoaderFuryPooled furyPooled :
         furyPooledObjectFactory.classLoaderFuryPooledCache.asMap().values()) {
       furyPooled.allFury.keySet().forEach(callback);
-      furyPooled.setFactoryCallback(factoryCallback);
     }
   }
 

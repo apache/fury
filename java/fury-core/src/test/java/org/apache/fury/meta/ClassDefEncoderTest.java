@@ -24,7 +24,9 @@ import static org.apache.fury.meta.ClassDefEncoder.getClassFields;
 
 import java.util.HashMap;
 import java.util.List;
+import lombok.Data;
 import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.MapFields;
@@ -61,5 +63,23 @@ public class ClassDefEncoderTest {
               fury.getClassResolver(), MemoryBuffer.fromByteArray(classDef.getEncoded()));
       Assert.assertEquals(classDef1, classDef);
     }
+  }
+
+  @Data
+  public static class Foo1 {
+    private int f1;
+  }
+
+  public static class Foo2 extends Foo1 {}
+
+  @Test
+  public void testEmptySubClassSerializer() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build();
+    ClassDef classDef = ClassDef.buildClassDef(fury, Foo2.class);
+    ClassDef classDef1 =
+        ClassDef.readClassDef(
+            fury.getClassResolver(), MemoryBuffer.fromByteArray(classDef.getEncoded()));
+
+    Assert.assertEquals(classDef, classDef1);
   }
 }

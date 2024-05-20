@@ -617,4 +617,31 @@ public class CollectionSerializersTest extends FuryTestBase {
     Fury f = Fury.builder().withLanguage(Language.JAVA).withRefTracking(refTracking).build();
     serDeCheck(f, data);
   }
+
+  @Data
+  abstract static class Foo {
+    private int f1;
+  }
+
+  static class Foo1 extends Foo {}
+
+  @Data
+  static class CollectionAbstractTest {
+    private List<Foo> fooList;
+  }
+
+  @Test(dataProvider = "enableCodegen")
+  public void testAbstractCollectionElementsSerialization(boolean enableCodegen) {
+    Fury fury = Fury.builder().withCodegen(enableCodegen).requireClassRegistration(false).build();
+    {
+      CollectionAbstractTest test = new CollectionAbstractTest();
+      test.fooList = new ArrayList<>(ImmutableList.of(new Foo1(), new Foo1()));
+      serDeCheck(fury, test);
+    }
+    {
+      CollectionAbstractTest test = new CollectionAbstractTest();
+      test.fooList = new ArrayList<>(ofArrayList(new Foo1(), new Foo1()));
+      serDeCheck(fury, test);
+    }
+  }
 }
