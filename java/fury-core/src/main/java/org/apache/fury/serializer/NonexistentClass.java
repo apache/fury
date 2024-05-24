@@ -31,32 +31,96 @@ import org.apache.fury.meta.ClassDef;
  * @see Config#shareMetaContext()
  */
 public interface NonexistentClass {
-  enum NonexistentEnumClass implements NonexistentClass {}
+  // @formatter:off
+
+  enum NonexistentEnum implements NonexistentClass {
+    V0,
+    V1,
+    V2,
+    V3,
+    V4,
+    V5,
+    V6,
+    V7,
+    V8,
+    V9,
+    V10,
+    V11,
+    V12,
+    V13,
+    V14,
+    V15,
+    V16,
+    V17,
+    V18,
+    V19,
+    V20,
+    V21,
+    V22,
+    V23,
+    V24,
+    V25,
+    V26,
+    V27,
+    V28,
+    V29,
+    V30,
+    V31,
+    V32,
+    V33,
+    V34,
+    V35,
+    V36,
+    V37,
+    V38,
+    V39,
+    V40,
+    V41,
+    V42,
+    V43,
+    V44,
+    V45,
+    V46,
+    V47,
+    V48,
+    V49,
+    V50,
+    V51,
+    V52,
+    V53,
+    V54,
+    V55,
+    V56,
+    V57,
+    V58,
+    V59,
+    V60,
+    V61,
+    V62,
+    V63,
+    UNKNOWN
+  }
 
   /** Ensure no fields here to avoid conflicts with peer class fields. */
-  class NonexistentSkipClass implements NonexistentClass {}
+  class NonexistentSkip implements NonexistentClass {}
 
-  class NonexistentMetaSharedClass extends LazyMap implements NonexistentClass {
+  class NonexistentMetaShared extends LazyMap implements NonexistentClass {
     final ClassDef classDef;
 
-    public NonexistentMetaSharedClass(ClassDef classDef) {
+    public NonexistentMetaShared(ClassDef classDef) {
       this.classDef = classDef;
     }
   }
 
-  class NonexistentArrayClass implements NonexistentClass {}
-
-  class NonexistentEnumArrayClass implements NonexistentClass {}
-
-  Class<?> NonexistentEnum1DArray = NonexistentEnumClass[].class;
-  Class<?> NonexistentEnum2DArray = NonexistentEnumClass[][].class;
-  Class<?> NonexistentEnum3DArray = NonexistentEnumClass[][][].class;
-  Class<?> NonexistentSkip1DArray = NonexistentSkipClass[].class;
-  Class<?> NonexistentSkip2DArray = NonexistentSkipClass[][].class;
-  Class<?> NonexistentSkip3DArray = NonexistentSkipClass[][][].class;
-  Class<?> Nonexistent1DArray = NonexistentMetaSharedClass[].class;
-  Class<?> Nonexistent2DArray = NonexistentMetaSharedClass[][].class;
-  Class<?> Nonexistent3DArray = NonexistentMetaSharedClass[][][].class;
+  Class<?> NonexistentEnum1DArray = NonexistentEnum[].class;
+  Class<?> NonexistentEnum2DArray = NonexistentEnum[][].class;
+  Class<?> NonexistentEnum3DArray = NonexistentEnum[][][].class;
+  Class<?> NonexistentSkip1DArray = NonexistentSkip[].class;
+  Class<?> NonexistentSkip2DArray = NonexistentSkip[][].class;
+  Class<?> NonexistentSkip3DArray = NonexistentSkip[][][].class;
+  Class<?> Nonexistent1DArray = NonexistentMetaShared[].class;
+  Class<?> Nonexistent2DArray = NonexistentMetaShared[][].class;
+  Class<?> Nonexistent3DArray = NonexistentMetaShared[][][].class;
 
   static Class<?> getUnexistentClass(boolean isEnum, int arrayDims, boolean shareMeta) {
     return getUnexistentClass("Unknown", isEnum, arrayDims, shareMeta);
@@ -95,9 +159,9 @@ public interface NonexistentClass {
         }
       }
     } else if (isEnum) {
-      return NonexistentEnumClass.class;
+      return NonexistentEnum.class;
     } else {
-      return shareMeta ? NonexistentMetaSharedClass.class : NonexistentSkipClass.class;
+      return shareMeta ? NonexistentMetaShared.class : NonexistentSkip.class;
     }
   }
 }

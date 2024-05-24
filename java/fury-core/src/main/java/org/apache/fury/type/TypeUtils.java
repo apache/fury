@@ -371,6 +371,13 @@ public class TypeUtils {
     return dimension;
   }
 
+  public static Class<?> getComponentIfArray(Class<?> type) {
+    if (type.isArray()) {
+      return getArrayComponent(type);
+    }
+    return type;
+  }
+
   public static Class<?> getArrayComponent(Class<?> type) {
     return getArrayComponentInfo(type).f0;
   }

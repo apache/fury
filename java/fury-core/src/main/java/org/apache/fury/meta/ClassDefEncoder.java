@@ -40,12 +40,12 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.ClassDef.FieldInfo;
+import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.MurmurHash3;
-import org.apache.fury.util.Preconditions;
 
 /**
  * An encoder which encode {@link ClassDef} into binary. See spec documentation:
@@ -216,9 +216,10 @@ class ClassDefEncoder {
     return classFields;
   }
 
-  private static void writeFieldsInfo(MemoryBuffer buffer, List<FieldInfo> fields) {
+  /** Write field type and name info. */
+  static void writeFieldsInfo(MemoryBuffer buffer, List<FieldInfo> fields) {
     for (FieldInfo fieldInfo : fields) {
-      ClassDef.FieldType fieldType = fieldInfo.getFieldType();
+      FieldType fieldType = fieldInfo.getFieldType();
       // `3 bits size + 2 bits field name encoding + polymorphism flag + nullability flag + ref
       // tracking flag`
       int header = ((fieldType.isMonomorphic() ? 1 : 0) << 2);
@@ -244,30 +245,7 @@ class ClassDefEncoder {
       if (!fieldInfo.hasTypeTag()) {
         buffer.writeBytes(encoded);
       }
-      if (fieldType instanceof ClassDef.RegisteredFieldType) {
-        short classId = ((ClassDef.RegisteredFieldType) fieldType).getClassId();
-        buffer.writeVarUint32Small7(5 + classId);
-      } else if (fieldType instanceof ClassDef.EnumFieldType) {
-        buffer.writeVarUint32Small7(4);
-      } else if (fieldType instanceof ClassDef.ArrayFieldType) {
-        ClassDef.ArrayFieldType arrayFieldType = (ClassDef.ArrayFieldType) fieldType;
-        buffer.writeVarUint32Small7(3);
-        buffer.writeVarUint32Small7(arrayFieldType.getDimensions());
-        (arrayFieldType).getComponentType().write(buffer);
-      } else if (fieldType instanceof ClassDef.CollectionFieldType) {
-        buffer.writeVarUint32Small7(2);
-        // TODO remove it when new collection deserialization jit finished.
-        ((ClassDef.CollectionFieldType) fieldType).getElementType().write(buffer);
-      } else if (fieldType instanceof ClassDef.MapFieldType) {
-        buffer.writeVarUint32Small7(1);
-        // TODO remove it when new map deserialization jit finished.
-        ClassDef.MapFieldType mapFieldType = (ClassDef.MapFieldType) fieldType;
-        mapFieldType.getKeyType().write(buffer);
-        mapFieldType.getValueType().write(buffer);
-      } else {
-        Preconditions.checkArgument(fieldType instanceof ClassDef.ObjectFieldType);
-        buffer.writeVarUint32Small7(0);
-      }
+      fieldType.write(buffer, false);
     }
   }
 

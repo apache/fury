@@ -128,6 +128,9 @@ public class ArraySerializers {
       refResolver.reference(value);
       if (isFinal) {
         final Serializer componentTypeSerializer = this.componentTypeSerializer;
+        if (componentTypeSerializer == null) {
+          System.out.println("=======");
+        }
         for (int i = 0; i < numElements; i++) {
           Object elem;
           int nextReadRefId = refResolver.tryPreserveRefId(buffer);
@@ -714,7 +717,7 @@ public class ArraySerializers {
         Fury fury, String className, Class<?> stubClass) {
       super(fury, stubClass);
       this.className = className;
-      this.dims = TypeUtils.getArrayDimensions(className);
+      this.dims = TypeUtils.getArrayDimensions(stubClass);
     }
 
     @Override
@@ -817,30 +820,22 @@ public class ArraySerializers {
     }
   }
 
-  public static final class NonexistentEnumArrayClassSerializer
-      extends AbstractedNonexistentArrayClassSerializer {
-    public NonexistentEnumArrayClassSerializer(Fury fury, String className, Class<?> cls) {
-      super(fury, className, cls);
-    }
-
-    @Override
-    protected Object readInnerElement(MemoryBuffer buffer) {
-      return buffer.readVarUint32Small7();
-    }
-  }
-
+  @SuppressWarnings("rawtypes")
   public static final class NonexistentArrayClassSerializer
       extends AbstractedNonexistentArrayClassSerializer {
-
-    private final CompatibleSerializer<NonexistentClass.NonexistentSkipClass> componentSerializer;
+    private final Serializer componentSerializer;
 
     public NonexistentArrayClassSerializer(Fury fury, String className, Class<?> cls) {
-      super(fury, className, NonexistentClass.NonexistentArrayClass.class);
-      if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE) {
-        componentSerializer =
-            new CompatibleSerializer<>(fury, NonexistentClass.NonexistentSkipClass.class);
+      super(fury, className, cls);
+      if (TypeUtils.getArrayComponent(cls).isEnum()) {
+        componentSerializer = new NonexistentClassSerializers.NonexistentEnumClassSerializer(fury);
       } else {
-        componentSerializer = null;
+        if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE) {
+          componentSerializer =
+              new CompatibleSerializer<>(fury, NonexistentClass.NonexistentSkip.class);
+        } else {
+          componentSerializer = null;
+        }
       }
     }
 

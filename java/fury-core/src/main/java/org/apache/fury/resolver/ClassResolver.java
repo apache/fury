@@ -113,8 +113,8 @@ import org.apache.fury.serializer.LambdaSerializer;
 import org.apache.fury.serializer.LocaleSerializer;
 import org.apache.fury.serializer.MetaSharedSerializer;
 import org.apache.fury.serializer.NonexistentClass;
-import org.apache.fury.serializer.NonexistentClass.NonexistentMetaSharedClass;
-import org.apache.fury.serializer.NonexistentClass.NonexistentSkipClass;
+import org.apache.fury.serializer.NonexistentClass.NonexistentMetaShared;
+import org.apache.fury.serializer.NonexistentClass.NonexistentSkip;
 import org.apache.fury.serializer.NonexistentClassSerializers;
 import org.apache.fury.serializer.NonexistentClassSerializers.NonexistentClassSerializer;
 import org.apache.fury.serializer.ObjectSerializer;
@@ -336,15 +336,15 @@ public class ClassResolver {
     if (fury.getConfig().deserializeNonexistentClass()) {
       if (metaContextShareEnabled) {
         addDefaultSerializer(
-            NonexistentMetaSharedClass.class, new NonexistentClassSerializer(fury, null));
+            NonexistentMetaShared.class, new NonexistentClassSerializer(fury, null));
         // Those class id must be known in advance, here is two bytes, so
         // `NonexistentClassSerializer.writeClassDef`
         // can overwrite written classinfo and replace with real classinfo.
         short classId =
-            Objects.requireNonNull(classInfoMap.get(NonexistentMetaSharedClass.class)).classId;
+            Objects.requireNonNull(classInfoMap.get(NonexistentMetaShared.class)).classId;
         Preconditions.checkArgument(classId > 63 && classId < 8192, classId);
       } else {
-        register(NonexistentSkipClass.class);
+        register(NonexistentSkip.class);
       }
     }
   }
@@ -1367,15 +1367,15 @@ public class ClassResolver {
   // TODO(chaokunyang) if ClassDef is consistent with class in this process,
   //  use existing serializer instead.
   private ClassInfo getMetaSharedClassInfo(ClassDef classDef, Class<?> clz) {
-    if (clz == NonexistentSkipClass.class) {
-      clz = NonexistentMetaSharedClass.class;
+    if (clz == NonexistentSkip.class) {
+      clz = NonexistentMetaShared.class;
     }
     Class<?> cls = clz;
     Short classId = extRegistry.registeredClassIdMap.get(cls);
     ClassInfo classInfo =
         new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
-    if (NonexistentClass.class.isAssignableFrom(cls)) {
-      if (cls == NonexistentMetaSharedClass.class) {
+    if (NonexistentClass.class.isAssignableFrom(TypeUtils.getComponentIfArray(cls))) {
+      if (cls == NonexistentMetaShared.class) {
         classInfo.serializer = new NonexistentClassSerializer(fury, classDef);
         // ensure `NonexistentMetaSharedClass` registered to write fixed-length class def,
         // so we can rewrite it in `NonexistentClassSerializer`.
@@ -1700,8 +1700,8 @@ public class ClassResolver {
             null,
             null,
             NO_CLASS_ID);
-    if (NonexistentClass.class.isAssignableFrom(cls)) {
-      classInfo.serializer = NonexistentClassSerializers.getSerializer(fury, className, cls);
+    if (NonexistentClass.class.isAssignableFrom(TypeUtils.getComponentIfArray(cls))) {
+      classInfo.serializer = NonexistentClassSerializers.getSerializer(fury, entireClassName, cls);
     } else {
       // don't create serializer here, if the class is an interface,
       // there won't be serializer since interface has no instance.

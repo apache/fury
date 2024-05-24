@@ -56,10 +56,10 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
   @DataProvider
   public static Object[][] metaShareConfig() {
     return Sets.cartesianProduct(
-            ImmutableSet.of(false), // referenceTracking
-            ImmutableSet.of(false), // fury1 enable codegen
-            ImmutableSet.of(false), // fury2 enable codegen
-            ImmutableSet.of(false)) // fury3 enable codegen
+            ImmutableSet.of(true, false), // referenceTracking
+            ImmutableSet.of(true, false), // fury1 enable codegen
+            ImmutableSet.of(true, false), // fury2 enable codegen
+            ImmutableSet.of(true, false)) // fury3 enable codegen
         .stream()
         .map(List::toArray)
         .toArray(Object[][]::new);
@@ -97,7 +97,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
               .withClassLoader(classLoader)
               .build();
       Object o = fury2.deserialize(bytes);
-      assertEquals(o.getClass(), NonexistentClass.NonexistentSkipClass.class);
+      assertEquals(o.getClass(), NonexistentClass.NonexistentSkip.class);
     }
   }
 
@@ -113,7 +113,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
     Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
     Fury fury2 = furyBuilder().withDeserializeNonexistentClass(true).build();
     Object o = fury2.deserialize(bytes);
-    assertEquals(o, 1);
+    assertEquals(o, NonexistentClass.NonexistentEnum.V1);
   }
 
   @Test
@@ -258,7 +258,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
       MetaContext context2 = new MetaContext();
       fury2.getSerializationContext().setMetaContext(context2);
       Object o2 = fury2.deserialize(bytes);
-      assertEquals(o2.getClass(), NonexistentClass.NonexistentMetaSharedClass.class);
+      assertEquals(o2.getClass(), NonexistentClass.NonexistentMetaShared.class);
       fury2.getSerializationContext().setMetaContext(context2);
       byte[] bytes2 = fury2.serialize(o2);
       Fury fury3 =
@@ -318,7 +318,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
 
         fury2.getSerializationContext().setMetaContext(context2);
         Object o2 = fury2.deserialize(bytes);
-        assertEquals(o2.getClass(), NonexistentClass.NonexistentMetaSharedClass.class);
+        assertEquals(o2.getClass(), NonexistentClass.NonexistentMetaShared.class);
         fury2.getSerializationContext().setMetaContext(context2);
         byte[] bytes2 = fury2.serialize(o2);
 

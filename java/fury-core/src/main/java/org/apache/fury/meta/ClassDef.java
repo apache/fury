@@ -366,23 +366,38 @@ public class ClassDef implements Serializable {
       return Objects.hash(isMonomorphic);
     }
 
-    public void write(MemoryBuffer buffer) {
+    /** Write field type info. */
+    public void write(MemoryBuffer buffer, boolean writeMonomorphicFlag) {
       byte header = (byte) (isMonomorphic ? 1 : 0);
-      if (this instanceof RegisteredFieldType) {
-        short classId = ((RegisteredFieldType) this).getClassId();
-        buffer.writeVarUint32Small7(((3 + classId) << 1) | header);
-      } else if (this instanceof CollectionFieldType) {
-        buffer.writeVarUint32Small7((2 << 1) | header);
-        ((CollectionFieldType) this).elementType.write(buffer);
-      } else if (this instanceof MapFieldType) {
-        buffer.writeVarUint32Small7((1 << 1) | header);
-        MapFieldType mapFieldType = (MapFieldType) this;
-        mapFieldType.keyType.write(buffer);
-        mapFieldType.valueType.write(buffer);
+      if (this instanceof ClassDef.RegisteredFieldType) {
+        short classId = ((ClassDef.RegisteredFieldType) this).getClassId();
+        buffer.writeVarUint32Small7(
+            writeMonomorphicFlag ? ((5 + classId) << 1) | header : 5 + classId);
+      } else if (this instanceof ClassDef.EnumFieldType) {
+        buffer.writeVarUint32Small7(writeMonomorphicFlag ? ((4) << 1) | header : 4);
+      } else if (this instanceof ClassDef.ArrayFieldType) {
+        ClassDef.ArrayFieldType arrayFieldType = (ClassDef.ArrayFieldType) this;
+        buffer.writeVarUint32Small7(writeMonomorphicFlag ? ((3) << 1) | header : 3);
+        buffer.writeVarUint32Small7(arrayFieldType.getDimensions());
+        (arrayFieldType).getComponentType().write(buffer);
+      } else if (this instanceof ClassDef.CollectionFieldType) {
+        buffer.writeVarUint32Small7(writeMonomorphicFlag ? ((2) << 1) | header : 2);
+        // TODO remove it when new collection deserialization jit finished.
+        ((ClassDef.CollectionFieldType) this).getElementType().write(buffer);
+      } else if (this instanceof ClassDef.MapFieldType) {
+        buffer.writeVarUint32Small7(writeMonomorphicFlag ? ((1) << 1) | header : 1);
+        // TODO remove it when new map deserialization jit finished.
+        ClassDef.MapFieldType mapFieldType = (ClassDef.MapFieldType) this;
+        mapFieldType.getKeyType().write(buffer);
+        mapFieldType.getValueType().write(buffer);
       } else {
-        Preconditions.checkArgument(this instanceof ObjectFieldType);
-        buffer.writeVarUint32Small7(header);
+        Preconditions.checkArgument(this instanceof ClassDef.ObjectFieldType);
+        buffer.writeVarUint32Small7(writeMonomorphicFlag ? header : 0);
       }
+    }
+
+    public void write(MemoryBuffer buffer) {
+      write(buffer, true);
     }
 
     public static FieldType read(MemoryBuffer buffer) {
@@ -391,6 +406,7 @@ public class ClassDef implements Serializable {
       return read(buffer, isMonomorphic, header >>> 1);
     }
 
+    /** Read field type info. */
     public static FieldType read(MemoryBuffer buffer, boolean isFinal, int typeId) {
       if (typeId == 0) {
         return new ObjectFieldType(isFinal);
@@ -587,7 +603,7 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeRef<?> toTypeToken(ClassResolver classResolver) {
-      return TypeRef.of(NonexistentClass.NonexistentEnumClass.class);
+      return TypeRef.of(NonexistentClass.NonexistentEnum.class);
     }
 
     public static EnumFieldType getInstance() {
