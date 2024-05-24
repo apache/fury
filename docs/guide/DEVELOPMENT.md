@@ -100,3 +100,39 @@ npm run test
 - node 14+
 - npm 8+
 
+# Update doc
+
+If [FuryBuilder](https://github.com/apache/incubator-fury/blob/main/java/fury-core/src/main/java/org/apache/fury/config/FuryBuilder.java) is modified (including modifying configuration fields or adding new configuration fields), we need to update the table in [java_serialization_guide.md#furybuilder--options](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_serialization_guide.md#furybuilder--options).
+
+We provide a script to automatically update this table. After modifying [FuryBuilder](https://github.com/apache/incubator-fury/blob/main/java/fury-core/src/main/java/org/apache/fury/config/FuryBuilder.java), we can perform the update operation through the following command.
+
+```bash
+python3 tools/gen_fury_builder_doc.py
+```
+
+To use this script, we need to add comments on the [FuryBuilder](https://github.com/apache/incubator-fury/blob/main/java/fury-core/src/main/java/org/apache/fury/config/FuryBuilder.java) configuration fields in the following format.
+
+```
+/**
+ * Comment body
+ *
+ * defaultValue: xxx
+ */
+```
+or
+```
+/** Comment body defaultValue: xxx */
+```
+
+The `Comment body` corresponds to the `Description` in the table, and the `defaultValue(optional)` corresponds to the `Default Value` in the table. If no `defaultValue` is provided in the comment, the value specified after the field will be used as the `defaultValue` (e.g. `boolean enable = true`, `true` will be used as `defaultValue`).
+
+All configuration fields should be within the following two tags
+
+```
+// org/apache/fury/config/FuryBuilder.java
+
+// ======== Config Area Begin ========
+xxxxxx
+xxxxxx
+// ======== Config Area End =========
+```

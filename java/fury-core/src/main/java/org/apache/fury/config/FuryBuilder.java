@@ -54,6 +54,7 @@ public final class FuryBuilder {
     ENABLE_CLASS_REGISTRATION_FORCIBLY = "true".equals(flagValue) || "1".equals(flagValue);
   }
 
+  // ======== Config Area Begin ========
   boolean checkClassVersion = false;
   Language language = Language.JAVA;
   boolean trackingRef = false;
@@ -76,6 +77,8 @@ public final class FuryBuilder {
   boolean scalaOptimizationEnabled = false;
   boolean suppressClassRegistrationWarnings = true;
   boolean deserializeNonexistentEnumValueAsNull = false;
+
+  // ======== Config Area End =========
 
   public FuryBuilder() {}
 
