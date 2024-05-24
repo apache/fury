@@ -24,13 +24,10 @@ import java.util.Collection;
 import java.util.List;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.IdentityObjectIntMap;
-import org.apache.fury.collection.LazyMap;
 import org.apache.fury.collection.LongMap;
 import org.apache.fury.collection.MapEntry;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.collection.Tuple3;
-import org.apache.fury.config.CompatibleMode;
-import org.apache.fury.config.Config;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
 import org.apache.fury.resolver.ClassInfo;
@@ -41,34 +38,11 @@ import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.Generics;
+import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public final class UnexistedClassSerializers {
-  /**
-   * A class for hold deserialization data when the class doesn't exist in this process. When {@link
-   * CompatibleMode#COMPATIBLE} is enabled
-   *
-   * @see Config#shareMetaContext()
-   */
-  public interface UnexistedClass {}
-
-  /** Ensure no fields here to avoid conflicts with peer class fields. */
-  public static class UnexistedSkipClass implements UnexistedClass {}
-
-  public static class UnexistedArrayClass implements UnexistedClass {}
-
-  public static class UnexistedEnumArrayClass implements UnexistedClass {}
-
-  public static class UnexistedSkipEnumClass implements UnexistedClass {}
-
-  public static class UnexistedMetaSharedClass extends LazyMap implements UnexistedClass {
-    private final ClassDef classDef;
-
-    public UnexistedMetaSharedClass(ClassDef classDef) {
-      this.classDef = classDef;
-    }
-  }
+public final class NonexistentClassSerializers {
 
   private static final class ClassFieldsInfo {
     private final ObjectSerializer.FinalTypeField[] finalFields;
@@ -91,13 +65,13 @@ public final class UnexistedClassSerializers {
     }
   }
 
-  public static final class UnexistedClassSerializer extends Serializer {
+  public static final class NonexistentClassSerializer extends Serializer {
     private final ClassDef classDef;
     private final ClassInfoHolder classInfoHolder;
     private final LongMap<ClassFieldsInfo> fieldsInfoMap;
 
-    public UnexistedClassSerializer(Fury fury, ClassDef classDef) {
-      super(fury, UnexistedMetaSharedClass.class);
+    public NonexistentClassSerializer(Fury fury, ClassDef classDef) {
+      super(fury, NonexistentClass.NonexistentMetaSharedClass.class);
       this.classDef = classDef;
       classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       fieldsInfoMap = new LongMap<>();
@@ -105,11 +79,12 @@ public final class UnexistedClassSerializers {
     }
 
     /**
-     * Multiple un existed class will correspond to this `UnexistedMetaSharedClass`. When querying
-     * classinfo by `class`, it may dispatch to same `UnexistedClassSerializer`, so we can't use
-     * `classDef` in this serializer, but use `classDef` in `UnexistedMetaSharedClass` instead.
+     * Multiple un existed class will correspond to this `NonexistentMetaSharedClass`. When querying
+     * classinfo by `class`, it may dispatch to same `NonexistentClassSerializer`, so we can't use
+     * `classDef` in this serializer, but use `classDef` in `NonexistentMetaSharedClass` instead.
      */
-    private void writeClassDef(MemoryBuffer buffer, UnexistedMetaSharedClass value) {
+    private void writeClassDef(
+        MemoryBuffer buffer, NonexistentClass.NonexistentMetaSharedClass value) {
       // Register NotFoundClass ahead to skip write meta shared info,
       // then revert written class id to write class info here,
       // since it's the only place to hold class def for not found class.
@@ -130,7 +105,8 @@ public final class UnexistedClassSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Object v) {
-      UnexistedMetaSharedClass value = (UnexistedMetaSharedClass) v;
+      NonexistentClass.NonexistentMetaSharedClass value =
+          (NonexistentClass.NonexistentMetaSharedClass) v;
       writeClassDef(buffer, value);
       ClassDef classDef = value.classDef;
       ClassFieldsInfo fieldsInfo = getClassFieldsInfo(classDef);
@@ -179,10 +155,10 @@ public final class UnexistedClassSerializers {
     private ClassFieldsInfo getClassFieldsInfo(ClassDef classDef) {
       ClassFieldsInfo fieldsInfo = fieldsInfoMap.get(classDef.getId());
       if (fieldsInfo == null) {
-        // Use `UnexistedSkipClass` since it doesn't have any field.
+        // Use `NonexistentSkipClass` since it doesn't have any field.
         Collection<Descriptor> descriptors =
             MetaSharedSerializer.consolidateFields(
-                fury.getClassResolver(), UnexistedSkipClass.class, classDef);
+                fury.getClassResolver(), NonexistentClass.NonexistentSkipClass.class, classDef);
         DescriptorGrouper descriptorGrouper =
             DescriptorGrouper.createDescriptorGrouper(
                 fury.getClassResolver()::isMonomorphic,
@@ -208,7 +184,8 @@ public final class UnexistedClassSerializers {
 
     @Override
     public Object read(MemoryBuffer buffer) {
-      UnexistedMetaSharedClass obj = new UnexistedMetaSharedClass(classDef);
+      NonexistentClass.NonexistentMetaSharedClass obj =
+          new NonexistentClass.NonexistentMetaSharedClass(classDef);
       Fury fury = this.fury;
       RefResolver refResolver = fury.getRefResolver();
       ClassResolver classResolver = fury.getClassResolver();
@@ -250,15 +227,39 @@ public final class UnexistedClassSerializers {
     }
   }
 
-  public static final class UnexistedEnumClassSerializer extends Serializer {
+  public static final class NonexistentEnumClassSerializer extends Serializer {
 
-    public UnexistedEnumClassSerializer(Fury fury) {
-      super(fury, UnexistedSkipEnumClass.class);
+    public NonexistentEnumClassSerializer(Fury fury) {
+      super(fury, NonexistentClass.NonexistentEnumClass.class);
     }
 
     @Override
     public Object read(MemoryBuffer buffer) {
       return buffer.readVarUint32Small7();
+    }
+  }
+
+  public static Serializer getSerializer(Fury fury, String className, Class<?> cls) {
+    if (cls.isArray()) {
+      Tuple2<Class<?>, Integer> componentInfo = TypeUtils.getArrayComponentInfo(cls);
+      if (componentInfo.f0.isEnum()) {
+        return new ArraySerializers.NonexistentEnumArrayClassSerializer(fury, className, cls);
+      } else {
+        return new ArraySerializers.NonexistentArrayClassSerializer(fury, className, cls);
+      }
+    } else {
+      if (cls.isEnum()) {
+        return new NonexistentEnumClassSerializer(fury);
+      } else {
+        if (fury.getConfig().shareMetaContext()) {
+          throw new IllegalStateException(
+              String.format(
+                  "Serializer of class %s should be set in ClassResolver#getMetaSharedClassInfo",
+                  className));
+        } else {
+          return new CompatibleSerializer(fury, cls);
+        }
+      }
     }
   }
 }

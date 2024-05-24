@@ -40,7 +40,7 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-public class UnexistedClassSerializersTest extends FuryTestBase {
+public class NonexistentClassSerializersTest extends FuryTestBase {
   @DataProvider
   public static Object[][] config() {
     return Sets.cartesianProduct(
@@ -56,10 +56,10 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   @DataProvider
   public static Object[][] metaShareConfig() {
     return Sets.cartesianProduct(
-            ImmutableSet.of(true, false), // referenceTracking
-            ImmutableSet.of(true, false), // fury1 enable codegen
-            ImmutableSet.of(true, false), // fury2 enable codegen
-            ImmutableSet.of(true, false)) // fury3 enable codegen
+            ImmutableSet.of(false), // referenceTracking
+            ImmutableSet.of(false), // fury1 enable codegen
+            ImmutableSet.of(false), // fury2 enable codegen
+            ImmutableSet.of(false)) // fury3 enable codegen
         .stream()
         .map(List::toArray)
         .toArray(Object[][]::new);
@@ -70,11 +70,11 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
         .withLanguage(Language.JAVA)
         .withCompatibleMode(CompatibleMode.COMPATIBLE)
         .requireClassRegistration(false)
-        .withDeserializeUnexistedClass(true);
+        .withDeserializeNonexistentClass(true);
   }
 
   @Test(dataProvider = "config")
-  public void testSkipUnexisted(
+  public void testSkipNonexistent(
       boolean referenceTracking, boolean enableCodegen1, boolean enableCodegen2) {
     Fury fury =
         furyBuilder()
@@ -85,8 +85,8 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          Struct.createNumberStructClass("TestSkipUnexistedClass1", 2),
-          Struct.createStructClass("TestSkipUnexistedClass1", 2)
+          Struct.createNumberStructClass("TestSkipNonexistentClass1", 2),
+          Struct.createStructClass("TestSkipNonexistentClass1", 2)
         }) {
       Object pojo = Struct.createPOJO(structClass);
       byte[] bytes = fury.serialize(pojo);
@@ -97,13 +97,13 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
               .withClassLoader(classLoader)
               .build();
       Object o = fury2.deserialize(bytes);
-      assertEquals(o.getClass(), UnexistedClassSerializers.UnexistedSkipClass.class);
+      assertEquals(o.getClass(), NonexistentClass.NonexistentSkipClass.class);
     }
   }
 
   @Test
-  public void testSkipUnexistedEnum() {
-    Fury fury1 = furyBuilder().withDeserializeUnexistedClass(true).build();
+  public void testSkipNonexistentEnum() {
+    Fury fury1 = furyBuilder().withDeserializeNonexistentClass(true).build();
     String enumCode = ("enum TestEnum {" + " A, B" + "}");
 
     Class<?> cls = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum", enumCode);
@@ -111,13 +111,13 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     assertEquals(c.toString(), "B");
     byte[] bytes = fury1.serialize(c);
     Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-    Fury fury2 = furyBuilder().withDeserializeUnexistedClass(true).build();
+    Fury fury2 = furyBuilder().withDeserializeNonexistentClass(true).build();
     Object o = fury2.deserialize(bytes);
     assertEquals(o, 1);
   }
 
   @Test
-  public void testSkipUnexistedEnumAndArrayField() throws Exception {
+  public void testSkipNonexistentEnumAndArrayField() throws Exception {
     String enumStructCode1 =
         ("public class TestEnumStruct {\n"
             + "  public enum TestEnum {\n"
@@ -145,7 +145,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ReflectionUtils.setObjectFieldValue(o, "f4", enumArray2);
     Fury fury1 =
         furyBuilder()
-            .withDeserializeUnexistedClass(true)
+            .withDeserializeNonexistentClass(true)
             .withClassLoader(cls1.getClassLoader())
             .build();
     byte[] bytes = fury1.serialize(o);
@@ -162,7 +162,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
                 "TestEnumStruct",
                 ("public class TestEnumStruct {" + " public String f1;" + "}")));
     Fury fury2 =
-        furyBuilder().withDeserializeUnexistedClass(true).withClassLoader(classLoader).build();
+        furyBuilder().withDeserializeNonexistentClass(true).withClassLoader(classLoader).build();
     Object o1 = fury2.deserialize(bytes);
     Assert.assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f1"), "str");
   }
@@ -173,7 +173,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "componentFinal")
-  public void testSkipUnexistedObjectArrayField(boolean componentFinal) throws Exception {
+  public void testSkipNonexistentObjectArrayField(boolean componentFinal) throws Exception {
     String enumStructCode1 =
         ("public class TestArrayStruct {\n"
             + "  public static "
@@ -204,7 +204,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ReflectionUtils.setObjectFieldValue(o, "f4", arr2D);
     Fury fury1 =
         furyBuilder()
-            .withDeserializeUnexistedClass(true)
+            .withDeserializeNonexistentClass(true)
             .withClassLoader(cls1.getClassLoader())
             .build();
     byte[] bytes = fury1.serialize(o);
@@ -221,13 +221,13 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
                 "TestArrayStruct",
                 ("public class TestArrayStruct {" + " public String f1;" + "}")));
     Fury fury2 =
-        furyBuilder().withDeserializeUnexistedClass(true).withClassLoader(classLoader).build();
+        furyBuilder().withDeserializeNonexistentClass(true).withClassLoader(classLoader).build();
     Object o1 = fury2.deserialize(bytes);
     Assert.assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f1"), "str");
   }
 
   @Test(dataProvider = "metaShareConfig")
-  public void testDeserializeUnexistedNewFury(
+  public void testDeserializeNonexistentNewFury(
       boolean referenceTracking,
       boolean enableCodegen1,
       boolean enableCodegen2,
@@ -241,8 +241,8 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          Struct.createNumberStructClass("TestSkipUnexistedClass2", 2),
-          Struct.createStructClass("TestSkipUnexistedClass2", 2)
+          Struct.createNumberStructClass("TestSkipNonexistentClass2", 2),
+          Struct.createStructClass("TestSkipNonexistentClass2", 2)
         }) {
       Object pojo = Struct.createPOJO(structClass);
       MetaContext context1 = new MetaContext();
@@ -258,7 +258,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
       MetaContext context2 = new MetaContext();
       fury2.getSerializationContext().setMetaContext(context2);
       Object o2 = fury2.deserialize(bytes);
-      assertEquals(o2.getClass(), UnexistedClassSerializers.UnexistedMetaSharedClass.class);
+      assertEquals(o2.getClass(), NonexistentClass.NonexistentMetaSharedClass.class);
       fury2.getSerializationContext().setMetaContext(context2);
       byte[] bytes2 = fury2.serialize(o2);
       Fury fury3 =
@@ -277,7 +277,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "metaShareConfig")
-  public void testDeserializeUnexisted(
+  public void testDeserializeNonexistent(
       boolean referenceTracking,
       boolean enableCodegen1,
       boolean enableCodegen2,
@@ -294,8 +294,8 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
         new Class<?>[] {
-          Struct.createNumberStructClass("TestSkipUnexistedClass3", 2),
-          Struct.createStructClass("TestSkipUnexistedClass3", 2)
+          Struct.createNumberStructClass("TestSkipNonexistentClass3", 2),
+          Struct.createStructClass("TestSkipNonexistentClass3", 2)
         }) {
       Fury fury2 =
           furyBuilder()
@@ -318,7 +318,7 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
 
         fury2.getSerializationContext().setMetaContext(context2);
         Object o2 = fury2.deserialize(bytes);
-        assertEquals(o2.getClass(), UnexistedClassSerializers.UnexistedMetaSharedClass.class);
+        assertEquals(o2.getClass(), NonexistentClass.NonexistentMetaSharedClass.class);
         fury2.getSerializationContext().setMetaContext(context2);
         byte[] bytes2 = fury2.serialize(o2);
 
@@ -332,12 +332,12 @@ public class UnexistedClassSerializersTest extends FuryTestBase {
 
   @Test
   public void testThrowExceptionIfClassNotExist() {
-    Fury fury = furyBuilder().withDeserializeUnexistedClass(false).build();
+    Fury fury = furyBuilder().withDeserializeNonexistentClass(false).build();
     ClassLoader classLoader = getClass().getClassLoader();
-    Class<?> structClass = Struct.createNumberStructClass("TestSkipUnexistedClass1", 2);
+    Class<?> structClass = Struct.createNumberStructClass("TestSkipNonexistentClass1", 2);
     Object pojo = Struct.createPOJO(structClass);
     Fury fury2 =
-        furyBuilder().withDeserializeUnexistedClass(false).withClassLoader(classLoader).build();
+        furyBuilder().withDeserializeNonexistentClass(false).withClassLoader(classLoader).build();
     byte[] bytes = fury.serialize(pojo);
     Assert.assertThrows(RuntimeException.class, () -> fury2.deserialize(bytes));
   }

@@ -70,7 +70,7 @@ public final class FuryBuilder {
   boolean requireClassRegistration = true;
   boolean shareMetaContext = false;
   boolean codeGenEnabled = true;
-  Boolean deserializeUnexistedClass;
+  Boolean deserializeNonexistentClass;
   boolean asyncCompilationEnabled = false;
   boolean registerGuavaTypes = true;
   boolean scalaOptimizationEnabled = false;
@@ -241,10 +241,10 @@ public final class FuryBuilder {
   /**
    * Whether deserialize/skip data of un-existed class.
    *
-   * @see Config#deserializeUnexistedClass()
+   * @see Config#deserializeNonexistentClass()
    */
-  public FuryBuilder withDeserializeUnexistedClass(boolean deserializeUnexistedClass) {
-    this.deserializeUnexistedClass = deserializeUnexistedClass;
+  public FuryBuilder withDeserializeNonexistentClass(boolean deserializeNonexistentClass) {
+    this.deserializeNonexistentClass = deserializeNonexistentClass;
     return this;
   }
 
@@ -301,12 +301,12 @@ public final class FuryBuilder {
     }
     if (compatibleMode == CompatibleMode.COMPATIBLE) {
       checkClassVersion = false;
-      if (deserializeUnexistedClass == null) {
-        deserializeUnexistedClass = true;
+      if (deserializeNonexistentClass == null) {
+        deserializeNonexistentClass = true;
       }
     } else {
-      if (deserializeUnexistedClass == null) {
-        deserializeUnexistedClass = false;
+      if (deserializeNonexistentClass == null) {
+        deserializeNonexistentClass = false;
       }
     }
     if (!requireClassRegistration) {

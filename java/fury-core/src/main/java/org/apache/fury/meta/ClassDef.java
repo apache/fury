@@ -29,7 +29,6 @@ import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +37,7 @@ import java.util.Objects;
 import java.util.SortedMap;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.MetaSharedCodecBuilder;
+import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.logging.Logger;
@@ -48,9 +48,11 @@ import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
+import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.FinalObjectTypeStub;
 import org.apache.fury.type.GenericType;
+import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
 
 /**
@@ -332,7 +334,7 @@ public class ClassDef implements Serializable {
       this.isMonomorphic = isMonomorphic;
     }
 
-    private final boolean isMonomorphic;
+    protected final boolean isMonomorphic;
 
     public boolean isMonomorphic() {
       return isMonomorphic;
@@ -396,8 +398,13 @@ public class ClassDef implements Serializable {
         return new MapFieldType(isFinal, read(buffer), read(buffer));
       } else if (typeId == 2) {
         return new CollectionFieldType(isFinal, read(buffer));
+      } else if (typeId == 3) {
+        int dims = buffer.readVarUint32Small7();
+        return new ArrayFieldType(isFinal, read(buffer), dims);
+      } else if (typeId == 4) {
+        return EnumFieldType.getInstance();
       } else {
-        return new RegisteredFieldType(isFinal, (short) (typeId - 3));
+        return new RegisteredFieldType(isFinal, (short) (typeId - 5));
       }
     }
   }
@@ -571,6 +578,76 @@ public class ClassDef implements Serializable {
     }
   }
 
+  public static class EnumFieldType extends FieldType {
+    private static final EnumFieldType INSTANCE = new EnumFieldType();
+
+    private EnumFieldType() {
+      super(true);
+    }
+
+    @Override
+    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+      return TypeRef.of(NonexistentClass.NonexistentEnumClass.class);
+    }
+
+    public static EnumFieldType getInstance() {
+      return INSTANCE;
+    }
+  }
+
+  public static class ArrayFieldType extends FieldType {
+    private final FieldType componentType;
+    private final int dimensions;
+
+    public ArrayFieldType(boolean isMonomorphic, FieldType componentType, int dimensions) {
+      super(isMonomorphic);
+      this.componentType = componentType;
+      this.dimensions = dimensions;
+    }
+
+    @Override
+    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+      if (componentType instanceof EnumFieldType) {
+        return TypeRef.of(NonexistentClass.getUnexistentClass(true, dimensions, true));
+      }
+      return TypeRef.of(NonexistentClass.getUnexistentClass(false, dimensions, true));
+    }
+
+    public int getDimensions() {
+      return dimensions;
+    }
+
+    public FieldType getComponentType() {
+      return componentType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      if (!super.equals(o)) return false;
+      ArrayFieldType that = (ArrayFieldType) o;
+      return dimensions == that.dimensions && Objects.equals(componentType, that.componentType);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(super.hashCode(), componentType, dimensions);
+    }
+
+    @Override
+    public String toString() {
+      return "ArrayFieldType{"
+          + "componentType="
+          + componentType
+          + ", dimensions="
+          + dimensions
+          + ", isMonomorphic="
+          + isMonomorphic
+          + '}';
+    }
+  }
+
   /** Class for field type which isn't registered and not collection/map type too. */
   public static class ObjectFieldType extends FieldType {
 
@@ -597,21 +674,26 @@ public class ClassDef implements Serializable {
   /** Build field type from generics, nested generics will be extracted too. */
   static FieldType buildFieldType(ClassResolver classResolver, Field field) {
     Preconditions.checkNotNull(field);
-    Class<?> rawType = field.getType();
-    boolean isFinal = classResolver.isMonomorphic(rawType);
-    if (Collection.class.isAssignableFrom(rawType)) {
-      GenericType genericType = GenericType.build(field.getGenericType());
+    GenericType genericType = GenericType.build(field.getGenericType());
+    return buildFieldType(classResolver, genericType);
+  }
+
+  /** Build field type from generics, nested generics will be extracted too. */
+  private static FieldType buildFieldType(ClassResolver classResolver, GenericType genericType) {
+    Preconditions.checkNotNull(genericType);
+    Class<?> rawType = genericType.getCls();
+    boolean isMonomorphic = genericType.isMonomorphic();
+    if (COLLECTION_TYPE.isSupertypeOf(genericType.getTypeRef())) {
       return new CollectionFieldType(
-          isFinal,
+          isMonomorphic,
           buildFieldType(
               classResolver,
               genericType.getTypeParameter0() == null
                   ? GenericType.build(Object.class)
                   : genericType.getTypeParameter0()));
-    } else if (Map.class.isAssignableFrom(rawType)) {
-      GenericType genericType = GenericType.build(field.getGenericType());
+    } else if (MAP_TYPE.isSupertypeOf(genericType.getTypeRef())) {
       return new MapFieldType(
-          isFinal,
+          isMonomorphic,
           buildFieldType(
               classResolver,
               genericType.getTypeParameter0() == null
@@ -625,44 +707,17 @@ public class ClassDef implements Serializable {
     } else {
       Short classId = classResolver.getRegisteredClassId(rawType);
       if (classId != null && classId != ClassResolver.NO_CLASS_ID) {
-        return new RegisteredFieldType(isFinal, classId);
+        return new RegisteredFieldType(isMonomorphic, classId);
       } else {
-        return new ObjectFieldType(isFinal);
-      }
-    }
-  }
-
-  /** Build field type from generics, nested generics will be extracted too. */
-  private static FieldType buildFieldType(ClassResolver classResolver, GenericType genericType) {
-    Preconditions.checkNotNull(genericType);
-    boolean isFinal = genericType.isMonomorphic();
-    if (COLLECTION_TYPE.isSupertypeOf(genericType.getTypeRef())) {
-      return new CollectionFieldType(
-          isFinal,
-          buildFieldType(
-              classResolver,
-              genericType.getTypeParameter0() == null
-                  ? GenericType.build(Object.class)
-                  : genericType.getTypeParameter0()));
-    } else if (MAP_TYPE.isSupertypeOf(genericType.getTypeRef())) {
-      return new MapFieldType(
-          isFinal,
-          buildFieldType(
-              classResolver,
-              genericType.getTypeParameter0() == null
-                  ? GenericType.build(Object.class)
-                  : genericType.getTypeParameter0()),
-          buildFieldType(
-              classResolver,
-              genericType.getTypeParameter1() == null
-                  ? GenericType.build(Object.class)
-                  : genericType.getTypeParameter1()));
-    } else {
-      Short classId = classResolver.getRegisteredClassId(genericType.getCls());
-      if (classId != null && classId != ClassResolver.NO_CLASS_ID) {
-        return new RegisteredFieldType(isFinal, classId);
-      } else {
-        return new ObjectFieldType(isFinal);
+        if (rawType.isEnum()) {
+          return EnumFieldType.getInstance();
+        }
+        if (rawType.isArray()) {
+          Tuple2<Class<?>, Integer> info = TypeUtils.getArrayComponentInfo(rawType);
+          return new ArrayFieldType(
+              isMonomorphic, buildFieldType(classResolver, GenericType.build(info.f0)), info.f1);
+        }
+        return new ObjectFieldType(isMonomorphic);
       }
     }
   }

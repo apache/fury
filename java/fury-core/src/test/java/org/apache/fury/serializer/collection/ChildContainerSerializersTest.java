@@ -179,7 +179,7 @@ public class ChildContainerSerializersTest extends FuryTestBase {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withDeserializeUnexistedClass(true)
+            .withDeserializeNonexistentClass(true)
             .withMetaContextShare(true)
             .requireClassRegistration(false)
             .requireClassRegistration(false)

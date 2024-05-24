@@ -102,8 +102,6 @@ import org.apache.fury.meta.MetaString;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.ArraySerializers;
-import org.apache.fury.serializer.ArraySerializers.UnexistedArrayClassSerializer;
-import org.apache.fury.serializer.ArraySerializers.UnexistedEnumArrayClassSerializer;
 import org.apache.fury.serializer.BufferSerializers;
 import org.apache.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
 import org.apache.fury.serializer.CompatibleSerializer;
@@ -114,6 +112,11 @@ import org.apache.fury.serializer.JdkProxySerializer;
 import org.apache.fury.serializer.LambdaSerializer;
 import org.apache.fury.serializer.LocaleSerializer;
 import org.apache.fury.serializer.MetaSharedSerializer;
+import org.apache.fury.serializer.NonexistentClass;
+import org.apache.fury.serializer.NonexistentClass.NonexistentMetaSharedClass;
+import org.apache.fury.serializer.NonexistentClass.NonexistentSkipClass;
+import org.apache.fury.serializer.NonexistentClassSerializers;
+import org.apache.fury.serializer.NonexistentClassSerializers.NonexistentClassSerializer;
 import org.apache.fury.serializer.ObjectSerializer;
 import org.apache.fury.serializer.OptionalSerializers;
 import org.apache.fury.serializer.PrimitiveSerializers;
@@ -124,13 +127,6 @@ import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.serializer.StructSerializer;
 import org.apache.fury.serializer.TimeSerializers;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedArrayClass;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedClassSerializer;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedEnumArrayClass;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedEnumClassSerializer;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedMetaSharedClass;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipClass;
-import org.apache.fury.serializer.UnexistedClassSerializers.UnexistedSkipEnumClass;
 import org.apache.fury.serializer.collection.ChildContainerSerializers;
 import org.apache.fury.serializer.collection.CollectionSerializer;
 import org.apache.fury.serializer.collection.CollectionSerializers;
@@ -337,18 +333,18 @@ public class ClassResolver {
     if (fury.getConfig().registerGuavaTypes()) {
       GuavaCollectionSerializers.registerDefaultSerializers(fury);
     }
-    if (fury.getConfig().deserializeUnexistedClass()) {
+    if (fury.getConfig().deserializeNonexistentClass()) {
       if (metaContextShareEnabled) {
         addDefaultSerializer(
-            UnexistedMetaSharedClass.class, new UnexistedClassSerializer(fury, null));
+            NonexistentMetaSharedClass.class, new NonexistentClassSerializer(fury, null));
         // Those class id must be known in advance, here is two bytes, so
-        // `UnexistedClassSerializer.writeClassDef`
+        // `NonexistentClassSerializer.writeClassDef`
         // can overwrite written classinfo and replace with real classinfo.
         short classId =
-            Objects.requireNonNull(classInfoMap.get(UnexistedMetaSharedClass.class)).classId;
+            Objects.requireNonNull(classInfoMap.get(NonexistentMetaSharedClass.class)).classId;
         Preconditions.checkArgument(classId > 63 && classId < 8192, classId);
       } else {
-        register(UnexistedSkipClass.class);
+        register(NonexistentSkipClass.class);
       }
     }
   }
@@ -519,9 +515,17 @@ public class ClassResolver {
     if (fury.getConfig().shareMetaContext()) {
       // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
       // TypeToken<V>)
-      return ReflectionUtils.isMonomorphic(clz)
-          && (isInnerClass(clz) || clz.isEnum() || TypeUtils.isEnumArray(clz))
-          && (!Map.class.isAssignableFrom(clz) && !Collection.class.isAssignableFrom(clz));
+      if (!ReflectionUtils.isMonomorphic(clz)) {
+        return false;
+      }
+      if (Map.class.isAssignableFrom(clz) || Collection.class.isAssignableFrom(clz)) {
+        return false;
+      }
+      if (clz.isArray()) {
+        Class<?> component = TypeUtils.getArrayComponent(clz);
+        return isMonomorphic(component);
+      }
+      return (isInnerClass(clz) || clz.isEnum());
     }
     return ReflectionUtils.isMonomorphic(clz);
   }
@@ -1276,7 +1280,7 @@ public class ClassResolver {
       buffer.writeVarUint32(newId);
       ClassDef classDef;
       Serializer<?> serializer = classInfo.serializer;
-      Preconditions.checkArgument(serializer.getClass() != UnexistedClassSerializer.class);
+      Preconditions.checkArgument(serializer.getClass() != NonexistentClassSerializer.class);
       if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE
           && (serializer instanceof Generated.GeneratedObjectSerializer
               // May already switched to MetaSharedSerializer when update class info cache.
@@ -1363,18 +1367,23 @@ public class ClassResolver {
   // TODO(chaokunyang) if ClassDef is consistent with class in this process,
   //  use existing serializer instead.
   private ClassInfo getMetaSharedClassInfo(ClassDef classDef, Class<?> clz) {
-    if (clz == UnexistedSkipClass.class) {
-      clz = UnexistedMetaSharedClass.class;
+    if (clz == NonexistentSkipClass.class) {
+      clz = NonexistentMetaSharedClass.class;
     }
     Class<?> cls = clz;
     Short classId = extRegistry.registeredClassIdMap.get(cls);
     ClassInfo classInfo =
         new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
-    if (cls == UnexistedMetaSharedClass.class) {
-      classInfo.serializer = new UnexistedClassSerializer(fury, classDef);
-      // ensure `UnexistedMetaSharedClass` registered to write fixed-length class def,
-      // so we can rewrite it in `UnexistedClassSerializer`.
-      Preconditions.checkNotNull(classId);
+    if (NonexistentClass.class.isAssignableFrom(cls)) {
+      if (cls == NonexistentMetaSharedClass.class) {
+        classInfo.serializer = new NonexistentClassSerializer(fury, classDef);
+        // ensure `NonexistentMetaSharedClass` registered to write fixed-length class def,
+        // so we can rewrite it in `NonexistentClassSerializer`.
+        Preconditions.checkNotNull(classId);
+      } else {
+        classInfo.serializer =
+            NonexistentClassSerializers.getSerializer(fury, classDef.getClassName(), cls);
+      }
       return classInfo;
     }
     if (clz.isArray() || cls.isEnum()) {
@@ -1655,8 +1664,8 @@ public class ClassResolver {
     String rawPkg = packageName;
     String className = simpleClassNameBytes.decode(TYPE_NAME_DECODER);
     boolean isArray = className.startsWith(ClassInfo.ARRAY_PREFIX);
+    int dimension = 0;
     if (isArray) {
-      int dimension = 0;
       while (className.charAt(dimension) == ClassInfo.ARRAY_PREFIX.charAt(0)) {
         dimension++;
       }
@@ -1680,7 +1689,7 @@ public class ClassResolver {
     MetaStringBytes fullClassNameBytes =
         metaStringResolver.getOrCreateMetaStringBytes(
             PACKAGE_ENCODER.encode(entireClassName, MetaString.Encoding.UTF_8));
-    Class<?> cls = loadClass(entireClassName, isArray, isEnum);
+    Class<?> cls = loadClass(entireClassName, isEnum, dimension);
     ClassInfo classInfo =
         new ClassInfo(
             cls,
@@ -1691,12 +1700,8 @@ public class ClassResolver {
             null,
             null,
             NO_CLASS_ID);
-    if (cls == UnexistedSkipEnumClass.class) {
-      classInfo.serializer = new UnexistedEnumClassSerializer(fury);
-    } else if (cls == UnexistedArrayClass.class) {
-      classInfo.serializer = new UnexistedArrayClassSerializer(fury, entireClassName);
-    } else if (cls == UnexistedEnumArrayClass.class) {
-      classInfo.serializer = new UnexistedEnumArrayClassSerializer(fury, entireClassName);
+    if (NonexistentClass.class.isAssignableFrom(cls)) {
+      classInfo.serializer = NonexistentClassSerializers.getSerializer(fury, className, cls);
     } else {
       // don't create serializer here, if the class is an interface,
       // there won't be serializer since interface has no instance.
@@ -1738,10 +1743,10 @@ public class ClassResolver {
   }
 
   private Class<?> loadClass(String className) {
-    return loadClass(className, false, false);
+    return loadClass(className, false, 0);
   }
 
-  private Class<?> loadClass(String className, boolean isArray, boolean isEnum) {
+  private Class<?> loadClass(String className, boolean isEnum, int arrayDims) {
     extRegistry.classChecker.checkClass(this, className);
     try {
       return Class.forName(className, false, fury.getClassLoader());
@@ -1753,16 +1758,10 @@ public class ClassResolver {
             String.format(
                 "Class %s not found from classloaders [%s, %s]",
                 className, fury.getClassLoader(), Thread.currentThread().getContextClassLoader());
-        if (fury.getConfig().deserializeUnexistedClass()) {
+        if (fury.getConfig().deserializeNonexistentClass()) {
           LOG.warn(msg);
-          if (isArray) {
-            return isEnum ? UnexistedEnumArrayClass.class : UnexistedArrayClass.class;
-          } else if (isEnum) {
-            return UnexistedSkipEnumClass.class;
-          } else {
-            // FIXME create a subclass dynamically may be better?
-            return UnexistedSkipClass.class;
-          }
+          return NonexistentClass.getUnexistentClass(
+              className, isEnum, arrayDims, metaContextShareEnabled);
         }
         throw new IllegalStateException(msg, ex);
       }

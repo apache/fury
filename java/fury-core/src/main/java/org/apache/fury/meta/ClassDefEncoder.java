@@ -246,7 +246,14 @@ class ClassDefEncoder {
       }
       if (fieldType instanceof ClassDef.RegisteredFieldType) {
         short classId = ((ClassDef.RegisteredFieldType) fieldType).getClassId();
-        buffer.writeVarUint32Small7(3 + classId);
+        buffer.writeVarUint32Small7(5 + classId);
+      } else if (fieldType instanceof ClassDef.EnumFieldType) {
+        buffer.writeVarUint32Small7(4);
+      } else if (fieldType instanceof ClassDef.ArrayFieldType) {
+        ClassDef.ArrayFieldType arrayFieldType = (ClassDef.ArrayFieldType) fieldType;
+        buffer.writeVarUint32Small7(3);
+        buffer.writeVarUint32Small7(arrayFieldType.getDimensions());
+        (arrayFieldType).getComponentType().write(buffer);
       } else if (fieldType instanceof ClassDef.CollectionFieldType) {
         buffer.writeVarUint32Small7(2);
         // TODO remove it when new collection deserialization jit finished.
