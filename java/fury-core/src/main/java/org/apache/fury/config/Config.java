@@ -49,7 +49,7 @@ public class Config implements Serializable {
   private final boolean requireClassRegistration;
   private final boolean suppressClassRegistrationWarnings;
   private final boolean registerGuavaTypes;
-  private final boolean shareGlobalContext;
+  private final boolean shareContext;
   private final boolean shareMetaContext;
   private final boolean shareUserContext;
   private final boolean asyncCompilationEnabled;
@@ -78,7 +78,7 @@ public class Config implements Serializable {
     defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
     shareMetaContext = builder.shareMetaContext;
     shareUserContext = builder.shareUserContext;
-    shareGlobalContext = shareMetaContext || shareUserContext;
+    shareContext = shareMetaContext || shareUserContext;
     deserializeUnexistedClass = builder.deserializeUnexistedClass;
     if (deserializeUnexistedClass) {
       // Only in meta share mode or compatibleMode, fury knows how to deserialize
@@ -190,8 +190,8 @@ public class Config implements Serializable {
     return shareUserContext;
   }
 
-  public boolean shareGlobalContext() {
-    return shareGlobalContext;
+  public boolean shareContext() {
+    return shareContext;
   }
 
   /**
@@ -249,7 +249,7 @@ public class Config implements Serializable {
         && registerGuavaTypes == config.registerGuavaTypes
         && shareMetaContext == config.shareMetaContext
         && shareUserContext == config.shareUserContext
-        && shareGlobalContext == config.shareGlobalContext
+        && shareContext == config.shareContext
         && asyncCompilationEnabled == config.asyncCompilationEnabled
         && deserializeUnexistedClass == config.deserializeUnexistedClass
         && scalaOptimizationEnabled == config.scalaOptimizationEnabled
@@ -281,7 +281,7 @@ public class Config implements Serializable {
         registerGuavaTypes,
         shareMetaContext,
         shareUserContext,
-        shareGlobalContext,
+        shareContext,
         asyncCompilationEnabled,
         deserializeUnexistedClass,
         scalaOptimizationEnabled);

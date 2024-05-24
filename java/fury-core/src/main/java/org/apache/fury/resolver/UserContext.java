@@ -34,7 +34,4 @@ public abstract class UserContext {
   public abstract void write(MemoryBuffer buffer);
 
   public abstract void read(MemoryBuffer buffer);
-
-  /** write/read end should clear user data. */
-  public abstract void reset();
 }

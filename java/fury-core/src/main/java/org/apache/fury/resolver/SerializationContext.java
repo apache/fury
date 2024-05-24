@@ -19,11 +19,10 @@
 
 package org.apache.fury.resolver;
 
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 import org.apache.fury.config.FuryBuilder;
-import org.apache.fury.util.Preconditions;
 
 /**
  * A context is used to add some context-related information, so that the serializers can set up
@@ -33,7 +32,7 @@ import org.apache.fury.util.Preconditions;
 public final class SerializationContext {
   private final IdentityHashMap<Object, Object> objects = new IdentityHashMap<>();
   private MetaContext metaContext;
-  private final Map<String, UserContext> userContexts = new LinkedHashMap<>();
+  private final List<UserContext> userContexts = new ArrayList<>();
 
   /** Return the previous value associated with <tt>key</tt>, or <tt>null</tt>. */
   public Object add(Object key, Object value) {
@@ -62,13 +61,12 @@ public final class SerializationContext {
     this.metaContext = metaContext;
   }
 
-  public Map<String, UserContext> getUserContexts() {
+  public List<UserContext> getUserContexts() {
     return userContexts;
   }
 
-  public void registerUserContextResolver(String name, UserContext userContext) {
-    Preconditions.checkState(!userContexts.containsKey(name));
-    userContexts.put(name, userContext);
+  public void addUserContext(UserContext userContext) {
+    userContexts.add(userContext);
   }
 
   public void reset() {
@@ -76,8 +74,6 @@ public final class SerializationContext {
       objects.clear();
     }
     metaContext = null;
-    for (UserContext userContext : userContexts.values()) {
-      userContext.reset();
-    }
+    userContexts.clear();
   }
 }

@@ -1410,14 +1410,14 @@ public class ClassResolver {
 
   /** write user context by register order. */
   public void writeUserContext(MemoryBuffer buffer) {
-    final Map<String, UserContext> userContexts = fury.getSerializationContext().getUserContexts();
-    for (UserContext userContext : userContexts.values()) {
+    final List<UserContext> userContexts = fury.getSerializationContext().getUserContexts();
+    for (UserContext userContext : userContexts) {
       userContext.write(buffer);
     }
   }
 
   /** after all data, write share meta context and user context. */
-  public void writeGlobalContext(MemoryBuffer buffer) {
+  public void writeContext(MemoryBuffer buffer) {
     if (fury.getConfig().shareMetaContext()) {
       writeClassDefs(buffer);
     }
@@ -1456,14 +1456,14 @@ public class ClassResolver {
 
   /** read user context by register order. */
   public void readUserContext(MemoryBuffer buffer) {
-    final Map<String, UserContext> userContexts = fury.getSerializationContext().getUserContexts();
-    for (UserContext userContext : userContexts.values()) {
+    final List<UserContext> userContexts = fury.getSerializationContext().getUserContexts();
+    for (UserContext userContext : userContexts) {
       userContext.read(buffer);
     }
   }
 
   /** read share meta context and user context before read data. */
-  public void readGlobalContext(MemoryBuffer buffer) {
+  public void readContext(MemoryBuffer buffer) {
     int globalContextOffSet = buffer.readInt32();
     int readerIndex = buffer.readerIndex();
     buffer.readerIndex(globalContextOffSet);
