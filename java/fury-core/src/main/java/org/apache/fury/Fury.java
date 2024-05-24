@@ -305,8 +305,8 @@ public final class Fury implements BaseFury {
 
   private void write(MemoryBuffer buffer, Object obj) {
     int startOffset = buffer.writerIndex();
-    boolean shareMetaContext = config.shareMetaContext();
-    if (shareMetaContext) {
+    boolean shareContext = config.shareContext();
+    if (shareContext) {
       buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
     }
     // reduce caller stack
@@ -315,9 +315,9 @@ public final class Fury implements BaseFury {
       classResolver.writeClass(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
-    if (shareMetaContext) {
+    if (shareContext) {
       buffer.putInt32(startOffset, buffer.writerIndex());
-      classResolver.writeClassDefs(buffer);
+      classResolver.writeContext(buffer);
     }
   }
 
@@ -754,8 +754,8 @@ public final class Fury implements BaseFury {
       if (isTargetXLang) {
         obj = xdeserializeInternal(buffer);
       } else {
-        if (config.shareMetaContext()) {
-          classResolver.readClassDefs(buffer);
+        if (config.shareContext()) {
+          classResolver.readContext(buffer);
         }
         obj = readRef(buffer);
       }
@@ -1025,7 +1025,7 @@ public final class Fury implements BaseFury {
       if (depth != 0) {
         throwDepthSerializationException();
       }
-      if (config.shareMetaContext()) {
+      if (config.shareContext()) {
         int startOffset = buffer.writerIndex();
         buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
         if (!refResolver.writeRefOrNull(buffer, obj)) {
@@ -1033,7 +1033,7 @@ public final class Fury implements BaseFury {
           writeData(buffer, classInfo, obj);
         }
         buffer.putInt32(startOffset, buffer.writerIndex());
-        classResolver.writeClassDefs(buffer);
+        classResolver.writeContext(buffer);
       } else {
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
@@ -1070,8 +1070,8 @@ public final class Fury implements BaseFury {
       if (depth != 0) {
         throwDepthDeserializationException();
       }
-      if (config.shareMetaContext()) {
-        classResolver.readClassDefs(buffer);
+      if (config.shareContext()) {
+        classResolver.readContext(buffer);
       }
       T obj;
       int nextReadRefId = refResolver.tryPreserveRefId(buffer);
@@ -1184,8 +1184,8 @@ public final class Fury implements BaseFury {
       if (depth != 0) {
         throwDepthDeserializationException();
       }
-      if (config.shareMetaContext()) {
-        classResolver.readClassDefs(buffer);
+      if (config.shareContext()) {
+        classResolver.readContext(buffer);
       }
       return readRef(buffer);
     } catch (Throwable t) {

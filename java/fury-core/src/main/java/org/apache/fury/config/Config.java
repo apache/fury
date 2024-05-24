@@ -49,7 +49,9 @@ public class Config implements Serializable {
   private final boolean requireClassRegistration;
   private final boolean suppressClassRegistrationWarnings;
   private final boolean registerGuavaTypes;
+  private final boolean shareContext;
   private final boolean shareMetaContext;
+  private final boolean shareUserContext;
   private final boolean asyncCompilationEnabled;
   private final boolean deserializeUnexistedClass;
   private final boolean scalaOptimizationEnabled;
@@ -75,6 +77,8 @@ public class Config implements Serializable {
     checkJdkClassSerializable = builder.checkJdkClassSerializable;
     defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
     shareMetaContext = builder.shareMetaContext;
+    shareUserContext = builder.shareUserContext;
+    shareContext = shareMetaContext || shareUserContext;
     deserializeUnexistedClass = builder.deserializeUnexistedClass;
     if (deserializeUnexistedClass) {
       // Only in meta share mode or compatibleMode, fury knows how to deserialize
@@ -182,6 +186,14 @@ public class Config implements Serializable {
     return shareMetaContext;
   }
 
+  public boolean shareUserContext() {
+    return shareUserContext;
+  }
+
+  public boolean shareContext() {
+    return shareContext;
+  }
+
   /**
    * Whether deserialize/skip data of un-existed class. If not enabled, an exception will be thrown
    * if class not exist.
@@ -236,6 +248,8 @@ public class Config implements Serializable {
         && suppressClassRegistrationWarnings == config.suppressClassRegistrationWarnings
         && registerGuavaTypes == config.registerGuavaTypes
         && shareMetaContext == config.shareMetaContext
+        && shareUserContext == config.shareUserContext
+        && shareContext == config.shareContext
         && asyncCompilationEnabled == config.asyncCompilationEnabled
         && deserializeUnexistedClass == config.deserializeUnexistedClass
         && scalaOptimizationEnabled == config.scalaOptimizationEnabled
@@ -266,6 +280,8 @@ public class Config implements Serializable {
         suppressClassRegistrationWarnings,
         registerGuavaTypes,
         shareMetaContext,
+        shareUserContext,
+        shareContext,
         asyncCompilationEnabled,
         deserializeUnexistedClass,
         scalaOptimizationEnabled);

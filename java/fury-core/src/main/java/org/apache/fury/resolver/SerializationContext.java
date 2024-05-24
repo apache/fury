@@ -19,7 +19,9 @@
 
 package org.apache.fury.resolver;
 
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.List;
 import org.apache.fury.config.FuryBuilder;
 
 /**
@@ -30,6 +32,7 @@ import org.apache.fury.config.FuryBuilder;
 public final class SerializationContext {
   private final IdentityHashMap<Object, Object> objects = new IdentityHashMap<>();
   private MetaContext metaContext;
+  private final List<UserContext> userContexts = new ArrayList<>();
 
   /** Return the previous value associated with <tt>key</tt>, or <tt>null</tt>. */
   public Object add(Object key, Object value) {
@@ -58,10 +61,19 @@ public final class SerializationContext {
     this.metaContext = metaContext;
   }
 
+  public List<UserContext> getUserContexts() {
+    return userContexts;
+  }
+
+  public void addUserContext(UserContext userContext) {
+    userContexts.add(userContext);
+  }
+
   public void reset() {
     if (objects.size() > 0) {
       objects.clear();
     }
     metaContext = null;
+    userContexts.clear();
   }
 }
