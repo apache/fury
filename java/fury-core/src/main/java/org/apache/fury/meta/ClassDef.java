@@ -627,8 +627,9 @@ public class ClassDef implements Serializable {
       TypeRef<?> componentTypeRef = componentType.toTypeToken(classResolver);
       Class<?> componentRawType = componentTypeRef.getRawType();
       if (NonexistentClass.class.isAssignableFrom(componentRawType)) {
-        return TypeRef.of(NonexistentClass.getUnexistentClass(
-          componentType instanceof EnumFieldType, dimensions, true));
+        return TypeRef.of(
+            NonexistentClass.getUnexistentClass(
+                componentType instanceof EnumFieldType, dimensions, true));
       } else {
         return TypeRef.of(Array.newInstance(componentRawType, new int[dimensions]).getClass());
       }
