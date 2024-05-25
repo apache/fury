@@ -645,9 +645,15 @@ public class ClassDef implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      if (!super.equals(o)) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      if (!super.equals(o)) {
+        return false;
+      }
       ArrayFieldType that = (ArrayFieldType) o;
       return dimensions == that.dimensions && Objects.equals(componentType, that.componentType);
     }
