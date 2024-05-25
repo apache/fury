@@ -628,6 +628,8 @@ public class ClassDef implements Serializable {
       Class<?> componentRawType = componentTypeRef.getRawType();
       if (NonexistentClass.class.isAssignableFrom(componentRawType)) {
         return TypeRef.of(
+            // We embed `isMonomorphic` flag in ObjectArraySerializer, so this flag can be ignored
+            // here.
             NonexistentClass.getUnexistentClass(
                 componentType instanceof EnumFieldType, dimensions, true));
       } else {

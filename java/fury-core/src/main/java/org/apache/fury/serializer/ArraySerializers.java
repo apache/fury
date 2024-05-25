@@ -48,6 +48,7 @@ public class ArraySerializers {
 
     public ObjectArraySerializer(Fury fury, Class<T[]> cls) {
       super(fury, cls);
+      fury.getClassResolver().setSerializer(cls, this);
       Preconditions.checkArgument(cls.isArray());
       Class<?> t = cls;
       Class<?> innerType = cls;
