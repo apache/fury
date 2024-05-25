@@ -27,6 +27,7 @@ import static org.apache.fury.type.TypeUtils.mapOf;
 
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -623,10 +624,14 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeRef<?> toTypeToken(ClassResolver classResolver) {
-      if (componentType instanceof EnumFieldType) {
-        return TypeRef.of(NonexistentClass.getUnexistentClass(true, dimensions, true));
+      TypeRef<?> componentTypeRef = componentType.toTypeToken(classResolver);
+      Class<?> componentRawType = componentTypeRef.getRawType();
+      if (NonexistentClass.class.isAssignableFrom(componentRawType)) {
+        return TypeRef.of(NonexistentClass.getUnexistentClass(
+          componentType instanceof EnumFieldType, dimensions, true));
+      } else {
+        return TypeRef.of(Array.newInstance(componentRawType, new int[dimensions]).getClass());
       }
-      return TypeRef.of(NonexistentClass.getUnexistentClass(false, dimensions, true));
     }
 
     public int getDimensions() {

@@ -989,7 +989,9 @@ public class ClassResolver {
         }
       }
     } else {
-      LOG.info("Object of type {} can't be serialized by jit", cls);
+      if (fury.getConfig().isCodeGenEnabled()) {
+        LOG.info("Object of type {} can't be serialized by jit", cls);
+      }
       switch (fury.getCompatibleMode()) {
         case SCHEMA_CONSISTENT:
           return ObjectSerializer.class;
