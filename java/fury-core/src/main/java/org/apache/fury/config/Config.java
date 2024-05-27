@@ -51,7 +51,7 @@ public class Config implements Serializable {
   private final boolean registerGuavaTypes;
   private final boolean shareMetaContext;
   private final boolean asyncCompilationEnabled;
-  private final boolean deserializeUnexistedClass;
+  private final boolean deserializeNonexistentClass;
   private final boolean scalaOptimizationEnabled;
   private transient int configHash;
   private final boolean deserializeNonexistentEnumValueAsNull;
@@ -75,8 +75,8 @@ public class Config implements Serializable {
     checkJdkClassSerializable = builder.checkJdkClassSerializable;
     defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
     shareMetaContext = builder.shareMetaContext;
-    deserializeUnexistedClass = builder.deserializeUnexistedClass;
-    if (deserializeUnexistedClass) {
+    deserializeNonexistentClass = builder.deserializeNonexistentClass;
+    if (deserializeNonexistentClass) {
       // Only in meta share mode or compatibleMode, fury knows how to deserialize
       // unexisted class by type info in data.
       Preconditions.checkArgument(shareMetaContext || compatibleMode == CompatibleMode.COMPATIBLE);
@@ -186,8 +186,8 @@ public class Config implements Serializable {
    * Whether deserialize/skip data of un-existed class. If not enabled, an exception will be thrown
    * if class not exist.
    */
-  public boolean deserializeUnexistedClass() {
-    return deserializeUnexistedClass;
+  public boolean deserializeNonexistentClass() {
+    return deserializeNonexistentClass;
   }
 
   /**
@@ -237,7 +237,7 @@ public class Config implements Serializable {
         && registerGuavaTypes == config.registerGuavaTypes
         && shareMetaContext == config.shareMetaContext
         && asyncCompilationEnabled == config.asyncCompilationEnabled
-        && deserializeUnexistedClass == config.deserializeUnexistedClass
+        && deserializeNonexistentClass == config.deserializeNonexistentClass
         && scalaOptimizationEnabled == config.scalaOptimizationEnabled
         && language == config.language
         && compatibleMode == config.compatibleMode
@@ -267,7 +267,7 @@ public class Config implements Serializable {
         registerGuavaTypes,
         shareMetaContext,
         asyncCompilationEnabled,
-        deserializeUnexistedClass,
+        deserializeNonexistentClass,
         scalaOptimizationEnabled);
   }
 

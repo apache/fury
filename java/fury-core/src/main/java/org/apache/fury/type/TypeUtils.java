@@ -371,6 +371,13 @@ public class TypeUtils {
     return dimension;
   }
 
+  public static Class<?> getComponentIfArray(Class<?> type) {
+    if (type.isArray()) {
+      return getArrayComponent(type);
+    }
+    return type;
+  }
+
   public static Class<?> getArrayComponent(Class<?> type) {
     return getArrayComponentInfo(type).f0;
   }
@@ -710,5 +717,12 @@ public class TypeUtils {
     }
 
     return new ArrayList<>(allTypeArguments);
+  }
+
+  public static boolean isEnumArray(Class<?> clz) {
+    if (!clz.isArray()) {
+      return false;
+    }
+    return getArrayComponent(clz).isEnum();
   }
 }

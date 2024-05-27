@@ -57,7 +57,6 @@ import org.apache.fury.util.record.RecordUtils;
  *
  * @see Ignore
  */
-@SuppressWarnings("UnstableApiUsage")
 public class Descriptor {
   private static Cache<Class<?>, Tuple2<SortedMap<Field, Descriptor>, SortedMap<Field, Descriptor>>>
       descCache = CacheBuilder.newBuilder().weakKeys().softValues().concurrencyLevel(64).build();
@@ -203,8 +202,8 @@ public class Descriptor {
   public String toString() {
     final StringBuilder sb = new StringBuilder("Descriptor{");
     sb.append("typeName=").append(typeName);
-    sb.append("name=").append(name);
-    sb.append("modifier=").append(modifier);
+    sb.append(", name=").append(name);
+    sb.append(", modifier=").append(modifier);
     if (field != null) {
       sb.append(", field=").append(field.getDeclaringClass().getSimpleName()).append('.');
     }

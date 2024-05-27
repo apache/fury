@@ -22,9 +22,9 @@ package org.apache.fury.serializer;
 import java.lang.reflect.Array;
 import java.util.IdentityHashMap;
 import org.apache.fury.Fury;
+import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
-import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -48,6 +48,7 @@ public class ArraySerializers {
 
     public ObjectArraySerializer(Fury fury, Class<T[]> cls) {
       super(fury, cls);
+      fury.getClassResolver().setSerializer(cls, this);
       Preconditions.checkArgument(cls.isArray());
       Class<?> t = cls;
       Class<?> innerType = cls;
@@ -61,7 +62,7 @@ public class ArraySerializers {
       }
       this.innerType = (Class<T>) innerType;
       Class<?> componentType = cls.getComponentType();
-      if (ReflectionUtils.isMonomorphic(componentType)) {
+      if (fury.getClassResolver().isMonomorphic(componentType)) {
         this.componentTypeSerializer = fury.getClassResolver().getSerializer(componentType);
       } else {
         // TODO add ClassInfo cache for non-final component type.
@@ -128,6 +129,9 @@ public class ArraySerializers {
       refResolver.reference(value);
       if (isFinal) {
         final Serializer componentTypeSerializer = this.componentTypeSerializer;
+        if (componentTypeSerializer == null) {
+          System.out.println("=======");
+        }
         for (int i = 0; i < numElements; i++) {
           Object elem;
           int nextReadRefId = refResolver.tryPreserveRefId(buffer);
@@ -706,15 +710,15 @@ public class ArraySerializers {
         new int[] {Platform.DOUBLE_ARRAY_OFFSET, 8, Type.FURY_PRIMITIVE_DOUBLE_ARRAY.getId()});
   }
 
-  public abstract static class AbstractedUnexistedArrayClassSerializer extends Serializer {
-    private final String className;
+  public abstract static class AbstractedNonexistentArrayClassSerializer extends Serializer {
+    protected final String className;
     private final int dims;
 
-    public AbstractedUnexistedArrayClassSerializer(
+    public AbstractedNonexistentArrayClassSerializer(
         Fury fury, String className, Class<?> stubClass) {
       super(fury, stubClass);
       this.className = className;
-      this.dims = TypeUtils.getArrayDimensions(className);
+      this.dims = TypeUtils.getArrayDimensions(stubClass);
     }
 
     @Override
@@ -741,6 +745,7 @@ public class ArraySerializers {
       RefResolver refResolver = fury.getRefResolver();
       Object[] value = new Object[numElements];
       refResolver.reference(value);
+
       if (isFinal) {
         for (int i = 0; i < numElements; i++) {
           Object elem;
@@ -816,33 +821,31 @@ public class ArraySerializers {
     }
   }
 
-  public static final class UnexistedEnumArrayClassSerializer
-      extends AbstractedUnexistedArrayClassSerializer {
-    public UnexistedEnumArrayClassSerializer(Fury fury, String className) {
-      super(fury, className, UnexistedClassSerializers.UnexistedEnumArrayClass.class);
+  @SuppressWarnings("rawtypes")
+  public static final class NonexistentArrayClassSerializer
+      extends AbstractedNonexistentArrayClassSerializer {
+    private final Serializer componentSerializer;
+
+    public NonexistentArrayClassSerializer(Fury fury, String className, Class<?> cls) {
+      super(fury, className, cls);
+      if (TypeUtils.getArrayComponent(cls).isEnum()) {
+        componentSerializer = new NonexistentClassSerializers.NonexistentEnumClassSerializer(fury);
+      } else {
+        if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE) {
+          componentSerializer =
+              new CompatibleSerializer<>(fury, NonexistentClass.NonexistentSkip.class);
+        } else {
+          componentSerializer = null;
+        }
+      }
     }
 
     @Override
     protected Object readInnerElement(MemoryBuffer buffer) {
-      return buffer.readVarUint32Small7();
-    }
-  }
-
-  public static final class UnexistedArrayClassSerializer
-      extends AbstractedUnexistedArrayClassSerializer {
-
-    private final CompatibleSerializer<UnexistedClassSerializers.UnexistedSkipClass>
-        componentSerializer;
-
-    public UnexistedArrayClassSerializer(Fury fury, String className) {
-      super(fury, className, UnexistedClassSerializers.UnexistedArrayClass.class);
-      // TODO(chaokunyang) meta share mode not supported currently.
-      componentSerializer =
-          new CompatibleSerializer<>(fury, UnexistedClassSerializers.UnexistedSkipClass.class);
-    }
-
-    @Override
-    protected Object readInnerElement(MemoryBuffer buffer) {
+      if (componentSerializer == null) {
+        throw new IllegalStateException(
+            String.format("Class %s should serialize elements as non-morphic", className));
+      }
       return componentSerializer.read(buffer);
     }
   }
