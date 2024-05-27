@@ -21,13 +21,15 @@ package org.apache.fury.resolver;
 
 import static org.testng.Assert.*;
 
+import org.apache.fury.config.Config;
+import org.apache.fury.config.FuryBuilder;
 import org.testng.annotations.Test;
 
 public class SerializationContextTest {
 
   @Test
   public void testSerializationContext() {
-    SerializationContext context = new SerializationContext();
+    SerializationContext context = new SerializationContext(new Config(new FuryBuilder()));
     assertFalse(context.containsKey("A"));
     context.add("A", 1);
     assertTrue(context.containsKey("A"));

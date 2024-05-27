@@ -20,6 +20,8 @@
 package org.apache.fury.resolver;
 
 import java.util.IdentityHashMap;
+
+import org.apache.fury.config.Config;
 import org.apache.fury.config.FuryBuilder;
 
 /**
@@ -29,7 +31,15 @@ import org.apache.fury.config.FuryBuilder;
  */
 public final class SerializationContext {
   private final IdentityHashMap<Object, Object> objects = new IdentityHashMap<>();
+  private final boolean scopedMetaShareEnabled;
   private MetaContext metaContext;
+
+  public SerializationContext(Config config) {
+    scopedMetaShareEnabled = config.isScopedMetaShareEnabled();
+    if (scopedMetaShareEnabled) {
+      metaContext = new MetaContext();
+    }
+  }
 
   /** Return the previous value associated with <tt>key</tt>, or <tt>null</tt>. */
   public Object add(Object key, Object value) {
@@ -58,10 +68,41 @@ public final class SerializationContext {
     this.metaContext = metaContext;
   }
 
-  public void reset() {
-    if (objects.size() > 0) {
+  public void resetWrite() {
+    if (!objects.isEmpty()) {
       objects.clear();
     }
-    metaContext = null;
+    if (scopedMetaShareEnabled) {
+      metaContext.classMap.clear();
+      metaContext.writingClassDefs.clear();
+    } else {
+      metaContext = null;
+    }
+  }
+
+  public void resetRead() {
+    if (!objects.isEmpty()) {
+      objects.clear();
+    }
+    if (scopedMetaShareEnabled) {
+      metaContext.readClassInfos.clear();
+      metaContext.readClassDefs.clear();
+    } else {
+      metaContext = null;
+    }
+  }
+
+  public void reset() {
+    if (!objects.isEmpty()) {
+      objects.clear();
+    }
+    if (scopedMetaShareEnabled) {
+      metaContext.classMap.clear();
+      metaContext.writingClassDefs.clear();
+      metaContext.readClassInfos.clear();
+      metaContext.readClassDefs.clear();
+    } else {
+      metaContext = null;
+    }
   }
 }

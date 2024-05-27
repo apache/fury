@@ -133,7 +133,7 @@ public final class Fury implements BaseFury {
     metaStringResolver = new MetaStringResolver();
     classResolver = new ClassResolver(this);
     classResolver.initialize();
-    serializationContext = new SerializationContext();
+    serializationContext = new SerializationContext(config);
     this.classLoader = classLoader;
     nativeObjects = new ArrayList<>();
     generics = new Generics(this);
@@ -1263,7 +1263,7 @@ public final class Fury implements BaseFury {
     refResolver.resetWrite();
     classResolver.resetWrite();
     metaStringResolver.resetWrite();
-    serializationContext.reset();
+    serializationContext.resetWrite();
     nativeObjects.clear();
     bufferCallback = null;
     depth = 0;
@@ -1273,7 +1273,7 @@ public final class Fury implements BaseFury {
     refResolver.resetRead();
     classResolver.resetRead();
     metaStringResolver.resetRead();
-    serializationContext.reset();
+    serializationContext.resetRead();
     nativeObjects.clear();
     peerOutOfBandEnabled = false;
     depth = 0;
