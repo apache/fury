@@ -1625,7 +1625,7 @@ public final class MemoryBuffer {
     // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
-    if (size - readIdx < 5) {
+    if (size - readIdx < 4) {
       result = (int) readVarUint36Slow();
     } else {
       long address = this.address;
@@ -1668,7 +1668,7 @@ public final class MemoryBuffer {
     // noinspection Duplicates
     int readIdx = readerIndex;
     int result;
-    if (size - readIdx < 5) {
+    if (size - readIdx < 4) {
       result = (int) readVarUint36Slow();
     } else {
       long address = this.address;
@@ -1706,7 +1706,7 @@ public final class MemoryBuffer {
     // Duplicate and manual inline for performance.
     // noinspection Duplicates
     int readIdx = readerIndex;
-    if (size - readIdx >= 9) {
+    if (size - readIdx >= 8) {
       long bulkValue = _unsafeGetInt64(readIdx++);
       // noinspection Duplicates
       long result = bulkValue & 0x7F;
@@ -1774,7 +1774,7 @@ public final class MemoryBuffer {
   /** Reads the 1-5 byte int part of a non-negative varint. */
   public int readVarUint32() {
     int readIdx = readerIndex;
-    if (size - readIdx < 5) {
+    if (size - readIdx < 4) {
       return (int) readVarUint36Slow();
     }
     // | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits | 1bit + 7bits |
@@ -1829,7 +1829,7 @@ public final class MemoryBuffer {
    */
   public int readVarUint32Small14() {
     int readIdx = readerIndex;
-    if (size - readIdx >= 5) {
+    if (size - readIdx >= 4) {
       int fourByteValue = _unsafeGetInt32(readIdx++);
       int value = fourByteValue & 0x7F;
       // Duplicate and manual inline for performance.
@@ -1879,7 +1879,7 @@ public final class MemoryBuffer {
     // noinspection Duplicates
     int readIdx = readerIndex;
     long result;
-    if (size - readIdx < 9) {
+    if (size - readIdx < 8) {
       result = readVarUint64Slow();
     } else {
       long address = this.address;
@@ -1909,7 +1909,7 @@ public final class MemoryBuffer {
     // CHECKSTYLE.ON:MethodName
     int readIdx = readerIndex;
     long result;
-    if (size - readIdx < 9) {
+    if (size - readIdx < 8) {
       result = readVarUint64Slow();
     } else {
       long address = this.address;
@@ -1936,7 +1936,7 @@ public final class MemoryBuffer {
   /** Reads the 1-9 byte int part of a non-negative var long. */
   public long readVarUint64() {
     int readIdx = readerIndex;
-    if (size - readIdx < 9) {
+    if (size - readIdx < 8) {
       return readVarUint64Slow();
     }
     // varint are written using little endian byte order, so read by little endian byte order.
