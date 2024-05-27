@@ -52,7 +52,7 @@ public final class SerializationContext {
    * Set meta context, which can be used to share data across multiple serialization call. Note that
    * {@code metaContext} will be cleared after the serialization is finished. Please set the context
    * before every serialization if metaShare is enabled by {@link
-   * FuryBuilder#withMetaContextShare(boolean)}
+   * FuryBuilder#withMetaShare(boolean)}
    */
   public void setMetaContext(MetaContext metaContext) {
     this.metaContext = metaContext;

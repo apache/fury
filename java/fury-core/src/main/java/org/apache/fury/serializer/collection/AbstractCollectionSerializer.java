@@ -186,7 +186,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       buffer.writeByte(bitmap);
     } else {
       // Write class in case peer doesn't have this class.
-      if (!fury.getConfig().shareMetaContext() && elemClass == declareElementType) {
+      if (!fury.getConfig().isMetaShareEnabled() && elemClass == declareElementType) {
         buffer.writeByte(bitmap);
       } else {
         bitmap |= CollectionFlags.NOT_DECL_ELEMENT_TYPE;
@@ -277,7 +277,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
         elemClass = Object.class;
       }
       // Write class in case peer doesn't have this class.
-      if (!fury.getConfig().shareMetaContext() && elemClass == declareElementType) {
+      if (!fury.getConfig().isMetaShareEnabled() && elemClass == declareElementType) {
         buffer.writeByte(bitmap);
       } else {
         bitmap |= CollectionFlags.NOT_DECL_ELEMENT_TYPE;

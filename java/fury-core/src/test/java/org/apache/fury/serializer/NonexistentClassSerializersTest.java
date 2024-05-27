@@ -236,7 +236,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
         furyBuilder()
             .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen1)
-            .withMetaContextShare(true)
+            .withMetaShare(true)
             .build();
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
@@ -252,7 +252,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
           furyBuilder()
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen2)
-              .withMetaContextShare(true)
+              .withMetaShare(true)
               .withClassLoader(classLoader)
               .build();
       MetaContext context2 = new MetaContext();
@@ -265,7 +265,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
           furyBuilder()
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen3)
-              .withMetaContextShare(true)
+              .withMetaShare(true)
               .withClassLoader(pojo.getClass().getClassLoader())
               .build();
       MetaContext context3 = new MetaContext();
@@ -286,7 +286,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
         furyBuilder()
             .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen1)
-            .withMetaContextShare(true)
+            .withMetaShare(true)
             .build();
     MetaContext context1 = new MetaContext();
     MetaContext context2 = new MetaContext();
@@ -301,14 +301,14 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
           furyBuilder()
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen2)
-              .withMetaContextShare(true)
+              .withMetaShare(true)
               .withClassLoader(classLoader)
               .build();
       Fury fury3 =
           furyBuilder()
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen3)
-              .withMetaContextShare(true)
+              .withMetaShare(true)
               .withClassLoader(structClass.getClassLoader())
               .build();
       for (int i = 0; i < 2; i++) {

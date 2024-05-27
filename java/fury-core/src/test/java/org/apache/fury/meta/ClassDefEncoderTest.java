@@ -38,7 +38,7 @@ public class ClassDefEncoderTest {
 
   @Test
   public void testBasicClassDef() throws Exception {
-    Fury fury = Fury.builder().withMetaContextShare(true).build();
+    Fury fury = Fury.builder().withMetaShare(true).build();
     Class<ClassDefTest.TestFieldsOrderClass1> type = ClassDefTest.TestFieldsOrderClass1.class;
     List<ClassDef.FieldInfo> fieldsInfo = buildFieldsInfo(fury.getClassResolver(), type);
     MemoryBuffer buffer =
@@ -56,7 +56,7 @@ public class ClassDefEncoderTest {
         new Class[] {
           MapFields.class, BeanA.class, Struct.createStructClass("TestBigMetaEncoding", 5)
         }) {
-      Fury fury = Fury.builder().withMetaContextShare(true).build();
+      Fury fury = Fury.builder().withMetaShare(true).build();
       ClassDef classDef = ClassDef.buildClassDef(fury, type);
       ClassDef classDef1 =
           ClassDef.readClassDef(

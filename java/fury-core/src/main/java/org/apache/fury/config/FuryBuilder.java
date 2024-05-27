@@ -68,7 +68,8 @@ public final class FuryBuilder {
   boolean checkJdkClassSerializable = true;
   Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
   boolean requireClassRegistration = true;
-  boolean shareMetaContext = false;
+  boolean metaShareEnabled = false;
+  boolean scopedMetaShareEnabled = false;
   boolean codeGenEnabled = true;
   Boolean deserializeNonexistentClass;
   boolean asyncCompilationEnabled = false;
@@ -233,8 +234,17 @@ public final class FuryBuilder {
   }
 
   /** Whether to enable meta share mode. */
-  public FuryBuilder withMetaContextShare(boolean shareMetaContext) {
-    this.shareMetaContext = shareMetaContext;
+  public FuryBuilder withMetaShare(boolean shareMeta) {
+    this.metaShareEnabled = shareMeta;
+    return this;
+  }
+
+  /**
+   * Scoped meta share focuses on a single serialization process. Metadata created or identified
+   * during this process is exclusive to it and is not shared with by other serializations.
+   */
+  public FuryBuilder withScopedMetaShare(boolean scoped) {
+    scopedMetaShareEnabled = scoped;
     return this;
   }
 

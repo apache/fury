@@ -49,7 +49,8 @@ public class Config implements Serializable {
   private final boolean requireClassRegistration;
   private final boolean suppressClassRegistrationWarnings;
   private final boolean registerGuavaTypes;
-  private final boolean shareMetaContext;
+  private final boolean metaShareEnabled;
+  private final boolean scopedMetaShareEnabled;
   private final boolean asyncCompilationEnabled;
   private final boolean deserializeNonexistentClass;
   private final boolean scalaOptimizationEnabled;
@@ -74,12 +75,13 @@ public class Config implements Serializable {
     compatibleMode = builder.compatibleMode;
     checkJdkClassSerializable = builder.checkJdkClassSerializable;
     defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
-    shareMetaContext = builder.shareMetaContext;
+    metaShareEnabled = builder.metaShareEnabled;
+    scopedMetaShareEnabled = builder.scopedMetaShareEnabled;
     deserializeNonexistentClass = builder.deserializeNonexistentClass;
     if (deserializeNonexistentClass) {
       // Only in meta share mode or compatibleMode, fury knows how to deserialize
       // unexisted class by type info in data.
-      Preconditions.checkArgument(shareMetaContext || compatibleMode == CompatibleMode.COMPATIBLE);
+      Preconditions.checkArgument(metaShareEnabled || compatibleMode == CompatibleMode.COMPATIBLE);
     }
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
@@ -178,8 +180,16 @@ public class Config implements Serializable {
     return defaultJDKStreamSerializerType;
   }
 
-  public boolean shareMetaContext() {
-    return shareMetaContext;
+  public boolean isMetaShareEnabled() {
+    return metaShareEnabled;
+  }
+
+  /**
+   * Scoped meta share focuses on a single serialization process. Metadata created or identified
+   * during this process is exclusive to it and is not shared with by other serializations.
+   */
+  public boolean isScopedMetaShareEnabled() {
+    return scopedMetaShareEnabled;
   }
 
   /**
@@ -235,7 +245,8 @@ public class Config implements Serializable {
         && requireClassRegistration == config.requireClassRegistration
         && suppressClassRegistrationWarnings == config.suppressClassRegistrationWarnings
         && registerGuavaTypes == config.registerGuavaTypes
-        && shareMetaContext == config.shareMetaContext
+        && metaShareEnabled == config.metaShareEnabled
+        && scopedMetaShareEnabled == config.scopedMetaShareEnabled
         && asyncCompilationEnabled == config.asyncCompilationEnabled
         && deserializeNonexistentClass == config.deserializeNonexistentClass
         && scalaOptimizationEnabled == config.scalaOptimizationEnabled
@@ -265,7 +276,8 @@ public class Config implements Serializable {
         requireClassRegistration,
         suppressClassRegistrationWarnings,
         registerGuavaTypes,
-        shareMetaContext,
+        metaShareEnabled,
+        scopedMetaShareEnabled,
         asyncCompilationEnabled,
         deserializeNonexistentClass,
         scalaOptimizationEnabled);

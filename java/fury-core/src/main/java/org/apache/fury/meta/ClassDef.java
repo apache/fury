@@ -70,7 +70,7 @@ import org.apache.fury.util.Preconditions;
  * @see MetaSharedCodecBuilder
  * @see CompatibleMode#COMPATIBLE
  * @see CompatibleSerializer
- * @see FuryBuilder#withMetaContextShare
+ * @see FuryBuilder#withMetaShare
  * @see ReflectionUtils#getFieldOffset
  */
 public class ClassDef implements Serializable {

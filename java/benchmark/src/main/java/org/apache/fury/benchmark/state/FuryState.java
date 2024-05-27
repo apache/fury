@@ -192,7 +192,7 @@ public class FuryState {
               .withClassVersionCheck(false)
               .withRefTracking(references)
               .requireClassRegistration(false)
-              .withMetaContextShare(true)
+              .withMetaShare(true)
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
               .build();
       // share meta first time.

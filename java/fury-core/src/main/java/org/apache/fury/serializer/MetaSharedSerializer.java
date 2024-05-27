@@ -57,7 +57,7 @@ import org.apache.fury.util.record.RecordUtils;
  * info for those types.
  *
  * @see CompatibleMode
- * @see FuryBuilder#withMetaContextShare
+ * @see FuryBuilder#withMetaShare
  * @see MetaSharedCodecBuilder
  * @see ObjectSerializer
  */
@@ -85,7 +85,8 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     Preconditions.checkArgument(
         !fury.getConfig().checkClassVersion(),
         "Class version check should be disabled when compatible mode is enabled.");
-    Preconditions.checkArgument(fury.getConfig().shareMetaContext(), "Meta share must be enabled.");
+    Preconditions.checkArgument(
+        fury.getConfig().isMetaShareEnabled(), "Meta share must be enabled.");
     Collection<Descriptor> descriptors = consolidateFields(fury.getClassResolver(), type, classDef);
     DescriptorGrouper descriptorGrouper =
         DescriptorGrouper.createDescriptorGrouper(

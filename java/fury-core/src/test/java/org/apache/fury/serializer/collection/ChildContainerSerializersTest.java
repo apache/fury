@@ -180,7 +180,7 @@ public class ChildContainerSerializersTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withDeserializeNonexistentClass(true)
-            .withMetaContextShare(true)
+            .withMetaShare(true)
             .requireClassRegistration(false)
             .requireClassRegistration(false)
             .withCodegen(enableCodegen)

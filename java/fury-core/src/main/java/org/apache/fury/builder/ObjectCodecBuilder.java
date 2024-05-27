@@ -87,7 +87,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   public ObjectCodecBuilder(Class<?> beanClass, Fury fury) {
     super(TypeRef.of(beanClass), fury, Generated.GeneratedObjectSerializer.class);
     Collection<Descriptor> descriptors;
-    boolean shareMeta = fury.getConfig().shareMetaContext();
+    boolean shareMeta = fury.getConfig().isMetaShareEnabled();
     if (shareMeta) {
       descriptors =
           visitFury(

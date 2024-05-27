@@ -28,7 +28,7 @@ import org.apache.fury.meta.ClassDef;
  * A class for hold deserialization data when the class doesn't exist in this process. When {@link
  * CompatibleMode#COMPATIBLE} is enabled
  *
- * @see Config#shareMetaContext()
+ * @see Config#isMetaShareEnabled()
  */
 public interface NonexistentClass {
   // @formatter:off
