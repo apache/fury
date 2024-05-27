@@ -19,6 +19,9 @@ import os
 import re
 import sys
 import dataclasses
+import subprocess
+import tempfile
+import shutil
 
 PROJECT_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
 
@@ -28,20 +31,11 @@ FURY_BUILDER_PATH = os.path.join(
 )
 JAVA_DOC_PATH = os.path.join(PROJECT_ROOT_DIR, "docs/guide/java_serialization_guide.md")
 
-JAVA_CONFIG_BEGIN = "// ======== Config Area Begin ========"
-JAVA_CONFIG_END = "// ======== Config Area End ========="
 DOC_GEN_BEGIN = "<!-- Auto generate region begin -->"
 DOC_GEN_END = "<!-- Auto generate region end -->"
 
-SPLIT_FIELD_PATTERN = re.compile(r"(?![*]+);\s*$", flags=re.MULTILINE)
-COMMENT_TMPL_PATTERN = re.compile(r"^\s*/[*]+\s*.*\s*[*]+/$", re.S | re.MULTILINE)
-SINGLE_LINE_COMMENT_PATTERN = re.compile(r"^\s*/[*]+(.+)[*]+/$", re.MULTILINE)
-MULTI_LINE_COMMENT_PATTERN = re.compile(
-    r"^(?!^\s*[*]\s?$)(\s*[*]+[\x20]*)[\x20]?(.*)[\x20]?(?<![*]/)$", re.MULTILINE
-)
-FIELD_PATTERN = re.compile(
-    r"^(?!^\s*[*]+)\s*(public\s+|private\s+|protected\s+|)(\w+|\w+<.+>)\s+(\w+)\s*=?\s*(.*)$",
-    re.MULTILINE,
+FIELD_LINE_PATTERN = re.compile(
+    r"^(public\s+|protected\s+|private\s+|)(\w+|\w+<.+>)\s+\w+$"
 )
 FILE_REPLACE_PATTERN = re.compile(
     rf"^{DOC_GEN_BEGIN}.*{DOC_GEN_END}$", flags=re.MULTILINE | re.S
@@ -57,63 +51,46 @@ class FieldInfo:
     field_comment: str
 
 
-def _parse_fields(content):
-    fields = SPLIT_FIELD_PATTERN.split(content)
-    result = []
-    for field in fields:
-        field_info = _parse_field(field)
-        if field_info is not None:
-            result.append(field_info)
+def _parse_fields(fields_content):
+    fields_info = []
+    for field in fields_content:
+        """
+        Field format:
+        <ul class="blockList">
+            <li class="blockList">
+                <h4>language</h4>
+                <pre><a href="Language.html" title="enum in org.apache.fury.config">Language</a> language</pre>
+                <div class="block">Whether cross-language serialize the object. If you used fury for java only, please set
+                    language to <a href="Language.html#JAVA"><code>Language.JAVA</code></a>, which will have much better performance.
+                </div>
+                <dl>
+                    <dt><span class="simpleTagLabel">defaultValue</span></dt>
+                    <dd>Language.JAVA</dd>
+                </dl>
+            </li>
+        </ul>
+        """
+        tag_labels = field.xpath('li/dl/dt/span[@class="simpleTagLabel"]/text()')
+        is_config_field = "defaultValue" in tag_labels
+        if not is_config_field:
+            continue
 
-    return result
+        field_default_val = "".join(field.xpath("li/dl/dd//text()"))
+        field_name = field.xpath("li/h4/text()")[0]
+        field_comment = "".join(field.xpath("li/div//text()")).replace("\n", "")
 
+        field_line = "".join(field.xpath("li/pre//text()"))
+        match = FIELD_LINE_PATTERN.search(field_line)
+        scope_group = match.group(1).strip()
+        field_scope = None if len(scope_group) == 0 else scope_group
+        field_type = match.group(2)
+        fields_info.append(
+            FieldInfo(
+                field_scope, field_name, field_type, field_default_val, field_comment
+            )
+        )
 
-def _parse_field(field):
-    # 1. Format comment section
-    comment_overview_match = COMMENT_TMPL_PATTERN.search(field)
-    if comment_overview_match is None:
-        comment = None
-        default_val = None
-    else:
-        single_line_match = SINGLE_LINE_COMMENT_PATTERN.search(field)
-        if single_line_match is not None:
-            fat_comment = single_line_match.group(1)
-        else:
-            multi_line_matches = MULTI_LINE_COMMENT_PATTERN.finditer(field)
-            fat_comment = ""
-            for match in multi_line_matches:
-                data = match.group(2)
-                fat_comment += data + " "
-
-        cutting_with_tag = "<p>defaultValue:"
-        cutting = "defaultValue:"
-        if field.find(cutting_with_tag) != -1:
-            split_data = fat_comment.split(cutting_with_tag)
-        else:
-            split_data = fat_comment.split(cutting)
-        assert (
-            len(split_data) <= 2
-        ), "Only one defaultValue can be specified in the comment."
-
-        default_val = split_data[1].strip() if len(split_data) == 2 else None
-        comment = split_data[0].strip()
-
-    # 2. Format field section
-    field_match = FIELD_PATTERN.search(field)
-    if field_match is None:
-        return None
-
-    scope = field_match.group(1).strip()
-    type = field_match.group(2)
-    name = field_match.group(3)
-    if (
-        default_val is None
-        and field_match.group(4) is not None
-        and len(field_match.group(4)) > 0
-    ):
-        default_val = field_match.group(4)
-    field_info = FieldInfo(scope, name, type, default_val, comment)
-    return field_info
+    return fields_info
 
 
 def _write_content(fields):
@@ -126,10 +103,10 @@ def _write_content(fields):
             return
 
     """
-        Table format:
-            | Option Name   | Description        | Default Value     |       <------ Table header
-            |---------------|--------------------|-------------------|       <------ Table delimiter
-            | `xxxxxx`      | xxxxxxxx           | xxxxx             |       <------ Table body
+    Table format:
+        | Option Name   | Description        | Default Value     |       <------ Table header
+        |---------------|--------------------|-------------------|       <------ Table delimiter
+        | `xxxxxx`      | xxxxxxxx           | xxxxx             |       <------ Table body
     """
     hdr1 = " Option Name"
     hdr2 = " Description"
@@ -198,17 +175,49 @@ def _write_content(fields):
 
 
 def main():
-    with open(FURY_BUILDER_PATH) as f:
-        content = f.read()
-        if content is None:
-            return 1
-    start_idx = content.find(JAVA_CONFIG_BEGIN)
-    end_idx = content.find(JAVA_CONFIG_END)
-    if start_idx == -1 or end_idx == -1:
-        return 0
+    # 1. Try installing lxml
+    try_count = 3
+    while try_count >= 0:
+        try:
+            from lxml import etree
+        except Exception:
+            if try_count == 0:
+                return 1
+            print("Try installing lxml.")
+            subprocess.check_call("pip3 install lxml", shell=True)
+        finally:
+            try_count -= 1
 
-    fields = _parse_fields(content[start_idx + len(JAVA_CONFIG_BEGIN) : end_idx])
-    _write_content(fields)
+    # 2. Generating javadoc
+    print("Generating javadoc...")
+    tmp_dir = tempfile.gettempdir()
+    output_dir = "output"
+    subprocess.call(
+        f"cd {PROJECT_ROOT_DIR}java/fury-core;"
+        f"mvn javadoc:javadoc -DreportOutputDirectory={tmp_dir} -DdestDir={output_dir} -Dshow=private",
+        shell=True,
+        stdout=subprocess.DEVNULL,
+    )
+    print("javadoc generated successfully.")
+
+    # 3. Parsing javadoc
+    javadoc_dir = os.path.join(tmp_dir, output_dir)
+    fury_build_src = os.path.join(
+        javadoc_dir, "org/apache/fury/config/FuryBuilder.html"
+    )
+    with open(fury_build_src) as f:
+        content = f.read()
+    shutil.rmtree(javadoc_dir)
+
+    html = etree.HTML(content)
+    # There is only one `Field Detail`
+    field_detail = html.xpath('//div[@class="details"]//section[1]')[0]
+    if field_detail is None:
+        return 1
+    fields_content = field_detail.xpath("ul/li/ul")
+    fields_info = _parse_fields(fields_content)
+    _write_content(fields_info)
+    print("Doc update completed.")
 
 
 if __name__ == "__main__":

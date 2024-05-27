@@ -116,23 +116,9 @@ To use this script, we need to add comments on the [FuryBuilder](https://github.
 /**
  * Comment body
  *
- * defaultValue: xxx
+ * @defaultValue xxx
  */
 ```
-or
-```
-/** Comment body defaultValue: xxx */
-```
 
-The `Comment body` corresponds to the `Description` in the table, and the `defaultValue(optional)` corresponds to the `Default Value` in the table. If no `defaultValue` is provided in the comment, the value specified after the field will be used as the `defaultValue` (e.g. `boolean enable = true`, `true` will be used as `defaultValue`).
+The `Comment body` corresponds to the `Description` in the table, and the `@defaultValue` corresponds to the `Default Value` in the table.
 
-All configuration fields should be within the following two tags
-
-```
-// org/apache/fury/config/FuryBuilder.java
-
-// ======== Config Area Begin ========
-xxxxxx
-xxxxxx
-// ======== Config Area End =========
-```
