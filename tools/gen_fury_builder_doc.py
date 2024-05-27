@@ -17,7 +17,6 @@
 
 import os
 import re
-import sys
 import dataclasses
 import subprocess
 import tempfile
@@ -182,7 +181,7 @@ def main():
             from lxml import etree
         except Exception:
             if try_count == 0:
-                return 1
+                raise Exception(f"Retrying {try_count} times to install lxml failed.")
             print("Try installing lxml.")
             subprocess.check_call("pip3 install lxml", shell=True)
         finally:
@@ -213,7 +212,9 @@ def main():
     # There is only one `Field Detail`
     field_detail = html.xpath('//div[@class="details"]//section[1]')[0]
     if field_detail is None:
-        return 1
+        raise Exception(
+            "There is no `Field Detail` related content in the current Javadoc."
+        )
     fields_content = field_detail.xpath("ul/li/ul")
     fields_info = _parse_fields(fields_content)
     _write_content(fields_info)
@@ -221,4 +222,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
