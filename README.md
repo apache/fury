@@ -111,19 +111,19 @@ Release version:
 <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.5.0</version>
+  <version>0.5.1</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.5.0</version>
+  <version>0.5.1</version>
 </dependency> -->
 ```
 
 ### Scala
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-core" % "0.5.0"
+libraryDependencies += "org.apache.fury" % "fury-core" % "0.5.1"
 ```
 
 ### Python

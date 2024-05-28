@@ -47,7 +47,7 @@ def prepare(v: str):
 
 
 def build(v: str):
-    """version format: 0.5.0"""
+    """version format: 0.5.1"""
     logger.info("Start to prepare release artifacts for version %s", v)
     _check_release_version(v)
     os.chdir(PROJECT_ROOT_DIR)
