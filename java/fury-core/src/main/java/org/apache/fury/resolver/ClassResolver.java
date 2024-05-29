@@ -811,6 +811,17 @@ public class ClassResolver {
       // serialized, which will create a class info with serializer null, see `#writeClassInternal`
       return classInfo.serializer.getClass();
     } else {
+      if (cls.isArray()) {
+        Class<?> component = TypeUtils.getArrayComponent(cls);
+        Preconditions.checkArgument(!component.isPrimitive());
+        if (NonexistentClass.class.isAssignableFrom(component)) {
+          return NonexistentClassSerializers.getSerializer(fury, "Unknown", cls).getClass();
+        }
+        return ArraySerializers.ObjectArraySerializer.class;
+      }
+      if (NonexistentClass.class.isAssignableFrom(cls)) {
+        return NonexistentClassSerializers.getSerializer(fury, "Unknown", cls).getClass();
+      }
       if (cls.isEnum()) {
         return EnumSerializer.class;
       } else if (Enum.class.isAssignableFrom(cls) && cls != Enum.class) {
@@ -820,9 +831,6 @@ public class ClassResolver {
         return CollectionSerializers.EnumSetSerializer.class;
       } else if (Charset.class.isAssignableFrom(cls)) {
         return Serializers.CharsetSerializer.class;
-      } else if (cls.isArray()) {
-        Preconditions.checkArgument(!cls.getComponentType().isPrimitive());
-        return ArraySerializers.ObjectArraySerializer.class;
       } else if (Functions.isLambda(cls)) {
         return LambdaSerializer.class;
       } else if (ReflectionUtils.isJdkProxy(cls)) {
@@ -1337,23 +1345,18 @@ public class ClassResolver {
       List<ClassDef> readClassDefs = metaContext.readClassDefs;
       ClassDef classDef = readClassDefs.get(id);
       ClassSpec classSpec = classDef.getClassSpec();
-      if (classSpec.isArray || classSpec.isEnum) {
-        Class<?> cls = loadClass(classDef.getClassSpec());
-        classInfo = getClassInfo(cls);
-      } else {
-        Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
-        if (classDefTuple == null || classDefTuple.f1 == null) {
-          if (classDefTuple != null) {
-            classDef = classDefTuple.f0;
-          }
-          Class<?> cls = loadClass(classDef.getClassSpec());
-          classInfo = getMetaSharedClassInfo(classDef, cls);
-          // Share serializer for same version class def to avoid too much different meta
-          // context take up too much memory.
-          putClassDef(classDef, classInfo);
-        } else {
-          classInfo = classDefTuple.f1;
+      Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
+      if (classDefTuple == null || classDefTuple.f1 == null) {
+        if (classDefTuple != null) {
+          classDef = classDefTuple.f0;
         }
+        Class<?> cls = loadClass(classDef.getClassSpec());
+        classInfo = getMetaSharedClassInfo(classDef, cls);
+        // Share serializer for same version class def to avoid too much different meta
+        // context take up too much memory.
+        putClassDef(classDef, classInfo);
+      } else {
+        classInfo = classDefTuple.f1;
       }
       readClassInfos.set(id, classInfo);
     }

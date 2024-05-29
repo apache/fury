@@ -104,7 +104,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
 
   @DataProvider
   public static Object[][] scopedMetaShare() {
-    return new Object[][] {{true}};
+    return new Object[][] {{false}, {true}};
   }
 
   @Test(dataProvider = "scopedMetaShare")

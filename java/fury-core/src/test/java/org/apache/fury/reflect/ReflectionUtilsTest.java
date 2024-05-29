@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.List;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.type.Descriptor;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class ReflectionUtilsTest {
@@ -69,5 +70,35 @@ public class ReflectionUtilsTest {
     List<Object> fieldValues =
         ReflectionUtils.getFieldValues(Descriptor.getFields(GetFieldValuesTestClass.class), o);
     assertEquals(fieldValues, ImmutableList.of("str", 10));
+  }
+
+  enum MonomorphicTestEnum1 {
+    A,
+    B
+  }
+
+  enum MonomorphicTestEnum2 {
+    A {
+      @Override
+      int f() {
+        return 0;
+      }
+    },
+    B {
+      @Override
+      int f() {
+        return 1;
+      }
+    };
+
+    abstract int f();
+  }
+
+  @Test
+  public void testMonomorphic() {
+    Assert.assertTrue(ReflectionUtils.isMonomorphic(MonomorphicTestEnum1.class));
+    Assert.assertTrue(ReflectionUtils.isMonomorphic(MonomorphicTestEnum2.class));
+    Assert.assertTrue(ReflectionUtils.isMonomorphic(MonomorphicTestEnum1[].class));
+    Assert.assertTrue(ReflectionUtils.isMonomorphic(MonomorphicTestEnum2[].class));
   }
 }
