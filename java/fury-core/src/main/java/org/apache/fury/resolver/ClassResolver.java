@@ -1295,9 +1295,11 @@ public class ClassResolver {
         classDef =
             classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(fury, cls));
       } else {
+        // Some type will use other serializers such MapSerializer and so on.
         classDef =
             classDefMap.computeIfAbsent(
-                classInfo.cls, cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>()));
+                classInfo.cls,
+                cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>(), new byte[1]));
       }
       metaContext.writingClassDefs.add(classDef);
     }
@@ -1338,14 +1340,17 @@ public class ClassResolver {
     if (classInfo == null) {
       List<ClassDef> readClassDefs = metaContext.readClassDefs;
       ClassDef classDef = readClassDefs.get(id);
-      ClassSpec classSpec = classDef.getClassSpec();
       Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
       if (classDefTuple == null || classDefTuple.f1 == null) {
         if (classDefTuple != null) {
           classDef = classDefTuple.f0;
         }
         Class<?> cls = loadClass(classDef.getClassSpec());
-        classInfo = getMetaSharedClassInfo(classDef, cls);
+        if (classDef.getExtMeta().length > 0) {
+          classInfo = getClassInfo(cls);
+        } else {
+          classInfo = getMetaSharedClassInfo(classDef, cls);
+        }
         // Share serializer for same version class def to avoid too much different meta
         // context take up too much memory.
         putClassDef(classDef, classInfo);

@@ -767,7 +767,7 @@ public class ClassDef implements Serializable {
     return buildClassDef(classResolver, type, fields, new byte[0]);
   }
 
-  private static ClassDef buildClassDef(
+  public static ClassDef buildClassDef(
       ClassResolver classResolver, Class<?> type, List<Field> fields, byte[] extMeta) {
     return ClassDefEncoder.buildClassDef(classResolver, type, fields, extMeta);
   }

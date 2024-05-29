@@ -182,7 +182,6 @@ public class ChildContainerSerializersTest extends FuryTestBase {
             .withDeserializeNonexistentClass(true)
             .withMetaShare(true)
             .requireClassRegistration(false)
-            .requireClassRegistration(false)
             .withCodegen(enableCodegen)
             .build();
     serDeMetaShared(fury, outerDO);
