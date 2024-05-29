@@ -19,7 +19,6 @@
 
 package org.apache.fury.resolver;
 
-import static org.apache.fury.collection.Collections.ofHashMap;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
@@ -98,6 +97,8 @@ import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.ClassDef;
+import org.apache.fury.meta.ClassSpec;
+import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
@@ -146,7 +147,6 @@ import org.apache.fury.type.ScalaTypes;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 
 /**
@@ -1293,16 +1293,9 @@ public class ClassResolver {
         classDef =
             classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(fury, cls));
       } else {
-        // TODO(chaokunyang) support more types meta-share serialization
         classDef =
             classDefMap.computeIfAbsent(
-                classInfo.cls,
-                cls ->
-                    ClassDef.buildClassDef(
-                        this,
-                        cls,
-                        new ArrayList<>(),
-                        ofHashMap(META_SHARE_FIELDS_INFO_KEY, "false")));
+                classInfo.cls, cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>()));
       }
       metaContext.writingClassDefs.add(classDef);
     }
@@ -1320,7 +1313,7 @@ public class ClassResolver {
     if (classInfo == null) {
       List<ClassDef> readClassDefs = metaContext.readClassDefs;
       ClassDef classDef = readClassDefs.get(id);
-      Class<?> cls = loadClass(classDef.getClassName());
+      Class<?> cls = loadClass(classDef.getClassSpec());
       classInfo = getClassInfo(cls, false);
       if (classInfo == null) {
         Short classId = extRegistry.registeredClassIdMap.get(cls);
@@ -1343,8 +1336,9 @@ public class ClassResolver {
     if (classInfo == null) {
       List<ClassDef> readClassDefs = metaContext.readClassDefs;
       ClassDef classDef = readClassDefs.get(id);
-      if ("false".equals(classDef.getExtMeta().getOrDefault(META_SHARE_FIELDS_INFO_KEY, ""))) {
-        Class<?> cls = loadClass(classDef.getClassName());
+      ClassSpec classSpec = classDef.getClassSpec();
+      if (classSpec.isArray || classSpec.isEnum) {
+        Class<?> cls = loadClass(classDef.getClassSpec());
         classInfo = getClassInfo(cls);
       } else {
         Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
@@ -1352,7 +1346,7 @@ public class ClassResolver {
           if (classDefTuple != null) {
             classDef = classDefTuple.f0;
           }
-          Class<?> cls = loadClass(classDef.getClassName());
+          Class<?> cls = loadClass(classDef.getClassSpec());
           classInfo = getMetaSharedClassInfo(classDef, cls);
           // Share serializer for same version class def to avoid too much different meta
           // context take up too much memory.
@@ -1663,35 +1657,12 @@ public class ClassResolver {
       MetaStringBytes packageBytes,
       MetaStringBytes simpleClassNameBytes) {
     String packageName = packageBytes.decode(PACKAGE_DECODER);
-    String rawPkg = packageName;
     String className = simpleClassNameBytes.decode(TYPE_NAME_DECODER);
-    boolean isArray = className.startsWith(ClassInfo.ARRAY_PREFIX);
-    int dimension = 0;
-    if (isArray) {
-      while (className.charAt(dimension) == ClassInfo.ARRAY_PREFIX.charAt(0)) {
-        dimension++;
-      }
-      packageName = StringUtils.repeat("[", dimension) + "L" + packageName;
-      className = className.substring(dimension) + ";";
-    }
-    boolean isEnum = className.startsWith(ClassInfo.ENUM_PREFIX);
-    if (isEnum) {
-      className = className.substring(1);
-    }
-    String entireClassName;
-    if (StringUtils.isBlank(rawPkg)) {
-      if (isArray) {
-        entireClassName = packageName + className;
-      } else {
-        entireClassName = className;
-      }
-    } else {
-      entireClassName = packageName + "." + className;
-    }
+    ClassSpec classSpec = Encoders.decodePkgAndClass(packageName, className);
     MetaStringBytes fullClassNameBytes =
         metaStringResolver.getOrCreateMetaStringBytes(
-            PACKAGE_ENCODER.encode(entireClassName, MetaString.Encoding.UTF_8));
-    Class<?> cls = loadClass(entireClassName, isEnum, dimension);
+            PACKAGE_ENCODER.encode(classSpec.entireClassName, MetaString.Encoding.UTF_8));
+    Class<?> cls = loadClass(classSpec.entireClassName, classSpec.isEnum, classSpec.dimension);
     ClassInfo classInfo =
         new ClassInfo(
             cls,
@@ -1703,7 +1674,8 @@ public class ClassResolver {
             null,
             NO_CLASS_ID);
     if (NonexistentClass.class.isAssignableFrom(TypeUtils.getComponentIfArray(cls))) {
-      classInfo.serializer = NonexistentClassSerializers.getSerializer(fury, entireClassName, cls);
+      classInfo.serializer =
+          NonexistentClassSerializers.getSerializer(fury, classSpec.entireClassName, cls);
     } else {
       // don't create serializer here, if the class is an interface,
       // there won't be serializer since interface has no instance.
@@ -1746,6 +1718,10 @@ public class ClassResolver {
 
   private Class<?> loadClass(String className) {
     return loadClass(className, false, 0);
+  }
+
+  private Class<?> loadClass(ClassSpec classSpec) {
+    return loadClass(classSpec.entireClassName, classSpec.isEnum, classSpec.dimension);
   }
 
   private Class<?> loadClass(String className, boolean isEnum, int arrayDims) {

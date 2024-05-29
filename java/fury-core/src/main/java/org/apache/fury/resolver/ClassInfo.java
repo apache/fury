@@ -24,12 +24,11 @@ import static org.apache.fury.meta.Encoders.TYPE_NAME_ENCODER;
 
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
+import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.serializer.Serializer;
-import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 
 /**
@@ -37,8 +36,6 @@ import org.apache.fury.util.function.Functions;
  * serialization.
  */
 public class ClassInfo {
-  static final String ARRAY_PREFIX = "1";
-  static final String ENUM_PREFIX = "2";
 
   final Class<?> cls;
   final MetaStringBytes fullClassNameBytes;
@@ -92,29 +89,11 @@ public class ClassInfo {
     if (cls != null
         && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
-      String packageName = ReflectionUtils.getPackage(cls);
-      String className = ReflectionUtils.getClassNameWithoutPackage(cls);
-      if (cls.isArray()) {
-        Tuple2<Class<?>, Integer> componentInfo = TypeUtils.getArrayComponentInfo(cls);
-        Class<?> ctype = componentInfo.f0;
-        if (!ctype.isPrimitive()) { // primitive array has special format like [[[III.
-          String componentName = ctype.getName();
-          packageName = ReflectionUtils.getPackage(componentName);
-          String componentSimpleName = ReflectionUtils.getClassNameWithoutPackage(componentName);
-          String prefix = StringUtils.repeat(ARRAY_PREFIX, componentInfo.f1);
-          if (ctype.isEnum()) {
-            className = prefix + ENUM_PREFIX + componentSimpleName;
-          } else {
-            className = prefix + componentSimpleName;
-          }
-        }
-      } else if (cls.isEnum()) {
-        className = ENUM_PREFIX + className;
-      }
+      Tuple2<String, String> tuple2 = Encoders.encodePkgAndClass(cls);
       this.packageNameBytes =
-          metaStringResolver.getOrCreateMetaStringBytes(PACKAGE_ENCODER.encode(packageName));
+          metaStringResolver.getOrCreateMetaStringBytes(PACKAGE_ENCODER.encode(tuple2.f0));
       this.classNameBytes =
-          metaStringResolver.getOrCreateMetaStringBytes(TYPE_NAME_ENCODER.encode(className));
+          metaStringResolver.getOrCreateMetaStringBytes(TYPE_NAME_ENCODER.encode(tuple2.f1));
     } else {
       this.packageNameBytes = null;
       this.classNameBytes = null;

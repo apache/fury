@@ -22,7 +22,6 @@ package org.apache.fury.meta;
 import static org.apache.fury.meta.ClassDefEncoder.buildFieldsInfo;
 import static org.apache.fury.meta.ClassDefEncoder.getClassFields;
 
-import java.util.HashMap;
 import java.util.List;
 import lombok.Data;
 import org.apache.fury.Fury;
@@ -43,7 +42,7 @@ public class ClassDefEncoderTest {
     List<ClassDef.FieldInfo> fieldsInfo = buildFieldsInfo(fury.getClassResolver(), type);
     MemoryBuffer buffer =
         ClassDefEncoder.encodeClassDef(
-            fury.getClassResolver(), type, getClassFields(type, fieldsInfo), new HashMap<>());
+            fury.getClassResolver(), type, getClassFields(type, fieldsInfo), new byte[0]);
     ClassDef classDef = ClassDef.readClassDef(fury.getClassResolver(), buffer);
     Assert.assertEquals(classDef.getClassName(), type.getName());
     Assert.assertEquals(classDef.getFieldsInfo().size(), type.getDeclaredFields().length);

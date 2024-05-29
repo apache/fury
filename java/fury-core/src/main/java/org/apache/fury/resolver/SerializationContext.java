@@ -20,7 +20,6 @@
 package org.apache.fury.resolver;
 
 import java.util.IdentityHashMap;
-
 import org.apache.fury.config.Config;
 import org.apache.fury.config.FuryBuilder;
 

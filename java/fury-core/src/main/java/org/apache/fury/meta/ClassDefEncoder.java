@@ -27,7 +27,6 @@ import static org.apache.fury.meta.Encoders.pkgEncodingsList;
 import static org.apache.fury.meta.Encoders.typeNameEncodingsList;
 
 import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -36,9 +35,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import org.apache.fury.Fury;
+import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.ClassDef.FieldInfo;
 import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.reflect.ReflectionUtils;
@@ -103,7 +102,7 @@ class ClassDefEncoder {
 
   /** Build class definition from fields of class. */
   static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields, Map<String, String> extMeta) {
+      ClassResolver classResolver, Class<?> type, List<Field> fields, byte[] extMeta) {
     List<FieldInfo> fieldInfos = buildFieldsInfo(classResolver, fields);
     Map<String, List<FieldInfo>> classLayers = getClassFields(type, fieldInfos);
     fieldInfos = new ArrayList<>(fieldInfos.size());
@@ -111,7 +110,11 @@ class ClassDefEncoder {
     MemoryBuffer encodeClassDef = encodeClassDef(classResolver, type, classLayers, extMeta);
     byte[] classDefBytes = encodeClassDef.getBytes(0, encodeClassDef.writerIndex());
     return new ClassDef(
-        type.getName(), fieldInfos, extMeta, encodeClassDef.getInt64(0), classDefBytes);
+        Encoders.buildClassSpec(type),
+        fieldInfos,
+        extMeta,
+        encodeClassDef.getInt64(0),
+        classDefBytes);
   }
 
   // see spec documentation: docs/specification/java_serialization_spec.md
@@ -120,7 +123,7 @@ class ClassDefEncoder {
       ClassResolver classResolver,
       Class<?> type,
       Map<String, List<FieldInfo>> classLayers,
-      Map<String, String> extMeta) {
+      byte[] extMeta) {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     buffer.increaseWriterIndex(9); // header + one byte size
     long header;
@@ -132,7 +135,7 @@ class ClassDefEncoder {
       header = encodedSize;
     }
     header |= SCHEMA_COMPATIBLE_FLAG;
-    if (!extMeta.isEmpty()) {
+    if (extMeta.length > 0) {
       header |= EXT_FLAG;
     }
     for (Map.Entry<String, List<FieldInfo>> entry : classLayers.entrySet()) {
@@ -147,24 +150,16 @@ class ClassDefEncoder {
         buffer.writeVarUint32Small7(classResolver.getRegisteredClassId(type));
       } else {
         buffer.writeVarUint32Small7(currentClassHeader);
-        String pkg = ReflectionUtils.getPackage(className);
-        String typeName = ReflectionUtils.getSimpleClassName(className);
-        writePkgName(buffer, pkg);
-        writeTypeName(buffer, typeName);
+        Class<?> currentType = getType(type, className);
+        Tuple2<String, String> encoded = Encoders.encodePkgAndClass(currentType);
+        writePkgName(buffer, encoded.f0);
+        writeTypeName(buffer, encoded.f1);
       }
       writeFieldsInfo(buffer, fields);
     }
-    if (!extMeta.isEmpty()) {
-      buffer.writeVarUint32Small7(extMeta.size());
-      for (Map.Entry<String, String> entry : extMeta.entrySet()) {
-        String k = entry.getKey();
-        String v = entry.getValue();
-        byte[] keyBytes = k.getBytes(StandardCharsets.UTF_8);
-        byte[] valueBytes = v.getBytes(StandardCharsets.UTF_8);
-        buffer.writePrimitiveArrayWithSize(keyBytes, Platform.BYTE_ARRAY_OFFSET, keyBytes.length);
-        buffer.writePrimitiveArrayWithSize(
-            valueBytes, Platform.BYTE_ARRAY_OFFSET, valueBytes.length);
-      }
+    if (extMeta.length > 0) {
+      buffer.writeVarUint32Small7(extMeta.length);
+      buffer.writeBytes(extMeta);
     }
     byte[] encodedClassDef = buffer.getBytes(0, buffer.writerIndex());
     long hash = MurmurHash3.murmurhash3_x64_128(encodedClassDef, 0, encodedClassDef.length, 47)[0];
@@ -186,6 +181,18 @@ class ClassDefEncoder {
       buffer.putByte(8, (byte) len);
     }
     return buffer;
+  }
+
+  private static Class<?> getType(Class<?> cls, String type) {
+    Class<?> c = cls;
+    while (cls != null) {
+      if (type.equals(cls.getName())) {
+        return cls;
+      }
+      cls = cls.getSuperclass();
+    }
+    throw new IllegalStateException(
+        String.format("Class %s doesn't have %s as super class", c, type));
   }
 
   static Map<String, List<FieldInfo>> getClassFields(Class<?> type, List<FieldInfo> fieldsInfo) {

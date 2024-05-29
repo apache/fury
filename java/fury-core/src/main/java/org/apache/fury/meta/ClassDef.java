@@ -103,9 +103,9 @@ public class ClassDef implements Serializable {
         }
       };
 
-  private final String className;
+  private final ClassSpec classSpec;
   private final List<FieldInfo> fieldsInfo;
-  private final Map<String, String> extMeta;
+  private final byte[] extMeta;
   // Unique id for class def. If class def are same between processes, then the id will
   // be same too.
   private final long id;
@@ -113,12 +113,8 @@ public class ClassDef implements Serializable {
   private transient List<Descriptor> descriptors;
 
   ClassDef(
-      String className,
-      List<FieldInfo> fieldsInfo,
-      Map<String, String> extMeta,
-      long id,
-      byte[] encoded) {
-    this.className = className;
+      ClassSpec classSpec, List<FieldInfo> fieldsInfo, byte[] extMeta, long id, byte[] encoded) {
+    this.classSpec = classSpec;
     this.fieldsInfo = fieldsInfo;
     this.extMeta = extMeta;
     this.id = id;
@@ -131,7 +127,11 @@ public class ClassDef implements Serializable {
    * @see Class#getName()
    */
   public String getClassName() {
-    return className;
+    return classSpec.entireClassName;
+  }
+
+  public ClassSpec getClassSpec() {
+    return classSpec;
   }
 
   /** Contain all fields info including all parent classes. */
@@ -140,7 +140,7 @@ public class ClassDef implements Serializable {
   }
 
   /** Returns ext meta for the class. */
-  public Map<String, String> getExtMeta() {
+  public byte[] getExtMeta() {
     return extMeta;
   }
 
@@ -165,21 +165,21 @@ public class ClassDef implements Serializable {
       return false;
     }
     ClassDef classDef = (ClassDef) o;
-    return Objects.equals(className, classDef.className)
+    return Objects.equals(classSpec.entireClassName, classDef.classSpec.entireClassName)
         && Objects.equals(fieldsInfo, classDef.fieldsInfo)
         && Objects.equals(extMeta, classDef.extMeta);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(className, fieldsInfo, extMeta);
+    return Objects.hash(classSpec.entireClassName, fieldsInfo, extMeta);
   }
 
   @Override
   public String toString() {
     return "ClassDef{"
         + "className='"
-        + className
+        + classSpec.entireClassName
         + '\''
         + ", fieldsInfo="
         + fieldsInfo
@@ -758,17 +758,17 @@ public class ClassDef implements Serializable {
 
   public static ClassDef buildClassDef(Fury fury, Class<?> cls, boolean resolveParent) {
     return ClassDefEncoder.buildClassDef(
-        fury.getClassResolver(), cls, buildFields(fury, cls, resolveParent), new HashMap<>());
+        fury.getClassResolver(), cls, buildFields(fury, cls, resolveParent), new byte[0]);
   }
 
   /** Build class definition from fields of class. */
   public static ClassDef buildClassDef(
       ClassResolver classResolver, Class<?> type, List<Field> fields) {
-    return buildClassDef(classResolver, type, fields, new HashMap<>());
+    return buildClassDef(classResolver, type, fields, new byte[0]);
   }
 
-  public static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields, Map<String, String> extMeta) {
+  private static ClassDef buildClassDef(
+      ClassResolver classResolver, Class<?> type, List<Field> fields, byte[] extMeta) {
     return ClassDefEncoder.buildClassDef(classResolver, type, fields, extMeta);
   }
 }

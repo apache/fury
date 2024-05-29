@@ -24,15 +24,11 @@ import static org.apache.fury.meta.Encoders.fieldNameEncodings;
 import static org.apache.fury.meta.Encoders.pkgEncodings;
 import static org.apache.fury.meta.Encoders.typeNameEncodings;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.meta.MetaString.Encoding;
-import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.Preconditions;
 
@@ -64,37 +60,30 @@ class ClassDefDecoder {
     numClasses += 1;
     String className = null;
     List<ClassDef.FieldInfo> classFields = new ArrayList<>();
+    ClassSpec classSpec = null;
     for (int i = 0; i < numClasses; i++) {
       // | num fields + register flag | header + package name | header + class name
       // | header + type id + field name | next field info | ... |
       int currentClassHeader = buffer.readVarUint32Small7();
       boolean isRegistered = (currentClassHeader & 0b1) != 0;
       int numFields = currentClassHeader >>> 1;
-      String fullClassName;
       if (isRegistered) {
         int registeredId = buffer.readVarUint32Small7();
-        fullClassName = classResolver.getClassInfo((short) registeredId).getCls().getName();
+        className = classResolver.getClassInfo((short) registeredId).getCls().getName();
       } else {
         String pkg = readPkgName(buffer);
         String typeName = readTypeName(buffer);
-        fullClassName = ReflectionUtils.getFullClassName(pkg, typeName);
+        classSpec = Encoders.decodePkgAndClass(pkg, typeName);
+        className = classSpec.entireClassName;
       }
-      className = fullClassName;
-      List<ClassDef.FieldInfo> fieldInfos = readFieldsInfo(buffer, fullClassName, numFields);
+      List<ClassDef.FieldInfo> fieldInfos = readFieldsInfo(buffer, className, numFields);
       classFields.addAll(fieldInfos);
     }
+    Preconditions.checkNotNull(classSpec);
     boolean hasExtMeta = (header & 0b1000000) != 0;
-    Map<String, String> extMeta = new HashMap<>();
-    if (hasExtMeta) {
-      int extMetaSize = buffer.readVarUint32Small7();
-      for (int i = 0; i < extMetaSize; i++) {
-        extMeta.put(
-            new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8),
-            new String(buffer.readBytesAndSize(), StandardCharsets.UTF_8));
-      }
-    }
+    byte[] extMeta = hasExtMeta ? buffer.readBytesAndSize() : new byte[0];
     return new ClassDef(
-        className, classFields, extMeta, id, encoded.getBytes(0, encoded.writerIndex()));
+        classSpec, classFields, extMeta, id, encoded.getBytes(0, encoded.writerIndex()));
   }
 
   private static List<ClassDef.FieldInfo> readFieldsInfo(
