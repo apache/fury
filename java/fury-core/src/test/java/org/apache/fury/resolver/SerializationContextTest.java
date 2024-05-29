@@ -29,7 +29,8 @@ public class SerializationContextTest {
 
   @Test
   public void testSerializationContext() {
-    SerializationContext context = new SerializationContext(new Config(new FuryBuilder()));
+    SerializationContext context = new SerializationContext(new Config(
+      new FuryBuilder().withDeserializeNonexistentClass(false)));
     assertFalse(context.containsKey("A"));
     context.add("A", 1);
     assertTrue(context.containsKey("A"));
