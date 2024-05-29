@@ -175,6 +175,9 @@ public class Example {
         // but may be insecure if the classes contains malicious code.
         .requireClassRegistration(true)
         .buildThreadSafeFury();
+      // Registering types can reduce class name serialization overhead, but not mandatory.
+      // If class registration enabled, all custom types must be registered.
+      fury.register(SomeClass.class);
       byte[] bytes = fury.serialize(object);
       System.out.println(fury.deserialize(bytes));
     }
