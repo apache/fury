@@ -23,6 +23,7 @@ import org.apache.fury.collection.LazyMap;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Config;
 import org.apache.fury.meta.ClassDef;
+import org.apache.fury.type.TypeUtils;
 
 /**
  * A class for hold deserialization data when the class doesn't exist in this process. When {@link
@@ -122,11 +123,19 @@ public interface NonexistentClass {
   Class<?> Nonexistent2DArray = NonexistentMetaShared[][].class;
   Class<?> Nonexistent3DArray = NonexistentMetaShared[][][].class;
 
-  static Class<?> getUnexistentClass(boolean isEnum, int arrayDims, boolean shareMeta) {
-    return getUnexistentClass("Unknown", isEnum, arrayDims, shareMeta);
+  static boolean isNonexistent(Class<?> cls) {
+    if (cls.isArray()) {
+      Class<?> component = TypeUtils.getArrayComponent(cls);
+      return NonexistentClass.class.isAssignableFrom(component);
+    }
+    return NonexistentClass.class.isAssignableFrom(cls);
   }
 
-  static Class<?> getUnexistentClass(
+  static Class<?> getNonexistentClass(boolean isEnum, int arrayDims, boolean shareMeta) {
+    return getNonexistentClass("Unknown", isEnum, arrayDims, shareMeta);
+  }
+
+  static Class<?> getNonexistentClass(
       String className, boolean isEnum, int arrayDims, boolean shareMeta) {
     if (arrayDims != 0) {
       if (isEnum) {

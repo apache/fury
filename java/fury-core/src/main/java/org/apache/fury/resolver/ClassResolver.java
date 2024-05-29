@@ -811,18 +811,12 @@ public class ClassResolver {
       // serialized, which will create a class info with serializer null, see `#writeClassInternal`
       return classInfo.serializer.getClass();
     } else {
-      if (cls.isArray()) {
-        Class<?> component = TypeUtils.getArrayComponent(cls);
-        Preconditions.checkArgument(!component.isPrimitive());
-        if (NonexistentClass.class.isAssignableFrom(component)) {
-          return NonexistentClassSerializers.getSerializer(fury, "Unknown", cls).getClass();
-        }
-        return ArraySerializers.ObjectArraySerializer.class;
-      }
-      if (NonexistentClass.class.isAssignableFrom(cls)) {
+      if (NonexistentClass.isNonexistent(cls)) {
         return NonexistentClassSerializers.getSerializer(fury, "Unknown", cls).getClass();
       }
-      if (cls.isEnum()) {
+      if (cls.isArray()) {
+        return ArraySerializers.ObjectArraySerializer.class;
+      } else if (cls.isEnum()) {
         return EnumSerializer.class;
       } else if (Enum.class.isAssignableFrom(cls) && cls != Enum.class) {
         // handles an enum value that is an inner class. Eg: enum A {b{}};
@@ -1741,7 +1735,7 @@ public class ClassResolver {
                 className, fury.getClassLoader(), Thread.currentThread().getContextClassLoader());
         if (fury.getConfig().deserializeNonexistentClass()) {
           LOG.warn(msg);
-          return NonexistentClass.getUnexistentClass(
+          return NonexistentClass.getNonexistentClass(
               className, isEnum, arrayDims, metaContextShareEnabled);
         }
         throw new IllegalStateException(msg, ex);

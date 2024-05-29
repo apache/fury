@@ -630,7 +630,7 @@ public class ClassDef implements Serializable {
         return TypeRef.of(
             // We embed `isMonomorphic` flag in ObjectArraySerializer, so this flag can be ignored
             // here.
-            NonexistentClass.getUnexistentClass(
+            NonexistentClass.getNonexistentClass(
                 componentType instanceof EnumFieldType, dimensions, true));
       } else {
         return TypeRef.of(Array.newInstance(componentRawType, new int[dimensions]).getClass());
