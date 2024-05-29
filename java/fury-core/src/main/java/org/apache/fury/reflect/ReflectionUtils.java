@@ -554,17 +554,22 @@ public class ReflectionUtils {
   }
 
   /**
-   * Returns the canonical name of the underlying class as defined by <cite>The Java Language
+   * Returns the literal name of the underlying class as defined by <cite>The Java Language
    * Specification</cite>. Throw {@link IllegalArgumentException} if the underlying class does not
    * have a canonical name(i.e., if it is a local or anonymous class or an array whose component
    * type does not have a canonical name).
    *
    * @throws IllegalArgumentException if the canonical name of the underlying class doesn't exist.
    */
-  public static String getCanonicalName(Class<?> cls) {
+  public static String getLiteralName(Class<?> cls) {
     String canonicalName = cls.getCanonicalName();
     org.apache.fury.util.Preconditions.checkArgument(
         canonicalName != null, "Class %s doesn't have canonical name", cls);
+    if (canonicalName.endsWith(".")) {
+      // qualifier name of scala object type will ends with `.`
+      String name = cls.getName();
+      canonicalName = name.substring(0, name.length() - 1).replace("$", ".") + "$";
+    }
     return canonicalName;
   }
 

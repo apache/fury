@@ -252,8 +252,7 @@ public class CodegenContext {
     if (clz.isArray()) {
       return "arr";
     } else {
-      String canonicalName = clz.getCanonicalName();
-      String type = canonicalName != null ? type(clz) : "Object";
+      String type = clz.getCanonicalName() != null ? type(clz) : "Object";
       int index = type.lastIndexOf(".");
       String name;
       if (index >= 0) {
@@ -283,7 +282,7 @@ public class CodegenContext {
     if (clz.isArray()) {
       return getArrayType(clz);
     }
-    String type = ReflectionUtils.getCanonicalName(clz);
+    String type = ReflectionUtils.getLiteralName(clz);
     if (type.startsWith("java.lang")) {
       if (!type.substring("java.lang.".length()).contains(".")) {
         String simpleName = clz.getSimpleName();
@@ -360,7 +359,7 @@ public class CodegenContext {
    */
   public void addImports(Class<?>... classes) {
     for (Class<?> clz : classes) {
-      imports.add(ReflectionUtils.getCanonicalName(clz));
+      imports.add(ReflectionUtils.getLiteralName(clz));
     }
   }
 
@@ -382,7 +381,7 @@ public class CodegenContext {
    * @param cls class to be imported
    */
   public void addImport(Class<?> cls) {
-    this.imports.add(ReflectionUtils.getCanonicalName(cls));
+    this.imports.add(ReflectionUtils.getLiteralName(cls));
   }
 
   /**

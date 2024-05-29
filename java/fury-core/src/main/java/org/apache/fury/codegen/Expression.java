@@ -343,7 +343,7 @@ public interface Expression {
           if (valueClass.isArray()) {
             v = String.format("%s.class", TypeUtils.getArrayType((Class<?>) value));
           } else {
-            v = String.format("%s.class", ReflectionUtils.getCanonicalName((Class<?>) (value)));
+            v = String.format("%s.class", ReflectionUtils.getLiteralName((Class<?>) (value)));
           }
           return new ExprCode(FalseLiteral, new LiteralValue(javaType, v));
         } else {
