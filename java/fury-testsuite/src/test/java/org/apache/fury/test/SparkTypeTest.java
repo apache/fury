@@ -17,27 +17,19 @@
  * under the License.
  */
 
-package org.apache.fury.serializer
+package org.apache.fury.test;
 
-import org.apache.fury.Fury
-import org.apache.fury.config.Language
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
+import org.apache.fury.Fury;
+import org.apache.fury.TestBase;
+import org.apache.spark.sql.types.DecimalType;
+import org.apache.spark.sql.types.DecimalType$;
+import org.testng.annotations.Test;
 
-object singleton {}
-
-case class Pair(f1: Any, f2: Any)
-
-class SingleObjectSerializerTest extends AnyWordSpec with Matchers {
-  "fury scala object support" should {
-    "serialize/deserialize" in {
-      val fury = Fury.builder()
-        .withLanguage(Language.JAVA)
-        .withRefTracking(true)
-        .withScalaOptimizationEnabled(true)
-        .requireClassRegistration(false).build()
-      fury.deserialize(fury.serialize(singleton)) shouldBe singleton
-      fury.deserialize(fury.serialize(Pair(singleton, singleton))) shouldEqual Pair(singleton, singleton)
-    }
+public class SparkTypeTest extends TestBase {
+  @Test(dataProvider = "enableCodegen")
+  public void testObjectType(boolean enableCodegen) {
+    Fury fury = builder().withRefTracking(true).withCodegen(enableCodegen).build();
+    fury.serialize(DecimalType$.MODULE$);
+    fury.serialize(new DecimalType(10, 10));
   }
 }
