@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.fury.Fury;
+import org.apache.fury.meta.MetaCompressor;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.TimeSerializers;
 import org.apache.fury.util.Preconditions;
@@ -51,6 +52,7 @@ public class Config implements Serializable {
   private final boolean registerGuavaTypes;
   private final boolean metaShareEnabled;
   private final boolean scopedMetaShareEnabled;
+  private final MetaCompressor metaCompressor;
   private final boolean asyncCompilationEnabled;
   private final boolean deserializeNonexistentClass;
   private final boolean scalaOptimizationEnabled;
@@ -77,6 +79,7 @@ public class Config implements Serializable {
     defaultJDKStreamSerializerType = builder.defaultJDKStreamSerializerType;
     metaShareEnabled = builder.metaShareEnabled;
     scopedMetaShareEnabled = builder.scopedMetaShareEnabled;
+    metaCompressor = builder.metaCompressor;
     deserializeNonexistentClass = builder.deserializeNonexistentClass;
     if (deserializeNonexistentClass) {
       // Only in meta share mode or compatibleMode, fury knows how to deserialize
@@ -192,6 +195,10 @@ public class Config implements Serializable {
     return scopedMetaShareEnabled;
   }
 
+  public MetaCompressor getMetaCompressor() {
+    return metaCompressor;
+  }
+
   /**
    * Whether deserialize/skip data of un-existed class. If not enabled, an exception will be thrown
    * if class not exist.
@@ -247,6 +254,7 @@ public class Config implements Serializable {
         && registerGuavaTypes == config.registerGuavaTypes
         && metaShareEnabled == config.metaShareEnabled
         && scopedMetaShareEnabled == config.scopedMetaShareEnabled
+        && metaCompressor == config.metaCompressor
         && asyncCompilationEnabled == config.asyncCompilationEnabled
         && deserializeNonexistentClass == config.deserializeNonexistentClass
         && scalaOptimizationEnabled == config.scalaOptimizationEnabled
@@ -278,6 +286,7 @@ public class Config implements Serializable {
         registerGuavaTypes,
         metaShareEnabled,
         scopedMetaShareEnabled,
+        metaCompressor,
         asyncCompilationEnabled,
         deserializeNonexistentClass,
         scalaOptimizationEnabled);

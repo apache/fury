@@ -43,4 +43,8 @@ public class MathUtils {
   public static long floorMod(long x, long y, long floorDiv) {
     return x - floorDiv * y;
   }
+
+  public static int toInt(boolean c) {
+    return c ? 1 : 0;
+  }
 }

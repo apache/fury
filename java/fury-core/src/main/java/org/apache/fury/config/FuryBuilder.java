@@ -27,6 +27,8 @@ import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.meta.DeflaterMetaCompressor;
+import org.apache.fury.meta.MetaCompressor;
 import org.apache.fury.pool.ThreadPoolFury;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.JavaSerializer;
@@ -77,6 +79,7 @@ public final class FuryBuilder {
   boolean scalaOptimizationEnabled = false;
   boolean suppressClassRegistrationWarnings = true;
   boolean deserializeNonexistentEnumValueAsNull = false;
+  MetaCompressor metaCompressor = new DeflaterMetaCompressor();
 
   public FuryBuilder() {}
 
@@ -248,6 +251,17 @@ public final class FuryBuilder {
     if (scoped) {
       metaShareEnabled = true;
     }
+    return this;
+  }
+
+  /**
+   * Set a compressor for meta compression. Note that the passed {@link MetaCompressor} should
+   * be thread-safe.
+   * By default, a `Deflater` based compressor {@link DeflaterMetaCompressor} will be used.
+   * Users can pass other compressor such as `zstd` for better compression rate.
+   */
+  public FuryBuilder withMetaCompressor(MetaCompressor metaCompressor) {
+    this.metaCompressor = metaCompressor;
     return this;
   }
 

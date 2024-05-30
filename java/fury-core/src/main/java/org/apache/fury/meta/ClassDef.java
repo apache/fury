@@ -79,6 +79,7 @@ public class ClassDef implements Serializable {
   static final int SCHEMA_COMPATIBLE_FLAG = 0b10000;
   public static final int SIZE_TWO_BYTES_FLAG = 0b100000;
   static final int OBJECT_TYPE_FLAG = 0b1000000;
+  static final int COMPRESSION_FLAG = 0b10000000;
   // TODO use field offset to sort field, which will hit l1-cache more. Since
   // `objectFieldOffset` is not part of jvm-specification, it may change between different jdk
   // vendor. But the deserialization peer use the class definition to create deserializer, it's OK
