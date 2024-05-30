@@ -29,48 +29,47 @@ public class FuryBuilderTest {
 
   @Test
   public void testWithMetaCompressor() {
-    Assert.assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new FuryBuilder()
-              .withMetaCompressor(
-                  new MetaCompressor() {
-                    @Override
-                    public byte[] compress(byte[] data, int offset, int size) {
-                      return new byte[0];
-                    }
+    MetaCompressor metaCompressor =
+        new FuryBuilder()
+            .withMetaCompressor(
+                new MetaCompressor() {
+                  @Override
+                  public byte[] compress(byte[] data, int offset, int size) {
+                    return new byte[0];
+                  }
 
-                    @Override
-                    public byte[] decompress(byte[] compressedData, int offset, int size) {
-                      return new byte[0];
-                    }
-                  });
-          new FuryBuilder()
-              .withMetaCompressor(
-                  new MetaCompressor() {
-                    @Override
-                    public byte[] compress(byte[] data, int offset, int size) {
-                      return new byte[0];
-                    }
+                  @Override
+                  public byte[] decompress(byte[] compressedData, int offset, int size) {
+                    return new byte[0];
+                  }
+                })
+            .metaCompressor;
+    Assert.assertEquals(metaCompressor.getClass().getName(), "TypeEqualMetaCompressor");
+    new FuryBuilder()
+        .withMetaCompressor(
+            new MetaCompressor() {
+              @Override
+              public byte[] compress(byte[] data, int offset, int size) {
+                return new byte[0];
+              }
 
-                    @Override
-                    public byte[] decompress(byte[] compressedData, int offset, int size) {
-                      return new byte[0];
-                    }
+              @Override
+              public byte[] decompress(byte[] compressedData, int offset, int size) {
+                return new byte[0];
+              }
 
-                    @Override
-                    public boolean equals(Object o) {
-                      if (this == o) {
-                        return true;
-                      }
-                      return o != null && getClass() == o.getClass();
-                    }
+              @Override
+              public boolean equals(Object o) {
+                if (this == o) {
+                  return true;
+                }
+                return o != null && getClass() == o.getClass();
+              }
 
-                    @Override
-                    public int hashCode() {
-                      return getClass().hashCode();
-                    }
-                  });
-        });
+              @Override
+              public int hashCode() {
+                return getClass().hashCode();
+              }
+            });
   }
 }

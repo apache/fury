@@ -267,9 +267,13 @@ public final class FuryBuilder {
           clz.getDeclaredMethod("hashCode");
           if (clz == Object.class) {
             LOG.warn(
-                "{} must implement equals/hashCode method, "
-                    + "otherwise compile cache may won't work",
+                "{} should implement equals/hashCode method, "
+                    + "otherwise compile cache may won't work. "
+                    + "Use type to check MetaCompressor identity instead, but this"
+                    + "may be incorrect if different compressor instance of same type "
+                    + "indicates different compressor.",
                 metaCompressor);
+            metaCompressor = MetaCompressor.typeEqualMetaCompressor(metaCompressor);
           }
           break;
         } catch (NoSuchMethodException e) {

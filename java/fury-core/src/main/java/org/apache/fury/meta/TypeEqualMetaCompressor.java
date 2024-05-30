@@ -19,16 +19,33 @@
 
 package org.apache.fury.meta;
 
-/**
- * An interface used to compress class metadata such as field names and types. The implementation of
- * this interface should be thread safe.
- */
-public interface MetaCompressor {
-  byte[] compress(byte[] data, int offset, int size);
+class TypeEqualMetaCompressor implements MetaCompressor {
+  private final MetaCompressor compressor;
 
-  byte[] decompress(byte[] data, int offset, int size);
+  public TypeEqualMetaCompressor(MetaCompressor compressor) {
+    this.compressor = compressor;
+  }
 
-  static MetaCompressor typeEqualMetaCompressor(MetaCompressor compressor) {
-    return new TypeEqualMetaCompressor(compressor);
+  @Override
+  public byte[] compress(byte[] data, int offset, int size) {
+    return compressor.compress(data, offset, size);
+  }
+
+  @Override
+  public byte[] decompress(byte[] data, int offset, int size) {
+    return compressor.decompress(data, offset, size);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || obj.getClass() != getClass()) {
+      return false;
+    }
+    return compressor.getClass().equals((((TypeEqualMetaCompressor) obj).compressor).getClass());
+  }
+
+  @Override
+  public int hashCode() {
+    return compressor.getClass().hashCode();
   }
 }
