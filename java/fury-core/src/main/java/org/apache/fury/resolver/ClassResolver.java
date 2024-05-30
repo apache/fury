@@ -87,6 +87,7 @@ import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.IdentityObjectIntMap;
+import org.apache.fury.collection.LongMap;
 import org.apache.fury.collection.ObjectMap;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.CompatibleMode;
@@ -242,7 +243,7 @@ public class ClassResolver {
     // ex. A->field1: B, B.field1: A
     private final Set<Class<?>> getClassCtx = new HashSet<>();
     private final Map<Class<?>, FieldResolver> fieldResolverMap = new HashMap<>();
-    private final Map<Long, Tuple2<ClassDef, ClassInfo>> classIdToDef = new HashMap<>();
+    private final LongMap<Tuple2<ClassDef, ClassInfo>> classIdToDef = new LongMap<>();
     private final Map<Class<?>, ClassDef> currentLayerClassDef = new HashMap<>();
     // TODO(chaokunyang) Better to  use soft reference, see ObjectStreamClass.
     private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Field, Descriptor>>
