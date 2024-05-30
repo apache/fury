@@ -82,6 +82,7 @@ public class KryoState {
       }
 
       kryo.setReferences(references);
+      kryo.setRegistrationRequired(registerClass);
     }
   }
 
@@ -134,6 +135,7 @@ public class KryoState {
           break;
       }
       output.setPosition(0);
+      kryo.setRegistrationRequired(registerClass);
       kryo.writeClassAndObject(output, object);
       serializedLength = output.position();
       LOG.info(

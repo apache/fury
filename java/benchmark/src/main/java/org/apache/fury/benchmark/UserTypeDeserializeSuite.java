@@ -59,17 +59,13 @@ public class UserTypeDeserializeSuite {
   @Benchmark
   public Object fury_deserialize(FuryState.FuryUserTypeState state) {
     state.buffer.readerIndex(0);
-    Object o = state.fury.readRef(state.buffer);
-    state.fury.resetRead();
-    return o;
+    return state.fury.deserialize(state.buffer);
   }
 
   @Benchmark
   public Object fury_deserialize_compatible(FuryState.FuryCompatibleState state) {
     state.buffer.readerIndex(0);
-    Object o = state.fury.readRef(state.buffer);
-    state.fury.resetRead();
-    return o;
+    return state.fury.deserialize(state.buffer);
   }
 
   @Benchmark
