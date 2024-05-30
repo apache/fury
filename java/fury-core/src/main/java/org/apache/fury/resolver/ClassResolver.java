@@ -1437,6 +1437,7 @@ public class ClassResolver {
         buffer.increaseReaderIndex(size);
       } else {
         tuple2 = readClassDef(buffer, id);
+        extRegistry.classIdToDef.put(id, tuple2);
       }
       metaContext.readClassDefs.add(tuple2.f0);
       // Will be set lazily, so even some classes doesn't exist, remaining classinfo
