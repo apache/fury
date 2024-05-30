@@ -506,7 +506,10 @@ public class ReflectionUtils {
     if (targetType.isArray()) {
       return isMonomorphic(targetType.getComponentType());
     }
-    return Modifier.isFinal(targetType.getModifiers());
+    // Although enum itself can be non-final, but it's subclass can only be anonymous
+    // inner class, which is final, and we serialize enum by value, which already
+    // identify the actual class, so we can take enum as monomorphic.
+    return targetType.isEnum() || Modifier.isFinal(targetType.getModifiers());
   }
 
   public static TypeRef getPublicSuperType(TypeRef typeRef) {

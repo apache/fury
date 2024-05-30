@@ -70,6 +70,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
         .withLanguage(Language.JAVA)
         .withCompatibleMode(CompatibleMode.COMPATIBLE)
         .requireClassRegistration(false)
+        .withCodegen(false)
         .withDeserializeNonexistentClass(true);
   }
 
@@ -101,23 +102,35 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
     }
   }
 
-  @Test
-  public void testSkipNonexistentEnum() {
-    Fury fury1 = furyBuilder().withDeserializeNonexistentClass(true).build();
-    String enumCode = ("enum TestEnum {" + " A, B" + "}");
+  @DataProvider
+  public static Object[][] scopedMetaShare() {
+    return new Object[][] {{false}, {true}};
+  }
 
+  @Test(dataProvider = "scopedMetaShare")
+  public void testNonexistentEnum(boolean scopedMetaShare) {
+    FuryBuilder builder = furyBuilder();
+    if (scopedMetaShare) {
+      builder.withMetaShare(true).withScopedMetaShare(true);
+    }
+    Fury fury = builder.withDeserializeNonexistentClass(true).build();
+    String enumCode = ("enum TestEnum {" + " A, B" + "}");
     Class<?> cls = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum", enumCode);
     Object c = cls.getEnumConstants()[1];
     assertEquals(c.toString(), "B");
-    byte[] bytes = fury1.serialize(c);
+    byte[] bytes = fury.serialize(c);
     Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-    Fury fury2 = furyBuilder().withDeserializeNonexistentClass(true).build();
+    Fury fury2 = builder.withDeserializeNonexistentClass(true).build();
     Object o = fury2.deserialize(bytes);
     assertEquals(o, NonexistentClass.NonexistentEnum.V1);
   }
 
-  @Test
-  public void testSkipNonexistentEnumAndArrayField() throws Exception {
+  @Test(dataProvider = "scopedMetaShare")
+  public void testNonexistentEnumAndArrayField(boolean scopedMetaShare) throws Exception {
+    FuryBuilder builder = furyBuilder();
+    if (scopedMetaShare) {
+      builder.withMetaShare(true).withScopedMetaShare(true);
+    }
     String enumStructCode1 =
         ("public class TestEnumStruct {\n"
             + "  public enum TestEnum {\n"
@@ -144,7 +157,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
     enumArray2[1] = enumArray;
     ReflectionUtils.setObjectFieldValue(o, "f4", enumArray2);
     Fury fury1 =
-        furyBuilder()
+        builder
             .withDeserializeNonexistentClass(true)
             .withClassLoader(cls1.getClassLoader())
             .build();
@@ -161,8 +174,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
                 "",
                 "TestEnumStruct",
                 ("public class TestEnumStruct {" + " public String f1;" + "}")));
-    Fury fury2 =
-        furyBuilder().withDeserializeNonexistentClass(true).withClassLoader(classLoader).build();
+    Fury fury2 = builder.withDeserializeNonexistentClass(true).withClassLoader(classLoader).build();
     Object o1 = fury2.deserialize(bytes);
     Assert.assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f1"), "str");
   }
@@ -236,7 +248,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
         furyBuilder()
             .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen1)
-            .withMetaContextShare(true)
+            .withMetaShare(true)
             .build();
     ClassLoader classLoader = getClass().getClassLoader();
     for (Class<?> structClass :
@@ -252,7 +264,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
           furyBuilder()
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen2)
-              .withMetaContextShare(true)
+              .withMetaShare(true)
               .withClassLoader(classLoader)
               .build();
       MetaContext context2 = new MetaContext();
@@ -265,7 +277,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
           furyBuilder()
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen3)
-              .withMetaContextShare(true)
+              .withMetaShare(true)
               .withClassLoader(pojo.getClass().getClassLoader())
               .build();
       MetaContext context3 = new MetaContext();
@@ -286,7 +298,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
         furyBuilder()
             .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen1)
-            .withMetaContextShare(true)
+            .withMetaShare(true)
             .build();
     MetaContext context1 = new MetaContext();
     MetaContext context2 = new MetaContext();
@@ -301,14 +313,14 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
           furyBuilder()
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen2)
-              .withMetaContextShare(true)
+              .withMetaShare(true)
               .withClassLoader(classLoader)
               .build();
       Fury fury3 =
           furyBuilder()
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen3)
-              .withMetaContextShare(true)
+              .withMetaShare(true)
               .withClassLoader(structClass.getClassLoader())
               .build();
       for (int i = 0; i < 2; i++) {

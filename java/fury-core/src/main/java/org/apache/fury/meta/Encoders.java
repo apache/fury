@@ -28,7 +28,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.fury.collection.Tuple2;
 import org.apache.fury.meta.MetaString.Encoding;
+import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.StringUtils;
 
 /** A class used to encode package/class/field name. */
 public class Encoders {
@@ -36,6 +40,8 @@ public class Encoders {
   public static final MetaStringDecoder PACKAGE_DECODER = new MetaStringDecoder('.', '_');
   public static final MetaStringEncoder TYPE_NAME_ENCODER = new MetaStringEncoder('$', '_');
   public static final MetaStringDecoder TYPE_NAME_DECODER = new MetaStringDecoder('$', '_');
+  public static final String ARRAY_PREFIX = "1";
+  public static final String ENUM_PREFIX = "2";
   static final MetaStringEncoder FIELD_NAME_ENCODER = new MetaStringEncoder('$', '_');
   static final MetaStringDecoder FIELD_NAME_DECODER = new MetaStringDecoder('$', '_');
   private static final ConcurrentMap<String, MetaString> pgkMetaStringCache =
@@ -65,6 +71,66 @@ public class Encoders {
   public static MetaString encodeTypeName(String typeName) {
     return typeMetaStringCache.computeIfAbsent(
         typeName, k -> TYPE_NAME_ENCODER.encode(typeName, typeNameEncodings));
+  }
+
+  public static Tuple2<String, String> encodePkgAndClass(Class<?> cls) {
+    String packageName = ReflectionUtils.getPackage(cls);
+    String className = ReflectionUtils.getClassNameWithoutPackage(cls);
+    if (cls.isArray()) {
+      Tuple2<Class<?>, Integer> componentInfo = TypeUtils.getArrayComponentInfo(cls);
+      Class<?> ctype = componentInfo.f0;
+      if (!ctype.isPrimitive()) { // primitive array has special format like [[[III.
+        String componentName = ctype.getName();
+        packageName = ReflectionUtils.getPackage(componentName);
+        String componentSimpleName = ReflectionUtils.getClassNameWithoutPackage(componentName);
+        String prefix = StringUtils.repeat(Encoders.ARRAY_PREFIX, componentInfo.f1);
+        if (ctype.isEnum()) {
+          className = prefix + Encoders.ENUM_PREFIX + componentSimpleName;
+        } else {
+          className = prefix + componentSimpleName;
+        }
+      }
+    } else if (cls.isEnum()) {
+      className = Encoders.ENUM_PREFIX + className;
+    }
+    return Tuple2.of(packageName, className);
+  }
+
+  public static ClassSpec buildClassSpec(Class<?> cls) {
+    if (cls.isArray()) {
+      Tuple2<Class<?>, Integer> info = TypeUtils.getArrayComponentInfo(cls);
+      return new ClassSpec(cls.getName(), info.f0.isEnum(), true, info.f1);
+    } else {
+      return new ClassSpec(cls.getName(), cls.isEnum(), false, 0);
+    }
+  }
+
+  public static ClassSpec decodePkgAndClass(String packageName, String className) {
+    String rawPkg = packageName;
+    boolean isArray = className.startsWith(Encoders.ARRAY_PREFIX);
+    int dimension = 0;
+    if (isArray) {
+      while (className.charAt(dimension) == Encoders.ARRAY_PREFIX.charAt(0)) {
+        dimension++;
+      }
+      packageName = StringUtils.repeat("[", dimension) + "L" + packageName;
+      className = className.substring(dimension) + ";";
+    }
+    boolean isEnum = className.startsWith(Encoders.ENUM_PREFIX);
+    if (isEnum) {
+      className = className.substring(1);
+    }
+    String entireClassName;
+    if (StringUtils.isBlank(rawPkg)) {
+      if (isArray) {
+        entireClassName = packageName + className;
+      } else {
+        entireClassName = className;
+      }
+    } else {
+      entireClassName = packageName + "." + className;
+    }
+    return new ClassSpec(entireClassName, isEnum, isArray, dimension);
   }
 
   public static MetaString encodeFieldName(String fieldName) {

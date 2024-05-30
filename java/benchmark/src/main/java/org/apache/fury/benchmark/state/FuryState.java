@@ -128,7 +128,7 @@ public class FuryState {
               .withRefTracking(references)
               .requireClassRegistration(false);
       if (compatible()) {
-        furyBuilder.withCompatibleMode(CompatibleMode.COMPATIBLE);
+        furyBuilder.withCompatibleMode(CompatibleMode.COMPATIBLE).withScopedMetaShare(true);
       }
       fury = furyBuilder.build();
       switch (objectType) {
@@ -152,7 +152,7 @@ public class FuryState {
           break;
       }
 
-      fury.writeRef(buffer, object);
+      fury.serialize(buffer, object);
       serializedLength = buffer.writerIndex();
       LOG.info(
           "======> Fury | {} | {} | {} | {} |",
@@ -161,7 +161,7 @@ public class FuryState {
           bufferType,
           serializedLength);
       buffer.writerIndex(0);
-      Preconditions.checkArgument(object.equals(fury.readRef(buffer)));
+      Preconditions.checkArgument(object.equals(fury.deserialize(buffer)));
       buffer.readerIndex(0);
     }
 
@@ -192,7 +192,7 @@ public class FuryState {
               .withClassVersionCheck(false)
               .withRefTracking(references)
               .requireClassRegistration(false)
-              .withMetaContextShare(true)
+              .withMetaShare(true)
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
               .build();
       // share meta first time.

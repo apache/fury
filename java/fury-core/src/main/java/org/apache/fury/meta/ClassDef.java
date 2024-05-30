@@ -70,7 +70,7 @@ import org.apache.fury.util.Preconditions;
  * @see MetaSharedCodecBuilder
  * @see CompatibleMode#COMPATIBLE
  * @see CompatibleSerializer
- * @see FuryBuilder#withMetaContextShare
+ * @see FuryBuilder#withMetaShare
  * @see ReflectionUtils#getFieldOffset
  */
 public class ClassDef implements Serializable {
@@ -78,7 +78,7 @@ public class ClassDef implements Serializable {
 
   static final int SCHEMA_COMPATIBLE_FLAG = 0b10000;
   public static final int SIZE_TWO_BYTES_FLAG = 0b100000;
-  static final int EXT_FLAG = 0b1000000;
+  static final int OBJECT_TYPE_FLAG = 0b1000000;
   // TODO use field offset to sort field, which will hit l1-cache more. Since
   // `objectFieldOffset` is not part of jvm-specification, it may change between different jdk
   // vendor. But the deserialization peer use the class definition to create deserializer, it's OK
@@ -103,9 +103,9 @@ public class ClassDef implements Serializable {
         }
       };
 
-  private final String className;
+  private final ClassSpec classSpec;
   private final List<FieldInfo> fieldsInfo;
-  private final Map<String, String> extMeta;
+  private final boolean isObjectType;
   // Unique id for class def. If class def are same between processes, then the id will
   // be same too.
   private final long id;
@@ -113,14 +113,14 @@ public class ClassDef implements Serializable {
   private transient List<Descriptor> descriptors;
 
   ClassDef(
-      String className,
+      ClassSpec classSpec,
       List<FieldInfo> fieldsInfo,
-      Map<String, String> extMeta,
+      boolean isObjectType,
       long id,
       byte[] encoded) {
-    this.className = className;
+    this.classSpec = classSpec;
     this.fieldsInfo = fieldsInfo;
-    this.extMeta = extMeta;
+    this.isObjectType = isObjectType;
     this.id = id;
     this.encoded = encoded;
   }
@@ -131,7 +131,11 @@ public class ClassDef implements Serializable {
    * @see Class#getName()
    */
   public String getClassName() {
-    return className;
+    return classSpec.entireClassName;
+  }
+
+  public ClassSpec getClassSpec() {
+    return classSpec;
   }
 
   /** Contain all fields info including all parent classes. */
@@ -140,8 +144,8 @@ public class ClassDef implements Serializable {
   }
 
   /** Returns ext meta for the class. */
-  public Map<String, String> getExtMeta() {
-    return extMeta;
+  public boolean isObjectType() {
+    return isObjectType;
   }
 
   /**
@@ -165,26 +169,26 @@ public class ClassDef implements Serializable {
       return false;
     }
     ClassDef classDef = (ClassDef) o;
-    return Objects.equals(className, classDef.className)
+    return Objects.equals(classSpec.entireClassName, classDef.classSpec.entireClassName)
         && Objects.equals(fieldsInfo, classDef.fieldsInfo)
-        && Objects.equals(extMeta, classDef.extMeta);
+        && Objects.equals(id, classDef.id);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(className, fieldsInfo, extMeta);
+    return Objects.hash(classSpec.entireClassName, fieldsInfo, id);
   }
 
   @Override
   public String toString() {
     return "ClassDef{"
         + "className='"
-        + className
+        + classSpec.entireClassName
         + '\''
         + ", fieldsInfo="
         + fieldsInfo
-        + ", extMeta="
-        + extMeta
+        + ", isObjectType="
+        + isObjectType
         + ", id="
         + id
         + '}';
@@ -630,7 +634,7 @@ public class ClassDef implements Serializable {
         return TypeRef.of(
             // We embed `isMonomorphic` flag in ObjectArraySerializer, so this flag can be ignored
             // here.
-            NonexistentClass.getUnexistentClass(
+            NonexistentClass.getNonexistentClass(
                 componentType instanceof EnumFieldType, dimensions, true));
       } else {
         return TypeRef.of(Array.newInstance(componentRawType, new int[dimensions]).getClass());
@@ -758,17 +762,17 @@ public class ClassDef implements Serializable {
 
   public static ClassDef buildClassDef(Fury fury, Class<?> cls, boolean resolveParent) {
     return ClassDefEncoder.buildClassDef(
-        fury.getClassResolver(), cls, buildFields(fury, cls, resolveParent), new HashMap<>());
+        fury.getClassResolver(), cls, buildFields(fury, cls, resolveParent), true);
   }
 
   /** Build class definition from fields of class. */
   public static ClassDef buildClassDef(
       ClassResolver classResolver, Class<?> type, List<Field> fields) {
-    return buildClassDef(classResolver, type, fields, new HashMap<>());
+    return buildClassDef(classResolver, type, fields, true);
   }
 
   public static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields, Map<String, String> extMeta) {
-    return ClassDefEncoder.buildClassDef(classResolver, type, fields, extMeta);
+      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isObjectType) {
+    return ClassDefEncoder.buildClassDef(classResolver, type, fields, isObjectType);
   }
 }

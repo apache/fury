@@ -98,7 +98,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     // as data serializer.
     classResolver.setSerializerIfAbsent(cls, this);
     Collection<Descriptor> descriptors;
-    boolean shareMeta = fury.getConfig().shareMetaContext();
+    boolean shareMeta = fury.getConfig().isMetaShareEnabled();
     if (shareMeta) {
       ClassDef classDef = classResolver.getClassDef(cls, resolveParent);
       descriptors = classDef.getDescriptors(classResolver, cls);
@@ -235,7 +235,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       RefResolver refResolver,
       ClassResolver classResolver) {
     FinalTypeField[] finalFields = this.finalFields;
-    boolean metaContextShareEnabled = fury.getConfig().shareMetaContext();
+    boolean metaShareEnabled = fury.getConfig().isMetaShareEnabled();
     for (int i = 0; i < finalFields.length; i++) {
       FinalTypeField fieldInfo = finalFields[i];
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
@@ -244,7 +244,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         Object fieldValue = fieldAccessor.getObject(value);
         if (writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId)) {
           Serializer<Object> serializer = fieldInfo.classInfo.getSerializer();
-          if (!metaContextShareEnabled || isFinal[i]) {
+          if (!metaShareEnabled || isFinal[i]) {
             // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
             // consistent with jit serializer.
             fury.writeRef(buffer, fieldValue, serializer);
@@ -341,10 +341,10 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     int counter = 0;
     // read order: primitive,boxed,final,other,collection,map
     FinalTypeField[] finalFields = this.finalFields;
-    boolean metaContextShareEnabled = fury.getConfig().shareMetaContext();
+    boolean metaShareEnabled = fury.getConfig().isMetaShareEnabled();
     for (int i = 0; i < finalFields.length; i++) {
       FinalTypeField fieldInfo = finalFields[i];
-      boolean isFinal = !metaContextShareEnabled || this.isFinal[i];
+      boolean isFinal = !metaShareEnabled || this.isFinal[i];
       short classId = fieldInfo.classId;
       if (classId >= ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID
           && classId <= ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID) {
@@ -377,10 +377,10 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     }
     // read order: primitive,boxed,final,other,collection,map
     FinalTypeField[] finalFields = this.finalFields;
-    boolean metaContextShareEnabled = fury.getConfig().shareMetaContext();
+    boolean metaShareEnabled = fury.getConfig().isMetaShareEnabled();
     for (int i = 0; i < finalFields.length; i++) {
       FinalTypeField fieldInfo = finalFields[i];
-      boolean isFinal = !metaContextShareEnabled || this.isFinal[i];
+      boolean isFinal = !metaShareEnabled || this.isFinal[i];
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       short classId = fieldInfo.classId;
       if (readPrimitiveFieldValueFailed(fury, buffer, obj, fieldAccessor, classId)

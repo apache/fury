@@ -85,7 +85,7 @@ public class RecordSerializersTest {
         Fury.builder()
             .requireClassRegistration(false)
             .withCodegen(codegen)
-            .withMetaContextShare(true)
+            .withMetaShare(true)
             .build();
     Foo foo = new Foo(10, "abc", new ArrayList<>(Arrays.asList("a", "b")), 'x');
     MetaContext context = new MetaContext();
@@ -153,7 +153,7 @@ public class RecordSerializersTest {
             .requireClassRegistration(false)
             .withCodegen(codegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withMetaContextShare(true)
+            .withMetaShare(true)
             .withClassLoader(cls1.getClassLoader())
             .build();
     String code2 =
@@ -169,7 +169,7 @@ public class RecordSerializersTest {
             .requireClassRegistration(false)
             .withCodegen(codegen)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withMetaContextShare(true)
+            .withMetaShare(true)
             .withClassLoader(cls2.getClassLoader())
             .build();
     MetaContext metaContext1 = new MetaContext();
@@ -211,7 +211,7 @@ public class RecordSerializersTest {
           Fury.builder()
               .requireClassRegistration(false)
               .withCodegen(codegen)
-              .withMetaContextShare(true)
+              .withMetaShare(true)
               .build();
       Object o1 = Records.createPrivateRecord(11);
       Object o2 = Records.createPublicRecord(11, o1);

@@ -75,7 +75,7 @@ public final class NonexistentClassSerializers {
       this.classDef = classDef;
       classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       fieldsInfoMap = new LongMap<>();
-      Preconditions.checkArgument(fury.getConfig().shareMetaContext());
+      Preconditions.checkArgument(fury.getConfig().isMetaShareEnabled());
     }
 
     /**
@@ -250,7 +250,7 @@ public final class NonexistentClassSerializers {
       if (cls.isEnum()) {
         return new NonexistentEnumClassSerializer(fury);
       } else {
-        if (fury.getConfig().shareMetaContext()) {
+        if (fury.getConfig().isMetaShareEnabled()) {
           throw new IllegalStateException(
               String.format(
                   "Serializer of class %s should be set in ClassResolver#getMetaSharedClassInfo",

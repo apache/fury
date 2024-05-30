@@ -37,7 +37,6 @@ import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.BeanB;
-import org.apache.fury.test.bean.Foo;
 import org.apache.fury.test.bean.Struct;
 import org.apache.fury.util.LoaderBinding.StagingType;
 import org.testng.Assert;
@@ -151,7 +150,7 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     ThreadSafeFury fury2 =
         Fury.builder()
             .withLanguage(Language.JAVA)
-            .withMetaContextShare(true)
+            .withMetaShare(true)
             .requireClassRegistration(false)
             .buildThreadSafeFury();
     BeanA beanA = BeanA.createBeanA(2);

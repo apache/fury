@@ -58,7 +58,7 @@ import org.apache.fury.util.record.RecordUtils;
  * info for those types.
  *
  * @see CompatibleMode
- * @see FuryBuilder#withMetaContextShare
+ * @see FuryBuilder#withMetaShare
  * @see GeneratedMetaSharedSerializer
  * @see MetaSharedSerializer
  */

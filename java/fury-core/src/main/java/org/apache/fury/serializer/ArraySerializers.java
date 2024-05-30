@@ -826,6 +826,10 @@ public class ArraySerializers {
       extends AbstractedNonexistentArrayClassSerializer {
     private final Serializer componentSerializer;
 
+    public NonexistentArrayClassSerializer(Fury fury, Class<?> cls) {
+      this(fury, "Unknown", cls);
+    }
+
     public NonexistentArrayClassSerializer(Fury fury, String className, Class<?> cls) {
       super(fury, className, cls);
       if (TypeUtils.getArrayComponent(cls).isEnum()) {

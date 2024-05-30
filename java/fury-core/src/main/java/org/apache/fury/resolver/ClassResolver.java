@@ -19,7 +19,6 @@
 
 package org.apache.fury.resolver;
 
-import static org.apache.fury.collection.Collections.ofHashMap;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
@@ -88,6 +87,7 @@ import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.IdentityObjectIntMap;
+import org.apache.fury.collection.LongMap;
 import org.apache.fury.collection.ObjectMap;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.CompatibleMode;
@@ -98,6 +98,8 @@ import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.ClassDef;
+import org.apache.fury.meta.ClassSpec;
+import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
@@ -146,7 +148,6 @@ import org.apache.fury.type.ScalaTypes;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 
 /**
@@ -242,7 +243,7 @@ public class ClassResolver {
     // ex. A->field1: B, B.field1: A
     private final Set<Class<?>> getClassCtx = new HashSet<>();
     private final Map<Class<?>, FieldResolver> fieldResolverMap = new HashMap<>();
-    private final Map<Long, Tuple2<ClassDef, ClassInfo>> classIdToDef = new HashMap<>();
+    private final LongMap<Tuple2<ClassDef, ClassInfo>> classIdToDef = new LongMap<>();
     private final Map<Class<?>, ClassDef> currentLayerClassDef = new HashMap<>();
     // TODO(chaokunyang) Better to  use soft reference, see ObjectStreamClass.
     private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Field, Descriptor>>
@@ -256,7 +257,7 @@ public class ClassResolver {
     this.fury = fury;
     metaStringResolver = fury.getMetaStringResolver();
     classInfoCache = NIL_CLASS_INFO;
-    metaContextShareEnabled = fury.getConfig().shareMetaContext();
+    metaContextShareEnabled = fury.getConfig().isMetaShareEnabled();
     extRegistry = new ExtRegistry();
     extRegistry.objectGenericType = buildGenericType(OBJECT_TYPE);
     shimDispatcher = new ShimDispatcher(fury);
@@ -512,7 +513,7 @@ public class ClassResolver {
    * non-final to write class def, so that it can be deserialized by the peer still.
    */
   public boolean isMonomorphic(Class<?> clz) {
-    if (fury.getConfig().shareMetaContext()) {
+    if (fury.getConfig().isMetaShareEnabled()) {
       // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
       // TypeToken<V>)
       if (!ReflectionUtils.isMonomorphic(clz)) {
@@ -811,7 +812,12 @@ public class ClassResolver {
       // serialized, which will create a class info with serializer null, see `#writeClassInternal`
       return classInfo.serializer.getClass();
     } else {
-      if (cls.isEnum()) {
+      if (NonexistentClass.isNonexistent(cls)) {
+        return NonexistentClassSerializers.getSerializer(fury, "Unknown", cls).getClass();
+      }
+      if (cls.isArray()) {
+        return ArraySerializers.ObjectArraySerializer.class;
+      } else if (cls.isEnum()) {
         return EnumSerializer.class;
       } else if (Enum.class.isAssignableFrom(cls) && cls != Enum.class) {
         // handles an enum value that is an inner class. Eg: enum A {b{}};
@@ -820,9 +826,6 @@ public class ClassResolver {
         return CollectionSerializers.EnumSetSerializer.class;
       } else if (Charset.class.isAssignableFrom(cls)) {
         return Serializers.CharsetSerializer.class;
-      } else if (cls.isArray()) {
-        Preconditions.checkArgument(!cls.getComponentType().isPrimitive());
-        return ArraySerializers.ObjectArraySerializer.class;
       } else if (Functions.isLambda(cls)) {
         return LambdaSerializer.class;
       } else if (ReflectionUtils.isJdkProxy(cls)) {
@@ -1293,16 +1296,10 @@ public class ClassResolver {
         classDef =
             classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(fury, cls));
       } else {
-        // TODO(chaokunyang) support more types meta-share serialization
+        // Some type will use other serializers such MapSerializer and so on.
         classDef =
             classDefMap.computeIfAbsent(
-                classInfo.cls,
-                cls ->
-                    ClassDef.buildClassDef(
-                        this,
-                        cls,
-                        new ArrayList<>(),
-                        ofHashMap(META_SHARE_FIELDS_INFO_KEY, "false")));
+                classInfo.cls, cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>(), false));
       }
       metaContext.writingClassDefs.add(classDef);
     }
@@ -1320,7 +1317,7 @@ public class ClassResolver {
     if (classInfo == null) {
       List<ClassDef> readClassDefs = metaContext.readClassDefs;
       ClassDef classDef = readClassDefs.get(id);
-      Class<?> cls = loadClass(classDef.getClassName());
+      Class<?> cls = loadClass(classDef.getClassSpec());
       classInfo = getClassInfo(cls, false);
       if (classInfo == null) {
         Short classId = extRegistry.registeredClassIdMap.get(cls);
@@ -1343,23 +1340,22 @@ public class ClassResolver {
     if (classInfo == null) {
       List<ClassDef> readClassDefs = metaContext.readClassDefs;
       ClassDef classDef = readClassDefs.get(id);
-      if ("false".equals(classDef.getExtMeta().getOrDefault(META_SHARE_FIELDS_INFO_KEY, ""))) {
-        Class<?> cls = loadClass(classDef.getClassName());
-        classInfo = getClassInfo(cls);
-      } else {
-        Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
-        if (classDefTuple == null || classDefTuple.f1 == null) {
-          if (classDefTuple != null) {
-            classDef = classDefTuple.f0;
-          }
-          Class<?> cls = loadClass(classDef.getClassName());
-          classInfo = getMetaSharedClassInfo(classDef, cls);
-          // Share serializer for same version class def to avoid too much different meta
-          // context take up too much memory.
-          putClassDef(classDef, classInfo);
-        } else {
-          classInfo = classDefTuple.f1;
+      Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
+      if (classDefTuple == null || classDefTuple.f1 == null) {
+        if (classDefTuple != null) {
+          classDef = classDefTuple.f0;
         }
+        Class<?> cls = loadClass(classDef.getClassSpec());
+        if (!classDef.isObjectType()) {
+          classInfo = getClassInfo(cls);
+        } else {
+          classInfo = getMetaSharedClassInfo(classDef, cls);
+        }
+        // Share serializer for same version class def to avoid too much different meta
+        // context take up too much memory.
+        putClassDef(classDef, classInfo);
+      } else {
+        classInfo = classDefTuple.f1;
       }
       readClassInfos.set(id, classInfo);
     }
@@ -1432,8 +1428,7 @@ public class ClassResolver {
     int numClassDefs = buffer.readVarUint32Small14();
     for (int i = 0; i < numClassDefs; i++) {
       long id = buffer.readInt64();
-      long hash = id >>> 8;
-      Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(hash);
+      Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(id);
       if (tuple2 != null) {
         int size =
             (id & SIZE_TWO_BYTES_FLAG) == 0
@@ -1663,35 +1658,12 @@ public class ClassResolver {
       MetaStringBytes packageBytes,
       MetaStringBytes simpleClassNameBytes) {
     String packageName = packageBytes.decode(PACKAGE_DECODER);
-    String rawPkg = packageName;
     String className = simpleClassNameBytes.decode(TYPE_NAME_DECODER);
-    boolean isArray = className.startsWith(ClassInfo.ARRAY_PREFIX);
-    int dimension = 0;
-    if (isArray) {
-      while (className.charAt(dimension) == ClassInfo.ARRAY_PREFIX.charAt(0)) {
-        dimension++;
-      }
-      packageName = StringUtils.repeat("[", dimension) + "L" + packageName;
-      className = className.substring(dimension) + ";";
-    }
-    boolean isEnum = className.startsWith(ClassInfo.ENUM_PREFIX);
-    if (isEnum) {
-      className = className.substring(1);
-    }
-    String entireClassName;
-    if (StringUtils.isBlank(rawPkg)) {
-      if (isArray) {
-        entireClassName = packageName + className;
-      } else {
-        entireClassName = className;
-      }
-    } else {
-      entireClassName = packageName + "." + className;
-    }
+    ClassSpec classSpec = Encoders.decodePkgAndClass(packageName, className);
     MetaStringBytes fullClassNameBytes =
         metaStringResolver.getOrCreateMetaStringBytes(
-            PACKAGE_ENCODER.encode(entireClassName, MetaString.Encoding.UTF_8));
-    Class<?> cls = loadClass(entireClassName, isEnum, dimension);
+            PACKAGE_ENCODER.encode(classSpec.entireClassName, MetaString.Encoding.UTF_8));
+    Class<?> cls = loadClass(classSpec.entireClassName, classSpec.isEnum, classSpec.dimension);
     ClassInfo classInfo =
         new ClassInfo(
             cls,
@@ -1703,7 +1675,8 @@ public class ClassResolver {
             null,
             NO_CLASS_ID);
     if (NonexistentClass.class.isAssignableFrom(TypeUtils.getComponentIfArray(cls))) {
-      classInfo.serializer = NonexistentClassSerializers.getSerializer(fury, entireClassName, cls);
+      classInfo.serializer =
+          NonexistentClassSerializers.getSerializer(fury, classSpec.entireClassName, cls);
     } else {
       // don't create serializer here, if the class is an interface,
       // there won't be serializer since interface has no instance.
@@ -1748,6 +1721,10 @@ public class ClassResolver {
     return loadClass(className, false, 0);
   }
 
+  private Class<?> loadClass(ClassSpec classSpec) {
+    return loadClass(classSpec.entireClassName, classSpec.isEnum, classSpec.dimension);
+  }
+
   private Class<?> loadClass(String className, boolean isEnum, int arrayDims) {
     extRegistry.classChecker.checkClass(this, className);
     try {
@@ -1762,7 +1739,7 @@ public class ClassResolver {
                 className, fury.getClassLoader(), Thread.currentThread().getContextClassLoader());
         if (fury.getConfig().deserializeNonexistentClass()) {
           LOG.warn(msg);
-          return NonexistentClass.getUnexistentClass(
+          return NonexistentClass.getNonexistentClass(
               className, isEnum, arrayDims, metaContextShareEnabled);
         }
         throw new IllegalStateException(msg, ex);

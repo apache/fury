@@ -22,7 +22,6 @@ package org.apache.fury.meta;
 import static org.apache.fury.meta.ClassDefEncoder.buildFieldsInfo;
 import static org.apache.fury.meta.ClassDefEncoder.getClassFields;
 
-import java.util.HashMap;
 import java.util.List;
 import lombok.Data;
 import org.apache.fury.Fury;
@@ -38,12 +37,12 @@ public class ClassDefEncoderTest {
 
   @Test
   public void testBasicClassDef() throws Exception {
-    Fury fury = Fury.builder().withMetaContextShare(true).build();
+    Fury fury = Fury.builder().withMetaShare(true).build();
     Class<ClassDefTest.TestFieldsOrderClass1> type = ClassDefTest.TestFieldsOrderClass1.class;
     List<ClassDef.FieldInfo> fieldsInfo = buildFieldsInfo(fury.getClassResolver(), type);
     MemoryBuffer buffer =
         ClassDefEncoder.encodeClassDef(
-            fury.getClassResolver(), type, getClassFields(type, fieldsInfo), new HashMap<>());
+            fury.getClassResolver(), type, getClassFields(type, fieldsInfo), true);
     ClassDef classDef = ClassDef.readClassDef(fury.getClassResolver(), buffer);
     Assert.assertEquals(classDef.getClassName(), type.getName());
     Assert.assertEquals(classDef.getFieldsInfo().size(), type.getDeclaredFields().length);
@@ -56,7 +55,7 @@ public class ClassDefEncoderTest {
         new Class[] {
           MapFields.class, BeanA.class, Struct.createStructClass("TestBigMetaEncoding", 5)
         }) {
-      Fury fury = Fury.builder().withMetaContextShare(true).build();
+      Fury fury = Fury.builder().withMetaShare(true).build();
       ClassDef classDef = ClassDef.buildClassDef(fury, type);
       ClassDef classDef1 =
           ClassDef.readClassDef(
