@@ -245,6 +245,9 @@ public final class FuryBuilder {
    */
   public FuryBuilder withScopedMetaShare(boolean scoped) {
     scopedMetaShareEnabled = scoped;
+    if (scoped) {
+      metaShareEnabled = true;
+    }
     return this;
   }
 
