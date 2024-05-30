@@ -37,4 +37,17 @@ public class DeflaterMetaCompressor implements MetaCompressor {
     }
     return outputStream.toByteArray();
   }
+
+  @Override
+  public int hashCode() {
+    return DeflaterMetaCompressor.class.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    return o != null && getClass() == o.getClass();
+  }
 }

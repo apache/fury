@@ -254,7 +254,7 @@ public class Config implements Serializable {
         && registerGuavaTypes == config.registerGuavaTypes
         && metaShareEnabled == config.metaShareEnabled
         && scopedMetaShareEnabled == config.scopedMetaShareEnabled
-        && metaCompressor == config.metaCompressor
+        && Objects.equals(metaCompressor, config.metaCompressor)
         && asyncCompilationEnabled == config.asyncCompilationEnabled
         && deserializeNonexistentClass == config.deserializeNonexistentClass
         && scalaOptimizationEnabled == config.scalaOptimizationEnabled

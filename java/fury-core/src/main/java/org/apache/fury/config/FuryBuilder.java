@@ -30,6 +30,7 @@ import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.DeflaterMetaCompressor;
 import org.apache.fury.meta.MetaCompressor;
 import org.apache.fury.pool.ThreadPoolFury;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.JavaSerializer;
 import org.apache.fury.serializer.ObjectStreamSerializer;
@@ -255,12 +256,26 @@ public final class FuryBuilder {
   }
 
   /**
-   * Set a compressor for meta compression. Note that the passed {@link MetaCompressor} should
-   * be thread-safe.
-   * By default, a `Deflater` based compressor {@link DeflaterMetaCompressor} will be used.
-   * Users can pass other compressor such as `zstd` for better compression rate.
+   * Set a compressor for meta compression. Note that the passed {@link MetaCompressor} should be
+   * thread-safe. By default, a `Deflater` based compressor {@link DeflaterMetaCompressor} will be
+   * used. Users can pass other compressor such as `zstd` for better compression rate.
    */
   public FuryBuilder withMetaCompressor(MetaCompressor metaCompressor) {
+    Class<?> clz = metaCompressor.getClass();
+    if (clz != DeflaterMetaCompressor.class) {
+      while (clz != null) {
+        try {
+          clz.getDeclaredMethod("hashCode");
+          if (clz == Object.class) {
+            throw new IllegalArgumentException(
+              metaCompressor+ "MetaCompressor %s must implement equals/hashCode method, " +
+                "otherwise compile cache may won't work");
+          }
+        } catch (NoSuchMethodException e) {
+          clz = clz.getSuperclass();
+        }
+      }
+    }
     this.metaCompressor = metaCompressor;
     return this;
   }
