@@ -83,6 +83,8 @@ public class KryoState {
 
       kryo.setReferences(references);
       kryo.setRegistrationRequired(registerClass);
+      kryo.register(int[].class);
+      kryo.register(long[].class);
     }
   }
 
