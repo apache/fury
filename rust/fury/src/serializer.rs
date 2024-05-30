@@ -236,7 +236,9 @@ impl<T: Serialize> Serialize for HashSet<T> {
 
 impl Serialize for NaiveDateTime {
     fn write(&self, serializer: &mut SerializerState) {
-        serializer.writer.u64(self.timestamp_millis() as u64);
+        serializer
+            .writer
+            .u64(self.and_utc().timestamp_millis() as u64);
     }
 
     fn reserved_space() -> usize {

@@ -17,7 +17,7 @@
 
 use crate::{buffer::Writer, Error};
 use byteorder::{ByteOrder, LittleEndian};
-use chrono::{Days, NaiveDate, NaiveDateTime};
+use chrono::{DateTime, Days, NaiveDate, NaiveDateTime};
 use std::collections::BTreeMap;
 use std::marker::PhantomData;
 
@@ -109,12 +109,12 @@ impl<'a> Row<'a> for NaiveDateTime {
     type ReadResult = Result<NaiveDateTime, Error>;
 
     fn write(v: &Self, writer: &mut Writer) {
-        writer.i64(v.timestamp_millis());
+        writer.i64(v.and_utc().timestamp_millis());
     }
 
     fn cast(bytes: &[u8]) -> Self::ReadResult {
         let timestamp = LittleEndian::read_u64(bytes);
-        let ret = NaiveDateTime::from_timestamp_millis(timestamp as i64);
+        let ret = DateTime::from_timestamp_millis(timestamp as i64).map(|dt| dt.naive_utc());
         match ret {
             Some(r) => Ok(r),
             None => Err(Error::NaiveDateTime),

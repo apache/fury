@@ -166,7 +166,7 @@ impl<T: Deserialize + Eq + std::hash::Hash> Deserialize for HashSet<T> {
 impl Deserialize for NaiveDateTime {
     fn read(deserializer: &mut DeserializerState) -> Result<Self, Error> {
         let timestamp = deserializer.reader.u64();
-        let ret = NaiveDateTime::from_timestamp_millis(timestamp as i64);
+        let ret = DateTime::from_timestamp_millis(timestamp as i64).map(|dt| dt.naive_utc());
         match ret {
             Some(r) => Ok(r),
             None => Err(Error::NaiveDateTime),
