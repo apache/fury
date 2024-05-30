@@ -44,7 +44,7 @@ public class FuryBuilderTest {
                   }
                 })
             .metaCompressor;
-    Assert.assertEquals(metaCompressor.getClass().getName(), "TypeEqualMetaCompressor");
+    Assert.assertEquals(metaCompressor.getClass().getSimpleName(), "TypeEqualMetaCompressor");
     new FuryBuilder()
         .withMetaCompressor(
             new MetaCompressor() {
