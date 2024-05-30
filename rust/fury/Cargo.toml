@@ -22,11 +22,11 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-proc-macro2 = { default-features = false, version = "1.0.66" }
-syn = { default-features = false, version = "2.0.26", features = ["full", "fold"] }
-quote = { default-features = false, version = "1.0.31" }
-fury-derive = { path="../fury-derive"}
-lazy_static = { version = "1.4.0" }
-byteorder = { version = "1.4.3" }
-chrono = "0.4.26"
-thiserror = { default-features = false, version = "1.0.43" }
+proc-macro2 = { default-features = false, version = "1.0" }
+syn = { default-features = false, version = "2.0", features = ["full", "fold"] }
+quote = { default-features = false, version = "1.0" }
+fury-derive = { path = "../fury-derive" }
+lazy_static = { version = "1.4" }
+byteorder = { version = "1.4" }
+chrono = "0.4"
+thiserror = { default-features = false, version = "1.0" }

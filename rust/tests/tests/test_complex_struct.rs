@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::{DateTime, NaiveDate, NaiveDateTime};
 use fury::{from_buffer, to_buffer, Fury};
 use std::collections::HashMap;
 
@@ -60,7 +60,7 @@ fn complex_struct() {
         op: Some("option".to_string()),
         op2: None,
         date: NaiveDate::from_ymd_opt(2025, 12, 12).unwrap(),
-        time: NaiveDateTime::from_timestamp_opt(1689912359, 0).unwrap(),
+        time: DateTime::from_timestamp(1689912359, 0).unwrap().naive_utc(),
         c5: 2.0,
         c6: 4.0,
     };
