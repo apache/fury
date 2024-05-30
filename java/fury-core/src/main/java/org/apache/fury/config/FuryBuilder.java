@@ -30,7 +30,6 @@ import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.DeflaterMetaCompressor;
 import org.apache.fury.meta.MetaCompressor;
 import org.apache.fury.pool.ThreadPoolFury;
-import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.JavaSerializer;
 import org.apache.fury.serializer.ObjectStreamSerializer;
@@ -268,8 +267,9 @@ public final class FuryBuilder {
           clz.getDeclaredMethod("hashCode");
           if (clz == Object.class) {
             throw new IllegalArgumentException(
-              metaCompressor+ "MetaCompressor %s must implement equals/hashCode method, " +
-                "otherwise compile cache may won't work");
+                metaCompressor
+                    + "MetaCompressor %s must implement equals/hashCode method, "
+                    + "otherwise compile cache may won't work");
           }
         } catch (NoSuchMethodException e) {
           clz = clz.getSuperclass();
