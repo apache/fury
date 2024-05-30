@@ -143,7 +143,7 @@ public final class Fury implements BaseFury {
 
   @Override
   public void register(Class<?> cls) {
-    classResolver.register(cls);
+    register(cls, false);
   }
 
   @Override
@@ -152,12 +152,17 @@ public final class Fury implements BaseFury {
   }
 
   @Override
-  public void register(Class<?> cls, Short id) {
-    classResolver.register(cls, id);
+  public void register(Class<?> cls, short id) {
+    register(cls, id, false);
   }
 
   @Override
-  public void register(Class<?> cls, Short id, boolean createSerializer) {
+  public void register(Class<?> cls, short id, boolean createSerializer) {
+    Preconditions.checkArgument(
+        id >= 0 && id <= Short.MAX_VALUE - Math.abs(ClassResolver.NO_CLASS_ID),
+        String.format(
+            "The specified ClassId only supports [0, %s]",
+            Short.MAX_VALUE - Math.abs(ClassResolver.NO_CLASS_ID)));
     classResolver.register(cls, id, createSerializer);
   }
 

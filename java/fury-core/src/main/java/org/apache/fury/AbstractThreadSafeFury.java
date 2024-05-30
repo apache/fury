@@ -36,12 +36,12 @@ public abstract class AbstractThreadSafeFury implements ThreadSafeFury {
   }
 
   @Override
-  public void register(Class<?> cls, Short id) {
+  public void register(Class<?> cls, short id) {
     processCallback(fury -> fury.register(cls, id));
   }
 
   @Override
-  public void register(Class<?> cls, Short id, boolean createSerializer) {
+  public void register(Class<?> cls, short id, boolean createSerializer) {
     processCallback(fury -> fury.register(cls, id, createSerializer));
   }
 

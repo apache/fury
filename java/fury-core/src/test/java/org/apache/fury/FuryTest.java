@@ -61,6 +61,7 @@ import org.apache.fury.exception.InsecureException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.ArraySerializersTest;
 import org.apache.fury.serializer.EnumSerializerTest;
 import org.apache.fury.serializer.ObjectSerializer;
@@ -236,6 +237,26 @@ public class FuryTest extends FuryTestBase {
     fury.register(BeanA.class);
     BeanA beanA = BeanA.createBeanA(2);
     assertEquals(beanA, serDe(fury, beanA));
+  }
+
+  @Test
+  public void testRegisterWithUnsupportedClassId() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build();
+    // failed
+    Assert.assertThrows(
+        IllegalArgumentException.class,
+        () -> fury.register(org.apache.fury.test.bean.Foo.class, (short) -1));
+    Assert.assertThrows(
+        IllegalArgumentException.class,
+        () -> fury.register(org.apache.fury.test.bean.Foo.class, (short) -64));
+    Assert.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            fury.register(
+                org.apache.fury.test.bean.Foo.class,
+                (short) (Short.MAX_VALUE - Math.abs(ClassResolver.NO_CLASS_ID) + 1)));
+    // successful
+    fury.register(org.apache.fury.test.bean.Foo.class, (short) 100);
   }
 
   @EqualsAndHashCode

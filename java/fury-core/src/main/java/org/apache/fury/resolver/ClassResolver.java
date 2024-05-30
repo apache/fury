@@ -160,45 +160,45 @@ public class ClassResolver {
   // bit 0 unset indicates class is written as an id.
   public static final byte USE_CLASS_VALUE_FLAG = 0b1;
   // preserve 0 as flag for class id not set in ClassInfo`
-  public static final short NO_CLASS_ID = (short) 0;
-  public static final short LAMBDA_STUB_ID = 1;
-  public static final short JDK_PROXY_STUB_ID = 2;
-  public static final short REPLACE_STUB_ID = 3;
+  public static final short NO_CLASS_ID = -64;
+  public static final short LAMBDA_STUB_ID = -63;
+  public static final short JDK_PROXY_STUB_ID = -62;
+  public static final short REPLACE_STUB_ID = -61;
   // Note: following pre-defined class id should be continuous, since they may be used based range.
-  public static final short PRIMITIVE_VOID_CLASS_ID = (short) (REPLACE_STUB_ID + 1);
-  public static final short PRIMITIVE_BOOLEAN_CLASS_ID = (short) (PRIMITIVE_VOID_CLASS_ID + 1);
-  public static final short PRIMITIVE_BYTE_CLASS_ID = (short) (PRIMITIVE_VOID_CLASS_ID + 2);
-  public static final short PRIMITIVE_CHAR_CLASS_ID = (short) (PRIMITIVE_VOID_CLASS_ID + 3);
-  public static final short PRIMITIVE_SHORT_CLASS_ID = (short) (PRIMITIVE_VOID_CLASS_ID + 4);
-  public static final short PRIMITIVE_INT_CLASS_ID = (short) (PRIMITIVE_VOID_CLASS_ID + 5);
-  public static final short PRIMITIVE_FLOAT_CLASS_ID = (short) (PRIMITIVE_VOID_CLASS_ID + 6);
-  public static final short PRIMITIVE_LONG_CLASS_ID = (short) (PRIMITIVE_VOID_CLASS_ID + 7);
-  public static final short PRIMITIVE_DOUBLE_CLASS_ID = (short) (PRIMITIVE_VOID_CLASS_ID + 8);
-  public static final short VOID_CLASS_ID = (short) (PRIMITIVE_DOUBLE_CLASS_ID + 1);
-  public static final short BOOLEAN_CLASS_ID = (short) (VOID_CLASS_ID + 1);
-  public static final short BYTE_CLASS_ID = (short) (VOID_CLASS_ID + 2);
-  public static final short CHAR_CLASS_ID = (short) (VOID_CLASS_ID + 3);
-  public static final short SHORT_CLASS_ID = (short) (VOID_CLASS_ID + 4);
-  public static final short INTEGER_CLASS_ID = (short) (VOID_CLASS_ID + 5);
-  public static final short FLOAT_CLASS_ID = (short) (VOID_CLASS_ID + 6);
-  public static final short LONG_CLASS_ID = (short) (VOID_CLASS_ID + 7);
-  public static final short DOUBLE_CLASS_ID = (short) (VOID_CLASS_ID + 8);
-  public static final short STRING_CLASS_ID = (short) (VOID_CLASS_ID + 9);
-  public static final short PRIMITIVE_BOOLEAN_ARRAY_CLASS_ID = (short) (STRING_CLASS_ID + 1);
-  public static final short PRIMITIVE_BYTE_ARRAY_CLASS_ID = (short) (STRING_CLASS_ID + 2);
-  public static final short PRIMITIVE_CHAR_ARRAY_CLASS_ID = (short) (STRING_CLASS_ID + 3);
-  public static final short PRIMITIVE_SHORT_ARRAY_CLASS_ID = (short) (STRING_CLASS_ID + 4);
-  public static final short PRIMITIVE_INT_ARRAY_CLASS_ID = (short) (STRING_CLASS_ID + 5);
-  public static final short PRIMITIVE_FLOAT_ARRAY_CLASS_ID = (short) (STRING_CLASS_ID + 6);
-  public static final short PRIMITIVE_LONG_ARRAY_CLASS_ID = (short) (STRING_CLASS_ID + 7);
-  public static final short PRIMITIVE_DOUBLE_ARRAY_CLASS_ID = (short) (STRING_CLASS_ID + 8);
-  public static final short STRING_ARRAY_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 1);
-  public static final short OBJECT_ARRAY_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 2);
-  public static final short ARRAYLIST_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 3);
-  public static final short HASHMAP_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 4);
-  public static final short HASHSET_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 5);
-  public static final short CLASS_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 6);
-  public static final short EMPTY_OBJECT_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 7);
+  public static final short PRIMITIVE_VOID_CLASS_ID = REPLACE_STUB_ID + 1;
+  public static final short PRIMITIVE_BOOLEAN_CLASS_ID = PRIMITIVE_VOID_CLASS_ID + 1;
+  public static final short PRIMITIVE_BYTE_CLASS_ID = PRIMITIVE_VOID_CLASS_ID + 2;
+  public static final short PRIMITIVE_CHAR_CLASS_ID = PRIMITIVE_VOID_CLASS_ID + 3;
+  public static final short PRIMITIVE_SHORT_CLASS_ID = PRIMITIVE_VOID_CLASS_ID + 4;
+  public static final short PRIMITIVE_INT_CLASS_ID = PRIMITIVE_VOID_CLASS_ID + 5;
+  public static final short PRIMITIVE_FLOAT_CLASS_ID = PRIMITIVE_VOID_CLASS_ID + 6;
+  public static final short PRIMITIVE_LONG_CLASS_ID = PRIMITIVE_VOID_CLASS_ID + 7;
+  public static final short PRIMITIVE_DOUBLE_CLASS_ID = PRIMITIVE_VOID_CLASS_ID + 8;
+  public static final short VOID_CLASS_ID = PRIMITIVE_DOUBLE_CLASS_ID + 1;
+  public static final short BOOLEAN_CLASS_ID = VOID_CLASS_ID + 1;
+  public static final short BYTE_CLASS_ID = VOID_CLASS_ID + 2;
+  public static final short CHAR_CLASS_ID = VOID_CLASS_ID + 3;
+  public static final short SHORT_CLASS_ID = VOID_CLASS_ID + 4;
+  public static final short INTEGER_CLASS_ID = VOID_CLASS_ID + 5;
+  public static final short FLOAT_CLASS_ID = VOID_CLASS_ID + 6;
+  public static final short LONG_CLASS_ID = VOID_CLASS_ID + 7;
+  public static final short DOUBLE_CLASS_ID = VOID_CLASS_ID + 8;
+  public static final short STRING_CLASS_ID = VOID_CLASS_ID + 9;
+  public static final short PRIMITIVE_BOOLEAN_ARRAY_CLASS_ID = STRING_CLASS_ID + 1;
+  public static final short PRIMITIVE_BYTE_ARRAY_CLASS_ID = STRING_CLASS_ID + 2;
+  public static final short PRIMITIVE_CHAR_ARRAY_CLASS_ID = STRING_CLASS_ID + 3;
+  public static final short PRIMITIVE_SHORT_ARRAY_CLASS_ID = STRING_CLASS_ID + 4;
+  public static final short PRIMITIVE_INT_ARRAY_CLASS_ID = STRING_CLASS_ID + 5;
+  public static final short PRIMITIVE_FLOAT_ARRAY_CLASS_ID = STRING_CLASS_ID + 6;
+  public static final short PRIMITIVE_LONG_ARRAY_CLASS_ID = STRING_CLASS_ID + 7;
+  public static final short PRIMITIVE_DOUBLE_ARRAY_CLASS_ID = STRING_CLASS_ID + 8;
+  public static final short STRING_ARRAY_CLASS_ID = PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 1;
+  public static final short OBJECT_ARRAY_CLASS_ID = PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 2;
+  public static final short ARRAYLIST_CLASS_ID = PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 3;
+  public static final short HASHMAP_CLASS_ID = PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 4;
+  public static final short HASHSET_CLASS_ID = PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 5;
+  public static final short CLASS_CLASS_ID = PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 6;
+  public static final short EMPTY_OBJECT_ID = PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 7;
   // use a lower load factor to minimize hash collision
   private static final float loadFactor = 0.25f;
   private static final float furyMapLoadFactor = 0.25f;
@@ -231,9 +231,9 @@ public class ClassResolver {
   private final ShimDispatcher shimDispatcher;
 
   private static class ExtRegistry {
-    // Here we set it to 1 because `NO_CLASS_ID` is 0 to avoid calculating it again in
+    // Here we set it to -63 because `NO_CLASS_ID` is -64 to avoid calculating it again in
     // `register(Class<?> cls)`.
-    private short classIdGenerator = 1;
+    private short classIdGenerator = NO_CLASS_ID + 1;
     private SerializerFactory serializerFactory;
     private final IdentityMap<Class<?>, Short> registeredClassIdMap =
         new IdentityMap<>(estimatedNumRegistered);
@@ -394,8 +394,8 @@ public class ClassResolver {
   /** register class. */
   public void register(Class<?> cls) {
     if (!extRegistry.registeredClassIdMap.containsKey(cls)) {
-      while (extRegistry.classIdGenerator < registeredId2ClassInfo.length
-          && registeredId2ClassInfo[extRegistry.classIdGenerator] != null) {
+      while (extRegistry.classIdGenerator + Math.abs(NO_CLASS_ID) < registeredId2ClassInfo.length
+          && registeredId2ClassInfo[extRegistry.classIdGenerator + Math.abs(NO_CLASS_ID)] != null) {
         extRegistry.classIdGenerator++;
       }
       register(cls, extRegistry.classIdGenerator);
@@ -433,7 +433,8 @@ public class ClassResolver {
    */
   public void register(Class<?> cls, int classId) {
     // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
-    Preconditions.checkArgument(classId >= 0 && classId < Short.MAX_VALUE);
+    Preconditions.checkArgument(
+        classId >= NO_CLASS_ID + 1 && classId <= Short.MAX_VALUE - Math.abs(NO_CLASS_ID));
     if (extRegistry.registeredClassIdMap.containsKey(cls)) {
       throw new IllegalArgumentException(
           String.format(
@@ -446,7 +447,7 @@ public class ClassResolver {
               "Class %s with name %s has been registered, registering class with same name are not allowed.",
               extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
     }
-    short id = (short) classId;
+    short id = (short) (classId + Math.abs(NO_CLASS_ID));
     if (id < registeredId2ClassInfo.length && registeredId2ClassInfo[id] != null) {
       throw new IllegalArgumentException(
           String.format(
@@ -486,7 +487,8 @@ public class ClassResolver {
   }
 
   public Short getRegisteredClassId(Class<?> cls) {
-    return extRegistry.registeredClassIdMap.get(cls);
+    Short classId = extRegistry.registeredClassIdMap.get(cls);
+    return classId == null ? null : (short) (classId - Math.abs(NO_CLASS_ID));
   }
 
   public Class<?> getRegisteredClass(short id) {
@@ -1129,6 +1131,7 @@ public class ClassResolver {
   }
 
   private ClassInfo getOrUpdateClassInfo(short classId) {
+    classId = (short)(classId + Math.abs(NO_CLASS_ID));
     ClassInfo classInfo = classInfoCache;
     if (classInfo.classId != classId) {
       classInfo = registeredId2ClassInfo[classId];

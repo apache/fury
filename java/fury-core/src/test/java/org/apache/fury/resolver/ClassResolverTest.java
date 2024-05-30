@@ -82,12 +82,14 @@ public class ClassResolverTest extends FuryTestBase {
         assertEquals(
             classResolver.getRegisteredClassId(classes.get(i)) + 1,
             classResolver.getRegisteredClassId(classes.get(i + 1)).shortValue());
-        assertTrue(classResolver.getRegisteredClassId(classes.get(i)) > 0);
+        assertTrue(classResolver.getRegisteredClassId(classes.get(i)) > ClassResolver.NO_CLASS_ID);
       }
       assertEquals(
           classResolver.getRegisteredClassId(classes.get(classes.size() - 2)) + 1,
           classResolver.getRegisteredClassId(classes.get(classes.size() - 1)).shortValue());
-      assertTrue(classResolver.getRegisteredClassId(classes.get(classes.size() - 1)) > 0);
+      assertTrue(
+          classResolver.getRegisteredClassId(classes.get(classes.size() - 1))
+              > ClassResolver.NO_CLASS_ID);
     }
   }
 
