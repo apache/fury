@@ -80,10 +80,9 @@ class ClassDefDecoder {
       classFields.addAll(fieldInfos);
     }
     Preconditions.checkNotNull(classSpec);
-    boolean hasExtMeta = (header & 0b1000000) != 0;
-    byte[] extMeta = hasExtMeta ? buffer.readBytesAndSize() : new byte[0];
+    boolean isObjectType = (header & ClassDef.OBJECT_TYPE_FLAG) != 0;
     return new ClassDef(
-        classSpec, classFields, extMeta, id, encoded.getBytes(0, encoded.writerIndex()));
+        classSpec, classFields, isObjectType, id, encoded.getBytes(0, encoded.writerIndex()));
   }
 
   private static List<ClassDef.FieldInfo> readFieldsInfo(

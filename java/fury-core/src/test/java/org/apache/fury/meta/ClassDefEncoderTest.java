@@ -42,7 +42,7 @@ public class ClassDefEncoderTest {
     List<ClassDef.FieldInfo> fieldsInfo = buildFieldsInfo(fury.getClassResolver(), type);
     MemoryBuffer buffer =
         ClassDefEncoder.encodeClassDef(
-            fury.getClassResolver(), type, getClassFields(type, fieldsInfo), new byte[0]);
+            fury.getClassResolver(), type, getClassFields(type, fieldsInfo), true);
     ClassDef classDef = ClassDef.readClassDef(fury.getClassResolver(), buffer);
     Assert.assertEquals(classDef.getClassName(), type.getName());
     Assert.assertEquals(classDef.getFieldsInfo().size(), type.getDeclaredFields().length);

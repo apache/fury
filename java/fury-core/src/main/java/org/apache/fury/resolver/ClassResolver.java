@@ -1298,8 +1298,7 @@ public class ClassResolver {
         // Some type will use other serializers such MapSerializer and so on.
         classDef =
             classDefMap.computeIfAbsent(
-                classInfo.cls,
-                cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>(), new byte[1]));
+                classInfo.cls, cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>(), false));
       }
       metaContext.writingClassDefs.add(classDef);
     }
@@ -1346,7 +1345,7 @@ public class ClassResolver {
           classDef = classDefTuple.f0;
         }
         Class<?> cls = loadClass(classDef.getClassSpec());
-        if (classDef.getExtMeta().length > 0) {
+        if (!classDef.isObjectType()) {
           classInfo = getClassInfo(cls);
         } else {
           classInfo = getMetaSharedClassInfo(classDef, cls);

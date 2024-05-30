@@ -78,7 +78,7 @@ public class ClassDef implements Serializable {
 
   static final int SCHEMA_COMPATIBLE_FLAG = 0b10000;
   public static final int SIZE_TWO_BYTES_FLAG = 0b100000;
-  static final int EXT_FLAG = 0b1000000;
+  static final int OBJECT_TYPE_FLAG = 0b1000000;
   // TODO use field offset to sort field, which will hit l1-cache more. Since
   // `objectFieldOffset` is not part of jvm-specification, it may change between different jdk
   // vendor. But the deserialization peer use the class definition to create deserializer, it's OK
@@ -105,7 +105,7 @@ public class ClassDef implements Serializable {
 
   private final ClassSpec classSpec;
   private final List<FieldInfo> fieldsInfo;
-  private final byte[] extMeta;
+  private final boolean isObjectType;
   // Unique id for class def. If class def are same between processes, then the id will
   // be same too.
   private final long id;
@@ -113,10 +113,14 @@ public class ClassDef implements Serializable {
   private transient List<Descriptor> descriptors;
 
   ClassDef(
-      ClassSpec classSpec, List<FieldInfo> fieldsInfo, byte[] extMeta, long id, byte[] encoded) {
+      ClassSpec classSpec,
+      List<FieldInfo> fieldsInfo,
+      boolean isObjectType,
+      long id,
+      byte[] encoded) {
     this.classSpec = classSpec;
     this.fieldsInfo = fieldsInfo;
-    this.extMeta = extMeta;
+    this.isObjectType = isObjectType;
     this.id = id;
     this.encoded = encoded;
   }
@@ -140,8 +144,8 @@ public class ClassDef implements Serializable {
   }
 
   /** Returns ext meta for the class. */
-  public byte[] getExtMeta() {
-    return extMeta;
+  public boolean isObjectType() {
+    return isObjectType;
   }
 
   /**
@@ -167,12 +171,12 @@ public class ClassDef implements Serializable {
     ClassDef classDef = (ClassDef) o;
     return Objects.equals(classSpec.entireClassName, classDef.classSpec.entireClassName)
         && Objects.equals(fieldsInfo, classDef.fieldsInfo)
-        && Objects.equals(extMeta, classDef.extMeta);
+        && Objects.equals(id, classDef.id);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(classSpec.entireClassName, fieldsInfo, extMeta);
+    return Objects.hash(classSpec.entireClassName, fieldsInfo, id);
   }
 
   @Override
@@ -183,8 +187,8 @@ public class ClassDef implements Serializable {
         + '\''
         + ", fieldsInfo="
         + fieldsInfo
-        + ", extMeta="
-        + extMeta
+        + ", isObjectType="
+        + isObjectType
         + ", id="
         + id
         + '}';
@@ -758,17 +762,17 @@ public class ClassDef implements Serializable {
 
   public static ClassDef buildClassDef(Fury fury, Class<?> cls, boolean resolveParent) {
     return ClassDefEncoder.buildClassDef(
-        fury.getClassResolver(), cls, buildFields(fury, cls, resolveParent), new byte[0]);
+        fury.getClassResolver(), cls, buildFields(fury, cls, resolveParent), true);
   }
 
   /** Build class definition from fields of class. */
   public static ClassDef buildClassDef(
       ClassResolver classResolver, Class<?> type, List<Field> fields) {
-    return buildClassDef(classResolver, type, fields, new byte[0]);
+    return buildClassDef(classResolver, type, fields, true);
   }
 
   public static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields, byte[] extMeta) {
-    return ClassDefEncoder.buildClassDef(classResolver, type, fields, extMeta);
+      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isObjectType) {
+    return ClassDefEncoder.buildClassDef(classResolver, type, fields, isObjectType);
   }
 }

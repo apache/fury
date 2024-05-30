@@ -19,7 +19,7 @@
 
 package org.apache.fury.meta;
 
-import static org.apache.fury.meta.ClassDef.EXT_FLAG;
+import static org.apache.fury.meta.ClassDef.OBJECT_TYPE_FLAG;
 import static org.apache.fury.meta.ClassDef.SCHEMA_COMPATIBLE_FLAG;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
@@ -102,17 +102,17 @@ class ClassDefEncoder {
 
   /** Build class definition from fields of class. */
   static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields, byte[] extMeta) {
+      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isObjectType) {
     List<FieldInfo> fieldInfos = buildFieldsInfo(classResolver, fields);
     Map<String, List<FieldInfo>> classLayers = getClassFields(type, fieldInfos);
     fieldInfos = new ArrayList<>(fieldInfos.size());
     classLayers.values().forEach(fieldInfos::addAll);
-    MemoryBuffer encodeClassDef = encodeClassDef(classResolver, type, classLayers, extMeta);
+    MemoryBuffer encodeClassDef = encodeClassDef(classResolver, type, classLayers, isObjectType);
     byte[] classDefBytes = encodeClassDef.getBytes(0, encodeClassDef.writerIndex());
     return new ClassDef(
         Encoders.buildClassSpec(type),
         fieldInfos,
-        extMeta,
+        isObjectType,
         encodeClassDef.getInt64(0),
         classDefBytes);
   }
@@ -123,7 +123,7 @@ class ClassDefEncoder {
       ClassResolver classResolver,
       Class<?> type,
       Map<String, List<FieldInfo>> classLayers,
-      byte[] extMeta) {
+      boolean isObjectType) {
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     buffer.increaseWriterIndex(9); // header + one byte size
     long header;
@@ -135,8 +135,8 @@ class ClassDefEncoder {
       header = encodedSize;
     }
     header |= SCHEMA_COMPATIBLE_FLAG;
-    if (extMeta.length > 0) {
-      header |= EXT_FLAG;
+    if (isObjectType) {
+      header |= OBJECT_TYPE_FLAG;
     }
     for (Map.Entry<String, List<FieldInfo>> entry : classLayers.entrySet()) {
       String className = entry.getKey();
@@ -156,10 +156,6 @@ class ClassDefEncoder {
         writeTypeName(buffer, encoded.f1);
       }
       writeFieldsInfo(buffer, fields);
-    }
-    if (extMeta.length > 0) {
-      buffer.writeVarUint32Small7(extMeta.length);
-      buffer.writeBytes(extMeta);
     }
     byte[] encodedClassDef = buffer.getBytes(0, buffer.writerIndex());
     long hash = MurmurHash3.murmurhash3_x64_128(encodedClassDef, 0, encodedClassDef.length, 47)[0];
