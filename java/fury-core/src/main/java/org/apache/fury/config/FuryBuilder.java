@@ -266,11 +266,12 @@ public final class FuryBuilder {
         try {
           clz.getDeclaredMethod("hashCode");
           if (clz == Object.class) {
-            throw new IllegalArgumentException(
-                metaCompressor
-                    + "MetaCompressor %s must implement equals/hashCode method, "
-                    + "otherwise compile cache may won't work");
+            LOG.warn(
+                "{} must implement equals/hashCode method, "
+                    + "otherwise compile cache may won't work",
+                metaCompressor);
           }
+          break;
         } catch (NoSuchMethodException e) {
           clz = clz.getSuperclass();
         }
