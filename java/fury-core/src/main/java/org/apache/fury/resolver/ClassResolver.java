@@ -1427,8 +1427,7 @@ public class ClassResolver {
     int numClassDefs = buffer.readVarUint32Small14();
     for (int i = 0; i < numClassDefs; i++) {
       long id = buffer.readInt64();
-      long hash = id >>> 8;
-      Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(hash);
+      Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(id);
       if (tuple2 != null) {
         int size =
             (id & SIZE_TWO_BYTES_FLAG) == 0
@@ -1437,7 +1436,6 @@ public class ClassResolver {
         buffer.increaseReaderIndex(size);
       } else {
         tuple2 = readClassDef(buffer, id);
-        extRegistry.classIdToDef.put(id, tuple2);
       }
       metaContext.readClassDefs.add(tuple2.f0);
       // Will be set lazily, so even some classes doesn't exist, remaining classinfo
