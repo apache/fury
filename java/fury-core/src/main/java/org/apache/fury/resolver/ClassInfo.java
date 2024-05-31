@@ -85,6 +85,9 @@ public class ClassInfo {
     } else {
       this.fullClassNameBytes = null;
     }
+    // When `classId == ClassResolver.REPLACE_STUB_ID` was established,
+    // means only classes are serialized, not the instance. If we
+    // serialize such class only, we need to write classname bytes.
     if (cls != null
         && ((classId == ClassResolver.NO_CLASS_ID
                 && !classResolver.getFury().getConfig().isMetaShareEnabled())
