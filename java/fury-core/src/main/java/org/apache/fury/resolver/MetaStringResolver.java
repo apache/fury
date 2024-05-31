@@ -22,6 +22,7 @@ package org.apache.fury.resolver;
 import org.apache.fury.collection.LongMap;
 import org.apache.fury.collection.ObjectMap;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
 
 /**
@@ -109,7 +110,7 @@ public final class MetaStringResolver {
     String str = metaStringBytes2StringMap.get(byteString);
     if (str == null) {
       // TODO support meta string in other languages.
-      str = byteString.decode('.', '_');
+      str = byteString.decode(Encoders.GENERIC_DECODER);
       metaStringBytes2StringMap.put(byteString, str);
     }
     return str;
