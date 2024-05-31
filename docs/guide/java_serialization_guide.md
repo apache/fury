@@ -30,8 +30,6 @@ public class Example {
     // Note that Fury instances should be reused between
     // multiple serializations of different objects.
     Fury fury = Fury.builder().withLanguage(Language.JAVA)
-      // Allow to deserialize objects unknown types, more flexible
-      // but may be insecure if the classes contains malicious code.
       .requireClassRegistration(true)
       .build();
     // Registering types can reduce class name serialization overhead, but not mandatory.
@@ -80,11 +78,12 @@ import org.apache.fury.config.*;
 
 public class Example {
   // reuse fury.
-  private static final ThreadSafeFury fury = Fury.builder()
-    // Allow to deserialize objects unknown types, more flexible
-    // but may be insecure if the classes contains malicious code.
-    .requireClassRegistration(true)
-    .buildThreadSafeFury();
+  private static final ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
+      Fury f = Fury.builder().withLanguage(Language.JAVA)
+              .withClassLoader(classLoader).build();
+      f.register(SomeClass.class);
+      return f;
+  });
 
   public static void main(String[] args) {
     SomeClass object = new SomeClass();
