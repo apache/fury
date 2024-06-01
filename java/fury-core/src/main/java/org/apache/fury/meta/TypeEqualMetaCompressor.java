@@ -19,11 +19,27 @@
 
 package org.apache.fury.meta;
 
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
+
+/**
+ * A {@link MetaCompressor} wrapper which compare equality by the compressor type for better
+ * serializer compile cache.
+ */
 class TypeEqualMetaCompressor implements MetaCompressor {
+  private static final Logger LOG = LoggerFactory.getLogger(TypeEqualMetaCompressor.class);
+
   private final MetaCompressor compressor;
 
   public TypeEqualMetaCompressor(MetaCompressor compressor) {
     this.compressor = compressor;
+    LOG.warn(
+        "{} should implement equals/hashCode method, "
+            + "otherwise compile cache may won't work. "
+            + "Use type to check MetaCompressor identity instead, but this"
+            + "may be incorrect if different compressor instance of same type "
+            + "indicates different compressor.",
+        compressor);
   }
 
   @Override

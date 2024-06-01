@@ -260,28 +260,7 @@ public final class FuryBuilder {
    * used. Users can pass other compressor such as `zstd` for better compression rate.
    */
   public FuryBuilder withMetaCompressor(MetaCompressor metaCompressor) {
-    Class<?> clz = metaCompressor.getClass();
-    if (clz != DeflaterMetaCompressor.class) {
-      while (clz != null) {
-        try {
-          clz.getDeclaredMethod("hashCode");
-          if (clz == Object.class) {
-            LOG.warn(
-                "{} should implement equals/hashCode method, "
-                    + "otherwise compile cache may won't work. "
-                    + "Use type to check MetaCompressor identity instead, but this"
-                    + "may be incorrect if different compressor instance of same type "
-                    + "indicates different compressor.",
-                metaCompressor);
-            metaCompressor = MetaCompressor.typeEqualMetaCompressor(metaCompressor);
-          }
-          break;
-        } catch (NoSuchMethodException e) {
-          clz = clz.getSuperclass();
-        }
-      }
-    }
-    this.metaCompressor = metaCompressor;
+    this.metaCompressor = MetaCompressor.checkMetaCompressor(metaCompressor);
     return this;
   }
 

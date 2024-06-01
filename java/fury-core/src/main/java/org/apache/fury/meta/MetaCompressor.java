@@ -28,7 +28,26 @@ public interface MetaCompressor {
 
   byte[] decompress(byte[] data, int offset, int size);
 
-  static MetaCompressor typeEqualMetaCompressor(MetaCompressor compressor) {
-    return new TypeEqualMetaCompressor(compressor);
+  /**
+   * Check whether {@link MetaCompressor} implements `equals/hashCode` method. If not implemented,
+   * return {@link TypeEqualMetaCompressor} instead which compare equality by the compressor type
+   * for better serializer compile cache.
+   */
+  static MetaCompressor checkMetaCompressor(MetaCompressor compressor) {
+    Class<?> clz = compressor.getClass();
+    if (clz != DeflaterMetaCompressor.class) {
+      while (clz != null) {
+        try {
+          clz.getDeclaredMethod("hashCode");
+          if (clz == Object.class) {
+            return new TypeEqualMetaCompressor(compressor);
+          }
+          break;
+        } catch (NoSuchMethodException e) {
+          clz = clz.getSuperclass();
+        }
+      }
+    }
+    return compressor;
   }
 }

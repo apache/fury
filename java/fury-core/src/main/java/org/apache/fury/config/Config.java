@@ -196,8 +196,8 @@ public class Config implements Serializable {
   }
 
   /**
-   * Returns a {@link MetaCompressor} to compress class metadata such as field names and types.
-   * The returned {@link MetaCompressor} should be thread safe.
+   * Returns a {@link MetaCompressor} to compress class metadata such as field names and types. The
+   * returned {@link MetaCompressor} should be thread safe.
    */
   public MetaCompressor getMetaCompressor() {
     return metaCompressor;
