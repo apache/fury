@@ -19,12 +19,14 @@
 
 package org.apache.fury.meta;
 
+import static org.apache.fury.meta.ClassDef.COMPRESSION_FLAG;
 import static org.apache.fury.meta.ClassDef.OBJECT_TYPE_FLAG;
 import static org.apache.fury.meta.ClassDef.SCHEMA_COMPATIBLE_FLAG;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
 import static org.apache.fury.meta.Encoders.pkgEncodingsList;
 import static org.apache.fury.meta.Encoders.typeNameEncodingsList;
+import static org.apache.fury.util.MathUtils.toInt;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -124,20 +126,7 @@ class ClassDefEncoder {
       Class<?> type,
       Map<String, List<FieldInfo>> classLayers,
       boolean isObjectType) {
-    MemoryBuffer buffer = MemoryUtils.buffer(32);
-    buffer.increaseWriterIndex(9); // header + one byte size
-    long header;
-    int encodedSize = classLayers.size() - 1; // num class must be greater than 0
-    if (encodedSize > 0b1110) {
-      header = 0b1111;
-      buffer.writeVarUint32Small7(encodedSize - 0b1110);
-    } else {
-      header = encodedSize;
-    }
-    header |= SCHEMA_COMPATIBLE_FLAG;
-    if (isObjectType) {
-      header |= OBJECT_TYPE_FLAG;
-    }
+    MemoryBuffer classDefBuf = MemoryBuffer.newHeapBuffer(128);
     for (Map.Entry<String, List<FieldInfo>> entry : classLayers.entrySet()) {
       String className = entry.getKey();
       List<FieldInfo> fields = entry.getValue();
@@ -146,36 +135,63 @@ class ClassDefEncoder {
       int currentClassHeader = (fields.size() << 1);
       if (classResolver.isRegistered(type)) {
         currentClassHeader |= 1;
-        buffer.writeVarUint32Small7(currentClassHeader);
-        buffer.writeVarUint32Small7(classResolver.getRegisteredClassId(type));
+        classDefBuf.writeVarUint32Small7(currentClassHeader);
+        classDefBuf.writeVarUint32Small7(classResolver.getRegisteredClassId(type));
       } else {
-        buffer.writeVarUint32Small7(currentClassHeader);
+        classDefBuf.writeVarUint32Small7(currentClassHeader);
         Class<?> currentType = getType(type, className);
         Tuple2<String, String> encoded = Encoders.encodePkgAndClass(currentType);
-        writePkgName(buffer, encoded.f0);
-        writeTypeName(buffer, encoded.f1);
+        writePkgName(classDefBuf, encoded.f0);
+        writeTypeName(classDefBuf, encoded.f1);
       }
-      writeFieldsInfo(buffer, fields);
+      writeFieldsInfo(classDefBuf, fields);
     }
-    byte[] encodedClassDef = buffer.getBytes(0, buffer.writerIndex());
-    long hash = MurmurHash3.murmurhash3_x64_128(encodedClassDef, 0, encodedClassDef.length, 47)[0];
+    byte[] compressed =
+        classResolver
+            .getFury()
+            .getConfig()
+            .getMetaCompressor()
+            .compress(classDefBuf.getHeapMemory(), 0, classDefBuf.writerIndex());
+    boolean isCompressed = false;
+    if (compressed.length < classDefBuf.writerIndex()) {
+      isCompressed = true;
+      classDefBuf = MemoryBuffer.fromByteArray(compressed);
+      classDefBuf.writerIndex(compressed.length);
+    }
+    long hash =
+        MurmurHash3.murmurhash3_x64_128(
+            classDefBuf.getHeapMemory(), 0, classDefBuf.writerIndex(), 47)[0];
+    long header;
+    int numClasses = classLayers.size() - 1; // num class must be greater than 0
+    if (numClasses > 0b1110) {
+      header = 0b1111;
+    } else {
+      header = numClasses;
+    }
+    header |= SCHEMA_COMPATIBLE_FLAG;
+    if (isObjectType) {
+      header |= OBJECT_TYPE_FLAG;
+    }
+    if (isCompressed) {
+      header |= COMPRESSION_FLAG;
+    }
     // this id will be part of generated codec, a negative number won't be allowed in class name.
     hash <<= 8;
     header |= Math.abs(hash);
-    int len = buffer.writerIndex() - 9;
+    MemoryBuffer buffer = MemoryUtils.buffer(classDefBuf.writerIndex() + 10);
+    int len = classDefBuf.writerIndex() + toInt(numClasses > 0b1110);
     if (len > 255) {
       header |= SIZE_TWO_BYTES_FLAG;
-    }
-    buffer.putInt64(0, header);
-    if (len > 255) {
-      MemoryBuffer buf = MemoryBuffer.newHeapBuffer(len + 1);
-      buf.writeInt64(header);
-      buf.writeInt16((short) len);
-      buf.writeBytes(buffer.getBytes(9, len));
-      buffer = buf;
+      buffer.writeInt64(header);
+      buffer.writeInt16((short) len);
     } else {
-      buffer.putByte(8, (byte) len);
+      buffer.writeInt64(header);
+      buffer.writeByte(len);
     }
+    if (numClasses > 0b1110) {
+      buffer.writeVarUint32Small7(numClasses - 0b1110);
+    }
+    buffer.writeBytes(classDefBuf.getHeapMemory(), 0, classDefBuf.writerIndex());
     return buffer;
   }
 

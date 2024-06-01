@@ -19,6 +19,7 @@
 
 package org.apache.fury.meta;
 
+import static org.apache.fury.meta.ClassDef.COMPRESSION_FLAG;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.fieldNameEncodings;
 import static org.apache.fury.meta.Encoders.pkgEncodings;
@@ -50,33 +51,42 @@ class ClassDefDecoder {
       size = buffer.readByte() & 0xff;
       encoded.writeByte(size);
     }
-    buffer.checkReadableBytes(size);
-    encoded.writeBytes(buffer.getBytes(buffer.readerIndex(), size));
+    byte[] encodedClassDef = buffer.readBytes(size);
+    encoded.writeBytes(encodedClassDef);
+    if ((id & COMPRESSION_FLAG) != 0) {
+      encodedClassDef =
+          classResolver
+              .getFury()
+              .getConfig()
+              .getMetaCompressor()
+              .decompress(encodedClassDef, 0, size);
+    }
+    MemoryBuffer classDefBuf = MemoryBuffer.fromByteArray(encodedClassDef);
     long header = id & 0xff;
     int numClasses = (int) (header & 0b1111);
     if (numClasses == 0b1111) {
-      numClasses += buffer.readVarUint32Small7();
+      numClasses += classDefBuf.readVarUint32Small7();
     }
     numClasses += 1;
-    String className = null;
+    String className;
     List<ClassDef.FieldInfo> classFields = new ArrayList<>();
     ClassSpec classSpec = null;
     for (int i = 0; i < numClasses; i++) {
       // | num fields + register flag | header + package name | header + class name
       // | header + type id + field name | next field info | ... |
-      int currentClassHeader = buffer.readVarUint32Small7();
+      int currentClassHeader = classDefBuf.readVarUint32Small7();
       boolean isRegistered = (currentClassHeader & 0b1) != 0;
       int numFields = currentClassHeader >>> 1;
       if (isRegistered) {
-        int registeredId = buffer.readVarUint32Small7();
+        int registeredId = classDefBuf.readVarUint32Small7();
         className = classResolver.getClassInfo((short) registeredId).getCls().getName();
       } else {
-        String pkg = readPkgName(buffer);
-        String typeName = readTypeName(buffer);
+        String pkg = readPkgName(classDefBuf);
+        String typeName = readTypeName(classDefBuf);
         classSpec = Encoders.decodePkgAndClass(pkg, typeName);
         className = classSpec.entireClassName;
       }
-      List<ClassDef.FieldInfo> fieldInfos = readFieldsInfo(buffer, className, numFields);
+      List<ClassDef.FieldInfo> fieldInfos = readFieldsInfo(classDefBuf, className, numFields);
       classFields.addAll(fieldInfos);
     }
     Preconditions.checkNotNull(classSpec);
