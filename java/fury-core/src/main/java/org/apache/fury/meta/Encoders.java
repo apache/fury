@@ -38,6 +38,7 @@ import org.apache.fury.util.StringUtils;
 public class Encoders {
   public static final MetaStringEncoder PACKAGE_ENCODER = new MetaStringEncoder('.', '_');
   public static final MetaStringDecoder PACKAGE_DECODER = new MetaStringDecoder('.', '_');
+  public static final MetaStringDecoder GENERIC_ENCODER = PACKAGE_ENCODER;
   public static final MetaStringDecoder GENERIC_DECODER = PACKAGE_DECODER;
   public static final MetaStringEncoder TYPE_NAME_ENCODER = new MetaStringEncoder('$', '_');
   public static final MetaStringDecoder TYPE_NAME_DECODER = new MetaStringDecoder('$', '_');

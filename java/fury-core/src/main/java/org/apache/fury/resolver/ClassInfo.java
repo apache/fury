@@ -81,7 +81,7 @@ public class ClassInfo {
     if (cls != null && classResolver.getFury().getLanguage() != Language.JAVA) {
       this.fullClassNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
-              PACKAGE_ENCODER.encode(cls.getName(), Encoding.UTF_8));
+              GENERIC_ENCODER.encode(cls.getName(), Encoding.UTF_8));
     } else {
       this.fullClassNameBytes = null;
     }

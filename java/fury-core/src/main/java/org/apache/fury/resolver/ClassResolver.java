@@ -1701,7 +1701,7 @@ public class ClassResolver {
     Class<?> cls = classNameBytes2Class.get(byteString);
     if (cls == null) {
       Preconditions.checkNotNull(byteString);
-      String className = byteString.decode(Encoders.PACKAGE_DECODER);
+      String className = byteString.decode(Encoders.GENERIC_DECODER);
       cls = loadClass(className);
       classNameBytes2Class.put(byteString, cls);
     }
