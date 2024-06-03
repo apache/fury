@@ -19,8 +19,8 @@
 
 package org.apache.fury.resolver;
 
-import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
 import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
+import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
 
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
