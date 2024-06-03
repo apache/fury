@@ -250,7 +250,7 @@ public final class Fury implements BaseFury {
         write(buffer, obj);
       } else {
         buffer.writeByte((byte) Language.JAVA.ordinal());
-        xserializeInternal(buffer, obj);
+        xwriteRef(buffer, obj);
       }
       return buffer;
     } catch (StackOverflowError t) {
@@ -318,22 +318,6 @@ public final class Fury implements BaseFury {
     if (shareMeta) {
       buffer.putInt32(startOffset, buffer.writerIndex());
       classResolver.writeClassDefs(buffer);
-    }
-  }
-
-  private void xserializeInternal(MemoryBuffer buffer, Object obj) {
-    int startOffset = buffer.writerIndex();
-    buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
-    buffer.writeInt32(-1); // preserve 4-byte for nativeObjects size
-    xwriteRef(buffer, obj);
-    buffer.putInt32(startOffset, buffer.writerIndex());
-    buffer.putInt32(startOffset + 4, nativeObjects.size());
-    refResolver.resetWrite();
-    // fury write opaque object classname which cause later write of classname only write an id.
-    classResolver.resetWrite();
-    metaStringResolver.resetWrite();
-    for (Object nativeObject : nativeObjects) {
-      writeRef(buffer, nativeObject);
     }
   }
 
@@ -752,7 +736,7 @@ public final class Fury implements BaseFury {
       }
       Object obj;
       if (isTargetXLang) {
-        obj = xdeserializeInternal(buffer);
+        obj = xreadRef(buffer);
       } else {
         if (config.isMetaShareEnabled()) {
           classResolver.readClassDefs(buffer);
@@ -792,28 +776,6 @@ public final class Fury implements BaseFury {
   public Object deserialize(FuryReadableChannel channel, Iterable<MemoryBuffer> outOfBandBuffers) {
     MemoryBuffer buf = channel.getBuffer();
     return deserialize(buf, outOfBandBuffers);
-  }
-
-  private Object xdeserializeInternal(MemoryBuffer buffer) {
-    Object obj;
-    int nativeObjectsStartOffset = buffer.readInt32();
-    int nativeObjectsSize = buffer.readInt32();
-    int endReaderIndex = nativeObjectsStartOffset;
-    if (peerLanguage == Language.JAVA) {
-      int readerIndex = buffer.readerIndex();
-      buffer.readerIndex(nativeObjectsStartOffset);
-      for (int i = 0; i < nativeObjectsSize; i++) {
-        nativeObjects.add(readRef(buffer));
-      }
-      endReaderIndex = buffer.readerIndex();
-      buffer.readerIndex(readerIndex);
-      refResolver.resetRead();
-      classResolver.resetRead();
-      metaStringResolver.resetRead();
-    }
-    obj = xreadRef(buffer);
-    buffer.readerIndex(endReaderIndex);
-    return obj;
   }
 
   /** Deserialize nullable referencable object from <code>buffer</code>. */
