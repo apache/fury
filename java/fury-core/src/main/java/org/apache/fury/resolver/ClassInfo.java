@@ -19,8 +19,8 @@
 
 package org.apache.fury.resolver;
 
+import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
-import static org.apache.fury.meta.Encoders.TYPE_NAME_ENCODER;
 
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
@@ -82,18 +82,23 @@ public class ClassInfo {
     if (cls != null && classResolver.getFury().getLanguage() != Language.JAVA) {
       this.fullClassNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
-              PACKAGE_ENCODER.encode(cls.getName(), Encoding.UTF_8));
+              GENERIC_ENCODER.encode(cls.getName(), Encoding.UTF_8));
     } else {
       this.fullClassNameBytes = null;
     }
+    // When `classId == ClassResolver.REPLACE_STUB_ID` was established,
+    // means only classes are serialized, not the instance. If we
+    // serialize such class only, we need to write classname bytes.
     if (cls != null
-        && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
+        && ((classId == ClassResolver.NO_CLASS_ID
+                && !classResolver.getFury().getConfig().isMetaShareEnabled())
+            || classId == ClassResolver.REPLACE_STUB_ID)) {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       Tuple2<String, String> tuple2 = Encoders.encodePkgAndClass(cls);
       this.packageNameBytes =
-          metaStringResolver.getOrCreateMetaStringBytes(PACKAGE_ENCODER.encode(tuple2.f0));
+          metaStringResolver.getOrCreateMetaStringBytes(Encoders.encodePackage(tuple2.f0));
       this.classNameBytes =
-          metaStringResolver.getOrCreateMetaStringBytes(TYPE_NAME_ENCODER.encode(tuple2.f1));
+          metaStringResolver.getOrCreateMetaStringBytes(Encoders.encodeTypeName(tuple2.f1));
     } else {
       this.packageNameBytes = null;
       this.classNameBytes = null;
