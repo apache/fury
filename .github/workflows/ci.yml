@@ -171,7 +171,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
-      - uses: dtolnay/rust-toolchain@nightly
       - name: Run Rust CI
         run: python ./ci/run_ci.py rust
 
