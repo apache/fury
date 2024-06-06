@@ -86,8 +86,6 @@ def _run_cpp():
 
 
 def _run_rust():
-    _exec_cmd("rustup component add clippy-preview")
-    _exec_cmd("rustup component add rustfmt")
     logging.info("Executing fury rust tests")
     _cd_project_subdir("rust")
 
