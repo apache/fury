@@ -53,8 +53,8 @@ where
         // ref flag
         let ref_flag = deserializer.reader.i8();
 
-        if ref_flag == (RefFlag::NotNullValueFlag as i8)
-            || ref_flag == (RefFlag::RefValueFlag as i8)
+        if ref_flag == (RefFlag::NotNullValue as i8)
+            || ref_flag == (RefFlag::RefValue as i8)
         {
             // type_id
             let type_id = deserializer.reader.i16();
@@ -71,9 +71,9 @@ where
             } else {
                 Ok(Self::read(deserializer)?)
             }
-        } else if ref_flag == (RefFlag::NullFlag as i8) {
+        } else if ref_flag == (RefFlag::Null as i8) {
             Err(Error::Null)
-        } else if ref_flag == (RefFlag::RefFlag as i8) {
+        } else if ref_flag == (RefFlag::Ref as i8) {
             Err(Error::Ref)
         } else {
             Err(Error::BadRefFlag)
@@ -189,8 +189,8 @@ impl<T: Deserialize> Deserialize for Option<T> {
         // ref flag
         let ref_flag = deserializer.reader.i8();
 
-        if ref_flag == (RefFlag::NotNullValueFlag as i8)
-            || ref_flag == (RefFlag::RefValueFlag as i8)
+        if ref_flag == (RefFlag::NotNullValue as i8)
+            || ref_flag == (RefFlag::RefValue as i8)
         {
             // type_id
             let type_id = deserializer.reader.i16();
@@ -203,9 +203,9 @@ impl<T: Deserialize> Deserialize for Option<T> {
             } else {
                 Ok(Self::read(deserializer)?)
             }
-        } else if ref_flag == (RefFlag::NullFlag as i8) {
+        } else if ref_flag == (RefFlag::Null as i8) {
             Ok(None)
-        } else if ref_flag == (RefFlag::RefFlag as i8) {
+        } else if ref_flag == (RefFlag::Ref as i8) {
             Err(Error::Ref)
         } else {
             Err(Error::BadRefFlag)
