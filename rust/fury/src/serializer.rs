@@ -71,7 +71,7 @@ where
     /// Step 1: write the length of the Vec into the buffer.
     /// Step 2: reserve the fixed size of all the elements.
     /// Step 3: loop through the Vec and invoke the serialize function of each item.
-    fn write_vec(value: &Vec<Self>, serializer: &mut SerializerState) {
+    fn write_vec(value: &[Self], serializer: &mut SerializerState) {
         serializer.writer.var_int32(value.len() as i32);
         serializer
             .writer
@@ -94,7 +94,7 @@ where
     /// Step 2: invoke the write function to write the Rust object.
     fn serialize(&self, serializer: &mut SerializerState) {
         // ref flag
-        serializer.writer.i8(RefFlag::NotNullValueFlag as i8);
+        serializer.writer.i8(RefFlag::NotNullValue as i8);
         // type
         serializer.writer.i16(if Self::is_vec() {
             Self::vec_ty()
@@ -130,9 +130,9 @@ macro_rules! impl_num_serialize_and_pritimive_vec {
                 serializer.writer.$name(*self);
             }
 
-            fn write_vec(value: &Vec<Self>, serializer: &mut SerializerState) {
+            fn write_vec(value: &[Self], serializer: &mut SerializerState) {
                 serializer.writer.var_int32(value.len() as i32);
-                serializer.writer.bytes(to_u8_slice(value.as_slice()));
+                serializer.writer.bytes(to_u8_slice(value));
             }
 
             fn reserved_space() -> usize {
@@ -161,7 +161,7 @@ impl Serialize for String {
         serializer.writer.bytes(self.as_bytes());
     }
 
-    fn write_vec(value: &Vec<Self>, serializer: &mut SerializerState) {
+    fn write_vec(value: &[Self], serializer: &mut SerializerState) {
         serializer.writer.var_int32(value.len() as i32);
         serializer
             .writer
@@ -182,9 +182,9 @@ impl Serialize for bool {
         serializer.writer.u8(if *self { 1 } else { 0 });
     }
 
-    fn write_vec(value: &Vec<Self>, serializer: &mut SerializerState) {
+    fn write_vec(value: &[Self], serializer: &mut SerializerState) {
         serializer.writer.var_int32(value.len() as i32);
-        serializer.writer.bytes(to_u8_slice(value.as_slice()));
+        serializer.writer.bytes(to_u8_slice(value));
     }
 
     fn reserved_space() -> usize {
@@ -291,14 +291,14 @@ where
         match self {
             Some(v) => {
                 // ref flag
-                serializer.writer.i8(RefFlag::NotNullValueFlag as i8);
+                serializer.writer.i8(RefFlag::NotNullValue as i8);
                 // type
                 serializer.writer.i16(<Self as FuryMeta>::ty() as i16);
 
                 v.write(serializer);
             }
             None => {
-                serializer.writer.i8(RefFlag::NullFlag as i8);
+                serializer.writer.i8(RefFlag::Null as i8);
             }
         }
     }
@@ -349,7 +349,7 @@ impl<'de> SerializerState<'de> {
         bitmap |= config_flags::IS_LITTLE_ENDIAN_FLAG;
         bitmap |= config_flags::IS_CROSS_LANGUAGE_FLAG;
         self.writer.u8(bitmap);
-        self.writer.u8(Language::RUST as u8);
+        self.writer.u8(Language::Rust as u8);
         self.writer.skip(4); // native offset
         self.writer.skip(4); // native size
         self

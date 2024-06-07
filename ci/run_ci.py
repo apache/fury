@@ -93,7 +93,7 @@ def _run_rust():
         "cargo doc --no-deps --document-private-items --all-features --open",
         "cargo fmt --all -- --check",
         "cargo fmt --all",
-        "cargo clippy --workspace --all-features --all-targets",
+        "cargo clippy --workspace --all-features --all-targets -- -D warnings",
         "cargo doc",
         "cargo build --all-features --all-targets",
         "cargo test",
