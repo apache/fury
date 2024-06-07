@@ -53,9 +53,7 @@ where
         // ref flag
         let ref_flag = deserializer.reader.i8();
 
-        if ref_flag == (RefFlag::NotNullValue as i8)
-            || ref_flag == (RefFlag::RefValue as i8)
-        {
+        if ref_flag == (RefFlag::NotNullValue as i8) || ref_flag == (RefFlag::RefValue as i8) {
             // type_id
             let type_id = deserializer.reader.i16();
             let ty = if Self::is_vec() {
@@ -189,9 +187,7 @@ impl<T: Deserialize> Deserialize for Option<T> {
         // ref flag
         let ref_flag = deserializer.reader.i8();
 
-        if ref_flag == (RefFlag::NotNullValue as i8)
-            || ref_flag == (RefFlag::RefValue as i8)
-        {
+        if ref_flag == (RefFlag::NotNullValue as i8) || ref_flag == (RefFlag::RefValue as i8) {
             // type_id
             let type_id = deserializer.reader.i16();
 
