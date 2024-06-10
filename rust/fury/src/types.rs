@@ -142,14 +142,14 @@ pub enum StringFlag {
 }
 
 pub enum RefFlag {
-    NullFlag = -3,
-    // RefFlag indicates that object is a not-null value.
+    Null = -3,
+    // Ref indicates that object is a not-null value.
     // We don't use another byte to indicate REF, so that we can save one byte.
-    RefFlag = -2,
+    Ref = -2,
     // NotNullValueFlag indicates that the object is a non-null value.
-    NotNullValueFlag = -1,
+    NotNullValue = -1,
     // RefValueFlag indicates that the object is a referencable and first read.
-    RefValueFlag = 0,
+    RefValue = 0,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -246,13 +246,13 @@ pub mod config_flags {
 
 #[derive(Debug, PartialEq)]
 pub enum Language {
-    XLANG = 0,
-    JAVA = 1,
-    PYTHON = 2,
-    CPP = 3,
-    GO = 4,
-    JAVASCRIPT = 5,
-    RUST = 6,
+    Xlang = 0,
+    Java = 1,
+    Python = 2,
+    Cpp = 3,
+    Go = 4,
+    Javascript = 5,
+    Rust = 6,
 }
 
 impl TryFrom<u8> for Language {
@@ -260,13 +260,13 @@ impl TryFrom<u8> for Language {
 
     fn try_from(num: u8) -> Result<Self, Error> {
         match num {
-            0 => Ok(Language::XLANG),
-            1 => Ok(Language::JAVA),
-            2 => Ok(Language::PYTHON),
-            3 => Ok(Language::CPP),
-            4 => Ok(Language::GO),
-            5 => Ok(Language::JAVASCRIPT),
-            6 => Ok(Language::RUST),
+            0 => Ok(Language::Xlang),
+            1 => Ok(Language::Java),
+            2 => Ok(Language::Python),
+            3 => Ok(Language::Cpp),
+            4 => Ok(Language::Go),
+            5 => Ok(Language::Javascript),
+            6 => Ok(Language::Rust),
             _ => Err(Error::UnsupportLanguageCode { code: num }),
         }
     }

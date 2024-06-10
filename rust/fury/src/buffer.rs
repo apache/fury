@@ -32,6 +32,10 @@ impl Writer {
         self.bf.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.bf.is_empty()
+    }
+
     pub fn reserve(&mut self, additional: usize) {
         self.reserved += additional;
         if self.bf.capacity() < self.reserved {
@@ -163,7 +167,7 @@ impl<'bf> Reader<'bf> {
     pub fn i16(&mut self) -> i16 {
         let result = LittleEndian::read_i16(self.slice_after_cursor());
         self.move_next(2);
-        result as i16
+        result
     }
 
     pub fn u32(&mut self) -> u32 {
@@ -175,7 +179,7 @@ impl<'bf> Reader<'bf> {
     pub fn i32(&mut self) -> i32 {
         let result = LittleEndian::read_i32(self.slice_after_cursor());
         self.move_next(4);
-        result as i32
+        result
     }
 
     pub fn u64(&mut self) -> u64 {
@@ -187,7 +191,7 @@ impl<'bf> Reader<'bf> {
     pub fn i64(&mut self) -> i64 {
         let result = LittleEndian::read_i64(self.slice_after_cursor());
         self.move_next(8);
-        result as i64
+        result
     }
 
     pub fn f32(&mut self) -> f32 {

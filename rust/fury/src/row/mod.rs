@@ -17,6 +17,7 @@
 
 mod bit_util;
 mod reader;
+#[allow(clippy::module_inception)]
 mod row;
 mod writer;
 
