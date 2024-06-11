@@ -519,7 +519,7 @@ else:
             fury.write_value(buffer, elem)
 ```
 
-[`CollectionSerializer#writeElements`](https://github.com/apache/incubator-fury/blob/20a1a78b17a75a123a6f5b7094c06ff77defc0fe/java/fury-core/src/main/java/org/apache/fury/serializer/collection/AbstractCollectionSerializer.java#L302)
+[`CollectionSerializer#writeElements`](https://github.com/apache/fury/blob/20a1a78b17a75a123a6f5b7094c06ff77defc0fe/java/fury-core/src/main/java/org/apache/fury/serializer/collection/AbstractCollectionSerializer.java#L302)
 can be taken as an example.
 
 ### array
@@ -550,7 +550,7 @@ Format:
 #### map key-value chunk data
 
 Map iteration is too expensive, Fury won't compute the header like for list since it introduce
-[considerable overhead](https://github.com/apache/incubator-fury/issues/925).
+[considerable overhead](https://github.com/apache/fury/issues/925).
 Users can use `MapFieldInfo` annotation to provide the header in advance. Otherwise Fury will use first key-value pair
 to predict header optimistically, and update the chunk header if the prediction failed at some pair.
 

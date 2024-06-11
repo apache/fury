@@ -38,7 +38,7 @@ public class TypeRefTest extends FuryTestBase {
 
   @Test
   public void testGetSubtype() {
-    // For issue: https://github.com/apache/incubator-fury/issues/1604
+    // For issue: https://github.com/apache/fury/issues/1604
     TypeRef<? extends Map<String, Object>> typeRef =
         TypeUtils.mapOf(MapObject.class, String.class, Object.class);
     assertEquals(typeRef, TypeRef.of(MapObject.class));
@@ -80,7 +80,7 @@ public class TypeRefTest extends FuryTestBase {
 
   @Test(dataProvider = "enableCodegen")
   public void testWildcardTypeSerialization(boolean enableCodegen) {
-    // see issue https://github.com/apache/incubator-fury/issues/1633
+    // see issue https://github.com/apache/fury/issues/1633
     Fury fury = builder().withCodegen(enableCodegen).build();
     serDeCheck(fury, new MyClass());
   }

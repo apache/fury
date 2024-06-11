@@ -36,7 +36,7 @@ fury.register(Class.forName("scala.Enumeration.Val"))
 If you want to avoid such registration, you can disable class registration by `FuryBuilder#requireClassRegistration(false)`.
 Note that this option allow to deserialize objects unknown types, more flexible but may be insecure if the classes contains malicious code.
 
-And circular references are common in scala, `Reference tracking` should be enabled by `FuryBuilder#withRefTracking(true)`. If you don't enable reference tracking, [StackOverflowError](https://github.com/apache/incubator-fury/issues/1032) may happen for some scala versions when serializing scala Enumeration.
+And circular references are common in scala, `Reference tracking` should be enabled by `FuryBuilder#withRefTracking(true)`. If you don't enable reference tracking, [StackOverflowError](https://github.com/apache/fury/issues/1032) may happen for some scala versions when serializing scala Enumeration.
 
 Note that fury instance should be shared between multiple serialization, the creation of fury instance is not cheap.
 
@@ -115,6 +115,6 @@ Scala collections and generics doesn't follow java collection framework, and is 
 
 The execution for scala collections will invoke Java serialization API `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` with fury `ObjectStream` implementation. Although `org.apache.fury.serializer.ObjectStreamSerializer` is much faster than JDK `ObjectOutputStream/ObjectInputStream`, but it still doesn't know how use scala collection generics.
 
-In future we plan to provide more optimization for scala types, see https://github.com/apache/incubator-fury/issues/682, stay tuned!
+In future we plan to provide more optimization for scala types, see https://github.com/apache/fury/issues/682, stay tuned!
 
-Scala collections serialization is finished in https://github.com/apache/incubator-fury/pull/1073, if you want better performance, please use fury snapshot version.
+Scala collections serialization is finished in https://github.com/apache/fury/pull/1073, if you want better performance, please use fury snapshot version.

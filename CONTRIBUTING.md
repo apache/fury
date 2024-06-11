@@ -2,15 +2,15 @@
 
 ## Finding good first issues
 
-See [Good First Issues](https://github.com/apache/incubator-fury/contribute).
+See [Good First Issues](https://github.com/apache/fury/contribute).
 
 ## How to create an issue
 
-Create an issue with [this form](https://github.com/apache/incubator-fury/issues/new/choose).
+Create an issue with [this form](https://github.com/apache/fury/issues/new/choose).
 
 ## How to title your PR
 
-Generally we follows the [Conventional Commits](https://www.conventionalcommits.org/) for pull request titles, 
+Generally we follows the [Conventional Commits](https://www.conventionalcommits.org/) for pull request titles,
 since we will squash and merge the PR and use the PR title as the first line of commit message.
 
 For example, here are good PR titles:
@@ -20,7 +20,7 @@ For example, here are good PR titles:
 
 If the submitted PR affects the performance of Fury, we strongly recommend using the perf type,
 and need to provide benchmark data in the PR description. For how to run the benchmark,
-please check [Fury Java Benchmark](https://github.com/apache/incubator-fury/blob/main/java/benchmark/README.md).
+please check [Fury Java Benchmark](https://github.com/apache/fury/blob/main/java/benchmark/README.md).
 
 For more details, please check [pr-lint.yml](./.github/workflows/pr-lint.yml).
 
@@ -189,7 +189,7 @@ sudo flamegraph.pl out.folded > out.svg
 
 ## Website
 
-Fury's website consists of static pages hosted at https://github.com/apache/incubator-fury-site.
+Fury's website consists of static pages hosted at https://github.com/apache/fury-site.
 
 All updates about docs under [guide](docs/guide) and [benchmarks](docs/benchmarks) will be synced to the site repo automatically.
 

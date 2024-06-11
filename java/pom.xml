@@ -49,7 +49,7 @@
     or stability of the code, it does indicate that the project has yet to be
     fully endorsed by the ASF.
   </description>
-  <url>https://github.com/apache/incubator-fury</url>
+  <url>https://github.com/apache/fury</url>
 
   <licenses>
     <license>
@@ -59,9 +59,9 @@
   </licenses>
 
   <scm>
-    <url>https://github.com/apache/incubator-fury</url>
-    <connection>git@github.com:apache/incubator-fury.git</connection>
-    <developerConnection>scm:git:ssh://github.com:apache/incubator-fury.git</developerConnection>
+    <url>https://github.com/apache/fury</url>
+    <connection>git@github.com:apache/fury.git</connection>
+    <developerConnection>scm:git:ssh://github.com:apache/fury.git</developerConnection>
   </scm>
   <developers>
     <developer>

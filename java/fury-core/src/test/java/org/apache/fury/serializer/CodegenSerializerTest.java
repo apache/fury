@@ -309,6 +309,6 @@ public class CodegenSerializerTest extends FuryTestBase {
     // `enum ColorEnum { case Red, Green, Blue }`
     // `case class Colors(set: Set[ColorEnum])`
     // ColorEnum.Green.getClass is a static local class.
-    // see https://github.com/apache/incubator-fury/issues/1033
+    // see https://github.com/apache/fury/issues/1033
   }
 }

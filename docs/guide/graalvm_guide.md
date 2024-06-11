@@ -6,26 +6,26 @@ id: graalvm_guide
 
 # GraalVM Native Image
 GraalVM `native image` can compile java code into native code ahead to build faster, smaller, leaner applications.
-The native image doesn't have a JIT compiler to compile bytecode into machine code, and doesn't support 
+The native image doesn't have a JIT compiler to compile bytecode into machine code, and doesn't support
 reflection unless configure reflection file.
 
-Fury runs on GraalVM native image pretty well. Fury generates all serializer code for `Fury JIT framework` and `MethodHandle/LambdaMetafactory` at graalvm build time. Then use those generated code for serialization at runtime without 
+Fury runs on GraalVM native image pretty well. Fury generates all serializer code for `Fury JIT framework` and `MethodHandle/LambdaMetafactory` at graalvm build time. Then use those generated code for serialization at runtime without
 any extra cost, the performance is great.
 
 In order to use Fury on graalvm native image, you must create Fury as an **static** field of a class, and **register** all classes at
- the enclosing class initialize time. Then configure `native-image.properties` under 
-`resources/META-INF/native-image/$xxx/native-image.propertie` to tell graalvm to init the class at native image 
+ the enclosing class initialize time. Then configure `native-image.properties` under
+`resources/META-INF/native-image/$xxx/native-image.propertie` to tell graalvm to init the class at native image
 build time. For example, here we configure `org.apache.fury.graalvm.Example` class be init at build time:
 ```properties
 Args = --initialize-at-build-time=org.apache.fury.graalvm.Example
 ```
 
-Another benefit using fury is that you don't have to configure [reflection json](https://www.graalvm.org/latest/reference-manual/native-image/metadata/#specifying-reflection-metadata-in-json) and 
+Another benefit using fury is that you don't have to configure [reflection json](https://www.graalvm.org/latest/reference-manual/native-image/metadata/#specifying-reflection-metadata-in-json) and
 [serialization json](https://www.graalvm.org/latest/reference-manual/native-image/metadata/#serialization), which is
-very tedious, cumbersome and inconvenient. When using fury, you just need to invoke 
+very tedious, cumbersome and inconvenient. When using fury, you just need to invoke
 `org.apache.fury.Fury.register(Class<?>, boolean)` for every type you want to serialize.
 
-Note that Fury `asyncCompilationEnabled` option will be disabled automatically for graalvm native image since graalvm 
+Note that Fury `asyncCompilationEnabled` option will be disabled automatically for graalvm native image since graalvm
 native image doesn't support JIT at the image run time.
 
 ## Not thread-safe Fury
@@ -85,7 +85,7 @@ public class ThreadSafeExample {
     List<String> f3,
     Map<String, Long> f4) {
   }
-  
+
   static ThreadSafeFury fury;
 
   static {
@@ -115,9 +115,9 @@ Args = --initialize-at-build-time=org.apache.fury.graalvm.ThreadSafeExample
 ```
 
 ## Framework Integration
-For framework developers, if you want to integrate fury for serialization, you can provided a configuration file to let 
-the users to list all the classes they want to serialize, then you can load those classes and invoke 
-`org.apache.fury.Fury.register(Class<?>, boolean)` to register those classes in your Fury integration class, and configure that 
+For framework developers, if you want to integrate fury for serialization, you can provided a configuration file to let
+the users to list all the classes they want to serialize, then you can load those classes and invoke
+`org.apache.fury.Fury.register(Class<?>, boolean)` to register those classes in your Fury integration class, and configure that
 class be initialized at graalvm native image build time.
 
 ## Benchmark
@@ -131,7 +131,7 @@ When Fury compression is enabled:
 - Struct: Fury is `24x speed, 31% size` compared to JDK.
 - Pojo: Fury is `12x speed, 48% size` compared to JDK.
 
-See [[Benchmark.java](https://github.com/apache/incubator-fury/blob/main/integration_tests/graalvm_tests/src/main/java/org/apache/fury/graalvm/Benchmark.java)] for benchmark code.
+See [[Benchmark.java](https://github.com/apache/fury/blob/main/integration_tests/graalvm_tests/src/main/java/org/apache/fury/graalvm/Benchmark.java)] for benchmark code.
 
 ### Struct Benchmark
 #### Class Fields

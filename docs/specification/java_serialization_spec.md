@@ -426,7 +426,7 @@ Format:
 #### Map Key-Value data
 
 Map iteration is too expensive, Fury won't compute the header like for collection before since it introduce
-[considerable overhead](https://github.com/apache/incubator-fury/issues/925).
+[considerable overhead](https://github.com/apache/fury/issues/925).
 Users can use `MapFieldInfo` annotation to provide header in advance. Otherwise Fury will use first key-value pair to
 predict header optimistically, and update the chunk header if the prediction failed at some pair.
 

@@ -37,7 +37,7 @@ public class JsonTest {
 
   @Test
   public void testSerializeJson() {
-    // For issue: https://github.com/apache/incubator-fury/issues/1604
+    // For issue: https://github.com/apache/fury/issues/1604
     JSONObject jsonObject = new JSONObject();
     jsonObject.put("k1", "v1");
     jsonObject.put("k2", "v2");
