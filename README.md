@@ -2,7 +2,7 @@
   <img width="65%" alt="" src="docs/images/logo/fury_github_banner.png"><br>
 </div>
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/apache/incubator-fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/incubator-fury/actions/workflows/ci.yml)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/apache/fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/fury/actions/workflows/ci.yml)
 [![Slack Channel](https://img.shields.io/badge/slack-join-3f0e40?logo=slack&style=for-the-badge)](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
 [![Twitter](https://img.shields.io/badge/@ApacheFury-follow-blue?logo=twitter&style=for-the-badge)](https://twitter.com/ApacheFury)
 [![Maven Version](https://img.shields.io/maven-central/v/org.apache.fury/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.apache.fury"%20AND%20a:"fury-core")
@@ -11,6 +11,12 @@
 **Apache Fury (incubating)** is a blazingly-fast multi-language serialization framework powered by **JIT** (just-in-time compilation) and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
 https://fury.apache.org
+
+> [!IMPORTANT]
+> Apache Fury (incubating) is an effort undergoing incubation at the Apache
+> Software Foundation (ASF), sponsored by the Apache Incubator PMC.
+>
+> Please read the [DISCLAIMER](DISCLAIMER) and a full explanation of ["incubating"](https://incubator.apache.org/policy/incubation.html).
 
 ## Features
 - **Multiple languages**: Java/Python/C++/Golang/JavaScript/Rust/Scala/TypeScript.
@@ -58,7 +64,7 @@ To ensure accurate benchmark statistics, it is advisable to **warm up** the syst
 ### Java Serialization
 In these charts below, titles containing "compatible" represent schema compatible mode: type forward/backward compatibility is enabled; while titles without "compatible" represent schema consistent mode: class schema must be the same between serialization and deserialization.
 
-Where `Struct` is a class with [100 primitive fields](https://github.com/apache/incubator-fury/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), and `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
+Where `Struct` is a class with [100 primitive fields](https://github.com/apache/fury/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), and `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
 
 <p align="center">
 <img width="24%" alt="" src="docs/benchmarks/compatible/bench_serialize_compatible_STRUCT_to_directBuffer_tps.png">
@@ -74,7 +80,7 @@ Where `Struct` is a class with [100 primitive fields](https://github.com/apache/
 <img width="24%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_SAMPLE_from_array_tps.png">
 </p>
 
-See [benchmarks](https://github.com/apache/incubator-fury/tree/main/docs/benchmarks) for more benchmarks about type forward/backward compatibility, off-heap support, zero-copy serialization.
+See [benchmarks](https://github.com/apache/fury/tree/main/docs/benchmarks) for more benchmarks about type forward/backward compatibility, off-heap support, zero-copy serialization.
 
 ## Installation
 ### Java
@@ -138,7 +144,7 @@ npm install @furyjs/fury
 
 ### Golang
 ```bash
-go get github.com/apache/incubator-fury/go/fury
+go get github.com/apache/fury/go/fury
 ```
 
 ## Quickstart
@@ -251,7 +257,7 @@ print(fury.deserialize(data))
 ```go
 package main
 
-import furygo "github.com/apache/incubator-fury/go/fury"
+import furygo "github.com/apache/fury/go/fury"
 import "fmt"
 
 func main() {
@@ -352,12 +358,12 @@ print(foo_row.f2[100000], foo_row.f4[100000].f1, foo_row.f4[200000].f2[5])
 ### Schema Compatibility
 Fury java object graph serialization supports class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
 
-We plan to add the schema compatibility support of cross-language serialization after [meta compression](https://github.com/apache/incubator-fury/issues/203) is finished.
+We plan to add the schema compatibility support of cross-language serialization after [meta compression](https://github.com/apache/fury/issues/203) is finished.
 
 ### Binary Compatibility
 We are still improving our protocols, thus binary compatibility is not guaranteed between Fury major releases for now.
 However, it is guaranteed between minor versions. Please
-`versioning` your data by Fury major version if you will upgrade Fury in the future, see [how to upgrade fury](https://github.com/apache/incubator-fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
+`versioning` your data by Fury major version if you will upgrade Fury in the future, see [how to upgrade fury](https://github.com/apache/fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
 
 Binary compatibility will be guaranteed when Fury 1.0 is released.
 

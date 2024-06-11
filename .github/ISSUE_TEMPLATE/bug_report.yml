@@ -26,16 +26,16 @@ body:
     attributes:
       label: Search before asking
       description: >
-        Please make sure to search in the [issues](https://github.com/apache/incubator-fury/issues) first to see whether the same issue was reported already.
+        Please make sure to search in the [issues](https://github.com/apache/fury/issues) first to see whether the same issue was reported already.
       options:
         - label: >
-            I had searched in the [issues](https://github.com/apache/incubator-fury/issues) and found no similar issues.
+            I had searched in the [issues](https://github.com/apache/fury/issues) and found no similar issues.
           required: true
   - type: textarea
     attributes:
       label: Version
       description: >
-        Please provide the versions of Fury, OS, and others such as JDK/Python/Gcc/Clang/Go/NodeJS if they are used. 
+        Please provide the versions of Fury, OS, and others such as JDK/Python/Gcc/Clang/Go/NodeJS if they are used.
         If Fury is the unstable version, please input commit id.
     validations:
       required: true
@@ -80,7 +80,7 @@ body:
     attributes:
       label: Are you willing to submit a PR?
       description: >
-        We very much look forward to developers or users to help solve Fury problems together. 
+        We very much look forward to developers or users to help solve Fury problems together.
         If you are willing to submit a PR to fix this problem, please tick it.
       options:
         - label: I'm willing to submit a PR!

@@ -26,7 +26,7 @@ jobs:
   release-python:
     name: Publish Fury Python to PyPI
     runs-on: ubuntu-20.04
-    if: github.repository == 'apache/incubator-fury'
+    if: github.repository == 'apache/fury'
     environment:
       name: pypi
       url: https://pypi.org/project/pyfury
@@ -43,7 +43,7 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Update version in setup.py
         run: |
-          echo "GITHUB_REF: $GITHUB_REF" 
+          echo "GITHUB_REF: $GITHUB_REF"
           tag=$(echo $GITHUB_REF | cut -d / -f 3)
           echo "tag: $tag"
           version=${tag:1}
