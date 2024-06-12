@@ -1657,8 +1657,8 @@ public class ClassResolver {
       ClassNameBytes classNameBytes,
       MetaStringBytes packageBytes,
       MetaStringBytes simpleClassNameBytes) {
-    String packageName = packageBytes.decode(PACKAGE_DECODER);
-    String className = simpleClassNameBytes.decode(TYPE_NAME_DECODER);
+    String packageName = packageBytes.decode(Encoders::decodePackage);
+    String className = simpleClassNameBytes.decode(Encoders::decodeTypeName);
     ClassSpec classSpec = Encoders.decodePkgAndClass(packageName, className);
     MetaStringBytes fullClassNameBytes =
         metaStringResolver.getOrCreateMetaStringBytes(
@@ -1701,7 +1701,7 @@ public class ClassResolver {
     Class<?> cls = classNameBytes2Class.get(byteString);
     if (cls == null) {
       Preconditions.checkNotNull(byteString);
-      String className = byteString.decode(Encoders.GENERIC_DECODER);
+      String className = byteString.decode(Encoders::decodeGeneric);
       cls = loadClass(className);
       classNameBytes2Class.put(byteString, cls);
     }
