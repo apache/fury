@@ -52,14 +52,10 @@ public class Encoders {
       new ConcurrentHashMap<>();
   private static final ConcurrentMap<String, MetaString> fieldMetaStringCache =
       new ConcurrentHashMap<>();
-  private static final ConcurrentMap<Long, String> pgkDecodeCache =
-          new ConcurrentHashMap<>();
-  private static final ConcurrentMap<Long, String> typeDecodeCache =
-          new ConcurrentHashMap<>();
-  private static final ConcurrentMap<Long, String> fieldDecodeCache =
-          new ConcurrentHashMap<>();
-  private static final ConcurrentMap<Long, String> genericDecodeCache =
-          new ConcurrentHashMap<>();
+  private static final ConcurrentMap<Long, String> pgkDecodeCache = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<Long, String> typeDecodeCache = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<Long, String> fieldDecodeCache = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<Long, String> genericDecodeCache = new ConcurrentHashMap<>();
   static final Encoding[] pkgEncodings =
       new Encoding[] {UTF_8, ALL_TO_LOWER_SPECIAL, LOWER_UPPER_DIGIT_SPECIAL};
   static final List<Encoding> pkgEncodingsList = Arrays.asList(pkgEncodings);
@@ -140,31 +136,30 @@ public class Encoders {
   }
 
   public static MetaString encodePackage(String pkg) {
-      return pgkMetaStringCache.computeIfAbsent(pkg, k -> PACKAGE_ENCODER.encode(pkg, pkgEncodings));
+    return pgkMetaStringCache.computeIfAbsent(pkg, k -> PACKAGE_ENCODER.encode(pkg, pkgEncodings));
   }
 
   public static MetaString encodeTypeName(String typeName) {
-      return typeMetaStringCache.computeIfAbsent(
-              typeName, k -> TYPE_NAME_ENCODER.encode(typeName, typeNameEncodings));
+    return typeMetaStringCache.computeIfAbsent(
+        typeName, k -> TYPE_NAME_ENCODER.encode(typeName, typeNameEncodings));
   }
 
   public static String decodeFieldName(long hashCode, byte[] bytes, MetaString.Encoding encoding) {
     return fieldDecodeCache.computeIfAbsent(
-            hashCode, k -> FIELD_NAME_DECODER.decode(bytes, encoding));
+        hashCode, k -> FIELD_NAME_DECODER.decode(bytes, encoding));
   }
 
   public static String decodePackage(long hashCode, byte[] bytes, MetaString.Encoding encoding) {
-    return pgkDecodeCache.computeIfAbsent(
-            hashCode, k -> PACKAGE_DECODER.decode(bytes, encoding));
+    return pgkDecodeCache.computeIfAbsent(hashCode, k -> PACKAGE_DECODER.decode(bytes, encoding));
   }
 
   public static String decodeTypeName(long hashCode, byte[] bytes, MetaString.Encoding encoding) {
     return typeDecodeCache.computeIfAbsent(
-            hashCode, k -> TYPE_NAME_DECODER.decode(bytes, encoding));
+        hashCode, k -> TYPE_NAME_DECODER.decode(bytes, encoding));
   }
 
   public static String decodeGeneric(long hashCode, byte[] bytes, MetaString.Encoding encoding) {
     return genericDecodeCache.computeIfAbsent(
-            hashCode, k -> GENERIC_DECODER.decode(bytes, encoding));
+        hashCode, k -> GENERIC_DECODER.decode(bytes, encoding));
   }
 }
