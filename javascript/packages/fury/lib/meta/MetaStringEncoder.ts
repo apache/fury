@@ -1,8 +1,8 @@
 class MetaStringEncoder {
-    static LOWER_SPECIAL = 5;
-    static LOWER_UPPER_DIGIT_SPECIAL = 6;
+    static LOWER_SPECIAL: number = 5;
+    static LOWER_UPPER_DIGIT_SPECIAL: number = 6;
 
-    static encode(input) {
+    static encode(input: string): MetaString {
         if (!input) {
             return MetaStringEncoder.createMetaString(input, 'UTF-8', '', '', new Uint8Array(0));
         }
@@ -10,7 +10,7 @@ class MetaStringEncoder {
         return MetaStringEncoder.encodeWithEncoding(input, encoding);
     }
 
-    static createMetaString(input, encoding, specialChar1, specialChar2, bytes) {
+    static createMetaString(input: string, encoding: string, specialChar1: string, specialChar2: string, bytes: Uint8Array): MetaString {
         return {
             input,
             encoding,
@@ -20,7 +20,7 @@ class MetaStringEncoder {
         };
     }
 
-    static computeEncoding(input) {
+    static computeEncoding(input: string): string {
         // Logic to determine the best encoding (LOWER_SPECIAL or LOWER_UPPER_DIGIT_SPECIAL)
         const lowerSpecialCount = [...input].filter(char => /[a-z._$|]/.test(char)).length;
         const lowerUpperDigitSpecialCount = [...input].filter(char => /[a-zA-Z0-9._]/.test(char)).length;
@@ -34,8 +34,8 @@ class MetaStringEncoder {
         }
     }
 
-    static encodeWithEncoding(input, encoding) {
-        let bitsPerChar;
+    static encodeWithEncoding(input: string, encoding: string): MetaString {
+        let bitsPerChar: number;
         if (encoding === 'LOWER_SPECIAL') {
             bitsPerChar = MetaStringEncoder.LOWER_SPECIAL;
         } else if (encoding === 'LOWER_UPPER_DIGIT_SPECIAL') {
@@ -72,7 +72,7 @@ class MetaStringEncoder {
         return MetaStringEncoder.createMetaString(input, encoding, '', '', bytes);
     }
 
-    static charToValueLowerSpecial(char) {
+    static charToValueLowerSpecial(char: string): number {
         if (char >= 'a' && char <= 'z') {
             return char.charCodeAt(0) - 'a'.charCodeAt(0);
         } else if (char === '.') {
@@ -88,7 +88,7 @@ class MetaStringEncoder {
         }
     }
 
-    static charToValueLowerUpperDigitSpecial(char) {
+    static charToValueLowerUpperDigitSpecial(char: string): number {
         if (char >= 'a' && char <= 'z') {
             return char.charCodeAt(0) - 'a'.charCodeAt(0);
         } else if (char >= 'A' && char <= 'Z') {
@@ -103,7 +103,15 @@ class MetaStringEncoder {
     }
 }
 
+interface MetaString {
+    input: string;
+    encoding: string;
+    specialChar1: string;
+    specialChar2: string;
+    bytes: Uint8Array;
+}
+
 // Example usage
 const input = "helloWorld_123";
-const encoded = MetaStringEncoder.encode(input);
-console.log(encoded); // Output the encoded MetaString object
+const encodedMSE = MetaStringEncoder.encode(input);
+console.log(encodedMSE); // Output the encoded MetaString object
