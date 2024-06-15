@@ -60,7 +60,7 @@ print(new_map)
 ```go
 package main
 
-import furygo "github.com/apache/incubator-fury/fury/go/fury"
+import furygo "github.com/apache/fury/fury/go/fury"
 import "fmt"
 
 func main() {
@@ -251,7 +251,7 @@ if __name__ == "__main__":
 ```go
 package main
 
-import furygo "github.com/apache/incubator-fury/fury/go/fury"
+import furygo "github.com/apache/fury/fury/go/fury"
 import "fmt"
 
 func main() {
@@ -456,7 +456,7 @@ print(fury.deserialize(data))
 ```go
 package main
 
-import furygo "github.com/apache/incubator-fury/fury/go/fury"
+import furygo "github.com/apache/fury/fury/go/fury"
 import "fmt"
 
 func main() {
@@ -565,7 +565,7 @@ print(fury.deserialize(data, buffers=buffers))
 ```go
 package main
 
-import furygo "github.com/apache/incubator-fury/fury/go/fury"
+import furygo "github.com/apache/fury/fury/go/fury"
 import "fmt"
 
 func main() {

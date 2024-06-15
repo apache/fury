@@ -6,7 +6,7 @@ id: development
 
 # How to build Fury
 
-Please checkout the source tree from https://github.com/apache/incubator-fury.
+Please checkout the source tree from https://github.com/apache/fury.
 
 ### Build Fury Java
 
