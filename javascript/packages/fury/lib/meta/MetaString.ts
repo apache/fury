@@ -1,9 +1,9 @@
 class MetaString {
-    static LOWER_SPECIAL = 5;
-    static LOWER_UPPER_DIGIT_SPECIAL = 6;
+    static LOWER_SPECIAL: number = 5;
+    static LOWER_UPPER_DIGIT_SPECIAL: number = 6;
 
     // Encode function based on the specified bits per character
-    static encode(str, bitsPerChar) {
+    static encode(str: string, bitsPerChar: number): Uint8Array {
         const totalBits = str.length * bitsPerChar + 1;
         const byteLength = Math.ceil(totalBits / 8);
         const bytes = new Uint8Array(byteLength);
@@ -32,9 +32,9 @@ class MetaString {
     }
 
     // Decoding function from the encoded bytes
-    static decode(bytes, bitsPerChar) {
+    static decode(bytes: Uint8Array, bitsPerChar: number): string {
         const totalBits = bytes.length * 8;
-        const chars = [];
+        const chars: string[] = [];
         let currentBit = 1;
 
         while (currentBit < totalBits) {
@@ -56,7 +56,7 @@ class MetaString {
     }
 
     // Convert a character to its value for LOWER_SPECIAL encoding
-    static charToValueLowerSpecial(char) {
+    static charToValueLowerSpecial(char: string): number {
         if (char >= 'a' && char <= 'z') {
             return char.charCodeAt(0) - 'a'.charCodeAt(0);
         } else if (char === '.') {
@@ -73,7 +73,7 @@ class MetaString {
     }
 
     // Convert a character to its value for LOWER_UPPER_DIGIT_SPECIAL encoding
-    static charToValueLowerUpperDigitSpecial(char) {
+    static charToValueLowerUpperDigitSpecial(char: string): number {
         if (char >= 'a' && char <= 'z') {
             return char.charCodeAt(0) - 'a'.charCodeAt(0);
         } else if (char >= 'A' && char <= 'Z') {
@@ -88,7 +88,7 @@ class MetaString {
     }
 
     // Convert a value to its character for LOWER_SPECIAL encoding
-    static valueToCharLowerSpecial(value) {
+    static valueToCharLowerSpecial(value: number): string {
         if (value >= 0 && value <= 25) {
             return String.fromCharCode(value + 'a'.charCodeAt(0));
         } else if (value === 26) {
@@ -105,7 +105,7 @@ class MetaString {
     }
 
     // Convert a value to its character for LOWER_UPPER_DIGIT_SPECIAL encoding
-    static valueToCharLowerUpperDigitSpecial(value) {
+    static valueToCharLowerUpperDigitSpecial(value: number): string {
         if (value >= 0 && value <= 25) {
             return String.fromCharCode(value + 'a'.charCodeAt(0));
         } else if (value >= 26 && value <= 51) {
@@ -123,7 +123,7 @@ class MetaString {
 }
 
 // Example usage
-const encoded = MetaString.encode("helloWorld_123", MetaString.LOWER_UPPER_DIGIT_SPECIAL);
-console.log(encoded);
-const decoded = MetaString.decode(encoded, MetaString.LOWER_UPPER_DIGIT_SPECIAL);
-console.log(decoded); // Output: "helloWorld_123"
+const encodedMS = MetaString.encode("helloWorld_123", MetaString.LOWER_UPPER_DIGIT_SPECIAL);
+console.log(encodedMS);
+const decodedMS = MetaString.decode(encodedMS, MetaString.LOWER_UPPER_DIGIT_SPECIAL);
+console.log(decodedMS); // Output: "helloWorld_123"
