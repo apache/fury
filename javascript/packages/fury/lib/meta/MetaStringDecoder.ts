@@ -1,11 +1,11 @@
 class MetaStringDecoder {
-    static LOWER_SPECIAL = 5;
-    static LOWER_UPPER_DIGIT_SPECIAL = 6;
+    static LOWER_SPECIAL: number = 5;
+    static LOWER_UPPER_DIGIT_SPECIAL: number = 6;
 
     // Decoding function from the encoded bytes
-    static decode(bytes, bitsPerChar) {
+    static decode(bytes: Uint8Array, bitsPerChar: number): string {
         const totalBits = bytes.length * 8;
-        const chars = [];
+        const chars: string[] = [];
         let currentBit = 1;
 
         while (currentBit < totalBits) {
@@ -27,7 +27,7 @@ class MetaStringDecoder {
     }
 
     // Convert a value to its character for LOWER_SPECIAL encoding
-    static valueToCharLowerSpecial(value) {
+    static valueToCharLowerSpecial(value: number): string {
         if (value >= 0 && value <= 25) {
             return String.fromCharCode(value + 'a'.charCodeAt(0));
         } else if (value === 26) {
@@ -44,7 +44,7 @@ class MetaStringDecoder {
     }
 
     // Convert a value to its character for LOWER_UPPER_DIGIT_SPECIAL encoding
-    static valueToCharLowerUpperDigitSpecial(value) {
+    static valueToCharLowerUpperDigitSpecial(value: number): string {
         if (value >= 0 && value <= 25) {
             return String.fromCharCode(value + 'a'.charCodeAt(0));
         } else if (value >= 26 && value <= 51) {
