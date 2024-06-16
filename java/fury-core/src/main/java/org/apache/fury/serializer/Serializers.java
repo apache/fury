@@ -48,7 +48,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.type.Type;
 import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.StringUtils;
@@ -178,22 +177,13 @@ public class Serializers {
   }
 
   public abstract static class CrossLanguageCompatibleSerializer<T> extends Serializer<T> {
-    private final short typeId;
 
-    public CrossLanguageCompatibleSerializer(Fury fury, Class<T> cls, short typeId) {
+    public CrossLanguageCompatibleSerializer(Fury fury, Class<T> cls) {
       super(fury, cls);
-      this.typeId = typeId;
     }
 
-    public CrossLanguageCompatibleSerializer(
-        Fury fury, Class<T> cls, short typeId, boolean needToWriteRef) {
+    public CrossLanguageCompatibleSerializer(Fury fury, Class<T> cls, boolean needToWriteRef) {
       super(fury, cls, needToWriteRef);
-      this.typeId = typeId;
-    }
-
-    @Override
-    public short getXtypeId() {
-      return typeId;
     }
 
     @Override
@@ -234,11 +224,6 @@ public class Serializers {
     @Override
     public void xwrite(MemoryBuffer buffer, T value) {
       stringSerializer.writeUTF8String(buffer, value.toString());
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.STRING.getId();
     }
 
     @Override

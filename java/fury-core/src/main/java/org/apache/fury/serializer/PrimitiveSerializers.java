@@ -27,7 +27,6 @@ import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.config.LongEncoding;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
-import org.apache.fury.type.Type;
 import org.apache.fury.util.Preconditions;
 
 /** Serializers for java primitive types. */
@@ -36,11 +35,7 @@ public class PrimitiveSerializers {
   public static final class BooleanSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Boolean> {
     public BooleanSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.BOOL.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
 
     @Override
@@ -57,11 +52,7 @@ public class PrimitiveSerializers {
   public static final class ByteSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Byte> {
     public ByteSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT8.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
 
     @Override
@@ -81,11 +72,6 @@ public class PrimitiveSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return Type.UINT8.getId();
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, Integer value) {
       Preconditions.checkArgument(value >= 0 && value <= 255);
       buffer.writeByte(value.byteValue());
@@ -101,11 +87,6 @@ public class PrimitiveSerializers {
   public static final class Uint16Serializer extends Serializer<Integer> {
     public Uint16Serializer(Fury fury) {
       super(fury, Integer.class);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.UINT16.getId();
     }
 
     @Override
@@ -140,11 +121,7 @@ public class PrimitiveSerializers {
   public static final class ShortSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Short> {
     public ShortSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT16.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
 
     @Override
@@ -163,11 +140,7 @@ public class PrimitiveSerializers {
     private final boolean compressNumber;
 
     public IntSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT32.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
       compressNumber = fury.compressInt();
     }
 
@@ -206,11 +179,7 @@ public class PrimitiveSerializers {
     private final LongEncoding longEncoding;
 
     public LongSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT64.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
       longEncoding = fury.longEncoding();
     }
 
@@ -290,11 +259,7 @@ public class PrimitiveSerializers {
   public static final class FloatSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Float> {
     public FloatSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.FLOAT.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
 
     @Override
@@ -311,11 +276,7 @@ public class PrimitiveSerializers {
   public static final class DoubleSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Double> {
     public DoubleSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.DOUBLE.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
 
     @Override

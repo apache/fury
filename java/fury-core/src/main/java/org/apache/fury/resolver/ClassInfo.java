@@ -20,7 +20,6 @@
 package org.apache.fury.resolver;
 
 import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
-import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
 
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
@@ -42,7 +41,7 @@ public class ClassInfo {
   final MetaStringBytes packageNameBytes;
   final MetaStringBytes classNameBytes;
   final boolean isDynamicGeneratedClass;
-  final MetaStringBytes typeTagBytes;
+  short xtypeId;
   Serializer<?> serializer;
   // use primitive to avoid boxing
   // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
@@ -54,15 +53,15 @@ public class ClassInfo {
       MetaStringBytes packageNameBytes,
       MetaStringBytes classNameBytes,
       boolean isDynamicGeneratedClass,
-      MetaStringBytes typeTagBytes,
       Serializer<?> serializer,
-      short classId) {
+      short classId,
+      short xtypeId) {
     this.cls = cls;
     this.fullClassNameBytes = fullClassNameBytes;
     this.packageNameBytes = packageNameBytes;
     this.classNameBytes = classNameBytes;
     this.isDynamicGeneratedClass = isDynamicGeneratedClass;
-    this.typeTagBytes = typeTagBytes;
+    this.xtypeId = xtypeId;
     this.serializer = serializer;
     this.classId = classId;
     if (cls != null && classId == ClassResolver.NO_CLASS_ID) {
@@ -73,9 +72,9 @@ public class ClassInfo {
   ClassInfo(
       ClassResolver classResolver,
       Class<?> cls,
-      String tag,
       Serializer<?> serializer,
-      short classId) {
+      short classId,
+      short xtypeId) {
     this.cls = cls;
     this.serializer = serializer;
     MetaStringResolver metaStringResolver = classResolver.getMetaStringResolver();
@@ -103,13 +102,7 @@ public class ClassInfo {
       this.packageNameBytes = null;
       this.classNameBytes = null;
     }
-    if (tag != null) {
-      this.typeTagBytes =
-          metaStringResolver.getOrCreateMetaStringBytes(
-              PACKAGE_ENCODER.encode(tag, Encoding.UTF_8));
-    } else {
-      this.typeTagBytes = null;
-    }
+    this.xtypeId = xtypeId;
     this.classId = classId;
     if (cls != null) {
       boolean isLambda = Functions.isLambda(cls);
@@ -132,6 +125,10 @@ public class ClassInfo {
 
   public short getClassId() {
     return classId;
+  }
+
+  public short getXtypeId() {
+    return xtypeId;
   }
 
   public MetaStringBytes getPackageNameBytes() {

@@ -33,14 +33,18 @@ import org.apache.fury.serializer.Serializers;
 public interface BaseFury {
 
   /**
-   * register class.
+   * Register class and allocate an auto-grown ID for this class. Note that the registration order
+   * is important. If registration order is inconsistent, the allocated ID will be different, and
+   * the deserialization will failed.
    *
    * @param cls class to register.
    */
   void register(Class<?> cls);
 
   /**
-   * Register class.
+   * Register class and allocate an auto-grown ID for this class. Note that the registration order
+   * is important. If registration order is inconsistent, the allocated ID will be different, and
+   * the deserialization will failed.
    *
    * @param cls class to register.
    * @param createSerializer whether to create serializer, if true and codegen enabled, this will
@@ -62,7 +66,9 @@ public interface BaseFury {
   void register(Class<?> cls, Short id, boolean createSerializer);
 
   /**
-   * Register a Serializer.
+   * Register a Serializer for a class, and allocate an auto-grown ID for this class if it's not
+   * registered yet. Note that the registration order is important. If registration order is
+   * inconsistent, the allocated ID will be different, and the deserialization will failed.
    *
    * @param type class needed to be serialized/deserialized.
    * @param serializerClass serializer class can be created with {@link Serializers#newSerializer}.
@@ -70,10 +76,18 @@ public interface BaseFury {
    */
   <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass);
 
+  /**
+   * Register a Serializer for a class, and allocate an auto-grown ID for this class if it's not
+   * registered yet. Note that the registration order is important. If registration order is
+   * inconsistent, the allocated ID will be different, and the deserialization will failed.
+   */
   void registerSerializer(Class<?> type, Serializer<?> serializer);
 
   /**
-   * Register a Serializer created by serializerCreator when fury created.
+   * Register a Serializer created by serializerCreator when fury created. And allocate an
+   * auto-grown ID for this class if it's not registered yet. Note that the registration order is
+   * important. If registration order is inconsistent, the allocated ID will be different, and the
+   * deserialization will failed.
    *
    * @param type class needed to be serialized/deserialized.
    * @param serializerCreator serializer creator with param {@link Fury}

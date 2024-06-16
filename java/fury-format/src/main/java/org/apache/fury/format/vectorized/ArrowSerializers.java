@@ -39,7 +39,6 @@ import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.serializer.Serializers.CrossLanguageCompatibleSerializer;
-import org.apache.fury.type.Type;
 
 /** Serializers for apache arrow. */
 public class ArrowSerializers {
@@ -57,7 +56,7 @@ public class ArrowSerializers {
     }
 
     public VectorSchemaRootSerializer(Fury fury, BufferAllocator allocator) {
-      super(fury, VectorSchemaRoot.class, Type.FURY_ARROW_RECORD_BATCH.getId());
+      super(fury, VectorSchemaRoot.class);
       this.allocator = allocator;
     }
 

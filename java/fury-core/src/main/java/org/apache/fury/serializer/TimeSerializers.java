@@ -41,7 +41,6 @@ import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.type.Type;
 import org.apache.fury.util.DateTimeUtils;
 
 /** Serializers for all time related types. */
@@ -126,17 +125,14 @@ public class TimeSerializers {
   }
 
   public static final class TimestampSerializer extends TimeSerializer<Timestamp> {
-    private final short typeId;
 
     public TimestampSerializer(Fury fury) {
       // conflict with instant
       super(fury, Timestamp.class);
-      typeId = (short) -Type.TIMESTAMP.getId();
     }
 
     public TimestampSerializer(Fury fury, boolean needToWriteRef) {
       super(fury, Timestamp.class, needToWriteRef);
-      typeId = (short) -Type.TIMESTAMP.getId();
     }
 
     @Override
@@ -147,11 +143,6 @@ public class TimeSerializers {
     @Override
     public Timestamp xread(MemoryBuffer buffer) {
       return DateTimeUtils.toJavaTimestamp(buffer.readInt64());
-    }
-
-    @Override
-    public short getXtypeId() {
-      return typeId;
     }
 
     @Override
@@ -176,11 +167,6 @@ public class TimeSerializers {
 
     public LocalDateSerializer(Fury fury, boolean needToWriteRef) {
       super(fury, LocalDate.class, needToWriteRef);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.DATE32.getId();
     }
 
     @Override
@@ -225,11 +211,6 @@ public class TimeSerializers {
 
     public InstantSerializer(Fury fury, boolean needToWriteRef) {
       super(fury, Instant.class, needToWriteRef);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.TIMESTAMP.getId();
     }
 
     @Override

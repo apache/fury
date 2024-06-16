@@ -73,11 +73,6 @@ public class ArraySerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
-    }
-
-    @Override
     public void write(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
       RefResolver refResolver = fury.getRefResolver();
@@ -351,11 +346,6 @@ public class ArraySerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, char[] value) {
       throw new UnsupportedOperationException();
     }
@@ -560,11 +550,6 @@ public class ArraySerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.FURY_STRING_ARRAY.getId();
-    }
-
-    @Override
     public void write(MemoryBuffer buffer, String[] value) {
       int len = value.length;
       buffer.writeVarUint32Small7(len);
@@ -693,7 +678,7 @@ public class ArraySerializers {
         new int[] {Platform.BOOLEAN_ARRAY_OFFSET, 1, Type.FURY_PRIMITIVE_BOOL_ARRAY.getId()});
     primitiveInfo.put(byte.class, new int[] {Platform.BYTE_ARRAY_OFFSET, 1, Type.BINARY.getId()});
     primitiveInfo.put(
-        char.class, new int[] {Platform.CHAR_ARRAY_OFFSET, 2, Fury.NOT_SUPPORT_CROSS_LANGUAGE});
+        char.class, new int[] {Platform.CHAR_ARRAY_OFFSET, 2, Fury.NOT_SUPPORT_XLANG});
     primitiveInfo.put(
         short.class,
         new int[] {Platform.SHORT_ARRAY_OFFSET, 2, Type.FURY_PRIMITIVE_SHORT_ARRAY.getId()});

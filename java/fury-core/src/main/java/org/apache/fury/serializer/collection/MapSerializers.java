@@ -41,7 +41,6 @@ import org.apache.fury.serializer.ReplaceResolveSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.StringSerializer;
-import org.apache.fury.type.Type;
 import org.apache.fury.util.Preconditions;
 
 /**
@@ -54,11 +53,6 @@ public class MapSerializers {
   public static final class HashMapSerializer extends MapSerializer<HashMap> {
     public HashMapSerializer(Fury fury) {
       super(fury, HashMap.class, true);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.MAP.getId();
     }
 
     @Override
@@ -77,11 +71,6 @@ public class MapSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return Type.MAP.getId();
-    }
-
-    @Override
     public LinkedHashMap newMap(MemoryBuffer buffer) {
       int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
@@ -94,11 +83,6 @@ public class MapSerializers {
   public static final class LazyMapSerializer extends MapSerializer<LazyMap> {
     public LazyMapSerializer(Fury fury) {
       super(fury, LazyMap.class, true);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.MAP.getId();
     }
 
     @Override
@@ -157,11 +141,6 @@ public class MapSerializers {
     public void write(MemoryBuffer buffer, Map<?, ?> value) {}
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.MAP.getId();
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
       // write length
       buffer.writeVarUint32Small7(0);
@@ -207,11 +186,6 @@ public class MapSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.MAP.getId();
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
       buffer.writeVarUint32Small7(1);
       Map.Entry entry = value.entrySet().iterator().next();
@@ -249,11 +223,6 @@ public class MapSerializers {
       fury.getRefResolver().reference(map);
       return map;
     }
-
-    @Override
-    public short getXtypeId() {
-      return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
-    }
   }
 
   public static final class ConcurrentSkipListMapSerializer
@@ -271,11 +240,6 @@ public class MapSerializers {
       ConcurrentSkipListMap map = new ConcurrentSkipListMap(comparator);
       fury.getRefResolver().reference(map);
       return map;
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
     }
   }
 

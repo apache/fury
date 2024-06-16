@@ -54,7 +54,6 @@ import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.ReplaceResolveSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
-import org.apache.fury.type.Type;
 import org.apache.fury.util.Preconditions;
 
 /**
@@ -67,11 +66,6 @@ public class CollectionSerializers {
   public static final class ArrayListSerializer extends CollectionSerializer<ArrayList> {
     public ArrayListSerializer(Fury fury) {
       super(fury, ArrayList.class, true);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.LIST.getId();
     }
 
     @Override
@@ -99,11 +93,6 @@ public class CollectionSerializers {
 
     public ArraysAsListSerializer(Fury fury, Class<List<?>> cls) {
       super(fury, cls, false);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
     }
 
     @Override
@@ -147,11 +136,6 @@ public class CollectionSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return Type.FURY_SET.getId();
-    }
-
-    @Override
     public HashSet newCollection(MemoryBuffer buffer) {
       int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
@@ -164,11 +148,6 @@ public class CollectionSerializers {
   public static final class LinkedHashSetSerializer extends CollectionSerializer<LinkedHashSet> {
     public LinkedHashSetSerializer(Fury fury) {
       super(fury, LinkedHashSet.class, true);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.FURY_SET.getId();
     }
 
     @Override
@@ -238,11 +217,6 @@ public class CollectionSerializers {
     public void write(MemoryBuffer buffer, List<?> value) {}
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, List<?> value) {
       // write length
       buffer.writeVarUint32Small7(0);
@@ -291,11 +265,6 @@ public class CollectionSerializers {
     public void write(MemoryBuffer buffer, Set<?> value) {}
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.FURY_SET.getId();
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, Set<?> value) {
       // write length
       buffer.writeVarUint32Small7(0);
@@ -341,11 +310,6 @@ public class CollectionSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, List<?> value) {
       buffer.writeVarUint32Small7(1);
       fury.xwriteRef(buffer, value.get(0));
@@ -372,11 +336,6 @@ public class CollectionSerializers {
     @Override
     public void write(MemoryBuffer buffer, Set<?> value) {
       fury.writeRef(buffer, value.iterator().next());
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.FURY_SET.getId();
     }
 
     @Override

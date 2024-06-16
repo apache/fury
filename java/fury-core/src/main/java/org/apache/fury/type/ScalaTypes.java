@@ -30,6 +30,7 @@ import org.apache.fury.reflect.TypeRef;
 public class ScalaTypes {
   private static final Class<?> SCALA_MAP_TYPE;
   private static final Class<?> SCALA_SEQ_TYPE;
+  private static final Class<?> SCALA_SET_TYPE;
   private static final Class<?> SCALA_ITERABLE_TYPE;
   private static final Class<?> SCALA_ITERATOR_TYPE;
   private static final java.lang.reflect.Type SCALA_ITERATOR_RETURN_TYPE;
@@ -41,6 +42,7 @@ public class ScalaTypes {
       SCALA_ITERATOR_TYPE = ReflectionUtils.loadClass("scala.collection.Iterator");
       SCALA_MAP_TYPE = ReflectionUtils.loadClass("scala.collection.Map");
       SCALA_SEQ_TYPE = ReflectionUtils.loadClass("scala.collection.Seq");
+      SCALA_SET_TYPE = ReflectionUtils.loadClass("scala.collection.Set");
       SCALA_ITERATOR_RETURN_TYPE = SCALA_ITERABLE_TYPE.getMethod("iterator").getGenericReturnType();
       SCALA_NEXT_RETURN_TYPE = SCALA_ITERATOR_TYPE.getMethod("next").getGenericReturnType();
     } catch (NoSuchMethodException e) {
@@ -54,6 +56,10 @@ public class ScalaTypes {
 
   public static Class<?> getScalaSeqType() {
     return SCALA_SEQ_TYPE;
+  }
+
+  public static Class<?> getScalaSetType() {
+    return SCALA_SET_TYPE;
   }
 
   public static Class<?> getScalaIterableType() {

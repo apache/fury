@@ -38,7 +38,6 @@ import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
-import org.apache.fury.type.Type;
 import org.apache.fury.util.unsafe._JDKAccess;
 
 /** Serializers for common guava types. */
@@ -81,11 +80,6 @@ public class GuavaCollectionSerializers {
       Object[] elements = ((CollectionContainer) collection).elements;
       ImmutableList list = ImmutableList.copyOf(elements);
       return (T) list;
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
     }
 
     public T xnewInstance(Collection collection) {
@@ -134,11 +128,6 @@ public class GuavaCollectionSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
-    }
-
-    @Override
     protected T xnewInstance(Collection collection) {
       return (T) ImmutableList.copyOf(collection);
     }
@@ -162,11 +151,6 @@ public class GuavaCollectionSerializers {
     public T onCollectionRead(Collection collection) {
       Object[] elements = ((CollectionContainer) collection).elements;
       return (T) ImmutableSet.copyOf(elements);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.FURY_SET.getId();
     }
 
     @Override
@@ -232,11 +216,6 @@ public class GuavaCollectionSerializers {
         builder.put(keyArray[i], valueArray[i]);
       }
       return (T) builder.build();
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.MAP.getId();
     }
 
     @Override
