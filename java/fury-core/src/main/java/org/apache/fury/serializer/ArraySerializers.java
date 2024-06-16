@@ -223,7 +223,7 @@ public class ArraySerializers {
     protected final int elemSize;
 
     public PrimitiveArraySerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, (short) primitiveInfo.get(TypeUtils.getArrayComponentInfo(cls).f0)[2]);
+      super(fury, cls);
       Class<?> innerType = TypeUtils.getArrayComponentInfo(cls).f0;
       this.offset = primitiveInfo.get(innerType)[0];
       this.elemSize = primitiveInfo.get(innerType)[1];
