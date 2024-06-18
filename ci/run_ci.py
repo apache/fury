@@ -115,6 +115,7 @@ def _run_js():
 def _install_cpp_deps():
     _exec_cmd(f"pip install pyarrow=={PYARROW_VERSION}")
     _exec_cmd("pip install psutil")
+    _exec_cmd("pip install 'numpy<2.0.0'")
     _install_bazel()
 
 
