@@ -74,6 +74,7 @@
     <module>fury-core</module>
     <module>fury-test-core</module>
     <module>fury-testsuite</module>
+    <module>fury-meta-compressor-zstd</module>
   </modules>
 
   <properties>
@@ -88,7 +89,12 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
+        <dependency>
+            <groupId>com.github.luben</groupId>
+            <artifactId>zstd-jni</artifactId>
+            <version>1.5.6-3</version>
+        </dependency>
+        <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
         <version>2.0.12</version>
