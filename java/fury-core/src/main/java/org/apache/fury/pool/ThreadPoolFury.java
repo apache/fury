@@ -29,6 +29,8 @@ import org.apache.fury.AbstractThreadSafeFury;
 import org.apache.fury.Fury;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferCallback;
@@ -36,6 +38,8 @@ import org.apache.fury.util.LoaderBinding;
 
 @ThreadSafe
 public class ThreadPoolFury extends AbstractThreadSafeFury {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ThreadPoolFury.class);
 
   private final FuryPooledObjectFactory furyPooledObjectFactory;
   private Consumer<Fury> factoryCallback = f -> {};
@@ -67,12 +71,19 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
 
   @Override
   public <R> R execute(Function<Fury, R> action) {
+    ClassLoaderFuryPooled pooledCache = null;
     Fury fury = null;
     try {
-      fury = furyPooledObjectFactory.getFury();
+      pooledCache = furyPooledObjectFactory.getPooledCache();
+      fury = pooledCache.getFury();
       return action.apply(fury);
+    } catch (Exception e) {
+      LOG.error(e.getMessage(), e);
+      throw new RuntimeException(e);
     } finally {
-      furyPooledObjectFactory.returnFury(fury);
+      if (pooledCache != null) {
+        pooledCache.returnFury(fury);
+      }
     }
   }
 
