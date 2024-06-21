@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 class MetaString {
   // Encode function that handles all Unicode characters
   static encode(str: string): Uint8Array {
