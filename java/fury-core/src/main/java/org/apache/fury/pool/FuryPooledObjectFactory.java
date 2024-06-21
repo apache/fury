@@ -81,33 +81,16 @@ public class FuryPooledObjectFactory {
         CacheBuilder.newBuilder().expireAfterAccess(expireTime, timeUnit).build();
   }
 
-  public Fury getFury() {
+  public ClassLoaderFuryPooled getPooledCache() {
     try {
       ClassLoader classLoader = classLoaderLocal.get();
       ClassLoaderFuryPooled classLoaderFuryPooled =
           classLoaderFuryPooledCache.getIfPresent(classLoader);
       if (classLoaderFuryPooled == null) {
         // double check cache
-        ClassLoaderFuryPooled cache = getOrAddCache(classLoader);
-        return cache.getFury();
+        return getOrAddCache(classLoader);
       }
-      return classLoaderFuryPooled.getFury();
-    } catch (Exception e) {
-      LOG.error(e.getMessage(), e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  public void returnFury(Fury fury) {
-    try {
-      ClassLoader classLoader = classLoaderLocal.get();
-      ClassLoaderFuryPooled classLoaderFuryPooled =
-          classLoaderFuryPooledCache.getIfPresent(classLoader);
-      if (classLoaderFuryPooled == null) {
-        // ifPresent will be cleared when cache expire 30's
-        return;
-      }
-      classLoaderFuryPooled.returnFury(fury);
+      return classLoaderFuryPooled;
     } catch (Exception e) {
       LOG.error(e.getMessage(), e);
       throw new RuntimeException(e);
