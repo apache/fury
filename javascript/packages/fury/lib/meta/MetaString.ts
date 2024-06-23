@@ -36,4 +36,3 @@ const encoded = MetaString.encode("$helloWorld_123 👌");
 console.log(encoded);
 const decoded = MetaString.decode(encoded);
 console.log(decoded); // Output: "$helloWorld_123 👌"
-
