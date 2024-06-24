@@ -44,7 +44,7 @@ BinaryArray binaryArray4 = binaryRow.getArray(3);
 BinaryRow barStruct = binaryArray4.getStruct(10);
 
 // zero-copy read 6th of f2 of 11th element of `readList<Bar> f4`
-barStruct.getArray(1).getLong(5);
+barStruct.getArray(1).getInt64(5);
 RowEncoder<Bar> barEncoder = Encoders.bean(Bar.class);
 // deserialize part of data.
 Bar newBar = barEncoder.fromRow(barStruct);
