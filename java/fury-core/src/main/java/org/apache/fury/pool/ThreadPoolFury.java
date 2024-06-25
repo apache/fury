@@ -256,6 +256,11 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   @Override
+  public <T> T copy(T obj) {
+    return null;
+  }
+
+  @Override
   public void setClassLoader(ClassLoader classLoader) {
     setClassLoader(classLoader, LoaderBinding.StagingType.SOFT_STAGING);
   }

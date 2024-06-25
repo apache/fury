@@ -26,6 +26,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -1218,6 +1219,18 @@ public final class Fury implements BaseFury {
   public Object deserializeJavaObjectAndClass(FuryReadableChannel channel) {
     MemoryBuffer buf = channel.getBuffer();
     return deserializeJavaObjectAndClass(buf);
+  }
+
+  @Override
+  public <T> T copy(T obj) {
+    if (Objects.isNull(obj)) {
+      return null;
+    }
+    if (obj instanceof FuryCopyable) {
+      return (T) ((FuryCopyable) obj).copy(this);
+    } else {
+      return (T) classResolver.getOrUpdateClassInfo(obj.getClass()).getSerializer().copy(obj);
+    }
   }
 
   private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {

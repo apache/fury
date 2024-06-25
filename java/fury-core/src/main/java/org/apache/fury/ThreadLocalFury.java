@@ -246,6 +246,11 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   }
 
   @Override
+  public <T> T copy(T obj) {
+    return null;
+  }
+
+  @Override
   public void setClassLoader(ClassLoader classLoader) {
     setClassLoader(classLoader, StagingType.STRONG_STAGING);
   }
