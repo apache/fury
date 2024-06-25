@@ -719,7 +719,30 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   /**
-   * Get and reset numElements of deserializing collection. Should be called after {@link #newMap}.
+   * <p>Map must have default constructor to be invoked by fury, otherwise created object can't be
+   * used to adding elements. For example:
+   *
+   * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
+   *
+   * <p>without default constructor, created list will have elementData as null, adding elements
+   * will raise NPE.
+   *
+   * @return empty map instance
+   */
+  public Map newMap() {
+    if (constructor == null) {
+      constructor = ReflectionUtils.getCtrHandle(type, true);
+    }
+    try {
+      return (Map) constructor.invoke();
+    } catch (Throwable e) {
+      throw new IllegalArgumentException(
+          "Please provide public no arguments constructor for class " + type, e);
+    }
+  }
+
+  /**
+   * Get and reset numElements of deserializing collection. Should be called after {@link #newMap(MemoryBuffer buffer)}.
    * Nested read may overwrite this element, reset is necessary to avoid use wrong value by mistake.
    */
   public int getAndClearNumElements() {

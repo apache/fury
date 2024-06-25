@@ -35,12 +35,14 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentHashMap.KeySetView;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.fury.Fury;
@@ -99,6 +101,12 @@ public class CollectionSerializers {
 
     public ArraysAsListSerializer(Fury fury, Class<List<?>> cls) {
       super(fury, cls, false);
+    }
+
+    @Override
+    public List<?> copy(List<?> originCollection) {
+      Object[] elements = originCollection.stream().map(fury::copy).toArray();
+      return Arrays.asList(elements);
     }
 
     @Override
@@ -221,6 +229,22 @@ public class CollectionSerializers {
       fury.getRefResolver().reference(collection);
       return collection;
     }
+
+    @Override
+    public T copy(T originCollection) {
+      Collection collection;
+      Comparator comparator = originCollection.comparator();
+      if (Objects.equals(type, TreeSet.class)) {
+        collection = new TreeSet(comparator);
+      } else {
+        try {
+          collection = (T) constructor.invoke(comparator);
+        } catch (Throwable e) {
+          throw new RuntimeException(e);
+        }
+      }
+      return (T) collection;
+    }
   }
 
   // ------------------------------ collections serializers ------------------------------ //
@@ -232,6 +256,7 @@ public class CollectionSerializers {
 
     public EmptyListSerializer(Fury fury, Class<List<?>> cls) {
       super(fury, cls, false);
+      setImmutable(true);
     }
 
     @Override
@@ -285,6 +310,7 @@ public class CollectionSerializers {
 
     public EmptySetSerializer(Fury fury, Class<Set<?>> cls) {
       super(fury, cls, false);
+      setImmutable(true);
     }
 
     @Override
@@ -317,6 +343,7 @@ public class CollectionSerializers {
 
     public EmptySortedSetSerializer(Fury fury, Class<SortedSet<?>> cls) {
       super(fury, cls, false);
+      setImmutable(true);
     }
 
     @Override
@@ -333,6 +360,7 @@ public class CollectionSerializers {
 
     public CollectionsSingletonListSerializer(Fury fury, Class<List<?>> cls) {
       super(fury, cls, false);
+      setImmutable(true);
     }
 
     @Override
@@ -367,6 +395,7 @@ public class CollectionSerializers {
 
     public CollectionsSingletonSetSerializer(Fury fury, Class<Set<?>> cls) {
       super(fury, cls, false);
+      setImmutable(true);
     }
 
     @Override
@@ -454,6 +483,20 @@ public class CollectionSerializers {
       buffer.writeVarUint32Small7(value.size());
       return value;
     }
+
+    @Override
+    public Set<?> copy(Set<?> originCollection) {
+      Map<?, Boolean> map =
+          (Map<?, Boolean>) Platform.getObject(originCollection, MAP_FIELD_OFFSET);
+      AbstractMapSerializer mapSerializer =
+          (AbstractMapSerializer) fury.getClassResolver().getSerializer(map.getClass());
+      Map newMap = mapSerializer.newMap();
+      Set set = Collections.newSetFromMap(newMap);
+      for (Object element : originCollection) {
+        set.add(fury.copy(element));
+      }
+      return set;
+    }
   }
 
   public static final class ConcurrentHashMapKeySetView
@@ -469,6 +512,15 @@ public class CollectionSerializers {
       setNumElements(numElements);
       ConcurrentHashMap.KeySetView keySetView = ConcurrentHashMap.newKeySet(numElements);
       fury.getRefResolver().reference(keySetView);
+      return keySetView;
+    }
+
+    @Override
+    public KeySetView copy(KeySetView originCollection) {
+      ConcurrentHashMap.KeySetView keySetView = ConcurrentHashMap.newKeySet(originCollection.size());
+      for (Object element : originCollection) {
+        keySetView.add(fury.copy(element));
+      }
       return keySetView;
     }
   }
@@ -542,6 +594,11 @@ public class CollectionSerializers {
         object.add(elemSerializer.read(buffer));
       }
       return object;
+    }
+
+    @Override
+    public EnumSet copy(EnumSet originCollection) {
+      return EnumSet.copyOf(originCollection);
     }
   }
 

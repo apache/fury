@@ -46,6 +46,18 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
   }
 
   @Override
+  public T copy(T originCollection) {
+    if (isImmutable()) {
+      return originCollection;
+    }
+    Collection collection = newCollection();
+    for (Object element : originCollection) {
+      collection.add(fury.copy(element));
+    }
+    return (T) collection;
+  }
+
+  @Override
   public T read(MemoryBuffer buffer) {
     Collection collection = newCollection(buffer);
     int numElements = getAndClearNumElements();

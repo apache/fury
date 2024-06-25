@@ -41,6 +41,16 @@ public class MapSerializer<T extends Map> extends AbstractMapSerializer<T> {
   }
 
   @Override
+  public T copy(T originMap) {
+    if (isImmutable()) {
+      return originMap;
+    }
+    Map map = newMap();
+    originMap.forEach((k, v) -> map.put(fury.copy(k), fury.copy(v)));
+    return (T) map;
+  }
+
+  @Override
   public T read(MemoryBuffer buffer) {
     Map map = newMap(buffer);
     readElements(buffer, getAndClearNumElements(), map);
