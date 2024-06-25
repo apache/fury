@@ -104,7 +104,6 @@ export class BrowserBuffer extends Uint8Array implements PlatformBuffer {
       textDecoder = new TextDecoder("utf-8");
     }
 
-
     return textDecoder.decode(this.subarray(start, end));
   }
 
@@ -146,7 +145,6 @@ export const fromUint8Array = hasBuffer
 export const alloc = (hasBuffer ? Buffer.allocUnsafe : BrowserBuffer.alloc) as unknown as (size: number) => PlatformBuffer;
 
 export const strByteLength = hasBuffer ? Buffer.byteLength : BrowserBuffer.byteLength;
-
 
 export const fromString
 = hasBuffer
