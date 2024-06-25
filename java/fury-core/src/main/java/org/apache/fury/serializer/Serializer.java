@@ -38,9 +38,17 @@ public abstract class Serializer<T> {
   protected final Class<T> type;
   protected final boolean isJava;
   protected final boolean needToWriteRef;
+  protected boolean immutable;
 
   public void write(MemoryBuffer buffer, T value) {
     throw new UnsupportedOperationException();
+  }
+
+  public T copy(T value) {
+    if (isImmutable()) {
+      return value;
+    }
+    throw new UnsupportedOperationException(String.format("Copy for %s is not supported", value.getClass()));
   }
 
   public T read(MemoryBuffer buffer) {
@@ -96,5 +104,13 @@ public abstract class Serializer<T> {
 
   public Class<T> getType() {
     return type;
+  }
+
+  public void setImmutable(boolean immutable) {
+    this.immutable = immutable;
+  }
+
+  public boolean isImmutable() {
+    return immutable;
   }
 }

@@ -41,6 +41,7 @@ public class PrimitiveSerializers {
           (Class) cls,
           Type.BOOL.getId(),
           !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      setImmutable(true);
     }
 
     @Override
@@ -62,6 +63,7 @@ public class PrimitiveSerializers {
           (Class) cls,
           Type.INT8.getId(),
           !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      setImmutable(true);
     }
 
     @Override
@@ -121,7 +123,7 @@ public class PrimitiveSerializers {
     }
   }
 
-  public static final class CharSerializer extends Serializer<Character> {
+  public static final class CharSerializer extends ImmutableSerializer<Character> {
     public CharSerializer(Fury fury, Class<?> cls) {
       super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
@@ -145,6 +147,7 @@ public class PrimitiveSerializers {
           (Class) cls,
           Type.INT16.getId(),
           !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      setImmutable(true);
     }
 
     @Override
@@ -169,6 +172,7 @@ public class PrimitiveSerializers {
           Type.INT32.getId(),
           !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
       compressNumber = fury.compressInt();
+      setImmutable(true);
     }
 
     @Override
@@ -212,6 +216,7 @@ public class PrimitiveSerializers {
           Type.INT64.getId(),
           !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
       longEncoding = fury.longEncoding();
+      setImmutable(true);
     }
 
     @Override
@@ -295,6 +300,7 @@ public class PrimitiveSerializers {
           (Class) cls,
           Type.FLOAT.getId(),
           !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      setImmutable(true);
     }
 
     @Override
@@ -316,6 +322,7 @@ public class PrimitiveSerializers {
           (Class) cls,
           Type.DOUBLE.getId(),
           !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      setImmutable(true);
     }
 
     @Override

@@ -302,7 +302,7 @@ public class Serializers {
     }
   }
 
-  public static final class BigDecimalSerializer extends Serializer<BigDecimal> {
+  public static final class BigDecimalSerializer extends ImmutableSerializer<BigDecimal> {
     public BigDecimalSerializer(Fury fury) {
       super(fury, BigDecimal.class);
     }
@@ -327,7 +327,7 @@ public class Serializers {
     }
   }
 
-  public static final class BigIntegerSerializer extends Serializer<BigInteger> {
+  public static final class BigIntegerSerializer extends ImmutableSerializer<BigInteger> {
     public BigIntegerSerializer(Fury fury) {
       super(fury, BigInteger.class);
     }
@@ -415,7 +415,7 @@ public class Serializers {
     }
   }
 
-  public static final class CurrencySerializer extends Serializer<Currency> {
+  public static final class CurrencySerializer extends ImmutableSerializer<Currency> {
     public CurrencySerializer(Fury fury) {
       super(fury, Currency.class);
     }
@@ -433,7 +433,7 @@ public class Serializers {
   }
 
   /** Serializer for {@link Charset}. */
-  public static final class CharsetSerializer<T extends Charset> extends Serializer<T> {
+  public static final class CharsetSerializer<T extends Charset> extends ImmutableSerializer<T> {
     public CharsetSerializer(Fury fury, Class<T> type) {
       super(fury, type);
     }
@@ -447,7 +447,7 @@ public class Serializers {
     }
   }
 
-  public static final class URISerializer extends Serializer<java.net.URI> {
+  public static final class URISerializer extends ImmutableSerializer<java.net.URI> {
 
     public URISerializer(Fury fury) {
       super(fury, URI.class);
@@ -464,7 +464,7 @@ public class Serializers {
     }
   }
 
-  public static final class RegexSerializer extends Serializer<Pattern> {
+  public static final class RegexSerializer extends ImmutableSerializer<Pattern> {
     public RegexSerializer(Fury fury) {
       super(fury, Pattern.class);
     }
@@ -483,7 +483,7 @@ public class Serializers {
     }
   }
 
-  public static final class UUIDSerializer extends Serializer<UUID> {
+  public static final class UUIDSerializer extends ImmutableSerializer<UUID> {
 
     public UUIDSerializer(Fury fury) {
       super(fury, UUID.class);
@@ -501,7 +501,7 @@ public class Serializers {
     }
   }
 
-  public static final class ClassSerializer extends Serializer<Class> {
+  public static final class ClassSerializer extends ImmutableSerializer<Class> {
     public ClassSerializer(Fury fury) {
       super(fury, Class.class);
     }
@@ -524,7 +524,7 @@ public class Serializers {
    * serializable or class registration checks.
    */
   // Use a separate serializer to avoid codegen for emtpy object.
-  public static final class EmptyObjectSerializer extends Serializer<Object> {
+  public static final class EmptyObjectSerializer extends ImmutableSerializer<Object> {
 
     public EmptyObjectSerializer(Fury fury) {
       super(fury, Object.class);

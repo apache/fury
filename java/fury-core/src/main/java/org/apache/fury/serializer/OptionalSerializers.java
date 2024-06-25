@@ -49,7 +49,7 @@ public final class OptionalSerializers {
     }
   }
 
-  public static final class OptionalIntSerializer extends Serializer<OptionalInt> {
+  public static final class OptionalIntSerializer extends ImmutableSerializer<OptionalInt> {
     public OptionalIntSerializer(Fury fury) {
       super(fury, OptionalInt.class);
     }
@@ -73,7 +73,7 @@ public final class OptionalSerializers {
     }
   }
 
-  public static final class OptionalLongSerializer extends Serializer<OptionalLong> {
+  public static final class OptionalLongSerializer extends ImmutableSerializer<OptionalLong> {
     public OptionalLongSerializer(Fury fury) {
       super(fury, OptionalLong.class);
     }
@@ -97,7 +97,7 @@ public final class OptionalSerializers {
     }
   }
 
-  public static final class OptionalDoubleSerializer extends Serializer<OptionalDouble> {
+  public static final class OptionalDoubleSerializer extends ImmutableSerializer<OptionalDouble> {
     public OptionalDoubleSerializer(Fury fury) {
       super(fury, OptionalDouble.class);
     }
