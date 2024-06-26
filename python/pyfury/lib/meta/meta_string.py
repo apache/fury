@@ -34,6 +34,10 @@ class MetaString:
         self.special_char2 = special_char2
         self.encoded_data = encoded_data
         self.length = length
+        if self.encoding != Encoding.UTF_8:
+            self.strip_last_char = (encoded_data[0] & 0x80) != 0
+        else:
+            self.strip_last_char = False
 
 class MetaStringEncoder:
     def __init__(self, special_char1, special_char2):
@@ -42,14 +46,14 @@ class MetaStringEncoder:
 
     def encode(self, input_string):
         if not input_string:
-            return MetaString(input_string, Encoding.UTF_8, self.special_char1, self.special_char2, np.array([]), 0)
+            return MetaString(input_string, Encoding.UTF_8, self.special_char1, self.special_char2, np.array([],np.uint8), 0)
 
         encoding = self.compute_encoding(input_string)
         return self.encode_with_encoding(input_string, encoding)
 
     def encode_with_encoding(self, input_string, encoding):
         if not input_string:
-            return MetaString(input_string, Encoding.LOWER_SPECIAL, self.special_char1, self.special_char2, np.array([]), 0)
+            return MetaString(input_string, Encoding.UTF_8, self.special_char1, self.special_char2, np.array([],np.uint8), 0)
 
         length = len(input_string)
         if encoding == Encoding.LOWER_SPECIAL:
@@ -189,9 +193,6 @@ class MetaStringDecoder:
     def decode(self, encoded_data, encoding):
         if len(encoded_data) == 0:
             return ""
-
-
-
         return self.decode_with_encoding(encoded_data, encoding)
 
     def decode_with_encoding(self, encoded_data, encoding):
@@ -286,6 +287,3 @@ class MetaStringDecoder:
             else:
                 result.append(char)
         return ''.join(result)
-
-
-
