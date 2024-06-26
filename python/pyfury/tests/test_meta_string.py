@@ -17,6 +17,9 @@
 
 import unittest
 
+from pyfury.lib.meta.meta_string import *
+
+
 class TestMetaString(unittest.TestCase):
 
     def setUp(self):
