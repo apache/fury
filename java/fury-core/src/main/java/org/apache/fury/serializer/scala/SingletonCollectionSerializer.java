@@ -46,6 +46,7 @@ public class SingletonCollectionSerializer extends AbstractCollectionSerializer 
     } catch (NoSuchFieldException e) {
       throw new RuntimeException(type + " doesn't have `MODULE$` field", e);
     }
+    setImmutable(true);
   }
 
   @Override
