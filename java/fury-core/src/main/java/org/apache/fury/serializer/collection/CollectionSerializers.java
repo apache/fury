@@ -243,6 +243,7 @@ public class CollectionSerializers {
           throw new RuntimeException(e);
         }
       }
+      originCollection.forEach(element -> collection.add(fury.copy(element)));
       return (T) collection;
     }
   }

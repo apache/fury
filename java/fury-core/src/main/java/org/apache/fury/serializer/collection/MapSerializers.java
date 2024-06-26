@@ -160,6 +160,7 @@ public class MapSerializers {
           throw new RuntimeException(e);
         }
       }
+      originMap.forEach((k, v) -> map.put(fury.copy(k), fury.copy(v)));
       return (T) map;
     }
   }
