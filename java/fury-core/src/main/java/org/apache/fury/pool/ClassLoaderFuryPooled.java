@@ -109,6 +109,7 @@ public class ClassLoaderFuryPooled {
       furyCondition.signalAll();
     } catch (Exception e) {
       LOG.error(e.getMessage(), e);
+      throw new RuntimeException(e);
     } finally {
       lock.unlock();
     }

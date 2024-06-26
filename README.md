@@ -4,7 +4,7 @@
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/apache/fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/fury/actions/workflows/ci.yml)
 [![Slack Channel](https://img.shields.io/badge/slack-join-3f0e40?logo=slack&style=for-the-badge)](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
-[![Twitter](https://img.shields.io/badge/@ApacheFury-follow-blue?logo=twitter&style=for-the-badge)](https://twitter.com/ApacheFury)
+[![X](https://img.shields.io/badge/@ApacheFury-follow-blue?logo=x&style=for-the-badge)](https://x.com/ApacheFury)
 [![Maven Version](https://img.shields.io/maven-central/v/org.apache.fury/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.apache.fury"%20AND%20a:"fury-core")
 
 
@@ -325,7 +325,7 @@ BinaryArray binaryArray4 = binaryRow.getArray(3);
 BinaryRow barStruct = binaryArray4.getStruct(10);
 
 // zero-copy read 6th of f2 of 11th element of `readList<Bar> f4`
-barStruct.getArray(1).getLong(5);
+barStruct.getArray(1).getInt64(5);
 RowEncoder<Bar> barEncoder = Encoders.bean(Bar.class);
 // deserialize part of data.
 Bar newBar = barEncoder.fromRow(barStruct);
