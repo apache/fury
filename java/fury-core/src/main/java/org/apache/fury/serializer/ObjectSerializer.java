@@ -23,6 +23,7 @@ import static org.apache.fury.type.DescriptorGrouper.createDescriptorGrouper;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -84,6 +85,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
   private final GenericTypeField[] containerFields;
   private final MethodHandle constructor;
   private final int classVersionHash;
+  private List<Field> allFieldCache;
 
   public ObjectSerializer(Fury fury, Class<T> cls) {
     this(fury, cls, true);
@@ -226,6 +228,36 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       }
     }
     writeContainerFields(buffer, value, fury, refResolver, classResolver);
+  }
+
+  @Override
+  public T copy(T originObj) {
+    T newObj = newBean(constructor, type);
+    List<Field> fieldsList = getAllFieldCache();
+    for (Field field : fieldsList) {
+      try {
+        Object value = field.get(originObj);
+        field.set(newObj, fury.copy(value));
+      } catch (Exception e) {
+        throw new RuntimeException(String.format("Copy object property %s (%s) error.",
+            field.getName(), type.getName()), e);
+      }
+    }
+    return newObj;
+  }
+
+  private List<Field> getAllFieldCache() {
+    if (Objects.isNull(allFieldCache)) {
+      allFieldCache = classResolver.getFieldResolver(type).getAllFieldsList().stream()
+          .map(e -> {
+            Field field = e.getField();
+            if (!field.isAccessible()) {
+              field.setAccessible(true);
+            }
+            return field;
+          }).collect(Collectors.toList());
+    }
+    return allFieldCache;
   }
 
   private void writeFinalFields(
