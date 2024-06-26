@@ -109,6 +109,16 @@ public class ArraySerializers {
     }
 
     @Override
+    public T[] copy(T[] originArray) {
+      int length = originArray.length;
+      Object[] newArray = newArray(length);
+      for (int i = 0; i < length; i++) {
+        newArray[i] = fury.copy(originArray[i]);
+      }
+      return (T[]) newArray;
+    }
+
+    @Override
     public void xwrite(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
       buffer.writeVarUint32Small7(len);
@@ -263,6 +273,13 @@ public class ArraySerializers {
     }
 
     @Override
+    public boolean[] copy(boolean[] originArray) {
+      boolean[] newArray = new boolean[originArray.length];
+      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
+      return newArray;
+    }
+
+    @Override
     public boolean[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -299,6 +316,13 @@ public class ArraySerializers {
     }
 
     @Override
+    public byte[] copy(byte[] originArray) {
+      byte[] newArray = new byte[originArray.length];
+      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
+      return newArray;
+    }
+
+    @Override
     public byte[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -330,6 +354,13 @@ public class ArraySerializers {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
       }
+    }
+
+    @Override
+    public char[] copy(char[] originArray) {
+      char[] newArray = new char[originArray.length];
+      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
+      return newArray;
     }
 
     @Override
@@ -384,6 +415,13 @@ public class ArraySerializers {
     }
 
     @Override
+    public short[] copy(short[] originArray) {
+      short[] newArray = new short[originArray.length];
+      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
+      return newArray;
+    }
+
+    @Override
     public short[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -417,6 +455,13 @@ public class ArraySerializers {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
       }
+    }
+
+    @Override
+    public int[] copy(int[] originArray) {
+      int[] newArray = new int[originArray.length];
+      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
+      return newArray;
     }
 
     @Override
@@ -456,6 +501,13 @@ public class ArraySerializers {
     }
 
     @Override
+    public long[] copy(long[] originArray) {
+      long[] newArray = new long[originArray.length];
+      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
+      return newArray;
+    }
+
+    @Override
     public long[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -492,6 +544,13 @@ public class ArraySerializers {
     }
 
     @Override
+    public float[] copy(float[] originArray) {
+      float[] newArray = new float[originArray.length];
+      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
+      return newArray;
+    }
+
+    @Override
     public float[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -525,6 +584,13 @@ public class ArraySerializers {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
       }
+    }
+
+    @Override
+    public double[] copy(double[] originArray) {
+      double[] newArray = new double[originArray.length];
+      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
+      return newArray;
     }
 
     @Override
@@ -591,6 +657,13 @@ public class ArraySerializers {
           }
         }
       }
+    }
+
+    @Override
+    public String[] copy(String[] originArray) {
+      String[] newArray = new String[originArray.length];
+      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
+      return newArray;
     }
 
     @Override
