@@ -17,8 +17,6 @@
 
 import unittest
 
-
-
 class TestMetaString(unittest.TestCase):
 
     def setUp(self):
@@ -120,6 +118,41 @@ class TestMetaString(unittest.TestCase):
         self.assertEqual(meta_string.encoding, Encoding.UTF_8)
         decoded_string = self.decoder.decode(meta_string.encoded_data, meta_string.encoding)
         self.assertEqual(decoded_string, test_string)
+
+    def test_strip_last_char(self):
+        test_string = "abc"  # encoded as 1|00000|00, 001|00010, exactly two bytes
+        encoded_meta_string = self.encoder.encode(test_string)
+        self.assertFalse(encoded_meta_string.strip_last_char)
+
+        test_string = "abcde"  # encoded as 1|00000|00, 001|00010, 00011|001, 00xxxxxx, stripped last char
+        encoded_meta_string = self.encoder.encode(test_string)
+        self.assertTrue(encoded_meta_string.strip_last_char)
+
+    def test_empty_string(self):
+        meta_string = self.encoder.encode("")
+        self.assertTrue(np.array_equal(meta_string.encoded_data, np.array([], dtype=np.uint8)))
+
+        decoded = self.decoder.decode(meta_string.encoded_data, meta_string.encoding)
+        self.assertEqual(decoded, "")
+
+    def test_ascii_encoding(self):
+        test_string = "asciiOnly"
+        encoded_meta_string = self.encoder.encode(test_string)
+        self.assertNotEqual(encoded_meta_string.encoding, Encoding.UTF_8)
+        self.assertEqual(encoded_meta_string.encoding, Encoding.ALL_TO_LOWER_SPECIAL)
+
+    def test_non_ascii_encoding(self):
+        test_string = "こんにちは"  # Non-ASCII string
+        encoded_meta_string = self.encoder.encode(test_string)
+        self.assertEqual(encoded_meta_string.encoding, Encoding.UTF_8)
+
+    def test_non_ascii_encoding_and_non_utf8(self):
+        non_ascii_string = "こんにちは"  # Non-ASCII string
+
+        with self.assertRaises(ValueError) as context:
+            self.encoder.encode_with_encoding(non_ascii_string, Encoding.LOWER_SPECIAL)
+
+        self.assertEqual(str(context.exception), "Unsupported character for LOWER_SPECIAL encoding: こ")
 
 
 if __name__ == "__main__":
