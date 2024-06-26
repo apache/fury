@@ -247,7 +247,7 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
 
   @Override
   public <T> T copy(T obj) {
-    return null;
+    return bindingThreadLocal.get().get().copy(obj);
   }
 
   @Override

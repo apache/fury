@@ -257,7 +257,7 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
 
   @Override
   public <T> T copy(T obj) {
-    return null;
+    return execute(fury -> fury.copy(obj));
   }
 
   @Override
