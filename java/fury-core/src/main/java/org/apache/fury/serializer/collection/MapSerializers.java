@@ -414,6 +414,11 @@ public class MapSerializers {
     }
 
     @Override
+    public T copy(T value) {
+      return dataSerializer.copy(value);
+    }
+
+    @Override
     public T read(MemoryBuffer buffer) {
       return dataSerializer.read(buffer);
     }
@@ -453,6 +458,11 @@ public class MapSerializers {
     @Override
     public void write(MemoryBuffer buffer, T value) {
       serializer.write(buffer, value);
+    }
+
+    @Override
+    public T copy(T value) {
+      return (T) serializer.copy(value);
     }
   }
 
