@@ -16,8 +16,9 @@
 # under the License.
 
 import unittest
+import numpy as np
 
-from pyfury.lib.meta.meta_string import *
+from pyfury.lib.meta.meta_string import MetaStringEncoder, MetaStringDecoder, Encoding
 
 
 class TestMetaString(unittest.TestCase):
