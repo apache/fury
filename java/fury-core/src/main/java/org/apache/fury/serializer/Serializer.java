@@ -48,7 +48,8 @@ public abstract class Serializer<T> {
     if (isImmutable()) {
       return value;
     }
-    throw new UnsupportedOperationException(String.format("Copy for %s is not supported", value.getClass()));
+    throw new UnsupportedOperationException(
+        String.format("Copy for %s is not supported", value.getClass()));
   }
 
   public T read(MemoryBuffer buffer) {

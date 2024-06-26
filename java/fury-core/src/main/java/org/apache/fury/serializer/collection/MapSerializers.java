@@ -298,7 +298,8 @@ public class MapSerializers {
     public ConcurrentSkipListMap copy(ConcurrentSkipListMap originMap) {
       Comparator comparator = originMap.comparator();
       ConcurrentSkipListMap concurrentSkipListMap = new ConcurrentSkipListMap(comparator);
-      originMap.forEach((key, value) -> concurrentSkipListMap.put(fury.copy(key), fury.copy(value)));
+      originMap.forEach(
+          (key, value) -> concurrentSkipListMap.put(fury.copy(key), fury.copy(value)));
       return concurrentSkipListMap;
     }
 

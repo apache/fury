@@ -719,8 +719,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   /**
-   * <p>Map must have default constructor to be invoked by fury, otherwise created object can't be
-   * used to adding elements. For example:
+   * Map must have default constructor to be invoked by fury, otherwise created object can't be used
+   * to adding elements. For example:
    *
    * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
    *
@@ -742,8 +742,9 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   /**
-   * Get and reset numElements of deserializing collection. Should be called after {@link #newMap(MemoryBuffer buffer)}.
-   * Nested read may overwrite this element, reset is necessary to avoid use wrong value by mistake.
+   * Get and reset numElements of deserializing collection. Should be called after {@link
+   * #newMap(MemoryBuffer buffer)}. Nested read may overwrite this element, reset is necessary to
+   * avoid use wrong value by mistake.
    */
   public int getAndClearNumElements() {
     int size = numElements;

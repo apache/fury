@@ -508,8 +508,8 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   /**
-   * <p>Collection must have default constructor to be invoked by fury, otherwise created object
-   * can't be used to adding elements. For example:
+   * Collection must have default constructor to be invoked by fury, otherwise created object can't
+   * be used to adding elements. For example:
    *
    * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
    *
@@ -537,8 +537,8 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
 
   /**
    * Get and reset numElements of deserializing collection. Should be called after {@link
-   * #newCollection(MemoryBuffer buffer)}. Nested read may overwrite this element, reset is necessary to avoid use wrong
-   * value by mistake.
+   * #newCollection(MemoryBuffer buffer)}. Nested read may overwrite this element, reset is
+   * necessary to avoid use wrong value by mistake.
    */
   public int getAndClearNumElements() {
     int size = numElements;

@@ -239,8 +239,9 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         Object value = field.get(originObj);
         field.set(newObj, fury.copy(value));
       } catch (Exception e) {
-        throw new RuntimeException(String.format("Copy object property %s (%s) error.",
-            field.getName(), type.getName()), e);
+        throw new RuntimeException(
+            String.format("Copy object property %s (%s) error.", field.getName(), type.getName()),
+            e);
       }
     }
     return newObj;
@@ -248,14 +249,17 @@ public final class ObjectSerializer<T> extends Serializer<T> {
 
   private List<Field> getAllFieldCache() {
     if (Objects.isNull(allFieldCache)) {
-      allFieldCache = classResolver.getFieldResolver(type).getAllFieldsList().stream()
-          .map(e -> {
-            Field field = e.getField();
-            if (!field.isAccessible()) {
-              field.setAccessible(true);
-            }
-            return field;
-          }).collect(Collectors.toList());
+      allFieldCache =
+          classResolver.getFieldResolver(type).getAllFieldsList().stream()
+              .map(
+                  e -> {
+                    Field field = e.getField();
+                    if (!field.isAccessible()) {
+                      field.setAccessible(true);
+                    }
+                    return field;
+                  })
+              .collect(Collectors.toList());
     }
     return allFieldCache;
   }

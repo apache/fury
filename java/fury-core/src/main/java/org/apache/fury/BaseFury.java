@@ -186,6 +186,6 @@ public interface BaseFury {
   @Deprecated
   Object deserializeJavaObjectAndClass(FuryReadableChannel channel);
 
-  /** Deep copy the <code>obj</code>*/
+  /** Deep copy the <code>obj</code>. */
   <T> T copy(T obj);
 }

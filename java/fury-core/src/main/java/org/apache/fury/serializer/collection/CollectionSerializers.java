@@ -518,7 +518,8 @@ public class CollectionSerializers {
 
     @Override
     public KeySetView copy(KeySetView originCollection) {
-      ConcurrentHashMap.KeySetView keySetView = ConcurrentHashMap.newKeySet(originCollection.size());
+      ConcurrentHashMap.KeySetView keySetView =
+          ConcurrentHashMap.newKeySet(originCollection.size());
       for (Object element : originCollection) {
         keySetView.add(fury.copy(element));
       }
