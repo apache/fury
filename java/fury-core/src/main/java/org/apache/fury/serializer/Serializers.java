@@ -274,6 +274,11 @@ public class Serializers {
     }
 
     @Override
+    public StringBuilder copy(StringBuilder origin) {
+      return new StringBuilder(origin);
+    }
+
+    @Override
     public StringBuilder read(MemoryBuffer buffer) {
       return new StringBuilder(stringSerializer.readJavaString(buffer));
     }
@@ -289,6 +294,11 @@ public class Serializers {
 
     public StringBufferSerializer(Fury fury) {
       super(fury, StringBuffer.class);
+    }
+
+    @Override
+    public StringBuffer copy(StringBuffer origin) {
+      return new StringBuffer(origin);
     }
 
     @Override
@@ -359,6 +369,11 @@ public class Serializers {
     }
 
     @Override
+    public AtomicBoolean copy(AtomicBoolean origin) {
+      return new AtomicBoolean(origin.get());
+    }
+
+    @Override
     public AtomicBoolean read(MemoryBuffer buffer) {
       return new AtomicBoolean(buffer.readBoolean());
     }
@@ -373,6 +388,11 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, AtomicInteger value) {
       buffer.writeInt32(value.get());
+    }
+
+    @Override
+    public AtomicInteger copy(AtomicInteger origin) {
+      return new AtomicInteger(origin.get());
     }
 
     @Override
@@ -393,6 +413,11 @@ public class Serializers {
     }
 
     @Override
+    public AtomicLong copy(AtomicLong origin) {
+      return new AtomicLong(origin.get());
+    }
+
+    @Override
     public AtomicLong read(MemoryBuffer buffer) {
       return new AtomicLong(buffer.readInt64());
     }
@@ -407,6 +432,11 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, AtomicReference value) {
       fury.writeRef(buffer, value.get());
+    }
+
+    @Override
+    public AtomicReference copy(AtomicReference origin) {
+      return new AtomicReference(fury.copy(origin.get()));
     }
 
     @Override
