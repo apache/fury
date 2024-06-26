@@ -29,7 +29,7 @@ class Encoding(Enum):
 
 class MetaString:
     def __init__(
-            self, original, encoding, special_char1, special_char2, encoded_data, length
+        self, original, encoding, special_char1, special_char2, encoded_data, length
     ):
         self.original = original
         self.encoding = encoding
@@ -83,7 +83,7 @@ class MetaStringEncoder:
                 self.special_char2,
                 encoded_data,
                 length * 5,
-                )
+            )
         elif encoding == Encoding.LOWER_UPPER_DIGIT_SPECIAL:
             encoded_data = self.encode_lower_upper_digit_special(input_string)
             return MetaString(
@@ -93,7 +93,7 @@ class MetaStringEncoder:
                 self.special_char2,
                 encoded_data,
                 length * 6,
-                )
+            )
         elif encoding == Encoding.FIRST_TO_LOWER_SPECIAL:
             encoded_data = self.encode_first_to_lower_special(input_string)
             return MetaString(
@@ -103,7 +103,7 @@ class MetaStringEncoder:
                 self.special_char2,
                 encoded_data,
                 length * 5,
-                )
+            )
         elif encoding == Encoding.ALL_TO_LOWER_SPECIAL:
             chars = list(input_string)
             upper_count = sum(1 for c in chars if c.isupper())
@@ -115,7 +115,7 @@ class MetaStringEncoder:
                 self.special_char2,
                 encoded_data,
                 (upper_count + length) * 5,
-                )
+            )
         else:
             encoded_data = np.frombuffer(input_string.encode("utf-8"), dtype=np.uint8)
             return MetaString(
@@ -125,7 +125,7 @@ class MetaStringEncoder:
                 self.special_char2,
                 encoded_data,
                 len(encoded_data) * 8,
-                )
+            )
 
     def compute_encoding(self, input_string):
         if not input_string:
@@ -156,11 +156,11 @@ class MetaStringEncoder:
         for c in chars:
             if can_lower_upper_digit_special_encoded:
                 if not (
-                        c.islower()
-                        or c.isupper()
-                        or c.isdigit()
-                        or c == self.special_char1
-                        or c == self.special_char2
+                    c.islower()
+                    or c.isupper()
+                    or c.isdigit()
+                    or c == self.special_char1
+                    or c == self.special_char2
                 ):
                     can_lower_upper_digit_special_encoded = False
             if can_lower_special_encoded:
@@ -281,15 +281,15 @@ class MetaStringDecoder:
         bit_index = 1
         bit_mask = 0b11111
         while bit_index + 5 <= num_bits and not (
-                stripLastChar and (bit_index + 2 * 5 > num_bits)
+            stripLastChar and (bit_index + 2 * 5 > num_bits)
         ):
             byte_index = bit_index // 8
             intra_byte_index = bit_index % 8
             # // Extract the 5-bit character value across byte boundaries if needed
             char_value = (
-                                 (data[byte_index] << 8)
-                                 | (data[byte_index + 1] if byte_index + 1 < len(data) else 0)
-                         ) >> (11 - intra_byte_index) & bit_mask
+                (data[byte_index] << 8)
+                | (data[byte_index + 1] if byte_index + 1 < len(data) else 0)
+            ) >> (11 - intra_byte_index) & bit_mask
             bit_index += 5
             decoded.append(self.decode_lower_special_char(char_value))
 
@@ -302,15 +302,15 @@ class MetaStringDecoder:
         bit_mask = 0b111111
         num_bits = len(data) * 8
         while bit_index + 6 <= num_bits and not (
-                strip_last_char and (bit_index + 2 * 6 > num_bits)
+            strip_last_char and (bit_index + 2 * 6 > num_bits)
         ):
             byte_index = bit_index // 8
             intra_byte_index = bit_index % 8
             # Extract the 6-bit character value across byte boundaries if needed
             char_value = (
-                                 (data[byte_index] << 8)
-                                 | (data[byte_index + 1] if byte_index + 1 < len(data) else 0)
-                         ) >> (10 - intra_byte_index) & bit_mask
+                (data[byte_index] << 8)
+                | (data[byte_index + 1] if byte_index + 1 < len(data) else 0)
+            ) >> (10 - intra_byte_index) & bit_mask
             bit_index += 6
             decoded.append(self.decode_lower_upper_digit_special_char(char_value))
         return "".join(decoded)

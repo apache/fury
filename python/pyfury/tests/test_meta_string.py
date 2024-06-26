@@ -23,26 +23,28 @@ from pyfury.lib.meta.meta_string import *
 class TestMetaString(unittest.TestCase):
 
     def setUp(self):
-        self.encoder = MetaStringEncoder('_', '$')
-        self.decoder = MetaStringDecoder('_', '$')
+        self.encoder = MetaStringEncoder("_", "$")
+        self.decoder = MetaStringDecoder("_", "$")
 
     def test_encode_meta_string_lower_special(self):
         encoded = self.encoder.encode_lower_special("abc_def")
         self.assertEqual(len(encoded), 5)
-        self.assertEqual(len(self.encoder.encode("org.apache.fury.benchmark.data").encoded_data), 19)
+        self.assertEqual(
+            len(self.encoder.encode("org.apache.fury.benchmark.data").encoded_data), 19
+        )
         self.assertEqual(len(self.encoder.encode("MediaContent").encoded_data), 9)
         decoded = self.decoder.decode(encoded, Encoding.LOWER_SPECIAL)
         self.assertEqual(decoded, "abc_def")
 
         for i in range(128):
-            builder = ''.join(chr(ord('a') + j % 26) for j in range(i))
+            builder = "".join(chr(ord("a") + j % 26) for j in range(i))
             encoded = self.encoder.encode_lower_special(builder)
             decoded = self.decoder.decode(encoded, Encoding.LOWER_SPECIAL)
             self.assertEqual(decoded, builder)
 
     def test_encode_meta_string_lower_upper_digit_special(self):
-        special_char1 = '.'
-        special_char2 = '_'
+        special_char1 = "."
+        special_char2 = "_"
         encoder = MetaStringEncoder(special_char1, special_char2)
         encoded = encoder.encode_lower_upper_digit_special("ExampleInput123")
         self.assertEqual(len(encoded), 12)
@@ -61,19 +63,19 @@ class TestMetaString(unittest.TestCase):
         for j in range(length):
             n = j % 64
             if n < 26:
-                chars.append(chr(ord('a') + n))
+                chars.append(chr(ord("a") + n))
             elif n < 52:
-                chars.append(chr(ord('A') + (n - 26)))
+                chars.append(chr(ord("A") + (n - 26)))
             elif n < 62:
-                chars.append(chr(ord('0') + (n - 52)))
+                chars.append(chr(ord("0") + (n - 52)))
             elif n == 62:
                 chars.append(special_char1)
             else:
                 chars.append(special_char2)
-        return ''.join(chars)
+        return "".join(chars)
 
     def test_meta_string(self):
-        for special_char1, special_char2 in [('.', '_'), ('.', '$'), ('_', '$')]:
+        for special_char1, special_char2 in [(".", "_"), (".", "$"), ("_", "$")]:
             encoder = MetaStringEncoder(special_char1, special_char2)
             for i in range(1, 128):
                 try:
@@ -84,16 +86,26 @@ class TestMetaString(unittest.TestCase):
                     self.assertEqual(meta_string.special_char1, special_char1)
                     self.assertEqual(meta_string.special_char2, special_char2)
                     decoder = MetaStringDecoder(special_char1, special_char2)
-                    new_string = decoder.decode(meta_string.encoded_data, meta_string.encoding)
+                    new_string = decoder.decode(
+                        meta_string.encoded_data, meta_string.encoding
+                    )
                     self.assertEqual(new_string, string)
                 except Exception as e:
                     self.fail(f"Failed at {i} with exception: {str(e)}")
 
     def test_encode_empty_string(self):
-        for encoding in [Encoding.LOWER_SPECIAL, Encoding.LOWER_UPPER_DIGIT_SPECIAL, Encoding.FIRST_TO_LOWER_SPECIAL, Encoding.ALL_TO_LOWER_SPECIAL, Encoding.UTF_8]:
+        for encoding in [
+            Encoding.LOWER_SPECIAL,
+            Encoding.LOWER_UPPER_DIGIT_SPECIAL,
+            Encoding.FIRST_TO_LOWER_SPECIAL,
+            Encoding.ALL_TO_LOWER_SPECIAL,
+            Encoding.UTF_8,
+        ]:
             meta_string = self.encoder.encode_with_encoding("", encoding)
             self.assertEqual(len(meta_string.encoded_data), 0)
-            decoded = self.decoder.decode(meta_string.encoded_data, meta_string.encoding)
+            decoded = self.decoder.decode(
+                meta_string.encoded_data, meta_string.encoding
+            )
             self.assertEqual(decoded, "")
 
     def test_encode_characters_outside_of_lower_special(self):
@@ -105,21 +117,27 @@ class TestMetaString(unittest.TestCase):
         test_string = "ABC_DEF"
         meta_string = self.encoder.encode(test_string)
         self.assertEqual(meta_string.encoding, Encoding.LOWER_UPPER_DIGIT_SPECIAL)
-        decoded_string = self.decoder.decode(meta_string.encoded_data, meta_string.encoding)
+        decoded_string = self.decoder.decode(
+            meta_string.encoded_data, meta_string.encoding
+        )
         self.assertEqual(decoded_string, test_string)
 
     def test_first_to_lower_special_encoding(self):
         test_string = "Aabcdef"
         meta_string = self.encoder.encode(test_string)
         self.assertEqual(meta_string.encoding, Encoding.FIRST_TO_LOWER_SPECIAL)
-        decoded_string = self.decoder.decode(meta_string.encoded_data, meta_string.encoding)
+        decoded_string = self.decoder.decode(
+            meta_string.encoded_data, meta_string.encoding
+        )
         self.assertEqual(decoded_string, test_string)
 
     def test_utf8_encoding(self):
         test_string = "你好，世界"  # Non-Latin characters
         meta_string = self.encoder.encode(test_string)
         self.assertEqual(meta_string.encoding, Encoding.UTF_8)
-        decoded_string = self.decoder.decode(meta_string.encoded_data, meta_string.encoding)
+        decoded_string = self.decoder.decode(
+            meta_string.encoded_data, meta_string.encoding
+        )
         self.assertEqual(decoded_string, test_string)
 
     def test_strip_last_char(self):
@@ -133,7 +151,9 @@ class TestMetaString(unittest.TestCase):
 
     def test_empty_string(self):
         meta_string = self.encoder.encode("")
-        self.assertTrue(np.array_equal(meta_string.encoded_data, np.array([], dtype=np.uint8)))
+        self.assertTrue(
+            np.array_equal(meta_string.encoded_data, np.array([], dtype=np.uint8))
+        )
 
         decoded = self.decoder.decode(meta_string.encoded_data, meta_string.encoding)
         self.assertEqual(decoded, "")
@@ -155,7 +175,10 @@ class TestMetaString(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             self.encoder.encode_with_encoding(non_ascii_string, Encoding.LOWER_SPECIAL)
 
-        self.assertEqual(str(context.exception), "Unsupported character for LOWER_SPECIAL encoding: こ")
+        self.assertEqual(
+            str(context.exception),
+            "Unsupported character for LOWER_SPECIAL encoding: こ",
+        )
 
 
 if __name__ == "__main__":
