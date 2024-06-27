@@ -2,18 +2,13 @@
 
 Fury is a blazingly-fast multi-language serialization framework powered by just-in-time compilation and zero-copy.
 
-How to build and test fury
+# How to build and test fury
 
 ## Build Fury Python
 
 ```bash
 cd python
 pip install pyarrow==14.0.0 Cython wheel numpy pytest
-```
-
-You should also install the bazel and bash environments
-
-```bash
 pip install -v -e .
 ```
 
