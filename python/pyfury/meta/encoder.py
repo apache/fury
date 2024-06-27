@@ -19,7 +19,7 @@ import numpy as np
 
 from pyfury.meta.encoding import Encoding, Short_MAX_VALUE
 from pyfury.meta.metastring import MetaString
-from pyfury.meta.preconditions import Preconditions
+from pyfury.utils.preconditions import Preconditions
 
 
 # Encodes plain text strings into MetaString objects with specified encoding mechanisms.

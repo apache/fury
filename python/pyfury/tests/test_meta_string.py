@@ -24,7 +24,6 @@ from pyfury.meta.encoder import MetaStringEncoder
 
 
 class TestMetaString(unittest.TestCase):
-
     def setUp(self):
         self.encoder = MetaStringEncoder("_", "$")
         self.decoder = MetaStringDecoder("_", "$")
