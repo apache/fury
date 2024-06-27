@@ -353,41 +353,64 @@ public class StringSerializerTest extends FuryTestBase {
   public void testLatinCheck() {
     int charArrayOffset = Platform.CHAR_ARRAY_OFFSET;
     long multiCharsNonLatinMask = StringSerializer.MULTI_CHARS_NON_LATIN_MASK;
-    assertTrue(StringUtils.isLatin("Fury".toCharArray(), charArrayOffset,
-            multiCharsNonLatinMask));
-    assertTrue(StringUtils.isLatin(StringUtils.random(8 * 10).toCharArray(), charArrayOffset
-            , multiCharsNonLatinMask));
+    assertTrue(StringUtils.isLatin("Fury".toCharArray(), charArrayOffset, multiCharsNonLatinMask));
+    assertTrue(
+        StringUtils.isLatin(
+            StringUtils.random(8 * 10).toCharArray(), charArrayOffset, multiCharsNonLatinMask));
     // test unaligned
-    assertTrue(StringUtils.isLatin((StringUtils.random(8 * 10) + "1").toCharArray(),
-            charArrayOffset, multiCharsNonLatinMask));
-    assertTrue(StringUtils.isLatin((StringUtils.random(8 * 10) + "12").toCharArray(),
-            charArrayOffset, multiCharsNonLatinMask));
-    assertTrue(StringUtils.isLatin((StringUtils.random(8 * 10) + "123").toCharArray(),
-            charArrayOffset, multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin("你好, Fury".toCharArray(), charArrayOffset,
+    assertTrue(
+        StringUtils.isLatin(
+            (StringUtils.random(8 * 10) + "1").toCharArray(),
+            charArrayOffset,
             multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin((StringUtils.random(8 * 10) + "你好").toCharArray(),
-            charArrayOffset, multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin((StringUtils.random(8 * 10) + "1你好").toCharArray(),
-            charArrayOffset, multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin((StringUtils.random(11) + "你").toCharArray(),
-            charArrayOffset, multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin((StringUtils.random(10) + "你好").toCharArray(),
-            charArrayOffset, multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin((StringUtils.random(9) + "性能好").toCharArray(),
-            charArrayOffset, multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin("\u1234".toCharArray(), charArrayOffset,
+    assertTrue(
+        StringUtils.isLatin(
+            (StringUtils.random(8 * 10) + "12").toCharArray(),
+            charArrayOffset,
             multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin("a\u1234".toCharArray(), charArrayOffset,
+    assertTrue(
+        StringUtils.isLatin(
+            (StringUtils.random(8 * 10) + "123").toCharArray(),
+            charArrayOffset,
             multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin("ab\u1234".toCharArray(), charArrayOffset,
+    assertFalse(
+        StringUtils.isLatin("你好, Fury".toCharArray(), charArrayOffset, multiCharsNonLatinMask));
+    assertFalse(
+        StringUtils.isLatin(
+            (StringUtils.random(8 * 10) + "你好").toCharArray(),
+            charArrayOffset,
             multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin("abc\u1234".toCharArray(), charArrayOffset,
+    assertFalse(
+        StringUtils.isLatin(
+            (StringUtils.random(8 * 10) + "1你好").toCharArray(),
+            charArrayOffset,
             multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin("abcd\u1234".toCharArray(), charArrayOffset,
+    assertFalse(
+        StringUtils.isLatin(
+            (StringUtils.random(11) + "你").toCharArray(), charArrayOffset, multiCharsNonLatinMask));
+    assertFalse(
+        StringUtils.isLatin(
+            (StringUtils.random(10) + "你好").toCharArray(),
+            charArrayOffset,
             multiCharsNonLatinMask));
-    assertFalse(StringUtils.isLatin("Javaone Keynote\u1234".toCharArray(), charArrayOffset,
+    assertFalse(
+        StringUtils.isLatin(
+            (StringUtils.random(9) + "性能好").toCharArray(),
+            charArrayOffset,
             multiCharsNonLatinMask));
+    assertFalse(
+        StringUtils.isLatin("\u1234".toCharArray(), charArrayOffset, multiCharsNonLatinMask));
+    assertFalse(
+        StringUtils.isLatin("a\u1234".toCharArray(), charArrayOffset, multiCharsNonLatinMask));
+    assertFalse(
+        StringUtils.isLatin("ab\u1234".toCharArray(), charArrayOffset, multiCharsNonLatinMask));
+    assertFalse(
+        StringUtils.isLatin("abc\u1234".toCharArray(), charArrayOffset, multiCharsNonLatinMask));
+    assertFalse(
+        StringUtils.isLatin("abcd\u1234".toCharArray(), charArrayOffset, multiCharsNonLatinMask));
+    assertFalse(
+        StringUtils.isLatin(
+            "Javaone Keynote\u1234".toCharArray(), charArrayOffset, multiCharsNonLatinMask));
   }
 
   @Test

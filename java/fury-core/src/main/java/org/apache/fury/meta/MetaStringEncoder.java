@@ -59,7 +59,10 @@ public class MetaStringEncoder {
     if (input.isEmpty()) {
       return new MetaString(input, Encoding.UTF_8, specialChar1, specialChar2, new byte[0]);
     }
-    if (!StringUtils.isLatin(input.toCharArray(), Platform.CHAR_ARRAY_OFFSET, StringSerializer.MULTI_CHARS_NON_LATIN_MASK)) {
+    if (!StringUtils.isLatin(
+        input.toCharArray(),
+        Platform.CHAR_ARRAY_OFFSET,
+        StringSerializer.MULTI_CHARS_NON_LATIN_MASK)) {
       return new MetaString(
           input,
           Encoding.UTF_8,
@@ -81,8 +84,11 @@ public class MetaStringEncoder {
   public MetaString encode(String input, Encoding encoding) {
     Preconditions.checkArgument(
         input.length() < Short.MAX_VALUE, "Long meta string than 32767 is not allowed");
-    if (encoding != Encoding.UTF_8 && !StringUtils.isLatin(input.toCharArray(),
-            Platform.CHAR_ARRAY_OFFSET, StringSerializer.MULTI_CHARS_NON_LATIN_MASK)) {
+    if (encoding != Encoding.UTF_8
+        && !StringUtils.isLatin(
+            input.toCharArray(),
+            Platform.CHAR_ARRAY_OFFSET,
+            StringSerializer.MULTI_CHARS_NON_LATIN_MASK)) {
       throw new IllegalArgumentException("Non-ASCII characters in meta string are not allowed");
     }
     if (input.isEmpty()) {

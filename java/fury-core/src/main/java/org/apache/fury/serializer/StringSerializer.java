@@ -301,7 +301,7 @@ public final class StringSerializer extends Serializer<String> {
     }
   }
 
-    // Invoked by fury JIT
+  // Invoked by fury JIT
   public String readJavaString(MemoryBuffer buffer) {
     if (STRING_VALUE_FIELD_IS_BYTES) {
       return readBytesString(buffer);

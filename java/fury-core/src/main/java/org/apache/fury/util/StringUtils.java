@@ -19,11 +19,10 @@
 
 package org.apache.fury.util;
 
-import org.apache.fury.memory.Platform;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import org.apache.fury.memory.Platform;
 
 public class StringUtils {
   private static final char[] BASE16_CHARS2 = {
@@ -252,29 +251,29 @@ public class StringUtils {
     return builder.toString();
   }
 
-    public static boolean isLatin(char[] chars, int charArrayOffset, long multiCharsNonLatinMask) {
-        int numChars = chars.length;
-        int vectorizedLen = numChars >> 2;
-        int vectorizedChars = vectorizedLen << 2;
-        int endOffset = charArrayOffset + (vectorizedChars << 1);
-        boolean isLatin = true;
-        for (int offset = charArrayOffset; offset < endOffset; offset += 8) {
-            // check 4 chars in a vectorized way, 4 times faster than scalar check loop.
-            // See benchmark in CompressStringSuite.latinSuperWordCheck.
-            long multiChars = Platform.getLong(chars, offset);
-            if ((multiChars & multiCharsNonLatinMask) != 0) {
-                isLatin = false;
-                break;
-            }
-        }
-        if (isLatin) {
-            for (int i = vectorizedChars; i < numChars; i++) {
-                if (chars[i] > 0xFF) {
-                    isLatin = false;
-                    break;
-                }
-            }
-        }
-        return isLatin;
+  public static boolean isLatin(char[] chars, int charArrayOffset, long multiCharsNonLatinMask) {
+    int numChars = chars.length;
+    int vectorizedLen = numChars >> 2;
+    int vectorizedChars = vectorizedLen << 2;
+    int endOffset = charArrayOffset + (vectorizedChars << 1);
+    boolean isLatin = true;
+    for (int offset = charArrayOffset; offset < endOffset; offset += 8) {
+      // check 4 chars in a vectorized way, 4 times faster than scalar check loop.
+      // See benchmark in CompressStringSuite.latinSuperWordCheck.
+      long multiChars = Platform.getLong(chars, offset);
+      if ((multiChars & multiCharsNonLatinMask) != 0) {
+        isLatin = false;
+        break;
+      }
     }
+    if (isLatin) {
+      for (int i = vectorizedChars; i < numChars; i++) {
+        if (chars[i] > 0xFF) {
+          isLatin = false;
+          break;
+        }
+      }
+    }
+    return isLatin;
+  }
 }

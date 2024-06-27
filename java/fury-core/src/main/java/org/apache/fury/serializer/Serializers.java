@@ -258,7 +258,8 @@ public class Serializers {
         buffer.writeBytes(v, 0, bytesLen);
       } else {
         char[] v = (char[]) GET_VALUE.apply(value);
-        if (StringUtils.isLatin(v, Platform.CHAR_ARRAY_OFFSET, StringSerializer.MULTI_CHARS_NON_LATIN_MASK)) {
+        if (StringUtils.isLatin(
+            v, Platform.CHAR_ARRAY_OFFSET, StringSerializer.MULTI_CHARS_NON_LATIN_MASK)) {
           stringSerializer.writeCharsLatin(buffer, v, value.length());
         } else {
           stringSerializer.writeCharsUTF16(buffer, v, value.length());
