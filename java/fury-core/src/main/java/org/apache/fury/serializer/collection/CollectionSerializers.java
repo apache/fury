@@ -361,6 +361,11 @@ public class CollectionSerializers {
     }
 
     @Override
+    public List<?> copy(List<?> originCollection) {
+      return Collections.singletonList(originCollection);
+    }
+
+    @Override
     public void write(MemoryBuffer buffer, List<?> value) {
       fury.writeRef(buffer, value.get(0));
     }
@@ -392,6 +397,11 @@ public class CollectionSerializers {
 
     public CollectionsSingletonSetSerializer(Fury fury, Class<Set<?>> cls) {
       super(fury, cls, false);
+    }
+
+    @Override
+    public Set<?> copy(Set<?> originCollection) {
+      return Collections.singleton(originCollection);
     }
 
     @Override
@@ -612,6 +622,11 @@ public class CollectionSerializers {
     }
 
     @Override
+    public BitSet copy(BitSet originCollection) {
+      return BitSet.valueOf(originCollection.toLongArray());
+    }
+
+    @Override
     public BitSet read(MemoryBuffer buffer) {
       long[] values = buffer.readLongs(buffer.readVarUint32Small7());
       return BitSet.valueOf(values);
@@ -627,6 +642,11 @@ public class CollectionSerializers {
       buffer.writeVarUint32Small7(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
+    }
+
+    @Override
+    public PriorityQueue copy(PriorityQueue originCollection) {
+      return new PriorityQueue(originCollection);
     }
 
     @Override

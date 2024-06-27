@@ -26,6 +26,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -215,6 +216,12 @@ public class MapSerializers {
 
     public SingletonMapSerializer(Fury fury, Class<Map<?, ?>> cls) {
       super(fury, cls, false);
+    }
+
+    @Override
+    public Map<?, ?> copy(Map<?, ?> originMap) {
+      Entry<?, ?> entry = originMap.entrySet().iterator().next();
+      return Collections.singletonMap(entry.getKey(), entry.getValue());
     }
 
     @Override
