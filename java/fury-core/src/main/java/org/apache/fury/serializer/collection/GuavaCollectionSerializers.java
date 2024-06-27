@@ -67,7 +67,6 @@ public class GuavaCollectionSerializers {
     public ImmutableListSerializer(Fury fury, Class<T> cls) {
       super(fury, cls);
       fury.getClassResolver().setSerializer(cls, this);
-      setImmutable(true);
     }
 
     @Override
@@ -119,7 +118,6 @@ public class GuavaCollectionSerializers {
     public RegularImmutableListSerializer(Fury fury, Class<T> cls) {
       super(fury, cls);
       function = (Function<Object[], ImmutableList>) regularImmutableListInvoke();
-      setImmutable(true);
     }
 
     @Override
@@ -151,7 +149,6 @@ public class GuavaCollectionSerializers {
 
     public ImmutableSetSerializer(Fury fury, Class<T> cls) {
       super(fury, cls);
-      setImmutable(true);
     }
 
     @Override
@@ -183,7 +180,6 @@ public class GuavaCollectionSerializers {
     public ImmutableSortedSetSerializer(Fury fury, Class<T> cls) {
       super(fury, cls, false);
       fury.getClassResolver().setSerializer(cls, this);
-      setImmutable(true);
     }
 
     @Override
@@ -288,7 +284,6 @@ public class GuavaCollectionSerializers {
       super(fury, cls);
       builderCtr = builderCtrCache.get(ImmutableMap.Builder.class);
       fury.getClassResolver().setSerializer(cls, this);
-      setImmutable(true);
     }
 
     @Override
@@ -310,7 +305,6 @@ public class GuavaCollectionSerializers {
       super(fury, cls);
       builderCtr = builderCtrCache.get(ImmutableBiMap.Builder.class);
       fury.getClassResolver().setSerializer(cls, this);
-      setImmutable(true);
     }
 
     @Override
@@ -330,7 +324,6 @@ public class GuavaCollectionSerializers {
     public ImmutableSortedMapSerializer(Fury fury, Class<T> cls) {
       super(fury, cls);
       fury.getClassResolver().setSerializer(cls, this);
-      setImmutable(true);
     }
 
     @Override

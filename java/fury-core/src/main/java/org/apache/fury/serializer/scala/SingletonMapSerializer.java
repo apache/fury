@@ -46,7 +46,6 @@ public class SingletonMapSerializer extends AbstractMapSerializer {
     } catch (NoSuchFieldException e) {
       throw new RuntimeException(type + " doesn't have `MODULE$` field", e);
     }
-    setImmutable(true);
   }
 
   @Override

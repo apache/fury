@@ -85,7 +85,6 @@ public class UnmodifiableSerializers {
       super(fury, cls, false);
       this.factory = factory;
       this.offset = offset;
-      setImmutable(true);
     }
 
     @Override
@@ -110,7 +109,6 @@ public class UnmodifiableSerializers {
       super(fury, cls, false);
       this.factory = factory;
       this.offset = offset;
-      setImmutable(true);
     }
 
     @Override

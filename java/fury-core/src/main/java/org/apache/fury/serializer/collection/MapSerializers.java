@@ -168,8 +168,7 @@ public class MapSerializers {
   public static final class EmptyMapSerializer extends MapSerializer<Map<?, ?>> {
 
     public EmptyMapSerializer(Fury fury, Class<Map<?, ?>> cls) {
-      super(fury, cls, false);
-      setImmutable(true);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -200,8 +199,7 @@ public class MapSerializers {
 
   public static final class EmptySortedMapSerializer extends MapSerializer<SortedMap<?, ?>> {
     public EmptySortedMapSerializer(Fury fury, Class<SortedMap<?, ?>> cls) {
-      super(fury, cls, false);
-      setImmutable(true);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -217,7 +215,6 @@ public class MapSerializers {
 
     public SingletonMapSerializer(Fury fury, Class<Map<?, ?>> cls) {
       super(fury, cls, false);
-      setImmutable(true);
     }
 
     @Override

@@ -34,6 +34,10 @@ public class MapSerializer<T extends Map> extends AbstractMapSerializer<T> {
     super(fury, cls, supportCodegenHook);
   }
 
+  public MapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook, boolean immutable) {
+    super(fury, cls, supportCodegenHook, immutable);
+  }
+
   @Override
   public Map onMapWrite(MemoryBuffer buffer, T value) {
     buffer.writeVarUint32Small7(value.size());

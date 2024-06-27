@@ -105,7 +105,6 @@ public class ImmutableCollectionSerializers {
   public static class ImmutableListSerializer extends CollectionSerializer {
     public ImmutableListSerializer(Fury fury, Class cls) {
       super(fury, cls, true);
-      setImmutable(true);
     }
 
     @Override
@@ -138,7 +137,6 @@ public class ImmutableCollectionSerializers {
   public static class ImmutableSetSerializer extends CollectionSerializer {
     public ImmutableSetSerializer(Fury fury, Class cls) {
       super(fury, cls, true);
-      setImmutable(true);
     }
 
     @Override
@@ -171,7 +169,6 @@ public class ImmutableCollectionSerializers {
   public static class ImmutableMapSerializer extends MapSerializer {
     public ImmutableMapSerializer(Fury fury, Class cls) {
       super(fury, cls, true);
-      setImmutable(true);
     }
 
     @Override

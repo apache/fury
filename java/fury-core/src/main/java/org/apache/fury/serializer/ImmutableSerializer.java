@@ -22,21 +22,22 @@ package org.apache.fury.serializer;
 import org.apache.fury.Fury;
 
 /**
- * Serializer for immutable objects. {@link #setImmutable(boolean)} set to true
+ * Serializer for immutable objects.
  *
  * @param <T> type of objects being serializing/deserializing
  */
 public abstract class ImmutableSerializer<T> extends Serializer<T> {
 
-  {
-    setImmutable(true);
-  }
-
   public ImmutableSerializer(Fury fury, Class<T> type) {
-    super(fury, type);
+    super(fury, type, true);
   }
 
   public ImmutableSerializer(Fury fury, Class<T> type, boolean needToWriteRef) {
-    super(fury, type, needToWriteRef);
+    super(fury, type, needToWriteRef, true);
   }
+
+  public ImmutableSerializer(Fury fury, Class<T> type, boolean needToWriteRef, boolean immutable) {
+    super(fury, type, needToWriteRef, true);
+  }
+
 }

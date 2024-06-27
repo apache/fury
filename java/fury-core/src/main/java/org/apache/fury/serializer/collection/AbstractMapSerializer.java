@@ -77,6 +77,16 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     partialGenericKVTypeMap = new IdentityMap<>();
   }
 
+  public AbstractMapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook, boolean immutable) {
+    super(fury, cls, immutable);
+    this.supportCodegenHook = supportCodegenHook;
+    keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
+    keyClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
+    valueClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
+    valueClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
+    partialGenericKVTypeMap = new IdentityMap<>();
+  }
+
   /**
    * Set key serializer for next serialization, the <code>serializer</code> will be cleared when
    * next serialization finished.

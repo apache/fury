@@ -256,8 +256,7 @@ public class CollectionSerializers {
   public static final class EmptyListSerializer extends CollectionSerializer<List<?>> {
 
     public EmptyListSerializer(Fury fury, Class<List<?>> cls) {
-      super(fury, cls, false);
-      setImmutable(true);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -310,8 +309,7 @@ public class CollectionSerializers {
   public static final class EmptySetSerializer extends CollectionSerializer<Set<?>> {
 
     public EmptySetSerializer(Fury fury, Class<Set<?>> cls) {
-      super(fury, cls, false);
-      setImmutable(true);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -343,8 +341,7 @@ public class CollectionSerializers {
   public static final class EmptySortedSetSerializer extends CollectionSerializer<SortedSet<?>> {
 
     public EmptySortedSetSerializer(Fury fury, Class<SortedSet<?>> cls) {
-      super(fury, cls, false);
-      setImmutable(true);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -361,7 +358,6 @@ public class CollectionSerializers {
 
     public CollectionsSingletonListSerializer(Fury fury, Class<List<?>> cls) {
       super(fury, cls, false);
-      setImmutable(true);
     }
 
     @Override
@@ -396,7 +392,6 @@ public class CollectionSerializers {
 
     public CollectionsSingletonSetSerializer(Fury fury, Class<Set<?>> cls) {
       super(fury, cls, false);
-      setImmutable(true);
     }
 
     @Override

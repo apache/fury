@@ -190,6 +190,12 @@ public class Serializers {
       this.typeId = typeId;
     }
 
+    public CrossLanguageCompatibleSerializer(
+        Fury fury, Class<T> cls, short typeId, boolean needToWriteRef, boolean immutable) {
+      super(fury, cls, needToWriteRef, immutable);
+      this.typeId = typeId;
+    }
+
     @Override
     public short getXtypeId() {
       return typeId;
