@@ -43,6 +43,7 @@ import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.FieldResolver.FieldInfo;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
@@ -85,7 +86,6 @@ public final class ObjectSerializer<T> extends Serializer<T> {
   private final GenericTypeField[] containerFields;
   private final MethodHandle constructor;
   private final int classVersionHash;
-  private List<Field> allFieldCache;
 
   public ObjectSerializer(Fury fury, Class<T> cls) {
     this(fury, cls, true);
@@ -232,36 +232,43 @@ public final class ObjectSerializer<T> extends Serializer<T> {
 
   @Override
   public T copy(T originObj) {
+    if (isRecord) {
+      return originObj;
+    }
     T newObj = newBean(constructor, type);
-    List<Field> fieldsList = getAllFieldCache();
-    for (Field field : fieldsList) {
-      try {
-        Object value = field.get(originObj);
-        field.set(newObj, fury.copy(value));
-      } catch (Exception e) {
-        throw new RuntimeException(
-            String.format("Copy object property %s (%s) error.", field.getName(), type.getName()),
-            e);
+    List<FieldInfo> fieldsList = classResolver.getFieldResolver(type).getAllFieldsList();
+    for (FieldInfo info : fieldsList) {
+      FieldAccessor fieldAccessor = info.getFieldAccessor();
+      long offset = fieldAccessor.getFieldOffset();
+      switch (info.getEmbeddedClassId()) {
+        case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+          Platform.putByte(newObj, offset, Platform.getByte(originObj, offset));
+          break;
+        case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+          Platform.putChar(newObj, offset, Platform.getChar(originObj, offset));
+          break;
+        case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+          Platform.putShort(newObj, offset, Platform.getShort(originObj, offset));
+          break;
+        case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+          Platform.putInt(newObj, offset, Platform.getInt(originObj, offset));
+          break;
+        case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+          Platform.putLong(newObj, offset, Platform.getLong(originObj, offset));
+          break;
+        case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+          Platform.putFloat(newObj, offset, Platform.getFloat(originObj, offset));
+          break;
+        case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+          Platform.putDouble(newObj, offset, Platform.getDouble(originObj, offset));
+          break;
+        case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+          Platform.putBoolean(newObj, offset, Platform.getBoolean(originObj, offset));
+          break;
+        default: Platform.putObject(newObj, offset, Platform.getObject(originObj, offset));
       }
     }
-    return newObj;
-  }
-
-  private List<Field> getAllFieldCache() {
-    if (Objects.isNull(allFieldCache)) {
-      allFieldCache =
-          classResolver.getFieldResolver(type).getAllFieldsList().stream()
-              .map(
-                  e -> {
-                    Field field = e.getField();
-                    if (!field.isAccessible()) {
-                      field.setAccessible(true);
-                    }
-                    return field;
-                  })
-              .collect(Collectors.toList());
-    }
-    return allFieldCache;
+    return originObj;
   }
 
   private void writeFinalFields(
