@@ -18,17 +18,18 @@
 import unittest
 import numpy as np
 
-from pyfury.lib.meta.meta_string import MetaStringEncoder, MetaStringDecoder, Encoding
+from pyfury.meta.encoding import Encoding
+from pyfury.meta.decoder import MetaStringDecoder
+from pyfury.meta.encoder import MetaStringEncoder
 
 
 class TestMetaString(unittest.TestCase):
-
     def setUp(self):
         self.encoder = MetaStringEncoder("_", "$")
         self.decoder = MetaStringDecoder("_", "$")
 
     def test_encode_meta_string_lower_special(self):
-        encoded = self.encoder.encode_lower_special("abc_def")
+        encoded = self.encoder._encode_lower_special("abc_def")
         self.assertEqual(len(encoded), 5)
         self.assertEqual(
             len(self.encoder.encode("org.apache.fury.benchmark.data").encoded_data), 19
@@ -39,7 +40,7 @@ class TestMetaString(unittest.TestCase):
 
         for i in range(128):
             builder = "".join(chr(ord("a") + j % 26) for j in range(i))
-            encoded = self.encoder.encode_lower_special(builder)
+            encoded = self.encoder._encode_lower_special(builder)
             decoded = self.decoder.decode(encoded, Encoding.LOWER_SPECIAL)
             self.assertEqual(decoded, builder)
 
@@ -47,7 +48,7 @@ class TestMetaString(unittest.TestCase):
         special_char1 = "."
         special_char2 = "_"
         encoder = MetaStringEncoder(special_char1, special_char2)
-        encoded = encoder.encode_lower_upper_digit_special("ExampleInput123")
+        encoded = encoder._encode_lower_upper_digit_special("ExampleInput123")
         self.assertEqual(len(encoded), 12)
         decoder = MetaStringDecoder(special_char1, special_char2)
         decoded = decoder.decode(encoded, Encoding.LOWER_UPPER_DIGIT_SPECIAL)
@@ -55,7 +56,7 @@ class TestMetaString(unittest.TestCase):
 
         for i in range(1, 128):
             string = self.create_string(i, special_char1, special_char2)
-            encoded = encoder.encode_lower_upper_digit_special(string)
+            encoded = encoder._encode_lower_upper_digit_special(string)
             decoded = decoder.decode(encoded, Encoding.LOWER_UPPER_DIGIT_SPECIAL)
             self.assertEqual(decoded, string, f"Failed at {i}")
 
