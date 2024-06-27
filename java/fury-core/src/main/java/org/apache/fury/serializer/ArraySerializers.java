@@ -20,6 +20,7 @@
 package org.apache.fury.serializer;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.IdentityHashMap;
 import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
@@ -274,9 +275,7 @@ public class ArraySerializers {
 
     @Override
     public boolean[] copy(boolean[] originArray) {
-      boolean[] newArray = new boolean[originArray.length];
-      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
-      return newArray;
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -317,9 +316,7 @@ public class ArraySerializers {
 
     @Override
     public byte[] copy(byte[] originArray) {
-      byte[] newArray = new byte[originArray.length];
-      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
-      return newArray;
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -358,9 +355,7 @@ public class ArraySerializers {
 
     @Override
     public char[] copy(char[] originArray) {
-      char[] newArray = new char[originArray.length];
-      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
-      return newArray;
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -416,9 +411,7 @@ public class ArraySerializers {
 
     @Override
     public short[] copy(short[] originArray) {
-      short[] newArray = new short[originArray.length];
-      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
-      return newArray;
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -459,9 +452,7 @@ public class ArraySerializers {
 
     @Override
     public int[] copy(int[] originArray) {
-      int[] newArray = new int[originArray.length];
-      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
-      return newArray;
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -502,9 +493,7 @@ public class ArraySerializers {
 
     @Override
     public long[] copy(long[] originArray) {
-      long[] newArray = new long[originArray.length];
-      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
-      return newArray;
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -545,9 +534,7 @@ public class ArraySerializers {
 
     @Override
     public float[] copy(float[] originArray) {
-      float[] newArray = new float[originArray.length];
-      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
-      return newArray;
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -588,9 +575,7 @@ public class ArraySerializers {
 
     @Override
     public double[] copy(double[] originArray) {
-      double[] newArray = new double[originArray.length];
-      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
-      return newArray;
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
