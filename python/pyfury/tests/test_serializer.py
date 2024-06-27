@@ -550,9 +550,6 @@ def test_function():
     c = fury.deserialize(fury.serialize(lambda x: x * 2))
     assert c(2) == 4
 
-    def func(x):
-        return x * 2
-
     c = fury.deserialize(fury.serialize(func))
     assert c(2) == 4
 
