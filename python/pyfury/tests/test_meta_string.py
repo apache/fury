@@ -19,8 +19,7 @@ import unittest
 import numpy as np
 
 from pyfury.meta.encoding import Encoding
-from pyfury.meta.decoder import MetaStringDecoder
-from pyfury.meta.encoder import MetaStringEncoder
+from pyfury.meta.metastring import MetaStringEncoder, MetaStringDecoder
 
 
 class TestMetaString(unittest.TestCase):
