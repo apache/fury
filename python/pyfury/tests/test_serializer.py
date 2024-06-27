@@ -192,8 +192,6 @@ def test_multiple_ref(language):
         objs.append(fury.deserialize(buffer))
     assert len(set(id(o) for o in objs)) == 1000
 
-    def func(x):
-        return x * 2
 
 class RefTestClass1:
     def __init__(self, f1=None):
@@ -549,6 +547,9 @@ def test_function():
     )
     c = fury.deserialize(fury.serialize(lambda x: x * 2))
     assert c(2) == 4
+
+    def func(x):
+        return x * 2
 
     c = fury.deserialize(fury.serialize(func))
     assert c(2) == 4
