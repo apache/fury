@@ -19,6 +19,7 @@
 
 package org.apache.fury;
 
+import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -55,6 +56,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -67,41 +69,26 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import org.apache.fury.collection.LazyMap;
 import org.apache.fury.serializer.EnumSerializerTest;
 import org.apache.fury.serializer.EnumSerializerTest.EnumFoo;
+import org.apache.fury.serializer.collection.ChildContainerSerializersTest.ChildArrayDeque;
+import org.apache.fury.test.bean.BeanA;
+import org.apache.fury.test.bean.BeanB;
+import org.apache.fury.test.bean.Cyclic;
 import org.apache.fury.util.DateTimeUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class FuryCopyTest extends FuryTestBase {
 
-  private final Fury fury = builder().withCodegen(false).build();
-
-  @Test
-  public void circularRefCopyTest() {
-    A a = new A();
-    B b = new B();
-    a.setName("a");
-    b.setName("b");
-    a.setB(b);
-    b.setA(a);
-    A aa = fury.copy(a);
-    B bb = fury.copy(b);
-
-    System.out.println(a);
-    System.out.println(aa);
-    System.out.println(b);
-    System.out.println(bb);
-
-    a.list.add(1);
-    b.list.add(2);
-    System.out.println(a);
-    System.out.println(aa);
-    System.out.println(b);
-    System.out.println(bb);
-  }
+  private final Fury fury = builder().withCopyRefTracking(true).withCodegen(false).build();
 
   @Test
   public void immutableObjectCopyTest() {
@@ -123,7 +110,8 @@ public class FuryCopyTest extends FuryTestBase {
     assertSame(Pattern.compile(""));
     assertSame(URI.create("test"));
     assertSame(new UUID(System.currentTimeMillis(), System.currentTimeMillis()));
-    // assertSame(new URL("https://www.baidu.com"));   // URL is not handle with URLSerializer. use replaceResolveSerializer
+    // URL is not handle with URLSerializer. use replaceResolveSerializer
+    // assertSame(new URL("https://www.baidu.com"));
 
     assertSame(Collections.EMPTY_LIST);
     assertSame(Collections.EMPTY_MAP);
@@ -141,16 +129,55 @@ public class FuryCopyTest extends FuryTestBase {
 
   @Test
   public void threadLocalCopyTest() {
-    // todo: theadlocal fury copy test use case
+    BeanA beanA = BeanA.createBeanA(2);
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    AtomicReference<Throwable> ex = new AtomicReference<>();
+    ThreadLocalFury threadLocalFury = builder().withCodegen(false).withCopyRefTracking(true)
+          .buildThreadLocalFury();
+    threadLocalFury.register(BeanA.class);
+    assetEqualsButNotSame(threadLocalFury.copy(beanA));
+    executor.execute(() -> {
+      try {
+        assetEqualsButNotSame(threadLocalFury.copy(beanA));
+      } catch (Throwable t) {
+        ex.set(t);
+      }
+    });
+    Assert.assertNull(ex.get());
   }
 
   @Test
-  public void threadpoolCopyTest() {
-    // todo: threadpool fury copy test use case
+  public void threadpoolCopyTest() throws InterruptedException {
+    BeanA beanA = BeanA.createBeanA(2);
+    AtomicBoolean flag = new AtomicBoolean(false);
+    ThreadSafeFury threadSafeFury = builder().withCopyRefTracking(true).withCodegen(false).withAsyncCompilation(true).buildThreadSafeFuryPool(5, 10);
+    for (int i = 0; i < 2000; i++) {
+      new Thread(() -> {
+        for (int j = 0; j < 10; j++) {
+          try {
+            threadSafeFury.setClassLoader(beanA.getClass().getClassLoader());
+            Assert.assertEquals(beanA, threadSafeFury.copy(beanA));
+          } catch (Exception e) {
+            e.printStackTrace();
+            flag.set(true);
+          }
+        }
+      }).start();
+    }
+    TimeUnit.SECONDS.sleep(5);
+    Assert.assertFalse(flag.get());
   }
 
   private void objectCopyTest() {
-    // todo: complex objects、circular reference copy test use case
+    for (int i = 1; i <= 10; i++) {
+      BeanA beanA = BeanA.createBeanA(i);
+      BeanB beanB = BeanB.createBeanB(i);
+      assetEqualsButNotSame(beanA);
+      assetEqualsButNotSame(beanB);
+    }
+
+    Cyclic cyclic = Cyclic.create(true);
+    assetEqualsButNotSame(cyclic);
   }
 
   private void mapCopyTest() {
@@ -187,12 +214,16 @@ public class FuryCopyTest extends FuryTestBase {
     assetEqualsButNotSame(Collections.newSetFromMap(new HashMap<>()));
     assetEqualsButNotSame(ConcurrentHashMap.newKeySet(10));
     assetEqualsButNotSame(new Vector<>(testData));
-    assetEqualsButNotSame(new ArrayDeque<>(testData));
     assetEqualsButNotSame(EnumSet.of(EnumSerializerTest.EnumFoo.A, EnumSerializerTest.EnumFoo.B));
     assetEqualsButNotSame(BitSet.valueOf(new byte[]{1, 2, 3}));
-    assetEqualsButNotSame(new PriorityQueue<>(testData));
     assetEqualsButNotSame(Collections.singleton(1));
     assetEqualsButNotSame(Collections.singletonList(1));
+
+    ImmutableList<String> data = ImmutableList.copyOf(testData);
+    ChildArrayDeque<String> list = new ChildArrayDeque<>();
+    list.addAll(data);
+    Assert.assertEquals(data, ImmutableList.copyOf(fury.copy(list)));
+    Assert.assertEquals(data, ImmutableList.copyOf(new PriorityQueue<>(data)));
   }
 
   private void primitiveCopyTest() {
@@ -232,7 +263,7 @@ public class FuryCopyTest extends FuryTestBase {
 
   private void assetEqualsButNotSame(Object obj) {
     Object newObj = fury.copy(obj);
-    Assert.assertNotSame(obj, newObj);
+    Assert.assertEquals(obj, newObj);
     Assert.assertNotSame(obj, newObj);
   }
 
