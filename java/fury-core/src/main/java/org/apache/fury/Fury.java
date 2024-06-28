@@ -1279,8 +1279,8 @@ public final class Fury implements BaseFury {
   }
 
   /**
-   * Record the mapping between the object currently being copied and
-   * the newly generated object after copying.
+   * Record the mapping between the object currently being copied and the newly generated object
+   * after copying.
    *
    * @param obj the new object instance
    */

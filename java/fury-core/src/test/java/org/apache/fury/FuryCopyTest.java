@@ -39,7 +39,6 @@ import java.time.Year;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -56,7 +55,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -132,17 +130,18 @@ public class FuryCopyTest extends FuryTestBase {
     BeanA beanA = BeanA.createBeanA(2);
     ExecutorService executor = Executors.newSingleThreadExecutor();
     AtomicReference<Throwable> ex = new AtomicReference<>();
-    ThreadLocalFury threadLocalFury = builder().withCodegen(false).withCopyRefTracking(true)
-          .buildThreadLocalFury();
+    ThreadLocalFury threadLocalFury =
+        builder().withCodegen(false).withCopyRefTracking(true).buildThreadLocalFury();
     threadLocalFury.register(BeanA.class);
     assetEqualsButNotSame(threadLocalFury.copy(beanA));
-    executor.execute(() -> {
-      try {
-        assetEqualsButNotSame(threadLocalFury.copy(beanA));
-      } catch (Throwable t) {
-        ex.set(t);
-      }
-    });
+    executor.execute(
+        () -> {
+          try {
+            assetEqualsButNotSame(threadLocalFury.copy(beanA));
+          } catch (Throwable t) {
+            ex.set(t);
+          }
+        });
     Assert.assertNull(ex.get());
   }
 
@@ -150,19 +149,26 @@ public class FuryCopyTest extends FuryTestBase {
   public void threadpoolCopyTest() throws InterruptedException {
     BeanA beanA = BeanA.createBeanA(2);
     AtomicBoolean flag = new AtomicBoolean(false);
-    ThreadSafeFury threadSafeFury = builder().withCopyRefTracking(true).withCodegen(false).withAsyncCompilation(true).buildThreadSafeFuryPool(5, 10);
+    ThreadSafeFury threadSafeFury =
+        builder()
+            .withCopyRefTracking(true)
+            .withCodegen(false)
+            .withAsyncCompilation(true)
+            .buildThreadSafeFuryPool(5, 10);
     for (int i = 0; i < 2000; i++) {
-      new Thread(() -> {
-        for (int j = 0; j < 10; j++) {
-          try {
-            threadSafeFury.setClassLoader(beanA.getClass().getClassLoader());
-            Assert.assertEquals(beanA, threadSafeFury.copy(beanA));
-          } catch (Exception e) {
-            e.printStackTrace();
-            flag.set(true);
-          }
-        }
-      }).start();
+      new Thread(
+              () -> {
+                for (int j = 0; j < 10; j++) {
+                  try {
+                    threadSafeFury.setClassLoader(beanA.getClass().getClassLoader());
+                    Assert.assertEquals(beanA, threadSafeFury.copy(beanA));
+                  } catch (Exception e) {
+                    e.printStackTrace();
+                    flag.set(true);
+                  }
+                }
+              })
+          .start();
     }
     TimeUnit.SECONDS.sleep(5);
     Assert.assertFalse(flag.get());
@@ -215,7 +221,7 @@ public class FuryCopyTest extends FuryTestBase {
     assetEqualsButNotSame(ConcurrentHashMap.newKeySet(10));
     assetEqualsButNotSame(new Vector<>(testData));
     assetEqualsButNotSame(EnumSet.of(EnumSerializerTest.EnumFoo.A, EnumSerializerTest.EnumFoo.B));
-    assetEqualsButNotSame(BitSet.valueOf(new byte[]{1, 2, 3}));
+    assetEqualsButNotSame(BitSet.valueOf(new byte[] {1, 2, 3}));
     assetEqualsButNotSame(Collections.singleton(1));
     assetEqualsButNotSame(Collections.singletonList(1));
 
@@ -267,7 +273,6 @@ public class FuryCopyTest extends FuryTestBase {
     Assert.assertNotSame(obj, newObj);
   }
 
-
   public static class A {
     private String name;
     private B b;
@@ -299,10 +304,7 @@ public class FuryCopyTest extends FuryTestBase {
 
     @Override
     public String toString() {
-      return "A{" +
-          "name='" + name + '\'' +
-          ", list=" + list +
-          '}';
+      return "A{" + "name='" + name + '\'' + ", list=" + list + '}';
     }
   }
 
@@ -337,10 +339,7 @@ public class FuryCopyTest extends FuryTestBase {
 
     @Override
     public String toString() {
-      return "B{" +
-          "name='" + name + '\'' +
-          ", list=" + list +
-          '}';
+      return "B{" + "name='" + name + '\'' + ", list=" + list + '}';
     }
   }
 }

@@ -77,7 +77,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     partialGenericKVTypeMap = new IdentityMap<>();
   }
 
-  public AbstractMapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook, boolean immutable) {
+  public AbstractMapSerializer(
+      Fury fury, Class<T> cls, boolean supportCodegenHook, boolean immutable) {
     super(fury, cls, immutable);
     this.supportCodegenHook = supportCodegenHook;
     keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();

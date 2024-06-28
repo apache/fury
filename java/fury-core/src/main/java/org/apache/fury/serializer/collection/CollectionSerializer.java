@@ -34,7 +34,8 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
     super(fury, type, supportCodegenHook);
   }
 
-  public CollectionSerializer(Fury fury, Class<T> type, boolean supportCodegenHook, boolean immutable) {
+  public CollectionSerializer(
+      Fury fury, Class<T> type, boolean supportCodegenHook, boolean immutable) {
     super(fury, type, supportCodegenHook, immutable);
   }
 

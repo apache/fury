@@ -39,5 +39,4 @@ public abstract class ImmutableSerializer<T> extends Serializer<T> {
   public ImmutableSerializer(Fury fury, Class<T> type, boolean needToWriteRef, boolean immutable) {
     super(fury, type, needToWriteRef, true);
   }
-
 }

@@ -23,7 +23,6 @@ import static org.apache.fury.type.DescriptorGrouper.createDescriptorGrouper;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -266,7 +265,8 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
           Platform.putBoolean(newObj, offset, Platform.getBoolean(originObj, offset));
           break;
-        default: Platform.putObject(newObj, offset, fury.copy(Platform.getObject(originObj, offset)));
+        default:
+          Platform.putObject(newObj, offset, fury.copy(Platform.getObject(originObj, offset)));
       }
     }
     return newObj;

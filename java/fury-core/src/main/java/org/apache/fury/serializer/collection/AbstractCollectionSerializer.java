@@ -65,7 +65,8 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     elementClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
   }
 
-  public AbstractCollectionSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook, boolean immutable) {
+  public AbstractCollectionSerializer(
+      Fury fury, Class<T> cls, boolean supportCodegenHook, boolean immutable) {
     super(fury, cls, immutable);
     this.supportCodegenHook = supportCodegenHook;
     elementClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
