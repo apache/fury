@@ -17,8 +17,21 @@
 
 import numpy as np
 
-from pyfury.meta.encoding import Encoding, Short_MAX_VALUE
-from pyfury.utils.preconditions import Preconditions
+
+from enum import Enum
+
+
+# Defines the types of supported encodings for MetaStrings.
+class Encoding(Enum):
+    UTF_8 = 0x00
+    LOWER_SPECIAL = 0x01
+    LOWER_UPPER_DIGIT_SPECIAL = 0x02
+    FIRST_TO_LOWER_SPECIAL = 0x03
+    ALL_TO_LOWER_SPECIAL = 0x04
+
+
+# SHORT_MAX_VALUE is used to check whether the length of the value is valid.
+Short_MAX_VALUE = 32767
 
 
 class MetaString:
@@ -161,10 +174,12 @@ class MetaStringEncoder:
         self.special_char2 = special_char2
 
     def encode(self, input_string):
-        Preconditions.check_argument(
-            len(input_string) < Short_MAX_VALUE,
-            "Long meta string than 32767 is not allowed",
-        )
+
+        # Long meta string than 32767 is not allowed.
+        assert (
+            len(input_string) < Short_MAX_VALUE
+        ), "Long meta string than 32767 is not allowed."
+
         if not input_string:
             return MetaString(
                 input_string,
@@ -179,10 +194,12 @@ class MetaStringEncoder:
         return self.encode_with_encoding(input_string, encoding)
 
     def encode_with_encoding(self, input_string, encoding):
-        Preconditions.check_argument(
-            len(input_string) < Short_MAX_VALUE,
-            "Long meta string than 32767 is not allowed",
-        )
+
+        # Long meta string than 32767 is not allowed.
+        assert (
+            len(input_string) < Short_MAX_VALUE
+        ), "Long meta string than 32767 is not allowed."
+
         if not input_string:
             return MetaString(
                 input_string,
