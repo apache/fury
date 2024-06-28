@@ -362,7 +362,7 @@ public class CollectionSerializers {
 
     @Override
     public List<?> copy(List<?> originCollection) {
-      return Collections.singletonList(originCollection);
+      return Collections.singletonList(fury.copy(originCollection.get(0)));
     }
 
     @Override
@@ -401,7 +401,7 @@ public class CollectionSerializers {
 
     @Override
     public Set<?> copy(Set<?> originCollection) {
-      return Collections.singleton(originCollection);
+      return Collections.singleton(fury.copy(originCollection.iterator().next()));
     }
 
     @Override

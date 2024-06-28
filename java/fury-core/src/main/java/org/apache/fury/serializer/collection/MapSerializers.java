@@ -221,7 +221,7 @@ public class MapSerializers {
     @Override
     public Map<?, ?> copy(Map<?, ?> originMap) {
       Entry<?, ?> entry = originMap.entrySet().iterator().next();
-      return Collections.singletonMap(entry.getKey(), entry.getValue());
+      return Collections.singletonMap(fury.copy(entry.getKey()), fury.copy(entry.getValue()));
     }
 
     @Override
