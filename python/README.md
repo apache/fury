@@ -2,8 +2,6 @@
 
 Fury is a blazingly-fast multi-language serialization framework powered by just-in-time compilation and zero-copy.
 
-# How to build and test fury
-
 ## Build Fury Python
 
 ```bash
