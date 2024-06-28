@@ -24,7 +24,6 @@ import java.util.HashSet;
 import org.apache.fury.collection.Collections;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.MetaString.Encoding;
-import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 
@@ -59,10 +58,7 @@ public class MetaStringEncoder {
     if (input.isEmpty()) {
       return new MetaString(input, Encoding.UTF_8, specialChar1, specialChar2, new byte[0]);
     }
-    if (!StringUtils.isLatin(
-        input.toCharArray(),
-        Platform.CHAR_ARRAY_OFFSET,
-        StringSerializer.MULTI_CHARS_NON_LATIN_MASK)) {
+    if (!StringUtils.isLatin(input.toCharArray(), Platform.CHAR_ARRAY_OFFSET)) {
       return new MetaString(
           input,
           Encoding.UTF_8,
@@ -85,10 +81,7 @@ public class MetaStringEncoder {
     Preconditions.checkArgument(
         input.length() < Short.MAX_VALUE, "Long meta string than 32767 is not allowed");
     if (encoding != Encoding.UTF_8
-        && !StringUtils.isLatin(
-            input.toCharArray(),
-            Platform.CHAR_ARRAY_OFFSET,
-            StringSerializer.MULTI_CHARS_NON_LATIN_MASK)) {
+        && !StringUtils.isLatin(input.toCharArray(), Platform.CHAR_ARRAY_OFFSET)) {
       throw new IllegalArgumentException("Non-ASCII characters in meta string are not allowed");
     }
     if (input.isEmpty()) {

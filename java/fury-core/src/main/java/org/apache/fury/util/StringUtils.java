@@ -25,9 +25,24 @@ import java.util.Random;
 import org.apache.fury.memory.Platform;
 
 public class StringUtils {
+  // A long mask used to clear all-higher bits of char in a super-word way.
+  public static final long MULTI_CHARS_NON_LATIN_MASK;
+
   private static final char[] BASE16_CHARS2 = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
   };
+
+  static {
+    if (Platform.IS_LITTLE_ENDIAN) {
+      // latin chars will be 0xXX,0x00;0xXX,0x00 in byte order;
+      // Using 0x00,0xff(0xff00) to clear latin bits.
+      MULTI_CHARS_NON_LATIN_MASK = 0xff00ff00ff00ff00L;
+    } else {
+      // latin chars will be 0x00,0xXX;0x00,0xXX in byte order;
+      // Using 0x00,0xff(0x00ff) to clear latin bits.
+      MULTI_CHARS_NON_LATIN_MASK = 0x00ff00ff00ff00ffL;
+    }
+  }
 
   /** Converts a bytes array into a hexadecimal string. */
   public static String encodeHexString(final byte[] data) {
@@ -251,7 +266,7 @@ public class StringUtils {
     return builder.toString();
   }
 
-  public static boolean isLatin(char[] chars, int charArrayOffset, long multiCharsNonLatinMask) {
+  public static boolean isLatin(char[] chars, int charArrayOffset) {
     int numChars = chars.length;
     int vectorizedLen = numChars >> 2;
     int vectorizedChars = vectorizedLen << 2;
@@ -261,7 +276,7 @@ public class StringUtils {
       // check 4 chars in a vectorized way, 4 times faster than scalar check loop.
       // See benchmark in CompressStringSuite.latinSuperWordCheck.
       long multiChars = Platform.getLong(chars, offset);
-      if ((multiChars & multiCharsNonLatinMask) != 0) {
+      if ((multiChars & MULTI_CHARS_NON_LATIN_MASK) != 0) {
         isLatin = false;
         break;
       }
