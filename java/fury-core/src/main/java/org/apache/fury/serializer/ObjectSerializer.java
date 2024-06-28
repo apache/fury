@@ -236,6 +236,7 @@ public final class ObjectSerializer<T> extends Serializer<T> {
       return originObj;
     }
     T newObj = newBean(constructor, type);
+    fury.copyReference(newObj);
     List<FieldInfo> fieldsList = classResolver.getFieldResolver(type).getAllFieldsList();
     for (FieldInfo info : fieldsList) {
       FieldAccessor fieldAccessor = info.getFieldAccessor();
@@ -265,10 +266,10 @@ public final class ObjectSerializer<T> extends Serializer<T> {
         case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
           Platform.putBoolean(newObj, offset, Platform.getBoolean(originObj, offset));
           break;
-        default: Platform.putObject(newObj, offset, Platform.getObject(originObj, offset));
+        default: Platform.putObject(newObj, offset, fury.copy(Platform.getObject(originObj, offset)));
       }
     }
-    return originObj;
+    return newObj;
   }
 
   private void writeFinalFields(
