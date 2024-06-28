@@ -113,7 +113,7 @@ def test_encode_empty_string():
 
 def test_encode_characters_outside_of_lower_special():
     encoder = MetaStringEncoder("_", "$")
-    decoder = MetaStringDecoder("_", "$")
+
     test_string = "abcdefABCDEF1234!@#"
     meta_string = encoder.encode(test_string)
     assert meta_string.encoding == Encoding.UTF_8
@@ -151,7 +151,7 @@ def test_utf8_encoding():
 
 def test_strip_last_char():
     encoder = MetaStringEncoder("_", "$")
-    decoder = MetaStringDecoder("_", "$")
+
     test_string = "abc"  # encoded as 1|00000|00, 001|00010, exactly two bytes
     encoded_meta_string = encoder.encode(test_string)
     assert not encoded_meta_string.strip_last_char
@@ -173,7 +173,7 @@ def test_empty_string():
 
 def test_ascii_encoding():
     encoder = MetaStringEncoder("_", "$")
-    decoder = MetaStringDecoder("_", "$")
+
     test_string = "asciiOnly"
     encoded_meta_string = encoder.encode(test_string)
     assert encoded_meta_string.encoding != Encoding.UTF_8
@@ -182,7 +182,7 @@ def test_ascii_encoding():
 
 def test_non_ascii_encoding():
     encoder = MetaStringEncoder("_", "$")
-    decoder = MetaStringDecoder("_", "$")
+
     test_string = "こんにちは"  # Non-ASCII string
     encoded_meta_string = encoder.encode(test_string)
     assert encoded_meta_string.encoding == Encoding.UTF_8
@@ -190,7 +190,7 @@ def test_non_ascii_encoding():
 
 def test_non_ascii_encoding_and_non_utf8():
     encoder = MetaStringEncoder("_", "$")
-    decoder = MetaStringDecoder("_", "$")
+
     non_ascii_string = "こんにちは"  # Non-ASCII string
 
     with pytest.raises(
