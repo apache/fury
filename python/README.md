@@ -27,7 +27,9 @@ pytest -v -s .
 cd python
 # install dependencies fro styling
 pip install black==22.1.0 flake8==3.9.1 flake8-quotes flake8-bugbear click==8.0.2
-# format python code
+# flake8 pyfury: prompts for code to be formatted, but not formatted
+flake8 pyfury
+# black pyfury: format python code
 black pyfury
 ```
 
