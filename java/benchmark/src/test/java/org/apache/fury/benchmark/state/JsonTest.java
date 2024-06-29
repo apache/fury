@@ -20,23 +20,44 @@
 package org.apache.fury.benchmark.state;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import java.util.List;
 import org.apache.fury.Fury;
+import org.apache.fury.collection.Collections;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class JsonTest {
   public static class DemoResponse {
     private JSONObject json;
+    private List<JSONObject> objects;
 
     public DemoResponse(JSONObject json) {
       this.json = json;
+      objects = Collections.ofArrayList(json);
     }
   }
 
-  @Test
-  public void testSerializeJson() {
+  @DataProvider
+  public static Object[][] config() {
+    return Sets.cartesianProduct(
+            ImmutableSet.of(true, false), // referenceTracking
+            ImmutableSet.of(true, false), // compatible mode
+            ImmutableSet.of(true, false), // scoped meta share mode
+            ImmutableSet.of(true, false) // fury enable codegen
+            )
+        .stream()
+        .map(List::toArray)
+        .toArray(Object[][]::new);
+  }
+
+  @Test(dataProvider = "config")
+  public void testSerializeJson(
+      boolean trackingRef, boolean compatible, boolean scoped, boolean codegen) {
     // For issue: https://github.com/apache/fury/issues/1604
     JSONObject jsonObject = new JSONObject();
     jsonObject.put("k1", "v1");
@@ -46,12 +67,17 @@ public class JsonTest {
         Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .withRefTracking(true)
+            .withRefTracking(trackingRef)
+            .withCompatibleMode(
+                compatible ? CompatibleMode.COMPATIBLE : CompatibleMode.SCHEMA_CONSISTENT)
+            .withScopedMetaShare(scoped)
+            .withCodegen(codegen)
             .registerGuavaTypes(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
     byte[] serialized = fury.serialize(resp);
     DemoResponse o = (DemoResponse) fury.deserialize(serialized);
     Assert.assertEquals(o.json, jsonObject);
+    Assert.assertEquals(o.objects, Collections.ofArrayList(jsonObject));
   }
 }

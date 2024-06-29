@@ -970,7 +970,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             jitWriteMap(buffer, map, serializer, typeRef),
             new Invoke(serializer, "write", buffer, map));
     if (generateNewMethod) {
-      return invokeGenerated(ctx, ofHashSet(buffer, map), write, "writeMap", false);
+      return invokeGenerated(ctx, ofHashSet(buffer, map, serializer), write, "writeMap", false);
     }
     return write;
   }
