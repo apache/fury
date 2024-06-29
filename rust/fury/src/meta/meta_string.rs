@@ -15,8 +15,38 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use super::encoding::Encoding;
-use super::error::Error;
+#[derive(Debug, PartialEq)]
+pub enum Encoding {
+    Utf8 = 0x00,
+    LowerSpecial = 0x01,
+    LowerUpperDigitSpecial = 0x02,
+    FirstToLowerSpecial = 0x03,
+    AllToLowerSpecial = 0x04,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("encoded_data cannot be empty")]
+    EncodedDataEmpty,
+
+    #[error("Long meta string than 32767 is not allowed")]
+    LengthExceed,
+
+    #[error("Non-ASCII characters in meta string are not allowed")]
+    OnlyAllowASCII,
+
+    #[error("Unsupported character for LOWER_SPECIAL encoding: {ch:?}")]
+    UnsupportedLowerSpecialCharacter { ch: char },
+
+    #[error("Unsupported character for LOWER_UPPER_DIGIT_SPECIAL encoding: {ch:?}")]
+    UnsupportedLowerUpperDigitSpecialCharacter { ch: char },
+
+    #[error("Invalid character value for LOWER_SPECIAL decoding: {value:?}")]
+    InvalidLowerSpecialValue { value: u8 },
+
+    #[error("Invalid character value for LOWER_UPPER_DIGIT_SPECIAL decoding: {value:?}")]
+    InvalidLowerUpperDigitSpecialValue { value: u8 },
+}
 
 #[derive(Debug, PartialEq)]
 pub struct MetaString {
