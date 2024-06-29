@@ -26,7 +26,7 @@ import org.apache.fury.memory.Platform;
 
 public class StringUtils {
   // A long mask used to clear all-higher bits of char in a super-word way.
-  public static final long MULTI_CHARS_NON_LATIN_MASK;
+  private static final long MULTI_CHARS_NON_LATIN_MASK;
 
   private static final char[] BASE16_CHARS2 = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
