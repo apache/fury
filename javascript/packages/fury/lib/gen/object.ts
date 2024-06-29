@@ -25,6 +25,18 @@ import { fromString } from "../platformBuffer";
 import { CodegenRegistry } from "./router";
 import { BaseSerializerGenerator, RefState } from "./serializer";
 import SerializerResolver from "../classResolver";
+import { MetaString } from "../meta/MetaString";
+
+// Function to compute meta information using MetaString
+const computeMetaInformation = (description: any) => {
+  const metaInfo = JSON.stringify(description);
+  return MetaString.encode(metaInfo);
+};
+
+// Function to decode meta information using MetaString
+const decodeMetaInformation = (encodedMetaInfo: Uint8Array) => {
+  return MetaString.decode(encodedMetaInfo);
+};
 
 function computeFieldHash(hash: number, id: number): number {
   let newHash = (hash) * 31 + (id);
@@ -69,9 +81,12 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   writeStmt(accessor: string): string {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
+    const metaInformation = computeMetaInformation(this.description);
+
 
     return `
             ${this.builder.writer.int32(expectHash)};
+            ${this.builder.writer.buffer(metaInformation)};
             ${Object.entries(options.props).sort().map(([key, inner]) => {
             const InnerGeneratorClass = CodegenRegistry.get(inner.type);
             if (!InnerGeneratorClass) {
@@ -88,6 +103,10 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
     const result = this.scope.uniqueName("result");
+    const encodedMetaInformation = computeMetaInformation(this.description);
+    const metaInformation = decodeMetaInformation(encodedMetaInformation);
+    console.log(metaInformation)
+    
     return `
         if (${this.builder.reader.int32()} !== ${expectHash}) {
             throw new Error("validate hash failed: ${this.safeTag()}. expect ${expectHash}");
