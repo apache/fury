@@ -170,7 +170,9 @@ impl MetaStringEncoder {
         input: &str,
         encoding: Encoding,
     ) -> Result<MetaString, Error> {
-        if input.len() >= std::i16::MAX as usize {
+        // equal to "std::i16::MAX"
+        const SHORT_MAX_VALUE: usize = 32767;
+        if input.len() >= SHORT_MAX_VALUE {
             return Err(Error::LengthExceed);
         }
         if encoding != Encoding::Utf8 && !self.is_latin(input) {
