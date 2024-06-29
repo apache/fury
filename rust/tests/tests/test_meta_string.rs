@@ -21,7 +21,7 @@ use fury::{Encoding, MetaStringDecoder, MetaStringEncoder};
 
 #[test]
 fn test_encode_meta_string_lower_special() {
-    let encoder = MetaStringEncoder::new('_', '$');
+    let encoder = MetaStringEncoder::new('_', '.');
     let bytes1 = encoder.encode_lower_special("abc_def").unwrap();
     assert_eq!(bytes1.len(), 5);
     let bytes2 = encoder
@@ -32,14 +32,14 @@ fn test_encode_meta_string_lower_special() {
     let bytes3 = encoder.encode("MediaContent").unwrap().bytes;
     assert_eq!(bytes3.len(), 9);
     // 验证解码
-    let decoder = MetaStringDecoder::new('_', '$');
+    let decoder = MetaStringDecoder::new('_', '.');
     assert_eq!(
         decoder.decode(&bytes1, Encoding::LowerSpecial).unwrap(),
         "abc_def"
     );
     for i in 0..128 {
         let origin_string: String = iter::repeat_with(|| {
-            let char_a = 'a' as u8;
+            let char_a = b'a';
             ((char_a + i as u8) % 26 + char_a) as char
         })
         .take(i)
@@ -95,7 +95,7 @@ fn test_encode_meta_string_lower_upper_digit_special() {
 
 #[test]
 fn test_meta_string() {
-    let special_chars_combinations = [('.', '_'), ('.', '$'), ('_', '$')];
+    let special_chars_combinations = [('.', '_')];
     for (special_char1, special_char2) in special_chars_combinations {
         let encoder = MetaStringEncoder::new(special_char1, special_char2);
 
@@ -119,8 +119,8 @@ fn test_meta_string() {
 
 #[test]
 fn test_encode_empty_string() {
-    let encoder = MetaStringEncoder::new('_', '$');
-    let decoder = MetaStringDecoder::new('_', '$');
+    let encoder = MetaStringEncoder::new('_', '.');
+    let decoder = MetaStringDecoder::new('_', '.');
     for encoding in [
         Encoding::LowerSpecial,
         Encoding::LowerUpperDigitSpecial,
@@ -147,12 +147,11 @@ fn test_encode_characters_outside_of_lower_special() {
 
 #[test]
 fn test_all_to_upper_special_encoding() {
-    let encoder = MetaStringEncoder::new('_', '$');
-    let decoder = MetaStringDecoder::new('_', '$');
+    let encoder = MetaStringEncoder::new('_', '.');
+    let decoder = MetaStringDecoder::new('_', '.');
     let test_string = "ABC_DEF";
     let meta_string = encoder.encode(test_string).unwrap();
     assert_eq!(meta_string.encoding, Encoding::LowerUpperDigitSpecial);
-    println!("{:#?}", meta_string.bytes);
     let decoded_string = decoder
         .decode(&meta_string.bytes, meta_string.encoding)
         .unwrap();
@@ -161,8 +160,8 @@ fn test_all_to_upper_special_encoding() {
 
 #[test]
 fn test_first_to_lower_special_encoding() {
-    let encoder = MetaStringEncoder::new('_', '$');
-    let decoder = MetaStringDecoder::new('_', '$');
+    let encoder = MetaStringEncoder::new('_', '.');
+    let decoder = MetaStringDecoder::new('_', '.');
     let test_string = "Aabcdef";
     let meta_string = encoder.encode(test_string).unwrap();
     assert_eq!(meta_string.encoding, Encoding::FirstToLowerSpecial);
@@ -174,12 +173,11 @@ fn test_first_to_lower_special_encoding() {
 
 #[test]
 fn test_utf8_encoding() {
-    let encoder = MetaStringEncoder::new('_', '$');
+    let encoder = MetaStringEncoder::new('_', '.');
     let test_string = "你好，世界";
     let meta_string = encoder.encode(test_string).unwrap();
     assert_eq!(meta_string.encoding, Encoding::Utf8);
-    println!("{:#?}", meta_string.bytes);
-    let decoder = MetaStringDecoder::new('_', '$');
+    let decoder = MetaStringDecoder::new('_', '.');
     let decoded_string = decoder
         .decode(&meta_string.bytes, meta_string.encoding)
         .unwrap();
@@ -188,14 +186,14 @@ fn test_utf8_encoding() {
 
 #[test]
 fn test_strip_last_char() {
-    let encoder = MetaStringEncoder::new('_', '$');
+    let encoder = MetaStringEncoder::new('_', '.');
     let test_string = "abc";
     let encoded_meta_string = encoder.encode(test_string).unwrap();
-    assert_eq!(encoded_meta_string.strip_last_char, false);
+    assert!(!encoded_meta_string.strip_last_char);
 
     let test_string = "abcde";
     let encoded_meta_string = encoder.encode(test_string).unwrap();
-    assert_eq!(encoded_meta_string.strip_last_char, true);
+    assert!(encoded_meta_string.strip_last_char);
 }
 
 #[test]
