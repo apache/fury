@@ -17,7 +17,7 @@
  * under the License.
  */
 
-class MetaString {
+export class MetaString {
   // Encode function that handles all Unicode characters
   static encode(str: string): Uint8Array {
     const encoder = new TextEncoder();
@@ -30,9 +30,3 @@ class MetaString {
     return decoder.decode(bytes);
   }
 }
-
-// Example usage
-const encoded = MetaString.encode("$helloWorld_123 👌");
-console.log(encoded);
-const decoded = MetaString.decode(encoded);
-console.log(decoded); // Output: "$helloWorld_123 👌"
