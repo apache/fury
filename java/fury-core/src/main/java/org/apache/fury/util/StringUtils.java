@@ -266,13 +266,13 @@ public class StringUtils {
     return builder.toString();
   }
 
-  public static boolean isLatin(char[] chars, int charArrayOffset) {
+  public static boolean isLatin(char[] chars) {
     int numChars = chars.length;
     int vectorizedLen = numChars >> 2;
     int vectorizedChars = vectorizedLen << 2;
-    int endOffset = charArrayOffset + (vectorizedChars << 1);
+    int endOffset = Platform.CHAR_ARRAY_OFFSET + (vectorizedChars << 1);
     boolean isLatin = true;
-    for (int offset = charArrayOffset; offset < endOffset; offset += 8) {
+    for (int offset = Platform.CHAR_ARRAY_OFFSET; offset < endOffset; offset += 8) {
       // check 4 chars in a vectorized way, 4 times faster than scalar check loop.
       // See benchmark in CompressStringSuite.latinSuperWordCheck.
       long multiChars = Platform.getLong(chars, offset);

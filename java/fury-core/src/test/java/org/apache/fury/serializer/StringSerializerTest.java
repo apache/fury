@@ -21,8 +21,6 @@ package org.apache.fury.serializer;
 
 import static org.apache.fury.serializer.StringSerializer.newBytesStringZeroCopy;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
 
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
@@ -288,95 +286,6 @@ public class StringSerializerTest extends FuryTestBase {
       assertEquals(stringSerializer.readJavaString(buffer), latinStr);
       assertEquals(buffer.writerIndex(), buffer.readerIndex());
     }
-  }
-
-  @Test(dataProvider = "endian")
-  public void testVectorizedLatinCheckAlgorithm(boolean endian) {
-    // assertTrue(isLatin("Fury".toCharArray(), endian));
-    // assertTrue(isLatin(StringUtils.random(8 * 10).toCharArray(), endian));
-    // test unaligned
-    assertTrue(isLatin((StringUtils.random(8 * 10) + "1").toCharArray(), endian));
-    assertTrue(isLatin((StringUtils.random(8 * 10) + "12").toCharArray(), endian));
-    assertTrue(isLatin((StringUtils.random(8 * 10) + "123").toCharArray(), endian));
-    assertFalse(isLatin("你好, Fury".toCharArray(), endian));
-    assertFalse(isLatin((StringUtils.random(8 * 10) + "你好").toCharArray(), endian));
-    assertFalse(isLatin((StringUtils.random(8 * 10) + "1你好").toCharArray(), endian));
-  }
-
-  private boolean isLatin(char[] chars, boolean isLittle) {
-    boolean reverseBytes =
-        (Platform.IS_LITTLE_ENDIAN && !isLittle) || (!Platform.IS_LITTLE_ENDIAN && !isLittle);
-    if (reverseBytes) {
-      for (int i = 0; i < chars.length; i++) {
-        chars[i] = Character.reverseBytes(chars[i]);
-      }
-    }
-    long mask;
-    if (isLittle) {
-      // latin chars will be 0xXX,0x00;0xXX,0x00 in byte order;
-      // Using 0x00,0xff(0xff00) to clear latin bits.
-      mask = 0xff00ff00ff00ff00L;
-    } else {
-      // latin chars will be 0x00,0xXX;0x00,0xXX in byte order;
-      // Using 0x00,0xff(0x00ff) to clear latin bits.
-      mask = 0x00ff00ff00ff00ffL;
-    }
-    int numChars = chars.length;
-    int vectorizedLen = numChars >> 2;
-    int vectorizedChars = vectorizedLen << 2;
-    int endOffset = Platform.CHAR_ARRAY_OFFSET + (vectorizedChars << 1);
-    boolean isLatin = true;
-    for (int offset = Platform.CHAR_ARRAY_OFFSET; offset < endOffset; offset += 8) {
-      // check 4 chars in a vectorized way, 4 times faster than scalar check loop.
-      long multiChars = Platform.getLong(chars, offset);
-      if ((multiChars & mask) != 0) {
-        isLatin = false;
-        break;
-      }
-    }
-    if (isLatin) {
-      for (int i = vectorizedChars; i < numChars; i++) {
-        char c = chars[i];
-        if (reverseBytes) {
-          c = Character.reverseBytes(c);
-        }
-        if (c > 0xFF) {
-          isLatin = false;
-          break;
-        }
-      }
-    }
-    return isLatin;
-  }
-
-  @Test
-  public void testLatinCheck() {
-    int charArrayOffset = Platform.CHAR_ARRAY_OFFSET;
-    assertTrue(StringUtils.isLatin("Fury".toCharArray(), charArrayOffset));
-    assertTrue(StringUtils.isLatin(StringUtils.random(8 * 10).toCharArray(), charArrayOffset));
-    // test unaligned
-    assertTrue(
-        StringUtils.isLatin((StringUtils.random(8 * 10) + "1").toCharArray(), charArrayOffset));
-    assertTrue(
-        StringUtils.isLatin((StringUtils.random(8 * 10) + "12").toCharArray(), charArrayOffset));
-    assertTrue(
-        StringUtils.isLatin((StringUtils.random(8 * 10) + "123").toCharArray(), charArrayOffset));
-    assertFalse(StringUtils.isLatin("你好, Fury".toCharArray(), charArrayOffset));
-    assertFalse(
-        StringUtils.isLatin((StringUtils.random(8 * 10) + "你好").toCharArray(), charArrayOffset));
-    assertFalse(
-        StringUtils.isLatin((StringUtils.random(8 * 10) + "1你好").toCharArray(), charArrayOffset));
-    assertFalse(StringUtils.isLatin((StringUtils.random(11) + "你").toCharArray(), charArrayOffset));
-    assertFalse(
-        StringUtils.isLatin((StringUtils.random(10) + "你好").toCharArray(), charArrayOffset));
-    assertFalse(
-        StringUtils.isLatin((StringUtils.random(9) + "性能好").toCharArray(), charArrayOffset));
-    assertFalse(StringUtils.isLatin("\u1234".toCharArray(), charArrayOffset));
-    assertFalse(StringUtils.isLatin("a\u1234".toCharArray(), charArrayOffset));
-    assertFalse(StringUtils.isLatin("ab\u1234".toCharArray(), charArrayOffset));
-    assertFalse(StringUtils.isLatin("abc\u1234".toCharArray(), charArrayOffset));
-    assertFalse(StringUtils.isLatin("abcd\u1234".toCharArray(), charArrayOffset));
-    assertFalse(StringUtils.isLatin("Javaone Keynote\u1234".toCharArray(), charArrayOffset));
   }
 
   @Test

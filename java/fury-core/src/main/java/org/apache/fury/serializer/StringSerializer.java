@@ -168,7 +168,7 @@ public final class StringSerializer extends Serializer<String> {
   // Invoked by jit
   public void writeCharsStringCompressed(MemoryBuffer buffer, String value) {
     final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    if (StringUtils.isLatin(chars, Platform.CHAR_ARRAY_OFFSET)) {
+    if (StringUtils.isLatin(chars)) {
       writeCharsLatin(buffer, chars, chars.length);
     } else {
       writeCharsUTF16(buffer, chars, chars.length);
@@ -278,7 +278,7 @@ public final class StringSerializer extends Serializer<String> {
       assert STRING_VALUE_FIELD_IS_CHARS;
       final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
       if (compressString) {
-        if (StringUtils.isLatin(chars, Platform.CHAR_ARRAY_OFFSET)) {
+        if (StringUtils.isLatin(chars)) {
           writeCharsLatin(buffer, chars, chars.length);
         } else {
           writeCharsUTF16(buffer, chars, chars.length);

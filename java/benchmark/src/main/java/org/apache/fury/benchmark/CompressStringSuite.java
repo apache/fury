@@ -102,7 +102,7 @@ public class CompressStringSuite {
 
   @Benchmark
   public Object latinSuperWordCheck() {
-      return StringUtils.isLatin(latinStrChars, Platform.CHAR_ARRAY_OFFSET);
+      return StringUtils.isLatin(latinStrChars);
   }
 
   public static void main(String[] args) throws Exception {
