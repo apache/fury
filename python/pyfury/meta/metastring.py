@@ -62,7 +62,6 @@ class MetaStringDecoder:
         return self.decode_with_encoding(encoded_data, encoding)
 
     def decode_with_encoding(self, encoded_data, encoding):
-
         if encoding == Encoding.LOWER_SPECIAL:
             return self._decode_lower_special(encoded_data)
         elif encoding == Encoding.LOWER_UPPER_DIGIT_SPECIAL:
