@@ -839,6 +839,9 @@ public class ClassResolver {
       } else if (ByteBuffer.class.isAssignableFrom(cls)) {
         return BufferSerializers.ByteBufferSerializer.class;
       }
+      if (shimDispatcher.contains(cls)) {
+        return shimDispatcher.getSerializer(cls).getClass();
+      }
       if (fury.getConfig().checkJdkClassSerializable()) {
         if (cls.getName().startsWith("java") && !(Serializable.class.isAssignableFrom(cls))) {
           throw new UnsupportedOperationException(
