@@ -20,6 +20,7 @@
 package org.apache.fury.serializer;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.IdentityHashMap;
 import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
@@ -106,6 +107,16 @@ public class ArraySerializers {
           }
         }
       }
+    }
+
+    @Override
+    public T[] copy(T[] originArray) {
+      int length = originArray.length;
+      Object[] newArray = newArray(length);
+      for (int i = 0; i < length; i++) {
+        newArray[i] = fury.copy(originArray[i]);
+      }
+      return (T[]) newArray;
     }
 
     @Override
@@ -263,6 +274,11 @@ public class ArraySerializers {
     }
 
     @Override
+    public boolean[] copy(boolean[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
+    }
+
+    @Override
     public boolean[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -299,6 +315,11 @@ public class ArraySerializers {
     }
 
     @Override
+    public byte[] copy(byte[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
+    }
+
+    @Override
     public byte[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -330,6 +351,11 @@ public class ArraySerializers {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
       }
+    }
+
+    @Override
+    public char[] copy(char[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -384,6 +410,11 @@ public class ArraySerializers {
     }
 
     @Override
+    public short[] copy(short[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
+    }
+
+    @Override
     public short[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -417,6 +448,11 @@ public class ArraySerializers {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
       }
+    }
+
+    @Override
+    public int[] copy(int[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -456,6 +492,11 @@ public class ArraySerializers {
     }
 
     @Override
+    public long[] copy(long[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
+    }
+
+    @Override
     public long[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -492,6 +533,11 @@ public class ArraySerializers {
     }
 
     @Override
+    public float[] copy(float[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
+    }
+
+    @Override
     public float[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -525,6 +571,11 @@ public class ArraySerializers {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
       }
+    }
+
+    @Override
+    public double[] copy(double[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -591,6 +642,13 @@ public class ArraySerializers {
           }
         }
       }
+    }
+
+    @Override
+    public String[] copy(String[] originArray) {
+      String[] newArray = new String[originArray.length];
+      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
+      return newArray;
     }
 
     @Override

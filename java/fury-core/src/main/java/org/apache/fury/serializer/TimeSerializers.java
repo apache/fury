@@ -46,7 +46,7 @@ import org.apache.fury.util.DateTimeUtils;
 
 /** Serializers for all time related types. */
 public class TimeSerializers {
-  public abstract static class TimeSerializer<T> extends Serializer<T> {
+  public abstract static class TimeSerializer<T> extends ImmutableSerializer<T> {
 
     public TimeSerializer(Fury fury, Class<T> type) {
       super(fury, type, !fury.getConfig().isTimeRefIgnored());

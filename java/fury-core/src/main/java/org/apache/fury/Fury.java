@@ -26,10 +26,12 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.builder.JITContext;
+import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Config;
 import org.apache.fury.config.FuryBuilder;
@@ -115,6 +117,10 @@ public final class Fury implements BaseFury {
   private Iterator<MemoryBuffer> outOfBandBuffers;
   private boolean peerOutOfBandEnabled;
   private int depth;
+  private int copyDepth;
+  private final boolean copyRefTracking;
+  private Object originObjRef;
+  private IdentityMap originToCopyMap;
 
   public Fury(FuryBuilder builder, ClassLoader classLoader) {
     // Avoid set classLoader in `FuryBuilder`, which won't be clear when
@@ -122,6 +128,7 @@ public final class Fury implements BaseFury {
     config = new Config(builder);
     this.language = config.getLanguage();
     this.refTracking = config.trackingRef();
+    this.copyRefTracking = config.copyTrackingRef();
     compressInt = config.compressInt();
     longEncoding = config.longEncoding();
     if (refTracking) {
@@ -280,6 +287,19 @@ public final class Fury implements BaseFury {
       if (StringUtils.isNotBlank(rawMessage)) {
         msg += ": " + rawMessage;
       }
+      StackOverflowError t1 = ExceptionUtils.trySetStackOverflowErrorMessage(e, msg);
+      if (t1 != null) {
+        return t1;
+      }
+    }
+    throw e;
+  }
+
+  private StackOverflowError processCopyStackOverflowError(StackOverflowError e) {
+    if (!copyRefTracking) {
+      String msg =
+          "Object may contain circular references, please enable ref tracking "
+              + "by `FuryBuilder#withCopyRefTracking(true)`";
       StackOverflowError t1 = ExceptionUtils.trySetStackOverflowErrorMessage(e, msg);
       if (t1 != null) {
         return t1;
@@ -1220,6 +1240,58 @@ public final class Fury implements BaseFury {
     return deserializeJavaObjectAndClass(buf);
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> T copy(T obj) {
+    if (Objects.isNull(obj)) {
+      return null;
+    }
+    try {
+      copyDepth++;
+      if (Objects.isNull(originToCopyMap)) {
+        originToCopyMap = new IdentityMap();
+      }
+      Object newObj = originToCopyMap.get(obj);
+      if (Objects.nonNull(newObj)) {
+        return (T) newObj;
+      }
+      if (copyRefTracking) {
+        originObjRef = obj;
+      }
+      T copy;
+      if (obj instanceof FuryCopyable) {
+        copy = (T) ((FuryCopyable<?>) obj).copy(this);
+      } else {
+        copy = (T) classResolver.getOrUpdateClassInfo(obj.getClass()).getSerializer().copy(obj);
+      }
+      if (Objects.nonNull(originObjRef)) {
+        copyReference(copy);
+      }
+      return copy;
+    } catch (StackOverflowError e) {
+      throw processCopyStackOverflowError(e);
+    } finally {
+      copyDepth--;
+      if (copyDepth == 0) {
+        resetCopy();
+      }
+    }
+  }
+
+  /**
+   * Record the mapping between the object currently being copied and the newly generated object
+   * after copying.
+   *
+   * @param obj the new object instance
+   */
+  @SuppressWarnings("unchecked")
+  public void copyReference(Object obj) {
+    if (copyDepth > 0 && Objects.nonNull(originObjRef) && Objects.nonNull(obj)) {
+      originToCopyMap.put(originObjRef, obj);
+      originObjRef = null;
+    }
+  }
+
   private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {
     MemoryBuffer buf = getBuffer();
     if (outputStream.getClass() == ByteArrayOutputStream.class) {
@@ -1257,6 +1329,7 @@ public final class Fury implements BaseFury {
     peerOutOfBandEnabled = false;
     bufferCallback = null;
     depth = 0;
+    resetCopy();
   }
 
   public void resetWrite() {
@@ -1277,6 +1350,11 @@ public final class Fury implements BaseFury {
     nativeObjects.clear();
     peerOutOfBandEnabled = false;
     depth = 0;
+  }
+
+  public void resetCopy() {
+    originToCopyMap.clear();
+    copyDepth = 0;
   }
 
   private void throwDepthSerializationException() {

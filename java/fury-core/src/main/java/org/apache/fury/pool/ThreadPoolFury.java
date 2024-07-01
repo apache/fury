@@ -267,6 +267,11 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   @Override
+  public <T> T copy(T obj) {
+    return execute(fury -> fury.copy(obj));
+  }
+
+  @Override
   public void setClassLoader(ClassLoader classLoader) {
     setClassLoader(classLoader, LoaderBinding.StagingType.SOFT_STAGING);
   }

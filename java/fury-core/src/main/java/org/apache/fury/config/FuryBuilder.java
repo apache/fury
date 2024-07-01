@@ -59,6 +59,7 @@ public final class FuryBuilder {
   boolean checkClassVersion = false;
   Language language = Language.JAVA;
   boolean trackingRef = false;
+  boolean copyTrackingRef = false;
   boolean basicTypesRefIgnored = true;
   boolean stringRefIgnored = true;
   boolean timeRefIgnored = true;
@@ -95,6 +96,12 @@ public final class FuryBuilder {
   /** Whether track shared or circular references. */
   public FuryBuilder withRefTracking(boolean trackingRef) {
     this.trackingRef = trackingRef;
+    return this;
+  }
+
+  /** Whether track {@link Fury#copy(Object)} circular references. */
+  public FuryBuilder withCopyRefTracking(boolean copyTrackingRef) {
+    this.copyTrackingRef = copyTrackingRef;
     return this;
   }
 

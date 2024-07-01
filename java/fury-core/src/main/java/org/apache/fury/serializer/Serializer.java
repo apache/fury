@@ -38,9 +38,18 @@ public abstract class Serializer<T> {
   protected final Class<T> type;
   protected final boolean isJava;
   protected final boolean needToWriteRef;
+  protected final boolean immutable;
 
   public void write(MemoryBuffer buffer, T value) {
     throw new UnsupportedOperationException();
+  }
+
+  public T copy(T value) {
+    if (isImmutable()) {
+      return value;
+    }
+    throw new UnsupportedOperationException(
+        String.format("Copy for %s is not supported", value.getClass()));
   }
 
   public T read(MemoryBuffer buffer) {
@@ -81,13 +90,27 @@ public abstract class Serializer<T> {
     } else {
       needToWriteRef = false;
     }
+    this.immutable = false;
   }
 
-  public Serializer(Fury fury, Class<T> type, boolean needToWriteRef) {
+  public Serializer(Fury fury, Class<T> type, boolean immutable) {
+    this.fury = fury;
+    this.type = type;
+    this.isJava = fury.getLanguage() == Language.JAVA;
+    if (fury.trackingRef()) {
+      needToWriteRef = !TypeUtils.isBoxed(TypeUtils.wrap(type)) || !fury.isBasicTypesRefIgnored();
+    } else {
+      needToWriteRef = false;
+    }
+    this.immutable = immutable;
+  }
+
+  public Serializer(Fury fury, Class<T> type, boolean needToWriteRef, boolean immutable) {
     this.fury = fury;
     this.type = type;
     this.isJava = fury.getLanguage() == Language.JAVA;
     this.needToWriteRef = needToWriteRef;
+    this.immutable = immutable;
   }
 
   public final boolean needToWriteRef() {
@@ -96,5 +119,9 @@ public abstract class Serializer<T> {
 
   public Class<T> getType() {
     return type;
+  }
+
+  public boolean isImmutable() {
+    return immutable;
   }
 }

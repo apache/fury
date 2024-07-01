@@ -17,32 +17,13 @@
  * under the License.
  */
 
-package org.apache.fury.serializer;
+package org.apache.fury;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import org.apache.fury.Fury;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.Platform;
-
-/** Serializer for {@link URL}. */
-// TODO(chaokunyang) ensure security to avoid dnslog detection.
-public final class URLSerializer extends ImmutableSerializer<URL> {
-
-  public URLSerializer(Fury fury, Class<URL> type) {
-    super(fury, type);
-  }
-
-  public void write(MemoryBuffer buffer, URL object) {
-    fury.writeString(buffer, object.toExternalForm());
-  }
-
-  public URL read(MemoryBuffer buffer) {
-    try {
-      return new URL(fury.readString(buffer));
-    } catch (MalformedURLException e) {
-      Platform.throwException(e);
-      throw new IllegalStateException("unreachable");
-    }
-  }
+/**
+ * Fury copy interface. Customize the copy method of the class
+ *
+ * @param <T> custom copy interface object
+ */
+public interface FuryCopyable<T> {
+  T copy(Fury fury);
 }
