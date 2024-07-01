@@ -96,7 +96,7 @@ mvn checkstyle:check
 ```bash
 cd python
 # install dependencies fro styling
-pip install black==22.1.0 flake8==3.9.1 flake8-quotes flake8-bugbear
+pip install black==22.1.0 flake8==3.9.1 flake8-quotes flake8-bugbear click==8.0.2
 # format python code
 black pyfury
 ```
