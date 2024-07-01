@@ -212,6 +212,7 @@ class BinaryWriterBuilder {
       // Handle Uint8Array input as needed
       return `${this.holder}.buffer(new Uint8Array(${v}))`;
     }
+  }
 
   float64(v: number | string) {
     return `${this.holder}.float64(${v})`;
