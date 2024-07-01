@@ -27,13 +27,12 @@ import { BaseSerializerGenerator, RefState } from "./serializer";
 import SerializerResolver from "../classResolver";
 import { MetaString } from "../meta/MetaString";
 
-// Function to compute meta information using MetaString
+// Ensure MetaString methods are correctly implemented
 const computeMetaInformation = (description: any) => {
   const metaInfo = JSON.stringify(description);
   return MetaString.encode(metaInfo);
 };
 
-// Function to decode meta information using MetaString
 const decodeMetaInformation = (encodedMetaInfo: Uint8Array) => {
   return MetaString.decode(encodedMetaInfo);
 };
@@ -83,20 +82,18 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const expectHash = computeStructHash(this.description);
     const metaInformation = computeMetaInformation(this.description);
 
-
     return `
-            ${this.builder.writer.int32(expectHash)};
-            ${this.builder.writer.buffer(metaInformation)};
-            ${Object.entries(options.props).sort().map(([key, inner]) => {
-            const InnerGeneratorClass = CodegenRegistry.get(inner.type);
-            if (!InnerGeneratorClass) {
-                throw new Error(`${inner.type} generator not exists`);
-            }
-            const innerGenerator = new InnerGeneratorClass(inner, this.builder, this.scope);
-            return innerGenerator.toWriteEmbed(`${accessor}${CodecBuilder.safePropAccessor(key)}`);
-        }).join(";\n")
-            }
-        `;
+      ${this.builder.writer.int32(expectHash)};
+      ${this.builder.writer.buffer(metaInformation)};
+      ${Object.entries(options.props).sort().map(([key, inner]) => {
+        const InnerGeneratorClass = CodegenRegistry.get(inner.type);
+        if (!InnerGeneratorClass) {
+            throw new Error(`${inner.type} generator not exists`);
+        }
+        const innerGenerator = new InnerGeneratorClass(inner, this.builder, this.scope);
+        return innerGenerator.toWriteEmbed(`${accessor}${CodecBuilder.safePropAccessor(key)}`);
+      }).join(";\n")}
+    `;
   }
 
   readStmt(accessor: (expr: string) => string, refState: RefState): string {
@@ -105,29 +102,30 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const result = this.scope.uniqueName("result");
     const encodedMetaInformation = computeMetaInformation(this.description);
     const metaInformation = decodeMetaInformation(encodedMetaInformation);
-    console.log(metaInformation)
-    
+
     return `
-        if (${this.builder.reader.int32()} !== ${expectHash}) {
-            throw new Error("validate hash failed: ${this.safeTag()}. expect ${expectHash}");
-        }
-        const ${result} = {
-            ${Object.entries(options.props).sort().map(([key]) => {
-            return `${CodecBuilder.safePropName(key)}: null`;
+      if (${this.builder.reader.int32()} !== ${expectHash}) {
+          throw new Error("validate hash failed: ${this.safeTag()}. expect ${expectHash}");
+      }
+      if (JSON.stringify(${this.builder.reader.buffer(metaInformation)}) !== JSON.stringify(${metaInformation})) {
+          throw new Error("validate meta information failed: ${this.safeTag()}. expect ${metaInformation}");
+      }
+      const ${result} = {
+        ${Object.entries(options.props).sort().map(([key]) => {
+          return `${CodecBuilder.safePropName(key)}: null`;
         }).join(",\n")}
-        };
-        ${this.maybeReference(result, refState)}
-        ${Object.entries(options.props).sort().map(([key, inner]) => {
-            const InnerGeneratorClass = CodegenRegistry.get(inner.type);
-            if (!InnerGeneratorClass) {
-                throw new Error(`${inner.type} generator not exists`);
-            }
-            const innerGenerator = new InnerGeneratorClass(inner, this.builder, this.scope);
-            return innerGenerator.toReadEmbed(expr => `${result}${CodecBuilder.safePropAccessor(key)} = ${expr}`);
-        }).join(";\n")
-            }
-        ${accessor(result)}
-         `;
+      };
+      ${this.maybeReference(result, refState)}
+      ${Object.entries(options.props).sort().map(([key, inner]) => {
+        const InnerGeneratorClass = CodegenRegistry.get(inner.type);
+        if (!InnerGeneratorClass) {
+          throw new Error(`${inner.type} generator not exists`);
+        }
+        const innerGenerator = new InnerGeneratorClass(inner, this.builder, this.scope);
+        return innerGenerator.toReadEmbed(expr => `${result}${CodecBuilder.safePropAccessor(key)} = ${expr}`);
+      }).join(";\n")}
+      ${accessor(result)}
+    `;
   }
 
   private safeTag() {
@@ -137,7 +135,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean, refState?: RefState): string {
     const name = this.scope.declare(
       "tag_ser",
-            `fury.classResolver.getSerializerByTag("${this.safeTag()}")`
+      `fury.classResolver.getSerializerByTag("${this.safeTag()}")`
     );
     if (!excludeHead) {
       return accessor(`${name}.read()`);
@@ -148,7 +146,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   toWriteEmbed(accessor: string, excludeHead?: boolean): string {
     const name = this.scope.declare(
       "tag_ser",
-            `fury.classResolver.getSerializerByTag("${this.safeTag()}")`
+      `fury.classResolver.getSerializerByTag("${this.safeTag()}")`
     );
     if (!excludeHead) {
       return `${name}.write(${accessor})`;
