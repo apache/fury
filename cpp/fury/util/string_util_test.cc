@@ -22,7 +22,7 @@
 #include <chrono>
 
 namespace fury {
-
+    // TEST efficiency
     TEST(StringUtilTest, TestIsLatinFunctions) {
     // Generate a unique test string once
     std::string testStr = generateRandomString(100000);
@@ -53,6 +53,33 @@ namespace fury {
     std::cout << "SSE2 Running Time: " << duration_sse2 << " ns" << std::endl;
     EXPECT_TRUE(result_sse2);
 
+}
+
+// TEST Logic
+TEST(StringUtilTest, TestIsLatinLogic) {
+// 使用AVX2指令集进行逻辑测试
+EXPECT_TRUE(isLatin_AVX2("Fury"));
+
+std::string randomStr = generateRandomString(80);
+EXPECT_TRUE(isLatin_AVX2(randomStr));
+
+// Test unaligned strings
+EXPECT_TRUE(isLatin_AVX2(randomStr + "1"));
+EXPECT_TRUE(isLatin_AVX2(randomStr + "12"));
+EXPECT_TRUE(isLatin_AVX2(randomStr + "123"));
+
+EXPECT_FALSE(isLatin_AVX2("你好, Fury"));
+EXPECT_FALSE(isLatin_AVX2(randomStr + "你好"));
+EXPECT_FALSE(isLatin_AVX2(randomStr + "1你好"));
+EXPECT_FALSE(isLatin_AVX2(generateRandomString(11) + "你"));
+EXPECT_FALSE(isLatin_AVX2(generateRandomString(10) + "你好"));
+EXPECT_FALSE(isLatin_AVX2(generateRandomString(9) + "性能好"));
+EXPECT_FALSE(isLatin_AVX2("\u1234"));
+EXPECT_FALSE(isLatin_AVX2("a\u1234"));
+EXPECT_FALSE(isLatin_AVX2("ab\u1234"));
+EXPECT_FALSE(isLatin_AVX2("abc\u1234"));
+EXPECT_FALSE(isLatin_AVX2("abcd\u1234"));
+EXPECT_FALSE(isLatin_AVX2("Javaone Keynote\u1234"));
 }
 
 } // namespace fury
