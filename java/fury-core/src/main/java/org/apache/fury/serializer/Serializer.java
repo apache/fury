@@ -38,11 +38,13 @@ public abstract class Serializer<T> {
   protected final Class<T> type;
   protected final boolean isJava;
   protected final boolean needToWriteRef;
+
   /**
-   * Whether to enable circular reference of copy.
-   * Only for mutable objects, immutable objects just return itself.
+   * Whether to enable circular reference of copy. Only for mutable objects, immutable objects just
+   * return itself.
    */
   protected final boolean needToCopyRef;
+
   protected final boolean immutable;
 
   public void write(MemoryBuffer buffer, T value) {
