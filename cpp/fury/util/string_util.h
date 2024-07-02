@@ -23,9 +23,9 @@
 
 namespace fury {
 
-    bool isLatin_Baseline(const std::string& str);
-    bool isLatin_AVX2(const std::string& str);
-    bool isLatin_SSE2(const std::string& str);
-    std::string generateRandomString(size_t length);
+bool isLatin_Baseline(const std::string &str);
+bool isLatin_AVX2(const std::string &str);
+bool isLatin_SSE2(const std::string &str);
+std::string generateRandomString(size_t length);
 
-}
+} // namespace fury
