@@ -84,36 +84,6 @@ namespace fury {
         return true;
     }
 
-
-    alignas(32) const char latin_lookup[32] = {
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-    };
-
-    bool isLatin_AVX2_vpshufb(const std::string& str) {
-        const char* data = str.data();
-        size_t len = str.size();
-
-        __m256i latin_table = _mm256_load_si256(reinterpret_cast<const __m256i*>(latin_lookup));
-
-        size_t i = 0;
-        for (; i + 32 <= len; i += 32) {
-            __m256i chars = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(data + i));
-            __m256i result = _mm256_shuffle_epi8(latin_table, chars);
-            if (!_mm256_testz_si256(result, result)) {
-                return false;
-            }
-        }
-
-        for (; i < len; ++i) {
-            if (static_cast<unsigned char>(data[i]) >= 128) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     std::string generateRandomString(size_t length) {
         const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         std::default_random_engine rng(std::random_device{}());

@@ -53,13 +53,6 @@ namespace fury {
     std::cout << "SSE2 Running Time: " << duration_sse2 << " ns" << std::endl;
     EXPECT_TRUE(result_sse2);
 
-    //  AVX2_vpshufb
-    start_time = std::chrono::high_resolution_clock::now();
-    bool result_avx2_vpshufb = isLatin_AVX2_vpshufb(testStr);
-    end_time = std::chrono::high_resolution_clock::now();
-    auto duration_avx2_vpshufb = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
-    std::cout << "AVX2_vpshufb Running Time: " << duration_avx2_vpshufb << " ns" << std::endl;
-    EXPECT_TRUE(result_avx2_vpshufb);
 }
 
 } // namespace fury
