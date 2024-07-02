@@ -30,17 +30,17 @@ namespace fury {
 
 
     //  Baseline
-    start_time = std::chrono::high_resolution_clock::now();
+    auto start_time = std::chrono::high_resolution_clock::now();
     bool result_baseline = isLatin_Baseline(testStr);
-    end_time = std::chrono::high_resolution_clock::now();
+    auto end_time = std::chrono::high_resolution_clock::now();
     auto duration_baseline = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
     std::cout << "Baseline Running Time: " << duration_baseline << " ns" << std::endl;
     EXPECT_TRUE(result_baseline);
 
     //  AVX2
-    auto start_time = std::chrono::high_resolution_clock::now();
+     start_time = std::chrono::high_resolution_clock::now();
     bool result_avx2 = isLatin_AVX2(testStr);
-    auto end_time = std::chrono::high_resolution_clock::now();
+     end_time = std::chrono::high_resolution_clock::now();
     auto duration_avx2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
     std::cout << "AVX2 Running Time: " << duration_avx2 << " ns" << std::endl;
     EXPECT_TRUE(result_avx2);
