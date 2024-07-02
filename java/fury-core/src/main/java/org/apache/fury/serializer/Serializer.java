@@ -38,6 +38,11 @@ public abstract class Serializer<T> {
   protected final Class<T> type;
   protected final boolean isJava;
   protected final boolean needToWriteRef;
+  /**
+   * Whether to enable circular reference of copy.
+   * Only for mutable objects, immutable objects just return itself.
+   */
+  protected final boolean needToCopyRef;
   protected final boolean immutable;
 
   public void write(MemoryBuffer buffer, T value) {
@@ -90,6 +95,7 @@ public abstract class Serializer<T> {
     } else {
       needToWriteRef = false;
     }
+    this.needToCopyRef = fury.copyTrackingRef();
     this.immutable = false;
   }
 
@@ -102,6 +108,7 @@ public abstract class Serializer<T> {
     } else {
       needToWriteRef = false;
     }
+    this.needToCopyRef = fury.copyTrackingRef() && !immutable;
     this.immutable = immutable;
   }
 
@@ -110,11 +117,16 @@ public abstract class Serializer<T> {
     this.type = type;
     this.isJava = fury.getLanguage() == Language.JAVA;
     this.needToWriteRef = needToWriteRef;
+    this.needToCopyRef = fury.copyTrackingRef() && !immutable;
     this.immutable = immutable;
   }
 
   public final boolean needToWriteRef() {
     return needToWriteRef;
+  }
+
+  public final boolean needToCopyRef() {
+    return needToCopyRef;
   }
 
   public Class<T> getType() {

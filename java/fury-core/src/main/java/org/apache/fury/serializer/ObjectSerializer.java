@@ -234,8 +234,25 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     if (isRecord) {
       return originObj;
     }
-    T newObj = newBean(constructor, type);
-    fury.copyReference(newObj);
+    T newObj;
+    if (!needToCopyRef) {
+      newObj = newBean(constructor, type);
+      copyFields(originObj, newObj);
+      return newObj;
+    }
+    newObj = (T) fury.getCopyObject(originObj);
+    if (Objects.nonNull(newObj)) {
+      return newObj;
+    }
+    fury.incCopyDepth(1);
+    newObj = newBean(constructor, type);
+    fury.copyReference(originObj, newObj);
+    copyFields(originObj, newObj);
+    fury.incCopyDepth(-1);
+    return newObj;
+  }
+
+  private void copyFields(T originObj, T newObj) {
     List<FieldInfo> fieldsList = classResolver.getFieldResolver(type).getAllFieldsList();
     for (FieldInfo info : fieldsList) {
       FieldAccessor fieldAccessor = info.getFieldAccessor();
@@ -269,7 +286,6 @@ public final class ObjectSerializer<T> extends Serializer<T> {
           Platform.putObject(newObj, offset, fury.copy(Platform.getObject(originObj, offset)));
       }
     }
-    return newObj;
   }
 
   private void writeFinalFields(

@@ -149,8 +149,8 @@ public class MapSerializers {
     }
 
     @Override
-    public T copy(T originMap) {
-      Comparator comparator = originMap.comparator();
+    public Map newMap(Map originMap) {
+      Comparator comparator = ((SortedMap) originMap).comparator();
       Map map;
       if (Objects.equals(type, TreeMap.class)) {
         map = new TreeMap(comparator);
@@ -161,8 +161,7 @@ public class MapSerializers {
           throw new RuntimeException(e);
         }
       }
-      originMap.forEach((k, v) -> map.put(fury.copy(k), fury.copy(v)));
-      return (T) map;
+      return map;
     }
   }
 
@@ -299,12 +298,19 @@ public class MapSerializers {
     }
 
     @Override
-    public ConcurrentSkipListMap copy(ConcurrentSkipListMap originMap) {
-      Comparator comparator = originMap.comparator();
-      ConcurrentSkipListMap concurrentSkipListMap = new ConcurrentSkipListMap(comparator);
-      originMap.forEach(
-          (key, value) -> concurrentSkipListMap.put(fury.copy(key), fury.copy(value)));
-      return concurrentSkipListMap;
+    public Map newMap(Map originMap) {
+      Comparator comparator = ((ConcurrentSkipListMap) originMap).comparator();
+      Map map;
+      if (Objects.equals(type, ConcurrentSkipListMap.class)) {
+        map = new ConcurrentSkipListMap(comparator);
+      } else {
+        try {
+          map = (Map) constructor.invoke(comparator);
+        } catch (Throwable e) {
+          throw new RuntimeException(e);
+        }
+      }
+      return map;
     }
 
     @Override

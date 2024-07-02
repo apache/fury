@@ -729,6 +729,11 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
+  public Map newMap(Map map) {
+    numElements = map.size();
+    return newMap();
+  }
+
   /**
    * Map must have default constructor to be invoked by fury, otherwise created object can't be used
    * to adding elements. For example:

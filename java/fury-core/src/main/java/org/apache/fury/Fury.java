@@ -119,8 +119,7 @@ public final class Fury implements BaseFury {
   private int depth;
   private int copyDepth;
   private final boolean copyRefTracking;
-  private Object originObjRef;
-  private IdentityMap originToCopyMap;
+  private final IdentityMap<Object, Object> originToCopyMap;
 
   public Fury(FuryBuilder builder, ClassLoader classLoader) {
     // Avoid set classLoader in `FuryBuilder`, which won't be clear when
@@ -145,6 +144,7 @@ public final class Fury implements BaseFury {
     nativeObjects = new ArrayList<>();
     generics = new Generics(this);
     stringSerializer = new StringSerializer(this);
+    originToCopyMap = new IdentityMap<>();
     LOG.info("Created new fury {}", this);
   }
 
@@ -1247,32 +1247,15 @@ public final class Fury implements BaseFury {
       return null;
     }
     try {
-      copyDepth++;
-      if (Objects.isNull(originToCopyMap)) {
-        originToCopyMap = new IdentityMap();
-      }
-      Object newObj = originToCopyMap.get(obj);
-      if (Objects.nonNull(newObj)) {
-        return (T) newObj;
-      }
-      if (copyRefTracking) {
-        originObjRef = obj;
-      }
-      T copy;
       if (obj instanceof FuryCopyable) {
-        copy = (T) ((FuryCopyable<?>) obj).copy(this);
+        return (T) ((FuryCopyable<?>) obj).copy(this);
       } else {
-        copy = (T) classResolver.getOrUpdateClassInfo(obj.getClass()).getSerializer().copy(obj);
+        return (T) classResolver.getOrUpdateClassInfo(obj.getClass()).getSerializer().copy(obj);
       }
-      if (Objects.nonNull(originObjRef)) {
-        copyReference(copy);
-      }
-      return copy;
     } catch (StackOverflowError e) {
       throw processCopyStackOverflowError(e);
     } finally {
-      copyDepth--;
-      if (copyDepth == 0) {
+      if (copyRefTracking && copyDepth == 0) {
         resetCopy();
       }
     }
@@ -1282,14 +1265,20 @@ public final class Fury implements BaseFury {
    * Record the mapping between the object currently being copied and the newly generated object
    * after copying.
    *
-   * @param obj the new object instance
+   * @param originObj the origin object instance
+   * @param newObj the new object instance
    */
-  @SuppressWarnings("unchecked")
-  public void copyReference(Object obj) {
-    if (copyDepth > 0 && Objects.nonNull(originObjRef) && Objects.nonNull(obj)) {
-      originToCopyMap.put(originObjRef, obj);
-      originObjRef = null;
+  public void copyReference(Object originObj, Object newObj) {
+    if (Objects.nonNull(originObj) && Objects.nonNull(newObj)) {
+      originToCopyMap.put(originObj, newObj);
     }
+  }
+
+  public Object getCopyObject(Object originObj) {
+    if (Objects.isNull(originObj)) {
+      return null;
+    }
+    return originToCopyMap.get(originObj);
   }
 
   private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {
@@ -1417,6 +1406,10 @@ public final class Fury implements BaseFury {
     this.depth += diff;
   }
 
+  public void incCopyDepth(int diff) {
+    this.copyDepth += diff;
+  }
+
   // Invoked by jit
   public StringSerializer getStringSerializer() {
     return stringSerializer;
@@ -1432,6 +1425,10 @@ public final class Fury implements BaseFury {
 
   public boolean trackingRef() {
     return refTracking;
+  }
+
+  public boolean copyTrackingRef() {
+    return copyRefTracking;
   }
 
   public boolean isStringRefIgnored() {

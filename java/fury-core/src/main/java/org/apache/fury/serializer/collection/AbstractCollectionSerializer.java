@@ -514,6 +514,11 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     }
   }
 
+  public Collection newCollection(Collection collection) {
+    numElements = collection.size();
+    return newCollection();
+  }
+
   /**
    * Collection must have default constructor to be invoked by fury, otherwise created object can't
    * be used to adding elements. For example:

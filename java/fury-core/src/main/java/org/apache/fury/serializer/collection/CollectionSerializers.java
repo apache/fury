@@ -105,8 +105,29 @@ public class CollectionSerializers {
 
     @Override
     public List<?> copy(List<?> originCollection) {
-      Object[] elements = originCollection.stream().map(fury::copy).toArray();
-      return Arrays.asList(elements);
+      Object[] elements = new Object[originCollection.size()];
+      if (!needToCopyRef) {
+        copyElements(originCollection, elements);
+        return Arrays.asList(elements);
+      }
+      List<?> newCollection;
+      newCollection = (List<?>) fury.getCopyObject(originCollection);
+      if (Objects.nonNull(newCollection)) {
+        return newCollection;
+      }
+      fury.incCopyDepth(1);
+      newCollection = Arrays.asList(elements);
+      fury.copyReference(originCollection, newCollection);
+      copyElements(originCollection, elements);
+      fury.incCopyDepth(-1);
+      return newCollection;
+    }
+
+    private void copyElements(List<?> originCollection, Object[] elements) {
+      int size = originCollection.size();
+      for (int i = 0; i < size; i++) {
+        elements[i] = fury.copy(originCollection.get(i));
+      }
     }
 
     @Override
@@ -231,9 +252,9 @@ public class CollectionSerializers {
     }
 
     @Override
-    public T copy(T originCollection) {
+    public Collection newCollection(Collection originCollection) {
       Collection collection;
-      Comparator comparator = originCollection.comparator();
+      Comparator comparator = ((SortedSet) originCollection).comparator();
       if (Objects.equals(type, TreeSet.class)) {
         collection = new TreeSet(comparator);
       } else {
@@ -243,8 +264,7 @@ public class CollectionSerializers {
           throw new RuntimeException(e);
         }
       }
-      originCollection.forEach(element -> collection.add(fury.copy(element)));
-      return (T) collection;
+      return collection;
     }
   }
 
@@ -481,6 +501,16 @@ public class CollectionSerializers {
     }
 
     @Override
+    public Collection newCollection(Collection originCollection) {
+      Map<?, Boolean> map =
+          (Map<?, Boolean>) Platform.getObject(originCollection, MAP_FIELD_OFFSET);
+      AbstractMapSerializer mapSerializer =
+          (AbstractMapSerializer) fury.getClassResolver().getSerializer(map.getClass());
+      Map newMap = mapSerializer.newMap();
+      return Collections.newSetFromMap(newMap);
+    }
+
+    @Override
     public Collection onCollectionWrite(MemoryBuffer buffer, Set<?> value) {
       final Map<?, Boolean> map = (Map<?, Boolean>) Platform.getObject(value, MAP_FIELD_OFFSET);
       final ClassInfo classInfo = fury.getClassResolver().getClassInfo(map.getClass());
@@ -488,20 +518,6 @@ public class CollectionSerializers {
       // newMap will read num size first.
       buffer.writeVarUint32Small7(value.size());
       return value;
-    }
-
-    @Override
-    public Set<?> copy(Set<?> originCollection) {
-      Map<?, Boolean> map =
-          (Map<?, Boolean>) Platform.getObject(originCollection, MAP_FIELD_OFFSET);
-      AbstractMapSerializer mapSerializer =
-          (AbstractMapSerializer) fury.getClassResolver().getSerializer(map.getClass());
-      Map newMap = mapSerializer.newMap();
-      Set set = Collections.newSetFromMap(newMap);
-      for (Object element : originCollection) {
-        set.add(fury.copy(element));
-      }
-      return set;
     }
   }
 
@@ -522,13 +538,8 @@ public class CollectionSerializers {
     }
 
     @Override
-    public KeySetView copy(KeySetView originCollection) {
-      ConcurrentHashMap.KeySetView keySetView =
-          ConcurrentHashMap.newKeySet(originCollection.size());
-      for (Object element : originCollection) {
-        keySetView.add(fury.copy(element));
-      }
-      return keySetView;
+    public Collection newCollection(Collection collection) {
+      return ConcurrentHashMap.newKeySet(collection.size());
     }
   }
 
@@ -645,8 +656,8 @@ public class CollectionSerializers {
     }
 
     @Override
-    public PriorityQueue copy(PriorityQueue originCollection) {
-      return new PriorityQueue(originCollection);
+    public Collection newCollection(Collection collection) {
+      return new PriorityQueue(collection.size(), ((PriorityQueue) collection).comparator());
     }
 
     @Override
