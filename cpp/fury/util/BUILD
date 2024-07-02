@@ -4,6 +4,8 @@ cc_library(
     name = "fury_util",
     srcs = glob(["*.cc"], exclude=["*test.cc"]),
     hdrs = glob(["*.h"]),
+    copts = ["-mavx2"],  # Enable AVX2 support
+    linkopts = ["-mavx2"],  # Ensure linker also knows about AVX2
     strip_include_prefix = "/cpp",
     alwayslink=True,
     linkstatic=True,
