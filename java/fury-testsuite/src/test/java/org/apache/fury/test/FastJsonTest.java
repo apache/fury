@@ -17,9 +17,9 @@
  * under the License.
  */
 
-package org.apache.fury.benchmark.state;
+package org.apache.fury.test;
 
-import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import java.util.List;
@@ -31,7 +31,7 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-public class JsonTest {
+public class FastJsonTest {
   public static class DemoResponse {
     private JSONObject json;
     private List<JSONObject> objects;

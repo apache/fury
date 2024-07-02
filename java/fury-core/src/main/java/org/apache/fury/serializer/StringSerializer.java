@@ -43,6 +43,7 @@ import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.MathUtils;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.unsafe._JDKAccess;
 
 /**
@@ -63,8 +64,6 @@ public final class StringSerializer extends ImmutableSerializer<String> {
   private static final Byte UTF16_BOXED = UTF16;
   private static final byte UTF8 = 2;
   private static final int DEFAULT_BUFFER_SIZE = 1024;
-  // A long mask used to clear all-higher bits of char in a super-word way.
-  private static final long MULTI_CHARS_NON_LATIN_MASK;
 
   // Make offset compatible with graalvm native image.
   private static final long STRING_VALUE_FIELD_OFFSET;
@@ -103,15 +102,6 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     Preconditions.checkArgument(
         ReflectionUtils.getFieldNullable(String.class, "offset") == null,
         "Current jdk not supported");
-    if (Platform.IS_LITTLE_ENDIAN) {
-      // latin chars will be 0xXX,0x00;0xXX,0x00 in byte order;
-      // Using 0x00,0xff(0xff00) to clear latin bits.
-      MULTI_CHARS_NON_LATIN_MASK = 0xff00ff00ff00ff00L;
-    } else {
-      // latin chars will be 0x00,0xXX;0x00,0xXX in byte order;
-      // Using 0x00,0xff(0x00ff) to clear latin bits.
-      MULTI_CHARS_NON_LATIN_MASK = 0x00ff00ff00ff00ffL;
-    }
   }
 
   private final boolean compressString;
@@ -178,7 +168,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
   // Invoked by jit
   public void writeCharsStringCompressed(MemoryBuffer buffer, String value) {
     final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    if (isLatin(chars)) {
+    if (StringUtils.isLatin(chars)) {
       writeCharsLatin(buffer, chars, chars.length);
     } else {
       writeCharsUTF16(buffer, chars, chars.length);
@@ -288,7 +278,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
       assert STRING_VALUE_FIELD_IS_CHARS;
       final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
       if (compressString) {
-        if (isLatin(chars)) {
+        if (StringUtils.isLatin(chars)) {
           writeCharsLatin(buffer, chars, chars.length);
         } else {
           writeCharsUTF16(buffer, chars, chars.length);
@@ -298,32 +288,6 @@ public final class StringSerializer extends ImmutableSerializer<String> {
         buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
       }
     }
-  }
-
-  public static boolean isLatin(char[] chars) {
-    int numChars = chars.length;
-    int vectorizedLen = numChars >> 2;
-    int vectorizedChars = vectorizedLen << 2;
-    int endOffset = Platform.CHAR_ARRAY_OFFSET + (vectorizedChars << 1);
-    boolean isLatin = true;
-    for (int offset = Platform.CHAR_ARRAY_OFFSET; offset < endOffset; offset += 8) {
-      // check 4 chars in a vectorized way, 4 times faster than scalar check loop.
-      // See benchmark in CompressStringSuite.latinSuperWordCheck.
-      long multiChars = Platform.getLong(chars, offset);
-      if ((multiChars & MULTI_CHARS_NON_LATIN_MASK) != 0) {
-        isLatin = false;
-        break;
-      }
-    }
-    if (isLatin) {
-      for (int i = vectorizedChars; i < numChars; i++) {
-        if (chars[i] > 0xFF) {
-          isLatin = false;
-          break;
-        }
-      }
-    }
-    return isLatin;
   }
 
   // Invoked by fury JIT
