@@ -24,6 +24,16 @@
 
 namespace fury {
 
+
+    bool isLatin_Baseline(const std::string& str) {
+        for (char c : str) {
+            if (static_cast<unsigned char>(c) >= 128) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     bool isLatin_AVX2(const std::string& str) {
         const char* data = str.data();
         size_t len = str.size();
@@ -74,14 +84,6 @@ namespace fury {
         return true;
     }
 
-    bool isLatin_Baseline(const std::string& str) {
-        for (char c : str) {
-            if (static_cast<unsigned char>(c) >= 128) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     alignas(32) const char latin_lookup[32] = {
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,

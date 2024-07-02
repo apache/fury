@@ -23,44 +23,43 @@
 
 namespace fury {
 
-    TEST(StringUtilTest, TestIsLatinAVX2) {
+    TEST(StringUtilTest, TestIsLatinFunctions) {
+    // Generate a unique test string once
     std::string testStr = generateRandomString(100000);
+    std::cout << "testStr : "<< std::endl;
+
+
+    //  Baseline
+    start_time = std::chrono::high_resolution_clock::now();
+    bool result_baseline = isLatin_Baseline(testStr);
+    end_time = std::chrono::high_resolution_clock::now();
+    auto duration_baseline = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    std::cout << "Baseline Running Time: " << duration_baseline << " ns" << std::endl;
+    EXPECT_TRUE(result_baseline);
+
+    //  AVX2
     auto start_time = std::chrono::high_resolution_clock::now();
-    bool result = isLatin_AVX2(testStr);
+    bool result_avx2 = isLatin_AVX2(testStr);
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
-    std::cout << "AVX2 Running Time: " << duration << " ns" << std::endl;
-    EXPECT_TRUE(result);
-}
+    auto duration_avx2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    std::cout << "AVX2 Running Time: " << duration_avx2 << " ns" << std::endl;
+    EXPECT_TRUE(result_avx2);
 
-TEST(StringUtilTest, TestIsLatinSSE2) {
-std::string testStr = generateRandomString(100000);
-auto start_time = std::chrono::high_resolution_clock::now();
-bool result = isLatin_SSE2(testStr);
-auto end_time = std::chrono::high_resolution_clock::now();
-auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
-std::cout << "SSE2 Running Time: " << duration << " ns" << std::endl;
-EXPECT_TRUE(result);
-}
+    //  SSE2
+    start_time = std::chrono::high_resolution_clock::now();
+    bool result_sse2 = isLatin_SSE2(testStr);
+    end_time = std::chrono::high_resolution_clock::now();
+    auto duration_sse2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    std::cout << "SSE2 Running Time: " << duration_sse2 << " ns" << std::endl;
+    EXPECT_TRUE(result_sse2);
 
-TEST(StringUtilTest, TestIsLatinBaseline) {
-std::string testStr = generateRandomString(100000);
-auto start_time = std::chrono::high_resolution_clock::now();
-bool result = isLatin_Baseline(testStr);
-auto end_time = std::chrono::high_resolution_clock::now();
-auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
-std::cout << "Baseline Running Time: " << duration << " ns" << std::endl;
-EXPECT_TRUE(result);
-}
-
-TEST(StringUtilTest, TestIsLatinAVX2_vpshufb) {
-std::string testStr = generateRandomString(100000);
-auto start_time = std::chrono::high_resolution_clock::now();
-bool result = isLatin_AVX2_vpshufb(testStr);
-auto end_time = std::chrono::high_resolution_clock::now();
-auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
-std::cout << "AVX2_vpshufb Running Time: " << duration << " ns" << std::endl;
-EXPECT_TRUE(result);
+    //  AVX2_vpshufb
+    start_time = std::chrono::high_resolution_clock::now();
+    bool result_avx2_vpshufb = isLatin_AVX2_vpshufb(testStr);
+    end_time = std::chrono::high_resolution_clock::now();
+    auto duration_avx2_vpshufb = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    std::cout << "AVX2_vpshufb Running Time: " << duration_avx2_vpshufb << " ns" << std::endl;
+    EXPECT_TRUE(result_avx2_vpshufb);
 }
 
 } // namespace fury
