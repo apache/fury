@@ -92,13 +92,6 @@ namespace fury {
         const char* data = str.data();
         size_t len = str.size();
 
-        __m256i mask = _mm256_setr_epi8(
-                0, 1, 2, 3, 4, 5, 6, 7,
-                8, 9, 10, 11, 12, 13, 14, 15,
-                16, 17, 18, 19, 20, 21, 22, 23,
-                24, 25, 26, 27, 28, 29, 30, 31
-        );
-
         __m256i latin_table = _mm256_load_si256(reinterpret_cast<const __m256i*>(latin_lookup));
 
         size_t i = 0;
@@ -134,4 +127,3 @@ namespace fury {
     }
 
 }
-
