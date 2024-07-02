@@ -62,7 +62,7 @@ TEST(StringUtilTest, TestIsLatinFunctions) {
 
 // TEST Logic
 TEST(StringUtilTest, TestIsLatinLogic) {
-  // 使用AVX2指令集进行逻辑测试
+
   EXPECT_TRUE(isLatin_AVX2("Fury"));
 
   std::string randomStr = generateRandomString(80);
