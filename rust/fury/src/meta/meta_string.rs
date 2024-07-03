@@ -75,8 +75,18 @@ impl MetaString {
 }
 
 pub struct MetaStringDecoder {}
+impl Default for MetaStringDecoder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 pub struct MetaStringEncoder {}
+impl Default for MetaStringEncoder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[derive(Debug)]
 struct StringStatistics {
