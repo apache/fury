@@ -30,8 +30,8 @@ class Encoding(Enum):
     ALL_TO_LOWER_SPECIAL = 0x04
 
 
-# SHORT_MAX_VALUE is used to check whether the length of the value is valid.
-Short_MAX_VALUE = 32767
+# _METASTRING_NUM_CHARS_LIMIT is used to check whether the length of the value is valid.
+_METASTRING_NUM_CHARS_LIMIT = 32767
 
 
 class MetaString:
