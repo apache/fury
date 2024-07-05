@@ -31,7 +31,6 @@ fn test_encode_meta_string_lower_special() {
     assert_eq!(bytes2.len(), 19);
     let bytes3 = encoder.encode("MediaContent").unwrap().bytes;
     assert_eq!(bytes3.len(), 9);
-    // 验证解码
     let decoder = MetaStringDecoder::new();
     assert_eq!(
         decoder.decode(&bytes1, Encoding::LowerSpecial).unwrap(),

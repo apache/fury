@@ -355,7 +355,6 @@ impl MetaStringDecoder {
         let strip_last_char = (data[0] & 0x80) != 0;
         let mut bit_index = 1;
         let bit_mask: usize = 0b111111;
-
         while bit_index + 6 <= num_bits && !(strip_last_char && (bit_index + 2 * 6 > num_bits)) {
             let byte_index = bit_index / 8;
             let intra_byte_index = bit_index % 8;
