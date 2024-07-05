@@ -166,7 +166,7 @@ class MetaStringEncoder:
 
         # Long meta string than 32767 is not allowed.
         assert (
-            len(input_string) < Short_MAX_VALUE
+            len(input_string) < _METASTRING_NUM_CHARS_LIMIT
         ), "Long meta string than 32767 is not allowed."
 
         if not input_string:
@@ -179,7 +179,7 @@ class MetaStringEncoder:
 
         # Long meta string than 32767 is not allowed.
         assert (
-            len(input_string) < Short_MAX_VALUE
+            len(input_string) < _METASTRING_NUM_CHARS_LIMIT
         ), "Long meta string than 32767 is not allowed."
 
         if not input_string:
