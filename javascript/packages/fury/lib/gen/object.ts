@@ -81,10 +81,9 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
     const metaInformation = computeMetaInformation(this.description);
-
     return `
       ${this.builder.writer.int32(expectHash)};
-      ${this.builder.writer.buffer(metaInformation)};
+      ${this.builder.writer.int32(metaInformation.length)};
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
@@ -99,16 +98,17 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   readStmt(accessor: (expr: string) => string, refState: RefState): string {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
-    const result = this.scope.uniqueName("result");
     const encodedMetaInformation = computeMetaInformation(this.description);
     const metaInformation = decodeMetaInformation(encodedMetaInformation);
+    const result = this.scope.uniqueName("result");
+
 
     return `
       if (${this.builder.reader.int32()} !== ${expectHash}) {
           throw new Error("validate hash failed: ${this.safeTag()}. expect ${expectHash}");
       }
-      if (JSON.stringify(${this.builder.reader.buffer(metaInformation)}) !== JSON.stringify(${metaInformation})) {
-          throw new Error("validate meta information failed: ${this.safeTag()}. expect ${metaInformation}");
+      if (${this.builder.reader.int32()} !== ${encodedMetaInformation.length}) {
+          throw new Error("validate meta information failed: ${this.safeTag()}. expect ${encodedMetaInformation.length}");
       }
       const ${result} = {
         ${Object.entries(options.props).sort().map(([key]) => {
