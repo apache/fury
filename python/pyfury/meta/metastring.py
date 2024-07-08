@@ -15,9 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 from collections import namedtuple
-
-
 from enum import Enum
+from typing import List
 
 
 class Encoding(Enum):
@@ -42,13 +41,14 @@ Statistics = namedtuple(
     ],
 )
 
-
 # _METASTRING_NUM_CHARS_LIMIT is used to check whether the length of the value is valid.
 _METASTRING_NUM_CHARS_LIMIT = 32767
 
 
 class MetaString:
-    def __init__(self, original, encoding, encoded_data, length):
+    def __init__(
+        self, original: str, encoding: Encoding, encoded_data: bytes, length: int
+    ):
         self.original = original
         self.encoding = encoding
         self.encoded_data = encoded_data
@@ -64,7 +64,7 @@ class MetaStringDecoder:
     Decodes MetaString objects back into their original plain text form.
     """
 
-    def decode(self, encoded_data, encoding):
+    def decode(self, encoded_data: bytes, encoding: Encoding) -> str:
         """
         Decodes the encoded data using the specified encoding.
 
@@ -79,7 +79,7 @@ class MetaStringDecoder:
             return ""
         return self.decode_with_encoding(encoded_data, encoding)
 
-    def decode_with_encoding(self, encoded_data, encoding):
+    def decode_with_encoding(self, encoded_data: bytes, encoding: Encoding) -> str:
         """
         Decodes the encoded data with the specified encoding.
 
@@ -103,7 +103,16 @@ class MetaStringDecoder:
         else:
             raise ValueError(f"Unexpected encoding flag: {encoding}")
 
-    def _decode_lower_special(self, data):
+    def _decode_lower_special(self, data: bytes) -> str:
+        """
+        Decodes data encoded with LOWER_SPECIAL encoding.
+
+        Args:
+            data (bytes): The encoded data.
+
+        Returns:
+            str: The decoded string.
+        """
         decoded = []
         num_bits = len(data) * 8  # Total number of bits in the data
         strip_last_char = (data[0] & 0x80) != 0  # Check the first bit of the first byte
@@ -124,7 +133,16 @@ class MetaStringDecoder:
 
         return "".join(decoded)
 
-    def _decode_lower_upper_digit_special(self, data):
+    def _decode_lower_upper_digit_special(self, data: bytes) -> str:
+        """
+        Decodes data encoded with LOWER_UPPER_DIGIT_SPECIAL encoding.
+
+        Args:
+            data (bytes): The encoded data.
+
+        Returns:
+            str: The decoded string.
+        """
         decoded = []
         bit_index = 1
         strip_last_char = (data[0] & 0x80) != 0
@@ -144,10 +162,15 @@ class MetaStringDecoder:
             decoded.append(self._decode_lower_upper_digit_special_char(char_value))
         return "".join(decoded)
 
-    def _decode_lower_special_char(self, char_value):
+    def _decode_lower_special_char(self, char_value: int) -> str:
         """
-        Decoding special char for LOWER_SPECIAL based on encoding mapping.
+        Decodes a single character encoded with LOWER_SPECIAL encoding.
 
+        Args:
+            char_value (int): The encoded character value.
+
+        Returns:
+            str: The decoded character.
         """
         if 0 <= char_value <= 25:
             return chr(ord("a") + char_value)
@@ -162,9 +185,15 @@ class MetaStringDecoder:
         else:
             raise ValueError(f"Invalid character value for LOWER_SPECIAL: {char_value}")
 
-    def _decode_lower_upper_digit_special_char(self, char_value):
+    def _decode_lower_upper_digit_special_char(self, char_value: int) -> str:
         """
-        Decoding special char for LOWER_UPPER_DIGIT_SPECIAL based on encoding mapping.
+        Decodes a single character encoded with LOWER_UPPER_DIGIT_SPECIAL encoding.
+
+        Args:
+            char_value (int): The encoded character value.
+
+        Returns:
+            str: The decoded character.
         """
         if 0 <= char_value <= 25:
             return chr(ord("a") + char_value)
@@ -181,11 +210,29 @@ class MetaStringDecoder:
                 f"Invalid character value for LOWER_UPPER_DIGIT_SPECIAL: {char_value}"
             )
 
-    def _decode_rep_first_lower_special(self, data):
+    def _decode_rep_first_lower_special(self, data: bytes) -> str:
+        """
+        Decodes data encoded with FIRST_TO_LOWER_SPECIAL encoding.
+
+        Args:
+            data (bytes): The encoded data.
+
+        Returns:
+            str: The decoded string.
+        """
         decoded_str = self._decode_lower_special(data)
         return decoded_str.capitalize()
 
-    def _decode_rep_all_to_lower_special(self, data):
+    def _decode_rep_all_to_lower_special(self, data: bytes) -> str:
+        """
+        Decodes data encoded with ALL_TO_LOWER_SPECIAL encoding.
+
+        Args:
+            data (bytes): The encoded data.
+
+        Returns:
+            str: The decoded string.
+        """
         decoded_str = self._decode_lower_special(data)
         result = []
         skip = False
@@ -201,10 +248,21 @@ class MetaStringDecoder:
         return "".join(result)
 
 
-# Encodes plain text strings into MetaString objects with specified encoding mechanisms.
 class MetaStringEncoder:
-    def encode(self, input_string):
+    """
+    Encodes plain text strings into MetaString objects with specified encoding mechanisms.
+    """
 
+    def encode(self, input_string: str) -> MetaString:
+        """
+        Encodes the input string into a MetaString object.
+
+        Args:
+            input_string (str): The string to encode.
+
+        Returns:
+            MetaString: The encoded MetaString object.
+        """
         # Long meta string than _METASTRING_NUM_CHARS_LIMIT is not allowed.
         assert (
             len(input_string) < _METASTRING_NUM_CHARS_LIMIT
@@ -216,7 +274,7 @@ class MetaStringEncoder:
         encoding = self.compute_encoding(input_string)
         return self.encode_with_encoding(input_string, encoding)
 
-    def encode_with_encoding(self, input_string, encoding):
+    def encode_with_encoding(self, input_string: str, encoding: Encoding) -> MetaString:
         """
         Encodes the input string with the specified encoding.
 
@@ -258,7 +316,7 @@ class MetaStringEncoder:
                 input_string, Encoding.UTF_8, encoded_data, len(encoded_data) * 8
             )
 
-    def compute_encoding(self, input_string):
+    def compute_encoding(self, input_string: str) -> Encoding:
         """
         Determines the encoding type of the input string.
 
@@ -288,7 +346,7 @@ class MetaStringEncoder:
                     return Encoding.LOWER_UPPER_DIGIT_SPECIAL
         return Encoding.UTF_8
 
-    def _compute_statistics(self, chars):
+    def _compute_statistics(self, chars: List[str]) -> Statistics:
         """
         Computes statistics for the given characters to determine encoding possibilities.
 
@@ -321,18 +379,56 @@ class MetaStringEncoder:
             upper_count,
         )
 
-    def _encode_lower_special(self, input_string):
-        return self._encode_generic(input_string, 5)
+    def _encode_lower_special(self, input_string: str) -> bytes:
+        """
+        Encodes the input string using LOWER_SPECIAL encoding.
 
-    def _encode_lower_upper_digit_special(self, input_string):
-        return self._encode_generic(input_string, 6)
+        Args:
+            input_string (str): The string to encode.
 
-    def _encode_first_to_lower_special(self, input_string):
+        Returns:
+            bytes: The encoded data.
+        """
+        chars = list(input_string)
+        return self._encode_generic(chars, 5)
+
+    def _encode_lower_upper_digit_special(self, input_string: str) -> bytes:
+        """
+        Encodes the input string using LOWER_UPPER_DIGIT_SPECIAL encoding.
+
+        Args:
+            input_string (str): The string to encode.
+
+        Returns:
+            bytes: The encoded data.
+        """
+        chars = list(input_string)
+        return self._encode_generic(chars, 6)
+
+    def _encode_first_to_lower_special(self, input_string: str) -> bytes:
+        """
+        Encodes the input string using FIRST_TO_LOWER_SPECIAL encoding.
+
+        Args:
+            input_string (str): The string to encode.
+
+        Returns:
+            bytes: The encoded data.
+        """
         chars = list(input_string)
         chars[0] = chars[0].lower()
         return self._encode_generic(chars, 5)
 
-    def _encode_all_to_lower_special(self, chars):
+    def _encode_all_to_lower_special(self, chars: List[str]) -> bytes:
+        """
+        Encodes the input string using ALL_TO_LOWER_SPECIAL encoding.
+
+        Args:
+            chars (list): The characters to encode.
+
+        Returns:
+            bytes: The encoded data.
+        """
         new_chars = []
         for c in chars:
             if c.isupper():
@@ -342,7 +438,17 @@ class MetaStringEncoder:
                 new_chars.append(c)
         return self._encode_generic(new_chars, 5)
 
-    def _encode_generic(self, chars, bits_per_char):
+    def _encode_generic(self, chars: List[str], bits_per_char: int) -> bytes:
+        """
+        Generic encoding function for encoding characters into bytes.
+
+        Args:
+            chars (list): The characters to encode.
+            bits_per_char (int): The number of bits per character.
+
+        Returns:
+            bytes: The encoded data.
+        """
         total_bits = len(chars) * bits_per_char + 1
         byte_length = (total_bits + 7) // 8
         bytes_array = bytearray(byte_length)
@@ -360,7 +466,17 @@ class MetaStringEncoder:
             bytes_array[0] = bytes_array[0] | 0x80
         return bytes_array
 
-    def _char_to_value(self, c, bits_per_char):
+    def _char_to_value(self, c: str, bits_per_char: int) -> int:
+        """
+        Converts a character to its encoded value based on the number of bits per character.
+
+        Args:
+            c (str): The character to convert.
+            bits_per_char (int): The number of bits per character.
+
+        Returns:
+            int: The encoded value of the character.
+        """
         if bits_per_char == 5:
             if "a" <= c <= "z":
                 return ord(c) - ord("a")
