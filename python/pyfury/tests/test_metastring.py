@@ -16,7 +16,6 @@
 # under the License.
 
 import pytest
-import numpy as np
 from pyfury.meta.metastring import (
     MetaStringEncoder,
     MetaStringDecoder,
