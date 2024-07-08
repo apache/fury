@@ -160,7 +160,7 @@ def test_empty_string():
     encoder = MetaStringEncoder()
     decoder = MetaStringDecoder()
     metastring = encoder.encode("")
-    assert np.array_equal(metastring.encoded_data, np.array([], dtype=np.uint8))
+    assert metastring.encoded_data==bytes()
 
     decoded = decoder.decode(metastring.encoded_data, metastring.encoding)
     assert decoded == ""

@@ -14,20 +14,33 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-import numpy as np
+from collections import namedtuple
 
 
 from enum import Enum
 
 
-# Defines the types of supported encodings for MetaStrings.
 class Encoding(Enum):
+    """
+    Defines the types of supported encodings for MetaStrings.
+    """
+
     UTF_8 = 0x00
     LOWER_SPECIAL = 0x01
     LOWER_UPPER_DIGIT_SPECIAL = 0x02
     FIRST_TO_LOWER_SPECIAL = 0x03
     ALL_TO_LOWER_SPECIAL = 0x04
+
+
+Statistics = namedtuple(
+    "Statistics",
+    [
+        "can_lower_upper_digit_special_encoded",
+        "can_lower_special_encoded",
+        "digit_count",
+        "upper_count",
+    ],
+)
 
 
 # _METASTRING_NUM_CHARS_LIMIT is used to check whether the length of the value is valid.
@@ -46,14 +59,37 @@ class MetaString:
             self.strip_last_char = False
 
 
-# Decodes MetaString objects back into their original plain text form.
 class MetaStringDecoder:
+    """
+    Decodes MetaString objects back into their original plain text form.
+    """
+
     def decode(self, encoded_data, encoding):
+        """
+        Decodes the encoded data using the specified encoding.
+
+        Args:
+            encoded_data (bytes): The data to decode.
+            encoding (Encoding): The encoding type used for decoding.
+
+        Returns:
+            str: The decoded string.
+        """
         if len(encoded_data) == 0:
             return ""
         return self.decode_with_encoding(encoded_data, encoding)
 
     def decode_with_encoding(self, encoded_data, encoding):
+        """
+        Decodes the encoded data with the specified encoding.
+
+        Args:
+            encoded_data (bytes): The data to decode.
+            encoding (Encoding): The encoding type.
+
+        Returns:
+            str: The decoded string.
+        """
         if encoding == Encoding.LOWER_SPECIAL:
             return self._decode_lower_special(encoded_data)
         elif encoding == Encoding.LOWER_UPPER_DIGIT_SPECIAL:
@@ -63,7 +99,7 @@ class MetaStringDecoder:
         elif encoding == Encoding.ALL_TO_LOWER_SPECIAL:
             return self._decode_rep_all_to_lower_special(encoded_data)
         elif encoding == Encoding.UTF_8:
-            return encoded_data.tobytes().decode("utf-8")
+            return encoded_data.decode("utf-8")
         else:
             raise ValueError(f"Unexpected encoding flag: {encoding}")
 
@@ -78,7 +114,7 @@ class MetaStringDecoder:
         ):
             byte_index = bit_index // 8
             intra_byte_index = bit_index % 8
-            # // Extract the 5-bit character value across byte boundaries if needed
+            # Extract the 5-bit character value across byte boundaries if needed
             char_value = (
                 (data[byte_index] << 8)
                 | (data[byte_index + 1] if byte_index + 1 < len(data) else 0)
@@ -108,8 +144,11 @@ class MetaStringDecoder:
             decoded.append(self._decode_lower_upper_digit_special_char(char_value))
         return "".join(decoded)
 
-    # Decoding special char for LOWER_SPECIAL based on encoding mapping.
     def _decode_lower_special_char(self, char_value):
+        """
+        Decoding special char for LOWER_SPECIAL based on encoding mapping.
+
+        """
         if 0 <= char_value <= 25:
             return chr(ord("a") + char_value)
         elif char_value == 26:
@@ -123,8 +162,10 @@ class MetaStringDecoder:
         else:
             raise ValueError(f"Invalid character value for LOWER_SPECIAL: {char_value}")
 
-    # Decoding special char for LOWER_UPPER_DIGIT_SPECIAL based on encoding mapping.
     def _decode_lower_upper_digit_special_char(self, char_value):
+        """
+        Decoding special char for LOWER_UPPER_DIGIT_SPECIAL based on encoding mapping.
+        """
         if 0 <= char_value <= 25:
             return chr(ord("a") + char_value)
         elif 26 <= char_value <= 51:
@@ -164,26 +205,35 @@ class MetaStringDecoder:
 class MetaStringEncoder:
     def encode(self, input_string):
 
-        # Long meta string than 32767 is not allowed.
+        # Long meta string than _METASTRING_NUM_CHARS_LIMIT is not allowed.
         assert (
             len(input_string) < _METASTRING_NUM_CHARS_LIMIT
-        ), "Long meta string than 32767 is not allowed."
+        ), "Long meta string than _METASTRING_NUM_CHARS_LIMIT is not allowed."
 
         if not input_string:
-            return MetaString(input_string, Encoding.UTF_8, np.array([], np.uint8), 0)
+            return MetaString(input_string, Encoding.UTF_8, bytes(), 0)
 
         encoding = self.compute_encoding(input_string)
         return self.encode_with_encoding(input_string, encoding)
 
     def encode_with_encoding(self, input_string, encoding):
+        """
+        Encodes the input string with the specified encoding.
 
-        # Long meta string than 32767 is not allowed.
+        Args:
+            input_string (str): The string to encode.
+            encoding (Encoding): The encoding type.
+
+        Returns:
+            MetaString: An encoded MetaString object.
+        """
+        # Long meta string than _METASTRING_NUM_CHARS_LIMIT is not allowed.
         assert (
             len(input_string) < _METASTRING_NUM_CHARS_LIMIT
-        ), "Long meta string than 32767 is not allowed."
+        ), "Long meta string than _METASTRING_NUM_CHARS_LIMIT is not allowed."
 
         if not input_string:
-            return MetaString(input_string, Encoding.UTF_8, np.array([], np.uint8), 0)
+            return MetaString(input_string, Encoding.UTF_8, bytes(), 0)
 
         length = len(input_string)
         if encoding == Encoding.LOWER_SPECIAL:
@@ -198,29 +248,38 @@ class MetaStringEncoder:
         elif encoding == Encoding.ALL_TO_LOWER_SPECIAL:
             chars = list(input_string)
             upper_count = sum(1 for c in chars if c.isupper())
-            encoded_data = self._encode_all_to_lower_special(chars, upper_count)
+            encoded_data = self._encode_all_to_lower_special(chars)
             return MetaString(
                 input_string, encoding, encoded_data, (upper_count + length) * 5
             )
         else:
-            encoded_data = np.frombuffer(input_string.encode("utf-8"), dtype=np.uint8)
+            encoded_data = bytes(input_string, "utf-8")
             return MetaString(
                 input_string, Encoding.UTF_8, encoded_data, len(encoded_data) * 8
             )
 
     def compute_encoding(self, input_string):
+        """
+        Determines the encoding type of the input string.
+
+        Args:
+            input_string (str): The string to be encoded.
+
+        Returns:
+            Encoding: The encoding type.
+        """
         if not input_string:
             return Encoding.LOWER_SPECIAL
 
         chars = list(input_string)
         statistics = self._compute_statistics(chars)
-        if statistics["can_lower_special_encoded"]:
+        if statistics.can_lower_special_encoded:
             return Encoding.LOWER_SPECIAL
-        elif statistics["can_lower_upper_digit_special_encoded"]:
-            if statistics["digit_count"] != 0:
+        elif statistics.can_lower_upper_digit_special_encoded:
+            if statistics.digit_count != 0:
                 return Encoding.LOWER_UPPER_DIGIT_SPECIAL
             else:
-                upper_count = statistics["upper_count"]
+                upper_count = statistics.upper_count
                 if upper_count == 1 and chars[0].isupper():
                     return Encoding.FIRST_TO_LOWER_SPECIAL
                 if (len(chars) + upper_count) * 5 < len(chars) * 6:
@@ -230,6 +289,15 @@ class MetaStringEncoder:
         return Encoding.UTF_8
 
     def _compute_statistics(self, chars):
+        """
+        Computes statistics for the given characters to determine encoding possibilities.
+
+        Args:
+            chars (list): List of characters to analyze.
+
+        Returns:
+            Statistics: A named tuple with encoding possibility flags and counts.
+        """
         can_lower_upper_digit_special_encoded = True
         can_lower_special_encoded = True
         digit_count = 0
@@ -245,12 +313,13 @@ class MetaStringEncoder:
                 digit_count += 1
             if c.isupper():
                 upper_count += 1
-        return {
-            "can_lower_upper_digit_special_encoded": can_lower_upper_digit_special_encoded,
-            "can_lower_special_encoded": can_lower_special_encoded,
-            "digit_count": digit_count,
-            "upper_count": upper_count,
-        }
+
+        return Statistics(
+            can_lower_upper_digit_special_encoded,
+            can_lower_special_encoded,
+            digit_count,
+            upper_count,
+        )
 
     def _encode_lower_special(self, input_string):
         return self._encode_generic(input_string, 5)
@@ -263,7 +332,7 @@ class MetaStringEncoder:
         chars[0] = chars[0].lower()
         return self._encode_generic(chars, 5)
 
-    def _encode_all_to_lower_special(self, chars, upper_count):
+    def _encode_all_to_lower_special(self, chars):
         new_chars = []
         for c in chars:
             if c.isupper():
