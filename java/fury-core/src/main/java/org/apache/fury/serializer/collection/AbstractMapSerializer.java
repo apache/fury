@@ -29,6 +29,7 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -40,6 +41,7 @@ import org.apache.fury.type.TypeUtils;
 /** Serializer for all map-like objects. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractMapSerializer<T> extends Serializer<T> {
+  private static final int MAX_CHUNK_SIZE = 128;
   protected MethodHandle constructor;
   protected final boolean supportCodegenHook;
   private Serializer keySerializer;
@@ -159,7 +161,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     Generics generics = fury.getGenerics();
     GenericType genericType = generics.nextGenericType();
     if (genericType == null) {
-      generalJavaWrite(fury, buffer, map);
+      generalJavaWriteV2(fury, buffer, map);
     } else {
       GenericType keyGenericType = genericType.getTypeParameter0();
       GenericType valueGenericType = genericType.getTypeParameter1();
@@ -169,7 +171,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       if (genericType.getTypeParametersCount() < 2) {
         Tuple2<GenericType, GenericType> kvGenericType = getKVGenericType(genericType);
         if (keyGenericType == objType && valueGenericType == objType) {
-          generalJavaWrite(fury, buffer, map);
+          generalJavaWriteV2(fury, buffer, map);
           return;
         }
         keyGenericType = kvGenericType.f0;
@@ -328,6 +330,174 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
+  private static class Chunk {
+
+      public Chunk(MemoryBuffer memoryBuffer, Fury fury) {
+          final int writerIndex = memoryBuffer.writerIndex();
+          // preserve a byte for header and chunk size
+          memoryBuffer.writerIndex(writerIndex + 2);
+          this.startOffset = writerIndex;
+          this.fury = fury;
+      }
+
+      public boolean predict(Object key, Object value) {
+          if (key == null || value == null) {
+              return true;
+          }
+          if (keyClass == null) {
+              keyClass = key.getClass();
+          }
+          if (valueClass == null) {
+              valueClass = value.getClass();
+          }
+          return key.getClass() == keyClass
+                  && value.getClass() == valueClass;
+      }
+
+      private int header = 0;
+      private int startOffset;
+      private int chunkSize;
+      private Class<?> keyClass = null;
+      private Class<?> valueClass = null;
+      private final Fury fury;
+      private boolean writeKeyClassInfo = false;
+      private boolean writeValueClassInfo = false;
+
+      public void write(Object key, Object value, MemoryBuffer memoryBuffer, ClassInfoHolder keyClassInfoWriteCache, ClassInfoHolder valueClassInfoWriteCache) {
+          //todo next chunk
+          if (chunkSize >= MAX_CHUNK_SIZE) {
+              reset(memoryBuffer);
+          }
+          updateHeader(key, value, memoryBuffer, keyClassInfoWriteCache, valueClassInfoWriteCache);
+          if ((header & MapFlags.TRACKING_KEY_REF) == MapFlags.TRACKING_KEY_REF) {
+              RefResolver refResolver = fury.getRefResolver();
+              if (!refResolver.writeRefOrNull(memoryBuffer, key)) {
+                  keyClassInfoWriteCache.getSerializer().write(memoryBuffer, key);
+              }
+          } else {
+              Serializer serializer = keyClassInfoWriteCache.getSerializer();
+              if ((header & MapFlags.KEY_HAS_NULL) != MapFlags.KEY_HAS_NULL) {
+                   serializer.write(memoryBuffer, key);
+              } else {
+                   if (key == null) {
+                       memoryBuffer.writeByte(Fury.NULL_FLAG);
+                   } else {
+                       memoryBuffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+                       serializer.write(memoryBuffer, key);
+                   }
+              }
+          }
+          if ((header & MapFlags.TRACKING_VALUE_REF) == MapFlags.TRACKING_VALUE_REF) {
+              RefResolver refResolver = fury.getRefResolver();
+              if (!refResolver.writeRefOrNull(memoryBuffer, key)) {
+                  valueClassInfoWriteCache.getSerializer().write(memoryBuffer, key);
+              }
+          } else {
+              Serializer serializer = valueClassInfoWriteCache.getSerializer();
+              if ((header & MapFlags.VALUE_HAS_NULL) != MapFlags.VALUE_HAS_NULL) {
+                  serializer.write(memoryBuffer, value);
+              } else {
+                  if (value == null) {
+                      memoryBuffer.writeByte(Fury.NULL_FLAG);
+                  } else {
+                      memoryBuffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+                      serializer.write(memoryBuffer, value);
+                  }
+              }
+          }
+          chunkSize++;
+      }
+
+      public void updateHeader(Object key, Object value, MemoryBuffer memoryBuffer, ClassInfoHolder keyClassInfoWriteCache, ClassInfoHolder valueClassInfoWriteCache) {
+          //todo 如果key只有null
+          if (key == null) {
+              header |= MapFlags.KEY_HAS_NULL;
+          } else {
+              ClassResolver classResolver = fury.getClassResolver();
+              ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+              if (classInfo.getSerializer().needToWriteRef()) {
+                  header |= MapFlags.TRACKING_KEY_REF;
+              }
+              if (!writeKeyClassInfo) {
+                  classResolver.writeClass(memoryBuffer, classInfo);
+              }
+          }
+          if (value == null) {
+              header |= MapFlags.VALUE_HAS_NULL;
+          } else {
+              ClassResolver classResolver = fury.getClassResolver();
+              ClassInfo classInfo = classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+              if (classInfo.getSerializer().needToWriteRef()) {
+                  header |= MapFlags.TRACKING_VALUE_REF;
+              }
+              if (!writeValueClassInfo) {
+                  classResolver.writeClass(memoryBuffer, classInfo);
+              }
+          }
+      }
+
+      /**
+       * update chunk size and header, if chunk size == 0, no nothing
+       * @param memoryBuffer memoryBuffer which is writing
+       */
+      private void end(MemoryBuffer memoryBuffer) {
+          if (chunkSize > 0) {
+              int currentWriteIndex = memoryBuffer.writerIndex();
+              memoryBuffer.writerIndex(startOffset);
+              memoryBuffer.writeByte(chunkSize);
+              memoryBuffer.writeByte(header);
+              memoryBuffer.writerIndex(currentWriteIndex);
+          }
+      }
+
+      /**
+       * if mark chunkFinish which means predict failed
+       * @param memoryBuffer memoryBuffer which is writing
+       */
+      private void markChunkFinish(MemoryBuffer memoryBuffer) {
+          end(memoryBuffer);
+          memoryBuffer.writeByte(0);
+      }
+
+      private void reset(MemoryBuffer memoryBuffer) {
+          end(memoryBuffer);
+          header = 0;
+          chunkSize = 0;
+          startOffset = memoryBuffer.writerIndex();
+          memoryBuffer.writerIndex(startOffset + 2);
+          keyClass = null;
+          valueClass = null;
+          writeKeyClassInfo = false;
+          writeValueClassInfo = false;
+      }
+
+
+  }
+
+    protected void generalJavaWriteV2(Fury fury, MemoryBuffer buffer, Map map) {
+        Chunk chunk = new Chunk(buffer, fury);
+        ClassResolver classResolver = fury.getClassResolver();
+        RefResolver refResolver = fury.getRefResolver();
+        boolean predict = true;
+        for (Object object : map.entrySet()) {
+          Map.Entry entry = (Map.Entry) object;
+          Object key = entry.getKey();
+          Object value = entry.getValue();
+          predict = predict && chunk.predict(key, value);
+          if (predict) {
+              chunk.write(key, value, buffer, keyClassInfoWriteCache, valueClassInfoWriteCache);
+          } else {
+              chunk.markChunkFinish(buffer);
+              writeJavaRefOptimized(
+                      fury, classResolver, refResolver, buffer, entry.getKey(), keyClassInfoWriteCache);
+              writeJavaRefOptimized(
+                      fury, classResolver, refResolver, buffer, entry.getValue(), valueClassInfoWriteCache);
+          }
+        }
+        chunk.end(buffer);
+  }
+
+
   public static void xwriteElements(Fury fury, MemoryBuffer buffer, Map value) {
     Generics generics = fury.getGenerics();
     GenericType genericType = generics.nextGenericType();
@@ -440,14 +610,14 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     Generics generics = fury.getGenerics();
     GenericType genericType = generics.nextGenericType();
     if (genericType == null) {
-      generalJavaRead(fury, buffer, map, size);
+      generalJavaReadV2(fury, buffer, map, size);
     } else {
       GenericType keyGenericType = genericType.getTypeParameter0();
       GenericType valueGenericType = genericType.getTypeParameter1();
       if (genericType.getTypeParametersCount() < 2) {
         Tuple2<GenericType, GenericType> kvGenericType = getKVGenericType(genericType);
         if (keyGenericType == objType && valueGenericType == objType) {
-          generalJavaRead(fury, buffer, map, size);
+          generalJavaReadV2(fury, buffer, map, size);
           return;
         }
         keyGenericType = kvGenericType.f0;
@@ -561,6 +731,57 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       generics.popGenericType();
       map.put(key, value);
     }
+  }
+
+  private void generalJavaReadV2(Fury fury, MemoryBuffer buffer, Map map, int size) {
+      int copySize = size;
+      while (copySize > 0) {
+          Object key = null;
+          Object value = null;
+          byte chunkSize = buffer.readByte();
+          if (chunkSize == 0) {
+              key = fury.readRef(buffer, keyClassInfoReadCache);
+              value = fury.readRef(buffer, valueClassInfoReadCache);
+          } else {
+              byte header = buffer.readByte();
+              Serializer keySerializer = fury.getClassResolver().readClassInfo(buffer, keyClassInfoReadCache).getSerializer();
+              Serializer valueSerializer = fury.getClassResolver().readClassInfo(buffer, valueClassInfoReadCache).getSerializer();
+              if ((header & MapFlags.TRACKING_KEY_REF) == MapFlags.TRACKING_KEY_REF) {
+                  key = fury.readRef(buffer, keySerializer);
+                  value = fury.readRef(buffer, valueSerializer);
+              } else {
+                  if ((header & MapFlags.KEY_HAS_NULL) != MapFlags.KEY_HAS_NULL) {
+                      key = keySerializer.read(buffer);
+                  } else {
+                      if ((header & MapFlags.VALUE_HAS_NULL) != MapFlags.VALUE_HAS_NULL) {
+                          key = keySerializer.read(buffer);
+                      } else {
+                          if (buffer.readByte() == Fury.NULL_FLAG) {
+                              key = null;
+                          } else {
+                              key = keySerializer.read(buffer);
+                          }
+                      }
+                  }
+              }
+              if ((header & MapFlags.TRACKING_VALUE_REF) == MapFlags.TRACKING_VALUE_REF) {
+
+              } else {
+                  if ((header & MapFlags.VALUE_HAS_NULL) != MapFlags.VALUE_HAS_NULL) {
+                      value = valueSerializer.read(buffer);
+                  } else {
+                      if (buffer.readByte() == Fury.NULL_FLAG) {
+                          value = null;
+                      } else {
+                          value = valueSerializer.read(buffer);
+                      }
+                  }
+              }
+          }
+          //todo 1. object 2. fury.incDepth(1);
+          copySize--;
+          map.put(key, value);
+      }
   }
 
   private void generalJavaRead(Fury fury, MemoryBuffer buffer, Map map, int size) {
