@@ -17,12 +17,15 @@
  */
 
 name := "fury-scala"
-scalaVersion := "2.13.13"
-crossScalaVersions := Seq("2.13.12", "3.3.3")
+val scala213Version = "2.13.14"
+scalaVersion := scala213Version
+crossScalaVersions := Seq(scala213Version, "3.3.3")
+
 resolvers += Resolver.mavenLocal
+resolvers += Resolver.ApacheMavenSnapshotsRepo
 
 val furyVersion = "0.6.0-SNAPSHOT"
 libraryDependencies ++= Seq(
   "org.apache.fury" % "fury-core" % furyVersion,
-  "org.scalatest" %% "scalatest" % "3.2.17",
+  "org.scalatest" %% "scalatest" % "3.2.19",
 )
