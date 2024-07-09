@@ -187,7 +187,9 @@ public class FuryCopyTest extends FuryTestBase {
   }
 
   private void mapCopyTest() {
-    Map<String, Integer> map = Map.of("a", 1, "b", 2);
+    Map<String, Integer> map = new HashMap<>();
+    map.put("a", 1);
+    map.put("b", 2);
     TreeMap<String, Integer> treeMap = new TreeMap<>(Comparator.naturalOrder());
     treeMap.putAll(map);
     EnumMap<EnumFoo, Object> enumMap = new EnumMap<>(EnumFoo.class);
