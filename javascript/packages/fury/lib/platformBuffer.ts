@@ -19,6 +19,9 @@
 
 import { hasBuffer } from "./util";
 
+let utf8Encoder: TextEncoder | null;
+let textDecoder: TextDecoder | null;
+
 export type SupportedEncodings = "latin1" | "utf8";
 
 export interface PlatformBuffer extends Uint8Array {
@@ -96,22 +99,12 @@ export class BrowserBuffer extends Uint8Array implements PlatformBuffer {
     if (end - start < 1) {
       return "";
     }
-    let str = "";
-    for (let i = start; i < end;) {
-      const t = this[i++];
-      if (t <= 0x7F) {
-        str += String.fromCharCode(t);
-      } else if (t >= 0xC0 && t < 0xE0) {
-        str += String.fromCharCode((t & 0x1F) << 6 | this[i++] & 0x3F);
-      } else if (t >= 0xE0 && t < 0xF0) {
-        str += String.fromCharCode((t & 0xF) << 12 | (this[i++] & 0x3F) << 6 | this[i++] & 0x3F);
-      } else if (t >= 0xF0) {
-        const t2 = ((t & 7) << 18 | (this[i++] & 0x3F) << 12 | (this[i++] & 0x3F) << 6 | this[i++] & 0x3F) - 0x10000;
-        str += String.fromCharCode(0xD800 + (t2 >> 10));
-        str += String.fromCharCode(0xDC00 + (t2 & 0x3FF));
-      }
+
+    if (!textDecoder) {
+      textDecoder = new TextDecoder("utf-8");
     }
-    return str;
+
+    return textDecoder.decode(this.subarray(start, end));
   }
 
   copy(target: Uint8Array, targetStart?: number, sourceStart?: number, sourceEnd?: number) {
@@ -152,8 +145,6 @@ export const fromUint8Array = hasBuffer
 export const alloc = (hasBuffer ? Buffer.allocUnsafe : BrowserBuffer.alloc) as unknown as (size: number) => PlatformBuffer;
 
 export const strByteLength = hasBuffer ? Buffer.byteLength : BrowserBuffer.byteLength;
-
-let utf8Encoder: TextEncoder | null;
 
 export const fromString
 = hasBuffer

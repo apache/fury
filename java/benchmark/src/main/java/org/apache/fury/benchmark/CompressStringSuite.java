@@ -22,7 +22,6 @@ package org.apache.fury.benchmark;
 import java.nio.ByteBuffer;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
-import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.util.StringUtils;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
