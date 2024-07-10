@@ -28,7 +28,7 @@ lazy val root = Project(id = "fury-scala", base = file("."))
     name := "fury-scala",
     apacheSonatypeLicenseFile := baseDirectory.value / ".." / "LICENSE",
     apacheSonatypeNoticeFile := baseDirectory.value / ".." / "NOTICE",
-    apacheSonatypeDisclaimerFile := Some(baseDirectory.value.getParentFile / "DISCLAIMER"),
+    apacheSonatypeDisclaimerFile := Some(baseDirectory.value / ".." / "DISCLAIMER"),
     description := "Apache Fury(Incubating) is a blazingly fast multi-language serialization framework powered by JIT and zero-copy.",
     homepage := Some(url("https://fury.apache.org/")),
     startYear := Some(2024),
