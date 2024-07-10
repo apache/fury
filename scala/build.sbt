@@ -16,16 +16,33 @@
  * limitations under the License.
  */
 
-name := "fury-scala"
+val furyVersion = "0.6.0-SNAPSHOT"
 val scala213Version = "2.13.14"
+ThisBuild / apacheSonatypeProjectProfile := "fury"
+version := furyVersion
 scalaVersion := scala213Version
 crossScalaVersions := Seq(scala213Version, "3.3.3")
+
+lazy val root = Project(id = "fury-scala", base = file("."))
+  .settings(
+    name := "fury-scala",
+    apacheSonatypeLicenseFile := baseDirectory.value / ".." / "LICENSE",
+    apacheSonatypeNoticeFile := baseDirectory.value / ".." / "NOTICE",
+    apacheSonatypeDisclaimerFile := Some(baseDirectory.value.getParentFile / "DISCLAIMER"),
+    description := "Apache Fury(Incubating) is a blazingly fast multi-language serialization framework powered by JIT and zero-copy.",
+    homepage := Some(url("https://fury.apache.org/")),
+    startYear := Some(2024),
+    developers := List(
+      Developer(
+        "fury-contributors",
+        "Apache Fury(Incubating) Contributors",
+        "dev@fury.apache.org",
+        url("https://github.com/apache/fury/graphs/contributors"))))
 
 resolvers += Resolver.mavenLocal
 resolvers += Resolver.ApacheMavenSnapshotsRepo
 
-val furyVersion = "0.6.0-SNAPSHOT"
 libraryDependencies ++= Seq(
   "org.apache.fury" % "fury-core" % furyVersion,
-  "org.scalatest" %% "scalatest" % "3.2.19",
+  "org.scalatest" %% "scalatest" % "3.2.19" % Test,
 )
