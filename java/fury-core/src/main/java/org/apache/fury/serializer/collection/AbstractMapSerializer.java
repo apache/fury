@@ -331,12 +331,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   private static class ChunkWriter {
-        //todo hening remove the preserve two byte in constructor
-      public ChunkWriter(MemoryBuffer memoryBuffer, Fury fury) {
-          final int writerIndex = memoryBuffer.writerIndex();
-          // preserve two byte for header and chunk size
-          memoryBuffer.writerIndex(writerIndex + 2);
-          this.startOffset = writerIndex;
+
+      public ChunkWriter(Fury fury) {
           this.fury = fury;
       }
 
@@ -367,10 +363,38 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       private final Fury fury;
       private boolean writeKeyClassInfo = false;
       private boolean writeValueClassInfo = false;
-      private boolean markChunkFinish = false;
+      /**
+       * mark chunk write finish,
+       */
+      private boolean markChunkWriteFinish = false;
+      /**
+       * preserve two byte for header and chunk size and record the write index
+       * so that we can write key value at first, write header and chunk size when the chunk is finish at correct position
+       */
+      private boolean preserveByteForHeaderAndChunkSize = false;
+
+      private void preserveByteForHeaderAndChunkSize(MemoryBuffer memoryBuffer) {
+          if (!preserveByteForHeaderAndChunkSize) {
+              int writerIndex = memoryBuffer.writerIndex();
+              // preserve two byte for header and chunk size
+              memoryBuffer.writerIndex(writerIndex + 2);
+              this.startOffset = writerIndex;
+              preserveByteForHeaderAndChunkSize = true;
+          }
+      }
 
       public void write(Object key, Object value, MemoryBuffer memoryBuffer, ClassInfoHolder keyClassInfoWriteCache, ClassInfoHolder valueClassInfoWriteCache) {
+          preserveByteForHeaderAndChunkSize(memoryBuffer);
           updateHeader(key, value, memoryBuffer, keyClassInfoWriteCache, valueClassInfoWriteCache);
+          writeKey(key, memoryBuffer, keyClassInfoWriteCache);
+          writeValue(value, memoryBuffer, valueClassInfoWriteCache);
+          chunkSize++;
+          if (chunkSize >= MAX_CHUNK_SIZE) {
+              reset(memoryBuffer);
+          }
+      }
+
+      private void writeKey(Object key, MemoryBuffer memoryBuffer, ClassInfoHolder keyClassInfoWriteCache) {
           if ((header & MapFlags.TRACKING_KEY_REF) == MapFlags.TRACKING_KEY_REF) {
               RefResolver refResolver = fury.getRefResolver();
               if (!refResolver.writeRefOrNull(memoryBuffer, key)) {
@@ -380,25 +404,24 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
               Serializer serializer = keyClassInfoWriteCache.getSerializer();
               serializer.write(memoryBuffer, key);
           }
-          if ((header & MapFlags.TRACKING_VALUE_REF) == MapFlags.TRACKING_VALUE_REF) {
-              RefResolver refResolver = fury.getRefResolver();
-              if (!refResolver.writeRefOrNull(memoryBuffer, key)) {
-                  valueClassInfoWriteCache.getSerializer().write(memoryBuffer, key);
-              }
-          } else {
-              Serializer serializer = valueClassInfoWriteCache.getSerializer();
-              if (value == null) {
-                  memoryBuffer.writeByte(Fury.NULL_FLAG);
-              } else {
-                  memoryBuffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-                  serializer.write(memoryBuffer, value);
-              }
-          }
-          chunkSize++;
-          if (chunkSize >= MAX_CHUNK_SIZE) {
-              reset(memoryBuffer);
-          }
       }
+
+      private void writeValue(Object value, MemoryBuffer memoryBuffer, ClassInfoHolder valueClassInfoWriteCache) {
+              if ((header & MapFlags.TRACKING_VALUE_REF) == MapFlags.TRACKING_VALUE_REF) {
+                  RefResolver refResolver = fury.getRefResolver();
+                  if (!refResolver.writeRefOrNull(memoryBuffer, value)) {
+                      valueClassInfoWriteCache.getSerializer().write(memoryBuffer, value);
+                  }
+              } else {
+                  Serializer serializer = valueClassInfoWriteCache.getSerializer();
+                  if (value == null) {
+                      memoryBuffer.writeByte(Fury.NULL_FLAG);
+                  } else {
+                      memoryBuffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+                      serializer.write(memoryBuffer, value);
+                  }
+              }
+          }
 
       public void updateHeader(Object key, Object value, MemoryBuffer memoryBuffer, ClassInfoHolder keyClassInfoWriteCache, ClassInfoHolder valueClassInfoWriteCache) {
           if (key == null) {
@@ -431,7 +454,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
 
       /**
        * update chunk size and header, if chunk size == 0, do nothing
-       * @param memoryBuffer memoryBuffer which is writing
+       * @param memoryBuffer memoryBuffer which is written
        */
       private void writeHeader(MemoryBuffer memoryBuffer) {
           if (chunkSize > 0) {
@@ -445,32 +468,34 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       }
 
       /**
-       * if mark chunkFinish which means predict failed
-       * @param memoryBuffer memoryBuffer which is writing
+       * use chunk size = 0 to mark chunk write finish,
+       * if mark chunk write finish which means predict failed, chunk write is finish,
+       * rest of map will be written by generalJavaWrite
+       * @param memoryBuffer memoryBuffer which is written
        */
-      private void markChunkFinish(MemoryBuffer memoryBuffer) {
-          if (!markChunkFinish) {
+      private void markChunkWriteFinish(MemoryBuffer memoryBuffer) {
+          if (!markChunkWriteFinish) {
               writeHeader(memoryBuffer);
               memoryBuffer.writeByte(0);
-              markChunkFinish = true;
+              markChunkWriteFinish = true;
           }
       }
 
+      /**
+       * chunk size reach max size, start new chunk, no need reset keyClass and value Class
+       * @param memoryBuffer memoryBuffer which is written
+       */
       private void reset(MemoryBuffer memoryBuffer) {
           writeHeader(memoryBuffer);
           header = 0;
           chunkSize = 0;
-          startOffset = memoryBuffer.writerIndex();
-          memoryBuffer.writerIndex(startOffset + 2);
-          keyClass = null;
-          valueClass = null;
+          preserveByteForHeaderAndChunkSize = false;
       }
-
 
   }
 
     protected void javaChunkWrite(Fury fury, MemoryBuffer buffer, Map map) {
-        ChunkWriter chunkWriter = new ChunkWriter(buffer, fury);
+        ChunkWriter chunkWriter = new ChunkWriter(fury);
         ClassResolver classResolver = fury.getClassResolver();
         RefResolver refResolver = fury.getRefResolver();
         boolean predict = true;
@@ -482,7 +507,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           if (predict) {
               chunkWriter.write(key, value, buffer, keyClassInfoWriteCache, valueClassInfoWriteCache);
           } else {
-              chunkWriter.markChunkFinish(buffer);
+              chunkWriter.markChunkWriteFinish(buffer);
               writeJavaRefOptimized(
                       fury, classResolver, refResolver, buffer, entry.getKey(), keyClassInfoWriteCache);
               writeJavaRefOptimized(
