@@ -41,7 +41,7 @@ import org.apache.fury.type.TypeUtils;
 /** Serializer for all map-like objects. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractMapSerializer<T> extends Serializer<T> {
-  private static final int MAX_CHUNK_SIZE = 128;
+  private static final int MAX_CHUNK_SIZE = 127;
   protected MethodHandle constructor;
   protected final boolean supportCodegenHook;
   private Serializer keySerializer;
@@ -753,11 +753,18 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
+  private static void checkChunkSize(byte chunkSize) {
+      if (chunkSize < 0) {
+          throw new RuntimeException("chunkSize < 0, which means serialization protocol is not same with deserialization protocol");
+      }
+  }
+
   private void javaChunkRead(Fury fury, MemoryBuffer buffer, Map map, int size) {
       int copySize = size;
       Serializer keySerializer = null;
       Serializer valueSerializer = null;
       byte chunkSize = buffer.readByte();
+      checkChunkSize(chunkSize);
       if (chunkSize == 0) {
           generalJavaRead(fury, buffer, map, size);
           return;
@@ -790,6 +797,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           map.put(key, value);
           if (chunkSize == 0 && copySize != 0) {
               chunkSize = buffer.readByte();
+              checkChunkSize(chunkSize);
               if (chunkSize == 0) {
                   generalJavaRead(fury, buffer, map, copySize);
               } else {
