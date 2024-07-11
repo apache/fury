@@ -1239,7 +1239,6 @@ public final class Fury implements BaseFury {
     return deserializeJavaObjectAndClass(buf);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <T> T copy(T obj) {
     if (obj == null) {

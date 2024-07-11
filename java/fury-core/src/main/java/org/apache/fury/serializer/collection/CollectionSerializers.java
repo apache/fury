@@ -651,7 +651,8 @@ public class CollectionSerializers {
 
     @Override
     public Collection newCollection(Collection collection) {
-      return new PriorityQueue(collection.size(), fury.copy(((PriorityQueue) collection).comparator()));
+      return new PriorityQueue(
+          collection.size(), fury.copy(((PriorityQueue) collection).comparator()));
     }
 
     @Override
