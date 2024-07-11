@@ -67,7 +67,7 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
                     utf8_bytes.push(third);
                     utf8_bytes.push(fourth);
                 } else {
-                    return Err(format!("Invalid UTF-16 string: missing surrogate pair"));
+                    return Err("Invalid UTF-16 string: missing surrogate pair".to_string());
                 }
             }
             // 3-byte UTF-8
