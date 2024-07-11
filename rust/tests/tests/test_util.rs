@@ -98,8 +98,9 @@ fn test_to_utf8_surrogate_pair() {
 fn test_to_utf8_missing_surrogate_pair() {
     let utf16 = &[0x00D8]; // Missing second surrogate
     let result = to_utf8(utf16, true);
-    assert!(
-        result.is_err(),
-        "Missing surrogate pair should return an error"
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err(),
+        "Invalid UTF-16 string: missing surrogate pair"
     );
 }

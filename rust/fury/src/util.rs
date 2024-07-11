@@ -15,18 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#[derive(thiserror::Error, Debug)]
-pub enum UtilError {
-    #[error("Invalid UTF-16 string: missing surrogate pair")]
-    MissingSurrogatePair,
-}
-
 // Swapping the high 8 bits and the low 8 bits of a 16-bit value
 fn swap_endian(value: u16) -> u16 {
     ((value & 0xff) << 8) | ((value & 0xff00) >> 8)
 }
 
-pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, UtilError> {
+pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String> {
     // Pre-allocating approximate capacity to minimize dynamic resizing
     let mut utf8_bytes = Vec::with_capacity(utf16.len() * 2);
     let mut iter = utf16.iter();
@@ -73,7 +67,7 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, UtilErr
                     utf8_bytes.push(third);
                     utf8_bytes.push(fourth);
                 } else {
-                    return Err(UtilError::MissingSurrogatePair);
+                    return Err(format!("Invalid UTF-16 string: missing surrogate pair"));
                 }
             }
             // 3-byte UTF-8
