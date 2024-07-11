@@ -248,7 +248,7 @@ public class CollectionSerializers {
     @Override
     public Collection newCollection(Collection originCollection) {
       Collection collection;
-      Comparator comparator = ((SortedSet) originCollection).comparator();
+      Comparator comparator = fury.copy(((SortedSet) originCollection).comparator());
       if (Objects.equals(type, TreeSet.class)) {
         collection = new TreeSet(comparator);
       } else {
@@ -651,7 +651,7 @@ public class CollectionSerializers {
 
     @Override
     public Collection newCollection(Collection collection) {
-      return new PriorityQueue(collection.size(), ((PriorityQueue) collection).comparator());
+      return new PriorityQueue(collection.size(), fury.copy(((PriorityQueue) collection).comparator()));
     }
 
     @Override

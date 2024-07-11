@@ -150,7 +150,7 @@ public class MapSerializers {
 
     @Override
     public Map newMap(Map originMap) {
-      Comparator comparator = ((SortedMap) originMap).comparator();
+      Comparator comparator = fury.copy(((SortedMap) originMap).comparator());
       Map map;
       if (Objects.equals(type, TreeMap.class)) {
         map = new TreeMap(comparator);
@@ -299,7 +299,7 @@ public class MapSerializers {
 
     @Override
     public Map newMap(Map originMap) {
-      Comparator comparator = ((ConcurrentSkipListMap) originMap).comparator();
+      Comparator comparator = fury.copy(((ConcurrentSkipListMap) originMap).comparator());
       Map map;
       if (Objects.equals(type, ConcurrentSkipListMap.class)) {
         map = new ConcurrentSkipListMap(comparator);
