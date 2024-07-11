@@ -50,6 +50,7 @@ TEST(StringUtilTest, TestIsLatinFunctions) {
 }
 
 TEST(StringUtilTest, TestIsLatinLogic) {
+
   // Test with Latin strings
   EXPECT_TRUE(isLatin("Fury"));
   EXPECT_TRUE(isLatin(generateRandomString(80)));
