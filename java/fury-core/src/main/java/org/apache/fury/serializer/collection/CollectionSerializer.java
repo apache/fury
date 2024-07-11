@@ -20,7 +20,6 @@
 package org.apache.fury.serializer.collection;
 
 import java.util.Collection;
-import java.util.Objects;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 
@@ -56,21 +55,15 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
     if (isImmutable()) {
       return originCollection;
     }
-    Collection newCollection;
-    if (!needToCopyRef) {
-      newCollection = newCollection(originCollection);
-      copyElements(originCollection, newCollection);
-      return (T) newCollection;
+    Collection newCollection = newCollection(originCollection);
+    if (needToCopyRef) {
+      Collection copyObject = (Collection) fury.getCopyObject(originCollection);
+      if (copyObject != null) {
+        return (T) copyObject;
+      }
+      fury.reference(originCollection, newCollection);
     }
-    newCollection = (Collection) fury.getCopyObject(originCollection);
-    if (Objects.nonNull(newCollection)) {
-      return (T) newCollection;
-    }
-    fury.incCopyDepth(1);
-    newCollection = newCollection(originCollection);
-    fury.copyReference(originCollection, newCollection);
     copyElements(originCollection, newCollection);
-    fury.incCopyDepth(-1);
     return (T) newCollection;
   }
 

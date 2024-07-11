@@ -26,7 +26,6 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -1243,9 +1242,10 @@ public final class Fury implements BaseFury {
   @SuppressWarnings("unchecked")
   @Override
   public <T> T copy(T obj) {
-    if (Objects.isNull(obj)) {
+    if (obj == null) {
       return null;
     }
+    copyDepth++;
     try {
       if (obj instanceof FuryCopyable) {
         return (T) ((FuryCopyable<?>) obj).copy(this);
@@ -1255,6 +1255,7 @@ public final class Fury implements BaseFury {
     } catch (StackOverflowError e) {
       throw processCopyStackOverflowError(e);
     } finally {
+      copyDepth--;
       if (copyRefTracking && copyDepth == 0) {
         resetCopy();
       }
@@ -1262,22 +1263,21 @@ public final class Fury implements BaseFury {
   }
 
   /**
-   * Record the mapping between the object currently being copied and the newly generated object
-   * after copying.
+   * Track ref for copy.
    *
-   * @param originObj the origin object instance
-   * @param newObj the new object instance
+   * <p>Call this method immediately after composited object such as object
+   * array/map/collection/bean is created so that circular reference can be copy correctly.
+   *
+   * @param o1 object before copying
+   * @param o2 the copied object
    */
-  public void copyReference(Object originObj, Object newObj) {
-    if (Objects.nonNull(originObj) && Objects.nonNull(newObj)) {
-      originToCopyMap.put(originObj, newObj);
+  public <T> void reference(T o1, T o2) {
+    if (o1 != null) {
+      originToCopyMap.put(o1, o2);
     }
   }
 
   public Object getCopyObject(Object originObj) {
-    if (Objects.isNull(originObj)) {
-      return null;
-    }
     return originToCopyMap.get(originObj);
   }
 

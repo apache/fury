@@ -105,20 +105,15 @@ public class CollectionSerializers {
     @Override
     public List<?> copy(List<?> originCollection) {
       Object[] elements = new Object[originCollection.size()];
-      if (!needToCopyRef) {
-        copyElements(originCollection, elements);
-        return Arrays.asList(elements);
+      List<?> newCollection = Arrays.asList(elements);
+      if (needToCopyRef) {
+        List<?> copyObject = (List<?>) fury.getCopyObject(originCollection);
+        if (copyObject != null) {
+          return copyObject;
+        }
+        fury.reference(originCollection, newCollection);
       }
-      List<?> newCollection;
-      newCollection = (List<?>) fury.getCopyObject(originCollection);
-      if (Objects.nonNull(newCollection)) {
-        return newCollection;
-      }
-      fury.incCopyDepth(1);
-      newCollection = Arrays.asList(elements);
-      fury.copyReference(originCollection, newCollection);
       copyElements(originCollection, elements);
-      fury.incCopyDepth(-1);
       return newCollection;
     }
 

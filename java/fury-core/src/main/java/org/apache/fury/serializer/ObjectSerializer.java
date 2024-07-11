@@ -234,21 +234,15 @@ public final class ObjectSerializer<T> extends Serializer<T> {
     if (isRecord) {
       return originObj;
     }
-    T newObj;
-    if (!needToCopyRef) {
-      newObj = newBean(constructor, type);
-      copyFields(originObj, newObj);
-      return newObj;
+    T newObj = newBean(constructor, type);
+    if (needToCopyRef) {
+      T copyObject = (T) fury.getCopyObject(originObj);
+      if (copyObject != null) {
+        return copyObject;
+      }
+      fury.reference(originObj, newObj);
     }
-    newObj = (T) fury.getCopyObject(originObj);
-    if (Objects.nonNull(newObj)) {
-      return newObj;
-    }
-    fury.incCopyDepth(1);
-    newObj = newBean(constructor, type);
-    fury.copyReference(originObj, newObj);
     copyFields(originObj, newObj);
-    fury.incCopyDepth(-1);
     return newObj;
   }
 
