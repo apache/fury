@@ -1247,11 +1247,7 @@ public final class Fury implements BaseFury {
     }
     copyDepth++;
     try {
-      if (obj instanceof FuryCopyable) {
-        return (T) ((FuryCopyable<?>) obj).copy(this);
-      } else {
-        return (T) classResolver.getOrUpdateClassInfo(obj.getClass()).getSerializer().copy(obj);
-      }
+      return (T) classResolver.getOrUpdateClassInfo(obj.getClass()).getSerializer().copy(obj);
     } catch (StackOverflowError e) {
       throw processCopyStackOverflowError(e);
     } finally {
