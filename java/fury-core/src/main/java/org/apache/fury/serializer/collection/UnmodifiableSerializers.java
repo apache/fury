@@ -22,6 +22,7 @@ package org.apache.fury.serializer.collection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -104,11 +105,23 @@ public class UnmodifiableSerializers {
   public static final class UnmodifiableMapSerializer extends MapSerializer<Map> {
     private final Function factory;
     private final long offset;
+    private final boolean isSortedMap;
 
     public UnmodifiableMapSerializer(Fury fury, Class cls, Function factory, long offset) {
       super(fury, cls, false);
       this.factory = factory;
       this.offset = offset;
+      this.isSortedMap = SortedMap.class.isAssignableFrom(cls);
+    }
+
+    @Override
+    public Map newMap(Map map) {
+      if (isSortedMap) {
+        Comparator comparator = fury.copy(((SortedMap) map).comparator());
+        return new TreeMap(comparator);
+      } else {
+        return new HashMap(map.size());
+      }
     }
 
     @Override
@@ -116,6 +129,11 @@ public class UnmodifiableSerializers {
       Preconditions.checkArgument(value.getClass() == type);
       Object fieldValue = Platform.getObject(value, offset);
       fury.writeRef(buffer, fieldValue);
+    }
+
+    @Override
+    public Map onMapCopy(Map map) {
+      return (Map) factory.apply(map);
     }
 
     @Override

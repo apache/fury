@@ -416,6 +416,10 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     return onMapRead(map);
   }
 
+  protected void copyEntry(Map originMap, Map newMap) {
+    originMap.forEach((k, v) -> newMap.put(fury.copy(k), fury.copy(v)));
+  }
+
   @SuppressWarnings("unchecked")
   protected final void readElements(MemoryBuffer buffer, int size, Map map) {
     Serializer keySerializer = this.keySerializer;
@@ -771,6 +775,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   public void setNumElements(int numElements) {
     this.numElements = numElements;
   }
+
+  public abstract T onMapCopy(Map map);
 
   public abstract T onMapRead(Map map);
 

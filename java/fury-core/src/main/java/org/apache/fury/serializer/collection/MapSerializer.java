@@ -58,11 +58,12 @@ public class MapSerializer<T extends Map> extends AbstractMapSerializer<T> {
       fury.reference(originMap, newMap);
     }
     copyEntry(originMap, newMap);
-    return (T) newMap;
+    return onMapCopy(newMap);
   }
 
-  public void copyEntry(T originMap, Map newMap) {
-    originMap.forEach((k, v) -> newMap.put(fury.copy(k), fury.copy(v)));
+  @Override
+  public T onMapCopy(Map map) {
+    return (T) map;
   }
 
   @Override

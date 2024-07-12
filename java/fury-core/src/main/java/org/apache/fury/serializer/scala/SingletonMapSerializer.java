@@ -68,6 +68,11 @@ public class SingletonMapSerializer extends AbstractMapSerializer {
   }
 
   @Override
+  public Object onMapCopy(Map map) {
+    throw new IllegalStateException("unreachable");
+  }
+
+  @Override
   public Object onMapRead(Map map) {
     throw new IllegalStateException("unreachable");
   }

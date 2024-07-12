@@ -222,6 +222,16 @@ public class GuavaCollectionSerializers {
     }
 
     @Override
+    public Map newMap(Map map) {
+      return new MapContainer(map.size());
+    }
+
+    @Override
+    public T onMapCopy(Map map) {
+      return onMapRead(map);
+    }
+
+    @Override
     public T onMapRead(Map map) {
       MapContainer container = (MapContainer) map;
       int size = container.size;
@@ -339,6 +349,17 @@ public class GuavaCollectionSerializers {
       setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);
       return new SortedMapContainer<>(comparator, numElements);
+    }
+
+    @Override
+    public Map newMap(Map map) {
+      Comparator comparator = fury.copy(((ImmutableSortedMap) map).comparator());
+      return new SortedMapContainer<>(comparator, map.size());
+    }
+
+    @Override
+    public T onMapCopy(Map map) {
+      return onMapRead(map);
     }
 
     @Override
