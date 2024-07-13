@@ -23,11 +23,6 @@
 
 namespace fury {
 
-bool isLatin_Baseline(const std::string &str);
-bool isLatin_AVX2(const std::string &str);
-bool isLatin_SSE2(const std::string &str);
-bool isLatin_NEON(const std::string &str);
-bool isLatin_RISCV(const std::string &str);
-std::string generateRandomString(size_t length);
+bool isLatin(const std::string &str);
 
 } // namespace fury

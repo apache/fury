@@ -18,11 +18,8 @@
  */
 
 #include "string_util.h"
-#include <iostream>
-#include <random>
 
 #if defined(__x86_64__) || defined(_M_X64)
-#include <emmintrin.h>
 #include <immintrin.h>
 #elif defined(__ARM_NEON) || defined(__ARM_NEON__)
 #include <arm_neon.h>
@@ -32,17 +29,9 @@
 
 namespace fury {
 
-bool isLatin_Baseline(const std::string &str) {
-  for (char c : str) {
-    if (static_cast<unsigned char>(c) >= 128) {
-      return false;
-    }
-  }
-  return true;
-}
-
 #if defined(__x86_64__) || defined(_M_X64)
-bool isLatin_AVX2(const std::string &str) {
+
+bool isLatin(const std::string &str) {
   const char *data = str.data();
   size_t len = str.size();
 
@@ -66,37 +55,9 @@ bool isLatin_AVX2(const std::string &str) {
   return true;
 }
 
-bool isLatin_SSE2(const std::string &str) {
-  const char *data = str.data();
-  size_t len = str.size();
+#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
 
-  size_t i = 0;
-  __m128i latin_mask = _mm_set1_epi8(0x80);
-  for (; i + 16 <= len; i += 16) {
-    __m128i chars =
-        _mm_loadu_si128(reinterpret_cast<const __m128i *>(data + i));
-    __m128i result = _mm_and_si128(chars, latin_mask);
-    if (!_mm_testz_si128(result, result)) {
-      return false;
-    }
-  }
-
-  for (; i < len; ++i) {
-    if (static_cast<unsigned char>(data[i]) >= 128) {
-      return false;
-    }
-  }
-
-  return true;
-}
-#else
-bool isLatin_AVX2(const std::string &str) { return isLatin_Baseline(str); }
-
-bool isLatin_SSE2(const std::string &str) { return isLatin_Baseline(str); }
-#endif
-
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
-bool isLatin_NEON(const std::string &str) {
+bool isLatin(const std::string &str) {
   const char *data = str.data();
   size_t len = str.size();
 
@@ -118,27 +79,21 @@ bool isLatin_NEON(const std::string &str) {
 
   return true;
 }
-#else
-bool isLatin_NEON(const std::string &str) { return isLatin_Baseline(str); }
-#endif
 
-#if defined(__riscv) && __riscv_vector
-bool isLatin_RISCV(const std::string &str) {
+#elif defined(__riscv) && __riscv_vector
+
+bool isLatin(const std::string &str) {
   const char *data = str.data();
   size_t len = str.size();
 
   size_t i = 0;
-  size_t vl;
-  while ((vl = vsetvl_e8m1(len - i)) > 0) {
-    vuint8m1_t chars =
-        vle8_v_u8m1(reinterpret_cast<const uint8_t *>(data + i), vl);
-    vuint8m1_t latin_mask = vmv_v_x_u8m1(0x80, vl);
-    vbool8_t result =
-        vmseq_vv_u8m1_b8(vand_vv_u8m1(chars, latin_mask, vl), latin_mask, vl);
-    if (vfirst_m_b8(result) != -1) {
+  for (; i + 16 <= len; i += 16) {
+    auto chars = vle8_v_u8m1(reinterpret_cast<const uint8_t *>(data + i), 16);
+    auto mask = vmv_v_x_u8m1(0x80, 16);
+    auto result = vand_vv_u8m1(chars, mask, 16);
+    if (vmax_v_u8m1(result, 16) != 0) {
       return false;
     }
-    i += vl;
   }
 
   for (; i < len; ++i) {
@@ -149,23 +104,18 @@ bool isLatin_RISCV(const std::string &str) {
 
   return true;
 }
+
 #else
-bool isLatin_RISCV(const std::string &str) { return isLatin_Baseline(str); }
-#endif
 
-std::string generateRandomString(size_t length) {
-  const char charset[] =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  std::default_random_engine rng(std::random_device{}());
-  std::uniform_int_distribution<> dist(0, sizeof(charset) - 2);
-
-  std::string result;
-  result.reserve(length);
-  for (size_t i = 0; i < length; ++i) {
-    result += charset[dist(rng)];
+bool isLatin(const std::string &str) {
+  for (char c : str) {
+    if (static_cast<unsigned char>(c) >= 128) {
+      return false;
+    }
   }
-
-  return result;
+  return true;
 }
+
+#endif
 
 } // namespace fury
