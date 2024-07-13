@@ -218,7 +218,6 @@ The text of each license is the standard Apache 2.0 license.
     Files:
       java/fury-core/src/main/java/org/apache/fury/util/Preconditions.java
       java/fury-core/src/main/java/org/apache/fury/reflect/TypeParameter.java
-      java/fury-core/src/main/java/org/apache/fury/reflect/Types.java
       java/fury-core/src/main/java/org/apache/fury/reflect/TypeRef.java
       java/fury-core/src/main/java/org/apache/fury/util/concurrency/DirectExecutorService.java
 
