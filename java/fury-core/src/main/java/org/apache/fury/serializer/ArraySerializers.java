@@ -31,8 +31,8 @@ import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.collection.CollectionFlags;
 import org.apache.fury.serializer.collection.FuryArrayAsListSerializer;
-import org.apache.fury.type.Type;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.type.Types;
 import org.apache.fury.util.Preconditions;
 
 /** Serializers for array types. */
@@ -675,24 +675,24 @@ public class ArraySerializers {
   static {
     primitiveInfo.put(
         boolean.class,
-        new int[] {Platform.BOOLEAN_ARRAY_OFFSET, 1, Type.FURY_PRIMITIVE_BOOL_ARRAY.getId()});
-    primitiveInfo.put(byte.class, new int[] {Platform.BYTE_ARRAY_OFFSET, 1, Type.BINARY.getId()});
+        new int[] {Platform.BOOLEAN_ARRAY_OFFSET, 1, Types.BOOL_ARRAY});
+    primitiveInfo.put(byte.class, new int[] {Platform.BYTE_ARRAY_OFFSET, 1, Types.BINARY});
     primitiveInfo.put(
         char.class, new int[] {Platform.CHAR_ARRAY_OFFSET, 2, Fury.NOT_SUPPORT_XLANG});
     primitiveInfo.put(
         short.class,
-        new int[] {Platform.SHORT_ARRAY_OFFSET, 2, Type.FURY_PRIMITIVE_SHORT_ARRAY.getId()});
+        new int[] {Platform.SHORT_ARRAY_OFFSET, 2, Types.INT16_ARRAY});
     primitiveInfo.put(
-        int.class, new int[] {Platform.INT_ARRAY_OFFSET, 4, Type.FURY_PRIMITIVE_INT_ARRAY.getId()});
+        int.class, new int[] {Platform.INT_ARRAY_OFFSET, 4, Types.INT32_ARRAY});
     primitiveInfo.put(
         long.class,
-        new int[] {Platform.LONG_ARRAY_OFFSET, 8, Type.FURY_PRIMITIVE_LONG_ARRAY.getId()});
+        new int[] {Platform.LONG_ARRAY_OFFSET, 8, Types.INT64_ARRAY});
     primitiveInfo.put(
         float.class,
-        new int[] {Platform.FLOAT_ARRAY_OFFSET, 4, Type.FURY_PRIMITIVE_FLOAT_ARRAY.getId()});
+        new int[] {Platform.FLOAT_ARRAY_OFFSET, 4, Types.FLOAT32_ARRAY});
     primitiveInfo.put(
         double.class,
-        new int[] {Platform.DOUBLE_ARRAY_OFFSET, 8, Type.FURY_PRIMITIVE_DOUBLE_ARRAY.getId()});
+        new int[] {Platform.DOUBLE_ARRAY_OFFSET, 8, Types.FLOAT64_ARRAY});
   }
 
   public abstract static class AbstractedNonexistentArrayClassSerializer extends Serializer {

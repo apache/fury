@@ -40,7 +40,7 @@ import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
-import org.apache.fury.type.Type;
+import org.apache.fury.type.Types;
 import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.Preconditions;
 
@@ -212,10 +212,10 @@ public class StructSerializer<T> extends Serializer<T> {
     int id;
     if (fieldGeneric.getTypeRef().isSubtypeOf(List.class)) {
       // TODO(chaokunyang) add list element type into schema hash
-      id = Type.LIST.getId();
+      id = Types.LIST;
     } else if (fieldGeneric.getTypeRef().isSubtypeOf(Map.class)) {
       // TODO(chaokunyang) add map key&value type into schema hash
-      id = Type.MAP.getId();
+      id = Types.MAP;
     } else {
       try {
         ClassInfo classInfo = fury.getClassResolver().getClassInfo(fieldGeneric.getCls());
