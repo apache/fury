@@ -43,15 +43,32 @@ std::string generateRandomString(size_t length) {
   return result;
 }
 
+bool isLatin_BaseLine(const std::string &str) {
+  for (char c : str) {
+    if (static_cast<unsigned char>(c) >= 128) {
+      return false;
+    }
+  }
+  return true;
+}
+
 TEST(StringUtilTest, TestIsLatinFunctions) {
   std::string testStr = generateRandomString(100000);
   auto start_time = std::chrono::high_resolution_clock::now();
-  bool result = isLatin(testStr);
+  bool result = isLatin_BaseLine(testStr);
   auto end_time = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
                       end_time - start_time)
                       .count();
-  FURY_LOG(INFO) << "Running Time: " << duration << " ns.";
+  FURY_LOG(INFO) << "BaseLine Running Time: " << duration << " ns.";
+
+  start_time = std::chrono::high_resolution_clock::now();
+  result = isLatin(testStr);
+  end_time = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time -
+                                                                  start_time)
+                 .count();
+  FURY_LOG(INFO) << "Optimized Running Time: " << duration << " ns.";
 
   EXPECT_TRUE(result);
 }
