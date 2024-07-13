@@ -53,7 +53,7 @@ public interface BaseFury {
   void register(Class<?> cls, boolean createSerializer);
 
   /** register class with given id. */
-  void register(Class<?> cls, Short id);
+  void register(Class<?> cls, int id);
 
   /**
    * Register class with specified id.
@@ -63,7 +63,7 @@ public interface BaseFury {
    * @param createSerializer whether to create serializer, if true and codegen enabled, this will
    *     generate the serializer code too.
    */
-  void register(Class<?> cls, Short id, boolean createSerializer);
+  void register(Class<?> cls, int id, boolean createSerializer);
 
   /**
    * Register a Serializer for a class, and allocate an auto-grown ID for this class if it's not

@@ -69,6 +69,12 @@ public class XtypeResolver {
     internalRegister(type, xtypeId);
   }
 
+  public void register(Class<?> cls, String namespace, String typeName) {
+    Preconditions.checkArgument(!typeName.contains("."),
+      "Typename %s should not contains ., please put it into namespace", typeName);
+
+  }
+
   private void registerDefaultTypes(int xtypeId, Class<?> defaultType, Class<?>... otherTypes) {
     internalRegister(defaultType, xtypeId);
     xtypeIdToClassMap.put(xtypeId, classResolver.getClassInfo(defaultType));

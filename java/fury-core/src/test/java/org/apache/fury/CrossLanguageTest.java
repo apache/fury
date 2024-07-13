@@ -468,7 +468,7 @@ public class CrossLanguageTest {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .build();
-    fury.register(ComplexObject2.class);
+    fury.register(ComplexObject2.class, "test.ComplexObject2");
     ComplexObject2 obj2 = new ComplexObject2();
     obj2.f1 = true;
     obj2.f2 = new HashMap<>(ImmutableMap.of((byte) -1, 2));
@@ -482,8 +482,8 @@ public class CrossLanguageTest {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .build();
-    fury.register(ComplexObject1.class);
-    fury.register(ComplexObject2.class);
+    fury.register(ComplexObject1.class, "test.ComplexObject1");
+    fury.register(ComplexObject2.class, "test.ComplexObject2");
     ComplexObject2 obj2 = new ComplexObject2();
     obj2.f1 = true;
     obj2.f2 = ImmutableMap.of((byte) -1, 2);
@@ -527,7 +527,7 @@ public class CrossLanguageTest {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .build();
-    fury.register(ComplexObject2.class);
+    fury.register(ComplexObject2.class, "test.ComplexObject2");
     ComplexObject2 obj = new ComplexObject2();
     obj.f1 = Foo.create();
     byte[] serialized = fury.serialize(obj);
@@ -542,7 +542,7 @@ public class CrossLanguageTest {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .build();
-    fury.register(ComplexObject1.class);
+    fury.register(ComplexObject1.class, "test.ComplexObject1");
     // don't register ComplexObject2/Foo to make them serialize as opaque blobs.
     ComplexObject1 obj = new ComplexObject1();
     obj.f1 = new ComplexObject2();
@@ -589,11 +589,6 @@ public class CrossLanguageTest {
     }
 
     @Override
-    public String getCrossLanguageTypeTag() {
-      return "test.ComplexObject1";
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, ComplexObject1 value) {
       fury.xwriteRef(buffer, value.f1);
       fury.xwriteRef(buffer, value.f2);
@@ -620,6 +615,7 @@ public class CrossLanguageTest {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .build();
+    fury.register(ComplexObject1.class, "test.ComplexObject1");
     fury.registerSerializer(ComplexObject1.class, ComplexObject1Serializer.class);
     ComplexObject1 obj = new ComplexObject1();
     obj.f1 = true;
@@ -722,8 +718,8 @@ public class CrossLanguageTest {
   @Test
   public void testStructArrayField() {
     Fury fury = Fury.builder().withLanguage(Language.XLANG).requireClassRegistration(true).build();
-    fury.register(ArrayStruct.class);
-    fury.register(ArrayField.class);
+    fury.register(ArrayStruct.class, "example.bar");
+    fury.register(ArrayField.class, "example.foo");
 
     ArrayField a = new ArrayField();
     a.a = "123";

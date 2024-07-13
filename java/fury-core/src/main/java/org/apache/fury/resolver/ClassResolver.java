@@ -470,7 +470,7 @@ public class ClassResolver {
     extRegistry.classIdGenerator++;
   }
 
-  public void register(Class<?> cls, Short id, boolean createSerializer) {
+  public void register(Class<?> cls, int id, boolean createSerializer) {
     register(cls, id);
     if (createSerializer) {
       getSerializer(cls);

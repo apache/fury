@@ -39,6 +39,7 @@ import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.serializer.Serializers.CrossLanguageCompatibleSerializer;
+import org.apache.fury.type.Types;
 
 /** Serializers for apache arrow. */
 public class ArrowSerializers {
@@ -165,6 +166,8 @@ public class ArrowSerializers {
   }
 
   public static void registerSerializers(Fury fury) {
+    fury.register(ArrowTable.class, Types.ARROW_TABLE);
+    fury.register(VectorSchemaRoot.class, Types.ARROW_RECORD_BATCH);
     fury.registerSerializer(ArrowTable.class, new ArrowTableSerializer(fury));
     fury.registerSerializer(VectorSchemaRoot.class, new VectorSchemaRootSerializer(fury));
   }
