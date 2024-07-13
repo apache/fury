@@ -147,20 +147,20 @@ public final class Fury implements BaseFury {
   }
 
   @Override
-  public void register(Class<?> cls, boolean createSerializer) {
-    if (language == Language.JAVA) {
-      classResolver.register(cls, createSerializer);
-    } else {
-      xtypeResolver.register(cls);
-    }
-  }
-
-  @Override
   public void register(Class<?> cls, int id) {
     if (language == Language.JAVA) {
       classResolver.register(cls, id);
     } else {
       xtypeResolver.register(cls, id);
+    }
+  }
+
+  @Override
+  public void register(Class<?> cls, boolean createSerializer) {
+    if (language == Language.JAVA) {
+      classResolver.register(cls, createSerializer);
+    } else {
+      xtypeResolver.register(cls);
     }
   }
 
@@ -173,13 +173,11 @@ public final class Fury implements BaseFury {
     }
   }
 
-  /** register class with given type tag which will be used for cross-language serialization. */
   public void register(Class<?> cls, String typeName) {
     Preconditions.checkArgument(language != Language.JAVA);
     register(cls, "", typeName);
   }
 
-  /** register class with given type tag which will be used for cross-language serialization. */
   public void register(Class<?> cls, String namespace, String typeName) {
     Preconditions.checkArgument(language != Language.JAVA);
     xtypeResolver.register(cls, namespace, typeName);

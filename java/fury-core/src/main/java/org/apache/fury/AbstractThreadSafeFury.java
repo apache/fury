@@ -21,8 +21,11 @@ package org.apache.fury;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import org.apache.fury.config.Language;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
+import org.apache.fury.util.Preconditions;
 
 public abstract class AbstractThreadSafeFury implements ThreadSafeFury {
   @Override
@@ -31,18 +34,23 @@ public abstract class AbstractThreadSafeFury implements ThreadSafeFury {
   }
 
   @Override
-  public void register(Class<?> cls, boolean createSerializer) {
-    processCallback(fury -> fury.register(cls, createSerializer));
-  }
-
-  @Override
   public void register(Class<?> cls, int id) {
     processCallback(fury -> fury.register(cls, id));
   }
 
   @Override
-  public void register(Class<?> cls, int id, boolean createSerializer) {
-    processCallback(fury -> fury.register(cls, id, createSerializer));
+  public void register(Class<?> cls, boolean createSerializer) {
+    processCallback(fury -> fury.register(cls, createSerializer));
+  }
+
+  @Override
+  public void register(Class<?> cls, String typeName) {
+    processCallback(fury -> fury.register(cls, typeName));
+  }
+
+  @Override
+  public void register(Class<?> cls, String namespace, String typeName) {
+    processCallback(fury -> fury.register(cls, namespace, typeName));
   }
 
   @Override
