@@ -20,6 +20,8 @@
 #include <chrono>
 #include <iostream>
 #include <random>
+#include <locale>
+#include <codecvt>
 
 #include "fury/util/logging.h"
 #include "string_util.h"
@@ -96,6 +98,140 @@ TEST(StringUtilTest, TestIsLatinLogic) {
   EXPECT_FALSE(isLatin("abc\u1234"));
   EXPECT_FALSE(isLatin("abcd\u1234"));
   EXPECT_FALSE(isLatin("Javaone Keynote\u1234"));
+}
+
+
+std::u16string generate_random_utf16_string(size_t length) {
+    std::u16string str(length, u'\0');
+    std::mt19937_64 rng(std::random_device{}());
+    std::uniform_int_distribution<uint32_t> dist(0, 0x10FFFF);
+
+    for (size_t i = 0; i < length; ++i) {
+        uint32_t code_point = dist(rng);
+        if (code_point <= 0xFFFF) {
+            str[i] = static_cast<char16_t>(code_point);
+        } else {
+            code_point -= 0x10000;
+            str[i] = static_cast<char16_t>(0xD800 + (code_point >> 10));
+            str.insert(str.begin() + i + 1, static_cast<char16_t>(0xDC00 + (code_point & 0x3FF)));
+            ++i;
+        }
+    }
+
+    return str;
+}
+
+std::string utf16_to_utf8_baseline(const std::u16string &utf16, bool is_little_endian) {
+    std::string utf8;
+
+    for (size_t i = 0; i < utf16.size(); ++i) {
+        uint16_t w1 = utf16[i];
+        if (!is_little_endian) {
+            w1 = (w1 >> 8) | (w1 << 8); // Swap bytes for big-endian
+        }
+
+        if (w1 >= 0xD800 && w1 <= 0xDBFF) {
+            if (i + 1 >= utf16.size()) {
+                throw std::runtime_error("Invalid UTF-16 sequence");
+            }
+
+            uint16_t w2 = utf16[++i];
+            if (!is_little_endian) {
+                w2 = (w2 >> 8) | (w2 << 8); // Swap bytes for big-endian
+            }
+
+            if (w2 < 0xDC00 || w2 > 0xDFFF) {
+                throw std::runtime_error("Invalid UTF-16 sequence");
+            }
+
+            uint32_t code_point = ((w1 - 0xD800) << 10) + (w2 - 0xDC00) + 0x10000;
+
+            utf8.push_back(0xF0 | (code_point >> 18));
+            utf8.push_back(0x80 | ((code_point >> 12) & 0x3F));
+            utf8.push_back(0x80 | ((code_point >> 6) & 0x3F));
+            utf8.push_back(0x80 | (code_point & 0x3F));
+        } else if (w1 >= 0xDC00 && w1 <= 0xDFFF) {
+            throw std::runtime_error("Invalid UTF-16 sequence");
+        } else {
+            if (w1 < 0x80) {
+                utf8.push_back(static_cast<char>(w1));
+            } else if (w1 < 0x800) {
+                utf8.push_back(0xC0 | (w1 >> 6));
+                utf8.push_back(0x80 | (w1 & 0x3F));
+            } else {
+                utf8.push_back(0xE0 | (w1 >> 12));
+                utf8.push_back(0x80 | ((w1 >> 6) & 0x3F));
+                utf8.push_back(0x80 | (w1 & 0x3F));
+            }
+        }
+    }
+
+    return utf8;
+}
+
+
+TEST(UTF16ToUTF8Test, BasicConversion) {
+std::u16string utf16 = u"Hello, 世界!";
+std::string utf8 = fury::utf16_to_utf8(utf16, true);
+ASSERT_EQ(utf8, u8"Hello, 世界!");
+}
+
+TEST(UTF16ToUTF8Test, EndiannessConversion) {
+std::u16string utf16 = {0xFFFE, 0xFFFE};
+std::string utf8 = fury::utf16_to_utf8(utf16, false);
+ASSERT_EQ(utf8, "\xEF\xBF\xBE\xEF\xBF\xBE");
+}
+
+TEST(UTF16ToUTF8Test, PerformanceTest) {
+const size_t num_tests = 1000;
+const size_t string_length = 1000;
+bool is_little_endian = true; // 假设测试小端序
+
+// Random UTF-16
+std::vector<std::u16string> test_strings;
+for (size_t i = 0; i < num_tests; ++i) {
+test_strings.push_back(generate_random_utf16_string(string_length));
+}
+
+// Lib
+try {
+auto start = std::chrono::high_resolution_clock::now();
+for (const auto &str : test_strings) {
+std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+std::string utf8 = convert.to_bytes(str);
+}
+auto end = std::chrono::high_resolution_clock::now();
+std::chrono::duration<double> elapsed = end - start;
+FURY_LOG(INFO) << "Standard library conversion took: " << elapsed.count() << " seconds";
+} catch (const std::exception &e) {
+FURY_LOG(FATAL) << "Caught exception: " << e.what();
+}
+
+// BaseLine
+try {
+auto start = std::chrono::high_resolution_clock::now();
+for (const auto &str : test_strings) {
+std::string utf8 = utf16_to_utf8_baseline(str, is_little_endian);
+}
+auto end = std::chrono::high_resolution_clock::now();
+std::chrono::duration<double> elapsed = end - start;
+FURY_LOG(INFO) << "Baseline conversion took: " << elapsed.count() << " seconds" ;
+} catch (const std::exception &e) {
+FURY_LOG(FATAL) << "Caught exception: " << e.what();
+}
+
+// SIMD
+try {
+auto start = std::chrono::high_resolution_clock::now();
+for (const auto &str : test_strings) {
+std::string utf8 = fury::utf16_to_utf8(str, is_little_endian);
+}
+auto end = std::chrono::high_resolution_clock::now();
+std::chrono::duration<double> elapsed = end - start;
+FURY_LOG(INFO) << "SIMD accelerated conversion took: " << elapsed.count() << " seconds";
+} catch (const std::exception &e) {
+FURY_LOG(FATAL) << "Caught exception: " << e.what();
+}
 }
 
 } // namespace fury
