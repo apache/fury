@@ -65,11 +65,11 @@ fn test_to_utf8_3byte() {
 
 #[test]
 fn test_to_utf8_endian() {
-    let utf16 = &[0x6100, 0x6200]; // 'a' in UTF-16 little endian
+    let utf16 = &[0x6100, 0x6200]; // 'ab' in UTF-16 little endian
     let expected = b"ab";
     let result = to_utf8(utf16, true).unwrap();
     assert_eq!(result, expected, "Little endian test failed");
-    let utf16 = &[0x0061, 0x0062]; // 'a' in UTF-16 big endian
+    let utf16 = &[0x0061, 0x0062]; // 'ab' in UTF-16 big endian
     let expected = b"ab";
     let result = to_utf8(utf16, false).unwrap();
     assert_eq!(result, expected, "Big endian test failed");
@@ -102,5 +102,13 @@ fn test_to_utf8_missing_surrogate_pair() {
     assert_eq!(
         result.unwrap_err(),
         "Invalid UTF-16 string: missing surrogate pair"
+    );
+
+    let utf16 = &[0x00D8, 0x00DA]; // Wrong second surrogate
+    let result = to_utf8(utf16, true);
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err(),
+        "Invalid UTF-16 string: wrong surrogate pair"
     );
 }

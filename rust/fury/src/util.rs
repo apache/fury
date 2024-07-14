@@ -17,7 +17,7 @@
 
 // Swapping the high 8 bits and the low 8 bits of a 16-bit value
 fn swap_endian(value: u16) -> u16 {
-    ((value & 0xff) << 8) | ((value & 0xff00) >> 8)
+    (value << 8) | (value >> 8)
 }
 
 pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String> {
@@ -32,15 +32,15 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
         };
         match wc {
             // 1-byte UTF-8
+            // [0000|0000|0ccc|cccc] => [0ccc|cccc]
             code_point if code_point < 0x80 => {
                 utf8_bytes.push(code_point as u8);
             }
             // 2-byte UTF-8
             code_point if code_point < 0x800 => {
-                // 110????? 10??????
-                // Need 11 bit suffix of wc
-                let second = ((code_point & 0b111111) as u8) | 0b10000000;
-                let first = ((code_point >> 6 & 0b11111) as u8) | 0b11000000;
+                // [0000|0bbb|bbcc|cccc] => [110|bbbbb], [10|cccccc]
+                let second = ((code_point & 0b11_1111) as u8) | 0b1000_0000;
+                let first = ((code_point >> 6 & 0b1_1111) as u8) | 0b1100_0000;
                 utf8_bytes.push(first);
                 utf8_bytes.push(second);
             }
@@ -53,15 +53,18 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
                     } else {
                         wc2
                     };
+                    if !(0xdc00..=0xdfff).contains(&wc2) {
+                        return Err("Invalid UTF-16 string: wrong surrogate pair".to_string());
+                    }
                     // utf16 to unicode
                     let code_point =
                         ((((wc1 as u32) - 0xd800) << 10) | ((wc2 as u32) - 0xdc00)) + 0x10000;
                     // 11110??? 10?????? 10?????? 10??????
                     // Need 21 bit suffix of code_point
-                    let fourth = ((code_point & 0b111111) as u8) | 0b10000000;
-                    let third = ((code_point >> 6 & 0b111111) as u8) | 0b10000000;
-                    let second = ((code_point >> 12 & 0b111111) as u8) | 0b10000000;
-                    let first = ((code_point >> 18 & 0b111) as u8) | 0b11110000;
+                    let fourth = ((code_point & 0b11_1111) as u8) | 0b1000_0000;
+                    let third = ((code_point >> 6 & 0b11_1111) as u8) | 0b1000_0000;
+                    let second = ((code_point >> 12 & 0b11_1111) as u8) | 0b1000_0000;
+                    let first = ((code_point >> 18 & 0b111) as u8) | 0b1111_0000;
                     utf8_bytes.push(first);
                     utf8_bytes.push(second);
                     utf8_bytes.push(third);
@@ -72,11 +75,11 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
             }
             // 3-byte UTF-8
             _ => {
-                // 1110???? 10?????? 10??????
+                // [aaaa|bbbb|bbcc|cccc] => [1110|aaaa], [10|bbbbbb], [10|cccccc]
                 // Need 16 bit suffix of wc, as same as wc itself
-                let third = ((wc & 0b111111) as u8) | 0b10000000;
-                let second = ((wc >> 6 & 0b111111) as u8) | 0b10000000;
-                let first = ((wc >> 12) as u8) | 0b11100000;
+                let third = ((wc & 0b11_1111) as u8) | 0b1000_0000;
+                let second = ((wc >> 6 & 0b11_1111) as u8) | 0b1000_0000;
+                let first = ((wc >> 12) as u8) | 0b1110_0000;
                 utf8_bytes.push(first);
                 utf8_bytes.push(second);
                 utf8_bytes.push(third);
