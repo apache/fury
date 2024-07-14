@@ -126,66 +126,67 @@ std::u16string generateRandomUTF16String(size_t length) {
 
 // Swap bytes to convert from big endian to little endian
 inline uint16_t swapBytes(uint16_t value) {
-    return (value >> 8) | (value << 8);
+  return (value >> 8) | (value << 8);
 }
 
-inline void utf16ToUtf8(uint16_t code_unit, char*& output) {
-    if (code_unit < 0x80) {
-        *output++ = static_cast<char>(code_unit);
-    } else if (code_unit < 0x800) {
-        *output++ = static_cast<char>(0xC0 | (code_unit >> 6));
-        *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
-    } else {
-        *output++ = static_cast<char>(0xE0 | (code_unit >> 12));
-        *output++ = static_cast<char>(0x80 | ((code_unit >> 6) & 0x3F));
-        *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
-    }
+inline void utf16ToUtf8(uint16_t code_unit, char *&output) {
+  if (code_unit < 0x80) {
+    *output++ = static_cast<char>(code_unit);
+  } else if (code_unit < 0x800) {
+    *output++ = static_cast<char>(0xC0 | (code_unit >> 6));
+    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
+  } else {
+    *output++ = static_cast<char>(0xE0 | (code_unit >> 12));
+    *output++ = static_cast<char>(0x80 | ((code_unit >> 6) & 0x3F));
+    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
+  }
 }
 
 inline void utf16SurrogatePairToUtf8(uint16_t high, uint16_t low, char *&utf8) {
-    uint32_t code_point = 0x10000 + ((high - 0xD800) << 10) + (low - 0xDC00);
-    *utf8++ = static_cast<char>((code_point >> 18) | 0xF0);
-    *utf8++ = static_cast<char>(((code_point >> 12) & 0x3F) | 0x80);
-    *utf8++ = static_cast<char>(((code_point >> 6) & 0x3F) | 0x80);
-    *utf8++ = static_cast<char>((code_point & 0x3F) | 0x80);
+  uint32_t code_point = 0x10000 + ((high - 0xD800) << 10) + (low - 0xDC00);
+  *utf8++ = static_cast<char>((code_point >> 18) | 0xF0);
+  *utf8++ = static_cast<char>(((code_point >> 12) & 0x3F) | 0x80);
+  *utf8++ = static_cast<char>(((code_point >> 6) & 0x3F) | 0x80);
+  *utf8++ = static_cast<char>((code_point & 0x3F) | 0x80);
 }
 
-std::string utf16ToUtf8BaseLine(const std::u16string &utf16, bool is_little_endian) {
-        std::string utf8;
-        utf8.reserve(utf16.size() * 3); // Reserve enough space to avoid frequent reallocations
+std::string utf16ToUtf8BaseLine(const std::u16string &utf16,
+                                bool is_little_endian) {
+  std::string utf8;
+  utf8.reserve(utf16.size() *
+               3); // Reserve enough space to avoid frequent reallocations
 
-        size_t i = 0;
-        size_t n = utf16.size();
-        char buffer[4]; // Buffer to hold temporary UTF-8 bytes
-        char *output = buffer;
+  size_t i = 0;
+  size_t n = utf16.size();
+  char buffer[4]; // Buffer to hold temporary UTF-8 bytes
+  char *output = buffer;
 
-        while (i < n) {
-            uint16_t code_unit = utf16[i];
-            if (!is_little_endian) {
-                code_unit = swapBytes(code_unit);
-            }
-            if (i + 1 < n && code_unit >= 0xD800 && code_unit <= 0xDBFF && utf16[i + 1] >= 0xDC00 && utf16[i + 1] <= 0xDFFF) {
-                // Surrogate pair
-                uint16_t high = code_unit;
-                uint16_t low = utf16[i + 1];
-                if (!is_little_endian) {
-                    low = swapBytes(low);
-                }
-                utf16SurrogatePairToUtf8(high, low, output);
-                utf8.append(buffer, output - buffer);
-                output = buffer;
-                ++i;
-            } else {
-                utf16ToUtf8(code_unit, output);
-                utf8.append(buffer, output - buffer);
-                output = buffer;
-            }
-            ++i;
-        }
-        return utf8;
+  while (i < n) {
+    uint16_t code_unit = utf16[i];
+    if (!is_little_endian) {
+      code_unit = swapBytes(code_unit);
     }
-
-
+    if (i + 1 < n && code_unit >= 0xD800 && code_unit <= 0xDBFF &&
+        utf16[i + 1] >= 0xDC00 && utf16[i + 1] <= 0xDFFF) {
+      // Surrogate pair
+      uint16_t high = code_unit;
+      uint16_t low = utf16[i + 1];
+      if (!is_little_endian) {
+        low = swapBytes(low);
+      }
+      utf16SurrogatePairToUtf8(high, low, output);
+      utf8.append(buffer, output - buffer);
+      output = buffer;
+      ++i;
+    } else {
+      utf16ToUtf8(code_unit, output);
+      utf8.append(buffer, output - buffer);
+      output = buffer;
+    }
+    ++i;
+  }
+  return utf8;
+}
 
 // Testing Basic Logic
 TEST(UTF16ToUTF8Test, BasicConversion) {
@@ -210,10 +211,10 @@ TEST(UTF16ToUTF8Test, SurrogatePairs) {
 
 // Testing Boundary
 TEST(UTF16ToUTF8Test, BoundaryValues) {
-std::u16string utf16 = {0x0000, 0xFFFF};
-std::string utf8 = fury::utf16ToUtf8(utf16, true);
-std::string expected_utf8 = std::string("\x00", 1) + "\xEF\xBF\xBF";
-ASSERT_EQ(utf8, expected_utf8);
+  std::u16string utf16 = {0x0000, 0xFFFF};
+  std::string utf8 = fury::utf16ToUtf8(utf16, true);
+  std::string expected_utf8 = std::string("\x00", 1) + "\xEF\xBF\xBF";
+  ASSERT_EQ(utf8, expected_utf8);
 }
 
 // Testing Special Characters
@@ -232,9 +233,9 @@ TEST(UTF16ToUTF8Test, LittleEndian) {
 
 // Testing BigEndian
 TEST(UTF16ToUTF8Test, BigEndian) {
-std::u16string utf16 = {0xFFFE, 0xFFFE};
-std::string utf8 = fury::utf16ToUtf8(utf16, false);
-ASSERT_EQ(utf8, "\xEF\xBF\xBE\xEF\xBF\xBE");
+  std::u16string utf16 = {0xFFFE, 0xFFFE};
+  std::string utf8 = fury::utf16ToUtf8(utf16, false);
+  ASSERT_EQ(utf8, "\xEF\xBF\xBE\xEF\xBF\xBE");
 }
 
 // Testing Performance
@@ -303,4 +304,3 @@ int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-
