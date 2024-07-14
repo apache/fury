@@ -21,11 +21,8 @@ package org.apache.fury;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
-
-import org.apache.fury.config.Language;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
-import org.apache.fury.util.Preconditions;
 
 public abstract class AbstractThreadSafeFury implements ThreadSafeFury {
   @Override

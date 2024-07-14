@@ -27,6 +27,7 @@ import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.config.LongEncoding;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.Preconditions;
 
 /** Serializers for java primitive types. */
@@ -292,21 +293,22 @@ public class PrimitiveSerializers {
 
   public static void registerDefaultSerializers(Fury fury) {
     // primitive types will be boxed.
-    fury.registerSerializer(boolean.class, new BooleanSerializer(fury, boolean.class));
-    fury.registerSerializer(byte.class, new ByteSerializer(fury, byte.class));
-    fury.registerSerializer(short.class, new ShortSerializer(fury, short.class));
-    fury.registerSerializer(char.class, new CharSerializer(fury, char.class));
-    fury.registerSerializer(int.class, new IntSerializer(fury, int.class));
-    fury.registerSerializer(long.class, new LongSerializer(fury, long.class));
-    fury.registerSerializer(float.class, new FloatSerializer(fury, float.class));
-    fury.registerSerializer(double.class, new DoubleSerializer(fury, double.class));
-    fury.registerSerializer(Boolean.class, new BooleanSerializer(fury, Boolean.class));
-    fury.registerSerializer(Byte.class, new ByteSerializer(fury, Byte.class));
-    fury.registerSerializer(Short.class, new ShortSerializer(fury, Short.class));
-    fury.registerSerializer(Character.class, new CharSerializer(fury, Character.class));
-    fury.registerSerializer(Integer.class, new IntSerializer(fury, Integer.class));
-    fury.registerSerializer(Long.class, new LongSerializer(fury, Long.class));
-    fury.registerSerializer(Float.class, new FloatSerializer(fury, Float.class));
-    fury.registerSerializer(Double.class, new DoubleSerializer(fury, Double.class));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(boolean.class, new BooleanSerializer(fury, boolean.class));
+    resolver.registerSerializer(byte.class, new ByteSerializer(fury, byte.class));
+    resolver.registerSerializer(short.class, new ShortSerializer(fury, short.class));
+    resolver.registerSerializer(char.class, new CharSerializer(fury, char.class));
+    resolver.registerSerializer(int.class, new IntSerializer(fury, int.class));
+    resolver.registerSerializer(long.class, new LongSerializer(fury, long.class));
+    resolver.registerSerializer(float.class, new FloatSerializer(fury, float.class));
+    resolver.registerSerializer(double.class, new DoubleSerializer(fury, double.class));
+    resolver.registerSerializer(Boolean.class, new BooleanSerializer(fury, Boolean.class));
+    resolver.registerSerializer(Byte.class, new ByteSerializer(fury, Byte.class));
+    resolver.registerSerializer(Short.class, new ShortSerializer(fury, Short.class));
+    resolver.registerSerializer(Character.class, new CharSerializer(fury, Character.class));
+    resolver.registerSerializer(Integer.class, new IntSerializer(fury, Integer.class));
+    resolver.registerSerializer(Long.class, new LongSerializer(fury, Long.class));
+    resolver.registerSerializer(Float.class, new FloatSerializer(fury, Float.class));
+    resolver.registerSerializer(Double.class, new DoubleSerializer(fury, Double.class));
   }
 }

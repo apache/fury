@@ -631,26 +631,29 @@ public class ArraySerializers {
   }
 
   public static void registerDefaultSerializers(Fury fury) {
-    fury.registerSerializer(Object[].class, new ObjectArraySerializer<>(fury, Object[].class));
-    fury.registerSerializer(Class[].class, new ObjectArraySerializer<>(fury, Class[].class));
-    fury.registerSerializer(byte[].class, new ByteArraySerializer(fury));
-    fury.registerSerializer(Byte[].class, new ObjectArraySerializer<>(fury, Byte[].class));
-    fury.registerSerializer(char[].class, new CharArraySerializer(fury));
-    fury.registerSerializer(
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(Object[].class, new ObjectArraySerializer<>(fury, Object[].class));
+    resolver.registerSerializer(Class[].class, new ObjectArraySerializer<>(fury, Class[].class));
+    resolver.registerSerializer(byte[].class, new ByteArraySerializer(fury));
+    resolver.registerSerializer(Byte[].class, new ObjectArraySerializer<>(fury, Byte[].class));
+    resolver.registerSerializer(char[].class, new CharArraySerializer(fury));
+    resolver.registerSerializer(
         Character[].class, new ObjectArraySerializer<>(fury, Character[].class));
-    fury.registerSerializer(short[].class, new ShortArraySerializer(fury));
-    fury.registerSerializer(Short[].class, new ObjectArraySerializer<>(fury, Short[].class));
-    fury.registerSerializer(int[].class, new IntArraySerializer(fury));
-    fury.registerSerializer(Integer[].class, new ObjectArraySerializer<>(fury, Integer[].class));
-    fury.registerSerializer(long[].class, new LongArraySerializer(fury));
-    fury.registerSerializer(Long[].class, new ObjectArraySerializer<>(fury, Long[].class));
-    fury.registerSerializer(float[].class, new FloatArraySerializer(fury));
-    fury.registerSerializer(Float[].class, new ObjectArraySerializer<>(fury, Float[].class));
-    fury.registerSerializer(double[].class, new DoubleArraySerializer(fury));
-    fury.registerSerializer(Double[].class, new ObjectArraySerializer<>(fury, Double[].class));
-    fury.registerSerializer(boolean[].class, new BooleanArraySerializer(fury));
-    fury.registerSerializer(Boolean[].class, new ObjectArraySerializer<>(fury, Boolean[].class));
-    fury.registerSerializer(String[].class, new StringArraySerializer(fury));
+    resolver.registerSerializer(short[].class, new ShortArraySerializer(fury));
+    resolver.registerSerializer(Short[].class, new ObjectArraySerializer<>(fury, Short[].class));
+    resolver.registerSerializer(int[].class, new IntArraySerializer(fury));
+    resolver.registerSerializer(
+        Integer[].class, new ObjectArraySerializer<>(fury, Integer[].class));
+    resolver.registerSerializer(long[].class, new LongArraySerializer(fury));
+    resolver.registerSerializer(Long[].class, new ObjectArraySerializer<>(fury, Long[].class));
+    resolver.registerSerializer(float[].class, new FloatArraySerializer(fury));
+    resolver.registerSerializer(Float[].class, new ObjectArraySerializer<>(fury, Float[].class));
+    resolver.registerSerializer(double[].class, new DoubleArraySerializer(fury));
+    resolver.registerSerializer(Double[].class, new ObjectArraySerializer<>(fury, Double[].class));
+    resolver.registerSerializer(boolean[].class, new BooleanArraySerializer(fury));
+    resolver.registerSerializer(
+        Boolean[].class, new ObjectArraySerializer<>(fury, Boolean[].class));
+    resolver.registerSerializer(String[].class, new StringArraySerializer(fury));
   }
 
   // ########################## utils ##########################
@@ -674,25 +677,16 @@ public class ArraySerializers {
 
   static {
     primitiveInfo.put(
-        boolean.class,
-        new int[] {Platform.BOOLEAN_ARRAY_OFFSET, 1, Types.BOOL_ARRAY});
+        boolean.class, new int[] {Platform.BOOLEAN_ARRAY_OFFSET, 1, Types.BOOL_ARRAY});
     primitiveInfo.put(byte.class, new int[] {Platform.BYTE_ARRAY_OFFSET, 1, Types.BINARY});
     primitiveInfo.put(
         char.class, new int[] {Platform.CHAR_ARRAY_OFFSET, 2, Fury.NOT_SUPPORT_XLANG});
+    primitiveInfo.put(short.class, new int[] {Platform.SHORT_ARRAY_OFFSET, 2, Types.INT16_ARRAY});
+    primitiveInfo.put(int.class, new int[] {Platform.INT_ARRAY_OFFSET, 4, Types.INT32_ARRAY});
+    primitiveInfo.put(long.class, new int[] {Platform.LONG_ARRAY_OFFSET, 8, Types.INT64_ARRAY});
+    primitiveInfo.put(float.class, new int[] {Platform.FLOAT_ARRAY_OFFSET, 4, Types.FLOAT32_ARRAY});
     primitiveInfo.put(
-        short.class,
-        new int[] {Platform.SHORT_ARRAY_OFFSET, 2, Types.INT16_ARRAY});
-    primitiveInfo.put(
-        int.class, new int[] {Platform.INT_ARRAY_OFFSET, 4, Types.INT32_ARRAY});
-    primitiveInfo.put(
-        long.class,
-        new int[] {Platform.LONG_ARRAY_OFFSET, 8, Types.INT64_ARRAY});
-    primitiveInfo.put(
-        float.class,
-        new int[] {Platform.FLOAT_ARRAY_OFFSET, 4, Types.FLOAT32_ARRAY});
-    primitiveInfo.put(
-        double.class,
-        new int[] {Platform.DOUBLE_ARRAY_OFFSET, 8, Types.FLOAT64_ARRAY});
+        double.class, new int[] {Platform.DOUBLE_ARRAY_OFFSET, 8, Types.FLOAT64_ARRAY});
   }
 
   public abstract static class AbstractedNonexistentArrayClassSerializer extends Serializer {

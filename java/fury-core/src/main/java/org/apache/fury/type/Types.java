@@ -1,7 +1,6 @@
 package org.apache.fury.type;
 
 public class Types {
-  public static final int NOT_SUPPORT_XLANG = 0;
   public static final int BOOL = 1;
   public static final int INT8 = 2;
   public static final int INT16 = 3;
@@ -14,25 +13,31 @@ public class Types {
   public static final int FLOAT32 = 10;
   public static final int FLOAT64 = 11;
   public static final int STRING = 12;
+
   public static final int ENUM = 13;
-  public static final int LIST = 14;
-  public static final int SET = 15;
-  public static final int MAP = 16;
-  public static final int DURATION = 17;
-  public static final int TIMESTAMP = 18;
-  public static final int DECIMAL = 19;
-  public static final int BINARY = 20;
-  public static final int ARRAY = 21;
-  public static final int BOOL_ARRAY = 22;
-  public static final int INT8_ARRAY = 23;
-  public static final int INT16_ARRAY = 24;
-  public static final int INT32_ARRAY = 25;
-  public static final int INT64_ARRAY = 26;
-  public static final int FLOAT16_ARRAY = 27;
-  public static final int FLOAT32_ARRAY = 28;
-  public static final int FLOAT64_ARRAY = 29;
-  public static final int TENSOR = 30;
-  public static final int SPARSE_TENSOR = 31;
-  public static final int ARROW_RECORD_BATCH = 32;
-  public static final int ARROW_TABLE = 33;
+  public static final int NS_ENUM = 14;
+  public static final int STRUCT = 15;
+  public static final int NS_STRUCT = 16;
+  public static final int EXT = 17;
+  public static final int NS_EXT = 18;
+  public static final int LIST = 19;
+  public static final int SET = 20;
+  public static final int MAP = 21;
+  public static final int DURATION = 22;
+  public static final int TIMESTAMP = 23;
+  public static final int DECIMAL = 24;
+  public static final int BINARY = 25;
+  public static final int ARRAY = 26;
+  public static final int BOOL_ARRAY = 27;
+  public static final int INT8_ARRAY = 28;
+  public static final int INT16_ARRAY = 29;
+  public static final int INT32_ARRAY = 30;
+  public static final int INT64_ARRAY = 31;
+  public static final int FLOAT16_ARRAY = 32;
+  public static final int FLOAT32_ARRAY = 33;
+  public static final int FLOAT64_ARRAY = 34;
+  public static final int TENSOR = 35;
+  public static final int SPARSE_TENSOR = 36;
+  public static final int ARROW_RECORD_BATCH = 37;
+  public static final int ARROW_TABLE = 38;
 }

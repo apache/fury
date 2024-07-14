@@ -389,27 +389,28 @@ public class MapSerializers {
 
   // TODO(chaokunyang) support ConcurrentSkipListMap.SubMap mo efficiently.
   public static void registerDefaultSerializers(Fury fury) {
-    fury.registerSerializer(HashMap.class, new HashMapSerializer(fury));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(HashMap.class, new HashMapSerializer(fury));
     fury.getClassResolver()
         .registerSerializer(LinkedHashMap.class, new LinkedHashMapSerializer(fury));
-    fury.registerSerializer(TreeMap.class, new SortedMapSerializer<>(fury, TreeMap.class));
-    fury.registerSerializer(
+    resolver.registerSerializer(TreeMap.class, new SortedMapSerializer<>(fury, TreeMap.class));
+    resolver.registerSerializer(
         Collections.EMPTY_MAP.getClass(),
         new EmptyMapSerializer(fury, (Class<Map<?, ?>>) Collections.EMPTY_MAP.getClass()));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         Collections.emptySortedMap().getClass(),
         new EmptySortedMapSerializer(
             fury, (Class<SortedMap<?, ?>>) Collections.emptySortedMap().getClass()));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         Collections.singletonMap(null, null).getClass(),
         new SingletonMapSerializer(
             fury, (Class<Map<?, ?>>) Collections.singletonMap(null, null).getClass()));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         ConcurrentHashMap.class, new ConcurrentHashMapSerializer(fury, ConcurrentHashMap.class));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         ConcurrentSkipListMap.class,
         new ConcurrentSkipListMapSerializer(fury, ConcurrentSkipListMap.class));
-    fury.registerSerializer(EnumMap.class, new EnumMapSerializer(fury));
-    fury.registerSerializer(LazyMap.class, new LazyMapSerializer(fury));
+    resolver.registerSerializer(EnumMap.class, new EnumMapSerializer(fury));
+    resolver.registerSerializer(LazyMap.class, new LazyMapSerializer(fury));
   }
 }

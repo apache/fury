@@ -526,19 +526,20 @@ public class Serializers {
   }
 
   public static void registerDefaultSerializers(Fury fury) {
-    fury.registerSerializer(Class.class, new ClassSerializer(fury));
-    fury.registerSerializer(StringBuilder.class, new StringBuilderSerializer(fury));
-    fury.registerSerializer(StringBuffer.class, new StringBufferSerializer(fury));
-    fury.registerSerializer(BigInteger.class, new BigIntegerSerializer(fury));
-    fury.registerSerializer(BigDecimal.class, new BigDecimalSerializer(fury));
-    fury.registerSerializer(AtomicBoolean.class, new AtomicBooleanSerializer(fury));
-    fury.registerSerializer(AtomicInteger.class, new AtomicIntegerSerializer(fury));
-    fury.registerSerializer(AtomicLong.class, new AtomicLongSerializer(fury));
-    fury.registerSerializer(AtomicReference.class, new AtomicReferenceSerializer(fury));
-    fury.registerSerializer(Currency.class, new CurrencySerializer(fury));
-    fury.registerSerializer(URI.class, new URISerializer(fury));
-    fury.registerSerializer(Pattern.class, new RegexSerializer(fury));
-    fury.registerSerializer(UUID.class, new UUIDSerializer(fury));
-    fury.registerSerializer(Object.class, new EmptyObjectSerializer(fury));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(Class.class, new ClassSerializer(fury));
+    resolver.registerSerializer(StringBuilder.class, new StringBuilderSerializer(fury));
+    resolver.registerSerializer(StringBuffer.class, new StringBufferSerializer(fury));
+    resolver.registerSerializer(BigInteger.class, new BigIntegerSerializer(fury));
+    resolver.registerSerializer(BigDecimal.class, new BigDecimalSerializer(fury));
+    resolver.registerSerializer(AtomicBoolean.class, new AtomicBooleanSerializer(fury));
+    resolver.registerSerializer(AtomicInteger.class, new AtomicIntegerSerializer(fury));
+    resolver.registerSerializer(AtomicLong.class, new AtomicLongSerializer(fury));
+    resolver.registerSerializer(AtomicReference.class, new AtomicReferenceSerializer(fury));
+    resolver.registerSerializer(Currency.class, new CurrencySerializer(fury));
+    resolver.registerSerializer(URI.class, new URISerializer(fury));
+    resolver.registerSerializer(Pattern.class, new RegexSerializer(fury));
+    resolver.registerSerializer(UUID.class, new UUIDSerializer(fury));
+    resolver.registerSerializer(Object.class, new EmptyObjectSerializer(fury));
   }
 }

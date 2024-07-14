@@ -21,8 +21,6 @@ package org.apache.fury;
 
 import java.io.OutputStream;
 import java.util.function.Function;
-
-import org.apache.fury.config.Language;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
@@ -30,7 +28,6 @@ import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.serializer.Serializers;
-import org.apache.fury.util.Preconditions;
 
 /** All Fury’s basic interface, including Fury’s basic methods. */
 public interface BaseFury {
@@ -71,7 +68,10 @@ public interface BaseFury {
   /** register class with given type name which will be used for cross-language serialization. */
   void register(Class<?> cls, String typeName);
 
-  /** register class with given type namespace and name which will be used for cross-language serialization. */
+  /**
+   * register class with given type namespace and name which will be used for cross-language
+   * serialization.
+   */
   void register(Class<?> cls, String namespace, String typeName);
 
   /**

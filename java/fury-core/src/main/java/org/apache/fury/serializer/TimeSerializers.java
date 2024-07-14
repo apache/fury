@@ -41,6 +41,7 @@ import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.DateTimeUtils;
 
 /** Serializers for all time related types. */
@@ -620,22 +621,23 @@ public class TimeSerializers {
   }
 
   public static void registerDefaultSerializers(Fury fury) {
-    fury.registerSerializer(Date.class, new DateSerializer(fury));
-    fury.registerSerializer(java.sql.Date.class, new SqlDateSerializer(fury));
-    fury.registerSerializer(Time.class, new SqlTimeSerializer(fury));
-    fury.registerSerializer(Timestamp.class, new TimestampSerializer(fury));
-    fury.registerSerializer(LocalDate.class, new LocalDateSerializer(fury));
-    fury.registerSerializer(LocalTime.class, new LocalTimeSerializer(fury));
-    fury.registerSerializer(LocalDateTime.class, new LocalDateTimeSerializer(fury));
-    fury.registerSerializer(Instant.class, new InstantSerializer(fury));
-    fury.registerSerializer(Duration.class, new DurationSerializer(fury));
-    fury.registerSerializer(ZoneOffset.class, new ZoneOffsetSerializer(fury));
-    fury.registerSerializer(ZonedDateTime.class, new ZonedDateTimeSerializer(fury));
-    fury.registerSerializer(Year.class, new YearSerializer(fury));
-    fury.registerSerializer(YearMonth.class, new YearMonthSerializer(fury));
-    fury.registerSerializer(MonthDay.class, new MonthDaySerializer(fury));
-    fury.registerSerializer(Period.class, new PeriodSerializer(fury));
-    fury.registerSerializer(OffsetTime.class, new OffsetTimeSerializer(fury));
-    fury.registerSerializer(OffsetDateTime.class, new OffsetDateTimeSerializer(fury));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(Date.class, new DateSerializer(fury));
+    resolver.registerSerializer(java.sql.Date.class, new SqlDateSerializer(fury));
+    resolver.registerSerializer(Time.class, new SqlTimeSerializer(fury));
+    resolver.registerSerializer(Timestamp.class, new TimestampSerializer(fury));
+    resolver.registerSerializer(LocalDate.class, new LocalDateSerializer(fury));
+    resolver.registerSerializer(LocalTime.class, new LocalTimeSerializer(fury));
+    resolver.registerSerializer(LocalDateTime.class, new LocalDateTimeSerializer(fury));
+    resolver.registerSerializer(Instant.class, new InstantSerializer(fury));
+    resolver.registerSerializer(Duration.class, new DurationSerializer(fury));
+    resolver.registerSerializer(ZoneOffset.class, new ZoneOffsetSerializer(fury));
+    resolver.registerSerializer(ZonedDateTime.class, new ZonedDateTimeSerializer(fury));
+    resolver.registerSerializer(Year.class, new YearSerializer(fury));
+    resolver.registerSerializer(YearMonth.class, new YearMonthSerializer(fury));
+    resolver.registerSerializer(MonthDay.class, new MonthDaySerializer(fury));
+    resolver.registerSerializer(Period.class, new PeriodSerializer(fury));
+    resolver.registerSerializer(OffsetTime.class, new OffsetTimeSerializer(fury));
+    resolver.registerSerializer(OffsetDateTime.class, new OffsetDateTimeSerializer(fury));
   }
 }
