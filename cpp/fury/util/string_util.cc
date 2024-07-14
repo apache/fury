@@ -81,7 +81,6 @@ std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   utf8.reserve(utf16.size() *
                3); // Reserve enough space to avoid frequent reallocations
 
-  const __m256i one = _mm256_set1_epi16(1);
   const __m256i limit1 = _mm256_set1_epi16(0x80);
   const __m256i limit2 = _mm256_set1_epi16(0x800);
 

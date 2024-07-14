@@ -121,7 +121,7 @@ std::u16string generateRandomUTF16String(size_t length) {
 
   return str;
 }
-
+// Basic implementation
 std::string utf16ToUtf8BaseLine(const std::u16string &utf16,
                                 bool is_little_endian) {
   std::string utf8;
@@ -171,22 +171,68 @@ std::string utf16ToUtf8BaseLine(const std::u16string &utf16,
   return utf8;
 }
 
+// Testing Basic Logic
 TEST(UTF16ToUTF8Test, BasicConversion) {
   std::u16string utf16 = u"Hello, 世界!";
   std::string utf8 = fury::utf16ToUtf8(utf16, true);
   ASSERT_EQ(utf8, u8"Hello, 世界!");
 }
 
-TEST(UTF16ToUTF8Test, EndiannessConversion) {
-  std::u16string utf16 = {0xFFFE, 0xFFFE};
-  std::string utf8 = fury::utf16ToUtf8(utf16, false);
-  ASSERT_EQ(utf8, "\xEF\xBF\xBE\xEF\xBF\xBE");
+// Testing Empty String
+TEST(UTF16ToUTF8Test, EmptyString) {
+  std::u16string utf16 = u"";
+  std::string utf8 = fury::utf16_to_utf8(utf16, true);
+  ASSERT_EQ(utf8, "");
 }
 
+// Testing emoji
+TEST(UTF16ToUTF8Test, SurrogatePairs) {
+  std::u16string utf16 = {0xD83D, 0xDE00}; // 😀 emoji
+  std::string utf8 = fury::utf16_to_utf8(utf16, true);
+  ASSERT_EQ(utf8, "\xF0\x9F\x98\x80");
+}
+
+// Testing Boundary
+TEST(UTF16ToUTF8Test, BoundaryValues) {
+  std::u16string utf16 = {0x0000, 0xFFFF};
+  std::string utf8 = fury::utf16_to_utf8(utf16, true);
+  ASSERT_EQ(utf8, "\x00\xEF\xBF\xBF");
+}
+
+// Testing Special Characters
+TEST(UTF16ToUTF8Test, SpecialCharacters) {
+  std::u16string utf16 = u" \n\t";
+  std::string utf8 = fury::utf16_to_utf8(utf16, true);
+  ASSERT_EQ(utf8, " \n\t");
+}
+
+// Testing Random Strings
+TEST(UTF16ToUTF8Test, RandomStrings) {
+  std::u16string utf16 = GenerateRandomUTF16String(1000);
+  std::string utf8_baseline = utf16_to_utf8_baseline(utf16, true);
+  std::string utf8_accelerated = fury::utf16_to_utf8(utf16, true);
+  ASSERT_EQ(utf8_baseline, utf8_accelerated);
+}
+
+// Testing LittleEndian
+TEST(UTF16ToUTF8Test, LittleEndian) {
+  std::u16string utf16 = {0x61, 0x62}; // "ab"
+  std::string utf8 = fury::utf16_to_utf8(utf16, true);
+  ASSERT_EQ(utf8, "ab");
+}
+
+TEST(UTF16ToUTF8Test, BigEndian) {
+  std::u16string utf16 = {0x6100, 0x6200}; // "ab" in big-endian
+  std::string utf8 = fury::utf16_to_utf8(utf16, false);
+  ASSERT_EQ(utf8, "ab");
+}
+
+// Testing Performance
 TEST(UTF16ToUTF8Test, PerformanceTest) {
   const size_t num_tests = 1000;
   const size_t string_length = 1000;
-  bool is_little_endian = true; // Default little_endian
+  // Default little_endian
+  bool is_little_endian = true;
 
   // Random UTF-16
   std::vector<std::u16string> test_strings;
