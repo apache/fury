@@ -56,6 +56,7 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.type.Generics;
+import org.apache.fury.type.Types;
 import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
@@ -185,17 +186,29 @@ public final class Fury implements BaseFury {
 
   @Override
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
-    classResolver.registerSerializer(type, serializerClass);
+    if (language == Language.JAVA) {
+      classResolver.registerSerializer(type, serializerClass);
+    } else {
+      xtypeResolver.registerSerializer(type, serializerClass);
+    }
   }
 
   @Override
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
-    classResolver.registerSerializer(type, serializer);
+    if (language == Language.JAVA) {
+      classResolver.registerSerializer(type, serializer);
+    } else {
+      xtypeResolver.registerSerializer(type, serializer);
+    }
   }
 
   @Override
   public void registerSerializer(Class<?> type, Function<Fury, Serializer<?>> serializerCreator) {
-    classResolver.registerSerializer(type, serializerCreator.apply(this));
+    if (language == Language.JAVA) {
+      classResolver.registerSerializer(type, serializerCreator.apply(this));
+    } else {
+      xtypeResolver.registerSerializer(type, serializerCreator.apply(this));
+    }
   }
 
   @Override
@@ -447,11 +460,47 @@ public final class Fury implements BaseFury {
 
   public void xwriteRef(MemoryBuffer buffer, Object obj) {
     if (!refResolver.writeRefOrNull(buffer, obj)) {
-      ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
-      buffer.writeVarUint32Small7(classInfo.getXtypeId());
-      depth++;
-      classInfo.getSerializer().xwrite(buffer, obj);
-      depth--;
+      ClassInfo classInfo = xtypeResolver.writeClassInfo(buffer, obj);
+      switch (classInfo.getXtypeId()) {
+        case Types.BOOL:
+          buffer.writeBoolean((Boolean) obj);
+          break;
+        case Types.INT8:
+          buffer.writeByte((Byte) obj);
+          break;
+        case Types.INT16:
+          buffer.writeInt16((Short) obj);
+          break;
+        case Types.INT32:
+          buffer.writeInt32((Integer) obj);
+          break;
+        case Types.VAR_INT32:
+          buffer.writeVarInt32((Integer) obj);
+          break;
+        case Types.INT64:
+          buffer.writeInt64((Long) obj);
+          break;
+        case Types.VAR_INT64:
+          buffer.writeVarInt64((Long) obj);
+          break;
+        case Types.SLI_INT64:
+          buffer.writeSliInt64((Long) obj);
+          break;
+        case Types.FLOAT32:
+          buffer.writeFloat32((Float) obj);
+          break;
+        case Types.FLOAT64:
+          buffer.writeFloat64((Double) obj);
+          break;
+        case Types.STRING:
+          stringSerializer.writeString(buffer, (String) obj);
+          break;
+          // TODO(add fastpath for other types)
+        default:
+          depth++;
+          classInfo.getSerializer().xwrite(buffer, obj);
+          depth--;
+      }
     }
   }
 
@@ -907,11 +956,37 @@ public final class Fury implements BaseFury {
   }
 
   public Object xreadNonRef(MemoryBuffer buffer, ClassInfo classInfo) {
-    depth++;
     assert classInfo != null;
-    Object o = classInfo.getSerializer().xread(buffer);
-    depth--;
-    return o;
+    switch (classInfo.getXtypeId()) {
+      case Types.BOOL:
+        return buffer.readBoolean();
+      case Types.INT8:
+        return buffer.readByte();
+      case Types.INT16:
+        return buffer.readInt16();
+      case Types.INT32:
+        return buffer.readInt32();
+      case Types.VAR_INT32:
+        return buffer.readVarUint32();
+      case Types.INT64:
+        return buffer.readInt64();
+      case Types.VAR_INT64:
+        return buffer.readVarInt64();
+      case Types.SLI_INT64:
+        return buffer.readSliInt64();
+      case Types.FLOAT32:
+        return buffer.readFloat32();
+      case Types.FLOAT64:
+        return buffer.readFloat64();
+      case Types.STRING:
+        return stringSerializer.readString(buffer);
+        // TODO(add fastpath for other types)
+      default:
+        depth++;
+        Object o = classInfo.getSerializer().xread(buffer);
+        depth--;
+        return o;
+    }
   }
 
   @Override

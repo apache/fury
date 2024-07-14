@@ -41,7 +41,7 @@ public class ClassInfo {
   final MetaStringBytes packageNameBytes;
   final MetaStringBytes classNameBytes;
   final boolean isDynamicGeneratedClass;
-  short xtypeId;
+  int xtypeId;
   Serializer<?> serializer;
   // use primitive to avoid boxing
   // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
@@ -127,7 +127,7 @@ public class ClassInfo {
     return classId;
   }
 
-  public short getXtypeId() {
+  public int getXtypeId() {
     return xtypeId;
   }
 

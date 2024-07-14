@@ -219,10 +219,7 @@ public class StructSerializer<T> extends Serializer<T> {
     } else {
       try {
         ClassInfo classInfo = fury.getClassResolver().getClassInfo(fieldGeneric.getCls());
-        short xtypeId = classInfo.getXtypeId();
-        if (xtypeId == Fury.NOT_SUPPORT_XLANG) {
-          return hash;
-        }
+        int xtypeId = classInfo.getXtypeId();
         id = Math.abs(xtypeId);
       } catch (Exception e) {
         return hash;

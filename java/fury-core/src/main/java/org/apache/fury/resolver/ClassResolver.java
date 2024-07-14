@@ -1657,7 +1657,7 @@ public class ClassResolver {
     return classInfo;
   }
 
-  private ClassInfo loadBytesToClassInfo(
+  ClassInfo loadBytesToClassInfo(
       MetaStringBytes packageBytes, MetaStringBytes simpleClassNameBytes) {
     ClassNameBytes classNameBytes =
         new ClassNameBytes(packageBytes.hashCode, simpleClassNameBytes.hashCode);
