@@ -73,10 +73,12 @@ public final class MetaStringResolver {
         dynamicWrittenMetaString = growWrite(id);
       }
       dynamicWrittenMetaString[id] = byteString;
-      buffer.writeVarUint32Small7(byteString.bytes.length << 2 | 0b1);
+      // last bit `1` indicates class is written by name instead of registered id.
+      buffer.writeVarUint32Small7(byteString.bytes.length << 2 | 0b01);
       buffer.writeInt64(byteString.hashCode);
       buffer.writeBytes(byteString.bytes);
     } else {
+      // last bit `1` indicates class is written by name instead of registered id.
       buffer.writeVarUint32Small7(((id + 1) << 2) | 0b11);
     }
   }
