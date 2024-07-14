@@ -67,6 +67,11 @@ Note:
 
 - Unsigned int/long are not added here, since not every language support those types.
 
+### Polymorphisms
+
+For polymorphism, if one non-final class is registered, and only one subclass is registered, then we can take all
+elements in List/Map have same type, thus reduce runtime check cost.
+
 ### Type disambiguation
 
 Due to differences between type systems of languages, those types can't be mapped one-to-one between languages. When

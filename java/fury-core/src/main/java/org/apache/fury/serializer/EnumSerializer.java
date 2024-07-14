@@ -25,17 +25,17 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Preconditions;
 
 @SuppressWarnings("rawtypes")
-public final class EnumSerializer extends Serializer<Enum> {
-  private final Enum[] enumConstants;
+public final class EnumSerializer<T extends Enum> extends Serializer<T> {
+  private final T[] enumConstants;
 
-  public EnumSerializer(Fury fury, Class<Enum> cls) {
+  public EnumSerializer(Fury fury, Class<T> cls) {
     super(fury, cls, false);
     if (cls.isEnum()) {
       enumConstants = cls.getEnumConstants();
     } else {
       Preconditions.checkArgument(Enum.class.isAssignableFrom(cls) && cls != Enum.class);
       @SuppressWarnings("unchecked")
-      Class<Enum> enclosingClass = (Class<Enum>) cls.getEnclosingClass();
+      Class<T> enclosingClass = (Class<T>) cls.getEnclosingClass();
       Preconditions.checkNotNull(enclosingClass);
       Preconditions.checkArgument(enclosingClass.isEnum());
       enumConstants = enclosingClass.getEnumConstants();
@@ -48,7 +48,7 @@ public final class EnumSerializer extends Serializer<Enum> {
   }
 
   @Override
-  public Enum read(MemoryBuffer buffer) {
+  public T read(MemoryBuffer buffer) {
     int value = buffer.readVarUint32Small7();
     if (value >= enumConstants.length) {
       return handleNonexistentEnumValue(value);
@@ -56,7 +56,7 @@ public final class EnumSerializer extends Serializer<Enum> {
     return enumConstants[value];
   }
 
-  private Enum handleNonexistentEnumValue(int value) {
+  private T handleNonexistentEnumValue(int value) {
     if (fury.getConfig().deserializeNonexistentEnumValueAsNull()) {
       return null;
     } else {

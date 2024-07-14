@@ -32,7 +32,6 @@ import org.apache.fury.io.MemoryBufferReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.Serializers;
-import org.apache.fury.type.Type;
 
 /** Serializers for {@link ArrowTable}. */
 public class ArrowTableSerializer
@@ -46,7 +45,7 @@ public class ArrowTableSerializer
   }
 
   public ArrowTableSerializer(Fury fury, BufferAllocator allocator) {
-    super(fury, ArrowTable.class, Type.FURY_ARROW_TABLE.getId());
+    super(fury, ArrowTable.class);
     this.allocator = allocator;
   }
 
