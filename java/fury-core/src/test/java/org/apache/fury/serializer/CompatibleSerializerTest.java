@@ -101,7 +101,7 @@ public class CompatibleSerializerTest extends FuryTestBase {
         Object o2 = fury.deserialize(newFury.serialize(o1));
         List<String> fields =
             Arrays.stream(fooClass.getDeclaredFields())
-                .map(f -> f.getDeclaringClass().getSimpleName() + f.getType() + f.getName())
+                .map(f -> f.getDeclaringClass().getSimpleName() + f.getName())
                 .collect(Collectors.toList());
         Assert.assertTrue(ReflectionUtils.objectFieldsEquals(new HashSet<>(fields), o2, foo));
       }
@@ -393,15 +393,14 @@ public class CompatibleSerializerTest extends FuryTestBase {
 
   @Test(dataProvider = "compressNumberScopedMetaShare")
   public void testCompressInt(boolean compressNumber, boolean scopedMetaShare) throws Exception {
+    Class<?> structClass = Struct.createNumberStructClass("CompatibleCompressIntStruct", 2);
     Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder()
             .withNumberCompressed(compressNumber)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withClassLoader(structClass.getClassLoader())
             .withScopedMetaShare(scopedMetaShare)
-            .requireClassRegistration(false)
             .build();
-    Class<?> structClass = Struct.createNumberStructClass("CompatibleCompressIntStruct", 2);
     serDeCheck(fury, Struct.createPOJO(structClass));
   }
 }

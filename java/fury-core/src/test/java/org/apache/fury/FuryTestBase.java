@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -170,14 +171,16 @@ public abstract class FuryTestBase {
 
   @DataProvider
   public static Object[][] javaFuryKVCompatible() {
-    FuryBuilder builder =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(false)
-            .withScopedMetaShare(false);
+    Supplier<FuryBuilder> builder =
+        () ->
+            Fury.builder()
+                .withLanguage(Language.JAVA)
+                .requireClassRegistration(false)
+                .withScopedMetaShare(false);
     return new Object[][] {
       {
         builder
+            .get()
             .withRefTracking(true)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
@@ -185,6 +188,7 @@ public abstract class FuryTestBase {
       },
       {
         builder
+            .get()
             .withRefTracking(false)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
@@ -192,6 +196,7 @@ public abstract class FuryTestBase {
       },
       {
         builder
+            .get()
             .withRefTracking(true)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
@@ -199,6 +204,7 @@ public abstract class FuryTestBase {
       },
       {
         builder
+            .get()
             .withRefTracking(false)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)

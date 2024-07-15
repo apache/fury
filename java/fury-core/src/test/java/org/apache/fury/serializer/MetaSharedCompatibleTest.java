@@ -170,7 +170,7 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
         Object o2 = fury.deserialize(newFury.serialize(o1));
         List<String> fields =
             Arrays.stream(fooClass.getDeclaredFields())
-                .map(f -> f.getDeclaringClass().getSimpleName() + f.getType() + f.getName())
+                .map(f -> f.getDeclaringClass().getSimpleName() + f.getName())
                 .collect(Collectors.toList());
         Assert.assertTrue(ReflectionUtils.objectFieldsEquals(new HashSet<>(fields), o2, foo));
       }

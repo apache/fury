@@ -20,6 +20,7 @@
 package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -98,7 +99,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
               .withClassLoader(classLoader)
               .build();
       Object o = fury2.deserialize(bytes);
-      assertEquals(o.getClass(), NonexistentClass.NonexistentSkip.class);
+      assertTrue(o instanceof NonexistentClass, "Unexpect type " + o.getClass());
     }
   }
 

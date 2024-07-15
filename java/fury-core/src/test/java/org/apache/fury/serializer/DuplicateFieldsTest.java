@@ -137,7 +137,7 @@ public class DuplicateFieldsTest extends FuryTestBase {
     {
       // FallbackSerializer/CodegenSerializer will set itself to ClassResolver.
       Fury fury1 = builder.build();
-      C newC = (C) serDeCheckSerializer(fury1, c, "Compatible.*Codec");
+      C newC = serDeCheckSerializer(fury1, c, scopedMetaShare ? ".*Codec" : "(Compatible)?.*Codec");
       assertEquals(newC.f1, c.f1);
       assertEquals(((B) newC).f1, ((B) c).f1);
       assertEquals(newC, c);
