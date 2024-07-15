@@ -353,7 +353,7 @@ public class GuavaCollectionSerializers {
 
     @Override
     public Map newMap(Map map) {
-      Comparator comparator = fury.copy(((ImmutableSortedMap) map).comparator());
+      Comparator comparator = fury.copyObject(((ImmutableSortedMap) map).comparator());
       return new SortedMapContainer<>(comparator, map.size());
     }
 

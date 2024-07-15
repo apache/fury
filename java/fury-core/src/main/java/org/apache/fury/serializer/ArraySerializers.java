@@ -114,7 +114,7 @@ public class ArraySerializers {
       int length = originArray.length;
       Object[] newArray = newArray(length);
       for (int i = 0; i < length; i++) {
-        newArray[i] = fury.copy(originArray[i]);
+        newArray[i] = fury.copyObject(originArray[i]);
       }
       return (T[]) newArray;
     }

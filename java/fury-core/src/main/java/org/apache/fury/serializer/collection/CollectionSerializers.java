@@ -120,7 +120,7 @@ public class CollectionSerializers {
     private void copyElements(List<?> originCollection, Object[] elements) {
       int size = originCollection.size();
       for (int i = 0; i < size; i++) {
-        elements[i] = fury.copy(originCollection.get(i));
+        elements[i] = fury.copyObject(originCollection.get(i));
       }
     }
 
@@ -248,7 +248,7 @@ public class CollectionSerializers {
     @Override
     public Collection newCollection(Collection originCollection) {
       Collection collection;
-      Comparator comparator = fury.copy(((SortedSet) originCollection).comparator());
+      Comparator comparator = fury.copyObject(((SortedSet) originCollection).comparator());
       if (Objects.equals(type, TreeSet.class)) {
         collection = new TreeSet(comparator);
       } else {
@@ -376,7 +376,7 @@ public class CollectionSerializers {
 
     @Override
     public List<?> copy(List<?> originCollection) {
-      return Collections.singletonList(fury.copy(originCollection.get(0)));
+      return Collections.singletonList(fury.copyObject(originCollection.get(0)));
     }
 
     @Override
@@ -415,7 +415,7 @@ public class CollectionSerializers {
 
     @Override
     public Set<?> copy(Set<?> originCollection) {
-      return Collections.singleton(fury.copy(originCollection.iterator().next()));
+      return Collections.singleton(fury.copyObject(originCollection.iterator().next()));
     }
 
     @Override
@@ -652,7 +652,7 @@ public class CollectionSerializers {
     @Override
     public Collection newCollection(Collection collection) {
       return new PriorityQueue(
-          collection.size(), fury.copy(((PriorityQueue) collection).comparator()));
+          collection.size(), fury.copyObject(((PriorityQueue) collection).comparator()));
     }
 
     @Override

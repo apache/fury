@@ -46,7 +46,7 @@ public final class OptionalSerializers {
     @Override
     public Optional copy(Optional originOptional) {
       if (originOptional.isPresent()) {
-        return Optional.ofNullable(fury.copy(originOptional.get()));
+        return Optional.ofNullable(fury.copyObject(originOptional.get()));
       }
       return originOptional;
     }

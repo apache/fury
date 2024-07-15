@@ -69,7 +69,7 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
 
   public void copyElements(T originCollection, Collection newCollection) {
     for (Object element : originCollection) {
-      newCollection.add(fury.copy(element));
+      newCollection.add(fury.copyObject(element));
     }
   }
 

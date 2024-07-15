@@ -164,7 +164,7 @@ public class MapSerializers {
 
     @Override
     public Map newMap(Map originMap) {
-      Comparator comparator = fury.copy(((SortedMap) originMap).comparator());
+      Comparator comparator = fury.copyObject(((SortedMap) originMap).comparator());
       Map map;
       if (type == TreeMap.class) {
         map = new TreeMap(comparator);
@@ -234,7 +234,8 @@ public class MapSerializers {
     @Override
     public Map<?, ?> copy(Map<?, ?> originMap) {
       Entry<?, ?> entry = originMap.entrySet().iterator().next();
-      return Collections.singletonMap(fury.copy(entry.getKey()), fury.copy(entry.getValue()));
+      return Collections.singletonMap(
+          fury.copyObject(entry.getKey()), fury.copyObject(entry.getValue()));
     }
 
     @Override
@@ -318,7 +319,7 @@ public class MapSerializers {
 
     @Override
     public Map newMap(Map originMap) {
-      Comparator comparator = fury.copy(((ConcurrentSkipListMap) originMap).comparator());
+      Comparator comparator = fury.copyObject(((ConcurrentSkipListMap) originMap).comparator());
       return new ConcurrentSkipListMap(comparator);
     }
 
@@ -396,8 +397,10 @@ public class MapSerializers {
     }
 
     @Override
-    protected void copyEntry(Map originMap, Map newMap) {
-      originMap.forEach((k, v) -> newMap.put(k, fury.copy(v)));
+    protected <K, V> void copyEntry(Map<K, V> originMap, Map<K, V> newMap) {
+      for (Entry<K, V> entry : originMap.entrySet()) {
+        newMap.put(entry.getKey(), fury.copyObject(entry.getValue()));
+      }
     }
   }
 

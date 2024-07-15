@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -106,23 +105,11 @@ public class SynchronizedSerializers {
   public static final class SynchronizedMapSerializer extends MapSerializer<Map> {
     private final Function factory;
     private final long offset;
-    private final boolean isSortedMap;
 
     public SynchronizedMapSerializer(Fury fury, Class cls, Function factory, long offset) {
       super(fury, cls, false);
       this.factory = factory;
       this.offset = offset;
-      this.isSortedMap = SortedMap.class.isAssignableFrom(cls);
-    }
-
-    @Override
-    public Map newMap(Map map) {
-      if (isSortedMap) {
-        Comparator comparator = fury.copy(((SortedMap) map).comparator());
-        return new TreeMap(comparator);
-      } else {
-        return new HashMap(map.size());
-      }
     }
 
     @Override
@@ -135,8 +122,9 @@ public class SynchronizedSerializers {
     }
 
     @Override
-    public Map onMapCopy(Map map) {
-      return (Map) factory.apply(map);
+    public Map copy(Map originMap) {
+      final Object unwrappedMap = Platform.getObject(originMap, offset);
+      return (Map) factory.apply(fury.copyObject(unwrappedMap));
     }
 
     @Override

@@ -416,8 +416,10 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     return onMapRead(map);
   }
 
-  protected void copyEntry(Map originMap, Map newMap) {
-    originMap.forEach((k, v) -> newMap.put(fury.copy(k), fury.copy(v)));
+  protected <K, V> void copyEntry(Map<K, V> originMap, Map<K, V> newMap) {
+    for (Map.Entry<K, V> entry : originMap.entrySet()) {
+      newMap.put(fury.copyObject(entry.getKey()), fury.copyObject(entry.getValue()));
+    }
   }
 
   @SuppressWarnings("unchecked")

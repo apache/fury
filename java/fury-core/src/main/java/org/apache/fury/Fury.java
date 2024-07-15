@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
@@ -58,6 +60,8 @@ import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.serializer.StringSerializer;
+import org.apache.fury.serializer.collection.CollectionSerializers.ArrayListSerializer;
+import org.apache.fury.serializer.collection.MapSerializers.HashMapSerializer;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.ExceptionUtils;
@@ -107,6 +111,8 @@ public final class Fury implements BaseFury {
   private MemoryBuffer buffer;
   private final List<Object> nativeObjects;
   private final StringSerializer stringSerializer;
+  private final ArrayListSerializer arrayListSerializer;
+  private final HashMapSerializer hashMapSerializer;
   private final Language language;
   private final boolean compressInt;
   private final LongEncoding longEncoding;
@@ -143,6 +149,8 @@ public final class Fury implements BaseFury {
     nativeObjects = new ArrayList<>();
     generics = new Generics(this);
     stringSerializer = new StringSerializer(this);
+    arrayListSerializer = new ArrayListSerializer(this);
+    hashMapSerializer = new HashMapSerializer(this);
     originToCopyMap = new IdentityMap<>();
     LOG.info("Created new fury {}", this);
   }
@@ -1241,20 +1249,91 @@ public final class Fury implements BaseFury {
 
   @Override
   public <T> T copy(T obj) {
-    if (obj == null) {
-      return null;
-    }
-    copyDepth++;
     try {
-      return (T) classResolver.getOrUpdateClassInfo(obj.getClass()).getSerializer().copy(obj);
+      return copyObject(obj);
     } catch (StackOverflowError e) {
       throw processCopyStackOverflowError(e);
     } finally {
-      copyDepth--;
-      if (copyRefTracking && copyDepth == 0) {
+      if (copyRefTracking) {
         resetCopy();
       }
     }
+  }
+
+  /**
+   * Copy object. This method provides a fast copy of common types.
+   *
+   * @param obj object to copy
+   * @return copied object
+   * @param <T> object type
+   */
+  public <T> T copyObject(T obj) {
+    if (obj == null) {
+      return null;
+    }
+    Object copy;
+    ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
+    switch (classInfo.getClassId()) {
+      case ClassResolver.BOOLEAN_CLASS_ID:
+      case ClassResolver.BYTE_CLASS_ID:
+      case ClassResolver.CHAR_CLASS_ID:
+      case ClassResolver.SHORT_CLASS_ID:
+      case ClassResolver.INTEGER_CLASS_ID:
+      case ClassResolver.FLOAT_CLASS_ID:
+      case ClassResolver.LONG_CLASS_ID:
+      case ClassResolver.DOUBLE_CLASS_ID:
+      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+      case ClassResolver.STRING_CLASS_ID:
+        return obj;
+      case ClassResolver.PRIMITIVE_BOOLEAN_ARRAY_CLASS_ID:
+        boolean[] boolArr = (boolean[]) obj;
+        return (T) Arrays.copyOf(boolArr, boolArr.length);
+      case ClassResolver.PRIMITIVE_BYTE_ARRAY_CLASS_ID:
+        byte[] byteArr = (byte[]) obj;
+        return (T) Arrays.copyOf(byteArr, byteArr.length);
+      case ClassResolver.PRIMITIVE_CHAR_ARRAY_CLASS_ID:
+        char[] charArr = (char[]) obj;
+        return (T) Arrays.copyOf(charArr, charArr.length);
+      case ClassResolver.PRIMITIVE_SHORT_ARRAY_CLASS_ID:
+        short[] shortArr = (short[]) obj;
+        return (T) Arrays.copyOf(shortArr, shortArr.length);
+      case ClassResolver.PRIMITIVE_INT_ARRAY_CLASS_ID:
+        int[] intArr = (int[]) obj;
+        return (T) Arrays.copyOf(intArr, intArr.length);
+      case ClassResolver.PRIMITIVE_FLOAT_ARRAY_CLASS_ID:
+        float[] floatArr = (float[]) obj;
+        return (T) Arrays.copyOf(floatArr, floatArr.length);
+      case ClassResolver.PRIMITIVE_LONG_ARRAY_CLASS_ID:
+        long[] longArr = (long[]) obj;
+        return (T) Arrays.copyOf(longArr, longArr.length);
+      case ClassResolver.PRIMITIVE_DOUBLE_ARRAY_CLASS_ID:
+        double[] doubleArr = (double[]) obj;
+        return (T) Arrays.copyOf(doubleArr, doubleArr.length);
+      case ClassResolver.STRING_ARRAY_CLASS_ID:
+        String[] stringArr = (String[]) obj;
+        return (T) Arrays.copyOf(stringArr, stringArr.length);
+      case ClassResolver.ARRAYLIST_CLASS_ID:
+        copyDepth++;
+        copy = arrayListSerializer.copy((ArrayList) obj);
+        break;
+      case ClassResolver.HASHMAP_CLASS_ID:
+        copyDepth++;
+        copy = hashMapSerializer.copy((HashMap) obj);
+        break;
+        // todo: add fastpath for other types.
+      default:
+        copyDepth++;
+        copy = classInfo.getSerializer().copy(obj);
+    }
+    copyDepth--;
+    return (T) copy;
   }
 
   /**

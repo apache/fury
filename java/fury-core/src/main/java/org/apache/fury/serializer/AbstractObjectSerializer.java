@@ -91,7 +91,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
               if (classResolver.isPrimitive(fieldInfo.getEmbeddedClassId())) {
                 return fieldAccessor.get(originObj);
               }
-              return fury.copy(fieldAccessor.get(originObj));
+              return fury.copyObject(fieldAccessor.get(originObj));
             })
         .toArray();
   }
@@ -127,7 +127,8 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
           Platform.putBoolean(newObj, offset, Platform.getBoolean(originObj, offset));
           break;
         default:
-          Platform.putObject(newObj, offset, fury.copy(Platform.getObject(originObj, offset)));
+          Platform.putObject(
+              newObj, offset, fury.copyObject(Platform.getObject(originObj, offset)));
       }
     }
   }

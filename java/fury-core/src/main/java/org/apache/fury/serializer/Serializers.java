@@ -443,7 +443,7 @@ public class Serializers {
 
     @Override
     public AtomicReference copy(AtomicReference origin) {
-      return new AtomicReference(fury.copy(origin.get()));
+      return new AtomicReference(fury.copyObject(origin.get()));
     }
 
     @Override
