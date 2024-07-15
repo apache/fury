@@ -333,9 +333,17 @@ public final class FuryBuilder {
       if (deserializeNonexistentClass == null) {
         deserializeNonexistentClass = true;
       }
-      if (metaShareEnabled == null) {
-        scopedMetaShareEnabled = true;
-        metaShareEnabled = true;
+      if (scopedMetaShareEnabled == null) {
+        if (metaShareEnabled == null) {
+          metaShareEnabled = true;
+          scopedMetaShareEnabled = true;
+        } else {
+          scopedMetaShareEnabled = false;
+        }
+      } else {
+        if (metaShareEnabled == null) {
+          metaShareEnabled = scopedMetaShareEnabled;
+        }
       }
     } else {
       if (deserializeNonexistentClass == null) {
