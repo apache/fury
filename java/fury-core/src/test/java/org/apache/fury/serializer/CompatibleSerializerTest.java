@@ -391,13 +391,14 @@ public class CompatibleSerializerTest extends FuryTestBase {
         MapFields.class, code, CompatibleSerializerTest.class + "createCompatibleClass3");
   }
 
-  @Test(dataProvider = "compressNumber")
-  public void testCompressInt(boolean compressNumber) throws Exception {
+  @Test(dataProvider = "compressNumberScopedMetaShare")
+  public void testCompressInt(boolean compressNumber, boolean scopedMetaShare) throws Exception {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withNumberCompressed(compressNumber)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withScopedMetaShare(scopedMetaShare)
             .requireClassRegistration(false)
             .build();
     Class<?> structClass = Struct.createNumberStructClass("CompatibleCompressIntStruct", 2);

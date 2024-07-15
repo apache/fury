@@ -45,6 +45,7 @@ public class JITContextTest extends FuryTestBase {
   public static Object[][] config1() {
     return Sets.cartesianProduct(
             ImmutableSet.of(true, false), // referenceTracking
+            ImmutableSet.of(true, false), // scoped meta share
             ImmutableSet.of(CompatibleMode.COMPATIBLE, CompatibleMode.SCHEMA_CONSISTENT))
         .stream()
         .map(List::toArray)
@@ -52,13 +53,15 @@ public class JITContextTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "config1", timeOut = 60_000)
-  public void testAsyncCompilation(boolean referenceTracking, CompatibleMode compatibleMode)
+  public void testAsyncCompilation(
+      boolean referenceTracking, boolean scopedMetaShare, CompatibleMode compatibleMode)
       throws InterruptedException {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
+            .withScopedMetaShare(scopedMetaShare)
             .requireClassRegistration(false)
             .withAsyncCompilation(true)
             .build();
@@ -93,12 +96,14 @@ public class JITContextTest extends FuryTestBase {
 
   @Test(dataProvider = "config1", timeOut = 60_000)
   public void testAsyncCompilationMetaShared(
-      boolean referenceTracking, CompatibleMode compatibleMode) throws InterruptedException {
+      boolean referenceTracking, boolean scopedMetaShare, CompatibleMode compatibleMode)
+      throws InterruptedException {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
+            .withScopedMetaShare(scopedMetaShare)
             .requireClassRegistration(false)
             .withAsyncCompilation(true)
             .build();

@@ -27,6 +27,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.builder.CodecUtils;
 import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
@@ -97,21 +98,22 @@ public class DuplicateFieldsTest extends FuryTestBase {
     }
   }
 
-  @Test()
-  public void testDuplicateFieldsCompatible() {
+  @Test(dataProvider = "scopedMetaShare")
+  public void testDuplicateFieldsCompatible(boolean scopedMetaShare) {
     C c = new C();
     ((B) c).f1 = 100;
     c.f1 = -100;
     assertEquals(((B) c).f1, 100);
     assertEquals(c.f1, -100);
-    Fury fury =
+    FuryBuilder builder =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
-            .build();
+            .withScopedMetaShare(scopedMetaShare)
+            .requireClassRegistration(false);
+    Fury fury = builder.build();
     {
       CompatibleSerializer<C> serializer = new CompatibleSerializer<>(fury, C.class);
       MemoryBuffer buffer = MemoryUtils.buffer(32);
@@ -134,14 +136,7 @@ public class DuplicateFieldsTest extends FuryTestBase {
     }
     {
       // FallbackSerializer/CodegenSerializer will set itself to ClassResolver.
-      Fury fury1 =
-          Fury.builder()
-              .withLanguage(Language.JAVA)
-              .withRefTracking(false)
-              .withCodegen(true)
-              .withCompatibleMode(CompatibleMode.COMPATIBLE)
-              .requireClassRegistration(false)
-              .build();
+      Fury fury1 = builder.build();
       C newC = (C) serDeCheckSerializer(fury1, c, "Compatible.*Codec");
       assertEquals(newC.f1, c.f1);
       assertEquals(((B) newC).f1, ((B) c).f1);

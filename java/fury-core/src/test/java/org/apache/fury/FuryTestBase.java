@@ -101,7 +101,17 @@ public abstract class FuryTestBase {
   }
 
   @DataProvider
+  public static Object[][] scopedMetaShare() {
+    return new Object[][] {{false}, {true}};
+  }
+
+  @DataProvider
   public static Object[][] compressNumberAndCodeGen() {
+    return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
+  }
+
+  @DataProvider
+  public static Object[][] compressNumberScopedMetaShare() {
     return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
   }
 
@@ -160,41 +170,38 @@ public abstract class FuryTestBase {
 
   @DataProvider
   public static Object[][] javaFuryKVCompatible() {
+    FuryBuilder builder =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .withScopedMetaShare(false);
     return new Object[][] {
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
             .withRefTracking(true)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
             .withRefTracking(false)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
             .withRefTracking(true)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
             .withRefTracking(false)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
     };
