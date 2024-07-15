@@ -83,7 +83,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const metaInformation = computeMetaInformation(this.description);
     return `
       ${this.builder.writer.int32(expectHash)};
-      ${this.builder.writer.int32(metaInformation.length)};
+      ${this.builder.writer.buffer(metaInformation)};
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
@@ -99,7 +99,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
     const encodedMetaInformation = computeMetaInformation(this.description);
-    const metaInformation = decodeMetaInformation(encodedMetaInformation);
+    //const metaInformation = decodeMetaInformation(encodedMetaInformation);
     const result = this.scope.uniqueName("result");
 
 
@@ -107,15 +107,13 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
       if (${this.builder.reader.int32()} !== ${expectHash}) {
           throw new Error("validate hash failed: ${this.safeTag()}. expect ${expectHash}");
       }
-      if (${this.builder.reader.int32()} !== ${encodedMetaInformation.length}) {
-          throw new Error("validate meta information failed: ${this.safeTag()}. expect ${encodedMetaInformation.length}");
-      }
       const ${result} = {
         ${Object.entries(options.props).sort().map(([key]) => {
           return `${CodecBuilder.safePropName(key)}: null`;
         }).join(",\n")}
       };
       ${this.maybeReference(result, refState)}
+      ${this.builder.reader.buffer(encodedMetaInformation.length)}
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
