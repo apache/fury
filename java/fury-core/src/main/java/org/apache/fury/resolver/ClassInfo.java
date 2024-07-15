@@ -90,9 +90,7 @@ public class ClassInfo {
     // means only classes are serialized, not the instance. If we
     // serialize such class only, we need to write classname bytes.
     if (cls != null
-        && ((classId == ClassResolver.NO_CLASS_ID
-                && !classResolver.getFury().getConfig().isMetaShareEnabled())
-            || classId == ClassResolver.REPLACE_STUB_ID)) {
+        && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       Tuple2<String, String> tuple2 = Encoders.encodePkgAndClass(cls);
       this.packageNameBytes =

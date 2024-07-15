@@ -1286,26 +1286,34 @@ public class ClassResolver {
       buffer.writeVarUint32(id);
     } else {
       buffer.writeVarUint32(newId);
-      ClassDef classDef;
-      Serializer<?> serializer = classInfo.serializer;
-      Preconditions.checkArgument(serializer.getClass() != NonexistentClassSerializer.class);
-      if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE
-          && (serializer instanceof Generated.GeneratedObjectSerializer
-              // May already switched to MetaSharedSerializer when update class info cache.
-              || serializer instanceof Generated.GeneratedMetaSharedSerializer
-              || serializer instanceof LazyInitBeanSerializer
-              || serializer instanceof ObjectSerializer
-              || serializer instanceof MetaSharedSerializer)) {
-        classDef =
-            classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(fury, cls));
-      } else {
-        // Some type will use other serializers such MapSerializer and so on.
-        classDef =
-            classDefMap.computeIfAbsent(
-                classInfo.cls, cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>(), false));
+      ClassDef classDef = classDefMap.get(classInfo.cls);
+      if (classDef == null) {
+        classDef = buildClassDef(classInfo);
       }
       metaContext.writingClassDefs.add(classDef);
     }
+  }
+
+  private ClassDef buildClassDef(ClassInfo classInfo) {
+    ClassDef classDef;
+    Serializer<?> serializer = classInfo.serializer;
+    Preconditions.checkArgument(serializer.getClass() != NonexistentClassSerializer.class);
+    if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE
+        && (serializer instanceof Generated.GeneratedObjectSerializer
+            // May already switched to MetaSharedSerializer when update class info cache.
+            || serializer instanceof Generated.GeneratedMetaSharedSerializer
+            || serializer instanceof LazyInitBeanSerializer
+            || serializer instanceof ObjectSerializer
+            || serializer instanceof MetaSharedSerializer)) {
+      classDef =
+          classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(fury, cls));
+    } else {
+      // Some type will use other serializers such MapSerializer and so on.
+      classDef =
+          classDefMap.computeIfAbsent(
+              classInfo.cls, cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>(), false));
+    }
+    return classDef;
   }
 
   private Class<?> readClassWithMetaShare(MemoryBuffer buffer) {
@@ -1510,6 +1518,11 @@ public class ClassResolver {
    * serializable object, {@link #writeClass(MemoryBuffer, ClassInfo)} should be invoked.
    */
   public void writeClassInternal(MemoryBuffer buffer, Class<?> cls) {
+    writeClassInternal(buffer, cls, metaContextShareEnabled);
+  }
+
+  public void writeClassInternal(
+      MemoryBuffer buffer, Class<?> cls, boolean metaContextShareEnabled) {
     ClassInfo classInfo = classInfoMap.get(cls);
     if (classInfo == null) {
       Short classId = extRegistry.registeredClassIdMap.get(cls);
@@ -1524,8 +1537,24 @@ public class ClassResolver {
       // ReplaceResolveSerializer.ReplaceStub
       classInfo.classId = NO_CLASS_ID;
     }
-    writeClass(buffer, classInfo);
+    if (metaContextShareEnabled) {
+      writeClass(buffer, classInfo);
+    } else {
+      writeClassUnshared(buffer, classInfo);
+    }
     classInfo.classId = classId;
+  }
+
+  private void writeClassUnshared(MemoryBuffer buffer, ClassInfo classInfo) {
+    if (classInfo.classId == NO_CLASS_ID) {
+      assert classInfo.packageNameBytes != null;
+      metaStringResolver.writeMetaStringBytesWithFlag(buffer, classInfo.packageNameBytes);
+      assert classInfo.classNameBytes != null;
+      metaStringResolver.writeMetaStringBytes(buffer, classInfo.classNameBytes);
+    } else {
+      // use classId
+      buffer.writeVarUint32(classInfo.classId << 1);
+    }
   }
 
   /**
@@ -1534,6 +1563,10 @@ public class ClassResolver {
    * #readClassInfo(MemoryBuffer, ClassInfoHolder)} should be invoked.
    */
   public Class<?> readClassInternal(MemoryBuffer buffer) {
+    return readClassInternal(buffer, metaContextShareEnabled);
+  }
+
+  public Class<?> readClassInternal(MemoryBuffer buffer, boolean metaContextShareEnabled) {
     int header = buffer.readVarUint32Small14();
     final ClassInfo classInfo;
     if ((header & 0b1) != 0) {
