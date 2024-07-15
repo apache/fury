@@ -38,7 +38,6 @@ fn test_to_utf8() {
     // final UTF-8 string
     let final_string = String::from_utf8(utf8_bytes.clone()).unwrap();
     println!("final string: {}", final_string);
-    println!("8len: {}, 16len: {}", utf8_bytes.len(), utf16_bytes.len());
     assert_eq!(s, final_string);
 }
 

@@ -29,27 +29,37 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
     let mut offset = 0;
     let mut iter = utf16.iter();
     while let Some(&wc) = iter.next() {
+        // Using big endian in this conversion
         let wc = if is_little_endian {
             swap_endian(wc)
         } else {
             wc
         };
         match wc {
-            // 1-byte UTF-8
-            // [0000|0000|0ccc|cccc] => [0ccc|cccc]
-            code_point if code_point < 0x80 => unsafe {
-                ptr.add(offset).write(code_point as u8);
+            code_point if code_point < 0x80 => {
+                // 1-byte UTF-8
+                // [0000|0000|0ccc|cccc] => [0ccc|cccc]
+                unsafe {
+                    ptr.add(offset).write(code_point as u8);
+                }
                 offset += 1;
-            },
-            code_point if code_point < 0x800 => unsafe {
+            }
+            code_point if code_point < 0x800 => {
                 // 2-byte UTF-8
                 // [0000|0bbb|bbcc|cccc] => [110|bbbbb], [10|cccccc]
-                ptr.add(offset)
-                    .write(((code_point >> 6 & 0b1_1111) as u8) | 0b1100_0000);
-                ptr.add(offset + 1)
-                    .write(((code_point & 0b11_1111) as u8) | 0b1000_0000);
+                // write a u16 to [u8;2] is affected by the processor's endianness.
+                #[cfg(target_endian = "little")]
+                let val: u16 = ((code_point >> 6 & 0b1_1111) | 0b1100_0000)
+                    | (((code_point & 0b11_1111) | 0b1000_0000) << 8);
+                #[cfg(target_endian = "big")]
+                let val: u16 = (((code_point >> 6 & 0b1_1111) | 0b1100_0000) << 8)
+                    | ((code_point & 0b11_1111) | 0b1000_0000);
+                unsafe {
+                    let ptr_16 = ptr.add(offset) as *mut u16;
+                    ptr_16.write(val);
+                }
                 offset += 2;
-            },
+            }
             wc1 if (0xd800..=0xdbff).contains(&wc1) => {
                 // Surrogate pair (4-byte UTF-8)
                 // Need extra u16, 2 u16 -> 4 u8
@@ -67,32 +77,41 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
                         ((((wc1 as u32) - 0xd800) << 10) | ((wc2 as u32) - 0xdc00)) + 0x10000;
                     // 11110??? 10?????? 10?????? 10??????
                     // Need 21 bit suffix of code_point
+                    #[cfg(target_endian = "little")]
+                    let val = ((code_point >> 18 & 0b111) | 0b1111_0000)
+                        | (((code_point >> 12 & 0b11_1111) | 0b1000_0000) << 8)
+                        | (((code_point >> 6 & 0b11_1111) | 0b1000_0000) << 16)
+                        | (((code_point & 0b11_1111) | 0b1000_0000) << 24);
+                    #[cfg(target_endian = "big")]
+                    let val = (((code_point >> 18 & 0b111) | 0b1111_0000) << 24)
+                        | (((code_point >> 12 & 0b11_1111) | 0b1000_0000) << 16)
+                        | (((code_point >> 6 & 0b11_1111) | 0b1000_0000) << 8)
+                        | ((code_point & 0b11_1111) | 0b1000_0000);
                     unsafe {
-                        ptr.add(offset)
-                            .write(((code_point >> 18 & 0b111) as u8) | 0b1111_0000);
-                        ptr.add(offset + 1)
-                            .write(((code_point >> 12 & 0b11_1111) as u8) | 0b1000_0000);
-                        ptr.add(offset + 2)
-                            .write(((code_point >> 6 & 0b11_1111) as u8) | 0b1000_0000);
-                        ptr.add(offset + 3)
-                            .write(((code_point & 0b11_1111) as u8) | 0b1000_0000);
-                        offset += 4;
+                        let ptr_32 = ptr.add(offset) as *mut u32;
+                        ptr_32.write(val);
                     }
+                    offset += 4;
                 } else {
                     return Err("Invalid UTF-16 string: missing surrogate pair".to_string());
                 }
             }
-            // 3-byte UTF-8, 1 u16 -> 3 u8
-            _ => unsafe {
+            _ => {
+                // 3-byte UTF-8, 1 u16 -> 3 u8
                 // [aaaa|bbbb|bbcc|cccc] => [1110|aaaa], [10|bbbbbb], [10|cccccc]
                 // Need 16 bit suffix of wc, as same as wc itself
-                ptr.add(offset).write(((wc >> 12) as u8) | 0b1110_0000);
-                ptr.add(offset + 1)
-                    .write(((wc >> 6 & 0b11_1111) as u8) | 0b1000_0000);
-                ptr.add(offset + 2)
-                    .write(((wc & 0b11_1111) as u8) | 0b1000_0000);
+                #[cfg(target_endian = "little")]
+                let val = ((wc >> 12) | 0b1110_0000) | (((wc >> 6 & 0b11_1111) | 0b1000_0000) << 8);
+                #[cfg(target_endian = "big")]
+                let val = (((wc >> 12) | 0b1110_0000) << 8) | ((wc >> 6 & 0b11_1111) | 0b1000_0000);
+                unsafe {
+                    let ptr_16 = ptr.add(offset) as *mut u16;
+                    ptr_16.write(val);
+                    ptr.add(offset + 2)
+                        .write((wc & 0b11_1111) as u8 | 0b1000_0000);
+                }
                 offset += 3;
-            },
+            }
         }
     }
     unsafe {
