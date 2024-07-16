@@ -418,7 +418,7 @@ public class ClassResolver {
         if (classDef == null) {
           classDef = buildClassDef(classInfo);
         }
-        getMetaSharedClassInfo(classDef, cls);
+        buildMetaSharedClassInfo(Tuple2.of(classDef, null), classDef);
       }
     }
   }
