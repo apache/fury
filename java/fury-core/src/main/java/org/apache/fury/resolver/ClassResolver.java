@@ -1405,6 +1405,10 @@ public class ClassResolver {
     if (sc == null) {
       if (GraalvmSupport.isGraalRuntime()) {
         sc = MetaSharedSerializer.class;
+        LOG.warn(
+            "Can't generate class at runtime in graalvm for class def {}, use {} instead",
+            classDef,
+            sc);
       } else {
         sc =
             fury.getJITContext()
