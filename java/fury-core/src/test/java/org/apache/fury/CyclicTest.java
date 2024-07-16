@@ -50,6 +50,7 @@ public class CyclicTest extends FuryTestBase {
     return Sets.cartesianProduct(
             ImmutableSet.of(true, false), // enableCodegen
             ImmutableSet.of(true, false), // async compilation
+            ImmutableSet.of(true, false), // scoped meta share
             ImmutableSet.of(
                 CompatibleMode.SCHEMA_CONSISTENT, CompatibleMode.COMPATIBLE) // structFieldsRepeat
             )
@@ -62,7 +63,8 @@ public class CyclicTest extends FuryTestBase {
                       .withLanguage(Language.JAVA)
                       .withCodegen((Boolean) c[0])
                       .withAsyncCompilation((Boolean) c[1])
-                      .withCompatibleMode((CompatibleMode) c[2])
+                      .withScopedMetaShare((Boolean) c[2])
+                      .withCompatibleMode((CompatibleMode) c[3])
                       .requireClassRegistration(false)
                 })
         .toArray(Object[][]::new);

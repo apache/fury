@@ -27,6 +27,7 @@ public class Main {
   public static void main(String[] args) throws Throwable {
     Example.main(args);
     CompatibleExample.main(args);
+    ScopedCompatibleExample.main(args);
     RecordExample.main(args);
     CompatibleRecordExample.main(args);
     RecordExample2.main(args);

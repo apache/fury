@@ -64,6 +64,7 @@ public final class SerializationContext {
    * FuryBuilder#withMetaShare(boolean)}
    */
   public void setMetaContext(MetaContext metaContext) {
+    assert !scopedMetaShareEnabled;
     this.metaContext = metaContext;
   }
 

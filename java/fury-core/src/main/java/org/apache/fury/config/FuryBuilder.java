@@ -70,8 +70,8 @@ public final class FuryBuilder {
   boolean checkJdkClassSerializable = true;
   Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
   boolean requireClassRegistration = true;
-  boolean metaShareEnabled = false;
-  boolean scopedMetaShareEnabled = false;
+  Boolean metaShareEnabled;
+  Boolean scopedMetaShareEnabled;
   boolean codeGenEnabled = true;
   Boolean deserializeNonexistentClass;
   boolean asyncCompilationEnabled = false;
@@ -239,6 +239,9 @@ public final class FuryBuilder {
   /** Whether to enable meta share mode. */
   public FuryBuilder withMetaShare(boolean shareMeta) {
     this.metaShareEnabled = shareMeta;
+    if (!shareMeta) {
+      scopedMetaShareEnabled = false;
+    }
     return this;
   }
 
@@ -248,9 +251,6 @@ public final class FuryBuilder {
    */
   public FuryBuilder withScopedMetaShare(boolean scoped) {
     scopedMetaShareEnabled = scoped;
-    if (scoped) {
-      metaShareEnabled = true;
-    }
     return this;
   }
 
@@ -330,9 +330,28 @@ public final class FuryBuilder {
       if (deserializeNonexistentClass == null) {
         deserializeNonexistentClass = true;
       }
+      if (scopedMetaShareEnabled == null) {
+        if (metaShareEnabled == null) {
+          metaShareEnabled = true;
+          scopedMetaShareEnabled = true;
+        } else {
+          scopedMetaShareEnabled = false;
+        }
+      } else {
+        if (metaShareEnabled == null) {
+          metaShareEnabled = scopedMetaShareEnabled;
+        }
+      }
     } else {
       if (deserializeNonexistentClass == null) {
         deserializeNonexistentClass = false;
+      }
+      if (scopedMetaShareEnabled != null) {
+        LOG.warn("Scoped meta share is for CompatibleMode only, disable it for {}", compatibleMode);
+      }
+      scopedMetaShareEnabled = false;
+      if (metaShareEnabled == null) {
+        metaShareEnabled = false;
       }
     }
     if (!requireClassRegistration) {

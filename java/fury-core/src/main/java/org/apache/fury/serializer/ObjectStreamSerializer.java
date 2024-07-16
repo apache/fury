@@ -19,6 +19,8 @@
 
 package org.apache.fury.serializer;
 
+import static org.apache.fury.resolver.ClassResolver.NO_CLASS_ID;
+
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -130,7 +132,7 @@ public class ObjectStreamSerializer extends Serializer {
       for (SlotsInfo slotsInfo : slotsInfos) {
         // create a classinfo to avoid null class bytes when class id is a
         // replacement id.
-        classResolver.writeClass(buffer, slotsInfo.classInfo);
+        classResolver.writeClassInternal(buffer, slotsInfo.classInfo.getCls());
         StreamClassInfo streamClassInfo = slotsInfo.streamClassInfo;
         Method writeObjectMethod = streamClassInfo.writeObjectMethod;
         if (writeObjectMethod == null) {
@@ -327,7 +329,7 @@ public class ObjectStreamSerializer extends Serializer {
 
     public SlotsInfo(Fury fury, Class<?> type) {
       this.cls = type;
-      classInfo = fury.getClassResolver().newClassInfo(type, null, ClassResolver.NO_CLASS_ID);
+      classInfo = fury.getClassResolver().newClassInfo(type, null, NO_CLASS_ID);
       ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(type);
       streamClassInfo = STREAM_CLASS_INFO_CACHE.get(type);
       // `putFields/writeFields` will convert to fields value to be written by

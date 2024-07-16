@@ -79,7 +79,9 @@ class ClassDefDecoder {
       int numFields = currentClassHeader >>> 1;
       if (isRegistered) {
         int registeredId = classDefBuf.readVarUint32Small7();
-        className = classResolver.getClassInfo((short) registeredId).getCls().getName();
+        Class<?> cls = classResolver.getClassInfo((short) registeredId).getCls();
+        className = cls.getName();
+        classSpec = new ClassSpec(cls);
       } else {
         String pkg = readPkgName(classDefBuf);
         String typeName = readTypeName(classDefBuf);

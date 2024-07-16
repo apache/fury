@@ -19,6 +19,8 @@
 
 package org.apache.fury.meta;
 
+import org.apache.fury.type.TypeUtils;
+
 public class ClassSpec {
   public final String entireClassName;
 
@@ -27,6 +29,13 @@ public class ClassSpec {
 
   public final boolean isArray;
   public final int dimension;
+
+  public ClassSpec(Class<?> cls) {
+    this.entireClassName = cls.getName();
+    isEnum = cls.isEnum();
+    isArray = cls.isArray();
+    dimension = isArray ? TypeUtils.getArrayDimensions(cls) : 0;
+  }
 
   public ClassSpec(String entireClassName, boolean isEnum, boolean isArray, int dimension) {
     this.entireClassName = entireClassName;

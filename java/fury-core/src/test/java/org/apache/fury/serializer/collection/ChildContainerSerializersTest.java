@@ -35,7 +35,6 @@ import lombok.Data;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.CompatibleMode;
-import org.apache.fury.config.Language;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -63,19 +62,23 @@ public class ChildContainerSerializersTest extends FuryTestBase {
   public static Object[][] furyConfig() {
     return new Object[][] {
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder()
             .withRefTracking(false)
+            .withScopedMetaShare(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder()
+            .withRefTracking(false)
+            .withScopedMetaShare(true)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .build()
+      },
+      {
+        builder()
             .withRefTracking(false)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
-            .requireClassRegistration(false)
             .build()
       },
     };
@@ -176,12 +179,11 @@ public class ChildContainerSerializersTest extends FuryTestBase {
     UserDO outerDO = new UserDO();
     outerDO.setFeatures(features);
     Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder()
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withDeserializeNonexistentClass(true)
             .withMetaShare(true)
-            .requireClassRegistration(false)
+            .withScopedMetaShare(false)
             .withCodegen(enableCodegen)
             .build();
     serDeMetaShared(fury, outerDO);
