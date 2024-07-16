@@ -111,7 +111,7 @@ public class RecordSerializersTest {
         Fury.builder()
             .requireClassRegistration(false)
             .withCodegen(codegen)
-          .withClassLoader(cls1.getClassLoader())
+            .withClassLoader(cls1.getClassLoader())
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
     byte[] bytes1 = fury.serialize(record1);
@@ -129,8 +129,8 @@ public class RecordSerializersTest {
         Fury.builder()
             .requireClassRegistration(false)
             .withCodegen(codegen)
-          .withClassLoader(cls2.getClassLoader())
-          .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withClassLoader(cls2.getClassLoader())
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
     Object o2 = fury2.deserialize(fury2.serialize(record2));
     Assert.assertEquals(o2, record2);
