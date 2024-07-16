@@ -412,7 +412,14 @@ public class ClassResolver {
   public void register(Class<?> cls, boolean createSerializer) {
     register(cls);
     if (createSerializer) {
-      getSerializer(cls);
+      ClassInfo classInfo = getClassInfo(cls);
+      if (metaContextShareEnabled && needToWriteClassDef(classInfo.serializer)) {
+        ClassDef classDef = classInfo.classDef;
+        if (classDef == null) {
+          classDef = buildClassDef(classInfo);
+        }
+        getMetaSharedClassInfo(classDef, cls);
+      }
     }
   }
 
@@ -687,9 +694,9 @@ public class ClassResolver {
 
   /**
    * Set serializer to avoid circular error when there is a serializer query for fields by {@link
-   * #getClassInfo} and {@link #getSerializer(Class)} which access current creating serializer. This
-   * method is used to avoid overwriting existing serializer for class when creating a data
-   * serializer for serialization of parts fields of a class.
+   * #buildMetaSharedClassInfo} and {@link #getSerializer(Class)} which access current creating
+   * serializer. This method is used to avoid overwriting existing serializer for class when
+   * creating a data serializer for serialization of parts fields of a class.
    */
   public <T> void setSerializerIfAbsent(Class<T> cls, Serializer<T> serializer) {
     Serializer<T> s = getSerializer(cls, false);
@@ -1341,23 +1348,30 @@ public class ClassResolver {
       ClassDef classDef = readClassDefs.get(id);
       Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
       if (classDefTuple == null || classDefTuple.f1 == null) {
-        if (classDefTuple != null) {
-          classDef = classDefTuple.f0;
-        }
-        Class<?> cls = loadClass(classDef.getClassSpec());
-        if (!classDef.isObjectType()) {
-          classInfo = getClassInfo(cls);
-        } else {
-          classInfo = getMetaSharedClassInfo(classDef, cls);
-        }
-        // Share serializer for same version class def to avoid too much different meta
-        // context take up too much memory.
-        putClassDef(classDef, classInfo);
+        classInfo = buildMetaSharedClassInfo(classDefTuple, classDef);
       } else {
         classInfo = classDefTuple.f1;
       }
       readClassInfos.set(id, classInfo);
     }
+    return classInfo;
+  }
+
+  private ClassInfo buildMetaSharedClassInfo(
+      Tuple2<ClassDef, ClassInfo> classDefTuple, ClassDef classDef) {
+    ClassInfo classInfo;
+    if (classDefTuple != null) {
+      classDef = classDefTuple.f0;
+    }
+    Class<?> cls = loadClass(classDef.getClassSpec());
+    if (!classDef.isObjectType()) {
+      classInfo = getClassInfo(cls);
+    } else {
+      classInfo = getMetaSharedClassInfo(classDef, cls);
+    }
+    // Share serializer for same version class def to avoid too much different meta
+    // context take up too much memory.
+    putClassDef(classDef, classInfo);
     return classInfo;
   }
 
@@ -1387,11 +1401,19 @@ public class ClassResolver {
       return getClassInfo(cls);
     }
     Class<? extends Serializer> sc =
-        fury.getJITContext()
-            .registerSerializerJITCallback(
-                () -> MetaSharedSerializer.class,
-                () -> CodecUtils.loadOrGenMetaSharedCodecClass(fury, cls, classDef),
-                c -> classInfo.setSerializer(this, Serializers.newSerializer(fury, cls, c)));
+        getMetaSharedDeserializerClassFromGraalvmRegistry(cls, classDef);
+    if (sc == null) {
+      if (GraalvmSupport.isGraalRuntime()) {
+        sc = MetaSharedSerializer.class;
+      } else {
+        sc =
+            fury.getJITContext()
+                .registerSerializerJITCallback(
+                    () -> MetaSharedSerializer.class,
+                    () -> CodecUtils.loadOrGenMetaSharedCodecClass(fury, cls, classDef),
+                    c -> classInfo.setSerializer(this, Serializers.newSerializer(fury, cls, c)));
+      }
+    }
     if (sc == MetaSharedSerializer.class) {
       classInfo.setSerializer(this, new MetaSharedSerializer(fury, cls, classDef));
     } else {
@@ -1883,6 +1905,30 @@ public class ClassResolver {
         ClassInfo classInfo = classResolver.classInfoMap.get(cls);
         if (classInfo != null) {
           return classInfo.serializer.getClass();
+        }
+      }
+    }
+    if (GraalvmSupport.isGraalRuntime()) {
+      if (Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls)) {
+        return null;
+      }
+      throw new RuntimeException(String.format("Class %s is not registered", cls));
+    }
+    return null;
+  }
+
+  private Class<? extends Serializer> getMetaSharedDeserializerClassFromGraalvmRegistry(
+      Class<?> cls, ClassDef classDef) {
+    List<ClassResolver> classResolvers = GRAALVM_REGISTRY.get(fury.getConfig().getConfigHash());
+    if (classResolvers == null || classResolvers.isEmpty()) {
+      return null;
+    }
+    for (ClassResolver classResolver : classResolvers) {
+      if (classResolver != this) {
+        Tuple2<ClassDef, ClassInfo> tuple2 =
+            classResolver.extRegistry.classIdToDef.get(classDef.getId());
+        if (tuple2 != null && tuple2.f1 != null) {
+          return tuple2.f1.serializer.getClass();
         }
       }
     }
