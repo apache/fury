@@ -1439,6 +1439,7 @@ public class ClassResolver {
         writingClassDefs.get(i).writeClassDef(buffer);
       }
     }
+    metaContext.writingClassDefs.size = 0;
   }
 
   private void writeClassDefs(MemoryBuffer buffer, ObjectArray<ClassDef> writingClassDefs) {
