@@ -1431,20 +1431,21 @@ public class ClassResolver {
   public void writeClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
     ObjectArray<ClassDef> writingClassDefs = metaContext.writingClassDefs;
-    buffer.writeVarUint32Small7(writingClassDefs.size());
+    final int size = writingClassDefs.size;
+    buffer.writeVarUint32Small7(size);
     if (buffer.isHeapFullyWriteable()) {
-      writeClassDefs(buffer, writingClassDefs);
+      writeClassDefs(buffer, writingClassDefs, size);
     } else {
-      for (int i = 0; i < writingClassDefs.size; i++) {
+      for (int i = 0; i < size; i++) {
         writingClassDefs.get(i).writeClassDef(buffer);
       }
     }
     metaContext.writingClassDefs.size = 0;
   }
 
-  private void writeClassDefs(MemoryBuffer buffer, ObjectArray<ClassDef> writingClassDefs) {
+  private void writeClassDefs(MemoryBuffer buffer, ObjectArray<ClassDef> writingClassDefs, int size) {
     int writerIndex = buffer.writerIndex();
-    for (int i = 0; i < writingClassDefs.size; i++) {
+    for (int i = 0; i < size; i++) {
       byte[] encoded = writingClassDefs.get(i).getEncoded();
       int bytesLen = encoded.length;
       buffer.ensure(writerIndex + bytesLen);
