@@ -111,11 +111,12 @@ public class RecordSerializersTest {
         Fury.builder()
             .requireClassRegistration(false)
             .withCodegen(codegen)
+          .withClassLoader(cls1.getClassLoader())
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
     byte[] bytes1 = fury.serialize(record1);
     Object o = fury.deserialize(bytes1);
-    Assert.assertEquals(record1, o);
+    Assert.assertEquals(o, record1);
     String code2 =
         "import java.util.*;"
             + "public record TestRecord(int f1, String f2, char f4, Map<String, Integer> f5) {}";
@@ -128,10 +129,11 @@ public class RecordSerializersTest {
         Fury.builder()
             .requireClassRegistration(false)
             .withCodegen(codegen)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+          .withClassLoader(cls2.getClassLoader())
+          .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
     Object o2 = fury2.deserialize(fury2.serialize(record2));
-    Assert.assertEquals(record2, o2);
+    Assert.assertEquals(o2, record2);
     // test compatible
     Assert.assertEquals(fury2.deserialize(bytes1), record2);
   }
