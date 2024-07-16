@@ -34,7 +34,7 @@ public class ClassSpec {
     this.entireClassName = cls.getName();
     isEnum = cls.isEnum();
     isArray = cls.isArray();
-    dimension = TypeUtils.getArrayDimensions(cls);
+    dimension = isArray ? TypeUtils.getArrayDimensions(cls) : 0;
   }
 
   public ClassSpec(String entireClassName, boolean isEnum, boolean isArray, int dimension) {
