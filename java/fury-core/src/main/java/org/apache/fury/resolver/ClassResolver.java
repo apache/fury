@@ -1575,6 +1575,9 @@ public class ClassResolver {
    */
   @CodegenInvoke
   public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache) {
+    if (metaContextShareEnabled) {
+      return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
+    }
     int header = buffer.readVarUint32Small14();
     if ((header & 0b1) != 0) {
       return readClassInfoByCache(buffer, classInfoCache, header);
