@@ -1443,7 +1443,8 @@ public class ClassResolver {
     metaContext.writingClassDefs.size = 0;
   }
 
-  private void writeClassDefs(MemoryBuffer buffer, ObjectArray<ClassDef> writingClassDefs, int size) {
+  private void writeClassDefs(
+      MemoryBuffer buffer, ObjectArray<ClassDef> writingClassDefs, int size) {
     int writerIndex = buffer.writerIndex();
     for (int i = 0; i < size; i++) {
       byte[] encoded = writingClassDefs.get(i).getEncoded();
