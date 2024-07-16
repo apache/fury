@@ -88,6 +88,7 @@ import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.IdentityObjectIntMap;
 import org.apache.fury.collection.LongMap;
+import org.apache.fury.collection.ObjectArray;
 import org.apache.fury.collection.ObjectMap;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.CompatibleMode;
@@ -204,7 +205,9 @@ public class ClassResolver {
   private static final float loadFactor = 0.25f;
   private static final float furyMapLoadFactor = 0.25f;
   private static final int estimatedNumRegistered = 150;
-  private static final String META_SHARE_FIELDS_INFO_KEY = "shareFieldsInfo";
+  private static final String SET_META__CONTEXT_MSG =
+      "Meta context must be set before serialization, "
+          + "please set meta context by SerializationContext.setMetaContext";
   private static final ClassInfo NIL_CLASS_INFO =
       new ClassInfo(null, null, null, null, false, null, null, ClassResolver.NO_CLASS_ID);
 
@@ -1285,10 +1288,7 @@ public class ClassResolver {
       return;
     }
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    Preconditions.checkNotNull(
-        metaContext,
-        "Meta context must be set before serialization, "
-            + "please set meta context by SerializationContext.setMetaContext");
+    assert metaContext != null : SET_META__CONTEXT_MSG;
     IdentityObjectIntMap<Class<?>> classMap = metaContext.classMap;
     int newId = classMap.size;
     int id = classMap.putOrGet(classInfo.cls, newId);
@@ -1332,19 +1332,16 @@ public class ClassResolver {
   }
 
   private ClassInfo readClassInfoWithMetaShare(MemoryBuffer buffer, MetaContext metaContext) {
-    Preconditions.checkNotNull(
-        metaContext,
-        "Meta context must be set before serialization,"
-            + " please set meta context by SerializationContext.setMetaContext");
+    assert metaContext != null : SET_META__CONTEXT_MSG;
     int header = buffer.readVarUint32Small14();
     int id = header >>> 1;
     if ((header & 0b1) == 0) {
       return getOrUpdateClassInfo((short) id);
     }
-    List<ClassInfo> readClassInfos = metaContext.readClassInfos;
+    ObjectArray<ClassInfo> readClassInfos = metaContext.readClassInfos;
     ClassInfo classInfo = readClassInfos.get(id);
     if (classInfo == null) {
-      List<ClassDef> readClassDefs = metaContext.readClassDefs;
+      ObjectArray<ClassDef> readClassDefs = metaContext.readClassDefs;
       ClassDef classDef = readClassDefs.get(id);
       Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
       if (classDefTuple == null || classDefTuple.f1 == null) {
@@ -1433,11 +1430,31 @@ public class ClassResolver {
    */
   public void writeClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    buffer.writeVarUint32Small7(metaContext.writingClassDefs.size());
-    for (ClassDef classDef : metaContext.writingClassDefs) {
-      classDef.writeClassDef(buffer);
+    ObjectArray<ClassDef> writingClassDefs = metaContext.writingClassDefs;
+    final int size = writingClassDefs.size;
+    buffer.writeVarUint32Small7(size);
+    if (buffer.isHeapFullyWriteable()) {
+      writeClassDefs(buffer, writingClassDefs, size);
+    } else {
+      for (int i = 0; i < size; i++) {
+        writingClassDefs.get(i).writeClassDef(buffer);
+      }
     }
-    metaContext.writingClassDefs.clear();
+    metaContext.writingClassDefs.size = 0;
+  }
+
+  private void writeClassDefs(
+      MemoryBuffer buffer, ObjectArray<ClassDef> writingClassDefs, int size) {
+    int writerIndex = buffer.writerIndex();
+    for (int i = 0; i < size; i++) {
+      byte[] encoded = writingClassDefs.get(i).getEncoded();
+      int bytesLen = encoded.length;
+      buffer.ensure(writerIndex + bytesLen);
+      final byte[] targetArray = buffer.getHeapMemory();
+      System.arraycopy(encoded, 0, targetArray, writerIndex, bytesLen);
+      writerIndex += bytesLen;
+    }
+    buffer.writerIndex(writerIndex);
   }
 
   /**

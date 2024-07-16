@@ -48,7 +48,7 @@ public class ClassInfo {
   // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
   short classId;
   ClassDef classDef;
-  public boolean needToWriteClassDef;
+  boolean needToWriteClassDef;
 
   ClassInfo(
       Class<?> cls,
