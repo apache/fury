@@ -132,7 +132,7 @@ public class ObjectStreamSerializer extends Serializer {
       for (SlotsInfo slotsInfo : slotsInfos) {
         // create a classinfo to avoid null class bytes when class id is a
         // replacement id.
-        classResolver.writeClassInternal(buffer, slotsInfo.classInfo.getCls(), false);
+        classResolver.writeClassInternal(buffer, slotsInfo.classInfo.getCls());
         StreamClassInfo streamClassInfo = slotsInfo.streamClassInfo;
         Method writeObjectMethod = streamClassInfo.writeObjectMethod;
         if (writeObjectMethod == null) {
@@ -184,7 +184,7 @@ public class ObjectStreamSerializer extends Serializer {
     try {
       TreeMap<Integer, ObjectInputValidation> callbacks = new TreeMap<>(Collections.reverseOrder());
       for (int i = 0; i < numClasses; i++) {
-        Class<?> currentClass = classResolver.readClassInternal(buffer, false);
+        Class<?> currentClass = classResolver.readClassInternal(buffer);
         SlotsInfo slotsInfo = slotsInfos[slotIndex++];
         StreamClassInfo streamClassInfo = slotsInfo.streamClassInfo;
         while (currentClass != slotsInfo.cls) {

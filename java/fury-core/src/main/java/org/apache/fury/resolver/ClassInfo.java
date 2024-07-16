@@ -24,6 +24,7 @@ import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
 
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
+import org.apache.fury.meta.ClassDef;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.reflect.ReflectionUtils;
@@ -36,7 +37,6 @@ import org.apache.fury.util.function.Functions;
  * serialization.
  */
 public class ClassInfo {
-
   final Class<?> cls;
   final MetaStringBytes fullClassNameBytes;
   final MetaStringBytes packageNameBytes;
@@ -47,6 +47,8 @@ public class ClassInfo {
   // use primitive to avoid boxing
   // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
   short classId;
+  ClassDef classDef;
+  public boolean needToWriteClassDef;
 
   ClassInfo(
       Class<?> cls,
@@ -78,6 +80,7 @@ public class ClassInfo {
       short classId) {
     this.cls = cls;
     this.serializer = serializer;
+    needToWriteClassDef = serializer != null && classResolver.needToWriteClassDef(serializer);
     MetaStringResolver metaStringResolver = classResolver.getMetaStringResolver();
     if (cls != null && classResolver.getFury().getLanguage() != Language.JAVA) {
       this.fullClassNameBytes =
@@ -143,6 +146,11 @@ public class ClassInfo {
   @SuppressWarnings("unchecked")
   public <T> Serializer<T> getSerializer() {
     return (Serializer<T>) serializer;
+  }
+
+  void setSerializer(ClassResolver resolver, Serializer<?> serializer) {
+    this.serializer = serializer;
+    needToWriteClassDef = serializer != null && resolver.needToWriteClassDef(serializer);
   }
 
   @Override
