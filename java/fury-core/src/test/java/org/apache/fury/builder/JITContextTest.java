@@ -110,9 +110,11 @@ public class JITContextTest extends FuryTestBase {
     BeanB beanB = BeanB.createBeanB(2);
     BeanA beanA = BeanA.createBeanA(2);
     MetaContext context = new MetaContext();
-    fury.getSerializationContext().setMetaContext(context);
+    if (!scopedMetaShare) {
+      fury.getSerializationContext().setMetaContext(context);
+    }
     byte[] bytes1 = fury.serialize(beanB);
-    fury.getSerializationContext().setMetaContext(context);
+    if (!scopedMetaShare) fury.getSerializationContext().setMetaContext(context);
     byte[] bytes2 = fury.serialize(beanA);
     while (!(getSerializer(fury, BeanB.class) instanceof Generated)) {
       LOG.info("Waiting {} serializer to be jit.", BeanB.class);
@@ -124,9 +126,9 @@ public class JITContextTest extends FuryTestBase {
     }
     Assert.assertTrue(getSerializer(fury, BeanB.class) instanceof Generated);
     Assert.assertTrue(getSerializer(fury, BeanA.class) instanceof Generated);
-    fury.getSerializationContext().setMetaContext(context);
+    if (!scopedMetaShare) fury.getSerializationContext().setMetaContext(context);
     assertEquals(fury.deserialize(bytes1), beanB);
-    fury.getSerializationContext().setMetaContext(context);
+    if (!scopedMetaShare) fury.getSerializationContext().setMetaContext(context);
     assertEquals(fury.deserialize(bytes2), beanA);
   }
 }
