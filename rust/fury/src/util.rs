@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use std::ptr;
+
 // Swapping the high 8 bits and the low 8 bits of a 16-bit value
 fn swap_endian(value: u16) -> u16 {
     (value << 8) | (value >> 8)
@@ -47,16 +49,12 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
             code_point if code_point < 0x800 => {
                 // 2-byte UTF-8
                 // [0000|0bbb|bbcc|cccc] => [110|bbbbb], [10|cccccc]
-                // write a u16 to [u8;2] is affected by the processor's endianness.
-                #[cfg(target_endian = "little")]
-                let val: u16 = ((code_point >> 6 & 0b1_1111) | 0b1100_0000)
-                    | (((code_point & 0b11_1111) | 0b1000_0000) << 8);
-                #[cfg(target_endian = "big")]
-                let val: u16 = (((code_point >> 6 & 0b1_1111) | 0b1100_0000) << 8)
-                    | ((code_point & 0b11_1111) | 0b1000_0000);
+                let bytes = [
+                    (code_point >> 6 & 0b1_1111) as u8 | 0b1100_0000,
+                    (code_point & 0b11_1111) as u8 | 0b1000_0000,
+                ];
                 unsafe {
-                    let ptr_16 = ptr.add(offset) as *mut u16;
-                    ptr_16.write(val);
+                    ptr::copy_nonoverlapping(bytes.as_ptr(), ptr.add(offset), 2);
                 }
                 offset += 2;
             }
@@ -77,19 +75,14 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
                         ((((wc1 as u32) - 0xd800) << 10) | ((wc2 as u32) - 0xdc00)) + 0x10000;
                     // 11110??? 10?????? 10?????? 10??????
                     // Need 21 bit suffix of code_point
-                    #[cfg(target_endian = "little")]
-                    let val = ((code_point >> 18 & 0b111) | 0b1111_0000)
-                        | (((code_point >> 12 & 0b11_1111) | 0b1000_0000) << 8)
-                        | (((code_point >> 6 & 0b11_1111) | 0b1000_0000) << 16)
-                        | (((code_point & 0b11_1111) | 0b1000_0000) << 24);
-                    #[cfg(target_endian = "big")]
-                    let val = (((code_point >> 18 & 0b111) | 0b1111_0000) << 24)
-                        | (((code_point >> 12 & 0b11_1111) | 0b1000_0000) << 16)
-                        | (((code_point >> 6 & 0b11_1111) | 0b1000_0000) << 8)
-                        | ((code_point & 0b11_1111) | 0b1000_0000);
+                    let bytes = [
+                        (code_point >> 18 & 0b111) as u8 | 0b1111_0000,
+                        (code_point >> 12 & 0b11_1111) as u8 | 0b1000_0000,
+                        (code_point >> 6 & 0b11_1111) as u8 | 0b1000_0000,
+                        (code_point & 0b11_1111) as u8 | 0b1000_0000,
+                    ];
                     unsafe {
-                        let ptr_32 = ptr.add(offset) as *mut u32;
-                        ptr_32.write(val);
+                        ptr::copy_nonoverlapping(bytes.as_ptr(), ptr.add(offset), 4);
                     }
                     offset += 4;
                 } else {
@@ -100,15 +93,13 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
                 // 3-byte UTF-8, 1 u16 -> 3 u8
                 // [aaaa|bbbb|bbcc|cccc] => [1110|aaaa], [10|bbbbbb], [10|cccccc]
                 // Need 16 bit suffix of wc, as same as wc itself
-                #[cfg(target_endian = "little")]
-                let val = ((wc >> 12) | 0b1110_0000) | (((wc >> 6 & 0b11_1111) | 0b1000_0000) << 8);
-                #[cfg(target_endian = "big")]
-                let val = (((wc >> 12) | 0b1110_0000) << 8) | ((wc >> 6 & 0b11_1111) | 0b1000_0000);
+                let bytes = [
+                    (wc >> 12 | 0b1110_0000) as u8,
+                    (wc >> 6 & 0b11_1111) as u8 | 0b1000_0000,
+                    (wc & 0b11_1111) as u8 | 0b1000_0000,
+                ];
                 unsafe {
-                    let ptr_16 = ptr.add(offset) as *mut u16;
-                    ptr_16.write(val);
-                    ptr.add(offset + 2)
-                        .write((wc & 0b11_1111) as u8 | 0b1000_0000);
+                    ptr::copy_nonoverlapping(bytes.as_ptr(), ptr.add(offset), 3);
                 }
                 offset += 3;
             }
