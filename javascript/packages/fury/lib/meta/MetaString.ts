@@ -20,13 +20,29 @@
 export class MetaString {
   // Encode function that handles all Unicode characters
   static encode(str: string): Uint8Array {
-    const encoder = new TextEncoder();
-    return encoder.encode(str);
+    let binaryString = '';
+    for (let i = 0; i < str.length; i++) {
+        binaryString += String.fromCharCode(str.charCodeAt(i));
+    }
+    const base64 = btoa(binaryString);
+    const outputArray = new Uint8Array(base64.length);
+    for (let i = 0; i < base64.length; i++) {
+        outputArray[i] = base64.charCodeAt(i);
+    }
+    return outputArray;
   }
 
   // Decoding function that handles all Unicode characters
   static decode(bytes: Uint8Array): string {
-    const decoder = new TextDecoder();
-    return decoder.decode(bytes);
+    let base64 = '';
+    for (let i = 0; i < bytes.length; i++) {
+        base64 += String.fromCharCode(bytes[i]);
+    }
+    const binaryString = atob(base64);
+    let outputString = '';
+    for (let i = 0; i < binaryString.length; i++) {
+        outputString += String.fromCharCode(binaryString.charCodeAt(i));
+    }
+    return outputString;
   }
 }
