@@ -56,6 +56,7 @@ public class MetaContextTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .withMetaShare(true)
+            .withScopedMetaShare(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withCodegen(enableCodegen)
             .requireClassRegistration(false)
@@ -78,7 +79,7 @@ public class MetaContextTest extends FuryTestBase {
     Assert.assertEquals(fury.deserialize(bytes1), o);
     fury.getSerializationContext().setMetaContext(new MetaContext());
     Assert.assertEquals(fury.serialize(o), bytes);
-    Assert.assertThrows(NullPointerException.class, () -> fury.serialize(o));
+    Assert.assertThrows(AssertionError.class, () -> fury.serialize(o));
   }
 
   // final InnerPojo will be taken as non-final for writing class def.
@@ -101,6 +102,7 @@ public class MetaContextTest extends FuryTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .withMetaShare(true)
+            .withScopedMetaShare(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withCodegen(enableCodegen)
             .requireClassRegistration(false)

@@ -41,6 +41,7 @@ import org.apache.fury.serializer.Serializers;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.ExceptionUtils;
+import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.record.RecordComponent;
@@ -136,6 +137,10 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static Serializer setCodegenSerializer(
       Fury fury, Class<?> cls, GeneratedMetaSharedSerializer s) {
+    if (GraalvmSupport.isGraalRuntime()) {
+      return fury.getJITContext()
+          .asyncVisitFury(f -> f.getClassResolver().getSerializer(s.getType()));
+    }
     // This method hold jit lock, so create jit serializer async to avoid block serialization.
     Class serializerClass =
         fury.getJITContext()

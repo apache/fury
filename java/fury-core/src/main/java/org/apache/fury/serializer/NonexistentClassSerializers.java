@@ -88,16 +88,15 @@ public final class NonexistentClassSerializers {
       // then revert written class id to write class info here,
       // since it's the only place to hold class def for not found class.
       buffer.increaseWriterIndex(-2);
-      buffer.writeByte(ClassResolver.USE_CLASS_VALUE_FLAG);
       MetaContext metaContext = fury.getSerializationContext().getMetaContext();
       IdentityObjectIntMap classMap = metaContext.classMap;
       int newId = classMap.size;
       // class not exist, use class def id for identity.
       int id = classMap.putOrGet(value.classDef.getId(), newId);
       if (id >= 0) {
-        buffer.writeVarUint32(id);
+        buffer.writeVarUint32(id << 1 | 0b1);
       } else {
-        buffer.writeVarUint32(newId);
+        buffer.writeVarUint32(newId << 1 | 0b1);
         metaContext.writingClassDefs.add(value.classDef);
       }
     }

@@ -22,7 +22,7 @@ package org.apache.fury.graalvm;
 import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
 
-public class CompatibleExample {
+public class ScopedCompatibleExample {
   static Fury fury;
 
   static {
@@ -30,7 +30,7 @@ public class CompatibleExample {
         Fury.builder()
             .requireClassRegistration(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withScopedMetaShare(false)
+            .withScopedMetaShare(true)
             .build();
     // register and generate serializer code.
     fury.register(Foo.class, true);

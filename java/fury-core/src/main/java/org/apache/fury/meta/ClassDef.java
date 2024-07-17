@@ -197,7 +197,7 @@ public class ClassDef implements Serializable {
 
   /** Write class definition to buffer. */
   public void writeClassDef(MemoryBuffer buffer) {
-    buffer.writeBytes(encoded);
+    buffer.writeBytes(encoded, 0, encoded.length);
   }
 
   /** Read class definition from buffer. */

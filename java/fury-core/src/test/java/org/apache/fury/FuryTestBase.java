@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -101,7 +102,17 @@ public abstract class FuryTestBase {
   }
 
   @DataProvider
+  public static Object[][] scopedMetaShare() {
+    return new Object[][] {{false}, {true}};
+  }
+
+  @DataProvider
   public static Object[][] compressNumberAndCodeGen() {
+    return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
+  }
+
+  @DataProvider
+  public static Object[][] compressNumberScopedMetaShare() {
     return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
   }
 
@@ -160,41 +171,43 @@ public abstract class FuryTestBase {
 
   @DataProvider
   public static Object[][] javaFuryKVCompatible() {
+    Supplier<FuryBuilder> builder =
+        () ->
+            Fury.builder()
+                .withLanguage(Language.JAVA)
+                .requireClassRegistration(false)
+                .withScopedMetaShare(false);
     return new Object[][] {
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
+            .get()
             .withRefTracking(true)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
+            .get()
             .withRefTracking(false)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
+            .get()
             .withRefTracking(true)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
+            .get()
             .withRefTracking(false)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
     };

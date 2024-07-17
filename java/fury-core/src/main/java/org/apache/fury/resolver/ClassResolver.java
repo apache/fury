@@ -89,6 +89,7 @@ import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.IdentityObjectIntMap;
 import org.apache.fury.collection.LongMap;
+import org.apache.fury.collection.ObjectArray;
 import org.apache.fury.collection.ObjectMap;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.CompatibleMode;
@@ -206,7 +207,9 @@ public class ClassResolver {
   private static final float loadFactor = 0.25f;
   private static final float furyMapLoadFactor = 0.25f;
   private static final int estimatedNumRegistered = 150;
-  private static final String META_SHARE_FIELDS_INFO_KEY = "shareFieldsInfo";
+  private static final String SET_META__CONTEXT_MSG =
+      "Meta context must be set before serialization, "
+          + "please set meta context by SerializationContext.setMetaContext";
   private static final ClassInfo NIL_CLASS_INFO =
       new ClassInfo(null, null, null, null, false, null, null, ClassResolver.NO_CLASS_ID);
 
@@ -414,7 +417,14 @@ public class ClassResolver {
   public void register(Class<?> cls, boolean createSerializer) {
     register(cls);
     if (createSerializer) {
-      getSerializer(cls);
+      ClassInfo classInfo = getClassInfo(cls);
+      if (metaContextShareEnabled && needToWriteClassDef(classInfo.serializer)) {
+        ClassDef classDef = classInfo.classDef;
+        if (classDef == null) {
+          classDef = buildClassDef(classInfo);
+        }
+        buildMetaSharedClassInfo(Tuple2.of(classDef, null), classDef);
+      }
     }
   }
 
@@ -648,7 +658,7 @@ public class ClassResolver {
       Class<?> cls = entry.getKey();
       if (cls.getName().equals(className)) {
         LOG.info("Clear serializer for class {}.", className);
-        entry.getValue().serializer = Serializers.newSerializer(fury, cls, serializer);
+        entry.getValue().setSerializer(this, Serializers.newSerializer(fury, cls, serializer));
         classInfoCache = NIL_CLASS_INFO;
         return;
       }
@@ -665,7 +675,7 @@ public class ClassResolver {
       }
       if (className.startsWith(classNamePrefix)) {
         LOG.info("Clear serializer for class {}.", className);
-        entry.getValue().serializer = Serializers.newSerializer(fury, cls, serializer);
+        entry.getValue().setSerializer(this, Serializers.newSerializer(fury, cls, serializer));
         classInfoCache = NIL_CLASS_INFO;
       }
     }
@@ -689,9 +699,9 @@ public class ClassResolver {
 
   /**
    * Set serializer to avoid circular error when there is a serializer query for fields by {@link
-   * #getClassInfo} and {@link #getSerializer(Class)} which access current creating serializer. This
-   * method is used to avoid overwriting existing serializer for class when creating a data
-   * serializer for serialization of parts fields of a class.
+   * #buildMetaSharedClassInfo} and {@link #getSerializer(Class)} which access current creating
+   * serializer. This method is used to avoid overwriting existing serializer for class when
+   * creating a data serializer for serialization of parts fields of a class.
    */
   public <T> void setSerializerIfAbsent(Class<T> cls, Serializer<T> serializer) {
     Serializer<T> s = getSerializer(cls, false);
@@ -704,7 +714,7 @@ public class ClassResolver {
   public void clearSerializer(Class<?> cls) {
     ClassInfo classInfo = classInfoMap.get(cls);
     if (classInfo != null) {
-      classInfo.serializer = null;
+      classInfo.setSerializer(this, null);
     }
   }
 
@@ -749,7 +759,7 @@ public class ClassResolver {
     }
 
     // 2. Set `Serializer` for `ClassInfo`.
-    classInfo.serializer = serializer;
+    classInfo.setSerializer(this, serializer);
   }
 
   @SuppressWarnings("unchecked")
@@ -1259,115 +1269,112 @@ public class ClassResolver {
 
   /** Write classname for java serialization. */
   public void writeClass(MemoryBuffer buffer, ClassInfo classInfo) {
-    if (classInfo.classId == NO_CLASS_ID) { // no class id provided.
-      // use classname
-      if (metaContextShareEnabled) {
-        buffer.writeByte(USE_CLASS_VALUE_FLAG);
-        // FIXME(chaokunyang) Register class but not register serializer can't be used with
-        //  meta share mode, because no class def are sent to peer.
-        writeClassWithMetaShare(buffer, classInfo);
-      } else {
+    if (metaContextShareEnabled) {
+      // FIXME(chaokunyang) Register class but not register serializer can't be used with
+      //  meta share mode, because no class def are sent to peer.
+      writeClassWithMetaShare(buffer, classInfo);
+    } else {
+      if (classInfo.classId == NO_CLASS_ID) { // no class id provided.
+        // use classname
         // if it's null, it's a bug.
         assert classInfo.packageNameBytes != null;
         metaStringResolver.writeMetaStringBytesWithFlag(buffer, classInfo.packageNameBytes);
         assert classInfo.classNameBytes != null;
         metaStringResolver.writeMetaStringBytes(buffer, classInfo.classNameBytes);
+      } else {
+        // use classId
+        buffer.writeVarUint32(classInfo.classId << 1);
       }
-    } else {
-      // use classId
-      buffer.writeVarUint32(classInfo.classId << 1);
     }
   }
 
   public void writeClassWithMetaShare(MemoryBuffer buffer, ClassInfo classInfo) {
+    if (classInfo.classId != NO_CLASS_ID && !classInfo.needToWriteClassDef) {
+      buffer.writeVarUint32(classInfo.classId << 1);
+      return;
+    }
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    Preconditions.checkNotNull(
-        metaContext,
-        "Meta context must be set before serialization,"
-            + " please set meta context by SerializationContext.setMetaContext");
+    assert metaContext != null : SET_META__CONTEXT_MSG;
     IdentityObjectIntMap<Class<?>> classMap = metaContext.classMap;
     int newId = classMap.size;
     int id = classMap.putOrGet(classInfo.cls, newId);
     if (id >= 0) {
-      buffer.writeVarUint32(id);
+      buffer.writeVarUint32(id << 1 | 0b1);
     } else {
-      buffer.writeVarUint32(newId);
-      ClassDef classDef;
-      Serializer<?> serializer = classInfo.serializer;
-      Preconditions.checkArgument(serializer.getClass() != NonexistentClassSerializer.class);
-      if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE
-          && (serializer instanceof Generated.GeneratedObjectSerializer
-              // May already switched to MetaSharedSerializer when update class info cache.
-              || serializer instanceof Generated.GeneratedMetaSharedSerializer
-              || serializer instanceof LazyInitBeanSerializer
-              || serializer instanceof ObjectSerializer
-              || serializer instanceof MetaSharedSerializer)) {
-        classDef =
-            classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(fury, cls));
-      } else {
-        // Some type will use other serializers such MapSerializer and so on.
-        classDef =
-            classDefMap.computeIfAbsent(
-                classInfo.cls, cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>(), false));
+      buffer.writeVarUint32(newId << 1 | 0b1);
+      ClassDef classDef = classInfo.classDef;
+      if (classDef == null) {
+        classDef = buildClassDef(classInfo);
       }
       metaContext.writingClassDefs.add(classDef);
     }
   }
 
-  private Class<?> readClassWithMetaShare(MemoryBuffer buffer) {
-    MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    Preconditions.checkNotNull(
-        metaContext,
-        "Meta context must be set before serialization,"
-            + " please set meta context by SerializationContext.setMetaContext");
-    int id = buffer.readVarUint32Small14();
-    List<ClassInfo> readClassInfos = metaContext.readClassInfos;
-    ClassInfo classInfo = readClassInfos.get(id);
-    if (classInfo == null) {
-      List<ClassDef> readClassDefs = metaContext.readClassDefs;
-      ClassDef classDef = readClassDefs.get(id);
-      Class<?> cls = loadClass(classDef.getClassSpec());
-      classInfo = getClassInfo(cls, false);
-      if (classInfo == null) {
-        Short classId = extRegistry.registeredClassIdMap.get(cls);
-        classInfo = new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
-        classInfoMap.put(cls, classInfo);
-      }
-      readClassInfos.set(id, classInfo);
+  private ClassDef buildClassDef(ClassInfo classInfo) {
+    ClassDef classDef;
+    Serializer<?> serializer = classInfo.serializer;
+    Preconditions.checkArgument(serializer.getClass() != NonexistentClassSerializer.class);
+    if (needToWriteClassDef(serializer)) {
+      classDef =
+          classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(fury, cls));
+    } else {
+      // Some type will use other serializers such MapSerializer and so on.
+      classDef =
+          classDefMap.computeIfAbsent(
+              classInfo.cls, cls -> ClassDef.buildClassDef(this, cls, new ArrayList<>(), false));
     }
-    return classInfo.cls;
+    classInfo.classDef = classDef;
+    return classDef;
+  }
+
+  boolean needToWriteClassDef(Serializer serializer) {
+    return fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE
+        && (serializer instanceof Generated.GeneratedObjectSerializer
+            // May already switched to MetaSharedSerializer when update class info cache.
+            || serializer instanceof Generated.GeneratedMetaSharedSerializer
+            || serializer instanceof LazyInitBeanSerializer
+            || serializer instanceof ObjectSerializer
+            || serializer instanceof MetaSharedSerializer);
   }
 
   private ClassInfo readClassInfoWithMetaShare(MemoryBuffer buffer, MetaContext metaContext) {
-    Preconditions.checkNotNull(
-        metaContext,
-        "Meta context must be set before serialization,"
-            + " please set meta context by SerializationContext.setMetaContext");
-    int id = buffer.readVarUint32Small14();
-    List<ClassInfo> readClassInfos = metaContext.readClassInfos;
+    assert metaContext != null : SET_META__CONTEXT_MSG;
+    int header = buffer.readVarUint32Small14();
+    int id = header >>> 1;
+    if ((header & 0b1) == 0) {
+      return getOrUpdateClassInfo((short) id);
+    }
+    ObjectArray<ClassInfo> readClassInfos = metaContext.readClassInfos;
     ClassInfo classInfo = readClassInfos.get(id);
     if (classInfo == null) {
-      List<ClassDef> readClassDefs = metaContext.readClassDefs;
+      ObjectArray<ClassDef> readClassDefs = metaContext.readClassDefs;
       ClassDef classDef = readClassDefs.get(id);
       Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
       if (classDefTuple == null || classDefTuple.f1 == null) {
-        if (classDefTuple != null) {
-          classDef = classDefTuple.f0;
-        }
-        Class<?> cls = loadClass(classDef.getClassSpec());
-        if (!classDef.isObjectType()) {
-          classInfo = getClassInfo(cls);
-        } else {
-          classInfo = getMetaSharedClassInfo(classDef, cls);
-        }
-        // Share serializer for same version class def to avoid too much different meta
-        // context take up too much memory.
-        putClassDef(classDef, classInfo);
+        classInfo = buildMetaSharedClassInfo(classDefTuple, classDef);
       } else {
         classInfo = classDefTuple.f1;
       }
       readClassInfos.set(id, classInfo);
     }
+    return classInfo;
+  }
+
+  private ClassInfo buildMetaSharedClassInfo(
+      Tuple2<ClassDef, ClassInfo> classDefTuple, ClassDef classDef) {
+    ClassInfo classInfo;
+    if (classDefTuple != null) {
+      classDef = classDefTuple.f0;
+    }
+    Class<?> cls = loadClass(classDef.getClassSpec());
+    if (!classDef.isObjectType()) {
+      classInfo = getClassInfo(cls);
+    } else {
+      classInfo = getMetaSharedClassInfo(classDef, cls);
+    }
+    // Share serializer for same version class def to avoid too much different meta
+    // context take up too much memory.
+    putClassDef(classDef, classInfo);
     return classInfo;
   }
 
@@ -1383,7 +1390,7 @@ public class ClassResolver {
         new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
     if (NonexistentClass.class.isAssignableFrom(TypeUtils.getComponentIfArray(cls))) {
       if (cls == NonexistentMetaShared.class) {
-        classInfo.serializer = new NonexistentClassSerializer(fury, classDef);
+        classInfo.setSerializer(this, new NonexistentClassSerializer(fury, classDef));
         // ensure `NonexistentMetaSharedClass` registered to write fixed-length class def,
         // so we can rewrite it in `NonexistentClassSerializer`.
         Preconditions.checkNotNull(classId);
@@ -1397,15 +1404,27 @@ public class ClassResolver {
       return getClassInfo(cls);
     }
     Class<? extends Serializer> sc =
-        fury.getJITContext()
-            .registerSerializerJITCallback(
-                () -> MetaSharedSerializer.class,
-                () -> CodecUtils.loadOrGenMetaSharedCodecClass(fury, cls, classDef),
-                c -> classInfo.serializer = Serializers.newSerializer(fury, cls, c));
+        getMetaSharedDeserializerClassFromGraalvmRegistry(cls, classDef);
+    if (sc == null) {
+      if (GraalvmSupport.isGraalRuntime()) {
+        sc = MetaSharedSerializer.class;
+        LOG.warn(
+            "Can't generate class at runtime in graalvm for class def {}, use {} instead",
+            classDef,
+            sc);
+      } else {
+        sc =
+            fury.getJITContext()
+                .registerSerializerJITCallback(
+                    () -> MetaSharedSerializer.class,
+                    () -> CodecUtils.loadOrGenMetaSharedCodecClass(fury, cls, classDef),
+                    c -> classInfo.setSerializer(this, Serializers.newSerializer(fury, cls, c)));
+      }
+    }
     if (sc == MetaSharedSerializer.class) {
-      classInfo.serializer = new MetaSharedSerializer(fury, cls, classDef);
+      classInfo.setSerializer(this, new MetaSharedSerializer(fury, cls, classDef));
     } else {
-      classInfo.serializer = Serializers.newSerializer(fury, cls, sc);
+      classInfo.setSerializer(this, Serializers.newSerializer(fury, cls, sc));
     }
     return classInfo;
   }
@@ -1417,11 +1436,31 @@ public class ClassResolver {
    */
   public void writeClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    buffer.writeVarUint32Small7(metaContext.writingClassDefs.size());
-    for (ClassDef classDef : metaContext.writingClassDefs) {
-      classDef.writeClassDef(buffer);
+    ObjectArray<ClassDef> writingClassDefs = metaContext.writingClassDefs;
+    final int size = writingClassDefs.size;
+    buffer.writeVarUint32Small7(size);
+    if (buffer.isHeapFullyWriteable()) {
+      writeClassDefs(buffer, writingClassDefs, size);
+    } else {
+      for (int i = 0; i < size; i++) {
+        writingClassDefs.get(i).writeClassDef(buffer);
+      }
     }
-    metaContext.writingClassDefs.clear();
+    metaContext.writingClassDefs.size = 0;
+  }
+
+  private void writeClassDefs(
+      MemoryBuffer buffer, ObjectArray<ClassDef> writingClassDefs, int size) {
+    int writerIndex = buffer.writerIndex();
+    for (int i = 0; i < size; i++) {
+      byte[] encoded = writingClassDefs.get(i).getEncoded();
+      int bytesLen = encoded.length;
+      buffer.ensure(writerIndex + bytesLen);
+      final byte[] targetArray = buffer.getHeapMemory();
+      System.arraycopy(encoded, 0, targetArray, writerIndex, bytesLen);
+      writerIndex += bytesLen;
+    }
+    buffer.writerIndex(writerIndex);
   }
 
   /**
@@ -1530,7 +1569,12 @@ public class ClassResolver {
       // ReplaceResolveSerializer.ReplaceStub
       classInfo.classId = NO_CLASS_ID;
     }
-    writeClass(buffer, classInfo);
+    if (classInfo.classId != NO_CLASS_ID) {
+      buffer.writeVarUint32(classInfo.classId << 1);
+    } else {
+      metaStringResolver.writeMetaStringBytesWithFlag(buffer, classInfo.packageNameBytes);
+      metaStringResolver.writeMetaStringBytes(buffer, classInfo.classNameBytes);
+    }
     classInfo.classId = classId;
   }
 
@@ -1543,9 +1587,6 @@ public class ClassResolver {
     int header = buffer.readVarUint32Small14();
     final ClassInfo classInfo;
     if ((header & 0b1) != 0) {
-      if (metaContextShareEnabled) {
-        return readClassWithMetaShare(buffer);
-      }
       MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytesWithFlag(buffer, header);
       MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
       classInfo = loadBytesToClassInfo(packageBytes, simpleClassNameBytes);
@@ -1562,23 +1603,19 @@ public class ClassResolver {
    * ClassInfo)} is faster since it use a non-global class info cache.
    */
   public ClassInfo readClassInfo(MemoryBuffer buffer) {
-    int header = buffer.readVarUint32Small14();
-    if ((header & 0b1) != 0) {
-      ClassInfo classInfo;
-      if (metaContextShareEnabled) {
-        classInfo =
-            readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
-      } else {
-        classInfo = readClassInfoFromBytes(buffer, classInfoCache, header);
-      }
-      classInfoCache = classInfo;
-      currentReadClass = classInfo.cls;
-      return classInfo;
-    } else {
-      ClassInfo classInfo = getOrUpdateClassInfo((short) (header >> 1));
-      currentReadClass = classInfo.cls;
-      return classInfo;
+    if (metaContextShareEnabled) {
+      return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
     }
+    int header = buffer.readVarUint32Small14();
+    ClassInfo classInfo;
+    if ((header & 0b1) != 0) {
+      classInfo = readClassInfoFromBytes(buffer, classInfoCache, header);
+      classInfoCache = classInfo;
+    } else {
+      classInfo = getOrUpdateClassInfo((short) (header >> 1));
+    }
+    currentReadClass = classInfo.cls;
+    return classInfo;
   }
 
   /**
@@ -1587,6 +1624,9 @@ public class ClassResolver {
    */
   @CodegenInvoke
   public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache) {
+    if (metaContextShareEnabled) {
+      return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
+    }
     int header = buffer.readVarUint32Small14();
     if ((header & 0b1) != 0) {
       return readClassInfoByCache(buffer, classInfoCache, header);
@@ -1598,6 +1638,9 @@ public class ClassResolver {
   /** Read class info, update classInfoHolder if cache not hit. */
   @CodegenInvoke
   public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
+    if (metaContextShareEnabled) {
+      return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
+    }
     int header = buffer.readVarUint32Small14();
     if ((header & 0b1) != 0) {
       return readClassInfoFromBytes(buffer, classInfoHolder, header);
@@ -1889,6 +1932,30 @@ public class ClassResolver {
         ClassInfo classInfo = classResolver.classInfoMap.get(cls);
         if (classInfo != null) {
           return classInfo.serializer.getClass();
+        }
+      }
+    }
+    if (GraalvmSupport.isGraalRuntime()) {
+      if (Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls)) {
+        return null;
+      }
+      throw new RuntimeException(String.format("Class %s is not registered", cls));
+    }
+    return null;
+  }
+
+  private Class<? extends Serializer> getMetaSharedDeserializerClassFromGraalvmRegistry(
+      Class<?> cls, ClassDef classDef) {
+    List<ClassResolver> classResolvers = GRAALVM_REGISTRY.get(fury.getConfig().getConfigHash());
+    if (classResolvers == null || classResolvers.isEmpty()) {
+      return null;
+    }
+    for (ClassResolver classResolver : classResolvers) {
+      if (classResolver != this) {
+        Tuple2<ClassDef, ClassInfo> tuple2 =
+            classResolver.extRegistry.classIdToDef.get(classDef.getId());
+        if (tuple2 != null && tuple2.f1 != null) {
+          return tuple2.f1.serializer.getClass();
         }
       }
     }
