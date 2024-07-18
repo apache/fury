@@ -1265,7 +1265,6 @@ public final class Fury implements BaseFury {
    *
    * @param obj object to copy
    * @return copied object
-   * @param <T> object type
    */
   public <T> T copyObject(T obj) {
     if (obj == null) {

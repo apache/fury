@@ -70,7 +70,7 @@ public final class CodegenSerializer {
    * potential recursive bean serializer creation when there is a circular reference in class
    * children fields.
    */
-  public static final class LazyInitBeanSerializer<T> extends Serializer<T> {
+  public static final class LazyInitBeanSerializer<T> extends AbstractObjectSerializer<T> {
     private Serializer<T> serializer;
     private Serializer<T> interpreterSerializer;
 
