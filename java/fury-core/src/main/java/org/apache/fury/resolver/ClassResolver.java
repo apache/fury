@@ -1007,7 +1007,7 @@ public class ClassResolver {
         }
       }
     } else {
-      if (fury.getConfig().isCodeGenEnabled()) {
+      if (codegen) {
         LOG.info("Object of type {} can't be serialized by jit", cls);
       }
       switch (fury.getCompatibleMode()) {
