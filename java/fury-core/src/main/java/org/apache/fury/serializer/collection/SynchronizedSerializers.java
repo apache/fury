@@ -122,6 +122,12 @@ public class SynchronizedSerializers {
     }
 
     @Override
+    public Map copy(Map originMap) {
+      final Object unwrappedMap = Platform.getObject(originMap, offset);
+      return (Map) factory.apply(fury.copyObject(unwrappedMap));
+    }
+
+    @Override
     public Map read(MemoryBuffer buffer) {
       final Object sourceCollection = fury.readRef(buffer);
       return (Map) factory.apply(sourceCollection);

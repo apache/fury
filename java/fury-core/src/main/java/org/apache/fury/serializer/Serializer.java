@@ -39,8 +39,24 @@ public abstract class Serializer<T> {
   protected final boolean isJava;
   protected final boolean needToWriteRef;
 
+  /**
+   * Whether to enable circular reference of copy. Only for mutable objects, immutable objects just
+   * return itself.
+   */
+  protected final boolean needToCopyRef;
+
+  protected final boolean immutable;
+
   public void write(MemoryBuffer buffer, T value) {
     throw new UnsupportedOperationException();
+  }
+
+  public T copy(T value) {
+    if (isImmutable()) {
+      return value;
+    }
+    throw new UnsupportedOperationException(
+        String.format("Copy for %s is not supported", value.getClass()));
   }
 
   public T read(MemoryBuffer buffer) {
@@ -81,20 +97,45 @@ public abstract class Serializer<T> {
     } else {
       needToWriteRef = false;
     }
+    this.needToCopyRef = fury.copyTrackingRef();
+    this.immutable = false;
   }
 
-  public Serializer(Fury fury, Class<T> type, boolean needToWriteRef) {
+  public Serializer(Fury fury, Class<T> type, boolean immutable) {
+    this.fury = fury;
+    this.type = type;
+    this.isJava = fury.getLanguage() == Language.JAVA;
+    if (fury.trackingRef()) {
+      needToWriteRef = !TypeUtils.isBoxed(TypeUtils.wrap(type)) || !fury.isBasicTypesRefIgnored();
+    } else {
+      needToWriteRef = false;
+    }
+    this.needToCopyRef = fury.copyTrackingRef() && !immutable;
+    this.immutable = immutable;
+  }
+
+  public Serializer(Fury fury, Class<T> type, boolean needToWriteRef, boolean immutable) {
     this.fury = fury;
     this.type = type;
     this.isJava = fury.getLanguage() == Language.JAVA;
     this.needToWriteRef = needToWriteRef;
+    this.needToCopyRef = fury.copyTrackingRef() && !immutable;
+    this.immutable = immutable;
   }
 
   public final boolean needToWriteRef() {
     return needToWriteRef;
   }
 
+  public final boolean needToCopyRef() {
+    return needToCopyRef;
+  }
+
   public Class<T> getType() {
     return type;
+  }
+
+  public boolean isImmutable() {
+    return immutable;
   }
 }

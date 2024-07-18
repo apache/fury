@@ -17,27 +17,13 @@
  * under the License.
  */
 
-package org.apache.fury.serializer;
-
-import java.lang.invoke.MethodHandle;
-import org.apache.fury.Fury;
-import org.apache.fury.memory.MemoryBuffer;
+package org.apache.fury;
 
 /**
- * Base class for compatible serializer. Both JIT mode serializer and interpreter-mode serializer
- * will extend this class.
+ * Fury copy interface. Customize the copy method of the class
+ *
+ * @param <T> custom copy interface object
  */
-public abstract class CompatibleSerializerBase<T> extends AbstractObjectSerializer<T> {
-  public CompatibleSerializerBase(Fury fury, Class<T> type) {
-    super(fury, type);
-  }
-
-  public CompatibleSerializerBase(Fury fury, Class<T> type, MethodHandle constructor) {
-    super(fury, type, constructor);
-  }
-
-  public T readAndSetFields(MemoryBuffer buffer, T obj) {
-    // java record object doesn't support update state.
-    throw new UnsupportedOperationException();
-  }
+public interface FuryCopyable<T> {
+  T copy(Fury fury);
 }

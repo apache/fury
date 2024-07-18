@@ -38,6 +38,7 @@ public class Config implements Serializable {
   private final boolean basicTypesRefIgnored;
   private final boolean stringRefIgnored;
   private final boolean timeRefIgnored;
+  private final boolean copyTrackingRef;
   private final boolean codeGenEnabled;
   private final boolean checkClassVersion;
   private final CompatibleMode compatibleMode;
@@ -65,6 +66,7 @@ public class Config implements Serializable {
     basicTypesRefIgnored = !trackingRef || builder.basicTypesRefIgnored;
     stringRefIgnored = !trackingRef || builder.stringRefIgnored;
     timeRefIgnored = !trackingRef || builder.timeRefIgnored;
+    copyTrackingRef = builder.copyTrackingRef;
     compressString = builder.compressString;
     compressInt = builder.compressInt;
     longEncoding = builder.longEncoding;
@@ -97,6 +99,10 @@ public class Config implements Serializable {
 
   public boolean trackingRef() {
     return trackingRef;
+  }
+
+  public boolean copyTrackingRef() {
+    return copyTrackingRef;
   }
 
   public boolean isBasicTypesRefIgnored() {
@@ -247,6 +253,7 @@ public class Config implements Serializable {
         && basicTypesRefIgnored == config.basicTypesRefIgnored
         && stringRefIgnored == config.stringRefIgnored
         && timeRefIgnored == config.timeRefIgnored
+        && copyTrackingRef == config.copyTrackingRef
         && codeGenEnabled == config.codeGenEnabled
         && checkClassVersion == config.checkClassVersion
         && checkJdkClassSerializable == config.checkJdkClassSerializable
@@ -276,6 +283,7 @@ public class Config implements Serializable {
         basicTypesRefIgnored,
         stringRefIgnored,
         timeRefIgnored,
+        copyTrackingRef,
         codeGenEnabled,
         checkClassVersion,
         compatibleMode,

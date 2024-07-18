@@ -19,7 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import java.lang.invoke.MethodHandle;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -34,7 +33,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.ClassDef;
 import org.apache.fury.reflect.FieldAccessor;
-import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -62,7 +60,7 @@ import org.apache.fury.util.record.RecordUtils;
  * @see ObjectSerializer
  */
 @SuppressWarnings({"unchecked"})
-public class MetaSharedSerializer<T> extends Serializer<T> {
+public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
   private final ObjectSerializer.FinalTypeField[] finalFields;
 
   /**
@@ -74,8 +72,6 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
 
   private final ObjectSerializer.GenericTypeField[] otherFields;
   private final ObjectSerializer.GenericTypeField[] containerFields;
-  private final boolean isRecord;
-  private final MethodHandle constructor;
   private final RecordInfo recordInfo;
   private Serializer<T> serializer;
   private final ClassInfoHolder classInfoHolder;
@@ -87,21 +83,15 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         "Class version check should be disabled when compatible mode is enabled.");
     Preconditions.checkArgument(
         fury.getConfig().isMetaShareEnabled(), "Meta share must be enabled.");
-    Collection<Descriptor> descriptors = consolidateFields(fury.getClassResolver(), type, classDef);
+    Collection<Descriptor> descriptors = consolidateFields(this.classResolver, type, classDef);
     DescriptorGrouper descriptorGrouper =
         DescriptorGrouper.createDescriptorGrouper(
-            fury.getClassResolver()::isMonomorphic,
+            this.classResolver::isMonomorphic,
             descriptors,
             false,
             fury.compressInt(),
             fury.getConfig().compressLong());
     // d.getField() may be null if not exists in this class when meta share enabled.
-    isRecord = RecordUtils.isRecord(type);
-    if (isRecord) {
-      constructor = RecordUtils.getRecordConstructor(type).f1;
-    } else {
-      this.constructor = ReflectionUtils.getCtrHandle(type, false);
-    }
     Tuple3<
             Tuple2<ObjectSerializer.FinalTypeField[], boolean[]>,
             ObjectSerializer.GenericTypeField[],
@@ -111,7 +101,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
     isFinal = infos.f0.f1;
     otherFields = infos.f1;
     containerFields = infos.f2;
-    classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
+    classInfoHolder = this.classResolver.nilClassInfoHolder();
     if (isRecord) {
       List<String> fieldNames =
           descriptorGrouper.getSortedDescriptors().stream()
@@ -127,8 +117,7 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
   public void write(MemoryBuffer buffer, T value) {
     if (serializer == null) {
       serializer =
-          fury.getClassResolver()
-              .createSerializerSafe(type, () -> new ObjectSerializer<>(fury, type));
+          this.classResolver.createSerializerSafe(type, () -> new ObjectSerializer<>(fury, type));
     }
     serializer.write(buffer, value);
   }
@@ -148,10 +137,10 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
         Platform.throwException(e);
       }
     }
-    T obj = ObjectSerializer.newBean(constructor, type);
+    T obj = newBean();
     Fury fury = this.fury;
-    RefResolver refResolver = fury.getRefResolver();
-    ClassResolver classResolver = fury.getClassResolver();
+    RefResolver refResolver = this.refResolver;
+    ClassResolver classResolver = this.classResolver;
     refResolver.reference(obj);
     // read order: primitive,boxed,final,other,collection,map
     ObjectSerializer.FinalTypeField[] finalFields = this.finalFields;
@@ -205,8 +194,8 @@ public class MetaSharedSerializer<T> extends Serializer<T> {
   private void readFields(MemoryBuffer buffer, Object[] fields) {
     int counter = 0;
     Fury fury = this.fury;
-    RefResolver refResolver = fury.getRefResolver();
-    ClassResolver classResolver = fury.getClassResolver();
+    RefResolver refResolver = this.refResolver;
+    ClassResolver classResolver = this.classResolver;
     // read order: primitive,boxed,final,other,collection,map
     ObjectSerializer.FinalTypeField[] finalFields = this.finalFields;
     for (int i = 0; i < finalFields.length; i++) {
