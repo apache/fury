@@ -40,13 +40,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
+import org.apache.fury.ThreadSafeFury;
+import org.apache.fury.codegen.JaninoUtils;
+import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-import org.apache.fury.ThreadSafeFury;
-import org.apache.fury.codegen.JaninoUtils;
-import org.apache.fury.config.CompatibleMode;
 
 public class SerializersTest extends FuryTestBase {
 
