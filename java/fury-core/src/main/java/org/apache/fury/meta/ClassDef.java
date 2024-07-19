@@ -235,10 +235,9 @@ public class ClassDef implements Serializable {
         Descriptor descriptor =
             descriptorsMap.get(fieldInfo.getDefinedClass() + "." + fieldInfo.getFieldName());
         Descriptor newDesc = fieldInfo.toDescriptor(resolver);
-        if (descriptor == null) {
-          descriptors.add(newDesc);
-        } else if (!descriptor.getRawType().isEnum()
-            && !newDesc.getRawType().isAssignableFrom(descriptor.getRawType())) {
+        if (descriptor == null
+            || !descriptor.getRawType().isEnum()
+                && !newDesc.getRawType().isAssignableFrom(descriptor.getRawType())) {
           // Make DescriptorGrouper have consistent order whether field exist or not
           // type is inconsistent use serialize type, except enum
           descriptors.add(newDesc);
