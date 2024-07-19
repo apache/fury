@@ -76,6 +76,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
+import org.apache.fury.FuryCopyable;
 import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.builder.CodecUtils;
@@ -110,6 +111,7 @@ import org.apache.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
 import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.serializer.EnumSerializer;
 import org.apache.fury.serializer.ExternalizableSerializer;
+import org.apache.fury.serializer.FuryCopyableSerializer;
 import org.apache.fury.serializer.JavaSerializer;
 import org.apache.fury.serializer.JdkProxySerializer;
 import org.apache.fury.serializer.LambdaSerializer;
@@ -1198,7 +1200,11 @@ public class ClassResolver {
     }
 
     Class<? extends Serializer> serializerClass = getSerializerClass(cls);
-    return Serializers.newSerializer(fury, cls, serializerClass);
+    Serializer serializer = Serializers.newSerializer(fury, cls, serializerClass);
+    if (FuryCopyable.class.isAssignableFrom(cls)) {
+      serializer = new FuryCopyableSerializer<>(fury, cls, serializer);
+    }
+    return serializer;
   }
 
   private String generateSecurityMsg(Class<?> cls) {

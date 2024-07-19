@@ -54,7 +54,7 @@ import org.apache.fury.util.unsafe._JDKAccess;
  * manually.
  */
 @SuppressWarnings("unchecked")
-public final class StringSerializer extends Serializer<String> {
+public final class StringSerializer extends ImmutableSerializer<String> {
   private static final boolean STRING_VALUE_FIELD_IS_CHARS;
   private static final boolean STRING_VALUE_FIELD_IS_BYTES;
 

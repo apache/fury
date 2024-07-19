@@ -35,6 +35,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
@@ -99,6 +100,28 @@ public class CollectionSerializers {
 
     public ArraysAsListSerializer(Fury fury, Class<List<?>> cls) {
       super(fury, cls, false);
+    }
+
+    @Override
+    public List<?> copy(List<?> originCollection) {
+      Object[] elements = new Object[originCollection.size()];
+      List<?> newCollection = Arrays.asList(elements);
+      if (needToCopyRef) {
+        List<?> copyObject = (List<?>) fury.getCopyObject(originCollection);
+        if (copyObject != null) {
+          return copyObject;
+        }
+        fury.reference(originCollection, newCollection);
+      }
+      copyElements(originCollection, elements);
+      return newCollection;
+    }
+
+    private void copyElements(List<?> originCollection, Object[] elements) {
+      int size = originCollection.size();
+      for (int i = 0; i < size; i++) {
+        elements[i] = fury.copyObject(originCollection.get(i));
+      }
     }
 
     @Override
@@ -221,6 +244,22 @@ public class CollectionSerializers {
       fury.getRefResolver().reference(collection);
       return collection;
     }
+
+    @Override
+    public Collection newCollection(Collection originCollection) {
+      Collection collection;
+      Comparator comparator = fury.copyObject(((SortedSet) originCollection).comparator());
+      if (Objects.equals(type, TreeSet.class)) {
+        collection = new TreeSet(comparator);
+      } else {
+        try {
+          collection = (T) constructor.invoke(comparator);
+        } catch (Throwable e) {
+          throw new RuntimeException(e);
+        }
+      }
+      return collection;
+    }
   }
 
   // ------------------------------ collections serializers ------------------------------ //
@@ -231,7 +270,7 @@ public class CollectionSerializers {
   public static final class EmptyListSerializer extends CollectionSerializer<List<?>> {
 
     public EmptyListSerializer(Fury fury, Class<List<?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -284,7 +323,7 @@ public class CollectionSerializers {
   public static final class EmptySetSerializer extends CollectionSerializer<Set<?>> {
 
     public EmptySetSerializer(Fury fury, Class<Set<?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -316,7 +355,7 @@ public class CollectionSerializers {
   public static final class EmptySortedSetSerializer extends CollectionSerializer<SortedSet<?>> {
 
     public EmptySortedSetSerializer(Fury fury, Class<SortedSet<?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -333,6 +372,11 @@ public class CollectionSerializers {
 
     public CollectionsSingletonListSerializer(Fury fury, Class<List<?>> cls) {
       super(fury, cls, false);
+    }
+
+    @Override
+    public List<?> copy(List<?> originCollection) {
+      return Collections.singletonList(fury.copyObject(originCollection.get(0)));
     }
 
     @Override
@@ -367,6 +411,11 @@ public class CollectionSerializers {
 
     public CollectionsSingletonSetSerializer(Fury fury, Class<Set<?>> cls) {
       super(fury, cls, false);
+    }
+
+    @Override
+    public Set<?> copy(Set<?> originCollection) {
+      return Collections.singleton(fury.copyObject(originCollection.iterator().next()));
     }
 
     @Override
@@ -446,6 +495,16 @@ public class CollectionSerializers {
     }
 
     @Override
+    public Collection newCollection(Collection originCollection) {
+      Map<?, Boolean> map =
+          (Map<?, Boolean>) Platform.getObject(originCollection, MAP_FIELD_OFFSET);
+      AbstractMapSerializer mapSerializer =
+          (AbstractMapSerializer) fury.getClassResolver().getSerializer(map.getClass());
+      Map newMap = mapSerializer.newMap();
+      return Collections.newSetFromMap(newMap);
+    }
+
+    @Override
     public Collection onCollectionWrite(MemoryBuffer buffer, Set<?> value) {
       final Map<?, Boolean> map = (Map<?, Boolean>) Platform.getObject(value, MAP_FIELD_OFFSET);
       final ClassInfo classInfo = fury.getClassResolver().getClassInfo(map.getClass());
@@ -470,6 +529,11 @@ public class CollectionSerializers {
       ConcurrentHashMap.KeySetView keySetView = ConcurrentHashMap.newKeySet(numElements);
       fury.getRefResolver().reference(keySetView);
       return keySetView;
+    }
+
+    @Override
+    public Collection newCollection(Collection collection) {
+      return ConcurrentHashMap.newKeySet(collection.size());
     }
   }
 
@@ -543,6 +607,11 @@ public class CollectionSerializers {
       }
       return object;
     }
+
+    @Override
+    public EnumSet copy(EnumSet originCollection) {
+      return EnumSet.copyOf(originCollection);
+    }
   }
 
   public static class BitSetSerializer extends Serializer<BitSet> {
@@ -555,6 +624,11 @@ public class CollectionSerializers {
       long[] values = set.toLongArray();
       buffer.writePrimitiveArrayWithSize(
           values, Platform.LONG_ARRAY_OFFSET, Math.multiplyExact(values.length, 8));
+    }
+
+    @Override
+    public BitSet copy(BitSet originCollection) {
+      return BitSet.valueOf(originCollection.toLongArray());
     }
 
     @Override
@@ -573,6 +647,12 @@ public class CollectionSerializers {
       buffer.writeVarUint32Small7(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
+    }
+
+    @Override
+    public Collection newCollection(Collection collection) {
+      return new PriorityQueue(
+          collection.size(), fury.copyObject(((PriorityQueue) collection).comparator()));
     }
 
     @Override
@@ -626,6 +706,11 @@ public class CollectionSerializers {
     }
 
     @Override
+    public T copy(T originCollection) {
+      return dataSerializer.copy(originCollection);
+    }
+
+    @Override
     public T read(MemoryBuffer buffer) {
       return dataSerializer.read(buffer);
     }
@@ -666,6 +751,11 @@ public class CollectionSerializers {
     @Override
     public void write(MemoryBuffer buffer, T value) {
       serializer.write(buffer, value);
+    }
+
+    @Override
+    public T copy(T value) {
+      return (T) serializer.copy(value);
     }
   }
 

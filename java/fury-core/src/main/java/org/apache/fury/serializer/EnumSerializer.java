@@ -25,7 +25,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.util.Preconditions;
 
 @SuppressWarnings("rawtypes")
-public final class EnumSerializer extends Serializer<Enum> {
+public final class EnumSerializer extends ImmutableSerializer<Enum> {
   private final Enum[] enumConstants;
 
   public EnumSerializer(Fury fury, Class<Enum> cls) {

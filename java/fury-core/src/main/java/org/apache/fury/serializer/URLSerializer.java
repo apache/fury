@@ -27,7 +27,7 @@ import org.apache.fury.memory.Platform;
 
 /** Serializer for {@link URL}. */
 // TODO(chaokunyang) ensure security to avoid dnslog detection.
-public final class URLSerializer extends Serializer<URL> {
+public final class URLSerializer extends ImmutableSerializer<URL> {
 
   public URLSerializer(Fury fury, Class<URL> type) {
     super(fury, type);

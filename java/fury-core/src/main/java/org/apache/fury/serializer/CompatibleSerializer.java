@@ -19,7 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import java.lang.invoke.MethodHandle;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -29,11 +28,9 @@ import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.FieldAccessor;
-import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
-import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.collection.AbstractCollectionSerializer;
 import org.apache.fury.serializer.collection.AbstractMapSerializer;
 import org.apache.fury.util.Preconditions;
@@ -51,43 +48,30 @@ import org.apache.fury.util.record.RecordUtils;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private static final int INDEX_FOR_SKIP_FILL_VALUES = -1;
-  private final RefResolver refResolver;
-  private final ClassResolver classResolver;
   private final FieldResolver fieldResolver;
-  private final boolean isRecord;
-  private final MethodHandle constructor;
   private final RecordInfo recordInfo;
 
   public CompatibleSerializer(Fury fury, Class<T> cls) {
     super(fury, cls);
-    this.refResolver = fury.getRefResolver();
-    this.classResolver = fury.getClassResolver();
     // Use `setSerializerIfAbsent` to avoid overwriting existing serializer for class when used
     // as data serializer.
     classResolver.setSerializerIfAbsent(cls, this);
     fieldResolver = classResolver.getFieldResolver(cls);
-    isRecord = RecordUtils.isRecord(type);
     if (isRecord) {
-      constructor = RecordUtils.getRecordConstructor(type).f1;
       List<String> fieldNames =
           fieldResolver.getAllFieldsList().stream()
               .map(FieldResolver.FieldInfo::getName)
               .collect(Collectors.toList());
       recordInfo = new RecordInfo(cls, fieldNames);
     } else {
-      this.constructor = ReflectionUtils.getCtrHandle(type, false);
       recordInfo = null;
     }
   }
 
   public CompatibleSerializer(Fury fury, Class<T> cls, FieldResolver fieldResolver) {
-    super(fury, cls);
-    this.refResolver = fury.getRefResolver();
-    this.classResolver = fury.getClassResolver();
-    isRecord = RecordUtils.isRecord(type);
+    super(fury, cls, null);
     Preconditions.checkArgument(!isRecord, cls);
     recordInfo = null;
-    this.constructor = null;
     this.fieldResolver = fieldResolver;
   }
 
@@ -625,16 +609,5 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
           return fury.readRef(buffer, serializer);
         }
     }
-  }
-
-  private Object newBean() {
-    if (constructor != null) {
-      try {
-        return constructor.invoke();
-      } catch (Throwable e) {
-        Platform.throwException(e);
-      }
-    }
-    return Platform.newInstance(type);
   }
 }

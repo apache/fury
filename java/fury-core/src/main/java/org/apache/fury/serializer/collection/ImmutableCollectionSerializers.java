@@ -183,6 +183,21 @@ public class ImmutableCollectionSerializers {
     }
 
     @Override
+    public Map newMap(Map map) {
+      int numElements = map.size();
+      if (Platform.JAVA_VERSION > 8) {
+        return new JDKImmutableMapContainer(numElements);
+      } else {
+        return new HashMap(numElements);
+      }
+    }
+
+    @Override
+    public Map onMapCopy(Map map) {
+      return onMapRead(map);
+    }
+
+    @Override
     public Map onMapRead(Map map) {
       if (Platform.JAVA_VERSION > 8) {
         JDKImmutableMapContainer container = (JDKImmutableMapContainer) map;

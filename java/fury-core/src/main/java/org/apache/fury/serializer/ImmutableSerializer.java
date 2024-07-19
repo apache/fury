@@ -19,25 +19,24 @@
 
 package org.apache.fury.serializer;
 
-import java.lang.invoke.MethodHandle;
 import org.apache.fury.Fury;
-import org.apache.fury.memory.MemoryBuffer;
 
 /**
- * Base class for compatible serializer. Both JIT mode serializer and interpreter-mode serializer
- * will extend this class.
+ * Serializer for immutable objects.
+ *
+ * @param <T> type of objects being serializing/deserializing
  */
-public abstract class CompatibleSerializerBase<T> extends AbstractObjectSerializer<T> {
-  public CompatibleSerializerBase(Fury fury, Class<T> type) {
-    super(fury, type);
+public abstract class ImmutableSerializer<T> extends Serializer<T> {
+
+  public ImmutableSerializer(Fury fury, Class<T> type) {
+    super(fury, type, true);
   }
 
-  public CompatibleSerializerBase(Fury fury, Class<T> type, MethodHandle constructor) {
-    super(fury, type, constructor);
+  public ImmutableSerializer(Fury fury, Class<T> type, boolean needToWriteRef) {
+    super(fury, type, needToWriteRef, true);
   }
 
-  public T readAndSetFields(MemoryBuffer buffer, T obj) {
-    // java record object doesn't support update state.
-    throw new UnsupportedOperationException();
+  public ImmutableSerializer(Fury fury, Class<T> type, boolean needToWriteRef, boolean immutable) {
+    super(fury, type, needToWriteRef, true);
   }
 }

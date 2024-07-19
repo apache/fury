@@ -77,6 +77,17 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     partialGenericKVTypeMap = new IdentityMap<>();
   }
 
+  public AbstractMapSerializer(
+      Fury fury, Class<T> cls, boolean supportCodegenHook, boolean immutable) {
+    super(fury, cls, immutable);
+    this.supportCodegenHook = supportCodegenHook;
+    keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
+    keyClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
+    valueClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
+    valueClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
+    partialGenericKVTypeMap = new IdentityMap<>();
+  }
+
   /**
    * Set key serializer for next serialization, the <code>serializer</code> will be cleared when
    * next serialization finished.
@@ -405,6 +416,12 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     return onMapRead(map);
   }
 
+  protected <K, V> void copyEntry(Map<K, V> originMap, Map<K, V> newMap) {
+    for (Map.Entry<K, V> entry : originMap.entrySet()) {
+      newMap.put(fury.copyObject(entry.getKey()), fury.copyObject(entry.getValue()));
+    }
+  }
+
   @SuppressWarnings("unchecked")
   protected final void readElements(MemoryBuffer buffer, int size, Map map) {
     Serializer keySerializer = this.keySerializer;
@@ -718,9 +735,38 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
+  public Map newMap(Map map) {
+    numElements = map.size();
+    return newMap();
+  }
+
   /**
-   * Get and reset numElements of deserializing collection. Should be called after {@link #newMap}.
-   * Nested read may overwrite this element, reset is necessary to avoid use wrong value by mistake.
+   * Map must have default constructor to be invoked by fury, otherwise created object can't be used
+   * to adding elements. For example:
+   *
+   * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
+   *
+   * <p>without default constructor, created list will have elementData as null, adding elements
+   * will raise NPE.
+   *
+   * @return empty map instance
+   */
+  public Map newMap() {
+    if (constructor == null) {
+      constructor = ReflectionUtils.getCtrHandle(type, true);
+    }
+    try {
+      return (Map) constructor.invoke();
+    } catch (Throwable e) {
+      throw new IllegalArgumentException(
+          "Please provide public no arguments constructor for class " + type, e);
+    }
+  }
+
+  /**
+   * Get and reset numElements of deserializing collection. Should be called after {@link
+   * #newMap(MemoryBuffer buffer)}. Nested read may overwrite this element, reset is necessary to
+   * avoid use wrong value by mistake.
    */
   public int getAndClearNumElements() {
     int size = numElements;
@@ -731,6 +777,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   public void setNumElements(int numElements) {
     this.numElements = numElements;
   }
+
+  public abstract T onMapCopy(Map map);
 
   public abstract T onMapRead(Map map);
 
