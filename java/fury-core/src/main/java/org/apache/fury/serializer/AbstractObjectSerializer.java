@@ -20,9 +20,14 @@
 package org.apache.fury.serializer;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 import org.apache.fury.Fury;
+import org.apache.fury.collection.Collections;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.collection.Tuple3;
 import org.apache.fury.memory.Platform;
@@ -38,27 +43,23 @@ import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.FinalObjectTypeStub;
 import org.apache.fury.type.GenericType;
+import org.apache.fury.util.GraalvmSupport;
+import org.apache.fury.util.record.RecordComponent;
 import org.apache.fury.util.record.RecordUtils;
 
+import static org.apache.fury.type.DescriptorGrouper.createDescriptorGrouper;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
-
   protected final RefResolver refResolver;
   protected final ClassResolver classResolver;
   protected final boolean isRecord;
   protected final MethodHandle constructor;
+  private InternalFieldInfo[] fieldInfos;
 
   public AbstractObjectSerializer(Fury fury, Class<T> type) {
-    super(fury, type);
-    this.refResolver = fury.getRefResolver();
-    this.classResolver = fury.getClassResolver();
-    this.isRecord = RecordUtils.isRecord(type);
-    if (isRecord) {
-      this.constructor = RecordUtils.getRecordConstructor(type).f1;
-    } else {
-      this.constructor = ReflectionUtils.getCtrHandle(type, false);
-    }
+    this(fury, type, RecordUtils.isRecord(type) ?
+      RecordUtils.getRecordConstructor(type).f1 : ReflectionUtils.getCtrHandle(type, false));
   }
 
   public AbstractObjectSerializer(Fury fury, Class<T> type, MethodHandle constructor) {
@@ -99,53 +100,150 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
   }
 
   private Object[] copyFields(T originObj) {
-    return classResolver.getFieldResolver(type).getAllFieldsList().stream()
-        .map(
-            fieldInfo -> {
-              FieldAccessor fieldAccessor = fieldInfo.getFieldAccessor();
-              if (classResolver.isPrimitive(fieldInfo.getEmbeddedClassId())) {
-                return fieldAccessor.get(originObj);
-              }
-              return fury.copyObject(fieldAccessor.get(originObj));
-            })
-        .toArray();
+    InternalFieldInfo[] fieldInfos = this.fieldInfos;
+    if (fieldInfos == null) {
+      fieldInfos = buildFieldsInfo();
+    }
+    Object[] fieldValues = new Object[fieldInfos.length];
+    for (int i = 0; i < fieldInfos.length; i++) {
+      InternalFieldInfo fieldInfo = fieldInfos[i];
+      FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
+      long fieldOffset = fieldAccessor.getFieldOffset();
+      if (fieldOffset != -1) {
+        fieldValues[i] = copyField(originObj, fieldOffset, fieldInfo.classId);
+      } else {
+        // field in record class has offset -1
+        Object fieldValue = fieldAccessor.get(originObj);
+        fieldValues[i] = fury.copyObject(fieldValue, fieldInfo.classId);
+      }
+    }
+    return fieldValues;
+  }
+
+  private Object copyField(Object targetObject, long fieldOffset, short classId) {
+    switch (classId) {
+      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+        return Platform.getBoolean(targetObject, fieldOffset);
+      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+        return Platform.getByte(targetObject, fieldOffset);
+      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+        return Platform.getChar(targetObject, fieldOffset);
+      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+        return Platform.getShort(targetObject, fieldOffset);
+      case ClassResolver.PRIMITIVE_INT_CLASS_ID: {
+        return Platform.getInt(targetObject, fieldOffset);
+      }
+      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+        return (Platform.getFloat(targetObject, fieldOffset));
+      case ClassResolver.PRIMITIVE_LONG_CLASS_ID: {
+        return Platform.getLong(targetObject, fieldOffset);
+      }
+      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+        return (Platform.getDouble(targetObject, fieldOffset));
+      case ClassResolver.BOOLEAN_CLASS_ID:
+      case ClassResolver.BYTE_CLASS_ID:
+      case ClassResolver.CHAR_CLASS_ID:
+      case ClassResolver.SHORT_CLASS_ID:
+      case ClassResolver.INTEGER_CLASS_ID:
+      case ClassResolver.FLOAT_CLASS_ID:
+      case ClassResolver.LONG_CLASS_ID:
+      case ClassResolver.DOUBLE_CLASS_ID:
+        return Platform.getObject(targetObject, fieldOffset);
+      default:
+        return fury.copyObject(Platform.getObject(targetObject, fieldOffset));
+    }
   }
 
   private void copyFields(T originObj, T newObj) {
-    List<FieldInfo> fieldsList = classResolver.getFieldResolver(type).getAllFieldsList();
-    for (FieldInfo info : fieldsList) {
-      FieldAccessor fieldAccessor = info.getFieldAccessor();
-      long offset = fieldAccessor.getFieldOffset();
-      switch (info.getEmbeddedClassId()) {
+    InternalFieldInfo[] fieldInfos = this.fieldInfos;
+    if (fieldInfos == null) {
+      fieldInfos = buildFieldsInfo();
+    }
+    for (InternalFieldInfo fieldInfo : fieldInfos) {
+      FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
+      long fieldOffset = fieldAccessor.getFieldOffset();
+      // record class won't go to this path;
+      assert fieldOffset != -1;
+      switch (fieldInfo.classId) {
         case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
-          Platform.putByte(newObj, offset, Platform.getByte(originObj, offset));
+          Platform.putByte(newObj, fieldOffset, Platform.getByte(originObj, fieldOffset));
           break;
         case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
-          Platform.putChar(newObj, offset, Platform.getChar(originObj, offset));
+          Platform.putChar(newObj, fieldOffset, Platform.getChar(originObj, fieldOffset));
           break;
         case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
-          Platform.putShort(newObj, offset, Platform.getShort(originObj, offset));
+          Platform.putShort(newObj, fieldOffset, Platform.getShort(originObj, fieldOffset));
           break;
         case ClassResolver.PRIMITIVE_INT_CLASS_ID:
-          Platform.putInt(newObj, offset, Platform.getInt(originObj, offset));
+          Platform.putInt(newObj, fieldOffset, Platform.getInt(originObj, fieldOffset));
           break;
         case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-          Platform.putLong(newObj, offset, Platform.getLong(originObj, offset));
+          Platform.putLong(newObj, fieldOffset, Platform.getLong(originObj, fieldOffset));
           break;
         case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-          Platform.putFloat(newObj, offset, Platform.getFloat(originObj, offset));
+          Platform.putFloat(newObj, fieldOffset, Platform.getFloat(originObj, fieldOffset));
           break;
         case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-          Platform.putDouble(newObj, offset, Platform.getDouble(originObj, offset));
+          Platform.putDouble(newObj, fieldOffset, Platform.getDouble(originObj, fieldOffset));
           break;
         case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
-          Platform.putBoolean(newObj, offset, Platform.getBoolean(originObj, offset));
+          Platform.putBoolean(newObj, fieldOffset, Platform.getBoolean(originObj, fieldOffset));
           break;
+        case ClassResolver.BOOLEAN_CLASS_ID:
+        case ClassResolver.BYTE_CLASS_ID:
+        case ClassResolver.CHAR_CLASS_ID:
+        case ClassResolver.SHORT_CLASS_ID:
+        case ClassResolver.INTEGER_CLASS_ID:
+        case ClassResolver.FLOAT_CLASS_ID:
+        case ClassResolver.LONG_CLASS_ID:
+        case ClassResolver.DOUBLE_CLASS_ID:
+        case ClassResolver.STRING_CLASS_ID:
+          Platform.putObject(
+            newObj, fieldOffset, Platform.getObject(originObj, fieldOffset));
         default:
           Platform.putObject(
-              newObj, offset, fury.copyObject(Platform.getObject(originObj, offset)));
+            newObj, fieldOffset, fury.copyObject(Platform.getObject(originObj, fieldOffset)));
       }
     }
+  }
+
+  private InternalFieldInfo[] buildFieldsInfo() {
+    List<Descriptor> descriptors = new ArrayList<>();
+    if (RecordUtils.isRecord(type)) {
+      RecordComponent[] components = RecordUtils.getRecordComponents(type);
+      assert components != null;
+      try {
+        for (RecordComponent component : components) {
+          Field field = type.getDeclaredField(component.getName());
+          descriptors.add(new Descriptor(
+            field, TypeRef.of(field.getGenericType()), component.getAccessor(), null));
+        }
+      } catch (NoSuchFieldException e) {
+        // impossible
+        Platform.throwException(e);
+      }
+    } else {
+      for (Field field : ReflectionUtils.getFields(type, true)) {
+        if (!Modifier.isStatic(field.getModifiers())) {
+          descriptors.add(new Descriptor(
+            field, TypeRef.of(field.getGenericType()), null, null));
+        }
+      }
+    }
+    DescriptorGrouper descriptorGrouper =
+      createDescriptorGrouper(
+        fury.getClassResolver()::isMonomorphic,
+        descriptors,
+        false,
+        fury.compressInt(),
+        fury.compressLong());
+    Tuple3<Tuple2<FinalTypeField[], boolean[]>, GenericTypeField[], GenericTypeField[]> infos =
+      buildFieldInfos(fury, descriptorGrouper);
+    fieldInfos = new InternalFieldInfo[descriptors.size()];
+    System.arraycopy(infos.f0.f0, 0, fieldInfos, 0, infos.f0.f0.length);
+    System.arraycopy(infos.f1, 0, fieldInfos, infos.f0.f0.length, infos.f1.length);
+    System.arraycopy(infos.f2, 0, fieldInfos, fieldInfos.length - infos.f2.length, infos.f2.length);
+    return fieldInfos;
   }
 
   protected T newBean() {
@@ -234,7 +332,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     protected final FieldAccessor fieldAccessor;
 
     private InternalFieldInfo(
-        short classId, String qualifiedFieldName, FieldAccessor fieldAccessor) {
+      short classId, String qualifiedFieldName, FieldAccessor fieldAccessor) {
       this.classId = classId;
       this.qualifiedFieldName = qualifiedFieldName;
       this.fieldAccessor = fieldAccessor;
@@ -243,13 +341,13 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     @Override
     public String toString() {
       return "InternalFieldInfo{"
-          + "classId="
-          + classId
-          + ", fieldName="
-          + qualifiedFieldName
-          + ", field="
-          + (fieldAccessor != null ? fieldAccessor.getField() : null)
-          + '}';
+        + "classId="
+        + classId
+        + ", fieldName="
+        + qualifiedFieldName
+        + ", field="
+        + (fieldAccessor != null ? fieldAccessor.getField() : null)
+        + '}';
     }
   }
 
@@ -275,7 +373,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     final boolean trackingRef;
 
     private GenericTypeField(
-        Class<?> cls, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
+      Class<?> cls, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
       super(getRegisteredClassId(fury, cls), qualifiedFieldName, accessor);
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
       genericType = fury.getClassResolver().buildGenericType(cls);
@@ -295,15 +393,15 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     @Override
     public String toString() {
       return "GenericTypeField{"
-          + "genericType="
-          + genericType
-          + ", classId="
-          + classId
-          + ", qualifiedFieldName="
-          + qualifiedFieldName
-          + ", field="
-          + (fieldAccessor != null ? fieldAccessor.getField() : null)
-          + '}';
+        + "genericType="
+        + genericType
+        + ", classId="
+        + classId
+        + ", qualifiedFieldName="
+        + qualifiedFieldName
+        + ", field="
+        + (fieldAccessor != null ? fieldAccessor.getField() : null)
+        + '}';
     }
   }
 
