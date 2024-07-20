@@ -81,6 +81,9 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
     const metaInformation = computeMetaInformation(this.description);
+    console.log("**********metaInformation**********")
+    console.log(metaInformation.byteLength)
+
     return `
       ${this.builder.writer.int32(expectHash)};
       ${this.builder.writer.buffer(metaInformation)};
@@ -99,13 +102,13 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
     const encodedMetaInformation = computeMetaInformation(this.description);
-    //const metaInformation = decodeMetaInformation(encodedMetaInformation);
     const result = this.scope.uniqueName("result");
-
-
+    let pass = this.builder.reader.int32()
+    console.log("**********Meta Info*************")
+    console.log(encodedMetaInformation.byteLength)
     return `
       if (${this.builder.reader.int32()} !== ${expectHash}) {
-          throw new Error("validate hash failed: ${this.safeTag()}. expect ${expectHash}");
+          throw new Error("got ${this.builder.reader.int32()} validate hash failed: ${this.safeTag()}. expect ${expectHash}");
       }
       const ${result} = {
         ${Object.entries(options.props).sort().map(([key]) => {
@@ -113,7 +116,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
         }).join(",\n")}
       };
       ${this.maybeReference(result, refState)}
-      ${this.builder.reader.buffer(encodedMetaInformation.length)}
+      ${this.builder.reader.buffer(encodedMetaInformation.byteLength)}
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
@@ -125,7 +128,8 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
       ${accessor(result)}
     `;
   }
-
+// /8 /7 /20 % 2
+// is there a ratio from length / deserializer  
   private safeTag() {
     return CodecBuilder.replaceBackslashAndQuote(this.description.options.tag);
   }
