@@ -120,42 +120,6 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     return fieldValues;
   }
 
-  private Object copyField(Object targetObject, long fieldOffset, short classId) {
-    switch (classId) {
-      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
-        return Platform.getBoolean(targetObject, fieldOffset);
-      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
-        return Platform.getByte(targetObject, fieldOffset);
-      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
-        return Platform.getChar(targetObject, fieldOffset);
-      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
-        return Platform.getShort(targetObject, fieldOffset);
-      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
-        {
-          return Platform.getInt(targetObject, fieldOffset);
-        }
-      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-        return (Platform.getFloat(targetObject, fieldOffset));
-      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-        {
-          return Platform.getLong(targetObject, fieldOffset);
-        }
-      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-        return (Platform.getDouble(targetObject, fieldOffset));
-      case ClassResolver.BOOLEAN_CLASS_ID:
-      case ClassResolver.BYTE_CLASS_ID:
-      case ClassResolver.CHAR_CLASS_ID:
-      case ClassResolver.SHORT_CLASS_ID:
-      case ClassResolver.INTEGER_CLASS_ID:
-      case ClassResolver.FLOAT_CLASS_ID:
-      case ClassResolver.LONG_CLASS_ID:
-      case ClassResolver.DOUBLE_CLASS_ID:
-        return Platform.getObject(targetObject, fieldOffset);
-      default:
-        return fury.copyObject(Platform.getObject(targetObject, fieldOffset));
-    }
-  }
-
   private void copyFields(T originObj, T newObj) {
     InternalFieldInfo[] fieldInfos = this.fieldInfos;
     if (fieldInfos == null) {
@@ -205,6 +169,42 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
           Platform.putObject(
               newObj, fieldOffset, fury.copyObject(Platform.getObject(originObj, fieldOffset)));
       }
+    }
+  }
+
+  private Object copyField(Object targetObject, long fieldOffset, short classId) {
+    switch (classId) {
+      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+        return Platform.getBoolean(targetObject, fieldOffset);
+      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+        return Platform.getByte(targetObject, fieldOffset);
+      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+        return Platform.getChar(targetObject, fieldOffset);
+      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+        return Platform.getShort(targetObject, fieldOffset);
+      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+      {
+        return Platform.getInt(targetObject, fieldOffset);
+      }
+      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+        return (Platform.getFloat(targetObject, fieldOffset));
+      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+      {
+        return Platform.getLong(targetObject, fieldOffset);
+      }
+      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+        return (Platform.getDouble(targetObject, fieldOffset));
+      case ClassResolver.BOOLEAN_CLASS_ID:
+      case ClassResolver.BYTE_CLASS_ID:
+      case ClassResolver.CHAR_CLASS_ID:
+      case ClassResolver.SHORT_CLASS_ID:
+      case ClassResolver.INTEGER_CLASS_ID:
+      case ClassResolver.FLOAT_CLASS_ID:
+      case ClassResolver.LONG_CLASS_ID:
+      case ClassResolver.DOUBLE_CLASS_ID:
+        return Platform.getObject(targetObject, fieldOffset);
+      default:
+        return fury.copyObject(Platform.getObject(targetObject, fieldOffset));
     }
   }
 
