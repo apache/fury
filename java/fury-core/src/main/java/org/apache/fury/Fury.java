@@ -1273,14 +1273,6 @@ public final class Fury implements BaseFury {
     Object copy;
     ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
     switch (classInfo.getClassId()) {
-      case ClassResolver.BOOLEAN_CLASS_ID:
-      case ClassResolver.BYTE_CLASS_ID:
-      case ClassResolver.CHAR_CLASS_ID:
-      case ClassResolver.SHORT_CLASS_ID:
-      case ClassResolver.INTEGER_CLASS_ID:
-      case ClassResolver.FLOAT_CLASS_ID:
-      case ClassResolver.LONG_CLASS_ID:
-      case ClassResolver.DOUBLE_CLASS_ID:
       case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
       case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
       case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
@@ -1289,6 +1281,14 @@ public final class Fury implements BaseFury {
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+      case ClassResolver.BOOLEAN_CLASS_ID:
+      case ClassResolver.BYTE_CLASS_ID:
+      case ClassResolver.CHAR_CLASS_ID:
+      case ClassResolver.SHORT_CLASS_ID:
+      case ClassResolver.INTEGER_CLASS_ID:
+      case ClassResolver.FLOAT_CLASS_ID:
+      case ClassResolver.LONG_CLASS_ID:
+      case ClassResolver.DOUBLE_CLASS_ID:
       case ClassResolver.STRING_CLASS_ID:
         return obj;
       case ClassResolver.PRIMITIVE_BOOLEAN_ARRAY_CLASS_ID:
@@ -1319,20 +1319,47 @@ public final class Fury implements BaseFury {
         String[] stringArr = (String[]) obj;
         return (T) Arrays.copyOf(stringArr, stringArr.length);
       case ClassResolver.ARRAYLIST_CLASS_ID:
-        copyDepth++;
         copy = arrayListSerializer.copy((ArrayList) obj);
         break;
       case ClassResolver.HASHMAP_CLASS_ID:
-        copyDepth++;
         copy = hashMapSerializer.copy((HashMap) obj);
         break;
         // todo: add fastpath for other types.
       default:
         copyDepth++;
         copy = classInfo.getSerializer().copy(obj);
+        copyDepth--;
     }
-    copyDepth--;
     return (T) copy;
+  }
+
+  public <T> T copyObject(T obj, int classId) {
+    if (obj == null) {
+      return null;
+    }
+    // Fast path to avoid cost of query class map.
+    switch (classId) {
+      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+      case ClassResolver.BOOLEAN_CLASS_ID:
+      case ClassResolver.BYTE_CLASS_ID:
+      case ClassResolver.CHAR_CLASS_ID:
+      case ClassResolver.SHORT_CLASS_ID:
+      case ClassResolver.INTEGER_CLASS_ID:
+      case ClassResolver.FLOAT_CLASS_ID:
+      case ClassResolver.LONG_CLASS_ID:
+      case ClassResolver.DOUBLE_CLASS_ID:
+      case ClassResolver.STRING_CLASS_ID:
+        return obj;
+      default:
+        return (T) classResolver.getOrUpdateClassInfo(obj.getClass()).getSerializer().copy(obj);
+    }
   }
 
   /**
