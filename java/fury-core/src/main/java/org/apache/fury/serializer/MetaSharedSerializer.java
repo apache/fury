@@ -96,7 +96,7 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
             Tuple2<ObjectSerializer.FinalTypeField[], boolean[]>,
             ObjectSerializer.GenericTypeField[],
             ObjectSerializer.GenericTypeField[]>
-        infos = ObjectSerializer.buildFieldInfos(fury, descriptorGrouper);
+        infos = AbstractObjectSerializer.buildFieldInfos(fury, descriptorGrouper);
     finalFields = infos.f0.f0;
     isFinal = infos.f0.f1;
     otherFields = infos.f1;
