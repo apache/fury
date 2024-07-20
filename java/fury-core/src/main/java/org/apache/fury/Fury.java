@@ -1319,19 +1319,17 @@ public final class Fury implements BaseFury {
         String[] stringArr = (String[]) obj;
         return (T) Arrays.copyOf(stringArr, stringArr.length);
       case ClassResolver.ARRAYLIST_CLASS_ID:
-        copyDepth++;
         copy = arrayListSerializer.copy((ArrayList) obj);
         break;
       case ClassResolver.HASHMAP_CLASS_ID:
-        copyDepth++;
         copy = hashMapSerializer.copy((HashMap) obj);
         break;
         // todo: add fastpath for other types.
       default:
         copyDepth++;
         copy = classInfo.getSerializer().copy(obj);
+        copyDepth--;
     }
-    copyDepth--;
     return (T) copy;
   }
 

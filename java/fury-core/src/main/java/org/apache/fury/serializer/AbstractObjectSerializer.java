@@ -165,6 +165,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         case ClassResolver.DOUBLE_CLASS_ID:
         case ClassResolver.STRING_CLASS_ID:
           Platform.putObject(newObj, fieldOffset, Platform.getObject(originObj, fieldOffset));
+          break;
         default:
           Platform.putObject(
               newObj, fieldOffset, fury.copyObject(Platform.getObject(originObj, fieldOffset)));
