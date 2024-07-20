@@ -26,8 +26,10 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.collection.Tuple3;
@@ -44,6 +46,7 @@ import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.FinalObjectTypeStub;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.util.record.RecordComponent;
+import org.apache.fury.util.record.RecordInfo;
 import org.apache.fury.util.record.RecordUtils;
 
 public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
@@ -52,6 +55,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
   protected final boolean isRecord;
   protected final MethodHandle constructor;
   private InternalFieldInfo[] fieldInfos;
+  private RecordInfo copyRecordInfo;
 
   public AbstractObjectSerializer(Fury fury, Class<T> type) {
     this(
@@ -78,7 +82,9 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     if (isRecord) {
       Object[] fieldValues = copyFields(originObj);
       try {
-        return (T) constructor.invokeWithArguments(fieldValues);
+        T t = (T) constructor.invokeWithArguments(fieldValues);
+        Arrays.fill(copyRecordInfo.getRecordComponents(), null);
+        return t;
       } catch (Throwable e) {
         Platform.throwException(e);
       }
@@ -117,7 +123,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         fieldValues[i] = fury.copyObject(fieldValue, fieldInfo.classId);
       }
     }
-    return fieldValues;
+    return RecordUtils.remapping(copyRecordInfo, fieldValues);
   }
 
   private void copyFields(T originObj, T newObj) {
@@ -242,6 +248,13 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     System.arraycopy(infos.f0.f0, 0, fieldInfos, 0, infos.f0.f0.length);
     System.arraycopy(infos.f1, 0, fieldInfos, infos.f0.f0.length, infos.f1.length);
     System.arraycopy(infos.f2, 0, fieldInfos, fieldInfos.length - infos.f2.length, infos.f2.length);
+    if (isRecord) {
+      List<String> fieldNames =
+          Arrays.stream(fieldInfos)
+              .map(f -> f.fieldAccessor.getField().getName())
+              .collect(Collectors.toList());
+      copyRecordInfo = new RecordInfo(type, fieldNames);
+    }
     return fieldInfos;
   }
 

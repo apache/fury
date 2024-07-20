@@ -235,4 +235,14 @@ public class RecordSerializersTest {
   }
 
   private record PrivateRecord(String foo) {}
+
+  @Test(dataProvider = "codegen")
+  public void testCopy(boolean codegen) {
+    Fury fury = Fury.builder().withCodegen(codegen).build();
+    fury.register(Foo.class);
+    fury.register(PrivateRecord.class);
+    Assert.assertEquals(fury.copy(new PrivateRecord("foo")), new PrivateRecord("foo"));
+    Foo foo = new Foo(10, "abc", new ArrayList<>(Arrays.asList("a", "b")), 'x');
+    Assert.assertEquals(fury.copy(foo), foo);
+  }
 }
