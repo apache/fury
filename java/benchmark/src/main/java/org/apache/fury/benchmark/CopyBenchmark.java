@@ -19,6 +19,7 @@
 
 package org.apache.fury.benchmark;
 
+import java.io.IOException;
 import org.apache.fury.benchmark.state.FuryState;
 import org.apache.fury.benchmark.state.KryoState;
 import org.openjdk.jmh.Main;
@@ -26,8 +27,6 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Mode;
-
-import java.io.IOException;
 
 @BenchmarkMode(Mode.Throughput)
 @CompilerControl(value = CompilerControl.Mode.INLINE)
@@ -46,8 +45,8 @@ public class CopyBenchmark {
   public static void main(String[] args) throws IOException {
     if (args.length == 0) {
       String commandLine =
-        "org.apache.fury.*CopyBenchmark.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv "
-          + "-p bufferType=array -p references=false";
+          "org.apache.fury.*CopyBenchmark.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv "
+              + "-p bufferType=array -p references=false";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }

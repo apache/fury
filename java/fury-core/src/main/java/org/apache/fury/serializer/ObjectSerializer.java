@@ -20,7 +20,6 @@
 package org.apache.fury.serializer;
 
 import static org.apache.fury.type.DescriptorGrouper.createDescriptorGrouper;
-import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
