@@ -278,7 +278,7 @@ public class RecordUtils {
     return recordComponentsIndex;
   }
 
-  public static void remapping(RecordInfo recordInfo, Object[] fields) {
+  public static Object[] remapping(RecordInfo recordInfo, Object[] fields) {
     int[] recordComponentsIndex = recordInfo.getRecordComponentsIndex();
     Object[] recordComponents = recordInfo.getRecordComponents();
     Object[] recordComponentsDefaultValues = recordInfo.getRecordComponentsDefaultValues();
@@ -291,5 +291,6 @@ public class RecordUtils {
         recordComponents[i] = recordComponentsDefaultValues[i];
       }
     }
+    return recordComponents;
   }
 }

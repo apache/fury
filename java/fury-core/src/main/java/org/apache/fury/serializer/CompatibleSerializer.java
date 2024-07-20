@@ -301,10 +301,10 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     if (isRecord) {
       Object[] fieldValues = new Object[fieldResolver.getNumFields()];
       readFields(buffer, fieldValues);
-      RecordUtils.remapping(recordInfo, fieldValues);
+      fieldValues = RecordUtils.remapping(recordInfo, fieldValues);
       assert constructor != null;
       try {
-        T t = (T) constructor.invokeWithArguments(recordInfo.getRecordComponents());
+        T t = (T) constructor.invokeWithArguments(fieldValues);
         Arrays.fill(recordInfo.getRecordComponents(), null);
         return t;
       } catch (Throwable e) {

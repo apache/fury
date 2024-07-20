@@ -230,9 +230,9 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
   public T read(MemoryBuffer buffer) {
     if (isRecord) {
       Object[] fields = readFields(buffer);
-      RecordUtils.remapping(recordInfo, fields);
+      fields = RecordUtils.remapping(recordInfo, fields);
       try {
-        T obj = (T) constructor.invokeWithArguments(recordInfo.getRecordComponents());
+        T obj = (T) constructor.invokeWithArguments(fields);
         Arrays.fill(recordInfo.getRecordComponents(), null);
         return obj;
       } catch (Throwable e) {
