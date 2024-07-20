@@ -184,17 +184,13 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
         return Platform.getShort(targetObject, fieldOffset);
       case ClassResolver.PRIMITIVE_INT_CLASS_ID:
-      {
         return Platform.getInt(targetObject, fieldOffset);
-      }
       case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
-        return (Platform.getFloat(targetObject, fieldOffset));
+        return Platform.getFloat(targetObject, fieldOffset);
       case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
-      {
         return Platform.getLong(targetObject, fieldOffset);
-      }
       case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
-        return (Platform.getDouble(targetObject, fieldOffset));
+        return Platform.getDouble(targetObject, fieldOffset);
       case ClassResolver.BOOLEAN_CLASS_ID:
       case ClassResolver.BYTE_CLASS_ID:
       case ClassResolver.CHAR_CLASS_ID:
@@ -203,6 +199,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       case ClassResolver.FLOAT_CLASS_ID:
       case ClassResolver.LONG_CLASS_ID:
       case ClassResolver.DOUBLE_CLASS_ID:
+      case ClassResolver.STRING_CLASS_ID:
         return Platform.getObject(targetObject, fieldOffset);
       default:
         return fury.copyObject(Platform.getObject(targetObject, fieldOffset));
