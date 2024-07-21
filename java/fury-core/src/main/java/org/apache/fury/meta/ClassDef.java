@@ -235,17 +235,18 @@ public class ClassDef implements Serializable {
         Descriptor descriptor =
             descriptorsMap.get(fieldInfo.getDefinedClass() + "." + fieldInfo.getFieldName());
         Descriptor newDesc = fieldInfo.toDescriptor(resolver);
-        if (descriptor == null
-            || (!descriptor.getRawType().isEnum()
-                    && !newDesc.getRawType().isAssignableFrom(descriptor.getRawType()))
-                && !newDesc.getRawType().isAssignableFrom(FinalObjectTypeStub.class)) {
+        if (descriptor != null) {
           // Make DescriptorGrouper have consistent order whether field exist or not
-          // type is inconsistent use serialize type, except enum
-          descriptors.add(newDesc);
+          // fury builtin types skip
+          if (newDesc.getRawType().getTypeName().contains("apache.fury")
+              || newDesc.getRawType().isAssignableFrom(descriptor.getRawType())) {
+            descriptor = descriptor.copyWithTypeName(newDesc.getTypeName());
+            descriptors.add(descriptor);
+          } else {
+            descriptors.add(newDesc);
+          }
         } else {
-          // Make DescriptorGrouper have consistent order whether field exist or not
-          descriptor = descriptor.copyWithTypeName(newDesc.getTypeName());
-          descriptors.add(descriptor);
+          descriptors.add(newDesc);
         }
       }
     }
