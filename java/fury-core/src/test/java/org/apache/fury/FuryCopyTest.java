@@ -86,7 +86,7 @@ import org.testng.annotations.Test;
 
 public class FuryCopyTest extends FuryTestBase {
 
-  private final Fury fury = builder().withCopyRefTracking(true).withCodegen(false).build();
+  private final Fury fury = builder().withRefCopy(true).withCodegen(false).build();
 
   @Test
   public void immutableObjectCopyTest() {
@@ -131,7 +131,7 @@ public class FuryCopyTest extends FuryTestBase {
     ExecutorService executor = Executors.newSingleThreadExecutor();
     AtomicReference<Throwable> ex = new AtomicReference<>();
     ThreadLocalFury threadLocalFury =
-        builder().withCodegen(false).withCopyRefTracking(true).buildThreadLocalFury();
+        builder().withCodegen(false).withRefCopy(true).buildThreadLocalFury();
     threadLocalFury.register(BeanA.class);
     assetEqualsButNotSame(threadLocalFury.copy(beanA));
     executor.execute(
@@ -151,7 +151,7 @@ public class FuryCopyTest extends FuryTestBase {
     AtomicBoolean flag = new AtomicBoolean(false);
     ThreadSafeFury threadSafeFury =
         builder()
-            .withCopyRefTracking(true)
+            .withRefCopy(true)
             .withCodegen(false)
             .withAsyncCompilation(true)
             .buildThreadSafeFuryPool(5, 10);
