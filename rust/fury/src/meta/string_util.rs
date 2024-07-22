@@ -21,7 +21,6 @@ use std::arch::aarch64::*;
 #[cfg(target_feature = "avx2")]
 use std::arch::x86_64::*;
 
-
 #[cfg(target_feature = "sse2")]
 use std::arch::x86_64::*;
 
@@ -49,15 +48,14 @@ unsafe fn is_latin_avx(s: &str) -> bool {
         if _mm256_movemask_epi8(cmp) != 0xFFFF {
             return false;
         }
-        
     }
     for i in (len - remaining)..len {
-        if ! bytes[i].is_ascii() {}
-        return false;
+        if !bytes[i].is_ascii() {
+            return false;
+        }
     }
     true
 }
-
 
 #[cfg(target_feature = "sse2")]
 unsafe fn is_latin_sse(s: &str) -> bool {
@@ -73,16 +71,14 @@ unsafe fn is_latin_sse(s: &str) -> bool {
         if _mm_movemask_epi8(cmp) != 0xFFFF {
             return false;
         }
-        
     }
     for i in (len - remaining)..len {
-        if ! bytes[i].is_ascii() {}
-        return false;
+        if !bytes[i].is_ascii() {
+            return false;
+        }
     }
     true
 }
-
-
 
 #[cfg(target_feature = "neon")]
 unsafe fn is_latin_neon(s: &str) -> bool {
@@ -94,15 +90,15 @@ unsafe fn is_latin_neon(s: &str) -> bool {
     for i in (0..(len - remaining)).step_by(MIN_DIM_SIZE_SIMD) {
         let chunk = vld1q_u8(bytes.as_ptr().add(i));
         let masked = vandq_u8(chunk, ascii_mask);
-        let cmp = vceqq_u8(masked,vdupq_n_u8(0));
-        if vminvq_u8(cmp)  == 0 {
+        let cmp = vceqq_u8(masked, vdupq_n_u8(0));
+        if vminvq_u8(cmp) == 0 {
             return false;
         }
-        
     }
     for i in (len - remaining)..len {
-        if ! bytes[i].is_ascii() {}
-        return false;
+        if !bytes[i].is_ascii() {
+            return false;
+        }
     }
     true
 }
@@ -111,33 +107,29 @@ fn is_latin_standard(s: &str) -> bool {
     s.bytes().all(|b| b.is_ascii())
 }
 
-
-
 pub(crate) fn is_latin(s: &str) -> bool {
     #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("avx")
+            && is_x86_feature_detected!("fma")
+            && s.len() >= MIN_DIM_SIZE_AVX
         {
-            if is_x86_feature_detected!("avx")
-                && is_x86_feature_detected!("fma")
-                && s.len() >= MIN_DIM_SIZE_AVX
-            {
-                return unsafe { is_latin_avx(s) };
-            }
+            return unsafe { is_latin_avx(s) };
         }
+    }
 
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        {
-            if is_x86_feature_detected!("sse") && s.len() >= MIN_DIM_SIZE_SIMD {
-                return unsafe { is_latin_sse(s)};
-            }
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    {
+        if is_x86_feature_detected!("sse") && s.len() >= MIN_DIM_SIZE_SIMD {
+            return unsafe { is_latin_sse(s) };
         }
+    }
 
-        #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
-        {
-            if std::arch::is_aarch64_feature_detected!("neon") && s.len() >= MIN_DIM_SIZE_SIMD {
-                return unsafe {is_latin_neon(s)};
-            }
+    #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
+    {
+        if std::arch::is_aarch64_feature_detected!("neon") && s.len() >= MIN_DIM_SIZE_SIMD {
+            return unsafe { is_latin_neon(s) };
         }
-        is_latin_standard(s)
-
-
+    }
+    is_latin_standard(s)
 }

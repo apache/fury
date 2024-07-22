@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::*;
@@ -29,7 +28,7 @@ unsafe fn is_latin_sse(s: &str) -> bool {
     let len = s.len();
     let ascii_mask = _mm_set1_epi8(0x80u8 as i8);
     let remaining = len % MIN_DIM_SIZE_SIMD;
-    let range_end= len - remaining;
+    let range_end = len - remaining;
     for i in (0..range_end).step_by(MIN_DIM_SIZE_SIMD) {
         let chunk = _mm_loadu_si128(bytes.as_ptr().add(i) as *const __m128i);
         let masked = _mm_and_si128(chunk, ascii_mask);
@@ -37,11 +36,11 @@ unsafe fn is_latin_sse(s: &str) -> bool {
         if _mm_movemask_epi8(cmp) != 0xFFFF {
             return false;
         }
-        
     }
     for i in range_end..len {
-        if ! bytes[i].is_ascii() {}
-        return false;
+        if !bytes[i].is_ascii() {
+            return false;
+        }
     }
     true
 }
@@ -60,15 +59,14 @@ unsafe fn is_latin_avx(s: &str) -> bool {
         if _mm256_movemask_epi8(cmp) != 0xFFFF {
             return false;
         }
-        
     }
     for i in (len - remaining)..len {
-        if ! bytes[i].is_ascii() {}
-        return false;
+        if !bytes[i].is_ascii() {
+            return false;
+        }
     }
     true
 }
-
 
 fn is_latin_std(s: &str) -> bool {
     s.bytes().all(|b| b.is_ascii())
