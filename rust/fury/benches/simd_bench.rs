@@ -16,11 +16,21 @@
 // under the License.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-#[cfg(target_arch = "x86_64")]
+#[cfg(target_feature = "avx2")]
 use std::arch::x86_64::*;
 
-const MIN_DIM_SIZE_SIMD: usize = 16;
-const MIN_DIM_SIZE_AVX: usize = 32;
+#[cfg(target_feature = "sse2")]
+use std::arch::x86_64::*;
+
+#[cfg(target_arch = "x86_64")]
+pub(crate) const MIN_DIM_SIZE_AVX: usize = 32;
+
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    all(target_arch = "aarch64", target_feature = "neon")
+))]
+pub(crate) const MIN_DIM_SIZE_SIMD: usize = 16;
 
 #[target_feature(enable = "sse2")]
 unsafe fn is_latin_sse(s: &str) -> bool {
@@ -45,7 +55,7 @@ unsafe fn is_latin_sse(s: &str) -> bool {
     true
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(target_feature = "avx2")]
 unsafe fn is_latin_avx(s: &str) -> bool {
     let bytes = s.as_bytes();
     let len = s.len();
