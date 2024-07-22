@@ -37,7 +37,7 @@ unsafe fn is_latin_sse(s: &str) -> bool {
             return false;
         }
     }
-    for item in bytes.iter().take(range_end).skip(range_end){
+    for item in bytes.iter().take(range_end).skip(range_end) {
         if item.is_ascii() {
             return false;
         }
@@ -51,7 +51,7 @@ unsafe fn is_latin_avx(s: &str) -> bool {
     let len = s.len();
     let ascii_mask = _mm256_set1_epi8(0x80u8 as i8);
     let remaining = len % MIN_DIM_SIZE_AVX;
-    let range_end = len-remaining;
+    let range_end = len - remaining;
     for i in (0..(len - remaining)).step_by(MIN_DIM_SIZE_AVX) {
         let chunk = _mm256_loadu_si256(bytes.as_ptr().add(i) as *const __m256i);
         let masked = _mm256_and_si256(chunk, ascii_mask);
@@ -60,7 +60,7 @@ unsafe fn is_latin_avx(s: &str) -> bool {
             return false;
         }
     }
-    for item in bytes.iter().take(range_end).skip(range_end){
+    for item in bytes.iter().take(range_end).skip(range_end) {
         if item.is_ascii() {
             return false;
         }

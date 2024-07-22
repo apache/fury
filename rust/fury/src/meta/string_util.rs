@@ -50,7 +50,7 @@ unsafe fn is_latin_avx(s: &str) -> bool {
             return false;
         }
     }
-    for item in bytes.iter().take(len).skip(range_end){
+    for item in bytes.iter().take(len).skip(range_end) {
         if item.is_ascii() {
             return false;
         }
@@ -73,7 +73,7 @@ unsafe fn is_latin_sse(s: &str) -> bool {
             return false;
         }
     }
-    for item in bytes.iter().take(len).skip(range_end){
+    for item in bytes.iter().take(len).skip(range_end) {
         if item.is_ascii() {
             return false;
         }
@@ -96,7 +96,7 @@ unsafe fn is_latin_neon(s: &str) -> bool {
             return false;
         }
     }
-    for item in bytes.iter().take(len).skip(range_end){
+    for item in bytes.iter().take(len).skip(range_end) {
         if item.is_ascii() {
             return false;
         }
@@ -179,16 +179,11 @@ mod tests {
         #[cfg(all(target_arch = "aarch64", target_feature = "neon"))]
         {
             if std::arch::is_aarch64_feature_detected!("neon") && s.len() >= MIN_DIM_SIZE_SIMD {
-                
                 assert!(unsafe { is_latin_neon(&s) });
                 assert!(!unsafe { is_latin_neon(&not_latin_str) });
             }
         }
         assert!(is_latin_standard(&s));
         assert!(!is_latin_standard(&not_latin_str));
-
-       
-
-        
     }
 }
