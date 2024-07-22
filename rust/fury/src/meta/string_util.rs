@@ -85,7 +85,7 @@ unsafe fn is_latin_sse(s: &str) -> bool {
 unsafe fn is_latin_neon(s: &str) -> bool {
     let bytes = s.as_bytes();
     let len = bytes.len();
-    let ascii_mask = vdupq_n_u8(0x80u8 as i8);
+    let ascii_mask = vdupq_n_u8(0x80);
     let remaining = len % MIN_DIM_SIZE_SIMD;
     let range_end = len - remaining;
     for i in (0..range_end).step_by(MIN_DIM_SIZE_SIMD) {
