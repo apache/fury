@@ -80,13 +80,11 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   writeStmt(accessor: string): string {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
-    const metaInformation = computeMetaInformation(this.description);
-    console.log("**********metaInformation**********")
-    console.log(metaInformation.byteLength)
+    const metaInformation = Buffer.from(computeMetaInformation(this.description));
 
     return `
       ${this.builder.writer.int32(expectHash)};
-      ${this.builder.writer.buffer(metaInformation)};
+      ${this.builder.writer.buffer(`Buffer.from("${metaInformation.toString('base64')}", "base64")`)};
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
@@ -103,9 +101,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const expectHash = computeStructHash(this.description);
     const encodedMetaInformation = computeMetaInformation(this.description);
     const result = this.scope.uniqueName("result");
-    let pass = this.builder.reader.int32()
-    console.log("**********Meta Info*************")
-    console.log(encodedMetaInformation.byteLength)
+    const pass = this.builder.reader.int32()
     return `
       if (${this.builder.reader.int32()} !== ${expectHash}) {
           throw new Error("got ${this.builder.reader.int32()} validate hash failed: ${this.safeTag()}. expect ${expectHash}");
