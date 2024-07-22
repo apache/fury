@@ -51,7 +51,7 @@ unsafe fn is_latin_avx(s: &str) -> bool {
         }
     }
     for item in bytes.iter().take(len).skip(range_end) {
-        if item.is_ascii() {
+        if !item.is_ascii() {
             return false;
         }
     }
@@ -74,7 +74,7 @@ unsafe fn is_latin_sse(s: &str) -> bool {
         }
     }
     for item in bytes.iter().take(len).skip(range_end) {
-        if item.is_ascii() {
+        if !item.is_ascii() {
             return false;
         }
     }
@@ -97,7 +97,7 @@ unsafe fn is_latin_neon(s: &str) -> bool {
         }
     }
     for item in bytes.iter().take(len).skip(range_end) {
-        if item.is_ascii() {
+        if !item.is_ascii() {
             return false;
         }
     }
