@@ -22,7 +22,7 @@ use std::arch::x86_64::*;
 #[cfg(target_feature = "sse2")]
 use std::arch::x86_64::*;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(target_feature = "avx2")]
 pub(crate) const MIN_DIM_SIZE_AVX: usize = 32;
 
 #[cfg(any(
