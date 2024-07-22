@@ -25,10 +25,7 @@ use std::arch::x86_64::*;
 #[cfg(target_feature = "avx2")]
 pub(crate) const MIN_DIM_SIZE_AVX: usize = 32;
 
-#[cfg(any(
-    target_arch = "x86",
-    target_arch = "x86_64"
-))]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub(crate) const MIN_DIM_SIZE_SIMD: usize = 16;
 
 #[cfg(target_feature = "sse2")]
