@@ -84,7 +84,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
 
     return `
       ${this.builder.writer.int32(expectHash)};
-      ${this.builder.writer.buffer(`Buffer.from("${metaInformation.toString('base64')}", "base64")`)};
+      ${this.builder.writer.buffer(`Buffer.from("${metaInformation.toString("base64")}", "base64")`)};
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
@@ -101,7 +101,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const expectHash = computeStructHash(this.description);
     const encodedMetaInformation = computeMetaInformation(this.description);
     const result = this.scope.uniqueName("result");
-    const pass = this.builder.reader.int32()
+    const pass = this.builder.reader.int32();
     return `
       if (${this.builder.reader.int32()} !== ${expectHash}) {
           throw new Error("got ${this.builder.reader.int32()} validate hash failed: ${this.safeTag()}. expect ${expectHash}");
@@ -124,8 +124,9 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
       ${accessor(result)}
     `;
   }
-// /8 /7 /20 % 2
-// is there a ratio from length / deserializer  
+
+  // /8 /7 /20 % 2
+  // is there a ratio from length / deserializer
   private safeTag() {
     return CodecBuilder.replaceBackslashAndQuote(this.description.options.tag);
   }
