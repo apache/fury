@@ -372,13 +372,16 @@ public class Descriptor {
     }
     do {
       Field[] fields = clazz.getDeclaredFields();
-      boolean haveExposed = false;
+      boolean haveExposed = false,haveIgnore = false;
       for (Field field : fields) {
         warmField(clz, field, compilationService);
         if(field.isAnnotationPresent(Exposed.class)){
           haveExposed = true;
         }
-        if(haveExposed && field.isAnnotationPresent(Ignore.class)){
+        if(field.isAnnotationPresent(Ignore.class)){
+          haveIgnore = true;
+        }
+        if(haveExposed && haveIgnore){
           descriptorMap.clear();
           throw new RuntimeException("Fields of a Class are not allowed to have both the Ignore and Exposed annotations simultaneously.");
         }

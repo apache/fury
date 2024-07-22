@@ -439,7 +439,7 @@ public class FuryTest extends FuryTestBase {
     assertEquals(3, o.f3);
   }
 
-    @Data
+  @Data
   @AllArgsConstructor
   private static class ExposedFields {
     @Exposed
