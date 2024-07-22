@@ -32,7 +32,7 @@ pub(crate) const MIN_DIM_SIZE_AVX: usize = 32;
 ))]
 pub(crate) const MIN_DIM_SIZE_SIMD: usize = 16;
 
-#[target_feature(enable = "sse2")]
+#[cfg(target_feature = "sse2")]
 unsafe fn is_latin_sse(s: &str) -> bool {
     let bytes = s.as_bytes();
     let len = s.len();
@@ -86,18 +86,19 @@ fn criterion_benchmark(c: &mut Criterion) {
     let test_str_short = "Hello, World!";
     let test_str_long = "Hello, World! ".repeat(1000);
 
+    #[cfg(target_feature = "sse2")]
     c.bench_function("SIMD sse short", |b| {
         b.iter(|| unsafe { is_latin_sse(black_box(test_str_short)) })
     });
-
+    #[cfg(target_feature = "sse2")]
     c.bench_function("SIMD sse long", |b| {
         b.iter(|| unsafe { is_latin_sse(black_box(&test_str_long)) })
     });
-
+    #[cfg(target_feature = "avx2")]
     c.bench_function("SIMD avx short", |b| {
         b.iter(|| unsafe { is_latin_avx(black_box(test_str_short)) })
     });
-
+    #[cfg(target_feature = "avx2")]
     c.bench_function("SIMD avx long", |b| {
         b.iter(|| unsafe { is_latin_avx(black_box(&test_str_long)) })
     });
