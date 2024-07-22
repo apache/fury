@@ -18,33 +18,26 @@ pub(crate) const MIN_DIM_SIZE_AVX: usize = 32;
 ))]
 pub(crate) const MIN_DIM_SIZE_SIMD: usize = 16;
 
-#[cfg(target_feature = "avx2")]
+#[cfg(target_arch = "x86_64")]
 unsafe fn is_latin_avx(s: &str) -> bool {
     let bytes = s.as_bytes();
     let len = bytes.len();
-    let mut i = 0;
+    let ascii_mask = _mm256_set1_epi8(0x80u8 as i8);
+    let remaining = len % MIN_DIM_SIZE_SIMD;
 
-    let ascii_mask = _mm256_set1_epi8(0x80u8 as i8); // 0x80 = 1000 0000
-
-    while i + MIN_DIM_SIZE_AVX <= len {
+    for i in (0..(len - remaining)).step_by(MIN_DIM_SIZE_SIMD) {
         let chunk = _mm256_loadu_si256(bytes.as_ptr().add(i) as *const __m256i);
         let masked = _mm256_and_si256(chunk, ascii_mask);
         let cmp = _mm256_cmpeq_epi8(masked, _mm256_setzero_si256());
-        
-        if _mm256_movemask_epi8(cmp) != -1 {
+        if _mm256_movemask_epi8(cmp) != 0xFFFF {
             return false;
         }
         
-        i += MIN_DIM_SIZE_AVX;
     }
-
-    while i < len {
-        if bytes[i] & 0x80 != 0 {
-            return false;
-        }
-        i += 1;
+    for i in (len - remaining)..len {
+        if ! bytes[i].is_ascii() {}
+        return false;
     }
-
     true
 }
 
@@ -53,59 +46,47 @@ unsafe fn is_latin_avx(s: &str) -> bool {
 unsafe fn is_latin_sse(s: &str) -> bool {
     let bytes = s.as_bytes();
     let len = bytes.len();
-    let mut i = 0;
+    let ascii_mask = _mm_set1_epi8(0x80u8 as i8);
+    let remaining = len % MIN_DIM_SIZE_SIMD;
 
-    let ascii_mask = _mm_set1_epi8(0x80u8 as i8); // 0x80 = 1000 0000
-
-    while i + MIN_DIM_SIZE_SIMD <= len {
+    for i in (0..(len - remaining)).step_by(MIN_DIM_SIZE_SIMD) {
         let chunk = _mm_loadu_si128(bytes.as_ptr().add(i) as *const __m128i);
         let masked = _mm_and_si128(chunk, ascii_mask);
         let cmp = _mm_cmpeq_epi8(masked, _mm_setzero_si128());
-        
         if _mm_movemask_epi8(cmp) != 0xFFFF {
             return false;
         }
         
-        i += MIN_DIM_SIZE_SIMD;
     }
-
-    while i < len {
-        if bytes[i] & 0x80 != 0 {
-            return false;
-        }
-        i += 1;
+    for i in (len - remaining)..len {
+        if ! bytes[i].is_ascii() {}
+        return false;
     }
-
     true
 }
 
 
 
-
+#[cfg(target_feature = "neon")]
 unsafe fn is_latin_neon(s: &str) -> bool {
     let bytes = s.as_bytes();
     let len = bytes.len();
-    let mut i = 0;
+    let ascii_mask = vdupq_n_u8(0x80u8 as i8);
+    let remaining = len % MIN_DIM_SIZE_SIMD;
 
-    let ascii_mask = vdupq_n_u8(0x80);
-    while i + MIN_DIM_SIZE_SIMD <= len {
+    for i in (0..(len - remaining)).step_by(MIN_DIM_SIZE_SIMD) {
         let chunk = vld1q_u8(bytes.as_ptr().add(i));
         let masked = vandq_u8(chunk, ascii_mask);
-        let cmp = vceqq_u8(masked, vdupq_n_u8(0));
-
-        if vminvq_u8(cmp) == 0 {
+        let cmp = vceqq_u8(masked,vdupq_n_u8(0));
+        if vminvq_u8(cmp)  == 0 {
             return false;
         }
-        i += MIN_DIM_SIZE_SIMD;
+        
     }
-
-    while i < len {
-        if bytes[i] & 0x80 != 0 {
-            return false;
-        }
-        i += 1;
+    for i in (len - remaining)..len {
+        if ! bytes[i].is_ascii() {}
+        return false;
     }
-
     true
 }
 
