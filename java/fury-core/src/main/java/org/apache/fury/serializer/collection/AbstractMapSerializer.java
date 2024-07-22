@@ -29,6 +29,7 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -417,8 +418,20 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   protected <K, V> void copyEntry(Map<K, V> originMap, Map<K, V> newMap) {
+    ClassResolver classResolver = fury.getClassResolver();
     for (Map.Entry<K, V> entry : originMap.entrySet()) {
-      newMap.put(fury.copyObject(entry.getKey()), fury.copyObject(entry.getValue()));
+      K key = entry.getKey();
+      if (key != null) {
+        ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+        key = fury.copyObject(key, classInfo.getClassId());
+      }
+      V value = entry.getValue();
+      if (value != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+        value = fury.copyObject(value, classInfo.getClassId());
+      }
+      newMap.put(key, value);
     }
   }
 
