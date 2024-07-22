@@ -371,7 +371,7 @@ public class Descriptor {
     }
     do {
       Field[] fields = clazz.getDeclaredFields();
-      boolean haveExposed = false,haveIgnore = false;
+      boolean haveExposed = false, haveIgnore = false;
       for (Field field : fields) {
         warmField(clz, field, compilationService);
         if (field.isAnnotationPresent(Exposed.class)) {
@@ -382,14 +382,14 @@ public class Descriptor {
         }
         if (haveExposed && haveIgnore) {
           descriptorMap.clear();
-          throw new RuntimeException("Fields of a Class are not allowed to have both the Ignore and Exposed annotations simultaneously.");
+          throw new RuntimeException(
+              "Fields of a Class are not allowed to have both the Ignore and Exposed annotations simultaneously.");
         }
       }
       for (Field field : fields) {
         int modifiers = field.getModifiers();
         // final and non-private field validation left to {@link isBean(clz)}
-        if (!Modifier.isTransient(modifiers)
-            && !Modifier.isStatic(modifiers)) {
+        if (!Modifier.isTransient(modifiers) && !Modifier.isStatic(modifiers)) {
           if (haveExposed) {
             if (field.isAnnotationPresent(Exposed.class)) {
               descriptorMap.put(field, new Descriptor(field, null));

@@ -52,7 +52,6 @@ import java.util.WeakHashMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
 import org.apache.fury.annotation.Exposed;
 import org.apache.fury.annotation.Ignore;
 import org.apache.fury.builder.Generated;
@@ -442,13 +441,10 @@ public class FuryTest extends FuryTestBase {
   @Data
   @AllArgsConstructor
   private static class ExposedFields {
-    @Exposed
-    int f1;
-    @Exposed
-    long f2;
+    @Exposed int f1;
+    @Exposed long f2;
     long f3;
-    @Exposed
-    ImmutableMap<String, Integer> map1;
+    @Exposed ImmutableMap<String, Integer> map1;
     ImmutableMap<String, Integer> map2;
   }
 
@@ -468,10 +464,8 @@ public class FuryTest extends FuryTestBase {
   @Data
   @AllArgsConstructor
   private static class ExposedFields2 {
-    @Exposed
-    int f1;
-    @Ignore
-    long f2;
+    @Exposed int f1;
+    @Ignore long f2;
     long f3;
   }
 
