@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::meta::string_util;
+
 #[derive(Debug, PartialEq)]
 pub enum Encoding {
     Utf8 = 0x00,
@@ -102,7 +104,7 @@ impl MetaStringEncoder {
     }
 
     fn is_latin(&self, s: &str) -> bool {
-        s.bytes().all(|b| b.is_ascii())
+        string_util::is_latin(s)
     }
 
     pub fn encode(&self, input: &str) -> Result<MetaString, Error> {

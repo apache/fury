@@ -16,4 +16,5 @@
 // under the License.
 
 mod meta_string;
+mod string_util;
 pub use meta_string::{Encoding, MetaStringDecoder, MetaStringEncoder};
