@@ -24,37 +24,26 @@ export class MetaString {
 
     // Encode function that infers the bits per character
     static encode(str: string): Uint8Array {
-        let bitsPerChar = MetaString.inferBitsPerChar(str);
+        const bitsPerChar = MetaString.inferBitsPerChar(str);
         const totalBits = str.length * bitsPerChar + 8; // Adjusted for metadata bits
         const byteLength = Math.ceil(totalBits / 8);
         const bytes = new Uint8Array(byteLength);
         let currentBit = 8; // Start after the first 8 metadata bits
 
-        //console.log(`Encoding string: ${str}`);
-        //console.log(`Bits per char: ${bitsPerChar}`);
-       //console.log(`Total bits: ${totalBits}`);
-        //console.log(`Byte length: ${byteLength}`);
-
-        for (let char of str) {
+        for (const char of str) {
             const value = bitsPerChar === MetaString.LOWER_SPECIAL
                 ? MetaString.charToValueLowerSpecial(char)
                 : bitsPerChar === MetaString.LOWER_UPPER_DIGIT_SPECIAL
                 ? MetaString.charToValueLowerUpperDigitSpecial(char)
                 : MetaString.charToValueUTF8(char);
 
-        //    console.log(`Encoding character: ${char}`);
-        //    console.log(`Character value: ${value}`);
-
             for (let i = bitsPerChar - 1; i >= 0; i--) {
                 if ((value & (1 << i)) !== 0) {
                     const bytePos = Math.floor(currentBit / 8);
                     const bitPos = currentBit % 8;
 
-                    //console.log(`Setting bit at currentBit: ${currentBit}, bytePos: ${bytePos}, bitPos: ${bitPos}`);
-
                     if (bytePos >= byteLength) {
-                        console.error(`Out of bounds access: bytePos ${bytePos}, byteLength ${byteLength}`);
-                        throw new RangeError('Offset is outside the bounds of the DataView');
+                        throw new RangeError("Offset is outside the bounds of the DataView");
                     }
                     bytes[bytePos] |= (1 << (7 - bitPos));
                 }
@@ -65,7 +54,6 @@ export class MetaString {
         // Store bitsPerChar in the first byte
         bytes[0] = bitsPerChar;
 
-        //console.log(`Encoded bytes: ${bytes}`);
         return bytes;
     }
 
@@ -76,10 +64,6 @@ export class MetaString {
         const chars: string[] = [];
         let currentBit = 8; // Start after the first 8 metadata bits
 
-        //console.log(`Decoding bytes: ${bytes}`);
-        //console.log(`Bits per char: ${bitsPerChar}`);
-        //console.log(`Total bits: ${totalBits}`);
-
         while (currentBit < totalBits) {
             let value = 0;
             for (let i = 0; i < bitsPerChar; i++) {
@@ -87,8 +71,7 @@ export class MetaString {
                 const bitPos = currentBit % 8;
 
                 if (bytePos >= bytes.length) {
-                    //console.error(`Out of bounds access: bytePos ${bytePos}, bytes.length ${bytes.length}`);
-                    throw new RangeError('Offset is outside the bounds of the DataView');
+                    throw new RangeError("Offset is outside the bounds of the DataView");
                 }
 
                 if (bytes[bytePos] & (1 << (7 - bitPos))) {
@@ -186,15 +169,3 @@ export class MetaString {
         return String.fromCharCode(value);
     }
 }
-
-
-const originalString = '{"type":29,"options":{"tag":"example.bar","props":{"b":{"type":11}}}}';
-const encodedBytes = MetaString.encode(originalString);
-const decodedString = MetaString.decode(encodedBytes);
-
-console.log(`Original string: ${originalString}`);
-console.log(`Encoded bytes: ${encodedBytes}`);
-console.log(`Decoded string: ${decodedString}`);
-
-// Verify if the original string matches the decoded string
-console.assert(originalString === decodedString, 'The decoded string does not match the original string');
