@@ -42,7 +42,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.fury.annotation.Exposed;
+import org.apache.fury.annotation.Expose;
 import org.apache.fury.annotation.Ignore;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.collection.Tuple2;
@@ -371,27 +371,26 @@ public class Descriptor {
     }
     do {
       Field[] fields = clazz.getDeclaredFields();
-      boolean haveExposed = false, haveIgnore = false;
+      boolean haveExpose = false, haveIgnore = false;
       for (Field field : fields) {
         warmField(clz, field, compilationService);
-        if (field.isAnnotationPresent(Exposed.class)) {
-          haveExposed = true;
+        if (field.isAnnotationPresent(Expose.class)) {
+          haveExpose = true;
         }
         if (field.isAnnotationPresent(Ignore.class)) {
           haveIgnore = true;
         }
-        if (haveExposed && haveIgnore) {
-          descriptorMap.clear();
+        if (haveExpose && haveIgnore) {
           throw new RuntimeException(
-              "Fields of a Class are not allowed to have both the Ignore and Exposed annotations simultaneously.");
+              "Fields of a Class are not allowed to have both the Ignore and Expose annotations simultaneously.");
         }
       }
       for (Field field : fields) {
         int modifiers = field.getModifiers();
         // final and non-private field validation left to {@link isBean(clz)}
         if (!Modifier.isTransient(modifiers) && !Modifier.isStatic(modifiers)) {
-          if (haveExposed) {
-            if (field.isAnnotationPresent(Exposed.class)) {
+          if (haveExpose) {
+            if (field.isAnnotationPresent(Expose.class)) {
               descriptorMap.put(field, new Descriptor(field, null));
             }
           } else {

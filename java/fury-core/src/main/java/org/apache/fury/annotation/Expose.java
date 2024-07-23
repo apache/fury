@@ -27,4 +27,4 @@ import java.lang.annotation.Target;
 /** Only fields with this annotation are permitted for de/serialization. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Exposed {}
+public @interface Expose {}
