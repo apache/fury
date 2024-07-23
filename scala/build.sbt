@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-val furyVersion = "0.6.0-SNAPSHOT"
+val furyVersion = "0.7.0-SNAPSHOT"
 val scala213Version = "2.13.14"
 ThisBuild / apacheSonatypeProjectProfile := "fury"
 version := furyVersion
