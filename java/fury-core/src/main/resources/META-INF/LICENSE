@@ -249,6 +249,7 @@ The text of each license is also included in licenses/LICENSE-[project].txt.
 * janino (https://github.com/janino-compiler/janino)
     Files:
       Shaded classes under org/apache/fury/shaded/org/codehaus/janino/*
+      Shaded classes under org/apache/fury/shaded/org/codehaus/commons/*
 
 
 ================================================================

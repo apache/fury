@@ -102,6 +102,7 @@ public final class Fury implements BaseFury {
 
   private final Config config;
   private final boolean refTracking;
+  private final boolean shareMeta;
   private final RefResolver refResolver;
   private final ClassResolver classResolver;
   private final MetaStringResolver metaStringResolver;
@@ -125,6 +126,7 @@ public final class Fury implements BaseFury {
   private int copyDepth;
   private final boolean copyRefTracking;
   private final IdentityMap<Object, Object> originToCopyMap;
+  private int classDefEndOffset;
 
   public Fury(FuryBuilder builder, ClassLoader classLoader) {
     // Avoid set classLoader in `FuryBuilder`, which won't be clear when
@@ -133,6 +135,7 @@ public final class Fury implements BaseFury {
     this.language = config.getLanguage();
     this.refTracking = config.trackingRef();
     this.copyRefTracking = config.copyRef();
+    this.shareMeta = config.isMetaShareEnabled();
     compressInt = config.compressInt();
     longEncoding = config.longEncoding();
     if (refTracking) {
@@ -332,7 +335,6 @@ public final class Fury implements BaseFury {
 
   private void write(MemoryBuffer buffer, Object obj) {
     int startOffset = buffer.writerIndex();
-    boolean shareMeta = config.isMetaShareEnabled();
     if (shareMeta) {
       buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
     }
@@ -781,8 +783,8 @@ public final class Fury implements BaseFury {
       if (isTargetXLang) {
         obj = xdeserializeInternal(buffer);
       } else {
-        if (config.isMetaShareEnabled()) {
-          classResolver.readClassDefs(buffer);
+        if (shareMeta) {
+          readClassDefs(buffer);
         }
         obj = readRef(buffer);
       }
@@ -790,6 +792,9 @@ public final class Fury implements BaseFury {
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
+      if (shareMeta) {
+        buffer.readerIndex(classDefEndOffset);
+      }
       resetRead();
       jitContext.unlock();
     }
@@ -1097,8 +1102,8 @@ public final class Fury implements BaseFury {
       if (depth != 0) {
         throwDepthDeserializationException();
       }
-      if (config.isMetaShareEnabled()) {
-        classResolver.readClassDefs(buffer);
+      if (shareMeta) {
+        readClassDefs(buffer);
       }
       T obj;
       int nextReadRefId = refResolver.tryPreserveRefId(buffer);
@@ -1111,6 +1116,9 @@ public final class Fury implements BaseFury {
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
+      if (shareMeta) {
+        buffer.readerIndex(classDefEndOffset);
+      }
       resetRead();
       jitContext.unlock();
     }
@@ -1211,13 +1219,16 @@ public final class Fury implements BaseFury {
       if (depth != 0) {
         throwDepthDeserializationException();
       }
-      if (config.isMetaShareEnabled()) {
-        classResolver.readClassDefs(buffer);
+      if (shareMeta) {
+        readClassDefs(buffer);
       }
       return readRef(buffer);
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
+      if (shareMeta) {
+        buffer.readerIndex(classDefEndOffset);
+      }
       resetRead();
       jitContext.unlock();
     }
@@ -1407,6 +1418,15 @@ public final class Fury implements BaseFury {
         resetBuffer();
       }
     }
+  }
+
+  private void readClassDefs(MemoryBuffer buffer) {
+    int classDefOffset = buffer.readInt32();
+    int readerIndex = buffer.readerIndex();
+    buffer.readerIndex(classDefOffset);
+    classResolver.readClassDefs(buffer);
+    classDefEndOffset = buffer.readerIndex();
+    buffer.readerIndex(readerIndex);
   }
 
   public void reset() {

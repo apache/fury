@@ -237,8 +237,17 @@ public class ClassDef implements Serializable {
         Descriptor newDesc = fieldInfo.toDescriptor(resolver);
         if (descriptor != null) {
           // Make DescriptorGrouper have consistent order whether field exist or not
-          descriptor = descriptor.copyWithTypeName(newDesc.getTypeName());
-          descriptors.add(descriptor);
+          // fury builtin types skip
+          Class<?> rawType = newDesc.getRawType();
+          if (rawType.isEnum()
+              || rawType.isAssignableFrom(descriptor.getRawType())
+              || NonexistentClass.isNonexistent(rawType)
+              || rawType.isAssignableFrom(FinalObjectTypeStub.class)) {
+            descriptor = descriptor.copyWithTypeName(newDesc.getTypeName());
+            descriptors.add(descriptor);
+          } else {
+            descriptors.add(newDesc);
+          }
         } else {
           descriptors.add(newDesc);
         }
