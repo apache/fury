@@ -129,7 +129,7 @@ Release version:
 
 ### Scala
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-core" % "0.6.6"
+libraryDependencies += "org.apache.fury" % "fury-core" % "0.6.0"
 ```
 
 ### Python
