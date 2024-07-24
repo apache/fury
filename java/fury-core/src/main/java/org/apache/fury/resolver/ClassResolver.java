@@ -1470,9 +1470,6 @@ public class ClassResolver {
    */
   public void readClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
-    int classDefOffset = buffer.readInt32();
-    int readerIndex = buffer.readerIndex();
-    buffer.readerIndex(classDefOffset);
     int numClassDefs = buffer.readVarUint32Small14();
     for (int i = 0; i < numClassDefs; i++) {
       long id = buffer.readInt64();
@@ -1491,7 +1488,6 @@ public class ClassResolver {
       // can be created still.
       metaContext.readClassInfos.add(null);
     }
-    buffer.readerIndex(readerIndex);
   }
 
   private Tuple2<ClassDef, ClassInfo> readClassDef(MemoryBuffer buffer, long header) {
