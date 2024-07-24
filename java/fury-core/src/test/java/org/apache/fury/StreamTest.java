@@ -23,6 +23,7 @@ import static org.apache.fury.io.FuryStreamReader.of;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
+import com.google.common.collect.Lists;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,15 +31,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.io.FuryStreamReader;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.test.bean.BeanA;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class StreamTest {
+
   @Test
   public void testBufferStream() {
     MemoryBuffer buffer0 = MemoryBuffer.newHeapBuffer(10);
@@ -319,5 +325,30 @@ public class StreamTest {
         Files.delete(tempFile);
       }
     }
+  }
+
+  @Test
+  public void testScopedMetaShare() throws IOException {
+    Fury fury =
+        Fury.builder()
+            .requireClassRegistration(false)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withScopedMetaShare(true)
+            .build();
+    ByteArrayOutputStream bas = new ByteArrayOutputStream();
+    ArrayList<Integer> list = Lists.newArrayList(1, 2, 3);
+    fury.serialize(bas, list);
+    HashMap<String, String> map = new HashMap<>();
+    map.put("key", "value");
+    fury.serialize(bas, map);
+    ArrayList<Integer> list2 = Lists.newArrayList(10, 9, 7);
+    fury.serialize(bas, list2);
+    bas.flush();
+
+    InputStream bis = new ByteArrayInputStream(bas.toByteArray());
+    FuryInputStream stream = of(bis);
+    Assert.assertEquals(fury.deserialize(stream), list);
+    Assert.assertEquals(fury.deserialize(stream), map);
+    Assert.assertEquals(fury.deserialize(stream), list2);
   }
 }
