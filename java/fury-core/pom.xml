@@ -128,6 +128,21 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <charset>UTF-8</charset>
+          <encoding>UTF-8</encoding>
+          <tags>
+            <tag>
+              <name>defaultValue</name>
+              <placement>f</placement>
+              <head>defaultValue</head>
+            </tag>
+          </tags>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>
