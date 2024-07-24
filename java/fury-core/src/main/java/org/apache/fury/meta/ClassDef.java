@@ -238,8 +238,19 @@ public class ClassDef implements Serializable {
         if (descriptor != null) {
           // Make DescriptorGrouper have consistent order whether field exist or not
           // fury builtin types skip
-          if (newDesc.getRawType().getTypeName().contains("apache.fury")
-              || newDesc.getRawType().isAssignableFrom(descriptor.getRawType())) {
+          if (newDesc.getRawType().isEnum()
+              || newDesc.getRawType().isAssignableFrom(descriptor.getRawType())
+              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentEnum.class)
+              || newDesc.getRawType().isAssignableFrom(FinalObjectTypeStub.class)
+              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentEnum1DArray)
+              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentEnum2DArray)
+              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentEnum3DArray)
+              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentSkip1DArray)
+              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentSkip2DArray)
+              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentSkip3DArray)
+              || newDesc.getRawType().isAssignableFrom(NonexistentClass.Nonexistent1DArray)
+              || newDesc.getRawType().isAssignableFrom(NonexistentClass.Nonexistent2DArray)
+              || newDesc.getRawType().isAssignableFrom(NonexistentClass.Nonexistent3DArray)) {
             descriptor = descriptor.copyWithTypeName(newDesc.getTypeName());
             descriptors.add(descriptor);
           } else {
