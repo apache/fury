@@ -240,17 +240,8 @@ public class ClassDef implements Serializable {
           // fury builtin types skip
           if (newDesc.getRawType().isEnum()
               || newDesc.getRawType().isAssignableFrom(descriptor.getRawType())
-              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentEnum.class)
-              || newDesc.getRawType().isAssignableFrom(FinalObjectTypeStub.class)
-              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentEnum1DArray)
-              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentEnum2DArray)
-              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentEnum3DArray)
-              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentSkip1DArray)
-              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentSkip2DArray)
-              || newDesc.getRawType().isAssignableFrom(NonexistentClass.NonexistentSkip3DArray)
-              || newDesc.getRawType().isAssignableFrom(NonexistentClass.Nonexistent1DArray)
-              || newDesc.getRawType().isAssignableFrom(NonexistentClass.Nonexistent2DArray)
-              || newDesc.getRawType().isAssignableFrom(NonexistentClass.Nonexistent3DArray)) {
+              || NonexistentClass.isNonexistent(newDesc.getRawType())
+              || newDesc.getRawType().isAssignableFrom(FinalObjectTypeStub.class)) {
             descriptor = descriptor.copyWithTypeName(newDesc.getTypeName());
             descriptors.add(descriptor);
           } else {
