@@ -52,6 +52,7 @@ import java.util.WeakHashMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.apache.fury.annotation.Expose;
 import org.apache.fury.annotation.Ignore;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.config.FuryBuilder;
@@ -435,6 +436,43 @@ public class FuryTest extends FuryTestBase {
     assertEquals(0, o.f1);
     assertEquals(0, o.f2);
     assertEquals(3, o.f3);
+  }
+
+  @Data
+  @AllArgsConstructor
+  private static class ExposeFields {
+    @Expose int f1;
+    @Expose long f2;
+    long f3;
+    @Expose ImmutableMap<String, Integer> map1;
+    ImmutableMap<String, Integer> map2;
+  }
+
+  @Test
+  public void testExposeFields() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    ImmutableMap<String, Integer> map1 = ImmutableMap.of("1", 1);
+    ImmutableMap<String, Integer> map2 = ImmutableMap.of("2", 2);
+    ExposeFields o = serDe(fury, new ExposeFields(1, 2, 3, map1, map2));
+    assertEquals(1, o.f1);
+    assertEquals(2, o.f2);
+    assertEquals(0, o.f3);
+    assertEquals(o.map1, map1);
+    assertNull(o.map2);
+  }
+
+  @Data
+  @AllArgsConstructor
+  private static class ExposeFields2 {
+    @Expose int f1;
+    @Ignore long f2;
+    long f3;
+  }
+
+  @Test
+  public void testExposeFields2() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    assertThrows(RuntimeException.class, () -> serDe(fury, new ExposeFields2(1, 2, 3)));
   }
 
   @Test(timeOut = 60_000)
