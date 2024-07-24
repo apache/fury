@@ -242,7 +242,7 @@ public class ClassDef implements Serializable {
           if (rawType.isEnum()
               || rawType.isAssignableFrom(descriptor.getRawType())
               || NonexistentClass.isNonexistent(rawType)
-              || newDesc.getRawType().isAssignableFrom(FinalObjectTypeStub.class)) {
+              || rawType.isAssignableFrom(FinalObjectTypeStub.class)) {
             descriptor = descriptor.copyWithTypeName(newDesc.getTypeName());
             descriptors.add(descriptor);
           } else {
