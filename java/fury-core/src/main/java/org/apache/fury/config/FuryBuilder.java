@@ -59,7 +59,7 @@ public final class FuryBuilder {
   boolean checkClassVersion = false;
   Language language = Language.JAVA;
   boolean trackingRef = false;
-  boolean copyTrackingRef = false;
+  boolean copyRef = false;
   boolean basicTypesRefIgnored = true;
   boolean stringRefIgnored = true;
   boolean timeRefIgnored = true;
@@ -99,9 +99,16 @@ public final class FuryBuilder {
     return this;
   }
 
-  /** Whether track {@link Fury#copy(Object)} circular references. */
-  public FuryBuilder withCopyRefTracking(boolean copyTrackingRef) {
-    this.copyTrackingRef = copyTrackingRef;
+  /**
+   * Whether track {@link Fury#copy(Object)} shared or circular references.
+   *
+   * <p>If this option is false, shared reference will be copied into different object, and circular
+   * reference copy will raise stack overflow exception.
+   *
+   * <p>If this option is enabled, the copy performance will be slower.
+   */
+  public FuryBuilder withRefCopy(boolean copyRef) {
+    this.copyRef = copyRef;
     return this;
   }
 

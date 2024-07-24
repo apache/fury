@@ -134,7 +134,7 @@ public final class Fury implements BaseFury {
     config = new Config(builder);
     this.language = config.getLanguage();
     this.refTracking = config.trackingRef();
-    this.copyRefTracking = config.copyTrackingRef();
+    this.copyRefTracking = config.copyRef();
     this.shareMeta = config.isMetaShareEnabled();
     compressInt = config.compressInt();
     longEncoding = config.longEncoding();
