@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
@@ -43,7 +44,7 @@ import org.apache.fury.test.bean.BeanA;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class StreamTest {
+public class StreamTest extends FuryTestBase {
 
   @Test
   public void testBufferStream() {
@@ -350,5 +351,31 @@ public class StreamTest {
     Assert.assertEquals(fury.deserialize(stream), list);
     Assert.assertEquals(fury.deserialize(stream), map);
     Assert.assertEquals(fury.deserialize(stream), list2);
+  }
+
+  @Test
+  public void testBigBufferStreamingMetaShared() throws IOException {
+    Fury fury = builder().withCompatibleMode(CompatibleMode.COMPATIBLE).build();
+    ByteArrayOutputStream bas = new ByteArrayOutputStream();
+    List<Integer> list = new ArrayList<>();
+    HashMap<String, String> map = new HashMap<>();
+    for (int i = 0; i < 5000; i++) {
+      list.add(i);
+      map.put("key" + i, "value" + i);
+    }
+    fury.serialize(bas, list);
+    fury.serialize(bas, map);
+    fury.serialize(bas, list);
+    fury.serialize(bas, new long[5000]);
+    fury.serialize(bas, new int[5000]);
+    bas.flush();
+
+    InputStream bis = new ByteArrayInputStream(bas.toByteArray());
+    FuryInputStream stream = of(bis);
+    assertEquals(fury.deserialize(stream), list);
+    assertEquals(fury.deserialize(stream), map);
+    assertEquals(fury.deserialize(stream), list);
+    assertEquals(fury.deserialize(stream), new long[5000]);
+    assertEquals(fury.deserialize(stream), new int[5000]);
   }
 }
