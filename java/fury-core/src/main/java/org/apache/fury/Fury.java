@@ -345,7 +345,7 @@ public final class Fury implements BaseFury {
       writeData(buffer, classInfo, obj);
     }
     if (shareMeta) {
-      buffer.putInt32(startOffset, buffer.writerIndex());
+      buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
       classResolver.writeClassDefs(buffer);
     }
   }
@@ -1064,7 +1064,7 @@ public final class Fury implements BaseFury {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
           writeData(buffer, classInfo, obj);
         }
-        buffer.putInt32(startOffset, buffer.writerIndex());
+        buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
         classResolver.writeClassDefs(buffer);
       } else {
         if (!refResolver.writeRefOrNull(buffer, obj)) {
@@ -1421,9 +1421,9 @@ public final class Fury implements BaseFury {
   }
 
   private void readClassDefs(MemoryBuffer buffer) {
-    int classDefOffset = buffer.readInt32();
+    int relativeClassDefOffset = buffer.readInt32();
     int readerIndex = buffer.readerIndex();
-    buffer.readerIndex(classDefOffset);
+    buffer.readerIndex(readerIndex + relativeClassDefOffset);
     classResolver.readClassDefs(buffer);
     classDefEndOffset = buffer.readerIndex();
     buffer.readerIndex(readerIndex);
