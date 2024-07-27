@@ -51,10 +51,6 @@ public class MapSerializer<T extends Map> extends AbstractMapSerializer<T> {
     }
     Map newMap = newMap(originMap);
     if (needToCopyRef) {
-      Map copyMap = (Map) fury.getCopyObject(originMap);
-      if (copyMap != null) {
-        return (T) copyMap;
-      }
       fury.reference(originMap, newMap);
     }
     copyEntry(originMap, newMap);

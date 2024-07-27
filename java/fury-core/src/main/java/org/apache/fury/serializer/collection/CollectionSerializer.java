@@ -59,10 +59,6 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
     }
     Collection newCollection = newCollection(originCollection);
     if (needToCopyRef) {
-      Collection copyObject = (Collection) fury.getCopyObject(originCollection);
-      if (copyObject != null) {
-        return (T) copyObject;
-      }
       fury.reference(originCollection, newCollection);
     }
     copyElements(originCollection, newCollection);

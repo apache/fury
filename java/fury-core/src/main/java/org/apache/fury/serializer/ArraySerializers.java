@@ -113,6 +113,9 @@ public class ArraySerializers {
     public T[] copy(T[] originArray) {
       int length = originArray.length;
       Object[] newArray = newArray(length);
+      if (needToCopyRef) {
+        fury.reference(originArray, newArray);
+      }
       Serializer componentSerializer = this.componentTypeSerializer;
       if (componentSerializer != null) {
         if (componentSerializer.isImmutable()) {
@@ -142,7 +145,6 @@ public class ArraySerializers {
 
     @Override
     public T[] read(MemoryBuffer buffer) {
-      // Some jdk8 will crash if use varint, why?
       int numElements = buffer.readVarUint32Small7();
       boolean isFinal = (numElements & 0b1) != 0;
       numElements >>>= 1;
@@ -151,9 +153,6 @@ public class ArraySerializers {
       refResolver.reference(value);
       if (isFinal) {
         final Serializer componentTypeSerializer = this.componentTypeSerializer;
-        if (componentTypeSerializer == null) {
-          System.out.println("=======");
-        }
         for (int i = 0; i < numElements; i++) {
           Object elem;
           int nextReadRefId = refResolver.tryPreserveRefId(buffer);

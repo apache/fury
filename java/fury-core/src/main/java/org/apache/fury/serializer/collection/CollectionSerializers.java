@@ -707,7 +707,7 @@ public class CollectionSerializers {
 
     @Override
     public T copy(T originCollection) {
-      return dataSerializer.copy(originCollection);
+      return fury.copyObject(originCollection, dataSerializer);
     }
 
     @Override
@@ -755,7 +755,7 @@ public class CollectionSerializers {
 
     @Override
     public T copy(T value) {
-      return (T) serializer.copy(value);
+      return fury.copyObject(value, (Serializer<T>) serializer);
     }
   }
 

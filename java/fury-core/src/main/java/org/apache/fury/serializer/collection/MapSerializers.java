@@ -449,7 +449,7 @@ public class MapSerializers {
 
     @Override
     public T copy(T value) {
-      return dataSerializer.copy(value);
+      return fury.copyObject(value, dataSerializer);
     }
 
     @Override
@@ -501,7 +501,7 @@ public class MapSerializers {
 
     @Override
     public T copy(T value) {
-      return (T) serializer.copy(value);
+      return fury.copyObject(value, (Serializer<T>) serializer);
     }
   }
 
