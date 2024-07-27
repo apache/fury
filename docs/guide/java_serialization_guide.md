@@ -79,10 +79,10 @@ import org.apache.fury.config.*;
 public class Example {
   // reuse fury.
   private static final ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
-      Fury f = Fury.builder().withLanguage(Language.JAVA)
-              .withClassLoader(classLoader).build();
-      f.register(SomeClass.class);
-      return f;
+    Fury f = Fury.builder().withLanguage(Language.JAVA)
+      .withClassLoader(classLoader).build();
+    f.register(SomeClass.class);
+    return f;
   });
 
   public static void main(String[] args) {
@@ -115,6 +115,7 @@ public class Example {
 | `codeGenEnabled`                    | Disabling may result in faster initial serialization but slower subsequent serializations.                                                                                                                                                                                                                                                                                                                                                                                                                                        | `true`                                                         |
 | `asyncCompilationEnabled`           | If enabled, serialization uses interpreter mode first and switches to JIT serialization after async serializer JIT for a class is finished.                                                                                                                                                                                                                                                                                                                                                                                       | `false`                                                        |
 | `scalaOptimizationEnabled`          | Enables or disables Scala-specific serialization optimization.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `false`                                                        |
+| `copyRef`                           | When disabled, the copy performance will be better. But fury deep copy will ignore circular and shared reference. Same reference of an object graph will be copied into different objects in one `Fury#copy`.                                                                                                                                                                                                                                                                                                                     | `true`                                                         |
 
 ## Advanced Usage
 
@@ -191,6 +192,29 @@ result,
 not worthy compared to performance cost. Maybe you should try to disable long compression if you find it didn't bring
 much
 space savings.
+
+### Object deep copy
+
+Deep copy example:
+
+```java
+Fury fury=Fury.builder()
+  ...
+  .withRefCopy(true).build();
+  SomeClass a=xxx;
+  SomeClass copied=fury.copy(a)
+```
+
+Make fury deep copy ignore circular and shared reference, this deep copy mode will ignore circular and shared reference.
+Same reference of an object graph will be copied into different objects in one `Fury#copy`.
+
+```java
+Fury fury=Fury.builder()
+  ...
+  .withRefCopy(false).build();
+  SomeClass a=xxx;
+  SomeClass copied=fury.copy(a)
+```
 
 ### Implement a customized serializer
 
