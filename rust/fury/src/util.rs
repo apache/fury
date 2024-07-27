@@ -848,8 +848,6 @@ pub mod utf16_to_utf8_simd {
 #[cfg(target_arch = "aarch64")]
 pub mod utf16_to_utf8_simd {
     pub mod neon {
-        use crate::row;
-
         use super::super::{swap_endian, IS_LITTLE_ENDIAN_LOCAL};
         use lazy_static::lazy_static;
         use std::arch::aarch64::{
@@ -905,8 +903,8 @@ pub mod utf16_to_utf8_simd {
             len_16: usize,
             is_little_endian: bool,
         ) -> Option<uint16x8_t> {
-            if offset_16 + 2 * CHUNK_UTF16_USAGE <= len_16 {
-                let next_chunk = vld1q_u16(ptr_16.add(offset_16 + CHUNK_UTF16_USAGE));
+            if *offset_16 + 2 * CHUNK_UTF16_USAGE <= len_16 {
+                let next_chunk = vld1q_u16(ptr_16.add(*offset_16 + CHUNK_UTF16_USAGE));
                 let next_chunk = if is_little_endian == super::super::IS_LITTLE_ENDIAN_LOCAL {
                     next_chunk
                 } else {
@@ -917,16 +915,16 @@ pub mod utf16_to_utf8_simd {
                     // store chunk and next_chunk
                     let utf8_packed = vmovn_high_u16(vmovn_u16(*chunk), next_chunk);
                     vst1q_u8(ptr_8.add(*offset_8), utf8_packed);
-                    offset_8 += CHUNK_UTF16_USAGE * 2;
-                    offset_16 += CHUNK_UTF16_USAGE * 2;
+                    *offset_8 += CHUNK_UTF16_USAGE * 2;
+                    *offset_16 += CHUNK_UTF16_USAGE * 2;
                     return None;
                 } else {
                     // next_chunk has some u16 not less than 0x80
                     // only store chunk
                     let utf8_packed = vmovn_u16(*chunk);
                     vst1_u8(ptr_8.add(*offset_8), utf8_packed);
-                    offset_8 += CHUNK_UTF16_USAGE;
-                    offset_16 += CHUNK_UTF16_USAGE;
+                    *offset_8 += CHUNK_UTF16_USAGE;
+                    *offset_16 += CHUNK_UTF16_USAGE;
                     // keep next_chunk for next step convert
                     return Some(next_chunk);
                 }
@@ -934,8 +932,8 @@ pub mod utf16_to_utf8_simd {
                 // the last and odd chunk
                 let utf8_packed = vmovn_u16(*chunk);
                 vst1_u8(ptr_8.add(*offset_8), utf8_packed);
-                offset_8 += CHUNK_UTF16_USAGE;
-                offset_16 += CHUNK_UTF16_USAGE;
+                *offset_8 += CHUNK_UTF16_USAGE;
+                *offset_16 += CHUNK_UTF16_USAGE;
                 // keep next_chunk for next step convert
                 return None;
             }
@@ -1008,11 +1006,10 @@ pub mod utf16_to_utf8_simd {
             Finally from these two code units we build proper UTF-8 sequence, taking
             into account the case (i.e, the number of bytes to write).
             */
-            /**
-             * Given [aaaa|bbbb|bbcc|cccc] our goal is to produce:
-             * t2 => [0ccc|cccc] [10cc|cccc]
-             * s4 => [1110|aaaa] ([110b|bbbb] OR [10bb|bbbb])
-             */
+
+            // Given [aaaa|bbbb|bbcc|cccc] our goal is to produce:
+            // t2 => [0ccc|cccc] [10cc|cccc]
+            // s4 => [1110|aaaa] ([110b|bbbb] OR [10bb|bbbb])
             // [aaaa|bbbb|bbcc|cccc] => [bbcc|cccc|bbcc|cccc]
             let t0 = vreinterpretq_u16_u8(vqtbl1q_u8(
                 vreinterpretq_u8_u16(*chunk),
@@ -1064,9 +1061,9 @@ pub mod utf16_to_utf8_simd {
             let utf8_1 = vqtbl1q_u8(out1, shuffle1);
 
             vst1q_u8(ptr_8.add(*offset_8), utf8_0);
-            *offset_8 += len0;
+            *offset_8 += len0 as usize;
             vst1q_u8(ptr_8.add(*offset_8), utf8_1);
-            *offset_8 += len1;
+            *offset_8 += len1 as usize;
 
             *offset_16 += CHUNK_UTF16_USAGE;
         }
@@ -1081,7 +1078,7 @@ pub mod utf16_to_utf8_simd {
             is_little_endian: bool,
         ) -> Option<String> {
             // check if one surrogates pair is separated by tow chunk
-            let tmp = *ptr_16.add(offset_16 + CHUNK_UTF16_USAGE - 1);
+            let tmp = *ptr_16.add(*offset_16 + CHUNK_UTF16_USAGE - 1);
             let tmp = if is_little_endian != IS_LITTLE_ENDIAN_LOCAL {
                 swap_endian(tmp)
             } else {
@@ -1089,7 +1086,7 @@ pub mod utf16_to_utf8_simd {
             };
             let mut sub_chunk_len = CHUNK_UTF16_USAGE;
             if (0xD800..=0xDBFF).contains(&tmp) {
-                if offset_16 + CHUNK_UTF16_USAGE < len_16 {
+                if *offset_16 + CHUNK_UTF16_USAGE < len_16 {
                     sub_chunk_len += 1;
                 } else {
                     return Some("Invalid UTF-16 string: missing surrogate pair".to_string());
@@ -1104,8 +1101,8 @@ pub mod utf16_to_utf8_simd {
             if res.is_err() {
                 return Some(res.err().unwrap());
             }
-            offset_8 += res.unwrap();
-            offset_16 += sub_chunk_len;
+            *offset_8 += res.unwrap();
+            *offset_16 += sub_chunk_len;
             return None;
         }
 
@@ -1146,7 +1143,7 @@ pub mod utf16_to_utf8_simd {
                 }
                 // check chunk's all u16 less than 0x800
                 if vmaxvq_u16(chunk) <= 0x7FF {
-                    let one_byte_bytemask = vcleq_u16(*chunk, *M_007F);
+                    let one_byte_bytemask = vcleq_u16(chunk, *M_007F);
                     one_to_one_two(
                         &chunk,
                         ptr_8,
@@ -1156,7 +1153,7 @@ pub mod utf16_to_utf8_simd {
                     );
                     continue;
                 }
-                let surrogates_bytemask = vceqq_u16(vandq_u16(*chunk, *M_F800), *M_D800);
+                let surrogates_bytemask = vceqq_u16(vandq_u16(chunk, *M_F800), *M_D800);
                 // It might seem like checking for surrogates_bitmask == 0xc000 could help. However,
                 // it is likely an uncommon occurrence.
                 if vmaxvq_u16(surrogates_bytemask) == 0 {

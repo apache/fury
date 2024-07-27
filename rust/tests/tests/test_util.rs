@@ -123,7 +123,7 @@ mod test_sse {
     };
     use std::arch::x86_64::{__m128i, _mm_storeu_si128};
 
-    #[warn(dead_code)]
+    #[allow(dead_code)]
     fn print_m128i_16(var: __m128i) {
         let mut val = [0i16; 8];
         unsafe {
