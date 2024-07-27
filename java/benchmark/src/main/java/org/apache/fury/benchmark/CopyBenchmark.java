@@ -75,7 +75,7 @@ public class CopyBenchmark {
   public static void main(String[] args) throws IOException {
     if (args.length == 0) {
       String commandLine =
-          "org.apache.fury.*CopyBenchmark.*map -f 1 -wi 3 -i 3 -t 1 -w 2000s -r 2s -rf csv "
+          "org.apache.fury.*CopyBenchmark.*list -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv "
               + "-p bufferType=array -p references=false";
       System.out.println(commandLine);
       args = commandLine.split(" ");

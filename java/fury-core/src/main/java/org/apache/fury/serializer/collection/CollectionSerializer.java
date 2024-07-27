@@ -22,6 +22,8 @@ package org.apache.fury.serializer.collection;
 import java.util.Collection;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassResolver;
 
 /** Base serializer for all java collections. */
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -68,8 +70,16 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
   }
 
   public void copyElements(T originCollection, Collection newCollection) {
+    ClassResolver classResolver = fury.getClassResolver();
     for (Object element : originCollection) {
-      newCollection.add(fury.copyObject(element));
+      if (element != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
+        if (!classInfo.getSerializer().isImmutable()) {
+          element = fury.copyObject(element, classInfo.getClassId());
+        }
+      }
+      newCollection.add(element);
     }
   }
 
