@@ -192,6 +192,26 @@ not worthy compared to performance cost. Maybe you should try to disable long co
 much
 space savings.
 
+### Object deep copy
+The default deep copy mode will ignore circular and shared reference. Same reference of an object graph will be copied
+into different objects in one `Fury#copy`.
+```java
+Fury fury = Fury.builder()
+  ...
+  .withRefCopy(false).build();
+SomeClass a = xxx;
+SomeClass copied = fury.copy(a)
+```
+
+Make fury deep copy follow circular and shared reference:
+```java
+Fury fury = Fury.builder()
+  ...
+  .withRefCopy(false).build();
+SomeClass a = xxx;
+SomeClass copied = fury.copy(a)
+```
+
 ### Implement a customized serializer
 
 In some cases, you may want to implement a serializer for your type, especially some class customize serialization by
