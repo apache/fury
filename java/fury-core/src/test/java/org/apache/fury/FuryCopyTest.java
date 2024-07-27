@@ -19,6 +19,7 @@
 
 package org.apache.fury;
 
+import static org.apache.fury.serializer.collection.MapSerializersTest.createMapFieldsObject;
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
@@ -79,9 +80,13 @@ import org.apache.fury.collection.LazyMap;
 import org.apache.fury.serializer.EnumSerializerTest;
 import org.apache.fury.serializer.EnumSerializerTest.EnumFoo;
 import org.apache.fury.serializer.collection.ChildContainerSerializersTest.ChildArrayDeque;
+import org.apache.fury.serializer.collection.SynchronizedSerializersTest;
+import org.apache.fury.serializer.collection.UnmodifiableSerializersTest;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.BeanB;
+import org.apache.fury.test.bean.CollectionFields;
 import org.apache.fury.test.bean.Cyclic;
+import org.apache.fury.test.bean.MapFields;
 import org.apache.fury.util.DateTimeUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -352,5 +357,31 @@ public class FuryCopyTest extends FuryTestBase {
     Cyclic cyclic = Cyclic.create(true);
     Fury fury = builder().withRefTracking(true).withRefCopy(true).build();
     assertEquals(fury.copy(cyclic), cyclic);
+  }
+
+  @Test
+  public void testComplexMapCopy() {
+    Fury fury = builder().withRefTracking(true).withRefCopy(true).build();
+    {
+      MapFields mapFields = UnmodifiableSerializersTest.createMapFields();
+      assertEquals(fury.copy(mapFields), mapFields);
+    }
+    {
+      MapFields obj = createMapFieldsObject();
+      assertEquals(fury.copy(obj), obj);
+    }
+  }
+
+  @Test
+  public void testComplexCollectionCopy() {
+    Fury fury = builder().withRefTracking(true).withRefCopy(true).build();
+    {
+      CollectionFields collectionFields = SynchronizedSerializersTest.createCollectionFields();
+      assertEquals(fury.copy(collectionFields).toCanEqual(), collectionFields.toCanEqual());
+    }
+    {
+      CollectionFields collectionFields = UnmodifiableSerializersTest.createCollectionFields();
+      assertEquals(fury.copy(collectionFields).toCanEqual(), collectionFields.toCanEqual());
+    }
   }
 }
