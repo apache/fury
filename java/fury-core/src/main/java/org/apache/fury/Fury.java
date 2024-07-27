@@ -309,7 +309,7 @@ public final class Fury implements BaseFury {
     if (!copyRefTracking) {
       String msg =
           "Object may contain circular references, please enable ref tracking "
-              + "by `FuryBuilder#withCopyRefTracking(true)`";
+              + "by `FuryBuilder#withRefCopy(true)`";
       StackOverflowError t1 = ExceptionUtils.trySetStackOverflowErrorMessage(e, msg);
       if (t1 != null) {
         return t1;
