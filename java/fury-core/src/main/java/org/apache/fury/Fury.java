@@ -1337,9 +1337,7 @@ public final class Fury implements BaseFury {
         break;
         // todo: add fastpath for other types.
       default:
-        copyDepth++;
-        copy = classInfo.getSerializer().copy(obj);
-        copyDepth--;
+        copy = copyObject(obj, classInfo.getSerializer());
     }
     return (T) copy;
   }
@@ -1369,8 +1367,24 @@ public final class Fury implements BaseFury {
       case ClassResolver.STRING_CLASS_ID:
         return obj;
       default:
-        return (T) classResolver.getOrUpdateClassInfo(obj.getClass()).getSerializer().copy(obj);
+        return copyObject(obj, classResolver.getOrUpdateClassInfo(obj.getClass()).getSerializer());
     }
+  }
+
+  public <T> T copyObject(T obj, Serializer<T> serializer) {
+    copyDepth++;
+    T copyObject;
+    if (serializer.needToCopyRef()) {
+      copyObject = getCopyObject(obj);
+      if (copyObject == null) {
+        copyObject = serializer.copy(obj);
+        originToCopyMap.put(obj, copyObject);
+      }
+    } else {
+      copyObject = serializer.copy(obj);
+    }
+    copyDepth--;
+    return copyObject;
   }
 
   /**
