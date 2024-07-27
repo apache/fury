@@ -908,7 +908,7 @@ pub mod utf16_to_utf8_simd {
                 let next_chunk = if is_little_endian == super::super::IS_LITTLE_ENDIAN_LOCAL {
                     next_chunk
                 } else {
-                    vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(*chunk)))
+                    vreinterpretq_u16_u8(vrev16q_u8(vreinterpretq_u8_u16(*next_chunk)))
                 };
                 // check next_chunk's all u16 less than 0x80
                 if vmaxvq_u16(next_chunk) <= 0x7F {
