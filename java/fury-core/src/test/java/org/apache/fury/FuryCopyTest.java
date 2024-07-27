@@ -19,8 +19,9 @@
 
 package org.apache.fury;
 
-import com.google.common.collect.ImmutableList;
+import static org.testng.Assert.assertEquals;
 
+import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -74,14 +75,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
 import org.apache.fury.collection.LazyMap;
-import org.apache.fury.config.Language;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.EnumSerializerTest;
 import org.apache.fury.serializer.EnumSerializerTest.EnumFoo;
-import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.collection.ChildContainerSerializersTest.ChildArrayDeque;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.BeanB;
@@ -89,9 +85,6 @@ import org.apache.fury.test.bean.Cyclic;
 import org.apache.fury.util.DateTimeUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
 
 public class FuryCopyTest extends FuryTestBase {
 
@@ -140,17 +133,17 @@ public class FuryCopyTest extends FuryTestBase {
     ExecutorService executor = Executors.newSingleThreadExecutor();
     AtomicReference<Throwable> ex = new AtomicReference<>();
     ThreadLocalFury threadLocalFury =
-      builder().withCodegen(false).withRefCopy(true).buildThreadLocalFury();
+        builder().withCodegen(false).withRefCopy(true).buildThreadLocalFury();
     threadLocalFury.register(BeanA.class);
     assetEqualsButNotSame(threadLocalFury.copy(beanA));
     executor.execute(
-      () -> {
-        try {
-          assetEqualsButNotSame(threadLocalFury.copy(beanA));
-        } catch (Throwable t) {
-          ex.set(t);
-        }
-      });
+        () -> {
+          try {
+            assetEqualsButNotSame(threadLocalFury.copy(beanA));
+          } catch (Throwable t) {
+            ex.set(t);
+          }
+        });
     Assert.assertNull(ex.get());
   }
 
@@ -159,25 +152,25 @@ public class FuryCopyTest extends FuryTestBase {
     BeanA beanA = BeanA.createBeanA(2);
     AtomicBoolean flag = new AtomicBoolean(false);
     ThreadSafeFury threadSafeFury =
-      builder()
-        .withRefCopy(true)
-        .withCodegen(false)
-        .withAsyncCompilation(true)
-        .buildThreadSafeFuryPool(5, 10);
+        builder()
+            .withRefCopy(true)
+            .withCodegen(false)
+            .withAsyncCompilation(true)
+            .buildThreadSafeFuryPool(5, 10);
     for (int i = 0; i < 2000; i++) {
       new Thread(
-        () -> {
-          for (int j = 0; j < 10; j++) {
-            try {
-              threadSafeFury.setClassLoader(beanA.getClass().getClassLoader());
-              Assert.assertEquals(beanA, threadSafeFury.copy(beanA));
-            } catch (Exception e) {
-              e.printStackTrace();
-              flag.set(true);
-            }
-          }
-        })
-        .start();
+              () -> {
+                for (int j = 0; j < 10; j++) {
+                  try {
+                    threadSafeFury.setClassLoader(beanA.getClass().getClassLoader());
+                    Assert.assertEquals(beanA, threadSafeFury.copy(beanA));
+                  } catch (Exception e) {
+                    e.printStackTrace();
+                    flag.set(true);
+                  }
+                }
+              })
+          .start();
     }
     TimeUnit.SECONDS.sleep(5);
     Assert.assertFalse(flag.get());
@@ -232,7 +225,7 @@ public class FuryCopyTest extends FuryTestBase {
     assetEqualsButNotSame(ConcurrentHashMap.newKeySet(10));
     assetEqualsButNotSame(new Vector<>(testData));
     assetEqualsButNotSame(EnumSet.of(EnumSerializerTest.EnumFoo.A, EnumSerializerTest.EnumFoo.B));
-    assetEqualsButNotSame(BitSet.valueOf(new byte[]{1, 2, 3}));
+    assetEqualsButNotSame(BitSet.valueOf(new byte[] {1, 2, 3}));
     assetEqualsButNotSame(Collections.singleton(1));
     assetEqualsButNotSame(Collections.singletonList(1));
 
@@ -357,10 +350,7 @@ public class FuryCopyTest extends FuryTestBase {
   @Test
   public void testCircularRefCopy() {
     Cyclic cyclic = Cyclic.create(true);
-    Fury fury = builder()
-      .withRefTracking(true)
-      .withRefCopy(true)
-      .build();
+    Fury fury = builder().withRefTracking(true).withRefCopy(true).build();
     assertEquals(fury.copy(cyclic), cyclic);
   }
 }
