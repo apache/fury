@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 use std::arch::is_aarch64_feature_detected;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};

@@ -854,9 +854,9 @@ pub mod utf16_to_utf8_simd {
         use lazy_static::lazy_static;
         use std::arch::aarch64::{
             uint16x8_t, vaddvq_u16, vandq_u16, vbicq_u16, vbslq_u16, vceqq_u16, vcleq_u16,
-            veorq_u16, vld1q_u16, vld1q_u16, vld1q_u8, vmaxvq_u16, vmovn_high_u16, vmovn_u16,
-            vmovq_n_u16, vorrq_u16, vqtbl1q_u8, vreinterpretq_u16_u8, vreinterpretq_u8_u16,
-            vrev16q_u8, vshlq_n_u16, vshrq_n_u16, vst1_u8, vst1q_u8, vzip1q_u16, vzip2q_u16,
+            veorq_u16, vld1q_u16, vld1q_u8, vmaxvq_u16, vmovn_high_u16, vmovn_u16, vmovq_n_u16,
+            vorrq_u16, vqtbl1q_u8, vreinterpretq_u16_u8, vreinterpretq_u8_u16, vrev16q_u8,
+            vshlq_n_u16, vshrq_n_u16, vst1_u8, vst1q_u8, vzip1q_u16, vzip2q_u16,
         };
 
         // 128/16=8
@@ -1159,7 +1159,7 @@ pub mod utf16_to_utf8_simd {
                 let surrogates_bytemask = vceqq_u16(vandq_u16(*chunk, *M_F800), *M_D800);
                 // It might seem like checking for surrogates_bitmask == 0xc000 could help. However,
                 // it is likely an uncommon occurrence.
-                if (vmaxvq_u16(surrogates_bytemask) == 0) {
+                if vmaxvq_u16(surrogates_bytemask) == 0 {
                     one_to_one_two_three(&chunk, ptr_8, &mut offset_16, &mut offset_8);
                     continue;
                 }
