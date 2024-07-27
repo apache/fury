@@ -42,10 +42,40 @@ public class CopyBenchmark {
     return state.kryo.copy(state.object);
   }
 
+  @Benchmark
+  public Object fury_copy_string_map(FuryState.DataState state) {
+    return state.fury.copy(state.data.stringMap);
+  }
+
+  @Benchmark
+  public Object fury_copy_int_map(FuryState.DataState state) {
+    return state.fury.copy(state.data.intMap);
+  }
+
+  @Benchmark
+  public Object kryo_copy_string_map(KryoState.DataState state) {
+    return state.kryo.copy(state.data.stringMap);
+  }
+
+  @Benchmark
+  public Object kryo_copy_int_map(KryoState.DataState state) {
+    return state.kryo.copy(state.data.intMap);
+  }
+
+  @Benchmark
+  public Object fury_copy_list(FuryState.DataState state) {
+    return state.fury.copy(state.data.intList);
+  }
+
+  @Benchmark
+  public Object kryo_copy_list(KryoState.DataState state) {
+    return state.kryo.copy(state.data.intList);
+  }
+
   public static void main(String[] args) throws IOException {
     if (args.length == 0) {
       String commandLine =
-          "org.apache.fury.*CopyBenchmark.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv "
+          "org.apache.fury.*CopyBenchmark.*map -f 1 -wi 3 -i 3 -t 1 -w 2000s -r 2s -rf csv "
               + "-p bufferType=array -p references=false";
       System.out.println(commandLine);
       args = commandLine.split(" ");
