@@ -19,9 +19,8 @@
 
 package org.apache.fury.resolver;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.fury.collection.IdentityObjectIntMap;
+import org.apache.fury.collection.ObjectArray;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
 
@@ -34,9 +33,9 @@ public class MetaContext {
   public final IdentityObjectIntMap<Class<?>> classMap = new IdentityObjectIntMap<>(8, 0.4f);
 
   /** Class definitions read from peer. */
-  public final List<ClassDef> readClassDefs = new ArrayList<>();
+  public final ObjectArray<ClassDef> readClassDefs = new ObjectArray<>();
 
-  public final List<ClassInfo> readClassInfos = new ArrayList<>();
+  public final ObjectArray<ClassInfo> readClassInfos = new ObjectArray<>();
 
   /**
    * New class definition which needs sending to peer. This will be filled up when there are new
@@ -44,5 +43,5 @@ public class MetaContext {
    *
    * @see ClassResolver#writeClassDefs(MemoryBuffer)
    */
-  public final List<ClassDef> writingClassDefs = new ArrayList<>();
+  public final ObjectArray<ClassDef> writingClassDefs = new ObjectArray<>();
 }

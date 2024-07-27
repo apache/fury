@@ -59,6 +59,7 @@ public final class FuryBuilder {
   boolean checkClassVersion = false;
   Language language = Language.JAVA;
   boolean trackingRef = false;
+  boolean copyRef = false;
   boolean basicTypesRefIgnored = true;
   boolean stringRefIgnored = true;
   boolean timeRefIgnored = true;
@@ -70,8 +71,8 @@ public final class FuryBuilder {
   boolean checkJdkClassSerializable = true;
   Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
   boolean requireClassRegistration = true;
-  boolean metaShareEnabled = false;
-  boolean scopedMetaShareEnabled = false;
+  Boolean metaShareEnabled;
+  Boolean scopedMetaShareEnabled;
   boolean codeGenEnabled = true;
   Boolean deserializeNonexistentClass;
   boolean asyncCompilationEnabled = false;
@@ -95,6 +96,19 @@ public final class FuryBuilder {
   /** Whether track shared or circular references. */
   public FuryBuilder withRefTracking(boolean trackingRef) {
     this.trackingRef = trackingRef;
+    return this;
+  }
+
+  /**
+   * Whether track {@link Fury#copy(Object)} shared or circular references.
+   *
+   * <p>If this option is false, shared reference will be copied into different object, and circular
+   * reference copy will raise stack overflow exception.
+   *
+   * <p>If this option is enabled, the copy performance will be slower.
+   */
+  public FuryBuilder withRefCopy(boolean copyRef) {
+    this.copyRef = copyRef;
     return this;
   }
 
@@ -239,6 +253,9 @@ public final class FuryBuilder {
   /** Whether to enable meta share mode. */
   public FuryBuilder withMetaShare(boolean shareMeta) {
     this.metaShareEnabled = shareMeta;
+    if (!shareMeta) {
+      scopedMetaShareEnabled = false;
+    }
     return this;
   }
 
@@ -248,9 +265,6 @@ public final class FuryBuilder {
    */
   public FuryBuilder withScopedMetaShare(boolean scoped) {
     scopedMetaShareEnabled = scoped;
-    if (scoped) {
-      metaShareEnabled = true;
-    }
     return this;
   }
 
@@ -330,9 +344,28 @@ public final class FuryBuilder {
       if (deserializeNonexistentClass == null) {
         deserializeNonexistentClass = true;
       }
+      if (scopedMetaShareEnabled == null) {
+        if (metaShareEnabled == null) {
+          metaShareEnabled = true;
+          scopedMetaShareEnabled = true;
+        } else {
+          scopedMetaShareEnabled = false;
+        }
+      } else {
+        if (metaShareEnabled == null) {
+          metaShareEnabled = scopedMetaShareEnabled;
+        }
+      }
     } else {
       if (deserializeNonexistentClass == null) {
         deserializeNonexistentClass = false;
+      }
+      if (scopedMetaShareEnabled != null) {
+        LOG.warn("Scoped meta share is for CompatibleMode only, disable it for {}", compatibleMode);
+      }
+      scopedMetaShareEnabled = false;
+      if (metaShareEnabled == null) {
+        metaShareEnabled = false;
       }
     }
     if (!requireClassRegistration) {

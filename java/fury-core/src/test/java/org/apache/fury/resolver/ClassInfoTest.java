@@ -20,7 +20,6 @@
 package org.apache.fury.resolver;
 
 import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
 
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
@@ -29,15 +28,6 @@ import org.testng.annotations.Test;
 public class ClassInfoTest {
   @Test
   public void testEncodePackageNameAndTypeName() {
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(false)
-            .withMetaShare(true)
-            .build();
-    ClassInfo info = fury.getClassResolver().getClassInfo(org.apache.fury.test.bean.Foo.class);
-    assertNull(info.packageNameBytes);
-
     Fury fury1 = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     ClassInfo info1 = fury1.getClassResolver().getClassInfo(org.apache.fury.test.bean.Foo.class);
     assertNotNull(info1.packageNameBytes);

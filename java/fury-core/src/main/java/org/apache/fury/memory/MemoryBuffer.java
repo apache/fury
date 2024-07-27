@@ -234,6 +234,14 @@ public final class MemoryBuffer {
   }
 
   /**
+   * Returns <tt>true</tt>, if the memory buffer is backed by heap memory and memory buffer can
+   * write to the whole memory region of underlying byte array.
+   */
+  public boolean isHeapFullyWriteable() {
+    return heapMemory != null && heapOffset == 0;
+  }
+
+  /**
    * Get the heap byte array object.
    *
    * @return Return non-null if the memory is on the heap, and return null, if the memory if off the

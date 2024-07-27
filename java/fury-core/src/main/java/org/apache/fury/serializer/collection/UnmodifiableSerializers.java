@@ -99,6 +99,12 @@ public class UnmodifiableSerializers {
       final Object sourceCollection = fury.readRef(buffer);
       return (Collection) factory.apply(sourceCollection);
     }
+
+    @Override
+    public Collection copy(Collection object) {
+      final Object collection = Platform.getObject(object, offset);
+      return (Collection) factory.apply(fury.copyObject(collection));
+    }
   }
 
   public static final class UnmodifiableMapSerializer extends MapSerializer<Map> {
@@ -116,6 +122,12 @@ public class UnmodifiableSerializers {
       Preconditions.checkArgument(value.getClass() == type);
       Object fieldValue = Platform.getObject(value, offset);
       fury.writeRef(buffer, fieldValue);
+    }
+
+    @Override
+    public Map copy(Map originMap) {
+      final Object unwrappedMap = Platform.getObject(originMap, offset);
+      return (Map) factory.apply(fury.copyObject(unwrappedMap));
     }
 
     @Override

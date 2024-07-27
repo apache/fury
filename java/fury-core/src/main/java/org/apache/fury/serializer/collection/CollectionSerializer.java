@@ -22,6 +22,8 @@ package org.apache.fury.serializer.collection;
 import java.util.Collection;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassResolver;
 
 /** Base serializer for all java collections. */
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -34,6 +36,11 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
     super(fury, type, supportCodegenHook);
   }
 
+  public CollectionSerializer(
+      Fury fury, Class<T> type, boolean supportCodegenHook, boolean immutable) {
+    super(fury, type, supportCodegenHook, immutable);
+  }
+
   @Override
   public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
     buffer.writeVarUint32Small7(value.size());
@@ -43,6 +50,33 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
   @Override
   public T onCollectionRead(Collection collection) {
     return (T) collection;
+  }
+
+  @Override
+  public T copy(T originCollection) {
+    if (isImmutable()) {
+      return originCollection;
+    }
+    Collection newCollection = newCollection(originCollection);
+    if (needToCopyRef) {
+      fury.reference(originCollection, newCollection);
+    }
+    copyElements(originCollection, newCollection);
+    return (T) newCollection;
+  }
+
+  public void copyElements(T originCollection, Collection newCollection) {
+    ClassResolver classResolver = fury.getClassResolver();
+    for (Object element : originCollection) {
+      if (element != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
+        if (!classInfo.getSerializer().isImmutable()) {
+          element = fury.copyObject(element, classInfo.getClassId());
+        }
+      }
+      newCollection.add(element);
+    }
   }
 
   @Override

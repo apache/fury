@@ -38,6 +38,7 @@ public class Config implements Serializable {
   private final boolean basicTypesRefIgnored;
   private final boolean stringRefIgnored;
   private final boolean timeRefIgnored;
+  private final boolean copyRef;
   private final boolean codeGenEnabled;
   private final boolean checkClassVersion;
   private final CompatibleMode compatibleMode;
@@ -65,6 +66,7 @@ public class Config implements Serializable {
     basicTypesRefIgnored = !trackingRef || builder.basicTypesRefIgnored;
     stringRefIgnored = !trackingRef || builder.stringRefIgnored;
     timeRefIgnored = !trackingRef || builder.timeRefIgnored;
+    copyRef = builder.copyRef;
     compressString = builder.compressString;
     compressInt = builder.compressInt;
     longEncoding = builder.longEncoding;
@@ -97,6 +99,18 @@ public class Config implements Serializable {
 
   public boolean trackingRef() {
     return trackingRef;
+  }
+
+  /**
+   * Returns true if copy value by ref, and false copy by value.
+   *
+   * <p>If this option is false, shared reference will be copied into different object, and circular
+   * reference copy will raise stack overflow exception.
+   *
+   * <p>If this option is enabled, the copy performance will be slower.
+   */
+  public boolean copyRef() {
+    return copyRef;
   }
 
   public boolean isBasicTypesRefIgnored() {
@@ -247,6 +261,7 @@ public class Config implements Serializable {
         && basicTypesRefIgnored == config.basicTypesRefIgnored
         && stringRefIgnored == config.stringRefIgnored
         && timeRefIgnored == config.timeRefIgnored
+        && copyRef == config.copyRef
         && codeGenEnabled == config.codeGenEnabled
         && checkClassVersion == config.checkClassVersion
         && checkJdkClassSerializable == config.checkJdkClassSerializable
@@ -276,6 +291,7 @@ public class Config implements Serializable {
         basicTypesRefIgnored,
         stringRefIgnored,
         timeRefIgnored,
+        copyRef,
         codeGenEnabled,
         checkClassVersion,
         compatibleMode,

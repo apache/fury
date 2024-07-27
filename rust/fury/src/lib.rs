@@ -18,15 +18,19 @@
 mod buffer;
 mod deserializer;
 mod error;
+mod meta;
 mod row;
 mod serializer;
 mod types;
+mod util;
 
 pub use deserializer::from_buffer;
 pub use error::Error;
 pub use fury_derive::*;
+pub use meta::{Encoding, MetaStringDecoder, MetaStringEncoder};
 pub use row::{from_row, to_row};
 pub use serializer::to_buffer;
+pub use util::to_utf8;
 
 pub mod __derive {
     pub use crate::buffer::{Reader, Writer};

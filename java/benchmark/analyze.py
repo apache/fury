@@ -127,7 +127,7 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
     if len(compatible) > 0:
         jdk = data[data["Lib"].str.contains("Jdk")].copy()
         jdk["Benchmark"] = jdk["Benchmark"] + "_compatible"
-        data = data.append(jdk)
+        data = pd.concat([data, jdk])
         fury_metashared_color = plot_color_map["Furymetashared"]
         fury_color = plot_color_map["Fury"]
         plot_color_map["Fury"] = fury_metashared_color

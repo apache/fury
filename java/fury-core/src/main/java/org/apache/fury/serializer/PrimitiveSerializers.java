@@ -40,7 +40,8 @@ public class PrimitiveSerializers {
           fury,
           (Class) cls,
           Type.BOOL.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()),
+          true);
     }
 
     @Override
@@ -61,7 +62,8 @@ public class PrimitiveSerializers {
           fury,
           (Class) cls,
           Type.INT8.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()),
+          true);
     }
 
     @Override
@@ -121,7 +123,7 @@ public class PrimitiveSerializers {
     }
   }
 
-  public static final class CharSerializer extends Serializer<Character> {
+  public static final class CharSerializer extends ImmutableSerializer<Character> {
     public CharSerializer(Fury fury, Class<?> cls) {
       super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
@@ -144,7 +146,8 @@ public class PrimitiveSerializers {
           fury,
           (Class) cls,
           Type.INT16.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()),
+          true);
     }
 
     @Override
@@ -167,7 +170,8 @@ public class PrimitiveSerializers {
           fury,
           (Class) cls,
           Type.INT32.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()),
+          true);
       compressNumber = fury.compressInt();
     }
 
@@ -210,7 +214,8 @@ public class PrimitiveSerializers {
           fury,
           (Class) cls,
           Type.INT64.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()),
+          true);
       longEncoding = fury.longEncoding();
     }
 
@@ -294,7 +299,8 @@ public class PrimitiveSerializers {
           fury,
           (Class) cls,
           Type.FLOAT.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()),
+          true);
     }
 
     @Override
@@ -315,7 +321,8 @@ public class PrimitiveSerializers {
           fury,
           (Class) cls,
           Type.DOUBLE.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()),
+          true);
     }
 
     @Override

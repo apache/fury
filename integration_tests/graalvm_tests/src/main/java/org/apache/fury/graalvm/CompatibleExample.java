@@ -30,6 +30,7 @@ public class CompatibleExample {
         Fury.builder()
             .requireClassRegistration(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withScopedMetaShare(false)
             .build();
     // register and generate serializer code.
     fury.register(Foo.class, true);

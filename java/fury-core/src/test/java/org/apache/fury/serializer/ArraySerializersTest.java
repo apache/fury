@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.fury.Fury;
@@ -95,13 +96,14 @@ public class ArraySerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testPrimitiveArray(boolean referenceTracking, Language language) {
-    FuryBuilder builder =
-        Fury.builder()
-            .withLanguage(language)
-            .withRefTracking(referenceTracking)
-            .requireClassRegistration(false);
-    Fury fury1 = builder.build();
-    Fury fury2 = builder.build();
+    Supplier<FuryBuilder> builder =
+        () ->
+            Fury.builder()
+                .withLanguage(language)
+                .withRefTracking(referenceTracking)
+                .requireClassRegistration(false);
+    Fury fury1 = builder.get().build();
+    Fury fury2 = builder.get().build();
     testPrimitiveArray(fury1, fury2);
   }
 

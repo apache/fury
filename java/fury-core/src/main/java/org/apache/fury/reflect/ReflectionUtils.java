@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -696,8 +697,8 @@ public class ReflectionUtils {
       Object o2) {
 
     for (String commonField : commonFieldsInfo.f0) {
-      Field field1 = commonFieldsInfo.f1.get(commonField);
-      Field field2 = commonFieldsInfo.f2.get(commonField);
+      Field field1 = Objects.requireNonNull(commonFieldsInfo.f1.get(commonField));
+      Field field2 = Objects.requireNonNull(commonFieldsInfo.f2.get(commonField));
       FieldAccessor accessor1 = FieldAccessor.createAccessor(field1);
       FieldAccessor accessor2 = FieldAccessor.createAccessor(field2);
       Object f1 = accessor1.get(o1);
@@ -769,15 +770,13 @@ public class ReflectionUtils {
             .collect(
                 Collectors.toMap(
                     // don't use `getGenericType` since janino doesn't support generics.
-                    f -> f.getDeclaringClass().getSimpleName() + f.getType() + f.getName(),
+                    f -> f.getDeclaringClass().getSimpleName() + f.getName(),
                     f -> f));
     Map<String, Field> fieldMap2 =
         fields2.stream()
             .collect(
-                Collectors.toMap(
-                    f -> f.getDeclaringClass().getSimpleName() + f.getType() + f.getName(),
-                    f -> f));
-    Set<String> commonFields = fieldMap1.keySet();
+                Collectors.toMap(f -> f.getDeclaringClass().getSimpleName() + f.getName(), f -> f));
+    Set<String> commonFields = new HashSet<>(fieldMap1.keySet());
     commonFields.retainAll(fieldMap2.keySet());
     return Tuple3.of(commonFields, fieldMap1, fieldMap2);
   }

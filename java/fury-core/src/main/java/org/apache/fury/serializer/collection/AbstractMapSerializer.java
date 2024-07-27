@@ -29,6 +29,7 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -69,6 +70,17 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
 
   public AbstractMapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
     super(fury, cls);
+    this.supportCodegenHook = supportCodegenHook;
+    keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
+    keyClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
+    valueClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
+    valueClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
+    partialGenericKVTypeMap = new IdentityMap<>();
+  }
+
+  public AbstractMapSerializer(
+      Fury fury, Class<T> cls, boolean supportCodegenHook, boolean immutable) {
+    super(fury, cls, immutable);
     this.supportCodegenHook = supportCodegenHook;
     keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
     keyClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
@@ -405,6 +417,28 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     return onMapRead(map);
   }
 
+  protected <K, V> void copyEntry(Map<K, V> originMap, Map<K, V> newMap) {
+    ClassResolver classResolver = fury.getClassResolver();
+    for (Map.Entry<K, V> entry : originMap.entrySet()) {
+      K key = entry.getKey();
+      if (key != null) {
+        ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          key = fury.copyObject(key, classInfo.getClassId());
+        }
+      }
+      V value = entry.getValue();
+      if (value != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          value = fury.copyObject(value, classInfo.getClassId());
+        }
+      }
+      newMap.put(key, value);
+    }
+  }
+
   @SuppressWarnings("unchecked")
   protected final void readElements(MemoryBuffer buffer, int size, Map map) {
     Serializer keySerializer = this.keySerializer;
@@ -718,9 +752,38 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
+  public Map newMap(Map map) {
+    numElements = map.size();
+    return newMap();
+  }
+
   /**
-   * Get and reset numElements of deserializing collection. Should be called after {@link #newMap}.
-   * Nested read may overwrite this element, reset is necessary to avoid use wrong value by mistake.
+   * Map must have default constructor to be invoked by fury, otherwise created object can't be used
+   * to adding elements. For example:
+   *
+   * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
+   *
+   * <p>without default constructor, created list will have elementData as null, adding elements
+   * will raise NPE.
+   *
+   * @return empty map instance
+   */
+  public Map newMap() {
+    if (constructor == null) {
+      constructor = ReflectionUtils.getCtrHandle(type, true);
+    }
+    try {
+      return (Map) constructor.invoke();
+    } catch (Throwable e) {
+      throw new IllegalArgumentException(
+          "Please provide public no arguments constructor for class " + type, e);
+    }
+  }
+
+  /**
+   * Get and reset numElements of deserializing collection. Should be called after {@link
+   * #newMap(MemoryBuffer buffer)}. Nested read may overwrite this element, reset is necessary to
+   * avoid use wrong value by mistake.
    */
   public int getAndClearNumElements() {
     int size = numElements;
@@ -731,6 +794,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   public void setNumElements(int numElements) {
     this.numElements = numElements;
   }
+
+  public abstract T onMapCopy(Map map);
 
   public abstract T onMapRead(Map map);
 

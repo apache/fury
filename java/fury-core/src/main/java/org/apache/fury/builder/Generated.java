@@ -27,6 +27,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
 import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.serializer.AbstractObjectSerializer;
 import org.apache.fury.serializer.CompatibleSerializerBase;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.Preconditions;
@@ -39,7 +40,7 @@ import org.apache.fury.util.Preconditions;
 public interface Generated {
 
   /** Base class for all generated serializers. */
-  abstract class GeneratedSerializer extends Serializer implements Generated {
+  abstract class GeneratedSerializer extends AbstractObjectSerializer implements Generated {
     public GeneratedSerializer(Fury fury, Class<?> cls) {
       super(fury, cls);
     }
