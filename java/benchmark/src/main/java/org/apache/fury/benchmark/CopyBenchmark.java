@@ -72,6 +72,16 @@ public class CopyBenchmark {
     return state.kryo.copy(state.data.intList);
   }
 
+  @Benchmark
+  public Object fury_copy_object_array(FuryState.DataState state) {
+    return state.fury.copy(state.data.objectArray);
+  }
+
+  @Benchmark
+  public Object kryo_copy_object_array(KryoState.DataState state) {
+    return state.kryo.copy(state.data.objectArray);
+  }
+
   public static void main(String[] args) throws IOException {
     if (args.length == 0) {
       String commandLine =

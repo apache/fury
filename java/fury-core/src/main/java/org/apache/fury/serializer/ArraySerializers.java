@@ -116,8 +116,19 @@ public class ArraySerializers {
       if (needToCopyRef) {
         fury.reference(originArray, newArray);
       }
-      for (int i = 0; i < length; i++) {
-        newArray[i] = fury.copyObject(originArray[i]);
+      Serializer componentSerializer = this.componentTypeSerializer;
+      if (componentSerializer != null) {
+        if (componentSerializer.isImmutable()) {
+          System.arraycopy(originArray, 0, newArray, 0, length);
+        } else {
+          for (int i = 0; i < length; i++) {
+            newArray[i] = componentSerializer.copy(originArray[i]);
+          }
+        }
+      } else {
+        for (int i = 0; i < length; i++) {
+          newArray[i] = fury.copyObject(originArray[i]);
+        }
       }
       return (T[]) newArray;
     }

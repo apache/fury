@@ -100,12 +100,14 @@ public class Data {
 
   public List<String> stringList = new ArrayList<>();
   public List<Integer> intList = new ArrayList<>();
+  public Object[] objectArray = new Integer[20];
   public Map<String, String> stringMap = new HashMap<>();
   public Map<Integer, Integer> intMap = new HashMap<>();
 
   {
     for (int i = 0; i < 20; i++) {
       stringList.add("hello, " + i);
+      objectArray[i] = i;
       intList.add(i);
       stringMap.put("key" + i, "value" + i);
       intMap.put(i, i * 2);

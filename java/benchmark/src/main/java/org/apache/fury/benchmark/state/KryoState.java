@@ -86,6 +86,9 @@ public class KryoState {
       kryo.setRegistrationRequired(registerClass);
       kryo.register(int[].class);
       kryo.register(long[].class);
+      kryo.register(Object[].class);
+      kryo.register(Integer[].class);
+      kryo.register(String[].class);
       kryo.register(ArrayList.class);
       kryo.register(HashMap.class);
     }
