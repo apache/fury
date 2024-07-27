@@ -189,7 +189,7 @@ public class StructSerializer<T> extends Serializer<T> {
       Object fieldValue = fury.xreadRefByNullableSerializer(buffer, serializer);
       fieldAccessor.set(obj, fieldValue);
       if (hasGenerics) {
-        generics.pushGenericType(fieldGeneric);
+        generics.popGenericType();
       }
     }
     return obj;
