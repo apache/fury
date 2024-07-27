@@ -1388,8 +1388,9 @@ public final class Fury implements BaseFury {
     }
   }
 
-  public Object getCopyObject(Object originObj) {
-    return originToCopyMap.get(originObj);
+  @SuppressWarnings("unchecked")
+  public <T> T getCopyObject(T originObj) {
+    return (T) originToCopyMap.get(originObj);
   }
 
   private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {

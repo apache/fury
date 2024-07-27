@@ -57,13 +57,16 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
     if (isImmutable()) {
       return originCollection;
     }
-    Collection newCollection = newCollection(originCollection);
+    Collection newCollection;
     if (needToCopyRef) {
-      Collection copyObject = (Collection) fury.getCopyObject(originCollection);
-      if (copyObject != null) {
-        return (T) copyObject;
+      newCollection = (Collection) fury.getCopyObject(originCollection);
+      if (newCollection != null) {
+        return (T) newCollection;
       }
+      newCollection = newCollection(originCollection);
       fury.reference(originCollection, newCollection);
+    } else {
+      newCollection = newCollection(originCollection);
     }
     copyElements(originCollection, newCollection);
     return (T) newCollection;
