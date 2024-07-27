@@ -59,7 +59,7 @@ public final class FuryBuilder {
   boolean checkClassVersion = false;
   Language language = Language.JAVA;
   boolean trackingRef = false;
-  boolean copyRef = false;
+  boolean copyRef = true;
   boolean basicTypesRefIgnored = true;
   boolean stringRefIgnored = true;
   boolean timeRefIgnored = true;
