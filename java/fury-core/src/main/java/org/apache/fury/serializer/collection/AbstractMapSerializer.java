@@ -423,13 +423,17 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       K key = entry.getKey();
       if (key != null) {
         ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
-        key = fury.copyObject(key, classInfo.getClassId());
+        if (!classInfo.getSerializer().isImmutable()) {
+          key = fury.copyObject(key, classInfo.getClassId());
+        }
       }
       V value = entry.getValue();
       if (value != null) {
         ClassInfo classInfo =
             classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
-        value = fury.copyObject(value, classInfo.getClassId());
+        if (!classInfo.getSerializer().isImmutable()) {
+          value = fury.copyObject(value, classInfo.getClassId());
+        }
       }
       newMap.put(key, value);
     }
