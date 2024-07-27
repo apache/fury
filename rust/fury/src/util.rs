@@ -917,7 +917,7 @@ pub mod utf16_to_utf8_simd {
                     vst1q_u8(ptr_8.add(*offset_8), utf8_packed);
                     *offset_8 += CHUNK_UTF16_USAGE * 2;
                     *offset_16 += CHUNK_UTF16_USAGE * 2;
-                    return None;
+                    None
                 } else {
                     // next_chunk has some u16 not less than 0x80
                     // only store chunk
@@ -926,7 +926,7 @@ pub mod utf16_to_utf8_simd {
                     *offset_8 += CHUNK_UTF16_USAGE;
                     *offset_16 += CHUNK_UTF16_USAGE;
                     // keep next_chunk for next step convert
-                    return Some(next_chunk);
+                    Some(next_chunk)
                 }
             } else {
                 // the last and odd chunk
@@ -935,7 +935,7 @@ pub mod utf16_to_utf8_simd {
                 *offset_8 += CHUNK_UTF16_USAGE;
                 *offset_16 += CHUNK_UTF16_USAGE;
                 // keep next_chunk for next step convert
-                return None;
+                None
             }
         }
 
@@ -1030,7 +1030,7 @@ pub mod utf16_to_utf8_simd {
             let s2 = vorrq_u16(s0, s1s);
             // s3: [00bb|bbbb|0000|aaaa] => [11bb|bbbb|1110|aaaa]
             let s3 = vorrq_u16(s2, vmovq_n_u16(0b1100000011100000));
-            let v_07ff = vmovq_n_u16(0x07FF as u16);
+            let v_07ff = vmovq_n_u16(0x07FF_u16);
             let one_or_two_bytes_bytemask = vcleq_u16(*chunk, v_07ff);
             let m0 = vbicq_u16(vmovq_n_u16(0b0100000000000000), one_or_two_bytes_bytemask);
             let s4 = veorq_u16(s3, m0);
@@ -1103,9 +1103,12 @@ pub mod utf16_to_utf8_simd {
             }
             *offset_8 += res.unwrap();
             *offset_16 += sub_chunk_len;
-            return None;
+            None
         }
 
+        /// # Safety
+        /// This function is unsafe because it assumes that:
+        /// target machine supports neon.
         #[target_feature(enable = "neon")]
         pub unsafe fn utf16_to_utf8(
             utf16: &[u16],
@@ -1169,8 +1172,8 @@ pub mod utf16_to_utf8_simd {
                     len_16,
                     is_little_endian,
                 );
-                if res.is_some() {
-                    return Err(res.unwrap());
+                if let Some(err_msg) = res {
+                    return Err(err_msg);
                 }
             }
             // dealing with remaining u16 not enough to form a chunk.
@@ -1188,7 +1191,7 @@ pub mod utf16_to_utf8_simd {
                 offset_8 += res.unwrap();
             }
             utf8_bytes.set_len(offset_8);
-            return Ok(utf8_bytes);
+            Ok(utf8_bytes)
         }
     }
 }
