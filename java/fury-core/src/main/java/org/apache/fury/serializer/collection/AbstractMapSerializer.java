@@ -427,6 +427,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
                         fury, classResolver, refResolver, buffer, entry.getValue(), valueClassInfoWriteCache);
             }
         }
+        chunkWriter.writeHeader(buffer);
   }
 
 
@@ -523,7 +524,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     } else if (valueSerializer != null) {
         javaChunkReadWithValueSerializer(buffer, map, size, valueSerializer);
     } else {
-      genericJavaRead(fury, buffer, map, size);
+        genericJavaRead(fury, buffer, map, size);
     }
   }
 
