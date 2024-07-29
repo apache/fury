@@ -1444,6 +1444,7 @@ public final class Fury implements BaseFury {
   private void readClassDefs(MemoryBuffer buffer) {
     int relativeClassDefOffset = buffer.readInt32();
     if (relativeClassDefOffset == -1) {
+      classDefEndOffset = buffer.readerIndex();
       return;
     }
     int readerIndex = buffer.readerIndex();
