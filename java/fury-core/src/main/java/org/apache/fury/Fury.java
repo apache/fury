@@ -48,6 +48,7 @@ import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.MapRefResolver;
+import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.resolver.NoRefResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -339,12 +340,14 @@ public final class Fury implements BaseFury {
       buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
     }
     // reduce caller stack
-    if (!refResolver.writeRefOrNull(buffer, obj)) {
+    boolean isNull = refResolver.writeRefOrNull(buffer, obj);
+    if (!isNull) {
       ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
       classResolver.writeClass(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
-    if (shareMeta) {
+    MetaContext metaContext = getSerializationContext().getMetaContext();
+    if (shareMeta && !isNull && metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
       buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
       classResolver.writeClassDefs(buffer);
     }
@@ -1063,9 +1066,12 @@ public final class Fury implements BaseFury {
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
           writeData(buffer, classInfo, obj);
+          MetaContext metaContext = getSerializationContext().getMetaContext();
+          if (metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
+            buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
+            classResolver.writeClassDefs(buffer);
+          }
         }
-        buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
-        classResolver.writeClassDefs(buffer);
       } else {
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
@@ -1437,6 +1443,9 @@ public final class Fury implements BaseFury {
 
   private void readClassDefs(MemoryBuffer buffer) {
     int relativeClassDefOffset = buffer.readInt32();
+    if (relativeClassDefOffset == -1) {
+      return;
+    }
     int readerIndex = buffer.readerIndex();
     buffer.readerIndex(readerIndex + relativeClassDefOffset);
     classResolver.readClassDefs(buffer);

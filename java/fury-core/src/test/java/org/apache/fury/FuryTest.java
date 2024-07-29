@@ -62,6 +62,7 @@ import org.apache.fury.exception.InsecureException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.serializer.ArraySerializersTest;
 import org.apache.fury.serializer.EnumSerializerTest;
 import org.apache.fury.serializer.ObjectSerializer;
@@ -597,5 +598,21 @@ public class FuryTest extends FuryTestBase {
     } catch (FuryException e) {
       Assert.assertTrue(e.getMessage().contains("[a, b]"));
     }
+  }
+
+  @Test
+  public void testNullObjSerAndDe() {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .withMetaShare(true)
+            .build();
+    MetaContext metaContext = new MetaContext();
+    fury.getSerializationContext().setMetaContext(metaContext);
+    byte[] bytes = fury.serializeJavaObjectAndClass(null);
+    fury.getSerializationContext().setMetaContext(metaContext);
+    Object obj = fury.deserializeJavaObjectAndClass(bytes);
+    assertNull(obj);
   }
 }

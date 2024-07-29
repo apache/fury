@@ -90,6 +90,10 @@ public final class ObjectArray<T> {
     return size;
   }
 
+  public boolean isEmpty() {
+    return size == 0;
+  }
+
   /**
    * Set all object array elements to null. This method is faster than {@link Arrays#fill} for large
    * arrays (> 128).
