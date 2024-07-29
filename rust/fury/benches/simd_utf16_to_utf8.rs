@@ -91,9 +91,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     c.bench_function("std utf16 to utf8", |b| {
         b.iter(|| {
-            let utf16_slice = black_box(&utf16_bytes).as_slice();
-            // 使用 from_utf16 方法尝试转换
-            String::from_utf16(utf16_slice).expect("Invalid UTF-16 sequence");
+            String::from_utf16(black_box(&utf16_bytes)).expect("Invalid UTF-16 sequence");
         });
     });
 }
