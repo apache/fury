@@ -205,7 +205,7 @@ class BinaryWriterBuilder {
     return `${this.holder}.uint64(${v})`;
   }
 
-  buffer(v: string) {
+  buffer(v: string) { // Accepting Uint8Array as a parameter
     return `${this.holder}.buffer(${v})`;
   }
 

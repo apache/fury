@@ -233,6 +233,26 @@ describe('object', () => {
     const obj = deserialize(bin);
     expect({kind: "123", path: null}).toEqual(obj)
 })
+
+  test('should handle emojis', () => {
+    const description = {
+      type: InternalSerializerType.OBJECT as const,
+      options: {
+        props: {
+          a: {
+            type: InternalSerializerType.STRING as const,
+          },
+        },
+        tag: "example.emoji"
+      }
+    };
+    
+    const fury = new Fury({ refTracking: true });
+    const { serialize, deserialize } = fury.registerSerializer(description);
+    const input = serialize({ a: "Hello, world! 🌍😊" });
+    const result = deserialize(input);
+    expect(result).toEqual({ a: "Hello, world! 🌍😊" });
+  });
 });
 
 
