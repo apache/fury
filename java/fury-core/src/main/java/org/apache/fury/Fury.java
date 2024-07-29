@@ -156,6 +156,7 @@ public final class Fury implements BaseFury {
     arrayListSerializer = new ArrayListSerializer(this);
     hashMapSerializer = new HashMapSerializer(this);
     originToCopyMap = new IdentityMap<>();
+    classDefEndOffset = -1;
     LOG.info("Created new fury {}", this);
   }
 
@@ -795,7 +796,7 @@ public final class Fury implements BaseFury {
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
-      if (shareMeta) {
+      if (shareMeta && classDefEndOffset != -1) {
         buffer.readerIndex(classDefEndOffset);
       }
       resetRead();
@@ -1122,7 +1123,7 @@ public final class Fury implements BaseFury {
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
-      if (shareMeta) {
+      if (shareMeta && classDefEndOffset != -1) {
         buffer.readerIndex(classDefEndOffset);
       }
       resetRead();
@@ -1232,7 +1233,7 @@ public final class Fury implements BaseFury {
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
-      if (shareMeta) {
+      if (shareMeta && classDefEndOffset != -1) {
         buffer.readerIndex(classDefEndOffset);
       }
       resetRead();
@@ -1444,7 +1445,6 @@ public final class Fury implements BaseFury {
   private void readClassDefs(MemoryBuffer buffer) {
     int relativeClassDefOffset = buffer.readInt32();
     if (relativeClassDefOffset == -1) {
-      classDefEndOffset = buffer.readerIndex();
       return;
     }
     int readerIndex = buffer.readerIndex();
@@ -1484,6 +1484,7 @@ public final class Fury implements BaseFury {
     nativeObjects.clear();
     peerOutOfBandEnabled = false;
     depth = 0;
+    classDefEndOffset = -1;
   }
 
   public void resetCopy() {
