@@ -170,8 +170,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         mapChunkWriter.writeFinalKey(key, buffer, keySerializer);
         mapChunkWriter.writeFinalValue(value, buffer, valueSerializer);
         mapChunkWriter.increaseChunkSize();
-//      fury.writeRef(buffer, key, keySerializer);
-//      fury.writeRef(buffer, value, valueSerializer);
     }
     mapChunkWriter.writeHeader(buffer);
   }
@@ -223,26 +221,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
-  private void javaKVTypesFinalWrite(
-      Fury fury,
-      MemoryBuffer buffer,
-      Map map,
-      GenericType keyGenericType,
-      GenericType valueGenericType,
-      Generics generics) {
-    Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
-    Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
-    for (Object object : map.entrySet()) {
-      Map.Entry entry = (Map.Entry) object;
-      generics.pushGenericType(keyGenericType);
-      fury.writeRef(buffer, entry.getKey(), keySerializer);
-      generics.popGenericType();
-      generics.pushGenericType(valueGenericType);
-      fury.writeRef(buffer, entry.getValue(), valueSerializer);
-      generics.popGenericType();
-    }
-  }
-
     /**
      * kv final write do not need to predict , since key and value is almost same type unless null
      *
@@ -277,35 +255,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           mapChunkWriter.increaseChunkSize();
       }
       mapChunkWriter.writeHeader(buffer);
-  }
-
-  private void javaKeyTypeFinalWrite(
-      Fury fury,
-      MemoryBuffer buffer,
-      Map map,
-      GenericType keyGenericType,
-      GenericType valueGenericType,
-      Generics generics) {
-    ClassResolver classResolver = fury.getClassResolver();
-    RefResolver refResolver = fury.getRefResolver();
-    boolean trackingValueRef = fury.getClassResolver().needToWriteRef(valueGenericType.getCls());
-    Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
-    for (Object object : map.entrySet()) {
-      Map.Entry entry = (Map.Entry) object;
-      generics.pushGenericType(keyGenericType);
-      fury.writeRef(buffer, entry.getKey(), keySerializer);
-      generics.popGenericType();
-      generics.pushGenericType(valueGenericType);
-      writeJavaRefOptimized(
-          fury,
-          classResolver,
-          refResolver,
-          trackingValueRef,
-          buffer,
-          entry.getValue(),
-          valueClassInfoWriteCache);
-      generics.popGenericType();
-    }
   }
 
   private void javaKeyTypeFinalChunkWrite(
@@ -395,18 +344,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         }
     }
     mapChunkWriter.writeHeader(buffer);
-  }
-
-  private void generalJavaWrite(Fury fury, MemoryBuffer buffer, Map map) {
-    ClassResolver classResolver = fury.getClassResolver();
-    RefResolver refResolver = fury.getRefResolver();
-    for (Object object : map.entrySet()) {
-      Map.Entry entry = (Map.Entry) object;
-      writeJavaRefOptimized(
-          fury, classResolver, refResolver, buffer, entry.getKey(), keyClassInfoWriteCache);
-      writeJavaRefOptimized(
-          fury, classResolver, refResolver, buffer, entry.getValue(), valueClassInfoWriteCache);
-    }
   }
 
     protected void generalJavaChunkWrite(Fury fury, MemoryBuffer buffer, Map map) {
@@ -583,14 +520,14 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     Generics generics = fury.getGenerics();
     GenericType genericType = generics.nextGenericType();
     if (genericType == null) {
-      javaChunkRead(fury, buffer, map, size);
+      generalJavaChunkRead(fury, buffer, map, size);
     } else {
       GenericType keyGenericType = genericType.getTypeParameter0();
       GenericType valueGenericType = genericType.getTypeParameter1();
       if (genericType.getTypeParametersCount() < 2) {
         Tuple2<GenericType, GenericType> kvGenericType = getKVGenericType(genericType);
         if (keyGenericType == objType && valueGenericType == objType) {
-            javaChunkRead(fury, buffer, map, size);
+            generalJavaChunkRead(fury, buffer, map, size);
           return;
         }
         keyGenericType = kvGenericType.f0;
@@ -644,27 +581,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
 
   }
 
-  private void javaKVTypesFinalRead(
-      Fury fury,
-      MemoryBuffer buffer,
-      Map map,
-      GenericType keyGenericType,
-      GenericType valueGenericType,
-      Generics generics,
-      int size) {
-    Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
-    Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
-    for (int i = 0; i < size; i++) {
-      generics.pushGenericType(keyGenericType);
-      Object key = fury.readRef(buffer, keySerializer);
-      generics.popGenericType();
-      generics.pushGenericType(valueGenericType);
-      Object value = fury.readRef(buffer, valueSerializer);
-      generics.popGenericType();
-      map.put(key, value);
-    }
-  }
-
     private void javaKeyTypeFinalChunkRead(Fury fury,
                                            MemoryBuffer buffer,
                                            Map map,
@@ -672,7 +588,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
                                            GenericType valueGenericType,
                                            Generics generics,
                                            int size) {
-        final MapChunkWriter mapChunkWriter = new MapChunkWriter(fury);
+        MapChunkWriter mapChunkWriter = new MapChunkWriter(fury);
         ClassResolver classResolver = fury.getClassResolver();
         boolean trackingValueRef = classResolver.needToWriteRef(valueGenericType.getCls());
         Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
@@ -680,7 +596,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
             byte chunkSize = buffer.readByte();
             Preconditions.checkArgument(chunkSize >= 0, "chunkSize < 0, which means serialization protocol is not same with deserialization protocol");
             byte header = buffer.readByte();
-            valueClassInfoReadCache.classInfo = classResolver.nilClassInfo();
             mapChunkWriter.setKeySerializer(null);
             mapChunkWriter.setValueSerializer(null);
             while (chunkSize > 0) {
@@ -697,28 +612,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         }
     }
 
-  private void javaKeyTypeFinalRead(Fury fury
-          , MemoryBuffer buffer
-          , Map map
-          , GenericType keyGenericType
-          , GenericType valueGenericType
-          , Generics generics
-          , int size) {
-    RefResolver refResolver = fury.getRefResolver();
-    boolean trackingValueRef = fury.getClassResolver().needToWriteRef(valueGenericType.getCls());
-    Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
-    for (int i = 0; i < size; i++) {
-      generics.pushGenericType(keyGenericType);
-      Object key = fury.readRef(buffer, keySerializer);
-      generics.popGenericType();
-      generics.pushGenericType(valueGenericType);
-      Object value =
-          readJavaRefOptimized(
-              fury, refResolver, trackingValueRef, buffer, valueClassInfoWriteCache);
-      generics.popGenericType();
-      map.put(key, value);
-    }
-  }
 
   private void javaValueTypeFinalChunkRead(Fury fury
           , MemoryBuffer buffer
@@ -737,8 +630,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           byte header = buffer.readByte();
           mapChunkWriter.setKeySerializer(null);
           mapChunkWriter.setValueSerializer(null);
-          valueClassInfoReadCache.classInfo = classResolver.nilClassInfo();
-          while(chunkSize > 0) {
+          while (chunkSize > 0) {
               generics.pushGenericType(keyGenericType);
               Object key = mapChunkWriter.readKey(header, buffer, classResolver, trackingKeyRef, keyClassInfoReadCache);
               generics.pushGenericType(valueGenericType);
@@ -752,28 +644,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       }
   }
 
-  private void javaValueTypeFinalRead(
-      Fury fury,
-      MemoryBuffer buffer,
-      Map map,
-      GenericType keyGenericType,
-      GenericType valueGenericType,
-      Generics generics,
-      int size) {
-    boolean trackingKeyRef = fury.getClassResolver().needToWriteRef(keyGenericType.getCls());
-    Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
-    RefResolver refResolver = fury.getRefResolver();
-    for (int i = 0; i < size; i++) {
-      generics.pushGenericType(keyGenericType);
-      Object key =
-          readJavaRefOptimized(fury, refResolver, trackingKeyRef, buffer, keyClassInfoWriteCache);
-      generics.popGenericType();
-      generics.pushGenericType(valueGenericType);
-      Object value = fury.readRef(buffer, valueSerializer);
-      generics.popGenericType();
-      map.put(key, value);
-    }
-  }
 
   private void javaKVTypesNonFinalChunkRead(Fury fury,
                                             MemoryBuffer buffer,
@@ -803,11 +673,9 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
               }
           } else {
               byte header = buffer.readByte();
-              keyClassInfoReadCache.classInfo = classResolver.nilClassInfo();
-              valueClassInfoReadCache.classInfo = classResolver.nilClassInfo();
               mapChunkWriter.setKeySerializer(null);
               mapChunkWriter.setValueSerializer(null);
-              while(chunkSize > 0) {
+              while (chunkSize > 0) {
                   generics.pushGenericType(keyGenericType);
                   Object key = mapChunkWriter.readKey(header, buffer, classResolver, trackingKeyRef, keyClassInfoReadCache);
                   generics.popGenericType();
@@ -822,34 +690,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       }
   }
 
-  private void javaKVTypesNonFinalRead(
-      Fury fury,
-      MemoryBuffer buffer,
-      Map map,
-      GenericType keyGenericType,
-      GenericType valueGenericType,
-      Generics generics,
-      int size) {
-    ClassResolver classResolver = fury.getClassResolver();
-    RefResolver refResolver = fury.getRefResolver();
-    boolean trackingKeyRef = classResolver.needToWriteRef(keyGenericType.getCls());
-    boolean trackingValueRef = classResolver.needToWriteRef(valueGenericType.getCls());
-    for (int i = 0; i < size; i++) {
-      generics.pushGenericType(keyGenericType);
-      Object key =
-          readJavaRefOptimized(fury, refResolver, trackingKeyRef, buffer, keyClassInfoWriteCache);
-      generics.popGenericType();
-      generics.pushGenericType(valueGenericType);
-      Object value =
-          readJavaRefOptimized(
-              fury, refResolver, trackingValueRef, buffer, valueClassInfoWriteCache);
-      generics.popGenericType();
-      map.put(key, value);
-    }
-  }
 
-
-  private void javaChunkRead(Fury fury, MemoryBuffer buffer, Map map, int size) {
+  private void generalJavaChunkRead(Fury fury, MemoryBuffer buffer, Map map, int size) {
       final MapChunkWriter mapChunkWriter = new MapChunkWriter(fury);
       ClassResolver classResolver = fury.getClassResolver();
       boolean trackingKeyRef = fury.trackingRef();
@@ -867,8 +709,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
               byte header = buffer.readByte();
               mapChunkWriter.setKeySerializer(null);
               mapChunkWriter.setValueSerializer(null);
-              keyClassInfoReadCache.classInfo = classResolver.nilClassInfo();
-              valueClassInfoReadCache.classInfo = classResolver.nilClassInfo();
               while (chunkSize > 0) {
                   Object key = mapChunkWriter.readKey(header, buffer, classResolver, trackingKeyRef, keyClassInfoReadCache);
                   Object value = mapChunkWriter.readValue(header, buffer, classResolver,  trackingKeyRef, valueClassInfoReadCache);
@@ -878,14 +718,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
               }
           }
       }
-  }
-
-  private void generalJavaRead(Fury fury, MemoryBuffer buffer, Map map, int size) {
-    for (int i = 0; i < size; i++) {
-      Object key = fury.readRef(buffer, keyClassInfoReadCache);
-      Object value = fury.readRef(buffer, valueClassInfoReadCache);
-      map.put(key, value);
-    }
   }
 
   @SuppressWarnings("unchecked")

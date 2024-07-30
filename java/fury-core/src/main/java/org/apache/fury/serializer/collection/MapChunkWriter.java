@@ -11,9 +11,6 @@ import org.apache.fury.util.Preconditions;
 
 import java.util.Map;
 
-/**
- * todo 1 value如果有空的情况，value可能有多个空，写class信息，在哪里写，2 写class当前可能写重复了
- */
 public class MapChunkWriter {
 
     private static final int MAX_CHUNK_SIZE = 127;
@@ -102,7 +99,6 @@ public class MapChunkWriter {
     public void increaseChunkSize() {
         chunkSize++;
     }
-
 
     public void generalChunkWrite(Object key, Object value, MemoryBuffer memoryBuffer, ClassResolver classResolver, RefResolver refResolver, ClassInfoHolder keyClassInfoWriteCache, ClassInfoHolder valueClassInfoWriteCache) {
         final boolean trackingRef = fury.trackingRef();
@@ -235,7 +231,6 @@ public class MapChunkWriter {
                     writeKeyClass(key, buffer, keyClassInfoWriteCache);
                     fury.writeRef(buffer, key, keyClassInfoWriteCache.getSerializer());
                 } else {
-                    // todo hening remove write class
                     if (!refResolver.writeNullFlag(buffer, key)) {
                         fury.writeRef(buffer, key, classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
                     }
@@ -283,12 +278,11 @@ public class MapChunkWriter {
 
     public void writeValue(Object value, MemoryBuffer buffer, ClassResolver classResolver, RefResolver refResolver, boolean trackingValueRef, ClassInfoHolder valueClassInfoWriteCache) {
         preserveByteForHeaderAndChunkSize(buffer);
+        updateValueHeader(value, trackingValueRef, valueIsNotSameType);
         if (!trackingValueRef) {
             if (value == null) {
-                updateValueHeader(null, false, false);
                 buffer.writeByte(Fury.NULL_FLAG);
             } else {
-                updateValueHeader(value, false, valueIsNotSameType);
                 if (!valueIsNotSameType) {
                     if (!valueHasNull()) {
                         writeValueClass(value, buffer, valueClassInfoWriteCache);
@@ -304,10 +298,8 @@ public class MapChunkWriter {
             }
         } else {
             if (value == null) {
-                updateValueHeader(null, true, false);
                 buffer.writeByte(Fury.NULL_FLAG);
             } else {
-                updateValueHeader(value, true, valueIsNotSameType);
                 if (!valueIsNotSameType) {
                     writeValueClass(value, buffer, valueClassInfoWriteCache);
                     if (!valueHasNull()) {
@@ -374,104 +366,6 @@ public class MapChunkWriter {
         }
     }
 
-
-//    private void writeValueNonNull(Object value, MemoryBuffer buffer, ClassResolver classResolver, RefResolver refResolver, ClassInfoHolder valueClassInfoWriteCache, boolean trackingValueRef) {
-//        updateValueHeader(value, buffer, valueClassInfoWriteCache, trackingValueRef);
-//        if (!trackingValueRef) {
-//            if (!valueNotSameType()) {
-//                Serializer valueSerializer = valueClassInfoWriteCache.getSerializer();
-//                if (valueHasNull()) {
-//                    buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-//                    valueSerializer.write(buffer, value);
-//                } else {
-//                    valueSerializer.write(buffer, value);
-//                }
-//            } else {
-//                if (keyIsNotSameType()) {
-//                    markChunkWriteFinish(buffer);
-//                }
-//                writeJavaRefOptimized(fury, classResolver, refResolver, false, buffer, value, valueClassInfoWriteCache);
-//            }
-//        } else {
-//            if (!valueNotSameType()) {
-//                if (!refResolver.writeRefOrNull(buffer, value)) {
-//                    valueClassInfoWriteCache.getSerializer().write(buffer, value);
-//                }
-//            } else {
-//                if (keyIsNotSameType()) {
-//                    markChunkWriteFinish(buffer);
-//                }
-//                writeJavaRefOptimized(fury, classResolver, refResolver, true, buffer, value, valueClassInfoWriteCache);
-//            }
-//        }
-//    }
-
-
-//    public void writeKey(Object key, MemoryBuffer buffer, ClassResolver classResolver, RefResolver refResolver, ClassInfoHolder keyClassInfoWriteCache) {
-//        preserveByteForHeaderAndChunkSize(buffer);
-//        final boolean trackingRef = fury.trackingRef();
-//        if (!trackingRef) {
-//            if (key == null) {
-//                header |= MapFlags.KEY_HAS_NULL;
-//                buffer.writeByte(Fury.NULL_FLAG);
-//            } else {
-//                updateKeyHeader(key, buffer, keyClassInfoWriteCache, false, keyIsNotSameType);
-//                if (!keyIsNotSameType) {
-//                    keyClassInfoWriteCache.getSerializer().write(buffer, key);
-//                } else {
-//                    fury.writeNonRef(buffer, key, classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
-//                }
-//            }
-//        } else {
-//            if (key == null) {
-//                //todo remove writeClass
-//                updateKeyHeader(null, buffer, keyClassInfoWriteCache, true, false);
-//                buffer.writeByte(Fury.NULL_FLAG);
-//            } else {
-//                if (!keyIsNotSameType) {
-//                    ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
-//                    boolean trackingKeyRef = classInfo.getSerializer().needToWriteRef();
-//                    updateKeyHeader(key, buffer, keyClassInfoWriteCache, trackingKeyRef, false);
-//                    fury.writeRef(buffer, key, keyClassInfoWriteCache.getSerializer());
-//                } else {
-//                    writeJavaRefOptimized(fury, classResolver, refResolver, buffer, key, keyClassInfoWriteCache);
-//                }
-//            }
-//        }
-//    }
-//
-//
-//    public void writeValue(Object value
-//            , MemoryBuffer buffer
-//            , ClassResolver classResolver
-//            , RefResolver refResolver
-//            , ClassInfoHolder valueClassInfoWriteCache) {
-//        preserveByteForHeaderAndChunkSize(buffer);
-//        boolean trackingRef = fury.trackingRef();
-//        if (!trackingRef) {
-//            if (value == null) {
-//                header |= MapFlags.VALUE_HAS_NULL;
-//                buffer.writeByte(Fury.NULL_FLAG);
-//            } else {
-//                updateValueHeader(value, buffer, valueClassInfoWriteCache, false, valueIsNotSameType);
-//                if (!valueIsNotSameType) {
-//                    if (!valueHasNull()) {
-//                        valueClassInfoWriteCache.getSerializer().write(buffer, value);
-//                    } else {
-//                        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-//                        valueClassInfoWriteCache.getSerializer().write(buffer, value);
-//                    }
-//                } else {
-//                    fury.writeNonRef(buffer, value, classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache));
-//                }
-//            }
-//        } else {
-//            ClassInfo classInfo = classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
-//            boolean trackingValueRef = classInfo.getSerializer().needToWriteRef();
-//            writeValueNonNull(value, buffer, classResolver, refResolver, valueClassInfoWriteCache, trackingValueRef);
-//        }
-//
-//    }
 
     private void updateKeyHeader(Object key, boolean trackingKeyRef, boolean keyIsNotSameType) {
         if (key == null) {
@@ -587,65 +481,6 @@ public class MapChunkWriter {
         valueClass = null;
     }
 
-    private void writeJavaRefOptimized(
-            Fury fury,
-            ClassResolver classResolver,
-            RefResolver refResolver,
-            boolean trackingRef,
-            MemoryBuffer buffer,
-            Object obj,
-            ClassInfoHolder classInfoHolder) {
-        if (trackingRef) {
-            if (!refResolver.writeNullFlag(buffer, obj)) {
-                fury.writeRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
-            }
-        } else {
-            if (obj == null) {
-                buffer.writeByte(Fury.NULL_FLAG);
-            } else {
-                buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-                fury.writeNonRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
-            }
-        }
-    }
-
-    private void writeJavaRefOptimized(
-            Fury fury,
-            ClassResolver classResolver,
-            RefResolver refResolver,
-            MemoryBuffer buffer,
-            Object obj,
-            ClassInfoHolder classInfoHolder) {
-        if (!refResolver.writeNullFlag(buffer, obj)) {
-            fury.writeRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
-        }
-    }
-
-    private Object readJavaRefOptimized(
-            Fury fury,
-            RefResolver refResolver,
-            boolean trackingRef,
-            MemoryBuffer buffer,
-            ClassInfoHolder classInfoHolder) {
-        if (trackingRef) {
-            int nextReadRefId = refResolver.tryPreserveRefId(buffer);
-            if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
-                Object obj = fury.readNonRef(buffer, classInfoHolder);
-                refResolver.setReadObject(nextReadRefId, obj);
-                return obj;
-            } else {
-                return refResolver.getReadObject();
-            }
-        } else {
-            byte headFlag = buffer.readByte();
-            if (headFlag == Fury.NULL_FLAG) {
-                return null;
-            } else {
-                return fury.readNonRef(buffer, classInfoHolder);
-            }
-        }
-    }
-
 
     private boolean keyHasNull() {
         return (header & MapFlags.KEY_HAS_NULL) == MapFlags.KEY_HAS_NULL;
@@ -675,4 +510,5 @@ public class MapChunkWriter {
     public void setValueSerializer(Serializer valueSerializer) {
         this.valueSerializer = valueSerializer;
     }
+
 }
