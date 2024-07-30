@@ -33,6 +33,8 @@ public class MapChunkWriter {
     private boolean keyIsNotSameType = false;
     private boolean valueIsNotSameType = false;
     private boolean prevKeyIsNull = false;
+    private Serializer keySerializer;
+    private Serializer valueSerializer;
 
     /**
      * mark chunk write finish
@@ -252,10 +254,10 @@ public class MapChunkWriter {
                 return null;
             } else {
                 if (!keyIsNotSameType()) {
-                    if (keyClassInfoReadCache.getSerializer() == null) {
-                        keyClassInfoReadCache.classInfo = classResolver.readClassInfo(memoryBuffer, keyClassInfoReadCache);
+                    if (keySerializer == null) {
+                        keySerializer = classResolver.readClassInfo(memoryBuffer, keyClassInfoReadCache).getSerializer();
                     }
-                    return keyClassInfoReadCache.getSerializer().read(memoryBuffer);
+                    return keySerializer.read(memoryBuffer);
                 } else {
                     return fury.readNonRef(memoryBuffer, keyClassInfoReadCache);
                 }
@@ -267,10 +269,10 @@ public class MapChunkWriter {
                 return null;
             } else {
                 if (!keyIsNotSameType()) {
-                    if (keyClassInfoReadCache.getSerializer() == null) {
-                        keyClassInfoReadCache.classInfo = classResolver.readClassInfo(memoryBuffer, keyClassInfoReadCache);
+                    if (keySerializer == null) {
+                        keySerializer = classResolver.readClassInfo(memoryBuffer, keyClassInfoReadCache).getSerializer();
                     }
-                    return fury.readRef(memoryBuffer, keyClassInfoReadCache.getSerializer());
+                    return fury.readRef(memoryBuffer, keySerializer);
                 } else {
                     return fury.readRef(memoryBuffer, keyClassInfoReadCache);
                 }
@@ -305,7 +307,7 @@ public class MapChunkWriter {
                 updateValueHeader(null, true, false);
                 buffer.writeByte(Fury.NULL_FLAG);
             } else {
-                updateKeyHeader(value, true, valueIsNotSameType);
+                updateValueHeader(value, true, valueIsNotSameType);
                 if (!valueIsNotSameType) {
                     writeValueClass(value, buffer, valueClassInfoWriteCache);
                     if (!valueHasNull()) {
@@ -331,40 +333,40 @@ public class MapChunkWriter {
                 if (valueHasNull()) {
                     byte flag = buffer.readByte();
                     if (flag == Fury.NOT_NULL_VALUE_FLAG) {
-                        if (valueClassInfoReadCache.getSerializer() == null) {
-                            valueClassInfoReadCache.classInfo = classResolver.readClassInfo(buffer, valueClassInfoReadCache);
+                        if (valueSerializer == null) {
+                            valueSerializer = classResolver.readClassInfo(buffer, valueClassInfoReadCache).getSerializer();
                         }
-                        return valueClassInfoReadCache.getSerializer().read(buffer);
+                        return valueSerializer.read(buffer);
                     } else {
                         return null;
                     }
                 } else {
-                    if (valueClassInfoReadCache.getSerializer() == null) {
-                        valueClassInfoReadCache.classInfo = classResolver.readClassInfo(buffer, valueClassInfoReadCache);
+                    if (valueSerializer == null) {
+                        valueSerializer = classResolver.readClassInfo(buffer, valueClassInfoReadCache).getSerializer();
                     }
-                    return valueClassInfoReadCache.getSerializer().read(buffer);
+                    return valueSerializer.read(buffer);
                 }
             } else {
                 return fury.readNullable(buffer, valueClassInfoReadCache);
             }
 
         } else {
-            if (!valueIsNotSameType) {
+            if (!valueIsNotSameType()) {
                 if (valueHasNull()) {
                     byte flag = buffer.readByte();
                     if (flag == Fury.NOT_NULL_VALUE_FLAG) {
-                        if (valueClassInfoReadCache.getSerializer() == null) {
-                            valueClassInfoReadCache.classInfo = classResolver.readClassInfo(buffer, valueClassInfoReadCache);
+                        if (valueSerializer == null) {
+                            valueSerializer = classResolver.readClassInfo(buffer, valueClassInfoReadCache).getSerializer();
                         }
-                        return fury.readRef(buffer, valueClassInfoReadCache.getSerializer());
+                        return fury.readRef(buffer, valueSerializer);
                     } else {
                         return null;
                     }
                 } else {
-                    if (valueClassInfoReadCache.getSerializer() == null) {
-                        valueClassInfoReadCache.classInfo = classResolver.readClassInfo(buffer, valueClassInfoReadCache);
+                    if (valueSerializer == null) {
+                        valueSerializer = classResolver.readClassInfo(buffer, valueClassInfoReadCache).getSerializer();
                     }
-                    return fury.readRef(buffer, valueClassInfoReadCache.getSerializer());
+                    return fury.readRef(buffer, valueSerializer);
                 }
             } else {
                 return fury.readRef(buffer, valueClassInfoReadCache);
@@ -486,18 +488,18 @@ public class MapChunkWriter {
     }
 
     private void writeKeyClass(Object key, MemoryBuffer memoryBuffer, ClassInfoHolder keyClassInfoWriteCache) {
+        ClassResolver classResolver = fury.getClassResolver();
+        ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
         if (!writeKeyClassInfo) {
-            ClassResolver classResolver = fury.getClassResolver();
-            ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
             classResolver.writeClass(memoryBuffer, classInfo);
             writeKeyClassInfo = true;
         }
     }
 
     private void writeValueClass(Object value, MemoryBuffer memoryBuffer, ClassInfoHolder valueClassInfoWriteCache) {
+        ClassResolver classResolver = fury.getClassResolver();
+        ClassInfo classInfo = classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
         if (!writeValueClassInfo) {
-            ClassResolver classResolver = fury.getClassResolver();
-            ClassInfo classInfo = classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
             classResolver.writeClass(memoryBuffer, classInfo);
             writeValueClassInfo = true;
         }
@@ -666,4 +668,11 @@ public class MapChunkWriter {
     }
 
 
+    public void setKeySerializer(Serializer keySerializer) {
+        this.keySerializer = keySerializer;
+    }
+
+    public void setValueSerializer(Serializer valueSerializer) {
+        this.valueSerializer = valueSerializer;
+    }
 }
