@@ -267,10 +267,10 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
 
   @Override
   public ClassResolver getClassResolver() {
-      return bindingThreadLocal.get().get().getClassResolver();
+    return bindingThreadLocal.get().get().getClassResolver();
   }
 
-    @Override
+  @Override
   public void clearClassLoader(ClassLoader loader) {
     bindingThreadLocal.get().clearClassLoader(loader);
   }

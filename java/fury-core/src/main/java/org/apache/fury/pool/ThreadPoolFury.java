@@ -289,12 +289,11 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
 
   @Override
   public ClassResolver getClassResolver() {
-      return execute(Fury::getClassResolver);
+    return execute(Fury::getClassResolver);
   }
 
-    @Override
+  @Override
   public void clearClassLoader(ClassLoader loader) {
     furyPooledObjectFactory.clearClassLoader(loader);
   }
-
 }
