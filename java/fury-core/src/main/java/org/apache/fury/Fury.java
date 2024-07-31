@@ -341,14 +341,13 @@ public final class Fury implements BaseFury {
       buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
     }
     // reduce caller stack
-    boolean isNull = refResolver.writeRefOrNull(buffer, obj);
-    if (!isNull) {
+    if (!refResolver.writeRefOrNull(buffer, obj)) {
       ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
       classResolver.writeClass(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
     MetaContext metaContext = getSerializationContext().getMetaContext();
-    if (shareMeta && !isNull && metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
+    if (shareMeta && metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
       buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
       classResolver.writeClassDefs(buffer);
     }
