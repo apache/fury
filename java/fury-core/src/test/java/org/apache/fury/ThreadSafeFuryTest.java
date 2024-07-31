@@ -223,7 +223,6 @@ public class ThreadSafeFuryTest extends FuryTestBase {
   public void testClassDuplicateName(StagingType staging) {
     ThreadSafeFury fury = Fury.builder().requireClassRegistration(false).buildThreadSafeFury();
     String className = "DuplicateStruct";
-
     Class<?> structClass1 = Struct.createStructClass(className, 1);
     Object struct1 = Struct.createPOJO(structClass1);
     byte[] bytes1 = fury.serialize(struct1);
@@ -256,7 +255,10 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     byte[] newBytes1 = fury.serialize(struct1);
     CompletableFuture.runAsync(
             () -> {
-              fury.setClassLoader(structClass1.getClassLoader(), staging);
+            fury.setClassLoader(structClass1.getClassLoader(), staging);
+            fury.getClassResolver().setClassChecker((classResolver, className1) -> true);
+            fury.getClassResolver().setSerializerFactory(
+                    (fury1, cls) -> null);
               Assert.assertEquals(fury.deserialize(newBytes1), struct1);
             })
         .join();

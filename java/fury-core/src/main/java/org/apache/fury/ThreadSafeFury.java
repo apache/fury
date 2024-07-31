@@ -21,6 +21,7 @@ package org.apache.fury;
 
 import java.nio.ByteBuffer;
 import java.util.function.Function;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.LoaderBinding;
 
 /**
@@ -62,6 +63,9 @@ public interface ThreadSafeFury extends BaseFury {
 
   /** Returns classLoader of serializer for current thread. */
   ClassLoader getClassLoader();
+
+  /** Returns classLoader of serializer for current thread. */
+  ClassResolver getClassResolver();
 
   /**
    * Clean up classloader set by {@link #setClassLoader(ClassLoader, LoaderBinding.StagingType)},

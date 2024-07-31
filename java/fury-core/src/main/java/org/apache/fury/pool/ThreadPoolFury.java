@@ -33,6 +33,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.util.LoaderBinding;
 
@@ -287,7 +288,13 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   @Override
+  public ClassResolver getClassResolver() {
+      return execute(Fury::getClassResolver);
+  }
+
+    @Override
   public void clearClassLoader(ClassLoader loader) {
     furyPooledObjectFactory.clearClassLoader(loader);
   }
+
 }
