@@ -79,6 +79,7 @@ public final class FuryBuilder {
   boolean scalaOptimizationEnabled = false;
   boolean suppressClassRegistrationWarnings = true;
   boolean deserializeNonexistentEnumValueAsNull = false;
+  boolean chunkSerializeMapEnabled = false;
   MetaCompressor metaCompressor = new DeflaterMetaCompressor();
 
   public FuryBuilder() {}
@@ -301,6 +302,16 @@ public final class FuryBuilder {
   /** Whether enable scala-specific serialization optimization. */
   public FuryBuilder withScalaOptimizationEnabled(boolean enableScalaOptimization) {
     this.scalaOptimizationEnabled = enableScalaOptimization;
+    return this;
+  }
+
+    /**
+     * use chunk by chunk method to serialize map, TODO: generate code for chunk by chunk method
+     * @param chunkSerializeMapEnabled
+     * @return
+     */
+  public FuryBuilder withChunkSerializeMapEnable(boolean chunkSerializeMapEnabled) {
+    this.chunkSerializeMapEnabled = chunkSerializeMapEnabled;
     return this;
   }
 

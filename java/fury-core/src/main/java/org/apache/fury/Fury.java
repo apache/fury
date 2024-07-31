@@ -1389,6 +1389,10 @@ public final class Fury implements BaseFury {
     return config.getDefaultJDKStreamSerializerType();
   }
 
+  public boolean isChunkSerializeMapEnabled() {
+    return config.isChunkSerializeMapEnabled();
+  }
+
   public boolean compressString() {
     return config.compressString();
   }
