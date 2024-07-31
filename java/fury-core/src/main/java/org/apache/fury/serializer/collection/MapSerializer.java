@@ -44,9 +44,9 @@ public class MapSerializer<T extends Map> extends AbstractMapSerializer<T> {
   public T read(MemoryBuffer buffer) {
     Map map = newMap(buffer);
     if (fury.isChunkSerializeMapEnabled()) {
-        chunkReadElements(buffer, getAndClearNumElements(), map);
+      chunkReadElements(buffer, getAndClearNumElements(), map);
     } else {
-        readElements(buffer, getAndClearNumElements(), map);
+      readElements(buffer, getAndClearNumElements(), map);
     }
     return onMapRead(map);
   }

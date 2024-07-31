@@ -305,11 +305,12 @@ public final class FuryBuilder {
     return this;
   }
 
-    /**
-     * use chunk by chunk method to serialize map, TODO: generate code for chunk by chunk method
-     * @param chunkSerializeMapEnabled
-     * @return
-     */
+  /**
+   * use chunk by chunk method to serialize map, TODO: generate code for chunk by chunk method
+   *
+   * @param chunkSerializeMapEnabled
+   * @return
+   */
   public FuryBuilder withChunkSerializeMapEnable(boolean chunkSerializeMapEnabled) {
     this.chunkSerializeMapEnabled = chunkSerializeMapEnabled;
     return this;

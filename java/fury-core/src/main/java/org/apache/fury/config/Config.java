@@ -60,7 +60,6 @@ public class Config implements Serializable {
   private transient int configHash;
   private final boolean deserializeNonexistentEnumValueAsNull;
 
-
   public Config(FuryBuilder builder) {
     language = builder.language;
     trackingRef = builder.trackingRef;
