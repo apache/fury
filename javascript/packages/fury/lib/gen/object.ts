@@ -102,9 +102,13 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const encodedMetaInformation = computeMetaInformation(this.description);
     const result = this.scope.uniqueName("result");
     const pass = this.builder.reader.int32();
+    const handler = this.scope.declare("handler","");    
     return `
       if (${this.builder.reader.int32()} !== ${expectHash}) {
           throw new Error("got ${this.builder.reader.int32()} validate hash failed: ${this.safeTag()}. expect ${expectHash}");
+      }
+      if(${handler} == ""){
+        ${handler} = ${this.builder.classResolver.getSerializerByTag(decodeMetaInformation(encodedMetaInformation))};
       }
       const ${result} = {
         ${Object.entries(options.props).sort().map(([key]) => {
@@ -125,8 +129,6 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     `;
   }
 
-  // /8 /7 /20 % 2
-  // is there a ratio from length / deserializer
   private safeTag() {
     return CodecBuilder.replaceBackslashAndQuote(this.description.options.tag);
   }
