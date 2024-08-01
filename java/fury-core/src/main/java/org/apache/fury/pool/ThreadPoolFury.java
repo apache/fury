@@ -33,8 +33,9 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.ClassChecker;
 import org.apache.fury.serializer.BufferCallback;
+import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.util.LoaderBinding;
 
 @ThreadSafe
@@ -288,8 +289,22 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public ClassResolver getClassResolver() {
-    return execute(Fury::getClassResolver);
+  public void setClassChecker(ClassChecker classChecker) {
+    execute(
+        fury -> {
+          fury.getClassResolver().setClassChecker(classChecker);
+          return null;
+        });
+  }
+
+  @Override
+  public ClassChecker getClassChecker() {
+    return execute(fury -> fury.getClassResolver().getClassChecker());
+  }
+
+  @Override
+  public SerializerFactory getSerializerFactory() {
+    return execute(fury -> fury.getClassResolver().getSerializerFactory());
   }
 
   @Override

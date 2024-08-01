@@ -256,8 +256,8 @@ public class ThreadSafeFuryTest extends FuryTestBase {
     CompletableFuture.runAsync(
             () -> {
               fury.setClassLoader(structClass1.getClassLoader(), staging);
-              fury.getClassResolver().setClassChecker((classResolver, className1) -> true);
-              fury.getClassResolver().setSerializerFactory((fury1, cls) -> null);
+              fury.setClassChecker((classResolver, className1) -> true);
+              fury.setSerializerFactory((fury1, cls) -> null);
               Assert.assertEquals(fury.deserialize(newBytes1), struct1);
             })
         .join();

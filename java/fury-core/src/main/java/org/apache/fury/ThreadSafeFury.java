@@ -21,7 +21,8 @@ package org.apache.fury;
 
 import java.nio.ByteBuffer;
 import java.util.function.Function;
-import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.ClassChecker;
+import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.util.LoaderBinding;
 
 /**
@@ -64,8 +65,25 @@ public interface ThreadSafeFury extends BaseFury {
   /** Returns classLoader of serializer for current thread. */
   ClassLoader getClassLoader();
 
-  /** Returns classLoader of serializer for current thread. */
-  ClassResolver getClassResolver();
+  /**
+   * Set ClassChecker of serializer for current thread only.
+   *
+   * @param classChecker {@link ClassChecker} for classChecker
+   */
+  void setClassChecker(ClassChecker classChecker);
+
+  /** Returns ClassChecker of serializer for current thread. */
+  ClassChecker getClassChecker();
+
+  /**
+   * Set tSerializerFactory of serializer for current thread only.
+   *
+   * @param serializerFactory {@link SerializerFactory} for serializerFactory
+   */
+  void setSerializerFactory(SerializerFactory serializerFactory);
+
+  /** Returns SerializerFactory of serializer for current thread. */
+  SerializerFactory getSerializerFactory();
 
   /**
    * Clean up classloader set by {@link #setClassLoader(ClassLoader, LoaderBinding.StagingType)},
