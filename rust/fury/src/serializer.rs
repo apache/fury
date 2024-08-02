@@ -49,7 +49,7 @@ fn to_u8_slice<T>(slice: &[T]) -> &[u8] {
 /// Types that implement the Serialize trait can be serialized to Fury.
 ///
 /// 1. Normal situation:
-/// The order of function calls is reserved_space -> serialize -> write.
+///    The order of function calls is reserved_space -> serialize -> write.
 ///     a. reserved_space is used to allocate the fixed memory space, which can avoid the cost of the memory check.
 ///         However, dynamic types like strings should allocate the size separately before being written to the buffer.
 ///     b. serialize is used to serialize the data into the buffer. The first step is to write the object head,
@@ -57,10 +57,10 @@ fn to_u8_slice<T>(slice: &[T]) -> &[u8] {
 ///         The second step is to call the write function, which is used to write the Rust object.
 ///     c. write is used to write the Rust object into the buffer.
 /// 2. Vec situation:
-/// If the object is in a Vec, the call order is reserved_space -> serialize -> write -> write_vec.
-/// The write_vec function is used to write the elements of the Vec. But why can't we just loop through the elements and write each element one by one?
-/// This is because Fury includes some primitive types like FuryPrimitiveBoolArray which do not include the head of the elements,
-/// but other Vecs do. So the write_vec function is necessary to handle the differences. Primitive arrays can overwrite the function.
+///    If the object is in a Vec, the call order is reserved_space -> serialize -> write -> write_vec.
+///    The write_vec function is used to write the elements of the Vec. But why can't we just loop through the elements and write each element one by one?
+///    This is because Fury includes some primitive types like FuryPrimitiveBoolArray which do not include the head of the elements,
+///    but other Vecs do. So the write_vec function is necessary to handle the differences. Primitive arrays can overwrite the function.
 pub trait Serialize
 where
     Self: Sized + FuryMeta,
