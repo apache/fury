@@ -268,11 +268,6 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public void setClassChecker(ClassChecker classChecker) {
-      processCallback(fury -> fury.getClassResolver().setClassChecker(classChecker));
-  }
-
-  @Override
   public ClassChecker getClassChecker() {
     return bindingThreadLocal.get().get().getClassResolver().getClassChecker();
   }
