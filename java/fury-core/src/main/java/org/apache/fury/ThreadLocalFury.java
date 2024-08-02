@@ -32,7 +32,6 @@ import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassChecker;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.BufferCallback;
-import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.util.LoaderBinding;
 import org.apache.fury.util.LoaderBinding.StagingType;
 
@@ -270,11 +269,6 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   @Override
   public ClassChecker getClassChecker() {
     return bindingThreadLocal.get().get().getClassResolver().getClassChecker();
-  }
-
-  @Override
-  public SerializerFactory getSerializerFactory() {
-    return bindingThreadLocal.get().get().getSerializerFactory();
   }
 
   @Override

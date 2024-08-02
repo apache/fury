@@ -35,7 +35,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.resolver.ClassChecker;
 import org.apache.fury.serializer.BufferCallback;
-import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.util.LoaderBinding;
 
 @ThreadSafe
@@ -300,11 +299,6 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   @Override
   public ClassChecker getClassChecker() {
     return execute(fury -> fury.getClassResolver().getClassChecker());
-  }
-
-  @Override
-  public SerializerFactory getSerializerFactory() {
-    return execute(fury -> fury.getClassResolver().getSerializerFactory());
   }
 
   @Override

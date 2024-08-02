@@ -82,9 +82,6 @@ public interface ThreadSafeFury extends BaseFury {
    */
   void setSerializerFactory(SerializerFactory serializerFactory);
 
-  /** Returns SerializerFactory of serializer for current thread. */
-  SerializerFactory getSerializerFactory();
-
   /**
    * Clean up classloader set by {@link #setClassLoader(ClassLoader, LoaderBinding.StagingType)},
    * <code>
