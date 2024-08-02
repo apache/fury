@@ -80,29 +80,27 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       return originObj;
     }
     if (isRecord) {
-      Object[] fieldValues = copyFields(originObj);
-      try {
-        T t = (T) constructor.invokeWithArguments(fieldValues);
-        Arrays.fill(copyRecordInfo.getRecordComponents(), null);
-        return t;
-      } catch (Throwable e) {
-        Platform.throwException(e);
-      }
-      return originObj;
+      return copyRecord(originObj);
     }
-    T newObj;
+    T newObj = newBean();
     if (needToCopyRef) {
-      T copyObject = (T) fury.getCopyObject(originObj);
-      if (copyObject != null) {
-        return copyObject;
-      }
-      newObj = newBean();
       fury.reference(originObj, newObj);
-    } else {
-      newObj = newBean();
     }
     copyFields(originObj, newObj);
     return newObj;
+  }
+
+  private T copyRecord(T originObj) {
+    Object[] fieldValues = copyFields(originObj);
+    try {
+      T t = (T) constructor.invokeWithArguments(fieldValues);
+      Arrays.fill(copyRecordInfo.getRecordComponents(), null);
+      fury.reference(originObj, t);
+      return t;
+    } catch (Throwable e) {
+      Platform.throwException(e);
+    }
+    return originObj;
   }
 
   private Object[] copyFields(T originObj) {

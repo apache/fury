@@ -19,6 +19,10 @@
 
 package org.apache.fury.benchmark.data;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.fury.util.StringUtils;
 
 public class Data {
@@ -92,5 +96,21 @@ public class Data {
       strLength = Integer.parseInt(strLengthStr);
     }
     return StringUtils.random(strLength);
+  }
+
+  public List<String> stringList = new ArrayList<>();
+  public List<Integer> intList = new ArrayList<>();
+  public Object[] objectArray = new Integer[20];
+  public Map<String, String> stringMap = new HashMap<>();
+  public Map<Integer, Integer> intMap = new HashMap<>();
+
+  {
+    for (int i = 0; i < 20; i++) {
+      stringList.add("hello, " + i);
+      objectArray[i] = i;
+      intList.add(i);
+      stringMap.put("key" + i, "value" + i);
+      intMap.put(i, i * 2);
+    }
   }
 }
