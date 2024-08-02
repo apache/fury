@@ -65,7 +65,7 @@ fn complex_struct() {
         c5: 2.0,
         c6: 4.0,
     };
-    let fury = Fury::new();
+    let fury = Fury::default();
     let bin: Vec<u8> = fury.serialize(&person);
     let obj: Person = fury.deserialize(&bin).expect("should success");
     assert_eq!(person, obj);
@@ -92,7 +92,7 @@ fn encode_to_obin() {
         f8: f64,
         f10: HashMap<i32, f64>,
     }
-    let fury = Fury::new();
+    let fury = Fury::default();
     let bin: Vec<u8> = fury.serialize(&Person {
         f1: "Hello".to_string(),
         f2: HashMap::from([("hello1".to_string(), 1), ("hello2".to_string(), 2)]),

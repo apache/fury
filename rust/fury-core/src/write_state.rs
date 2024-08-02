@@ -34,7 +34,7 @@ impl<'se> WriteState<'se> {
             writer,
             tags: Vec::new(),
             fury,
-            meta_store: MetaWriterStore::new(),
+            meta_store: MetaWriterStore::default(),
         }
     }
 
@@ -43,7 +43,7 @@ impl<'se> WriteState<'se> {
     }
 
     pub fn get_fury(&self) -> &Fury {
-        &self.fury
+        self.fury
     }
 
     pub fn write_tag(&mut self, tag: &'static str) {

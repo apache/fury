@@ -26,13 +26,15 @@ pub struct Fury {
     mode: Mode,
 }
 
-impl Fury {
-    pub fn new() -> Fury {
+impl Default for Fury {
+    fn default() -> Self {
         Fury {
             mode: Mode::Compatible,
         }
     }
+}
 
+impl Fury {
     pub fn mode(&mut self, mode: Mode) {
         self.mode = mode;
     }

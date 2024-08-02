@@ -36,7 +36,7 @@ impl<'de, 'bf: 'de> ReadState<'de, 'bf> {
     }
 
     pub fn get_fury(&self) -> &Fury {
-        &self.fury
+        self.fury
     }
 
     pub fn head(&mut self) -> Result<(), Error> {

@@ -79,7 +79,7 @@ impl Serializer for Vec<bool> {
     fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
         let size = deserializer.reader.var_int32();
         let bytes = deserializer.reader.bytes(size as usize).to_vec();
-        Ok(unsafe { mem::transmute(bytes) })
+        Ok(unsafe { mem::transmute::<Vec<u8>, Vec<bool>>(bytes) })
     }
 }
 

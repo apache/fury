@@ -34,7 +34,7 @@ impl MetaReaderStore {
     }
 
     fn get(&self, index: usize) -> &TypeMeta {
-        unsafe { &self.reading_type_defs.get_unchecked(index) }
+        unsafe { self.reading_type_defs.get_unchecked(index) }
     }
 
     fn from_bytes(reader: &mut Reader) -> MetaReaderStore {
@@ -47,6 +47,7 @@ impl MetaReaderStore {
     }
 }
 
+#[derive(Default)]
 pub struct MetaWriterStore<'a> {
     writing_type_defs: Vec<&'a [u8]>,
     index_map: HashMap<u32, usize>,
@@ -54,13 +55,6 @@ pub struct MetaWriterStore<'a> {
 
 #[allow(dead_code)]
 impl<'a> MetaWriterStore<'a> {
-    pub fn new() -> MetaWriterStore<'a> {
-        MetaWriterStore {
-            writing_type_defs: Vec::new(),
-            index_map: HashMap::new(),
-        }
-    }
-
     pub fn push<'b: 'a>(&mut self, type_id: u32, type_meta_bytes: &'b [u8]) -> usize {
         match self.index_map.get(&type_id) {
             None => {
