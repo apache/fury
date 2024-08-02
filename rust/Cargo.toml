@@ -17,6 +17,7 @@
 
 [workspace]
 members = [
+    "fury-core",
     "fury",
     "fury-derive",
     "tests"
