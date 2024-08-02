@@ -16,7 +16,6 @@
 // under the License.
 
 use super::buffer::Reader;
-use super::types::Language;
 use crate::error::Error;
 use crate::fury::Fury;
 
@@ -37,13 +36,6 @@ impl<'de, 'bf: 'de> ReadState<'de, 'bf> {
 
     pub fn get_fury(&self) -> &Fury {
         self.fury
-    }
-
-    pub fn head(&mut self) -> Result<(), Error> {
-        let _bitmap = self.reader.u8();
-        let _language: Language = self.reader.u8().try_into()?;
-        self.reader.skip(8); // native offset and size
-        Ok(())
     }
 
     pub fn read_tag(&mut self) -> Result<&str, Error> {

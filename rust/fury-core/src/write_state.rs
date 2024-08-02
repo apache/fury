@@ -16,10 +16,8 @@
 // under the License.
 
 use super::buffer::Writer;
-use super::types::{config_flags, Language, SIZE_OF_REF_AND_TYPE};
 use crate::fury::Fury;
 use crate::meta::MetaWriterStore;
-use crate::serializer::Serializer;
 
 pub struct WriteState<'se> {
     pub writer: &'se mut Writer,
@@ -63,20 +61,5 @@ impl<'se> WriteState<'se> {
                 self.writer.bytes(tag.as_bytes());
             }
         };
-    }
-
-    pub fn head<T: Serializer>(&mut self) -> &Self {
-        const HEAD_SIZE: usize = 10;
-        self.writer
-            .reserve(<T as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE + HEAD_SIZE);
-
-        let mut bitmap = 0;
-        bitmap |= config_flags::IS_LITTLE_ENDIAN_FLAG;
-        bitmap |= config_flags::IS_CROSS_LANGUAGE_FLAG;
-        self.writer.u8(bitmap);
-        self.writer.u8(Language::Rust as u8);
-        self.writer.skip(4); // native offset
-        self.writer.skip(4); // native size
-        self
     }
 }

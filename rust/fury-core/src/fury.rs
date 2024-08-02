@@ -19,7 +19,7 @@ use crate::buffer::{Reader, Writer};
 use crate::error::Error;
 use crate::read_state::ReadState;
 use crate::serializer::Serializer;
-use crate::types::Mode;
+use crate::types::{config_flags, Language, Mode, SIZE_OF_REF_AND_TYPE};
 use crate::write_state::WriteState;
 
 pub struct Fury {
@@ -43,17 +43,37 @@ impl Fury {
         &self.mode
     }
 
+
+    pub fn write_head<T: Serializer>(&self, writer: &mut Writer) {
+        const HEAD_SIZE: usize = 10;
+        writer.reserve(<T as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE + HEAD_SIZE);
+        let mut bitmap = 0;
+        bitmap |= config_flags::IS_LITTLE_ENDIAN_FLAG;
+        bitmap |= config_flags::IS_CROSS_LANGUAGE_FLAG;
+        writer.u8(bitmap);
+        writer.u8(Language::Rust as u8);
+        writer.skip(4); // native offset
+        writer.skip(4); // native size
+    }
+
+    fn read_head(&self, reader: &mut Reader) -> Result<(), Error> {
+        let _bitmap = reader.u8();
+        let _language: Language = reader.u8().try_into()?;
+        reader.skip(8); // native offset and size
+        Ok(())
+    }
+
     pub fn deserialize<T: Serializer>(&self, bf: &[u8]) -> Result<T, Error> {
-        let reader = Reader::new(bf);
+        let mut reader = Reader::new(bf);
+        self.read_head(&mut reader)?;
         let mut deserializer = ReadState::new(self, reader);
-        deserializer.head()?;
         <T as Serializer>::deserialize(&mut deserializer)
     }
 
     pub fn serialize<T: Serializer>(&self, record: &T) -> Vec<u8> {
         let mut writer = Writer::default();
+        self.write_head(&mut writer);
         let mut serializer = WriteState::new(self, &mut writer);
-        serializer.head::<T>();
         <T as Serializer>::serialize(record, &mut serializer);
         writer.dump()
     }
