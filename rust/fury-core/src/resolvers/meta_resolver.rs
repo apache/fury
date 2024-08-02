@@ -15,66 +15,61 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use std::any::TypeId;
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
 use crate::meta::TypeMeta;
 use std::collections::HashMap;
+use std::rc::Rc;
 
-#[allow(dead_code)]
-pub struct MetaReaderStore {
-    reading_type_defs: Vec<TypeMeta>,
+#[derive(Default)]
+pub struct MetaReaderResolver {
+    reading_type_defs: Vec<Rc<TypeMeta>>,
 }
 
-#[allow(dead_code)]
-impl MetaReaderStore {
-    fn new() -> MetaReaderStore {
-        MetaReaderStore {
-            reading_type_defs: Vec::new(),
-        }
-    }
-
-    fn get(&self, index: usize) -> &TypeMeta {
+impl MetaReaderResolver {
+    pub fn get(&self, index: usize) -> &Rc<TypeMeta> {
         unsafe { self.reading_type_defs.get_unchecked(index) }
     }
 
-    fn from_bytes(reader: &mut Reader) -> MetaReaderStore {
+    pub fn load(&mut self, reader: &mut Reader) {
         let meta_size = reader.var_int32();
-        let mut reading_type_defs = Vec::<TypeMeta>::with_capacity(meta_size as usize);
+        self.reading_type_defs.reserve(meta_size as usize);
         for _ in 0..meta_size {
-            reading_type_defs.push(TypeMeta::from_bytes(reader));
+            self.reading_type_defs.push(Rc::new(TypeMeta::from_bytes(reader)));
         }
-        MetaReaderStore { reading_type_defs }
     }
 }
 
 #[derive(Default)]
-pub struct MetaWriterStore<'a> {
-    writing_type_defs: Vec<&'a [u8]>,
-    index_map: HashMap<u32, usize>,
+pub struct MetaWriterResolver<'a> {
+    type_defs: Vec<&'a [u8]>,
+    type_id_index_map: HashMap<TypeId, usize>,
 }
 
 #[allow(dead_code)]
-impl<'a> MetaWriterStore<'a> {
-    pub fn push<'b: 'a>(&mut self, type_id: u32, type_meta_bytes: &'b [u8]) -> usize {
-        match self.index_map.get(&type_id) {
+impl<'a> MetaWriterResolver<'a> {
+    pub fn push<'b: 'a>(&mut self, type_id: TypeId, type_meta_bytes: &'b [u8]) -> usize {
+        match self.type_id_index_map.get(&type_id) {
             None => {
-                let index = self.writing_type_defs.len();
-                self.writing_type_defs.push(type_meta_bytes);
-                self.index_map.insert(type_id, index);
+                let index = self.type_defs.len();
+                self.type_defs.push(type_meta_bytes);
+                self.type_id_index_map.insert(type_id, index);
                 index
             }
             Some(index) => *index,
         }
     }
 
-    fn to_bytes(&self, writer: &mut Writer) -> Result<(), Error> {
-        for item in self.writing_type_defs.iter() {
+    pub fn to_bytes(&self, writer: &mut Writer) -> Result<(), Error> {
+        writer.var_int32(self.type_defs.len() as i32);
+        for item in self.type_defs.iter() {
             writer.bytes(item)
         }
         Ok(())
     }
 
-    fn reset(&mut self) {
-        self.writing_type_defs.clear();
+    pub fn reset(&mut self) {
+        self.type_defs.clear();
     }
 }

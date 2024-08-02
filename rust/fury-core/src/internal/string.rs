@@ -16,10 +16,10 @@
 // under the License.
 
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolvers::context::ReadContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList};
-use crate::write_state::WriteState;
+use crate::resolvers::context::WriteContext;
 use std::mem;
 
 impl Serializer for String {
@@ -27,14 +27,14 @@ impl Serializer for String {
         mem::size_of::<i32>()
     }
 
-    fn write(&self, serializer: &mut WriteState) {
-        serializer.writer.var_int32(self.len() as i32);
-        serializer.writer.bytes(self.as_bytes());
+    fn write(&self, context: &mut WriteContext) {
+        context.writer.var_int32(self.len() as i32);
+        context.writer.bytes(self.as_bytes());
     }
 
-    fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
-        let len = deserializer.reader.var_int32();
-        Ok(deserializer.reader.string(len as usize))
+    fn read(context: &mut ReadContext) -> Result<Self, Error> {
+        let len = context.reader.var_int32();
+        Ok(context.reader.string(len as usize))
     }
 
     fn ty() -> FieldType {

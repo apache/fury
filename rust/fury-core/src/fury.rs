@@ -15,12 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use std::cmp::PartialEq;
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolvers::context::ReadContext;
 use crate::serializer::Serializer;
 use crate::types::{config_flags, Language, Mode, SIZE_OF_REF_AND_TYPE};
-use crate::write_state::WriteState;
+use crate::resolvers::context::WriteContext;
 
 pub struct Fury {
     mode: Mode,
@@ -29,14 +30,16 @@ pub struct Fury {
 impl Default for Fury {
     fn default() -> Self {
         Fury {
-            mode: Mode::Compatible,
+            mode: Mode::SchemaConsistent,
         }
     }
 }
 
+
 impl Fury {
-    pub fn mode(&mut self, mode: Mode) {
+    pub fn mode(mut self, mode: Mode) -> Self {
         self.mode = mode;
+        self
     }
 
     pub fn get_mode(&self) -> &Mode {
@@ -44,7 +47,7 @@ impl Fury {
     }
 
 
-    pub fn write_head<T: Serializer>(&self, writer: &mut Writer) {
+    pub fn write_head<T: Serializer>(&self, writer: &mut Writer) -> usize {
         const HEAD_SIZE: usize = 10;
         writer.reserve(<T as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE + HEAD_SIZE);
         let mut bitmap = 0;
@@ -52,29 +55,34 @@ impl Fury {
         bitmap |= config_flags::IS_CROSS_LANGUAGE_FLAG;
         writer.u8(bitmap);
         writer.u8(Language::Rust as u8);
-        writer.skip(4); // native offset
-        writer.skip(4); // native size
+        writer.skip(4); // meta offset
+        writer.len() - 4
     }
 
-    fn read_head(&self, reader: &mut Reader) -> Result<(), Error> {
+    fn read_head(&self, reader: &mut Reader) -> Result<u32, Error> {
         let _bitmap = reader.u8();
         let _language: Language = reader.u8().try_into()?;
-        reader.skip(8); // native offset and size
-        Ok(())
+        Ok(reader.u32())
     }
 
     pub fn deserialize<T: Serializer>(&self, bf: &[u8]) -> Result<T, Error> {
         let mut reader = Reader::new(bf);
-        self.read_head(&mut reader)?;
-        let mut deserializer = ReadState::new(self, reader);
-        <T as Serializer>::deserialize(&mut deserializer)
+        let meta_offset = self.read_head(&mut reader)?;
+        let mut context = ReadContext::new(self, reader);
+        if meta_offset > 0 {
+            context.load_meta(meta_offset as usize);
+        }
+        <T as Serializer>::deserialize(&mut context)
     }
 
     pub fn serialize<T: Serializer>(&self, record: &T) -> Vec<u8> {
         let mut writer = Writer::default();
-        self.write_head(&mut writer);
-        let mut serializer = WriteState::new(self, &mut writer);
-        <T as Serializer>::serialize(record, &mut serializer);
+        let meta_offset = self.write_head::<T>(&mut writer);
+        let mut context = WriteContext::new(self, &mut writer);
+        <T as Serializer>::serialize(record, &mut context);
+        if Mode::Compatible == self.mode {
+            context.write_meta(meta_offset);
+        }
         writer.dump()
     }
 }

@@ -16,35 +16,35 @@
 // under the License.
 
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolvers::context::ReadContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList, SIZE_OF_REF_AND_TYPE};
-use crate::write_state::WriteState;
+use crate::resolvers::context::WriteContext;
 use std::collections::HashSet;
 use std::mem;
 
 impl<T: Serializer + Eq + std::hash::Hash> Serializer for HashSet<T> {
-    fn write(&self, serializer: &mut WriteState) {
+    fn write(&self, context: &mut WriteContext) {
         // length
-        serializer.writer.i32(self.len() as i32);
+        context.writer.i32(self.len() as i32);
 
         let reserved_space =
             (<T as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE) * self.len();
-        serializer.writer.reserve(reserved_space);
+        context.writer.reserve(reserved_space);
 
         // key-value
         for i in self.iter() {
-            i.serialize(serializer);
+            i.serialize(context);
         }
     }
 
-    fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
+    fn read(context: &mut ReadContext) -> Result<Self, Error> {
         // length
-        let len = deserializer.reader.var_int32();
+        let len = context.reader.var_int32();
         let mut result = HashSet::new();
         // key-value
         for _ in 0..len {
-            result.insert(<T as Serializer>::deserialize(deserializer)?);
+            result.insert(<T as Serializer>::deserialize(context)?);
         }
         Ok(result)
     }

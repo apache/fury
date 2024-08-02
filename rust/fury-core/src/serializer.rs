@@ -15,59 +15,69 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use num_enum::TryFromPrimitiveError;
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolvers::context::ReadContext;
 use crate::types::{FieldType, RefFlag};
-use crate::write_state::WriteState;
+use crate::resolvers::context::WriteContext;
+
+
+pub fn serialize<T: Serializer>(this: &T, context: &mut WriteContext) {
+    // ref flag
+    context.writer.i8(RefFlag::NotNullValue as i8);
+    // type
+    context.writer.i16(T::ty() as i16);
+    this.write(context);
+}
+
+pub fn deserialize<T: Serializer>(context: &mut ReadContext) -> Result<T, Error> {
+    // ref flag
+    let ref_flag = context.reader.i8();
+
+    if ref_flag == (RefFlag::NotNullValue as i8) || ref_flag == (RefFlag::RefValue as i8) {
+        // type_id
+        let type_id = context.reader.i16();
+        let ty = T::ty();
+        if type_id != ty as i16 {
+            Err(Error::FieldType {
+                expected: ty,
+                actial: type_id,
+            })
+        } else {
+            Ok(T::read(context)?)
+        }
+    } else if ref_flag == (RefFlag::Null as i8) {
+        Err(Error::Null)
+    } else if ref_flag == (RefFlag::Ref as i8) {
+        Err(Error::Ref)
+    } else {
+        Err(Error::BadRefFlag)
+    }
+}
 
 pub trait Serializer
 where
-    Self: Sized,
+    Self: Default,
 {
     /// The fixed memory size of the Type.
     /// Avoid the memory check, which would hurt performance.
     fn reserved_space() -> usize;
 
     /// Write the data into the buffer.
-    fn write(&self, serializer: &mut WriteState);
+    fn write(&self, context: &mut WriteContext);
 
     /// Entry point of the serialization.
     ///
     /// Step 1: write the type flag and type flag into the buffer.
     /// Step 2: invoke the write function to write the Rust object.
-    fn serialize(&self, serializer: &mut WriteState) {
-        // ref flag
-        serializer.writer.i8(RefFlag::NotNullValue as i8);
-        // type
-        serializer.writer.i16(Self::ty() as i16);
-        self.write(serializer);
+    fn serialize(&self, context: &mut WriteContext) {
+        serialize(self, context);
     }
 
-    fn read(deserializer: &mut ReadState) -> Result<Self, Error>;
+    fn read(context: &mut ReadContext) -> Result<Self, Error>;
 
-    fn deserialize(deserializer: &mut ReadState) -> Result<Self, Error> {
-        // ref flag
-        let ref_flag = deserializer.reader.i8();
-
-        if ref_flag == (RefFlag::NotNullValue as i8) || ref_flag == (RefFlag::RefValue as i8) {
-            // type_id
-            let type_id = deserializer.reader.i16();
-            let ty = Self::ty();
-            if type_id != ty as i16 {
-                Err(Error::FieldType {
-                    expected: ty,
-                    actial: type_id,
-                })
-            } else {
-                Ok(Self::read(deserializer)?)
-            }
-        } else if ref_flag == (RefFlag::Null as i8) {
-            Err(Error::Null)
-        } else if ref_flag == (RefFlag::Ref as i8) {
-            Err(Error::Ref)
-        } else {
-            Err(Error::BadRefFlag)
-        }
+    fn deserialize(context: &mut ReadContext) -> Result<Self, Error> {
+        deserialize(context)
     }
 
     fn ty() -> FieldType;

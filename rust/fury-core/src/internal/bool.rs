@@ -16,10 +16,10 @@
 // under the License.
 
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolvers::context::ReadContext;
 use crate::serializer::Serializer;
 use crate::types::FieldType;
-use crate::write_state::WriteState;
+use crate::resolvers::context::WriteContext;
 use std::mem;
 
 impl Serializer for bool {
@@ -27,12 +27,12 @@ impl Serializer for bool {
         mem::size_of::<i32>()
     }
 
-    fn write(&self, serializer: &mut WriteState) {
-        serializer.writer.u8(if *self { 1 } else { 0 });
+    fn write(&self, context: &mut WriteContext) {
+        context.writer.u8(if *self { 1 } else { 0 });
     }
 
-    fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
-        Ok(deserializer.reader.u8() == 1)
+    fn read(context: &mut ReadContext) -> Result<Self, Error> {
+        Ok(context.reader.u8() == 1)
     }
 
     fn ty() -> FieldType {

@@ -16,10 +16,10 @@
 // under the License.
 
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolvers::context::ReadContext;
 use crate::serializer::Serializer;
 use crate::types::FieldType;
-use crate::write_state::WriteState;
+use crate::resolvers::context::WriteContext;
 use std::mem;
 
 pub fn to_u8_slice<T>(slice: &[T]) -> &[u8] {
@@ -35,19 +35,19 @@ fn from_u8_slice<T: Clone>(slice: &[u8]) -> Vec<T> {
 macro_rules! impl_primitive_vec {
     ($name: ident, $ty:tt, $field_type: expr) => {
         impl Serializer for Vec<$ty> {
-            fn write(&self, serializer: &mut WriteState) {
-                serializer.writer.var_int32(self.len() as i32);
-                serializer
+            fn write(&self, context: &mut WriteContext) {
+                context.writer.var_int32(self.len() as i32);
+                context
                     .writer
                     .reserve(self.len() * mem::size_of::<$ty>());
-                serializer.writer.bytes(to_u8_slice(self));
+                context.writer.bytes(to_u8_slice(self));
             }
 
-            fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
+            fn read(context: &mut ReadContext) -> Result<Self, Error> {
                 // length
-                let len = (deserializer.reader.var_int32() as usize) * mem::size_of::<$ty>();
+                let len = (context.reader.var_int32() as usize) * mem::size_of::<$ty>();
                 Ok(from_u8_slice::<$ty>(
-                    deserializer.reader.bytes(len as usize),
+                    context.reader.bytes(len as usize),
                 ))
             }
 
@@ -63,9 +63,9 @@ macro_rules! impl_primitive_vec {
 }
 
 impl Serializer for Vec<bool> {
-    fn write(&self, serializer: &mut WriteState) {
-        serializer.writer.var_int32(self.len() as i32);
-        serializer.writer.bytes(to_u8_slice(self));
+    fn write(&self, context: &mut WriteContext) {
+        context.writer.var_int32(self.len() as i32);
+        context.writer.bytes(to_u8_slice(self));
     }
 
     fn reserved_space() -> usize {
@@ -76,9 +76,9 @@ impl Serializer for Vec<bool> {
         FieldType::FuryPrimitiveBoolArray
     }
 
-    fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
-        let size = deserializer.reader.var_int32();
-        let bytes = deserializer.reader.bytes(size as usize).to_vec();
+    fn read(context: &mut ReadContext) -> Result<Self, Error> {
+        let size = context.reader.var_int32();
+        let bytes = context.reader.bytes(size as usize).to_vec();
         Ok(unsafe { mem::transmute::<Vec<u8>, Vec<bool>>(bytes) })
     }
 }

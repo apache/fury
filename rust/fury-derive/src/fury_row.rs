@@ -17,8 +17,7 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
-
-use crate::fury_meta::sorted_fields;
+use crate::util::sorted_fields;
 
 pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;

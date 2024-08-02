@@ -16,39 +16,39 @@
 // under the License.
 
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolvers::context::ReadContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList, SIZE_OF_REF_AND_TYPE};
-use crate::write_state::WriteState;
+use crate::resolvers::context::WriteContext;
 use std::collections::HashMap;
 use std::mem;
 
 impl<T1: Serializer + Eq + std::hash::Hash, T2: Serializer> Serializer for HashMap<T1, T2> {
-    fn write(&self, serializer: &mut WriteState) {
+    fn write(&self, context: &mut WriteContext) {
         // length
-        serializer.writer.var_int32(self.len() as i32);
+        context.writer.var_int32(self.len() as i32);
 
         let reserved_space = (<T1 as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE)
             * self.len()
             + (<T2 as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE) * self.len();
-        serializer.writer.reserve(reserved_space);
+        context.writer.reserve(reserved_space);
 
         // key-value
         for i in self.iter() {
-            i.0.serialize(serializer);
-            i.1.serialize(serializer);
+            i.0.serialize(context);
+            i.1.serialize(context);
         }
     }
 
-    fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
+    fn read(context: &mut ReadContext) -> Result<Self, Error> {
         // length
-        let len = deserializer.reader.var_int32();
+        let len = context.reader.var_int32();
         let mut result = HashMap::new();
         // key-value
         for _ in 0..len {
             result.insert(
-                <T1 as Serializer>::deserialize(deserializer)?,
-                <T2 as Serializer>::deserialize(deserializer)?,
+                <T1 as Serializer>::deserialize(context)?,
+                <T2 as Serializer>::deserialize(context)?,
             );
         }
         Ok(result)

@@ -27,6 +27,7 @@ pub enum Encoding {
     AllToLowerSpecial = 0x04,
 }
 
+
 #[derive(Debug, PartialEq)]
 pub struct MetaString {
     pub original: String,
